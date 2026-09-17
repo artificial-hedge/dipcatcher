@@ -376,9 +376,7 @@ def oos_rank_scores(
     return pred
 
 
-def bench_ranking(
-    frame: pl.DataFrame, config: AppConfig, label: str
-) -> list[dict[str, Any]]:
+def bench_ranking(frame: pl.DataFrame, config: AppConfig, label: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     specs: list[tuple[str, str, list[str] | None, str | None]] = [
         ("oracle_raw", "oracle", None, "cs_z_planted_signal"),
@@ -473,7 +471,9 @@ def bench_volatility(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
     y = sub[label].to_numpy().astype(float)
     roll = np.clip(sub["vol_20"].to_numpy().astype(float) ** 2, config.train.qlike_floor, None)
     if "vol_ewma" in sub.columns:
-        ewma = np.clip(sub["vol_ewma"].to_numpy().astype(float) ** 2, config.train.qlike_floor, None)
+        ewma = np.clip(
+            sub["vol_ewma"].to_numpy().astype(float) ** 2, config.train.qlike_floor, None
+        )
     else:
         ewma = roll
     _, te = _holdout(y.size)
@@ -584,7 +584,9 @@ def bench_distribution(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]
 
 
 def bench_regime(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
-    cols = [c for c in ["mkt_ret_1", "mkt_vol_20", "cs_dispersion", "breadth"] if c in frame.columns]
+    cols = [
+        c for c in ["mkt_ret_1", "mkt_vol_20", "cs_dispersion", "breadth"] if c in frame.columns
+    ]
     if len(cols) < 2:
         return {}
     sub = frame.select(["event_time", *cols]).unique("event_time").drop_nulls().sort("event_time")
@@ -704,9 +706,7 @@ def bench_liquidity(frame: pl.DataFrame) -> dict[str, Any]:
         a = sub["amihud"].to_numpy().astype(float)
         r = np.abs(sub["ret_1"].to_numpy().astype(float))
         out["corr_amihud_abs_ret"] = pearson_ic(a, r)
-    ac = almgren_chriss_trajectory(
-        1.0, 5, sigma=0.02, eta=1e-4, gamma=1e-5, risk_aversion=1e-3
-    )
+    ac = almgren_chriss_trajectory(1.0, 5, sigma=0.02, eta=1e-4, gamma=1e-5, risk_aversion=1e-3)
     tw = twap_trajectory(1.0, 5)
     ac_c = expected_shortfall_ac(
         ac, slice_trades(ac), arrival=100.0, eta=1e-4, gamma=1e-5, sigma=0.02
@@ -838,11 +838,16 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
             high_kupiec = kupiec_pof(hh, alpha)
             high_hits = float(m_x.get(high_key, float("nan")))
     hmm_cond: dict[str, float] = {}
-    rcols = [c for c in ["mkt_ret_1", "mkt_vol_20", "cs_dispersion", "breadth"] if c in frame.columns]
+    rcols = [
+        c for c in ["mkt_ret_1", "mkt_vol_20", "cs_dispersion", "breadth"] if c in frame.columns
+    ]
     if len(rcols) >= 2:
         try:
             rsub = (
-                frame.select(["event_time", *rcols]).unique("event_time").drop_nulls().sort("event_time")
+                frame.select(["event_time", *rcols])
+                .unique("event_time")
+                .drop_nulls()
+                .sort("event_time")
             )
             rx = rsub.select(rcols).to_numpy().astype(float)
             rdates = rsub["event_time"].to_numpy()
@@ -1366,9 +1371,7 @@ def bench_interval_risk(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any
     # Same 1/n on the date, inside the name box; interval caps clip further.
     weights = np.minimum(w_eq, max_w)
     caps = cap_from_interval(lo, hi, max_weight=max_w, width_ref=wr, downside_ref=dr)
-    out = bench_interval_caps(
-        lo, hi, weights, max_weight=max_w, width_ref=wr, downside_ref=dr
-    )
+    out = bench_interval_caps(lo, hi, weights, max_weight=max_w, width_ref=wr, downside_ref=dr)
     width = hi - lo
     finite_w = np.isfinite(width)
     med_w = float(np.nanmedian(width[finite_w])) if int(finite_w.sum()) else 0.0

@@ -121,7 +121,12 @@ class GaussianHMMRegime(JoblibMixin):
         ll = float(self.model.score(xx))
         aic = 2 * n_params - 2 * ll
         bic = float(np.log(n) * n_params - 2 * ll)
-        return {"aic": float(aic), "bic": bic, "avg_ll": ll / max(n, 1), "n_params": float(n_params)}
+        return {
+            "aic": float(aic),
+            "bic": bic,
+            "avg_ll": ll / max(n, 1),
+            "n_params": float(n_params),
+        }
 
     def metadata(self) -> ModelMeta:
         return ModelMeta(

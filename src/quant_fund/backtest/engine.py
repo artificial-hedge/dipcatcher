@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import SupportsFloat
 
 import numpy as np
 import polars as pl
@@ -31,7 +32,7 @@ class Book:
         return self.cash + pos
 
 
-def _valid_price(value: object) -> float | None:
+def _valid_price(value: SupportsFloat | None) -> float | None:
     if value is None:
         return None
     price = float(value)

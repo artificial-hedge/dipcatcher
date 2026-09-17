@@ -26,9 +26,7 @@ def conformal_quantile(scores: Array, alpha: float) -> float:
     return float(np.quantile(s, level, method="higher"))
 
 
-def cqr_scores(
-    y: Array, lower: Array, upper: Array, scale: Array | None = None
-) -> Array:
+def cqr_scores(y: Array, lower: Array, upper: Array, scale: Array | None = None) -> Array:
     y = np.asarray(y, dtype=float)
     lo = np.asarray(lower, dtype=float)
     hi = np.asarray(upper, dtype=float)
@@ -90,9 +88,7 @@ def set_metrics(y: Array, lower: Array, upper: Array) -> SetMetrics:
     )
 
 
-def conditional_coverage(
-    y: Array, lower: Array, upper: Array, labels: Array
-) -> dict[str, float]:
+def conditional_coverage(y: Array, lower: Array, upper: Array, labels: Array) -> dict[str, float]:
     """Coverage within each label. Labels are never mixed across groups."""
     y = np.asarray(y, dtype=float)
     lo = np.asarray(lower, dtype=float)

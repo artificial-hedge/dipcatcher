@@ -228,7 +228,9 @@ def research(config: Path = typer.Option(Path("configs/research.yaml"))) -> None
         )
     vol = nb.families.get("volatility", {})
     if vol:
-        typer.echo(f"volatility QLIKE ewma={vol.get('qlike_ewma')} rolling={vol.get('qlike_rolling')}")
+        typer.echo(
+            f"volatility QLIKE ewma={vol.get('qlike_ewma')} rolling={vol.get('qlike_rolling')}"
+        )
     rl = nb.families.get("reinforcement", {})
     if rl:
         typer.echo(

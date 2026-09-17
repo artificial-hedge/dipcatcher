@@ -76,9 +76,7 @@ def _horizon_name(bars: int, config: AppConfig) -> str:
     return f"{bars}d"
 
 
-def history_for_calibration(
-    frame: pl.DataFrame, asof: datetime, horizon_bars: int
-) -> pl.DataFrame:
+def history_for_calibration(frame: pl.DataFrame, asof: datetime, horizon_bars: int) -> pl.DataFrame:
     """Rows whose forward labels are realized before ``asof``. Never the decision bar."""
     times = frame["event_time"].unique().sort().to_list()
     if not times:
@@ -92,9 +90,7 @@ def history_for_calibration(
     return frame.filter(pl.col("event_time") <= times[last])
 
 
-def _align_col(
-    frame: pl.DataFrame, dates: np.ndarray, ids: np.ndarray, name: str
-) -> Array | None:
+def _align_col(frame: pl.DataFrame, dates: np.ndarray, ids: np.ndarray, name: str) -> Array | None:
     if name not in frame.columns:
         return None
     sub = frame.select(["event_time", "security_id", name]).drop_nulls()
@@ -108,10 +104,7 @@ def _align_col(
         )
     }
     return np.array(
-        [
-            lookup.get((d, str(i)), np.nan)
-            for d, i in zip(_date_keys(dates), ids, strict=True)
-        ],
+        [lookup.get((d, str(i)), np.nan) for d, i in zip(_date_keys(dates), ids, strict=True)],
         dtype=float,
     )
 

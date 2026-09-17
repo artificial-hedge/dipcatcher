@@ -194,18 +194,14 @@ def test_h13_equal_weight_claim_matches_weight_rule() -> None:
             "n_bind_tight": 8,
         }
     )
-    h13_other = next(
-        h for h in _build_hypotheses(fam, _rankers()) if h.id == "H13_interval_caps"
-    )
+    h13_other = next(h for h in _build_hypotheses(fam, _rankers()) if h.id == "H13_interval_caps")
     assert "equal-weight" not in h13_other.statement.lower()
     assert "equal weight" not in h13_other.statement.lower()
 
 
 def test_h10_floor_miss_is_not_a_fdr_discovery() -> None:
     fam = _families(jackknife_plus={"coverage": 0.70, "coverage_floor": 0.8})
-    h10 = next(
-        h for h in _build_hypotheses(fam, _rankers()) if h.id == "H10_jackknife_coverage"
-    )
+    h10 = next(h for h in _build_hypotheses(fam, _rankers()) if h.id == "H10_jackknife_coverage")
     assert h10.meets_floor is False
     assert h10.family == "bound"
     assert h10.reject_fdr is False

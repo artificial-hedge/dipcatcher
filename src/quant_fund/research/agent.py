@@ -190,9 +190,7 @@ def _contrast_inference(
     return t, p, "mean-difference t using reported n_dates, not dummy 0/1"
 
 
-def _apply_family_fdr(
-    hyps: list[HypothesisResult], family: str, alpha: float = 0.05
-) -> None:
+def _apply_family_fdr(hyps: list[HypothesisResult], family: str, alpha: float = 0.05) -> None:
     idx = [i for i, h in enumerate(hyps) if h.family == family]
     if not idx:
         return
@@ -444,7 +442,9 @@ def _build_hypotheses(
                 "bind more than the tight half."
             )
         else:
-            statement = "Wide-interval names bind more than tight-interval names after interval caps."
+            statement = (
+                "Wide-interval names bind more than tight-interval names after interval caps."
+            )
         hyps.append(
             _hyp(
                 "H13_interval_caps",

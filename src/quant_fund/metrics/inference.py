@@ -192,9 +192,7 @@ def two_proportion_test(
     return z, p
 
 
-def benjamini_hochberg(
-    p_values: Array, alpha: float = 0.05
-) -> tuple[NDArray[np.bool_], float]:
+def benjamini_hochberg(p_values: Array, alpha: float = 0.05) -> tuple[NDArray[np.bool_], float]:
     """BH FDR control. Returns (reject mask in original order, adaptive threshold)."""
     p = np.asarray(p_values, dtype=float)
     m = int(p.size)
@@ -289,12 +287,8 @@ def jobson_korkie_memmel(sr_a: float, sr_b: float, n: int, corr: float) -> tuple
     """Memmel (2003) correction of Jobson–Korkie Sharpe difference test."""
     if n < 10:
         return float("nan"), float("nan")
-    theta = (
-        (sr_a - sr_b)
-        / np.sqrt(
-            (1.0 / n)
-            * (2.0 * (1.0 - corr) + 0.5 * (sr_a**2 + sr_b**2 - sr_a * sr_b * (1.0 + corr**2)))
-        )
+    theta = (sr_a - sr_b) / np.sqrt(
+        (1.0 / n) * (2.0 * (1.0 - corr) + 0.5 * (sr_a**2 + sr_b**2 - sr_a * sr_b * (1.0 + corr**2)))
     )
     p = float(2.0 * stats.norm.sf(abs(float(theta))))
     return float(theta), p

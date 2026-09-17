@@ -243,11 +243,16 @@ def select_scaled_wrappee(
     t_covers = bool(np.isfinite(cov_t) and cov_t >= min_coverage)
     t_better_crps = bool(np.isfinite(crps_t) and np.isfinite(crps_g) and crps_t < crps_g)
     t_better_pit = False
-    if np.isfinite(ks_p_t) and np.isfinite(ks_p_g) and ks_p_t > ks_p_g or (
-        np.isfinite(ks_t)
-        and np.isfinite(ks_g)
-        and (not np.isfinite(ks_p_t) or not np.isfinite(ks_p_g) or ks_p_t == ks_p_g)
-        and ks_t < ks_g
+    if (
+        np.isfinite(ks_p_t)
+        and np.isfinite(ks_p_g)
+        and ks_p_t > ks_p_g
+        or (
+            np.isfinite(ks_t)
+            and np.isfinite(ks_g)
+            and (not np.isfinite(ks_p_t) or not np.isfinite(ks_p_g) or ks_p_t == ks_p_g)
+            and ks_t < ks_g
+        )
     ):
         t_better_pit = True
     name = "scaled_student_t" if t_covers and (t_better_crps or t_better_pit) else "scaled_gaussian"

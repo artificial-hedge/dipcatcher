@@ -104,8 +104,10 @@ def dcc_gaussian(
         v = ewma_variance_1d(x[:, j])
         vol[:, j] = np.sqrt(np.clip(v, 1e-16, None))
     z = x / np.clip(vol, 1e-12, None)
-    qbar = np.corrcoef(z, rowvar=False)
-    qbar = np.nan_to_num(qbar, nan=0.0, posinf=0.0, neginf=0.0)
+    qbar = np.asarray(
+        np.nan_to_num(np.corrcoef(z, rowvar=False), nan=0.0, posinf=0.0, neginf=0.0),
+        dtype=np.float64,
+    )
     np.fill_diagonal(qbar, 1.0)
     qbar, _ = repair_psd(qbar, tol=1e-12)
 
