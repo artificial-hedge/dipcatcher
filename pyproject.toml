@@ -83,6 +83,23 @@ packages = ["quant_fund"]
 ignore_missing_imports = true
 warn_unused_ignores = false
 
+# Numeric-return ratchet: these modules must not leak untyped library results.
+[[tool.mypy.overrides]]
+module = [
+    "quant_fund.utils.numeric",
+    "quant_fund.metrics.conformal",
+    "quant_fund.metrics.evalues",
+    "quant_fund.execution.almgren_chriss",
+    "quant_fund.portfolio.interval_risk",
+    "quant_fund.models.covariance",
+    "quant_fund.models.regime",
+    "quant_fund.models.calibration",
+    "quant_fund.models.distribution",
+    "quant_fund.models.tail",
+]
+warn_return_any = true
+warn_unused_ignores = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"

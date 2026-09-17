@@ -105,7 +105,7 @@ class DrawdownClassifier(JoblibMixin):
         x = np.where(np.isfinite(x), x, 0.0)
         if not hasattr(self.model, "coef_"):
             return np.full(x.shape[0], 0.05)
-        return self.model.predict_proba(x)[:, 1]
+        return np.asarray(self.model.predict_proba(x)[:, 1], dtype=np.float64)
 
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return self.predict_proba(x)

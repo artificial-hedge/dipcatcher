@@ -29,8 +29,8 @@ def almgren_chriss_trajectory(
         raise ValueError("n_slices >= 1")
     if x0 == 0:
         return np.zeros(n_slices + 1)
-    t = np.arange(n_slices + 1, dtype=float) * tau
-    t_end = t[-1]
+    t: Array = np.arange(n_slices + 1, dtype=np.float64) * tau
+    t_end = float(t[-1])
     if risk_aversion <= 0 or eta <= 0 or sigma <= 0:
         # equal slices
         return x0 * (1.0 - t / t_end)
@@ -42,7 +42,7 @@ def almgren_chriss_trajectory(
     x = x0 * np.sinh(kappa * (t_end - t)) / denom
     x[0] = x0
     x[-1] = 0.0
-    return x
+    return np.asarray(x, dtype=np.float64)
 
 
 def slice_trades(holdings: Array) -> Array:

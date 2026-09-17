@@ -107,7 +107,7 @@ class GaussianHMMRegime(JoblibMixin):
             raise RuntimeError("GaussianHMMRegime must be fitted before prediction")
         xx = self.scaler.transform(np.where(np.isfinite(x), x, 0.0))
         p = self.model.predict_proba(xx)
-        return p / np.clip(p.sum(axis=1, keepdims=True), 1e-12, None)
+        return np.asarray(p / np.clip(p.sum(axis=1, keepdims=True), 1e-12, None), dtype=np.float64)
 
     def predict(self, x: NDArray[np.float64]) -> NDArray[np.float64]:
         return self.predict_proba(x)

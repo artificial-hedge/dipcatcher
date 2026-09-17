@@ -80,7 +80,7 @@ def factor_cov(betas: Array, factor_cov: Array, idio_var: Array) -> Array:
     b = np.asarray(betas, dtype=float)
     f = np.asarray(factor_cov, dtype=float)
     d = np.diag(np.asarray(idio_var, dtype=float))
-    return b @ f @ b.T + d
+    return np.asarray(b @ f @ b.T + d, dtype=np.float64)
 
 
 def dcc_gaussian(
@@ -129,7 +129,7 @@ def dcc_gaussian(
             except np.linalg.LinAlgError:
                 return 1e12
             ll += logdet + quadratic
-        return ll / t
+        return float(ll / t)
 
     x0 = np.array([0.05 if a0 is None else a0, 0.9 if b0 is None else b0])
     res = minimize(nll, x0, bounds=[(1e-6, 0.5), (1e-6, 0.99)])

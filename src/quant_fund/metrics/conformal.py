@@ -32,15 +32,15 @@ def cqr_scores(
     y = np.asarray(y, dtype=float)
     lo = np.asarray(lower, dtype=float)
     hi = np.asarray(upper, dtype=float)
-    raw = np.maximum(lo - y, y - hi)
+    raw = np.asarray(np.maximum(lo - y, y - hi), dtype=np.float64)
     if scale is None:
         return raw
-    return raw / np.maximum(np.asarray(scale, dtype=float), 1e-12)
+    return np.asarray(raw / np.maximum(np.asarray(scale, dtype=float), 1e-12), dtype=np.float64)
 
 
 def onesided_scores(y: Array, bound: Array) -> Array:
     """Residual for an upper prediction bound: how far y exceeds the bound."""
-    return np.asarray(y, dtype=float) - np.asarray(bound, dtype=float)
+    return np.asarray(np.asarray(y, dtype=float) - np.asarray(bound, dtype=float), dtype=np.float64)
 
 
 def expand_interval(

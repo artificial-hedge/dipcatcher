@@ -38,8 +38,8 @@ class ProbabilityCalibrator(JoblibMixin):
         if not self.fitted:
             return s
         if self.method == "platt":
-            return self.platt.predict_proba(s.reshape(-1, 1))[:, 1]
-        return self.iso.predict(s)
+            return np.asarray(self.platt.predict_proba(s.reshape(-1, 1))[:, 1], dtype=np.float64)
+        return np.asarray(self.iso.predict(s), dtype=np.float64)
 
     def metadata(self) -> ModelMeta:
         return ModelMeta(family="calibration", name=self.method, version="v1")

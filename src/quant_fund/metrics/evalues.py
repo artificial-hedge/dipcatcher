@@ -43,7 +43,7 @@ def _step_e(miss: Array, alpha: float) -> Array:
     lam = _alt_lambda(a)
     x = np.clip(np.asarray(miss, dtype=float), 0.0, 1.0)
     raw = (x / a) * lam + ((1.0 - x) / (1.0 - a)) * (1.0 - lam)
-    return np.clip(raw, 0.0, _E_MAX)
+    return np.asarray(np.clip(raw, 0.0, _E_MAX), dtype=np.float64)
 
 
 def e_value_bernoulli(miss: float, alpha: float) -> float:
@@ -63,7 +63,7 @@ def e_process(misses: Array, alpha: float) -> Array:
     steps = _step_e(x, alpha)
     log_steps = np.log(np.clip(steps, _EPS, _E_MAX))
     log_run = np.minimum(np.cumsum(log_steps), np.log(_E_MAX))
-    return np.exp(log_run).astype(float)
+    return np.asarray(np.exp(log_run), dtype=np.float64)
 
 
 def e_process_threshold(e: Array, level: float = 0.05) -> dict[str, object]:

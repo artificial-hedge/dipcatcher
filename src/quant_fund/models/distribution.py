@@ -105,7 +105,7 @@ class ScaledGaussianDistribution(JoblibMixin):
     def predict(self, scale: NDArray[np.float64]) -> NDArray[np.float64]:
         sc = np.maximum(np.asarray(scale, dtype=float).reshape(-1), 1e-8)
         width = self.z_sig * sc
-        return self.mu + width[:, None] * self.z[None, :]
+        return np.asarray(self.mu + width[:, None] * self.z[None, :], dtype=np.float64)
 
     def metadata(self) -> ModelMeta:
         return ModelMeta(
@@ -200,7 +200,7 @@ class ScaledStudentTDistribution(JoblibMixin):
         sc = np.maximum(np.asarray(scale, dtype=float).reshape(-1), 1e-8)
         z = np.array([student_t.ppf(t, self.nu) for t in self.taus])
         width = self.z_sig * sc
-        return self.mu + width[:, None] * z[None, :]
+        return np.asarray(self.mu + width[:, None] * z[None, :], dtype=np.float64)
 
     def metadata(self) -> ModelMeta:
         return ModelMeta(

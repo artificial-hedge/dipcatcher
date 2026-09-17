@@ -46,7 +46,7 @@ def interval_width(lo: Array | float, hi: Array | float) -> Array:
 
 def downside(lo: Array | float) -> Array:
     """How negative the lower endpoint is: ``max(0, -lo)``."""
-    return np.maximum(0.0, -np.asarray(lo, dtype=float))
+    return np.asarray(np.maximum(0.0, -np.asarray(lo, dtype=float)), dtype=np.float64)
 
 
 def interval_refs(
