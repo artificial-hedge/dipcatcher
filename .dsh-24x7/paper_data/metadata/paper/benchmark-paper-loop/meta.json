@@ -1,0 +1,615 @@
+{
+  "run_id": "benchmark-paper-loop",
+  "schema_version": 2,
+  "label": "PAPER_SIMULATED_SYNTHETIC",
+  "disclaimer": "Paper/shadow ledger uses simulated fills. Not live broker connectivity. SYNTHETIC bars \u21d2 research-only diagnostics.",
+  "data_source": "SYNTHETIC",
+  "mode": "paper",
+  "fill": "next_open",
+  "initial_nav": 1000000.0,
+  "has_shadow": true,
+  "resumed": false,
+  "metrics": {
+    "label": "PAPER_SIMULATED",
+    "data_source": "SYNTHETIC",
+    "research_only": true,
+    "live_pnl_claim": false,
+    "disclaimer": "SYNTHETIC / simulated book diagnostics \u2014 not live broker P&L.",
+    "exposure": {
+      "gross": 0.13993143359753724,
+      "net": 0.01999020479964818,
+      "n_long": 4,
+      "n_short": 4,
+      "gross_mean": 0.13993143359753718,
+      "gross_max": 0.13993143359753726,
+      "net_mean": 0.019990204799648175,
+      "net_abs_mean": 0.019990204799648175
+    },
+    "execution": {
+      "realized_vol_ann": 0.0018137779674649293,
+      "max_drawdown": -0.00011289240217327023,
+      "calmar_diagnostic": 37.919011657088205,
+      "n_returns": 19,
+      "role": 1.0
+    },
+    "equity": {
+      "n_points": 20,
+      "nav_start": 1.0,
+      "nav_end": 1.0003221193530694,
+      "nav_peak": 1.0003221193530694,
+      "total_return": 0.0003221193530693611,
+      "max_drawdown_nav": -0.00011289240217327023,
+      "max_underwater_duration": 2,
+      "n_underwater_episodes": 8,
+      "realized_vol_ann": 0.0018137779674646617,
+      "role": 1.0
+    },
+    "drawdown_duration": {
+      "n_bars": 19,
+      "n_episodes": 8,
+      "max_underwater_duration": 2,
+      "mean_underwater_duration": 1.25,
+      "time_underwater_frac": 0.5263157894736842,
+      "current_underwater_duration": 0,
+      "deepest_trough": -0.00011289240217327023,
+      "episodes": [
+        {
+          "start_idx": 1,
+          "end_idx": 1,
+          "duration": 1,
+          "trough": -0.00010391985631441614,
+          "trough_idx": 1,
+          "recovered": true
+        },
+        {
+          "start_idx": 3,
+          "end_idx": 3,
+          "duration": 1,
+          "trough": -0.00010643486891437348,
+          "trough_idx": 3,
+          "recovered": true
+        },
+        {
+          "start_idx": 5,
+          "end_idx": 6,
+          "duration": 2,
+          "trough": -0.00011289240217327023,
+          "trough_idx": 6,
+          "recovered": true
+        },
+        {
+          "start_idx": 8,
+          "end_idx": 8,
+          "duration": 1,
+          "trough": -0.00010357753353373855,
+          "trough_idx": 8,
+          "recovered": true
+        },
+        {
+          "start_idx": 10,
+          "end_idx": 10,
+          "duration": 1,
+          "trough": -0.00010607563183684388,
+          "trough_idx": 10,
+          "recovered": true
+        },
+        {
+          "start_idx": 12,
+          "end_idx": 13,
+          "duration": 2,
+          "trough": -0.0001125057904384219,
+          "trough_idx": 13,
+          "recovered": true
+        },
+        {
+          "start_idx": 15,
+          "end_idx": 15,
+          "duration": 1,
+          "trough": -0.00010323745751916746,
+          "trough_idx": 15,
+          "recovered": true
+        },
+        {
+          "start_idx": 17,
+          "end_idx": 17,
+          "duration": 1,
+          "trough": -0.0001057188115904939,
+          "trough_idx": 17,
+          "recovered": true
+        }
+      ],
+      "threshold": 0.0,
+      "role": 1.0,
+      "live_pnl_claim": false,
+      "research_only": true
+    },
+    "var_es": {
+      "var": 0.00010611155554457774,
+      "es": 0.00010643486891437972,
+      "alpha": 0.95,
+      "n": 19
+    },
+    "var_backtest": {
+      "hit_rate": 0.05263157894736842,
+      "kupiec_lr": 0.0027252209969939045,
+      "kupiec_p": 0.9583664252044094,
+      "christoffersen_ind_lr": 0.11771500011223601,
+      "christoffersen_ind_p": 0.73152609234986,
+      "christoffersen_cc_lr": 0.12044022110922992,
+      "christoffersen_cc_p": 0.941557264082384,
+      "acerbi_szekely_z1": 0.052631578947367474,
+      "acerbi_szekely_z2": 0.0,
+      "fissler_ziegel_mean": -9.147817442330261,
+      "es_hit_count": 1.0,
+      "n": 19
+    },
+    "mean_turnover": NaN,
+    "capacity": {},
+    "stress": {
+      "shock_down_pnl": -0.0027986286719507442,
+      "shock_up_pnl": 0.0003998040959929635,
+      "liquidity_haircut_pnl": -0.013993143359753725,
+      "liquidity_freeze_pnl": -0.0013993143359753723,
+      "liquidity_freeze_frac": 0.5,
+      "gap_open_pnl": -0.0055972573439014885,
+      "gap_open_sigma": 2.0,
+      "corr_spike_1sigma_pnl": NaN,
+      "corr_spike": 0.9,
+      "liquidity_haircut": 0.1,
+      "note": "stylized_hypothetical"
+    },
+    "stress_report": {
+      "scenarios": {
+        "shock_down_pnl": -0.0027986286719507442,
+        "shock_up_pnl": 0.0003998040959929635,
+        "liquidity_haircut_pnl": -0.013993143359753725,
+        "liquidity_freeze_pnl": -0.0013993143359753723,
+        "liquidity_freeze_frac": 0.5,
+        "gap_open_pnl": -0.0055972573439014885,
+        "gap_open_sigma": 2.0,
+        "corr_spike_1sigma_pnl": NaN,
+        "corr_spike": 0.9,
+        "liquidity_haircut": 0.1,
+        "note": "stylized_hypothetical"
+      },
+      "contributions": [
+        {
+          "scenario": "shock_down_pnl",
+          "pnl": -0.0027986286719507442
+        },
+        {
+          "scenario": "shock_up_pnl",
+          "pnl": 0.0003998040959929635
+        },
+        {
+          "scenario": "liquidity_haircut_pnl",
+          "pnl": -0.013993143359753725
+        },
+        {
+          "scenario": "liquidity_freeze_pnl",
+          "pnl": -0.0013993143359753723
+        },
+        {
+          "scenario": "gap_open_pnl",
+          "pnl": -0.0055972573439014885
+        },
+        {
+          "scenario": "corr_spike_1sigma_pnl",
+          "pnl": NaN
+        }
+      ],
+      "ranked_adverse": [
+        {
+          "scenario": "liquidity_haircut_pnl",
+          "pnl": -0.013993143359753725
+        },
+        {
+          "scenario": "gap_open_pnl",
+          "pnl": -0.0055972573439014885
+        },
+        {
+          "scenario": "shock_down_pnl",
+          "pnl": -0.0027986286719507442
+        },
+        {
+          "scenario": "liquidity_freeze_pnl",
+          "pnl": -0.0013993143359753723
+        },
+        {
+          "scenario": "shock_up_pnl",
+          "pnl": 0.0003998040959929635
+        }
+      ],
+      "worst_scenario": "liquidity_haircut_pnl",
+      "worst_pnl": -0.013993143359753725,
+      "adverse_pnl_sum": -0.02378834371158133,
+      "n_scenarios": 6,
+      "note": "stylized_hypothetical",
+      "live_pnl_claim": false,
+      "research_only": true,
+      "role": "stress_report"
+    },
+    "min_trl": {
+      "n_obs": 19,
+      "conf": 0.95,
+      "min_track_record_length": 124.41342759175218,
+      "min_trl": 124.41342759175218,
+      "track_record_bars": 125.0,
+      "research_only": true,
+      "claim": "bailey_ldp_min_trl_diagnostic_only"
+    },
+    "equity_analytics": {
+      "n_points": 20,
+      "nav_start": 999990.0049975013,
+      "nav_end": 1000312.121130987,
+      "nav_peak": 1000312.121130987,
+      "total_return": 0.0003221193530693611,
+      "max_drawdown_nav": -0.00011289240217327023,
+      "max_underwater_duration": 2,
+      "n_underwater_episodes": 8,
+      "realized_vol_ann": 0.0018137779674649293,
+      "role": 1.0
+    },
+    "risk_gate_rejects": 0,
+    "kill_switch_halts": 0,
+    "reject_total": 0,
+    "reject_accounting": {
+      "reject_total": 0,
+      "kill_switch_halts": 0,
+      "risk_gate_rejects": 0,
+      "other_rejects": 0
+    },
+    "n_steps": 20,
+    "n_steps_this_run": 20,
+    "n_fills": 160,
+    "n_order_records_this_run": 320,
+    "mean_weight_l1_divergence": 0.0,
+    "max_weight_l1_divergence": 0.0,
+    "rolling_mean_l1_divergence": 0.0,
+    "rolling_window": 10,
+    "challenger_metrics": {
+      "window": 10,
+      "challengers": {
+        "shadow": {
+          "n": 20,
+          "mean_l1": 0.0,
+          "max_l1": 0.0,
+          "rolling_mean_l1": 0.0,
+          "last_l1": 0.0
+        }
+      },
+      "role": "paper_shadow_research_diagnostic",
+      "live_pnl_claim": false,
+      "research_only": true,
+      "closest_challenger": "shadow",
+      "farthest_challenger": "shadow"
+    },
+    "has_shadow": true,
+    "n_extra_challengers": 0,
+    "kill_tripped_mid_run": false,
+    "resumed": false,
+    "portfolio_conformal": {
+      "n": 19,
+      "role": "paper_book_research_diagnostic",
+      "live_pnl_claim": false,
+      "status": "insufficient_sample"
+    },
+    "promotion_dry_run": {
+      "would_promote_paper": false,
+      "would_promote_live": false,
+      "mean_l1": 0.0,
+      "max_l1": 0.0,
+      "n_steps": 20,
+      "champion_nav": 1000312.121130987,
+      "shadow_gross": 0.14,
+      "max_mean_l1": 0.25,
+      "min_steps": 21,
+      "reasons": [
+        "insufficient_steps:20<21",
+        "synthetic_evidence_not_live_promotable"
+      ],
+      "data_source": "SYNTHETIC",
+      "live_pnl_claim": false,
+      "research_only": true,
+      "note": "dry_run_only_no_live_capital",
+      "schema_version": 2,
+      "run_id": "benchmark-paper-loop",
+      "rolling_mean_l1": 0.0,
+      "rolling_window": 10,
+      "primary_challenger": "shadow",
+      "challenger_metrics": {
+        "window": 10,
+        "challengers": {
+          "shadow": {
+            "n": 20,
+            "mean_l1": 0.0,
+            "max_l1": 0.0,
+            "rolling_mean_l1": 0.0,
+            "last_l1": 0.0
+          }
+        },
+        "role": "paper_shadow_research_diagnostic",
+        "live_pnl_claim": false,
+        "research_only": true,
+        "closest_challenger": "shadow",
+        "farthest_challenger": "shadow"
+      },
+      "risk_accounting": {
+        "reject_total": 0,
+        "kill_switch_halts": 0,
+        "risk_gate_rejects": 0,
+        "other_rejects": 0
+      },
+      "kill_tripped_mid_run": false,
+      "receipt_sha256": "195f2ab6880fe86de08ffe78fe98fb3214da2c5573a36f88a47032f709807098"
+    },
+    "analytics_export": {
+      "label": "PAPER_SIMULATED",
+      "data_source": "SYNTHETIC",
+      "research_only": true,
+      "live_pnl_claim": false,
+      "disclaimer": "SYNTHETIC / simulated book diagnostics \u2014 not live broker P&L.",
+      "exposure": {
+        "gross": 0.13993143359753724,
+        "net": 0.01999020479964818,
+        "n_long": 4,
+        "n_short": 4,
+        "gross_mean": 0.13993143359753718,
+        "gross_max": 0.13993143359753726,
+        "net_mean": 0.019990204799648175,
+        "net_abs_mean": 0.019990204799648175
+      },
+      "execution": {
+        "realized_vol_ann": 0.0018137779674649293,
+        "max_drawdown": -0.00011289240217327023,
+        "calmar_diagnostic": 37.919011657088205,
+        "n_returns": 19,
+        "role": 1.0
+      },
+      "equity": {
+        "n_points": 20,
+        "nav_start": 1.0,
+        "nav_end": 1.0003221193530694,
+        "nav_peak": 1.0003221193530694,
+        "total_return": 0.0003221193530693611,
+        "max_drawdown_nav": -0.00011289240217327023,
+        "max_underwater_duration": 2,
+        "n_underwater_episodes": 8,
+        "realized_vol_ann": 0.0018137779674646617,
+        "role": 1.0
+      },
+      "drawdown_duration": {
+        "n_bars": 19,
+        "n_episodes": 8,
+        "max_underwater_duration": 2,
+        "mean_underwater_duration": 1.25,
+        "time_underwater_frac": 0.5263157894736842,
+        "current_underwater_duration": 0,
+        "deepest_trough": -0.00011289240217327023,
+        "episodes": [
+          {
+            "start_idx": 1,
+            "end_idx": 1,
+            "duration": 1,
+            "trough": -0.00010391985631441614,
+            "trough_idx": 1,
+            "recovered": true
+          },
+          {
+            "start_idx": 3,
+            "end_idx": 3,
+            "duration": 1,
+            "trough": -0.00010643486891437348,
+            "trough_idx": 3,
+            "recovered": true
+          },
+          {
+            "start_idx": 5,
+            "end_idx": 6,
+            "duration": 2,
+            "trough": -0.00011289240217327023,
+            "trough_idx": 6,
+            "recovered": true
+          },
+          {
+            "start_idx": 8,
+            "end_idx": 8,
+            "duration": 1,
+            "trough": -0.00010357753353373855,
+            "trough_idx": 8,
+            "recovered": true
+          },
+          {
+            "start_idx": 10,
+            "end_idx": 10,
+            "duration": 1,
+            "trough": -0.00010607563183684388,
+            "trough_idx": 10,
+            "recovered": true
+          },
+          {
+            "start_idx": 12,
+            "end_idx": 13,
+            "duration": 2,
+            "trough": -0.0001125057904384219,
+            "trough_idx": 13,
+            "recovered": true
+          },
+          {
+            "start_idx": 15,
+            "end_idx": 15,
+            "duration": 1,
+            "trough": -0.00010323745751916746,
+            "trough_idx": 15,
+            "recovered": true
+          },
+          {
+            "start_idx": 17,
+            "end_idx": 17,
+            "duration": 1,
+            "trough": -0.0001057188115904939,
+            "trough_idx": 17,
+            "recovered": true
+          }
+        ],
+        "threshold": 0.0,
+        "role": 1.0,
+        "live_pnl_claim": false,
+        "research_only": true
+      },
+      "var_es": {
+        "var": 0.00010611155554457774,
+        "es": 0.00010643486891437972,
+        "alpha": 0.95,
+        "n": 19
+      },
+      "var_backtest": {
+        "hit_rate": 0.05263157894736842,
+        "kupiec_lr": 0.0027252209969939045,
+        "kupiec_p": 0.9583664252044094,
+        "christoffersen_ind_lr": 0.11771500011223601,
+        "christoffersen_ind_p": 0.73152609234986,
+        "christoffersen_cc_lr": 0.12044022110922992,
+        "christoffersen_cc_p": 0.941557264082384,
+        "acerbi_szekely_z1": 0.052631578947367474,
+        "acerbi_szekely_z2": 0.0,
+        "fissler_ziegel_mean": -9.147817442330261,
+        "es_hit_count": 1.0,
+        "n": 19
+      },
+      "mean_turnover": NaN,
+      "capacity": {},
+      "stress": {
+        "shock_down_pnl": -0.0027986286719507442,
+        "shock_up_pnl": 0.0003998040959929635,
+        "liquidity_haircut_pnl": -0.013993143359753725,
+        "liquidity_freeze_pnl": -0.0013993143359753723,
+        "liquidity_freeze_frac": 0.5,
+        "gap_open_pnl": -0.0055972573439014885,
+        "gap_open_sigma": 2.0,
+        "corr_spike_1sigma_pnl": NaN,
+        "corr_spike": 0.9,
+        "liquidity_haircut": 0.1,
+        "note": "stylized_hypothetical"
+      },
+      "stress_report": {
+        "scenarios": {
+          "shock_down_pnl": -0.0027986286719507442,
+          "shock_up_pnl": 0.0003998040959929635,
+          "liquidity_haircut_pnl": -0.013993143359753725,
+          "liquidity_freeze_pnl": -0.0013993143359753723,
+          "liquidity_freeze_frac": 0.5,
+          "gap_open_pnl": -0.0055972573439014885,
+          "gap_open_sigma": 2.0,
+          "corr_spike_1sigma_pnl": NaN,
+          "corr_spike": 0.9,
+          "liquidity_haircut": 0.1,
+          "note": "stylized_hypothetical"
+        },
+        "contributions": [
+          {
+            "scenario": "shock_down_pnl",
+            "pnl": -0.0027986286719507442
+          },
+          {
+            "scenario": "shock_up_pnl",
+            "pnl": 0.0003998040959929635
+          },
+          {
+            "scenario": "liquidity_haircut_pnl",
+            "pnl": -0.013993143359753725
+          },
+          {
+            "scenario": "liquidity_freeze_pnl",
+            "pnl": -0.0013993143359753723
+          },
+          {
+            "scenario": "gap_open_pnl",
+            "pnl": -0.0055972573439014885
+          },
+          {
+            "scenario": "corr_spike_1sigma_pnl",
+            "pnl": NaN
+          }
+        ],
+        "ranked_adverse": [
+          {
+            "scenario": "liquidity_haircut_pnl",
+            "pnl": -0.013993143359753725
+          },
+          {
+            "scenario": "gap_open_pnl",
+            "pnl": -0.0055972573439014885
+          },
+          {
+            "scenario": "shock_down_pnl",
+            "pnl": -0.0027986286719507442
+          },
+          {
+            "scenario": "liquidity_freeze_pnl",
+            "pnl": -0.0013993143359753723
+          },
+          {
+            "scenario": "shock_up_pnl",
+            "pnl": 0.0003998040959929635
+          }
+        ],
+        "worst_scenario": "liquidity_haircut_pnl",
+        "worst_pnl": -0.013993143359753725,
+        "adverse_pnl_sum": -0.02378834371158133,
+        "n_scenarios": 6,
+        "note": "stylized_hypothetical",
+        "live_pnl_claim": false,
+        "research_only": true,
+        "role": "stress_report"
+      },
+      "min_trl": null,
+      "run_id": "benchmark-paper-loop",
+      "schema_keys": [
+        "label",
+        "data_source",
+        "research_only",
+        "live_pnl_claim",
+        "disclaimer",
+        "exposure",
+        "execution",
+        "equity",
+        "drawdown_duration",
+        "var_es",
+        "var_backtest",
+        "mean_turnover",
+        "capacity",
+        "stress",
+        "stress_report"
+      ],
+      "schema_role": "paper_backtest_aligned",
+      "analytics_export_sha256": "f8e54b47bb29cae3d5eb664e1ba12a4a5c57a3efca20b699dba551aad8cbaf2c"
+    },
+    "analytics_export_validation": {
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "present_schema_keys": [
+        "label",
+        "data_source",
+        "research_only",
+        "live_pnl_claim",
+        "disclaimer",
+        "exposure",
+        "execution",
+        "equity",
+        "drawdown_duration",
+        "var_es",
+        "var_backtest",
+        "mean_turnover",
+        "capacity",
+        "stress",
+        "stress_report"
+      ],
+      "role": "analytics_export_validation",
+      "live_pnl_claim": false,
+      "research_only": true
+    },
+    "analytics_export_ok": true
+  }
+}
