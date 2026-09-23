@@ -1,0 +1,33 @@
+{
+  "checkpoint": "artifacts/repo_llm/checkpoint.pt",
+  "config": {
+    "d_ff": 1024,
+    "d_model": 256,
+    "n_heads": 8,
+    "n_layers": 6,
+    "seq_len": 128,
+    "tie_embeddings": true,
+    "vocab_size": 256
+  },
+  "corpus": "artifacts/repo_llm/corpus.bin",
+  "corpus_sha256": "f93ac2279afed2d399bab28759017e3f790d4b21a7fd96454111043aa156da65",
+  "device": "cpu",
+  "excluded_prefixes": [
+    "artifacts/repo_llm/"
+  ],
+  "execution_claim": "research_only",
+  "file_count": 2588,
+  "git_head": "ebd3951951025e8bc0876c7726771eccd38d18d9",
+  "init": "corpus_fold_v1",
+  "live_pnl_claim": false,
+  "manifest": "artifacts/repo_llm/manifest.json",
+  "parameter_count": 4820224,
+  "probe_loss_final": 5.257237523794174,
+  "probe_loss_initial": 5.600858747959137,
+  "sizes_the_book": false,
+  "step": 10202,
+  "token_count": 1966540994,
+  "tokens_seen": 10446848,
+  "train_loss_first": 5.438596248626709,
+  "train_loss_last": 5.10935115814209
+}

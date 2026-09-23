@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (amended by ADR-023 for the robinhood+ / Kronos K-line engine only)
+Accepted (amended by ADR-023 for the robinhood+ / Kronos K-line engine, and by ADR-032 for the repository byte LM only)
 
 ## Date
 
@@ -32,3 +32,9 @@ on the tape through 2024-12-31 only, frozen, and scored once on the
 frozen holdout beats both SPY and the ungated top-5 inside the
 pre-registered White reality check; it never moves blend_weight, submits
 nothing, and is not a live P&L claim.
+
+## Amendment (2026-09-23): repository byte LM (ADR-032)
+
+`quant_fund.repo_llm` trains a decoder-only byte transformer on the
+git working tree. Torch stays optional. The checkpoint is not a forecast,
+does not enter fusion, and does not change `blend_weight`.

@@ -70,6 +70,10 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
         "verify-research: runs northset_session_means_honesty_errors "
         "(session soft-verify dispatcher; research_only, no Sharpe)"
     )
+    typer.echo(
+        "repo-llm: dipcatcher repo-llm "
+        "(byte LM of this repo; research_only; does not size the book)"
+    )
     cfg = _cfg(config)
     ns = cfg.northset
     typer.echo(
@@ -1624,6 +1628,44 @@ def monitor(
         raise typer.Exit(2)
     if status == "warn":
         raise typer.Exit(1)
+
+
+@app.command("repo-llm")
+def repo_llm(
+    steps: int = typer.Option(500, "--steps", min=1, help="New AdamW updates to run."),
+    out: Path = typer.Option(Path("artifacts/repo_llm"), "--out"),
+    resume: bool = typer.Option(False, "--resume", help="Continue checkpoint.pt for this corpus."),
+    seed: int = typer.Option(42, "--seed"),
+    batch_size: int = typer.Option(8, "--batch-size"),
+    seq_len: int = typer.Option(128, "--seq-len"),
+    d_model: int = typer.Option(256, "--d-model"),
+    n_layers: int = typer.Option(6, "--n-layers"),
+    n_heads: int = typer.Option(8, "--n-heads"),
+    lr: float = typer.Option(3e-4, "--lr"),
+) -> None:
+    """Fold this repository into byte-level LM weights and train them."""
+    import json
+
+    from quant_fund.repo_llm.config import RepoLMConfig
+    from quant_fund.repo_llm.convert import convert_repository
+
+    summary = convert_repository(
+        Path("."),
+        out,
+        steps=steps,
+        seed=seed,
+        batch_size=batch_size,
+        lr=lr,
+        resume=resume,
+        config=RepoLMConfig(
+            d_model=d_model,
+            n_heads=n_heads,
+            n_layers=n_layers,
+            seq_len=seq_len,
+        ),
+    )
+    typer.echo(json.dumps(summary, indent=2, sort_keys=True))
+    typer.echo("research_only: repository byte LM; blend_weight unchanged; no live P&L claim")
 
 
 if __name__ == "__main__":
