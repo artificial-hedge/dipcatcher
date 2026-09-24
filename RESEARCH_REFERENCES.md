@@ -172,3 +172,9 @@
 - Lopez de Prado (2018), ch. 7 — purged/embargoed k-fold — `metrics/purged_cv.py`.
 - Peng, Long & Ding (2005). "Feature selection based on mutual information." TPAMI — `metrics/feature_select.py` mRMR + forward orthogonalized screen.
 
+
+## Research 100 catalog
+
+See [the 100-reference source-to-code map](docs/RESEARCH100_CATALOG.md) and
+[implementation scope and evaluation](docs/RESEARCH100.md). Existing components
+are distinguished from new work; component tests are not empirical reproductions.
