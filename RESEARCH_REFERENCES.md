@@ -182,3 +182,53 @@
 - C. V. L. Charlier (1905); F. Y. Edgeworth (1905). Gram-Charlier Type A / Edgeworth series — `models/edgeworth.py`.
 - R. Jarrow, A. Rudd (1982). "Approximate option valuation for arbitrary stochastic processes." J. Financial Economics — Gram-Charlier option application (`models/edgeworth.py`).
 - J. W. Tukey (1977). *Exploratory Data Analysis*; D. C. Hoaglin (1985). "Summarizing shape numerically: the g-and-h distributions." — `models/tukey_gh.py` (quantile fit).
+## Wave 8 references (forecasting, robust location & risk canon)
+
+### Exponential smoothing / classical forecasting
+- C. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages." ONR memo (reprinted IJF 2004) — `models/ets.py` Holt linear trend.
+- P. R. Winters (1960). "Forecasting sales by exponentially weighted moving averages." Management Science — `models/ets.py` Holt-Winters additive/multiplicative seasonality.
+- E. S. Gardner, E. McKenzie (1985). "Forecasting trends in time series." Management Science — `models/ets.py` damped-trend extension.
+- R. Hyndman, A. Koehler, J. Ord, R. Snyder (2008). *Forecasting with Exponential Smoothing: The State Space Approach.* Springer — `models/ets.py` initialisation/estimation conventions.
+- V. Assimakopoulos, K. Nikolopoulos (2000). "The theta model: a decomposition approach to forecasting." IJF — `models/theta.py`.
+- R. Hyndman, B. Billah (2003). "Unmasking the Theta method." IJF — theta = SES with half-slope drift (`models/theta.py`).
+- J. D. Croston (1972). "Forecasting and stock control for intermittent demands." Op. Res. Quarterly — `models/croston.py`.
+- A. Syntetos, J. Boylan (2005). "The accuracy of intermittent demand estimates." IJF — SBA bias correction (`models/croston.py`).
+- R. Teunter, A. Syntetos, M. Z. Babai (2011). "Intermittent demand: linking forecasting to inventory obsolescence." EJOR — TSB variant (`models/croston.py`).
+
+### Robust location / slope
+- J. L. Hodges, E. L. Lehmann (1963). "Estimates of location based on rank tests." Ann. Math. Statist. — `metrics/robust_location.py` (one- and two-sample HL).
+- A. F. Siegel (1982). "Robust regression using repeated medians." Biometrika — `metrics/robust_location.py` repeated-median slope/intercept.
+
+### Expectiles & spectral risk
+- W. K. Newey, J. L. Powell (1987). "Asymmetric least squares estimation and testing." Econometrica — `models/expectile.py` expectile regression (IRLS).
+- F. Bellini, E. Di Bernardino (2017). "Risk management with expectiles." Eur. J. Finance — expectile Value-at-Risk / coherence (`models/expectile.py`).
+- C. Acerbi (2002). "Spectral measures of risk: a coherent representation of subjective risk aversion." J. Banking & Finance — `metrics/spectral_risk.py`.
+- K. Dowd, J. Cotter, G. Sorwar (2008). "Spectral risk measures: properties and limitations." J. Financial Services Research — exponential (CARA) spectrum (`metrics/spectral_risk.py`).
+
+## Wave 10 references (risk measures, performance & stable laws)
+
+### Coherent / entropic risk
+- H. Follmer, A. Schied (2011). *Stochastic Finance* (3rd ed.) — entropic risk measure (`metrics/entropic_risk.py`).
+- A. Ahmadi-Javid (2012). "Entropic value-at-risk: a new coherent risk measure." J. Optimization Theory and Applications — `metrics/entropic_risk.py`.
+
+### Performance ratios
+- J. Pezier, A. White (2006). "The relative merits of alternative investments." — adjusted (skew/kurtosis) Sharpe ratio (`metrics/perf_ratios.py`).
+- F. Modigliani, L. Modigliani (1997). "Risk-adjusted performance." J. Portfolio Management — M^2 (`metrics/perf_ratios.py`).
+- A. Biglova, S. Ortobelli, S. Rachev, S. Stoyanov (2004). "Different approaches to risk estimation in portfolio theory." J. Portfolio Management — Rachev ratio (`metrics/perf_ratios.py`).
+- J. Schwager (2012). *Hedge Fund Market Wizards* — gain-to-pain ratio (`metrics/perf_ratios.py`).
+- F. Sortino, R. van der Meer, A. Plantinga (1999). "The Dutch triangle." J. Portfolio Management — upside potential ratio (`metrics/perf_ratios.py`).
+
+### Alpha-stable distributions
+- J. M. Chambers, C. L. Mallows, B. W. Stuck (1976). "A method for simulating stable random variables." JASA — `models/stable.py` sampler.
+- S. J. Press (1972). "Estimation in univariate and multivariate stable distributions." JASA; A. Koutrouvelis (1980). "Regression-type estimation of the parameters of stable laws." JASA — ECF fit (`models/stable.py`).
+
+### Portfolio construction
+- R. Michaud (1998). *Efficient Asset Management*; R. Michaud, R. Michaud (2008) — resampled efficiency (`portfolio/resampled.py`).
+
+## Wave 21 references (forecast accuracy, whitening, MVO & utility)
+
+- H. Theil (1966). *Applied Economic Forecasting* — Theil's U inequality coefficients (`metrics/forecast_accuracy.py`).
+- R. Hyndman, A. Koehler (2006). "Another look at measures of forecast accuracy." IJF — MASE (`metrics/forecast_accuracy.py`).
+- A. Kessy, A. Lewin, K. Strimmer (2018). "Optimal whitening and decorrelation." The American Statistician — `models/whitening.py`.
+- H. Markowitz (1952). "Portfolio selection." Journal of Finance — `models/efficient_frontier.py`.
+- J. Pratt (1964). "Risk aversion in the small and in the large." Econometrica; K. Arrow (1965). *Aspects of the Theory of Risk-Bearing* — `metrics/utility.py`.

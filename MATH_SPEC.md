@@ -189,3 +189,63 @@
   g->0). Monotone in Z for h>=0 so CDF/PDF follow by inversion and
   f(x)=phi(Z)/(dx/dZ). Hoaglin fit: g = (1/Z) ln(UHS/LHS) per symmetric
   quantile pair; regress ln[FS g/(2 sinh gZ)] on Z^2/2 for (ln B, h).
+## Wave 8 mathematical conventions
+
+- `ets.py`: SES level l_t = a y_t + (1-a) l_{t-1}; Holt adds trend
+  b_t = beta (l_t - l_{t-1}) + (1-beta) phi b_{t-1} with damped factor
+  phi in [0.8, 1]; multi-step damping sum_{i=1..h} phi^i (= h when phi=1).
+  Holt-Winters additive s_t = gamma (y_t - l_{t-1} - phi b_{t-1}) +
+  (1-gamma) s_{t-m}; multiplicative uses ratios y_t / s_{t-m}. Smoothing
+  params fit by bounded L-BFGS-B on one-step SSE; states seeded from the
+  first one/two seasons; AIC = n ln(SSE/n) + 2k.
+- `theta.py`: theta line Z_t(theta) = theta y_t + (1-theta)(a + b t) with
+  (a, b) the OLS trend. Reconstruction weight 1/theta on the theta line and
+  1 - 1/theta on the trend line (equal 1/2 weights at theta=2). Forecast =
+  (1/theta) SES-extrapolation(Z) + (1 - 1/theta)(a + b(n+h-1)); drift is
+  ~ b/2 (Hyndman-Billah).
+- `croston.py`: SES on non-zero sizes z and inter-arrival intervals p;
+  rate = z_hat / p_hat. SBA scales by (1 - alpha/2). TSB smooths demand
+  probability every period: prob_t = beta 1{y_t>0} + (1-beta) prob_{t-1},
+  size updated only on occurrences; rate = prob_hat * z_hat.
+- `robust_location.py`: Hodges-Lehmann = median of Walsh averages
+  {(x_i + x_j)/2 : i <= j}; two-sample = median{x_i - y_j}. Siegel
+  repeated median slope = median_i median_{j != i} (y_j - y_i)/(x_j - x_i),
+  intercept = median_i (y_i - slope x_i) (50% breakdown).
+- `expectile.py`: tau-expectile minimises E[w_tau(y-mu)(y-mu)^2],
+  w_tau = tau if residual > 0 else 1 - tau; solved by IRLS (WLS with
+  sqrt-weights) which converges on the convex objective. EVaR = tau-expectile
+  of losses, coherent for tau >= 1/2.
+- `spectral_risk.py`: M_phi = sum_i w_i L_(i) over ascending losses, with
+  band weights w_i = integral_{(i-1)/n}^{i/n} phi(p) dp, phi non-negative,
+  non-decreasing, sum 1. Exponential phi(p) = k e^{-k(1-p)}/(1-e^{-k});
+  power phi(p) = gamma p^{gamma-1}; ES is the uniform tail spectrum on
+  [alpha, 1] scaled by 1/(1-alpha).
+
+## Wave 10 mathematical conventions
+
+- `entropic_risk.py`: rho_theta(L) = (1/theta) log E[e^{theta L}] (log-sum-exp
+  stabilised). EVaR_{1-alpha} = inf_{z>0} (1/z) log(E[e^{zL}]/(1-alpha)),
+  minimised over log z; satisfies EVaR >= CVaR >= VaR.
+- `perf_ratios.py`: ASR = SR[1 + (S/6)SR - ((K-3)/24)SR^2] (Pezier-White);
+  M^2 = rf + SR * sigma_benchmark; Rachev = E[x | x >= Q_{1-beta}] /
+  (-E[x | x <= Q_alpha]); gain-to-pain = sum(x)/sum(max(-x,0)); UPR =
+  E[(x-mar)_+] / sqrt(E[((x-mar)_-)^2]).
+- `stable.py`: Chambers-Mallows-Stuck sampler with U~Unif(-pi/2,pi/2), W~Exp(1);
+  zeta=-beta tan(pi alpha/2), xi=atan(-zeta)/alpha. ECF fit regresses
+  log(-log|phi(t)|) on log|t|: slope=alpha, intercept=alpha log c; loc=median.
+- `resampled.py`: for s=1..S draw N(mu,cov) of length n_obs, re-estimate
+  (mu_s, cov_s), solve simplex-constrained max-Sharpe / min-variance (SLSQP),
+  average the weights and renormalise (Michaud resampled efficiency).
+
+## Wave 21 mathematical conventions
+
+- `forecast_accuracy.py`: U1=sqrt(MSE)/(sqrt(mean a^2)+sqrt(mean f^2)); U2=
+  sqrt(sum(f-a)^2)/sqrt(sum(a_t-a_{t-1})^2); MASE=mean|a-f|/mean|a_t-a_{t-m}|.
+- `whitening.py`: Sigma=U Lambda U'; PCA W=Lambda^{-1/2}U'; ZCA W=U Lambda^{-1/2}
+  U' (symmetric); whitened Cov = I.
+- `efficient_frontier.py`: A=1'S^{-1}1, B=1'S^{-1}mu, C=mu'S^{-1}mu, D=AC-B^2;
+  min-var w=S^{-1}1/A; frontier w=g+h m, var=(A m^2-2B m+C)/D; tangency=
+  S^{-1}(mu-rf)/1'S^{-1}(mu-rf).
+- `utility.py`: u(w)=(w^{1-gamma}-1)/(1-gamma) (log for gamma=1); CE gross =
+  (mean gross^{1-gamma})^{1/(1-gamma)} (geometric mean for gamma=1); CE<mean for
+  gamma>0.
