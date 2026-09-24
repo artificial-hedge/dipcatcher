@@ -217,3 +217,16 @@
 - `resampled.py`: for s=1..S draw N(mu,cov) of length n_obs, re-estimate
   (mu_s, cov_s), solve simplex-constrained max-Sharpe / min-variance (SLSQP),
   average the weights and renormalise (Michaud resampled efficiency).
+
+## Wave 22 mathematical conventions
+
+- `scale_tests.py`: Bartlett B=((N-k)ln sp2 - sum(n_i-1)ln s_i^2)/C ~ chi2_{k-1};
+  Levene/Brown-Forsythe F on |x-center| (mean/median); Fligner-Killeen chi2 on
+  normal scores of ranked |x-median_i|.
+- `ledoit_wolf_sharpe.py`: SR_i=mu_i/sqrt(gamma_i-mu_i^2); delta-method gradient
+  wrt (mu1,mu2,gamma1,gamma2) with Newey-West HAC covariance of (r1,r2,r1^2,r2^2);
+  z=(SR1-SR2)/se.
+- `liquidity_extra.py`: Hui-Heubel LR=((Pmax-Pmin)/Pmin)/(dollar_vol/(shares*Pbar));
+  Ulcer Index = RMS percent drawdown; Martin ratio = annualised excess / UI.
+- `agreement.py`: kappa=(po-pe)/(1-pe); weighted kappa=1 - sum(w p)/sum(w
+  outer(row,col)), w linear |i-j|/(k-1) or quadratic ((i-j)/(k-1))^2.
