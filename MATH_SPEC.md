@@ -217,3 +217,14 @@
 - `resampled.py`: for s=1..S draw N(mu,cov) of length n_obs, re-estimate
   (mu_s, cov_s), solve simplex-constrained max-Sharpe / min-variance (SLSQP),
   average the weights and renormalise (Michaud resampled efficiency).
+
+## Wave 19 mathematical conventions
+
+- `random_projection.py`: JL min dim k = ceil(4 ln n /(eps^2/2 - eps^3/3));
+  Gaussian R ~ N(0,1/k); Achlioptas sparse R entries sqrt(s/k){+1,0,-1} at
+  probs {1/2s, 1-1/s, 1/2s}, s=1/density.
+- `spectral_clustering.py`: W=exp(-||xi-xj||^2/(2 sigma^2)) (median-heuristic
+  sigma, zero diagonal); L_sym=I-D^{-1/2}WD^{-1/2}; embed with k smallest
+  eigenvectors, row-normalise, k-means.
+- `cluster_validity.py`: silhouette s=(b-a)/max(a,b); Calinski-Harabasz
+  (B/(k-1))/(W/(n-k)); Davies-Bouldin mean_i max_{j!=i}(s_i+s_j)/d_ij.
