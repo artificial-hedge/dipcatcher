@@ -108,3 +108,11 @@ The FastAPI service (`dipcatcher api`, default host `127.0.0.1`):
 - `dipcatcher verify-research` — verify immutable provenance, scorecards, and research artifacts
 - `configs/production.yaml` — **not** a live broker profile; research-strict promotion gates only (Phase-17 broker absent)
 - See `docs/DATA_SOURCE_LABELS.md` and `docs/VALIDATION.md`
+
+### Research 100
+
+[100 source-linked research references](docs/RESEARCH100_CATALOG.md) map to
+executable components and tests. [Usage and evidence](docs/RESEARCH100.md) cover
+new cost-aware allocation, risk-constrained Kelly, causal volatility management,
+and serial-adjusted evaluation. Existing components and new work are distinguished;
+no claim of 100 reproduced studies or demonstrated market-performance uplift is made.

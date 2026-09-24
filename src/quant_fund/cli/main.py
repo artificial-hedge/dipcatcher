@@ -12,6 +12,7 @@ from quant_fund.lightspeed.cli import ls_app
 from quant_fund.pipeline.doctor import doctor as run_doctor
 from quant_fund.pipeline.train import train_family
 from quant_fund.quant_models.cli import qm_app
+from quant_fund.research.research100_cli import research100_app
 from quant_fund.utils.logging import configure_logging, get_logger
 
 
@@ -51,6 +52,7 @@ app.add_typer(train_app, name="train")
 app.add_typer(hmm_app, name="hmm")
 app.add_typer(ls_app, name="ls")
 app.add_typer(qm_app, name="qm")
+app.add_typer(research100_app, name="research100")
 
 
 def _cfg(config: Path):
