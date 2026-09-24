@@ -23,7 +23,7 @@ import itertools
 import json
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parent.parent
@@ -47,7 +47,7 @@ from quant_fund.backtest.sleeves import (  # noqa: E402
 )
 from quant_fund.config.loader import load_config  # noqa: E402
 
-SPLIT = datetime(2025, 1, 1, tzinfo=UTC)
+DEFAULT_SPLIT = datetime(2025, 1, 1, tzinfo=UTC)
 PPY = 365.25
 METRIC_KEYS = (
     "total_return",
@@ -117,9 +117,31 @@ class Evaluator:
             (sid[0] if isinstance(sid, tuple) else sid): df["event_time"].sort().to_list()
             for sid, df in bars.group_by("security_id")
         }
-        times = sorted(bars["event_time"].unique().to_list())
-        self.step_s = (times[1] - times[0]).total_seconds() if len(times) > 1 else 3600.0
+        self.bar_times = sorted(bars["event_time"].unique().to_list())
+        self.step_s = (
+            (self.bar_times[1] - self.bar_times[0]).total_seconds()
+            if len(self.bar_times) > 1
+            else 3600.0
+        )
         self.stale_bound = int(cfg.risk_gate.stale_price_bars) + 1
+
+    def _funding_on_bars(self, f: pl.DataFrame) -> pl.DataFrame:
+        """Assign each funding event to the latest bar at-or-before it.
+
+        The perp engine applies funding only on exact bar-timestamp matches
+        (`fund_map.get(dt)`); on a coarser grain (e.g. 8h events on daily
+        bars) the intraday events would be dropped, losing 2/3 of carry
+        income. Backward-asof lands every event on its containing bar."""
+        if f.height == 0:
+            return f
+        grid = pl.DataFrame({"bar_time": self.bar_times})
+        return (
+            f.sort("event_time")
+            .join_asof(grid, left_on="event_time", right_on="bar_time", strategy="backward")
+            .drop_nulls("bar_time")
+            .drop("event_time")
+            .rename({"bar_time": "event_time"})
+        )
 
     def eligible(self, lo: datetime, hi: datetime) -> set[str]:
         """Sids markable through the whole segment: prints in-segment, no
@@ -179,20 +201,29 @@ class Evaluator:
             )
         elig = sorted(self.eligible(lo, hi))
         b = _slice(self.bars, lo, hi).filter(pl.col("security_id").is_in(elig))
-        f = _slice(self.funding, lo, hi)
+        f = self._funding_on_bars(_slice(self.funding, lo, hi))
         wseg = w.filter(
             (pl.col("event_time") >= lo)
             & (pl.col("event_time") < hi)
             & pl.col("security_id").is_in(elig)
         )
+        if b.height == 0 or wseg.height == 0:
+            return {"skipped": True, "n": 0, "sharpe": None}
         self.n_evals += 1
         res = run_perp_backtest(b, f, wseg, self.cfg, initial_nav=self.nav, scaler=scaler)
-        return _metrics(res.metrics)
+        m = _metrics(res.metrics)
+        m["funding_events_dropped"] = res.metrics.get("funding_events_dropped")
+        return m
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--data-dir", type=Path, default=Path("data/binance_carry"))
+    p.add_argument(
+        "--split",
+        default=None,
+        help="ISO dev/holdout boundary (default 2025-01-01)",
+    )
     p.add_argument("--initial-nav", type=float, default=1_000_000.0)
     p.add_argument("--config", default="configs/research.yaml")
     p.add_argument("--target-vols", type=float, nargs="*", default=None)
@@ -211,7 +242,10 @@ def main() -> int:
         funding = funding.filter(pl.col("security_id").is_in(keep))
 
     t0, t1 = bars["event_time"].min(), bars["event_time"].max()
-    dev_times = sorted(bars.filter(pl.col("event_time") < SPLIT)["event_time"].unique().to_list())
+    split = datetime.fromisoformat(args.split).replace(tzinfo=UTC) if args.split else DEFAULT_SPLIT
+    dev_times = sorted(bars.filter(pl.col("event_time") < split)["event_time"].unique().to_list())
+    if not dev_times:
+        raise SystemExit(f"no bars before split {split}")
     mid = dev_times[len(dev_times) // 2]
 
     cfg = load_config(args.config)
@@ -228,7 +262,7 @@ def main() -> int:
     def score_weights(wkey: str, w: pl.DataFrame, *, mdd_gate=False) -> tuple[float, dict]:
         best = (float("-inf"), {})
         h1 = ev.run(w, t0, mid, None)
-        h2 = ev.run(w, mid, SPLIT, None)
+        h2 = ev.run(w, mid, split, None)
         s = _score(h1, h2, mdd_gate=mdd_gate)
         if s > best[0]:
             best = (s, {"tv": None, "h1": h1, "h2": h2})
@@ -238,7 +272,7 @@ def main() -> int:
         "schema": "megaplan_eval.v1",
         "created_at": datetime.now(tz=UTC).isoformat(),
         "data_dir": str(args.data_dir),
-        "split": str(SPLIT),
+        "split": str(split),
         "dev_mid": str(mid),
         "bar_span": [str(t0), str(t1)],
         "n_symbols": int(bars["security_id"].n_unique()),
@@ -373,7 +407,7 @@ def main() -> int:
     stageC = {}
     for tv in args.target_vols:
         h1 = ev.run(champ_w, t0, mid, tv)
-        h2 = ev.run(champ_w, mid, SPLIT, tv)
+        h2 = ev.run(champ_w, mid, split, tv)
         stageC[tv] = {"score": _score(h1, h2, mdd_gate=True), "h1": h1, "h2": h2}
         print(
             f"  tv={tv}: score={stageC[tv]['score']:.3f} h1={h1.get('sharpe')} h2={h2.get('sharpe')}",
@@ -381,17 +415,26 @@ def main() -> int:
         )
     # include no-overlay as a candidate
     h1 = ev.run(champ_w, t0, mid, None)
-    h2 = ev.run(champ_w, mid, SPLIT, None)
+    h2 = ev.run(champ_w, mid, split, None)
     stageC["none"] = {"score": _score(h1, h2, mdd_gate=True), "h1": h1, "h2": h2}
     receipt["stageC"] = {str(k): v for k, v in stageC.items()}
     bestC = max(stageC.items(), key=lambda kv: kv[1]["score"])
+    qualified = bestC[1]["score"] > float("-inf")
     champ_tv = None if bestC[0] == "none" else float(bestC[0])
-    receipt["frozen"] = {"blend": bestB[0], "mix": bestB[1]["mix"], "target_vol": champ_tv}
+    receipt["frozen"] = {
+        "blend": bestB[0],
+        "mix": bestB[1]["mix"],
+        "target_vol": champ_tv,
+        "qualified_on_dev": qualified,
+    }
     print(f"frozen: {receipt['frozen']}", flush=True)
 
     # ---- Locked eval: one shot on dev + holdout -------------------------
+    # holdout runs through t1 + one bar step so the dataset's last bar is
+    # inside the (lo, hi) window rather than truncated off.
     final = {}
-    for label, lo, hi in (("dev", t0, SPLIT), ("holdout", SPLIT, t1)):
+    hold_end = t1 + timedelta(seconds=ev.step_s)
+    for label, lo, hi in (("dev", t0, split), ("holdout", split, hold_end)):
         final[label] = ev.run(champ_w, lo, hi, champ_tv)
         print(f"{label}: {final[label]}", flush=True)
     receipt["final"] = final
@@ -400,10 +443,14 @@ def main() -> int:
         _sharpe(final["holdout"]) > 5.0
         and abs(float(final["holdout"].get("max_drawdown") or 1.0)) < 0.05
     )
+    h_mdd = final["holdout"].get("max_drawdown")
+    mdd_ok = h_mdd is not None and abs(float(h_mdd)) < 0.05
+    gate = _sharpe(final["holdout"]) > 5.0 and mdd_ok
     receipt["gate"] = {
         "sharpe_gt_5": _sharpe(final["holdout"]) > 5.0,
-        "mdd_lt_5pct": abs(float(final["holdout"].get("max_drawdown") or 1.0)) < 0.05,
-        "PROVEN": gate,
+        "mdd_lt_5pct": mdd_ok,
+        "qualified_on_dev": qualified,
+        "PROVEN": gate and qualified,
     }
     receipt["input_hashes"] = {f.name: _sha256(f) for f in sorted(args.data_dir.glob("*.parquet"))}
     receipt["segment_exclusions"] = {
