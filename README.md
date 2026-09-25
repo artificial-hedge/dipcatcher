@@ -30,6 +30,9 @@ see [docs/NET_RETURN_TOURNAMENT.md](docs/NET_RETURN_TOURNAMENT.md).
 For cost-aware sizing with matched rank-allocation controls, see
 [docs/COST_AWARE_CONSTRUCTION.md](docs/COST_AWARE_CONSTRUCTION.md).
 
+For prospective decisions, durable settlement, restart reconciliation and a frozen evidence plan, see
+[docs/FORWARD_SHADOW_RECORD.md](docs/FORWARD_SHADOW_RECORD.md).
+
 ## What it does not do
 
 - Headline Sharpe, PSR, DSR, or live P&L as research output
