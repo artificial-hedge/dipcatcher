@@ -198,6 +198,26 @@ def test_index_rejects_nonexistent_git_revision(runs):
     assert any("does not identify a local commit" in e for e in verify_phase1_index(path)["errors"])
 
 
+def test_index_verifies_historical_tournament_code_without_current_solver(runs, monkeypatch):
+    import quant_fund.research.net_tournament as tournament_module
+    import quant_fund.research.phase1_verify as verifier_module
+
+    old_hashes = json.loads((runs / "tournament/manifest.json").read_text())["code_sha256"]
+    monkeypatch.setattr(
+        verifier_module,
+        "_committed_code_hashes",
+        lambda revision, errors: old_hashes,
+    )
+    monkeypatch.setattr(verifier_module, "git_revision", lambda: "0" * 40)
+    monkeypatch.setattr(
+        tournament_module,
+        "_code_hashes",
+        lambda: {**old_hashes, "cost_allocation.py": "0" * 64},
+    )
+    assert not verify_phase1_run(runs / "tournament")["valid"]
+    assert verify_phase1_index(runs / "research/index.json")["valid"]
+
+
 def test_gzip_report_verifies_and_duplicate_representation_fails(runs):
     path = runs / "tournament/validation.json"
     original = path.read_bytes()

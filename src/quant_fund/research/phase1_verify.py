@@ -157,17 +157,28 @@ def _dataset(path: Path, expected: Any, errors: list[str]) -> None:
         errors.append(f"source dataset unreadable: {exc}")
 
 
-def _benchmark_manifest(run_dir: Path, errors: list[str]) -> dict[str, Any] | None:
+def _benchmark_manifest(
+    run_dir: Path,
+    errors: list[str],
+    *,
+    committed_code_hashes: dict[str, str] | None = None,
+) -> dict[str, Any] | None:
     manifest = _receipt(run_dir / "manifest.json", errors)
     if manifest is None:
         return None
     _assert(manifest.get("schema_version") == 1, errors, "benchmark: unsupported schema")
     _assert(_timestamp(manifest.get("created_at")), errors, "benchmark: invalid timestamp")
     _honesty(manifest, errors, "benchmark manifest", report=False)
+    expected_code_sha = (
+        committed_code_hashes.get("real_benchmark.py")
+        if committed_code_hashes is not None
+        else real_benchmark._code_sha()
+    )
     _assert(
-        manifest.get("code_sha256") == real_benchmark._code_sha(),
+        manifest.get("code_sha256") == expected_code_sha,
         errors,
-        "benchmark: code SHA-256 differs from this checkout",
+        "benchmark: code SHA-256 differs from "
+        + ("indexed Git revision" if committed_code_hashes is not None else "this checkout"),
     )
     _assert(
         manifest.get("runtime") == real_benchmark._runtime(),
@@ -269,25 +280,41 @@ def _benchmark_report(
         errors.append("benchmark: invalid eligibility audit")
 
 
-def _benchmark(run_dir: Path, errors: list[str]) -> dict[str, Any] | None:
-    manifest = _benchmark_manifest(run_dir, errors)
+def _benchmark(
+    run_dir: Path,
+    errors: list[str],
+    *,
+    committed_code_hashes: dict[str, str] | None = None,
+) -> dict[str, Any] | None:
+    manifest = _benchmark_manifest(run_dir, errors, committed_code_hashes=committed_code_hashes)
     if manifest is not None:
         for phase in ("validation", "test"):
             _benchmark_report(run_dir, phase, manifest, errors)
     return manifest
 
 
-def _tournament_manifest(run_dir: Path, errors: list[str]) -> dict[str, Any] | None:
+def _tournament_manifest(
+    run_dir: Path,
+    errors: list[str],
+    *,
+    committed_code_hashes: dict[str, str] | None = None,
+) -> dict[str, Any] | None:
     manifest = _receipt(run_dir / "manifest.json", errors)
     if manifest is None:
         return None
     _assert(manifest.get("schema_version") == 1, errors, "tournament: unsupported schema")
     _assert(_timestamp(manifest.get("created_at")), errors, "tournament: invalid timestamp")
     _honesty(manifest, errors, "tournament manifest", report=False)
+    expected_code_hashes = (
+        committed_code_hashes
+        if committed_code_hashes is not None
+        else net_tournament._code_hashes()
+    )
     _assert(
-        manifest.get("code_sha256") == net_tournament._code_hashes(),
+        manifest.get("code_sha256") == expected_code_hashes,
         errors,
-        "tournament: code hashes differ from this checkout",
+        "tournament: code hashes differ from "
+        + ("indexed Git revision" if committed_code_hashes is not None else "this checkout"),
     )
     _assert(
         manifest.get("runtime") == net_tournament._tournament_runtime(),
@@ -300,7 +327,9 @@ def _tournament_manifest(run_dir: Path, errors: list[str]) -> dict[str, Any] | N
     else:
         parent_dir = run_dir / parent
         parent_errors: list[str] = []
-        parent_manifest = _benchmark(parent_dir, parent_errors)
+        parent_manifest = _benchmark(
+            parent_dir, parent_errors, committed_code_hashes=committed_code_hashes
+        )
         errors.extend(f"parent benchmark: {error}" for error in parent_errors)
         if parent_manifest is not None:
             _assert(
@@ -526,7 +555,9 @@ def _tournament_phase(
     return report
 
 
-def verify_phase1_run(run_dir: Path) -> dict[str, Any]:
+def verify_phase1_run(
+    run_dir: Path, *, committed_code_hashes: dict[str, str] | None = None
+) -> dict[str, Any]:
     """Verify a completed run or a tournament blocked by frozen validation."""
     run_dir = Path(run_dir)
     errors: list[str] = []
@@ -550,9 +581,9 @@ def verify_phase1_run(run_dir: Path) -> dict[str, Any]:
     )
     state = "complete"
     if kind == "real_benchmark":
-        _benchmark(run_dir, errors)
+        _benchmark(run_dir, errors, committed_code_hashes=committed_code_hashes)
     elif kind == "net_tournament":
-        sealed = _tournament_manifest(run_dir, errors)
+        sealed = _tournament_manifest(run_dir, errors, committed_code_hashes=committed_code_hashes)
         if sealed is not None:
             validation = _tournament_phase(run_dir, "validation", sealed, None, errors)
             if validation is not None and validation.get("selected") is None:
@@ -655,7 +686,10 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
         seen.add(identity)
         run_dir = (path.parent / run_path).resolve()
         config_file = (path.parent / config_path).resolve()
-        result = verify_phase1_run(run_dir)
+        result = verify_phase1_run(
+            run_dir,
+            committed_code_hashes=committed if committed and not same_dirty_checkout else None,
+        )
         errors.extend(f"{label}: {error}" for error in result["errors"])
         _assert(result["kind"] == kind, errors, f"{label}: run kind mismatch")
         for filename, field in (
