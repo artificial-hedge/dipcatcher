@@ -21,8 +21,9 @@ from the file:
 US names use the NYSE and NASDAQ common-stock universe, with public daily and
 minute bars available through opt-in collectors (Stooq, and the Hugging Face
 OHLCV-1m adapter). Crypto research uses public Binance series. Alpaca is an
-offline quote-column preset for book panels. Fills in this tree go through
-`SimulatedBroker`.
+offline quote-column preset for book panels. Simulated paper fills go through
+`SimulatedBroker`. The event-driven backtester fills at the next open by
+default. Neither path submits a live order.
 
 The Python distribution name is `fx-1`. Console scripts are `dipcatcher` and
 `fx1`. Version `0.4.0` lives in `fx1.__version__`.
