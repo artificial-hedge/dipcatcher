@@ -24,6 +24,7 @@
 # %%
 from __future__ import annotations
 
+import gzip
 import json
 import sys
 from pathlib import Path
@@ -60,6 +61,37 @@ def _flag(value: object) -> str:
     return str(value).lower()
 
 
+def _receipt_file(path: Path) -> Path | None:
+    compressed = path.with_name(path.name + ".gz")
+    if path.is_file() and compressed.is_file():
+        raise SystemExit(f"ambiguous receipt {path.name}")
+    if path.is_file():
+        return path
+    if compressed.is_file():
+        return compressed
+    return None
+
+
+def _open_receipt(path: Path) -> dict[str, object] | None:
+    """Read a raw or gzip receipt the way the Phase-1 verifier does."""
+    found = _receipt_file(path)
+    if found is None:
+        return None
+    if found.suffix == ".gz":
+        with gzip.open(found, "rt", encoding="utf-8") as handle:
+            loaded: object = json.loads(handle.read())
+    else:
+        loaded = json.loads(found.read_text())
+    if not isinstance(loaded, dict):
+        raise SystemExit(f"{found.name} is not a JSON object")
+    parsed: dict[str, object] = {}
+    for key, value in loaded.items():
+        if not isinstance(key, str):
+            raise SystemExit(f"{found.name} has a non-string key")
+        parsed[key] = value
+    return parsed
+
+
 def _summarize_run(index_dir: Path, entry: dict[str, object], number: int) -> None:
     kind = entry.get("kind")
     relative = entry.get("path")
@@ -76,23 +108,31 @@ def _summarize_run(index_dir: Path, entry: dict[str, object], number: int) -> No
     print(f"research_only={_flag(manifest.get('research_only'))}")
     print(f"live_pnl_claim={_flag(manifest.get('live_pnl_claim'))}")
     print(f"test_sha256_sealed={str(isinstance(test_sha, str)).lower()}")
-    validation_path = run_dir / "validation.json"
-    if validation_path.is_file():
-        validation = _load_object(validation_path)
+    validation = _open_receipt(run_dir / "validation.json")
+    if validation is None:
+        print("validation_receipt=absent")
+    else:
+        print("validation_receipt=sealed")
         print(f"promote={_flag(validation.get('promote'))}")
         print(f"validation_claim={validation.get('claim')}")
+        if "selected" in validation:
+            selected = validation["selected"]
+            if selected is None:
+                print("selected=null")
+            elif isinstance(selected, str) and selected.strip():
+                print(f"selected={selected}")
+            else:
+                print("selected=present")
         scores = validation.get("scores")
         if isinstance(scores, dict) and scores:
             first = next(iter(scores.values()))
             keys = sorted(str(key) for key in first) if isinstance(first, dict) else []
             print("score_models=" + ",".join(sorted(str(key) for key in scores)))
             print("score_keys=" + ",".join(keys))
-    else:
-        print("validation_receipt=absent")
-    if isinstance(test_sha, str):
-        print("test_receipt=sealed")
-    else:
-        print("test_receipt=absent")
+    test_on_disk = _receipt_file(run_dir / "test.json") is not None
+    if isinstance(test_sha, str) != test_on_disk:
+        raise SystemExit(f"index run {number} test seal does not match the files on disk")
+    print("test_receipt=sealed" if test_on_disk else "test_receipt=absent")
 
 
 def main() -> None:
