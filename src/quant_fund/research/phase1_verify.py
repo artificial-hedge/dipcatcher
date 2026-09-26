@@ -11,7 +11,10 @@ import gzip
 import hashlib
 import json
 import math
+import re
 import subprocess
+import tomllib
+from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
@@ -136,6 +139,77 @@ def _committed_code_hashes(revision: str, errors: list[str]) -> dict[str, str]:
     return hashes
 
 
+_BENCHMARK_RUNTIME_KEYS = ("python", "numpy", "polars")
+_TOURNAMENT_RUNTIME_KEYS = (*_BENCHMARK_RUNTIME_KEYS, "cvxpy", "clarabel", "scipy")
+
+
+def _committed_runtime(revision: str, errors: list[str]) -> dict[str, str]:
+    """Read the dependency versions and Python series frozen at the indexed commit."""
+    root = Path(__file__).resolve().parents[3]
+    try:
+        lock_bytes = subprocess.run(
+            ["git", "-C", str(root), "show", f"{revision}:uv.lock"],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        ).stdout
+        python_bytes = subprocess.run(
+            ["git", "-C", str(root), "show", f"{revision}:.python-version"],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        ).stdout
+        lock = tomllib.loads(lock_bytes.decode("utf-8"))
+        python_series = python_bytes.decode("utf-8").strip()
+    except (OSError, UnicodeError, ValueError, subprocess.SubprocessError) as exc:
+        errors.append(f"index: historical runtime lock unavailable: {exc}")
+        return {}
+    if not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", python_series):
+        errors.append("index: invalid historical .python-version")
+        return {}
+    packages = lock.get("package")
+    if not isinstance(packages, list):
+        errors.append("index: historical uv.lock lacks packages")
+        return {}
+    runtime = {"python": python_series}
+    for package in packages:
+        if not isinstance(package, dict):
+            errors.append("index: invalid historical locked package")
+            return {}
+        name, version = package.get("name"), package.get("version")
+        if name in _TOURNAMENT_RUNTIME_KEYS[1:]:
+            if name in runtime or not isinstance(version, str) or not version:
+                errors.append(f"index: invalid or duplicate historical locked package {name}")
+                return {}
+            runtime[name] = version
+    if set(runtime) != set(_TOURNAMENT_RUNTIME_KEYS):
+        errors.append("index: historical uv.lock lacks required runtime packages")
+        return {}
+    return runtime
+
+
+def _runtime_matches(recorded: Any, expected: Mapping[str, object], *, historical: bool) -> bool:
+    """Historical Python patch is unpinned; every package version is pinned by uv.lock."""
+    if not isinstance(recorded, dict) or set(recorded) != set(expected):
+        return False
+    if not historical:
+        return recorded == expected
+    python_version = recorded.get("python")
+    python_series = expected.get("python")
+    if (
+        not isinstance(python_version, str)
+        or not isinstance(python_series, str)
+        or not re.fullmatch(r"\d+\.\d+\.\d+", python_version)
+        or not (
+            python_version == python_series
+            if python_series.count(".") == 2
+            else python_version.startswith(python_series + ".")
+        )
+    ):
+        return False
+    return all(recorded[key] == value for key, value in expected.items() if key != "python")
+
+
 def _honesty(value: dict[str, Any], errors: list[str], label: str, *, report: bool) -> None:
     _assert(value.get("research_only") is True, errors, f"{label}: research_only must be true")
     _assert(value.get("live_pnl_claim") is False, errors, f"{label}: live_pnl_claim must be false")
@@ -162,6 +236,7 @@ def _benchmark_manifest(
     errors: list[str],
     *,
     committed_code_hashes: dict[str, str] | None = None,
+    committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
     manifest = _receipt(run_dir / "manifest.json", errors)
     if manifest is None:
@@ -180,10 +255,20 @@ def _benchmark_manifest(
         "benchmark: code SHA-256 differs from "
         + ("indexed Git revision" if committed_code_hashes is not None else "this checkout"),
     )
+    expected_runtime = (
+        {key: committed_runtime.get(key) for key in _BENCHMARK_RUNTIME_KEYS}
+        if committed_runtime is not None
+        else real_benchmark._runtime()
+    )
     _assert(
-        manifest.get("runtime") == real_benchmark._runtime(),
+        _runtime_matches(
+            manifest.get("runtime"),
+            expected_runtime,
+            historical=committed_runtime is not None,
+        ),
         errors,
-        "benchmark: runtime differs from this environment",
+        "benchmark: runtime differs from "
+        + ("indexed Git lock" if committed_runtime is not None else "this environment"),
     )
     try:
         raw = manifest["protocol"]
@@ -285,8 +370,14 @@ def _benchmark(
     errors: list[str],
     *,
     committed_code_hashes: dict[str, str] | None = None,
+    committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
-    manifest = _benchmark_manifest(run_dir, errors, committed_code_hashes=committed_code_hashes)
+    manifest = _benchmark_manifest(
+        run_dir,
+        errors,
+        committed_code_hashes=committed_code_hashes,
+        committed_runtime=committed_runtime,
+    )
     if manifest is not None:
         for phase in ("validation", "test"):
             _benchmark_report(run_dir, phase, manifest, errors)
@@ -298,6 +389,7 @@ def _tournament_manifest(
     errors: list[str],
     *,
     committed_code_hashes: dict[str, str] | None = None,
+    committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
     manifest = _receipt(run_dir / "manifest.json", errors)
     if manifest is None:
@@ -316,10 +408,20 @@ def _tournament_manifest(
         "tournament: code hashes differ from "
         + ("indexed Git revision" if committed_code_hashes is not None else "this checkout"),
     )
+    expected_runtime = (
+        {key: committed_runtime.get(key) for key in _TOURNAMENT_RUNTIME_KEYS}
+        if committed_runtime is not None
+        else net_tournament._tournament_runtime()
+    )
     _assert(
-        manifest.get("runtime") == net_tournament._tournament_runtime(),
+        _runtime_matches(
+            manifest.get("runtime"),
+            expected_runtime,
+            historical=committed_runtime is not None,
+        ),
         errors,
-        "tournament: runtime differs from this environment",
+        "tournament: runtime differs from "
+        + ("indexed Git lock" if committed_runtime is not None else "this environment"),
     )
     parent = manifest.get("benchmark_run")
     if not isinstance(parent, str) or not parent.strip():
@@ -328,7 +430,10 @@ def _tournament_manifest(
         parent_dir = run_dir / parent
         parent_errors: list[str] = []
         parent_manifest = _benchmark(
-            parent_dir, parent_errors, committed_code_hashes=committed_code_hashes
+            parent_dir,
+            parent_errors,
+            committed_code_hashes=committed_code_hashes,
+            committed_runtime=committed_runtime,
         )
         errors.extend(f"parent benchmark: {error}" for error in parent_errors)
         if parent_manifest is not None:
@@ -556,7 +661,10 @@ def _tournament_phase(
 
 
 def verify_phase1_run(
-    run_dir: Path, *, committed_code_hashes: dict[str, str] | None = None
+    run_dir: Path,
+    *,
+    committed_code_hashes: dict[str, str] | None = None,
+    committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Verify a completed run or a tournament blocked by frozen validation."""
     run_dir = Path(run_dir)
@@ -581,9 +689,19 @@ def verify_phase1_run(
     )
     state = "complete"
     if kind == "real_benchmark":
-        _benchmark(run_dir, errors, committed_code_hashes=committed_code_hashes)
+        _benchmark(
+            run_dir,
+            errors,
+            committed_code_hashes=committed_code_hashes,
+            committed_runtime=committed_runtime,
+        )
     elif kind == "net_tournament":
-        sealed = _tournament_manifest(run_dir, errors, committed_code_hashes=committed_code_hashes)
+        sealed = _tournament_manifest(
+            run_dir,
+            errors,
+            committed_code_hashes=committed_code_hashes,
+            committed_runtime=committed_runtime,
+        )
         if sealed is not None:
             validation = _tournament_phase(run_dir, "validation", sealed, None, errors)
             if validation is not None and validation.get("selected") is None:
@@ -649,6 +767,11 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
         if isinstance(revision, str) and _sha256(revision, length=40)
         else {}
     )
+    committed_runtime = (
+        _committed_runtime(revision, errors)
+        if isinstance(revision, str) and _sha256(revision, length=40)
+        else {}
+    )
     same_dirty_checkout = (
         revision == git_revision() and index.get("git_worktree_sha256") == git_worktree_sha256()
     )
@@ -689,6 +812,7 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
         result = verify_phase1_run(
             run_dir,
             committed_code_hashes=committed if committed and not same_dirty_checkout else None,
+            committed_runtime=committed_runtime if not same_dirty_checkout else None,
         )
         errors.extend(f"{label}: {error}" for error in result["errors"])
         _assert(result["kind"] == kind, errors, f"{label}: run kind mismatch")
