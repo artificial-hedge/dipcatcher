@@ -16,12 +16,12 @@ from quant_fund.research.real_benchmark import _seal
 from quant_fund.utils.reproducibility import git_revision
 
 
-def _time(day: int, hour: int = 20) -> datetime:
-    return datetime(2026, 9, 1, hour, tzinfo=UTC) + timedelta(days=day)
+def _time(day: int, hour: int = 20, minute: int = 0) -> datetime:
+    return datetime(2026, 9, 1, hour, minute, tzinfo=UTC) + timedelta(days=day)
 
 
 def _bars(day: int, *, open_price: bool = False) -> list[dict]:
-    moment = _time(day, 13 if open_price else 20)
+    moment = _time(day, 13, 30) if open_price else _time(day, 20)
     return [
         {
             "security_id": sid,
@@ -36,7 +36,7 @@ def _bars(day: int, *, open_price: bool = False) -> list[dict]:
 
 
 def _packet(day: int, *, open_price: bool = False) -> dict:
-    moment = _time(day, 13 if open_price else 20)
+    moment = _time(day, 13, 30) if open_price else _time(day, 20)
     return {
         "kind": "forward_shadow_open" if open_price else "forward_shadow_close",
         "source": "yahoo",
@@ -54,10 +54,19 @@ def _put(path: Path, data: dict) -> Path:
     return path
 
 
+@pytest.fixture(scope="module")
+def schedule() -> dict:
+    return fw.materialize_xnys_schedule(fw._CALENDAR_FIRST, fw._CALENDAR_LAST).as_dict()
+
+
 @pytest.fixture
-def sample(tmp_path: Path) -> tuple[Path, Path, Path]:
+def sample(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, schedule: dict
+) -> tuple[Path, Path, Path]:
     run = tmp_path / "run"
     (run / "events").mkdir(parents=True)
+    revision = git_revision()
+    monkeypatch.setattr(fw, "_checkout_state", lambda: (revision, fw._hash(b"")))
     spec = json.loads(Path("configs/net_tournament.json").read_text())
     warmup = [row for day in range(3, 24) for row in _bars(day)]
     benchmark = fw._sealed(Path("data/metadata/real_benchmark/us_wide_20260925/manifest.json"))
@@ -74,6 +83,10 @@ def sample(tmp_path: Path) -> tuple[Path, Path, Path]:
         code_sha256=source_sha,
         warmup=warmup,
         power_sha256=power_sha,
+        git_revision=revision,
+        git_worktree_sha256=fw._hash(b""),
+        schedule_sha256=schedule["schedule_sha256"],
+        historical_index_sha256=fw._PUBLISHED_INDEX_SHA256,
     )
     manifest = _seal(
         {
@@ -95,7 +108,9 @@ def sample(tmp_path: Path) -> tuple[Path, Path, Path]:
             "validation_receipt_sha256": validation["receipt_sha256"],
             "dataset_sha256": benchmark["protocol"]["dataset_sha256"],
             "power_plan_sha256": power_sha,
-            "git_revision": git_revision(),
+            "historical_index_receipt_sha256": fw._PUBLISHED_INDEX_SHA256,
+            "exchange_schedule": schedule,
+            "git_revision": revision,
             "git_worktree_sha256": fw._hash(b""),
             "strategy": "momentum_20",
             "benchmark": "equal_weight",
@@ -231,7 +246,7 @@ def test_partial_universe_and_skipped_weekday_are_rejected(sample: tuple[Path, P
         fw.decide(run, close, now=_time(24, 22))
     later = _packet(27)
     _put(close, later)
-    with pytest.raises(ValueError, match="skipped weekday"):
+    with pytest.raises(ValueError, match="first scheduled XNYS session"):
         fw.decide(run, close, now=_time(27, 22))
     later["missed_sessions"] = [{"date": "2026-09-25", "reason": "no_feed"}]
     _put(close, later)
@@ -243,11 +258,34 @@ def test_open_must_be_a_separate_next_market_session(sample: tuple[Path, Path, P
     run, close, opening = sample
     fw.decide(run, close, now=_time(24, 22))
     _put(opening, _packet(24, open_price=True))
-    with pytest.raises(ValueError, match="later weekday"):
+    with pytest.raises(ValueError, match="immediately next"):
         fw.execute(run, opening, now=_time(27, 15))
     _put(opening, _packet(30, open_price=True))
-    with pytest.raises(ValueError, match="market closure"):
+    with pytest.raises(ValueError, match="immediately next"):
         fw.execute(run, opening, now=_time(30, 15))
+    assert fw.verify(run)["paired_sessions"] == 0
+
+
+def test_packet_instants_must_match_frozen_exchange_hours(sample: tuple[Path, Path, Path]) -> None:
+    run, close, opening = sample
+    shifted_close = _packet(24)
+    for row in shifted_close["bars"]:
+        for field in ("event_time", "available_time", "ingested_time"):
+            row[field] = _time(24, 21).isoformat()
+    shifted_close["external_attestation"]["recorded_at"] = _time(24, 21, 1).isoformat()
+    _put(close, shifted_close)
+    with pytest.raises(ValueError, match="scheduled XNYS close"):
+        fw.decide(run, close, now=_time(24, 22))
+    _put(close, _packet(24))
+    fw.decide(run, close, now=_time(24, 22))
+    shifted_open = _packet(27, open_price=True)
+    for row in shifted_open["bars"]:
+        for field in ("event_time", "available_time", "ingested_time"):
+            row[field] = _time(27, 13).isoformat()
+    shifted_open["external_attestation"]["recorded_at"] = _time(27, 13, 1).isoformat()
+    _put(opening, shifted_open)
+    with pytest.raises(ValueError, match="scheduled XNYS open"):
+        fw.execute(run, opening, now=_time(27, 15))
     assert fw.verify(run)["paired_sessions"] == 0
 
 
@@ -259,6 +297,73 @@ def test_resealed_manifest_horizon_cannot_change(sample: tuple[Path, Path, Path]
     _put(run / "manifest.json", _seal(original))
     assert fw.verify(run)["valid"] is False
     assert "horizon" in fw.verify(run)["errors"][0]
+
+
+def _recommit(manifest: dict) -> dict:
+    manifest.pop("receipt_sha256", None)
+    commitment = fw._commitment(
+        spec_sha256=manifest["spec_sha256"],
+        benchmark_sha256=manifest["benchmark_receipt_sha256"],
+        validation_sha256=manifest["validation_receipt_sha256"],
+        code_sha256=manifest["code_sha256"],
+        warmup=manifest["warmup"],
+        power_sha256=manifest["power_plan_sha256"],
+        git_revision=manifest["git_revision"],
+        git_worktree_sha256=manifest["git_worktree_sha256"],
+        schedule_sha256=manifest["exchange_schedule"]["schedule_sha256"],
+        historical_index_sha256=manifest["historical_index_receipt_sha256"],
+    )
+    manifest["protocol_commitment_sha256"] = commitment
+    manifest["freeze"]["commitment_sha256"] = commitment
+    return _seal(manifest)
+
+
+def test_resealed_fake_git_revision_is_rejected(sample: tuple[Path, Path, Path]) -> None:
+    run, _, _ = sample
+    manifest = json.loads((run / "manifest.json").read_text())
+    manifest["git_revision"] = "f" * 40
+    _put(run / "manifest.json", _recommit(manifest))
+    report = fw.verify(run)
+    assert report["valid"] is False
+    assert "Git commit" in report["errors"][0]
+
+
+def test_freeze_follows_all_warmup_ingestion(sample: tuple[Path, Path, Path]) -> None:
+    run, _, _ = sample
+    manifest = json.loads((run / "manifest.json").read_text())
+    manifest["warmup"][0]["ingested_time"] = _time(24, 0).isoformat()
+    _put(run / "manifest.json", _recommit(manifest))
+    report = fw.verify(run)
+    assert report["valid"] is False
+    assert "external freeze timestamp" in report["errors"][0]
+
+
+def test_verify_from_outside_repository(
+    sample: tuple[Path, Path, Path], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    run, _, _ = sample
+    monkeypatch.chdir(tmp_path)
+    assert fw.verify(run)["valid"] is True
+
+
+def test_published_commitment_loads_archived_receipts_and_warmup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bronze = fw._ROOT / "data/file_us_wide/bronze/bars.parquet"
+    if not bronze.is_file():
+        pytest.skip("published historical bronze snapshot is not present")
+    monkeypatch.chdir(fw._ROOT)
+    revision = git_revision()
+    monkeypatch.setattr(fw, "_checkout_state", lambda: (revision, fw._hash(b"")))
+    result = CliRunner().invoke(app, ["paper", "--forward-stage", "commitment"])
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.stdout[result.stdout.index("{") :])
+    assert output["git_revision"] == revision
+    assert output["git_worktree_sha256"] == fw._hash(b"")
+    assert len(output["protocol_commitment_sha256"]) == 64
+    assert output["last_historical_warmup_session"] == "2026-09-18T20:00:00+00:00"
+    assert output["research_only"] is True
+    assert output["live_pnl_claim"] is False
 
 
 def test_resealed_open_metrics_and_attestation_fail_verify(sample: tuple[Path, Path, Path]) -> None:

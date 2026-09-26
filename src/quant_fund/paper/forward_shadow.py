@@ -11,7 +11,9 @@ import hashlib
 import json
 import math
 import os
-from datetime import UTC, datetime, timedelta
+import subprocess
+from datetime import UTC, date, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -21,14 +23,22 @@ import polars as pl
 from quant_fund.config.models import AppConfig, CostConfig, RiskGateConfig
 from quant_fund.execution.costs import total_cost
 from quant_fund.execution.simulated_broker import SimulatedBroker
+from quant_fund.paper.xnys_calendar import (
+    XnysSchedule,
+    materialize_xnys_schedule,
+    verify_xnys_schedule,
+)
 from quant_fund.research.net_replay import ReplayConfig, Strategy, _universe, _weights, market_panel
 from quant_fund.research.real_benchmark import _load_bars, _read_receipt, _seal, protocol_for_run
 from quant_fund.schemas.orders import Order, OrderSide
-from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 
 BOOKS = ("momentum_20", "equal_weight")
 SCENARIOS = ("configured", "double_impact")
 _EMPTY = "0" * 64
+_ROOT = Path(__file__).resolve().parents[3]
+_PUBLISHED_INDEX_SHA256 = "0ce794b56249952fce5b2ff1046eea9e50b2f4e6d691539b8019959131873204"
+_CALENDAR_FIRST = date(2026, 9, 18)
+_CALENDAR_LAST = date(2034, 12, 31)
 
 
 def _hash(raw: bytes) -> str:
@@ -52,7 +62,10 @@ def _dt(value: Any) -> datetime:
 
 def _load(path: Path) -> dict[str, Any]:
     raw = gzip.open(path, "rb").read() if path.suffix == ".gz" else path.read_bytes()
-    return json.loads(raw)
+    value = json.loads(raw)
+    if not isinstance(value, dict):
+        raise ValueError(f"{path.name}: expected JSON object")
+    return value
 
 
 def _sealed(path: Path) -> dict[str, Any]:
@@ -76,6 +89,7 @@ def _source_hashes() -> dict[str, str]:
     from quant_fund.config import models
     from quant_fund.execution import costs, simulated_broker
     from quant_fund.monitoring import kill_switch
+    from quant_fund.paper import xnys_calendar
     from quant_fund.portfolio import risk_gate
     from quant_fund.research import net_replay, phase1_verify, real_benchmark
     from quant_fund.schemas import orders
@@ -102,12 +116,58 @@ def _source_hashes() -> dict[str, str]:
                 risk_gate,
                 orders,
                 reproducibility,
+                xnys_calendar,
             ),
         )
     ) | {
         Path(__file__).name: _hash(Path(__file__).read_bytes()),
         "cli_main.py": _hash((Path(__file__).parents[1] / "cli" / "main.py").read_bytes()),
     }
+
+
+def _checkout_state() -> tuple[str, str]:
+    """Identify the exact source checkout; only committed, clean trees may freeze."""
+    try:
+        revision = subprocess.run(
+            ["git", "-C", str(_ROOT), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout.strip()
+        changes = subprocess.run(
+            ["git", "-C", str(_ROOT), "status", "--porcelain", "-z", "--untracked-files=all"],
+            check=True,
+            capture_output=True,
+            timeout=30,
+        ).stdout
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise ValueError("cannot identify the frozen Git checkout") from exc
+    if len(revision) != 40 or any(c not in "0123456789abcdef" for c in revision):
+        raise ValueError("frozen git_revision must identify an exact commit")
+    if changes:
+        raise ValueError("commit the forward protocol and use a clean worktree before freezing")
+    return revision, _hash(b"")
+
+
+def _warmup_cutoff(warmup: list[dict[str, Any]]) -> datetime:
+    """Every historical availability and ingestion must precede the freeze."""
+    return max(
+        _dt(row[field])
+        for row in warmup
+        for field in ("event_time", "available_time", "ingested_time")
+    )
+
+
+@lru_cache(maxsize=4)
+def _verified_schedule(raw: str) -> XnysSchedule:
+    return verify_xnys_schedule(json.loads(raw))
+
+
+def _calendar(manifest: dict[str, Any]) -> XnysSchedule:
+    return _verified_schedule(
+        json.dumps(manifest["exchange_schedule"], sort_keys=True, separators=(",", ":"))
+    )
 
 
 def _commitment(
@@ -118,6 +178,10 @@ def _commitment(
     code_sha256: dict[str, str],
     warmup: list[dict[str, Any]],
     power_sha256: str,
+    git_revision: str,
+    git_worktree_sha256: str,
+    schedule_sha256: str,
+    historical_index_sha256: str,
 ) -> str:
     return _hash(
         json.dumps(
@@ -128,6 +192,10 @@ def _commitment(
                 "code_sha256": code_sha256,
                 "warmup_sha256": _hash(json.dumps(warmup, sort_keys=True).encode()),
                 "power_sha256": power_sha256,
+                "git_revision": git_revision,
+                "git_worktree_sha256": git_worktree_sha256,
+                "schedule_sha256": schedule_sha256,
+                "historical_index_sha256": historical_index_sha256,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -136,6 +204,7 @@ def _commitment(
 
 
 def _check_manifest(manifest: dict[str, Any]) -> None:
+    revision, worktree_sha256 = _checkout_state()
     if manifest.get("kind") != "forward_shadow_manifest" or manifest.get("schema_version") != 1:
         raise ValueError("forward shadow manifest kind/schema mismatch")
     if (
@@ -148,20 +217,33 @@ def _check_manifest(manifest: dict[str, Any]) -> None:
         raise ValueError("frozen strategy/comparator changed")
     if manifest.get("min_paired_sessions") != 1400 or manifest.get("source") != "yahoo":
         raise ValueError("forward evidence horizon or source differs from the power plan")
+    calendar = _calendar(manifest)
+    if calendar.first_date != _CALENDAR_FIRST or calendar.last_date != _CALENDAR_LAST:
+        raise ValueError("frozen XNYS schedule bounds changed")
+    if manifest.get("historical_index_receipt_sha256") != _PUBLISHED_INDEX_SHA256 or (
+        _sealed(_ROOT / "data/metadata/research/phase1_evidence_index.json")["receipt_sha256"]
+        != _PUBLISHED_INDEX_SHA256
+    ):
+        raise ValueError("published historical evidence index changed")
     if manifest.get("code_sha256") != _source_hashes():
         raise ValueError("forward-shadow source code changed since freeze")
-    if manifest.get("git_worktree_sha256") != _hash(b""):
-        raise ValueError("freeze was not created from a clean worktree")
-    if manifest.get("spec_sha256") != _hash(Path("configs/net_tournament.json").read_bytes()):
+    if (
+        manifest.get("git_revision") != revision
+        or manifest.get("git_worktree_sha256") != worktree_sha256
+    ):
+        raise ValueError("frozen Git commit/clean worktree differs from this checkout")
+    if manifest.get("spec_sha256") != _hash((_ROOT / "configs/net_tournament.json").read_bytes()):
         raise ValueError("frozen spec hash differs from the published slate")
-    if manifest["tournament_spec"] != json.loads(Path("configs/net_tournament.json").read_text()):
+    if manifest["tournament_spec"] != json.loads(
+        (_ROOT / "configs/net_tournament.json").read_text()
+    ):
         raise ValueError("frozen tournament spec content differs")
     if manifest.get("power_plan_sha256") != _hash(
-        Path("docs/FORWARD_SHADOW_POWER.md").read_bytes()
+        (_ROOT / "docs/FORWARD_SHADOW_POWER.md").read_bytes()
     ):
         raise ValueError("the pre-collection power analysis changed")
-    benchmark = _sealed(Path("data/metadata/real_benchmark/us_wide_20260925/manifest.json"))
-    validation = _sealed(Path("data/metadata/net_tournament/us_wide_20260925/validation.json.gz"))
+    benchmark = _sealed(_ROOT / "data/metadata/real_benchmark/us_wide_20260925/manifest.json")
+    validation = _sealed(_ROOT / "data/metadata/net_tournament/us_wide_20260925/validation.json.gz")
     if (
         manifest.get("benchmark_receipt_sha256") != benchmark["receipt_sha256"]
         or manifest.get("validation_receipt_sha256") != validation["receipt_sha256"]
@@ -173,6 +255,7 @@ def _check_manifest(manifest: dict[str, Any]) -> None:
     if not isinstance(warmup, list) or not warmup:
         raise ValueError("historical warmup is missing")
     latest = max(_dt(row["event_time"]) for row in warmup)
+    cutoff = _warmup_cutoff(warmup)
     ids = sorted({row["security_id"] for row in warmup if _dt(row["event_time"]) == latest})
     if ids != manifest.get("expected_security_ids") or len(ids) < 2:
         raise ValueError("frozen universe differs from historical warmup")
@@ -182,9 +265,11 @@ def _check_manifest(manifest: dict[str, Any]) -> None:
         or set(proof) != {"recorded_at", "reference", "issuer", "commitment_sha256"}
         or not proof["reference"]
         or not proof["issuer"]
-        or not latest < _dt(proof["recorded_at"]) <= _dt(manifest["created_at"])
+        or not cutoff < _dt(proof["recorded_at"]) <= _dt(manifest["created_at"])
     ):
         raise ValueError("invalid external freeze timestamp/reference")
+    if sum(session.day > _dt(proof["recorded_at"]).date() for session in calendar.sessions) < 1400:
+        raise ValueError("frozen XNYS schedule cannot cover the planned paired horizon")
     expected = _commitment(
         spec_sha256=manifest["spec_sha256"],
         benchmark_sha256=manifest["benchmark_receipt_sha256"],
@@ -192,6 +277,10 @@ def _check_manifest(manifest: dict[str, Any]) -> None:
         code_sha256=manifest["code_sha256"],
         warmup=warmup,
         power_sha256=manifest["power_plan_sha256"],
+        git_revision=manifest["git_revision"],
+        git_worktree_sha256=manifest["git_worktree_sha256"],
+        schedule_sha256=calendar.schedule_sha256,
+        historical_index_sha256=manifest["historical_index_receipt_sha256"],
     )
     if (
         proof["commitment_sha256"] != expected
@@ -347,6 +436,8 @@ def _close_packet(
     if len(times) != 1 or len({row["security_id"] for row in bars}) != len(bars):
         raise ValueError("close packet must have one session and unique names")
     event = times.pop()
+    calendar = _calendar(manifest)
+    calendar.validate_close(event)
     freeze = _dt(manifest["freeze"]["recorded_at"])
     if event.date() <= freeze.date() or (
         before["last_close"] and event <= _dt(before["last_close"])
@@ -360,22 +451,23 @@ def _close_packet(
             f"missing={sorted(expected_ids - observed_ids)} "
             f"extra={sorted(observed_ids - expected_ids)}"
         )
-    last = _dt(before["last_close"]) if before["last_close"] else freeze
-    cursor = last.date() + timedelta(days=1)
-    missed = []
-    while cursor < event.date():
-        if cursor.weekday() < 5:
-            missed.append(cursor.isoformat())
-        cursor += timedelta(days=1)
     declared = packet.get("missed_sessions", [])
-    if (
-        not isinstance(declared, list)
-        or [row.get("date") for row in declared] != missed
-        or any(row.get("reason") != "market_closed" for row in declared)
+    if not isinstance(declared, list) or any(
+        not isinstance(row, dict) or row.get("reason") != "market_closed" for row in declared
     ):
-        raise ValueError(
-            "skipped weekdays may only be market_closed; no_feed/downtime must interrupt"
+        raise ValueError("no_feed/downtime must interrupt; only market_closed may be declared")
+    if before["last_close"]:
+        calendar.validate_gap(
+            _dt(before["last_close"]).date(),
+            event.date(),
+            [row["date"] for row in declared],
         )
+    else:
+        first = next((s for s in calendar.sessions if s.day > freeze.date()), None)
+        if first is None or event.date() != first.day or declared:
+            raise ValueError(
+                "first decision must use the first scheduled XNYS session after freeze"
+            )
     _packet_attestation(packet, observed_at, event, manifest["source"])
     for row in bars:
         if (
@@ -423,21 +515,18 @@ def _open_packet(
     if {row["security_id"] for row in bars} != set(manifest["expected_security_ids"]):
         raise ValueError("open packet missing/extra frozen-universe names")
     event_time = dates.pop()
-    if event_time.date() <= _dt(before["last_close"]).date() or event_time.weekday() >= 5:
-        raise ValueError("next-open must be in a later weekday market session")
-    prior_day = _dt(before["last_close"]).date() + timedelta(days=1)
-    closures = []
-    while prior_day < event_time.date():
-        if prior_day.weekday() < 5:
-            closures.append(prior_day.isoformat())
-        prior_day += timedelta(days=1)
+    calendar = _calendar(manifest)
+    calendar.validate_next_open(_dt(before["last_close"]), event_time)
     declared = packet.get("market_closures", [])
-    if (
-        not isinstance(declared, list)
-        or [row.get("date") for row in declared] != closures
-        or any(row.get("reason") != "market_closed" for row in declared)
+    if not isinstance(declared, list) or any(
+        not isinstance(row, dict) or row.get("reason") != "market_closed" for row in declared
     ):
-        raise ValueError("next-open gap needs explicit weekday market closure records")
+        raise ValueError("next-open gap needs scheduled market closure records")
+    calendar.validate_gap(
+        _dt(before["last_close"]).date(),
+        event_time.date(),
+        [row["date"] for row in declared],
+    )
     if event_time <= _dt(before["last_close"]) or (
         before["last_open"] and event_time <= _dt(before["last_open"])
     ):
@@ -474,22 +563,24 @@ def prepare(
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Freeze validation-selected strategy and pre-existing warmup; no decisions."""
-    from quant_fund.research.phase1_verify import verify_phase1_run
+    from quant_fund.research.phase1_verify import verify_phase1_index
 
     now = now or datetime.now(UTC)
     if (
-        spec_path.resolve() != Path("configs/net_tournament.json").resolve()
+        spec_path.resolve() != (_ROOT / "configs/net_tournament.json").resolve()
         or benchmark_run.resolve()
-        != Path("data/metadata/real_benchmark/us_wide_20260925").resolve()
+        != (_ROOT / "data/metadata/real_benchmark/us_wide_20260925").resolve()
         or tournament_run.resolve()
-        != Path("data/metadata/net_tournament/us_wide_20260925").resolve()
+        != (_ROOT / "data/metadata/net_tournament/us_wide_20260925").resolve()
     ):
         raise ValueError("this adapter freezes the published canonical Phase-1 slate only")
+    revision, worktree_sha256 = _checkout_state()
+    index_path = _ROOT / "data/metadata/research/phase1_evidence_index.json"
     if (
-        not verify_phase1_run(benchmark_run)["valid"]
-        or not verify_phase1_run(tournament_run)["valid"]
+        _sealed(index_path)["receipt_sha256"] != _PUBLISHED_INDEX_SHA256
+        or not verify_phase1_index(index_path)["valid"]
     ):
-        raise ValueError("the published benchmark/tournament receipts must verify")
+        raise ValueError("the published historical receipt index must verify")
     benchmark = _read_receipt(benchmark_run / "manifest.json")
     tournament = _read_receipt(tournament_run / "manifest.json")
     validation = _sealed(tournament_run / "validation.json.gz")
@@ -532,33 +623,41 @@ def prepare(
     )
     if len(expected_ids) < 2:
         raise ValueError("latest warmup session has an insufficient frozen universe")
+    calendar = materialize_xnys_schedule(_CALENDAR_FIRST, _CALENDAR_LAST)
     commitment = _commitment(
         spec_sha256=_hash(spec_raw),
         benchmark_sha256=benchmark["receipt_sha256"],
         validation_sha256=validation["receipt_sha256"],
         code_sha256=_source_hashes(),
         warmup=warmup,
-        power_sha256=_hash(Path("docs/FORWARD_SHADOW_POWER.md").read_bytes()),
+        power_sha256=_hash((_ROOT / "docs/FORWARD_SHADOW_POWER.md").read_bytes()),
+        git_revision=revision,
+        git_worktree_sha256=worktree_sha256,
+        schedule_sha256=calendar.schedule_sha256,
+        historical_index_sha256=_PUBLISHED_INDEX_SHA256,
     )
     if freeze_attestation is None:
         return {
             "protocol_commitment_sha256": commitment,
+            "git_revision": revision,
+            "git_worktree_sha256": worktree_sha256,
+            "exchange_schedule_sha256": calendar.schedule_sha256,
             "last_historical_warmup_session": dates[-1].isoformat(),
             "research_only": True,
             "live_pnl_claim": False,
         }
     if output is None:
         raise ValueError("freezing requires an output directory")
-    if git_worktree_sha256() != _hash(b""):
-        raise ValueError("commit the forward protocol and use a clean worktree before freezing")
     proof = json.loads(freeze_attestation.read_text())
     if set(proof) != {"recorded_at", "reference", "issuer", "commitment_sha256"} or (
         proof["commitment_sha256"] != commitment or not proof["reference"] or not proof["issuer"]
     ):
         raise ValueError(f"freeze attestation must bind the protocol commitment {commitment}")
     frozen_at = _dt(proof["recorded_at"])
-    if not dates[-1] < frozen_at <= now:
+    if not _warmup_cutoff(warmup) < frozen_at <= now:
         raise ValueError("the externally recorded freeze must follow the inspected warmup")
+    if sum(session.day > frozen_at.date() for session in calendar.sessions) < 1400:
+        raise ValueError("frozen XNYS schedule cannot cover the planned paired horizon")
     if output.exists():
         raise FileExistsError("a frozen run cannot be overwritten")
     receipt = _seal(
@@ -576,14 +675,16 @@ def prepare(
             "spec_sha256": _hash(spec_raw),
             "benchmark_receipt_sha256": benchmark["receipt_sha256"],
             "validation_receipt_sha256": validation["receipt_sha256"],
-            "power_plan_sha256": _hash(Path("docs/FORWARD_SHADOW_POWER.md").read_bytes()),
+            "power_plan_sha256": _hash((_ROOT / "docs/FORWARD_SHADOW_POWER.md").read_bytes()),
+            "historical_index_receipt_sha256": _PUBLISHED_INDEX_SHA256,
+            "exchange_schedule": calendar.as_dict(),
             "min_paired_sessions": 1400,
             "warmup": warmup,
             "warmup_status": "historical_only_excluded_from_evidence",
             "dataset_sha256": protocol.dataset_sha256,
             "code_sha256": _source_hashes(),
-            "git_revision": git_revision(),
-            "git_worktree_sha256": git_worktree_sha256(),
+            "git_revision": revision,
+            "git_worktree_sha256": worktree_sha256,
             "live_pnl_claim": False,
             "research_only": True,
             "external_attestation_verified": False,
