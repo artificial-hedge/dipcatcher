@@ -37,7 +37,7 @@ def _blocked(self, address):
     host = ""
     if isinstance(address, tuple) and address:
         host = str(address[0])
-    if host not in {"127.0.0.1", "::1", "localhost"}:
+    if host not in {{"127.0.0.1", "::1", "localhost"}}:
         raise OSError("examples CI forbids network access: %r" % (address,))
     return _connect(self, address)
 
@@ -104,6 +104,27 @@ def _imported_modules(path: Path) -> set[str]:
         elif isinstance(node, ast.ImportFrom) and node.module:
             modules.add(node.module)
     return modules
+
+
+def test_runner_blocks_outbound_sockets(tmp_path: Path) -> None:
+    probe = tmp_path / "probe_network.py"
+    probe.write_text(
+        "import socket\nsocket.create_connection(('1.1.1.1', 443), timeout=2)\n",
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    result = subprocess.run(
+        [sys.executable, "-c", _WRAPPER.format(script=str(probe))],
+        cwd=REPO,
+        env=env,
+        text=True,
+        capture_output=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "forbids network access" in result.stderr + result.stdout
 
 
 def test_gallery_files_match_the_runner() -> None:
