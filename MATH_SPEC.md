@@ -251,6 +251,20 @@
 - `variance_swap.py`: DDKZ fair strike K_var=(2/T)e^{rT} sum (dK_i/K_i^2) Q(K_i)
   - (1/T)(F/K0-1)^2 with OTM puts below K0 and calls at/above; equals sigma^2
   under flat Black-Scholes vol.
+## Wave 12 mathematical conventions
+
+- `nig_vg.py`: NIG f=(alpha delta/pi) exp(delta gamma + beta(x-mu)) K_1(alpha g)/g,
+  g=sqrt(delta^2+(x-mu)^2), gamma=sqrt(alpha^2-beta^2); closed-form MoM inverts
+  (mean,var,skew,exkurt) with bar_beta^2 = r/(3-4r), r=s^2/k. VG uses the
+  Madan-Carr-Chang density with K_{1/nu-1/2}; both sampled as normal
+  mean-variance mixtures (inverse-Gaussian / gamma subordinators).
+- `mic.py`: MIC = max over grids with n_x n_y <= n^0.6 of I(X;Y)/log(min(n_x,n_y))
+  using equi-frequency (quantile) bins; value in [0,1].
+- `archimedean_extra.py`: Frank C=-1/theta log(1+ (e^{-theta u}-1)(e^{-theta v}-1)/
+  (e^{-theta}-1)), tau=1-4/theta+4 D_1(theta)/theta (Debye), fit by tau inversion;
+  Joe C=1-(a+b-ab)^{1/theta}, a=(1-u)^theta, density c=S^{1/theta-2}
+  ((1-u)(1-v))^{theta-1}(theta-1+S), fit by ML. Both sampled by conditional
+  inversion of dC/du.
 ## Wave 10 mathematical conventions
 
 - `entropic_risk.py`: rho_theta(L) = (1/theta) log E[e^{theta L}] (log-sum-exp
@@ -280,6 +294,67 @@
 - `lowess.py`: local linear fit over the frac*n nearest points with tricube
   weights (1-|u|^3)^3; robustness iterations reweight by Tukey bisquare
   (1-(r/6s)^2)^2, s=median|resid|.
+## Optional scorecard families (benches_extra)
+
+- `complexity` / `roughness` / `serial_randomness` benches average per-asset
+  proper-score diagnostics over the SYNTHETIC panel's `ret_1` series (assets with
+  >= 64/128 observations), reusing the entropy/fractal/serial metric modules; the
+  resulting family blobs contain only finite floats with no sharpe/sortino/
+  calmar/pnl/nav key tokens, so the verify.py scorecard honesty gates pass.
+## Wave 15 mathematical conventions
+
+- `fgls_ar1.py`: estimate rho from OLS residuals (rho=sum r_t r_{t-1}/sum r_{t-1}^2);
+  Cochrane-Orcutt quasi-differences y_t-rho y_{t-1} (drops obs 1); Prais-Winsten
+  keeps obs 1 scaled by sqrt(1-rho^2); iterate to convergence.
+- `twosample.py`: KS D=max|F_x-F_y|, p via Kolmogorov asymptotic with the
+  Stephens small-sample correction on sqrt(ne) D, ne=n_x n_y/(n_x+n_y); energy
+  distance E=2 mean|x_i-y_j| - mean|x_i-x_j| - mean|y_i-y_j|; permutation
+  p-values (count of shuffled statistics >= observed, +1 smoothing).
+## Wave 16 mathematical conventions
+
+- `american_baw.py`: b=r-q; q2/q1 = (-(N-1) +/- sqrt((N-1)^2+4M/Kc))/2,
+  M=2r/sigma^2, N=2b/sigma^2, Kc=1-e^{-rT}; critical price by root finding;
+  C_A = C_E + A2 (S/S*)^{q2} for S<S*, else S-K (puts analogous with q1).
+- `johnson_sb.py`: SB z=gamma+delta log(u/(1-u)), u=(x-xi)/lambda on (xi,xi+lam);
+  SL z=gamma+delta log(x-xi); fit fixes support then regresses Phi^{-1}(rank)
+  on the transform (slope=delta, intercept=gamma).
+- `carr_madan.py`: psi(v)=e^{-rT} phi(v-(alpha+1)i)/(alpha^2+alpha-v^2+
+  i(2alpha+1)v); C(k)=e^{-alpha k}/pi Re int e^{-ivk} psi dv via FFT with
+  log-strike spacing lambda=2pi/(N eta) and Simpson weights.
+## Wave 17 mathematical conventions
+
+- `iv_approx.py`: Brenner-Subrahmanyam sigma = sqrt(2 pi/T) C/S (ATM);
+  Corrado-Miller sigma = sqrt(2pi/T)/(S+Ke^{-rT}) [(C-X/2)+sqrt((C-X/2)^2-X^2/pi)],
+  X = S - K e^{-rT} (radicand floored at 0).
+- `leisen_reimer.py`: p=PP(d2,n), p'=PP(d1,n) with Peizer-Pratt method-2
+  PP(z,n)=0.5+sign(z)0.5 sqrt(1-exp(-(z/(n+1/3+0.1/(n+1)))^2 (n+1/6))); u=e^{(r-q)dt}
+  p'/p, d=(e^{(r-q)dt}-p u)/(1-p); odd n; backward induction (+early exercise).
+- `tempered_stable.py`: psi(u)=C Gamma(-Y)[(M-iu)^Y-M^Y+(G+iu)^Y-G^Y]; cumulants
+  c_k=C Gamma(k-Y)[M^{Y-k}+(-1)^k G^{Y-k}]; density by numerical inversion
+  f(x)=(1/pi) int_0^inf Re(e^{-iux} e^{psi(u)}) du.
+## Wave 18 mathematical conventions
+
+- `vasicek_credit.py`: P(L<=x)=Phi((sqrt(1-rho)Phi^{-1}(x)-Phi^{-1}(pd))/sqrt(rho));
+  density sqrt((1-rho)/rho) exp(0.5 Phi^{-1}(x)^2 - 0.5/rho(sqrt(1-rho)Phi^{-1}(x)
+  -Phi^{-1}(pd))^2); VaR_q=Phi((Phi^{-1}(pd)+sqrt(rho)Phi^{-1}(q))/sqrt(1-rho));
+  mean loss = pd.
+- `gaussian_copula_default.py`: p_i(m)=Phi((Phi^{-1}(pd_i)-sqrt(rho)m)/sqrt(1-rho));
+  conditional default-count pmf by convolving [1-p_i, p_i] (ASB recursion),
+  integrated over M with Gauss-Hermite quadrature.
+- `creditrisk_plus.py`: G(z)=exp(sum pd_i(z^{v_i}-1)); Panjer recursion p_0=
+  exp(-sum pd_i), p_n=(1/n) sum_{k=1}^n k a_k p_{n-k}, a_k=sum_{i:v_i=k} pd_i;
+  E[loss]=sum pd_i v_i, Var=sum pd_i v_i^2.
+## Wave 20 mathematical conventions
+
+- `concordance.py`: from concordant C, discordant D, ties Tx/Ty: gamma=(C-D)/(C+D);
+  Somers' D_{y|x}=(C-D)/(C+D+Ty); tau-b=(C-D)/sqrt((C+D+Tx)(C+D+Ty)); c-index =
+  (#{s_pos>s_neg}+0.5 #ties)/(n_pos n_neg) (= AUC).
+- `calibration_tests.py`: Spiegelhalter Z = sum (y-p)(1-2p)/sqrt(sum (1-2p)^2
+  p(1-p)) ~ N(0,1) under calibration; insensitive to symmetric additive shifts,
+  sensitive to over/under-confidence.
+- `gam.py`: backfitting y=intercept+sum_j f_j(x_j); each f_j refit from the
+  partial residual with a Gaussian local-linear smoother (Silverman bandwidth)
+  and centred to zero mean; iterate to convergence.
 ## Wave 19 mathematical conventions
 
 - `random_projection.py`: JL min dim k = ceil(4 ln n /(eps^2/2 - eps^3/3));
