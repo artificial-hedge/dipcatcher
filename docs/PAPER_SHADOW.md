@@ -162,7 +162,11 @@ uv run dipcatcher paper --forward-stage commitment
 
 Obtain an independently recorded freeze file containing exactly
 `recorded_at` (offset-aware timestamp), `issuer`, `reference`, and the printed
-`commitment_sha256`. The record must follow the last historical warmup bar.
+`commitment_sha256`. The commitment binds the exact Git commit and clean
+worktree digest, both printed for review with the schedule hash. The record
+must follow every historical warmup event,
+availability, and ingestion timestamp, including late ingestions on older
+rows.
 Then create a new, exclusive run directory:
 
 ```bash
@@ -174,20 +178,44 @@ uv run dipcatcher paper --forward-stage freeze \
 No freeze or forward record is supplied with this adapter. The phase-one
 2025/2026 historical snapshot is **warmup only**; the first accepted decision
 must occur on a *later market date* than the recorded freeze. The program
-checks the published benchmark and validation receipts, clean Git state, the
+checks the published benchmark and validation receipts through the sealed
+historical evidence index, clean Git state, the
 exact `configs/net_tournament.json` slate, source file hashes, the power-plan
 hash, and the static 424-name universe from the final warmup session. No other
 strategy or comparator can be selected through this mode.
+
+The protocol also commits an offline `exchange_calendars==4.13.2` XNYS session
+schedule from 2026-09-18 through 2034-12-31. It requires exact scheduled close
+and next-session open instants, including DST and early closes. The first
+decision must use the first scheduled session after freeze; later close packets
+cannot skip scheduled sessions. A claimed closure on a scheduled session fails
+verification. This schedule is a planning input, not independent exchange
+attestation. Published NYSE hours currently extend only through 2028; the
+2029–2034 calendar is projected and needs comparison with each new official
+NYSE publication. Any discrepancy stops the current protocol version and
+requires a new freeze. `official_comparison_verified=false` and no forward
+evidence is accepted by this adapter.
+
+The indexed historical runs were produced with a recorded runtime that may
+differ from the current environment. Archive verification checks the seals,
+source commit, config and dataset links without claiming to replay those runs
+under today's dependency versions. Standalone research-run verification retains
+its strict current-runtime check. Forward verification requires the exact clean
+Git checkout named by the freeze. Keep a dedicated clean checkout at that
+commit for restart and verification. Even unrelated later docs or test edits
+block verification in the frozen checkout until restored; a later commit cannot
+silently reinterpret the frozen protocol.
 
 For each genuinely new session, supply a close packet with `kind` set to
 `forward_shadow_close`, `source` set to `yahoo`, all frozen names in `bars`,
 and `external_attestation` containing `issuer`, `reference`, and
 `recorded_at`. Each bar has `security_id`, `event_time`, `available_time`,
 `ingested_time`, `close`, and `volume`. Timestamps have UTC offsets. Any
-skipped weekday between the previous close and current close must appear in
+scheduled exchange closure between the previous close and current close must appear in
 `missed_sessions` as `{ "date": "YYYY-MM-DD", "reason": "market_closed" }`.
-Feed downtime or a missing name cannot be hidden as a market closure; interrupt
-the protocol version. These calendar claims require independent review.
+Feed downtime, a missing name, or a skipped scheduled session cannot be hidden
+as a market closure; interrupt the protocol version. These calendar claims
+require independent review.
 
 ```bash
 uv run dipcatcher paper --forward-stage decide \

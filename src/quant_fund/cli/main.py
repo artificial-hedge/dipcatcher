@@ -1604,6 +1604,9 @@ def paper(
             if key
             in {
                 "protocol_commitment_sha256",
+                "git_revision",
+                "git_worktree_sha256",
+                "exchange_schedule_sha256",
                 "last_historical_warmup_session",
                 "receipt_sha256",
                 "stage",
