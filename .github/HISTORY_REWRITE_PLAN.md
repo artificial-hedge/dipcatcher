@@ -36,9 +36,10 @@ Largest single blobs:
 | 19,756,938 | `ed0983475f56` | `data/file_us_wide/bronze/bars.parquet` |
 | ~8,020,320 each | several | `data/file_us_wide/metadata/oos_scores_*/**/*.npy` |
 
-`data/file_us_wide/` is still tracked on `HEAD` (`.gitignore` covers
-`data/file_us/` but not `data/file_us_wide/`). `.dsh-24x7/` is still tracked.
-Removing them from the index without a rewrite leaves the blobs in history.
+At the audit base, `data/file_us_wide/` and `.dsh-24x7/` were tracked.
+As of `e749f1149`, `data/file_us_wide/` is no longer tracked, while
+`.dsh-24x7/` remains tracked. Removing paths from the index without a
+rewrite leaves their blobs in history.
 
 Dropping `data/file_us_wide/`, `.dsh-24x7/`, and `artifacts/` removes about
 447 MiB of the 518 MiB of uncompressed blobs. That is the rewrite worth doing.

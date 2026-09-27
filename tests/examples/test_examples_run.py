@@ -188,6 +188,8 @@ def test_example_runs_offline(name: str) -> None:
         assert "verification_authorizes_live_trading=false" in stdout
         if "SKIP:" in stdout:
             assert "tracked real US snapshot absent" in stdout
+            assert "data_label=absent_tracked_real_snapshot" in stdout
+            assert "index_valid=true" not in stdout
         else:
             assert "index_kind=phase1_evidence_index" in stdout
             assert "seal_errors=0" in stdout

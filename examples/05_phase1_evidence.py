@@ -21,6 +21,7 @@
 # is reported and does not by itself fail the summary. Any other verifier error
 # fails the example. The sealed US tape is gitignored; when it is absent this
 # example restores that blob from git history so the dataset hash is checked.
+# A shallow checkout without the blob reports a skip, never a valid receipt.
 # Passing verification does not authorize live trading.
 
 # %%
@@ -183,17 +184,21 @@ def main() -> None:
     _materialize_sealed_tape()
     if not INDEX_PATH.is_file():
         raise SystemExit(f"phase-1 evidence index is absent: {INDEX_PATH}")
+    print("verifier=phase1_evidence_index")
+    print("claim=research_only")
+    print("not_investment_advice=true")
+    print("no_live_trading_claim=true")
+    print("verification_authorizes_live_trading=false")
+    if not (ROOT / _SEALED_TAPE).is_file():
+        print("data_label=absent_tracked_real_snapshot")
+        print("SKIP: tracked real US snapshot absent; receipt verification unmeasured")
+        return
+    print("data_label=tracked_real_snapshot")
     index = _load_object(INDEX_PATH)
     verified = verify_phase1_index(INDEX_PATH)
     errors = _errors(verified)
     seal_errors = [error for error in errors if _RUNTIME_NOTE not in error]
     runtime_errors = [error for error in errors if _RUNTIME_NOTE in error]
-    print("verifier=phase1_evidence_index")
-    print("data_label=tracked_real_snapshot")
-    print("claim=research_only")
-    print("not_investment_advice=true")
-    print("no_live_trading_claim=true")
-    print("verification_authorizes_live_trading=false")
     print(f"index_kind={index.get('kind')}")
     print(f"index_valid={_flag(verified.get('valid'))}")
     print(f"runtime_errors={len(runtime_errors)}")
