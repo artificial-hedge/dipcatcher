@@ -184,7 +184,7 @@ def test_deleted_file_changes_worktree_fingerprint(
 def test_smudged_lfs_file_matching_pointer_is_clean(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A filter-off diff lists a smudged LFS file; a matching oid is still clean."""
+    """A smudged LFS file whose bytes match the pointer stays a clean fingerprint."""
     if shutil.which("git-lfs") is None:
         pytest.skip("git-lfs is required to smudge a real pointer")
     repo = tmp_path / "repo"
@@ -200,29 +200,9 @@ def test_smudged_lfs_file_matching_pointer_is_clean(
     pointer = _git(repo, "cat-file", "blob", "HEAD:payload.bin").stdout
     assert pointer.startswith(b"version https://git-lfs.github.com/spec/v1\n")
     assert payload.read_bytes() == original
-    dirty = subprocess.run(
-        [
-            "git",
-            "-c",
-            "filter.lfs.clean=",
-            "-c",
-            "filter.lfs.smudge=",
-            "-c",
-            "filter.lfs.process=",
-            "-c",
-            "filter.lfs.required=false",
-            "diff",
-            "--name-status",
-            "-z",
-            "--no-renames",
-            "HEAD",
-        ],
-        cwd=repo,
-        check=True,
-        capture_output=True,
-    )
-    assert b"payload.bin" in dirty.stdout
-
+    # Blanking the LFS filters lists the smudged file on some Git builds and
+    # already treats it as clean on others. The fingerprint must be clean
+    # either way, and a real byte change must still move it.
     monkeypatch.chdir(repo)
     assert git_worktree_sha256() == hash_bytes(b"")
     payload.write_bytes(original + b"!")
