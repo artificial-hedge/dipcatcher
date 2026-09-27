@@ -25,8 +25,9 @@ fmt: ## Auto-fix lint + format
 	uv run ruff check --fix src tests
 	uv run ruff format src tests
 
-typecheck: ## mypy on the harness
+typecheck: ## mypy on the harness (public modules are strict; see pyproject)
 	uv run mypy src/quant_fund
+	uv run mypy --strict --follow-imports=silent src/quant_fund/__init__.py src/quant_fund/public.py
 
 security: ## Bandit static security analysis on src/
 	uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
