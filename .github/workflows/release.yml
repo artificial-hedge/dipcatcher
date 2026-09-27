@@ -84,14 +84,25 @@ jobs:
           cat SHA256SUMS
 
       - name: Sign distributions with Sigstore
-        uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
-        with:
-          inputs: ./dist/*.whl ./dist/*.tar.gz
-          verify: true
-          verify-cert-identity: "^https://github.com/artificial-hedge/dipcatcher/.github/workflows/release.yml@.*"
-          verify-oidc-issuer: https://token.actions.githubusercontent.com
-          release-signing-artifacts: false
-          upload-signing-artifacts: false
+        # setup-uv exports VIRTUAL_ENV. The sigstore GitHub Action installs
+        # into that environment and then cannot import its own packages.
+        # uvx with those variables unset uses a separate environment.
+        # sigstore 4.5 writes dist/<name>.sigstore.json next to each file.
+        run: |
+          set -euo pipefail
+          unset VIRTUAL_ENV UV_PYTHON UV_PROJECT_ENVIRONMENT
+          shopt -s nullglob
+          dists=(dist/*.whl dist/*.tar.gz)
+          if [ "${#dists[@]}" -eq 0 ]; then
+            echo "no distributions to sign" >&2
+            exit 1
+          fi
+          uvx --from sigstore==4.5.0 sigstore sign --oidc "${dists[@]}"
+          identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}"
+          uvx --from sigstore==4.5.0 sigstore verify identity \
+            --cert-identity "${identity}" \
+            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${dists[@]}"
 
       - name: SLSA build provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
