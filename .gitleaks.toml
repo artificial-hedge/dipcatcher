@@ -1,0 +1,17 @@
+title = "dipcatcher"
+
+[extend]
+useDefault = true
+
+# Global allowlist entries are OR-ed. They cover the two shapes a full-history
+# scan actually hits in this repo. Neither is a live credential.
+[allowlist]
+description = "Content hashes and the synthetic probe canary."
+regexTarget = "secret"
+regexes = [
+  '''(?i)^[0-9a-f]{40}$''',
+  '''(?i)^[0-9a-f]{64}$''',
+]
+paths = [
+  '''tests/fx1/test_sources\.py''',
+]
