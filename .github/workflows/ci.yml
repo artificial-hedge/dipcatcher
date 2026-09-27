@@ -148,6 +148,38 @@ jobs:
           path: coverage.xml
           if-no-files-found: error
 
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Sync
+        run: uv sync --frozen --group dev
+      - name: Synthetic performance subset
+        run: |
+          uv run pytest tests/perf -q -m "not perf_full" -o addopts= --strict-markers \
+            --benchmark-only --benchmark-min-rounds=5 --benchmark-max-time=2 \
+            --benchmark-warmup=on --benchmark-disable-gc \
+            --benchmark-json=perf-ci.json
+      - name: Flag calibration-normalized regressions
+        run: |
+          uv run python tests/perf/check_regression.py perf-ci.json \
+            tests/perf/baselines/baseline.json --threshold 0.50 --ci
+      - name: Upload performance results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dipcatcher-perf
+          path: perf-ci.json
+          if-no-files-found: error
+
   smoke:
     needs: [test, lint]
     runs-on: ubuntu-latest

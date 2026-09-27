@@ -503,17 +503,18 @@ def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
     parents = _build_parent_map(tree)
     out: list[_Finding] = []
     for node in ast.walk(tree):
-        stmt: ast.Import | ast.ImportFrom | None = None
+        if not isinstance(node, (ast.Import, ast.ImportFrom)):
+            continue
         module: str | None = None
         if isinstance(node, ast.ImportFrom) and node.module:
-            stmt = node
             module = node.module
         elif isinstance(node, ast.Import):
-            stmt = node
             for alias in node.names:
                 if alias.name.startswith("quant_fund."):
                     module = alias.name
-        if stmt is None or module is None or not module.startswith("quant_fund."):
+        if module is None or not module.startswith("quant_fund."):
+            continue
+        if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
         sub = module.split(".")[1]
         if sub == package:
@@ -528,11 +529,12 @@ def _check_lh011(tree: ast.AST, path_str: str) -> list[_Finding]:
             cur = parents.get(id(cur))
         allowed = whitelist | (lazy_whitelist if nested else frozenset())
         if sub not in allowed:
+            assert isinstance(node, (ast.Import, ast.ImportFrom))
             out.append(
                 _Finding(
                     "LH011",
-                    stmt.lineno,
-                    stmt.col_offset,
+                    node.lineno,
+                    node.col_offset,
                     f"quant_fund.{package} imports non-whitelisted quant_fund.{sub} "
                     f"({'lazy ' if nested else ''}import; whitelist: {sorted(allowed) or 'none'})",
                 )
