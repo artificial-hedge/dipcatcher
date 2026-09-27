@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -181,10 +183,42 @@ def test_deleted_file_changes_worktree_fingerprint(
     assert len(deleted) == 64
 
 
+def _filter_off_name_status(repo: Path) -> bytes:
+    return subprocess.run(
+        [
+            "git",
+            "-c",
+            "filter.lfs.clean=",
+            "-c",
+            "filter.lfs.smudge=",
+            "-c",
+            "filter.lfs.process=",
+            "-c",
+            "filter.lfs.required=false",
+            "diff",
+            "--name-status",
+            "-z",
+            "--no-renames",
+            "HEAD",
+        ],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
 def test_smudged_lfs_file_matching_pointer_is_clean(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A smudged LFS file whose bytes match the pointer stays a clean fingerprint."""
+    """A matching LFS smudge stays clean, including after the stat cache breaks.
+
+    Git trusts the index stat cache. A quiescent smudge is absent from a
+    filter-off diff once that cache is refreshed, and whether a just-written
+    file is listed depends on racy-git timestamps (Git 2.55's nanosecond index
+    often is not racy). Touching the file lists it, because the worktree bytes
+    are not the pointer blob. The fingerprint still treats a matching oid as
+    clean.
+    """
     if shutil.which("git-lfs") is None:
         pytest.skip("git-lfs is required to smudge a real pointer")
     repo = tmp_path / "repo"
@@ -200,10 +234,17 @@ def test_smudged_lfs_file_matching_pointer_is_clean(
     pointer = _git(repo, "cat-file", "blob", "HEAD:payload.bin").stdout
     assert pointer.startswith(b"version https://git-lfs.github.com/spec/v1\n")
     assert payload.read_bytes() == original
-    # Blanking the LFS filters lists the smudged file on some Git builds and
-    # already treats it as clean on others. The fingerprint must be clean
-    # either way, and a real byte change must still move it.
+    # Backdate, then refresh with the clean filter still on, so the cached
+    # stat matches and the index timestamp is strictly newer than the file.
+    past = time.time() - 30
+    os.utime(payload, (past, past))
+    _git(repo, "update-index", "--refresh")
+    assert b"payload.bin" not in _filter_off_name_status(repo)
+
     monkeypatch.chdir(repo)
+    assert git_worktree_sha256() == hash_bytes(b"")
+    payload.touch()
+    assert b"payload.bin" in _filter_off_name_status(repo)
     assert git_worktree_sha256() == hash_bytes(b"")
     payload.write_bytes(original + b"!")
     assert git_worktree_sha256() != hash_bytes(b"")
