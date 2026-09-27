@@ -207,8 +207,6 @@ def execution_sensitivity_cmd(
         if max_dates < 2:
             raise typer.BadParameter("--max-dates must be at least 2")
         dates = dates[:max_dates]
-    import polars as pl
-
     feat = feat.filter(pl.col("event_time").is_in(dates))
     weights = build_causal_weight_panel(cfg, dates)
     report = execution_sensitivity(
