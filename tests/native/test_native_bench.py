@@ -18,10 +18,13 @@ import pytest
 
 from quant_fund.native import reference
 
-pytestmark = pytest.mark.skipif(
-    importlib.util.find_spec("quant_core") is None,
-    reason="quant_core extension is not built",
-)
+pytestmark = [
+    pytest.mark.native,
+    pytest.mark.skipif(
+        importlib.util.find_spec("quant_core") is None,
+        reason="quant_core extension is not built",
+    ),
+]
 
 # Minimum median speedup against the current NumPy reference. ema, rsi,
 # bollinger, and hash_many are already close to the vectorized reference,
