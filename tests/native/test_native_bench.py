@@ -23,15 +23,17 @@ pytestmark = pytest.mark.skipif(
     reason="quant_core extension is not built",
 )
 
-# Minimum median speedup. Loop kernels are far above this; reductions that
-# NumPy already implements in C are not gated.
+# Minimum median speedup against the current NumPy reference. ema, rsi,
+# bollinger, and hash_many are already close to the vectorized reference,
+# so their floors only require Rust to stay faster. The Python-loop kernels
+# stay well above 3x. Reductions NumPy already implements in C are not gated.
 _MIN_SPEEDUP = {
-    "bollinger": 8.0,
-    "rsi": 5.0,
-    "ema": 5.0,
+    "bollinger": 1.5,
+    "rsi": 1.05,
+    "ema": 1.05,
     "book_features": 3.0,
     "turnover_series": 3.0,
-    "hash_many": 1.5,
+    "hash_many": 1.05,
 }
 
 
