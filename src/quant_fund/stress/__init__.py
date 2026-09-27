@@ -1,39 +1,39 @@
-"""Research stress-testing and scenario engine.
+"""Research-only stress engine with lazy public exports.
 
-Simulation and diagnostics only. This package does not submit orders, talk to
-a broker, or rewrite sealed research receipts.
-
-Heavy numeric dependencies stay behind attribute access so ``dipcatcher --help``
-does not import them.
+Importing the CLI must not load numerical and plotting dependencies before a
+stress command is invoked.
 """
 
 from __future__ import annotations
 
-import importlib
+from importlib import import_module
 from typing import Any
 
 _EXPORTS = {
-    "CRISIS_CATALOG": ("quant_fund.stress.catalog", "CRISIS_CATALOG"),
-    "Crisis": ("quant_fund.stress.catalog", "Crisis"),
-    "crisis_by_id": ("quant_fund.stress.catalog", "crisis_by_id"),
-    "replay_crisis": ("quant_fund.stress.replay", "replay_crisis"),
-    "replay_portfolio": ("quant_fund.stress.replay", "replay_portfolio"),
-    "build_stress_report": ("quant_fund.stress.report", "build_stress_report"),
-    "render_html": ("quant_fund.stress.report", "render_html"),
-    "render_markdown": ("quant_fund.stress.report", "render_markdown"),
-    "reverse_stress": ("quant_fund.stress.reverse", "reverse_stress"),
-    "worst_linear_scenario": ("quant_fund.stress.reverse", "worst_linear_scenario"),
-    "ResearchStrategy": ("quant_fund.stress.strategy", "ResearchStrategy"),
+    "CRISIS_CATALOG": "catalog",
+    "Crisis": "catalog",
+    "crisis_by_id": "catalog",
+    "replay_crisis": "replay",
+    "replay_portfolio": "replay",
+    "build_stress_report": "report",
+    "render_html": "report",
+    "render_markdown": "report",
+    "reverse_stress": "reverse",
+    "worst_linear_scenario": "reverse",
+    "ResearchStrategy": "strategy",
 }
 
 __all__ = list(_EXPORTS)
 
 
 def __getattr__(name: str) -> Any:
-    target = _EXPORTS.get(name)
-    if target is None:
+    module = _EXPORTS.get(name)
+    if module is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-    module_name, attr = target
-    value = getattr(importlib.import_module(module_name), attr)
+    value = getattr(import_module(f".{module}", __name__), name)
     globals()[name] = value
     return value
+
+
+def __dir__() -> list[str]:
+    return sorted(set(globals()) | set(__all__))

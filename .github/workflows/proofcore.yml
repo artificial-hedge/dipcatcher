@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -64,7 +64,7 @@ jobs:
       PROOFCORE_SIGNING_KEY: ${{ secrets.PROOFCORE_SIGNING_KEY }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -85,7 +85,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -102,25 +102,31 @@ jobs:
           path: leakage-report.json
           if-no-files-found: ignore
 
-  # §9.3 reality-filter: advisory at first (§13 phase 4), then blocking.
-  # The CI trial ledger is exported from the provenance DB; a fresh CI DB has
-  # < 10 trials, whose honest verdict is 'insufficient_evidence' (exit 1) —
-  # that is exactly why this job is advisory until the ledger accumulates.
+  # §9.3 reality-filter. data/metadata/proofcore.duckdb is not in the repo
+  # at HEAD or on main (data/metadata/** is gitignored). Export would create
+  # an empty DB and write 0 rows. `quant reality preflight --db` exits 3
+  # with REALITY_FILTER_SKIP; `make reality-gate` maps that to exit 0. This
+  # step turns the skip line into a notice. A database that has rows is
+  # exported and scored with the unchanged filter and fails the job unless
+  # the verdict is pass. continue-on-error is not used.
   reality-filter:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true # advisory at first (DESIGN.md §9.3/§13 phase 4)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
-      - name: Reality-filter gate (advisory)
-        run: make reality-gate
+      - name: Reality-filter gate
+        run: |
+          make reality-gate | tee "${RUNNER_TEMP:-/tmp}/reality-gate.log"
+          if grep -q '^REALITY_FILTER_SKIP:' "${RUNNER_TEMP:-/tmp}/reality-gate.log"; then
+            echo "::notice title=reality-filter::$(grep -m1 '^REALITY_FILTER_SKIP:' "${RUNNER_TEMP:-/tmp}/reality-gate.log")"
+          fi
 
   # §9.3/§12 coverage floors (A3 #2): per-package gates ADDITIVE to the
   # existing global 80% floor in ci.yml (which is not touched): pit 90,
@@ -131,7 +137,7 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true
@@ -148,7 +154,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: "3.12"
           enable-cache: true

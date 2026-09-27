@@ -7,8 +7,6 @@ from pathlib import Path
 
 import typer
 
-from quant_fund.stress.catalog import CRISIS_CATALOG
-
 stress_app = typer.Typer(
     help="Research stress and scenario engine. Simulation only. Does not submit orders."
 )
@@ -17,6 +15,8 @@ stress_app = typer.Typer(
 @stress_app.command("crises")
 def crises_cmd() -> None:
     """List catalog episodes and whether each one is historical."""
+    from quant_fund.stress.catalog import CRISIS_CATALOG
+
     for crisis in CRISIS_CATALOG:
         kind = "historical" if crisis.historical else "hypothetical"
         print(f"{crisis.crisis_id}\t{kind}\t{crisis.name}")

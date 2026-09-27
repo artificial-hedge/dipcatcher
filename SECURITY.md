@@ -84,8 +84,9 @@ hit unexpected personal data and report it.
   (`.github/workflows/secret-scan.yml`), with `.gitleaks.toml` allowing
   content hashes and the synthetic test canary.
 - GitHub Actions are pinned to full commit SHAs. Workflow tokens are
-  read-only except where a job must upload code-scanning results, mint an
-  OIDC identity, or publish a GitHub Release for a tag the owner pushed.
+  read-only except where a job must upload code-scanning results or mint an
+  OIDC identity. A tag push builds, signs, and attests the distributions and
+  uploads them as workflow artifacts.
 - Checkpoint signatures for a local fx-1 checkout stay on the attestation
   ladder (`fx1 attestation <checkpoint_dir>` before serving). Package
   releases, when a tag is pushed, are signed with Sigstore and carry SLSA

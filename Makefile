@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke
 
 .DEFAULT_GOAL := help
 
@@ -42,6 +42,10 @@ diffbacktest: ## Differentiable backtest (optional JAX extra, CPU)
 
 security: ## Bandit static security analysis on src/
 	uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
+
+audit-obs: ## Audit ledger and observability tests
+	uv run pytest tests/unit/audit tests/unit/observe -q
+	uv run mypy src/quant_fund/audit src/quant_fund/observe
 
 audit: ## Locked-deps vulnerability audit (pip-audit)
 	uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups \
@@ -158,9 +162,15 @@ leakage-scan: ## Leakage hunter — WARN MODE this wave (adjudicated: advisory o
 		echo "tests/leakage_fixtures not present yet (W3 lands separately); skipped"; \
 	fi
 
-reality-gate: ## Reality-filter gate: export trial ledger from provenance DB + ledger-gate
-	uv run quant proofcore export --db $(PROOFCORE_DB) --out $(PROOFCORE_LEDGER)
-	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER)
+reality-gate: ## Reality-filter gate: score trials; absent DB or empty export skips
+	uv run quant reality preflight --db $(PROOFCORE_DB); code=$$?; \
+	if [ $$code -eq 3 ]; then exit 0; fi; \
+	if [ $$code -ne 0 ]; then exit $$code; fi; \
+	uv run quant proofcore export --db $(PROOFCORE_DB) --out $(PROOFCORE_LEDGER); \
+	uv run quant reality preflight --ledger $(PROOFCORE_LEDGER); code=$$?; \
+	if [ $$code -eq 3 ]; then exit 0; fi; \
+	if [ $$code -ne 0 ]; then exit $$code; fi; \
+	uv run quant reality trial-report --ledger $(PROOFCORE_LEDGER) && \
 	uv run quant reality ledger-gate --ledger $(PROOFCORE_LEDGER)
 
 receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending

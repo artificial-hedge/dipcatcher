@@ -552,6 +552,30 @@ jobs:
       - name: Examples gallery
         run: make examples
 
+  audit-observability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Sync
+        run: uv sync --frozen --all-groups
+      - name: Audit ledger and observability tests
+        run: uv run pytest tests/unit/audit tests/unit/observe -q
+      - name: Types for the new packages
+        run: uv run mypy src/quant_fund/audit src/quant_fund/observe
+      - name: Observability config parses
+        run: |
+          uv run python -c "import json, pathlib, yaml; root = pathlib.Path('deploy/observability'); yaml.safe_load((root / 'slo.yml').read_text()); yaml.safe_load((root / 'docker-compose.yml').read_text()); yaml.safe_load((root / 'otel-collector.yaml').read_text()); yaml.safe_load((root / 'prometheus.yml').read_text()); json.loads((root / 'grafana/dashboards/dipcatcher.json').read_text())"
+      - name: Compose config
+        run: docker compose -f deploy/observability/docker-compose.yml config
+
   diffbacktest:
     runs-on: ubuntu-latest
     timeout-minutes: 25
