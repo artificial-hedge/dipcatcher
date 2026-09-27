@@ -19,7 +19,9 @@
 # The example calls `verify_phase1_index` and `verify_phase1_run`, the same path as
 # `dipcatcher verify-research`. A runtime mismatch against the sealing interpreter
 # is reported and does not by itself fail the summary. Any other verifier error
-# fails the example. Passing verification does not authorize live trading.
+# fails the example. If the derived US snapshot is not in this checkout, the
+# example skips instead of treating a missing file as a failed seal.
+# Passing verification does not authorize live trading.
 
 # %%
 from __future__ import annotations
@@ -136,6 +138,16 @@ def _summarize_run(index_dir: Path, entry: dict[str, object], number: int) -> No
 
 
 def main() -> None:
+    print("verifier=phase1_evidence_index")
+    print("data_label=tracked_real_snapshot")
+    print("claim=research_only")
+    print("not_investment_advice=true")
+    print("no_live_trading_claim=true")
+    print("verification_authorizes_live_trading=false")
+    snapshot = ROOT / "data" / "file_us_wide" / "bronze" / "bars.parquet"
+    if not snapshot.is_file():
+        print(f"SKIP: tracked real US snapshot absent ({snapshot})")
+        return
     if not INDEX_PATH.is_file():
         raise SystemExit(f"phase-1 evidence index is absent: {INDEX_PATH}")
     index = _load_object(INDEX_PATH)
@@ -143,12 +155,6 @@ def main() -> None:
     errors = _errors(verified)
     seal_errors = [error for error in errors if _RUNTIME_NOTE not in error]
     runtime_errors = [error for error in errors if _RUNTIME_NOTE in error]
-    print("verifier=phase1_evidence_index")
-    print("data_label=tracked_real_snapshot")
-    print("claim=research_only")
-    print("not_investment_advice=true")
-    print("no_live_trading_claim=true")
-    print("verification_authorizes_live_trading=false")
     print(f"index_kind={index.get('kind')}")
     print(f"index_valid={_flag(verified.get('valid'))}")
     print(f"runtime_errors={len(runtime_errors)}")
