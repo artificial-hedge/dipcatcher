@@ -1,3 +1,23 @@
+# Doubled-path mirror trees (src/src, tests/tests, ...).
+# An external process periodically recreates these as full copies of src/ and
+# tests/. They break repo-wide ripgrep/ruff walks because the in-flight copies
+# hold exclusive file locks, and they double-count audits and pytest collection.
+# Ignored so tooling skips them. NOTE: scripts/scripts and configs/configs are
+# TRACKED duplicates and must be removed with `git rm`, not by ignoring them.
+/src/src/
+/tests/tests/
+/clients/clients/
+/deploy/deploy/
+/docker/docker/
+/examples/examples/
+/notebooks/notebooks/
+/quality/quality/
+/research/research/
+/spec/spec/
+/typings/typings/
+/verifier/verifier/
+/web/web/
+
 .venv/
 .venv-*/
 __pycache__/
