@@ -1,6 +1,19 @@
 inherit: base.yaml
 runtime:
   mode: research
+# Ported 2026-09-28 from the tracked duplicate configs/configs/research.yaml,
+# which held unique content present in no revision of this file (introduced by
+# 621023e on top of 811dffc's leftover-tree commit). Conflicting values in that
+# copy (lookback 64, sample_count 8, decoder: markov) were deliberately NOT
+# ported - the outer/base.yaml values stay authoritative pending an owner call.
+universe:
+  min_price: 5.0
+  min_adv: 100000.0
+  min_history_bars: 60
+  top_n_adv: 50
+features:
+  winsor_p: 0.01
+  ewma_lambda: 0.94
 data:
   source: synthetic
   synthetic_n_assets: 36
@@ -20,10 +33,21 @@ validation:
 # it beats ridge on the causal SYNTHETIC card (date IC / pinball / CRPS / DM).
 robinhood_plus:
   enabled: true
+  backend: numpy
   lookback: 32
   pred_len: 5
   sample_count: 4
   blend_weight: 0.0
+  s1_bits: 5
+  s2_bits: 5
+  allow_network: false
+  clip: 5.0
+  temperature: 1.0
+  top_p: 0.9
+  max_context: 512
+  # `decoder` intentionally NOT set here: base.yaml declares
+  # `decoder: hierarchical_markov` and the nested copy's `markov` value
+  # conflicts. Owner decision required before overriding.
 # Transparent fusion on; learned fusion remains off (ADR). Interval caps on.
 fusion:
   alpha_weight: 1.0
