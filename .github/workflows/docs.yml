@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Additive merge-queue trigger (docs/SOTA/16-ci-cd.md §4.1). The Pages deploy
+  # job stays `push`-only, so a queued merge builds the site without deploying.
+  merge_group:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

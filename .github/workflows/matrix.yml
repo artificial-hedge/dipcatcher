@@ -18,6 +18,11 @@ name: Platform Matrix
 on:
   pull_request:
     branches: [main]
+  # Additive merge-queue trigger (docs/SOTA/16-ci-cd.md §4.1). Fires only once
+  # a queue is enabled; the header note that this lane never gates ci.yml jobs
+  # is unchanged — the queue simply runs it too.
+  merge_group:
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:

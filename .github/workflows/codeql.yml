@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Additive merge-queue trigger (docs/SOTA/16-ci-cd.md §4.1) so this can be a
+  # required check without another workflow change. No job here is
+  # event-guarded, so a queued merge analyses the same tree a PR would.
+  merge_group:
+    branches: [main]
   schedule:
     - cron: "17 6 * * 1"
 

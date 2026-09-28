@@ -1,0 +1,89 @@
+# Composite uv bootstrap — the single pin site for astral-sh/setup-uv.
+#
+# Why this exists: docs/SOTA/16-ci-cd.md (G2/G5) found the
+# "setup-uv -> uv sync" preamble copy-pasted 35x across 11 workflows, and the
+# copies had already drifted — atlas.yml pinned setup-uv v5 while every other
+# workflow pinned v10.2.0. Routing call sites through this composite leaves
+# exactly one SHA to bump and one sync policy to reason about.
+#
+# Contract
+#   * Checkout-free. The caller checks out first and MUST pass
+#     `persist-credentials: false` to actions/checkout (least privilege; this
+#     is what zizmor's `artipacked` audit asks for). See the migrated
+#     workflows for the exact shape.
+#   * Installs the locked environment with `uv sync --frozen`, matching
+#     AGENTS.md ("CI parity | .github/workflows/ci.yml + fx1.yml use
+#     `uv sync --frozen`") and `make sync`. Do NOT switch this to `--locked`:
+#     the standalone `uv lock --check` gate in ci.yml's audit job and in
+#     docs.yml is what catches a stale lock, and `--frozen` keeps installs
+#     working when pyproject.toml is mid-flight.
+#   * `sync-args` is expanded into a shell command line, so it must be literal
+#     workflow-file text — never an event- or user-controlled expression.
+#   * Repo-root anchored: the sync step pins
+#     `working-directory: ${{ github.workspace }}`, so callers that set
+#     `defaults.run.working-directory` for another purpose (web_explorer.yml
+#     and replay_viz.yml do this for npm) get the same behaviour.
+name: uv-setup
+description: >-
+  Checkout-free uv bootstrap: installs the SHA-pinned astral-sh/setup-uv,
+  restores the dependency cache, and installs the locked environment with
+  `uv sync --frozen`. Callers must run actions/checkout (with
+  persist-credentials: false) before this step.
+
+inputs:
+  python-version:
+    description: CPython version handed to astral-sh/setup-uv.
+    required: false
+    default: "3.12"
+  sync-args:
+    description: >-
+      Extra flags appended to `uv sync --frozen` (e.g. "--all-groups",
+      "--only-group docs", "--group dev --extra jax"). Literal text only.
+    required: false
+    default: "--all-groups --all-extras"
+  enable-cache:
+    description: Passed through to setup-uv (auto | true | false).
+    required: false
+    default: "true"
+  cache-dependency-glob:
+    description: Glob whose hash invalidates the uv dependency cache.
+    required: false
+    default: "uv.lock"
+  cache-suffix:
+    description: >-
+      Disambiguates cache keys for jobs that share uv.lock but resolve it
+      differently (e.g. "py3.13-shard2", "group-dev", "extra-jax"), so the
+      first uploader does not win the key for everyone. Empty (the default)
+      keeps the unsuffixed key the existing call sites use today.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up uv
+      # SINGLE PIN SITE. Bump this SHA (and its version comment) here and
+      # nowhere else; Dependabot's github-actions entry updates it.
+      uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        enable-cache: ${{ inputs.enable-cache }}
+        cache-dependency-glob: ${{ inputs.cache-dependency-glob }}
+        cache-suffix: ${{ inputs.cache-suffix }}
+    - name: Sync locked environment
+      shell: bash
+      # Pinned explicitly so the sync always runs at the repo root: some
+      # callers set `defaults.run.working-directory` for npm lanes
+      # (web_explorer.yml, replay_viz.yml), and pinning here keeps the result
+      # the same whether or not that default is inherited into composite run
+      # steps. setup-uv's own `working-directory` input already defaults to
+      # the workspace.
+      working-directory: ${{ github.workspace }}
+      env:
+        # env indirection rather than `${{ }}` inside the script body: the
+        # command line stays free of expression interpolation.
+        UV_SYNC_ARGS: ${{ inputs.sync-args }}
+      run: |
+        set -euo pipefail
+        # Word-splitting of UV_SYNC_ARGS is intentional (it is a flag list).
+        uv sync --frozen ${UV_SYNC_ARGS}

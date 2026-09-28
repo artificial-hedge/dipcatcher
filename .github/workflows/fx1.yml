@@ -4,6 +4,11 @@ on:
   push:
     branches: [main, 'fx-1/**']
   pull_request:
+  # Required checks must also be reported on merge_group so a merge queue can
+  # gate on the fx1 lane without another workflow change
+  # (docs/SOTA/16-ci-cd.md §4.1). Additive: fires only once a queue exists.
+  merge_group:
+    branches: [main]
 
 # Least privilege. This workflow only reads the repo and runs tests.
 permissions:

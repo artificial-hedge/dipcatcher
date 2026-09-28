@@ -10,6 +10,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Additive merge-queue trigger (docs/SOTA/16-ci-cd.md §4.1).
+  merge_group:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,13 +29,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+      # Routes through the composite so the setup-uv pin lives in exactly one
+      # place (.github/actions/uv-setup/action.yml). This replaces the drifted
+      # `astral-sh/setup-uv@… # v5` pin with the repo-majority v10.2.0 — see
+      # docs/SOTA/16-ci-cd.md finding G2.
+      - uses: ./.github/actions/uv-setup
         with:
           python-version: "3.12"
-          enable-cache: true
-          cache-dependency-glob: uv.lock
-      - name: Sync
-        run: uv sync --frozen --all-groups
+          sync-args: "--all-groups"
       - name: Architecture diagrams fresh
         run: uv run --frozen python scripts/gen_arch_diagrams.py --check
       - name: Atlas unit tests

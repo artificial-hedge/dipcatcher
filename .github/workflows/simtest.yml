@@ -32,6 +32,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only lane: no git push, so the token is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -52,6 +55,9 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only lane: no git push, so the token is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -62,4 +68,17 @@ jobs:
       - name: Large swarm
         env:
           MLFLOW_DISABLE_AGENT_HINT: "1"
-        run: uv run python scripts/simtest_swarm.py --seeds ${{ inputs.seeds }} --days ${{ inputs.days }} --base-seed ${{ inputs.base_seed }}
+          # Dispatch inputs reach the script through env vars, never through
+          # expression interpolation inside `run:` (script-injection
+          # hardening — docs/SOTA/18-security.md F3). workflow_dispatch needs
+          # write access, so this is defense-in-depth, but the indirection is
+          # free and keeps the repo grep-clean for `${{ }}` in run blocks.
+          SIMTEST_SEEDS: ${{ inputs.seeds }}
+          SIMTEST_DAYS: ${{ inputs.days }}
+          SIMTEST_BASE_SEED: ${{ inputs.base_seed }}
+        run: |
+          set -euo pipefail
+          uv run python scripts/simtest_swarm.py \
+            --seeds "${SIMTEST_SEEDS:-4000}" \
+            --days "${SIMTEST_DAYS:-8}" \
+            --base-seed "${SIMTEST_BASE_SEED:-0}"

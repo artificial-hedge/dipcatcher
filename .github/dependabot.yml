@@ -42,3 +42,42 @@ updates:
       actions:
         patterns:
           - "*"
+  # --- JS/TS supply chain (docs/SOTA/18-security.md F4) -------------------
+  # Both trees commit a package-lock.json and install with `npm ci` in CI
+  # (web_explorer.yml, replay_viz.yml), so Dependabot can propose
+  # lockfile-respecting bumps. Grouping matches the existing convention so a
+  # weekly run opens one PR per tree instead of a dozen.
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      web-tooling:
+        patterns:
+          - "*"
+  - package-ecosystem: npm
+    directory: /replay
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      replay-tooling:
+        patterns:
+          - "*"
+  # --- Rust supply chain --------------------------------------------------
+  # rust/quant_core commits Cargo.lock and ci.yml's rust-accel job builds it
+  # with `cargo clippy --locked`. Not covered by the uv/pip ecosystems, so
+  # crate bumps had no update path at all until now.
+  - package-ecosystem: cargo
+    directory: /rust/quant_core
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      rust-crates:
+        patterns:
+          - "*"

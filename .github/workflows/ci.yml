@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main, p1/historical-receipts-20260925]
+  # Required checks must be reported on the merge_group event too, otherwise a
+  # merge queue cannot gate on them. Purely additive: this fires only once a
+  # queue is enabled (docs/SOTA/16-ci-cd.md §4.1). The `package` job still
+  # attests only on `push`, and the test job keeps the PR "fast" suite because
+  # neither `schedule` nor `workflow_dispatch` matches a merge_group run.
+  merge_group:
+    branches: [main]
   schedule:
     # Full offline suite, including tests marked slow. PR runs stay on the fast subset.
     - cron: "17 6 * * *"
@@ -190,13 +197,18 @@ jobs:
       - name: Sync
         run: uv sync --frozen --all-groups --all-extras
       - name: Pytest
+        env:
+          # `inputs.suite` is a closed-set choice (full|fast), but routing it
+          # through env keeps dispatch inputs out of the `run:` body entirely
+          # (docs/SOTA/18-security.md F3).
+          DISPATCH_SUITE: ${{ inputs.suite }}
         run: |
           set -euo pipefail
           suite="fast"
           if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
             suite="full"
           elif [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            suite="${{ inputs.suite }}"
+            suite="${DISPATCH_SUITE:-full}"
           fi
           if [ "$suite" = "full" ]; then
             marker='not network'
@@ -246,6 +258,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only job: no git push, so GITHUB_TOKEN is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -445,6 +460,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only job: no git push, so GITHUB_TOKEN is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -516,7 +534,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only job: no git push, so GITHUB_TOKEN is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -636,6 +657,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only job: no git push, so GITHUB_TOKEN is not persisted.
+          persist-credentials: false
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -657,6 +681,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only job: no git push, so GITHUB_TOKEN is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
@@ -680,6 +707,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Read-only job: no git push, so GITHUB_TOKEN is not persisted.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           python-version: "3.12"
