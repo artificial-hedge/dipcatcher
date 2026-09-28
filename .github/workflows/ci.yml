@@ -116,7 +116,7 @@ jobs:
         # Main pushes only: fork PRs cannot mint id-tokens, and provenance
         # matters at release boundaries, not per-PR.
         if: github.event_name == 'push'
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.0.0
         with:
           subject-path: |
             dist/*.whl
@@ -174,14 +174,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
       - name: Cache pip downloads
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pip
           key: pip-${{ runner.os }}-py${{ matrix.python }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             pip-${{ runner.os }}-py${{ matrix.python }}-
       - name: Cache synthetic lakes and Northset benches
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/dipcatcher
           key: dipcatcher-session-${{ runner.os }}-py${{ matrix.python }}-${{ hashFiles('src/quant_fund/**/*.py') }}
