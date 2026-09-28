@@ -45,6 +45,12 @@ layout.
         └──────────────────────────────────────────────────┘
 ```
 
+> **Status note (training box).** The diagram lists components, not wired
+> stages. In the shipped `fx1.train.pipeline`, the `card` stage has **no
+> runner** (`Stage.CARD` enum only), and `curriculum` / `experiment tracking`
+> exist as modules + CLI commands but are **not invoked by the pipeline**.
+> See the capability-status table in `docs/FX1_TRAINING.md`.
+
 ## Trust flow (what an auditor should trace)
 
 No step below has produced a checkpoint in this repository. The sequence is
@@ -59,6 +65,12 @@ the plan the package encodes.
    card whose eval deltas beat the base statistically (bootstrap CI +
    McNemar) and whose honesty gate passed natively, plus a signed release
    and optional TEE/zkML attestation.
+   > **Status: PARTIAL / PLANNED.** The comparison machinery ships
+   > (`fx1.eval.compare`, invoked by `run_eval_candidate`), but the pipeline
+   > does **not** enforce the comparison, has **no refusal-rate floor**, and
+   > produces no model card (`Stage.CARD` has no `run_card`; cards come only
+   > from the `fx1 modelcard` CLI). See `docs/FX1_TRAINING.md` capability
+   > table.
 4. **Served answer** → the serve path is specified to validate honesty and
    attach provenance. Refusal behavior is specified as DPO pairs and
    red-team cases. Local generation is unimplemented.

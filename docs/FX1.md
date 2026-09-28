@@ -13,7 +13,10 @@ shows the registered lab surfaces.
 ## What the plumbing enforces
 
 The table is the corpus and eval contract. It is a plan for a future training
-run, and a record of what the package checks today.
+run, and a record of what the package checks today. Not every training
+capability implied elsewhere in these docs is wired — `docs/FX1_TRAINING.md`
+carries the authoritative **Capability status** table (SHIPPED / PARTIAL /
+PLANNED with code locations); consult it before relying on a pipeline claim.
 
 | Property | General LLM | fx-1 plan |
 |---|---|---|

@@ -36,6 +36,11 @@ Then: `fx1 sources list` → `fx1 sources describe wind` →
   contamination audit, statistical ship gate.
 - **Training**: LoRA ladder, DPO pairs, immutable receipts, cluster specs,
   six-stage gated pipeline, tracking, curriculum.
+  *Drift caveat:* only five of the six stages have runners — `card` is an enum
+  member with no `run_card`; `tracking` and `curriculum` ship as modules + CLI
+  commands but are never invoked by the pipeline; the ship-gate comparison is
+  computed but not enforced (no refusal floor, domain-only). Details in
+  `docs/FX1_TRAINING.md` → *Capability status*.
 - **Model**: versioned cards with ship gate, hosted-K3 + local backends.
 - **Bench**: Dip Quality Score flagship.
 - **Reward**: deterministic auditable reward model.
