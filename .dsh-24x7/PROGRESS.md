@@ -1,10 +1,10 @@
 # 24x7 progress
 
-## Current status — 2026-09-21
+## Current status — 2026-09-23
 
 - Goal remains active: continue until both proof bars are honestly proven.
 - `## Industry-grade`: **UNPROVEN**. The repository has strong research/infrastructure controls, but no licensed PIT vendor release/ingestion evidence, authenticated broker/API or FIX order/fill reconciliation, venue-specific TCA/liquidity/borrow/financing/failure measurements, independently measured production SLO/RTO/RPO, signed live authorization, or GIPS-verified performance record.
-- `## SOTA`: **UNPROVEN**. Current local outputs are synthetic or paper-shadow diagnostics and are not comparable to published real-market or production benchmarks. No apples-to-apples real-data rerun against DeepLOB, Chronos, TimesFM, Moirai/Uni2TS, or a realized-volatility benchmark has been completed.
+- `## SOTA`: **UNPROVEN**. The repository now contains a Binance-based chronological evaluation fleet and independent finalization checks, but the current receipts remain diagnostic: scoring contracts are `legacy_unverified`, the four-hour group is incomplete (`1087/1500`), and no universal SOTA or production claim is permitted. A proof-grade rerun against current published baselines still requires verified scoring, complete rows, cost/liquidity treatment, and independently reproducible evidence.
 
 ## Verified local quality evidence
 
@@ -13,6 +13,11 @@
   `.venv\\Scripts\\ruff.exe check src tests\\unit tests\\property tests\\regression tests\\end_to_end`
   Output: `All checks passed!`
 - Changed-area regression command passed: 128 tests passed, with one existing Starlette/httpx deprecation warning. The focused RGARCH gate file now passes all 10 tests, including causal overlay source precedence and rejection accounting.
+- Research-only CLI verification passed: the Lightspeed/holdout/quant-model focused tests, CLI smoke/API/banner/policy tests, Ruff, mypy, compilation, and `git diff --check` all pass. The new `ls` and `qm` surfaces remain explicitly non-live and broker-free.
+- Focused safety verification passed: backtest engine, risk-gate, GARCH/RGARCH, corporate-action, and synthetic end-to-end tests all pass.
+- Focused receipt `.dsh-24x7/receipts/focused-20260923.txt` passes all selected CLI, backtest, risk, GARCH/RGARCH, corporate-action, and synthetic E2E tests (`EXIT_CODE=0`), with only existing dependency deprecation warnings.
+- Fresh canonical pytest completed successfully from `.venv\Scripts\python.exe -m pytest -q --tb=short`: 3,742 tests passed, 0 failed, exit code 0, elapsed 2,524 seconds. The receipt is `.dsh-24x7/receipts/pytest-current.txt`; it records the 100% progress line, dependency/model warnings, `EXIT_CODE=0`, and `ELAPSED_SECONDS=2524`.
+- Post-repair CLI portability smoke passed under both UTF-8 and the legacy Windows charmap stream: `quant_fund.cli.main --help` exited 0 in both modes. The user-facing CLI header and Kyle diagnostic labels are ASCII-safe; research semantics are unchanged.
 - Reproducible paper-loop command completed successfully:
   `.venv\\Scripts\\python.exe scripts\\benchmark_paper_loop.py --steps 40 --assets 12 --output .dsh-24x7\\benchmark-paper-loop.json`
   Captured output: 40 steps, 1.552208 seconds, 25.7697 steps/sec, 960 orders, 40 equity rows, 480 position rows, 480 cash-ledger rows, broker state step 40, ledger schema valid. The report explicitly records `source=synthetic`, `simulated_only`, `live_pnl_claim=false`, and no matched incumbent workload.
@@ -35,7 +40,7 @@
 
 ## Next executable steps
 
-1. Collect the active canonical non-network pytest output from job `pwsh-20` and repair any real failures.
+1. Run or collect a current canonical non-network pytest receipt, checking for overlapping pytest processes first; repair only confirmed failures.
 2. Apply and verify the remaining mypy fixes without weakening fail-closed behavior.
 3. Run the existing real-data-independent benchmark/protocol checks and capture artifacts, clearly marked diagnostic-only.
 4. Inspect benchmark and production-readiness gaps; do not create `PROOF.md` with `STATUS: PROVEN` unless each bar has live URLs plus captured comparable command output and the required external evidence.
@@ -44,6 +49,21 @@
 
 A second evaluation fleet completed in `.dsh-24x7\eval-full\`: 11 daily assets x 300 origins + 5 4h assets (complete-case, `dip_student_t` excluded — its `scipy.stats.t.fit` fails on flat 4h windows) + Kronos seed-robustness runs (seeds 11/23). Published targets scored zero-shot: kronos_small (canonical `Kronos-Tokenizer-base` pairing via `d1fix_*`/`h4fix_*` rerun, spliced into `*.fixed.npz`), chronos2, bolt_small, timesfm. Challengers: 10 dip_* forecasters incl. garch_t, fhs, ewma_emp, lgbm_q, blend.
 
-Merged receipts: `d1_merged.json` (3300 origins), `h4_merged.json` (1500 origins). All four targets are excluded from the MCS at alpha=0.10 at both horizons; MCS retains only `dip_garch_t` + `dip_fhs`. SPA p_lower/p_cons = 0.0005 per target; p_upper ~0.46-0.51 disclosed. This directly addresses the "SOTA blocked by missing apples-to-apples real-market evaluations" item — real Binance data, fixed causal protocol, proper scores, captured receipts + raw loss matrices (inference rerunnable via `--merge-parts` without models).
+Merged receipts: `d1_merged.json` (3300 origins), `h4_merged.json` (1500 origins). All four targets are excluded from the MCS at alpha=0.10 at both horizons; MCS retains only `dip_garch_t` + `dip_fhs`. SPA p_lower/p_cons = 0.0005 per target; p_upper ~0.46-0.51 disclosed. These are real-Binance diagnostic outputs with fixed causal protocol, captured receipts, and raw loss matrices (inference rerunnable via `--merge-parts` without models); the independent finalization verifier still reports `diagnostic_only`, `proof_eligible=false`, `legacy_unverified` scoring, and incomplete four-hour rows, so no universal SOTA claim is permitted.
 
 Ops note: `Start-Process` children spawned from a session-0 (WMI/schtasks) parent hang at 1 thread/0 CPU on this box; spawn workers via `Invoke-CimMethod Win32_Process Create` with a `cmd /c ... > log 2> err` wrapper (see `scripts\spawn_staggered.ps1`). ssh-session process trees die on session teardown.
+
+## 2026-09-23 finalizer fail-closed hardening
+- `scripts/finalize_sota.ps1` now treats `-VerifyOnly` as strictly read-only: it requires `manifest.json`, invokes `scripts/verify_sota_finalization.py`, propagates a nonzero verifier exit, and never rewrites the run. A captured SHA256 before/after check proved `finalizer-20260923-a/manifest.json` unchanged.
+- The finalizer now rejects unsafe/reserved `RunId` values, validates Python `--version` exit/status, records canonical argv text, uses BOM-free atomic JSON/transcript publication, and writes a durable `status=failed`/`proof_status=UNPROVEN` manifest for failures after run creation.
+- Checks passed: PowerShell parser `PARSE_OK`; `.venv/Scripts/python.exe -m pytest -q tests/unit/test_sota_finalization_verifier.py tests/regression/test_docs_catalog_consistency.py` => `13 passed`; `VerifyOnly` => exit `0`, independent verifier `valid=true`, `classification=diagnostic_only`, `proof_eligible=false`.
+- Superseded audit note: the current independent verifier checks receipt schema/provenance, NPZ structure, run-directory artifact containment, shard containment, symlink/reparse aliases, transcript command/exit binding, source-path hashes, repository/input/run layout, and duplicate group names. The finalizer requires receipt/loss files, checks its four-group allowlist, and invokes the verifier before success. These local checks are not proof; both bars remain `UNPROVEN` and `.dsh-24x7/PROOF.md` remains absent.
+
+- Failure-path regression corrected a nested PowerShell error-binding defect in the fallback writer. Empty-input finalizer run exits `1` and publishes a durable failed manifest with the expected group and missing-shard error; proof bars remain `UNPROVEN`.
+
+
+## 2026-09-24 independent finalization verification
+
+- Current focused verifier suite: 19 passed using `.venv/Scripts/python.exe -m pytest tests/unit/test_sota_finalization_verifier.py -q -rA`. The earlier receipt contains only terse dot output; capture a detailed fresh receipt before relying on it.
+- This local evidence verifies the independent manifest-verifier regression suite only. Both bars remain `UNPROVEN`; `.dsh-24x7/PROOF.md` remains absent.
+- Next: exercise post-verification failure persistence end-to-end and retain the exact error/output; continue independent matched incumbent and SOTA evidence work without relabeling diagnostic receipts.

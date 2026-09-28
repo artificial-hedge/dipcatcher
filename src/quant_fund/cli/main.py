@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import typer
 
+from quant_fund.cli.research import ls_app, qm_app
 from quant_fund.config import dump_resolved, load_config
 from quant_fund.hmm.cli import hmm_app
 from quant_fund.pipeline.doctor import doctor as run_doctor
@@ -42,11 +44,13 @@ def format_fdr_families(hypotheses: list) -> str:
 
 
 app = typer.Typer(
-    help="Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is research, never live."
+    help="Dipcatcher - Artificial Hedge's proprietary research lab. Default mode is research, never live."
 )
 train_app = typer.Typer(help="Train a forecast family.")
 app.add_typer(train_app, name="train")
 app.add_typer(hmm_app, name="hmm")
+app.add_typer(ls_app, name="ls")
+app.add_typer(qm_app, name="qm")
 
 
 def _cfg(config: Path):
@@ -61,10 +65,11 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     info = run_doctor(str(config))
     for k, v in info.items():
         typer.echo(f"{k}: {v}")
+    typer.echo("research surfaces: hunt|book|race|confirm (research-only; not live)")
     # Research-only Kyle/OFI dump path (CLI hint; not a live gate).
     typer.echo(
         "kyle_ofi: dipcatcher kyle-ofi --dump-lambda-series PATH "
-        "(research_only λ date-series parquet; no Sharpe/pnl)"
+        "(research_only lambda date-series parquet; no Sharpe/pnl)"
     )
     typer.echo(
         "verify-research: runs northset_session_means_honesty_errors "
@@ -632,14 +637,14 @@ def kyle_ofi(
     dump_lambda_series: Path | None = typer.Option(
         None,
         "--dump-lambda-series",
-        help="Write research_only Kyle λ date-series parquet (depth+ofi rows; claim=research_diagnostic_only; never Sharpe/pnl)",
+        help="Write research_only Kyle lambda date-series parquet (depth+ofi rows; claim=research_diagnostic_only; never Sharpe/pnl)",
     ),
 ) -> None:
-    """Kyle λ / OFI→Δmid research diagnostics (date-level IC + HAC).
+    """Kyle lambda / OFI-to-dmid research diagnostics (date-level IC + HAC).
 
     Default: SYNTHETIC bars + SYNTHETIC L2. With ``--book``, fuses external/
     vendor-mapped panels (research-only). Stamps book_source / book_dgp.
-    Optional ``--dump-lambda-series`` writes a research_only λ panel parquet.
+    Optional ``--dump-lambda-series`` writes a research_only lambda panel parquet.
     """
     import polars as pl
 
@@ -731,7 +736,7 @@ def kyle_ofi(
     synthetic = str(receipt.get("book_dgp", "")).startswith("synthetic")
     typer.echo(format_data_label(synthetic=synthetic, data_source=str(receipt.get("data_source"))))
     typer.echo("SYNTHETIC" if synthetic else str(receipt.get("book_source")))
-    typer.echo("kyle_ofi — Kyle λ / OFI→Δmid research (date-level IC + HAC)")
+    typer.echo("kyle_ofi - Kyle lambda / OFI-to-dmid research (date-level IC + HAC)")
     typer.echo(
         f"n_fused={receipt['n_fused']} n_scored={receipt['n_scored']} "
         f"book_source={receipt.get('book_source')} book_dgp={receipt.get('book_dgp')} "
@@ -1626,5 +1631,14 @@ def monitor(
         raise typer.Exit(1)
 
 
+def _configure_cli_streams() -> None:
+    """Prevent legacy Windows code pages from crashing CLI help/output."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="replace")
+
+
 if __name__ == "__main__":
+    _configure_cli_streams()
     app()

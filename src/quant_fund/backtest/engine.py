@@ -440,8 +440,8 @@ def run_backtest(
 
 def _build_result(
     *,
-    navs: list[dict],
-    fill_rows: list[dict],
+    navs: list[dict] | pl.DataFrame,
+    fill_rows: list[dict] | pl.DataFrame,
     cost_sum: dict[str, float],
     reject_count: int,
     cash_reject_count: int,
@@ -453,16 +453,22 @@ def _build_result(
     """Shared metrics/output tail for ``run_backtest`` and the fast replay path."""
     # Column-oriented construction: pl.DataFrame(list-of-dicts) goes through
     # the slow from_dicts marshalling path; transposing to per-column lists is
-    # several times faster and produces an identical frame.
+    # several times faster and produces an identical frame. Callers that
+    # already hold column data (the compiled replay kernel) may pass a
+    # ready-built DataFrame with the same columns/dtypes.
     eq = (
-        pl.DataFrame({k: [r[k] for r in navs] for k in navs[0]})
-        if navs
-        else pl.DataFrame({"event_time": [], "nav": []})
+        navs
+        if isinstance(navs, pl.DataFrame)
+        else (
+            pl.DataFrame({k: [r[k] for r in navs] for k in navs[0]})
+            if navs
+            else pl.DataFrame({"event_time": [], "nav": []})
+        )
     )
     fills_df = (
-        pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]})
-        if fill_rows
-        else pl.DataFrame()
+        fill_rows
+        if isinstance(fill_rows, pl.DataFrame)
+        else (pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]}) if fill_rows else pl.DataFrame())
     )
     is_summary: dict[str, object] | None = None
     if fills_df.height:
