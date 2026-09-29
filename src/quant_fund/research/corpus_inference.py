@@ -163,6 +163,7 @@ def corpus_audit(
     receipt_files = sorted(p for p in root.glob(glob) if p.is_file())
     errors: list[dict[str, str]] = []
     digests: dict[str, str] = {}
+    input_labels: dict[str, str] = {}
     for path in receipt_files:
         try:
             raw = path.read_bytes()
@@ -170,6 +171,9 @@ def corpus_audit(
             doc = json.loads(raw)
             if not isinstance(doc, Mapping):
                 raise ValueError("receipt root is not an object")
+            body = doc.get("payload")
+            inner = body if isinstance(body, Mapping) else doc
+            input_labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
             findings.extend(harvest_findings(doc, path.name))
         except Exception as exc:  # noqa: BLE001 — errors are recorded, never skipped
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
@@ -188,15 +192,22 @@ def corpus_audit(
 
     surviving = [f for f in p_findings if f.get("survives_fdr")]
     inputs_sha256 = hash_bytes(canonical_json_bytes({"digests": digests, "q": q}))
+    distinct_labels = set(input_labels.values())
+    if len(distinct_labels) == 1:
+        data_label = distinct_labels.pop()
+    elif distinct_labels:
+        data_label = "MIXED"
+    else:
+        data_label = "UNKNOWN"
     return {
         "kind": CORPUS_SCHEMA,
         "schema": CORPUS_SCHEMA,
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "research_only": True,
         "live_pnl_claim": False,
         "generated_at_commit": git_revision(),
         "inputs_sha256": inputs_sha256,
-        "params": {"q": q, "glob": glob},
+        "params": {"q": q, "glob": glob, "input_labels": input_labels},
         "n_receipts": len(receipt_files),
         "n_parse_errors": len(errors),
         "parse_errors": errors,
