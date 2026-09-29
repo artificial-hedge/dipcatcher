@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 789,
+  "module_count": 790,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -2287,6 +2287,10 @@
       "src": "quant_fund.hedge_lab"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.hedge_lab._receipt"
+    },
+    {
       "dst": "quant_fund.hedge_lab.scoreboard",
       "src": "quant_fund.hedge_lab.directional"
     },
@@ -2296,6 +2300,10 @@
     },
     {
       "dst": "quant_fund.config",
+      "src": "quant_fund.hedge_lab.gated_race"
+    },
+    {
+      "dst": "quant_fund.hedge_lab._receipt",
       "src": "quant_fund.hedge_lab.gated_race"
     },
     {
@@ -2352,6 +2360,10 @@
     },
     {
       "dst": "quant_fund.config",
+      "src": "quant_fund.hedge_lab.lightspeed_book"
+    },
+    {
+      "dst": "quant_fund.hedge_lab._receipt",
       "src": "quant_fund.hedge_lab.lightspeed_book"
     },
     {
@@ -2419,6 +2431,10 @@
       "src": "quant_fund.hedge_lab.mirror"
     },
     {
+      "dst": "quant_fund.hedge_lab._receipt",
+      "src": "quant_fund.hedge_lab.mirror"
+    },
+    {
       "dst": "quant_fund.hedge_lab.scoreboard",
       "src": "quant_fund.hedge_lab.mirror"
     },
@@ -2464,6 +2480,10 @@
     },
     {
       "dst": "quant_fund.data.lake",
+      "src": "quant_fund.hedge_lab.runner"
+    },
+    {
+      "dst": "quant_fund.hedge_lab._receipt",
       "src": "quant_fund.hedge_lab.runner"
     },
     {
@@ -2547,6 +2567,10 @@
       "src": "quant_fund.hedge_lab.tape"
     },
     {
+      "dst": "quant_fund.hedge_lab._receipt",
+      "src": "quant_fund.hedge_lab.target_hunt"
+    },
+    {
       "dst": "quant_fund.hedge_lab.directional",
       "src": "quant_fund.hedge_lab.target_hunt"
     },
@@ -2584,6 +2608,10 @@
     },
     {
       "dst": "quant_fund.config",
+      "src": "quant_fund.hedge_lab.v2_slate"
+    },
+    {
+      "dst": "quant_fund.hedge_lab._receipt",
       "src": "quant_fund.hedge_lab.v2_slate"
     },
     {
@@ -7111,6 +7139,10 @@
       "src": "quant_fund.research.receipt_schema"
     },
     {
+      "dst": "quant_fund.hedge_lab._receipt",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
       "dst": "quant_fund.paper.sim_live",
       "src": "quant_fund.research.receipt_v2"
     },
@@ -8068,6 +8100,7 @@
     "quant_fund.fusion",
     "quant_fund.fusion.engine",
     "quant_fund.hedge_lab",
+    "quant_fund.hedge_lab._receipt",
     "quant_fund.hedge_lab.char_books",
     "quant_fund.hedge_lab.directional",
     "quant_fund.hedge_lab.gated_race",
@@ -9303,7 +9336,7 @@
     },
     {
       "dst": "quant_fund.hedge_lab",
-      "imports": 32,
+      "imports": 38,
       "src": "quant_fund.hedge_lab"
     },
     {
@@ -9348,7 +9381,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 5,
+      "imports": 6,
       "src": "quant_fund.hedge_lab"
     },
     {
@@ -10059,6 +10092,11 @@
     {
       "dst": "quant_fund.execution",
       "imports": 3,
+      "src": "quant_fund.research"
+    },
+    {
+      "dst": "quant_fund.hedge_lab",
+      "imports": 1,
       "src": "quant_fund.research"
     },
     {

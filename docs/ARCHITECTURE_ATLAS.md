@@ -252,7 +252,7 @@ flowchart LR
   quant_fund_hedge_lab -->|1| quant_fund_reality
   quant_fund_hedge_lab -->|6| quant_fund_research
   quant_fund_hedge_lab -->|5| quant_fund_risk
-  quant_fund_hedge_lab -->|5| quant_fund_utils
+  quant_fund_hedge_lab -->|6| quant_fund_utils
   quant_fund_hedge_lab -->|1| quant_fund_validation
   quant_fund_labels -->|1| quant_fund_config
   quant_fund_labels -->|1| quant_fund_data
@@ -371,6 +371,7 @@ flowchart LR
   quant_fund_research -->|12| quant_fund_config
   quant_fund_research -->|1| quant_fund_data
   quant_fund_research -->|3| quant_fund_execution
+  quant_fund_research -->|1| quant_fund_hedge_lab
   quant_fund_research -->|59| quant_fund_metrics
   quant_fund_research -->|4| quant_fund_microstructure
   quant_fund_research -->|59| quant_fund_models
@@ -624,7 +625,7 @@ sequenceDiagram
 | `quant_fund.features` | 9 |
 | `quant_fund.formal` | 4 |
 | `quant_fund.fusion` | 2 |
-| `quant_fund.hedge_lab` | 15 |
+| `quant_fund.hedge_lab` | 16 |
 | `quant_fund.hmm` | 4 |
 | `quant_fund.labels` | 4 |
 | `quant_fund.leakage` | 8 |
@@ -660,9 +661,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 11 |
 
-- Modules scanned: **789**
+- Modules scanned: **790**
 - Packages: **65**
-- Cross-package import edges: **272**
+- Cross-package import edges: **273**
 
 <!-- END GENERATED: coverage -->
 
