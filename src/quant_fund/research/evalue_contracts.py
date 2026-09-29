@@ -38,6 +38,7 @@ EVALUE_FAMILY_KINDS = frozenset(
         "lane_power",
         "honest_verdict.v1",
         "monitor_run",
+        "suite_health",
     }
 )
 
@@ -598,6 +599,85 @@ def _monitor_run_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _suite_health_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if p.get("data_label") != "SYNTHETIC":
+        errors.append("data_label_not_synthetic")
+    if p.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if p.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if not _is_sha256(p.get("inputs_sha256")):
+        errors.append("inputs_sha256_invalid")
+    params = p.get("params")
+    if not isinstance(params, Mapping):
+        errors.append("params_missing")
+        return errors
+    if not isinstance(params.get("receipts_dir"), str):
+        errors.append("params_receipts_dir_not_str")
+    alpha = _num(params.get("alpha"))
+    if alpha is None or not (0.0 < alpha < 1.0):
+        errors.append("params_alpha_out_of_range")
+    n_files = params.get("n_files")
+    if not isinstance(n_files, int) or isinstance(n_files, bool) or n_files < 1:
+        errors.append("params_n_files_not_positive_int")
+        n_files = None
+    n_receipts = p.get("n_receipts")
+    n_ok = p.get("n_ok")
+    n_failed = p.get("n_failed")
+    for name, v in (("n_receipts", n_receipts), ("n_ok", n_ok), ("n_failed", n_failed)):
+        if not isinstance(v, int) or isinstance(v, bool) or v < 0:
+            errors.append(f"{name}_not_nonnegative_int")
+    if (
+        isinstance(n_receipts, int)
+        and isinstance(n_ok, int)
+        and isinstance(n_failed, int)
+        and not (
+            isinstance(n_ok, bool) or isinstance(n_failed, bool) or isinstance(n_receipts, bool)
+        )
+    ):
+        if n_ok + n_failed != n_receipts:
+            errors.append("ok_plus_failed_neq_receipts")
+        if n_files is not None and n_receipts != n_files:
+            errors.append("n_receipts_neq_n_files")
+    if not isinstance(p.get("corpus_lane_available"), bool):
+        errors.append("corpus_lane_available_not_bool")
+    n_findings = p.get("n_findings_harvested")
+    n_pooled = p.get("n_evalues_pooled")
+    for name, v in (("n_findings_harvested", n_findings), ("n_evalues_pooled", n_pooled)):
+        if not isinstance(v, int) or isinstance(v, bool) or v < 0:
+            errors.append(f"{name}_not_nonnegative_int")
+    if (
+        isinstance(n_pooled, int)
+        and isinstance(n_findings, int)
+        and not isinstance(n_pooled, bool)
+        and not isinstance(n_findings, bool)
+        and n_pooled > n_findings
+    ):
+        errors.append("n_evalues_pooled_exceeds_findings")
+    pooled = p.get("pooled_evalue")
+    if pooled is not None and not (_finite(pooled) and float(pooled) > 0.0):
+        errors.append("pooled_evalue_not_positive_finite")
+    # fail-closed invariant: any unverifiable input must withhold the pool
+    if (
+        isinstance(n_failed, int)
+        and not isinstance(n_failed, bool)
+        and n_failed > 0
+        and pooled is not None
+    ):
+        errors.append("pooled_evalue_not_withheld_on_failures")
+    pooled_alarmed = p.get("pooled_alarmed")
+    if not isinstance(pooled_alarmed, bool):
+        errors.append("pooled_alarmed_not_bool")
+    elif (
+        pooled_alarmed and pooled is not None and alpha is not None and float(pooled) < 1.0 / alpha
+    ):
+        errors.append("pooled_alarmed_below_threshold")
+    elif pooled_alarmed and pooled is None:
+        errors.append("pooled_alarmed_without_pooled_evalue")
+    return errors
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
@@ -633,4 +713,6 @@ def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         return _honest_verdict_errors(receipt)
     if kind in ("monitor_run", "monitor_run.v1"):
         return _monitor_run_errors(receipt)
+    if kind in ("suite_health", "suite_health.v1"):
+        return _suite_health_errors(receipt)
     return []

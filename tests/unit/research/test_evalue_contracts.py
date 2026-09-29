@@ -346,6 +346,7 @@ def test_new_kind_fixtures_pass() -> None:
         _BASE_LANE_POWER,
         _BASE_HONEST_VERDICT,
         _BASE_MONITOR_RUN,
+        _BASE_SUITE_HEALTH,
     ):
         assert evalue_family_contract_errors(base) == [], base.get("kind")
 
@@ -425,3 +426,40 @@ def test_monitor_run_contract() -> None:
     bad4 = dict(_BASE_MONITOR_RUN)
     bad4["params"] = dict(_BASE_MONITOR_RUN["params"], level=1.2)
     assert "params.level_out_of_unit_interval" in evalue_family_contract_errors(bad4)
+
+
+_BASE_SUITE_HEALTH = {
+    "kind": "suite_health",
+    "schema": "suite_health.v1",
+    "data_label": "SYNTHETIC",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "inputs_sha256": _SHA,
+    "params": {"receipts_dir": "receipts", "alpha": 0.05, "n_files": 10},
+    "n_receipts": 10,
+    "n_ok": 10,
+    "n_failed": 0,
+    "corpus_lane_available": True,
+    "n_findings_harvested": 12,
+    "n_evalues_pooled": 4,
+    "pooled_evalue": 25.0,
+    "pooled_alarmed": True,
+}
+
+
+def test_suite_health_contract() -> None:
+    assert evalue_family_contract_errors(_BASE_SUITE_HEALTH) == []
+    # accounting must reconcile
+    bad = dict(_BASE_SUITE_HEALTH, n_failed=1)
+    assert "ok_plus_failed_neq_receipts" in evalue_family_contract_errors(bad)
+    # the fail-closed invariant: failed inputs withhold the pooled e-value
+    bad2 = dict(_BASE_SUITE_HEALTH, n_ok=9, n_failed=1)
+    assert "pooled_evalue_not_withheld_on_failures" in evalue_family_contract_errors(bad2)
+    bad2["pooled_evalue"] = None
+    bad2["pooled_alarmed"] = False
+    assert evalue_family_contract_errors(bad2) == []
+    # alarmed must sit at or above the 1/alpha threshold
+    bad3 = dict(_BASE_SUITE_HEALTH, pooled_evalue=10.0)
+    assert "pooled_alarmed_below_threshold" in evalue_family_contract_errors(bad3)
+    bad4 = dict(_BASE_SUITE_HEALTH, n_evalues_pooled=99)
+    assert "n_evalues_pooled_exceeds_findings" in evalue_family_contract_errors(bad4)
