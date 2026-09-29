@@ -196,6 +196,7 @@ nav:
       - Fast replay conformance: FAST_REPLAY_P42.md
       - Fast-path latency argument: P4_3_FAST_PATH_ARGUMENT.md
       - Explainability: EXPLAINABILITY.md
+      - Allocation pack: ALLOCATION_PACK.md
       - Reality pre-registration: REALITY_PREREGISTRATION.md
       - Reality trial 2026: REALITY_TRIAL_2026.md
       - Recorded trial batches: research/findings.md
