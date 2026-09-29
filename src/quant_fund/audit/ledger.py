@@ -332,8 +332,10 @@ class AuditLedger:
 
     def _append_line(self, path: Path, body: bytes) -> None:
         line = body + b"\n"
-        fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o644)
+        fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o600)
         try:
+            if hasattr(os, "fchmod"):
+                os.fchmod(fd, 0o600)
             view = line
             while view:
                 wrote = os.write(fd, view)

@@ -81,6 +81,15 @@ def _stamp_research_honesty(payload: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _public_doctor_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Keep internal import exception details out of API diagnostics."""
+    out = dict(report)
+    imports = out.get("core_imports")
+    if isinstance(imports, str) and imports.startswith("fail:"):
+        out["core_imports"] = "fail"
+    return out
+
+
 def _weights_honesty_envelope(rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Wrap weight/ranking rows with explicit non-live honesty flags."""
     return _stamp_research_honesty(
@@ -296,7 +305,7 @@ def readiness(config_path: str = "configs/research.yaml") -> JSONResponse:
     """Fail-closed readiness probe for the configured research runtime."""
     resolved = resolve_allowed_config_path(config_path)
     try:
-        report = doctor(str(resolved))
+        report = _public_doctor_report(doctor(str(resolved)))
     except (yaml.YAMLError, ValidationError, ValueError) as exc:
         # Genuine configuration problems fail closed as not_ready. Internal
         # bugs (any other exception type) are NOT masked here — they propagate
@@ -877,7 +886,7 @@ def drift(config_path: str = "configs/research.yaml") -> dict[str, Any]:
 
 @app.get("/doctor")
 def doctor_endpoint(config_path: str = "configs/research.yaml") -> dict[str, Any]:
-    return doctor(str(resolve_allowed_config_path(config_path)))
+    return _public_doctor_report(doctor(str(resolve_allowed_config_path(config_path))))
 
 
 @app.get("/research/latest")

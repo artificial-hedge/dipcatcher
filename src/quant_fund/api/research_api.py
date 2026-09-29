@@ -698,7 +698,7 @@ def create_app(settings: ResearchApiSettings | None = None) -> FastAPI:  # noqa:
         from quant_fund.research.phase1_verify import verify_phase1_run
 
         _result_files(run_dir)  # reject escaping symlink files before verification
-        result = verify_phase1_run(run_dir)
+        result = verify_phase1_run(run_dir, allowed_root=cfg.data_root)
         manifest_sha: str | None = None
         manifest = run_dir / "manifest.json"
         if manifest.is_file():

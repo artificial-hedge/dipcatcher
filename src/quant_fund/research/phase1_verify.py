@@ -25,6 +25,8 @@ from quant_fund.research.catalog import BENCHMARK_CATALOG_VERSION
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH
 from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+
 
 def _object_without_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
@@ -39,9 +41,21 @@ def _reject_nonfinite(token: str) -> None:
     raise ValueError(f"non-finite JSON value: {token}")
 
 
-def _receipt(path: Path, errors: list[str]) -> dict[str, Any] | None:
+def _resolve_under(root: Path, candidate: Path) -> Path:
+    """Resolve a receipt-derived path and reject reads outside its evidence root."""
+    resolved_root = root.resolve()
+    resolved = candidate.resolve()
     try:
-        compressed = path.with_name(path.name + ".gz")
+        resolved.relative_to(resolved_root)
+    except ValueError as exc:
+        raise ValueError("path escapes evidence root") from exc
+    return resolved
+
+
+def _receipt(path: Path, errors: list[str], *, root: Path) -> dict[str, Any] | None:
+    try:
+        path = _resolve_under(root, path)
+        compressed = _resolve_under(root, path.with_name(path.name + ".gz"))
         if path.exists() and compressed.exists():
             raise ValueError("ambiguous raw and gzip receipts")
         raw = (
@@ -73,8 +87,14 @@ def _receipt(path: Path, errors: list[str]) -> dict[str, Any] | None:
         return None
 
 
-def _receipt_exists(path: Path) -> bool:
-    return path.exists() or path.with_name(path.name + ".gz").exists()
+def _receipt_exists(path: Path, errors: list[str], *, root: Path) -> bool:
+    try:
+        path = _resolve_under(root, path)
+        compressed = _resolve_under(root, path.with_name(path.name + ".gz"))
+    except (OSError, ValueError):
+        errors.append(f"{path.name}: receipt path escapes evidence root")
+        return True
+    return path.exists() or compressed.exists()
 
 
 def _assert(condition: bool, errors: list[str], message: str) -> None:
@@ -97,6 +117,23 @@ def _sha256(value: Any, *, length: int = SHA256_HEX_LENGTH) -> bool:
         and len(value) == length
         and all(c in "0123456789abcdef" for c in value)
     )
+
+
+def _dataset(path: Path, expected: Any, errors: list[str], *, root: Path) -> None:
+    if not _sha256(expected):
+        errors.append("protocol: invalid dataset_sha256")
+        return
+    try:
+        path = _resolve_under(root, path)
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        _assert(digest.hexdigest() == expected, errors, "source dataset SHA-256 mismatch")
+    except ValueError:
+        errors.append("source dataset path escapes evidence root")
+    except OSError as exc:
+        errors.append(f"source dataset unreadable: {exc}")
 
 
 def _committed_code_hashes(revision: str, errors: list[str]) -> dict[str, str]:
@@ -218,28 +255,15 @@ def _honesty(value: dict[str, Any], errors: list[str], label: str, *, report: bo
         _assert(value.get("promote") is False, errors, f"{label}: promote must be false")
 
 
-def _dataset(path: Path, expected: Any, errors: list[str]) -> None:
-    if not _sha256(expected):
-        errors.append("protocol: invalid dataset_sha256")
-        return
-    try:
-        digest = hashlib.sha256()
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        _assert(digest.hexdigest() == expected, errors, "source dataset SHA-256 mismatch")
-    except OSError as exc:
-        errors.append(f"source dataset unreadable: {exc}")
-
-
 def _benchmark_manifest(
     run_dir: Path,
     errors: list[str],
     *,
+    allowed_root: Path,
     committed_code_hashes: dict[str, str] | None = None,
     committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
-    manifest = _receipt(run_dir / "manifest.json", errors)
+    manifest = _receipt(run_dir / "manifest.json", errors, root=allowed_root)
     if manifest is None:
         return None
     _assert(manifest.get("schema_version") == 1, errors, "benchmark: unsupported schema")
@@ -279,7 +303,10 @@ def _benchmark_manifest(
         protocol.validate()
         source = Path(protocol.dataset_path)
         _dataset(
-            source if source.is_absolute() else run_dir / source, protocol.dataset_sha256, errors
+            source if source.is_absolute() else run_dir / source,
+            protocol.dataset_sha256,
+            errors,
+            root=allowed_root,
         )
         _assert(
             manifest.get("holdout_status")
@@ -303,9 +330,14 @@ def _benchmark_manifest(
 
 
 def _benchmark_report(
-    run_dir: Path, phase: str, manifest: dict[str, Any], errors: list[str]
+    run_dir: Path,
+    phase: str,
+    manifest: dict[str, Any],
+    errors: list[str],
+    *,
+    allowed_root: Path,
 ) -> None:
-    report = _receipt(run_dir / f"{phase}.json", errors)
+    report = _receipt(run_dir / f"{phase}.json", errors, root=allowed_root)
     if report is None:
         return
     _assert(report.get("phase") == phase, errors, f"{phase}: phase mismatch")
@@ -370,18 +402,20 @@ def _benchmark(
     run_dir: Path,
     errors: list[str],
     *,
+    allowed_root: Path,
     committed_code_hashes: dict[str, str] | None = None,
     committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
     manifest = _benchmark_manifest(
         run_dir,
         errors,
+        allowed_root=allowed_root,
         committed_code_hashes=committed_code_hashes,
         committed_runtime=committed_runtime,
     )
     if manifest is not None:
         for phase in ("validation", "test"):
-            _benchmark_report(run_dir, phase, manifest, errors)
+            _benchmark_report(run_dir, phase, manifest, errors, allowed_root=allowed_root)
     return manifest
 
 
@@ -389,10 +423,11 @@ def _tournament_manifest(
     run_dir: Path,
     errors: list[str],
     *,
+    allowed_root: Path,
     committed_code_hashes: dict[str, str] | None = None,
     committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any] | None:
-    manifest = _receipt(run_dir / "manifest.json", errors)
+    manifest = _receipt(run_dir / "manifest.json", errors, root=allowed_root)
     if manifest is None:
         return None
     _assert(manifest.get("schema_version") == 1, errors, "tournament: unsupported schema")
@@ -428,21 +463,26 @@ def _tournament_manifest(
     if not isinstance(parent, str) or not parent.strip():
         errors.append("tournament: benchmark_run path missing")
     else:
-        parent_dir = run_dir / parent
-        parent_errors: list[str] = []
-        parent_manifest = _benchmark(
-            parent_dir,
-            parent_errors,
-            committed_code_hashes=committed_code_hashes,
-            committed_runtime=committed_runtime,
-        )
-        errors.extend(f"parent benchmark: {error}" for error in parent_errors)
-        if parent_manifest is not None:
-            _assert(
-                manifest.get("benchmark_manifest") == parent_manifest,
-                errors,
-                "tournament: embedded benchmark manifest differs from parent",
+        try:
+            parent_dir = _resolve_under(allowed_root, run_dir / parent)
+        except (OSError, ValueError):
+            errors.append("tournament: benchmark_run path escapes evidence root")
+        else:
+            parent_errors: list[str] = []
+            parent_manifest = _benchmark(
+                parent_dir,
+                parent_errors,
+                allowed_root=allowed_root,
+                committed_code_hashes=committed_code_hashes,
+                committed_runtime=committed_runtime,
             )
+            errors.extend(f"parent benchmark: {error}" for error in parent_errors)
+            if parent_manifest is not None:
+                _assert(
+                    manifest.get("benchmark_manifest") == parent_manifest,
+                    errors,
+                    "tournament: embedded benchmark manifest differs from parent",
+                )
     try:
         raw = manifest["spec"]
         if not isinstance(raw, dict):
@@ -489,6 +529,8 @@ def _tournament_phase(
     manifest: dict[str, Any],
     validation: dict[str, Any] | None,
     errors: list[str],
+    *,
+    allowed_root: Path,
 ) -> dict[str, Any] | None:
     candidates = manifest.get("candidates")
     names = (
@@ -502,7 +544,7 @@ def _tournament_phase(
     )
     benchmark = manifest.get("benchmark")
     baseline = benchmark.get("name") if isinstance(benchmark, dict) else None
-    attempt = _receipt(run_dir / f"{phase}.attempt.json", errors)
+    attempt = _receipt(run_dir / f"{phase}.attempt.json", errors, root=allowed_root)
     if attempt is not None:
         _assert(attempt.get("phase") == phase, errors, f"{phase}: attempt phase mismatch")
         _assert(
@@ -516,7 +558,7 @@ def _tournament_phase(
         _assert(
             attempt.get("candidates") == names, errors, f"{phase}: attempt candidate slate mismatch"
         )
-    report = _receipt(run_dir / f"{phase}.json", errors)
+    report = _receipt(run_dir / f"{phase}.json", errors, root=allowed_root)
     if report is None:
         return None
     _assert(report.get("phase") == phase, errors, f"{phase}: phase mismatch")
@@ -664,22 +706,32 @@ def _tournament_phase(
 def verify_phase1_run(
     run_dir: Path,
     *,
+    allowed_root: Path | None = None,
     committed_code_hashes: dict[str, str] | None = None,
     committed_runtime: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Verify a completed run or a tournament blocked by frozen validation."""
-    run_dir = Path(run_dir)
+    run_dir = Path(run_dir).resolve()
+    if allowed_root is None:
+        allowed_root = _REPO_ROOT if run_dir.is_relative_to(_REPO_ROOT) else run_dir.parent
+    allowed_root = Path(allowed_root).resolve()
     errors: list[str] = []
     try:
-        manifest = json.loads((run_dir / "manifest.json").read_text())
-        if not isinstance(manifest, dict):
-            raise ValueError("manifest is not an object")
-    except (OSError, ValueError, UnicodeError) as exc:
+        run_dir = _resolve_under(allowed_root, run_dir)
+    except (OSError, ValueError) as exc:
         return {
             "valid": False,
             "path": str(run_dir),
             "kind": None,
-            "errors": [f"manifest.json: {exc}"],
+            "errors": [str(exc)],
+        }
+    manifest = _receipt(run_dir / "manifest.json", errors, root=allowed_root)
+    if manifest is None:
+        return {
+            "valid": False,
+            "path": str(run_dir),
+            "kind": None,
+            "errors": errors,
         }
     kind = (
         "net_tournament"
@@ -693,6 +745,7 @@ def verify_phase1_run(
         _benchmark(
             run_dir,
             errors,
+            allowed_root=allowed_root,
             committed_code_hashes=committed_code_hashes,
             committed_runtime=committed_runtime,
         )
@@ -700,11 +753,14 @@ def verify_phase1_run(
         sealed = _tournament_manifest(
             run_dir,
             errors,
+            allowed_root=allowed_root,
             committed_code_hashes=committed_code_hashes,
             committed_runtime=committed_runtime,
         )
         if sealed is not None:
-            validation = _tournament_phase(run_dir, "validation", sealed, None, errors)
+            validation = _tournament_phase(
+                run_dir, "validation", sealed, None, errors, allowed_root=allowed_root
+            )
             if validation is not None and validation.get("selected") is None:
                 state = "blocked"
                 scenarios = validation.get("scenarios")
@@ -719,12 +775,14 @@ def verify_phase1_run(
                 )
                 for name in ("test.attempt.json", "test.json"):
                     _assert(
-                        not _receipt_exists(run_dir / name),
+                        not _receipt_exists(run_dir / name, errors, root=allowed_root),
                         errors,
                         f"blocked tournament: unexpected {name}",
                     )
             else:
-                _tournament_phase(run_dir, "test", sealed, validation, errors)
+                _tournament_phase(
+                    run_dir, "test", sealed, validation, errors, allowed_root=allowed_root
+                )
     else:
         errors.append("unsupported Phase-1 manifest")
     return {
@@ -738,9 +796,11 @@ def verify_phase1_run(
 
 def verify_phase1_index(path: Path) -> dict[str, Any]:
     """Verify an index binding run receipts to source configs and code provenance."""
-    path = Path(path)
+    path = Path(path).resolve()
+    allowed_root = _REPO_ROOT if path.is_relative_to(_REPO_ROOT) else path.parent.parent
+    allowed_root = allowed_root.resolve()
     errors: list[str] = []
-    index = _receipt(path, errors)
+    index = _receipt(path, errors, root=allowed_root)
     if index is None:
         return {
             "valid": False,
@@ -808,10 +868,15 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
         identity = (kind, run_path)
         _assert(identity not in seen, errors, f"{label}: duplicate run")
         seen.add(identity)
-        run_dir = (path.parent / run_path).resolve()
-        config_file = (path.parent / config_path).resolve()
+        try:
+            run_dir = _resolve_under(allowed_root, path.parent / run_path)
+            config_file = _resolve_under(allowed_root, path.parent / config_path)
+        except (OSError, ValueError):
+            errors.append(f"{label}: run or config path escapes evidence root")
+            continue
         result = verify_phase1_run(
             run_dir,
+            allowed_root=allowed_root,
             committed_code_hashes=committed if committed and not same_dirty_checkout else None,
             committed_runtime=committed_runtime if not same_dirty_checkout else None,
         )
@@ -825,7 +890,7 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
             recorded = entry.get(field)
             if field == "test_sha256" and recorded is None and result.get("state") == "blocked":
                 _assert(
-                    not _receipt_exists(run_dir / filename),
+                    not _receipt_exists(run_dir / filename, errors, root=allowed_root),
                     errors,
                     f"{label}: blocked run contains test receipt",
                 )
@@ -833,7 +898,7 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
             if not _sha256(recorded):
                 errors.append(f"{label}: {field} missing")
                 continue
-            linked = _receipt(run_dir / filename, errors)
+            linked = _receipt(run_dir / filename, errors, root=allowed_root)
             if linked is not None:
                 _assert(
                     linked["receipt_sha256"] == recorded, errors, f"{label}: {field} link mismatch"
@@ -843,6 +908,7 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
             errors.append(f"{label}: config_sha256 missing")
             continue
         try:
+            config_file = _resolve_under(allowed_root, config_file)
             config_bytes = config_file.read_bytes()
             _assert(
                 hashlib.sha256(config_bytes).hexdigest() == expected_config,
@@ -854,7 +920,7 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
                 object_pairs_hook=_object_without_duplicate_keys,
                 parse_constant=_reject_nonfinite,
             )
-            manifest = _receipt(run_dir / "manifest.json", errors)
+            manifest = _receipt(run_dir / "manifest.json", errors, root=allowed_root)
             if manifest is None or not isinstance(config, dict):
                 raise ValueError("config or run manifest is not an object")
             source_hashes = (
@@ -888,11 +954,13 @@ def verify_phase1_index(path: Path) -> dict[str, Any]:
                 if not isinstance(declared, str) or not isinstance(actual, str):
                     raise ValueError("dataset path missing")
                 frozen_source = Path(actual)
-                frozen_source = (
-                    frozen_source if frozen_source.is_absolute() else run_dir / frozen_source
+                frozen_source = _resolve_under(
+                    allowed_root,
+                    frozen_source if frozen_source.is_absolute() else run_dir / frozen_source,
                 )
+                declared_source = _resolve_under(allowed_root, config_file.parent / declared)
                 _assert(
-                    (config_file.parent / declared).resolve() == frozen_source.resolve(),
+                    declared_source == frozen_source,
                     errors,
                     f"{label}: config dataset path differs from frozen dataset",
                 )
