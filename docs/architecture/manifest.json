@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 811,
+  "module_count": 812,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -7123,6 +7123,18 @@
       "src": "quant_fund.research.monitor_run"
     },
     {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "quant_fund.research.multih_fleet"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.multih_fleet"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.multih_fleet"
+    },
+    {
       "dst": "quant_fund.research.cost_allocation",
       "src": "quant_fund.research.net_replay"
     },
@@ -8877,6 +8889,7 @@
     "quant_fund.research.loss_cs",
     "quant_fund.research.mcs_seq",
     "quant_fund.research.monitor_run",
+    "quant_fund.research.multih_fleet",
     "quant_fund.research.net_replay",
     "quant_fund.research.net_tournament",
     "quant_fund.research.online_fdr",
@@ -10370,7 +10383,7 @@
     },
     {
       "dst": "quant_fund.metrics",
-      "imports": 64,
+      "imports": 65,
       "src": "quant_fund.research"
     },
     {
@@ -10425,7 +10438,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 165,
+      "imports": 167,
       "src": "quant_fund.research"
     },
     {
