@@ -62,10 +62,41 @@ class _BrokenHead:
 
 def test_bet_densities_integrate_to_one() -> None:
     for name, f in default_channels().items():
+        if name.startswith("grapa"):
+            continue  # stateful predictable bets: validity is per-step conditional
         mass = si.quad(f, 0.0, 1.0, epsabs=1e-12)[0]
         assert mass == pytest.approx(1.0, abs=1e-9), name
         grid = np.linspace(0.0, 1.0, 1001)
         assert min(f(float(u)) for u in grid) >= 0.0, name
+
+
+def test_grapa_channels_are_valid_evalues() -> None:
+    """Predictable bets: E[f(u_t)|past] = 1 under the null AND bets >= 0."""
+    for ch in ("grapa_loc", "grapa_disp"):
+        channel = default_channels()[ch]
+        rng = np.random.default_rng(0)
+        # under the null each bet must have conditional mean ~1
+        bets = [float(channel(float(u))) for u in rng.uniform(0, 1, size=2000)]
+        assert min(bets) >= 0.0
+        # second-epoch bets (lam_t fitted) still average ~1 under the null
+        assert np.mean(bets[1000:]) == pytest.approx(1.0, abs=0.05)
+
+
+def test_grapa_learns_and_beats_fixed_on_bias() -> None:
+    """On a biased PIT stream the adaptive channel should out-grow fixed."""
+    rng = np.random.default_rng(0)
+    fixed = CalibrationEProcess(
+        alpha=0.05,
+        channels={"loc_hi": default_channels()["loc_hi"]},
+    )
+    adaptive = CalibrationEProcess(
+        alpha=0.05,
+        channels={"grapa_loc": default_channels()["grapa_loc"]},
+    )
+    for u in rng.beta(1.6, 1.0, size=600):  # right-shifted PITs
+        fixed.update(float(u))
+        adaptive.update(float(u))
+    assert adaptive.wealth > fixed.wealth
 
 
 def test_uniform_stream_no_alarm_monte_carlo() -> None:
@@ -110,7 +141,8 @@ def test_shifted_pit_alarms_loc_channel() -> None:
         proc.update(float(u))
     assert proc.alarmed
     ch = proc.channel_wealths
-    assert ch["loc_hi"] == max(ch.values())
+    # the richest channel must be a location bet (fixed or adaptive)
+    assert max(ch, key=ch.__getitem__).startswith(("loc_", "grapa_loc"))
 
 
 def test_nonfinite_pit_is_inconclusive_not_crash() -> None:

@@ -82,13 +82,60 @@ def _disp_density(lam: float) -> Callable[[float], float]:
     return lambda u: 1.0 + lam * ((2.0 * u - 1.0) * (2.0 * u - 1.0) - 1.0 / 3.0)
 
 
+class _GrapaChannel:
+    """Predictable-mixture bet on a centered PIT moment.
+
+    λ_t is fitted from the moment's running mean/variance *before* seeing
+    u_t (GRAPA-style plug-in, Merton-fraction clipped for non-negativity),
+    so the bet is F_{t-1}-measurable — valid even when the underlying
+    series is serially dependent, since only the *PIT* stream enters the
+    history. ``moment(u)`` must satisfy E_U[moment]=0 and |moment|<=1.
+    """
+
+    def __init__(
+        self, moment: Callable[[float], float], lam_max: float, scale_max: float = 1.0
+    ) -> None:
+        self._moment = moment
+        self._lam_max = lam_max
+        self._scale_max = scale_max
+        self._sum = 0.0
+        self._sum2 = 0.0
+        self._n = 0
+
+    def __call__(self, u: float) -> float:
+        if self._n > 1:
+            mean = self._sum / self._n
+            var = max(1e-9, self._sum2 / self._n - mean * mean)
+            lam = mean / var
+            lam = max(-self._lam_max, min(self._lam_max, lam))
+        else:
+            lam = 0.0
+        d = self._moment(u)
+        self._sum += d
+        self._sum2 += d * d
+        self._n += 1
+        return max(0.0, 1.0 + lam * d)
+
+
+def _loc_moment(u: float) -> float:
+    return 2.0 * u - 1.0
+
+
+def _disp_moment(u: float) -> float:
+    d = 2.0 * u - 1.0
+    return (d * d - 1.0 / 3.0) / (4.0 / 5.0)  # rescale into [-1/3, ~0.94]
+
+
 def default_channels() -> dict[str, Callable[[float], float]]:
-    """The four fixed bets, mixed at equal weight."""
+    """Fixed bets + two adaptive GRAPA channels, mixed at equal weight."""
     return {
         "loc_hi": _loc_density(0.5),
         "loc_lo": _loc_density(-0.5),
         "overconf": _disp_density(1.5),
         "underconf": _disp_density(-1.5),
+        # adaptive: lam_max |d| <= 0.9 keeps bets bounded and positive
+        "grapa_loc": _GrapaChannel(_loc_moment, lam_max=0.9),
+        "grapa_disp": _GrapaChannel(_disp_moment, lam_max=0.9),
     }
 
 
