@@ -222,6 +222,7 @@ def honest_verdict(
     alpha: float = 0.05,
     seed: int = 0,
     n_boot: int = 2000,
+    data_label: str | None = None,
 ) -> dict[str, Any]:
     """Composite verdict over per-head loss streams → honest_verdict.v1.
 
@@ -294,7 +295,9 @@ def honest_verdict(
 
     report: dict[str, Any] = {
         "kind": HONEST_VERDICT_SCHEMA,
-        "data_label": "SYNTHETIC",
+        # callers that cannot name the source stamp UNKNOWN — never claim
+        # SYNTHETIC for a stream whose provenance is not actually synthetic
+        "data_label": str(data_label) if data_label else "UNKNOWN",
         "research_only": True,
         "live_pnl_claim": False,
         "verdict": verdict,
