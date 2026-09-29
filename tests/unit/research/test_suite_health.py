@@ -69,3 +69,24 @@ def test_harvested_evalues_pool(tmp_path: Path) -> None:
     else:
         assert rec["n_evalues_pooled"] == 0
         assert rec["pooled_evalue"] is None
+
+
+def test_label_aggregates_inputs(tmp_path: Path) -> None:
+    """Suite label is the unique input label, MIXED for a mixed corpus."""
+    rec = seal_receipt(
+        {
+            "kind": "demo",
+            "level": "research",
+            "data_label": "yahoo_eod",
+            "research_only": True,
+            "live_pnl_claim": False,
+        }
+    )
+    (tmp_path / "r.json").write_text(json.dumps(rec))
+    _frame, rep = suite_health(tmp_path)
+    assert rep["data_label"] == "yahoo_eod"
+    assert rep["params"]["input_labels"]["r.json"] == "yahoo_eod"
+
+    _sealed(tmp_path, "s.json")
+    _frame, rep2 = suite_health(tmp_path)
+    assert rep2["data_label"] == "MIXED"

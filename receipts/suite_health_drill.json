@@ -1,0 +1,36 @@
+{
+  "claims": [
+    {
+      "kind": "empirical_synthetic",
+      "text": "all committed receipts re-verify and harvested evidence is pooled under arbitrary dependence"
+    }
+  ],
+  "code_revision": "13ed0fd7a9a60fa05ab5a04e837bec867527e6ec",
+  "corpus_lane_available": true,
+  "data_label": "SYNTHETIC",
+  "evidence": [
+    "per_receipt_reverification",
+    "arbitrary_dependence_pooling",
+    "fail_closed_on_corruption",
+    "lazy_corpus_harvest"
+  ],
+  "inputs_sha256": "026cfb568a183a9b90f3ce870a8bbb3fe22d822764d7677e367076da9b074b94",
+  "kind": "suite_health",
+  "level": "research",
+  "live_pnl_claim": false,
+  "n_evalues_pooled": 0,
+  "n_failed": 7,
+  "n_findings_harvested": 52,
+  "n_ok": 5,
+  "n_receipts": 12,
+  "params": {
+    "alpha": 0.05,
+    "n_files": 12,
+    "receipts_dir": "receipts"
+  },
+  "pooled_alarmed": false,
+  "pooled_evalue": null,
+  "receipt_sha256": "c57f1aa0d668e82882478fecb1363e5fefcec3c4a6481a9976c4d6a76741b490",
+  "research_only": true,
+  "schema": "suite_health.v1"
+}

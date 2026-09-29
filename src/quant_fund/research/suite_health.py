@@ -63,6 +63,7 @@ def suite_health(
     corpus_mod = _lazy_corpus()
     rows: list[dict[str, Any]] = []
     evalues: list[float] = []
+    labels: dict[str, str] = {}
     findings_total = 0
 
     for path in files:
@@ -72,6 +73,12 @@ def suite_health(
         except Exception:
             payload = None
         kind = (payload.get("kind") or payload.get("schema")) if isinstance(payload, dict) else None
+        if isinstance(payload, dict):
+            body = payload.get("payload")
+            inner = body if isinstance(body, dict) else payload
+            labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
+        else:
+            labels[path.name] = "UNKNOWN"
         n_findings = 0
         if corpus_mod is not None and isinstance(payload, dict):
             for f in corpus_mod.harvest_findings(payload, path.name):
@@ -91,6 +98,13 @@ def suite_health(
         )
 
     frame = pl.DataFrame(rows)
+    distinct_labels = set(labels.values())
+    if len(distinct_labels) == 1:
+        data_label = distinct_labels.pop()
+    elif distinct_labels:
+        data_label = "MIXED"
+    else:
+        data_label = "UNKNOWN"
     n_ok = int(frame["valid"].sum())
     n_failed = frame.height - n_ok
     # pooled evidence: arithmetic mean of harvested e-values — valid under
@@ -103,7 +117,7 @@ def suite_health(
         "schema": SUITE_HEALTH_SCHEMA,
         "kind": "suite_health",
         "level": "research",
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "research_only": True,
         "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
@@ -112,6 +126,7 @@ def suite_health(
             "receipts_dir": str(root),
             "alpha": alpha,
             "n_files": len(files),
+            "input_labels": labels,
         },
         "n_receipts": frame.height,
         "n_ok": n_ok,
