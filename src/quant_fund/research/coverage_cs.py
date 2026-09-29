@@ -48,6 +48,14 @@ DEFAULT_P_GRID: tuple[float, ...] = tuple(np.round(np.arange(0.01, 0.991, 0.01),
 DEFAULT_ALT_GRID: tuple[float, ...] = (0.5, 0.7, 1.3, 2.0)
 
 
+def _strict_breach(flag: object) -> int:
+    if isinstance(flag, (bool, np.bool_)):
+        return int(flag)
+    if isinstance(flag, (int, np.integer)) and flag in (0, 1):
+        return int(flag)
+    raise ValueError(f"breach must be bool or a 0/1 int, got {flag!r}")
+
+
 @dataclass
 class CoverageCS:
     """Bernoulli CS on a breach-rate stream, inverted LR mixture.
@@ -76,9 +84,14 @@ class CoverageCS:
         self._log_w = np.zeros((p0.size, len(self.alt_grid)), dtype=float)
 
     def update(self, breach: bool) -> tuple[float, float]:
-        """Fold one breach indicator; return the current (lo, hi) CS."""
+        """Fold one breach indicator; return the current (lo, hi) CS.
+
+        Strict flag: ``None`` is a missing observation, not a non-breach —
+        silently folding it would deflate the measured breach rate, so
+        anything outside {False, True, 0, 1} raises.
+        """
         assert self._log_w is not None
-        b = float(bool(breach))
+        b = float(_strict_breach(breach))
         p0 = np.asarray(self.p0_grid, dtype=float)
         for j, g in enumerate(self.alt_grid):
             p1 = np.minimum(0.999999, g * p0)
@@ -87,7 +100,7 @@ class CoverageCS:
                 np.log1p(-p1) - np.log1p(-p0)
             )
         self.n_eval += 1
-        self.n_breach += int(bool(breach))
+        self.n_breach += int(_strict_breach(breach))
         return self.interval()
 
     def _log_e(self) -> np.ndarray:

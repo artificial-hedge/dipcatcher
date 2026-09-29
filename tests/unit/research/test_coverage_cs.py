@@ -136,3 +136,12 @@ def test_audit_fails_closed() -> None:
         audit_coverage_cs({}, shards={"const": _const_shard})
     with pytest.raises(ValueError):
         audit_coverage_cs({"h": _GaussianFactory(1.0)}, shards={"const": _const_shard}, n_eval=0)
+
+
+def test_strict_breach_flag_rejects_missing_and_nonbinary() -> None:
+    cs = CoverageCS(alpha=0.05)
+    for bad in (None, 2, "x", float("nan"), 0.5):
+        with pytest.raises(ValueError):
+            cs.update(bad)
+    for ok in (True, False, 0, 1, np.bool_(True), np.int64(1)):
+        cs.update(ok)
