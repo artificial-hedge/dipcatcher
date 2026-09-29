@@ -36,7 +36,7 @@ Verified gaps are tracked in
 | Cluster spec generation (ZeRO-3, precision `bf16|fp8|mxfp4`, seed) | SHIPPED | `train/cluster.py:16-64` |
 | Experiment tracking (MLflow/JSONL) wired per stage | PLANNED | `train/tracking.py:17` (`Tracker`) is shipped and exported (`train/__init__.py:9`) but never instantiated or called anywhere in the pipeline |
 | Curriculum ordering (contracts→interpretation→loops→refusal) | PARTIAL | `train/curriculum.py:39` (`build_curriculum`); reachable via CLI `fx1 curriculum` (`cli.py:195-205`), NOT invoked by `Pipeline` |
-| DPO / preference stage | PARTIAL | `train/dpo.py:98` (`build_preference_pairs`) + CLI `fx1 dpo-build`; there is no `Stage.DPO` / `run_dpo` in the pipeline |
+| DPO / preference stage | PARTIAL | `train/dpo.py:98` (`build_preference_pairs`) + CLI `fx1 dpo`; there is no `Stage.DPO` / `run_dpo` in the pipeline |
 | DISTILL stage (K3-LoRA teacher → servable student) | PLANNED | `LadderStage.DISTILL` enum only (`train/config.py:21`); no distillation implementation |
 | LoRA MoE target modules (expert `gate/up/down` + shared experts) | PLANNED | `LoRAConfig.target_modules` is attention-only (`train/config.py:28-30`) |
 | Stage fail-closed validators: fp16-on-K3, PROXY receipt before K3 | PARTIAL | fp16 is structurally impossible in `ClusterSpec.precision` (`train/cluster.py:23`); but `TrainConfig` has no precision/stage-precision gate and no PROXY-receipt-before-K3 requirement (`_k3_run_disclosure` `train/config.py:57-71`) |
@@ -168,7 +168,7 @@ cannot produce its evidence stops the pipeline — no skip flags.
 - **Preference stage** (`fx1.train.dpo`): contract-derived DPO pairs make
   honesty native.
   **Status: PARTIAL** — pair construction ships (`train/dpo.py:98-120`,
-  CLI `fx1 dpo-build`), but there is **no DPO stage** in `Stage` /
+  CLI `fx1 dpo`), but there is **no DPO stage** in `Stage` /
   `Pipeline` and no trainer consumes the pairs. Running DPO is PLANNED.
 - **Curriculum ordering** (`fx1.train.curriculum`): contracts → interpretation
   → research loops → refusal.
