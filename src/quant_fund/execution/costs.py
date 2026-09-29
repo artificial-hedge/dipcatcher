@@ -59,6 +59,8 @@ def total_cost(
     sigma: float,
     config: CostConfig,
     maker: bool = False,
+    *,
+    half_spread_bps: float | None = None,
 ) -> dict[str, float | str]:
     """Decomposed per-fill cost. ``maker=True`` is the passive-limit leg:
     commission at ``maker_commission_bps`` (falls back to ``commission_bps``),
@@ -75,6 +77,9 @@ def total_cost(
         value = float(getattr(config, name))
         if not np.isfinite(value) or value < 0:
             raise ValueError(f"{name} must be finite and non-negative")
+    spread_bps = float(config.half_spread_bps if half_spread_bps is None else half_spread_bps)
+    if not np.isfinite(spread_bps) or spread_bps < 0:
+        raise ValueError("half_spread_bps must be finite and non-negative")
     if config.frictionless:
         return {
             "commission": 0.0,
@@ -98,6 +103,9 @@ def total_cost(
     commission = commission_cost(notional, commission_bps)
     spread = 0.0 if maker else half_spread_cost(notional, config.half_spread_bps)
     impact = 0.0 if maker else sqrt_impact(quantity, price, adv_dollars, sigma, config.impact_y)
+    commission = commission_cost(notional, config.commission_bps)
+    spread = half_spread_cost(notional, spread_bps)
+    impact = sqrt_impact(quantity, price, adv_dollars, sigma, config.impact_y)
     bps_to = abs(notional) * config.bps_per_turnover / 1e4
     total = commission + spread + impact + bps_to
     return {
