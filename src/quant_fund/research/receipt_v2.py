@@ -472,9 +472,12 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     if kind == "vol_bench":
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
         return vol_bench_v2_consistency_errors(payload)
+    if kind == "evidence_audit":
+        from quant_fund.research.evidence_audit import evidence_audit_consistency_errors
+
+        return evidence_audit_consistency_errors(payload)
     if kind == "selection_concordance":
         from quant_fund.research.concordance import concordance_consistency_errors
-
         return concordance_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
