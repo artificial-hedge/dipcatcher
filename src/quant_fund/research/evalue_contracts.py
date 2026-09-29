@@ -537,7 +537,7 @@ def _honest_verdict_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
-_MONITOR_LANES = frozenset({"coverage", "tail", "calibration", "conformal", "drift"})
+_MONITOR_LANES = frozenset({"coverage", "tail", "calibration", "conformal", "drift", "emerge"})
 
 
 def _monitor_run_errors(p: Mapping[str, Any]) -> list[str]:
