@@ -29,6 +29,7 @@ from quant_fund.hedge_lab.resources import (
     ram_plan,
 )
 from quant_fund.hedge_lab.scoreboard import book_economic_scoreboard, moving_block_bootstrap_ci
+from quant_fund.metrics.returns import annualized_vol, sharpe_ratio
 from quant_fund.models.ranking import drop_oracle_columns
 from quant_fund.models.robinhood_plus.compare import train_public_ridge
 from quant_fund.pipeline.dataset import (
@@ -40,6 +41,7 @@ from quant_fund.pipeline.dataset import (
 from quant_fund.pipeline.forecast import build_causal_weight_panel, clear_forecast_caches
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.risk.overlay import BookRiskOverlay
+from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 
 
 class HedgeLabProtocol(BaseModel):
@@ -92,12 +94,20 @@ def _equity_returns(equity: pl.DataFrame) -> np.ndarray:
     return np.asarray(nav[1:] / nav[:-1] - 1.0, dtype=float)
 
 
-def _benchmark_returns(
+def _aligned_book_and_benchmark(
     feat: pl.DataFrame, equity: pl.DataFrame, benchmark_id: str
-) -> np.ndarray | None:
+) -> tuple[np.ndarray, np.ndarray] | None:
+    """(book_rets, bench_rets) on the common equity∩benchmark date calendar.
+
+    Both legs are returns between consecutive *joined* dates, so each pair
+    spans the same sessions — a benchmark gap is a multi-day return matched
+    by the book's multi-day return, never a positional tail overlap. Returns
+    ``None`` when the benchmark is absent or either leg is non-finite (fail
+    closed: no IR rather than a misaligned one).
+    """
     if not benchmark_id or "security_id" not in feat.columns or "close" not in feat.columns:
         return None
-    if equity.is_empty() or "event_time" not in equity.columns:
+    if equity.is_empty() or "event_time" not in equity.columns or "nav" not in equity.columns:
         return None
     bench = (
         feat.filter(pl.col("security_id") == benchmark_id)
@@ -108,21 +118,34 @@ def _benchmark_returns(
     if bench.height < 3:
         return None
     joined = (
-        equity.select("event_time").join(bench, on="event_time", how="inner").sort("event_time")
+        equity.select("event_time", "nav")
+        .join(bench, on="event_time", how="inner")
+        .sort("event_time")
     )
+    if joined.height < 3:
+        return None
+    nav = joined["nav"].to_numpy().astype(float)
     close = joined["close"].to_numpy().astype(float)
-    if close.size < 3:
+    with np.errstate(divide="ignore", invalid="ignore"):
+        book_r = np.asarray(nav[1:] / nav[:-1] - 1.0, dtype=float)
+        bench_r = np.asarray(close[1:] / close[:-1] - 1.0, dtype=float)
+    if book_r.size < 2 or not np.all(np.isfinite(book_r)) or not np.all(np.isfinite(bench_r)):
         return None
-    return np.asarray(close[1:] / close[:-1] - 1.0, dtype=float)
+    return book_r, bench_r
 
 
-def _align_book_and_benchmark(book: np.ndarray, bench: np.ndarray | None) -> np.ndarray | None:
-    if bench is None:
-        return None
-    n = min(int(book.size), int(bench.size))
-    if n < 2:
-        return None
-    return bench[-n:]
+def _attach_benchmark_ir(
+    economic: dict[str, Any], aligned: tuple[np.ndarray, np.ndarray] | None
+) -> None:
+    """Merge information-ratio keys from the date-aligned benchmark pair."""
+    if aligned is None:
+        return
+    book_r, bench_r = aligned
+    active = book_r - bench_r
+    ir = sharpe_ratio(active)
+    economic["information_ratio"] = float(ir["sharpe"])
+    economic["active_ann_vol"] = float(annualized_vol(active))
+    economic["ir_aligned_bars"] = int(active.size)
 
 
 def _persist_public_feature_gold(config: AppConfig) -> None:
@@ -202,7 +225,7 @@ def run_hedge_lab(
     weights = build_causal_weight_panel(cfg, dates)
     if not weights.is_empty():
         for art in arts:
-            weights.write_parquet(art / "weights.parquet")
+            atomic_write_parquet(weights, art / "weights.parquet")
     # Valuation tape is the full silver lake (union calendar). Membership-filtered
     # gold is for signals only: a name that rotates out of top-N ADV must still
     # be markable so the book can flatten instead of going stale.
@@ -218,14 +241,9 @@ def run_hedge_lab(
         )
     result = run_backtest(bars, weights, cfg, initial_nav=proto.initial_nav, risk_overlay=overlay)
     rets = _equity_returns(result.equity)
-    bench = _align_book_and_benchmark(
-        rets, _benchmark_returns(bars, result.equity, str(cfg.data.benchmark_id))
-    )
-    if bench is not None and bench.size != rets.size:
-        n = min(rets.size, bench.size)
-        rets = rets[-n:]
-        bench = bench[-n:]
-    economic = book_economic_scoreboard(rets, data_source=source, benchmark_returns=bench)
+    aligned = _aligned_book_and_benchmark(bars, result.equity, str(cfg.data.benchmark_id))
+    economic = book_economic_scoreboard(rets, data_source=source)
+    _attach_benchmark_ir(economic, aligned)
     do_boot = bootstrap if bootstrap is not None else proto.bootstrap
     boot_n = n_boot if n_boot is not None else proto.n_boot
     boot: dict[str, Any] = {"status": "skipped"}
@@ -250,20 +268,15 @@ def run_hedge_lab(
             risk_overlay=overlay_m,
         )
         rets_m = _equity_returns(result_m.equity)
-        bench_m = _align_book_and_benchmark(
-            rets_m, _benchmark_returns(bars, result_m.equity, str(cfg.data.benchmark_id))
-        )
-        if bench_m is not None and bench_m.size != rets_m.size:
-            n_m = min(rets_m.size, bench_m.size)
-            rets_m = rets_m[-n_m:]
-            bench_m = bench_m[-n_m:]
-        economic_m = book_economic_scoreboard(rets_m, data_source=source, benchmark_returns=bench_m)
+        aligned_m = _aligned_book_and_benchmark(bars, result_m.equity, str(cfg.data.benchmark_id))
+        economic_m = book_economic_scoreboard(rets_m, data_source=source)
+        _attach_benchmark_ir(economic_m, aligned_m)
         boot_m: dict[str, Any] = {"status": "skipped"}
         if do_boot and rets_m.size >= 20:
             boot_m = moving_block_bootstrap_ci(rets_m, n_boot=boot_n)
         if not result_m.equity.is_empty():
             for art in arts:
-                result_m.equity.write_parquet(art / "equity_mirror.parquet")
+                atomic_write_parquet(result_m.equity, art / "equity_mirror.parquet")
         mirror_blob = {
             "status": "ok",
             "enabled": True,
@@ -323,7 +336,7 @@ def run_hedge_lab(
         raise AssertionError("hedge-lab research twin leaked nested forbidden keys")
     if not result.equity.is_empty():
         for art in arts:
-            result.equity.write_parquet(art / "equity.parquet")
+            atomic_write_parquet(result.equity, art / "equity.parquet")
     ram_claim_stats: dict[str, Any] = {"status": "skipped"}
     claimed = None
     do_claim = proto.claim_ram if claim_ram is None else bool(claim_ram)
@@ -370,11 +383,11 @@ def run_hedge_lab(
     }
     dest = root / "metadata" / "hedge_lab_receipt.json"
     payload = json.dumps(receipt, indent=2, default=str)
-    dest.write_text(payload, encoding="utf-8")
+    atomic_write_text(dest, payload)
     published = dest
     for art in arts:
         published = art / "latest.json"
-        published.write_text(payload, encoding="utf-8")
+        atomic_write_text(published, payload)
     receipt["receipt_path"] = str(dest)
     receipt["artifact_path"] = str(published)
     del claimed
