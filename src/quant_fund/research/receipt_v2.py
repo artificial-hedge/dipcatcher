@@ -472,6 +472,9 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.evidence_audit import evidence_audit_consistency_errors
 
         return evidence_audit_consistency_errors(payload)
+    if kind == "selection_concordance":
+        from quant_fund.research.concordance import concordance_consistency_errors
+        return concordance_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
         return coherence_v2_consistency_errors(payload)

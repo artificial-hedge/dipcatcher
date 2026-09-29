@@ -1,0 +1,57 @@
+{
+  "alpha": 0.05,
+  "champion": null,
+  "coverage_guarantee": "P(set contains an optimal head at every origin) >= 1 - alpha",
+  "data_label": "yahoo_eod",
+  "drill": {
+    "excluded_heads": [
+      "nbeats",
+      "nhits",
+      "lgbm_q2"
+    ],
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "n_eval": 300,
+    "n_train": 1000,
+    "score": "mean pinball over DEFAULT_TAUS",
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "eliminated": {
+    "conf_t": 29,
+    "empirical": 14,
+    "gaussian": 271,
+    "gmm": 14,
+    "hstep_emp": 14,
+    "isotonic": 17,
+    "regime": 14,
+    "skew_t": 17,
+    "stack": 20
+  },
+  "evidence": [
+    "ville_inequality",
+    "pairwise_supermartingales",
+    "union_bound_k_minus_1",
+    "permanent_elimination",
+    "anytime_valid"
+  ],
+  "kind": "mcs_seq.v1",
+  "lam": 0.5,
+  "live_pnl_claim": false,
+  "n_eliminated": 9,
+  "n_heads": 12,
+  "n_origins": 300,
+  "receipt_sha256": "f0b72cb3aa796bbff4cc8744e72d6ef40c4539b4e3445e0356ddee5452dc4411",
+  "research_only": true,
+  "survivors": [
+    "fhs_skew",
+    "hstep_t",
+    "qar"
+  ]
+}
