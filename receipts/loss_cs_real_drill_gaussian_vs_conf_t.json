@@ -1,0 +1,38 @@
+{
+  "alpha": 0.05,
+  "bound": 0.0005556059235267558,
+  "challenger": "gaussian",
+  "cs_high": 2.103370268349208e-05,
+  "cs_low": -9.775281957945879e-05,
+  "data_label": "yahoo_eod",
+  "drill": {
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "loss_stream": "per-origin mean pinball over the default tau grid",
+    "n_eval": 300,
+    "n_train": 1000,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "evidence": [
+    "ville_inequality",
+    "betting_confidence_sequence",
+    "bounded_increments",
+    "time_uniform_coverage"
+  ],
+  "excludes_zero": false,
+  "incumbent": "conf_t",
+  "interpretation": "inconclusive",
+  "kind": "loss_cs.v1",
+  "lam": 0.5,
+  "mean_diff": -3.308069273216095e-05,
+  "n": 300,
+  "receipt_sha256": "4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743",
+  "schema": "loss_cs.v1"
+}
