@@ -145,9 +145,12 @@ def test_v2_verdict_outside_enum_fails_even_resealed() -> None:
 
 
 def test_v2_dropped_schema_still_fails_closed() -> None:
-    """schema_version=2 alone routes to v2; a missing ``schema`` fails the model."""
+    """``schema_version: 2`` is a per-format counter and must NOT dispatch to
+    the v2 schema on its own (#261): a receipt claiming it without the
+    ``schema: receipt.v2`` tag is a v1 downgrade candidate and fails closed
+    on the evidence-field guard."""
     receipt = {k: v for k, v in _generic_v2().items() if k != "schema"}
-    _invalid_with(seal_receipt(receipt), "receipt_v2_schema")
+    _invalid_with(seal_receipt(receipt), "possible_v2_downgrade")
 
 
 def test_v2_downgrade_to_v1_dispatch_is_flagged() -> None:

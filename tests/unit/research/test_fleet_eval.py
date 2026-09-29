@@ -414,6 +414,7 @@ def test_fleet_registry_covers_default_heads() -> None:
         "tirex2",
         "kronos_base",
         "moirai2",
+        "tabpfn_ts",
     }
     for factory in factories.values():
         assert factory().metadata().family == "distribution"
