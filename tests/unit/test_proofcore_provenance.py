@@ -7,9 +7,11 @@ over a real duckdb file in tmp_path.
 from __future__ import annotations
 
 import json
+from typing import Literal
 
 import pytest
 
+from quant_fund.proofcore import provenance as provenance_mod
 from quant_fund.proofcore.contracts import (
     GENESIS_HASH,
     CodeFingerprint,
@@ -32,7 +34,7 @@ def _bundle(bundle_id: str, *, prev: str = GENESIS_HASH, created: str) -> ProofB
         created_utc=created,
         run_kind="backtest",
         code=CodeFingerprint(git_revision="a26be34", worktree_sha256=_HEX, dirty=False),
-        data_manifest=DataManifestSummary(reads=[], merkle_root=_HEX, n_reads=0),
+        data_manifest=DataManifestSummary(reads=(), merkle_root=_HEX, n_reads=0),
         config_sha256=_HEX,
         seed=7,
         env=EnvFingerprint(
@@ -52,7 +54,12 @@ def _bundle(bundle_id: str, *, prev: str = GENESIS_HASH, created: str) -> ProofB
     )
 
 
-def _trial(trial_id: str, bundle_hash: str, *, family: str = "discovery") -> TrialLedgerRow:
+def _trial(
+    trial_id: str,
+    bundle_hash: str,
+    *,
+    family: Literal["calibration", "discovery", "bound"] = "discovery",
+) -> TrialLedgerRow:
     return TrialLedgerRow(
         trial_id=trial_id,
         bundle_hash=bundle_hash,
@@ -185,6 +192,53 @@ def test_chain_head_follows_links(tmp_path) -> None:
         assert db.chain_head() == b3.bundle_id
 
 
+def test_bundles_returns_chain_order_not_timestamp_order(tmp_path) -> None:
+    """Audit/export order is the hash chain, not wall clock: a bundle minted on
+    a skewed clock must not reorder the ledger."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        b1 = _bundle(_id(1), created="2026-09-26T00:02:00+00:00")
+        b2 = _bundle(_id(2), prev=b1.bundle_id, created="2026-09-26T00:01:00+00:00")
+        b3 = _bundle(_id(3), prev=b2.bundle_id, created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(b1, None)
+        db.insert_bundle(b2, None)
+        db.insert_bundle(b3, None)
+        # created_utc order would be b3, b2, b1 — the chain is the opposite.
+        assert [r["bundle_id"] for r in db.bundles()] == [
+            b1.bundle_id,
+            b2.bundle_id,
+            b3.bundle_id,
+        ]
+
+
+def test_bundles_fail_closed_on_unreachable_row(tmp_path) -> None:
+    """A row no genesis walk reaches (dangling prev, e.g. hand-edited table)
+    breaks export loudly rather than silently dropping or reordering it."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        b1 = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(b1, None)
+        # Bypass insert_bundle's chain-head check: a row pointing at a hash
+        # no bundle has (as if the middle of the chain were deleted).
+        db._con.execute(
+            "INSERT INTO proof_bundles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                _id(2),
+                "2026-09-26T00:01:00+00:00",
+                "backtest",
+                "a26be34",
+                _HEX,
+                7,
+                _HEX,
+                _id(99),
+                "none",
+                "{}",
+                None,
+                None,
+            ],
+        )
+        with pytest.raises(ProvenanceError, match="unreachable"):
+            db.bundles()
+
+
 def test_trial_round_trip_and_family_filter(tmp_path) -> None:
     with ProvenanceDB(tmp_path / "prov.duckdb") as db:
         bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
@@ -289,3 +343,74 @@ def test_db_persists_across_connections(tmp_path) -> None:
     with ProvenanceDB(path) as db:
         assert len(db.bundles()) == 1
         assert db.chain_head() == _id(1)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "bundle_id; DROP TABLE proof_bundles",
+        "bundle_id' OR '1'='1",
+        "id, (SELECT 1)",
+        "created_utc--",
+        "bundle id",
+        "",
+        "1bad",
+        'bundle_id"',
+        "proof_bundles.bundle_id",
+    ],
+)
+def test_sql_identifier_validation_rejects_injection(payload: str) -> None:
+    with pytest.raises(ProvenanceError, match="SQL identifier"):
+        provenance_mod._sql_identifier(payload)
+    with pytest.raises(ProvenanceError, match="SQL identifier"):
+        provenance_mod._sql_identifier_list(("bundle_id", payload))
+    with pytest.raises(ProvenanceError, match="SQL identifier"):
+        provenance_mod._insert_statement("proof_bundles", ("bundle_id", payload))
+    with pytest.raises(ProvenanceError, match="SQL identifier"):
+        provenance_mod._select_statement(payload, provenance_mod._TRIAL_COLUMNS)
+
+
+def test_sql_builders_reject_empty_identifier_lists() -> None:
+    assert provenance_mod._sql_identifier("bundle_id") == "bundle_id"
+    with pytest.raises(ProvenanceError, match="empty SQL identifier"):
+        provenance_mod._sql_identifier_list(())
+    with pytest.raises(ProvenanceError, match="no bound parameters"):
+        provenance_mod._bound_placeholders(0)
+
+
+def test_write_path_rejects_injected_column_before_execute(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(
+        provenance_mod,
+        "_BUNDLE_COLUMNS",
+        ("bundle_id", "created_utc; DROP TABLE proof_bundles"),
+    )
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        with pytest.raises(ProvenanceError, match="SQL identifier"):
+            db.insert_bundle(bundle, None)
+        # Static chain-head query still sees the table, so the DROP never ran.
+        assert db.chain_head() == GENESIS_HASH
+
+
+def test_bound_parameters_store_sql_text_as_data(tmp_path) -> None:
+    payload = "alpha'; DROP TABLE trial_ledger; --"
+    cluster = "1' OR '1'='1"
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(bundle, None)
+        trial = _trial(_id(11), bundle.bundle_id, family="calibration").model_copy(
+            update={"strategy": payload, "cluster_id": cluster}
+        )
+        db.insert_trial(trial)
+        stored = db.trials()
+        assert len(stored) == 1
+        assert stored[0].strategy == payload
+        assert stored[0].cluster_id == cluster
+        assert db.trials(family="calibration' OR '1'='1") == []
+        assert db.trials(family="calibration' OR family='discovery") == []
+        assert [row.trial_id for row in db.trials(family="calibration")] == [trial.trial_id]
+        assert db.chain_head() == bundle.bundle_id
+        insert_sql = provenance_mod._insert_statement("trial_ledger", provenance_mod._TRIAL_COLUMNS)
+        assert insert_sql.count("?") == len(provenance_mod._TRIAL_COLUMNS)
+        assert "'" not in insert_sql
+        assert "--" not in insert_sql
