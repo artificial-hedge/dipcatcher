@@ -52,6 +52,7 @@ LATTICE_SCHEMA = "receipt_lattice.v1"
 _META_AUDIT_KINDS = frozenset(
     {
         "corpus_epoch.v1",
+        "corpus_proof.v1",
         "receipt_admission.v1",
         "receipt_lattice.v1",
         "receipt_graph.v1",

@@ -5,7 +5,7 @@
       "target": "quality/crown_jewels.json"
     },
     "quality__epoch_heads.json.tsr": {
-      "sha256": "c52e0c91a46534b9d14af840a45483c55d7bbbbf06f77726d7369ad1e1ed3843",
+      "sha256": "001cbcf4d51b236d87a6d6c373ca59c55da209ce64d40401ad920eaa46db6ba9",
       "target": "quality/epoch_heads.json"
     }
   },
