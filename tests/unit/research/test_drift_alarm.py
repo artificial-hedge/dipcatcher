@@ -119,3 +119,46 @@ def test_mc_false_alarm_rate() -> None:
             ep.update(float(x))
         alarms += int(ep.alarmed)
     assert alarms <= 3  # alpha=0.05 → expect ~1; allow slack
+
+
+def test_conformal_rank_is_exactly_mean_zero_under_exchangeability() -> None:
+    """Per-step factor mean: under any iid stream the smoothed conformal
+    rank is uniform, so E[e_t | F] = 1 + lam_t·E[1−2p] = 1 — the exact
+    martingale property the old clip bet lacked."""
+    factors = []
+    for s in range(200):
+        rng = np.random.default_rng(20_000 + s)
+        ep = EProcessDriftAlarm(alpha=0.05, burn_in=5, seed=s)
+        prev = 1.0
+        for x in rng.standard_t(2.5, 60):  # heavy tails, iid → exchangeable
+            st = ep.update(float(x))
+            e = st.statistic / prev
+            if prev != 1.0 or e != 1.0:  # skip burn-in steps
+                factors.append(e)
+            prev = st.statistic
+    # E[factor] == 1 up to MC noise (factors bounded in (0, 1+lam))
+    assert abs(float(np.mean(factors)) - 1.0) < 0.05
+
+
+def test_null_control_across_families() -> None:
+    """Distribution-free null control: the clip bet failed at ~45% on
+    left-skewed and ~10% on heavy tails; the conformal-rank bet holds
+    alpha on every iid family."""
+    families = {
+        "gaussian": lambda r, n: r.normal(0.0, 1.0, n),
+        "t3": lambda r, n: r.standard_t(3.0, n),
+        "laplace": lambda r, n: r.laplace(0.0, 1.0, n),
+        "hetero": lambda r, n: r.normal(0.0, np.where(np.arange(n) % 2, 1.0, 3.0)),
+        "skew_left": lambda r, n: -np.abs(r.normal(0.0, 1.0, n)) + np.sqrt(2.0 / np.pi),
+        "skew_right": lambda r, n: np.abs(r.normal(0.0, 1.0, n)) - np.sqrt(2.0 / np.pi),
+    }
+    for name, gen in families.items():
+        alarms = 0
+        n_sims = 60
+        for s in range(n_sims):
+            rng = np.random.default_rng(30_000 + s)
+            ep = EProcessDriftAlarm(alpha=0.05, burn_in=8, seed=s)
+            for x in gen(rng, 250):
+                ep.update(float(x))
+            alarms += int(ep.alarmed)
+        assert alarms <= 6, f"{name}: {alarms}/{n_sims} alarms at alpha=0.05"
