@@ -5943,6 +5943,10 @@
       "src": "quant_fund.research.capacity_overlay"
     },
     {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.capacity_overlay"
+    },
+    {
       "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.research.capacity_overlay"
     },
@@ -6136,6 +6140,10 @@
     },
     {
       "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.cross_sectional"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
       "src": "quant_fund.research.cross_sectional"
     },
     {
@@ -6511,11 +6519,23 @@
       "src": "quant_fund.research.receipt_schema"
     },
     {
+      "dst": "quant_fund.research.capacity_overlay",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
       "dst": "quant_fund.research.catalog",
       "src": "quant_fund.research.receipt_v2"
     },
     {
+      "dst": "quant_fund.research.cross_sectional",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
       "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
+      "dst": "quant_fund.research.vol_bench",
       "src": "quant_fund.research.receipt_v2"
     },
     {
@@ -6644,6 +6664,10 @@
     },
     {
       "dst": "quant_fund.research.garch_benchmark",
+      "src": "quant_fund.research.vol_bench"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
       "src": "quant_fund.research.vol_bench"
     },
     {
@@ -9249,7 +9273,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 102,
+      "imports": 108,
       "src": "quant_fund.research"
     },
     {
