@@ -121,6 +121,7 @@ __all__ = [
 
 __all__ = sorted(_ATTR_TO_MODULE)
 
+
 def eval_prompt_surface() -> list[str]:
     """Every user prompt the eval surface presents to a model.
     The decontamination target: canonical bank prompts, red-team tasks,
@@ -142,6 +143,8 @@ def eval_prompt_surface() -> list[str]:
                 seen.add(message["content"])
                 prompts.append(message["content"])
     return prompts
+
+
 _LAZY_CAPABILITY = frozenset({"CapabilityEvalReport", "run_capability_eval"})
 
 
