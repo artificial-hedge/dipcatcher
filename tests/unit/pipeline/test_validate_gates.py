@@ -539,3 +539,132 @@ def test_walk_forward_count_metadata_must_be_positive_integer(
     )
     assert result["gates"]["causal_or_walk_forward"] is False
     assert "missing_causal_panel_or_walk_forward_evidence" in result["reasons"]
+
+
+# ---------------------------------------------------------------------------
+# hypothesis_family_split: computed AND enforced (SOTA wave 28)
+#
+# A notebook that registers hypotheses without pre-registered families cannot
+# separate "we predicted this" from "we found this". The gate used to be
+# computed into `gates` + `reasons` only, leaving `ok=True`/`promote=True` —
+# a computed-but-unenforced gate. These lock the enforcement.
+# ---------------------------------------------------------------------------
+
+_COMPLETE_NON_SYNTHETIC = {
+    "evidence_complete": True,
+    "mean_ic": 0.5,
+    "net_spread": 0.2,
+    "turnover": 0.1,
+    "n_folds": 5,
+    "fold_ic_stability": 1.0,
+    "walk_forward_complete": True,
+    "data_source": "file",
+    "run_id": "a" * 64,
+}
+
+
+def _bound_candidate(tmp_path: Path, monkeypatch, notebook: dict) -> dict:
+    """A receipt-valid, run-id/worktree-bound, non-synthetic candidate.
+
+    Everything except the hypothesis family split is green, so the family-split
+    gate is the only thing that can move the verdict.
+    """
+    import quant_fund.validation.gates as gates
+
+    cfg = load_config("configs/research.yaml")
+    cfg.data.root = tmp_path
+    cfg.data.source = "file"  # type: ignore[assignment]
+    monkeypatch.setattr(gates, "_load_research_notebook", lambda _config: notebook)
+    monkeypatch.setattr(gates, "verify_research_artifact", lambda _path: {"valid": True})
+    monkeypatch.setattr(gates, "_current_worktree_sha256", lambda: "b" * 64)
+    return gates.validate_candidate("model-x", cfg, metrics=dict(_COMPLETE_NON_SYNTHETIC))
+
+
+@pytest.mark.parametrize("family", ["calibration", "discovery", "bound"])
+def test_family_split_present_still_validates(tmp_path: Path, monkeypatch, family: str) -> None:
+    """Each pre-registered family on its own satisfies the split gate."""
+    notebook = {
+        "provenance": {"run_id": "a" * 64, "git_worktree_sha256": "b" * 64},
+        "hypotheses": [{"id": "H1", "family": family, "p_value": 0.01}],
+    }
+    result = _bound_candidate(tmp_path, monkeypatch, notebook)
+    assert result["gates"]["hypothesis_family_split"] is True
+    assert result["ok"] is True
+    assert result["promote"] is True
+    assert result["gates"]["promotion"] is True
+    assert "hypothesis_family_split_missing" not in result["reasons"]
+
+
+@pytest.mark.parametrize(
+    "hypotheses",
+    [
+        # families stripped entirely (legacy / migrated / hand-authored receipt)
+        [{"id": "H1", "p_value": 0.01}, {"id": "H2", "p_value": 0.02}],
+        # a family that is not one of the three pre-registered ones
+        [{"id": "H1", "family": "post_hoc", "p_value": 0.01}],
+        # family present but None — cannot be coerced into a valid split
+        [{"id": "H1", "family": None, "p_value": 0.01}],
+        # non-dict rows carrying no family attribute
+        ["H1", "H2"],
+    ],
+)
+def test_hypotheses_without_family_split_are_rejected(
+    tmp_path: Path, monkeypatch, hypotheses: list[object]
+) -> None:
+    """PERFECT IC + bound receipt still REJECTED when the family split is missing.
+
+    This is the regression lock for the computed-but-unenforced gate: before the
+    fix this candidate returned ``ok=True`` and ``promote=True`` while the
+    reason ``hypothesis_family_split_missing`` sat unread in the ledger.
+    """
+    notebook = {
+        "provenance": {"run_id": "a" * 64, "git_worktree_sha256": "b" * 64},
+        "hypotheses": hypotheses,
+    }
+    result = _bound_candidate(tmp_path, monkeypatch, notebook)
+    assert result["gates"]["hypothesis_family_split"] is False
+    assert result["ok"] is False
+    assert result["promote"] is False
+    assert result["gates"]["promotion"] is False
+    assert result["promotion"]["promote"] is False
+    assert "hypothesis_family_split_missing" in result["reasons"]
+    # The reason must not be the only signal: the gate dict must agree with it.
+    assert result["gates"]["promotion"] is False
+
+
+def test_no_hypotheses_does_not_trip_the_family_split_gate(tmp_path: Path, monkeypatch) -> None:
+    """An empty hypothesis list is not a family-split violation (fail-closed elsewhere)."""
+    notebook = {
+        "provenance": {"run_id": "a" * 64, "git_worktree_sha256": "b" * 64},
+        "hypotheses": [],
+    }
+    result = _bound_candidate(tmp_path, monkeypatch, notebook)
+    assert result["gates"]["hypothesis_family_split"] is False
+    assert "hypothesis_family_split_missing" not in result["reasons"]
+    assert result["ok"] is True
+
+
+def test_family_split_gate_blocks_even_when_other_gates_all_pass(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Mixed families where NONE is pre-registered: gate computed, verdict flipped."""
+    notebook = {
+        "provenance": {"run_id": "a" * 64, "git_worktree_sha256": "b" * 64},
+        "hypotheses": [
+            {"id": "H1", "family": "oracle", "p_value": 0.001},
+            {"id": "H2", "family": "snooping", "p_value": 0.001},
+            {"id": "H3", "family": "vol_tail", "p_value": 0.001},
+        ],
+    }
+    result = _bound_candidate(tmp_path, monkeypatch, notebook)
+    # Every other gate is green.
+    assert result["gates"]["causal_or_walk_forward"] is True
+    assert result["gates"]["synthetic_not_claimed_live"] is True
+    assert result["gates"]["multi_fold_stability"] is True
+    assert result["gates"]["research_notebook_receipt_valid"] is True
+    assert result["gates"]["research_receipt_run_id_bound"] is True
+    assert result["gates"]["research_receipt_worktree_bound"] is True
+    # ...and the single computed gate is enough to reject.
+    assert result["gates"]["hypothesis_family_split"] is False
+    assert result["ok"] is False
+    assert result["promote"] is False

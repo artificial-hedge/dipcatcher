@@ -266,7 +266,13 @@ def validate_candidate(
     if not fold_ok:
         reasons.append("insufficient_multi_fold_stability")
 
-    # Gate: research notebook family split present when notebook exists
+    # Gate: research notebook family split present when notebook exists.
+    # A notebook that registers hypotheses but files none of them under a
+    # pre-registered family (calibration / discovery / bound) cannot separate
+    # "we predicted this" from "we found this", so it is not promotable
+    # evidence. This used to be COMPUTED ONLY: the flag and the reason were
+    # recorded while `ok` and `promote` stayed True. It is now enforced.
+    family_split_failed = False
     if notebook is not None:
         hyps = notebook.get("hypotheses") or []
         families = {
@@ -278,6 +284,7 @@ def validate_candidate(
         )
         gates["hypothesis_family_split"] = bool(hyps) and has_split
         if hyps and not has_split:
+            family_split_failed = True
             reasons.append("hypothesis_family_split_missing")
     else:
         gates["hypothesis_family_split"] = False
@@ -307,16 +314,22 @@ def validate_candidate(
         promo["promote"] = False
         if not notebook_receipt_valid and "research_notebook_invalid" not in reasons:
             reasons.append("research_notebook_invalid")
+    # ENFORCED (was computed-only): hypotheses registered without a
+    # pre-registered family cannot evidence promotion, whatever the IC says.
+    if family_split_failed:
+        promo["promote"] = False
     gates["promotion"] = bool(promo["promote"])
     for r in promo.get("reasons") or []:
         if r not in reasons:
             reasons.append(str(r))
 
-    # Research-ok: causal/WF present, no synthetic-as-live mistake
+    # Research-ok: causal/WF present, no synthetic-as-live mistake, and every
+    # recorded research-correctness reason actually fails the decision.
     research_ok = (
         gates["causal_or_walk_forward"]
         and gates["synthetic_not_claimed_live"]
         and gates.get("multi_fold_stability", True)
+        and not family_split_failed
     )
     if notebook is None and not _required_metrics_present(blob):
         research_ok = False
