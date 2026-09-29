@@ -33,15 +33,21 @@ does not score them.
 - `receipts/basis_reversion_screen_20asset_1d_20260922.json`: basis_reversion_screen.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/calib_real_drill.json`: calibration_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/coherence_2dd641ab766a536a.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/cost_calibration_eval_df9b8d7068bf709b.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/dip_bench_crypto_1d_20260925.json`: fx1.dip_bench/v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fast_replay_p42_conformance_20260927.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/fast_replay_p42_conformance_20260928.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/fleet_race_real_drill.json`: fleet_race.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/incumbent_bench_qlib.json`: incumbent_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_clean.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_defect.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/nautilus_conformance_7bf19a08c147547b.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/rankic_eval_9ebdad7da83e7348.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - draft PR #202 survivorship-corrected batch: not on this tree; listed as pending, not merged, with no measured figures
