@@ -32,6 +32,7 @@ from quant_fund.portfolio.interval_risk import apply_interval_caps, interval_ref
 from quant_fund.portfolio.optimizer import optimize_mean_variance
 from quant_fund.schemas.errors import OptimizationInfeasible
 from quant_fund.schemas.forecast import AssetForecast, IntervalMethod, MarketState
+from quant_fund.utils.numeric import midrank
 from quant_fund.utils.atomicio import atomic_write_parquet
 
 from .artifacts import (
@@ -183,9 +184,8 @@ def forecast_asof(
                 if "cs_pct_mom_20" in day.columns
                 else np.zeros(day.height)
             )
-    # percentile ranks within the day
-    order = scores.argsort().argsort()
-    pct = (order + 0.5) / max(len(scores), 1)
+    # percentile ranks within the day (midranks — tied scores share a percentile)
+    pct = (midrank(scores) - 0.5) / max(len(scores), 1)
     if config.fusion.apply_probability_calibration:
         calibrator = _load_probability_calibrator(config, asof=asof)
         if "cs_pct_mom_20" not in day.columns:
@@ -221,8 +221,7 @@ def forecast_asof(
             scores[i] = (1.0 - blend) * float(scores[i]) + blend * float(hit.forecast.rank_score)
             alpha[i] = (1.0 - blend) * float(alpha[i]) + blend * mu
             conf[i] = (1.0 - blend) * float(conf[i]) + blend * float(hit.forecast.confidence)
-        order = scores.argsort().argsort()
-        pct = (order + 0.5) / max(len(scores), 1)
+        pct = (midrank(scores) - 0.5) / max(len(scores), 1)
         conf = np.clip(conf, 0.2, 1.0)
     regime = np.ones(day.height)
     tail = np.clip(vol * 0.1, 0, None)
@@ -617,6 +616,24 @@ def optimize_asof(
     return out
 
 
+def decision_dates(
+    config: AppConfig,
+    dates: list[datetime] | None = None,
+) -> list[datetime]:
+    """Subset of ``dates`` that have a row on the causal gold panel.
+
+    The gold panel drops warmup bars (no universe membership yet) and the
+    label-horizon tail, so a raw feature-date grid always contains decision
+    dates ``optimize_asof`` must refuse. Callers iterating a coarse grid
+    intersect it here — the same convention as ``execution-sensitivity``.
+    ``dates=None`` returns the panel's own dates.
+    """
+    on_panel = set(panel(config)["event_time"].unique().to_list())
+    if dates is None:
+        return sorted(on_panel)
+    return [d for d in dates if d in on_panel]
+
+
 def build_causal_weight_panel(
     config: AppConfig,
     dates: list[datetime] | None = None,
@@ -670,6 +687,7 @@ def build_causal_weight_panel(
 
 __all__ = [
     "build_causal_weight_panel",
+    "decision_dates",
     "forecast_asof",
     "optimize_asof",
 ]
