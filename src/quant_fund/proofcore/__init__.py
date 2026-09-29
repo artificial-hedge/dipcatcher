@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from quant_fund.proofcore.contracts import (
+    MERKLE_ALGORITHM_V1,
+    MERKLE_ALGORITHM_V2,
     SCHEMA_VERSION,
     CodeFingerprint,
     DataAccessRecord,
@@ -18,11 +20,16 @@ from quant_fund.proofcore.contracts import (
     SignatureBlock,
     TrialLedgerRow,
     canonical_json_bytes,
+    merkle_inclusion_proof_hex_v2,
+    merkle_root_from_inclusion_hex_v2,
     merkle_root_hex,
+    merkle_root_hex_v2,
     sha256_hex_bytes,
 )
 
 __all__ = [
+    "MERKLE_ALGORITHM_V1",
+    "MERKLE_ALGORITHM_V2",
     "SCHEMA_VERSION",
     "CodeFingerprint",
     "DataAccessRecord",
@@ -38,6 +45,9 @@ __all__ = [
     "SignatureBlock",
     "TrialLedgerRow",
     "canonical_json_bytes",
+    "merkle_inclusion_proof_hex_v2",
+    "merkle_root_from_inclusion_hex_v2",
     "merkle_root_hex",
+    "merkle_root_hex_v2",
     "sha256_hex_bytes",
 ]

@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import re
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import PurePosixPath
 from typing import Literal, Self
@@ -145,11 +146,35 @@ def sha256_hex_json(obj: object) -> str:
 
 
 def merkle_root_hex(leaf_hashes: list[str]) -> str:
-    """Merkle root over hex digests. Empty list hashes the empty string.
+    """MERKLE V1 — order-independent set commitment. **DEPRECATED: MALLEABLE.**
 
     Leaves are sorted before pairing (order-independent commitment).
     Odd levels duplicate the last node. Domain-separated via b"PC:leaf:"/
     b"PC:node:" prefixes so leaf and node hashes can never collide by design.
+
+    .. deprecated::
+        **Do not use for new seals, manifests, or proofs.** Two defects make
+        this root unusable as a commitment (``docs/SOTA/12`` N8/N9):
+
+        1. **Extension malleability.** Because leaves are sorted and the last
+           node of an odd level is duplicated, re-appending a copy of the
+           *maximum* leaf leaves the root byte-identical::
+
+               merkle_root_hex([a, b, c]) == merkle_root_hex([a, b, c, max(a, b, c)])
+
+           (measured: ``d44f177398ab19ee...`` for both). A 4-read data manifest
+           can therefore share a root with a 3-read manifest, so the root does
+           not commit to the number of reads.
+        2. **Order blindness.** ``merkle_root_hex([a, b, c]) ==
+           merkle_root_hex([c, b, a])``. Read order is load-bearing for
+           point-in-time claims; this root does not commit to it.
+
+        Kept unchanged, byte for byte, because sealed ``proofcore/1`` bundles
+        reference v1 roots and re-deriving them would invalidate immutable
+        evidence. Verification of old artifacts must keep calling this
+        function. Use :func:`merkle_root_hex_v2` for anything new: it is
+        order-preserving, commits to the leaf count, rejects duplicates, and
+        is domain-separated from v1 so the two can never collide.
     """
     if not leaf_hashes:
         return sha256_hex_bytes(b"")
@@ -165,6 +190,182 @@ def merkle_root_hex(leaf_hashes: list[str]) -> str:
             nxt.append(sha256_hex_bytes(b"PC:node:" + left + right))
         level = nxt
     return level[0]
+
+
+#: Merkle construction tags. ``MERKLE_ALGORITHM_V1`` / ``_V2`` are the strings
+#: a manifest or receipt records so a verifier knows which tree to recompute.
+MERKLE_ALGORITHM_V1: str = "merkle-sorted-v1"
+MERKLE_ALGORITHM_V2: str = "merkle-ordered-v2"
+
+#: Domain-separation tags for the v2 tree. Structurally distinct from v1's
+#: ``b"PC:leaf:"`` / ``b"PC:node:"``: the v2 leaf tag is ``b"PC2:leaf:"`` plus
+#: a decimal leaf count, so no v2 leaf preimage can equal a v1 preimage and no
+#: v2 leaf hash can equal an internal node hash.
+_MERKLE_V2_LEAF_TAG: bytes = b"PC2:leaf:"
+_MERKLE_V2_NODE_TAG: bytes = b"PC2:node:"
+_MERKLE_V2_EMPTY_TAG: bytes = b"PC2:tree:0"
+
+
+def _merkle_v2_leaf_preimage(index: int, count: int, leaf_hash: str) -> bytes:
+    """v2 leaf preimage: tag || decimal leaf count || ':' || index || ':' || digest."""
+    return (
+        _MERKLE_V2_LEAF_TAG
+        + str(count).encode("ascii")
+        + b":"
+        + str(index).encode("ascii")
+        + b":"
+        + bytes.fromhex(leaf_hash)
+    )
+
+
+def _merkle_v2_validate(leaf_hashes: Sequence[str]) -> None:
+    """Fail closed on a malformed, duplicated, or non-appendable leaf set."""
+    for h in leaf_hashes:
+        if not isinstance(h, str) or _SHA256_HEX.fullmatch(h) is None:
+            raise ProofError(f"merkle leaf is not a sha256 hex digest: {h!r}")
+    seen: set[str] = set()
+    for index, leaf in enumerate(leaf_hashes):
+        if leaf in seen:
+            raise ProofError(f"merkle v2 leaf set contains a duplicate leaf at index {index}")
+        seen.add(leaf)
+
+
+def merkle_root_hex_v2(leaf_hashes: Sequence[str]) -> str:
+    """MERKLE V2 — order-preserving, count-committing, extension-resistant root.
+
+    Use this for every new seal, data manifest, or artifact commitment. The
+    deprecated v1 (:func:`merkle_root_hex`) sorts leaves and duplicates the odd
+    node, which makes its root order-blind and *extendable*: appending a copy of
+    the maximum leaf reproduces the same root. A commitment you can silently
+    extend is not a commitment.
+
+    Construction (all three properties are required; each kills a v1 attack):
+
+    1. **Leaf order is preserved.** Leaves are hashed at their given position,
+       never sorted, so ``root([a, b, c]) != root([c, b, a])``.
+    2. **The leaf count is bound into every leaf preimage.** Each leaf is
+       ``SHA256(b"PC2:leaf:" + <count> + b":" + <index> + b":" + <digest>)``.
+       Appending any leaf changes ``<count>`` for *every* leaf, so the root of
+       ``L`` can never equal the root of ``L + [x]`` for any ``x`` — including
+       ``x == max(L)``, the exact v1 malleability.
+    3. **Duplicate leaves are rejected.** A repeated digest raises
+       :class:`ProofError` instead of producing an ambiguous tree, so the
+       "re-append the maximum leaf" construction cannot even be expressed.
+
+    **Odd-node choice (documented, deliberate).** At an odd level the last node
+    is duplicated, matching v1's shape:
+    ``SHA256(b"PC2:node:" + left + left)``. That padding is *not* what v1's
+    extension bug came from (the sort was), and it is safe here because
+    property 2 already commits to the leaf count. It is not the RFC 6962
+    ``k``-split, so v2 does **not** yield RFC 6962 consistency proofs; the
+    audit ledger (``quant_fund.audit.merkle``) remains the structure for
+    append-only logs with inclusion and consistency proofs.
+
+    **Domain separation from v1.** The empty tree is ``SHA256(b"PC2:tree:0")``,
+    not v1's ``SHA256(b"")``; every non-empty v2 leaf/node carries a ``PC2:``
+    tag v1 never emits. A v1 root and a v2 root over the same leaves therefore
+    differ, and neither can be mistaken for the other.
+
+    Raises:
+        ProofError: a leaf is not a lowercase 64-hex SHA-256 digest, or the
+            leaf set contains a duplicate.
+    """
+    leaves = list(leaf_hashes)
+    if not leaves:
+        return sha256_hex_bytes(_MERKLE_V2_EMPTY_TAG)
+    _merkle_v2_validate(leaves)
+    count = len(leaves)
+    level = [
+        sha256_hex_bytes(_merkle_v2_leaf_preimage(index, count, leaf))
+        for index, leaf in enumerate(leaves)
+    ]
+    while len(level) > 1:
+        nxt: list[str] = []
+        for i in range(0, len(level), 2):
+            left = bytes.fromhex(level[i])
+            right = bytes.fromhex(level[min(i + 1, len(level) - 1)])
+            nxt.append(sha256_hex_bytes(_MERKLE_V2_NODE_TAG + left + right))
+        level = nxt
+    return level[0]
+
+
+def merkle_inclusion_proof_hex_v2(leaf_hashes: Sequence[str], index: int) -> list[str]:
+    """Sibling path from ``leaf_hashes[index]`` to :func:`merkle_root_hex_v2`.
+
+    Ordered leaf-to-root, with the duplicated-last-node convention at odd
+    levels. Pair this with the leaf count so a single recorded read can be
+    proven against a committed manifest root without disclosing the others.
+    """
+    leaves = list(leaf_hashes)
+    if not leaves:
+        raise ProofError("cannot build an inclusion proof for an empty leaf set")
+    _merkle_v2_validate(leaves)
+    if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(leaves):
+        raise ProofError(f"inclusion index {index} is outside leaf count {len(leaves)}")
+    count = len(leaves)
+    level = [
+        sha256_hex_bytes(_merkle_v2_leaf_preimage(position, count, leaf))
+        for position, leaf in enumerate(leaves)
+    ]
+    cursor = index
+    proof: list[str] = []
+    while len(level) > 1:
+        sibling = min(cursor ^ 1, len(level) - 1)
+        proof.append(level[sibling])
+        nxt: list[str] = []
+        for i in range(0, len(level), 2):
+            left = bytes.fromhex(level[i])
+            right = bytes.fromhex(level[min(i + 1, len(level) - 1)])
+            nxt.append(sha256_hex_bytes(_MERKLE_V2_NODE_TAG + left + right))
+        level = nxt
+        cursor //= 2
+    return proof
+
+
+def merkle_root_from_inclusion_hex_v2(
+    leaf_hash: str,
+    index: int,
+    count: int,
+    proof: Sequence[str],
+) -> str:
+    """Recompute a v2 root from one leaf, its position, the leaf count, and a path.
+
+    Fails closed: a wrong index, a wrong count, or a path that is shorter or
+    longer than the tree requires raises :class:`ProofError`.
+    """
+    if not isinstance(leaf_hash, str) or _SHA256_HEX.fullmatch(leaf_hash) is None:
+        raise ProofError("merkle leaf is not a sha256 hex digest")
+    if isinstance(count, bool) or not isinstance(count, int) or count < 1:
+        raise ProofError(f"leaf count must be a positive integer, got {count!r}")
+    if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < count:
+        raise ProofError(f"inclusion index {index} is outside leaf count {count}")
+    path = list(proof)
+    for node in path:
+        if not isinstance(node, str) or _SHA256_HEX.fullmatch(node) is None:
+            raise ProofError("merkle proof node is not a sha256 hex digest")
+    expected_levels = 0
+    width = count
+    while width > 1:
+        expected_levels += 1
+        width = (width + 1) // 2
+    if len(path) != expected_levels:
+        raise ProofError(
+            f"merkle v2 inclusion proof has {len(path)} nodes; leaf count {count} "
+            f"requires exactly {expected_levels}"
+        )
+    current = sha256_hex_bytes(_merkle_v2_leaf_preimage(index, count, leaf_hash))
+    cursor = index
+    for node in path:
+        if cursor % 2 == 1:
+            current = sha256_hex_bytes(
+                _MERKLE_V2_NODE_TAG + bytes.fromhex(node) + bytes.fromhex(current)
+            )
+        else:
+            current = sha256_hex_bytes(
+                _MERKLE_V2_NODE_TAG + bytes.fromhex(current) + bytes.fromhex(node)
+            )
+        cursor //= 2
+    return current
 
 
 # ---------------------------------------------------------------------------
