@@ -73,9 +73,16 @@ def _now_iso() -> str:
 @contextmanager
 def _dataset_write_lock(directory: Path):
     """Serialize appends across processes; SQLite releases the lock on crash."""
-    connection = sqlite3.connect(directory / ".append-lock.sqlite3", timeout=30)
+    try:
+        connection = sqlite3.connect(directory / ".append-lock.sqlite3", timeout=30)
+    except sqlite3.Error as exc:
+        raise VaultError(f"dataset append lock unavailable: {exc}") from exc
     try:
         connection.execute("BEGIN EXCLUSIVE")
+    except sqlite3.Error as exc:
+        connection.close()
+        raise VaultError(f"dataset append lock busy: {exc}") from exc
+    try:
         yield
     finally:
         connection.rollback()
@@ -125,6 +132,8 @@ class PitVault:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
             if not isinstance(meta, dict) or not isinstance(meta.get("security_level"), bool):
                 raise ValueError("dataset metadata must declare a boolean security_level")
+            if meta.get("dataset") != name:
+                raise ValueError(f"dataset metadata name field {meta.get('dataset')!r} != {name!r}")
             if not isinstance(meta.get("monotonic_known_at", False), bool):
                 raise ValueError("monotonic_known_at must be boolean")
             return meta
@@ -151,15 +160,26 @@ class PitVault:
         directory = self._dataset_dir(name)
         if manifest_mod.manifest_path(self.root, name).exists():
             raise VaultError(f"dataset already exists: {name!r}")
+        # Dataset dirs must never nest: a descendant's files would land inside
+        # the parent's machinery namespace (parts/, manifests/) and can wedge
+        # its write-once appends or pollute verify(); an ancestor swallows the
+        # existing child's storage.
+        for other in self.list_datasets():
+            if name.startswith(other + "/") or other.startswith(name + "/"):
+                raise VaultError(
+                    f"dataset dirs must not nest: {name!r} conflicts with "
+                    f"existing dataset {other!r}"
+                )
         (directory / manifest_mod.PARTS_DIR).mkdir(parents=True, exist_ok=True)
         meta = {
             "dataset": name,
             "security_level": bool(security_level),
             "monotonic_known_at": bool(monotonic_known_at),
         }
+        meta_payload = json.dumps(meta, sort_keys=True).encode("utf-8")
         manifest_mod._atomic_write(
             directory / manifest_mod.DATASET_META_NAME,
-            json.dumps(meta, sort_keys=True).encode("utf-8"),
+            meta_payload,
         )
         manifest = PitManifest(
             dataset=name,
@@ -167,6 +187,7 @@ class PitVault:
             revision=0,
             prev_manifest_sha256=GENESIS_HASH,
             files=(),
+            dataset_meta_sha256=sha256_hex_bytes(meta_payload),
         )
         manifest_mod.write_manifest(self.root, name, manifest, prev_manifest_sha256=GENESIS_HASH)
 
@@ -241,7 +262,9 @@ class PitVault:
                 ) as temporary:
                     temporary_path = Path(temporary.name)
                 frame.write_parquet(temporary_path)
-                with temporary_path.open("rb") as handle:
+                # r+b: fsync needs a write-capable descriptor on Windows;
+                # an rb handle raises OSError(EBADF) there.
+                with temporary_path.open("r+b") as handle:
                     os.fsync(handle.fileno())
                 # link() is an atomic exclusive publish: it cannot replace a part
                 # created by another writer or a crashed earlier append.
@@ -271,6 +294,7 @@ class PitVault:
                 revision=revision,
                 prev_manifest_sha256=current_sha,
                 files=(*current.files, entry),
+                dataset_meta_sha256=current.dataset_meta_sha256,
             )
             manifest_mod.write_manifest(self.root, name, updated, prev_manifest_sha256=current_sha)
             return updated
@@ -284,9 +308,14 @@ class PitVault:
             orphan = directory / manifest_mod.PARTS_DIR / f"r{revision:07d}.parquet"
             if manifest_mod.versioned_manifest_path(self.root, name, revision).exists():
                 raise VaultError(f"{name}: revision {revision} has a retained manifest")
+            # A symlink must be checked before exists(): a dangling link reports
+            # exists() == False and would be silently skipped while still
+            # wedging the next append's write-once check.
+            if orphan.is_symlink():
+                raise VaultError(f"{name}: unsafe uncommitted part: {orphan}")
             if not orphan.exists():
                 return False
-            if orphan.is_symlink() or not orphan.is_file():
+            if not orphan.is_file():
                 raise VaultError(f"{name}: unsafe uncommitted part: {orphan}")
             orphan.unlink()
             return True
@@ -385,7 +414,9 @@ class PitVault:
         attached = active_recorder is not None and active_recorder is not self.recorder
         # ADVERSARIAL §1b-W2: re-resolve against the active proven-run context
         # so vaults created before the runner entered its run context are
-        # still recorded.
+        # still recorded. ADVERSARIAL R2 §1-W6: active_recorder/watchdog fall
+        # back to the run's thread-visible registry, so reads from worker
+        # threads carrying no proven-run context attach too (fail-loud).
         if recorder is None:
             recorder = run_context.active_recorder()
             attached = recorder is not None
@@ -396,11 +427,20 @@ class PitVault:
                 attached = True
         if attached and not self._warned_auto_attach:
             self._warned_auto_attach = True
-            _LOG.warning(
-                "PitVault(%s) has no recorder/watchdog of its own; auto-attached to "
-                "the active proven run's hooks so this read is proven",
-                self.root,
-            )
+            if run_context.context_is_proven():
+                _LOG.warning(
+                    "PitVault(%s) has no recorder/watchdog of its own; auto-attached "
+                    "to the active proven run's hooks so this read is proven",
+                    self.root,
+                )
+            else:
+                _LOG.warning(
+                    "PitVault(%s) read from a thread with no proven-run context "
+                    "while a proven run is active; cross-thread auto-attached to "
+                    "the run's recorder/watchdog so this read is proven (use "
+                    "proofcore.run_context.proven_thread to propagate the context)",
+                    self.root,
+                )
         if recorder is None and watchdog is None:
             return
         params = {"policy": policy.value}
