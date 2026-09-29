@@ -62,6 +62,8 @@ data/reality_sweep/
 data/reality_sweep_survivorship/
 # Runtime lock created by the audit ledger; public keys and entries stay tracked.
 research/reality/audit/.lock
+# Generated SYNTHETIC demo dataset — regenerate via `make demo-data`.
+data/demo/
 research/reality/survivorship/audit/.lock
 # Content-addressed lake objects (regenerate; do not commit market data).
 data/lake/
