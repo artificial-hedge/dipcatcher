@@ -189,6 +189,7 @@ def monitor_stream(
     lam: float = 0.5,
     ph_delta: float = 0.1,
     ph_h: float = 5.0,
+    data_label: str = "UNKNOWN",
 ) -> dict[str, object]:
     """Run both alarms over a stream → ``drift_alarm.v1`` report."""
     ep = EProcessDriftAlarm(alpha=alpha, lam=lam)
@@ -199,7 +200,7 @@ def monitor_stream(
     n_inconclusive = sum(1 for s in ep._steps if s.inconclusive)
     return {
         "kind": DRIFT_ALARM_SCHEMA,
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "research_only": True,
         "live_pnl_claim": False,
         "n_obs": ep._n + n_inconclusive,
