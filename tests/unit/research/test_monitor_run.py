@@ -66,6 +66,25 @@ def test_frame_shape_and_columns() -> None:
         assert col in frame.columns
 
 
+def test_deterministic_replay_is_byte_identical() -> None:
+    """The monitor is a deterministic function of (factories, shards, seed):
+    two runs must produce byte-identical frames and receipts — otherwise the
+    sealed receipt could not be reproduced as evidence."""
+    kwargs = dict(
+        n_train=256,
+        n_eval=64,
+        taus=[0.05, 0.1, 0.5, 0.9, 0.95],
+        seed=7,
+        alpha=0.05,
+        level=0.9,
+    )
+    factories = {"tight": _GaussianFactory(1.0), "wide": _GaussianFactory(2.0)}
+    frame_a, receipt_a = monitor_fleet(dict(factories), _shards(), **kwargs)
+    frame_b, receipt_b = monitor_fleet(dict(factories), _shards(), **kwargs)
+    assert frame_a.write_csv() == frame_b.write_csv()
+    assert receipt_a == receipt_b
+
+
 def test_broken_head_rows_status_error() -> None:
     class _Broken:
         def __call__(self):
