@@ -63,11 +63,26 @@ def test_corpus_audit_end_to_end(tmp_path: Path) -> None:
     assert rep["n_survivors"] == 2
     srcs = {c["source"] for c in rep["surviving_claims"]}
     assert srcs == {"a.json", "b.json"}
-    # e-value product merge: 30.0 ≥ 1/0.05 → corpus rejects null.
+    # e-value mean merge: single finding → mean = the value itself.
     assert rep["corpus_evalue"] == 30.0
     assert rep["corpus_reject_at_alpha"] is True
     # inputs carry no data_label — the corpus honestly reports UNKNOWN
     assert rep["data_label"] == "UNKNOWN"
+
+
+def test_evalue_mean_merge_valid_under_dependence(tmp_path: Path) -> None:
+    """Arithmetic mean of e-values is an e-value under arbitrary dependence
+    (Vovk–Wang): mean(30, 0.5) = 15.25 — the product (15.0) is kept only
+    as a labeled diagnostic since receipts cannot be assumed independent."""
+    _write(tmp_path, "a.json", {"kind": "k", "epromotion_evalue": 30.0})
+    _write(tmp_path, "b.json", {"kind": "k", "drift_evalue": 0.5})
+    rep = corpus_audit(tmp_path, q=0.05)
+    assert rep["corpus_evalue"] == 15.25
+    assert rep["corpus_evalue_product_dependence_assuming"] == 15.0
+    assert "evalue_mean_merge" in rep["evidence"]
+    assert "evalue_product_merge" not in rep["evidence"]
+    # mean 15.25 < 1/0.05 → no corpus rejection from dependent evidence
+    assert rep["corpus_reject_at_alpha"] is False
 
 
 def test_parse_error_recorded(tmp_path: Path) -> None:

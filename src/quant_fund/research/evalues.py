@@ -91,6 +91,7 @@ class LossEProcess:
     _diffs: list[float] = field(default_factory=list)
     _wins: int = 0
     _log_e: float = 0.0
+    _max_log_e: float = 0.0
     _promotion_origin: int | None = None
 
     def __post_init__(self) -> None:
@@ -120,6 +121,7 @@ class LossEProcess:
         self._log_e += float(np.log(e))
         self._wins += int(d < 0)
         self._diffs.append(d)
+        self._max_log_e = max(self._max_log_e, self._log_e)
         log_cap = float(np.log(1.0 / self.alpha))
         if self._promotion_origin is None and self._log_e >= log_cap:
             self._promotion_origin = len(self._diffs) - 1
@@ -127,7 +129,11 @@ class LossEProcess:
         state = EProcessState(
             origin=len(self._diffs) - 1,
             evalue=evalue,
-            anytime_p=float(min(1.0, 1.0 / evalue)),
+            # the anytime p is calibrated on the running max — Ville bounds
+            # P(sup E_t >= 1/alpha), so 1/current-E understates evidence once
+            # the process has crossed and dipped back (and would contradict
+            # the latched `promoted` flag on the same state).
+            anytime_p=float(min(1.0, np.exp(-min(self._max_log_e, 700.0)))),
             promoted=self._promotion_origin is not None,
         )
         self._states.append(state)

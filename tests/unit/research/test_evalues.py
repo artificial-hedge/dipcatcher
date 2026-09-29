@@ -45,6 +45,21 @@ def test_worse_challenger_never_promotes() -> None:
     assert proc.promotion_origin is None
 
 
+def test_anytime_p_is_running_max_of_wealth() -> None:
+    """Ville bounds the SUPREMUM: once promoted, a dip below 1/alpha must
+    leave anytime_p <= alpha (latched), not snap back above it."""
+    proc = LossEProcess(alpha=0.05)
+    for _ in range(60):
+        st = proc.update(0.0, 1.0)  # challenger better → wealth crosses 20
+    assert st.promoted
+    for _ in range(55):
+        st = proc.update(1.0, 0.0)  # wealth dips back under the threshold
+    assert st.evalue < 20.0
+    assert st.promoted  # latched
+    assert st.anytime_p <= 0.05  # 1/max E, not 1/current E
+    assert st.anytime_p < 1.0 / st.evalue  # strictly below the naive inverse
+
+
 def test_causality_prefix_invariant() -> None:
     rng = np.random.default_rng(7)
     c = rng.normal(0.5, 0.02, size=80)
