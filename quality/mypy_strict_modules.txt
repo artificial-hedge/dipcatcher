@@ -362,6 +362,7 @@ src/quant_fund/research/garch_benchmark.py
 src/quant_fund/research/net_replay.py
 src/quant_fund/research/net_tournament.py
 src/quant_fund/research/prospective_sota.py
+src/quant_fund/research/quantile_ladder.py
 src/quant_fund/research/real_benchmark.py
 src/quant_fund/research/sota_evidence.py
 src/quant_fund/research/sota_protocol.py
