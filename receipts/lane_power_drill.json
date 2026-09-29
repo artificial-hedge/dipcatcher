@@ -1,0 +1,55 @@
+{
+  "claims": [
+    {
+      "kind": "empirical_synthetic",
+      "text": "measured alarm rate/time per lane per defect size; defect=0 rows bound the false-alarm rate by alpha"
+    }
+  ],
+  "code_revision": "24f979d48f657c21b0192e364d239edb6311ece1",
+  "evidence": [
+    "sequential_power_measurement",
+    "defect_injection_grid",
+    "null_control_row_per_lane",
+    "lazy_lane_resolution"
+  ],
+  "inputs_sha256": "29f57ae06d9155ab5b3b8fd4174059a1a0f33b9c73273b76c585b12c5f1b4faa",
+  "kind": "lane_power",
+  "level": "research",
+  "n_lanes_ok": 9,
+  "null_alarm_rate": {
+    "calibration_eprocess": 0.0,
+    "changepoint_localize": 0.0,
+    "conformal_monitor": 0.0,
+    "coverage_cs": 0.0,
+    "coverage_watch": 0.0,
+    "drift_alarm": 0.0,
+    "loss_cs": 0.0,
+    "promotion": 0.125,
+    "tail_watch": 0.0
+  },
+  "params": {
+    "alpha": 0.05,
+    "defects": [
+      0.0,
+      0.1,
+      0.25,
+      0.5,
+      1.0
+    ],
+    "lanes": [
+      "coverage_watch",
+      "tail_watch",
+      "calibration_eprocess",
+      "drift_alarm",
+      "loss_cs",
+      "changepoint_localize",
+      "promotion",
+      "conformal_monitor",
+      "coverage_cs"
+    ],
+    "n_seeds": 8,
+    "n_steps": 200
+  },
+  "receipt_sha256": "8d91f50d308726296d79349ce4f24d37768edd6355b9db45bf57b137d8ed9b91",
+  "schema": "lane_power.v1"
+}
