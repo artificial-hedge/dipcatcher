@@ -269,6 +269,26 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       cumulative h-step realized variance, NW loss diffs vs `har`, sealed
       receipts). Real-data vol cells still open.
 
+### P3b — Sequential inference suite (new statistical layer)
+
+- [~] Anytime-valid head promotion: `research/evalues.py` `LossEProcess`
+      (betting e-process, Ville/Ramdas) wired into `vol_bench` — PR #380.
+- [~] Sequential fleet elimination: `research/fleet_race.py` + `dipcatcher
+      race` (two e-processes per head vs fixed incumbent) — PR #381.
+- [~] Corpus-level inference: `research/corpus_inference.py` harvests all
+      committed receipts → pooled BH-FDR + e-value product — PR #382.
+- [~] Online FDR over the receipt stream: `research/online_fdr.py`
+      Foster–Stine alpha-investing — PR #383.
+- [~] Verifier contracts for the family: `research/evalue_contracts.py`
+      deep-checks all four kinds — PR #384.
+- [~] Winner's-curse correction: `research/winner_curse.py` bootstrap
+      selection-bias + split-half honest control — PR #385.
+- [~] Anytime-valid drift alarms: `research/drift_alarm.py` level-shift
+      e-process + Page–Hinkley diagnostic — PR #386.
+- [~] Composite verdict: `research/honest_verdict.py` — PR #387.
+- [~] Registry completeness ratchet (no orphan heads) — PR #388.
+      See `docs/SEQUENTIAL_INFERENCE.md` for the architecture.
+
 ### P4 — Industry-grade bar (the open one)
 
 - [ ] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
