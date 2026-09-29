@@ -1,0 +1,60 @@
+{
+  "data_label": "yahoo_eod",
+  "drill": {
+    "excluded_heads": [
+      "nbeats",
+      "nhits",
+      "lgbm_q2"
+    ],
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "n_eval": 300,
+    "n_train": 1000,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "evidence": [
+    "ville_inequality",
+    "nonnegative_test_martingale",
+    "fixed_predictable_bets",
+    "level_test_not_change_test"
+  ],
+  "generated_at_commit": "dc1e47215d316108cbd403ee0c6ad2c91ee742bb",
+  "inputs_sha256": "1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb",
+  "kind": "calibration_audit.v1",
+  "live_pnl_claim": false,
+  "n_models": 12,
+  "n_shards": 1,
+  "params": {
+    "alpha": 0.05,
+    "channels": [
+      "loc_hi",
+      "loc_lo",
+      "overconf",
+      "underconf",
+      "grapa_loc",
+      "grapa_disp"
+    ],
+    "n_eval": 300,
+    "n_train": 1000,
+    "seed": 0,
+    "taus": [
+      0.05,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9,
+      0.95
+    ]
+  },
+  "receipt_sha256": "0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370",
+  "research_only": true,
+  "schema": "calibration_audit.v1"
+}

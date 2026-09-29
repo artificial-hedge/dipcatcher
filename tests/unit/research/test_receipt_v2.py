@@ -304,6 +304,28 @@ def test_verify_receipt_rejects_unsealed_and_unreadable(tmp_path: Path) -> None:
     assert verify_receipt_payload([1, 2, 3])["valid"] is False
 
 
+def test_verify_receipt_file_rejects_duplicate_keys(tmp_path: Path) -> None:
+    # A file's bytes must determine one payload; {"a":1,"a":2} lets a forged
+    # file carry a second readable claim while only the last is sealed.
+    dup = tmp_path / "dup.json"
+    dup.write_text('{"kind": "forged", "kind": "benign", "live_pnl_claim": false}')
+    result = verify_receipt_file(dup)
+    assert result["valid"] is False
+    assert any(e.startswith("duplicate_json_key:") for e in result["errors"])
+
+    nested = tmp_path / "nested_dup.json"
+    nested.write_text('{"outer": {"kind": 1, "kind": 2}}')
+    result = verify_receipt_file(nested)
+    assert result["valid"] is False
+    assert any(e.startswith("duplicate_json_key:") for e in result["errors"])
+
+    malformed = tmp_path / "malformed.json"
+    malformed.write_text('{"a": ')
+    result = verify_receipt_file(malformed)
+    assert result["valid"] is False
+    assert any(e.startswith("receipt_unreadable") for e in result["errors"])
+
+
 def test_fleet_v1_contract_violations_still_refused(tmp_path: Path) -> None:
     receipt = _small_fleet_receipt()
     with pytest.raises(ValueError, match="synthetic research contract"):
@@ -389,6 +411,53 @@ def test_cli_verify_receipt_fails_closed(tmp_path: Path) -> None:
     result = CliRunner().invoke(app, ["verify-receipt", str(bad)])
     assert result.exit_code == 1
     assert '"valid": false' in result.output
+
+
+_RECEIPTS = Path(__file__).resolve().parents[3] / "receipts"
+
+
+def _cost_calibration() -> dict[str, Any]:
+    import copy
+
+    return copy.deepcopy(
+        json.loads((_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").read_text())
+    )
+
+
+def test_committed_cost_calibration_receipt_verifies() -> None:
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.receipt_v2 import verify_receipt_payload
+
+    result = verify_receipt_payload(_cost_calibration())
+    errors = result["errors"] if isinstance(result, dict) else result.errors
+    assert errors == []
+
+
+def test_cost_calibration_forged_inputs_digest_fails() -> None:
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_payload
+
+    forged = _cost_calibration()
+    forged["estimators"] = ["flat"]  # digest binds the full estimator list
+    forged = seal_receipt(forged)
+    result = verify_receipt_payload(forged, "forged.json")
+    errors = result["errors"] if isinstance(result, dict) else result.errors
+    assert "inputs_sha256_mismatch" in errors
+
+
+def test_cost_calibration_forged_row_total_fails() -> None:
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_payload
+
+    forged = _cost_calibration()
+    forged["results"][0]["total_cost"] = 1.0  # commission+spread+impact ≠ 1
+    forged = seal_receipt(forged)
+    result = verify_receipt_payload(forged, "forged.json")
+    errors = result["errors"] if isinstance(result, dict) else result.errors
+    assert any("total_cost_rederive_mismatch" in e for e in errors)
 
 
 # ---------------------------------------------------------------------------
