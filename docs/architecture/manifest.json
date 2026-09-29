@@ -3511,6 +3511,10 @@
       "src": "quant_fund.models.event_study"
     },
     {
+      "dst": "quant_fund.utils.numeric",
+      "src": "quant_fund.models.factor_models"
+    },
+    {
       "dst": "quant_fund.models.var_coint",
       "src": "quant_fund.models.favar"
     },
@@ -9627,7 +9631,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 16,
+      "imports": 17,
       "src": "quant_fund.models"
     },
     {
