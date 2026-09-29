@@ -25,6 +25,10 @@ Design choices:
   union bound controls; a later dip below threshold cannot resurrect.
 - The pair process is instantiated with ``alpha/(K-1)`` so its built-in
   promotion flag trips at precisely the elimination threshold.
+- Pair bets are *sign* bets (``LossEProcess``): elimination certifies
+  median dominance of the loss difference, not mean dominance — the
+  distribution-free guarantee that keeps Ville valid under skewed
+  loss streams. Mean dominance claims belong to ``loss_cs``.
 - Fail closed: non-finite loss, unknown head, or a missing head raises.
 
 Receipt: ``mcs_seq.v1`` — sealed by callers via ``receipt_v2``.
