@@ -134,3 +134,18 @@ def test_strict_cli_gate(tmp_path: Path) -> None:
     # wrong bytes → still a strict failure (the pin covers content, not name)
     assert res.exit_code == 1
     assert hashlib.sha256(body).hexdigest() != digest
+
+
+def test_dataset_sha256_tracks_corpus_bytes(tmp_path: Path) -> None:
+    """Identical corpora share dataset_sha256 across audits and alpha;
+    adding a file changes it."""
+    _sealed(tmp_path, "a.json")
+    _sealed(tmp_path, "b.json")
+    _, r1 = suite_health(tmp_path)
+    _, r2 = suite_health(tmp_path, alpha=0.1)
+    d = r1["dataset_sha256"]
+    assert len(d) == 64 and all(c in "0123456789abcdef" for c in d)
+    assert r2["dataset_sha256"] == d  # alpha is a run param, not data
+    _sealed(tmp_path, "c.json")
+    _, r3 = suite_health(tmp_path)
+    assert r3["dataset_sha256"] != d

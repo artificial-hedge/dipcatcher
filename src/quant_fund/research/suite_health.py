@@ -23,7 +23,7 @@ import polars as pl
 
 from quant_fund.research.emerge import emerge_mean
 from quant_fund.research.receipt_v2 import verify_receipt_file
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 SUITE_HEALTH_SCHEMA = "suite_health.v1"
@@ -64,12 +64,15 @@ def suite_health(
     rows: list[dict[str, Any]] = []
     evalues: list[float] = []
     labels: dict[str, str] = {}
+    digests: dict[str, str] = {}
     findings_total = 0
 
     for path in files:
         result = verify_receipt_file(path)
         try:
-            payload: Any = json.loads(path.read_text())
+            raw = path.read_bytes()
+            digests[path.name] = hash_bytes(raw)
+            payload: Any = json.loads(raw)
         except Exception:
             payload = None
         kind = (payload.get("kind") or payload.get("schema")) if isinstance(payload, dict) else None
@@ -121,6 +124,14 @@ def suite_health(
         "research_only": True,
         "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
+        # Corpus-level fingerprint: digest over the audited receipt file
+        # contents only — corpus lanes over the same directory agree on it,
+        # which is what the cross-receipt lattice edges on.
+        "dataset_sha256": hash_bytes(
+            canonical_json_bytes(
+                {"shards": {name: {"file_sha256": d} for name, d in digests.items()}}
+            )
+        ),
         "code_revision": git_revision(),
         "params": {
             "receipts_dir": str(root),
