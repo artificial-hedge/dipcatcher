@@ -34,7 +34,7 @@
     },
     "data": {
       "doc": "docs/AUDIT_P63_DATA.md",
-      "n_modules": 33,
+      "n_modules": 34,
       "status": "audited"
     },
     "diffbacktest": {
@@ -43,7 +43,7 @@
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "features": {
@@ -73,7 +73,7 @@
       "status": "audited"
     },
     "leakage": {
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "lightspeed": {
@@ -91,7 +91,7 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 58,
+      "n_modules": 60,
       "status": "audited"
     },
     "microstructure": {
@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 152,
+      "n_modules": 175,
       "status": "audited"
     },
     "monitoring": {
@@ -148,12 +148,12 @@
     },
     "proof": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
+      "n_modules": 9,
       "status": "audited"
     },
     "proofcore": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "quant_models": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 62,
+      "n_modules": 76,
       "status": "audited"
     },
     "risk": {
@@ -202,7 +202,7 @@
     },
     "utils": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
+      "n_modules": 9,
       "status": "audited"
     },
     "validation": {
