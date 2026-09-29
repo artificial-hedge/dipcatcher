@@ -290,6 +290,13 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       Kendall-τ on elimination confidence, SPA/Reality-Check decisiveness on
       differentials-vs-best. A head MCS keeps but StepM rejects is flagged:
       dependence-fragile selection, not evidence.
+- [x] P3.7 Distributional coherence bench: `dipcatcher coherence-bench` —
+      `research/coherence.py` reconciles per-name marginal quantile grids
+      to the aggregate distribution on SYNTHETIC correlated panels
+      (gauss/independent/heavy-tail/regime-break copulas). Methods:
+      direct aggregate fit, naive sum-of-quantiles (comonotone bound),
+      independent MC convolution, and a Gaussian copula MC fit on
+      in-sample PIT z-scores. Proper scores only; sealed receipt.v2.
 
 ### P3b — Sequential inference suite (new statistical layer)
 
