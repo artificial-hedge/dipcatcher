@@ -1,0 +1,139 @@
+"""changepoint_localize drill on REAL tape: where did the streams shift?
+
+Cross-lane corroboration: the calibration audit alarmed on gaussian's
+PITs at origin 17 on the Yahoo tape — ``localize_changepoint`` should
+find a shift early in that same stream, and the loss-diff stream
+``pinball(gaussian) - pinball(conf_t)`` shows where the winner gap moved.
+Each stream gets its own sealed ``changepoint_localize.v1`` receipt under
+``receipts/cp_real_drill_<stream>.json`` stamped ``data_label=yahoo_eod``.
+Proper scores only; no P&L claims.
+
+Usage: ``python -m scripts.cp_real_drill [bars.parquet]`` — ``data/`` is
+gitignored; pass an absolute path where the tape lives outside the
+checkout.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+import numpy as np
+import polars as pl
+
+from quant_fund.metrics.scoring import pinball_loss, pit_values
+from quant_fund.research.changepoint_localize import localize_report
+from quant_fund.research.fleet_eval import DEFAULT_TAUS, SyntheticShard, fleet_head_factories
+from quant_fund.research.receipt_v2 import verify_receipt_file
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+BARS = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/file_us_wide/bronze/bars.parquet")
+SYMBOL = "NVDA"
+N_TRAIN = 1000
+N_EVAL = 300
+TAUS = np.asarray(DEFAULT_TAUS, dtype=float)
+
+
+def real_shard(symbol: str, bars: Path) -> SyntheticShard:
+    df = (
+        pl.read_parquet(bars, columns=["symbol", "event_time", "close"])
+        .filter(pl.col("symbol") == symbol)
+        .sort("event_time")
+    )
+    if df.height < N_TRAIN + N_EVAL + 5:
+        raise ValueError(f"{symbol} tape too short: {df.height}")
+    rets = np.diff(np.log(df["close"].to_numpy().astype(float)))
+    if not np.isfinite(rets).all():
+        raise ValueError("non-finite returns on the real tape")
+    targets = rets[1:]
+    feats = rets[:-1].reshape(-1, 1)  # x_t = y_{t-1}: strictly causal
+    return SyntheticShard(
+        name=f"yahoo_eod:{symbol}",
+        x=feats,
+        y=targets,
+        config={
+            "data_label": "yahoo_eod",
+            "source": "yahoo",
+            "symbol": symbol,
+            "n_bars": int(df.height),
+            "first": str(df["event_time"][0]),
+            "last": str(df["event_time"][-1]),
+        },
+    )
+
+
+def _head_panels(shard: SyntheticShard, names: tuple[str, ...]) -> dict[str, np.ndarray]:
+    out: dict[str, np.ndarray] = {}
+    factories = fleet_head_factories(DEFAULT_TAUS, 0)
+    for name in names:
+        model = factories[name]()
+        model.fit(shard.x[:N_TRAIN], shard.y[:N_TRAIN])
+        if getattr(model, "fleet_lagged_predict", False):
+            lag_x = shard.y[N_TRAIN - 1 : N_TRAIN + N_EVAL - 1].reshape(-1, 1)
+            q = np.asarray(model.predict(lag_x), dtype=float)
+        else:
+            q = np.asarray(model.predict(shard.x[N_TRAIN : N_TRAIN + N_EVAL]), dtype=float)
+        out[name] = q
+    return out
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    tmp.write_text(text)
+    os.replace(tmp, path)
+
+
+def _seal(report: dict, out: Path):
+    canonical = json.loads(canonical_json_bytes(dict(report)))
+    digest = hash_bytes(canonical_json_bytes(canonical))
+    payload = {**canonical, "receipt_sha256": digest}
+    _atomic_write_text(out, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return verify_receipt_file(out)
+
+
+def main() -> None:
+    shard = real_shard(SYMBOL, BARS)
+    y_eval = np.asarray(shard.y[N_TRAIN : N_TRAIN + N_EVAL], dtype=float)
+    panels = _head_panels(shard, ("gaussian", "conf_t"))
+
+    streams: dict[str, np.ndarray] = {}
+    u = np.asarray(pit_values(y_eval, panels["gaussian"], TAUS), dtype=float)
+    streams["gaussian_pit"] = np.clip(u, 1e-9, 1.0 - 1e-9)
+    lg = np.stack(
+        [pinball_loss(y_eval, panels["gaussian"][:, i], float(TAUS[i])) for i in range(TAUS.size)],
+        axis=1,
+    ).mean(axis=1)
+    lc = np.stack(
+        [pinball_loss(y_eval, panels["conf_t"][:, i], float(TAUS[i])) for i in range(TAUS.size)],
+        axis=1,
+    ).mean(axis=1)
+    streams["gaussian_minus_conf_t_pinball"] = lg - lc
+
+    results = {}
+    for name, stream in streams.items():
+        report = localize_report(stream.tolist(), stream_name=name, data_label="yahoo_eod")
+        report["drill"] = {
+            "tape": str(BARS.resolve()),
+            "shard": shard.config,
+            "n_train": N_TRAIN,
+            "n_eval": N_EVAL,
+            "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+        }
+        out = Path("receipts") / f"cp_real_drill_{name}.json"
+        ok = _seal(report, out)
+        results[name] = {
+            "receipt": str(out),
+            "verify": ok["valid"],
+            "alarmed": report["alarmed"],
+            "tau_hat": report["tau_hat"],
+            "cs": [report["cs_lo"], report["cs_hi"]],
+        }
+        if not ok["valid"]:
+            raise SystemExit(f"sealed receipt failed verification: {ok['errors']}")
+    print(json.dumps(results, indent=2))
+
+
+if __name__ == "__main__":
+    main()
