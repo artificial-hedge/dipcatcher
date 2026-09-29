@@ -560,17 +560,18 @@ def run_vol_bench(
         orient="row",
     ).select(columns)
 
+    shard_digests = {
+        name: {
+            "returns_sha256": meta["returns_sha256"],
+            "rv_sha256": meta["rv_sha256"],
+            "parkinson_sha256": meta["parkinson_sha256"],
+        }
+        for name, meta in shard_meta.items()
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
-                "shards": {
-                    name: {
-                        "returns_sha256": meta["returns_sha256"],
-                        "rv_sha256": meta["rv_sha256"],
-                        "parkinson_sha256": meta["parkinson_sha256"],
-                    }
-                    for name, meta in shard_meta.items()
-                },
+                "shards": shard_digests,
                 "models": sorted(str(k) for k in forecasters),
                 "horizons": [int(h) for h in horizon_set],
                 "min_history": min_history,
@@ -581,6 +582,10 @@ def run_vol_bench(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated stream content only —
+    # receipts across lanes that evaluated the same shard set agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": shard_digests}))
     receipt: dict[str, Any] = {
         "schema": VOL_BENCH_SCHEMA,
         "kind": "vol_bench",
@@ -600,6 +605,7 @@ def run_vol_bench(
         "models": sorted(str(k) for k in forecasters),
         "shards": shard_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
         "results": rows,

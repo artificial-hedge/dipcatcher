@@ -192,4 +192,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         return _rankic_contract_errors(payload)
     if payload.get("receipt") == _P42_RECEIPT:
         return _p42_conformance_contract_errors(payload)
+    if schema == "receipt_lattice.v1" or payload.get("kind") == "receipt_lattice.v1":
+        from quant_fund.research.receipt_lattice import lattice_contract_errors
+
+        return lattice_contract_errors(payload)
     return []
