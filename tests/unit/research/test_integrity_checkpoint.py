@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -124,3 +125,50 @@ def test_verify_repo_carries_checkpoint_gate(tmp_path: Path) -> None:
     res = verify_repo(tmp_path)
     assert "checkpoint" in res["gates"]
     assert res["gates"]["checkpoint"]["signed"] is False
+
+
+def test_checkpoint_chains_to_predecessor(tmp_path: Path) -> None:
+    root, priv, pub = _repo(tmp_path)
+    write_checkpoint(root, priv, pub)
+    first = (root / "quality/checkpoint.json").read_bytes()
+    write_checkpoint(root, priv, pub)
+    second = json.loads((root / "quality/checkpoint.json").read_text())
+    assert second["payload"]["prev_sha256"] == hashlib.sha256(first).hexdigest()
+    assert verify_checkpoint(root)["ok"] is True
+
+
+def test_prev_must_be_witnessed_when_proofs_exist(tmp_path: Path) -> None:
+    root, priv, pub = _repo(tmp_path)
+    write_checkpoint(root, priv, pub)
+    first_sha = hashlib.sha256((root / "quality/checkpoint.json").read_bytes()).hexdigest()
+    # A committed witness proof for the first checkpoint.
+    w = root / "quality/witness"
+    w.mkdir(parents=True)
+    (w / "checkpoint.json_1.json").write_text(json.dumps({"target": {"sha256": first_sha}}))
+    write_checkpoint(root, priv, pub)
+    assert verify_checkpoint(root)["ok"] is True
+    # An attacker rewrites prev to an unwitnessed digest — even re-signing
+    # with the real key can't make it one of the public witnesses.
+    body = json.loads((root / "quality/checkpoint.json").read_text())
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    body["payload"]["prev_sha256"] = "f" * 64
+    key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv))
+    from quant_fund.utils.hashing import canonical_json_bytes
+
+    body["signature"] = key.sign(canonical_json_bytes(body["payload"])).hex()
+    (root / "quality/checkpoint.json").write_text(json.dumps(body, indent=2, sort_keys=True))
+    res = verify_checkpoint(root)
+    assert res["ok"] is False
+    assert "prev_not_witnessed" in res["errors"]
+
+
+def test_contract_accepts_genesis_and_valid_prev(tmp_path: Path) -> None:
+    root, _priv, _pub = _repo(tmp_path)
+    state = checkpoint_state(root)
+    assert state["prev_sha256"] is None  # genesis
+    assert checkpoint_contract_errors(state) == []
+    state["prev_sha256"] = "x" * 64
+    assert checkpoint_contract_errors(state) == []
+    state["prev_sha256"] = "tooshort"
+    assert "prev_sha256_malformed" in checkpoint_contract_errors(state)

@@ -2,7 +2,7 @@
   "algorithm": "ed25519",
   "key_id": "bc3bcff676056adf",
   "payload": {
-    "at": "2026-09-29T22:36:57+00:00",
+    "at": "2026-09-29T22:39:03+00:00",
     "heads": {
       ".github/workflows/*.yml": {
         "receipt": "corpus_epoch_db9f2a0717a5b548.json",
@@ -31,8 +31,9 @@
       "quality/crown_jewels.json": "6718b3653a87b35023f1bcae946506d02b48dc8ec1f1ada5c314411fc539a32a",
       "quality/epoch_heads.json": "d49a788b141b94c1d120161aa980d1192c94d457f6f98e9932950945708d5670"
     },
+    "prev_sha256": "2cc6639ebc2e93342d3f46701b845c626987876ac249541bdb5ddbfe50b6bdb5",
     "schema": "integrity_checkpoint.v1"
   },
   "schema": "integrity_checkpoint_sig.v1",
-  "signature": "ebbb243e08b93b639412cbf2d5b566118e5dcf0f479610d3eeb69a98e0c47aaa86f31587ab2fd23eed38e08db46faa9f98bf6b53323cf4192e5b1660febfd008"
+  "signature": "2c8fdb275ac73bc9d108cb67afc301da3ed65c5b484b40f12f93d4cfd51ff5fbb6a9c6cf4017700622810fd4e319e30ac526993302f2da3fce92975bd0807407"
 }

@@ -60,12 +60,19 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
             missing.append(rel)
     heads_pin = root_path / "quality/epoch_heads.json"
     heads = load_heads_pin(heads_pin) if heads_pin.is_file() else {}
+    # Temporal binding: the new checkpoint names the digest of the one it
+    # replaces. Each witnessed digest already sits in the public Rekor log,
+    # so the checkpoint sequence is anchored end-to-end — a rewritten
+    # "current" checkpoint can't claim continuity it never had.
+    prev_file = root_path / DEFAULT_CHECKPOINT_PATH
+    prev_sha256 = hash_bytes(prev_file.read_bytes()) if prev_file.exists() else None
     return {
         "schema": CHECKPOINT_SCHEMA,
         "at": datetime.now(UTC).isoformat(timespec="seconds"),
         "pins": pins,
         "heads": heads,
         "missing_pins": missing,
+        "prev_sha256": prev_sha256,
     }
 
 
@@ -169,6 +176,25 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
                 errors.append(f"anchor:{err}")
     # No anchor at all: neutral (unsigned trees never reach here — signed only).
 
+    # Predecessor continuity: when witness proofs exist, the declared
+    # prev_sha256 must be one of the publicly witnessed digests — a
+    # fabricated or rolled-back predecessor can't satisfy this without
+    # having been committed to Rekor first.
+    prev = payload.get("prev_sha256")
+    if prev is not None:
+        from quant_fund.research.integrity_witness import WITNESS_DIR
+
+        witnessed: set[str] = set()
+        for p in (root_path / WITNESS_DIR).glob(f"{DEFAULT_CHECKPOINT_PATH.name}_*.json"):
+            try:
+                digest = json.loads(p.read_text()).get("target", {}).get("sha256")
+            except (OSError, json.JSONDecodeError, AttributeError):
+                continue
+            if isinstance(digest, str):
+                witnessed.add(digest)
+        if witnessed and prev not in witnessed:
+            errors.append("prev_not_witnessed")
+
     return {
         "ok": not errors,
         "signed": True,
@@ -198,4 +224,7 @@ def checkpoint_contract_errors(payload: Any) -> list[str]:
         for key, entry in heads.items():
             if not isinstance(entry, dict) or not entry.get("receipt"):
                 errors.append(f"head_entry_malformed:{key}")
+    prev = payload.get("prev_sha256")
+    if prev is not None and (not isinstance(prev, str) or len(prev) != 64):
+        errors.append("prev_sha256_malformed")
     return errors
