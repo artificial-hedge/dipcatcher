@@ -8601,6 +8601,7 @@
     "quant_fund.research.catalog.registry",
     "quant_fund.research.catalog.session",
     "quant_fund.research.catalog.sweep",
+    "quant_fund.research.changepoint_localize",
     "quant_fund.research.coherence",
     "quant_fund.research.conformal_monitor",
     "quant_fund.research.corpus_inference",
