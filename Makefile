@@ -205,6 +205,7 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped
+	uv run dipcatcher crown-jewels --check
 
 stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching receipts/, verifier/*.md, quality/*.json, or .github/workflows/*.yml
 	uv run dipcatcher corpus-epoch --corpus-dir receipts --out-dir receipts --heads-pin quality/epoch_heads.json

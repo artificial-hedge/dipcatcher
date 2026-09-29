@@ -1651,3 +1651,47 @@ def corpus_epoch(
         f"verdict={receipt['verdict']} root={receipt['epoch_root_sha256'][:16]}"
     )
     typer.echo(f"receipt={path}")
+
+
+@app.command("crown-jewels")
+def crown_jewels_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo root the jewels live under."),
+    pin: Path = typer.Option(
+        Path("quality/crown_jewels.json"),
+        "--pin",
+        help="Committed pin file (quality/crown_jewels.json).",
+    ),
+    check: bool = typer.Option(
+        False, "--check", help="Verify every crown jewel against the pin; nonzero on any drift."
+    ),
+    write: bool = typer.Option(
+        False, "--write", help="Rewrite the pin over the current files (run after a legit change)."
+    ),
+) -> None:
+    """Byte-pin the gate-defining files: lint/type/test config, the dependency
+    lock, hooks, the secret-scan allowlist, and AGENTS.md — the honesty
+    contract. A silent edit to any of them weakens every check downstream.
+    ``--check`` fails on missing/mutated/symlinked jewels and on a pin that
+    drifted from the code-defined coverage set. Config integrity only —
+    never a market or P&L claim.
+    """
+    from quant_fund.research.crown_jewels import (
+        crown_jewel_digests,
+        crown_jewels_errors,
+        write_crown_jewels_pin,
+    )
+
+    if check == write:
+        raise typer.BadParameter("pass exactly one of --check / --write")
+    if write:
+        path = write_crown_jewels_pin(root, pin)
+        typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+        typer.echo(f"crown-jewels pin={path} jewels={len(crown_jewel_digests(root))}")
+        return
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    errors = crown_jewels_errors(root, pin)
+    for err in errors:
+        typer.echo(f"crown-jewels error: {err}")
+    if errors:
+        raise typer.Exit(code=1)
+    typer.echo("crown-jewels intact")
