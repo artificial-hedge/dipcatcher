@@ -167,6 +167,18 @@ def default_runner(
 Runner = Callable[..., RunOutcome]
 
 
+def _home_dir() -> Path:
+    """Home directory honoring ``$HOME``.
+
+    ``Path.home()`` ignores ``$HOME`` on Windows (it reads ``USERPROFILE``),
+    while every child process spawned here receives ``$HOME`` from the
+    environment allowlist — so the config-file probe must resolve home the
+    same way the gateway SDK child does, on every platform.
+    """
+    home = os.environ.get("HOME")
+    return Path(home) if home else Path.home()
+
+
 class DataSourceAdapter(ABC):
     """Uniform interface over every bundled datasource CLI."""
 
@@ -197,7 +209,7 @@ class DataSourceAdapter(ABC):
         # agent-gw SDKs also resolve credentials from the runtime config file.
         return (
             "KIMI_API_KEY" in self.spec.credentials
-            and (Path.home() / ".kimi" / "agent-gw.json").exists()
+            and (_home_dir() / ".kimi" / "agent-gw.json").exists()
         )
 
     def probe(self) -> SourceProbe:
