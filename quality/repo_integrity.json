@@ -2,7 +2,7 @@
   "data_label": "SYNTHETIC",
   "gates": {
     "checkpoint": {
-      "anchored": true,
+      "anchored": false,
       "errors": [],
       "ok": true,
       "signed": true
@@ -40,7 +40,7 @@
       "anchored": true,
       "errors": [],
       "fresh": {
-        "quality/checkpoint.json": true,
+        "quality/checkpoint.json": false,
         "quality/crown_jewels.json": false,
         "quality/epoch_heads.json": false
       },
@@ -63,11 +63,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "1ee93233868f118bab4837ef827f36fb0330e11962dc8d72b5b6f848b5c79e19",
-    "epoch_heads_sha256": "df2b3b95f1283dc2a9e1bbcf5b1d40b448116442d17dced40abc809c6588539b",
+    "crown_jewels_sha256": "54292b5676b1b6cf938824a671bdcff7f810be6328a42d220244034720b39fc8",
+    "epoch_heads_sha256": "fbadb9cb6ba8ed8b012d930fad54106c72c795806a135d49a42c754292faab63",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "3c42305c54871df9434076d9d22b26f5d7947ceca3338ed398fbd99335ee6148",
+  "receipt_sha256": "ce41d7dc9964d440e60302ee5d5b041d57d8feb978e7a1a46551d61a75400edc",
   "schema": "repo_integrity.v1"
 }

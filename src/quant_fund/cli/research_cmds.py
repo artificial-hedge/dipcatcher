@@ -2127,3 +2127,53 @@ def verify_witness_cmd(
         typer.echo(f"  {err}")
     if not res["ok"]:
         raise typer.Exit(code=1)
+
+
+@app.command("witness-bundle")
+def witness_bundle_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    out: Path = typer.Option(Path("quality/auditor_bundle.json"), "--out"),
+) -> None:
+    """Emit the zero-trust auditor bundle: checkpoint + pin files + pubkeys
+    + freshest Rekor witness proof in one JSON document. Refuses to bundle
+    a tree that doesn't verify. Hand the file to anyone — they need no repo
+    access, only this CLI and trust in the public Rekor log.
+    """
+    from quant_fund.research.auditor_bundle import build_bundle
+
+    try:
+        path = build_bundle(root, out)
+    except ValueError as exc:
+        typer.echo(f"bundle refused: {exc}")
+        raise typer.Exit(code=2) from exc
+    typer.echo(f"bundle={path}")
+
+
+@app.command("verify-bundle")
+def verify_bundle_cmd(
+    bundle: Path = typer.Argument(..., help="auditor_bundle.v1 JSON document"),
+    rekor_pubkey: Path | None = typer.Option(
+        None, "--rekor-pubkey", help="caller-pinned Rekor public key PEM (strongest)"
+    ),
+    no_fetch: bool = typer.Option(
+        False, "--no-fetch", help="use the bundle's pinned Rekor key, never fetch live"
+    ),
+) -> None:
+    """Verify an auditor bundle with zero trusted repo input.
+
+    The witness key is authenticated by the transparency log itself: the
+    Rekor entry body records which public key signed the witnessed digest,
+    and the bundled ``witness_signing.pub`` must equal it byte-for-byte.
+    """
+    from quant_fund.research.auditor_bundle import verify_bundle
+
+    res = verify_bundle(
+        bundle,
+        rekor_pubkey_pem=rekor_pubkey.read_bytes() if rekor_pubkey else None,
+        rekor_url=None if no_fetch else "https://rekor.sigstore.dev",
+    )
+    typer.echo(f"bundle: {'ok' if res['ok'] else 'FAIL'} log_index={res.get('log_index')}")
+    for err in res["errors"]:
+        typer.echo(f"  {err}")
+    if not res["ok"]:
+        raise typer.Exit(code=1)

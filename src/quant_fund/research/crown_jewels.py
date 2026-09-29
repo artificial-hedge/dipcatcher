@@ -52,6 +52,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "quality/timestamps/freetsa_cacert.pem",  # TSA chain verify root — a swapped
     "quality/timestamps/freetsa_tsa.crt",  # cert pair would launder forged anchors
     # --- the verifier itself: a silent rewrite beats every layer above ---
+    "src/quant_fund/research/auditor_bundle.py",
     "src/quant_fund/research/corpus_epoch.py",
     "src/quant_fund/research/crown_jewels.py",
     "src/quant_fund/research/epoch_consistency.py",

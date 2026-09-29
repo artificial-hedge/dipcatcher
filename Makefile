@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness epoch-consistency
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency
 
 .DEFAULT_GOAL := help
 
@@ -246,6 +246,12 @@ witness-checkpoint: ## Witness the checkpoint into the public Rekor transparency
 
 verify-witness: ## Verify committed Rekor witness proofs offline — RFC 6962 inclusion + Rekor SET/note signatures
 	uv run dipcatcher verify-witness
+
+witness-bundle: ## Emit the zero-trust auditor bundle (one JSON: checkpoint + pins + pubkeys + freshest Rekor proof)
+	uv run dipcatcher witness-bundle --out auditor_bundle.json
+
+verify-bundle: ## Verify an auditor bundle with zero trusted repo input (BUNDLE=path)
+	uv run dipcatcher verify-bundle $(BUNDLE)
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

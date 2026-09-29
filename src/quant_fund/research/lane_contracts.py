@@ -239,6 +239,10 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.integrity_witness import witness_contract_errors
 
         return witness_contract_errors(payload)
+    if schema == "auditor_bundle.v1" or payload.get("kind") == "auditor_bundle":
+        from quant_fund.research.auditor_bundle import bundle_contract_errors
+
+        return bundle_contract_errors(payload)
     if schema == "receipt_lattice.v1" or payload.get("kind") == "receipt_lattice.v1":
         from quant_fund.research.receipt_lattice import lattice_contract_errors
 
