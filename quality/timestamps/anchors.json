@@ -1,0 +1,13 @@
+{
+  "anchors": {
+    "quality__crown_jewels.json.tsr": {
+      "sha256": "7029538e31459df439a6954c2477ce4a091bfc570cd365ad770604cae07da8f9",
+      "target": "quality/crown_jewels.json"
+    },
+    "quality__epoch_heads.json.tsr": {
+      "sha256": "c52e0c91a46534b9d14af840a45483c55d7bbbbf06f77726d7369ad1e1ed3843",
+      "target": "quality/epoch_heads.json"
+    }
+  },
+  "schema": "timestamp_anchors.v1"
+}

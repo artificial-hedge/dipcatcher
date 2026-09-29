@@ -50,6 +50,13 @@ GENESIS_PREV = "0" * 64
 # Reserved name — it is never a member under any pattern in any corpus dir.
 HEADS_PIN_BASENAME = "epoch_heads.json"
 
+# Basenames never admitted as members — bookkeeping that the chain governs
+# rather than measures: the heads pin (stamping rewrites it) and the
+# timestamp-anchor manifest (each anchor request rewrites it; its integrity
+# comes from the .tsr tokens' imprint binding + committed TSA certs, not the
+# corpus chain — as a member it could never stay fresh, by design).
+EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME, "anchors.json"})
+
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
@@ -59,8 +66,8 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     On a flat dir the keys equal the plain filenames, so existing chains are
     unchanged. ``corpus_epoch_*.json`` receipts are members like any other —
     epochs stamp each other, which is what lets the chain detect a stamped
-    epoch's own deletion or mutation. ``epoch_heads.json`` is skipped: the
-    committed head-pin file is the chain's bookkeeping, not corpus content.
+    epoch's own deletion or mutation. Basenames in ``EXEMPT_BASENAMES`` are
+    skipped: they are chain bookkeeping, not corpus content.
     """
     root = Path(corpus_dir)
     if not root.is_dir():
@@ -68,7 +75,7 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     return {
         path.relative_to(root).as_posix(): hash_bytes(path.read_bytes())
         for path in sorted(root.rglob(pattern))
-        if path.is_file() and path.name != HEADS_PIN_BASENAME
+        if path.is_file() and path.name not in EXEMPT_BASENAMES
     }
 
 

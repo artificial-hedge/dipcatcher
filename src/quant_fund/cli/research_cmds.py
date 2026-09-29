@@ -1790,3 +1790,26 @@ def sign_pins_cmd(
         priv, pub = fields
     sig_path = sign_pins(root, priv, pub)
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
+
+
+@app.command("anchor-timestamp")
+def anchor_timestamp_cmd(
+    file: Path = typer.Option(
+        Path("quality/epoch_heads.json"),
+        "--file",
+        help="Repo-relative file to anchor (default: the epoch-heads pin).",
+    ),
+    root: Path = typer.Option(Path("."), "--root"),
+    tsr_url: str = typer.Option("https://freetsa.org/tsr", "--tsr-url"),
+) -> None:
+    """RFC 3161-anchor a file to wall-clock time via a public TSA.
+
+    POSTs the file's sha256 (never its contents) to the timestamp authority
+    and commits the returned token under ``quality/timestamps/`` with an
+    ``anchors.json`` entry. Proves the pinned state existed by the TSA's
+    signature time — a history rewriter cannot mint the chain retroactively.
+    """
+    from quant_fund.research.timestamp_anchor import stamp_timestamp
+
+    token = stamp_timestamp(file, root=root, tsr_url=tsr_url)
+    typer.echo(f"timestamp={token}")

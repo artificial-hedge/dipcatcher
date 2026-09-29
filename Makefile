@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins
 
 .DEFAULT_GOAL := help
 
@@ -218,6 +218,10 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching rece
 
 sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
 	uv run dipcatcher sign-pins
+
+anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); run after sign-pins, at quiet points only — every stamp-epochs stales the anchors
+	uv run dipcatcher anchor-timestamp --file quality/epoch_heads.json
+	uv run dipcatcher anchor-timestamp --file quality/crown_jewels.json
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

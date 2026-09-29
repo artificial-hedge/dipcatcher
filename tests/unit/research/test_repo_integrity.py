@@ -63,9 +63,14 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     # Unsigned pins are a neutral gate state — signing is opt-in but a forged
     # signature must fail closed.
     assert res["gates"]["pin_signatures"] == {"ok": True, "signed": False, "errors": []}
+    # No timestamp anchors committed — neutral gate state, same contract as
+    # unsigned pins: absence is fine, a malformed one must fail closed.
+    assert res["gates"]["timestamp_anchors"]["anchored"] is False
+    assert res["gates"]["timestamp_anchors"]["ok"] is True
     assert set(res["gates"]) == {
         "crown_jewels",
         "pin_signatures",
+        "timestamp_anchors",
         "epoch:receipts",
         "epoch:verifier",
         "epoch:quality",

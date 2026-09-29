@@ -32,6 +32,7 @@ from quant_fund.research.crown_jewels import (
     crown_jewels_errors,
 )
 from quant_fund.research.gate_signatures import verify_pin_signatures
+from quant_fund.research.timestamp_anchor import verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
 
@@ -71,6 +72,14 @@ def verify_repo(
         "ok": bool(sig["ok"]),
         "signed": bool(sig["signed"]),
         "errors": sig["errors"],
+    }
+
+    ts = verify_timestamps(root)
+    gates["timestamp_anchors"] = {
+        "ok": bool(ts["ok"]),
+        "anchored": bool(ts["anchored"]),
+        "fresh": ts.get("fresh", {}),
+        "errors": ts["errors"],
     }
 
     pin_present = pin_path.is_file()
@@ -130,6 +139,7 @@ def repo_integrity_receipt(
                 else None
             ),
             "gate_pins_signed": verdict["gates"]["pin_signatures"]["signed"],
+            "timestamps_anchored": verdict["gates"]["timestamp_anchors"]["anchored"],
         },
         "params": {"corpora": [c[0] for c in CORPORA]},
     }

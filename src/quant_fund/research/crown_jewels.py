@@ -43,6 +43,9 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "pyproject.toml",  # deps, ruff/mypy/pytest config
     "tests/conftest.py",  # suite-level fixtures
     "uv.lock",  # the supply-chain lock
+    "quality/gate_signing.pub",  # the pin-signature trust root
+    "quality/timestamps/freetsa_cacert.pem",  # TSA chain verify root — a swapped
+    "quality/timestamps/freetsa_tsa.crt",  # cert pair would launder forged anchors
 )
 
 

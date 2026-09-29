@@ -15,6 +15,7 @@ detects, and the boundary where detection stops.
 | Head pins | `quality/epoch_heads.json` | `--heads-pin` on check | Rewind attack: deleting the newest epoch to hide later tamper |
 | Crown jewels | `quality/crown_jewels.json` | `dipcatcher crown-jewels --check` | Silent edits to the files that *define* the gates (Makefile, pyproject, uv.lock, hooks, gitleaks, conftests, mkdocs, AGENTS.md) |
 | Pin signature | `gate_pins.sig` + `quality/gate_signing.pub` | `verify-repo` (`pin_signatures` gate) | Forged pins: an editor can re-pin after rewriting a gate file, but cannot re-sign — Ed25519 covers both pin files' bytes |
+| Timestamp anchor | `quality/timestamps/*.tsr` + `anchors.json` | `verify-repo` (`timestamp_anchors` gate) | Retroactive history fabrication: an RFC 3161 TSA signature proves the pinned state existed by wall-clock time T — the chain can't be minted after the fact |
 | Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict` | A new receipt that breaks lattice/FDR on entry |
 | Capstone | `repo_integrity.v1` | `dipcatcher verify-repo` | One sealed verdict over all of the above |
 
@@ -40,6 +41,13 @@ pin) and `dipcatcher crown-jewels --write` if a jewel changed. Both must land
 in the same commit as the change. If `GATE_SIGNING_KEY` is provisioned,
 finish with `make sign-pins` — the signature must cover the final pin bytes
 (sign last, since stamping updates `epoch_heads.json`).
+
+Timestamp anchors (`dipcatcher anchor-timestamp`) go **stale by design** on
+every stamp — the `.tsr` binds the pin bytes at request time. Re-anchor at
+quiet points: after merges land, at release. A stale anchor stays valid
+proof of the earlier state; `fresh: false` just says the pin has moved on.
+The FreeTSA certs in `quality/timestamps/` make chain verification offline;
+only stamping needs the network.
 
 ## Trust boundary
 

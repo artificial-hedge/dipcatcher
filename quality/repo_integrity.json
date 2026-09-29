@@ -28,6 +28,10 @@
     "pin_signatures": {
       "errors": [],
       "ok": true
+    },
+    "timestamp_anchors": {
+      "errors": [],
+      "ok": true
     }
   },
   "kind": "repo_integrity",
@@ -42,10 +46,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "6d9bd98f7101829e4fb3aa020d9ae38d68a90870b58a6bf0a85943c46bc3154c",
-    "epoch_heads_sha256": "3b0da7d584528c81e32405905bee134e9ec63f1ef328b8955a636cab57c0fa62",
-    "gate_pins_signed": true
+    "crown_jewels_sha256": "7029538e31459df439a6954c2477ce4a091bfc570cd365ad770604cae07da8f9",
+    "epoch_heads_sha256": "8064dfa16452cc281a03107972af3b5f2ecb57e1e187610b647f474d1b6d63dd",
+    "gate_pins_signed": true,
+    "timestamps_anchored": true
   },
-  "receipt_sha256": "8689e84a9f64e033f54241a7e3d888dd28e2d2de8d6d2b0fa88d7590aa0b59a5",
+  "receipt_sha256": "c5d51e0d33a3a01cc70009b54b93db1c2f71e47c0e18710f3241ebdae14a11c4",
   "schema": "repo_integrity.v1"
 }
