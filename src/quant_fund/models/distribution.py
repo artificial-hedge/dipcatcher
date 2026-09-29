@@ -395,6 +395,8 @@ def fit_operational_wrappee(
 
 
 class LinearQuantileDistribution(JoblibMixin):
+    """Per-tau linear quantile regression (sklearn ``QuantileRegressor``)."""
+
     def __init__(self, taus: list[float]) -> None:
         self.taus = taus
         self.models = [QuantileRegressor(quantile=t, alpha=1e-4, solver="highs") for t in taus]
@@ -423,6 +425,8 @@ class LinearQuantileDistribution(JoblibMixin):
 
 
 class TreeQuantileDistribution(JoblibMixin):
+    """Per-tau gradient-boosted quantile head (LightGBM backend)."""
+
     def __init__(self, taus: list[float], backend: str = "lightgbm", seed: int = 42) -> None:
         self.taus = taus
         self.backend = backend
