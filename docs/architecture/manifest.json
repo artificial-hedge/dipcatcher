@@ -5048,6 +5048,10 @@
     },
     {
       "dst": "quant_fund.proofcore.contracts",
+      "src": "quant_fund.pit.cli"
+    },
+    {
+      "dst": "quant_fund.proofcore.contracts",
       "src": "quant_fund.pit.corrections"
     },
     {
@@ -9114,7 +9118,7 @@
     },
     {
       "dst": "quant_fund.proofcore",
-      "imports": 5,
+      "imports": 6,
       "src": "quant_fund.pit"
     },
     {
