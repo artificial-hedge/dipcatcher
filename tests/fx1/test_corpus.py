@@ -58,7 +58,7 @@ def _write_run_manifest(
     payload: dict = {
         "schema_version": 1,
         "synthetic": synthetic,
-        "disclaimer": "SYNTHETIC research. Not a live-P&L claim.",
+        "disclaimer": "SYNTHETIC research; simulated correctness evidence only.",
         "families": {},
         "correctness": {"metric": 1.0},
     }
