@@ -17,6 +17,7 @@ form used by ``real_benchmark``.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import platform
 import sys
@@ -37,6 +38,7 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.research.impossible_fit import impossible_fit_scan
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -406,25 +408,69 @@ def _code_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     return []
 
 
+def _inner_claimed_kinds(payload: Mapping[str, Any]) -> set[str]:
+    """Kind strings the sealed *inner* payload claims about itself.
+
+    The envelope ``kind`` is attacker-renameable at zero cost; the inner
+    body's own ``kind``/``schema`` are inside the seal, so a renamed outer
+    kind must not strip the deep checks. ``<base>.vN`` schemas map to both
+    ``<base>`` and ``<base>_eval`` (the lane naming convention).
+    """
+    inner = payload.get("payload")
+    claims: set[str] = set()
+    if not isinstance(inner, Mapping):
+        return claims
+    for key in ("kind", "schema"):
+        value = inner.get(key)
+        if isinstance(value, str) and value:
+            claims.add(value)
+            base, sep, suffix = value.rpartition(".v")
+            if sep and suffix.isdigit() and base:
+                claims.add(base)
+                claims.add(f"{base}_eval")
+    return claims
+
+
+_LANE_CONSISTENCY: dict[str, str] = {
+    "distribution_fleet_eval": "quant_fund.research.fleet_eval.fleet_v2_consistency_errors",
+    "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
+    "cross_sectional_rankic_eval": "quant_fund.research.cross_sectional.rankic_v2_consistency_errors",
+    "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
+}
+
+
 def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
-    """Lane-specific re-derivation of the bound digests, where defined."""
+    """Lane-specific re-derivation of the bound digests, where defined.
+
+    Dispatches on the envelope ``kind`` *and* on the sealed inner payload's
+    claimed ``kind``/``schema``: renaming the outer kind no longer strips a
+    lane's deep checks, and the mismatch is flagged.
+    """
     kind = payload.get("kind")
+    for claimed in sorted({kind, *_inner_claimed_kinds(payload)}, key=str):
+        if claimed in _LANE_CONSISTENCY:
+            path = _LANE_CONSISTENCY[claimed]
+            module, _, func = path.rpartition(".")
+            errors = getattr(importlib.import_module(module), func)(payload)
+            if claimed != kind:
+                errors = [*errors, "kind_fingerprint_mismatch"]
+            return errors
     if kind == "distribution_fleet_eval":
         from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
         return fleet_v2_consistency_errors(payload)
     if kind == "capacity_overlay_eval":
         from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
-
         return capacity_v2_consistency_errors(payload)
     if kind == "cross_sectional_rankic_eval":
         from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
-
         return rankic_v2_consistency_errors(payload)
     if kind == "vol_bench":
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
-
         return vol_bench_v2_consistency_errors(payload)
+    if kind == "coherence_eval":
+        from quant_fund.research.coherence import coherence_v2_consistency_errors
+        return coherence_v2_consistency_errors(payload)
     return []
 
 
@@ -495,9 +541,12 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
+    elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
+        from quant_fund.data.ingest import data_manifest_contract_errors
+
+        errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
         from quant_fund.paper.sim_live import sim_live_contract_errors
-
         errors.extend(sim_live_contract_errors(payload))
     if payload.get("schema") == "cost_calibration.v1":
         from quant_fund.research.cost_calibration import (
@@ -508,6 +557,13 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     from quant_fund.research.lane_contracts import lane_contract_errors
 
     errors.extend(lane_contract_errors(payload))
+    if payload.get("catalog") == "hedge_lab_analytics":
+        from quant_fund.hedge_lab._receipt import lane_receipt_contract_errors
+
+        errors.extend(lane_receipt_contract_errors(payload))
+    if payload.get("kind") in EVALUE_FAMILY_KINDS:
+        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+        errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
@@ -525,9 +581,23 @@ def verify_receipt_payload(
     path = Path(path)
     if not isinstance(payload, dict):
         return _result(path, payload, None, ["receipt_not_object"])
-    if payload.get("schema") == RECEIPT_V2_SCHEMA or payload.get("schema_version") == 2:
+    # The v2 marker is the `schema: "receipt.v2"` tag alone — `schema_version`
+    # is a per-format counter (e.g. data-source receipts use 2 without being
+    # receipt.v2 envelopes), so it cannot dispatch on its own.
+    if payload.get("schema") == RECEIPT_V2_SCHEMA:
         return _verify_v2(path, payload)
     return _verify_v1(path, payload)
+
+
+def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    seen: set[str] = set()
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in seen:
+            raise ValueError(f"duplicate_json_key:{key}")
+        seen.add(key)
+        obj[key] = value
+    return obj
 
 
 def _reject_json_constant(value: str) -> Any:
@@ -536,9 +606,20 @@ def _reject_json_constant(value: str) -> Any:
 
 
 def verify_receipt_file(path: Path | str) -> ReceiptVerification:
-    """Read a receipt JSON file and verify it. Fails closed on unreadable input."""
+    """Read a receipt JSON file and verify it. Fails closed on unreadable input.
+
+    Duplicate object keys are rejected: ``{"k": 1, "k": 2}`` parses to ``2``
+    in Python but would let a file carry two readable claims while only one
+    is sealed — the bytes must determine a unique payload.
+    """
     file_path = Path(path)
     try:
+        payload: object = json.loads(file_path.read_text(), object_pairs_hook=_no_duplicate_keys)
+    except ValueError as exc:
+        if str(exc).startswith("duplicate_json_key:"):
+            return _result(file_path, {}, None, [str(exc)])
+        return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
+    except (OSError, UnicodeError) as exc:
         payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
     except (OSError, UnicodeError, ValueError) as exc:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])

@@ -11,8 +11,9 @@ per-origin observation through the anytime-valid monitor family:
 - ``EProcessDriftAlarm`` — head-vs-fleet-median loss drift (drift_alarm)
 
 Each monitor is lazy-imported and probed per (shard, head) cell; a lane
-whose module is not merged yet contributes ``lane_missing`` rows instead
-of being silently skipped — the receipt records which lanes ran.
+whose module is not merged yet contributes ``None`` columns (recorded as
+``lanes_available[...] = false`` on the receipt) instead of being
+silently skipped — the receipt records which lanes ran.
 
 Drift pairing: every head's loss diff is taken against the fleet median
 at the same origin (computed across the cell's heads), so a head that
@@ -35,7 +36,7 @@ from quant_fund.research.fleet_eval import (
     ShardGenerator,
 )
 from quant_fund.research.verdict_run import predict_eval_matrix
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 MONITOR_RUN_SCHEMA = "monitor_run.v1"
@@ -77,7 +78,8 @@ def monitor_fleet(
 
     Returns (row frame, ``monitor_run.v1`` receipt). Each cell row carries
     one column per lane's alarm flag; a lane that cannot be imported shows
-    ``lane_missing`` rather than an error or a fabricated pass.
+    ``None`` rather than an error or a fabricated pass, and the receipt's
+    ``lanes_available`` map records the miss.
     """
     from quant_fund.research.verdict_run import resolved_names
 
@@ -129,10 +131,15 @@ def monitor_fleet(
     rows: list[dict[str, Any]] = []
     shard_names: list[str] = []
     shard_labels: dict[str, str] = {}
+    shard_digests: dict[str, dict[str, str]] = {}
 
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
         shard = generator(n_shard, int(seed) + shard_index)
         shard_names.append(shard_name)
+        shard_digests[shard_name] = {
+            "x_sha256": hash_bytes(np.asarray(shard.x, dtype=float).tobytes()),
+            "y_sha256": hash_bytes(np.asarray(shard.y, dtype=float).tobytes()),
+        }
         label = str(shard.config.get("data_label") or "").strip()
         if not label:
             label = "UNKNOWN"
@@ -267,6 +274,7 @@ def monitor_fleet(
         "research_only": True,
         "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
+        "dataset_sha256": hash_bytes(canonical_json_bytes({"shards": shard_digests})),
         "code_revision": git_revision(),
         "params": {
             "n_train": n_train,

@@ -107,7 +107,7 @@ class TestCapacityMetrics:
             capacity_metrics(book, aum=-1, participation_cap=0.1)
         with pytest.raises(ValueError):
             capacity_metrics(book, aum=1e6, participation_cap=0.0)
-        bad = SyntheticBook("bad", book.weights, -book.adv_dollar)
+        bad = SyntheticBook("bad", book.weights, -book.adv_dollar, "SYNTHETIC")
         with pytest.raises(ValueError):
             capacity_metrics(bad, aum=1e6, participation_cap=0.1)
 
@@ -207,3 +207,67 @@ def test_table_shape() -> None:
     table = format_capacity_table(frame)
     assert "days_to_trade" in table and "impact_bps" in table
     assert len(table.strip().splitlines()) == 2 + frame.height
+
+
+def test_capacity_v1_audit_clean_and_tampered(tmp_path: Path) -> None:
+    """The audit recounts the grid, re-derives feasibility, catches tampering."""
+    from quant_fund.research.capacity_overlay import capacity_v1_audit_errors
+
+    _, receipt = run_capacity_bench(seed=3, n_dates=30, n_names=6)
+    assert capacity_v1_audit_errors(receipt) == []
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"].pop()
+    assert "n_rows_mismatch" in capacity_v1_audit_errors(tampered)
+
+    tampered = json.loads(json.dumps(receipt))
+    # Flip feasibility on an infeasible row: max_participation > cap.
+    row = next(r for r in tampered["results"] if r["feasible"] == 0)
+    row["feasible"] = 1
+    assert "row_feasible_mismatch" in capacity_v1_audit_errors(tampered)
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"][0]["days_to_trade"] += 0.5
+    assert "row_days_to_trade_mismatch" in capacity_v1_audit_errors(tampered)
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["books"][0]["adv_sha256"] = "deadbeef"
+    assert any(e.startswith("book_digest_invalid") for e in capacity_v1_audit_errors(tampered))
+
+
+def test_capacity_v1_audit_committed_receipt_clean() -> None:
+    """The sealed capacity receipt committed to main must audit clean."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    receipt_path = (
+        Path(__file__).resolve().parents[3] / "receipts" / "capacity_eval_cd0854242ed8a9ec.json"
+    )
+    if not receipt_path.exists():
+        pytest.skip("committed capacity receipt not present")
+    result = verify_receipt_file(receipt_path)
+    assert result["valid"], result["errors"]
+
+
+class TestDataLabelProvenance:
+    def test_label_derived_from_books_not_hardcoded(self) -> None:
+        book = uniform_book(30, 6, 1)
+        real = SyntheticBook("real", book.weights, book.adv_dollar, "yahoo_eod")
+        _, receipt = run_capacity_bench(books=[real])
+        assert receipt["data_label"] == "yahoo_eod"
+        assert (
+            receipt["params"]["books"][0]["data_label"] == "yahoo_eod"
+            if "params" in receipt
+            else True
+        )
+
+    def test_mixed_data_labels_fail_closed(self) -> None:
+        a = uniform_book(30, 6, 1)
+        b = concentrated_book(30, 6, 2)
+        real = SyntheticBook("real", b.weights, b.adv_dollar, "stooq_eod")
+        with pytest.raises(ValueError, match="mixed data_label"):
+            run_capacity_bench(books=[a, real])
+
+    def test_empty_label_rejected(self) -> None:
+        book = uniform_book(30, 6, 1)
+        with pytest.raises(ValueError, match="data_label"):
+            SyntheticBook("x", book.weights, book.adv_dollar, " ")
