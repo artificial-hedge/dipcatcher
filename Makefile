@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke perf-record perf-check
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit
 
 .DEFAULT_GOAL := help
 
@@ -54,6 +54,9 @@ audit: ## Locked-deps vulnerability audit (pip-audit)
 
 doctor: ## Harness environment check
 	uv run dipcatcher doctor
+
+demo-data: ## Generate labeled-SYNTHETIC offline demo dataset into data/demo/
+	uv run python scripts/gen_demo_data.py
 
 native: ## Build optional quant_core (Rust + maturin). NumPy stays the fallback.
 	uv pip install "maturin>=1.7,<2"
@@ -195,6 +198,12 @@ reality-gate: ## Reality-filter gate: score trials; absent DB or empty export sk
 
 receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending
 	uv run python -m quant_fund.proofcore.ci receipts-reverify receipts
+
+evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
+	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
+
+lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
+	uv run dipcatcher lattice --strict --out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

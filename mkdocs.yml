@@ -135,9 +135,11 @@ nav:
   - Concepts:
       - Architecture: ARCHITECTURE.md
       - Architecture atlas: ARCHITECTURE_ATLAS.md
+      - Architecture guards: ARCHITECTURE_GUARDS.md
       - Data contracts: DATA_CONTRACTS.md
       - Receipt verification: RECEIPT_VERIFICATION.md
       - Receipt v2: RECEIPT_V2.md
+      - Receipt sealing conventions: RECEIPT_SEALING.md
       - Robustness certification: ROBUSTNESS.md
       - Validation: VALIDATION.md
       - Formal verification: FORMAL_VERIFICATION.md
@@ -150,6 +152,7 @@ nav:
       - Labels: DATA_SOURCE_LABELS.md
       - Hugging Face OHLCV-1m: HF_OHLCV_1M.md
       - Data lake: DATA_LAKE.md
+      - Demo data: DEMO_DATA.md
   - Research:
       - Research centre: RESEARCH_CENTRE.md
       - Research 100: RESEARCH100.md
@@ -157,6 +160,7 @@ nav:
       - Stress and scenarios: STRESS.md
       - Northset: NORTHSET.md
       - Market simulator: MARKET_SIM.md
+      - Sequential inference: SEQUENTIAL_INFERENCE.md
       - Candle and order book: CANDLE_ORDER_BOOK.md
       - Real-data benchmark: REAL_DATA_BENCHMARK.md
       - Net-return tournament: NET_RETURN_TOURNAMENT.md
@@ -167,24 +171,47 @@ nav:
       - Prospective journal: PROSPECTIVE_SOTA.md
       - SOTA canon roadmap: SOTA_CANON_ROADMAP_2026_09.md
       - Statistical-core audit: AUDIT_P62_STATS.md
+      - Validation-layer audit: AUDIT_P62B_VALIDATION.md
       - P6.1 money audit: AUDIT_P61_MONEY.md
       - P6.3 data audit: AUDIT_P63_DATA.md
       - P6.4 dist/vol audit: AUDIT_P64_DIST.md
+      - P6.4B forecast-layer audit: AUDIT_P64B_FORECAST.md
       - P6.5 micro audit: AUDIT_P65_MICRO.md
       - P6.6 infra audit: AUDIT_P66_INFRA.md
+      - Research-lane audit: AUDIT_RESEARCH.md
+      - Northset audit: AUDIT_NORTHSET.md
+      - P6.9 mutation audit: AUDIT_P69_TESTS.md
+      - P6.10 deps audit: AUDIT_P610_DEPS.md
+      - Security evidence: SECURITY_EVIDENCE.md
       - Forward shadow record: FORWARD_SHADOW_RECORD.md
       - Ranker probability experiment: RANKER_PROBABILITY_EXPERIMENT.md
       - Performance: PERF.md
+      - Perf sweep: PERF_SWEEP.md
       - Causal capacity: CAUSAL_CAPACITY.md
       - Forward shadow power: FORWARD_SHADOW_POWER.md
       - Model cards: MODEL_CARDS.md
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
+      - Audit ledger: AUDIT_LEDGER.md
+      - fx1 audit: AUDIT_FX1.md
+      - fx1 eval-harness audit: AUDIT_FX1_EVALHARNESS.md
+      - market-sim audit: AUDIT_MARKET_SIM.md
+      - models audit: AUDIT_MODELS.md
+      - mutation audit: AUDIT_MUTATION.md
+      - PIT-vault audit: AUDIT_PIT_VAULT.md
+      - pretrade audit: AUDIT_PRETRADE.md
+      - Data quality: DATA_QUALITY.md
       - Scenario Monte Carlo: MC_ENGINE.md
+      - Run comparison: RUN_COMPARE.md
       - Fast replay conformance: FAST_REPLAY_P42.md
+      - Fast-path latency argument: P4_3_FAST_PATH_ARGUMENT.md
       - Explainability: EXPLAINABILITY.md
+      - Allocation pack: ALLOCATION_PACK.md
       - Reality pre-registration: REALITY_PREREGISTRATION.md
       - Reality trial 2026: REALITY_TRIAL_2026.md
+      - Reality pre-reg survivorship: REALITY_PREREGISTRATION_SURVIVORSHIP.md
+      - Reality trial survivorship 2026: REALITY_TRIAL_SURVIVORSHIP_2026.md
+      - Recorded trial batches: research/findings.md
   - Operations:
       - Platform matrix: PLATFORM_MATRIX.md
       - Runbook: OPERATIONS_RUNBOOK.md
@@ -265,6 +292,7 @@ nav:
   - Proofcore:
       - Overview: proofcore/README.md
       - Migration: proofcore/MIGRATION.md
+      - Wave 2: proofcore/WAVE2.md
   - Archive:
       - archive.md
       - Implementation plan: IMPLEMENTATION_PLAN.md
