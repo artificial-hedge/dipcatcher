@@ -311,3 +311,32 @@ def test_require_stamped_promotes_arrivals_to_errors(tmp_path: Path) -> None:
     # Default mode stays informational for accumulative corpora.
     assert check_epoch_chain(corpus)["errors"] == []
     assert check_epoch_chain(corpus)["unstamped"] == ["rogue.json"]
+
+
+def test_allow_member_updates_for_mutable_corpora(tmp_path: Path) -> None:
+    """Mutable corpora (quality manifests, workflows) attest history, not
+    immutability: a stamped member's legit edit between stamps must not be a
+    tamper error — but post-stamp drift still fails via head_member_digest_drift
+    until re-stamped."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "manifest.json", "v1")
+    _receipt(corpus, "pin.json", "p1")
+    _stamp(corpus)
+    # Legitimate member update between stamps.
+    _receipt(corpus, "manifest.json", "v2")
+    _stamp(corpus)
+    # Strict (append-only) mode: digest change between epochs is tamper evidence.
+    strict = check_epoch_chain(corpus)
+    assert any(e.startswith("member_mutated:manifest.json") for e in strict["errors"])
+    # Mutable mode: mutation recorded, not an error; head still covers live state.
+    mutable = check_epoch_chain(corpus, allow_member_updates=True)
+    assert mutable["errors"] == []
+    # Drift after the newest stamp still fails even in mutable mode.
+    _receipt(corpus, "manifest.json", "v3")
+    drift = check_epoch_chain(corpus, allow_member_updates=True)
+    assert "head_member_digest_drift:manifest.json" in drift["errors"]
+    # Removals still error in mutable mode (use allowed_removals pins).
+    (corpus / "pin.json").unlink()
+    removed = check_epoch_chain(corpus, allow_member_updates=True)
+    assert any("pin.json" in e for e in removed["errors"])

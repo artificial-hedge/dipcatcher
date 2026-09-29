@@ -320,6 +320,7 @@ def check_epoch_chain(
     pattern: str = "*.json",
     expected_head: Mapping[str, str] | None = None,
     require_stamped: bool = False,
+    allow_member_updates: bool = False,
 ) -> dict[str, Any]:
     """Walk the committed epoch chain against the live corpus.
 
@@ -342,6 +343,15 @@ def check_epoch_chain(
     ``unstamped_member:`` errors — for corpora whose *every* member is
     security-critical (e.g. CI workflow definitions), an unstamped arrival
     is itself the tamper, not a pending stamp.
+
+    ``allow_member_updates`` relaxes ``member_mutated`` for *mutable*
+    corpora (quality manifests, workflow definitions) whose members
+    legitimately change between stamps — the chain then provides ordered
+    history attestation (every committed state, honestly declared deltas,
+    pinned head) while post-stamp edits still surface as
+    ``head_member_digest_drift`` until re-stamped. Append-only corpora
+    (receipts, verifier records) must leave it False: a digest change
+    between epochs there is tamper evidence.
     """
     root = Path(corpus_dir)
     errors: list[str] = []
@@ -437,7 +447,7 @@ def check_epoch_chain(
             errors.append(f"members_added_dishonest:{cur_name}")
         # Mutated members: same name, different digest.
         for kept in set(prev_members) & set(cur_members):
-            if prev_members[kept] != cur_members[kept]:
+            if prev_members[kept] != cur_members[kept] and not allow_member_updates:
                 errors.append(f"member_mutated:{kept}@{cur_name}")
 
     # Head vs live corpus: stamped membership must hold exactly; files added

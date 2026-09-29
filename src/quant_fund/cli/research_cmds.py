@@ -1548,6 +1548,13 @@ def corpus_epoch(
         help="With --check: unstamped members are errors, not informational — "
         "for corpora where every member is security-critical (e.g. CI workflows).",
     ),
+    allow_member_updates: bool = typer.Option(
+        False,
+        "--allow-member-updates",
+        help="With --check: digest changes to stamped members between epochs are "
+        "history attestation, not tamper errors — for mutable corpora (quality "
+        "manifests, workflow definitions). Leave off for append-only corpora.",
+    ),
 ) -> None:
     """Corpus epoch: hash-chained integrity root over the evidence store.
 
@@ -1605,6 +1612,7 @@ def corpus_epoch(
             pattern=glob,
             expected_head=expected_head,
             require_stamped=require_stamped,
+            allow_member_updates=allow_member_updates,
         )
         typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
         if not require_stamped:
