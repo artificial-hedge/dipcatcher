@@ -14,6 +14,7 @@ detects, and the boundary where detection stops.
 | Epoch chain | `corpus_epoch_*.json` per (dir, pattern) | `dipcatcher corpus-epoch --check` | Receipt deletion, reorder, unstamped arrivals, dishonest deltas |
 | Head pins | `quality/epoch_heads.json` | `--heads-pin` on check | Rewind attack: deleting the newest epoch to hide later tamper |
 | Crown jewels | `quality/crown_jewels.json` | `dipcatcher crown-jewels --check` | Silent edits to the files that *define* the gates (Makefile, pyproject, uv.lock, hooks, gitleaks, conftests, mkdocs, AGENTS.md) |
+| Pin signature | `gate_pins.sig` + `quality/gate_signing.pub` | `verify-repo` (`pin_signatures` gate) | Forged pins: an editor can re-pin after rewriting a gate file, but cannot re-sign — Ed25519 covers both pin files' bytes |
 | Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict` | A new receipt that breaks lattice/FDR on entry |
 | Capstone | `repo_integrity.v1` | `dipcatcher verify-repo` | One sealed verdict over all of the above |
 
@@ -36,16 +37,21 @@ Five corpora are epoch-chained under `quality/epoch_heads.json`:
 
 After touching a covered file: `make stamp-epochs` (advances all chains +
 pin) and `dipcatcher crown-jewels --write` if a jewel changed. Both must land
-in the same commit as the change.
+in the same commit as the change. If `GATE_SIGNING_KEY` is provisioned,
+finish with `make sign-pins` — the signature must cover the final pin bytes
+(sign last, since stamping updates `epoch_heads.json`).
 
 ## Trust boundary
 
-Seals are sha256, not signatures — a determined editor could rewrite file,
-receipt, pin, and chain together and re-stamp. Detection therefore bottoms out
-at **git review**: pins and epochs are small, reviewable diffs in every PR, and
-`verify-repo` receipts pin the pin files' digests into the receipts corpus so
-their history is itself chained. The system makes silent tamper impossible —
-any rewrite leaves a committed, hash-linked trail.
+Receipt seals are sha256, not signatures — but the *pins* are: when
+`gate_pins.sig` + `quality/gate_signing.pub` are committed, rewriting a gate
+file, re-pinning, and re-stamping still cannot produce a valid signature
+without the private key (held outside the repo). For unsigned trees the
+boundary is **git review**: pins and epochs are small, reviewable diffs in
+every PR, and `verify-repo` receipts pin the pin files' digests into the
+receipts corpus so their history is itself chained. Either way, silent
+tamper is impossible — any rewrite leaves a committed, hash-linked trail or
+a broken signature.
 
 ## Operator quick reference
 

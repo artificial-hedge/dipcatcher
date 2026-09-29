@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins
 
 .DEFAULT_GOAL := help
 
@@ -214,6 +214,9 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching rece
 	uv run dipcatcher corpus-epoch --corpus-dir quality --out-dir quality --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --out-dir .github/workflows --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --out-dir configs --heads-pin quality/epoch_heads.json
+
+sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
+	uv run dipcatcher sign-pins
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

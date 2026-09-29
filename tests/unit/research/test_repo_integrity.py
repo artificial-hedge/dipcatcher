@@ -60,8 +60,12 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     root = _git_repo(tmp_path)
     res = verify_repo(root)
     assert res["ok"], res
+    # Unsigned pins are a neutral gate state — signing is opt-in but a forged
+    # signature must fail closed.
+    assert res["gates"]["pin_signatures"] == {"ok": True, "signed": False, "errors": []}
     assert set(res["gates"]) == {
         "crown_jewels",
+        "pin_signatures",
         "epoch:receipts",
         "epoch:verifier",
         "epoch:quality",

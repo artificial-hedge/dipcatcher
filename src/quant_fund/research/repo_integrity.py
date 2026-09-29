@@ -31,6 +31,7 @@ from quant_fund.research.crown_jewels import (
 from quant_fund.research.crown_jewels import (
     crown_jewels_errors,
 )
+from quant_fund.research.gate_signatures import verify_pin_signatures
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
 
@@ -64,6 +65,13 @@ def verify_repo(
 
     jewel_errs = crown_jewels_errors(root, pin_path=root / JEWELS_PIN)
     gates["crown_jewels"] = {"ok": not jewel_errs, "errors": jewel_errs}
+
+    sig = verify_pin_signatures(root)
+    gates["pin_signatures"] = {
+        "ok": bool(sig["ok"]),
+        "signed": bool(sig["signed"]),
+        "errors": sig["errors"],
+    }
 
     pin_present = pin_path.is_file()
     heads = load_heads_pin(pin_path) if pin_present else {}
@@ -121,6 +129,7 @@ def repo_integrity_receipt(
                 if (root / JEWELS_PIN).is_file()
                 else None
             ),
+            "gate_pins_signed": verdict["gates"]["pin_signatures"]["signed"],
         },
         "params": {"corpora": [c[0] for c in CORPORA]},
     }

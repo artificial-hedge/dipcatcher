@@ -1734,9 +1734,59 @@ def verify_repo_cmd(
         typer.echo(f"receipt={path}")
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for name, gate in result["gates"].items():
-        typer.echo(
-            f"verify-repo {name}: {'ok' if gate['ok'] else 'FAIL ' + ','.join(gate['errors'])}"
-        )
+        state = "ok" if gate["ok"] else "FAIL " + ",".join(gate["errors"])
+        if name == "pin_signatures" and gate["ok"] and not gate.get("signed"):
+            state = "unsigned"
+        typer.echo(f"verify-repo {name}: {state}")
     if not result["ok"]:
         raise typer.Exit(code=1)
     typer.echo("repo integrity: all gates intact")
+
+
+@app.command("sign-pins")
+def sign_pins_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    key_file: Path | None = typer.Option(
+        None,
+        "--key-file",
+        help="File containing the hex Ed25519 private seed + public key "
+        "(two lines, or `PRIV\\nPUB`). Falls back to GATE_SIGNING_KEY env.",
+    ),
+) -> None:
+    """Ed25519-sign the integrity pins (epoch_heads.json + crown_jewels.json).
+
+    Writes ``gate_pins.sig`` (repo root, outside every chained corpus) and
+    ``quality/gate_signing.pub``. The private seed is never persisted —
+    supply it via --key-file or the GATE_SIGNING_KEY env var
+    ("<priv_hex>:<pub_hex>" or a file path). Run after `make stamp-epochs`
+    so the signature covers the fresh pin bytes.
+    """
+    import os
+
+    from quant_fund.research.gate_signatures import (
+        generate_keypair,
+        key_id,
+        sign_pins,
+    )
+
+    raw: str | None = None
+    if key_file is not None:
+        raw = key_file.read_text().strip()
+    else:
+        env = os.environ.get("GATE_SIGNING_KEY", "").strip()
+        if env:
+            raw = Path(env).read_text().strip() if Path(env).is_file() else env
+    if raw is None:
+        priv, pub = generate_keypair()
+        typer.echo(
+            "generated an ephemeral keypair (no key supplied) — "
+            "the signature only attests to this key's holder"
+        )
+    else:
+        fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
+        if len(fields) != 2:
+            typer.echo("sign-pins: key material must be '<priv_hex>:<pub_hex>' or two lines")
+            raise typer.Exit(code=2)
+        priv, pub = fields
+    sig_path = sign_pins(root, priv, pub)
+    typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
