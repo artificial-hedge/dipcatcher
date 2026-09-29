@@ -19,12 +19,10 @@ correctness evidence, not market data.
 from __future__ import annotations
 
 import json
-import os
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Any
 
 import numpy as np
@@ -56,6 +54,7 @@ from quant_fund.models.regime_dist import RegimeDistribution
 from quant_fund.models.skew_t import skew_t_ppf
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
+from quant_fund.utils.atomicio import publish_text_once
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -434,9 +433,10 @@ class _HStepOneStepHead:
 # models/distribution.py plus the landed conditional/series heads via the
 # fleet adapters above: qar (one-step lagged scoring), hstep as its two h=1
 # construction slices, the series/feature heads regime / fhs_skew /
-# lgbm_q2 / conf_t directly, and the torch-optional neural heads nbeats /
-# nhits (imported lazily inside the factory so this module never requires
-# the ``nn`` extra — no cross-PR head dependencies).
+# lgbm_q2 / conf_t directly, the torch-optional neural heads nbeats /
+# nhits, and the fail-closed moirai2 adapter (imported lazily inside the
+# factory so this module never requires the ``nn`` extra — no cross-PR
+# head dependencies).
 FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "empirical": lambda taus, seed: EmpiricalDistribution(list(taus)),
     "gaussian": lambda taus, seed: GaussianDistribution(list(taus)),
@@ -453,6 +453,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "hstep_emp": lambda taus, seed: _HStepOneStepHead(taus, "empirical"),
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
+    "moirai2": lambda taus, seed: _moirai2(taus, seed),
 }
 
 
@@ -466,6 +467,12 @@ def _nhits(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.nbeats import NHiTsDistribution
 
     return NHiTsDistribution(list(taus), seed=int(seed))
+
+
+def _moirai2(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.moirai2 import Moirai2Distribution
+
+    return Moirai2Distribution(list(taus), seed=int(seed))
 
 
 def resolve_shard_generators(names: Iterable[str] | None = None) -> dict[str, ShardGenerator]:
@@ -697,7 +704,9 @@ def run_distribution_fleet(
                     blob["head"] = str(head)
                 if version:
                     blob["version"] = str(version)
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except (AttributeError, ImportError, KeyError, RuntimeError, TypeError, ValueError):
+                # Metadata is a label. A missing or unreadable head stays
+                # "unknown"; scoring errors are recorded on the row above.
                 pass
 
     columns = [
@@ -767,37 +776,7 @@ def run_distribution_fleet(
 
 def _atomic_write_text(path: Path, content: str) -> None:
     """Publish a complete immutable text artifact without replacing an existing one."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if path.is_symlink():
-        raise FileExistsError(f"receipt path is a symlink: {path}")
-    if path.exists():
-        if path.read_text(encoding="utf-8") != content:
-            raise FileExistsError(f"receipt already exists with different content: {path}")
-        return
-    temporary_path: Path | None = None
-    try:
-        with NamedTemporaryFile(
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            mode="w",
-            encoding="utf-8",
-            delete=False,
-        ) as temporary:
-            temporary_path = Path(temporary.name)
-            temporary.write(content)
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        try:
-            os.link(temporary_path, path)
-        except FileExistsError:
-            if path.is_symlink() or path.read_text(encoding="utf-8") != content:
-                raise FileExistsError(
-                    f"receipt already exists with different content: {path}"
-                ) from None
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
+    publish_text_once(path, content)
 
 
 def fleet_v1_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
@@ -812,6 +791,18 @@ def fleet_v1_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         errors.append("live_pnl_claim_not_false")
     if not isinstance(receipt.get("results"), list) or not receipt["results"]:
         errors.append("results_missing_or_empty")
+    else:
+        rows = receipt["results"]
+        n_rows = receipt.get("n_rows")
+        if isinstance(n_rows, int) and not isinstance(n_rows, bool) and n_rows != len(rows):
+            errors.append("n_rows_mismatch")
+        declared_errors = receipt.get("n_error_rows")
+        if isinstance(declared_errors, int) and not isinstance(declared_errors, bool):
+            actual_errors = sum(
+                1 for row in rows if isinstance(row, Mapping) and row.get("status") != "ok"
+            )
+            if declared_errors != actual_errors:
+                errors.append("n_error_rows_mismatch")
     if not family_blob_forbidden_metrics_absent(research_blob):
         errors.append("forbidden_metric_keys")
     return errors

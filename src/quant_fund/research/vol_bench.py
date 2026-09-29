@@ -36,6 +36,7 @@ from quant_fund.models.har import har_forecast, har_rv_fit
 from quant_fund.models.realized_garch import RealizedGARCHVol
 from quant_fund.models.rough_vol import simulate_fou
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalues import LossEProcess
 from quant_fund.research.garch_benchmark import build_origins
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -47,6 +48,7 @@ DEFAULT_HORIZONS: tuple[int, ...] = (1, 5)
 DM_REFERENCE = "har"
 
 _VARIANCE_FLOOR = 1e-12
+_EPROMOTION_INIT_SCALE = 1e-4
 _INTRADAY_STEPS = 24
 _LN2 = float(np.log(2.0))
 _EWMA_LAMBDA = 0.94
@@ -457,6 +459,9 @@ def run_vol_bench(
         "dm_qlike_mean",
         "dm_qlike_se",
         "dm_qlike_t",
+        "epromotion_evalue",
+        "epromotion_origin",
+        "epromotion_anytime_p",
     ]
     rows: list[dict[str, Any]] = []
     shard_meta: dict[str, Any] = {}
@@ -495,6 +500,9 @@ def run_vol_bench(
                     "dm_qlike_mean": None,
                     "dm_qlike_se": None,
                     "dm_qlike_t": None,
+                    "epromotion_evalue": None,
+                    "epromotion_origin": None,
+                    "epromotion_anytime_p": None,
                 }
                 scored = _eval_shard_model(shard, forecaster, horizon, origins, shard_seed)
                 if isinstance(scored, str):
@@ -516,6 +524,19 @@ def run_vol_bench(
                     row_refs[model_name]["dm_qlike_mean"] = float(diff["mean_diff"])
                     row_refs[model_name]["dm_qlike_se"] = float(diff["se"])
                     row_refs[model_name]["dm_qlike_t"] = float(diff["t"])
+                    # Anytime-valid promotion: per-origin e-process on the
+                    # QLIKE stream vs the HAR incumbent (challenger=model).
+                    proc = LossEProcess(alpha=0.05, init_scale=_EPROMOTION_INIT_SCALE)
+                    for c_loss, b_loss in zip(
+                        qlike_loss(targets, forecasts).tolist(),
+                        qlike_loss(ref_targets, ref_forecasts).tolist(),
+                        strict=True,
+                    ):
+                        proc.update(c_loss, b_loss)
+                    final_state = proc.states[-1]
+                    row_refs[model_name]["epromotion_evalue"] = float(final_state.evalue)
+                    row_refs[model_name]["epromotion_origin"] = proc.promotion_origin
+                    row_refs[model_name]["epromotion_anytime_p"] = float(final_state.anytime_p)
 
     frame = pl.DataFrame(
         rows,
@@ -532,6 +553,9 @@ def run_vol_bench(
             "dm_qlike_mean": pl.Float64,
             "dm_qlike_se": pl.Float64,
             "dm_qlike_t": pl.Float64,
+            "epromotion_evalue": pl.Float64,
+            "epromotion_origin": pl.Int64,
+            "epromotion_anytime_p": pl.Float64,
         },
         orient="row",
     ).select(columns)
