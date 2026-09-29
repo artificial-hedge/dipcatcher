@@ -2049,5 +2049,18 @@ Gates: 82 tests green; ruff check clean; ruff format applied; mypy clean on all 
 - Wave 7 (vol/credit/selection canon): 12 modules — models/{egarch,har,dcc,stoch_vol,count,ordered,qar,dfm,fractional,kmv}.py + metrics/{purged_cv,feature_select}.py; 54 unit tests green; ruff/mypy clean. Notable: ordered.py cutpoint sizing bug caught by prob-sum invariant; dfm stationary-init uses solve_discrete_lyapunov.
 
 
+## Canon wave 10 (11 modules, 88 tests) — DONE
 
-- Wave 11 (regression/nonlinear canon): 6 modules — models/{bvar,msgarch,qvar,predictive_regression,port_sorts,smooth_transition}.py; 30 unit tests green; ruff/mypy clean. Minnesota-prior BVAR (BGR per-coefficient dummies, IRF/FEVD/forecast), Markov-switching GARCH (collapsed filter + quasi-MLE + sim), quantile VAR (smoothed pinball BFGS + qIRF), Stambaugh/Bonferroni/Newey-West predictive regression, NYSE-breakpoint portfolio sorts (EW/VW + bivariate), LSTAR/ESTAR NLS + LST linearity F-test.
+- models/information_filter.py — Anderson-Moore information-form KF (inverse-covariance recursion), Masreliez Huber-robust KF, square-root Potter SRIF
+- metrics/twcrps.py — threshold-weighted CRPS for ensembles (exact piecewise integral on unique(ens U y) grid, per-segment Gauss-Legendre), tail-focused twCRPS
+- metrics/mcr.py — PAVA isotonic reliability, exact Bröcker (2009) MCB-DSC-UNC decomposition with WGV and -2*COV terms, URC log-score decomposition
+- models/synthetic_control.py — Duchi simplex projection, projected-gradient SC fit (Lipschitz step), in-space placebo rank p-values
+- models/causal_panel.py — 2x2 diff-in-diff ATT, TWFE dummy OLS, segmented interrupted time series with Andrews-bandwidth HAC
+- models/optimal_transport.py — log-stabilized Sinkhorn, 1-D W2 barycenter via quantile averaging, Gaussian Bures fixed point
+- models/selective_inference.py — Lee et al. polyhedral truncation set, TG CDF in log-space, sign-conditioned intervals, bisection solve
+- models/hsmm.py — explicit-duration HSMM: forward filter on extended KxD space, Viterbi decode, EM-lite emission fit
+- models/io_hmm.py — Bengio-Frasconi input-output HMM: softmax transition tensor, forward-filtered NLL, BFGS MLE
+- models/leadlag.py — cross-correlation lead-lag score/adjacency matrices, Hayashi-Yoshida asynchronous covariance
+- models/midas_regression.py — exp-Almon NLS + UMIDAS OLS with forecast path
+
+Gates: 88 tests green across the wave; ruff check clean; ruff format applied; mypy clean on all 11 files.
