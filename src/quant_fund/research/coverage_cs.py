@@ -142,6 +142,7 @@ def audit_coverage_cs(
     alpha: float = 0.05,
     p0_grid: Sequence[float] = DEFAULT_P_GRID,
     alt_grid: Sequence[float] = DEFAULT_ALT_GRID,
+    data_label: str | None = None,
 ) -> tuple[pl.DataFrame, dict]:
     """Per (head, level): stream breaches into a CoverageCS.
 
@@ -150,6 +151,9 @@ def audit_coverage_cs(
     the first index at which nominal left the CS (coverage-cs origin), and
     the empirical breach rate for context. A malformed (non-finite or
     crossed) interval row is inconclusive — never a breach.
+    ``data_label`` stamps the receipt's provenance; when None it is
+    derived from the shard configs (all-SYNTHETIC → SYNTHETIC, mixed →
+    MIXED, unlabeled → UNKNOWN).
     """
     if n_train <= 0 or n_eval <= 0:
         raise ValueError("n_train and n_eval must be positive")
@@ -172,12 +176,15 @@ def audit_coverage_cs(
         raise ValueError("no requested level is expressible in the tau grid")
 
     rows: list[dict] = []
+    shard_labels: set[str] = set()
     n_shard = n_train + n_eval
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
         shard = generator(n_shard, int(seed) + shard_index)
+        shard_labels.add(str(shard.config.get("data_label") or "UNKNOWN"))
         y_eval = np.asarray(shard.y[n_train : n_train + n_eval], dtype=float)
         for name in sorted(factories):
             factory = factories[name]
+            err: str | None = None
             try:
                 model = factory()
                 model.fit(shard.x[:n_train], shard.y[:n_train])
@@ -186,8 +193,9 @@ def audit_coverage_cs(
                     q = np.asarray(model.predict(lag_x), dtype=float)
                 else:
                     q = np.asarray(model.predict(shard.x[n_train : n_train + n_eval]), dtype=float)
-            except Exception:
+            except Exception as exc:
                 q = None
+                err = str(exc)
             for level, idx in level_index.items():
                 if idx is None or q is None or q.ndim != 2 or q.shape[1] != tau_arr.shape[0]:
                     rows.append(
@@ -196,6 +204,7 @@ def audit_coverage_cs(
                             "head": name,
                             "level": level,
                             "status": "level_unsupported" if q is not None else "error",
+                            "error": err,
                             "n_eval": 0,
                             "breach_rate": float("nan"),
                             "cs_low": float("nan"),
@@ -225,6 +234,7 @@ def audit_coverage_cs(
                         "head": name,
                         "level": level,
                         "status": "ok" if cs.n_eval else "inconclusive",
+                        "error": err,
                         "n_eval": cs.n_eval,
                         "breach_rate": cs.n_eval and cs.n_breach / cs.n_eval or float("nan"),
                         "cs_low": lo,
@@ -233,10 +243,18 @@ def audit_coverage_cs(
                         "nominal_exit_origin": exit_origin,
                     }
                 )
+    if data_label is None:
+        if shard_labels == {"SYNTHETIC"}:
+            data_label = "SYNTHETIC"
+        elif len(shard_labels) > 1:
+            data_label = "MIXED"
+        else:
+            data_label = next(iter(shard_labels), "UNKNOWN")
     frame = pl.DataFrame(rows)
     receipt: dict[str, object] = {
         "schema": COVERAGE_CS_SCHEMA,
         "kind": "coverage_cs",
+        "data_label": data_label,
         "level": "research",
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         "code_revision": git_revision(),
