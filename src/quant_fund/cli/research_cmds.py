@@ -763,6 +763,12 @@ def suite_health_cmd(
     ),
     alpha: float = typer.Option(0.05, help="Pooled-evidence alarm threshold."),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit 1 unless every failing receipt is a byte-pinned legacy "
+        "unsealed artifact (CI evidence-audit gate).",
+    ),
 ) -> None:
     """Re-verify every receipt in a directory + pool evidence → sealed summary.
 
@@ -785,12 +791,34 @@ def suite_health_cmd(
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"suite_health_{sealed['receipt_sha256'][:16]}.json"
     _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=receipt["data_label"],
+        )
+    )
     typer.echo(
         f"receipts={receipt['n_receipts']} ok={receipt['n_ok']} "
         f"failed={receipt['n_failed']} pooled_evalue={receipt['pooled_evalue']}"
     )
     typer.echo(f"receipt={path}")
+    if strict:
+        import polars as pl
+
+        from quant_fund.research.legacy_unsealed import is_known_unsealed
+        from quant_fund.research.receipt_v2 import verify_receipt_file
+
+        bad: list[str] = []
+        for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
+            p = receipts_dir / str(row["file"])
+            result = verify_receipt_file(p)
+            if not is_known_unsealed(p, result["errors"]):
+                bad.append(f"{row['file']}: {result['errors']}")
+        if bad:
+            typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
+            for line in bad:
+                typer.echo(f"  {line}", err=True)
+            raise typer.Exit(code=1)
 
 
 __all__ = [

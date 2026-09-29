@@ -35,6 +35,7 @@ does not score them.
 - `receipts/dip_bench_crypto_1d_20260925.json`: fx1.dip_bench/v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fast_replay_p42_conformance_20260927.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/honest_verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/incumbent_bench_qlib.json`: incumbent_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/lane_power_drill.json`: lane_power.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/monitor_run_drill_clean.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
