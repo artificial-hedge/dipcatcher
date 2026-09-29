@@ -180,3 +180,56 @@ def test_all_challengers_run_on_all_panels() -> None:
     expected = {(shard, chal) for shard in PANEL_GENERATORS for chal in CHALLENGERS}
     got = {(r["shard"], r["challenger"]) for r in combos.iter_rows(named=True)}
     assert got == expected
+
+
+def test_data_label_derived_from_panels() -> None:
+    def real_panel(n_dates: int, n_assets: int, seed: int, horizons):
+        p = PANEL_GENERATORS["linear_signal"](n_dates, n_assets, seed, horizons)
+        return type(p)(
+            dates=p.dates,
+            asset_ids=p.asset_ids,
+            signal=p.signal,
+            forward=p.forward,
+            description=p.description,
+            data_label="yahoo_eod",
+        )
+
+    _, receipt = run_cross_sectional_bench(
+        panels={"yahoo_x": real_panel}, n_dates=52, n_assets=8, horizons=(1,)
+    )
+    assert receipt["data_label"] == "yahoo_eod"
+    assert receipt["panels"]["yahoo_x"]["data_label"] == "yahoo_eod"
+
+
+def test_mixed_data_labels_fail_closed() -> None:
+    def real_panel(n_dates: int, n_assets: int, seed: int, horizons):
+        p = PANEL_GENERATORS["linear_signal"](n_dates, n_assets, seed, horizons)
+        return type(p)(
+            dates=p.dates,
+            asset_ids=p.asset_ids,
+            signal=p.signal,
+            forward=p.forward,
+            description=p.description,
+            data_label="yahoo_eod",
+        )
+
+    with pytest.raises(ValueError, match="mixed data_label"):
+        run_cross_sectional_bench(
+            panels={"synth": PANEL_GENERATORS["pure_noise"], "real": real_panel},
+            n_dates=52,
+            n_assets=8,
+            horizons=(1,),
+        )
+
+
+def test_empty_label_rejected() -> None:
+    p = PANEL_GENERATORS["linear_signal"](52, 8, 0, (1,))
+    with pytest.raises(ValueError, match="data_label"):
+        type(p)(
+            dates=p.dates,
+            asset_ids=p.asset_ids,
+            signal=p.signal,
+            forward=p.forward,
+            description=p.description,
+            data_label=" ",
+        )
