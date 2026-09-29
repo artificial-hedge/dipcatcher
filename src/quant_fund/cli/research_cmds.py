@@ -876,6 +876,55 @@ def mcs(
     typer.echo(f"champion={receipt['champion']}")
     typer.echo(f"receipt={path}")
 
+@app.command("serial-watch")
+def serial_watch_cmd(
+    pits: Path = typer.Argument(..., help="JSON file: a list of PITs in (0,1), or {name: [pits]}."),
+    n_lags: int = typer.Option(5, help="Max lag for the sign-product families."),
+    alpha: float = typer.Option(0.05, help="Per-family claim level."),
+    lam: float = typer.Option(0.5, help="Bet cap λ ∈ (0,1)."),
+    data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on each receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Anytime-valid PIT serial-independence audit; sealed receipt per stream.
+
+    Proper-scores evidence only — reports the per-lag family claim and the
+    pooled e-value claim separately (never one merged flag; the joint claim
+    boundary is per-family level α AND pooled level α, not one shared level).
+    """
+    import json
+
+    from quant_fund.research.serial_watch import serial_report, write_serial_receipt
+
+    try:
+        raw = json.loads(pits.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"cannot read PIT file {pits}: {exc}") from exc
+    streams: dict[str, object] = (
+        {"stream": raw}
+        if isinstance(raw, list)
+        else {str(k): v for k, v in raw.items()}
+        if isinstance(raw, dict)
+        else {}
+    )
+    if not streams:
+        raise typer.BadParameter("PIT file must be a JSON list or {name: [pits]} mapping")
+    try:
+        for name, stream in streams.items():
+            receipt = serial_report(
+                stream, n_lags=n_lags, alpha=alpha, lam=lam, data_label=data_label
+            )
+            path = write_serial_receipt(receipt, out_dir)
+            typer.echo(
+                format_data_label(synthetic=data_label == "SYNTHETIC", data_source=data_label)
+            )
+            typer.echo(
+                f"{name}: alarmed_lags={receipt['alarmed_lags']} "
+                f"(per-family claim, level {alpha}) pooled_evalue={receipt['pooled_evalue']:.4g} "
+                f"pooled_alarmed={receipt['pooled_alarmed']} (separate pooled claim, level {alpha})"
+            )
+            typer.echo(f"receipt={path}")
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 @app.command("cost-surface")
 def cost_surface(
     bands: str = typer.Option(
@@ -1034,8 +1083,98 @@ def cost_calibration(
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(format_cost_calibration_table(frame))
     typer.echo(f"receipt={path}")
-    typer.echo(f"report={report}")
-@app.command("cost-calibration")
+    typer.echo(f"report={report}")@app.command("sleeve-study")
+def sleeve_study(
+    n_names: int = typer.Option(8, help="Names in the synthetic perp book."),
+    n_bars: int = typer.Option(168, help="Hourly bars per name (>= 96)."),
+    alloc_window: int = typer.Option(20, help="Trailing-NAV allocation window."),
+    vol_target: float = typer.Option(0.15, help="Annualized vol target for the overlay."),
+    dd_threshold: float = typer.Option(0.25, help="Drawdown-governor hard bound."),
+    seed: int = typer.Option(11, help="Base seed."),
+    dev: bool = typer.Option(False, "--dev", help="Acknowledge dev-only use; required to run."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """P5.1 multi-sleeve dev study on a seeded SYNTHETIC perp book.
+
+    Runs funding-carry, slow-trend and sweep-reclaim sleeves solo through
+    ``run_perp_backtest``, then a trailing-NAV risk-parity mix, then the mix
+    under a chained vol-target + drawdown-governor overlay. Reports turnover,
+    decomposed cost, exposure, overlay scale-factor dispersion and
+    allocation HHI — telemetry only, never a P&L or live-trading claim.
+    """
+    if not dev:
+        raise typer.BadParameter(
+            "sleeve-study is dev-only evidence tooling; pass --dev to acknowledge."
+        )
+    from quant_fund.research.sleeve_study import (
+        _synth_perp_book,
+        format_sleeve_study_table,
+        run_sleeve_study,
+        write_sleeve_study_receipt,
+    )
+
+    try:
+        bars, funding = _synth_perp_book(seed, n_names, n_bars)
+        frame, receipt = run_sleeve_study(
+            bars,
+            funding,
+            seed=seed,
+            alloc_window=alloc_window,
+            vol_target=vol_target,
+            dd_threshold=dd_threshold,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_sleeve_study_receipt(receipt, out_dir)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(format_sleeve_study_table(frame))
+    typer.echo(f"receipt={path}")@app.command("cost-calibration")
+def cost_calibration(
+    half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
+    lookback: int = typer.Option(20, help="Trailing OHLC window for estimators."),
+    n_dates: int = typer.Option(40, help="Dates in the SYNTHETIC panel."),
+    n_names: int = typer.Option(4, help="Names in the SYNTHETIC panel."),
+    seed: int = typer.Option(7, help="Panel seed."),
+    planted_rel_spread: float = typer.Option(
+        0.002, help="Planted high-low relative full spread for the SYNTHETIC book."
+    ),
+    dev: bool = typer.Option(False, "--dev", help="Acknowledge dev-only use; required to run."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    report_path: Path = typer.Option(
+        Path("reports/cost_calibration_flat_vs_ohlc.md"),
+        help="Markdown report path (flat vs calibrated trial table).",
+    ),
+) -> None:
+    """Flat vs OHLC-calibrated cost trials (dev-only SYNTHETIC diagnostic).
+
+    Matched books under flat half-spread and Corwin–Schultz / Abdi–Ranaldo /
+    Roll. Reports decomposed costs only — never Sharpe or live P&L.
+    """
+    if not dev:
+        raise typer.BadParameter(
+            "cost-calibration is dev-only evidence tooling; pass --dev to acknowledge."
+        )
+    from quant_fund.research.cost_calibration import (
+        format_cost_calibration_table,
+        run_cost_calibration_trials,
+        write_cost_calibration_receipt,
+        write_cost_calibration_report,
+    )
+
+    frame, receipt = run_cost_calibration_trials(
+        half_spread_bps=half_spread_bps,
+        lookback=lookback,
+        n_dates=n_dates,
+        n_names=n_names,
+        seed=seed,
+        planted_rel_spread=planted_rel_spread,
+    )
+    path = write_cost_calibration_receipt(receipt, out_dir)
+    report = write_cost_calibration_report(frame, receipt, report_path)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(format_cost_calibration_table(frame))
+    typer.echo(f"receipt={path}")
+    typer.echo(f"report={report}")@app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
     lookback: int = typer.Option(20, help="Trailing OHLC window for estimators."),
@@ -1371,8 +1510,15 @@ __all__ = [
     "verdict",
     "lane_power",
     "monitor",
+    "serial_watch_cmd",
     "suite_health_cmd",
     "verdict",
+    "lane_power",
+    "mcs",
+    "monitor",
+    "suite_health_cmd",
+    "verdict",
+    "race",
     "race",
     "race",
     "race",
