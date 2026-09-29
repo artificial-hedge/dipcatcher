@@ -215,8 +215,17 @@ fleet contract.
 Each: pinned artifact + sha256, zero-shot, native output honored
 (quantile/sample/path), per-model coverage disclosed.
 
-- [ ] P2.1 `moirai2` — Salesforce/moirai-2.0-R-small via uni2ts; quantile
-      head maps directly onto our CRPS/pinball path.
+- [~] P2.1 `moirai2` — Salesforce/moirai-2.0-R-small via uni2ts; quantile
+      head maps directly onto our CRPS/pinball path. Adapter landed:
+      `Moirai2Distribution` (`models/moirai2.py`) — lazy fail-closed
+      import, `availability()` gate, causal-window `predict_from_history`,
+      registered in `FLEET_HEAD_REGISTRY`. Dep evidence: `uv add uni2ts`
+      fails resolution — every published uni2ts (1.1.0–2.0.0) pins
+      `scipy>=1.11.3,<1.12.dev0` and `numpy~=1.26.0` against pinned
+      `scipy>=1.14` / `numpy>=2.0` (upstream main pins the same ranges, so
+      git install does not help either), plus `gluonts~=0.14.3` → `toolz<1`
+      vs `exchange-calendars==4.13.2` → `toolz>=1`. Lane stays fail-closed
+      until upstream loosens. Fleet cell open pending a resolvable dep.
 - [ ] P2.2 `tirex2` — NX-AI TiRex-2; prefer a decontaminated checkpoint for
       the fev-bench/GIFT overlap question; sample-path → distribution.
 - [ ] P2.3 `sundial` — THU-MT flow-matching; sample paths → empirical dist.
@@ -275,6 +284,26 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       direct aggregate fit, naive sum-of-quantiles (comonotone bound),
       independent MC convolution, and a Gaussian copula MC fit on
       in-sample PIT z-scores. Proper scores only; sealed receipt.v2.
+
+### P3b — Sequential inference suite (new statistical layer)
+
+- [~] Anytime-valid head promotion: `research/evalues.py` `LossEProcess`
+      (betting e-process, Ville/Ramdas) wired into `vol_bench` — PR #380.
+- [~] Sequential fleet elimination: `research/fleet_race.py` + `dipcatcher
+      race` (two e-processes per head vs fixed incumbent) — PR #381.
+- [~] Corpus-level inference: `research/corpus_inference.py` harvests all
+      committed receipts → pooled BH-FDR + e-value product — PR #382.
+- [~] Online FDR over the receipt stream: `research/online_fdr.py`
+      Foster–Stine alpha-investing — PR #383.
+- [~] Verifier contracts for the family: `research/evalue_contracts.py`
+      deep-checks all four kinds — PR #384.
+- [~] Winner's-curse correction: `research/winner_curse.py` bootstrap
+      selection-bias + split-half honest control — PR #385.
+- [~] Anytime-valid drift alarms: `research/drift_alarm.py` level-shift
+      e-process + Page–Hinkley diagnostic — PR #386.
+- [~] Composite verdict: `research/honest_verdict.py` — PR #387.
+- [~] Registry completeness ratchet (no orphan heads) — PR #388.
+      See `docs/SEQUENTIAL_INFERENCE.md` for the architecture.
 
 ### P4 — Industry-grade bar (the open one)
 

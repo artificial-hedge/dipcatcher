@@ -30,6 +30,7 @@ from quant_fund.backtest.engine import (
     _make_order,
     _projected_exposures,
     _valid_price,
+    _validate_bar_panel,
     _validate_target_weight_panel,
 )
 from quant_fund.backtest.event_sim.clock import EventClock, EventKind
@@ -105,12 +106,14 @@ class EventSimSpec:
             raise ValueError("fill_model must be next_open, vwap, or l2_queue")
         if self.signal_to_order_bars < 0 or self.order_to_exchange_bars < 0:
             raise ValueError("latency bars must be non-negative")
-        for label, delay in (
-            ("signal_to_order", self.signal_to_order),
-            ("order_to_exchange", self.order_to_exchange),
+        for label, delay, bars in (
+            ("signal_to_order", self.signal_to_order, self.signal_to_order_bars),
+            ("order_to_exchange", self.order_to_exchange, self.order_to_exchange_bars),
         ):
             if delay is not None and delay < timedelta(0):
                 raise ValueError(f"{label} timedelta must be non-negative")
+            if delay is not None and bars != 0:
+                raise ValueError(f"{label}: choose bar-count or timedelta latency, not both")
         if self.vwap_window_bars < 1 or self.l2_rest_bars < 0:
             raise ValueError("vwap window must be >= 1 and l2 rest bars >= 0")
         if self.min_notional < 0.0 or not math.isfinite(self.min_notional):
@@ -187,6 +190,7 @@ class _State:
     exec_mark: dict[str, float] = field(default_factory=dict)
     close_mark: dict[str, float] = field(default_factory=dict)
     marked_today: set[str] = field(default_factory=set)
+    pre_exec_marks: dict[str, float] = field(default_factory=dict)
     snaps: dict[int, _Snap] = field(default_factory=dict)
     last_target: dict[str, float] = field(default_factory=dict)
     cost_sum: dict[str, float] = field(
@@ -208,6 +212,7 @@ class _State:
     traded_turn: float = 0.0
     garch_overlay_dates: int = 0
     realized_garch_overlay_dates: int = 0
+    overlay_counted_bar: int = -1
     stopped: bool = False
     nav_checked: bool = False
     min_cash: float = 0.0
@@ -370,7 +375,7 @@ def _load_books(
         indexed: dict[tuple[str, datetime], OrderBookSnapshot] = {}
         for day in rows.values():
             for row in day:
-                snap = _snapshot_from_row(row, 0.0)
+                snap = _snapshot_from_row(row, 4.0)
                 if snap is not None:
                     indexed[(snap.security_id, snap.event_time)] = snap
         return indexed
@@ -413,6 +418,10 @@ def _ingest(state: _State, rows: list[dict[str, Any]], *, use_open: bool, stale_
     for sid in close_mark:
         if sid not in marked:
             next_ages[sid] = next_ages.get(sid, 0) + 1
+    # Marks knowable at execution time are the pre-update marks; valuing a
+    # non-executing name at this bar's own close leaks future prices into
+    # open-time sizing and gating, mirroring pre_exec_marks in the engine.
+    state.pre_exec_marks = dict(state.last_marks)
     state.last_marks = dict(close_mark)
     state.mark_ages = next_ages
     state.exec_mark = exec_mark
@@ -631,7 +640,7 @@ def _try_commit(
     except KillSwitchActive:
         state.halt_count += 1
         return False
-    nav_prices = {**state.last_marks, **state.exec_mark}
+    nav_prices = {**state.pre_exec_marks, **state.exec_mark}
     current_w, gross_after, net_after = _projected_exposures(
         state.book, nav_prices, sid, delta, nav, set(state.book.shares)
     )
@@ -734,7 +743,12 @@ def _prepare_targets(
     return target_w
 
 
-def _count_overlay(state: _State, source: str | None) -> None:
+def _count_overlay(state: _State, source: str | None, bar_index: int) -> None:
+    # Overlay dates are per-bar counters, matching the engine's per-iteration
+    # increments; two fills landing on one bar must not double-count.
+    if bar_index == state.overlay_counted_bar:
+        return
+    state.overlay_counted_bar = bar_index
     if source == MARKET_RISK_OVERLAY_REALIZED_GARCH:
         state.realized_garch_overlay_dates += 1
     elif source == MARKET_RISK_OVERLAY_GARCH:
@@ -756,7 +770,7 @@ def _rebalance_next_open(
     kill: KillSwitch,
 ) -> None:
     """One next-open rebalance. Legacy zero-extra specs follow ``run_backtest``."""
-    nav_prices = {**state.last_marks, **state.exec_mark}
+    nav_prices = {**state.pre_exec_marks, **state.exec_mark}
     nav = state.book.nav(nav_prices)
     state.nav_checked = True
     if nav <= 0:
@@ -765,8 +779,7 @@ def _rebalance_next_open(
     target_w = _prepare_targets(state, signal_index, risk_overlay)
     snap = state.snaps[signal_index]
     market_vol, overlay_source = market_risk_overlay_asof(config, bars, signal_time)
-    _count_overlay(state, overlay_source)
-    state.traded_turn = 0.0
+    _count_overlay(state, overlay_source, bar_index)
     ids = set(state.exec_mark) | set(state.book.shares) | set(target_w)
     costs_cfg = config.costs
     legacy = (
@@ -828,6 +841,8 @@ def _rebalance_next_open(
                     book=None,
                     include_spread=True,
                 )
+        if not legacy and below_min_notional(delta, price, spec.min_notional):
+            continue
         try:
             kill.assert_new_orders_allowed()
         except KillSwitchActive:
@@ -964,7 +979,7 @@ def _rebalance_path(
     bars: pl.DataFrame,
     kill: KillSwitch,
 ) -> None:
-    nav_prices = {**state.last_marks, **state.exec_mark}
+    nav_prices = {**state.pre_exec_marks, **state.exec_mark}
     nav = state.book.nav(nav_prices)
     state.nav_checked = True
     if nav <= 0:
@@ -973,8 +988,7 @@ def _rebalance_path(
     target_w = _prepare_targets(state, signal_index, risk_overlay)
     snap = state.snaps[signal_index]
     market_vol, overlay_source = market_risk_overlay_asof(config, bars, signal_time)
-    _count_overlay(state, overlay_source)
-    state.traded_turn = 0.0
+    _count_overlay(state, overlay_source, bar_index)
     for sid, resting in list(state.resting.items()):
         same = abs(float(target_w.get(sid, 0.0)) - resting.target_w) <= 1e-12
         if not same:
@@ -1164,7 +1178,10 @@ def _advance_resting(
     market_vol: float | None,
     kill: KillSwitch,
 ) -> None:
-    if resting.placed_bar == bar_index or resting.bars_left <= 0:
+    if resting.placed_bar == bar_index:
+        return
+    if resting.bars_left <= 0:
+        state.resting.pop(resting.sid, None)
         return
     row = _row_on(rows, exec_time, resting.sid)
     if row is None:
@@ -1178,8 +1195,10 @@ def _advance_resting(
         volume = 0.0
     if resting.kind == "vwap":
         px = bar_vwap_price(row)
-        if px is None or volume <= 0.0:
+        if px is None or not math.isfinite(volume) or volume <= 0.0:
             resting.bars_left -= 1
+            if resting.bars_left <= 0:
+                state.resting.pop(resting.sid, None)
             return
         sign = 1.0 if resting.remaining > 0 else -1.0
         take = sign * min(abs(resting.remaining), volume)
@@ -1210,8 +1229,10 @@ def _advance_resting(
             state.resting.pop(resting.sid, None)
         return
     book = books.get((resting.sid, exec_time))
-    if book is None or volume < 0.0:
+    if book is None or not math.isfinite(volume) or volume < 0.0:
         resting.bars_left -= 1
+        if resting.bars_left <= 0:
+            state.resting.pop(resting.sid, None)
         return
     touch_px, touch_sz = touch(book, resting.side)
     step = advance_queue(
@@ -1278,7 +1299,7 @@ def _mark_equity(
     if state.stopped:
         return
     if not state.nav_checked:
-        nav_open = state.book.nav({**state.last_marks, **state.exec_mark})
+        nav_open = state.book.nav({**state.pre_exec_marks, **state.exec_mark})
         if nav_open <= 0:
             state.stopped = True
             return
@@ -1289,9 +1310,12 @@ def _mark_equity(
     )
     borrow = short_notional * (config.costs.borrow_bps_per_year / 1e4) / 252.0
     if not config.costs.frictionless:
-        if not spec.allow_margin:
-            borrow = min(borrow, max(state.book.cash, 0.0))
+        # The engine debits the full borrow charge unconditionally; clamping
+        # it to available cash understates the cost of a short book. Keep the
+        # settlement ledger in lockstep so buying power tracks real cash.
         state.book.cash -= borrow
+        if state.constraints is not None:
+            state.constraints.settled -= borrow
         nav_close -= borrow
         state.min_cash = min(state.min_cash, state.book.cash)
     state.navs.append(
@@ -1343,6 +1367,7 @@ def run_event_backtest(
             "event simulator requires execution.fill=next_open without a close auction"
         )
     _validate_target_weight_panel(weights)
+    _validate_bar_panel(bars)
     day_rows, dates, synthetic = _index_rows(bars)
     weights_by_date: dict[datetime, dict[str, float]] = {}
     for wrow in weights.iter_rows(named=True):
@@ -1414,6 +1439,15 @@ def run_event_backtest(
         order_bar = signal_index + step
         if order_bar < n:
             clock.schedule(order_bar, EventKind.ORDER, {"signal_index": signal_index})
+        else:
+            state.events.append(
+                {
+                    "kind": "CANCEL",
+                    "bar_index": bar_index,
+                    "signal_index": signal_index,
+                    "reason": "expired_after_sample",
+                }
+            )
 
     def on_order(bar_index: int, signal_index: int) -> None:
         _log("ORDER", bar_index, signal_index=signal_index)
@@ -1423,6 +1457,15 @@ def run_event_backtest(
         ex_bar = bar_index + step
         if ex_bar < n:
             clock.schedule(ex_bar, EventKind.EXCHANGE, {"signal_index": signal_index})
+        else:
+            state.events.append(
+                {
+                    "kind": "CANCEL",
+                    "bar_index": bar_index,
+                    "signal_index": signal_index,
+                    "reason": "expired_after_sample",
+                }
+            )
 
     def on_exchange(bar_index: int, signal_index: int) -> None:
         _log("EXCHANGE", bar_index, signal_index=signal_index)
