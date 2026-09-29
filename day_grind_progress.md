@@ -2049,14 +2049,18 @@ Gates: 82 tests green; ruff check clean; ruff format applied; mypy clean on all 
 - Wave 7 (vol/credit/selection canon): 12 modules — models/{egarch,har,dcc,stoch_vol,count,ordered,qar,dfm,fractional,kmv}.py + metrics/{purged_cv,feature_select}.py; 54 unit tests green; ruff/mypy clean. Notable: ordered.py cutpoint sizing bug caught by prob-sum invariant; dfm stationary-init uses solve_discrete_lyapunov.
 
 
+## Canon wave 10 (11 modules, 88 tests) — DONE
 
-## Canon wave 12 (6 modules, 27 tests) — DONE
+- models/information_filter.py — Anderson-Moore information-form KF (inverse-covariance recursion), Masreliez Huber-robust KF, square-root Potter SRIF
+- metrics/twcrps.py — threshold-weighted CRPS for ensembles (exact piecewise integral on unique(ens U y) grid, per-segment Gauss-Legendre), tail-focused twCRPS
+- metrics/mcr.py — PAVA isotonic reliability, exact Bröcker (2009) MCB-DSC-UNC decomposition with WGV and -2*COV terms, URC log-score decomposition
+- models/synthetic_control.py — Duchi simplex projection, projected-gradient SC fit (Lipschitz step), in-space placebo rank p-values
+- models/causal_panel.py — 2x2 diff-in-diff ATT, TWFE dummy OLS, segmented interrupted time series with Andrews-bandwidth HAC
+- models/optimal_transport.py — log-stabilized Sinkhorn, 1-D W2 barycenter via quantile averaging, Gaussian Bures fixed point
+- models/selective_inference.py — Lee et al. polyhedral truncation set, TG CDF in log-space, sign-conditioned intervals, bisection solve
+- models/hsmm.py — explicit-duration HSMM: forward filter on extended KxD space, Viterbi decode, EM-lite emission fit
+- models/io_hmm.py — Bengio-Frasconi input-output HMM: softmax transition tensor, forward-filtered NLL, BFGS MLE
+- models/leadlag.py — cross-correlation lead-lag score/adjacency matrices, Hayashi-Yoshida asynchronous covariance
+- models/midas_regression.py — exp-Almon NLS + UMIDAS OLS with forecast path
 
-- models/bai_perron.py — Bai-Perron (1998/2003) sup-Wald break tests, exact DP m-partition, sequential l→l+1 detection, segment refit + BIC
-- models/ucm.py — Harvey (1989) level+slope+stochastic-cycle structural model: Kalman MLE, RTS-smoothed components, damped forecast
-- models/favar.py — Bernanke-Boivin-Eliasz (2005) two-step FAVAR: PCA factors + VAR(p), OIRF/GIRF, generalized FEVD, recursion forecast
-- models/dml.py — Chernozhukov et al. (2018) DML: PLR and IRM (ATE) with cross-fitted ridge nuisances, influence-function SEs
-- models/ms_var.py — Hamilton (1989)/Kim (1994) MS-VAR(1) EM: Hamilton filter + Kim smoother, weighted M-step, transition counts, belief-propagation forecast
-- models/vine_copula.py — Bedford-Cooke C-vine with Gaussian pairs: tau-inversion fit, h-recursion loglik, inverse-h simulation
-
-Gates: 27 tests green; ruff check + format clean; mypy clean on all 7 files.
+Gates: 88 tests green across the wave; ruff check clean; ruff format applied; mypy clean on all 11 files.
