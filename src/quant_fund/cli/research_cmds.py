@@ -1704,3 +1704,214 @@ def basis_carry_cmd(
     typer.echo(f"receipt={path}")
     if strict and receipt["n_error_rows"]:
         raise typer.Exit(code=1)
+
+
+#: ``source:ARG`` legs resolve through this table — the symbol kwarg name and
+#: the daily-resolution defaults differ per venue adapter (Kraken takes
+#: ``pair``/``symbol``, OKX takes ``inst_id``). File legs bypass it entirely.
+_XVENUE_SOURCE_KWARGS: dict[str, tuple[str, dict[str, Any]]] = {
+    "kraken_spot": ("pair", {"interval": 1440}),
+    "kraken_futures_mark": ("symbol", {"tick_type": "mark", "resolution": "1d"}),
+    "kraken_funding": ("symbol", {}),
+    "okx_spot": ("inst_id", {"bar": "1Dutc"}),
+    "okx_mark": ("inst_id", {"bar": "1Dutc"}),
+    "okx_funding": ("inst_id", {}),
+}
+
+#: Canonical BTC legs for ``--preset kraken-okx``: Kraken spot + perpetual
+#: mark/funding against OKX spot + linear-swap mark/funding.
+_XVENUE_PRESETS: dict[str, list[dict[str, str]]] = {
+    "kraken-okx": [
+        {
+            "venue": "kraken",
+            "spot": "kraken_spot:XBTUSD",
+            "mark": "kraken_futures_mark:PF_XBTUSD",
+            "funding": "kraken_funding:PF_XBTUSD",
+        },
+        {
+            "venue": "okx",
+            "spot": "okx_spot:BTC-USDT",
+            "mark": "okx_mark:BTC-USDT-SWAP",
+            "funding": "okx_funding:BTC-USDT-SWAP",
+        },
+    ],
+}
+
+_XVENUE_LEG_FIELDS = ("venue", "spot", "mark", "funding")
+
+
+def _xvenue_parse_leg_spec(spec: str) -> dict[str, str]:
+    """Parse one ``--leg`` spec: comma-separated venue/spot/mark/funding keys."""
+    out: dict[str, str] = {}
+    for chunk in spec.split(","):
+        key, sep, value = chunk.partition("=")
+        key, value = key.strip().lower(), value.strip()
+        if not sep or not key or not value:
+            raise typer.BadParameter(
+                f"--leg entries must be key=value pairs, got {chunk!r} in {spec!r}"
+            )
+        if key not in _XVENUE_LEG_FIELDS:
+            raise typer.BadParameter(
+                f"unknown --leg key {key!r}; expected one of {sorted(_XVENUE_LEG_FIELDS)}"
+            )
+        if key in out:
+            raise typer.BadParameter(f"duplicate --leg key {key!r}")
+        out[key] = value
+    if "venue" not in out or "spot" not in out or "mark" not in out:
+        raise typer.BadParameter(
+            "--leg needs at least venue=, spot=, and mark= (funding= is optional)"
+        )
+    return out
+
+
+def _xvenue_frame(spec_value: str, *, cfg_root: Path, field: str, venue: str) -> Any:
+    """Resolve one leg field to a frame: ``source:ARG`` collect or file path."""
+    import polars as pl
+
+    from quant_fund.data.collector import collect_source
+
+    head, sep, arg = spec_value.partition(":")
+    if sep and head in _XVENUE_SOURCE_KWARGS:
+        symbol_kwarg, defaults = _XVENUE_SOURCE_KWARGS[head]
+        fetch_kwargs = {symbol_kwarg: arg, **defaults}
+        result = collect_source(head, cfg_root, fetch_kwargs=fetch_kwargs)
+        typer.echo(f"{venue}.{field} source={head} arg={arg} rows={result.frame.height}")
+        return result.frame
+    path = Path(spec_value)
+    if not path.is_file():
+        raise typer.BadParameter(
+            f"{venue}.{field}: {spec_value!r} is neither a known source:ARG "
+            f"({sorted(_XVENUE_SOURCE_KWARGS)}) nor an existing file"
+        )
+    if path.suffix == ".parquet":
+        return pl.read_parquet(path)
+    return pl.read_csv(path)
+
+
+@app.command("xvenue-basis")
+def xvenue_basis_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    leg: list[str] = typer.Option(
+        [],
+        "--leg",
+        help="One venue leg, comma-separated key=value: "
+        "'venue=kraken,spot=kraken_spot:XBTUSD,mark=kraken_futures_mark:PF_XBTUSD,"
+        "funding=kraken_funding:PF_XBTUSD'. Each field is source:ARG or a "
+        "parquet/CSV path. Repeat >= 2 times.",
+    ),
+    preset: str | None = typer.Option(
+        None,
+        "--preset",
+        help="Expand a canned pair of legs instead of passing --leg "
+        f"(choices: {sorted(_XVENUE_PRESETS)}).",
+    ),
+    asset: str = typer.Option(
+        "BTC", "--asset", help="Underlying asset label sealed into the receipt."
+    ),
+    data_label: str | None = typer.Option(
+        None,
+        "--data-label",
+        help="Provenance label for legs that load frames from files (e.g. "
+        "SYNTHETIC for fixtures). Source-collected legs are labeled by venue.",
+    ),
+    min_overlap: int = typer.Option(
+        5, "--min-overlap", help="Minimum shared dates per leg and per venue pair."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = crossvenue_basis.v1 (default), "
+        "2 = unified receipt.v2 envelope.",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero when any leg or venue pair fails to produce a measured row.",
+    ),
+) -> None:
+    """Cross-venue funding/basis bench (P5.5).
+
+    Inner-joins each venue's spot and mark closes on calendar date, then
+    diffs the basis (and the daily-summed realized funding rates, where both
+    venues have history) across every venue pair — the cross-venue carry
+    differential. Descriptive statistics only, sealed as a
+    ``crossvenue_basis.v1`` receipt; never P&L.
+    """
+    from quant_fund.research.crossvenue_basis import (
+        VenueLeg,
+        run_crossvenue_basis,
+        write_crossvenue_basis_receipt,
+    )
+
+    cfg = _cfg(config)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    if preset is not None and leg:
+        raise typer.BadParameter("pass either --preset or --leg, not both")
+    if preset is not None:
+        if preset not in _XVENUE_PRESETS:
+            raise typer.BadParameter(
+                f"unknown --preset {preset!r}; expected one of {sorted(_XVENUE_PRESETS)}"
+            )
+        leg_specs = _XVENUE_PRESETS[preset]
+    else:
+        leg_specs = [_xvenue_parse_leg_spec(spec) for spec in leg]
+    if len(leg_specs) < 2:
+        raise typer.BadParameter("crossvenue basis needs >= 2 legs (--leg or --preset)")
+
+    uses_files = False
+    for spec in leg_specs:
+        for field in ("spot", "mark", "funding"):
+            value = spec.get(field)
+            if value is not None and value.split(":", 1)[0] not in _XVENUE_SOURCE_KWARGS:
+                uses_files = True
+    if uses_files and data_label is None:
+        raise typer.BadParameter("file inputs need --data-label (e.g. SYNTHETIC for fixtures)")
+
+    legs: list[VenueLeg] = []
+    for spec in leg_specs:
+        venue = spec["venue"].lower()
+        leg_uses_files = any(
+            spec[field].split(":", 1)[0] not in _XVENUE_SOURCE_KWARGS for field in ("spot", "mark")
+        ) or (
+            spec.get("funding") is not None
+            and spec["funding"].split(":", 1)[0] not in _XVENUE_SOURCE_KWARGS
+        )
+        label = data_label if leg_uses_files else venue
+        if not label:
+            raise typer.BadParameter(f"leg {venue!r} needs --data-label for its file inputs")
+        legs.append(
+            VenueLeg(
+                venue=venue,
+                spot=_xvenue_frame(spec["spot"], cfg_root=cfg.data.root, field="spot", venue=venue),
+                mark=_xvenue_frame(spec["mark"], cfg_root=cfg.data.root, field="mark", venue=venue),
+                funding=(
+                    _xvenue_frame(
+                        spec["funding"], cfg_root=cfg.data.root, field="funding", venue=venue
+                    )
+                    if spec.get("funding")
+                    else None
+                ),
+                data_label=str(label),
+            )
+        )
+
+    try:
+        frame, receipt = run_crossvenue_basis(legs=legs, asset=asset, min_overlap=min_overlap)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_crossvenue_basis_receipt(receipt, out_dir, receipt_version=receipt_version)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
+    typer.echo(frame)
+    typer.echo(f"verdict={receipt['verdict']}")
+    typer.echo(f"receipt={path}")
+    if strict and receipt["n_error_rows"]:
+        raise typer.Exit(code=1)

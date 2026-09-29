@@ -40,6 +40,7 @@ does not score them.
 - `receipts/coverage_real_drill.json`: coverage_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cp_real_drill_gaussian_pit.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/crossvenue_basis_3f4ff76f517655a7.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search

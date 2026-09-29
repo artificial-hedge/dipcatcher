@@ -570,6 +570,7 @@ src/quant_fund/research/catalog/session.py
 src/quant_fund/research/catalog/sweep.py
 src/quant_fund/research/cost_allocation.py
 src/quant_fund/research/cross_sectional.py
+src/quant_fund/research/crossvenue_basis.py
 src/quant_fund/research/explainability/__init__.py
 src/quant_fund/research/explainability/attribution.py
 src/quant_fund/research/explainability/drift.py
