@@ -20,6 +20,8 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.utils.numeric import midrank
+
 Array = NDArray[np.float64]
 
 
@@ -149,8 +151,10 @@ def double_sorted_factors(
     leg_b = np.zeros(t)
     grid_ret = np.full((t, cuts, cuts), np.nan)
     for s in range(t):
-        qa = np.argsort(np.argsort(a[s])) * cuts // n  # 0..cuts-1
-        qb = np.argsort(np.argsort(b[s])) * cuts // n
+        # midranks keep a whole tie group in one cell (permutation-invariant);
+        # -1 maps the 1-based ranks back onto 0..cuts-1 cell indices
+        qa = ((midrank(a[s]) - 1.0) * cuts // n).astype(int)
+        qb = ((midrank(b[s]) - 1.0) * cuts // n).astype(int)
         for i in range(cuts):
             for j in range(cuts):
                 sel = (qa == i) & (qb == j)
@@ -202,6 +206,8 @@ def bai_ng_factors(returns: Array, r_max: int = 8) -> dict[str, Array]:
     cov = z.T @ z / t
     vals = np.linalg.eigvalsh(cov)[::-1]
     total = float(vals.sum())
+    if total <= 0.0:
+        raise ValueError("panel has zero total variance; cannot select factors")
     cnt = min(n, t)
     r_max = max(1, min(r_max, cnt - 1))
     # V(r): residual variance of the r-factor approximation.
