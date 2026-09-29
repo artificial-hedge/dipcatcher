@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 788,
+  "module_count": 789,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1089,6 +1089,18 @@
     {
       "dst": "quant_fund.schemas.errors",
       "src": "quant_fund.backtest.fast_replay"
+    },
+    {
+      "dst": "quant_fund.backtest.fast_replay",
+      "src": "quant_fund.backtest.nautilus_conformance"
+    },
+    {
+      "dst": "quant_fund.config",
+      "src": "quant_fund.backtest.nautilus_conformance"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.backtest.nautilus_conformance"
     },
     {
       "dst": "quant_fund.backtest.engine",
@@ -7961,6 +7973,7 @@
     "quant_fund.backtest.event_sim.sensitivity",
     "quant_fund.backtest.event_sim.simulator",
     "quant_fund.backtest.fast_replay",
+    "quant_fund.backtest.nautilus_conformance",
     "quant_fund.backtest.overlay",
     "quant_fund.backtest.perp_engine",
     "quant_fund.backtest.sleeves",
@@ -8945,12 +8958,12 @@
     },
     {
       "dst": "quant_fund.backtest",
-      "imports": 15,
+      "imports": 16,
       "src": "quant_fund.backtest"
     },
     {
       "dst": "quant_fund.config",
-      "imports": 7,
+      "imports": 8,
       "src": "quant_fund.backtest"
     },
     {
@@ -8986,6 +8999,11 @@
     {
       "dst": "quant_fund.portfolio",
       "imports": 5,
+      "src": "quant_fund.backtest"
+    },
+    {
+      "dst": "quant_fund.research",
+      "imports": 1,
       "src": "quant_fund.backtest"
     },
     {
