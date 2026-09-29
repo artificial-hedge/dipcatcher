@@ -1093,18 +1093,43 @@ def _agdcc_full_bounds(n: int) -> list[tuple[float, float]]:
     return bounds
 
 
+DCC_NLL_FAIL_CLOSED = 1e12
+
+
+def _dcc_nll_average(total: float, t: int) -> float:
+    r"""Mean stage-2 objective; fail closed on a non-finite accumulation.
+
+    Every DCC stage-2 term comes from ``_gaussian_corr_nll`` or
+    ``student_t_corr_nll``, which return the finite
+    ``DCC_NLL_FAIL_CLOSED`` sentinel instead of NaN for a singular,
+    indefinite, or non-finite correlation matrix. A non-finite mean
+    therefore means a term bypassed those guards, and the optimiser must
+    not be allowed to minimise a NaN objective — SLSQP has no ordering on
+    NaN, so it would report ``success`` for an arbitrary parameter vector
+    and the estimator would hand back a matrix fitted to nothing. Shared
+    by every DCC family so Gaussian, Student-t, ADCC, and AG-DCC cannot
+    diverge on this guard again.
+    """
+    if t < 1:
+        raise ValueError("DCC stage-2 objective needs at least one observation")
+    mean = float(total) / float(t)
+    if not np.isfinite(mean):
+        raise ValueError("DCC stage-2 objective is non-finite; refusing to optimise a NaN nll")
+    return mean
+
+
 def _gaussian_corr_nll(z: Array, corr: Array) -> float:
     residual = np.asarray(z, dtype=float).reshape(-1)
     r = np.asarray(corr, dtype=float)
     sign, logdet = np.linalg.slogdet(r)
     if sign <= 0 or not np.isfinite(logdet):
-        return 1e12
+        return DCC_NLL_FAIL_CLOSED
     try:
         quadratic = float(residual @ np.linalg.solve(r, residual))
     except np.linalg.LinAlgError:
-        return 1e12
+        return DCC_NLL_FAIL_CLOSED
     if not np.isfinite(quadratic):
-        return 1e12
+        return DCC_NLL_FAIL_CLOSED
     return float(logdet + quadratic)
 
 
@@ -1126,13 +1151,13 @@ def student_t_corr_nll(z: Array, corr: Array, nu: float) -> float:
         raise ValueError("student-t DCC nu must be finite and greater than 2")
     sign, logdet = np.linalg.slogdet(r)
     if sign <= 0 or not np.isfinite(logdet):
-        return 1e12
+        return DCC_NLL_FAIL_CLOSED
     try:
         quadratic = float(residual @ np.linalg.solve(r, residual))
     except np.linalg.LinAlgError:
-        return 1e12
+        return DCC_NLL_FAIL_CLOSED
     if not np.isfinite(quadratic) or quadratic < -1e-8:
-        return 1e12
+        return DCC_NLL_FAIL_CLOSED
     quadratic = max(quadratic, 0.0)
     return float(
         -2.0 * gammaln(0.5 * (nu + n))
@@ -1205,7 +1230,12 @@ def dcc_gaussian(
     are not substituted. The estimation sample is the trailing contiguous
     complete-case window ending at the last row: holes are not concatenated,
     and an incomplete terminal row fails closed so \(z_t\) cannot be silently
-    dropped from \(H_{t+1}\). Params stamp ``family=dcc_gaussian``,
+    dropped from \(H_{t+1}\). Stage 2 reuses the same extracted helpers as
+    ``dcc_student_t`` (``_dcc_qbar``, ``_dcc_step_q``, ``_dcc_r_from_q``,
+    ``_gaussian_corr_nll``, ``_dcc_nll_average``, ``_dcc_one_step_h``), so a
+    non-finite objective raises rather than being optimised — this estimator
+    must not diverge from the Student-t, ADCC, and AG-DCC paths. Params stamp
+    ``family=dcc_gaussian``,
     ``covariance_object=one_step_ahead``, ``sample=trailing_complete_window``,
     and ``asymmetric=false``. Student-t DCC, Cappiello–Engle–Sheppard ADCC,
     and Bollerslev CCC are separate catalog estimators and must not be run
@@ -1222,9 +1252,7 @@ def dcc_gaussian(
         raise ValueError("a0 must be finite and non-negative")
     if b0 is not None and (not np.isfinite(b0) or b0 < 0):
         raise ValueError("b0 must be finite and non-negative")
-    raw = np.asarray(returns, dtype=float)
-    x = dcc_trailing_complete_window(raw, min_rows=DCC_STAGE1_MIN_OBS)
-    n_prefix_dropped = float(raw.shape[0] - x.shape[0]) if raw.ndim == 2 else 0.0
+    x, n_prefix_dropped = _dcc_prepare_window(returns)
     t, n = x.shape
     z = np.zeros_like(x)
     sigma_one_step = np.zeros(n, dtype=float)
@@ -1232,34 +1260,22 @@ def dcc_gaussian(
         _sigma_j, z_j, sigma_next_j = _dcc_stage1_sigma_z_and_one_step(x[:, j])
         z[:, j] = z_j
         sigma_one_step[j] = sigma_next_j
-    with np.errstate(divide="ignore", invalid="ignore"):
-        qbar = np.asarray(np.corrcoef(z, rowvar=False), dtype=float)
-    if not np.isfinite(qbar).all():
-        raise ValueError("DCC correlation target is non-finite; input has unusable variance")
-    np.fill_diagonal(qbar, 1.0)
-    qbar, _ = repair_psd(qbar, tol=1e-12)
+    qbar = _dcc_qbar(z)
 
     def nll(params: Array) -> float:
         a, b = float(params[0]), float(params[1])
         if a < 0 or b < 0 or a + b >= 0.999:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         q = qbar.copy()
         ll = 0.0
         for i in range(1, t):
-            q = (1 - a - b) * qbar + a * np.outer(z[i - 1], z[i - 1]) + b * q
-            d = np.sqrt(np.clip(np.diag(q), 1e-12, None))
-            r = q / np.outer(d, d)
-            r = 0.5 * (r + r.T)
-            np.fill_diagonal(r, 1.0)
-            sign, logdet = np.linalg.slogdet(r)
-            if sign <= 0:
-                return 1e12
-            try:
-                quadratic = float(z[i] @ np.linalg.solve(r, z[i]))
-            except np.linalg.LinAlgError:
-                return 1e12
-            ll += logdet + quadratic
-        return float(ll / t)
+            q = _dcc_step_q(q, qbar, z[i - 1], a, b)
+            r = _dcc_r_from_q(q)
+            term = _gaussian_corr_nll(z[i], r)
+            if term >= DCC_NLL_FAIL_CLOSED:
+                return DCC_NLL_FAIL_CLOSED
+            ll += term
+        return _dcc_nll_average(ll, t)
 
     x0 = np.array([0.05 if a0 is None else a0, 0.9 if b0 is None else b0])
     x0 = np.clip(x0, 1e-6, 0.99)
@@ -1274,18 +1290,9 @@ def dcc_gaussian(
     )
     candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
     a, b = float(candidate[0]), float(candidate[1])
-    q = qbar.copy()
     # In-sample Q_1..Q_t, then one extra step Q_{t+1} from z_t.
-    for i in range(1, t + 1):
-        q = (1 - a - b) * qbar + a * np.outer(z[i - 1], z[i - 1]) + b * q
-    d = np.sqrt(np.clip(np.diag(q), 1e-12, None))
-    r = q / np.outer(d, d)
-    r = 0.5 * (r + r.T)
-    np.fill_diagonal(r, 1.0)
-    d_next = np.diag(sigma_one_step)
-    h = d_next @ r @ d_next
-    h, _ = repair_psd(h)
-    return h, {
+    h = _dcc_one_step_h(z, qbar, a, b, sigma_one_step)
+    return np.asarray(h, dtype=float), {
         "a": a,
         "b": b,
         "success": float(res.success),
@@ -1348,17 +1355,17 @@ def dcc_student_t(
     def nll(params: Array) -> float:
         a, b, nu_hat = float(params[0]), float(params[1]), float(params[2])
         if a < 0 or b < 0 or a + b >= 0.999 or nu_hat <= 2.0:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         q = qbar.copy()
         ll = 0.0
         for i in range(1, t):
             q = _dcc_step_q(q, qbar, z[i - 1], a, b)
             r = _dcc_r_from_q(q)
             term = student_t_corr_nll(z[i], r, nu_hat)
-            if term >= 1e12:
-                return 1e12
+            if term >= DCC_NLL_FAIL_CLOSED:
+                return DCC_NLL_FAIL_CLOSED
             ll += term
-        return float(ll / t)
+        return _dcc_nll_average(ll, t)
 
     nu0 = 8.0 if nu is None else float(nu)
     x0 = np.array(
@@ -1453,20 +1460,20 @@ def adcc(
     def nll(params: Array) -> float:
         a, b, g = float(params[0]), float(params[1]), float(params[2])
         if a < 0 or b < 0 or g < 0 or a + b + kappa * g >= 0.999:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         intercept = (1.0 - a - b) * qbar - g * nbar
         if min_eigenvalue(intercept) < -1e-10:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         q = qbar.copy()
         ll = 0.0
         for i in range(1, t):
             q = _adcc_step_q(q, qbar, nbar, z[i - 1], n_shock[i - 1], a, b, g)
             r = _dcc_r_from_q(q)
             term = _gaussian_corr_nll(z[i], r)
-            if term >= 1e12:
-                return 1e12
+            if term >= DCC_NLL_FAIL_CLOSED:
+                return DCC_NLL_FAIL_CLOSED
             ll += term
-        return float(ll / t)
+        return _dcc_nll_average(ll, t)
 
     x0 = np.array(
         [
@@ -1581,20 +1588,20 @@ def agdcc(
     def nll(params: Array) -> float:
         a, b, g = _unpack(params)
         if np.any(a < 0) or np.any(b < 0) or np.any(g < 0):
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         intercept = _agdcc_intercept(qbar, nbar, a, b, g)
         if min_eigenvalue(intercept) < -1e-10:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         q = qbar.copy()
         ll = 0.0
         for i in range(1, t):
             q = _agdcc_step_q(q, intercept, z[i - 1], n_shock[i - 1], a, b, g)
             r = _dcc_r_from_q(q)
             term = _gaussian_corr_nll(z[i], r)
-            if term >= 1e12:
-                return 1e12
+            if term >= DCC_NLL_FAIL_CLOSED:
+                return DCC_NLL_FAIL_CLOSED
             ll += term
-        return float(ll / t)
+        return _dcc_nll_average(ll, t)
 
     x0 = np.concatenate([start_a, start_b, start_g])
     bounds = [(0.0, 0.8)] * n + [(1e-6, 0.995)] * n + [(0.0, 0.8)] * n
@@ -1691,22 +1698,22 @@ def agdcc_full(
     def nll(params: Array) -> float:
         a, b, g = _agdcc_full_unpack(params, n)
         if np.any(np.diag(a) < 0) or np.any(np.diag(b) < 0) or np.any(np.diag(g) < 0):
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         intercept = _agdcc_full_intercept(qbar, nbar, a, b, g)
         if min_eigenvalue(intercept) < -1e-10:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         if _agdcc_full_kronecker_radius(a, b, g) >= 0.999:
-            return 1e12
+            return DCC_NLL_FAIL_CLOSED
         q = qbar.copy()
         ll = 0.0
         for i in range(1, t):
             q = _agdcc_full_step_q(q, intercept, z[i - 1], n_shock[i - 1], a, b, g)
             r = _dcc_r_from_q(q)
             term = _gaussian_corr_nll(z[i], r)
-            if term >= 1e12:
-                return 1e12
+            if term >= DCC_NLL_FAIL_CLOSED:
+                return DCC_NLL_FAIL_CLOSED
             ll += term
-        return float(ll / t)
+        return _dcc_nll_average(ll, t)
 
     res = minimize(nll, x0, bounds=_agdcc_full_bounds(n), method="SLSQP")
     candidate = np.asarray(res.x if res.success and np.isfinite(res.fun) else x0)
