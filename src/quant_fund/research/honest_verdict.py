@@ -158,8 +158,8 @@ def _magnitude_component(
     except ImportError as exc:
         return ComponentResult("magnitude", False, error=f"unavailable:{exc.name}")
     rep = cs_from_streams(
-        np.asarray(scores[winner], dtype=float),
-        np.asarray(scores[runner_up], dtype=float),
+        np.asarray(scores[winner], dtype=float).tolist(),
+        np.asarray(scores[runner_up], dtype=float).tolist(),
         alpha=alpha,
     )
     return ComponentResult("magnitude", True, detail=dict(rep))
@@ -174,7 +174,7 @@ def _localize_component(
     except ImportError as exc:
         return ComponentResult("localize", False, error=f"unavailable:{exc.name}")
     diffs = np.diff(np.asarray(scores[winner], dtype=float))
-    res = localize_changepoint(diffs, alpha=alpha)
+    res = localize_changepoint(diffs.tolist(), alpha=alpha)
     return ComponentResult(
         "localize",
         True,
