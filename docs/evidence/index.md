@@ -2340,6 +2340,57 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `receipt_sha256`: 86c888a2c61fcdc1c0eb9bac0162f396dc468192ede2b3700db4114757782e00
 - `schema`: coverage_cs.v1
 
+### `receipts/coverage_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/coverage_real_drill.json | 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a | b9dfb8a8f080123c6c166c691d956ceb9e43cec2971888a2814356e3cb4b10bb | not_checked | absent | inputs_sha256=d80c4ec2a299f2f7429504d956d19faae59d440dedde591467075f2f100d74bb | unspecified | absent | absent | absent |
+
+- `claims`:
+  - [0]
+    - `kind`: theoretical
+    - `text`: anytime-valid verdict on nominal interval coverage; lr mixture over breach-rate alternatives
+- `code_revision`: 1c65f3bde31a65b772f819f2cd7626d630950b1e
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - bernoulli_lr_bet
+  - exact_evalue_under_h0
+  - alternative_mixture_two_sided
+  - nominal_coverage_test
+- `kind`: coverage_audit
+- `level`: research
+- `params`:
+  - `alpha`: 0.05
+  - `alt_grid`:
+    - 0.5
+    - 0.7
+    - 1.3
+    - 2.0
+  - `levels`:
+    - 0.8
+    - 0.9
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `seed`: 0
+- `receipt_sha256`: b9dfb8a8f080123c6c166c691d956ceb9e43cec2971888a2814356e3cb4b10bb
+- `schema`: coverage_audit.v1
+
 ### `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |

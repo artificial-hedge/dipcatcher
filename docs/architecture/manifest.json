@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 815,
+  "module_count": 816,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -6775,6 +6775,18 @@
       "src": "quant_fund.research.coverage_cs"
     },
     {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.coverage_watch"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.coverage_watch"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.coverage_watch"
+    },
+    {
       "dst": "quant_fund.metrics.cross_section",
       "src": "quant_fund.research.cross_sectional"
     },
@@ -8912,6 +8924,7 @@
     "quant_fund.research.cost_allocation",
     "quant_fund.research.cost_calibration",
     "quant_fund.research.coverage_cs",
+    "quant_fund.research.coverage_watch",
     "quant_fund.research.cross_sectional",
     "quant_fund.research.drift_alarm",
     "quant_fund.research.emerge",
@@ -10489,7 +10502,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 171,
+      "imports": 172,
       "src": "quant_fund.research"
     },
     {
@@ -10504,7 +10517,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 59,
+      "imports": 61,
       "src": "quant_fund.research"
     },
     {
