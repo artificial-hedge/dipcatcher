@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 816,
+  "module_count": 817,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -7615,6 +7615,18 @@
       "src": "quant_fund.research.suite_health"
     },
     {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.tail_watch"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.tail_watch"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.tail_watch"
+    },
+    {
       "dst": "quant_fund.metrics.scoring",
       "src": "quant_fund.research.verdict_run"
     },
@@ -8973,6 +8985,7 @@
     "quant_fund.research.sota_evidence",
     "quant_fund.research.sota_protocol",
     "quant_fund.research.suite_health",
+    "quant_fund.research.tail_watch",
     "quant_fund.research.verdict_run",
     "quant_fund.research.verify",
     "quant_fund.research.vol_bench",
@@ -10502,7 +10515,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 172,
+      "imports": 173,
       "src": "quant_fund.research"
     },
     {
@@ -10517,7 +10530,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 61,
+      "imports": 63,
       "src": "quant_fund.research"
     },
     {

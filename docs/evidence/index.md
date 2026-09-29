@@ -23348,6 +23348,59 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `research_only`: true
 - `schema`: suite_health.v1
 
+### `receipts/tail_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/tail_real_drill.json | 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4 | a936b4b39fa051d9b5e3b515b24379c62e401b42b30d4dfad290f285c08e75e7 | not_checked | absent | inputs_sha256=4239dcdb9bccea13e150bcee593d30751abc620f84a45d3f8d0b2f506c632fd5 | unspecified | absent | absent | absent |
+
+- `claims`:
+  - [0]
+    - `kind`: theoretical
+    - `text`: anytime-valid verdict on tail depth: conditional deep-share of breaches matches tau_lo/tau_hi under any correct tail
+- `code_revision`: 5aec2df7922758a9567779c6e5c3db5238d49e7b
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - nested_quantile_consistency
+  - bernoulli_lr_bet
+  - exact_evalue_under_h0
+  - shape_free_tail_depth
+  - alternative_mixture_two_sided
+- `kind`: tail_audit
+- `level`: research
+- `params`:
+  - `alpha`: 0.05
+  - `alt_grid`:
+    - 0.5
+    - 0.75
+    - 1.35
+    - 1.9
+  - `cell`:
+    - 0.05
+    - 0.1
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `p0_deep_share`: 0.5
+  - `seed`: 0
+- `receipt_sha256`: a936b4b39fa051d9b5e3b515b24379c62e401b42b30d4dfad290f285c08e75e7
+- `schema`: tail_audit.v1
+
 ### `receipts/verdict_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
