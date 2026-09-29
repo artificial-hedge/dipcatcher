@@ -207,9 +207,43 @@ def admission_check(
         ).encode()
     )
 
+    # -- 5. epoch-chain integrity ------------------------------------------------
+    # Binding to the stamped epoch chain is defense in depth on top of the
+    # member-map digest: if the corpus was tampered *after* its last stamp,
+    # admitting into it must not claim a clean pass. Feature-detected so this
+    # module works whether or not corpus_epoch has merged/stamped yet.
+    chain_errors: list[str] = []
+    hard_chain_errors: list[str] = []
+    epoch_head: str | None = None
+    epoch_root_value: str | None = None
+    try:
+        from quant_fund.research.corpus_epoch import check_epoch_chain
+    except ImportError:
+        checks.append({"name": "epoch_chain", "ok": True, "skipped": "corpus_epoch_unavailable"})
+    else:
+        chain_result = check_epoch_chain(corpus_dir)
+        chain_errors = list(chain_result["errors"])
+        # An unstamped corpus ("no_epoch_receipts") is benign — the gate
+        # works fine before the first epoch stamp exists. Only a *broken
+        # stamped chain* (fork, member_removed/mutated, dishonest delta)
+        # is a quarantine-class finding.
+        hard_chain_errors = [e for e in chain_errors if e != "no_epoch_receipts"]
+        head_name = chain_result.get("head")
+        epoch_head = head_name if isinstance(head_name, str) else None
+        root_value = chain_result.get("head_epoch_root")
+        epoch_root_value = root_value if isinstance(root_value, str) else None
+        checks.append(
+            {
+                "name": "epoch_chain",
+                "ok": not hard_chain_errors,
+                "errors": chain_errors,
+                "unstamped": list(chain_result["unstamped"]),
+            }
+        )
+
     if not seal_ok or reject_errors:
         verdict = "reject"
-    elif quarantine_errors or new_inconsistent:
+    elif quarantine_errors or new_inconsistent or hard_chain_errors:
         verdict = "quarantine"
     else:
         verdict = "admit"
@@ -227,6 +261,8 @@ def admission_check(
         "candidate_sha256": candidate_sha,
         "n_corpus_receipts": len(corpus_files),
         "checks": checks,
+        "corpus_epoch_receipt": epoch_head,
+        "corpus_epoch_root": epoch_root_value,
         "lattice_new_inconsistent": sorted(new_inconsistent),
         "survivors_added": added,
         "survivors_removed": removed,
@@ -258,13 +294,28 @@ def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append("n_corpus_receipts")
     # verdict↔checks coherence: reject requires a failed seal or honesty reject;
     # quarantine requires some quarantine-class finding; admit requires all ok.
+    epoch_root = payload.get("corpus_epoch_root")
+    if epoch_root is not None and not (isinstance(epoch_root, str) and len(epoch_root) == 64):
+        errors.append("corpus_epoch_root")
+    epoch_receipt = payload.get("corpus_epoch_receipt")
+    if epoch_receipt is not None and not (
+        isinstance(epoch_receipt, str) and epoch_receipt.startswith("corpus_epoch_")
+    ):
+        errors.append("corpus_epoch_receipt")
     if isinstance(checks, list) and errors == []:
         seal_check: Mapping[str, Any] = next((c for c in checks if c.get("name") == "seal"), {})
         honesty: Mapping[str, Any] = next((c for c in checks if c.get("name") == "honesty"), {})
         lattice: Mapping[str, Any] = next((c for c in checks if c.get("name") == "lattice"), {})
+        epoch_chain: Mapping[str, Any] = next(
+            (c for c in checks if c.get("name") == "epoch_chain"), {}
+        )
         verdict = payload["verdict"]
         rejectable = not seal_check.get("ok", True) or bool(honesty.get("reject_errors"))
-        quarantinable = bool(honesty.get("quarantine_errors")) or not lattice.get("ok", True)
+        quarantinable = (
+            bool(honesty.get("quarantine_errors"))
+            or not lattice.get("ok", True)
+            or not epoch_chain.get("ok", True)
+        )
         if verdict == "reject" and not rejectable:
             errors.append("verdict_reject_without_cause")
         elif verdict == "quarantine" and (rejectable or not quarantinable):

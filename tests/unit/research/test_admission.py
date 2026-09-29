@@ -164,3 +164,50 @@ def test_empty_corpus_admits_first_clean_receipt(tmp_path: Path) -> None:
     result = admission_check(candidate, corpus)
     assert result["verdict"] == "admit"
     assert result["n_corpus_receipts"] == 0
+
+
+def test_epoch_chain_check_present_or_skipped(corpus: Path, tmp_path: Path) -> None:
+    """The epoch-chain check always runs — skipped only if corpus_epoch is absent."""
+    candidate = _write(tmp_path, "c.json", _claim_body(2.0))
+    result = admission_check(candidate, corpus)
+    epoch_check = next(c for c in result["checks"] if c["name"] == "epoch_chain")
+    assert epoch_check["ok"] is True
+    # corpus_epoch lands in a sibling PR: either it is importable and the
+    # (unstamped) corpus reports intact-with-no-epochs, or it is skipped.
+    if epoch_check.get("skipped") == "corpus_epoch_unavailable":
+        assert result["corpus_epoch_root"] is None
+    else:
+        # an unstamped corpus is benign — no epochs yet, nothing authoritative
+        # broken; admissions proceed normally
+        assert epoch_check["errors"] == ["no_epoch_receipts"]
+        assert result["verdict"] == "admit"
+
+
+def test_epoch_chain_fields_contract() -> None:
+    """A broken epoch chain is quarantinable; forged bindings are pinned."""
+    base = {
+        "kind": ADMISSION_SCHEMA,
+        "schema": ADMISSION_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "CORPUS",
+        "inputs_sha256": "ab" * 32,
+        "candidate_sha256": "cd" * 32,
+        "n_corpus_receipts": 2,
+        "corpus_epoch_receipt": "corpus_epoch_" + "0" * 16 + ".json",
+        "corpus_epoch_root": "ef" * 32,
+        "verdict": "quarantine",
+        "checks": [
+            {"name": "seal", "ok": True},
+            {"name": "honesty", "ok": True, "reject_errors": [], "quarantine_errors": []},
+            {"name": "lattice", "ok": True},
+            {"name": "corpus", "ok": True},
+            {"name": "epoch_chain", "ok": False, "errors": ["member_removed:x.json"]},
+        ],
+    }
+    assert admission_contract_errors(base) == []
+    base["corpus_epoch_root"] = "nothex"
+    assert "corpus_epoch_root" in admission_contract_errors(base)
+    base["corpus_epoch_root"] = "ef" * 32
+    base["verdict"] = "admit"
+    assert "verdict_admit_with_findings" in admission_contract_errors(base)
