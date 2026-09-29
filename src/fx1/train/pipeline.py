@@ -93,9 +93,12 @@ class Pipeline:
             for line in corpus_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
-        prompts = eval_prompts or [
-            m["content"] for t in DEFAULT_BANK for m in t.messages if m["role"] == "user"
-        ]
+        # The full eval surface — canonical bank, red-team, rephrased and
+        # masked twins — is always screened; caller-supplied prompts only
+        # widen the target, never narrow it.
+        from fx1.eval import eval_prompt_surface
+
+        prompts = eval_prompt_surface() + list(eval_prompts or [])
         kept, report = dedup_and_filter(examples, eval_prompts=prompts)
         if report.kept == 0:
             raise RuntimeError("quality gate: corpus empty after filtering")
@@ -159,6 +162,11 @@ class Pipeline:
             base_summary.setdefault("results", [])
         cand_summary = run_suite(candidate_fn, list(DEFAULT_BANK))
         cand_out = self._write("eval_candidate.json", cand_summary)
+        if not cand_summary["honesty_gate_passed"]:
+            raise RuntimeError(
+                "candidate fails the honesty gate; the comparison must not "
+                "certify a model that violates the contract"
+            )
         base_results = list(base_summary.get("results", []))
         cand_results = cand_summary.results
         base_pass = [bool(r["passed"]) for r in base_results if r["kind"] == "domain"]
