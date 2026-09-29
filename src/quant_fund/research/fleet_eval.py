@@ -453,6 +453,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "hstep_emp": lambda taus, seed: _HStepOneStepHead(taus, "empirical"),
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
+    "sundial": lambda taus, seed: _sundial(taus, seed),
 }
 
 
@@ -466,6 +467,12 @@ def _nhits(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.nbeats import NHiTsDistribution
 
     return NHiTsDistribution(list(taus), seed=int(seed))
+
+
+def _sundial(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.sundial import SundialDistribution
+
+    return SundialDistribution(list(taus), seed=int(seed))
 
 
 def resolve_shard_generators(names: Iterable[str] | None = None) -> dict[str, ShardGenerator]:
