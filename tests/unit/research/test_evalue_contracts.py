@@ -496,3 +496,33 @@ def test_monitor_run_label_binding_contract() -> None:
     mixed = dict(payload)
     mixed["params"] = {"data_labels": {"s1": "a", "s2": "b"}}
     assert evalue_family_contract_errors(mixed) != []
+
+
+def test_honest_verdict_label_binding_contract() -> None:
+    """Verdict data_label binds to run.params.data_labels when present."""
+    payload = {
+        "kind": "honest_verdict.v1",
+        "schema": "honest_verdict.v1",
+        "data_label": "yahoo_eod",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "inputs_sha256": _SHA,
+        "verdict": "confirmed",
+        "winner": "a",
+        "alpha": 0.05,
+        "n_obs": 100,
+        "n_heads": 2,
+        "components": {},
+        "unavailable_lanes": [],
+        "evidence": [],
+        "run": {
+            "params": {
+                "data_labels": {"s1": "yahoo_eod"},
+            }
+        },
+    }
+    errs = evalue_family_contract_errors(payload)
+    assert "data_label_mismatches_shard_labels" not in errs
+    bad = dict(payload)
+    bad["data_label"] = "SYNTHETIC"
+    assert "data_label_mismatches_shard_labels" in evalue_family_contract_errors(bad)

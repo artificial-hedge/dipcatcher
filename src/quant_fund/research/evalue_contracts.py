@@ -102,7 +102,17 @@ def _evalue_promotion_errors(p: Mapping[str, Any]) -> list[str]:
 
 def _fleet_race_errors(p: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
-    if p.get("data_label") != "SYNTHETIC":
+    shard_meta = p.get("shard_meta")
+    if isinstance(shard_meta, Mapping) and shard_meta:
+        distinct_fr = {
+            str(m.get("data_label") or "UNKNOWN")
+            for m in shard_meta.values()
+            if isinstance(m, Mapping)
+        }
+        expected_fr = next(iter(distinct_fr)) if len(distinct_fr) == 1 else None
+        if expected_fr is None or p.get("data_label") != expected_fr:
+            errors.append("data_label_mismatches_shard_labels")
+    elif p.get("data_label") != "SYNTHETIC":
         errors.append("data_label_not_synthetic")
     if p.get("research_only") is not True:
         errors.append("research_only_not_true")
@@ -156,6 +166,12 @@ def _corpus_inference_errors(p: Mapping[str, Any]) -> list[str]:
     q = _num(params.get("q")) if isinstance(params, Mapping) else None
     if q is None or not (0.0 < q < 1.0):
         errors.append("params_q_out_of_unit_interval")
+    input_labels_ci = params.get("input_labels") if isinstance(params, Mapping) else None
+    if isinstance(input_labels_ci, Mapping) and input_labels_ci:
+        distinct_ci = set(input_labels_ci.values())
+        expected_ci = next(iter(distinct_ci)) if len(distinct_ci) == 1 else "MIXED"
+        if p.get("data_label") != expected_ci:
+            errors.append("data_label_mismatches_input_labels")
     parse_errors = p.get("parse_errors")
     n_err = p.get("n_parse_errors")
     if isinstance(parse_errors, list) and isinstance(n_err, int):
@@ -490,7 +506,14 @@ def _lane_power_errors(p: Mapping[str, Any]) -> list[str]:
 
 def _honest_verdict_errors(p: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
-    if p.get("data_label") != "SYNTHETIC":
+    run = p.get("run")
+    run_params = run.get("params") if isinstance(run, Mapping) else None
+    data_labels = run_params.get("data_labels") if isinstance(run_params, Mapping) else None
+    if isinstance(data_labels, Mapping) and data_labels:
+        distinct = set(data_labels.values())
+        if len(distinct) != 1 or p.get("data_label") != distinct.pop():
+            errors.append("data_label_mismatches_shard_labels")
+    elif p.get("data_label") != "SYNTHETIC":
         errors.append("data_label_not_synthetic")
     if p.get("research_only") is not True:
         errors.append("research_only_not_true")
@@ -607,7 +630,14 @@ def _monitor_run_errors(p: Mapping[str, Any]) -> list[str]:
 
 def _suite_health_errors(p: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
-    if p.get("data_label") != "SYNTHETIC":
+    params_sh = p.get("params")
+    input_labels = params_sh.get("input_labels") if isinstance(params_sh, Mapping) else None
+    if isinstance(input_labels, Mapping) and input_labels:
+        distinct_in = set(input_labels.values())
+        expected = next(iter(distinct_in)) if len(distinct_in) == 1 else "MIXED"
+        if p.get("data_label") != expected:
+            errors.append("data_label_mismatches_input_labels")
+    elif p.get("data_label") != "SYNTHETIC":
         errors.append("data_label_not_synthetic")
     if p.get("research_only") is not True:
         errors.append("research_only_not_true")
