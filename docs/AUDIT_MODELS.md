@@ -197,3 +197,52 @@ audited paths verified (guards, index math, formula spot-check); no defect.
 
 Note: `__init__.py`, `__init__.pyi`-style module files and pure-reexport
 shims are excluded (no estimation logic).
+
+## Merge-wave audit (PR #428, 2026-09-29)
+
+Second pass covering the modules merged after the original 141-module table —
+the foundation-model adapters (moirai2/sundial/tabpfn_ts/tirex2/toto2/
+kronos_fleet), the `robinhood_plus` package, and the estimator arrivals.
+Same contract: causal index math, fail-closed degenerate handling, honest
+stamps. All reads clean; no defects found.
+
+| Module | Verdict | Evidence |
+|---|---|---|
+| `__init__.py` | CLEAN | Package surface only. |
+| `bai_perron` | CLEAN | Structural-break tests: trimming enforced, sup-F critical-value bands honest, degenerate series raise. |
+| `bvar` | CLEAN | Minnesota-prior BVAR: prior shrinkage guarded, draws seeded, non-finite inputs raise. |
+| `causal_panel` | CLEAN | Panel causal estimators consume declared windows only; no full-sample stats leak into estimates. |
+| `dml` | CLEAN | Double-ML cross-fitting: nuisances fit on folds excluding the scored rows (OOF-only residuals). |
+| `favar` | CLEAN | Factor-augmented VAR: factors extracted on the estimation window only. |
+| `hsmm` | CLEAN | Hidden semi-Markov: forward-backward in log space; duration pmf normalized; unfitted raise. |
+| `information_filter` | CLEAN | Nonlinear information filter: measurement-update ordering respects causality; covariance PSD guard. |
+| `io_hmm` | CLEAN | Input-output HMM: transition covariates read at the decision index only. |
+| `kronos_fleet` | CLEAN | Fleet adapter — emits sealed fleet receipts via the `fleet_eval` conventions; lazy fail-closed backend. |
+| `leadlag` | CLEAN | Lead-lag estimators (Hayashi–Yoshida style): non-synchronous covariance computed on overlapping intervals only. |
+| `midas_regression` | CLEAN | MIDAS weighting functions normalized; horizon alignment documented; degenerate weights raise. |
+| `moirai2` | CLEAN | Optional-dependency adapter: lazy import fails closed with actionable message (uv.lock conflict documented); no Hub download by default; `empty_forecast` stamps miss status instead of fabricating paths. |
+| `ms_var` | CLEAN | Markov-switching VAR: EM in log space with convergence guard; regime-conditional params checked finite. |
+| `msgarch` | CLEAN | Markov-switching GARCH: filtered probabilities forward-only; likelihood NaN → raise. |
+| `optimal_transport` | CLEAN | OT solvers on validated marginals; non-positive masses rejected; deterministic coupling. |
+| `port_sorts` | CLEAN | Portfolio sorts: formation-period features only; breakpoints from the same-period cross-section; no forward ranking. |
+| `predictive_regression` | CLEAN | Predictive regressions on trailing design; Bonferroni/Stambaugh-style bias correction honest. |
+| `qvar` | CLEAN | Quantile VAR: joint-sign consistency enforced; non-finite spread rejected. |
+| `robinhood_plus/__init__.py` | CLEAN | Re-export surface. |
+| `robinhood_plus/autoregress.py` | CLEAN | Autoregressive decode loop consumes only emitted context; max-step bound. |
+| `robinhood_plus/bench.py` | CLEAN | Bench entries sealed via `family_blob_forbidden_metrics_absent`; `sizes_book=False` for SYNTHETIC. |
+| `robinhood_plus/compare.py` | CLEAN | Comparison lane re-derives reported stats from payloads. |
+| `robinhood_plus/constants.py` | CLEAN | Constants only. |
+| `robinhood_plus/engine.py` | CLEAN | Event filtering enforces `event_time <= asof` AND `available_time <= asof` — PIT-correct. |
+| `robinhood_plus/predictor.py` | CLEAN | Prediction path validates shapes/finiteness; labels documented evaluation-only (never in K-line codes). |
+| `robinhood_plus/tokenizer.py` | CLEAN | Deterministic tokenization; vocabulary pinned. |
+| `robinhood_plus/torch_backend.py` | CLEAN | Never numpy-fallbacks under torch missing — fails closed; no hub downloads by default. |
+| `robinhood_plus/transformer.py` | CLEAN | Architecture config deterministic; attention masks causal. |
+| `selective_inference` | CLEAN | Post-selection intervals: conditioning on the selection event implemented honestly (truncated-Gaussian CDF); out-of-region returns NaN not garbage. |
+| `smooth_transition` | CLEAN | STAR/ESTAR-LSTAR transitions: transition function bounded; grid-search determinism; non-convergence raises. |
+| `sundial` | CLEAN | Optional-dependency adapter like moirai2: lazy fail-closed import, documented uv.lock conflict, no fabricated forecasts. |
+| `synthetic_control` | CLEAN | Donor-pool weights fit on pre-treatment window only; post-period never enters weights. |
+| `tabpfn_ts` | CLEAN | Optional-dependency adapter: lazy import, fail-closed, synthetic-path stamps. |
+| `tirex2` | CLEAN | Foundation-TS adapter: lazy fail-closed backend; seeded eval harness only. |
+| `toto2` | CLEAN | Same adapter pattern: optional dep fails closed; no silent fallback estimator. |
+| `ucm` | CLEAN | Unobserved-components state space: Kalman recursion forward-only; variance positivity guarded. |
+| `vine_copula` | CLEAN | Vine-copula pair-copula selection: loglik guards; family set fixed; degenerate tail rejected. |

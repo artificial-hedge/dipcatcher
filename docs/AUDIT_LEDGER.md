@@ -17,7 +17,7 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `cli/` | All 15 modules: argv-list subprocess only, no shell, config-error UX | #205 doctor UX |
 | `compute/` | Per-task seed derivation (murmur-finalize mix) so process_map result order = item order; serial fallback on pool failure; task exceptions propagate | — |
 | `config/` | safe_load, inherit path-containment, cycle detection | — |
-| `data/` | PIT sources, atomic writes, universe tie parity, manifest seals | #176 P6.3 fixes, #261 manifest seal, #275 pooled_stream atomic |
+| `data/` | PIT sources, atomic writes, universe tie parity, manifest seals; merge-wave (42 modules): `index_membership` PIT replay, `adapters/dolthub_stocks` provenance (sealed on #428), `quality/` report package — `AUDIT_P63_DATA.md` | #176 P6.3 fixes, #261 manifest seal, #275 pooled_stream atomic, #428 merge-wave |
 | `diffbacktest/` | `delay>=1` structural gate; `end = t - delay` verified causal in every builder; adversarial radius documented as upper bound | — |
 | `execution/` | Money-path fills, costs | #173 P6.6, #174 P6.1 (exec-NAV leak, leverage-cap trap) |
 | `features/` | lot_spread eps dead-zone parity with zero_share | #337 |
@@ -32,7 +32,7 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `mc_engine/` | Philox counter streams, chunk-pure engine, checkpoint fingerprinting, TDigest/Welford/P² merges, POT/GPD | #268 KATs, #295/#319 coverage |
 | `metrics/` | Proper-score suite, VaR backtests, inference (HAC/DM/MCS) | #206 clustered-variance, #304 propriety, #312 DQ, #315 KLM |
 | `microstructure/` | Quote/impact estimators | #175 P6.5 |
-| `models/` | All 152 modules estimator-by-estimator (child lane, `AUDIT_MODELS.md` on #345): estimator contracts, NaN/fail-closed edges, spec drift | #345 — 25 contract fixes |
+| `models/` | All 152 modules estimator-by-estimator (child lane, `AUDIT_MODELS.md` on #345): estimator contracts, NaN/fail-closed edges, spec drift; merge-wave +27 (foundation-model adapters fail-closed, `robinhood_plus` PIT engine) — `AUDIT_MODELS.md` | #345 — 25 contract fixes, #428 merge-wave |
 | `monitoring/` | PSI drift emits `insufficient_data` not false all-clear; kill_switch: unknown state blocks, invalid transitions raise, auto-flatten never on exception | — |
 | `native/` | env-gated dispatch; docs honestly separate bit-exact kernels (cumsum, wealth, SHA-256) from tolerance kernels (EMA/RSI/book-OLS) | — |
 | `northset/` | All 9 modules: estimators (Kyle/Roll/Parkinson/GK/RS/YZ/CS/AR/CKS/BNS formula-verified), CKS OFI, sweep battery (executable next-open timing, cross-sectional demeaning, PIT vol regimes, matched eligible controls, predeclared primary test) | #317 flat-bar junk + VPIN remainder |
@@ -44,7 +44,7 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `portfolio/` | Optimizer (infeasible diagnostics), allocators (PSD cov), factor betas (trailing ridge), conformal (chrono split), attribution (prev-bar weights) | #332 non-PSD refusal, fingerprint framing |
 | `pretrade/` | Hot risk-gate surface | #287 (child audit doc) |
 | `proof/` | HMAC env-only, merkle canonical dumps | — |
-| `research/` | All 62 modules (child lane, `AUDIT_RESEARCH.md` on #341): receipt writers/verifiers first, then signal→return causality, forced SYNTHETIC stamps, degenerate-input handling | #341 — `oos_rank_scores` no-fold fallback lacked boundary purge (real look-ahead, fixed); `sota_receipt.json` unsealed/non-atomic (fixed); `benches/common.py` purge gap fixed on #342 (documented below) |
+| `research/` | All 62 modules (child lane, `AUDIT_RESEARCH.md` on #341): receipt writers/verifiers first, then signal→return causality, forced SYNTHETIC stamps, degenerate-input handling; merge-wave +50 (seq-inf lane suite, allocation/pairs/explainability/catalog split) — `AUDIT_RESEARCH.md` | #341 — `oos_rank_scores` no-fold fallback lacked boundary purge (real look-ahead, fixed); `sota_receipt.json` unsealed/non-atomic (fixed); `benches/common.py` purge gap fixed on #342 (documented below); #428 merge-wave |
 | `proofcore/` | Hash-chain export ordering | #279 wall-clock → genesis walk |
 | `quant_models/` | BS/Greeks/GEX/HRP/TSMOM/risk-parity/MC; causal TSMOM, honest receipts | — |
 | `reality/` | Bailey–LdP PSR/DSR/MinTRL, CSCV/PBO ω-logit, SPA, BH-FDR — all verified against papers | — |
