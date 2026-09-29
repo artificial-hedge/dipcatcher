@@ -101,7 +101,7 @@ _CHAR_SEP = r"[\s\-_]{1,3}"
 # Punctuation allowed between the connector phrasing and the number. Comma,
 # semicolon and period are deliberately excluded so prose such as "sharpe, 3
 # others" or "the nav. 2 of 5" stays a mention, not a claim.
-_VALUE_GAP = r"[\s\-\u2013\u2014=:)\]}'\"]*"
+_VALUE_GAP = r"[\s\-\u2013\u2014=>:)\]}'\"]*"
 # Ratio nouns that turn a token mention into a metric phrase.
 _RATIO_WORD = r"(?:ratio|value|number|multiple|level|score|reading|print)"
 # Claim connectors allowed between the token and the numeric value.
