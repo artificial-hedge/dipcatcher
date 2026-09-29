@@ -1,0 +1,83 @@
+{
+  "corpus_evalue": 1.0,
+  "corpus_reject_at_alpha": false,
+  "data_label": "MIXED",
+  "evidence": [
+    "bh_fdr_pooled_family",
+    "evalue_product_merge",
+    "tagged_claim_provenance"
+  ],
+  "generated_at_commit": "8096a5245da4d708771c00b7756e334a3638f14b",
+  "inputs_sha256": "30c129932661b7f9c36fa8822f6669bc062d383b10358a221b3073936efd440c",
+  "kind": "corpus_inference.v1",
+  "live_pnl_claim": false,
+  "n_e_findings": 0,
+  "n_p_findings": 52,
+  "n_parse_errors": 0,
+  "n_receipts": 10,
+  "n_survivors": 7,
+  "params": {
+    "glob": "*.json",
+    "input_labels": {
+      "adaptive_mix_20asset_1d_20260922.json": "UNKNOWN",
+      "adaptive_mix_band_search_20asset_1d_20260922.json": "UNKNOWN",
+      "basis_pair_candidate_20asset_1d_20260922.json": "UNKNOWN",
+      "basis_reversion_screen_20asset_1d_20260922.json": "UNKNOWN",
+      "capacity_eval_cd0854242ed8a9ec.json": "SYNTHETIC",
+      "dip_bench_crypto_1d_20260925.json": "UNKNOWN",
+      "fast_replay_p42_conformance_20260927.json": "UNKNOWN",
+      "fleet_eval_5ddf15b0dc7d3ca1.json": "SYNTHETIC",
+      "incumbent_bench_qlib.json": "UNKNOWN",
+      "rankic_eval_9ebdad7da83e7348.json": "SYNTHETIC"
+    },
+    "q": 0.05
+  },
+  "parse_errors": [],
+  "receipt_sha256": "b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6",
+  "research_only": true,
+  "schema": "corpus_inference.v1",
+  "surviving_claims": [
+    {
+      "family": "pooled",
+      "path": "results[14].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.0003521222142801333
+    },
+    {
+      "family": "pooled",
+      "path": "results[21].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.004205896471930621
+    },
+    {
+      "family": "pooled",
+      "path": "results[24].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.00025215641774270535
+    },
+    {
+      "family": "pooled",
+      "path": "results[27].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 1.1904848878731533e-06
+    },
+    {
+      "family": "pooled",
+      "path": "results[31].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.00017886857828392145
+    },
+    {
+      "family": "pooled",
+      "path": "results[40].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 0.0011998006712072259
+    },
+    {
+      "family": "pooled",
+      "path": "results[47].pit_ks_p",
+      "source": "fleet_eval_5ddf15b0dc7d3ca1.json",
+      "value": 1.0262118132145719e-05
+    }
+  ]
+}
