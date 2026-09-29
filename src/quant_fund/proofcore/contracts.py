@@ -419,3 +419,152 @@ class RealityReport(_Strict):
         if any(_SHA256_HEX.fullmatch(trial_id) is None for trial_id in value):
             raise ValueError("bh_fdr_rejects must contain lowercase sha256 trial ids")
         return value
+
+
+# ---------------------------------------------------------------------------
+# Wave 2: causal runs & replay schemas (docs/proofcore/WAVE2.md §2)
+# ---------------------------------------------------------------------------
+
+
+class DecisionTraceRow(_Strict):
+    """One decision window of a causal proven run (WAVE2.md §2.1).
+
+    Chain anchor amendment: ``prev_row_sha256`` is GENESIS_HASH for seq 0
+    (same convention as the bundle chain's prev_bundle_hash), NOT "".
+    """
+
+    seq: int = Field(ge=0)
+    decision_time: datetime = Field(description="tz-aware decision time of this window")
+    known_at_ceiling: datetime = Field(
+        description="tz-aware; runner enforces == decision_time (fail closed)"
+    )
+    data_manifest_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    feature_set_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    estimator_state_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    action_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    rng_counter_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    prev_row_sha256: str = Field(
+        min_length=HASH_HEX_LEN,
+        max_length=HASH_HEX_LEN,
+        description="trace_row_hash of the previous row; GENESIS_HASH for seq 0",
+    )
+
+    @field_validator("decision_time", "known_at_ceiling")
+    @classmethod
+    def validate_tz_aware(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("trace times must be timezone-aware")
+        return value
+
+
+def trace_row_hash(row: DecisionTraceRow) -> str:
+    """Canonical hash of one trace row (canonical_json_bytes of its json dump)."""
+    return sha256_hex_json(row.model_dump(mode="json"))
+
+
+class DecisionTrace(_Strict):
+    """Hash-chained decision trace of one causal proven run (WAVE2.md §2.2).
+
+    Chain-anchor amendment: ``head_row_sha256`` is GENESIS_HASH when the trace
+    is empty, NOT "".
+    """
+
+    rows: tuple[DecisionTraceRow, ...]
+    spec_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    code_fingerprint: str = Field(
+        description="git revision when in a worktree; else src-tree hash fallback (WAVE2 §7.2)"
+    )
+    env_fingerprint: str = Field(
+        description="platform|python tag|quant_fund version (narrowed env gate for replay)"
+    )
+    head_row_sha256: str = Field(
+        min_length=HASH_HEX_LEN,
+        max_length=HASH_HEX_LEN,
+        description="trace_row_hash of the last row; GENESIS_HASH when empty",
+    )
+
+    def verify_chain(self) -> None:
+        """Fail closed (ProofError) on any gap, ordering, or link break."""
+        prev_hash = GENESIS_HASH
+        for expected_seq, row in enumerate(self.rows):
+            if row.seq != expected_seq:
+                raise ProofError(f"trace row seq gap: expected {expected_seq}, got {row.seq}")
+            if row.prev_row_sha256 != prev_hash:
+                raise ProofError(f"trace chain broken at seq {row.seq}")
+            if row.known_at_ceiling != row.decision_time:
+                raise ProofError(f"known_at_ceiling != decision_time at seq {row.seq}")
+            prev_hash = trace_row_hash(row)
+        if prev_hash != self.head_row_sha256:
+            raise ProofError("trace head_row_sha256 does not match rows")
+
+
+class FeatureDecl(_Strict):
+    """One declared feature of a RunSpec (WAVE2.md §2.3). No user callables."""
+
+    name: str = Field(min_length=1)
+    kind: Literal["vault_column_lag", "vault_window_agg", "prior_decision_state"]
+    params: dict[str, object] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def freeze_decl_params(self) -> Self:
+        object.__setattr__(self, "params", _FrozenDict(self.params))
+        return self
+
+
+class DecisionGrid(_Strict):
+    start: datetime
+    step: str = Field(description="fixed grid step: Nd | Nh | Nm | Ns, integer N >= 1")
+    count: int = Field(gt=0)
+
+    @field_validator("start")
+    @classmethod
+    def validate_start_tz(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("decision grid start must be timezone-aware")
+        return value
+
+
+class RunSpec(_Strict):
+    """Frozen input of a causal proven run (WAVE2.md §2.3)."""
+
+    name: str = Field(min_length=1)
+    vault_uri: str = Field(description="logical, e.g. 'vault://main'")
+    decision_grid: DecisionGrid
+    features: tuple[FeatureDecl, ...]
+    estimator: str = Field(description="allowlist name (runner §4.3)")
+    estimator_params: dict[str, object] = Field(default_factory=dict)
+    seed: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def freeze_estimator_params(self) -> Self:
+        object.__setattr__(self, "estimator_params", _FrozenDict(self.estimator_params))
+        return self
+
+
+class Divergence(_Strict):
+    seq: int = Field(ge=0)
+    field: str = Field(
+        description="one of the DecisionTraceRow hash fields, or 'metric:<name>'"
+    )
+    expected_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    actual_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+
+
+class ReplayVerdict(_Strict):
+    """Result of a bit-exact replay attempt (WAVE2.md §2.4)."""
+
+    bundle_id: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
+    status: Literal["identical", "diverged", "unavailable"]
+    reason: str | None = Field(
+        default=None, description="set iff status != identical (e.g. env_mismatch)"
+    )
+    first_divergence: Divergence | None = None
+    compared_rows: int = Field(ge=0)
+    recomputed_metrics: dict[str, str] = Field(
+        default_factory=dict, description="name -> sha256 of the recomputed value set"
+    )
+
+    @model_validator(mode="after")
+    def freeze_recomputed(self) -> Self:
+        object.__setattr__(self, "recomputed_metrics", _FrozenDict(self.recomputed_metrics))
+        return self
