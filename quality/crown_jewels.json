@@ -1,6 +1,6 @@
 {
   "files": {
-    ".gitleaks.toml": "d6b2084e557f62bd1911458ac4a33dbda0d9fbf0b0eb14355616a694743176f3",
+    ".gitleaks.toml": "d0a79001e556e84414015e9ffa34c62519966655c201f88b0dab9c2f8e68b091",
     ".pre-commit-config.yaml": "290aefe8e52e6cd7a17bcc26a3ef3a03d425ada39f200323a57fa6942bc3f146",
     "AGENTS.md": "3ecede6441ebba88b527e61e7c3ef5060059f02ad96250c06077bbd97f7706e5",
     "Makefile": "ee5d94ed8bacd9d5ff4ee9483a085e13174f83140f8fcb5348f9a011b6f60e65",
