@@ -211,6 +211,32 @@ def _run_coverage_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneRes
     return _LaneResult(excluded, t_alarm, width)
 
 
+def _run_serial(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """SerialWatch over a PIT stream with injected AR(1) probit-scale
+    dependence: z_t = defect * z_{t-1} + sqrt(1-defect^2) * eps_t,
+    u_t = Phi(z_t) — uniform marginals at every defect, so only the
+    serial lane sees the defect (calibration lanes must stay silent)."""
+    from scipy.stats import norm
+
+    from quant_fund.research.serial_watch import SerialWatch
+
+    rng = np.random.default_rng(seed)
+    watch = SerialWatch(alpha=alpha)
+    rho = min(0.95, max(-0.95, defect))
+    t_alarm = float("nan")
+    stat = float("nan")
+    z = 0.0
+    alarmed = False
+    for i in range(n):
+        z = rho * z + float(np.sqrt(max(0.0, 1.0 - rho * rho))) * float(rng.standard_normal())
+        state = watch.update(float(norm.cdf(z)))
+        stat = float(state.pooled_evalue)
+        alarmed = alarmed or state.pooled_alarmed
+        if state.pooled_alarmed and not np.isfinite(t_alarm):
+            t_alarm = float(i)
+    return _LaneResult(alarmed, t_alarm, stat)
+
+
 _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "coverage_watch": _run_coverage,
     "tail_watch": _run_tail,
@@ -221,6 +247,7 @@ _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "promotion": _run_promotion,
     "conformal_monitor": _run_conformal,
     "coverage_cs": _run_coverage_cs,
+    "serial_watch": _run_serial,
 }
 
 # lane key → the module its runner lazy-imports (test ratchet scans the
