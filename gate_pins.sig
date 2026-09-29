@@ -4,9 +4,9 @@
   "payload": {
     "files": {
       "quality/crown_jewels.json": "2497c88ebfd9e55d5e23585924db974ab70c582eb74352fc6f3ccb6d9773183b",
-      "quality/epoch_heads.json": "82fd5d49898b113d694c33c2f97b796f5f0a336fe0f3b82e4c2a0c678520a3e3"
+      "quality/epoch_heads.json": "304fc17b7ec8b609bd85a4c59c45de1f5e6a06d1107efcb0d43ebf382bf1730c"
     }
   },
   "schema": "gate_signatures.v1",
-  "signature": "add886902ac83c4e87d3337704e5a230111cbbf5a4dcbceb70d9218c4be16c39f6e922ab763be7ef2cb393d6185f051a25ff2cef2688c0d1a1e0866f2ea61a0d"
+  "signature": "7f4448cce04b8fb4247d2f7ced5255a9cfe5ab2e2a6e508d04852340f46913100a011b943dbd558cfada0b96ea4e7789b82887220e3c8ad95399deee6b8bb40c"
 }
