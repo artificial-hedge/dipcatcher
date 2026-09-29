@@ -543,17 +543,17 @@ def vol_bench(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    path = write_vol_bench_receipt(receipt, out_dir)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    path = write_vol_bench_receipt(receipt, out_dir, receipt_version=receipt_version)
     typer.echo(
         format_data_label(
             synthetic=receipt["data_label"] == "SYNTHETIC",
             data_source=str(receipt["data_label"]),
         )
     )
-    if receipt_version not in (1, 2):
-        raise typer.BadParameter("--receipt-version must be 1 or 2")
-    path = write_vol_bench_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     typer.echo(frame)
     typer.echo(f"receipt={path}")
 
@@ -610,7 +610,9 @@ def rankic(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    path = write_rankic_receipt(receipt, out_dir)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    path = write_rankic_receipt(receipt, out_dir, receipt_version=receipt_version)
     typer.echo(
         format_data_label(
             synthetic=receipt["data_label"] == "SYNTHETIC",
@@ -619,11 +621,6 @@ def rankic(
     )
     if receipt["data_label"] == "SYNTHETIC":
         typer.echo("SYNTHETIC")
-    if receipt_version not in (1, 2):
-        raise typer.BadParameter("--receipt-version must be 1 or 2")
-    path = write_rankic_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    typer.echo("SYNTHETIC")
     typer.echo(format_rankic_table(frame))
     typer.echo(f"receipt={path}")
 
@@ -681,17 +678,17 @@ def capacity(
         participation_cap=participation_cap,
         impact_coeff=impact_coeff,
     )
-    path = write_capacity_receipt(receipt, out_dir)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    path = write_capacity_receipt(receipt, out_dir, receipt_version=receipt_version)
     typer.echo(
         format_data_label(
             synthetic=receipt["data_label"] == "SYNTHETIC",
             data_source=str(receipt["data_label"]),
         )
     )
-    if receipt_version not in (1, 2):
-        raise typer.BadParameter("--receipt-version must be 1 or 2")
-    path = write_capacity_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     typer.echo(format_capacity_table(frame))
     typer.echo(f"receipt={path}")
 
@@ -865,14 +862,20 @@ def suite_health_cmd(
     if strict:
         import polars as pl
 
-        from quant_fund.research.legacy_unsealed import is_known_unsealed
+        from quant_fund.research.legacy_unsealed import (
+            is_known_contract_legacy,
+            is_known_unsealed,
+        )
         from quant_fund.research.receipt_v2 import verify_receipt_file
 
         bad: list[str] = []
         for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
             p = receipts_dir / str(row["file"])
             result = verify_receipt_file(p)
-            if not is_known_unsealed(p, result["errors"]):
+            if not (
+                is_known_unsealed(p, result["errors"])
+                or is_known_contract_legacy(p, result["errors"])
+            ):
                 bad.append(f"{row['file']}: {result['errors']}")
         if bad:
             typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
@@ -918,6 +921,7 @@ def mcs(
     typer.echo(f"eliminated={receipt['eliminated']}")
     typer.echo(f"champion={receipt['champion']}")
     typer.echo(f"receipt={path}")
+
 
 @app.command("serial-watch")
 def serial_watch_cmd(
@@ -968,6 +972,8 @@ def serial_watch_cmd(
             typer.echo(f"receipt={path}")
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
 @app.command("fleet-significance")
 def fleet_significance(
     config: Path = typer.Option(Path("configs/research.yaml")),
@@ -1066,7 +1072,6 @@ def cost_calibration(
     typer.echo(format_cost_calibration_table(frame))
     typer.echo(f"receipt={path}")
     typer.echo(f"report={report}")
-
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -1411,6 +1416,13 @@ __all__ = [
     "monitor",
     "suite_health_cmd",
     "verdict",
+    "lane_power",
+    "mcs",
+    "monitor",
+    "serial_watch_cmd",
+    "suite_health_cmd",
+    "verdict",
+    "race",
     "race",
     "race",
     "race",
@@ -1440,6 +1452,17 @@ def lattice_cmd(
     head_sha: str | None = typer.Option(
         None, "--head-sha", help="Current HEAD sha for stale-code flags (default: auto)."
     ),
+    known_inconsistent: Path | None = typer.Option(
+        None,
+        "--known-inconsistent",
+        help="JSON map of receipt filename -> sha256 whose byte-exact "
+        "inconsistent claim groups are acknowledged (demo artifacts).",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero iff the verdict is 'inconsistent' (stale/drift/known-pinned pass).",
+    ),
 ) -> None:
     """Cross-receipt consistency lattice over a receipts directory.
 
@@ -1456,10 +1479,26 @@ def lattice_cmd(
     root = Path(receipts_dir)
     if not root.is_dir():
         raise typer.BadParameter(f"receipts dir {root} does not exist")
+    pins: dict[str, str] | None = None
+    if known_inconsistent is not None:
+        if not known_inconsistent.is_file():
+            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
+        try:
+            raw_pins = json.loads(known_inconsistent.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+        if not isinstance(raw_pins, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+        ):
+            raise typer.BadParameter(
+                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        pins = dict(raw_pins)
     receipt = receipt_lattice(
         root,
         head_sha=head_sha or git_revision(),
         float_rel_tol=float_rel_tol,
+        known_inconsistent=pins,
     )
     out_dir.mkdir(parents=True, exist_ok=True)
     sealed = seal_receipt(receipt)
@@ -1472,3 +1511,5 @@ def lattice_cmd(
         f"verdict={receipt['verdict']}"
     )
     typer.echo(f"receipt={path}")
+    if strict and receipt["verdict"] == "inconsistent":
+        raise typer.Exit(code=1)

@@ -78,20 +78,22 @@ ALIASES = {
     "finra": "finra_short_sale_volume",
     "ohlcv-1m": "hf_ohlcv_1m",
     "hf-ohlcv-1m": "hf_ohlcv_1m",
+    "dolthub": "dolthub_stocks",
+    "dolt-stocks": "dolthub_stocks",
+    "post-no-preference": "dolthub_stocks",
 }
 
 
-def _install_hf_ohlcv() -> None:
-    """Register the HF minute adapter without an import cycle through this module."""
-    if "hf_ohlcv_1m" in SOURCE_REGISTRY:
-        return
-    from quant_fund.data.adapters.hf_ohlcv_1m import HfOhlcv1mSource
-
-    SOURCE_REGISTRY[HfOhlcv1mSource.name] = HfOhlcv1mSource
-
-
 def _install_lazy_sources() -> None:
-    _install_hf_ohlcv()
+    """Register adapters that live outside sources/adapters.py (avoid cycles)."""
+    if "hf_ohlcv_1m" not in SOURCE_REGISTRY:
+        from quant_fund.data.adapters.hf_ohlcv_1m import HfOhlcv1mSource
+
+        SOURCE_REGISTRY[HfOhlcv1mSource.name] = HfOhlcv1mSource
+    if "dolthub_stocks" not in SOURCE_REGISTRY:
+        from quant_fund.data.adapters.dolthub_stocks import DolthubStocksSource
+
+        SOURCE_REGISTRY[DolthubStocksSource.name] = DolthubStocksSource
 
 
 def source_names() -> tuple[str, ...]:
