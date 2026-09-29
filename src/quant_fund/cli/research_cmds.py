@@ -2308,3 +2308,38 @@ def rotate_key_cmd(
         raise typer.Exit(code=1) from exc
     typer.echo(f"rotation={out}")
     typer.echo("next: update quality/gate_signing.pub, make sign-pins, checkpoint, witness")
+
+
+@app.command("fuzz-drill")
+def fuzz_drill_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo tree to attack."),
+    seed: int = typer.Option(1, "--seed", help="Mutation-sequence seed (replays identically)."),
+    rounds: int | None = typer.Option(
+        None, "--rounds", help="Cap the sampled mutations (default: all)."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed fuzz_drill.v1 receipt here.",
+    ),
+) -> None:
+    """Metamorphic fuzz of the integrity verifier: seeded random mutations
+    classified must-fail vs must-pass — a verifier that rejects *everything*
+    is just as broken as one that misses a forgery."""
+    from quant_fund.research.fuzz_drill import fuzz_drill, write_fuzz_receipt
+
+    result = fuzz_drill(root, seed=seed, rounds=rounds)
+    typer.echo(format_data_label(synthetic=True, data_source="CORPUS"))
+    typer.echo(
+        f"fuzz-drill: seed={seed} mutations={result['n_mutations']} "
+        f"escaped={result['n_escaped']} false_positive={result['n_false_positive']} "
+        f"verdict={result['verdict']}"
+    )
+    for m in result["mutations"]:
+        if m.get("outcome") in ("escaped", "false_positive"):
+            typer.echo(f"  {m['outcome'].upper()}: {m['mutation']} {m.get('errors', '')}")
+    if out is not None:
+        path = write_fuzz_receipt(result, Path(out).parent if out.suffix else out)
+        typer.echo(f"receipt={path}")
+    if not result["ok"]:
+        raise typer.Exit(code=1)
