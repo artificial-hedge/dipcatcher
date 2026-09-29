@@ -9,12 +9,12 @@
       "sha256": "6952a3f11642bddec43c83e9026bcd2b9699e69f59fe760ba60552e85eb20518"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_ef612bfa114fdb3f.json",
-      "sha256": "1f9adb410f3309b84d30246ef96e8eb699c9e35946a9e4ff61f80d2076c25bf9"
+      "receipt": "corpus_epoch_ed777a164aeef99e.json",
+      "sha256": "0c42b7be6c79a556b873d2c190e5d76ffac0184ff5edafa411b53c6dd3ee0697"
     },
     "receipts/*.json": {
-      "receipt": "corpus_epoch_a83ba798e9abd892.json",
-      "sha256": "9913a8a80d7232d5af2f1b6864389ea666b8fd81582ea55ce9dbdc835394385d"
+      "receipt": "corpus_epoch_6cf185cfb5466dd7.json",
+      "sha256": "256d5692208eda60d80880dee77a6124f3c5b5f13a1ddb1e62c6521552639416"
     },
     "verifier/*.md": {
       "receipt": "corpus_epoch_f61ec6668de15227.json",
