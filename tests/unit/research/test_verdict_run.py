@@ -109,7 +109,7 @@ def test_run_verdict_fails_closed_no_heads() -> None:
             n_train=64,
             n_eval=64,
             seed=0,
-            n_boot=50,
+            n_boot=100,
         )
 
 
@@ -130,7 +130,7 @@ def test_run_verdict_propagates_shard_label() -> None:
         {"r": real_shard},
         n_train=64,
         n_eval=64,
-        n_boot=50,
+        n_boot=100,
     )
     assert verdict["data_label"] == "yahoo_eod"
     assert verdict["run"]["params"]["data_labels"] == {"r": "yahoo_eod"}
@@ -156,5 +156,5 @@ def test_run_verdict_refuses_mixed_labels() -> None:
             {"s": _gauss_shard, "r": real_shard},
             n_train=64,
             n_eval=64,
-            n_boot=50,
+            n_boot=100,
         )
