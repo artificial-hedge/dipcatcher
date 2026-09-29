@@ -1328,8 +1328,10 @@ def online_fdr_cmd(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
+    from quant_fund.utils.receipt import verified_corpus_files
+
     files = sorted(
-        (p for p in root.glob("*.json") if p.is_file()),
+        verified_corpus_files(root),
         key=lambda p: (p.stat().st_mtime, p.name),
     )
     digests: dict[str, str] = {}
