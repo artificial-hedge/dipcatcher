@@ -37,6 +37,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
@@ -241,6 +243,32 @@ def honest_verdict(
     if not (0.0 < alpha < 1.0):
         raise ValueError("alpha must be in (0, 1)")
 
+    pit_arrays = {h: np.asarray(v, dtype=float).ravel() for h, v in (pits or {}).items()}
+    # Corpus-level fingerprint: digest over the evaluated stream content
+    # only — head names are just shard identities; receipts across lanes
+    # over the same streams agree, which is what the lattice edges on.
+    dataset_sha256 = hash_bytes(
+        canonical_json_bytes(
+            {
+                "shards": {
+                    h: {
+                        "losses_sha256": hash_bytes(np.ascontiguousarray(a).tobytes()),
+                        **(
+                            {
+                                "pits_sha256": hash_bytes(
+                                    np.ascontiguousarray(pit_arrays[h]).tobytes()
+                                )
+                            }
+                            if h in pit_arrays
+                            else {}
+                        ),
+                    }
+                    for h, a in arrays.items()
+                }
+            }
+        )
+    )
+
     wc = _winner_curse_component(arrays, seed, n_boot)
     if wc.available:
         winner = str(wc.detail["selected_head"])
@@ -305,6 +333,7 @@ def honest_verdict(
         "n_obs": n,
         "n_heads": len(arrays),
         "inputs_sha256": _sha256_stream(arrays),
+        "dataset_sha256": dataset_sha256,
         "components": {c.name: c.detail for c in components},
         "unavailable_lanes": unavailable,
         "evidence": [

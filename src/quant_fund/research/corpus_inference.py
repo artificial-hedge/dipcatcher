@@ -202,6 +202,12 @@ def corpus_audit(
 
     surviving = [f for f in p_findings if f.get("survives_fdr")]
     inputs_sha256 = hash_bytes(canonical_json_bytes({"digests": digests, "q": q}))
+    # Corpus-level fingerprint: digest over the audited receipt file
+    # contents only — corpus lanes over the same directory agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(
+        canonical_json_bytes({"shards": {name: {"file_sha256": d} for name, d in digests.items()}})
+    )
     distinct_labels = set(input_labels.values())
     if len(distinct_labels) == 1:
         data_label = distinct_labels.pop()
@@ -217,6 +223,7 @@ def corpus_audit(
         "live_pnl_claim": False,
         "generated_at_commit": git_revision(),
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "params": {"q": q, "glob": glob, "input_labels": input_labels},
         "n_receipts": len(receipt_files),
         "n_parse_errors": len(errors),

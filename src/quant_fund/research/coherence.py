@@ -327,11 +327,20 @@ def run_coherence(
             rows.append(row)
 
     frame = pl.DataFrame(rows)
+    # Corpus-level fingerprint: digest over the evaluated panel content only —
+    # receipts across lanes that evaluated the same panels agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(
+        canonical_json_bytes(
+            {"shards": {name: {"y_sha256": meta["y_sha256"]} for name, meta in panel_meta.items()}}
+        )
+    )
     payload: dict[str, Any] = {
         "schema": COHERENCE_SCHEMA,
         "kind": "coherence_eval",
         "data_label": "SYNTHETIC",
         "live_pnl_claim": False,
+        "dataset_sha256": dataset_sha256,
         "n_train": n_train,
         "n_eval": n_eval,
         "seed": int(seed),
