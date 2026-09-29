@@ -115,12 +115,6 @@ def _clip_lam(lam: float) -> float:
     return float(np.clip(x, _EPS, 1.0 - _EPS))
 
 
-def _psi_exp(lam: float) -> float:
-    """Exponential CGF ψ_E(λ) = −log(1−λ) − λ (Choe–Ramdas / sub-exp)."""
-    lam_clipped = _clip_lam(lam)
-    return float(-np.log(1.0 - lam_clipped) - lam_clipped)
-
-
 def _align_loss_diff(
     loss_a: Array | None,
     loss_b: Array | None,
@@ -142,22 +136,11 @@ def _align_loss_diff(
     return diff[np.isfinite(diff)]
 
 
-def _predictable_bound_scale(d: Array, initial_bound: float) -> Array:
-    """b_t = max(initial_bound, max_{s<t}|d_s|); b_0 uses initial only."""
+def _validate_initial_bound(initial_bound: float) -> float:
     b0 = float(initial_bound)
     if not np.isfinite(b0) or b0 <= 0.0:
         raise ValueError("initial_bound must be finite and > 0")
-    n = int(d.size)
-    if n == 0:
-        return np.asarray([], dtype=float)
-    out = np.empty(n, dtype=float)
-    run = b0
-    out[0] = run
-    abs_d = np.abs(d)
-    for t in range(1, n):
-        run = max(run, float(abs_d[t - 1]))
-        out[t] = run
-    return out
+    return b0
 
 
 def e_process_loss_diff(
@@ -168,36 +151,53 @@ def e_process_loss_diff(
     lam: float = 0.25,
     initial_bound: float = 1.0,
 ) -> Array:
-    """Anytime-valid capital process for H0: E[d] ≤ 0 (research-only).
+    """Anytime-valid capital process for the median-null ``median(d) ≤ 0``.
 
     ``d_t = L_{A,t} − L_{B,t}`` (smaller loss better). Rejecting / wealth
-    growth is evidence that A is systematically **worse** than B
-    (Choe–Ramdas weak null style on the loss differential).
+    growth is evidence that A is systematically **worse** than B.
 
-    Construction (bounded exponential betting):
+    Construction (sign bet — the same distribution-free construction as
+    ``research.evalues.LossEProcess``):
     1. Align losses → finite ``d``.
-    2. Predictable scale ``b_t = max(initial_bound, max_{s<t}|d_s|)``.
-    3. Soft observation ``x_t = clip(d_t / b_t, −1, 1)``.
-    4. One-step factor ``e_t = exp(λ x_t − ψ_E(λ) x_t²)`` with
-       ``ψ_E(λ) = −log(1−λ) − λ``, ``λ ∈ (0,1)``.
-    5. Capital ``E_t = ∏_{s≤t} e_s`` (log-cumsum; clipped like coverage e-process).
+    2. One-step factor ``e_t = 1 + lam_t·sign(d_t)`` with
+       ``lam_t = clip(2·p̂_t − 1, 0, lam)``, ``p̂_t`` the Laplace-smoothed
+       running win-rate computed on strict history (predictable, and
+       clipped nonnegative — all validity needs under the null).
+    3. Capital ``E_t = ∏_{s≤t} e_s`` (log-cumsum; clipped like coverage).
 
-    Under H0 with |x|≤1, ``(E_t)`` is a nonnegative supermartingale for fixed
-    predictable λ; Ville via ``e_process_threshold`` (default level 0.05 → 20).
-    Soft truncation / post-hoc unbounded losses → research diagnostic only,
-    not a live-performance or promotion claim. Empty → ``[1.0]``.
+    Why the sign bet: the earlier bounded-exponential factor
+    ``exp(λ·clip(d_t/b_t, −1, 1) − ψ_E(λ)·clip²)`` was *not* a valid
+    e-factor for the mean-null it claimed — clipping is asymmetric for
+    skewed ``d`` (a stable left tail gets saturated at −1 while the
+    positive side stays linear, so ``E[clip(d/b)] > 0`` under ``E[d] ≤ 0``),
+    and the running bound ``b_t`` leaves a transient window before a first
+    large ``|d|`` is seen where every factor has ``E[e_t] > 1``
+    (meta-audit: 92% Ville-cross rate on a mean-0 two-point stream).
+    No e-process can test the raw mean-null ``E[d] ≤ 0`` for unbounded
+    differentials, so the process now tests the strongest distribution-free
+    notion of "not worse" — ``median(d) ≤ 0`` ⇒ ``E[sign(d)] ≤ 0`` ⇒
+    ``E[e_t | F_{t-1}] ≤ 1`` under arbitrary tails, skew, scale, and
+    misspecification. ``lam_t`` adaptivity only trades power inside the
+    valid envelope, never validity.
+
+    ``initial_bound`` is retained for API compatibility and is unused by
+    the bet — the sign bet needs no scale. Empty → ``[1.0]``.
     """
+    _validate_initial_bound(initial_bound)
     diff = _align_loss_diff(loss_a, loss_b, d)
     if diff.size == 0:
         return np.array([1.0], dtype=float)
-    lam_clipped = _clip_lam(lam)
-    psi = _psi_exp(lam_clipped)
-    scale = _predictable_bound_scale(diff, initial_bound)
-    x = np.clip(diff / scale, -1.0, 1.0)
-    log_steps = lam_clipped * x - psi * (x * x)
-    log_steps = np.clip(log_steps, -np.log(_E_MAX), np.log(_E_MAX))
-    log_run = np.minimum(np.cumsum(log_steps), np.log(_E_MAX))
-    return np.exp(log_run).astype(float)
+    lam_cap = _clip_lam(lam)
+    g = np.sign(diff)  # +1 on d>0 (A worse) — growth side of the bet
+    # predictable lam_t: wins = #(d>0) among strict history
+    wins_before = np.concatenate(([0.0], np.cumsum(g > 0.0)[:-1]))
+    t_idx = np.arange(diff.size, dtype=float)
+    p_hat = (wins_before + 1.0) / (t_idx + 2.0)  # Laplace pseudo-count 1
+    lam_t = np.clip(2.0 * p_hat - 1.0, 0.0, lam_cap)
+    e_t = 1.0 + lam_t * g  # in (1 - lam, 1 + lam), strictly positive
+    log_run = np.minimum(np.cumsum(np.log(e_t)), np.log(_E_MAX))
+    path: Array = np.exp(log_run).astype(float)
+    return path
 
 
 def e_process_dm(
