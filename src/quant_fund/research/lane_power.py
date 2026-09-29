@@ -151,7 +151,7 @@ def _run_localize(defect: float, seed: int, n: int, alpha: float) -> _LaneResult
     rng = np.random.default_rng(seed)
     tau_true = n // 2
     x = np.concatenate([rng.normal(0, 1, tau_true), rng.normal(defect * 2.0, 1, n - tau_true)])
-    res = localize_changepoint(x, alpha=alpha, window=min(40, n // 4), min_left=10)
+    res = localize_changepoint(x.tolist(), alpha=alpha, window=min(40, n // 4), min_left=10)
     err = abs(res.tau_hat - tau_true)
     return _LaneResult(bool(res.alarmed), float(res.tau_hat), float(err))
 
@@ -168,7 +168,7 @@ def _run_promotion(defect: float, seed: int, n: int, alpha: float) -> _LaneResul
         b = float(rng.normal(0.5, 0.5))
         st = proc.update(c, b)
         if st.promoted and not np.isfinite(t_alarm):
-            t_alarm = float(proc.promotion_origin)
+            t_alarm = float(proc.promotion_origin or 0)
     return _LaneResult(
         proc.promotion_origin is not None,
         t_alarm,
