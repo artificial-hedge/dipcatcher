@@ -42,6 +42,7 @@ from quant_fund.models.robinhood_plus.engine import (
 )
 from quant_fund.research.benches import bench_conformal, bench_distribution, bench_jackknife_plus
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 KRONOS_PAPER_TSFM = (
@@ -405,7 +406,7 @@ def run_sota_protocol(
     receipt["receipt_sha256"] = hash_bytes(canonical_json_bytes(receipt))
     dest = Path(cfg.data.root) / "metadata" / "sota_receipt.json"
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(receipt, indent=2, default=str), encoding="utf-8")
+    atomic_write_text(dest, json.dumps(receipt, indent=2, default=str))
     receipt["receipt_path"] = str(dest)
     return receipt
 
