@@ -43,10 +43,14 @@ def test_build_bundle_contains_all_members(tmp_path: Path) -> None:
 
     bundle = json.loads(_build(tmp_path).read_text())
     assert bundle["schema"] == BUNDLE_SCHEMA
-    assert set(bundle["files"]) == set(BUNDLE_MEMBERS)
+    assert set(BUNDLE_MEMBERS) <= set(bundle["files"])
+    # spine members ride along: archived checkpoints + witness proofs
+    assert not (set(bundle["files"]) - set(BUNDLE_MEMBERS)) - {
+        r for r in bundle["files"] if r.startswith(("quality/checkpoints/", "quality/witness/"))
+    }
     assert bundle["witness_proof"]["schema"] == "integrity_witness.v1"
     # every member hash is declared
-    assert set(bundle["files_sha256"]) == set(BUNDLE_MEMBERS)
+    assert set(bundle["files_sha256"]) == set(bundle["files"])
 
 
 @requires_tree
@@ -209,3 +213,89 @@ def test_standalone_verifier_agrees_with_library(tmp_path: Path) -> None:
         timeout=60,
     )
     assert not res2["ok"] and proc2.returncode == 1
+
+
+@requires_tree
+def test_bundle_carries_full_spine(tmp_path: Path) -> None:
+    """The bundle ships every archived checkpoint + witness proof so an
+    auditor verifies the whole chain, not just the head."""
+    bundle = _build(tmp_path)
+    body = json.loads(bundle.read_text())
+    spine = [r for r in body["files"] if r.startswith("quality/checkpoints/")]
+    proofs = [r for r in body["files"] if r.startswith("quality/witness/")]
+    assert len(spine) >= 3  # archive has history on this branch
+    assert len(proofs) >= 3
+    from quant_fund.research.auditor_bundle import verify_bundle
+
+    res = verify_bundle(bundle, rekor_url=None)
+    assert res["ok"], res["errors"]
+    assert res["spine_members"] == len(spine)
+    assert res["witness_proofs"] == len(proofs)
+
+
+@requires_tree
+def test_bundle_interior_spine_drop_fails_both_implementations(tmp_path: Path) -> None:
+    """Dropping an interior link orphans everything below it — both the
+    library and the standalone script must fail."""
+    import base64
+    import hashlib
+    import subprocess
+    import sys
+
+    bundle = _build(tmp_path)
+    body = json.loads(bundle.read_text())
+    # Pick a NON-genesis archive member (one that has a prev on the spine):
+    # walk from the head, drop the second link.
+    records = {}
+    for rel, b64 in body["files"].items():
+        if rel.startswith("quality/checkpoints/") or rel == "quality/checkpoint.json":
+            raw = base64.b64decode(b64)
+            records[hashlib.sha256(raw).hexdigest()] = (rel, raw)
+    head = hashlib.sha256(base64.b64decode(body["files"]["quality/checkpoint.json"])).hexdigest()
+    order = []
+    cur: str | None = head
+    while cur in records:
+        order.append(cur)
+        cur = json.loads(records[cur][1]).get("payload", {}).get("prev_sha256")
+    assert len(order) >= 3
+    interior = records[order[1]][0]  # first archived link
+    body["files"].pop(interior)
+    body["files_sha256"].pop(interior)
+    bad = tmp_path / "interior_dropped.json"
+    bad.write_text(json.dumps(body))
+
+    from quant_fund.research.auditor_bundle import verify_bundle
+
+    res = verify_bundle(bad, rekor_url=None)
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts/verify_auditor_bundle.py"),
+            str(bad),
+            "--offline",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert not res["ok"]
+    assert any("orphan" in e for e in res["errors"])
+    assert proc.returncode == 1, proc.stdout
+
+
+@requires_tree
+def test_bundle_rejects_unexpected_member(tmp_path: Path) -> None:
+    """Members outside the pinned prefixes are fail-closed."""
+    import base64
+
+    bundle = _build(tmp_path)
+    body = json.loads(bundle.read_text())
+    body["files"]["unexpected/extra.json"] = base64.b64encode(b"{}").decode()
+    bad = tmp_path / "extra.json"
+    bad.write_text(json.dumps(body))
+
+    from quant_fund.research.auditor_bundle import verify_bundle
+
+    res = verify_bundle(bad, rekor_url=None)
+    assert not res["ok"]
+    assert any("unexpected_member" in e for e in res["errors"])

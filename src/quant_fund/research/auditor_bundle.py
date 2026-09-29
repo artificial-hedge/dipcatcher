@@ -49,6 +49,14 @@ BUNDLE_MEMBERS: tuple[str, ...] = (
     "quality/rekor_pubkey.pem",
 )
 
+# Optional members carrying the full checkpoint history: every archived
+# predecessor plus every committed Rekor witness proof. With them the
+# auditor verifies the whole spine offline, not just the head.
+SPINE_PREFIXES: tuple[str, ...] = (
+    "quality/checkpoints/",
+    "quality/witness/checkpoint.json_",
+)
+
 
 def _fetch_json(url: str, timeout: int = 30) -> dict[str, Any]:
     with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310  # nosec B310
@@ -85,9 +93,12 @@ def build_bundle(root: str | Path, out: str | Path) -> Path:
     proof = _freshest_proof(root_path, DEFAULT_TARGET.name)
     if proof is None:
         raise ValueError("no witness proof committed — run witness-checkpoint first")
-    files = {
-        rel: base64.b64encode((root_path / rel).read_bytes()).decode() for rel in BUNDLE_MEMBERS
-    }
+    members = list(BUNDLE_MEMBERS)
+    for sub in sorted((root_path / "quality/checkpoints").glob("*.json")):
+        members.append(f"quality/checkpoints/{sub.name}")
+    for sub in sorted((root_path / "quality/witness").glob(f"{DEFAULT_TARGET.name}_*.json")):
+        members.append(f"quality/witness/{sub.name}")
+    files = {rel: base64.b64encode((root_path / rel).read_bytes()).decode() for rel in members}
     bundle = {
         "schema": BUNDLE_SCHEMA,
         "files": files,
@@ -152,6 +163,28 @@ def verify_bundle(
         want = declared.get(rel)
         if isinstance(want, str) and hash_bytes(decoded[rel]) != want:
             errors.append(f"files_sha256_mismatch:{rel}")
+    # Spine members are optional in the bundle; any member outside the
+    # pinned prefixes is an unexpected surface — fail closed.
+    for rel in files:
+        if rel in BUNDLE_MEMBERS:
+            continue
+        if not any(rel.startswith(p) for p in SPINE_PREFIXES):
+            errors.append(f"unexpected_member:{rel}")
+            continue
+        b64 = files[rel]
+        if not isinstance(b64, str):
+            errors.append(f"b64_malformed:{rel}")
+            continue
+        try:
+            raw = base64.b64decode(b64)
+        except ValueError:
+            errors.append(f"b64_malformed:{rel}")
+            continue
+        want = declared.get(rel)
+        if isinstance(want, str) and hash_bytes(raw) != want:
+            errors.append(f"files_sha256_mismatch:{rel}")
+        else:
+            decoded[rel] = raw
     if errors:
         return {"ok": False, "errors": sorted(errors)}
 
@@ -204,6 +237,27 @@ def verify_bundle(
         if not wit.get("current"):
             errors.append("witness:checkpoint_digest_stale")
 
+        # Spine: when the bundle carries the archive + witness proofs,
+        # verify the whole chain — links, forks, orphans, Rekor order —
+        # and cryptographically verify every bundled proof.
+        spine_rels = [r for r in decoded if r.startswith(SPINE_PREFIXES[0])]
+        witness_rels = [r for r in decoded if r.startswith(SPINE_PREFIXES[1])]
+        if spine_rels or witness_rels:
+            from quant_fund.research.checkpoint_chain import checkpoint_spine
+            from quant_fund.research.integrity_witness import verify_witnesses
+
+            spine_res = checkpoint_spine(tmp_root)
+            # The scratch tree legitimately has one "orphan": the live
+            # checkpoint file is a member record, not an archive entry.
+            for e in spine_res.get("errors", []):
+                errors.append(f"spine:{e}")
+            if spine_rels and spine_res.get("verdict") != "intact":
+                errors.append(f"spine_not_intact:{spine_res.get('verdict')}")
+            if len(witness_rels) > 1:
+                all_wit = verify_witnesses(tmp_root)
+                for e in all_wit.get("errors", []):
+                    errors.append(f"witness:{e}")
+
         # The decisive link: the key REKOR recorded as signer must equal
         # the bundled witness pubkey — the log authenticates our key.
         logged_key = _extract_entry_pubkey(str(proof.get("rekor", {}).get("body_b64", "")))
@@ -216,6 +270,8 @@ def verify_bundle(
         "ok": not errors,
         "errors": sorted(errors),
         "log_index": proof.get("rekor", {}).get("log_index"),
+        "spine_members": len([r for r in decoded if r.startswith(SPINE_PREFIXES[0])]),
+        "witness_proofs": len([r for r in decoded if r.startswith(SPINE_PREFIXES[1])]),
     }
 
 

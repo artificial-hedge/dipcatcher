@@ -54,6 +54,10 @@ MEMBERS = (
     "quality/witness_signing.pub",
     "quality/rekor_pubkey.pem",
 )
+# Optional members: the archived checkpoint records and every committed
+# Rekor proof. Carrying them lets this script verify the whole spine —
+# every historical pin state — not just the head checkpoint.
+SPINE_PREFIXES = ("quality/checkpoints/", "quality/witness/checkpoint.json_")
 
 
 def _sha(b: bytes) -> bytes:
@@ -109,6 +113,128 @@ def _inclusion_walk(leaf: bytes, log_index: int, tree_size: int, path: list[byte
         fn >>= 1
         sn >>= 1
     return r
+
+
+def _verify_spine(
+    files: dict[str, str],
+    declared: dict[str, str],
+    decoded_checkpoint: bytes,
+    gate_pub_hex: str,
+    errors: list[str],
+) -> None:
+    """Independent spine walk: chain links, signatures, forks, Rekor order.
+
+    Independent of the library implementation — a divergence between this
+    verdict and ``checkpoint_chain.checkpoint_spine`` is itself a finding.
+    """
+    for rel in files:
+        if rel not in MEMBERS and not rel.startswith(SPINE_PREFIXES):
+            errors.append(f"unexpected_member:{rel}")
+    records: dict[str, bytes] = {}
+    witnessed: dict[str, int] = {}
+    wit_times: dict[str, float] = {}
+    for rel, b64 in files.items():
+        if rel.startswith(SPINE_PREFIXES[1]):
+            try:
+                raw = base64.b64decode(b64)
+                proof = json.loads(raw)
+            except (ValueError, json.JSONDecodeError):
+                errors.append(f"spine_proof_malformed:{rel}")
+                continue
+            digest = proof.get("target", {}).get("sha256")
+            index = proof.get("rekor", {}).get("log_index")
+            itime = proof.get("rekor", {}).get("integrated_time")
+            if isinstance(digest, str) and isinstance(index, int):
+                witnessed[digest] = index
+                if isinstance(itime, (int, float)):
+                    wit_times[digest] = float(itime)
+        elif rel.startswith(SPINE_PREFIXES[0]):
+            try:
+                raw = base64.b64decode(b64)
+            except ValueError:
+                errors.append(f"b64_malformed:{rel}")
+                continue
+            if declared.get(rel) != _sha(raw).hex():
+                errors.append(f"files_sha256_mismatch:{rel}")
+                continue
+            records[_sha(raw).hex()] = raw
+    if not records and not witnessed:
+        return  # pre-spine bundle — nothing more to check
+
+    # The live checkpoint is a record too — it is the spine head.
+    records[_sha(decoded_checkpoint).hex()] = decoded_checkpoint
+
+    spine: list[str] = []
+    seen: set[str] = set()
+    cur: str | None = _sha(decoded_checkpoint).hex()
+    while cur is not None:
+        if cur in seen:
+            errors.append(f"spine_cycle:{cur[:12]}")
+            break
+        seen.add(cur)
+        raw = records.get(cur)
+        if raw is None:
+            if cur not in witnessed:
+                errors.append(f"spine_dangling_prev:{cur[:12]}")
+            break
+        spine.append(cur)
+        try:
+            payload = json.loads(raw).get("payload") or {}
+        except (json.JSONDecodeError, AttributeError):
+            errors.append(f"spine_malformed:{cur[:12]}")
+            break
+        prev = payload.get("prev_sha256")
+        if prev is None:
+            break  # genesis
+        if not isinstance(prev, str) or len(prev) != 64:
+            errors.append(f"spine_prev_malformed:{cur[:12]}")
+            break
+        cur = prev
+
+    # Every record's signature under the pinned gate key.
+    for digest, raw in records.items():
+        try:
+            body = json.loads(raw)
+        except json.JSONDecodeError:
+            errors.append(f"spine_malformed:{digest[:12]}")
+            continue
+        if not _ed25519_verify(
+            gate_pub_hex, str(body.get("signature", "")), _canon(body.get("payload"))
+        ):
+            errors.append(f"spine_signature_invalid:{digest[:12]}")
+
+    # Forks + orphans.
+    claims: dict[str, int] = {}
+    for raw in records.values():
+        try:
+            prev = (json.loads(raw).get("payload") or {}).get("prev_sha256")
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if isinstance(prev, str):
+            claims[prev] = claims.get(prev, 0) + 1
+    for prev, n in claims.items():
+        if n > 1:
+            errors.append(f"spine_fork:{prev[:12]}")
+    head_digest = _sha(decoded_checkpoint).hex()
+    for digest in records:
+        if digest not in spine and digest != head_digest:
+            errors.append(f"spine_orphan:{digest[:12]}")
+
+    # Rekor order must follow the chain direction on witnessed links.
+    ordered = list(reversed(spine))
+    for parent, child in zip(ordered, ordered[1:], strict=False):  # adjacent pairs
+        if parent in witnessed and child in witnessed and witnessed[child] <= witnessed[parent]:
+            errors.append(f"spine_rekor_order:{child[:12]}")
+
+    # Witnessed-but-absent digests: grandfather pre-retention history
+    # (integrated before the earliest recorded proof), flag the rest.
+    recorded_times = [wit_times[d] for d in spine if d in wit_times]
+    era_start = min(recorded_times) if recorded_times else None
+    for digest in set(witnessed) - set(records):
+        itime = wit_times.get(digest)
+        if era_start is not None and itime is not None and itime < era_start:
+            continue
+        errors.append(f"spine_witnessed_absent:{digest[:12]}")
 
 
 def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
@@ -243,6 +369,8 @@ def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
             errors.append(f"pin_drift:{rel}")
     if not _ed25519_verify(gate_pub_hex, str(sigfile.get("signature", "")), _canon(sig_payload)):
         errors.append("gate_pins_signature_invalid")
+
+    _verify_spine(files, declared, checkpoint_raw, gate_pub_hex, errors)
 
     return sorted(set(errors))
 
