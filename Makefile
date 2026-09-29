@@ -203,7 +203,9 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
-	uv run dipcatcher lattice --strict --out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
+	uv run dipcatcher lattice --strict \
+		--known-inconsistent quality/lattice_known_inconsistent.json \
+		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

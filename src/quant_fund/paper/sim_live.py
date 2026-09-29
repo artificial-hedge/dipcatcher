@@ -35,7 +35,6 @@ import polars as pl
 
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.returns import annualized_vol, sharpe_ratio
-from quant_fund.paper.ledger import _atomic_write_text
 from quant_fund.paper.loop import PaperLoopResult, run_paper_loop
 from quant_fund.paper.quantile_signals import (
     DEFAULT_TAUS,
@@ -510,9 +509,6 @@ def run_sim_live(
     sealed = seal_receipt(receipt)
     out_dir.mkdir(parents=True, exist_ok=True)
     receipt_path = out_dir / f"sim_live_{effective_run_id}.json"
-    _atomic_write_text(receipt_path, json.dumps(receipt, indent=2, default=str))
-    receipt_path.write_text(json.dumps(sealed, indent=2, default=str))
-    atomic_write_text(receipt_path, json.dumps(receipt, indent=2, default=str))
     atomic_write_text(receipt_path, json.dumps(sealed, indent=2, default=str))
     return SimLiveResult(
         run_id=effective_run_id,

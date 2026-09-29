@@ -452,6 +452,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         if claimed in _LANE_CONSISTENCY:
             path = _LANE_CONSISTENCY[claimed]
             module, _, func = path.rpartition(".")
+            errors: list[str] = list(getattr(importlib.import_module(module), func)(payload))
             errors: list[str] = getattr(importlib.import_module(module), func)(payload)
             if claimed != kind:
                 errors = [*errors, "kind_fingerprint_mismatch"]
@@ -565,6 +566,8 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         errors.extend(_quantile_ladder_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+
+        errors.extend(evalue_family_contract_errors(payload))
     elif schema == "vol_bench.v1":
         from quant_fund.research.vol_bench import vol_bench_contract_errors
 
