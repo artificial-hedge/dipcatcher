@@ -666,6 +666,8 @@ jobs:
         run: uv sync --frozen --all-groups
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
+      - name: Cross-receipt consistency lattice
+        run: make lattice-check
 
   pretrade-risk:
     runs-on: ubuntu-latest
