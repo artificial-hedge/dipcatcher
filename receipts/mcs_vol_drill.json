@@ -1,0 +1,39 @@
+{
+  "alpha": 0.05,
+  "champion": null,
+  "coverage_guarantee": "P(set contains an optimal head at every origin) >= 1 - alpha",
+  "data_label": "SYNTHETIC",
+  "drill": {
+    "horizon": 1,
+    "min_history": 200,
+    "model_errors": {},
+    "n_origins": 96,
+    "seed": 7,
+    "shard": "garch_vol",
+    "source": "vol_bench._eval_shard_model per-origin QLIKE",
+    "stride": 4
+  },
+  "eliminated": {},
+  "evidence": [
+    "ville_inequality",
+    "pairwise_supermartingales",
+    "union_bound_k_minus_1",
+    "permanent_elimination",
+    "anytime_valid"
+  ],
+  "kind": "mcs_seq.v1",
+  "lam": 0.5,
+  "live_pnl_claim": false,
+  "n_eliminated": 0,
+  "n_heads": 5,
+  "n_origins": 96,
+  "receipt_sha256": "682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e",
+  "research_only": true,
+  "survivors": [
+    "dip_garch_t",
+    "har",
+    "realized_garch",
+    "rv_ewma",
+    "rv_roll"
+  ]
+}

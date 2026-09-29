@@ -772,6 +772,44 @@ def suite_health_cmd(
             raise typer.Exit(code=1)
 
 
+@app.command()
+def mcs(
+    streams: Path = typer.Argument(
+        ...,
+        help="Loss streams: JSON {head: [per-origin losses]} or parquet/csv "
+        "(numeric column per head). Lower loss = better head.",
+    ),
+    alpha: float = typer.Option(0.05, help="Coverage failure level."),
+    lam: float = typer.Option(0.5, help="Betting fraction per pair-process."),
+    data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on the receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Sequential model confidence set over per-origin proper losses.
+
+    Maintains a survivor set containing an optimal head with probability
+    >= 1 - alpha *uniformly over time* (Ville + union bound over pairwise
+    e-processes; permanent elimination). Writes a sealed mcs_seq.v1
+    receipt — proper-score evidence only.
+    """
+    from quant_fund.research.mcs_seq import load_loss_streams, mcs_report, write_mcs_receipt
+
+    try:
+        loss_streams = load_loss_streams(streams)
+        receipt = mcs_report(loss_streams, alpha=alpha, lam=lam, data_label=data_label)
+    except (ValueError, FileNotFoundError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_mcs_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    typer.echo(f"survivors={receipt['survivors']}")
+    typer.echo(f"eliminated={receipt['eliminated']}")
+    typer.echo(f"champion={receipt['champion']}")
+    typer.echo(f"receipt={path}")
+
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -1103,6 +1141,10 @@ __all__ = [
     "execution_sensitivity_cmd",
     "fleet",
     "lane_power",
+    "mcs",
+    "monitor",
+    "verdict",
+    "race",
     "race",
     "suite_health_cmd",
     "monitor",
