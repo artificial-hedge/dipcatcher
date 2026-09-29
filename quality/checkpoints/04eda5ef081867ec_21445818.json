@@ -2,10 +2,10 @@
   "algorithm": "ed25519",
   "key_id": "bc3bcff676056adf",
   "payload": {
-    "at": "2026-09-29T23:28:30+00:00",
+    "at": "2026-09-29T23:27:44+00:00",
     "code": {
-      "revision": "d8847f0d899e59e87d6d86fa0b973227aed9c7b7",
-      "worktree_sha256": "c3ee8144f41b983ba97fa7ba030f11030eb8839433dcc4b9f406e78c412633c8"
+      "revision": "210eb69dd1c21cf8644bcbcfecf55d0dfa83b3b7",
+      "worktree_sha256": "f34e66382c53e3217c195977be4ba3b06031596d5156ac3fdd108accf8d9fe23"
     },
     "heads": {
       ".github/workflows/*.yml": {
@@ -17,8 +17,8 @@
         "sha256": "46d6eea1a430e5762ab3de9a2c929527a7955019e47e2389f5c0ef67db49a507"
       },
       "quality/*.json": {
-        "receipt": "corpus_epoch_f3c1fea2a1be4586.json",
-        "sha256": "ea6cb2b43cc7892e984c75332862ed51f0939a5abbc6231502a9bcb694cecafa"
+        "receipt": "corpus_epoch_2c7b1f25b040f955.json",
+        "sha256": "3a8a45a8184d2f9cb60cc8b5afdb02ee59f511aba26d0303365d69cabe6a05c6"
       },
       "receipts/*.json": {
         "receipt": "corpus_epoch_574953afdf88a0f6.json",
@@ -31,13 +31,13 @@
     },
     "missing_pins": [],
     "pins": {
-      "gate_pins.sig": "764f95c0658f8fc8bb054b10f6a802fd1babee8ba5a4dd566192fa0eba71034b",
+      "gate_pins.sig": "6e4449c4e7673fb0d451efa10cfbfe352c96e5f1443823e39044d8a91fad5be5",
       "quality/crown_jewels.json": "eacd53b22df0ca4aca7df1a365809a933ae4e37fe80eb7d5af2eba91ad6eda95",
-      "quality/epoch_heads.json": "9d3863510a8677c8df5b282cd8ded0c0be1555588989d9d8d83f896a676a71cd"
+      "quality/epoch_heads.json": "86d9547c5122102ee733618fc64eec17f96cfbd4de961182b8966e8b09fdff00"
     },
-    "prev_sha256": "04eda5ef081867ec2144581873d5f4e934b87f9432b8573d38b448e14acf6f11",
+    "prev_sha256": "1d70402910bb3005af3e6c47301c326f12ba0f1ea0c2d1fb9c532dbf360c5f31",
     "schema": "integrity_checkpoint.v1"
   },
   "schema": "integrity_checkpoint_sig.v1",
-  "signature": "74c74d276dbaac7f877a96f73de4ef6fd81fa00644eb583b622b2b6b6776a32552cfca561eddef2315429c4a7b0d086cfd304edb1498ddbcbda5fd5da9a25100"
+  "signature": "4d46e79a1b89724469cbc07c51c32f97c21f0ad7bdde9306fedb408a3a37f3f72207f31a90196b87b2f536d934714846683da4a29c319a29d1e143ec5ca4950b"
 }
