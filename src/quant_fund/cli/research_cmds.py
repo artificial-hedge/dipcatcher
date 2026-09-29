@@ -560,6 +560,43 @@ def lane_power(
     typer.echo(f"receipt={path}")
 
 
+@app.command("suite-health")
+def suite_health_cmd(
+    receipts_dir: Path = typer.Option(
+        Path("receipts"), help="Directory of committed receipts to re-verify."
+    ),
+    alpha: float = typer.Option(0.05, help="Pooled-evidence alarm threshold."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Re-verify every receipt in a directory + pool evidence → sealed summary.
+
+    One command audits the whole evidence trail: each file gets a fresh
+    verify-receipt pass (seal + kind contract), harvestable p-values /
+    e-values are pooled under arbitrary dependence, and a corrupt artifact
+    withholds the pooled claim — never asserted over partial evidence.
+    """
+    import json
+
+    from quant_fund.research.fleet_eval import _atomic_write_text
+    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.research.suite_health import suite_health
+
+    try:
+        frame, receipt = suite_health(receipts_dir, alpha=alpha)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    sealed = seal_receipt(receipt)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"suite_health_{sealed['receipt_sha256'][:16]}.json"
+    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"receipts={receipt['n_receipts']} ok={receipt['n_ok']} "
+        f"failed={receipt['n_failed']} pooled_evalue={receipt['pooled_evalue']}"
+    )
+    typer.echo(f"receipt={path}")
+
+
 __all__ = [
     "capacity",
     "execution_sensitivity_cmd",
@@ -567,6 +604,7 @@ __all__ = [
     "lane_power",
     "rankic",
     "research",
+    "suite_health_cmd",
     "verify_identities",
     "verify_receipt_cmd",
     "vol_bench",
