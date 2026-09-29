@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from quant_fund.research.evalues import LossEProcess, promotion_report
+from quant_fund.research.evalues import LossEProcess, OnlineLambda, promotion_report
 
 
 def test_identical_streams_never_promote() -> None:
@@ -121,17 +121,24 @@ def test_martingale_validity_under_symmetric_null() -> None:
     assert promoted / trials <= 0.10
 
 
-def _promotion_rate(make_stream, n_sims: int, n_origins: int, alpha: float = 0.05) -> float:
+def _promotion_rate(
+    make_stream, n_sims: int, n_origins: int, alpha: float = 0.05, policy: str = "kelly"
+) -> float:
     """Fraction of runs whose evalue ever reaches 1/alpha (Ville exceedance)."""
     promoted = 0
     for seed in range(n_sims):
         rng = np.random.default_rng(seed * 7919 + 17)
-        proc = LossEProcess(alpha=alpha)
+        proc = LossEProcess(alpha=alpha, lambda_policy=policy)
         for di in make_stream(rng, n_origins):
             proc.update(float(di), 0.0)
         if proc.promotion_origin is not None:
             promoted += 1
     return promoted / n_sims
+
+
+def _null_rate_bound(alpha: float, n_sims: int) -> float:
+    """alpha + 3*sigma_MC bound for a binomial promotion-rate estimate."""
+    return alpha + 3.0 * float(np.sqrt(alpha * (1.0 - alpha) / n_sims))
 
 
 def test_ville_null_control_iid_gaussian() -> None:
@@ -249,3 +256,175 @@ def test_report_schema() -> None:
     assert "ville_inequality" in rep["evidence"]
     assert rep["final_evalue"] > 0
     assert 0.0 <= rep["challenger_win_rate"] <= 1.0
+
+
+def test_online_lambda_predictable_first_bet() -> None:
+    """lam_t uses strict history: the first bet must be neutral regardless of d_1."""
+    proc = LossEProcess(lambda_policy="online")
+    st = proc.update(-1e6, 0.0)
+    assert st.evalue == pytest.approx(1.0)
+    assert st.lam == 0.0
+    st2 = proc.update(-1.0, 0.0)
+    assert st2.lam > 0.0
+    assert st2.evalue > 1.0
+
+
+def test_online_lambda_bounds_and_positive_factors() -> None:
+    """The adaptive bet stays in [0, lam] and no e-factor can go negative."""
+    rng = np.random.default_rng(23)
+    # Edge flip, sign-alternating, and pure-noise segments stress the tracker.
+    d = np.concatenate(
+        [
+            rng.normal(-0.01, 0.02, 60),
+            rng.normal(0.01, 0.02, 60),
+            (-1.0) ** np.arange(60) * 0.01,
+            rng.normal(0.0, 0.02, 60),
+        ]
+    )
+    proc = LossEProcess(lambda_policy="online", lam=0.5)
+    prev = 1.0
+    for di in d:
+        st = proc.update(float(di), 0.0)
+        assert 0.0 <= st.lam <= 0.5
+        factor = st.evalue / prev
+        assert factor > 0.0
+        assert factor == pytest.approx(1.0 - st.lam * np.sign(di), rel=1e-9)
+        prev = st.evalue
+
+
+def test_online_causality_prefix_invariant() -> None:
+    rng = np.random.default_rng(7)
+    c = rng.normal(0.5, 0.02, size=80)
+    b = rng.normal(0.5, 0.02, size=80)
+    proc_a = LossEProcess(lambda_policy="online")
+    states_full = [proc_a.update(ci, bi) for ci, bi in zip(c, b, strict=True)]
+    proc_b = LossEProcess(lambda_policy="online")
+    states_prefix = [proc_b.update(ci, bi) for ci, bi in zip(c[:40], b[:40], strict=True)]
+    for sf, sp in zip(states_full[:40], states_prefix, strict=True):
+        assert sf.evalue == pytest.approx(sp.evalue)
+        assert sf.lam == pytest.approx(sp.lam)
+        assert sf.promoted == sp.promoted
+
+
+def test_online_policy_default_is_kelly() -> None:
+    """Omitting lambda_policy reproduces the Kelly plug-in state-for-state."""
+    rng = np.random.default_rng(31)
+    d = rng.normal(0.0, 0.02, 60)
+    pa, pb = LossEProcess(), LossEProcess(lambda_policy="kelly")
+    for di in d:
+        sa, sb = pa.update(float(di), 0.0), pb.update(float(di), 0.0)
+        assert sa == sb
+
+
+def test_online_policy_instance_accepted() -> None:
+    pol = OnlineLambda(lam_max=0.4, eta=0.3, smooth=0.5)
+    proc = LossEProcess(lambda_policy=pol)
+    for _ in range(30):
+        st = proc.update(-0.01, 0.0)
+    assert 0.0 < st.lam <= 0.4
+
+
+def test_online_policy_invalid_raises() -> None:
+    with pytest.raises(ValueError, match="lambda_policy"):
+        LossEProcess(lambda_policy="bogus")
+    with pytest.raises(ValueError, match="lam_max"):
+        OnlineLambda(lam_max=1.2)
+    with pytest.raises(ValueError, match="eta"):
+        OnlineLambda(lam_max=0.5, eta=0.0)
+    with pytest.raises(ValueError, match="smooth"):
+        OnlineLambda(lam_max=0.5, smooth=0.0)
+
+
+def test_evalue_trajectory_logged() -> None:
+    """The logged state path reconstructs prod e_i for both policies."""
+    rng = np.random.default_rng(41)
+    d = rng.normal(-0.004, 0.02, 80)
+    for policy in ("kelly", "online"):
+        proc = LossEProcess(lambda_policy=policy)
+        for di in d:
+            proc.update(float(di), 0.0)
+        states = proc.states
+        assert len(states) == len(d)
+        assert [s.origin for s in states] == list(range(len(d)))
+        log_e = 0.0
+        for s, di in zip(states, d, strict=True):
+            log_e += np.log(1.0 - s.lam * np.sign(di))
+            assert s.evalue == pytest.approx(np.exp(log_e), rel=1e-9)
+            assert s.evalue > 0.0
+
+
+@pytest.mark.parametrize("policy", ["kelly", "online"])
+@pytest.mark.parametrize(
+    "make_stream",
+    [
+        lambda r, n: r.normal(0.0, 0.02, n),
+        lambda r, n: r.standard_t(3, n) * 0.02,
+        lambda r, n: np.where(r.random(n) < 0.55, 0.01, -0.5),
+    ],
+    ids=["gaussian", "heavy_tail", "skewed_median_nonneg"],
+)
+def test_ville_null_control_alpha_plus_3sigma(make_stream, policy: str) -> None:
+    """Both bet policies hold the Ville bound: rate <= alpha + 3*sigma_MC.
+
+    Each iid median-null stream keeps the conditional challenger win-rate
+    <= 50%, so any predictable bounded bet has E[e_i|F] <= 1 — adaptive
+    lambda is measurable w.r.t. the same filtration and cannot break the
+    supermartingale.
+    """
+    n_sims, n_origins, alpha = 600, 150, 0.05
+    rate = _promotion_rate(make_stream, n_sims, n_origins, alpha, policy=policy)
+    assert rate <= _null_rate_bound(alpha, n_sims)
+
+
+def test_online_tracks_regime_change_faster() -> None:
+    """Abrupt regime flip: the tracker promotes earlier than the flat plug-in."""
+    n_sims, n_origins = 300, 400
+
+    def flip(rng, n):
+        d = rng.normal(0.008, 0.02, n)  # incumbent better
+        d[120:] = rng.normal(-0.008, 0.02, n - 120)  # challenger better
+        return d
+
+    rate, med = {}, {}
+    for policy in ("kelly", "online"):
+        crossings: list[int] = []
+        for seed in range(n_sims):
+            rng = np.random.default_rng(seed * 104729 + 3)
+            proc = LossEProcess(lambda_policy=policy)
+            for di in flip(rng, n_origins):
+                proc.update(float(di), 0.0)
+            if proc.promotion_origin is not None:
+                crossings.append(proc.promotion_origin)
+        rate[policy] = len(crossings) / n_sims
+        med[policy] = float(np.median(crossings)) if crossings else float("inf")
+    assert rate["online"] >= rate["kelly"] + 0.2
+    assert med["online"] <= med["kelly"] * 0.8
+
+
+def test_online_iid_parity() -> None:
+    """On the iid alternative the tracker must not materially underperform."""
+    n_sims, n_origins = 300, 400
+    rate, med = {}, {}
+    for policy in ("kelly", "online"):
+        crossings: list[int] = []
+        for seed in range(n_sims):
+            rng = np.random.default_rng(seed * 7919 + 17)
+            proc = LossEProcess(lambda_policy=policy)
+            for di in rng.normal(-0.008, 0.02, n_origins):
+                proc.update(float(di), 0.0)
+            if proc.promotion_origin is not None:
+                crossings.append(proc.promotion_origin)
+        rate[policy] = len(crossings) / n_sims
+        med[policy] = float(np.median(crossings))
+    assert rate["online"] >= rate["kelly"] - 0.05
+    assert med["online"] <= med["kelly"] * 1.35
+
+
+def test_report_records_lambda_policy() -> None:
+    rng = np.random.default_rng(13)
+    c, b = rng.normal(0.4, 0.02, 60), rng.normal(0.5, 0.02, 60)
+    rep = promotion_report(c, b)
+    assert rep["lambda_policy"] == "kelly"
+    rep = promotion_report(c, b, lambda_policy="online")
+    assert rep["lambda_policy"] == "online"
+    assert rep["final_evalue"] > 0.0
