@@ -426,6 +426,10 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
 
         return vol_bench_v2_consistency_errors(payload)
+    if kind == "coherence_eval":
+        from quant_fund.research.coherence import coherence_v2_consistency_errors
+
+        return coherence_v2_consistency_errors(payload)
     return []
 
 
