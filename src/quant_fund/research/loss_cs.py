@@ -147,6 +147,7 @@ def cs_from_streams(
     bound: float | None = None,
     challenger: str = "challenger",
     incumbent: str = "incumbent",
+    data_label: str = "UNKNOWN",
 ) -> dict[str, Any]:
     """CS over ``d_t = challenger − incumbent`` proper-loss diffs.
 
@@ -174,6 +175,7 @@ def cs_from_streams(
         "schema": LOSS_CS_SCHEMA,
         "challenger": challenger,
         "incumbent": incumbent,
+        "data_label": data_label,
         "alpha": alpha,
         "lam": lam,
         "bound": eff_bound,
