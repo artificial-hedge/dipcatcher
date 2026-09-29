@@ -1,9 +1,18 @@
-"""Leakage Hunter rule registry (LH001..LH012) and path allowlists.
+"""Leakage Hunter rule registry (LH001..LH014) and path allowlists.
 
 RULE_REGISTRY is the ONLY source of rule metadata (DESIGN.md §6.1). Rule IDs
 are permanent; new rules append with new IDs. Allowlists are per-rule
 frozensets of path globs; every entry carries a comment citing why the
 existing site is legitimate (or which audit finding / follow-up owns it).
+LH001 also has a function-scoped allowlist: the file stays scanned, and
+only the named function is exempt.
+
+Residual ceiling (ADVERSARIAL §1a, pinned by the documented-negative fixtures
+in tests/leakage_fixtures/adv_*.py): numpy/pandas index arithmetic, dict
+lookups at ``dates[i+1]``, lone numbers beyond the proximity window, manual
+Sharpe algebra without a ``sharpe_ratio`` call, and cross-file/multi-level
+helper indirection remain uncaught. The pack is a tripwire; the runtime
+watchdog + proof layer are the barrier.
 """
 
 from __future__ import annotations
@@ -88,7 +97,8 @@ RULE_REGISTRY: dict[str, RuleSpec] = {
         "warning",
         "Direct parquet read outside data layer",
         "`pl.read_parquet`/`pl.scan_parquet` outside `data/`/`pit/` bypasses "
-        "the PIT choke point (audit A2 F8). Route reads through "
+        "the PIT choke point (audit A2 F8); `PitVault.history()` returns "
+        "unfiltered versions and is audit-only. Route reads through "
         "`pit.guarded_read_parquet`. WARNING-only until the call-site "
         "migration wave lands (adjudicated; flips to error afterwards).",
     ),
@@ -114,6 +124,27 @@ RULE_REGISTRY: dict[str, RuleSpec] = {
         "Unparseable file",
         "`ast.parse` raised SyntaxError; the file was not scanned. Fix the "
         "syntax so the linter can check it.",
+    ),
+    "LH013": RuleSpec(
+        "LH013",
+        "warning",
+        "Headline metric claim in a comment/docstring/f-string/spelled-out form",
+        "ADVERSARIAL section 1a hardening: the forbidden-headline channel is "
+        "not limited to digit-bearing plain string literals — comments and "
+        "docstrings render into published docs, f-string templates disclose "
+        "runtime numbers, and spelled-out numerals ('exceeded two') evade "
+        "the digit matcher. WARNING-only: prose mentions of metric names are "
+        "legitimate; a human reviews these.",
+    ),
+    "LH014": RuleSpec(
+        "LH014",
+        "warning",
+        "Call to a helper that trips a leakage rule",
+        "ADVERSARIAL section 1a hardening: leaky logic hidden in a helper "
+        "function is still leaky when strategy code calls the helper. "
+        "Single-level, single-file summary pass: flags call sites of "
+        "functions whose own body produced a finding. Cross-file and "
+        "multi-level indirection are the documented residual ceiling.",
     ),
 }
 
@@ -148,6 +179,17 @@ LH001_ALLOWLIST: frozenset[str] = frozenset(
     }
 )
 
+# LH001 function scope. The file stays scanned; a finding is dropped only
+# when its innermost enclosing function is listed. Nested helpers and every
+# other function in the file remain checked.
+# forward_close_return_labels builds y_{t+1} as column fwd_ret_1 on the full
+# bar panel. It is a label, not a feature.
+LH001_FUNCTION_ALLOWLIST: dict[str, frozenset[str]] = {
+    "src/quant_fund/microstructure/candle_book_features.py": frozenset(
+        {"forward_close_return_labels"}
+    ),
+}
+
 # LH003: scaler `.fit` sites that consume caller-sliced train folds (audit §2:
 # "ranker scalers fit inside each train fold"; the fold loop lives in
 # pipeline/train.py, above these classes).
@@ -155,6 +197,10 @@ LH003_ALLOWLIST: frozenset[str] = frozenset(
     {
         "src/quant_fund/models/ranking.py",
         "src/quant_fund/models/asset_pricing.py",
+        # GaussianHMMRegime.fit self-fits its StandardScaler on the model's
+        # own training input — the caller slices folds, same model-self-fit
+        # idiom as ranking.py / asset_pricing.py above.
+        "src/quant_fund/models/regime.py",
     }
 )
 
@@ -167,6 +213,21 @@ LH004_ALLOWLIST: frozenset[str] = frozenset(
         "src/quant_fund/portfolio/pnl_attribution.py",
         "src/quant_fund/portfolio/factor_model.py",
         "src/quant_fund/microstructure/candle_book_features.py",
+        # data/universe.py _vectorized_membership_panel: backward asof-join on
+        # event_time over bars whose _membership_fast_supported check already
+        # proves available_time <= event_time (no late inserts) — same
+        # publish-time-clean class as the sites above.
+        "src/quant_fund/data/universe.py",
+    }
+)
+
+# LH005: intentional fixed research universes. lightspeed/specs.py pins the
+# momentum spec's reference universe by design (explicit SELECTION_END /
+# HOLDOUT_START split — holdout is not for retuning); LH005 gates every
+# other site.
+LH005_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "src/quant_fund/lightspeed/specs.py",
     }
 )
 
@@ -254,8 +315,15 @@ RULE_ALLOWLISTS: dict[str, frozenset[str]] = {
     "LH001": LH001_ALLOWLIST | CONTROL_FIXTURE_ALLOWLIST,
     "LH003": LH003_ALLOWLIST,
     "LH004": LH004_ALLOWLIST,
+    "LH005": LH005_ALLOWLIST,
     "LH006": LH006_ALLOWLIST,
     "LH007": LH007_ALLOWLIST,
+}
+
+# rule id -> repo-relative path -> function names. Exact path suffix, not a
+# glob: a same-named function in another file is still scanned.
+FUNCTION_ALLOWLISTS: dict[str, dict[str, frozenset[str]]] = {
+    "LH001": LH001_FUNCTION_ALLOWLIST,
 }
 
 # LH009 / LH010 scope exemptions (these rules are warning-severity at HEAD but

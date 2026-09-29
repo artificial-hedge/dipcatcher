@@ -16,14 +16,13 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize as opt
 
+from quant_fund.utils.series import finite_series
+
 Array = NDArray[np.float64]
 
 
 def _v(x: Array, n: int = 20) -> Array:
-    v = np.asarray(x, dtype=float).reshape(-1)
-    if v.size < n or not np.all(np.isfinite(v)):
-        raise ValueError(f"series must be finite with length >= {n}")
-    return v
+    return finite_series(x, n)
 
 
 def beta_weights(k: int, theta1: float, theta2: float) -> Array:
@@ -72,7 +71,7 @@ def fit_midas(
     Xr = X[rows]
     yl = ylag[rows]
 
-    def unpack(theta: Array):
+    def unpack(theta: Array) -> tuple[float, float, float, float, float]:
         if ar_lag:
             a, b, t1, t2, c = theta
         else:
@@ -89,7 +88,9 @@ def fit_midas(
         except ValueError:
             return 1e12
         mid = Xr @ w
-        e = yr - (a + b * mid + c * yl)
+        # yl[0] is NaN when ar_lag=False, so the c*yl term must be skipped
+        # rather than multiplied through.
+        e = yr - (a + b * mid + c * yl) if ar_lag else yr - (a + b * mid)
         out = float(e @ e)
         return out if np.isfinite(out) else 1e12
 
@@ -112,7 +113,7 @@ def fit_midas(
         )
         if best is None or res.fun < best.fun:
             best = res
-    if best is None or not np.isfinite(best.fun):
+    if best is None or not np.isfinite(best.fun) or best.fun >= 1e12:
         raise ValueError("MIDAS fit failed")
     a, b, t1, t2, c = unpack(best.x)
     w = beta_weights(k_lags, t1, t2)

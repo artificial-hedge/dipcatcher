@@ -5,7 +5,7 @@ Split out of the original module. Import the parent path; it re-exports these na
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -18,6 +18,13 @@ from quant_fund.models.calibration import ProbabilityCalibrator
 from quant_fund.utils.hashing import hash_file
 
 from .state import _RANKER_CACHE, _RL_POLICY_CACHE
+
+
+def _stamp_utc_date(value: datetime) -> date:
+    """UTC calendar date of a stamp; naive values already mean UTC."""
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value.date()
+    return value.astimezone(UTC).date()
 
 
 def _ranker_artifact_path(config: AppConfig) -> Path:
@@ -95,7 +102,10 @@ def _load_rl_cached(config: AppConfig) -> tuple[Any, list[str], str] | None:
     )
     if path is None:
         return None
-    key = (str(path.resolve()), path.stat().st_mtime)
+    # Cache identity is artifact bytes, matching the ranker/GARCH loaders:
+    # an mtime-preserving rewrite (os.utime, same-size swap) must not reuse
+    # a stale policy.
+    key = (str(path.resolve()), _joblib_artifact_digest(path))
     cached = _RL_POLICY_CACHE.get(key)
     if cached is not None:
         return cast(tuple[Any, list[str], str], cached)
@@ -150,8 +160,8 @@ def _load_probability_calibrator(
             fit_end = datetime.fromisoformat(str(calibrator.fit_end).replace("Z", "+00:00"))
         except ValueError as exc:
             raise ValueError("probability calibrator fit_end is not parseable") from exc
-        left = fit_end.date()
-        right = asof.date()
+        left = _stamp_utc_date(fit_end)
+        right = _stamp_utc_date(asof)
         if (right - left).days < 0 or (right - left).days > max_age:
             raise ValueError("probability calibrator is stale for forecast asof")
     return calibrator

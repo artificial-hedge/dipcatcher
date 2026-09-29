@@ -17,16 +17,13 @@ from numpy.typing import NDArray
 from scipy import optimize as opt
 from scipy import stats
 
+from quant_fund.utils.series import finite_nonconstant_series
+
 Array = NDArray[np.float64]
 
 
 def _v(x: Array, n: int = 64) -> Array:
-    v = np.asarray(x, dtype=float).reshape(-1)
-    if v.size < n or not np.all(np.isfinite(v)):
-        raise ValueError(f"series must be finite with length >= {n}")
-    if v.std() == 0:
-        raise ValueError("degenerate (constant) series")
-    return v
+    return finite_nonconstant_series(x, n)
 
 
 def _periodogram(v: Array) -> tuple[Array, Array]:
@@ -89,6 +86,8 @@ def local_whittle(series: Array, bandwidth: float | None = None) -> dict[str, fl
         return out if np.isfinite(out) else 1e12
 
     res = opt.minimize_scalar(R, bounds=(-0.5, 1.0), method="bounded")
+    if not np.isfinite(res.fun) or res.fun >= 1e12:
+        raise ValueError("Whittle local estimator hit the invalid-region penalty")
     d_hat = float(res.x)
     se = 1.0 / (2.0 * math.sqrt(m))
     return {
@@ -120,6 +119,8 @@ def whittle_arfima(series: Array) -> dict[str, float]:
         return out if np.isfinite(out) else 1e12
 
     res = opt.minimize_scalar(R, bounds=(-0.49, 0.49), method="bounded")
+    if not np.isfinite(res.fun) or res.fun >= 1e12:
+        raise ValueError("Whittle ARFIMA estimator hit the invalid-region penalty")
     d_hat = float(res.x)
     # Fox–Taqqu asymptotic variance: Var(d) = pi^2/(24n) -> se = pi/sqrt(24n).
     se = math.pi / math.sqrt(24.0 * n)

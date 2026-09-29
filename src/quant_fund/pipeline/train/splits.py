@@ -6,7 +6,7 @@ Split out of the original module. Import the parent path; it re-exports these na
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
@@ -122,7 +122,9 @@ def _walk_forward_splits(
     ]
 
 
-def _split_fold(dates, x, y, fold):
+def _split_fold(
+    dates: Any, x: np.ndarray, y: np.ndarray, fold: Fold
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     date_ns = timestamp_ns(dates)
     tr = np.isin(date_ns, timestamp_ns(fold.train_times))
     va = np.isin(date_ns, timestamp_ns(fold.val_times))
@@ -155,13 +157,22 @@ def _require_model(name: str, catalog: set[str], family: str) -> str:
     return name
 
 
+def _as_utc(value: datetime) -> datetime:
+    """Normalize comparison stamps; naive wall-clock values mean UTC."""
+    if value.tzinfo is None or value.utcoffset() is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def _stamp_naive(value: datetime) -> bool:
+    return value.tzinfo is None or value.utcoffset() is None
+
+
 def _stamp_strictly_before(stamp: object, asof: object) -> bool:
     """Compare panel timestamps to asof without mixing naive/aware datetimes."""
     if isinstance(stamp, datetime) and isinstance(asof, datetime):
-        if stamp.tzinfo is None and asof.tzinfo is not None:
-            return stamp.replace(tzinfo=asof.tzinfo) < asof
-        if stamp.tzinfo is not None and asof.tzinfo is None:
-            return stamp.replace(tzinfo=None) < asof
+        if _stamp_naive(stamp) != _stamp_naive(asof):
+            return _as_utc(stamp) < _as_utc(asof)
         return stamp < asof
     return bool(stamp < asof)  # type: ignore[operator]
 
@@ -169,10 +180,8 @@ def _stamp_strictly_before(stamp: object, asof: object) -> bool:
 def _stamp_at_or_before(stamp: object, asof: object) -> bool:
     """True when ``stamp`` is observable at the decision origin."""
     if isinstance(stamp, datetime) and isinstance(asof, datetime):
-        if stamp.tzinfo is None and asof.tzinfo is not None:
-            return stamp.replace(tzinfo=asof.tzinfo) <= asof
-        if stamp.tzinfo is not None and asof.tzinfo is None:
-            return stamp.replace(tzinfo=None) <= asof
+        if _stamp_naive(stamp) != _stamp_naive(asof):
+            return _as_utc(stamp) <= _as_utc(asof)
         return stamp <= asof
     return bool(stamp <= asof)  # type: ignore[operator]
 

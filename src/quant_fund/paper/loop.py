@@ -319,7 +319,7 @@ def _paper_portfolio_conformal(returns: np.ndarray) -> dict[str, Any]:
     return out
 
 
-def run_paper_loop(
+def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
     bars: pl.DataFrame,
     config: AppConfig,
     *,
@@ -437,19 +437,29 @@ def run_paper_loop(
     dates = sorted(px["event_time"].unique().to_list())
     if prior_state and prior_state.get("resume_fingerprint"):
         prior_cutoff = _parse_iso(prior_state.get("last_exec"))
-        if prior_cutoff is not None:
-            current_fingerprint = _paper_resume_fingerprint(px, config, prior_cutoff)
-            if current_fingerprint != prior_state["resume_fingerprint"]:
-                raise ValueError(
-                    "resume input/config fingerprint mismatch; refusing to replay altered evidence"
-                )
+        if prior_cutoff is None:
+            raise ValueError(
+                "cannot resume: last_exec is missing or unparseable; "
+                "refusing to skip the input/config fingerprint check"
+            )
+        current_fingerprint = _paper_resume_fingerprint(px, config, prior_cutoff)
+        if current_fingerprint != prior_state["resume_fingerprint"]:
+            raise ValueError(
+                "resume input/config fingerprint mismatch; refusing to replay altered evidence"
+            )
     use_next_open = (
         config.execution.fill is FillConvention.NEXT_OPEN
         and not config.execution.allow_close_auction
     )
     # Decision dates: all but last when next-open
     decision_dates = dates[:-1] if use_next_open and len(dates) > 1 else dates
-    skip_after = _parse_iso(prior_state.get("last_decision")) if prior_state else None
+    raw_last_decision = prior_state.get("last_decision") if prior_state else None
+    skip_after = _parse_iso(raw_last_decision) if raw_last_decision else None
+    if raw_last_decision is not None and skip_after is None:
+        raise ValueError(
+            "cannot resume: last_decision is unparseable; "
+            "refusing to replay already-executed decision dates"
+        )
     if skip_after is not None:
         decision_dates = [d for d in decision_dates if d > skip_after]
     if max_steps is not None:
@@ -727,7 +737,15 @@ def run_paper_loop(
             abs(min(champ.shares.get(s, 0.0), 0.0)) * valuation_marks.get(s, 0.0)
             for s in champ.shares
         )
-        borrow = short_notional * (config.costs.borrow_bps_per_year / 1e4) / 252.0
+        # Accrue borrow over elapsed wall-clock time since the previous exec
+        # bar (matches net_replay / forward_shadow); a fixed /252 per bar
+        # overcharges ~6x on 4h grids and ~24x on 1h grids.
+        borrow_years = (
+            (exec_dt - last_exec).total_seconds() / (365.0 * 86400.0)
+            if last_exec is not None
+            else 0.0
+        )
+        borrow = short_notional * (config.costs.borrow_bps_per_year / 1e4) * borrow_years
         if not config.costs.frictionless:
             champ.cash -= borrow
             nav_close -= borrow

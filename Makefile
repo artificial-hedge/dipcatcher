@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke perf-record perf-check evidence-audit
 
 .DEFAULT_GOAL := help
 
@@ -28,6 +28,7 @@ coverage: ## PR-gate tests + coverage (threshold in pyproject)
 lint: ## Ruff check + format check on src/ and tests/
 	uv run ruff check src tests
 	uv run ruff format --check src tests
+	uv run python scripts/check_mypy_strict_allowlist.py
 
 fmt: ## Auto-fix lint + format
 	uv run ruff check --fix src tests
@@ -99,6 +100,15 @@ simtest: ## Bounded deterministic-simulation tests and swarm (CI size)
 simtest-large: ## Large seeded swarm (workflow_dispatch size; not the PR default)
 	MLFLOW_DISABLE_AGENT_HINT=1 uv run python scripts/simtest_swarm.py --seeds 4000 --days 8 --base-seed 0
 
+# Timings are machine-local: the CI gate (.github/workflows/perf-baseline.yml)
+# records its baseline on CI runners; these targets are for local self-checks.
+perf-record: ## Record a local perf baseline over the scoring/inference hot paths
+	uv run python scripts/perf_baseline.py record --output data/metadata/perf-baseline.json
+
+perf-check: ## Compare current timings against the stored local baseline (1.5x gate)
+	uv run python scripts/perf_baseline.py record --output data/metadata/perf-current.json
+	uv run python scripts/perf_baseline.py compare --baseline data/metadata/perf-baseline.json --current data/metadata/perf-current.json
+
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
 	PYTHONPATH=src uv run pytest tests/fx1 -q
@@ -131,6 +141,8 @@ fx1-gate: fx1-lint ## Full fx-1 CI gate locally: lint + types + tests + honesty 
 
 PROOFCORE_LEDGER ?= data/metadata/proofcore-trials.jsonl
 PROOFCORE_DB ?= data/metadata/proofcore.duckdb
+DEFAULT_PROOFCORE_DB := data/metadata/proofcore.duckdb
+COMMITTED_TRIAL_LEDGER ?= research/reality/trials.jsonl
 
 proofcore-test: ## PROOFCORE W5 tests: contracts, provenance DB, CI helpers, layering gate
 	uv run pytest tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py -q
@@ -163,6 +175,14 @@ leakage-scan: ## Leakage hunter — WARN MODE this wave (adjudicated: advisory o
 	fi
 
 reality-gate: ## Reality-filter gate: score trials; absent DB or empty export skips
+	if [ ! -f "$(PROOFCORE_DB)" ] && [ "$(PROOFCORE_DB)" = "$(DEFAULT_PROOFCORE_DB)" ] && [ -s "$(COMMITTED_TRIAL_LEDGER)" ]; then \
+	  uv run quant reality preflight --ledger $(COMMITTED_TRIAL_LEDGER); code=$$?; \
+	  if [ $$code -eq 3 ]; then exit 0; fi; \
+	  if [ $$code -ne 0 ]; then exit $$code; fi; \
+	  uv run quant reality trial-report --ledger $(COMMITTED_TRIAL_LEDGER); \
+	  uv run quant reality ledger-gate --ledger $(COMMITTED_TRIAL_LEDGER); \
+	  exit $$?; \
+	fi; \
 	uv run quant reality preflight --db $(PROOFCORE_DB); code=$$?; \
 	if [ $$code -eq 3 ]; then exit 0; fi; \
 	if [ $$code -ne 0 ]; then exit $$code; fi; \
@@ -175,6 +195,9 @@ reality-gate: ## Reality-filter gate: score trials; absent DB or empty export sk
 
 receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending
 	uv run python -m quant_fund.proofcore.ci receipts-reverify receipts
+
+evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
+	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

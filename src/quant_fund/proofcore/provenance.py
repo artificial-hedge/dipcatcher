@@ -11,6 +11,7 @@ fail-closed; bundles may be logged as unverified evidence.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +57,12 @@ _TRIAL_COLUMNS: tuple[str, ...] = (
     "created_utc",
 )
 
+# Storage column set for trial_ledger: the caller-facing row plus the
+# storage-bound chain link. ``insert_trial`` binds ``prev_trial_hash`` to the
+# current chain head — callers never set it, so the chain cannot be
+# accidentally or deliberately seeded mid-history.
+_TRIAL_STORAGE_COLUMNS: tuple[str, ...] = _TRIAL_COLUMNS + ("prev_trial_hash",)
+
 _DDL = """
 CREATE TABLE IF NOT EXISTS proof_bundles (
     bundle_id TEXT PRIMARY KEY,
@@ -83,9 +90,68 @@ CREATE TABLE IF NOT EXISTS trial_ledger (
     skew DOUBLE NOT NULL,
     kurtosis_raw DOUBLE NOT NULL,
     returns_sha256 TEXT NOT NULL,
-    created_utc TEXT NOT NULL
+    created_utc TEXT NOT NULL,
+    prev_trial_hash TEXT NOT NULL UNIQUE
 );
 """
+
+# Bare names only. Quotes, comments, dots, and statement breaks never interpolate.
+_SQL_IDENTIFIER = re.compile(r"\A[A-Za-z_][A-Za-z0-9_]*\Z")
+
+
+def _sql_identifier(name: str) -> str:
+    """Return one bare SQL name, or refuse anything that can change the statement.
+
+    Values are never passed here. Callers bind those with ``?`` placeholders.
+    """
+    if _SQL_IDENTIFIER.fullmatch(name) is None:
+        raise ProvenanceError(
+            f"refusing SQL identifier {name!r}: only a single unquoted name may be interpolated"
+        )
+    return name
+
+
+def _sql_identifier_list(names: tuple[str, ...]) -> str:
+    if not names:
+        raise ProvenanceError("refusing an empty SQL identifier list")
+    return ", ".join(_sql_identifier(name) for name in names)
+
+
+def _bound_placeholders(count: int) -> str:
+    if count < 1:
+        raise ProvenanceError("refusing SQL with no bound parameters")
+    return ", ".join("?" for _ in range(count))
+
+
+def _insert_statement(table: str, columns: tuple[str, ...]) -> str:
+    return " ".join(
+        (
+            "INSERT INTO",
+            _sql_identifier(table),
+            "(" + _sql_identifier_list(columns) + ")",
+            "VALUES",
+            "(" + _bound_placeholders(len(columns)) + ")",
+        )
+    )
+
+
+def _select_statement(table: str, columns: tuple[str, ...]) -> str:
+    return " ".join(
+        (
+            "SELECT",
+            _sql_identifier_list(columns),
+            "FROM",
+            _sql_identifier(table),
+        )
+    )
+
+
+def _where_bound(column: str) -> str:
+    return " WHERE " + _sql_identifier(column) + " = ?"
+
+
+def _order_by(columns: tuple[str, ...]) -> str:
+    return " ORDER BY " + _sql_identifier_list(columns)
 
 
 class ProvenanceDB:
@@ -98,7 +164,13 @@ class ProvenanceDB:
     trial_ledger(trial_id TEXT PK, bundle_hash TEXT REFERENCES proof_bundles,
                  family TEXT, strategy TEXT, cluster_id TEXT, n_obs BIGINT,
                  periods_per_year DOUBLE, sharpe_periodic DOUBLE, skew DOUBLE,
-                 kurtosis_raw DOUBLE, returns_sha256 TEXT, created_utc TEXT)
+                 kurtosis_raw DOUBLE, returns_sha256 TEXT, created_utc TEXT,
+                 prev_trial_hash TEXT UNIQUE)
+
+    Trials chain like bundles: each insert binds ``prev_trial_hash`` to the
+    current ``_trial_head()``, so a DELETE of a losing trial — the deflation
+    attack this ledger exists to defeat — leaves a dangling link that
+    ``verify_trial_chain`` and ``_trial_head`` both surface.
     """
 
     def __init__(self, path: Path) -> None:
@@ -109,6 +181,21 @@ class ProvenanceDB:
             self._con = duckdb.connect(str(self.path))
             # duckdb enforces declared FK constraints natively (no pragma).
             self._con.execute(_DDL)
+            # CREATE TABLE IF NOT EXISTS upgrades nothing: an older file keeps
+            # its narrower schema. The ledger is declared append-only, so a
+            # missing chain column means the file predates the tamper-evident
+            # schema — refuse to extend it silently.
+            trial_cols = {
+                r[1] for r in self._con.execute("PRAGMA table_info(trial_ledger)").fetchall()
+            }
+            if "prev_trial_hash" not in trial_cols:
+                raise ProvenanceError(
+                    "trial_ledger predates the prev_trial_hash chain schema — "
+                    "regenerate the provenance DB rather than migrating a "
+                    "ledger that claims append-only evidence"
+                )
+        except ProvenanceError:
+            raise
         except Exception as exc:  # duckdb.IOException and friends
             raise ProvenanceError(f"cannot open provenance DB at {self.path}: {exc}") from exc
 
@@ -148,8 +235,7 @@ class ProvenanceDB:
                     f"does not match chain head {expected_prev}"
                 )
             self._con.execute(
-                f"INSERT INTO proof_bundles ({', '.join(_BUNDLE_COLUMNS)}) "
-                f"VALUES ({', '.join('?' for _ in _BUNDLE_COLUMNS)})",
+                _insert_statement("proof_bundles", _BUNDLE_COLUMNS),
                 [
                     bundle.bundle_id,
                     bundle.created_utc,
@@ -181,7 +267,7 @@ class ProvenanceDB:
         the DB layer (DESIGN.md §9.1).
         """
         existing = self._con.execute(
-            f"SELECT {', '.join(_TRIAL_COLUMNS)} FROM trial_ledger WHERE trial_id = ?",
+            _select_statement("trial_ledger", _TRIAL_COLUMNS) + _where_bound("trial_id"),
             [row.trial_id],
         ).fetchone()
         values = self._trial_values(row)
@@ -196,10 +282,11 @@ class ProvenanceDB:
             return
         try:
             self._con.execute(
-                f"INSERT INTO trial_ledger ({', '.join(_TRIAL_COLUMNS)}) "
-                f"VALUES ({', '.join('?' for _ in _TRIAL_COLUMNS)})",
-                values,
+                _insert_statement("trial_ledger", _TRIAL_STORAGE_COLUMNS),
+                [*values, self._trial_head()],
             )
+        except ProvenanceError:
+            raise
         except Exception as exc:
             raise ProvenanceError(f"insert_trial({row.trial_id}) failed: {exc}") from exc
 
@@ -209,12 +296,12 @@ class ProvenanceDB:
 
     def trials(self, *, family: str | None = None) -> list[TrialLedgerRow]:
         """All trial rows (optionally one family), ordered by (created_utc, trial_id)."""
-        sql = f"SELECT {', '.join(_TRIAL_COLUMNS)} FROM trial_ledger"
+        sql = _select_statement("trial_ledger", _TRIAL_COLUMNS)
         params: list[Any] = []
         if family is not None:
-            sql += " WHERE family = ?"
+            sql += _where_bound("family")
             params.append(family)
-        sql += " ORDER BY created_utc, trial_id"
+        sql += _order_by(("created_utc", "trial_id"))
         rows = self._con.execute(sql, params).fetchall()
         return [
             TrialLedgerRow(
@@ -235,23 +322,115 @@ class ProvenanceDB:
         ]
 
     def bundles(self) -> list[dict[str, Any]]:
-        """All proof-bundle rows as plain dicts (audit/export path), chain order."""
-        sql = (
-            f"SELECT {', '.join(_BUNDLE_COLUMNS)} FROM proof_bundles "
-            "ORDER BY created_utc, bundle_id"
-        )
-        rows = self._con.execute(sql).fetchall()
-        return [dict(zip(_BUNDLE_COLUMNS, r, strict=True)) for r in rows]
+        """All proof-bundle rows as plain dicts (audit/export path), in hash-chain
+        order — the genesis-linked bundle first, each row followed by the bundle
+        that points to it. Wall-clock order is not chain order: skewed
+        ``created_utc`` values must not reorder an audit trail.
+
+        Any row the genesis walk cannot reach (dangling prev pointer, hand-edited
+        table) raises ``ProvenanceError`` — a broken chain must be loud, not
+        silently reordered."""
+        sql = _select_statement("proof_bundles", _BUNDLE_COLUMNS)
+        rows = [
+            dict(zip(_BUNDLE_COLUMNS, r, strict=True)) for r in self._con.execute(sql).fetchall()
+        ]
+        # prev_bundle_hash is UNIQUE and bundle_id is the PK, so the table is a
+        # linked list: at most one row claims each predecessor.
+        by_prev = {row["prev_bundle_hash"]: row for row in rows}
+        ordered: list[dict[str, Any]] = []
+        cursor = by_prev.pop(GENESIS_HASH, None)
+        while cursor is not None:
+            ordered.append(cursor)
+            cursor = by_prev.pop(cursor["bundle_id"], None)
+        if by_prev:
+            raise ProvenanceError(
+                "proof_bundles does not form a single chain from genesis: "
+                f"{len(by_prev)} row(s) unreachable — possible tamper"
+            )
+        return ordered
 
     def chain_head(self) -> str:
         """Current head of the bundle chain: the stored bundle no other bundle
-        points to via ``prev_bundle_hash``. ``GENESIS_HASH`` on an empty DB."""
-        row = self._con.execute(
+        points to via ``prev_bundle_hash``. ``GENESIS_HASH`` on an empty DB.
+
+        Inserts and the UNIQUE(prev_bundle_hash) constraint keep a
+        well-formed ledger a single chain with exactly one unreferenced
+        head. A different head count is only possible by direct DB
+        manipulation — a fork (extra heads) or a cycle/dangling link (no
+        head) — and the ledger must fail loudly rather than arbitrate.
+        """
+        heads: list[tuple[str, ...]] = self._con.execute(
             "SELECT bundle_id FROM proof_bundles "
             "WHERE bundle_id NOT IN (SELECT prev_bundle_hash FROM proof_bundles) "
-            "ORDER BY created_utc DESC, bundle_id DESC LIMIT 1"
-        ).fetchone()
-        return row[0] if row is not None else GENESIS_HASH
+            "ORDER BY created_utc DESC, bundle_id DESC LIMIT 2"
+        ).fetchall()
+        if len(heads) == 1:
+            return heads[0][0]
+        n_bundles_row = self._con.execute("SELECT count(*) FROM proof_bundles").fetchone()
+        n_bundles = 0 if n_bundles_row is None else int(n_bundles_row[0])
+        if n_bundles == 0:
+            return GENESIS_HASH
+        shape = "forked" if heads else "has no head (cycle or dangling link)"
+        raise ProvenanceError(
+            f"bundle chain {shape} — {n_bundles} stored bundles, "
+            f"{len(heads)} unreferenced heads; the provenance ledger "
+            "has been tampered with"
+        )
+
+    def _trial_head(self) -> str:
+        """Head of the trial chain, mirroring ``chain_head`` semantics.
+
+        Exactly one unreferenced trial means a well-formed ledger; zero rows
+        means ``GENESIS_HASH``. Any other state is only reachable through
+        direct DB manipulation and must fail loudly.
+        """
+        heads = self._con.execute(
+            "SELECT trial_id FROM trial_ledger "
+            "WHERE trial_id NOT IN (SELECT prev_trial_hash FROM trial_ledger) "
+            "ORDER BY created_utc DESC, trial_id DESC LIMIT 2"
+        ).fetchall()
+        if len(heads) == 1:
+            return str(heads[0][0])
+        n_rows = self._con.execute("SELECT count(*) FROM trial_ledger").fetchone()
+        if not heads and n_rows is not None and int(n_rows[0]) == 0:
+            return GENESIS_HASH
+        shape = "forked" if heads else "has no head (cycle or dangling link)"
+        raise ProvenanceError(f"trial chain {shape} — the provenance ledger has been tampered with")
+
+    def verify_trial_chain(self) -> list[str]:
+        """Walk the trial chain from genesis to head; return the ordered ids.
+
+        Raises ``ProvenanceError`` on any malformed link: a row whose
+        ``prev_trial_hash`` dangles, extra rows unreachable from genesis, a
+        fork, or a cycle. Complements the per-row idempotence check — this is
+        the audit that proves the log is complete, not just consistent.
+        """
+        rows = self._con.execute("SELECT trial_id, prev_trial_hash FROM trial_ledger").fetchall()
+        if not rows:
+            return []
+        by_prev: dict[str, str] = {}
+        for trial_id, prev in rows:
+            if prev in by_prev:
+                raise ProvenanceError(
+                    f"trial chain forked at {prev}: both {by_prev[prev]} and {trial_id} "
+                    "claim it as predecessor"
+                )
+            by_prev[prev] = trial_id
+        ordered: list[str] = []
+        cursor = by_prev.pop(GENESIS_HASH, None)
+        if cursor is None:
+            raise ProvenanceError(
+                "trial chain has no genesis link — the first row was rewritten or deleted"
+            )
+        while cursor is not None:
+            ordered.append(cursor)
+            cursor = by_prev.pop(cursor, None)
+        if by_prev:
+            raise ProvenanceError(
+                f"trial chain has {len(by_prev)} row(s) unreachable from genesis — "
+                "the ledger has been tampered with"
+            )
+        return ordered
 
     # ------------------------------------------------------------------
     # Lifecycle

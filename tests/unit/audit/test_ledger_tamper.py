@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -433,3 +434,45 @@ def test_refuse_append_onto_a_corrupt_log(tmp_path: Path) -> None:
     ledger.entries_path.write_bytes(ledger.entries_path.read_bytes().replace(b"{", b" ", 1))
     with pytest.raises(AuditError):
         ledger.append("paper_decision", {"simulation_only": True})
+
+
+@pytest.mark.parametrize("line", [b'{"payload":NaN}\n', b'{"payload":Infinity}\n'])
+def test_nonfinite_json_corruption_returns_failed_verdict(tmp_path: Path, line: bytes) -> None:
+    root = tmp_path / "malformed-ledger"
+    root.mkdir()
+    (root / "entries.jsonl").write_bytes(line)
+    report = verify_ledger(root)
+    assert report["valid"] is False
+    assert "invalid_json_value:0" in report["errors"]
+
+
+def test_unattested_extra_entry_field_is_rejected(tmp_path: Path) -> None:
+    ledger = AuditLedger(tmp_path / "ledger", sync=False)
+    ledger.append("risk_decision", {"accepted": True})
+    row = json.loads(ledger.entries_path.read_text())
+    row["unattested"] = "forged"
+    ledger.entries_path.write_bytes(canonical_json_bytes(row) + b"\n")
+    report = verify_ledger(ledger.root)
+    assert report["valid"] is False
+    assert "unexpected_entry_fields:0" in report["errors"]
+
+
+def test_ledger_files_are_lf_only_on_every_platform(tmp_path: Path) -> None:
+    """On Windows ``os.open`` without ``O_BINARY`` writes CRLF, which the
+    verifier reads back as ``carriage_return`` corruption. Pin the byte
+    contract: every file the ledger emits is LF-canonical."""
+    signer = Ed25519Signer.generate()
+    key = tmp_path / "key"
+    signer.write(key)
+    ledger = AuditLedger(
+        tmp_path / "ledger", signer=signer, sign_every=1, clock=lambda: "2020-01-01T00:00:00Z"
+    )
+    ledger.append("paper_decision", {"simulation_only": True, "live_pnl_claim": False})
+    ledger.checkpoint()
+    for emitted in (tmp_path / "ledger").iterdir():
+        if emitted.name != ".lock":
+            raw = emitted.read_bytes()
+            assert b"\r" not in raw, f"{emitted.name} contains a carriage return"
+    for emitted in tmp_path.iterdir():
+        if emitted.is_file():
+            assert b"\r" not in emitted.read_bytes()

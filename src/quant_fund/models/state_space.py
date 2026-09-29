@@ -18,15 +18,13 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize
 
+from quant_fund.utils.series import finite_observations
+
 Array = NDArray[np.float64]
 
 
 def _as_vector(x: Array, name: str = "x", *, min_obs: int = 8) -> Array:
-    v = np.asarray(x, dtype=float).reshape(-1)
-    v = v[np.isfinite(v)]
-    if v.size < min_obs:
-        raise ValueError(f"{name} must contain at least {min_obs} finite observations")
-    return v
+    return finite_observations(x, name, min_obs=min_obs)
 
 
 def kalman_filter(
@@ -249,7 +247,10 @@ def ou_mle(x: Array, dt: float = 1.0) -> dict[str, float]:
     if abs(denom) < 1e-18:
         raise ValueError("x has no variation for OU fit")
     phi = (n * s_xy - s_x * s_y) / denom
-    phi = float(np.clip(phi, 1e-6, 0.999999))
+    # phi = exp(-theta dt) must lie in (0, 1); outside that the series does
+    # not follow a stationary OU transition and any result would be fiction.
+    if not np.isfinite(phi) or phi <= 0.0 or phi >= 1.0:
+        raise ValueError("estimated phi outside (0, 1); series is not mean-reverting OU")
     mu = (s_y - phi * s_x) / (n * (1.0 - phi))
     resid = x1 - (mu + phi * (x0 - mu))
     sigma_eps2 = float(resid @ resid / n)

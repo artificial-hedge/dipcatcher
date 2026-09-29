@@ -12,9 +12,9 @@ to those rows and to research receipts.
 
 from __future__ import annotations
 
-import fcntl
 import json
 import os
+import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -26,6 +26,11 @@ from quant_fund.audit.canonical import canonical_json_bytes, json_safe, sha256_h
 from quant_fund.audit.errors import AuditError
 from quant_fund.audit.merkle import merkle_root
 from quant_fund.audit.signing import Signature
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 SCHEMA_VERSION = 1
 GENESIS_HASH = "0" * 64
@@ -86,6 +91,8 @@ class LedgerEntry:
 
 def entry_from_obj(obj: dict[str, Any]) -> tuple[LedgerEntry | None, str | None]:
     """Parse one JSON object. Returns ``(entry, error)``."""
+    if set(obj) != {"v", "index", "kind", "recorded_at", "payload", "prev_hash", "entry_hash"}:
+        return None, "unexpected_entry_fields"
     index = _strict_int(obj.get("index"))
     version = _strict_int(obj.get("v"))
     kind = obj.get("kind")
@@ -127,9 +134,16 @@ def load_jsonl(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
     objects are still returned for the lines that parsed, so callers can report
     the first corruption rather than hiding it.
     """
-    if not path.is_file():
-        return [], []
-    raw = path.read_bytes()
+    try:
+        if path.is_symlink():
+            return [], ["unsafe_symlink"]
+        if not path.exists():
+            return [], []
+        if not path.is_file():
+            return [], ["not_regular_file"]
+        raw = path.read_bytes()
+    except OSError as exc:
+        return [], [f"unreadable:{exc.__class__.__name__}"]
     errors: list[str] = []
     if not raw:
         return [], []
@@ -154,7 +168,11 @@ def load_jsonl(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
         if not isinstance(parsed, dict):
             errors.append(f"malformed_line:{index}")
             continue
-        canonical = canonical_json_bytes(parsed)
+        try:
+            canonical = canonical_json_bytes(parsed)
+        except AuditError:
+            errors.append(f"invalid_json_value:{index}")
+            continue
         if line != canonical:
             errors.append(f"noncanonical_line:{index}")
         objects.append(parsed)
@@ -192,13 +210,30 @@ class AuditLedger:
     @contextmanager
     def _lock(self) -> Iterator[None]:
         self.root.mkdir(parents=True, exist_ok=True)
-        fd = os.open(self.root / ".lock", os.O_CREAT | os.O_RDWR, 0o600)
+        fd = os.open(
+            self.root / ".lock", os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0), 0o600
+        )
+        locked = False
         try:
-            fcntl.flock(fd, fcntl.LOCK_EX)
+            if sys.platform == "win32":
+                if os.fstat(fd).st_size == 0:
+                    os.write(fd, b"0")
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+            else:
+                fcntl.flock(fd, fcntl.LOCK_EX)
+            locked = True
             yield
         finally:
-            fcntl.flock(fd, fcntl.LOCK_UN)
-            os.close(fd)
+            try:
+                if locked:
+                    if sys.platform == "win32":
+                        os.lseek(fd, 0, os.SEEK_SET)
+                        msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                    else:
+                        fcntl.flock(fd, fcntl.LOCK_UN)
+            finally:
+                os.close(fd)
 
     def append(
         self,
@@ -292,14 +327,19 @@ class AuditLedger:
             "sigstore_issuer": signature.sigstore_issuer,
         }
         self._append_line(self.checkpoints_path, canonical_json_bytes(record))
+        from quant_fund.utils.atomicio import atomic_write_text
+
         if signer.scheme == "ed25519" and signature.public_key_hex:
             pub = self.root / "ed25519.pub"
-            pub.write_text(signature.public_key_hex + "\n", encoding="ascii")
+            pub.write_bytes((signature.public_key_hex + "\n").encode("ascii"))
+            atomic_write_text(pub, signature.public_key_hex + "\n")
         return record
 
     def _append_line(self, path: Path, body: bytes) -> None:
         line = body + b"\n"
-        fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o644)
+        fd = os.open(
+            path, os.O_CREAT | os.O_APPEND | os.O_WRONLY | getattr(os, "O_BINARY", 0), 0o644
+        )
         try:
             view = line
             while view:

@@ -283,10 +283,12 @@ def corwin_schultz_spread(bars: pl.DataFrame) -> float:
     )
     exp_a = np.exp(alpha)
     spread = 2.0 * (exp_a - 1.0) / (1.0 + exp_a)
-    finite = np.isfinite(spread) & (spread > 0.0) & (spread < 1.0)
+    # Corwin–Schultz set negative pair estimates to zero before averaging;
+    # dropping them would upward-bias the mean.
+    finite = np.isfinite(spread)
     if int(finite.sum()) < 4:
         return float("nan")
-    return float(np.mean(spread[finite]))
+    return float(np.mean(np.clip(spread[finite], 0.0, None)))
 
 
 def amihud_illiquidity(bars: pl.DataFrame) -> pl.DataFrame:
@@ -295,14 +297,16 @@ def amihud_illiquidity(bars: pl.DataFrame) -> pl.DataFrame:
     missing = [c for c in required if c not in bars.columns]
     if missing:
         raise ValueError(f"bars missing columns: {missing}")
+    dvol = pl.col("close") * pl.col("volume")
     return (
         bars.sort(["security_id", "event_time"])
         .with_columns(pl.col("close").shift(1).over("security_id").alias("prev_close"))
         .with_columns(
-            (
-                (pl.col("close") / pl.col("prev_close") - 1.0).abs()
-                / (pl.col("close") * pl.col("volume")).clip(lower_bound=_FLOOR)
-            ).alias("amihud")
+            pl.when(dvol.is_finite() & (dvol > 0.0))
+            .then((pl.col("close") / pl.col("prev_close") - 1.0).abs() / dvol)
+            # Zero/negative/non-finite dollar volume is undefined, not 1e12·|r|.
+            .otherwise(None)
+            .alias("amihud")
         )
     )
 
@@ -475,15 +479,22 @@ def abdi_ranaldo_spread(bars: pl.DataFrame) -> float:
 
 
 def volume_over_range(bars: pl.DataFrame) -> pl.DataFrame:
-    """Volume / (high − low). High values are a liquidity proxy, not a return claim."""
+    """Volume / (high − low). High values are a liquidity proxy, not a return claim.
+
+    A flat or invalid bar (``high <= low``, null, or non-finite) is
+    undefined — the floor-clip would otherwise emit ``volume / 1e-12``,
+    a finite-but-meaningless liquidity score.
+    """
     required = ("security_id", "event_time", "high", "low", "volume")
     missing = [c for c in required if c not in bars.columns]
     if missing:
         raise ValueError(f"bars missing columns: {missing}")
+    rng = pl.col("high") - pl.col("low")
     return bars.with_columns(
-        (pl.col("volume") / (pl.col("high") - pl.col("low")).clip(lower_bound=_FLOOR)).alias(
-            "volume_over_range"
-        )
+        pl.when(rng.is_finite() & (rng > 0.0) & pl.col("volume").is_finite())
+        .then(pl.col("volume") / rng)
+        .otherwise(None)
+        .alias("volume_over_range")
     )
 
 
@@ -563,7 +574,9 @@ def session_vpin(session: pl.DataFrame) -> float:
     """Bulk-volume VPIN proxy: |signed session volume| / total volume per parent day."""
     required = ("security_id", "parent_event_time", "open", "close", "volume")
     missing = [c for c in required if c not in session.columns]
-    if missing or session.height == 0:
+    if missing:
+        raise ValueError(f"session missing columns: {missing}")
+    if session.height == 0:
         return float("nan")
     signed = session.with_columns(
         (
@@ -627,12 +640,27 @@ def _volume_clock_vpin(
         acc_buy += max(b, 0.0)
         acc_sell += max(s, 0.0)
         vol = acc_buy + acc_sell
-        if vol >= bucket_volume:
-            tox = abs(acc_buy - acc_sell) / vol
+        # Easley volume clock: each bucket is exactly ``bucket_volume``.
+        # When a row overflows the bucket, its remainder is carried into
+        # the next bucket split proportionally to the row's buy/sell
+        # composition — discarding it would inflate bucket volume and
+        # corrupt the toxicity mean. One large row can fill several
+        # buckets, so this is a loop, not an if.
+        while vol >= bucket_volume:
+            # The excess comes from this row's contribution; split it by
+            # the row's own buy/sell mix (excess < b + s always, since
+            # the accumulator was below the boundary entering this row).
+            row_vol = b + s
+            excess = vol - bucket_volume
+            frac = min(excess / row_vol, 1.0) if row_vol > 0.0 else 0.0
+            ex_buy = frac * b
+            ex_sell = frac * s
+            tox = abs((acc_buy - ex_buy) - (acc_sell - ex_sell)) / bucket_volume
             bucket_tox.append(float(tox))
             last = float(np.mean(bucket_tox[-int(window) :]))
-            acc_buy = 0.0
-            acc_sell = 0.0
+            acc_buy = ex_buy
+            acc_sell = ex_sell
+            vol = acc_buy + acc_sell
         out[i] = last
     return out
 
@@ -666,12 +694,15 @@ def vpin_proxy(
         pl.col("top_ask_size").shift(1).over("security_id").alias("_pta"),
     )
     # Approximate buy/sell volume from top-of-book updates (OFI absolute legs).
+    # CKS decomposition: buy legs are bid_up·q^B_n + ask_up·q^A_{n-1} (ask
+    # liquidity pulled on an uptick is buy-side pressure); sell legs are
+    # bid_dn·q^B_{n-1} + ask_dn·q^A_n. Then buy−sell == OFI exactly.
     buy = pl.when(pl.col("best_bid") >= pl.col("_pb")).then(pl.col("top_bid_size")).otherwise(
         0.0
-    ) + pl.when(pl.col("best_ask") <= pl.col("_pa")).then(pl.col("_pta")).otherwise(0.0)
+    ) + pl.when(pl.col("best_ask") >= pl.col("_pa")).then(pl.col("_pta")).otherwise(0.0)
     sell = pl.when(pl.col("best_bid") <= pl.col("_pb")).then(pl.col("_ptb")).otherwise(
         0.0
-    ) + pl.when(pl.col("best_ask") >= pl.col("_pa")).then(pl.col("top_ask_size")).otherwise(0.0)
+    ) + pl.when(pl.col("best_ask") <= pl.col("_pa")).then(pl.col("top_ask_size")).otherwise(0.0)
     frame = frame.with_columns(buy.alias("_buy"), sell.alias("_sell"))
     vol = pl.col("_buy") + pl.col("_sell")
     toxicity = (

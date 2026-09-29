@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 import json
 import os
 import time
@@ -13,6 +14,7 @@ import polars as pl
 from quant_fund.data.sources.base import (
     SourceAdapter,
     SourceError,
+    parse_time,
     pit_frame,
     query_url,
     utc_now,
@@ -21,23 +23,43 @@ from quant_fund.data.sources.normalize import csv_rows, normalize_observations, 
 
 # Binance USDⓈ-M futures launched September 2019; no perp kline predates this.
 PERP_EARLIEST_MS = 1567296000000  # 2019-09-01T00:00:00Z
+# Binance spot trading launched July 2017; no spot kline predates this.
+SPOT_EARLIEST_MS = 1498867200000  # 2017-07-01T00:00:00Z
 
 _BINANCE_INTERVALS = frozenset(
     {"1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1M"}
 )
 
 
+def _require_kline_rows(payload: Any) -> list[list[Any]]:
+    """Validate the kline row shape and timestamp fields before use."""
+    if not isinstance(payload, list):
+        raise SourceError("Binance klines response must be a list")
+    for item in payload:
+        if not (isinstance(item, list) and len(item) >= 7):
+            raise SourceError("malformed Binance kline row")
+        try:
+            int(item[0])
+            int(item[6])
+        except (TypeError, ValueError) as exc:
+            raise SourceError("malformed Binance kline row") from exc
+    return payload
+
+
 def _paginated_klines(
     client: Any,
     endpoint: str,
     *,
-    symbol: str,
+    symbol: str | None = None,
+    pair: str | None = None,
+    contract_type: str | None = None,
     interval: str,
     start_time: int | None,
     end_time: int | None,
     limit: int,
     max_pages: int,
     pause_seconds: float,
+    earliest_ms: int = 0,
 ) -> list[list[Any]]:
     """Fetch every kline page for [start_time, end_time) in ascending order.
 
@@ -46,6 +68,9 @@ def _paginated_klines(
     bars, so full-history callers must paginate forward explicitly. The cursor
     advances to ``last_open_time + 1`` each page, which guarantees progress even
     when a page is truncated mid-interval. ``max_pages`` bounds total requests.
+    ``earliest_ms`` is the caller's listing floor used when ``start_time`` is
+    ``None`` — it differs between spot and futures products and defaults to
+    the epoch so unspecified floors never silently truncate history.
     """
     if interval not in _BINANCE_INTERVALS:
         raise ValueError(f"unsupported Binance interval {interval!r}")
@@ -55,23 +80,22 @@ def _paginated_klines(
         raise ValueError("max_pages must be >= 1")
     if pause_seconds < 0:
         raise ValueError("pause_seconds must be non-negative")
-    cursor = int(start_time) if start_time is not None else PERP_EARLIEST_MS
+    cursor = int(start_time) if start_time is not None else earliest_ms
     rows: list[list[Any]] = []
     for _ in range(max_pages):
-        payload = client.get_json(
-            query_url(
-                endpoint,
-                {
-                    "symbol": symbol.upper(),
-                    "interval": interval,
-                    "startTime": cursor,
-                    "endTime": end_time,
-                    "limit": limit,
-                },
-            )
-        )
-        if not isinstance(payload, list):
-            raise SourceError("Binance klines response must be a list")
+        params: dict[str, Any] = {
+            "interval": interval,
+            "startTime": cursor,
+            "endTime": end_time,
+            "limit": limit,
+        }
+        if pair is not None:
+            params["pair"] = pair.upper()
+            params["contractType"] = contract_type
+        else:
+            params["symbol"] = str(symbol).upper()
+        payload = client.get_json(query_url(endpoint, params))
+        payload = _require_kline_rows(payload)
         if not payload:
             break
         rows.extend(payload)
@@ -126,11 +150,9 @@ class BinancePublicDataSource(SourceAdapter):
                 limit=limit,
                 max_pages=max_pages,
                 pause_seconds=pause_seconds,
+                earliest_ms=SPOT_EARLIEST_MS,
             )
-        if not isinstance(payload, list):
-            raise SourceError("Binance klines response must be a list")
-        if not all(isinstance(item, list) and len(item) >= 7 for item in payload):
-            raise SourceError("malformed Binance kline row")
+        payload = _require_kline_rows(payload)
         now_ms = int(utc_now().timestamp() * 1000)
         rows = [
             {
@@ -215,9 +237,8 @@ class BinanceUsdtmPerpSource(SourceAdapter):
             limit=limit,
             max_pages=max_pages,
             pause_seconds=pause_seconds,
+            earliest_ms=PERP_EARLIEST_MS,
         )
-        if payload and not all(isinstance(item, list) and len(item) >= 7 for item in payload):
-            raise SourceError("malformed Binance perp kline row")
         rows = [
             {
                 "security_id": symbol.upper(),
@@ -284,10 +305,14 @@ class BinanceFundingRateSource(SourceAdapter):
             for item in payload:
                 if not isinstance(item, dict):
                     raise SourceError("malformed Binance funding row")
-                if int(item["fundingTime"]) > now_ms:
+                try:
+                    funding_time = int(item["fundingTime"])
+                    rate = float(item["fundingRate"])
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise SourceError(f"malformed Binance funding row: {item!r}") from exc
+                if funding_time > now_ms:
                     # Not yet charged — the rate is only realized at fundingTime.
                     continue
-                rate = float(item["fundingRate"])
                 if not (rate == rate and abs(rate) < 10.0):
                     raise SourceError("funding rate is not finite")
                 normalized_rows.append(
@@ -360,8 +385,16 @@ class BinancePerpUniverseSource(SourceAdapter):
             symbol = str(item.get("symbol", "")).upper()
             if not symbol:
                 continue
-            onboard = item.get("onboardDate")
-            onboard_ms = int(onboard) if onboard is not None else PERP_EARLIEST_MS
+            try:
+                onboard_ms = int(item["onboardDate"])
+            except KeyError as exc:
+                raise SourceError(
+                    f"perp universe member {symbol!r} is missing onboardDate"
+                ) from exc
+            except (TypeError, ValueError) as exc:
+                raise SourceError(
+                    f"perp universe member {symbol!r} has invalid onboardDate"
+                ) from exc
             volume = quote_volume.get(symbol)
             if volume is None or volume < float(min_quote_volume):
                 continue
@@ -383,6 +416,224 @@ class BinancePerpUniverseSource(SourceAdapter):
         if not rows:
             raise SourceError("Binance perp universe resolved to zero symbols")
         return pit_frame(rows, source=self.name, revision_id="v1").sort(["rank"])
+
+
+# Binance COIN-M delivery futures launched late August 2020; nothing predates this.
+DELIVERY_EARLIEST_MS = 1595721600000  # 2020-07-26T00:00:00Z (first listed quarterlies)
+# contractType values the continuousKlines endpoint accepts for spliced series.
+DELIVERY_CONTRACT_TYPES = frozenset({"PERPETUAL", "CURRENT_QUARTERLY", "NEXT_QUARTERLY"})
+
+
+def _require_delivery_symbol(symbol: str) -> str:
+    """Named COIN-M contracts look like ``BTCUSD_250926`` (pair_deliveryYYMMDD)."""
+    token = symbol.upper()
+    left, sep, right = token.rpartition("_")
+    if (
+        not sep
+        or not left
+        or not left.replace("_", "").isalnum()
+        or not (len(right) == 6 and right.isdigit())
+    ):
+        raise ValueError(f"delivery contract symbols look like 'BTCUSD_250926', got {symbol!r}")
+    return token
+
+
+class BinanceDeliveryKlinesSource(SourceAdapter):
+    """Binance COIN-M delivery-futures klines for one named contract.
+
+    ``symbol`` is the deliverable contract (``BTCUSD_250926``): the series is
+    complete for that contract alone — it lists and expires, it does not roll.
+    Full-history pagination forward from ``start_time`` (default: the COIN-M
+    listing floor). The still-open bar is dropped, same as spot/perp — its
+    close time lies in the future and its OHLCV mutates.
+    """
+
+    name = "binance_delivery_klines"
+    endpoint = "https://dapi.binance.com/dapi/v1/klines"
+
+    def fetch(
+        self,
+        *,
+        symbol: str = "BTCUSD_QUARTERLY",
+        interval: str = "1d",
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int = 1500,
+        max_pages: int = 200,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        contract = _require_delivery_symbol(symbol)
+        now_ms = int(utc_now().timestamp() * 1000)
+        payload = _paginated_klines(
+            self.client,
+            self.endpoint,
+            symbol=contract,
+            interval=interval,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+            max_pages=max_pages,
+            pause_seconds=pause_seconds,
+            earliest_ms=DELIVERY_EARLIEST_MS,
+        )
+        rows = [
+            {
+                "security_id": contract,
+                "event_time": item[0],
+                "open": item[1],
+                "high": item[2],
+                "low": item[3],
+                "close": item[4],
+                "volume": item[5],
+                "available_time": item[6],
+            }
+            for item in payload
+            if int(item[6]) <= now_ms
+        ]
+        if not rows:
+            raise SourceError("Binance delivery returned only an in-progress kline")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{interval}.coinm")
+
+
+class BinanceDeliveryContinuousSource(SourceAdapter):
+    """Binance COIN-M continuous klines spliced over successive quarterlies.
+
+    The ``continuousKlines`` endpoint stitches the front ``contractType``
+    series (``CURRENT_QUARTERLY`` or ``NEXT_QUARTERLY``), so rows cross
+    contract boundaries — the series rolls at delivery without an explicit
+    roll flag from Binance. Rows carry ``contract_type`` so downstream code
+    can never mistake the splice for one instrument; treat step changes near
+    published delivery dates as roll artifacts, not price moves.
+    """
+
+    name = "binance_delivery_continuous"
+    endpoint = "https://dapi.binance.com/dapi/v1/continuousKlines"
+
+    def fetch(
+        self,
+        *,
+        pair: str = "BTCUSD",
+        contract_type: str = "CURRENT_QUARTERLY",
+        interval: str = "1d",
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int = 1500,
+        max_pages: int = 200,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        if contract_type.upper() not in DELIVERY_CONTRACT_TYPES:
+            raise ValueError(f"contract_type must be one of {sorted(DELIVERY_CONTRACT_TYPES)}")
+        if not pair or not pair.upper().isalnum():
+            raise ValueError(f"malformed Binance pair {pair!r}")
+        pair = pair.upper()
+        contract_type = contract_type.upper()
+        now_ms = int(utc_now().timestamp() * 1000)
+        payload = _paginated_klines(
+            self.client,
+            self.endpoint,
+            pair=pair,
+            contract_type=contract_type,
+            interval=interval,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+            max_pages=max_pages,
+            pause_seconds=pause_seconds,
+            earliest_ms=DELIVERY_EARLIEST_MS,
+        )
+        security_id = f"{pair}@{contract_type}"
+        rows = [
+            {
+                "security_id": security_id,
+                "event_time": item[0],
+                "open": item[1],
+                "high": item[2],
+                "low": item[3],
+                "close": item[4],
+                "volume": item[5],
+                "available_time": item[6],
+                "contract_type": contract_type,
+            }
+            for item in payload
+            if int(item[6]) <= now_ms
+        ]
+        if not rows:
+            raise SourceError("Binance continuous returned only an in-progress kline")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{interval}.coinm")
+
+
+class BinanceDeliveryUniverseSource(SourceAdapter):
+    """COIN-M delivery-futures universe: contract listings + delivery dates.
+
+    ``exchangeInfo`` only exposes contracts currently listed — a survivorship-
+    truncated snapshot of deliverable quarterlies. Rows carry ``delivery_ms``
+    (expiry) and ``onboard_ms`` (listing) so cash-and-carry lanes can align
+    spot/future pairs on their true windows; ``available_time = now`` so PIT
+    logic can never pretend the listing was known earlier.
+    """
+
+    name = "binance_delivery_universe"
+    info_endpoint = "https://dapi.binance.com/dapi/v1/exchangeInfo"
+
+    def fetch(
+        self,
+        *,
+        base_asset: str | None = None,
+        statuses: tuple[str, ...] = ("TRADING",),
+    ) -> pl.DataFrame:
+        info = self.client.get_json(self.info_endpoint)
+        symbols = info.get("symbols") if isinstance(info, dict) else None
+        if not isinstance(symbols, list):
+            raise SourceError("Binance exchangeInfo response has no symbols list")
+        wanted = frozenset(s.upper() for s in statuses)
+        now = utc_now()
+        rows: list[dict[str, Any]] = []
+        for item in symbols:
+            if not isinstance(item, dict):
+                continue
+            contract_type = str(item.get("contractType", "")).upper()
+            if contract_type not in DELIVERY_CONTRACT_TYPES - {"PERPETUAL"}:
+                continue
+            if wanted and str(item.get("status", "")).upper() not in wanted:
+                continue
+            if (
+                base_asset is not None
+                and str(item.get("baseAsset", "")).upper() != base_asset.upper()
+            ):
+                continue
+            symbol = str(item.get("symbol", "")).upper()
+            if not symbol:
+                continue
+            try:
+                delivery_ms = int(item["deliveryDate"])
+                onboard_ms = int(item["onboardDate"])
+            except KeyError as exc:
+                raise SourceError(
+                    f"delivery universe member {symbol!r} is missing a date field"
+                ) from exc
+            except (TypeError, ValueError) as exc:
+                raise SourceError(
+                    f"delivery universe member {symbol!r} has invalid date fields"
+                ) from exc
+            if delivery_ms <= onboard_ms:
+                raise SourceError(f"delivery universe member {symbol!r} delivers before it lists")
+            rows.append(
+                {
+                    "security_id": symbol,
+                    "event_time": delivery_ms,
+                    "available_time": now,
+                    "value": float(delivery_ms - onboard_ms) / 86_400_000.0,
+                    "contract_type": contract_type,
+                    "base_asset": str(item.get("baseAsset", "")).upper(),
+                    "pair": str(item.get("pair", "")).upper(),
+                    "onboard_ms": onboard_ms,
+                    "delivery_ms": delivery_ms,
+                }
+            )
+        rows.sort(key=lambda r: (r["delivery_ms"], r["security_id"]))
+        if not rows:
+            raise SourceError("Binance delivery universe resolved to zero contracts")
+        return pit_frame(rows, source=self.name, revision_id="v1")
 
 
 class GdeltSource(SourceAdapter):
@@ -431,6 +682,11 @@ class SecEdgarSource(SourceAdapter):
             headers={"Accept-Encoding": "gzip, deflate"},
         )
         recent = payload.get("filings", {}).get("recent", {}) if isinstance(payload, dict) else {}
+        filing_dates = recent.get("filingDate", [])
+        forms = recent.get("form", [])
+        accessions = recent.get("accessionNumber", [])
+        if not (len(filing_dates) == len(forms) == len(accessions)):
+            raise SourceError("SEC submissions payload has ragged filing columns")
         rows = [
             {
                 "security_id": normalized,
@@ -440,10 +696,10 @@ class SecEdgarSource(SourceAdapter):
                 "title": accession,
             }
             for filed, form, accession in zip(
-                recent.get("filingDate", []),
-                recent.get("form", []),
-                recent.get("accessionNumber", []),
-                strict=False,
+                filing_dates,
+                forms,
+                accessions,
+                strict=True,
             )
         ]
         return (
@@ -495,21 +751,31 @@ class FredSource(SourceAdapter):
                     {"id": series_id, "cosd": observation_start, "coed": observation_end},
                 )
             )
+            table = csv_rows(text)
+            # ALFRED graph CSV data columns are vintage-suffixed
+            # ("GDP_20260915"); FRED uses the bare series id. A single-series
+            # CSV carries exactly one data column besides observation_date.
+            value_col = series_id
+            if table and series_id not in table[0]:
+                candidates = [key for key in table[0] if key != "observation_date"]
+                if len(candidates) != 1:
+                    raise SourceError(f"CSV response has no unambiguous {series_id!r} data column")
+                value_col = candidates[0]
             rows = [
                 {
                     "security_id": series_id,
                     "event_time": row.get("observation_date"),
                     "available_time": utc_now(),
-                    "value": row.get(series_id),
+                    "value": row.get(value_col),
                 }
-                for row in csv_rows(text)
+                for row in table
             ]
         return normalize_observations(rows, source=self.name)
 
 
 class AlfredSource(FredSource):
     name = "alfred"
-    csv_endpoint = "https://api.stlouisfed.org/fred/series/observations"
+    csv_endpoint = "https://alfred.stlouisfed.org/graph/alfredgraph.csv"
 
 
 class TreasurySource(SourceAdapter):
@@ -544,9 +810,11 @@ class TreasurySource(SourceAdapter):
             [
                 {
                     "security_id": str(row.get("security_type", endpoint)),
-                    "event_time": row[date_key],
+                    # Ragged later rows surface as a null timestamp, which
+                    # normalize_observations rejects — never silently skipped.
+                    "event_time": row.get(date_key),
                     "available_time": utc_now(),
-                    "value": row[value_key],
+                    "value": row.get(value_key),
                 }
                 for row in rows
             ],
@@ -584,9 +852,9 @@ class CftcSource(SourceAdapter):
             [
                 {
                     "security_id": row.get("market_and_exchange_names", self.name),
-                    "event_time": row[date_key],
+                    "event_time": row.get(date_key),
                     "available_time": utc_now(),
-                    "value": row[value_key],
+                    "value": row.get(value_key),
                 }
                 for row in payload
             ],
@@ -613,9 +881,9 @@ class FinaSource(SourceAdapter):
             [
                 {
                     "security_id": row.get("symbol", self.name),
-                    "event_time": row[date_key],
+                    "event_time": row.get(date_key),
                     "available_time": utc_now(),
-                    "value": row[value_key],
+                    "value": row.get(value_key),
                 }
                 for row in rows
             ],
@@ -636,7 +904,7 @@ class WorldBankSource(SourceAdapter):
                 {"format": "json", "per_page": page_size},
             )
         )
-        if not isinstance(payload, list) or len(payload) < 2:
+        if not isinstance(payload, list) or len(payload) < 2 or not isinstance(payload[1], list):
             raise SourceError("World Bank payload has unexpected shape")
         return normalize_observations(
             [
@@ -651,6 +919,26 @@ class WorldBankSource(SourceAdapter):
             ],
             source=self.name,
         )
+
+
+_BEA_QUARTER_END = {"Q1": "03-31", "Q2": "06-30", "Q3": "09-30", "Q4": "12-31"}
+
+
+def _bea_period_date(period: str) -> str:
+    """Map a BEA TimePeriod (annual/quarterly/monthly) to a period-end date."""
+    if "Q" in period:
+        year, _, quarter = period.partition("Q")
+        end = _BEA_QUARTER_END.get(f"Q{quarter}")
+        if end:
+            return f"{year}-{end}"
+    elif "M" in period:
+        year, _, month = period.partition("M")
+        if month.isdigit() and 1 <= int(month) <= 12:
+            _, last = calendar.monthrange(int(year), int(month))
+            return f"{year}-{month}-{last:02d}"
+    if period.isdigit() and len(period) == 4:
+        return f"{period}-12-31"
+    return period
 
 
 class BeaSource(SourceAdapter):
@@ -688,7 +976,8 @@ class BeaSource(SourceAdapter):
         rows = [
             {
                 "security_id": table_name,
-                "event_time": row.get("TimePeriod"),
+                "event_time": _bea_period_date(row.get("TimePeriod", "")),
+                "available_time": utc_now(),
                 "value": row.get("DataValue"),
             }
             for row in data
@@ -730,6 +1019,142 @@ class _OptionalLibrarySource(SourceAdapter):
         raise SourceError(
             f"{self.name} requires an explicit {self.library_name} payload; no dependency is installed by default"
         )
+
+
+def _vendor_names(
+    names: object, default: tuple[tuple[str, str], ...]
+) -> tuple[tuple[str, str], ...]:
+    """Coerce ``names`` to ``(security_id, vendor_symbol)`` pairs; ``None`` picks ``default``."""
+    if names is None:
+        return default
+    if isinstance(names, str):
+        pairs: list[tuple[str, str]] = []
+        for item in names.split(","):
+            security_id, sep, symbol = item.partition(":")
+            if not sep or not security_id.strip() or not symbol.strip():
+                raise ValueError(f"names entries must be 'SECURITY:vendor_symbol', got {item!r}")
+            pairs.append((security_id.strip(), symbol.strip()))
+        return tuple(pairs)
+    if isinstance(names, (list, tuple)):
+        pairs = []
+        for entry in names:
+            if not isinstance(entry, (tuple, list)) or len(entry) != 2:
+                raise ValueError(
+                    f"names entries must be (security_id, vendor_symbol) pairs, got {entry!r}"
+                )
+            security_id, symbol = entry
+            pairs.append((str(security_id), str(symbol)))
+        return tuple(pairs)
+    raise ValueError(f"names must be a comma string or pair sequence, got {type(names).__name__}")
+
+
+def _vendor_bool(value: object) -> bool:
+    """Coerce CLI ``--param`` strings to bool; fail closed on anything else."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    raise ValueError(f"strict must be a boolean, got {value!r}")
+
+
+class StooqSource(SourceAdapter):
+    """Stooq daily-equities universe as a PIT-stamped source frame.
+
+    ``fetch`` returns a session-close PIT frame for a comma list of
+    ``SECURITY:stooq_symbol`` names (default US_LIQUID). Per-name fetch
+    failures fail the whole call under ``strict=True`` (the default) so a
+    silently-truncated universe can never reach the pipeline; pass
+    ``strict=false`` to keep the surviving names. ``start``/``end`` are
+    session dates (ISO strings), not instants.
+    """
+
+    name = "stooq"
+
+    def fetch(
+        self,
+        *,
+        names: object = None,
+        start: object = None,
+        end: object = None,
+        pause_s: float = 0.4,
+        max_workers: int = 4,
+        strict: object = True,
+    ) -> pl.DataFrame:
+        # Lazy: data.adapters.__init__ already imports sources.base, so a
+        # top-level edge here would create a module cycle through the registry.
+        from quant_fund.data.adapters.stooq import US_LIQUID, collect_bars
+
+        universe = _vendor_names(names, US_LIQUID)
+        strict_flag = _vendor_bool(strict)
+        start_dt = None if start is None else parse_time(start)
+        end_dt = None if end is None else parse_time(end)
+        bars, errors = collect_bars(
+            universe,
+            start=start_dt,
+            end=end_dt,
+            pause_s=float(pause_s),
+            max_workers=int(max_workers),
+        )
+        if errors and strict_flag:
+            raise SourceError(
+                f"stooq fetch failed for {len(errors)}/{len(universe)} names: {errors}"
+            )
+        if bars.is_empty():
+            raise SourceError(
+                f"stooq fetch returned no bars ({len(errors)}/{len(universe)} names failed)"
+            )
+        return bars
+
+
+class YahooSource(SourceAdapter):
+    """Yahoo v8 daily-equities universe as a PIT-stamped source frame.
+
+    Same contract as :class:`StooqSource` but over Yahoo chart payloads
+    (``SECURITY:yahoo_symbol`` names, e.g. ``AAPL:AAPL`` or ``VOD:VOD.L``;
+    default YAHOO_US). Kept as a separate registered source on purpose — the
+    ``source`` column must name the true vendor, so there is no silent
+    stooq→yahoo fallback.
+    """
+
+    name = "yahoo"
+
+    def fetch(
+        self,
+        *,
+        names: object = None,
+        start: object = None,
+        end: object = None,
+        pause_s: float = 0.15,
+        max_workers: int = 4,
+        strict: object = True,
+    ) -> pl.DataFrame:
+        # Lazy: same module-cycle reason as StooqSource.
+        from quant_fund.data.adapters.yahoo_eod import YAHOO_US, collect_bars
+
+        universe = _vendor_names(names, YAHOO_US)
+        strict_flag = _vendor_bool(strict)
+        start_dt = None if start is None else parse_time(start)
+        end_dt = None if end is None else parse_time(end)
+        bars, errors = collect_bars(
+            universe,
+            start=start_dt,
+            end=end_dt,
+            pause_s=float(pause_s),
+            max_workers=int(max_workers),
+        )
+        if errors and strict_flag:
+            raise SourceError(
+                f"yahoo fetch failed for {len(errors)}/{len(universe)} names: {errors}"
+            )
+        if bars.is_empty():
+            raise SourceError(
+                f"yahoo fetch returned no bars ({len(errors)}/{len(universe)} names failed)"
+            )
+        return bars
 
 
 class CryptofeedSource(_OptionalLibrarySource):

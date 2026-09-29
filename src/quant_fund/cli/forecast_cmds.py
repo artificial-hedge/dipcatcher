@@ -5,12 +5,21 @@ Split out of the original module. Import the parent path; it re-exports these na
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
 
 from .app import app
 from .support import _cfg
+
+
+def _parse_asof(value: str | None) -> datetime | None:
+    """Interpret naive CLI dates as UTC for the UTC-timestamped panels."""
+    if not value:
+        return None
+    parsed = datetime.fromisoformat(value)
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
 
 
 @app.command()
@@ -50,12 +59,10 @@ def validate(
 def forecast(
     config: Path = typer.Option(Path("configs/research.yaml")), date: str | None = None
 ) -> None:
-    from datetime import datetime
-
     from quant_fund.pipeline.forecast import forecast_asof
 
     cfg = _cfg(config)
-    asof = datetime.fromisoformat(date) if date else None
+    asof = _parse_asof(date)
     state = forecast_asof(cfg, asof)
     if "SYNTHETIC" in state.notes:
         typer.echo("SYNTHETIC")
@@ -85,12 +92,10 @@ def kronos_forecast(
     execution paths. Quantile bands are the predicted candle envelope, not a
     calibrated predictive interval.
     """
-    from datetime import datetime
-
     from quant_fund.pipeline.kronos import forecast_kronos_frame
 
     cfg = _cfg(config)
-    asof = datetime.fromisoformat(date) if date else None
+    asof = _parse_asof(date)
     try:
         state = forecast_kronos_frame(cfg, asof=asof)
     except ValueError as exc:
@@ -112,12 +117,10 @@ def kronos_forecast(
 def optimize(
     config: Path = typer.Option(Path("configs/research.yaml")), date: str | None = None
 ) -> None:
-    from datetime import datetime
-
     from quant_fund.pipeline.forecast import optimize_asof
 
     cfg = _cfg(config)
-    asof = datetime.fromisoformat(date) if date else None
+    asof = _parse_asof(date)
     w = optimize_asof(cfg, asof)
     typer.echo(w.head(20))
 
@@ -129,10 +132,12 @@ def backtest(
         "ref", "--engine", help="ref (event loop) or fast (bit-identical vectorized replay)"
     ),
 ) -> None:
+    import polars as pl
+
     from quant_fund.backtest.engine import run_backtest
     from quant_fund.backtest.fast_replay import run_backtest_fast
     from quant_fund.pipeline.dataset import ensure_silver
-    from quant_fund.pipeline.forecast import build_causal_weight_panel
+    from quant_fund.pipeline.forecast import build_causal_weight_panel, decision_dates
 
     if engine not in ("ref", "fast"):
         raise typer.BadParameter("--engine must be 'ref' or 'fast'")
@@ -142,7 +147,15 @@ def backtest(
     from quant_fund.features.engine import build_features
 
     feat = build_features(bars, cfg)
-    dates = feat["event_time"].unique().sort().to_list()
+    # Gold drops warmup bars (universe membership) and the label-horizon tail;
+    # optimize_asof fails closed on a decision date with no panel row, so the
+    # replay grid is the overlap only (same contract as execution-sensitivity).
+    dates = decision_dates(cfg, feat["event_time"].unique().sort().to_list())
+    if len(dates) < 2:
+        raise typer.BadParameter(
+            "need at least 2 decision dates on both the feature panel and the causal gold panel"
+        )
+    feat = feat.filter(pl.col("event_time").is_in(dates))
     # Causal: optimize_asof(asof=d) per date — no end-of-sample weight broadcast
     weights = build_causal_weight_panel(cfg, dates)
     run = run_backtest_fast if engine == "fast" else run_backtest

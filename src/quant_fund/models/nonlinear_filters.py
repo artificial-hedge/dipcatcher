@@ -13,9 +13,14 @@ References:
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import numpy as np
 from numpy.typing import NDArray
+
+Transition = Callable[[float], float]
+ParticleTransition = Callable[[float, np.random.Generator], float]
+ObservationLogLik = Callable[[float, float], float]
 
 Array = NDArray[np.float64]
 
@@ -29,10 +34,10 @@ def _check_series(y: Array, n: int = 10) -> Array:
 
 def extended_kalman(
     y: Array,
-    f,
-    F_jac,
-    h,
-    H_jac,
+    f: Transition,
+    F_jac: Transition,
+    h: Transition,
+    H_jac: Transition,
     Q: float,
     R: float,
     x0: float,
@@ -81,8 +86,8 @@ def _sigma_points(x: float, P: float, kappa: float = 2.0) -> tuple[Array, Array,
 
 def unscented_kalman(
     y: Array,
-    f,
-    h,
+    f: Transition,
+    h: Transition,
     Q: float,
     R: float,
     x0: float,
@@ -119,8 +124,8 @@ def unscented_kalman(
 
 def particle_filter(
     y: Array,
-    f,
-    obs_loglik,
+    f: ParticleTransition,
+    obs_loglik: ObservationLogLik,
     q_std: float,
     n_particles: int = 500,
     x0: float = 0.0,
@@ -161,13 +166,18 @@ def particle_filter(
         mx = ll.max()
         if not np.isfinite(mx):
             raise ValueError("observation likelihood returned all -inf")
+        # SIS weight recursion: w_t ∝ w_{t-1} * p(y_t|x_t). The previous
+        # weights must carry over between resampling events — resetting to
+        # exp(lw) discards the accumulated importance weights.
         lw = ll - mx
-        w = np.exp(lw)
+        w = w * np.exp(lw)
         tot = w.sum()
         if tot <= 0 or not np.isfinite(tot):
             raise ValueError("particle degeneracy: zero total weight")
         w /= tot
-        loglik += mx + math.log(tot / n_particles)
+        # Incremental marginal likelihood: log(sum_i w_prev_i * exp(lw_i));
+        # reduces to mx + log(tot_raw/N) when the previous weights are uniform.
+        loglik += mx + math.log(tot)
         ess[t] = 1.0 / float(w @ w)
         if ess[t] < resample_frac * n_particles:
             parts = parts[systematic(w)]
