@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 
@@ -18,6 +21,7 @@ from quant_fund.data.lake import Lake
 from quant_fund.data.security_master import attach_master_attributes
 from quant_fund.data.sources import SourceAdapter, get_source
 from quant_fund.data.universe import build_membership_panel
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
 class PublicMarketProvider:
@@ -182,7 +186,43 @@ def ingest(config: AppConfig) -> dict[str, Path]:
             for frame in [frames[name]]
         },
     }
+    manifest["receipt_sha256"] = hash_bytes(canonical_json_bytes(manifest))
     manifest_path = Path(config.data.root) / "metadata" / "data_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
     paths["manifest"] = manifest_path
     return paths
+
+
+_SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
+
+
+def data_manifest_contract_errors(manifest: Mapping[str, Any]) -> list[str]:
+    """Contract errors for a sealed data manifest (verify-receipt dispatch)."""
+    errors: list[str] = []
+    if manifest.get("schema_version") != 1:
+        errors.append("schema_version_not_1")
+    if not manifest.get("source"):
+        errors.append("source_missing")
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, dict) or not artifacts:
+        errors.append("artifacts_missing")
+        return errors
+    for name, item in artifacts.items():
+        if not isinstance(item, dict):
+            errors.append(f"artifact:{name}:not_object")
+            continue
+        digest = item.get("sha256")
+        if not (isinstance(digest, str) and _SHA256_HEX.fullmatch(digest)):
+            errors.append(f"artifact:{name}:sha256_invalid")
+        rows = item.get("rows")
+        if not (isinstance(rows, int) and not isinstance(rows, bool) and rows >= 0):
+            errors.append(f"artifact:{name}:rows_invalid")
+        cols = item.get("columns")
+        if not (
+            isinstance(cols, list)
+            and cols
+            and all(isinstance(c, str) for c in cols)
+            and cols == sorted(cols)
+        ):
+            errors.append(f"artifact:{name}:columns_invalid")
+    return errors
