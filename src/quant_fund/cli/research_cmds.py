@@ -1971,3 +1971,77 @@ def anchor_timestamp_cmd(
 
     token = stamp_timestamp(file, root=root, tsr_url=tsr_url)
     typer.echo(f"timestamp={token}")
+
+
+@app.command("checkpoint")
+def checkpoint_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    key_file: Path | None = typer.Option(
+        None,
+        "--key-file",
+        help="Hex Ed25519 private seed + public key (two lines or PRIV:PUB). "
+        "Falls back to GATE_SIGNING_KEY env.",
+    ),
+    anchor: bool = typer.Option(
+        False,
+        "--anchor",
+        help="Also RFC 3161-anchor the checkpoint via FreeTSA (network).",
+    ),
+) -> None:
+    """Sign the pin state into ``quality/checkpoint.json`` — a portable
+    signed-tree-head an auditor can verify with just the pubkey.
+
+    Covers the sha256 of both pin files and gate_pins.sig plus every
+    corpus's pinned head receipt. Run LAST, after `make sign-pins`, so the
+    checkpoint binds the current signature. ``--anchor`` time-binds the
+    checkpoint itself.
+    """
+    import os
+
+    from quant_fund.research.integrity_checkpoint import (
+        anchor_checkpoint,
+        write_checkpoint,
+    )
+
+    raw: str | None = None
+    if key_file is not None:
+        raw = key_file.read_text().strip()
+    else:
+        env = os.environ.get("GATE_SIGNING_KEY", "").strip()
+        if env:
+            raw = Path(env).read_text().strip() if Path(env).is_file() else env
+    if raw is None:
+        typer.echo("checkpoint: no key material — supply --key-file or GATE_SIGNING_KEY")
+        raise typer.Exit(code=2)
+    fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
+    if len(fields) != 2:
+        typer.echo("checkpoint: key material must be '<priv_hex>:<pub_hex>' or two lines")
+        raise typer.Exit(code=2)
+    path = write_checkpoint(root, fields[0], fields[1])
+    typer.echo(f"checkpoint={path}")
+    if anchor:
+        typer.echo(f"timestamp={anchor_checkpoint(root)}")
+
+
+@app.command("verify-checkpoint")
+def verify_checkpoint_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+) -> None:
+    """Verify the committed integrity checkpoint: signature under the
+    committed pubkey, pinned digests vs the live tree (``current``), and
+    the TSA anchor. Missing/unsigned checkpoint is neutral, not a failure.
+    """
+    from quant_fund.research.integrity_checkpoint import verify_checkpoint
+
+    res = verify_checkpoint(root)
+    if not res["signed"]:
+        typer.echo("checkpoint: unsigned (no checkpoint committed)")
+        return
+    typer.echo(
+        f"checkpoint: {'ok' if res['ok'] else 'FAIL'} "
+        f"anchored={res['anchored']} current={res['current']}"
+    )
+    for err in res["errors"]:
+        typer.echo(f"  {err}")
+    if not res["ok"]:
+        raise typer.Exit(code=1)

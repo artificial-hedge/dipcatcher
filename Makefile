@@ -234,6 +234,12 @@ anchor-pins: ## RFC 3161 timestamp-anchor both pin files via FreeTSA (network); 
 	uv run dipcatcher anchor-timestamp --file quality/epoch_heads.json
 	uv run dipcatcher anchor-timestamp --file quality/crown_jewels.json
 
+checkpoint: ## Sign the pin state into quality/checkpoint.json (needs GATE_SIGNING_KEY); run LAST — it binds the current signature
+	uv run dipcatcher checkpoint
+
+anchor-checkpoint: ## RFC 3161-anchor the checkpoint (network); one token time-binds the whole pin state
+	uv run dipcatcher checkpoint --anchor
+
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \
 		--known-inconsistent quality/lattice_known_inconsistent.json \

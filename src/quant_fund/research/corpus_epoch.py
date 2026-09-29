@@ -57,9 +57,9 @@ EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME})
 # Member rel-paths exempt per corpus dir — exact paths, not basenames, so a
 # real member can never hide behind a shared filename: the timestamp-anchor
 # manifest is rewritten by each anchor request and authenticates itself via
-# the .tsr imprints + pinned TSA certs; chained membership would just stale
-# every anchor instantly.
-EXEMPT_RELPATHS: frozenset[str] = frozenset({"timestamps/anchors.json"})
+# the .tsr imprints + pinned TSA certs, and the integrity checkpoint is a
+# digest-of-pins (chained membership would stale itself instantly).
+EXEMPT_RELPATHS: frozenset[str] = frozenset({"timestamps/anchors.json", "checkpoint.json"})
 
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:

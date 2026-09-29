@@ -77,10 +77,14 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     # unsigned pins: absence is fine, a malformed one must fail closed.
     assert res["gates"]["timestamp_anchors"]["anchored"] is False
     assert res["gates"]["timestamp_anchors"]["ok"] is True
+    # No checkpoint committed — same neutral contract as unsigned pins.
+    assert res["gates"]["checkpoint"]["signed"] is False
+    assert res["gates"]["checkpoint"]["ok"] is True
     assert set(res["gates"]) == {
         "crown_jewels",
         "pin_signatures",
         "timestamp_anchors",
+        "checkpoint",
         "epoch:receipts",
         "epoch:verifier",
         "epoch:quality",

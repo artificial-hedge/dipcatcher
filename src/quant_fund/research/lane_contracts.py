@@ -231,6 +231,10 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.epoch_consistency import consistency_contract_errors
 
         return consistency_contract_errors(payload)
+    if schema == "integrity_checkpoint.v1" or payload.get("kind") == "integrity_checkpoint":
+        from quant_fund.research.integrity_checkpoint import checkpoint_contract_errors
+
+        return checkpoint_contract_errors(payload)
     if schema == "receipt_lattice.v1" or payload.get("kind") == "receipt_lattice.v1":
         from quant_fund.research.receipt_lattice import lattice_contract_errors
 

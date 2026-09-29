@@ -1,11 +1,15 @@
 {
   "anchors": {
+    "quality__checkpoint.json.tsr": {
+      "sha256": "94c0de88d375d3c41d1ef9cf497964b905e0a1ba091eaeca741102f485859771",
+      "target": "quality/checkpoint.json"
+    },
     "quality__crown_jewels.json.tsr": {
-      "sha256": "ed0c2da99579a480795d1befe81977d1767239620a2551be150f228d8cc8daca",
+      "sha256": "ac4a713ee7e329ffc42557740811c55f6432df9e53ed101bc94a07905fee6673",
       "target": "quality/crown_jewels.json"
     },
     "quality__epoch_heads.json.tsr": {
-      "sha256": "2e8e92a1cfda9fb834dcca57b140d0ea70cd05a7fe5666aca5833d6b322a2df3",
+      "sha256": "f9c8f5d364fea9a88456cf80a9d0cafb4e41b98a786b0361f8b56e1b15a0a078",
       "target": "quality/epoch_heads.json"
     }
   },

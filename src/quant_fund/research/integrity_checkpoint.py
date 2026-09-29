@@ -1,0 +1,201 @@
+"""Integrity checkpoint: a portable signed snapshot of the pin state.
+
+``verify-repo`` re-derives every gate from the live tree — powerful, but the
+verifier needs the full repo *and* the full stack. A checkpoint instead binds
+the whole integrity state into one small artifact: the sha256 of every pin
+file (``epoch_heads.json``, ``crown_jewels.json``, ``gate_pins.sig``) plus
+each corpus's pinned head receipt, signed with the same Ed25519 key as the
+pins themselves and timestamp-anchored like them.
+
+An external auditor's minimal bundle is therefore ``quality/checkpoint.json``
++ ``quality/gate_signing.pub`` + the checkpoint's TSA token: verify the
+signature offline (no repo), then walk into a clone and confirm the pinned
+files hash to the declared digests. This is the signed-tree-head pattern from
+public transparency logs applied to the repo's own pin state.
+
+``verify_checkpoint`` splits *authenticity* (``ok`` — signature valid,
+well-formed, TSA-anchored) from *currency* (``current`` — the pinned files
+still match the live tree). A stale-but-authentic checkpoint is still valid
+proof of the state at its timestamp.
+
+Provenance evidence only; never a market or P&L claim.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
+
+from quant_fund.research.corpus_epoch import load_heads_pin
+from quant_fund.research.gate_signatures import DEFAULT_PUBKEY_PATH, key_id
+from quant_fund.research.timestamp_anchor import stamp_timestamp, verify_timestamps
+from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+CHECKPOINT_SCHEMA = "integrity_checkpoint.v1"
+CHECKPOINT_SIG_SCHEMA = "integrity_checkpoint_sig.v1"
+DEFAULT_CHECKPOINT_PATH = Path("quality/checkpoint.json")
+
+# The pin files whose bytes the checkpoint covers. gate_pins.sig is included
+# so the checkpoint also binds *which* pin signature was current.
+PINNED_FILES = (
+    "quality/epoch_heads.json",
+    "quality/crown_jewels.json",
+    "gate_pins.sig",
+)
+
+
+def checkpoint_state(root: str | Path) -> dict[str, Any]:
+    """Digest of the pin layer + the chain heads it records."""
+    root_path = Path(root)
+    pins: dict[str, str] = {}
+    missing: list[str] = []
+    for rel in PINNED_FILES:
+        member = root_path / rel
+        if member.exists():
+            pins[rel] = hash_bytes(member.read_bytes())
+        else:
+            missing.append(rel)
+    heads_pin = root_path / "quality/epoch_heads.json"
+    heads = load_heads_pin(heads_pin) if heads_pin.is_file() else {}
+    return {
+        "schema": CHECKPOINT_SCHEMA,
+        "at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "pins": pins,
+        "heads": heads,
+        "missing_pins": missing,
+    }
+
+
+def write_checkpoint(
+    root: str | Path,
+    private_seed_hex: str,
+    pubkey_hex: str,
+    *,
+    path: Path = DEFAULT_CHECKPOINT_PATH,
+) -> Path:
+    """Sign ``checkpoint_state`` and write the checkpoint file atomically."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    root_path = Path(root)
+    state = checkpoint_state(root_path)
+    key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
+    body = {
+        "schema": CHECKPOINT_SIG_SCHEMA,
+        "algorithm": "ed25519",
+        "key_id": key_id(pubkey_hex),
+        "payload": state,
+        "signature": key.sign(canonical_json_bytes(state)).hex(),
+    }
+    atomic_write_text(root_path / path, json.dumps(body, indent=2, sort_keys=True) + "\n")
+    return root_path / path
+
+
+def anchor_checkpoint(root: str | Path) -> Path:
+    """RFC 3161-anchor the checkpoint — one TSA token time-binds the pins."""
+    return stamp_timestamp(DEFAULT_CHECKPOINT_PATH, root=root)
+
+
+def verify_checkpoint(root: str | Path) -> dict[str, Any]:
+    """Verify the committed checkpoint against the committed pubkey + anchors.
+
+    ``ok`` = authentic: signature verifies under ``gate_signing.pub``, the
+    payload is well-formed, and the TSA anchor commits to this checkpoint
+    file. ``current`` = the pinned digests still match the live tree —
+    False means the pin state moved on (expected after ``stamp-epochs``),
+    which deprecates but never invalidates the checkpoint.
+    """
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    root_path = Path(root)
+    errors: list[str] = []
+    cp_rel = DEFAULT_CHECKPOINT_PATH.as_posix()
+    cp_file = root_path / DEFAULT_CHECKPOINT_PATH
+    pub_file = root_path / DEFAULT_PUBKEY_PATH
+    if not cp_file.exists():
+        return {"ok": True, "signed": False, "current": False, "errors": []}
+    if not pub_file.exists():
+        return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}
+    try:
+        body = json.loads(cp_file.read_text())
+    except json.JSONDecodeError:
+        return {"ok": False, "signed": True, "current": False, "errors": ["checkpoint_malformed"]}
+    payload = body.get("payload")
+    if (
+        body.get("algorithm") != "ed25519"
+        or body.get("schema") != CHECKPOINT_SIG_SCHEMA
+        or not isinstance(payload, dict)
+        or payload.get("schema") != CHECKPOINT_SCHEMA
+    ):
+        return {"ok": False, "signed": True, "current": False, "errors": ["checkpoint_malformed"]}
+    pubkey_hex = pub_file.read_text().strip()
+    try:
+        pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+    except ValueError:
+        return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_malformed"]}
+    if body.get("key_id") != key_id(pubkey_hex):
+        errors.append("key_id_mismatch")
+    try:
+        pubkey.verify(bytes.fromhex(str(body.get("signature", ""))), canonical_json_bytes(payload))
+    except (InvalidSignature, ValueError):
+        errors.append("signature_invalid")
+
+    # Currency: pinned digests vs live bytes.
+    pins = payload.get("pins", {})
+    current = True
+    if isinstance(pins, dict):
+        for rel in PINNED_FILES:
+            declared = pins.get(rel)
+            member = root_path / rel
+            if (
+                declared is None
+                or not member.exists()
+                or hash_bytes(member.read_bytes()) != declared
+            ):
+                current = False
+    else:
+        current = False
+
+    # Authenticity of *when*: the anchor must commit to this checkpoint file.
+    ts = verify_timestamps(root_path)
+    anchored = False
+    if ts.get("anchored"):
+        anchored = bool(ts.get("fresh", {}).get(cp_rel))
+        for err in ts.get("errors", []):
+            if cp_rel in str(err) or "checkpoint" in str(err):
+                errors.append(f"anchor:{err}")
+    # No anchor at all: neutral (unsigned trees never reach here — signed only).
+
+    return {
+        "ok": not errors,
+        "signed": True,
+        "anchored": anchored,
+        "current": current,
+        "errors": errors,
+    }
+
+
+def checkpoint_contract_errors(payload: Any) -> list[str]:
+    """Lane contract for the checkpoint *state* payload."""
+    if not isinstance(payload, dict) or payload.get("schema") != CHECKPOINT_SCHEMA:
+        return ["schema_mismatch"]
+    errors: list[str] = []
+    pins = payload.get("pins")
+    if not isinstance(pins, dict):
+        errors.append("pins_missing")
+    else:
+        for rel in PINNED_FILES:
+            digest = pins.get(rel)
+            if not isinstance(digest, str) or len(digest) != 64:
+                errors.append(f"pin_digest_malformed:{rel}")
+    heads = payload.get("heads")
+    if not isinstance(heads, dict) or not heads:
+        errors.append("heads_missing")
+    else:
+        for key, entry in heads.items():
+            if not isinstance(entry, dict) or not entry.get("receipt"):
+                errors.append(f"head_entry_malformed:{key}")
+    return errors

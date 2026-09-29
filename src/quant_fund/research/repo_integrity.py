@@ -33,6 +33,7 @@ from quant_fund.research.crown_jewels import (
     crown_jewels_errors,
 )
 from quant_fund.research.gate_signatures import verify_pin_signatures
+from quant_fund.research.integrity_checkpoint import verify_checkpoint
 from quant_fund.research.timestamp_anchor import verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
@@ -81,6 +82,15 @@ def verify_repo(
         "anchored": bool(ts["anchored"]),
         "fresh": ts.get("fresh", {}),
         "errors": ts["errors"],
+    }
+
+    cp = verify_checkpoint(root)
+    gates["checkpoint"] = {
+        "ok": bool(cp["ok"]),
+        "signed": bool(cp["signed"]),
+        "anchored": bool(cp.get("anchored", False)),
+        "current": bool(cp.get("current", False)),
+        "errors": cp["errors"],
     }
 
     pin_present = pin_path.is_file()

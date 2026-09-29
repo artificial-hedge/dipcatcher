@@ -54,6 +54,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/epoch_consistency.py",
     "src/quant_fund/research/epoch_merkle.py",
     "src/quant_fund/research/gate_signatures.py",
+    "src/quant_fund/research/integrity_checkpoint.py",
     "src/quant_fund/research/lane_contracts.py",
     "src/quant_fund/research/receipt_lattice.py",
     "src/quant_fund/research/receipt_v2.py",

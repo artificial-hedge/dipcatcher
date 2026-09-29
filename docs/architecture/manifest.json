@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 838,
+  "module_count": 839,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1696,6 +1696,10 @@
     },
     {
       "dst": "quant_fund.research.identity_sweep",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.integrity_checkpoint",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -7288,6 +7292,26 @@
     },
     {
       "dst": "quant_fund.research.corpus_epoch",
+      "src": "quant_fund.research.integrity_checkpoint"
+    },
+    {
+      "dst": "quant_fund.research.gate_signatures",
+      "src": "quant_fund.research.integrity_checkpoint"
+    },
+    {
+      "dst": "quant_fund.research.timestamp_anchor",
+      "src": "quant_fund.research.integrity_checkpoint"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
+      "src": "quant_fund.research.integrity_checkpoint"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.integrity_checkpoint"
+    },
+    {
+      "dst": "quant_fund.research.corpus_epoch",
       "src": "quant_fund.research.lane_contracts"
     },
     {
@@ -7296,6 +7320,10 @@
     },
     {
       "dst": "quant_fund.research.epoch_merkle",
+      "src": "quant_fund.research.lane_contracts"
+    },
+    {
+      "dst": "quant_fund.research.integrity_checkpoint",
       "src": "quant_fund.research.lane_contracts"
     },
     {
@@ -7852,6 +7880,10 @@
     },
     {
       "dst": "quant_fund.research.gate_signatures",
+      "src": "quant_fund.research.repo_integrity"
+    },
+    {
+      "dst": "quant_fund.research.integrity_checkpoint",
       "src": "quant_fund.research.repo_integrity"
     },
     {
@@ -9360,6 +9392,7 @@
     "quant_fund.research.honest_verdict",
     "quant_fund.research.identity_sweep",
     "quant_fund.research.impossible_fit",
+    "quant_fund.research.integrity_checkpoint",
     "quant_fund.research.lane_contracts",
     "quant_fund.research.lane_power",
     "quant_fund.research.legacy_unsealed",
@@ -9938,7 +9971,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 33,
+      "imports": 34,
       "src": "quant_fund.cli"
     },
     {
@@ -10923,7 +10956,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 228,
+      "imports": 233,
       "src": "quant_fund.research"
     },
     {
@@ -10938,7 +10971,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 83,
+      "imports": 85,
       "src": "quant_fund.research"
     },
     {

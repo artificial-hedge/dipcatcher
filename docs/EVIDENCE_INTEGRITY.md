@@ -19,6 +19,7 @@ detects, and the boundary where detection stops.
 | Inclusion proof | `corpus_proof_*.json` (RFC 6962 merkle path) | `dipcatcher corpus-proof --check` | "Was this file in epoch N?" in O(log n) — the path recomputes the epoch's Merkle root and binds to the named chained receipt |
 | Consistency proof | `epoch_consistency.v1` (hop digest list) | `dipcatcher corpus-consistency --check [--held]` | History rewrite: proves the live chain *extends* an old head digest a verifier already holds (anchored pin, earlier clone) — a rewritten chain can't reach the held bytes without keeping every real hop verbatim |
 | Verifier coverage | derived jewel set | inside `crown-jewels --check` | A new integrity-critical module (`*_epoch*`, `*merkle*`, `*anchor*`, …) that dodges `DEFAULT_JEWELS` fails `verifier_unpinned` — the pin can't be dodged by omission |
+| Checkpoint | `quality/checkpoint.json` (signed, anchored) | `dipcatcher verify-checkpoint` | Portable signed tree-head: an auditor needs only checkpoint + pubkey + its TSA token — signature verifies offline, pinned digests bind a clone. `current` flags staleness without invalidating authenticity |
 | Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict` | A new receipt that breaks lattice/FDR on entry |
 | Capstone | `repo_integrity.v1` | `dipcatcher verify-repo` | One sealed verdict over all of the above — contract-checked so the attestation can't claim `ok` while a gate lists errors, hide a gate entirely, or disagree with its own digest pins |
 
