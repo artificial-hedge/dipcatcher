@@ -7,11 +7,9 @@ moves. Rejected orders are skipped (not silently unconstrained).
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Any, cast
 
 import numpy as np
@@ -19,6 +17,11 @@ import polars as pl
 
 from quant_fund.config.models import AppConfig, FillConvention
 from quant_fund.execution.costs import total_cost
+from quant_fund.execution.spread_calibration import (
+    is_calibrated_spread_estimator,
+    pit_calibrated_half_spread_bps,
+    require_ohlc_for_calibration,
+)
 from quant_fund.metrics.analytics import (
     ANALYTICS_SCHEMA_KEYS,
     analytics_export_digest,
@@ -36,6 +39,7 @@ from quant_fund.portfolio.risk_gate import check_order, funded
 from quant_fund.risk.overlay import BookRiskOverlay
 from quant_fund.schemas.errors import KillSwitchActive, RiskGateRejected
 from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
+from quant_fund.utils.atomicio import atomic_write_text
 
 
 class StaleValuationError(RuntimeError):
@@ -227,8 +231,14 @@ def _fast_replay_is_complete(config: AppConfig, risk_overlay: BookRiskOverlay | 
     and both counters stay 0, so the fast replay plus those zeros is the same
     result. A present artifact keeps the event loop, which counts overlay dates
     and feeds the per-order vol gate.
+
+    OHLC spread calibration is also out of class: the fast kernel only charges
+    the flat ``half_spread_bps`` surface, so auto-dispatch stays on the event
+    loop and an explicit ``fast=True`` call refuses with ``ValueError``.
     """
     if risk_overlay is not None or config.execution.allow_close_auction:
+        return False
+    if is_calibrated_spread_estimator(config.costs.spread_estimator):
         return False
     from quant_fund.pipeline.forecast import (
         _garch_artifact_path,
@@ -305,7 +315,17 @@ def _run_backtest_event_loop(
     """Reference event loop. ``run_backtest`` delegates here when the fast replay is incomplete."""
     _validate_target_weight_panel(weights)
     _validate_bar_panel(bars)
-    px = bars.select(
+    costs_cfg0 = config.costs
+    require_ohlc_for_calibration(bars, costs_cfg0.spread_estimator)
+    calibrated_half_spread: dict[tuple[str, datetime], float] | None = None
+    if is_calibrated_spread_estimator(costs_cfg0.spread_estimator):
+        calibrated_half_spread = pit_calibrated_half_spread_bps(
+            bars,
+            estimator=costs_cfg0.spread_estimator,
+            lookback=int(costs_cfg0.spread_calibration_lookback),
+            floor_bps=float(costs_cfg0.half_spread_bps),
+        )
+    select_cols: list[pl.Expr | str] = [
         "security_id",
         "event_time",
         "open",
@@ -317,7 +337,10 @@ def _run_backtest_event_loop(
         else (pl.col("close") * pl.col("volume")).alias("adv"),
         pl.col("vol_20") if "vol_20" in bars.columns else pl.lit(0.02).alias("vol_20"),
         "source",
-    )
+    ]
+    if calibrated_half_spread is not None:
+        select_cols.extend(["high", "low"])
+    px = bars.select(select_cols)
     # Pre-index rows by timestamp once: per-date frame scans inside the loop
     # are O(rows x dates) and dominate wall time on wide books. Row-index
     # lists keep identical iteration order (input row order preserved per
@@ -505,12 +528,31 @@ def _run_backtest_event_loop(
             ):
                 reject_count += 1
                 continue
-            costs = total_cost(delta, price, adv, vols.get(sid, 0.02), costs_cfg)
+            half_bps = (
+                None
+                if calibrated_half_spread is None
+                else calibrated_half_spread.get((sid, dt), float(costs_cfg.half_spread_bps))
+            )
+            costs = total_cost(
+                delta,
+                price,
+                adv,
+                vols.get(sid, 0.02),
+                costs_cfg,
+                half_spread_bps=half_bps,
+            )
             # Cap executable size using liquidity available at the decision.
             max_qty = costs_cfg.participation_limit * (adv / price)
             if abs(delta) > max_qty:
                 delta = np.sign(delta) * max_qty
-                costs = total_cost(delta, price, adv, vols.get(sid, 0.02), costs_cfg)
+                costs = total_cost(
+                    delta,
+                    price,
+                    adv,
+                    vols.get(sid, 0.02),
+                    costs_cfg,
+                    half_spread_bps=half_bps,
+                )
             try:
                 kill.assert_new_orders_allowed()
             except KillSwitchActive:
@@ -817,26 +859,7 @@ def cost_sensitivity(
 
 def _atomic_write_text(path: Path, content: str) -> None:
     """Publish a text artifact atomically so readers never see partial JSON."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        temporary = None
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+    atomic_write_text(path, content)
 
 
 def export_backtest_metrics_json(

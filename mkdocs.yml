@@ -138,6 +138,7 @@ nav:
       - Data contracts: DATA_CONTRACTS.md
       - Receipt verification: RECEIPT_VERIFICATION.md
       - Receipt v2: RECEIPT_V2.md
+      - Receipt sealing conventions: RECEIPT_SEALING.md
       - Robustness certification: ROBUSTNESS.md
       - Validation: VALIDATION.md
       - Formal verification: FORMAL_VERIFICATION.md
@@ -157,6 +158,7 @@ nav:
       - Stress and scenarios: STRESS.md
       - Northset: NORTHSET.md
       - Market simulator: MARKET_SIM.md
+      - Sequential inference: SEQUENTIAL_INFERENCE.md
       - Candle and order book: CANDLE_ORDER_BOOK.md
       - Real-data benchmark: REAL_DATA_BENCHMARK.md
       - Net-return tournament: NET_RETURN_TOURNAMENT.md
@@ -185,6 +187,7 @@ nav:
       - Model cards: MODEL_CARDS.md
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
+      - Audit ledger: AUDIT_LEDGER.md
       - Scenario Monte Carlo: MC_ENGINE.md
       - Fast replay conformance: FAST_REPLAY_P42.md
       - Fast-path latency argument: P4_3_FAST_PATH_ARGUMENT.md
