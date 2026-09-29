@@ -2070,6 +2070,80 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema_version`: 2
 - `verdict`: pass
 
+### `receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json | 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9 | f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_index`: null
+- `alarmed`: false
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `stream`: gaussian_minus_conf_t_pinball
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - conformal_pvalues_exchangeability
+  - kappa_martingale_stopping_valid
+  - nonparametric_distribution_shift
+- `final_martingale`: 1.9967505694246255e-28
+- `kappa`: 0.5
+- `kind`: conformal_monitor.v1
+- `mode`: fixed
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `receipt_sha256`: f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d
+- `research_only`: true
+- `window`: 50
+
+### `receipts/conformal_real_drill_gaussian_pit.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/conformal_real_drill_gaussian_pit.json | 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e | 7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_index`: 55
+- `alarmed`: true
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `stream`: gaussian_pit
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - conformal_pvalues_exchangeability
+  - kappa_martingale_stopping_valid
+  - nonparametric_distribution_shift
+- `final_martingale`: 9.394953747251887e-27
+- `kappa`: 0.5
+- `kind`: conformal_monitor.v1
+- `mode`: fixed
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `receipt_sha256`: 7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701
+- `research_only`: true
+- `window`: 50
+
 ### `receipts/corpus_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
