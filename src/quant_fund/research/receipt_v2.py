@@ -38,6 +38,7 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.quantile_ladder import QUANTILE_LADDER_KINDS
 from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.research.impossible_fit import impossible_fit_scan
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
@@ -557,11 +558,14 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
+    if payload.get("kind") in QUANTILE_LADDER_KINDS:
+        from quant_fund.research.quantile_ladder import _quantile_ladder_errors
+
+        errors.extend(_quantile_ladder_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
     elif schema == "vol_bench.v1":
         from quant_fund.research.vol_bench import vol_bench_contract_errors
-
         errors.extend(vol_bench_contract_errors(payload))
     elif schema == "capacity_overlay.v1":
         from quant_fund.research.capacity_overlay import capacity_contract_errors
