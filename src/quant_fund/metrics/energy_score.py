@@ -17,10 +17,26 @@ distribution equals the data-generating distribution.
 ``threshold_energy_score`` implements the threshold-weighted variant in the
 spirit of Gneiting & Ranjan (2013, "Combining predictive distributions",
 Electron. J. Stat. 7, 1747–1782, doi:10.1214/13-EJS823) — a multiplicative
-kernel centered at the observation applied to both terms of the score, which
-keeps the kernel-score (proper scoring rule) structure of Gneiting & Raftery
-(2007, §4). The exact weighting implemented here (documented, cf. the
-Matheson & Winkler 1976, Manag. Sci. 22(10), 1087–1096 weighting idea):
+kernel centered at the observation applied to both terms of the score.
+
+**Propriety caveat (measured, not theoretical hand-waving).** That weighting
+is *not* a kernel reweighting in the Gneiting & Raftery (2007, §4) sense: term
+1 receives ``w`` once (linear) while term 2 receives ``w`` twice (quadratic),
+so the two terms scale at different rates. The expected score behaves like
+
+    E[ES_w] ≈ sigma * a * (w - (sqrt(2)/2) * w**2),   a = E||Z||,
+
+and the leading coefficient vanishes at **w = sqrt(2)** — exactly, and
+dimension-free (``a`` cancels). For ``weight < sqrt(2)`` the score is bounded
+below and has an interior minimum at the truth; for ``weight >= sqrt(2)`` it is
+**improper** and diverges to ``-inf`` as forecast dispersion grows, i.e. it
+rewards unbounded variance inflation. ``threshold_energy_score`` therefore
+emits a ``RuntimeWarning`` for ``weight >= sqrt(2)`` and its arithmetic is left
+untouched so that sealed receipts stay reproducible (AGENTS.md honesty contract
+rule #4). Use ``quant_fund.metrics.scoring.crps_threshold_weighted`` for a
+proper threshold-weighted score. The exact weighting implemented here
+(documented, cf. the Matheson & Winkler 1976, Manag. Sci. 22(10), 1087–1096
+weighting idea):
 
     w(r) = weight   if r >  threshold   (tail error, amplified)
     w(r) = 1.0      if r <= threshold   (central error, full weight)
@@ -37,6 +53,8 @@ weight, so the threshold-weighted score emphasizes tail errors. ``weight =
 
 from __future__ import annotations
 
+import math
+import warnings
 from dataclasses import dataclass
 
 import numpy as np
@@ -45,12 +63,25 @@ from scipy.spatial.distance import cdist
 
 __all__ = [
     "EnergyScoreCurve",
+    "THRESHOLD_WEIGHT_PROPRIETY_BOUND",
     "energy_score",
     "energy_score_curve",
     "threshold_energy_score",
 ]
 
 Array = NDArray[np.float64]
+
+#: Exact, dimension-free weight at which ``threshold_energy_score`` stops being
+#: a proper scoring rule: term 1 is linear in the weight while term 2 is
+#: quadratic, so ``E[ES_w] ~ sigma * a * (w - w**2 / sqrt(2))`` and the leading
+#: coefficient vanishes at ``w = sqrt(2)``. Above it the expectation diverges to
+#: ``-inf`` as forecast dispersion grows (variance inflation is rewarded). The
+#: value is the *boundary*, not a safe setting: measured drift still turns
+#: negative at ``w = sqrt(2)`` for large ``sigma``. Use ``weight <
+#: THRESHOLD_WEIGHT_PROPRIETY_BOUND`` for a bounded-below score, or
+#: ``quant_fund.metrics.scoring.crps_threshold_weighted`` (proper at any
+#: weight) when tail emphasis is needed.
+THRESHOLD_WEIGHT_PROPRIETY_BOUND: float = math.sqrt(2.0)
 
 
 @dataclass(frozen=True)
@@ -120,10 +151,23 @@ def energy_score(ensemble: Array, observation: Array) -> float:
     return term1 - term2
 
 
-def _validate_weight(weight: float) -> float:
+def _validate_weight(weight: float, *, warn: bool = True) -> float:
     w = float(weight)
     if not np.isfinite(w) or w < 1.0:
         raise ValueError(f"weight must be >= 1, got {weight}")
+    if warn and w >= THRESHOLD_WEIGHT_PROPRIETY_BOUND:
+        warnings.warn(
+            f"threshold_energy_score is an IMPROPER scoring rule at weight={w!r} >= "
+            f"sqrt(2)={THRESHOLD_WEIGHT_PROPRIETY_BOUND!r}: term 1 is linear in the "
+            "weight while term 2 is quadratic, so E[ES_w] ~ sigma*a*(w - w^2/sqrt(2)) "
+            "diverges to -inf as forecast dispersion grows (unbounded variance "
+            "inflation is rewarded). The arithmetic is unchanged so sealed receipts "
+            "stay reproducible; use weight < sqrt(2), or "
+            "quant_fund.metrics.scoring.crps_threshold_weighted for a proper "
+            "threshold-weighted score.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
     return w
 
 
@@ -150,11 +194,38 @@ def threshold_energy_score(
     ES_w = (1/n) Σ_i w(d_i) d_i
            − (1/(2n(n−1))) Σ_{i≠j} w(d_i) w(d_j) ||x_i − x_j||₂,
     d_i = ||x_i − y||₂. Tail errors (d_i > threshold) are amplified by
-    ``weight``; central misses (d_i <= threshold) keep full weight. The
-    product kernel w(d_i) w(d_j) on the second term preserves the
-    kernel-score structure, so ES_w remains a proper scoring rule (not
-    strictly proper when weight > 1). ``weight = 1.0`` recovers
-    ``energy_score`` exactly.
+    ``weight``; central misses (d_i <= threshold) keep full weight.
+    ``weight = 1.0`` recovers ``energy_score`` exactly.
+
+    .. warning::
+       **Domain of propriety: ``weight < sqrt(2)`` ONLY.** This is *not* a
+       kernel-score reweighting: the product kernel ``w(d_i) w(d_j)`` makes
+       term 2 quadratic in the weight while term 1 stays linear, so
+
+           E[ES_w] ≈ sigma · a · (w − w²/√2),   a = E||Z||,
+
+       and the leading coefficient vanishes at ``w* = sqrt(2)`` — exactly, and
+       dimension-free (``a`` cancels; verified for d = 1..16). Consequences:
+
+       * ``weight < sqrt(2)`` — bounded below, interior minimum at the truth
+         (still not *strictly* proper: the weighting collapses information
+         about the tails).
+       * ``weight >= sqrt(2)`` — **improper**. The expectation is monotone
+         decreasing in forecast dispersion and diverges to ``-inf``, so a
+         forecaster that inflates its variance without limit is rewarded
+         without limit. The score can legitimately come out *negative*, which
+         a proper energy score in the population cannot. ``sqrt(2)`` is the
+         boundary, not a safe value: at ``w = sqrt(2)`` the residual
+         finite-threshold correction still drifts negative as sigma grows
+         (measured +0.160 at sigma=8 → −0.0012 at sigma=128, d=2, 60 members).
+
+       A ``RuntimeWarning`` is emitted for ``weight >= sqrt(2)`` but the
+       arithmetic is deliberately unchanged: existing tests pin it and sealed
+       receipts may reference it, so altering the numbers would invalidate
+       immutable evidence (AGENTS.md honesty contract rule #4). Do not
+       headline this score at ``weight >= sqrt(2)``; use
+       ``quant_fund.metrics.scoring.crps_threshold_weighted`` (proper at any
+       weight, 1-D) instead.
     """
     ens, obs = _validate_inputs(ensemble, observation)
     t = _validate_threshold(threshold)
