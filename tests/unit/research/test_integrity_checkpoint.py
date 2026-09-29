@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 from quant_fund.research.gate_signatures import generate_keypair, sign_pins
@@ -14,6 +15,8 @@ from quant_fund.research.integrity_checkpoint import (
     verify_checkpoint,
     write_checkpoint,
 )
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _repo(tmp_path: Path) -> tuple[Path, str, str]:
@@ -205,3 +208,21 @@ def test_unarchived_prev_fails_when_archive_exists(tmp_path: Path) -> None:
             f.unlink()
     res = verify_checkpoint(root)
     assert "prev_not_archived" in res["errors"]
+
+
+def test_code_attestation_present_and_wellformed(tmp_path: Path) -> None:
+    root, _priv, _pub = _repo(tmp_path)
+    state = checkpoint_state(root)
+    code = state["code"]
+    assert set(code) == {"revision", "worktree_sha256"}
+    assert checkpoint_contract_errors(state) == []
+    # Outside a git checkout both are UNKNOWN and still contract-clean.
+    assert code["revision"] in ("UNKNOWN",) or len(code["revision"]) == 40
+
+
+def test_code_attestation_binds_real_revision() -> None:
+    state = checkpoint_state(REPO_ROOT)
+    assert (
+        state["code"]["revision"]
+        == subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
+    )

@@ -71,6 +71,8 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
     # "current" checkpoint can't claim continuity it never had.
     prev_file = root_path / DEFAULT_CHECKPOINT_PATH
     prev_sha256 = hash_bytes(prev_file.read_bytes()) if prev_file.exists() else None
+    from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
+
     return {
         "schema": CHECKPOINT_SCHEMA,
         "at": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -78,6 +80,15 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
         "heads": heads,
         "missing_pins": missing,
         "prev_sha256": prev_sha256,
+        # The pins are only as strong as the verifier that minted them —
+        # record WHICH code produced this state: HEAD revision plus a
+        # fingerprint over tracked diffs + untracked files. A tampered
+        # verifier that re-pins corrupted artifacts can't reproduce the
+        # code fingerprint its checkpoint committed to.
+        "code": {
+            "revision": git_revision(),
+            "worktree_sha256": git_worktree_sha256(),
+        },
     }
 
 
@@ -250,4 +261,15 @@ def checkpoint_contract_errors(payload: Any) -> list[str]:
     prev = payload.get("prev_sha256")
     if prev is not None and (not isinstance(prev, str) or len(prev) != 64):
         errors.append("prev_sha256_malformed")
+    code = payload.get("code")
+    if code is not None:
+        if not isinstance(code, dict):
+            errors.append("code_not_mapping")
+        else:
+            for field, size in (("revision", 40), ("worktree_sha256", 64)):
+                v = code.get(field)
+                if v == "UNKNOWN":
+                    continue
+                if not isinstance(v, str) or len(v) != size:
+                    errors.append(f"code_{field}_malformed")
     return errors
