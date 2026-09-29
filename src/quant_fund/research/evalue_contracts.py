@@ -543,7 +543,13 @@ _MONITOR_LANES = frozenset({"coverage", "tail", "calibration", "conformal", "dri
 
 def _monitor_run_errors(p: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
-    if p.get("data_label") != "SYNTHETIC":
+    params = p.get("params")
+    data_labels = params.get("data_labels") if isinstance(params, Mapping) else None
+    if isinstance(data_labels, Mapping) and data_labels:
+        distinct = set(data_labels.values())
+        if len(distinct) != 1 or p.get("data_label") != distinct.pop():
+            errors.append("data_label_mismatches_shard_labels")
+    elif p.get("data_label") != "SYNTHETIC":
         errors.append("data_label_not_synthetic")
     if p.get("research_only") is not True:
         errors.append("research_only_not_true")
