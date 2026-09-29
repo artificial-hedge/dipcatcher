@@ -18,6 +18,13 @@ def _load(name: str) -> dict:
     return json.loads((RECEIPTS / name).read_text(encoding="utf-8"))
 
 
+def _load_dated(prefix: str) -> dict:
+    """Resolve the newest dated receipt — reseals rename the artifact."""
+    matches = sorted(RECEIPTS.glob(f"{prefix}_*.json"))
+    assert matches, f"no committed receipt matching {prefix}_*.json"
+    return json.loads(matches[-1].read_text(encoding="utf-8"))
+
+
 @pytest.fixture()
 def capacity() -> dict:
     return _load("capacity_eval_cd0854242ed8a9ec.json")
@@ -30,7 +37,7 @@ def rankic() -> dict:
 
 @pytest.fixture()
 def p42() -> dict:
-    return _load("fast_replay_p42_conformance_20260927.json")
+    return _load_dated("fast_replay_p42_conformance")
 
 
 class TestCapacityContract:
