@@ -134,3 +134,30 @@ def test_pits_unlock_calibration_lane() -> None:
         assert calib == {}  # lane absent on this checkout — honest empty detail
     elif "skipped" not in calib:
         assert "final_evalue" in calib and "miscalibrated" in calib
+
+
+def test_dataset_sha256_tracks_stream_content() -> None:
+    """Same loss streams share dataset_sha256 regardless of seed/n_boot;
+    a mutated stream changes it."""
+    r1 = honest_verdict(_streams(3), seed=0, n_boot=100)
+    r2 = honest_verdict(_streams(3), seed=9, n_boot=150)
+    d1, d2 = r1["dataset_sha256"], r2["dataset_sha256"]
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2
+    alt = _streams(3)
+    alt["winner"] = np.asarray(alt["winner"], dtype=float) * 2.0
+    r3 = honest_verdict(alt, seed=0, n_boot=100)
+    assert r3["dataset_sha256"] != d1
+
+
+def test_dataset_sha256_includes_supplied_pits() -> None:
+    def _pits(seed: int, heads: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        rng = np.random.default_rng(seed)
+        return {h: rng.uniform(0, 1, 200) for h in heads}
+
+    scores = _streams(4)
+    without = honest_verdict(scores, seed=0, n_boot=100)
+    with_pits = honest_verdict(scores, pits=_pits(17, scores), seed=0, n_boot=100)
+    same_pits = honest_verdict(scores, pits=_pits(17, scores), seed=5, n_boot=150)
+    assert with_pits["dataset_sha256"] != without["dataset_sha256"]
+    assert with_pits["dataset_sha256"] == same_pits["dataset_sha256"]

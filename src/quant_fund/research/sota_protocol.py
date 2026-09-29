@@ -491,7 +491,6 @@ def verify_sota_receipt(path: str | Path) -> list[str]:
     receipt["receipt_path"] = str(dest)
     return receipt
 
-
 SOTA_RECEIPT_REQUIRED_KEYS = (
     "protocol_id",
     "protocol_sha256",
@@ -501,8 +500,6 @@ SOTA_RECEIPT_REQUIRED_KEYS = (
     "promotion",
     "receipt_sha256",
 )
-
-
 def sota_receipt_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Contract errors for a written ``sota_receipt.json`` payload."""
     errors = [key for key in SOTA_RECEIPT_REQUIRED_KEYS if key not in receipt]
@@ -517,8 +514,6 @@ def sota_receipt_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     if not family_blob_forbidden_metrics_absent(dict(receipt)):
         errors.append("forbidden_metrics")
     return errors
-
-
 def sota_receipt_seal_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Digest errors for a written receipt (``receipt_path`` is post-seal)."""
     unsigned = {
@@ -528,8 +523,6 @@ def sota_receipt_seal_errors(receipt: Mapping[str, Any]) -> list[str]:
     }
     expected = hash_bytes(canonical_json_bytes(unsigned))
     return [] if receipt.get("receipt_sha256") == expected else ["receipt_sha256"]
-
-
 def verify_sota_receipt(path: str | Path) -> list[str]:
     """Fail-closed verification of a written ``sota_receipt.json`` file."""
     try:
