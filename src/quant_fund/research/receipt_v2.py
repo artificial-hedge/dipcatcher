@@ -411,7 +411,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     lane's deep checks, and the mismatch is flagged.
     """
     kind = payload.get("kind")
-    for claimed in {kind, *_inner_claimed_kinds(payload)}:
+    for claimed in sorted({kind, *_inner_claimed_kinds(payload)}, key=str):
         if claimed == "distribution_fleet_eval":
             from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
