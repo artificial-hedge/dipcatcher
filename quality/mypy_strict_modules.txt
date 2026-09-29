@@ -15,14 +15,18 @@ src/quant_fund/audit/trace.py
 src/quant_fund/audit/verify.py
 src/quant_fund/backtest/__init__.py
 src/quant_fund/backtest/adaptive_mix.py
+src/quant_fund/backtest/carry_engine.py
 src/quant_fund/backtest/engine.py
 src/quant_fund/backtest/event_sim/__init__.py
 src/quant_fund/backtest/event_sim/clock.py
 src/quant_fund/backtest/event_sim/constraints.py
 src/quant_fund/backtest/event_sim/costs.py
 src/quant_fund/backtest/event_sim/fills.py
+src/quant_fund/backtest/event_sim/sensitivity.py
 src/quant_fund/backtest/event_sim/simulator.py
+src/quant_fund/backtest/fast_replay.py
 src/quant_fund/backtest/overlay.py
+src/quant_fund/backtest/perp_engine.py
 src/quant_fund/backtest/sleeves.py
 src/quant_fund/calendars/__init__.py
 src/quant_fund/calendars/alignment.py
@@ -64,6 +68,7 @@ src/quant_fund/data/adapters/vendor_http.py
 src/quant_fund/data/adapters/yahoo_eod.py
 src/quant_fund/data/calendars.py
 src/quant_fund/data/collector.py
+src/quant_fund/data/concurrent_io.py
 src/quant_fund/data/corporate_actions.py
 src/quant_fund/data/ingest.py
 src/quant_fund/data/lake.py
@@ -86,6 +91,9 @@ src/quant_fund/data/sources/registry.py
 src/quant_fund/data/sources/storage.py
 src/quant_fund/data/universe.py
 src/quant_fund/diffbacktest/__init__.py
+src/quant_fund/diffbacktest/jax_core.py
+src/quant_fund/diffbacktest/numpy_core.py
+src/quant_fund/diffbacktest/spec.py
 src/quant_fund/diffbacktest/study.py
 src/quant_fund/execution/__init__.py
 src/quant_fund/execution/almgren_chriss.py
@@ -167,6 +175,7 @@ src/quant_fund/mc_engine/cli.py
 src/quant_fund/mc_engine/engine.py
 src/quant_fund/mc_engine/engine_config.py
 src/quant_fund/mc_engine/philox.py
+src/quant_fund/mc_engine/report.py
 src/quant_fund/mc_engine/scenario.py
 src/quant_fund/mc_engine/summary.py
 src/quant_fund/mc_engine/tails.py
@@ -241,6 +250,7 @@ src/quant_fund/models/agaci.py
 src/quant_fund/models/alpha.py
 src/quant_fund/models/american_baw.py
 src/quant_fund/models/ar_estimation.py
+src/quant_fund/models/arch_fit.py
 src/quant_fund/models/archimedean_extra.py
 src/quant_fund/models/arma.py
 src/quant_fund/models/asset_pricing.py
@@ -321,6 +331,7 @@ src/quant_fund/models/market_making.py
 src/quant_fund/models/mfdfa.py
 src/quant_fund/models/mixture.py
 src/quant_fund/models/momentum.py
+src/quant_fund/models/nbeats.py
 src/quant_fund/models/ngboost_lite.py
 src/quant_fund/models/nig_vg.py
 src/quant_fund/models/nonlinear_filters.py
@@ -415,6 +426,7 @@ src/quant_fund/paper/clock.py
 src/quant_fund/paper/forward_shadow.py
 src/quant_fund/paper/ledger.py
 src/quant_fund/paper/loop.py
+src/quant_fund/paper/quantile_signals.py
 src/quant_fund/paper/recon.py
 src/quant_fund/paper/sim_live.py
 src/quant_fund/paper/xnys_calendar.py
@@ -427,6 +439,7 @@ src/quant_fund/parity/report.py
 src/quant_fund/parity/session.py
 src/quant_fund/parity/shadow.py
 src/quant_fund/parity/shortfall.py
+src/quant_fund/parity/strategy.py
 src/quant_fund/parity/trace.py
 src/quant_fund/pipeline/__init__.py
 src/quant_fund/pipeline/dataset.py
@@ -444,7 +457,10 @@ src/quant_fund/pipeline/forecast/wrappee.py
 src/quant_fund/pipeline/kronos.py
 src/quant_fund/pipeline/train/__init__.py
 src/quant_fund/pipeline/train/distribution.py
+src/quant_fund/pipeline/train/families.py
 src/quant_fund/pipeline/train/garch_data.py
+src/quant_fund/pipeline/train/ranking.py
+src/quant_fund/pipeline/train/splits.py
 src/quant_fund/pipeline/train/volatility.py
 src/quant_fund/pit/__init__.py
 src/quant_fund/pit/cli.py
@@ -452,6 +468,7 @@ src/quant_fund/pit/corrections.py
 src/quant_fund/pit/frame.py
 src/quant_fund/pit/manifest.py
 src/quant_fund/pit/shim.py
+src/quant_fund/pit/vault.py
 src/quant_fund/portfolio/__init__.py
 src/quant_fund/portfolio/allocators.py
 src/quant_fund/portfolio/attribution.py
@@ -475,6 +492,7 @@ src/quant_fund/pretrade/shadow.py
 src/quant_fund/pretrade/spec.py
 src/quant_fund/pretrade/state.py
 src/quant_fund/proof/__init__.py
+src/quant_fund/proof/bundle.py
 src/quant_fund/proof/cli.py
 src/quant_fund/proof/recorder.py
 src/quant_fund/proof/replay.py
@@ -552,9 +570,11 @@ src/quant_fund/research/catalog/sweep.py
 src/quant_fund/research/cost_allocation.py
 src/quant_fund/research/cross_sectional.py
 src/quant_fund/research/explainability/__init__.py
+src/quant_fund/research/explainability/attribution.py
 src/quant_fund/research/explainability/drift.py
 src/quant_fund/research/explainability/partial_dependence.py
 src/quant_fund/research/explainability/receipt.py
+src/quant_fund/research/explainability/report.py
 src/quant_fund/research/explainability/scoring.py
 src/quant_fund/research/fleet_eval.py
 src/quant_fund/research/forward_evidence.py
@@ -563,10 +583,12 @@ src/quant_fund/research/garch_benchmark.py
 src/quant_fund/research/identity_sweep.py
 src/quant_fund/research/net_replay.py
 src/quant_fund/research/net_tournament.py
+src/quant_fund/research/phase1_verify.py
 src/quant_fund/research/prospective_sota.py
 src/quant_fund/research/ranker_probability.py
 src/quant_fund/research/real_benchmark.py
 src/quant_fund/research/reality_sweep.py
+src/quant_fund/research/receipt_lattice.py
 src/quant_fund/research/receipt_schema.py
 src/quant_fund/research/receipt_v2.py
 src/quant_fund/research/research100.py
@@ -606,6 +628,7 @@ src/quant_fund/schemas/portfolio.py
 src/quant_fund/simtest/__init__.py
 src/quant_fund/simtest/clock.py
 src/quant_fund/simtest/eventlog.py
+src/quant_fund/simtest/faults.py
 src/quant_fund/simtest/feed.py
 src/quant_fund/simtest/invariants.py
 src/quant_fund/simtest/io.py
@@ -622,6 +645,7 @@ src/quant_fund/stress/jumps.py
 src/quant_fund/stress/regimes.py
 src/quant_fund/stress/replay.py
 src/quant_fund/stress/report.py
+src/quant_fund/stress/reverse.py
 src/quant_fund/stress/risk.py
 src/quant_fund/stress/strategy.py
 src/quant_fund/stress/vendor_cache.py

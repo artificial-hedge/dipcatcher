@@ -16,6 +16,7 @@ from typer.testing import CliRunner
 from quant_fund.cli.main import app
 from quant_fund.research.fleet_eval import (
     fleet_head_factories,
+    fleet_receipt_v2,
     run_distribution_fleet,
     write_fleet_receipt,
 )
@@ -304,6 +305,28 @@ def test_verify_receipt_rejects_unsealed_and_unreadable(tmp_path: Path) -> None:
     assert verify_receipt_payload([1, 2, 3])["valid"] is False
 
 
+def test_verify_receipt_file_rejects_duplicate_keys(tmp_path: Path) -> None:
+    # A file's bytes must determine one payload; {"a":1,"a":2} lets a forged
+    # file carry a second readable claim while only the last is sealed.
+    dup = tmp_path / "dup.json"
+    dup.write_text('{"kind": "forged", "kind": "benign", "live_pnl_claim": false}')
+    result = verify_receipt_file(dup)
+    assert result["valid"] is False
+    assert any(e.startswith("duplicate_json_key:") for e in result["errors"])
+
+    nested = tmp_path / "nested_dup.json"
+    nested.write_text('{"outer": {"kind": 1, "kind": 2}}')
+    result = verify_receipt_file(nested)
+    assert result["valid"] is False
+    assert any(e.startswith("duplicate_json_key:") for e in result["errors"])
+
+    malformed = tmp_path / "malformed.json"
+    malformed.write_text('{"a": ')
+    result = verify_receipt_file(malformed)
+    assert result["valid"] is False
+    assert any(e.startswith("receipt_unreadable") for e in result["errors"])
+
+
 def test_fleet_v1_contract_violations_still_refused(tmp_path: Path) -> None:
     receipt = _small_fleet_receipt()
     with pytest.raises(ValueError, match="synthetic research contract"):
@@ -389,6 +412,95 @@ def test_cli_verify_receipt_fails_closed(tmp_path: Path) -> None:
     result = CliRunner().invoke(app, ["verify-receipt", str(bad)])
     assert result.exit_code == 1
     assert '"valid": false' in result.output
+
+
+def test_schema_version_2_non_envelope_dispatches_to_v1(tmp_path: Path) -> None:
+    """`schema_version` is a per-format counter, not a receipt.v2 marker."""
+    body = {
+        "schema_version": 2,
+        "kind": "source_storage_receipt",
+        "sha256": "a" * 64,
+        "live_pnl_claim": False,
+    }
+    sealed = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
+    path = tmp_path / "sidecar.json"
+    path.write_text(json.dumps(sealed))
+    result = verify_receipt_file(path)
+    assert result["valid"] is True, result["errors"]
+    assert result["digest_convention"] == "canonical_json"
+
+
+def test_data_manifest_dispatches_contract_check(tmp_path: Path) -> None:
+    """A schema_version=1 manifest-shaped payload gets manifest checks."""
+    manifest = {
+        "schema_version": 1,
+        "source": "synthetic",
+        "artifacts": {
+            "bars": {"path": "/x/b.parquet", "sha256": "a" * 64, "rows": 3, "columns": ["a", "b"]}
+        },
+        "live_pnl_claim": False,
+    }
+    sealed = {**manifest, "receipt_sha256": hash_bytes(canonical_json_bytes(manifest))}
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(sealed))
+    assert verify_receipt_file(path)["valid"] is True
+
+    broken = json.loads(json.dumps(manifest))
+    broken["artifacts"]["bars"]["sha256"] = "nothex"
+    broken["artifacts"]["bars"]["columns"] = ["b", "a"]
+    bad = {**broken, "receipt_sha256": hash_bytes(canonical_json_bytes(broken))}
+    bad_path = tmp_path / "bad_manifest.json"
+    bad_path.write_text(json.dumps(bad))
+    errors = verify_receipt_file(bad_path)["errors"]
+    assert any("sha256_invalid" in e for e in errors)
+    assert any("columns_invalid" in e for e in errors)
+
+
+_RECEIPTS = Path(__file__).resolve().parents[3] / "receipts"
+
+
+def _cost_calibration() -> dict[str, Any]:
+    import copy
+
+    return copy.deepcopy(
+        json.loads((_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").read_text())
+    )
+
+
+def test_committed_cost_calibration_receipt_verifies() -> None:
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.receipt_v2 import verify_receipt_payload
+
+    result = verify_receipt_payload(_cost_calibration())
+    errors = result["errors"] if isinstance(result, dict) else result.errors
+    assert errors == []
+
+
+def test_cost_calibration_forged_inputs_digest_fails() -> None:
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_payload
+
+    forged = _cost_calibration()
+    forged["estimators"] = ["flat"]  # digest binds the full estimator list
+    forged = seal_receipt(forged)
+    result = verify_receipt_payload(forged, "forged.json")
+    errors = result["errors"] if isinstance(result, dict) else result.errors
+    assert "inputs_sha256_mismatch" in errors
+
+
+def test_cost_calibration_forged_row_total_fails() -> None:
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_payload
+
+    forged = _cost_calibration()
+    forged["results"][0]["total_cost"] = 1.0  # commission+spread+impact ≠ 1
+    forged = seal_receipt(forged)
+    result = verify_receipt_payload(forged, "forged.json")
+    errors = result["errors"] if isinstance(result, dict) else result.errors
+    assert any("total_cost_rederive_mismatch" in e for e in errors)
 
 
 # ---------------------------------------------------------------------------
@@ -580,3 +692,26 @@ def test_cli_lanes_receipt_version_two(tmp_path: Path) -> None:
         verify = CliRunner().invoke(app, ["verify-receipt", str(written[0])])
         assert verify.exit_code == 0, verify.output
         assert '"valid": true' in verify.output
+
+
+def test_renamed_v2_kind_still_dispatches_on_inner_claims() -> None:
+    """A v2 envelope with a renamed ``kind`` must not strip the lane's deep
+    check: the sealed inner payload's own claims re-enter dispatch, and the
+    rename is flagged ``kind_fingerprint_mismatch``."""
+    receipt = fleet_receipt_v2(_small_fleet_receipt())
+    assert receipt["kind"] == "distribution_fleet_eval"
+    renamed = dict(receipt)
+    renamed["kind"] = "innocuous_lane"
+    renamed = seal_receipt(renamed)
+    errors = verify_receipt_payload(renamed)["errors"]
+    assert "kind_fingerprint_mismatch" in errors, errors
+    # The lane's deep check still ran (dataset_hash re-derivation).
+    assert any("hash" in e or "mismatch" in e for e in errors)
+
+
+def test_matching_v2_kind_gets_no_rename_flag() -> None:
+    """A correctly-claimed kind dispatches without the mismatch flag."""
+    errors = verify_receipt_payload(seal_receipt(fleet_receipt_v2(_small_fleet_receipt())))[
+        "errors"
+    ]
+    assert "kind_fingerprint_mismatch" not in errors, errors

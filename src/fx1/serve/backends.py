@@ -44,7 +44,9 @@ class HostedK3Backend:
         self._api_url = api_url
 
     def complete(self, messages: list[dict[str, str]]) -> str:
-        body = json.dumps({"model": self._model, "messages": messages}).encode()
+        # temperature pinned to 0 — eval/teacher runs must be deterministic;
+        # unpinned sampling makes eval results unreproducible across replays.
+        body = json.dumps({"model": self._model, "messages": messages, "temperature": 0.0}).encode()
         request = urllib.request.Request(
             self._api_url,
             data=body,
