@@ -174,3 +174,12 @@ def test_audit_fail_closed_on_bad_head() -> None:
     assert row["status"] == "inconclusive"  # all rows malformed -> no evidence
     assert not row["tail_alarm"]
     assert receipt["schema"] == "tail_audit.v1"
+
+
+def test_strict_flags_reject_missing_and_nonbinary() -> None:
+    proc = TailDepthEProcess(alpha=0.05, p0=0.5)
+    for a, b in ((None, False), (True, None), (2, True), (True, "x"), (float("nan"), False)):
+        with pytest.raises(ValueError):
+            proc.update(a, b)
+    for ok in (True, False, 0, 1, np.bool_(True), np.int64(1)):
+        proc.update(ok, False)

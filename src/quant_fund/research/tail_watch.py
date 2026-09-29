@@ -61,6 +61,14 @@ TAIL_AUDIT_SCHEMA = "tail_audit.v1"
 DEFAULT_ALT_GRID: tuple[float, ...] = (0.5, 0.75, 1.35, 1.9)
 
 
+def _strict_breach(flag: object) -> int:
+    if isinstance(flag, (bool, np.bool_)):
+        return int(flag)
+    if isinstance(flag, (int, np.integer)) and flag in (0, 1):
+        return int(flag)
+    raise ValueError(f"breach must be bool or a 0/1 int, got {flag!r}")
+
+
 @dataclass
 class TailDepthEProcess:
     """LR-mixture e-process on the conditional deep-breach stream.
@@ -101,16 +109,22 @@ class TailDepthEProcess:
 
     def update(self, outer_breach: bool, deep_breach: bool) -> float:
         """Fold one row: ``outer_breach`` = y < q_hi, ``deep_breach`` =
-        y < q_lo. Non-outer rows contribute the factor 1."""
+        y < q_lo. Non-outer rows contribute the factor 1.
+
+        Strict flags: ``None`` is a missing observation — folding it as a
+        non-outer row would deflate the deep-share estimate.
+        """
+        outer = _strict_breach(outer_breach)
+        deep = _strict_breach(deep_breach)
         self._n += 1
-        if not outer_breach:
+        if not outer:
             return self.evalue
         self._n_outer += 1
-        self._n_deep += int(deep_breach)
+        self._n_deep += deep
         eps = 1e-9
         for j, ratio in enumerate(self.alt_grid):
             p1 = min(1.0 - eps, max(eps, self.p0 * float(ratio)))
-            self._wealths[j] = min(self._wealths[j] * self._lr(deep_breach, p1, self.p0), 1e300)
+            self._wealths[j] = min(self._wealths[j] * self._lr(bool(deep), p1, self.p0), 1e300)
         if self._alarm_at is None and self.evalue >= 1.0 / self.alpha:
             self._alarm_at = self._n - 1
         return self.evalue
