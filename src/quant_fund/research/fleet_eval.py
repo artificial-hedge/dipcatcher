@@ -462,6 +462,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "hstep_emp": lambda taus, seed: _HStepOneStepHead(taus, "empirical"),
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
+    "sundial": lambda taus, seed: _sundial(taus, seed),
     "toto2": lambda taus, seed: _toto2(taus, seed),
     "tirex2": lambda taus, seed: _tirex2(taus, seed),
     "kronos_base": lambda taus, seed: _kronos_base(taus, seed),
@@ -488,9 +489,12 @@ def _nhits(taus: Sequence[float], seed: int) -> Any:
     return NHiTsDistribution(list(taus), seed=int(seed))
 
 
+def _sundial(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.sundial import SundialDistribution
+
+    return SundialDistribution(list(taus), seed=int(seed))
 def _toto2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.toto2 import Toto2Distribution
-
     return Toto2Distribution(list(taus), seed=int(seed))
 def _tirex2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tirex2 import Tirex2Distribution
