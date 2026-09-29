@@ -187,7 +187,7 @@ flowchart LR
   quant_fund_audit -->|2| quant_fund_research
   quant_fund_audit -->|3| quant_fund_utils
   quant_fund_backtest -->|7| quant_fund_config
-  quant_fund_backtest -->|6| quant_fund_execution
+  quant_fund_backtest -->|8| quant_fund_execution
   quant_fund_backtest -->|6| quant_fund_metrics
   quant_fund_backtest -->|1| quant_fund_microstructure
   quant_fund_backtest -->|5| quant_fund_monitoring
@@ -365,10 +365,10 @@ flowchart LR
   quant_fund_reporting -->|2| quant_fund_utils
   quant_fund_research -->|1| quant_fund
   quant_fund_research -->|3| quant_fund_audit
-  quant_fund_research -->|2| quant_fund_backtest
-  quant_fund_research -->|10| quant_fund_config
+  quant_fund_research -->|3| quant_fund_backtest
+  quant_fund_research -->|12| quant_fund_config
   quant_fund_research -->|1| quant_fund_data
-  quant_fund_research -->|2| quant_fund_execution
+  quant_fund_research -->|3| quant_fund_execution
   quant_fund_research -->|54| quant_fund_metrics
   quant_fund_research -->|4| quant_fund_microstructure
   quant_fund_research -->|58| quant_fund_models
@@ -381,7 +381,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|1| quant_fund_schemas
-  quant_fund_research -->|40| quant_fund_utils
+  quant_fund_research -->|42| quant_fund_utils
   quant_fund_research -->|8| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
@@ -617,7 +617,7 @@ sequenceDiagram
 | `quant_fund.config` | 3 |
 | `quant_fund.data` | 34 |
 | `quant_fund.diffbacktest` | 5 |
-| `quant_fund.execution` | 6 |
+| `quant_fund.execution` | 7 |
 | `quant_fund.features` | 9 |
 | `quant_fund.formal` | 4 |
 | `quant_fund.fusion` | 2 |
@@ -648,7 +648,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 2 |
 | `quant_fund.reporting` | 4 |
-| `quant_fund.research` | 74 |
+| `quant_fund.research` | 75 |
 | `quant_fund.risk` | 5 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -657,7 +657,7 @@ sequenceDiagram
 | `quant_fund.utils` | 8 |
 | `quant_fund.validation` | 11 |
 
-- Modules scanned: **764**
+- Modules scanned: **766**
 - Packages: **65**
 - Cross-package import edges: **269**
 

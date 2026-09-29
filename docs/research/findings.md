@@ -35,6 +35,7 @@ does not score them.
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/coherence_2dd641ab766a536a.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/cost_calibration_eval_df9b8d7068bf709b.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/dip_bench_crypto_1d_20260925.json`: fx1.dip_bench/v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search

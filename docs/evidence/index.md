@@ -1625,6 +1625,81 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
     - `value`: 1.0262118132145719e-05
 
+### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_df9b8d7068bf709b.json | 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b | df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68 | not_checked | 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f | inputs_sha256=60e4d5577d428605825c73e4be06987316aaf6a6dd92b30f75d9f7d72e9f10f9 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_relative`: 0.0008280850981386401
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-09-28T16:46:41.013669+00:00
+- `git_revision`: 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: flat
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 1850.7817080066654
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 7477.672951985385
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 9328.45465999205
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 1854.8502840709652
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 116
+    - `research_only`: true
+    - `spread`: 2944.5377726169922
+    - `spread_estimator`: roll
+    - `total_cost`: 4799.388056687958
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
 ### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
