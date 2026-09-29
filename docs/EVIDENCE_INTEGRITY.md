@@ -23,7 +23,8 @@ detects, and the boundary where detection stops.
 | Checkpoint spine | `quality/checkpoints/*.json` — every historical checkpoint, each carrying `prev_sha256` | `dipcatcher checkpoint-chain` | Pin-state history as a *chain*, not a point: deleting an archive record → `dangling_prev`, injecting a side-chain → `spine_fork`+`spine_orphan`, a re-signed record → `signature_invalid`, Rekor-witnessed digests that vanished → `witnessed_absent`. Terminus resolvable only in Rekor (pre-archive era) is a valid `witness` genesis |
 | Transparency log | `quality/witness/*.json` (Rekor hashedrekord entry) | `dipcatcher verify-witness` (offline), `verify-witness --online` (live consistency: committed tree is a prefix of Rekor's *current* signed head) | External non-repudiation: the checkpoint digest + our ECDSA witness sig sit in sigstore's public append-only log — a state *we* can't rewrite either. Proof self-verifies: RFC 6962 inclusion walk to Rekor's signed root + signed-entry-timestamp + checkpoint-note sig under the pinned Rekor pubkey. Proofs minted before the archive era bound `witnessed_absent` vs `grandfathered_witness` (pre-retention history) |
 | Auditor bundle | `auditor_bundle.v1` (one JSON doc) | `dipcatcher witness-bundle` / `verify-bundle <file>` | Zero-trust third-party audit: bundle carries checkpoint + pins + pubkeys + **every archived checkpoint and every committed witness proof** — the auditor replays the whole spine (links, signatures, forks, orphans, Rekor order), not just the head. The witness key is authenticated by the **log itself** — Rekor's entry body records the signer pubkey, which must equal the bundled `witness_signing.pub` byte-for-byte. `scripts/verify_auditor_bundle.py` is an independent second implementation (same verdict contract; members outside the pinned prefixes fail `unexpected_member`). No repo access, no trusted inputs beyond Rekor's own key |
-| Tamper drill | `tamper_drill.v1` | `dipcatcher tamper-drill` | Self-adversarial: clones the real tree, lands 18 mutations (epoch/merkle/anchor/sig/checkpoint/spine classes), and requires `verify-repo` to flag **every** one — a verifier that went blind reports `missed:` instead of `ok` |
+| Tamper drill | `tamper_drill.v1` | `dipcatcher tamper-drill` | Self-adversarial: clones the real tree, lands every probe mutation (epoch/merkle/anchor/sig/checkpoint/spine/key classes), and requires `verify-repo` to flag **every** one — a verifier that went blind reports `missed:` instead of `ok` |
+| Key rotation | `quality/rotation_*.json` (`key_rotation.v1`) | `dipcatcher verify-rotations` | Key substitution without authorization: each link is dual-signed — the outgoing key proves *authorization*, the incoming proves *possession* — and the first link's `old_pubkey` must re-verify a real spine signature (`unanchored_genesis` otherwise). The spine walks a **keyring** — live key + every authorized retired key — so records verify under their era's key (`signature_key_unknown` for a never-authorized signer). Live `gate_signing.pub` must equal the chain terminus |
 | Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict` | A new receipt that breaks lattice/FDR on entry |
 | Capstone | `repo_integrity.v1` | `dipcatcher verify-repo` | One sealed verdict over all of the above — contract-checked so the attestation can't claim `ok` while a gate lists errors, hide a gate entirely, or disagree with its own digest pins |
 
@@ -70,6 +71,16 @@ every PR, and `verify-repo` receipts pin the pin files' digests into the
 receipts corpus so their history is itself chained. Either way, silent
 tamper is impossible — any rewrite leaves a committed, hash-linked trail or
 a broken signature.
+
+Key lineage: when `GATE_SIGNING_KEY` rotates, `dipcatcher rotate-key`
+records a dual-signed `key_rotation.v1` link (old key authorizes, new key
+proves possession), then the operator installs the new pubkey in
+`gate_signing.pub`, re-signs (`make sign-pins`), and checkpoints + witnesses
+the transition. The rotation chain's genesis is anchored to the spine: the
+outgoing key must have signed a real checkpoint. A substituted key whose
+holder never signed — i.e. never held authority — fails
+`unanchored_genesis`; a rotation recorded but never installed fails
+`live_key_not_terminus`.
 
 ## Operator quick reference
 
