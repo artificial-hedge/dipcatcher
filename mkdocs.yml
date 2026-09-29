@@ -168,14 +168,18 @@ nav:
       - Prospective journal: PROSPECTIVE_SOTA.md
       - SOTA canon roadmap: SOTA_CANON_ROADMAP_2026_09.md
       - Statistical-core audit: AUDIT_P62_STATS.md
+      - Validation-layer audit: AUDIT_P62B_VALIDATION.md
       - P6.1 money audit: AUDIT_P61_MONEY.md
       - P6.3 data audit: AUDIT_P63_DATA.md
       - P6.4 dist/vol audit: AUDIT_P64_DIST.md
       - P6.5 micro audit: AUDIT_P65_MICRO.md
       - P6.6 infra audit: AUDIT_P66_INFRA.md
+      - P6.10 deps audit: AUDIT_P610_DEPS.md
+      - Security evidence: SECURITY_EVIDENCE.md
       - Forward shadow record: FORWARD_SHADOW_RECORD.md
       - Ranker probability experiment: RANKER_PROBABILITY_EXPERIMENT.md
       - Performance: PERF.md
+      - Perf sweep: PERF_SWEEP.md
       - Causal capacity: CAUSAL_CAPACITY.md
       - Forward shadow power: FORWARD_SHADOW_POWER.md
       - Model cards: MODEL_CARDS.md

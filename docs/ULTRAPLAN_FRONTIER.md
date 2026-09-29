@@ -291,9 +291,12 @@ Each: pinned artifact + sha256, zero-shot, native output honored
 
 ### P4 — Industry-grade bar (the open one)
 
-- [ ] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
+- [x] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
       allocation trace); classify remaining 5.4× gap: interpreter loop vs
       per-order gate cost vs polars overhead.
+      Landed: `docs/PERF_SWEEP.md` — top-20 tables, classification
+      (~80% per-order gate/cost, ~15% loop body, ~5% marshalling), and
+      bit-identical event-loop vectorizations (1.41× event-loop speedup).
 - [x] P4.2 Implement `run_backtest_fast` vectorized replay path for the
       *matched-workload class* (fixed rules: target-percent orders, next-open,
       no limits/stops) behind an explicit flag; must produce bit-identical
@@ -374,8 +377,10 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       `predicates`, `session`/`candle`/`kyle`/`northset` honesty checkers,
       `consistency`, `families`); `__init__.py` re-exports all 444 public
       names so `from quant_fund.research.catalog import X` is unchanged.
-- [ ] P6.8 Perf sweep: cProfile top-20 hot paths across engine, features,
+- [x] P6.8 Perf sweep: cProfile top-20 hot paths across engine, features,
       scoring; fix only where semantics bit-identical.
+      Landed: `docs/PERF_SWEEP.md` + `scripts/_perf_identity.py`
+      (byte-identity replay vs frozen pre-change engine, 7 workloads).
 - [ ] P6.9 Test-quality audit: mutation spot-checks on money-path
       conditionals; property tests (hypothesis) for accounting identities;
       coverage gaps in `tests/` map.
@@ -403,8 +408,11 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       Partially landed: every `receipt.v2` envelope carries an `environment`
       block (python/numpy/polars/scipy versions, BLAS/LAPACK build from
       `np.__config__.CONFIG`, loaded BLAS threadpools via threadpoolctl) with
-      a `fingerprint_sha256` digest over the block. Still open: adopt v2 in
-      the remaining lanes and sweep fingerprints across machines.
+      a `fingerprint_sha256` digest over the block. Adopted by every
+      receipt-producing lane (`fleet_eval`, `capacity_overlay`,
+      `cross_sectional`, `vol_bench` via `--receipt-version 2`; v1 remains the
+      default seal and still verifies). Still open: cross-machine fingerprint
+      sweeps.
 - [ ] P7.5 Remote-fleet ops: consolidate `spawn_*.ps1` into one parametrized
       launcher + watchdog (auto-respawn dead shards, heartbeat file).
 - [ ] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
