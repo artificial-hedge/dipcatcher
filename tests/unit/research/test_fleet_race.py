@@ -152,3 +152,35 @@ def test_global_evidence_product_pooling() -> None:
         )
     # oracle is never worse than any head -> its demote product should be 1
     assert ge["oracle"]["demote_evalue_product"] <= 1.0 + 1e-9
+
+
+def test_race_data_label_derived_and_mixed_refused() -> None:
+    """Receipt stamps the shards' own label; mixed corpora fail closed."""
+    from quant_fund.research.fleet_eval import SyntheticShard
+
+    def real_shard(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(
+            "r", np.zeros((n, 1)), rng.normal(0.0, 0.01, n), {"data_label": "yahoo_eod"}
+        )
+
+    _frame, receipt = fleet_race(
+        _factories({"a": 0.0}),
+        shards={"r": real_shard},
+        n_train=64,
+        n_eval=32,
+        n_chunks=8,
+    )
+    assert receipt["data_label"] == "yahoo_eod"
+    assert receipt["shard_meta"]["r"]["data_label"] == "yahoo_eod"
+
+    import pytest
+
+    with pytest.raises(ValueError, match="mixed data_label"):
+        fleet_race(
+            _factories({"a": 0.0}),
+            shards={"s": SHARD_G, "r": real_shard},
+            n_train=64,
+            n_eval=32,
+            n_chunks=8,
+        )
