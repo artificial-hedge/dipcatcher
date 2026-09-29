@@ -2237,3 +2237,74 @@ def checkpoint_chain_cmd(
         typer.echo(f"receipt={path}")
     if not result["ok"]:
         raise typer.Exit(code=1)
+
+
+@app.command("verify-rotations")
+def verify_rotations_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo tree to verify."),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed key_rotation_audit.v1 receipt here.",
+    ),
+) -> None:
+    """Verify the gate-key rotation chain: each link dual-signed by the
+    outgoing and incoming keys, genesis anchored to a spine-observed key,
+    and the live gate_signing.pub equal to the chain terminus."""
+    from quant_fund.research.key_rotation import verify_rotations
+
+    result = verify_rotations(root)
+    typer.echo(
+        f"verify-rotations: n={result['n_rotations']} verdict={result['verdict']} "
+        f"current={result.get('current_key_id', '?')}"
+    )
+    for e in result["errors"]:
+        typer.echo(f"  {e}")
+    for n in result["notes"]:
+        typer.echo(f"  note: {n}")
+    if out is not None:
+        from quant_fund.research.receipt_v2 import seal_receipt
+        from quant_fund.utils.atomicio import atomic_write_text
+
+        payload = dict(result)
+        payload["schema"] = "key_rotation_audit.v1"
+        sealed = seal_receipt(payload)
+        atomic_write_text(out, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+        typer.echo(f"receipt={out}")
+    if not result["ok"]:
+        raise typer.Exit(code=1)
+
+
+@app.command("rotate-key")
+def rotate_key_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo tree."),
+    old_key_env: str = typer.Option(
+        "GATE_SIGNING_KEY", "--old-key-env", help="Env var with the outgoing Ed25519 seed hex."
+    ),
+    new_key_env: str = typer.Option(
+        "GATE_SIGNING_KEY_NEW",
+        "--new-key-env",
+        help="Env var with the incoming Ed25519 seed hex.",
+    ),
+    reason: str = typer.Option("scheduled rotation", "--reason"),
+) -> None:
+    """Record an authorized gate-key rotation: a dual-signed receipt under
+    quality/rotation_<id>.json proving the outgoing key authorized the
+    incoming one. After this, re-sign pins with the new key, update
+    gate_signing.pub to the new pubkey, then checkpoint + witness."""
+    import os
+
+    old_seed = os.environ.get(old_key_env)
+    new_seed = os.environ.get(new_key_env)
+    if not old_seed or not new_seed:
+        typer.echo(f"rotate-key: need both ${old_key_env} and ${new_key_env}")
+        raise typer.Exit(code=2)
+    from quant_fund.research.key_rotation import rotate_key
+
+    try:
+        out = rotate_key(root, old_seed, new_seed, reason=reason)
+    except ValueError as exc:
+        typer.echo(f"rotate-key: {exc}")
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"rotation={out}")
+    typer.echo("next: update quality/gate_signing.pub, make sign-pins, checkpoint, witness")

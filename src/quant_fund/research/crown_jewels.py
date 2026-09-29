@@ -61,6 +61,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/gate_signatures.py",
     "src/quant_fund/research/integrity_checkpoint.py",
     "src/quant_fund/research/integrity_witness.py",
+    "src/quant_fund/research/key_rotation.py",
     "src/quant_fund/research/lane_contracts.py",
     "src/quant_fund/research/receipt_lattice.py",
     "src/quant_fund/research/receipt_v2.py",
@@ -92,6 +93,7 @@ _VERIFIER_VOCABULARY = (
     "checkpoint",
     "tamper",
     "witness",
+    "rotation",
 )
 
 

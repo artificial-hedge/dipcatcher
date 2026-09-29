@@ -111,6 +111,15 @@ def verify_repo(
         "errors": spine["errors"],
     }
 
+    from quant_fund.research.key_rotation import verify_rotations
+
+    rot = verify_rotations(root)
+    gates["key_rotation"] = {
+        "ok": bool(rot["ok"]),
+        "n_rotations": rot["n_rotations"],
+        "errors": rot["errors"],
+    }
+
     pin_present = pin_path.is_file()
     pin_parse_error: str | None = None
     if pin_present:
@@ -156,7 +165,13 @@ def verify_repo(
 # Gates every attestation must carry — the neutral/absent states are legal
 # (unsigned pins, unanchored timestamps report ok=True) but the gate itself
 # must be *run*: a receipt missing a gate hid the surface, not passed it.
-_REQUIRED_GATES = ("crown_jewels", "pin_signatures", "timestamp_anchors", "spine")
+_REQUIRED_GATES = (
+    "crown_jewels",
+    "pin_signatures",
+    "timestamp_anchors",
+    "spine",
+    "key_rotation",
+)
 
 
 def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:

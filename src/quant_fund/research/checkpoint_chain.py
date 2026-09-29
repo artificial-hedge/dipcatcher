@@ -133,7 +133,7 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
     try:
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-        pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex))
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex))
     except ValueError:
         return {
             "schema": CHAIN_SCHEMA,
@@ -146,8 +146,28 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
         }
 
     records = collect_spine_records(root_path)
+
+    # Keyring: the live key plus every retired key a rotation chain
+    # authorized — records verify under the key that was current in *their*
+    # era, so a legitimate rotation doesn't retroactively invalidate the
+    # spine, and a record signed by a never-authorized key flags.
+    from quant_fund.research.key_rotation import load_keyring
+
+    ring = load_keyring(root_path)
     for rec in records.values():
-        _verify_signature(rec, pubkey, pub_hex)
+        kid = str((rec.get("body") or {}).get("key_id", ""))
+        rec_pub_hex = ring.get(kid, pub_hex)
+        if kid and kid not in ring:
+            rec["sig_ok"] = False
+            rec["errors"].append("signature_key_unknown")
+            continue
+        try:
+            rec_pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(rec_pub_hex))
+        except ValueError:
+            rec["sig_ok"] = False
+            rec["errors"].append("signature_key_malformed")
+            continue
+        _verify_signature(rec, rec_pub, rec_pub_hex)
 
     # Rekor proofs: digest -> (log_index, integrated_time). Loaded before
     # the walk because a terminus that resolves only in Rekor is a valid

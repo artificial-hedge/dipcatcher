@@ -83,12 +83,18 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     # No witness proofs committed — the public-log layer is optional.
     assert res["gates"]["witness"]["witnessed"] is False
     assert res["gates"]["witness"]["ok"] is True
+    # No checkpoint spine or key rotations — both neutral-absent.
+    assert res["gates"]["spine"]["ok"] is True
+    assert res["gates"]["key_rotation"]["ok"] is True
+    assert res["gates"]["key_rotation"]["n_rotations"] == 0
     assert set(res["gates"]) == {
         "crown_jewels",
         "pin_signatures",
         "timestamp_anchors",
         "checkpoint",
         "witness",
+        "spine",
+        "key_rotation",
         "epoch:receipts",
         "epoch:verifier",
         "epoch:quality",

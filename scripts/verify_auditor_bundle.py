@@ -57,7 +57,7 @@ MEMBERS = (
 # Optional members: the archived checkpoint records and every committed
 # Rekor proof. Carrying them lets this script verify the whole spine —
 # every historical pin state — not just the head checkpoint.
-SPINE_PREFIXES = ("quality/checkpoints/", "quality/witness/checkpoint.json_")
+SPINE_PREFIXES = ("quality/checkpoints/", "quality/witness/checkpoint.json_", "quality/rotation_")
 
 
 def _sha(b: bytes) -> bytes:
@@ -113,6 +113,109 @@ def _inclusion_walk(leaf: bytes, log_index: int, tree_size: int, path: list[byte
         fn >>= 1
         sn >>= 1
     return r
+
+
+def _key_id(pub_hex: str) -> str:
+    return hashlib.sha256(bytes.fromhex(pub_hex)).hexdigest()[:16]
+
+
+def _verify_rotations(
+    files: dict[str, str],
+    declared: dict[str, str],
+    gate_pub_hex: str,
+    records: dict[str, bytes],
+    errors: list[str],
+) -> dict[str, str]:
+    """Dual-signed key lineage: old authorizes, new proves possession.
+
+    Returns the keyring (key_id -> pub hex) covering every authorized key —
+    live terminus + genesis + every intermediate link.
+    """
+    ring = {_key_id(gate_pub_hex): gate_pub_hex}
+    recs: list[tuple[str, dict[str, Any]]] = []
+    for rel, b64 in files.items():
+        if not rel.startswith("quality/rotation_"):
+            continue
+        try:
+            raw = base64.b64decode(b64)
+            body = json.loads(raw)
+        except (ValueError, json.JSONDecodeError):
+            errors.append(f"rotation_malformed:{rel}")
+            continue
+        if declared.get(rel) != _sha(raw).hex():
+            errors.append(f"files_sha256_mismatch:{rel}")
+            continue
+        if (
+            not isinstance(body, dict)
+            or body.get("schema") != "key_rotation.v1"
+            or not isinstance(body.get("payload"), dict)
+        ):
+            errors.append(f"rotation_malformed:{rel}")
+            continue
+        payload = body["payload"]
+        ok = True
+        for side in ("old", "new"):
+            if not _ed25519_verify(
+                str(payload.get(f"{side}_pubkey", "")),
+                str(body.get(f"{side}_signature", "")),
+                _canon(payload),
+            ):
+                errors.append(f"rotation_signature_invalid:{rel}:{side}")
+                ok = False
+        if str(payload.get("old_key_id", "")) != _key_id(str(payload.get("old_pubkey", ""))) or str(
+            payload.get("new_key_id", "")
+        ) != _key_id(str(payload.get("new_pubkey", ""))):
+            errors.append(f"rotation_key_id_mismatch:{rel}")
+            ok = False
+        if ok:
+            recs.append((rel, payload))
+            ring.setdefault(_key_id(str(payload["old_pubkey"])), str(payload["old_pubkey"]))
+            ring.setdefault(_key_id(str(payload["new_pubkey"])), str(payload["new_pubkey"]))
+    if not recs:
+        return ring
+
+    claims: dict[str, list[str]] = {}
+    for rel, payload in recs:
+        claims.setdefault(str(payload.get("old_pubkey", "")), []).append(rel)
+    for old, group in claims.items():
+        if len(group) > 1:
+            errors.append(f"rotation_fork:{_key_id(old)}")
+    new_pubs = {str(p["new_pubkey"]) for _, p in recs}
+    starts = [(r, p) for r, p in recs if str(p["old_pubkey"]) not in new_pubs]
+    if len(starts) != 1:
+        errors.append(f"rotation_chain_ambiguous:{len(starts)}")
+        return ring
+    cur_rel, cur = starts[0]
+    seen: set[str] = set()
+    terminus = None
+    while True:
+        new_pub = str(cur["new_pubkey"])
+        terminus = new_pub
+        if new_pub in seen:
+            errors.append(f"rotation_cycle:{_key_id(new_pub)}")
+            break
+        seen.add(new_pub)
+        nxt = claims.get(new_pub)
+        if not nxt:
+            break
+        cur = next(p for r, p in recs if r == nxt[0])
+    if terminus != gate_pub_hex:
+        errors.append("rotation_live_key_not_terminus")
+
+    # Genesis anchor: the first outgoing key must verify a spine record.
+    genesis_pub = str(starts[0][1]["old_pubkey"])
+    anchored = False
+    for raw in records.values():
+        try:
+            rec = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if _ed25519_verify(genesis_pub, str(rec.get("signature", "")), _canon(rec.get("payload"))):
+            anchored = True
+            break
+    if not anchored:
+        errors.append("rotation_unanchored_genesis")
+    return ring
 
 
 def _verify_spine(
@@ -191,16 +294,20 @@ def _verify_spine(
             break
         cur = prev
 
-    # Every record's signature under the pinned gate key.
+    # Every record's signature under the key authorized in its era.
+    ring = _verify_rotations(files, declared, gate_pub_hex, records, errors)
     for digest, raw in records.items():
         try:
             body = json.loads(raw)
         except json.JSONDecodeError:
             errors.append(f"spine_malformed:{digest[:12]}")
             continue
-        if not _ed25519_verify(
-            gate_pub_hex, str(body.get("signature", "")), _canon(body.get("payload"))
-        ):
+        kid = str(body.get("key_id", ""))
+        pub = ring.get(kid)
+        if pub is None:
+            errors.append(f"spine_signature_key_unknown:{digest[:12]}")
+            continue
+        if not _ed25519_verify(pub, str(body.get("signature", "")), _canon(body.get("payload"))):
             errors.append(f"spine_signature_invalid:{digest[:12]}")
 
     # Forks + orphans.

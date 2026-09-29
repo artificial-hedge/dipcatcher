@@ -55,6 +55,9 @@ BUNDLE_MEMBERS: tuple[str, ...] = (
 SPINE_PREFIXES: tuple[str, ...] = (
     "quality/checkpoints/",
     "quality/witness/checkpoint.json_",
+    # Gate-key rotation records ride the bundle so an auditor can verify
+    # the key lineage (retired keys still verify their era's checkpoints).
+    "quality/rotation_",
 )
 
 
@@ -98,6 +101,8 @@ def build_bundle(root: str | Path, out: str | Path) -> Path:
         members.append(f"quality/checkpoints/{sub.name}")
     for sub in sorted((root_path / "quality/witness").glob(f"{DEFAULT_TARGET.name}_*.json")):
         members.append(f"quality/witness/{sub.name}")
+    for sub in sorted(root_path.glob("quality/rotation_*.json")):
+        members.append(f"quality/{sub.name}")
     files = {rel: base64.b64encode((root_path / rel).read_bytes()).decode() for rel in members}
     bundle = {
         "schema": BUNDLE_SCHEMA,
@@ -257,6 +262,11 @@ def verify_bundle(
                 all_wit = verify_witnesses(tmp_root)
                 for e in all_wit.get("errors", []):
                     errors.append(f"witness:{e}")
+            from quant_fund.research.key_rotation import verify_rotations
+
+            rot = verify_rotations(tmp_root)
+            for e in rot.get("errors", []):
+                errors.append(f"rotation:{e}")
 
         # The decisive link: the key REKOR recorded as signer must equal
         # the bundled witness pubkey — the log authenticates our key.

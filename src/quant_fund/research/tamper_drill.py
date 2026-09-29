@@ -168,6 +168,46 @@ def _probes(clone: Path) -> list[tuple[str, Any]]:
             (quality / "checkpoints" / "zz_injected_fork.json").write_text(json.dumps(forged))
 
         probes.append(("inject_side_chain_checkpoint", _side_chain))
+
+        # Inject an UNAUTHORIZED key rotation: dual-signed, internally
+        # consistent — but the 'old' key never signed a spine member. The
+        # key_rotation gate must flag the unanchored genesis and (since the
+        # forged terminus != live pub) the stale live key.
+        def _evil_rotation() -> None:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                Ed25519PrivateKey,
+            )
+            from cryptography.hazmat.primitives.serialization import (
+                Encoding,
+                PublicFormat,
+            )
+
+            from quant_fund.research.gate_signatures import generate_keypair, key_id
+            from quant_fund.utils.hashing import canonical_json_bytes
+
+            old_seed, _ = generate_keypair()
+            new_seed, _ = generate_keypair()
+            ok_ = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(old_seed))
+            nk = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(new_seed))
+            op = ok_.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
+            np_ = nk.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
+            payload = {
+                "at": "2000-01-01T00:00:00+00:00",
+                "reason": "forged authorization",
+                "old_key_id": key_id(op),
+                "new_key_id": key_id(np_),
+                "old_pubkey": op,
+                "new_pubkey": np_,
+            }
+            body = {
+                "schema": "key_rotation.v1",
+                "payload": payload,
+                "old_signature": ok_.sign(canonical_json_bytes(payload)).hex(),
+                "new_signature": nk.sign(canonical_json_bytes(payload)).hex(),
+            }
+            (quality / "rotation_evil.json").write_text(json.dumps(body) + "\n")
+
+        probes.append(("inject_unauthorized_rotation", _evil_rotation))
     return probes
 
 
