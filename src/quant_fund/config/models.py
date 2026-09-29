@@ -482,6 +482,7 @@ class DataConfig(StrictConfigModel):
             "bea",
             "openbb",
             "hf_ohlcv_1m",
+            "dolthub_stocks",
         }
         if normalized not in supported:
             raise ValueError(

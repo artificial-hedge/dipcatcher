@@ -40,6 +40,7 @@ from pydantic import (
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.research.impossible_fit import impossible_fit_scan
+from quant_fund.research.quantile_ladder import QUANTILE_LADDER_KINDS
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -451,7 +452,8 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         if claimed in _LANE_CONSISTENCY:
             path = _LANE_CONSISTENCY[claimed]
             module, _, func = path.rpartition(".")
-            errors = getattr(importlib.import_module(module), func)(payload)
+            errors: list[str] = list(getattr(importlib.import_module(module), func)(payload))
+            errors: list[str] = getattr(importlib.import_module(module), func)(payload)
             if claimed != kind:
                 errors = [*errors, "kind_fingerprint_mismatch"]
             return errors
@@ -465,12 +467,15 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         return calibration_v2_consistency_errors(payload)
     if kind == "capacity_overlay_eval":
         from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
+
         return capacity_v2_consistency_errors(payload)
     if kind == "cross_sectional_rankic_eval":
         from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
+
         return rankic_v2_consistency_errors(payload)
     if kind == "vol_bench":
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
+
         return vol_bench_v2_consistency_errors(payload)
     if kind == "evidence_audit":
         from quant_fund.research.evidence_audit import evidence_audit_consistency_errors
@@ -478,9 +483,11 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         return evidence_audit_consistency_errors(payload)
     if kind == "selection_concordance":
         from quant_fund.research.concordance import concordance_consistency_errors
+
         return concordance_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
+
         return coherence_v2_consistency_errors(payload)
     return []
 
@@ -553,31 +560,41 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
+    if payload.get("kind") in QUANTILE_LADDER_KINDS:
+        from quant_fund.research.quantile_ladder import _quantile_ladder_errors
+
+        errors.extend(_quantile_ladder_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+
+        errors.extend(evalue_family_contract_errors(payload))
     elif schema == "vol_bench.v1":
         from quant_fund.research.vol_bench import vol_bench_contract_errors
 
         errors.extend(vol_bench_contract_errors(payload))
     elif schema == "capacity_overlay.v1":
         from quant_fund.research.capacity_overlay import capacity_contract_errors
+
         errors.extend(capacity_contract_errors(payload))
     elif schema == "cross_sectional_rankic.v1":
         from quant_fund.research.cross_sectional import rankic_contract_errors
+
         errors.extend(rankic_contract_errors(payload))
     elif payload.get("kind") == "ranker_probability_experiment":
         from quant_fund.research.ranker_probability import ranker_prob_contract_errors
+
         errors.extend(ranker_prob_contract_errors(payload))
     elif payload.get("schema") == "calibration_eval.v1":
         from quant_fund.research.calibration_eval import calibration_contract_errors
+
         errors.extend(calibration_contract_errors(payload))
     elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
         from quant_fund.data.ingest import data_manifest_contract_errors
+
         errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
         from quant_fund.paper.sim_live import sim_live_contract_errors
 
-        errors.extend(evalue_family_contract_errors(payload))
         errors.extend(sim_live_contract_errors(payload))
     if payload.get("schema") == "cost_calibration.v1":
         from quant_fund.research.cost_calibration import (
@@ -594,6 +611,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         errors.extend(lane_receipt_contract_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+
         errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
@@ -645,14 +663,16 @@ def verify_receipt_file(path: Path | str) -> ReceiptVerification:
     """
     file_path = Path(path)
     try:
-        payload: object = json.loads(file_path.read_text(), object_pairs_hook=_no_duplicate_keys)
+        payload: object = json.loads(
+            file_path.read_text(),
+            object_pairs_hook=_no_duplicate_keys,
+            parse_constant=_reject_json_constant,
+        )
     except ValueError as exc:
         if str(exc).startswith("duplicate_json_key:"):
             return _result(file_path, {}, None, [str(exc)])
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     except (OSError, UnicodeError) as exc:
-        payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
-    except (OSError, UnicodeError, ValueError) as exc:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     return verify_receipt_payload(payload, file_path)
 

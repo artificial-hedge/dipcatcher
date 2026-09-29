@@ -251,6 +251,9 @@ Each: pinned artifact + sha256, zero-shot, native output honored
 - [ ] P2.6 `kronos_base` in the v5 fleet (only the v1 3-asset run beat it;
       fleet-scale evidence missing).
 - [x] P2.7 Classical neural baselines (landed): N-BEATS / N-HiTS / DLinear via a small
+- [x] P2.6 `kronos_base` fleet head — wraps the real Kronos adapter,
+      candle-envelope → 5/50/95 quantiles (#377). v5-fleet-scale cell
+      remains remote-gated like the rest of the fleet.
 - [~] P2.7 Classical neural baselines: N-BEATS / N-HiTS / DLinear via a small
       harness (Darts or direct) — closes the "only foundation models"
       objection.
@@ -289,9 +292,15 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       receipt. Result: empirical_ratio wins clustered/break shards, native
       hstep wins where horizon structure matters — the construction
       discriminates as designed. 4h {1,6} remains remote-gated (P3.1 bars).
-- [ ] P3.3 Second domain: Stooq US equity dailies (remote `data/file_us`
-      tapes) OR Binance non-USDT quotes — requires same bar-integrity
-      hashing + availability-time discipline.
+- [x] P3.3 Second domain: US equity dailies — the committed 424-name
+      `data/file_us_wide` yahoo corpus ran through `real_benchmark`'s
+      preregistered two-phase harness (protocol hash-pins the parquet;
+      prepare audits splits, then validation scores before test).
+      Verdict: honest negative — on 495 validation dates / 431 test
+      dates, no baseline (ridge, rolling_mean_20, historical_mean) beat
+      the zero-return forecast on equal-weight MSE; `promote: false`,
+      `claim: fixed_split_forecast_diagnostic`. Sealed receipts:
+      `receipts/real_benchmark_us_wide_{manifest,validation,test}.json`.
 - [x] P3.4 Cross-sectional lane: rank-IC eval vs targets on the panel
       (existing ranking bench + northset) — a different claim axis.
       Harness landed: `research/cross_sectional.py` + `dipcatcher rankic` —
@@ -328,27 +337,26 @@ Each: pinned artifact + sha256, zero-shot, native output honored
 
 ### P3b — Sequential inference suite (new statistical layer)
 
-- [~] Anytime-valid head promotion: `research/evalues.py` `LossEProcess`
-      (betting e-process, Ville/Ramdas) wired into `vol_bench` — PR #380.
-- [~] Sequential fleet elimination: `research/fleet_race.py` + `dipcatcher
-      race` (two e-processes per head vs fixed incumbent) — PR #381.
-- [~] Corpus-level inference: `research/corpus_inference.py` harvests all
-      committed receipts → pooled BH-FDR + e-value product — PR #382.
-- [~] Online FDR over the receipt stream: `research/online_fdr.py`
-      Foster–Stine alpha-investing — PR #383.
-- [~] Verifier contracts for the family: `research/evalue_contracts.py`
-      deep-checks all four kinds — PR #384.
-- [~] Winner's-curse correction: `research/winner_curse.py` bootstrap
-      selection-bias + split-half honest control — PR #385.
-- [~] Anytime-valid drift alarms: `research/drift_alarm.py` level-shift
-      e-process + Page–Hinkley diagnostic — PR #386.
-- [~] Composite verdict: `research/honest_verdict.py` — PR #387.
-- [~] Registry completeness ratchet (no orphan heads) — PR #388.
+- [x] Anytime-valid head promotion: `research/evalues.py` `LossEProcess`
+      (betting e-process, Ville/Ramdas) wired into `vol_bench` — #380.
+- [x] Sequential fleet elimination: `research/fleet_race.py` + `dipcatcher
+      race` (two e-processes per head vs fixed incumbent) — #381.
+- [x] Corpus-level inference: `research/corpus_inference.py` harvests all
+      committed receipts → pooled BH-FDR + e-value product — #382.
+- [x] Online FDR over the receipt stream: `research/online_fdr.py`
+      Foster–Stine alpha-investing — #383.
+- [x] Verifier contracts for the family: `research/evalue_contracts.py`
+      deep-checks the kinds — #384, #398 (extended).
+- [x] Winner's-curse correction: `research/winner_curse.py` bootstrap
+      selection-bias + split-half honest control — #385.
+- [x] Anytime-valid drift alarms: `research/drift_alarm.py` level-shift
+      e-process + Page–Hinkley diagnostic — #386.
+- [x] Composite verdict: `research/honest_verdict.py` — #387.
+- [x] Registry completeness ratchet (no orphan heads) — #388.
       See `docs/SEQUENTIAL_INFERENCE.md` for the architecture.
 
 ### P4 — Industry-grade bar (the open one)
 
-- [~] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
 - [x] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
       allocation trace); classify remaining 5.4× gap: interpreter loop vs
       per-order gate cost vs polars overhead.
@@ -384,12 +392,18 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       same bars/panel/costs; document matched or not-fair with receipts.
 - [ ] P4.5 UX evidence (in flight: config-error UX + doctor graceful
       degradation + UX evidence doc): `dipcatcher doctor` self-check output, error-message
+- [x] P4.4 NautilusTrader conformance replay attempt (third incumbent):
+      same bars/panel/costs — attempted and sealed not-fair/attempted
+      verdict: `receipts/nautilus_conformance_*.json` (#232).
 - [~] P4.5 UX evidence: `dipcatcher doctor` self-check output, error-message
       quality suite, `--help` coverage vs incumbent CLIs/APIs.
 - [ ] P4.6 Security evidence (in flight: dep-hygiene + secrets-scan
       receipt lane): `uv audit`/`pip-audit` receipt, secrets scan
 - [~] P4.6 Security evidence: `uv audit`/`pip-audit` receipt, secrets scan
       (gitleaks), no-`eval`/no-`pickle-load` audit, input-validation matrix.
+- [x] P4.6 Security evidence: sealed `receipts/deps_security_hygiene_*.json`
+      (pin audit + `uv audit`), gitleaks in CI with allowlist ratchet,
+      no-`eval`/no-`pickle` sweep clean, SHA-pinned actions.
 - [ ] P4.7 Write the industry-grade verdict in PROOF.md only after P4.1–P4.6.
 
 ### P5 — Strategy performance (highest honest result; locked holdout)
@@ -447,7 +461,7 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
 - [x] P6.1 Money paths: `simulated_broker.py`, `carry_engine.py`,
       `perp_engine.py`, `engine.py`, `sleeves.py`, `risk_gate.py`,
       `costs.py`, `implementation_shortfall.py`, `pnl_attribution.py`.
-- [~] P6.2 Statistical core: `scoring.py`, `inference.py`, `snooping.py`,
+- [x] P6.2 Statistical core: `scoring.py`, `inference.py`, `snooping.py`,
       `hac.py`, `evalues.py`, `conformal.py`, `multiple_testing.py`,
       `cpcv.py`, `purging.py`, `embargo.py`, `walk_forward.py`, `fdr.py`,
       `gates.py`.
@@ -468,6 +482,11 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       `pipeline/train.py`, `pipeline/forecast.py`, `fusion/engine.py`,
       `labels/engine.py`, `features/`.
 - [x] P6.5 Exec/microstructure (audited — 8 fixes + KAT regressions): `almgren_chriss.py`, `microstructure/*`,
+- [x] P6.4 Model layer: every file in `models/` audited line-by-line
+      vs cited behavior; `pipeline/` causal gates verified.
+      Completion evidence: `quality/audit_coverage*.json` marks
+      `models/` and the named dirs `audited` under CI enforcement
+      + `docs/AUDIT_LEDGER.md` per-directory findings (#334+).
 - [x] P6.5 Exec/microstructure: `almgren_chriss.py`, `microstructure/*`,
       `northset/*` estimators (Kyle λ, Roll, VPIN, OFI).
 - [x] P6.6 Infra (audited — look-ahead, NaN gates, recon, borrow accrual): `paper/*` (ledger atomicity, resume), `registry/`,
@@ -495,6 +514,12 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       lane): pin audit, `uv audit` receipt, license
 - [~] P6.10 Dependency hygiene: pin audit, `uv audit` receipt, license
       scan, dead-dep removal.
+- [x] P6.9 Test-quality audit: mutation spot-checks on money-path
+      conditionals (#221, #372, #397 — survivors pinned), property tests
+      for accounting identities, verifier mutation-fuzz (#368).
+- [x] P6.10 Dependency hygiene: sealed `receipts/deps_security_hygiene_*.json`
+      (pin audit + `uv audit` + license scan), verifier contract
+      re-derives it (#349).
 
 ### P7 — Frontier infrastructure upgrades
 
@@ -507,19 +532,13 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       from artifact store). Draft the workflow; flag for user.
 - [x] P7.2 Receipt v2 schema: unified `receipt.json` fields across eval,
       Drafted + partially live: `.github/workflows/reproduce_sota.yml` —
+- [x] P7.1 CI reproduction job: `.github/workflows/reproduce_sota.yml` —
       the *native* leg runs unconditionally (both committed parts reproduce
-      their committed merged receipts bit-exact, verified locally):
-      `nd_*.paths.npz` → `native/MERGED_d1_native.json` and
-      `nh_*.paths.npz` → `native/MERGED_h4_native.json`, verified by
-      `scripts/check_sota_reproduction.py` (recursive compare; volatile
-      timestamp keys dropped, implementation-hash drift reported as
-      warnings, part paths normalized to basename). The kronos leg
-      (`mega-arena/spliced/d1_*.mega.npz` → `mega-arena/merge_d1.json`)
-      stays gated on the real policy decision: the reference receipt's
-      `timestamp_source=reconstructed_from_hash_verified_bars` requires
-      `--bars-root data/raw/sources`, which is gitignored — commit the bar
-      parquets or set the `SOTA_ARTIFACT_URI` repo variable (s3:// prefix
-      mirroring sources/) to lift the gate; the workflow notices-and-skips
+      their merged receipts bit-exact via `scripts/check_sota_reproduction.py`;
+      volatile timestamp keys dropped, implementation-hash drift reported as
+      warnings). The kronos leg stays gated on the repo-policy decision:
+      `--bars-root data/raw/sources` is gitignored — commit the bar
+      parquets or set `SOTA_ARTIFACT_URI`; the workflow notices-and-skips
       until then.
 - [ ] P7.2 Receipt v2 schema: unified `receipt.json` fields across eval,
       incumbent, carry, paper lanes (dataset hash, code hash, params,
@@ -533,6 +552,15 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
 - [ ] P7.3 Experiment registry hardening (in flight — `log_fleet_run`
       indexes fleet tournaments in MLflow keyed to `receipt_sha256`;
       index-vs-evidence contract in `docs/EXPERIMENT_REGISTRY.md`): mlflow.db exists locally — wire
+- [~] P7.2 Receipt v2 schema: unified envelope across eval/incumbent/
+      carry/paper lanes (dataset hash, code hash, params, environment,
+      `live_pnl_claim`, verdict).
+      Partially landed: `research/receipt_v2.py` defines `receipt.v2`
+      (pydantic + published `receipt_v2.schema.json`); `dipcatcher
+      verify-receipt` validates v1/v2; `fleet_eval`, `vol_bench`,
+      `capacity_overlay`, `cross_sectional` emit v2 behind
+      `--receipt-version 2`. Remaining v1 writers migrating on an
+      in-flight sweep.
 - [~] P7.3 Experiment registry hardening: mlflow.db exists locally — wire
       fleet runs into it or document why not.
 - [ ] P7.4 Determinism sweep (in flight — receipt.v2 adoption across
@@ -554,18 +582,23 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       receipt-producing lane (`fleet_eval`, `capacity_overlay`,
       `cross_sectional`, `vol_bench` via `--receipt-version 2`; v1 remains the
       default seal and still verifies). Still open: cross-machine fingerprint
+      fleet runs into it or document why not. (PR #218 open.)
+- [~] P7.4 Determinism sweep: every `receipt.v2` envelope carries an
+      `environment` block (python/numpy/polars/scipy versions, BLAS/LAPACK
+      build from `np.__config__.CONFIG`, threadpools via threadpoolctl)
+      with a `fingerprint_sha256` digest. Cross-process determinism proven:
+      `sim_live` receipts are byte-identical under different PYTHONHASHSEED
+      (`tests/unit/determinism/`). Still open: cross-machine fingerprint
       sweeps.
-- [x] P7.5 Remote-fleet ops: consolidate `spawn_*.ps1` into one parametrized
-      launcher + watchdog (auto-respawn dead shards, heartbeat file).
-- [~] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
-      Landed: `scripts/fleet_spawn.ps1` (JSON-manifest WMI launcher, same
-      Win32_Process + cmd /c redirect pattern, dry-run + spawn receipt) +
-      `scripts/fleet_watchdog.ps1` (PID liveness, output-file staleness,
-      bounded respawn, `.dsh-24x7/fleet_heartbeat.json` heartbeat) +
-      `scripts/fleet_manifest_sota.ps1` (regenerates the spawn_sota_all job
-      list as a manifest).
-- [x] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
-      spawn, Defender exclusions, durable paths), durable staging dirs.
+- [x] P7.5 Remote-fleet ops: consolidated into `scripts/fleet_spawn.ps1`
+      (JSON-manifest WMI launcher, Win32_Process + `cmd /c` redirect,
+      dry-run + spawn receipt) + `scripts/fleet_watchdog.ps1` (PID liveness,
+      output staleness, bounded respawn, `.dsh-24x7/fleet_heartbeat.json`)
+      + `scripts/fleet_manifest_sota.ps1`.
+- [x] P7.6 `AGENTS.md` refresh: remote conventions landed — PowerShell-only,
+      WMI spawn survives ssh teardown, parametrized launcher + watchdog,
+      `.dsh-24x7` durable paths, thread-pinning env block, Defender
+      exclusions.
 - [x] P7.7 Evidence chain-of-custody: `research/evidence_audit.py` +
       `dipcatcher verify-all` — set-level receipt audit (filename↔digest
       binding, duplicate-seal detection, unsealed-legacy accounting,
@@ -574,13 +607,8 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       v2 envelopes and sealed v1 receipts now route to `verify-receipt`
       instead of the notebook-schema `verify-research`, which had never
       verified a sealed receipt correctly. The 7 committed pre-envelope
-      artifacts (no `receipt_sha256`, wrong schema family for
-      `verify-research`) moved to `receipts/legacy-unsealed/` — retained
-      for provenance, still rendered on the evidence page, outside the
-      seal-verified set. `make receipts-reverify` is green again.
-      Landed: AGENTS.md "Remote fleet" section — PowerShell-only, WMI spawn
-      survives ssh teardown, parametrized launcher + watchdog, `.dsh-24x7`
-      durable paths, thread-pinning env block, Defender exclusions.
+      artifacts moved to `receipts/legacy-unsealed/` — retained for
+      provenance, outside the seal-verified set.
 
 ## Execution rules
 
