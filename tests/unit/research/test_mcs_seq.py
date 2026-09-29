@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -129,3 +131,52 @@ def test_causality_future_cannot_rewrite_past() -> None:
         mcs2.update({"a": rng.normal(10, 1), "b": rng.normal(-10, 1)})
     snap2 = [(s.origin, s.survivors, s.n_eliminated) for s in mcs2.states[:30]]
     assert snap == snap2
+
+
+def test_mcs_cli_writes_sealed_receipt(tmp_path: Path) -> None:
+    """`dipcatcher mcs` loads streams, seals an mcs_seq.v1 receipt."""
+    import json
+
+    import numpy as np
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    rng = np.random.default_rng(5)
+    streams = {
+        "best": (rng.standard_normal(300) * 0.01).tolist(),
+        "worse": (rng.standard_normal(300) * 0.01 + 0.02).tolist(),
+        "worst": (rng.standard_normal(300) * 0.01 + 0.05).tolist(),
+    }
+    src = tmp_path / "streams.json"
+    src.write_text(json.dumps(streams))
+    out = tmp_path / "receipts"
+
+    result = CliRunner().invoke(
+        app,
+        ["mcs", str(src), "--alpha", "0.05", "--data-label", "SYNTHETIC", "--out-dir", str(out)],
+    )
+    assert result.exit_code == 0, result.output
+    assert "DATA_LABEL=SYNTHETIC" in result.output
+    assert "champion=best" in result.output
+    receipts = list(out.glob("mcs_seq_*.json"))
+    assert len(receipts) == 1
+    assert verify_receipt_file(receipts[0])["valid"]
+
+
+def test_mcs_cli_fail_closed_on_bad_input(tmp_path: Path) -> None:
+    """Non-map JSON / missing file / <2 heads all exit non-zero."""
+    import json
+
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"only": [1.0, 2.0]}))
+    assert CliRunner().invoke(app, ["mcs", str(bad)]).exit_code != 0
+    assert CliRunner().invoke(app, ["mcs", str(tmp_path / "gone.json")]).exit_code != 0
+    arr = tmp_path / "arr.json"
+    arr.write_text(json.dumps([1.0, 2.0]))
+    assert CliRunner().invoke(app, ["mcs", str(arr)]).exit_code != 0
