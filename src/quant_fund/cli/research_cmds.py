@@ -576,10 +576,76 @@ def verdict(
     typer.echo(f"receipt={path}")
 
 
+@app.command(name="fleet-monitor")
+def monitor(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    models: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(512, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(256, help="Trailing scored rows per shard."),
+    seed: int | None = typer.Option(
+        None, help="Base seed (default: train.random_seed from config)."
+    ),
+    alpha: float = typer.Option(0.05, help="Alarm threshold (anytime-valid)."),
+    level: float = typer.Option(0.9, help="Central interval for coverage lane."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Fleet tournament → every anytime-valid monitor lane → sealed receipt.
+
+    Re-runs the tournament keeping per-origin quantiles, then streams each
+    (shard, head) cell through the monitor family: coverage breach rate,
+    nested tail depth, PIT calibration, conformal exchangeability, and
+    loss drift vs the fleet median. Lanes whose modules are not merged
+    report lane_missing on the receipt rather than failing silently.
+    """
+    from quant_fund.research.fleet_eval import (
+        _atomic_write_text,
+        fleet_head_factories,
+    )
+    from quant_fund.research.monitor_run import monitor_fleet
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    try:
+        factories = fleet_head_factories(
+            cfg.quantiles.levels,
+            base_seed,
+            None if models is None else models.split(","),
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    frame, receipt = monitor_fleet(
+        factories,
+        None if shards is None else shards.split(","),
+        n_train=n_train,
+        n_eval=n_eval,
+        seed=base_seed,
+        alpha=alpha,
+        level=level,
+        taus=cfg.quantiles.levels,
+    )
+    sealed = seal_receipt(receipt)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"monitor_run_{sealed['receipt_sha256'][:16]}.json"
+    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"rows={receipt['n_rows']} alarms={receipt['n_alarm_rows']} "
+        f"lanes={sum(receipt['lanes_available'].values())}/5"
+    )
+    typer.echo(f"receipt={path}")
+
+
 __all__ = [
     "capacity",
     "execution_sensitivity_cmd",
     "fleet",
+    "monitor",
     "rankic",
     "research",
     "verdict",

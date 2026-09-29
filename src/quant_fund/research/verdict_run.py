@@ -40,6 +40,29 @@ from quant_fund.utils.reproducibility import git_revision
 VERDICT_RUN_SCHEMA = "honest_verdict_run.v1"
 
 
+def predict_eval_matrix(
+    shard: Any, model: Any, n_train: int, n_eval: int, tau_arr: np.ndarray
+) -> np.ndarray:
+    """Fit-time → eval-quantile matrix, enforcing the fleet predict contract.
+
+    Returns the (n_eval, n_taus) quantile matrix; raises on shape,
+    finiteness, or crossing violations — same contract as ``fleet_eval``'s
+    ``_score_row``, including the ``fleet_lagged_predict`` convention.
+    """
+    if getattr(model, "fleet_lagged_predict", False):
+        lag_x = shard.y[n_train - 1 : n_train + n_eval - 1].reshape(-1, 1)
+        q = np.asarray(model.predict(lag_x), dtype=float)
+    else:
+        q = np.asarray(model.predict(shard.x[n_train : n_train + n_eval]), dtype=float)
+    if q.ndim != 2 or q.shape[0] != n_eval or q.shape[1] != tau_arr.size:
+        raise ValueError(f"predict returned shape {q.shape}; expected ({n_eval}, {tau_arr.size})")
+    if not np.isfinite(q).all():
+        raise ValueError("predict returned non-finite quantiles")
+    if np.any(np.diff(q, axis=1) < 0.0):
+        raise ValueError("predict returned crossing quantiles")
+    return q
+
+
 def verdict_streams(
     factories: Mapping[str, HeadFactory],
     shards: Iterable[str] | Mapping[str, ShardGenerator] | None = None,
@@ -84,19 +107,7 @@ def verdict_streams(
             try:
                 model = factories[name]()
                 model.fit(shard.x[:n_train], shard.y[:n_train])
-                if getattr(model, "fleet_lagged_predict", False):
-                    lag_x = shard.y[n_train - 1 : n_train + n_eval - 1].reshape(-1, 1)
-                    q = np.asarray(model.predict(lag_x), dtype=float)
-                else:
-                    q = np.asarray(model.predict(shard.x[n_train : n_train + n_eval]), dtype=float)
-                if q.ndim != 2 or q.shape[0] != n_eval or q.shape[1] != tau_arr.size:
-                    raise ValueError(
-                        f"predict returned shape {q.shape}; expected ({n_eval}, {tau_arr.size})"
-                    )
-                if not np.isfinite(q).all():
-                    raise ValueError("predict returned non-finite quantiles")
-                if np.any(np.diff(q, axis=1) < 0.0):
-                    raise ValueError("predict returned crossing quantiles")
+                q = predict_eval_matrix(shard, model, n_train, n_eval, tau_arr)
             except Exception as exc:
                 status = "error"
                 err = str(exc)
