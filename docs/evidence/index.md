@@ -1085,525 +1085,113 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: capacity_overlay.v1
 - `seed`: 11
 
-### `receipts/concordance_df424fa2f6b1c4e9.json`
+### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/concordance_df424fa2f6b1c4e9.json | d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c | df424fa2f6b1c4e9c52a20d07a9b76ca2eaecf8b87473df713cf7416e878928c | not_checked | 3246b8d37c1ffda200754c943d9c97879cddd5a6 | absent | unspecified | absent | absent | false |
+| receipts/deps_security_hygiene_f3b4e6fd22e439b7.json | 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7 | f3b4e6fd22e439b7932ef3b9084387ee9c91274a24d17af248bebbc10b68a167 | not_checked | absent | absent | unspecified | absent | true | false |
 
-- `code_files`:
-  - `concordance.py`: f254220d642e96bd7df29a9b83b3553d1dd6287bf0e95390c7eb8f23f141a810
+- `artifact_sha256`:
+  - `bandit_report.json`: 809cd6121547aa0fe7ba43a02bee5b7d032cf7677b4e186f697e3afad325118c
+  - `bandit_strict.txt`: 87a0d55d41533af09c000df7e63d6fa0aa38f2a585fda3748f2d824c1713a822
+  - `deptry_src.txt`: ff6a683d5c49cc51f281f71b0d33bdd6b3b3f6a98cc32e827d42489cdb26b6a9
+  - `environment.txt`: 51db324590116cdb29cde79a5e84e163b558ad5205ca99de5982ca5bd9413649
+  - `export_all.txt`: 9fbf64df6666d2cfa7f4c6e7ffb8da02d4f0a55c16c8fc6519c46d851518730b
+  - `gitleaks_report.json`: 37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570
+  - `licenses_all.json`: a6fd604a5b417cae275fab6b11a080394bc8d3081e7c647ea1022caa4efd5121
+  - `pip_audit.json`: 049e4778f823e4f6e95ea20dc9426dde053a1920d865b5912e5509c74ec29ba6
+  - `uv_audit.json`: 737891e2dfea09ce5a31b82b8a023663d03d6f2de336f16f2d8e492275e04e21
+- `base_commit`: 2ed19c2a39b9c5521250e5e0cf53db188bc76b54
+- `ci_gates`:
+  - `dependency_review`: .github/workflows/dependency-review.yml (fail-on-severity moderate)
+  - `secret_scan`: .github/workflows/secret-scan.yml (gitleaks 8.30.1, sha256-pinned, --full-history)
+- `commands`:
+  - `bandit`: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
+  - `deptry`: uv run --with deptry==0.25.1 deptry src
+  - `gitleaks`: gitleaks detect --source . --redact --no-banner --config .gitleaks.toml --log-opts=--full-history
+  - `licenses`: importlib.metadata scan of installed env + PyPI metadata for 22 platform-only pins
+  - `lock_check`: uv lock --check
+  - `pip_audit`: uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups | uvx --from pip-audit==2.10.1 pip-audit --strict -r /dev/stdin
+  - `uv_audit`: uv audit --output-format json
 - `data_label`: SYNTHETIC
-- `dataset_hash`: 982dca72f99ef77a84027d13bbbf7cc1d76c67a2b6245a66ca758804dd06c82e
+- `dependency_changes`:
+  - `declared_direct`:
+    - cryptography>=44
+    - threadpoolctl>=3.5
+  - `note`: no advisory-driven bump needed — both auditors report zero findings
+  - `removed_direct`:
+    - pydantic-settings
+    - python-dotenv
+  - `vulnerability_bumps`:
+- `docs`:
+  - docs/AUDIT_P610_DEPS.md
+  - docs/SECURITY_EVIDENCE.md
 - `environment`:
-  - `blas`:
-    - `found`: true
-    - `name`: accelerate
-    - `version`: null
-  - `byteorder`: little
-  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
-  - `implementation`: CPython
-  - `lapack`:
-    - `found`: true
-    - `name`: accelerate
-    - `version`: null
-  - `machine`: arm64
-  - `packages`:
-    - `numpy`: 2.5.3
-    - `polars`: 1.44.2
-    - `scipy`: 1.18.1
-  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `bandit`: 1.9.4
+  - `deptry`: 0.25.1
+  - `gitleaks`: 8.30.1
+  - `pip_audit`: 2.10.1
+  - `platform`: macOS arm64
   - `python`: 3.12.14
-  - `threadpools`:
-- `generated_at`: 2026-09-28T05:55:24.544258+00:00
-- `git_revision`: 3246b8d37c1ffda200754c943d9c97879cddd5a6
-- `kind`: selection_concordance
-- `params_hash`: 25df53328e1bcc41f27a0ec4692d3a9eeebea5534e2b399d003c41cda6b67ceb
-- `payload`:
-  - `alpha`: 0.1
-  - `block`: null
-  - `n_boot`: 300
-  - `n_eval`: 128
-  - `n_rows`: 135
-  - `n_taus`: 7
-  - `n_train`: 384
-  - `schema`: selection_concordance.v1
-  - `seed`: 0
-  - `shards`:
-    - [0]
-      - `alpha`: 0.1
-      - `best`: qar
-      - `block`: 1.7113493281720593
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - empirical
-          - nbeats
-          - nhits
-        - `mcs`:
-          - nbeats
-          - nhits
-        - `stepm`:
-          - nbeats
-          - nhits
-      - `eliminated_intersection`:
-        - nbeats
-        - nhits
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.6666666666666666
-          - `kendall_tau`: 0.6150813955507916
-        - `mcs_vs_stepm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: 0.7197633633294866
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.6666666666666666
-          - `kendall_tau`: 0.5847351773491256
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: iid_gaussian
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [1]
-      - `alpha`: 0.1
-      - `best`: regime
-      - `block`: 1.0218475437775143
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - empirical
-          - gaussian
-          - hstep_emp
-          - hstep_t
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - stack
-        - `mcs`:
-          - empirical
-          - gaussian
-          - hstep_emp
-          - hstep_t
-          - lgbm_q2
-          - nbeats
-          - nhits
-        - `stepm`:
-          - gaussian
-          - hstep_t
-          - nbeats
-          - nhits
-          - stack
-      - `eliminated_intersection`:
-        - gaussian
-        - hstep_t
-        - nbeats
-        - nhits
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.875
-          - `kendall_tau`: 0.9050124966251124
-        - `mcs_vs_stepm`:
-          - `jaccard`: 0.5
-          - `kendall_tau`: 0.7024393586862705
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.625
-          - `kendall_tau`: 0.6248192335464722
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: bimodal_mixture
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [2]
-      - `alpha`: 0.1
-      - `best`: conf_t
-      - `block`: 1.6319780057582054
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - fhs_skew
-          - nbeats
-          - nhits
-          - skew_t
-          - stack
-        - `mcs`:
-          - nbeats
-          - nhits
-        - `stepm`:
-          - nbeats
-          - nhits
-      - `eliminated_intersection`:
-        - nbeats
-        - nhits
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.4
-          - `kendall_tau`: 0.9111396372656012
-        - `mcs_vs_stepm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: 0.7090880313044139
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.4
-          - `kendall_tau`: 0.7765104378637272
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: heavy_tail
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [3]
-      - `alpha`: 0.1
-      - `best`: regime
-      - `block`: 1.0
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_t
-          - nbeats
-          - nhits
-          - stack
-        - `mcs`:
-          - fhs_skew
-          - gaussian
-          - hstep_t
-          - nbeats
-          - nhits
-          - stack
-        - `stepm`:
-          - fhs_skew
-          - gaussian
-          - hstep_t
-          - nbeats
-          - nhits
-          - qar
-      - `eliminated_intersection`:
-        - fhs_skew
-        - gaussian
-        - hstep_t
-        - nbeats
-        - nhits
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.8571428571428571
-          - `kendall_tau`: 0.8999732473284427
-        - `mcs_vs_stepm`:
-          - `jaccard`: 0.7142857142857143
-          - `kendall_tau`: 0.9093977234462831
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.625
-          - `kendall_tau`: 0.884559439890032
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: left_skew
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [4]
-      - `alpha`: 0.1
-      - `best`: qar
-      - `block`: 8.398424531025052
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - fhs_skew
-          - gaussian
-          - nbeats
-          - nhits
-        - `mcs`:
-          - nbeats
-          - nhits
-        - `stepm`:
-          - conf_t
-          - fhs_skew
-          - nbeats
-          - nhits
-      - `eliminated_intersection`:
-        - nbeats
-        - nhits
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.5
-          - `kendall_tau`: 0.8462396997155366
-        - `mcs_vs_stepm`:
-          - `jaccard`: 0.5
-          - `kendall_tau`: 0.834057656228299
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.6
-          - `kendall_tau`: 0.7867957924694431
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: regime_switch
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [5]
-      - `alpha`: 0.1
-      - `best`: stack
-      - `block`: 1.4807529162595143
-      - `concordant`: true
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - conf_t
-          - empirical
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_emp
-          - hstep_t
-          - isotonic
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - qar
-          - regime
-          - skew_t
-        - `mcs`:
-          - conf_t
-          - empirical
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_emp
-          - hstep_t
-          - isotonic
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - qar
-          - regime
-          - skew_t
-        - `stepm`:
-          - conf_t
-          - empirical
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_emp
-          - hstep_t
-          - isotonic
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - qar
-          - regime
-          - skew_t
-      - `eliminated_intersection`:
-        - conf_t
-        - empirical
-        - fhs_skew
-        - gaussian
-        - gmm
-        - hstep_emp
-        - hstep_t
-        - isotonic
-        - lgbm_q2
-        - nbeats
-        - nhits
-        - qar
-        - regime
-        - skew_t
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: 0.36514837167011077
-        - `mcs_vs_stepm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: null
-        - `stepm_vs_dm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: null
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: garch_cluster
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [6]
-      - `alpha`: 0.1
-      - `best`: regime
-      - `block`: 1.0
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - empirical
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_emp
-          - hstep_t
-          - isotonic
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - qar
-          - skew_t
-          - stack
-        - `mcs`:
-          - empirical
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_emp
-          - hstep_t
-          - isotonic
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - qar
-          - skew_t
-          - stack
-        - `stepm`:
-          - conf_t
-          - empirical
-          - fhs_skew
-          - gaussian
-          - gmm
-          - hstep_emp
-          - hstep_t
-          - isotonic
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - qar
-          - skew_t
-          - stack
-      - `eliminated_intersection`:
-        - empirical
-        - fhs_skew
-        - gaussian
-        - gmm
-        - hstep_emp
-        - hstep_t
-        - isotonic
-        - lgbm_q2
-        - nbeats
-        - nhits
-        - qar
-        - skew_t
-        - stack
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: 0.50709255283711
-        - `mcs_vs_stepm`:
-          - `jaccard`: 0.9285714285714286
-          - `kendall_tau`: 1.0
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.9285714285714286
-          - `kendall_tau`: 0.37796447300922725
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: vol_break
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [7]
-      - `alpha`: 0.1
-      - `best`: qar
-      - `block`: 1.0
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - conf_t
-          - empirical
-          - fhs_skew
-          - nbeats
-          - nhits
-          - regime
-        - `mcs`:
-          - conf_t
-          - fhs_skew
-          - nbeats
-          - nhits
-          - regime
-        - `stepm`:
-          - conf_t
-          - fhs_skew
-          - nbeats
-          - nhits
-          - regime
-      - `eliminated_intersection`:
-        - conf_t
-        - fhs_skew
-        - nbeats
-        - nhits
-        - regime
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.8333333333333334
-          - `kendall_tau`: 0.7500062987893729
-        - `mcs_vs_stepm`:
-          - `jaccard`: 1.0
-          - `kendall_tau`: 0.8832055150452627
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.8333333333333334
-          - `kendall_tau`: 0.7703288865196433
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: gjr_leverage
-      - `spa_p_consistent`: 0.0033222591362126247
-    - [8]
-      - `alpha`: 0.1
-      - `best`: qar
-      - `block`: 2.1615551628596816
-      - `concordant`: false
-      - `decisive`: true
-      - `eliminated`:
-        - `dm`:
-          - empirical
-          - gaussian
-          - gmm
-          - hstep_emp
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - regime
-          - skew_t
-          - stack
-        - `mcs`:
-          - empirical
-          - gaussian
-          - hstep_emp
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - regime
-        - `stepm`:
-          - lgbm_q2
-          - nbeats
-          - nhits
-          - regime
-          - stack
-      - `eliminated_intersection`:
-        - lgbm_q2
-        - nbeats
-        - nhits
-        - regime
-      - `n_boot`: 300
-      - `n_heads_ok`: 15
-      - `pair_stats`:
-        - `mcs_vs_dm`:
-          - `jaccard`: 0.7
-          - `kendall_tau`: 0.9710083124552246
-        - `mcs_vs_stepm`:
-          - `jaccard`: 0.5
-          - `kendall_tau`: 0.8195737385236203
-        - `stepm_vs_dm`:
-          - `jaccard`: 0.5
-          - `kendall_tau`: 0.7799080767991882
-      - `rc_p`: 0.0033222591362126247
-      - `shard`: ar1_lagged_x
-      - `spa_p_consistent`: 0.0033222591362126247
-- `receipt_sha256`: df424fa2f6b1c4e9c52a20d07a9b76ca2eaecf8b87473df713cf7416e878928c
-- `schema`: receipt.v2
-- `schema_version`: 2
-- `verdict`: pass
+  - `uv`: 0.12.19
+- `evidence_dir`: data/metadata/reports/deps_hygiene_20260928/
+- `generated`: 2026-09-28T00:00:00Z
+- `receipt`: deps_security_hygiene
+- `receipt_sha256`: f3b4e6fd22e439b7932ef3b9084387ee9c91274a24d17af248bebbc10b68a167
+- `research_only`: true
+- `results`:
+  - `bandit`:
+    - `loc`: 158122
+    - `severity_medium_or_high_findings`: 0
+  - `deptry`:
+    - `accepted`:
+      - statsmodels (tests/scripts only)
+      - clarabel (cvxpy solver)
+      - optional imports sigstore/huggingface_hub/ray/quant_core/kronos-model
+    - `dep002_fixed`:
+      - pydantic-settings
+      - python-dotenv
+    - `dep003_fixed`:
+      - cryptography
+      - threadpoolctl
+    - `findings_total`: 14
+  - `eval_exec_pickle`:
+    - `eval_exec_hits`: 0
+    - `pickle_path`: fx1.forecast.artifacts behind allow_unsafe_deserialization + trusted_checkpoint_sha256
+  - `gitleaks`:
+    - `bytes_scanned`: 49307356
+    - `commits_scanned`: 408
+    - `leaks`: 0
+  - `licenses`:
+    - `blank_metadata`:
+      - huey (bundled MIT)
+      - cuda-toolkit
+      - nvidia-cuda-runtime
+      - nvidia-cudnn-cu13
+      - nvidia-nccl-cu13
+      - nvidia-nvshmem-cu13
+    - `gpl_family_runtime`: 0
+    - `installed_scanned`: 184
+    - `mpl_2_0`:
+      - certifi
+      - hypothesis
+      - pathspec
+      - tqdm
+    - `pins_covered`: 206
+    - `platform_only_via_pypi`: 22
+  - `pin_audit`:
+    - `duplicate_names_in_export`: 0
+    - `uv_lock_check`: pass
+  - `pip_audit`:
+    - `audited_dependencies`: 182
+    - `vulnerabilities`: 0
+  - `uv_audit`:
+    - `adverse_statuses`: 0
+    - `audited_packages`: 206
+    - `vulnerabilities`: 0
+- `schema`: deps_hygiene.v1
+- `ultraplan_item`: P6.10+P4.6
+- `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
 
 ### `receipts/fast_replay_p42_conformance_20260927.json`
 
