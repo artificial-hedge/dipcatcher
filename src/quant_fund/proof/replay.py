@@ -124,13 +124,15 @@ def _current_env_fingerprint() -> str:
 
 
 def _current_env_fingerprint_contracts() -> str:
-    """Contracts-style variant (§2.2): real ``quant_fund.__version__`` or dev."""
+    """Contracts-style variant (§2.2): real ``quant_fund.__version__`` or dev.
+
+    Read from the installed ``fx-1`` distribution metadata rather than
+    importing ``quant_fund`` — keeps ``proof/`` layering-clean (the package
+    dist name is ``fx-1``; its version is the canonical semver)."""
     version = "dev"
     try:
-        import quant_fund
-
-        version = str(getattr(quant_fund, "__version__", "dev") or "dev")
-    except Exception:  # never let a version probe break the gate
+        version = importlib_metadata.version("fx-1") or "dev"
+    except importlib_metadata.PackageNotFoundError:
         version = "dev"
     return f"{platform.platform()}|{platform.python_version()}|{version}"
 

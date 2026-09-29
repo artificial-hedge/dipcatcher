@@ -30,6 +30,7 @@ from quant_fund.research.receipt_v2 import (
     wrap_receipt_v2,
 )
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.receipt import verified_corpus_files
 from quant_fund.utils.reproducibility import git_revision
 
 SUITE_HEALTH_SCHEMA = "suite_health.v1"
@@ -71,7 +72,9 @@ def suite_health(
     root = Path(receipts_dir)
     if not root.is_dir():
         raise ValueError(f"receipts dir not found: {root}")
-    files = sorted(root.glob("*.json"))
+    # Recursive to match the epoch chain's member semantics — a receipt in a
+    # subdirectory is still corpus evidence; quarantined subdirs are skipped.
+    files = verified_corpus_files(root)
     if not files:
         raise ValueError(f"no receipts under {root}")
 
@@ -84,9 +87,10 @@ def suite_health(
 
     for path in files:
         result = verify_receipt_file(path)
+        rel = path.relative_to(root).as_posix()
         try:
             raw = path.read_bytes()
-            digests[path.name] = hash_bytes(raw)
+            digests[rel] = hash_bytes(raw)
             payload: Any = json.loads(raw)
         except Exception:
             payload = None
@@ -94,12 +98,12 @@ def suite_health(
         if isinstance(payload, dict):
             body = payload.get("payload")
             inner = body if isinstance(body, dict) else payload
-            labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
+            labels[rel] = str(inner.get("data_label") or "UNKNOWN")
         else:
-            labels[path.name] = "UNKNOWN"
+            labels[rel] = "UNKNOWN"
         n_findings = 0
         if corpus_mod is not None and isinstance(payload, dict):
-            for f in corpus_mod.harvest_findings(payload, path.name):
+            for f in corpus_mod.harvest_findings(payload, rel):
                 n_findings += 1
                 e = f.get("evalue")
                 if isinstance(e, (int, float)) and np.isfinite(e) and e > 0:
@@ -107,7 +111,7 @@ def suite_health(
         findings_total += n_findings
         rows.append(
             {
-                "file": path.name,
+                "file": rel,
                 "kind": str(kind) if kind else None,
                 "valid": result["valid"],
                 "n_errors": len(result["errors"]),
