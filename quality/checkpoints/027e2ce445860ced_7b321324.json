@@ -2,10 +2,10 @@
   "algorithm": "ed25519",
   "key_id": "bc3bcff676056adf",
   "payload": {
-    "at": "2026-09-29T23:29:47+00:00",
+    "at": "2026-09-29T23:28:30+00:00",
     "code": {
-      "revision": "1655b1b16cef0c779451f45ea0047962979b7ff0",
-      "worktree_sha256": "8bdebbf49bf1420be17de6c150610c9d2a30ff50f375291fac0152e4cfb62e5a"
+      "revision": "d8847f0d899e59e87d6d86fa0b973227aed9c7b7",
+      "worktree_sha256": "c3ee8144f41b983ba97fa7ba030f11030eb8839433dcc4b9f406e78c412633c8"
     },
     "heads": {
       ".github/workflows/*.yml": {
@@ -17,8 +17,8 @@
         "sha256": "46d6eea1a430e5762ab3de9a2c929527a7955019e47e2389f5c0ef67db49a507"
       },
       "quality/*.json": {
-        "receipt": "corpus_epoch_98c5eda5aaf01256.json",
-        "sha256": "ecf27ee174e80cb1d50ced984f6cd87f6ecc46a95f6a859b58a5706153381f94"
+        "receipt": "corpus_epoch_f3c1fea2a1be4586.json",
+        "sha256": "ea6cb2b43cc7892e984c75332862ed51f0939a5abbc6231502a9bcb694cecafa"
       },
       "receipts/*.json": {
         "receipt": "corpus_epoch_574953afdf88a0f6.json",
@@ -31,13 +31,13 @@
     },
     "missing_pins": [],
     "pins": {
-      "gate_pins.sig": "1a6e9acc7e5f6dbe691f5a7e2169e427d5166c2b07a41a447274bb2e164d52fb",
-      "quality/crown_jewels.json": "517ce8218a91d2379e73087781ea6c529efc74105544ae0d64be183fef95ef24",
-      "quality/epoch_heads.json": "1938c219a7d54d9d2f9135ad11ad2db04ae1f9035827fd72d9bcb64f7be66ccb"
+      "gate_pins.sig": "764f95c0658f8fc8bb054b10f6a802fd1babee8ba5a4dd566192fa0eba71034b",
+      "quality/crown_jewels.json": "eacd53b22df0ca4aca7df1a365809a933ae4e37fe80eb7d5af2eba91ad6eda95",
+      "quality/epoch_heads.json": "9d3863510a8677c8df5b282cd8ded0c0be1555588989d9d8d83f896a676a71cd"
     },
-    "prev_sha256": "027e2ce445860ced7b3213247d0f88f6d1a1d3d3ba10d507839e56a5b1148f64",
+    "prev_sha256": "04eda5ef081867ec2144581873d5f4e934b87f9432b8573d38b448e14acf6f11",
     "schema": "integrity_checkpoint.v1"
   },
   "schema": "integrity_checkpoint_sig.v1",
-  "signature": "5937b6a3fd8b9d4b469385a4f75a96bd3084be017f046379572355fda55f9e4ed5a183eb21232dd9690c9f0b08d64a9882f59c789d05bf8a3c0f3c32697f4405"
+  "signature": "74c74d276dbaac7f877a96f73de4ef6fd81fa00644eb583b622b2b6b6776a32552cfca561eddef2315429c4a7b0d086cfd304edb1498ddbcbda5fd5da9a25100"
 }
