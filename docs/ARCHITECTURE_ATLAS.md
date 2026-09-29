@@ -374,7 +374,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_hedge_lab
   quant_fund_research -->|67| quant_fund_metrics
   quant_fund_research -->|4| quant_fund_microstructure
-  quant_fund_research -->|61| quant_fund_models
+  quant_fund_research -->|62| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|1| quant_fund_paper
   quant_fund_research -->|13| quant_fund_pipeline
@@ -634,7 +634,7 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 60 |
 | `quant_fund.microstructure` | 7 |
-| `quant_fund.models` | 177 |
+| `quant_fund.models` | 178 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -661,7 +661,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 11 |
 
-- Modules scanned: **821**
+- Modules scanned: **822**
 - Packages: **65**
 - Cross-package import edges: **273**
 

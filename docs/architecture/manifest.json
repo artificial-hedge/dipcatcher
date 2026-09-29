@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 821,
+  "module_count": 822,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3939,6 +3939,10 @@
       "src": "quant_fund.models.tirex2"
     },
     {
+      "dst": "quant_fund.models.base",
+      "src": "quant_fund.models.toto2"
+    },
+    {
       "dst": "quant_fund.models.state_space",
       "src": "quant_fund.models.ucm"
     },
@@ -7019,6 +7023,10 @@
       "src": "quant_fund.research.fleet_eval"
     },
     {
+      "dst": "quant_fund.models.toto2",
+      "src": "quant_fund.research.fleet_eval"
+    },
+    {
       "dst": "quant_fund.research.catalog",
       "src": "quant_fund.research.fleet_eval"
     },
@@ -8804,6 +8812,7 @@
     "quant_fund.models.theta",
     "quant_fund.models.threshold",
     "quant_fund.models.tirex2",
+    "quant_fund.models.toto2",
     "quant_fund.models.trade_sign",
     "quant_fund.models.tukey_gh",
     "quant_fund.models.ucm",
@@ -10022,7 +10031,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 73,
+      "imports": 74,
       "src": "quant_fund.models"
     },
     {
@@ -10542,7 +10551,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 61,
+      "imports": 62,
       "src": "quant_fund.research"
     },
     {
