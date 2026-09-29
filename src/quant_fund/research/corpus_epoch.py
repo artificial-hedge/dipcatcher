@@ -61,6 +61,14 @@ EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME})
 # digest-of-pins (chained membership would stale itself instantly).
 EXEMPT_RELPATHS: frozenset[str] = frozenset({"timestamps/anchors.json", "checkpoint.json"})
 
+# Member rel-path *prefixes* exempt per corpus dir. Rekor witness proofs are
+# self-authenticating (RFC 6962 inclusion + log-signed timestamps inside the
+# file) and churn with every checkpoint rewrite — a new proof replaces the
+# retired one each cycle, so chain membership would force an endless
+# restamp-rewrite loop. Exemption is prefix-wide because filenames embed the
+# per-entry log index.
+EXEMPT_PREFIXES: frozenset[str] = frozenset({"witness/"})
+
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
@@ -84,7 +92,16 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
         if path.is_file()
         and path.name not in EXEMPT_BASENAMES
         and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
+        and not _exempt_member(root, path.relative_to(root).as_posix())
     }
+
+
+def _exempt_member(root: Path, relname: str) -> bool:
+    """True for corpus-scoped prefix exemptions (e.g. ``quality/witness/``).
+
+    Only applies inside the corpus the prefix belongs to — a ``witness/``
+    drop under ``receipts`` stays a normal member."""
+    return root.name == "quality" and any(relname.startswith(prefix) for prefix in EXEMPT_PREFIXES)
 
 
 def epoch_root(members: Mapping[str, str]) -> str:
@@ -444,19 +461,32 @@ def check_epoch_chain(
     if len(genesis) > 1:
         errors.append(f"epoch_multiple_genesis:{','.join(sorted(genesis))}")
 
-    # Membership must be non-decreasing along the chain.
+    # Membership must be non-decreasing along the chain. Members under a
+    # corpus-scoped exempt prefix churn by rule (self-authenticating files
+    # like Rekor witness proofs replace per checkpoint rewrite) — their
+    # epoch-to-epoch presence delta is bookkeeping, not evidence loss.
     allowed = dict(allowed_removals or {})
     for prev_name, cur_name in child_of.items():
-        prev_members = _member_maps(by_name[prev_name])
-        cur_members = _member_maps(by_name[cur_name])
+        prev_members = {
+            k: v for k, v in _member_maps(by_name[prev_name]).items() if not _exempt_member(root, k)
+        }
+        cur_members = {
+            k: v for k, v in _member_maps(by_name[cur_name]).items() if not _exempt_member(root, k)
+        }
         for gone in sorted(set(prev_members) - set(cur_members)):
             if allowed.get(gone) != prev_members[gone]:
                 errors.append(f"member_removed:{gone}@{cur_name}")
-        declared_removed = set(by_name[cur_name].get("members_removed") or [])
+        declared_removed = {
+            n
+            for n in (by_name[cur_name].get("members_removed") or [])
+            if not _exempt_member(root, n)
+        }
         actual_removed = set(prev_members) - set(cur_members)
         if declared_removed != actual_removed:
             errors.append(f"members_removed_dishonest:{cur_name}")
-        declared_added = set(by_name[cur_name].get("members_added") or [])
+        declared_added = {
+            n for n in (by_name[cur_name].get("members_added") or []) if not _exempt_member(root, n)
+        }
         actual_added = set(cur_members) - set(prev_members)
         if declared_added != actual_added:
             errors.append(f"members_added_dishonest:{cur_name}")
@@ -476,7 +506,7 @@ def check_epoch_chain(
         root_val = head.get("epoch_root_sha256")
         head_root = root_val if isinstance(root_val, str) else None
         live = member_digests(root, pattern=pattern)
-        head_members = _member_maps(head)
+        head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
         for name in stamped - set(live):
             if allowed.get(name) != head_members[name]:

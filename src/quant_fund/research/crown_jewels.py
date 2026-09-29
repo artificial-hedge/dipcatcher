@@ -46,6 +46,9 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "tests/conftest.py",  # suite-level fixtures
     "uv.lock",  # the supply-chain lock
     "quality/gate_signing.pub",  # the pin-signature trust root
+    "quality/witness_signing.pub",  # Rekor witness-signature key
+    "quality/rekor_pubkey.pem",  # the public log's verification key — a swapped
+    # copy would launder forged SET/checkpoint-note signatures
     "quality/timestamps/freetsa_cacert.pem",  # TSA chain verify root — a swapped
     "quality/timestamps/freetsa_tsa.crt",  # cert pair would launder forged anchors
     # --- the verifier itself: a silent rewrite beats every layer above ---
@@ -55,6 +58,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/epoch_merkle.py",
     "src/quant_fund/research/gate_signatures.py",
     "src/quant_fund/research/integrity_checkpoint.py",
+    "src/quant_fund/research/integrity_witness.py",
     "src/quant_fund/research/lane_contracts.py",
     "src/quant_fund/research/receipt_lattice.py",
     "src/quant_fund/research/receipt_v2.py",

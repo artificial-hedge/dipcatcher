@@ -340,3 +340,40 @@ def test_allow_member_updates_for_mutable_corpora(tmp_path: Path) -> None:
     (corpus / "pin.json").unlink()
     removed = check_epoch_chain(corpus, allow_member_updates=True)
     assert any("pin.json" in e for e in removed["errors"])
+
+
+def test_witness_prefix_exempt_only_inside_quality(tmp_path: Path) -> None:
+    """quality/witness/* proofs churn per checkpoint rewrite — exempt from
+    membership so the chain doesn't require an endless restamp loop. The
+    exemption is corpus-scoped: receipts/witness/* stays a normal member."""
+    quality = tmp_path / "quality"
+    (quality / "witness").mkdir(parents=True)
+    _receipt(quality, "pin.json", "p1")
+    _receipt(quality / "witness", "proof_1.json", "w1")
+    members = member_digests(quality)
+    assert "pin.json" in members
+    assert "witness/proof_1.json" not in members
+
+    # The same relative name under a different corpus is NOT exempt.
+    receipts = tmp_path / "receipts"
+    (receipts / "witness").mkdir(parents=True)
+    _receipt(receipts, "main.json", "r1")
+    _receipt(receipts / "witness", "proof_1.json", "w1")
+    rmembers = member_digests(receipts)
+    assert "witness/proof_1.json" in rmembers
+
+
+def test_witness_replacement_is_not_member_removed(tmp_path: Path) -> None:
+    """A proof stamped as a member, then exempted, must not be flagged as a
+    removal when the chain rechecks history."""
+    quality = tmp_path / "quality"
+    (quality / "witness").mkdir(parents=True)
+    _receipt(quality, "pin.json", "p1")
+    _receipt(quality / "witness", "proof_1.json", "w1")
+    _stamp(quality)  # head stamped while proof was still a member
+    # Exemption now applies (same as post-rule code): proof stays on disk,
+    # next stamp excludes it from membership, no removal error.
+    _receipt(quality, "pin.json", "p2")
+    _stamp(quality)
+    res = check_epoch_chain(quality, allow_member_updates=True)
+    assert res["errors"] == []

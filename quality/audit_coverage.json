@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 120,
+      "n_modules": 121,
       "status": "audited"
     },
     "risk": {
@@ -240,6 +240,10 @@
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "research/integrity_witness.py": {
+      "doc": "docs/EVIDENCE_INTEGRITY.md",
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",

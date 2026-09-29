@@ -2045,3 +2045,64 @@ def verify_checkpoint_cmd(
         typer.echo(f"  {err}")
     if not res["ok"]:
         raise typer.Exit(code=1)
+
+
+@app.command("witness-checkpoint")
+def witness_checkpoint_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    key_file: Path | None = typer.Option(
+        None,
+        "--key-file",
+        help="PEM file holding an ECDSA P-256 private key. "
+        "Falls back to WITNESS_SIGNING_KEY env (PEM text or path).",
+    ),
+    target: Path = typer.Option(
+        Path("quality/checkpoint.json"), "--target", help="Repo-relative file to witness."
+    ),
+    rekor_url: str = typer.Option("https://rekor.sigstore.dev", "--rekor-url"),
+) -> None:
+    """Witness ``quality/checkpoint.json`` into the public Rekor transparency
+    log and commit the self-verifying proof under ``quality/witness/``.
+
+    Only the artifact's sha256 and our ECDSA signature leave the machine;
+    the committed proof verifies fully offline (RFC 6962 inclusion walk +
+    Rekor's signed entry timestamp and checkpoint note under the pinned
+    Rekor pubkey). Requires network on submit; none on verify.
+    """
+    import os
+
+    from quant_fund.research.integrity_witness import submit_witness
+
+    pem: bytes | None = None
+    if key_file is not None:
+        pem = key_file.read_bytes()
+    else:
+        env = os.environ.get("WITNESS_SIGNING_KEY", "").strip()
+        if env:
+            pem = Path(env).read_bytes() if Path(env).is_file() else env.encode()
+    if pem is None:
+        typer.echo("witness-checkpoint: no key material — supply --key-file or WITNESS_SIGNING_KEY")
+        raise typer.Exit(code=2)
+    out = submit_witness(root, pem, target=target, rekor_url=rekor_url)
+    typer.echo(f"witness={out}")
+
+
+@app.command("verify-witness")
+def verify_witness_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+) -> None:
+    """Verify every committed ``quality/witness/*.json`` proof offline:
+    digest + our witness signature + RFC 6962 inclusion + Rekor SET and
+    checkpoint-note signatures. No proofs committed is neutral.
+    """
+    from quant_fund.research.integrity_witness import verify_witnesses
+
+    res = verify_witnesses(root)
+    if not res["witnessed"]:
+        typer.echo("witness: none committed")
+        return
+    typer.echo(f"witness: {'ok' if res['ok'] else 'FAIL'}")
+    for err in res["errors"]:
+        typer.echo(f"  {err}")
+    if not res["ok"]:
+        raise typer.Exit(code=1)

@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness epoch-consistency
 
 .DEFAULT_GOAL := help
 
@@ -207,6 +207,7 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
 	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --allow-member-updates
 	uv run dipcatcher crown-jewels --check
+	uv run dipcatcher verify-witness
 	uv run dipcatcher verify-repo
 
 epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
@@ -239,6 +240,12 @@ checkpoint: ## Sign the pin state into quality/checkpoint.json (needs GATE_SIGNI
 
 anchor-checkpoint: ## RFC 3161-anchor the checkpoint (network); one token time-binds the whole pin state
 	uv run dipcatcher checkpoint --anchor
+
+witness-checkpoint: ## Witness the checkpoint into the public Rekor transparency log (network; needs WITNESS_SIGNING_KEY); commits a self-verifying proof under quality/witness/
+	uv run dipcatcher witness-checkpoint
+
+verify-witness: ## Verify committed Rekor witness proofs offline — RFC 6962 inclusion + Rekor SET/note signatures
+	uv run dipcatcher verify-witness
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

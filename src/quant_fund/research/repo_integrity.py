@@ -34,6 +34,7 @@ from quant_fund.research.crown_jewels import (
 )
 from quant_fund.research.gate_signatures import verify_pin_signatures
 from quant_fund.research.integrity_checkpoint import verify_checkpoint
+from quant_fund.research.integrity_witness import verify_witnesses
 from quant_fund.research.timestamp_anchor import verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import hash_bytes
@@ -91,6 +92,13 @@ def verify_repo(
         "anchored": bool(cp.get("anchored", False)),
         "current": bool(cp.get("current", False)),
         "errors": cp["errors"],
+    }
+
+    wit = verify_witnesses(root)
+    gates["witness"] = {
+        "ok": bool(wit["ok"]),
+        "witnessed": bool(wit["witnessed"]),
+        "errors": wit["errors"],
     }
 
     pin_present = pin_path.is_file()

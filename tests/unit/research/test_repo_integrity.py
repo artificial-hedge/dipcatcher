@@ -80,11 +80,15 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     # No checkpoint committed — same neutral contract as unsigned pins.
     assert res["gates"]["checkpoint"]["signed"] is False
     assert res["gates"]["checkpoint"]["ok"] is True
+    # No witness proofs committed — the public-log layer is optional.
+    assert res["gates"]["witness"]["witnessed"] is False
+    assert res["gates"]["witness"]["ok"] is True
     assert set(res["gates"]) == {
         "crown_jewels",
         "pin_signatures",
         "timestamp_anchors",
         "checkpoint",
+        "witness",
         "epoch:receipts",
         "epoch:verifier",
         "epoch:quality",
