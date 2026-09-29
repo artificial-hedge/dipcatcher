@@ -513,9 +513,12 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     from quant_fund.research.lane_contracts import lane_contract_errors
 
     errors.extend(lane_contract_errors(payload))
+    if payload.get("catalog") == "hedge_lab_analytics":
+        from quant_fund.hedge_lab._receipt import lane_receipt_contract_errors
+
+        errors.extend(lane_receipt_contract_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
-
         errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 

@@ -35,6 +35,10 @@ import yaml
 from numpy.typing import NDArray
 
 from quant_fund.config import load_config
+from quant_fund.hedge_lab._receipt import (
+    seal_receipt,
+    verify_lane_receipt,
+)
 from quant_fund.hedge_lab.directional import close_matrix, simple_returns, topk_long_returns
 from quant_fund.hedge_lab.gated_race import slice_ic_window
 from quant_fund.hedge_lab.lightspeed_book import _align_ic, _date_key, _ic_card
@@ -310,17 +314,23 @@ def _calibration(cfg: Any) -> dict[str, Any]:
         }
 
 
+def verify_slate_receipt(path: str | Path) -> list[str]:
+    """Fail-closed verification of a written lane receipt file."""
+    return verify_lane_receipt(path)
+
+
 def _write_receipt(receipt: dict[str, Any], artifact: str, root: Path) -> dict[str, Any]:
-    payload = json.dumps(receipt, indent=2, default=str)
+    sealed = seal_receipt(receipt)
+    payload = json.dumps(sealed, indent=2, default=str)
     public = Path(artifact)
     public.parent.mkdir(parents=True, exist_ok=True)
     public.write_text(payload, encoding="utf-8")
     meta = root / "metadata" / public.name
     meta.parent.mkdir(parents=True, exist_ok=True)
     meta.write_text(payload, encoding="utf-8")
-    receipt["artifact_path"] = str(public)
-    receipt["metadata_path"] = str(meta)
-    return receipt
+    sealed["artifact_path"] = str(public)
+    sealed["metadata_path"] = str(meta)
+    return sealed
 
 
 def _base_receipt(
