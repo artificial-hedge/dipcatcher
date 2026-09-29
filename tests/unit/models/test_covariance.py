@@ -7,6 +7,7 @@ from hypothesis import strategies as st
 
 from quant_fund.models.covariance import (
     DCC_COVARIANCE_OBJECT_ONE_STEP,
+    DCC_NLL_FAIL_CLOSED,
     DCC_SAMPLE_TRAILING_COMPLETE,
     EWMA_MIN_OBS,
     EWMA_SPEC_RISKMETRICS,
@@ -21,7 +22,11 @@ from quant_fund.models.covariance import (
     OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF,
     OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_NONLINEAR,
     SAMPLE_SPEC_UNBIASED,
+    _gaussian_corr_nll,
+    adcc,
+    agdcc,
     dcc_gaussian,
+    dcc_student_t,
     ewma,
     ewma_cov,
     ewma_variance_1d,
@@ -37,6 +42,7 @@ from quant_fund.models.covariance import (
     repair_psd,
     sample,
     sample_cov,
+    student_t_corr_nll,
 )
 
 
@@ -527,3 +533,116 @@ def test_dcc_finite_psd_on_constant_plus_noise() -> None:
     assert params["stage1"] == "garch"
     assert params["covariance_object"] == "one_step_ahead"
     assert float(params["horizon"]) == 1.0
+
+
+def _dcc_returns(rows: int = 240, assets: int = 3, seed: int = 31) -> np.ndarray:
+    """SYNTHETIC seeded returns for DCC stage-2 guard tests (not market data)."""
+    rng = np.random.default_rng(seed)
+    x = 0.001 + rng.normal(scale=0.01, size=(rows, assets))
+    x[:, 1] += 0.5 * x[:, 0]
+    return x
+
+
+def test_gaussian_corr_nll_fails_closed_on_degenerate_correlation() -> None:
+    """The extracted term helper returns the sentinel, never NaN/inf."""
+    z = np.array([0.3, -0.4, 0.1])
+    assert np.isfinite(_gaussian_corr_nll(z, np.eye(3)))
+    # The degenerate inputs are deliberately singular / indefinite / NaN, so
+    # slogdet raises an "invalid value" FP warning. That warning is incidental
+    # to the invariant under test (the sentinel is returned, never NaN/inf), so
+    # it is suppressed locally rather than leaking into the suite output.
+    with np.errstate(invalid="ignore"):
+        for bad in (np.ones((3, 3)), np.diag([1.0, -2.0, 1.0]), np.full((3, 3), np.nan)):
+            assert _gaussian_corr_nll(z, bad) == DCC_NLL_FAIL_CLOSED
+        assert student_t_corr_nll(z, np.ones((3, 3)), 8.0) == DCC_NLL_FAIL_CLOSED
+
+
+def test_dcc_gaussian_fails_closed_on_non_finite_objective(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A NaN stage-2 objective raises instead of returning a fitted matrix.
+
+    Regression guard: ``dcc_gaussian`` once inlined its own copies of the Q
+    recursion and the correlation-nll term and dropped the ``isfinite``
+    guard, so it could optimise a NaN objective — SLSQP has no ordering on
+    NaN and reports ``success`` for an arbitrary parameter vector — while
+    ``dcc_student_t`` / ``adcc`` / ``agdcc`` failed closed.
+    """
+    monkeypatch.setattr(
+        "quant_fund.models.covariance._gaussian_corr_nll",
+        lambda z, corr: float("nan"),
+    )
+    with pytest.raises(ValueError, match="non-finite"):
+        dcc_gaussian(_dcc_returns())
+
+
+@pytest.mark.parametrize(
+    ("helper", "estimator"),
+    [
+        ("_gaussian_corr_nll", dcc_gaussian),
+        ("student_t_corr_nll", dcc_student_t),
+        ("_gaussian_corr_nll", adcc),
+        ("_gaussian_corr_nll", agdcc),
+    ],
+    ids=["dcc_gaussian", "dcc_student_t", "adcc", "agdcc"],
+)
+def test_dcc_families_share_the_non_finite_objective_guard(
+    monkeypatch: pytest.MonkeyPatch, helper: str, estimator: object
+) -> None:
+    """Every DCC family fails closed on a non-finite stage-2 objective.
+
+    The three named ``OptimizerConfig`` covariance paths are documented as
+    interchangeable; this pins the shared fail-closed invariant so one family
+    cannot silently drift to fail-open behaviour again.
+    """
+    arity = 3 if helper == "student_t_corr_nll" else 2
+
+    def _nan(*args: object) -> float:
+        assert len(args) == arity
+        return float("nan")
+
+    monkeypatch.setattr(f"quant_fund.models.covariance.{helper}", _nan)
+    with pytest.raises(ValueError, match="non-finite"):
+        # seed=21 is load-bearing: the fixture default (31) is non-stationary at
+        # 200 rows, so stage-1 GARCH would raise `nonstationary_persistence` and
+        # the monkeypatched stage-2 objective would never be reached. Verified
+        # seed 21 passes stage-1 for all four families and the guard fires.
+        estimator(_dcc_returns(rows=200, assets=2, seed=21))  # type: ignore[operator]
+
+
+def test_dcc_gaussian_reuses_extracted_helpers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``dcc_gaussian`` calls the shared helpers; it keeps no inlined copies.
+
+    Structural guard so the estimators cannot diverge again: every stage-2
+    step, correlation rescale, objective term, objective average, and
+    one-step matrix must come from the extracted helpers.
+    """
+    import quant_fund.models.covariance as cov
+
+    calls = dict.fromkeys(("qbar", "step_q", "r_from_q", "term", "average", "one_step_h"), 0)
+
+    def _count(name: str, original: object) -> object:
+        def wrapper(*args: object, **kwargs: object) -> object:
+            calls[name] += 1
+            return original(*args, **kwargs)  # type: ignore[operator]
+
+        return wrapper
+
+    for name, helper in (
+        ("qbar", "_dcc_qbar"),
+        ("step_q", "_dcc_step_q"),
+        ("r_from_q", "_dcc_r_from_q"),
+        ("term", "_gaussian_corr_nll"),
+        ("average", "_dcc_nll_average"),
+        ("one_step_h", "_dcc_one_step_h"),
+    ):
+        monkeypatch.setattr(cov, helper, _count(name, getattr(cov, helper)))
+
+    h, params = dcc_gaussian(_dcc_returns(rows=200, assets=2, seed=21))
+    assert np.isfinite(h).all()
+    assert params["family"] == "dcc_gaussian"
+    assert params["covariance_object"] == "one_step_ahead"
+    for name, count in calls.items():
+        assert count > 0, f"dcc_gaussian did not call the shared {name} helper"
