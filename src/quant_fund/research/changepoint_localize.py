@@ -153,6 +153,7 @@ def localize_report(
     window: int = 40,
     min_left: int = 10,
     stream_name: str = "stream",
+    data_label: str = "UNKNOWN",
 ) -> dict[str, Any]:
     """Receipt-shaped localization report."""
     res = localize_changepoint(stream, alpha=alpha, lam=lam, window=window, min_left=min_left)
@@ -160,6 +161,7 @@ def localize_report(
         "kind": LOCALIZE_SCHEMA,
         "schema": LOCALIZE_SCHEMA,
         "stream": stream_name,
+        "data_label": data_label,
         "alpha": alpha,
         "lam": lam,
         "min_left": min_left,
