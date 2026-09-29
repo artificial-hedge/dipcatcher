@@ -9,8 +9,8 @@
       "sha256": "b947be50a8b9288521a245481f4e6a93d8e40c49433d28347ab039c252483d05"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_1685df6df5e15b1f.json",
-      "sha256": "2d6aed7722039a26877a32920c722b37cc0583d30e19a9c1f35fa85b7096eb07"
+      "receipt": "corpus_epoch_b1d06039429c2a47.json",
+      "sha256": "5fe200c8b02584b7632a9f9eab9f9797580c8a7377a60c4d7951155305277e12"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_d479e96760271bba.json",
