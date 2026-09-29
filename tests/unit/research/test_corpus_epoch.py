@@ -143,6 +143,57 @@ def test_fails_closed_on_missing_dir(tmp_path: Path) -> None:
         corpus_epoch(tmp_path / "nope")
 
 
+def test_nested_members_use_posix_rel_paths(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    (corpus / "runs").mkdir(parents=True)
+    _receipt(corpus, "a.json", "1")
+    _receipt(corpus / "runs", "nested.json", "2")
+    members = member_digests(corpus)
+    assert set(members) == {"a.json", "runs/nested.json"}
+    epoch = corpus_epoch(corpus)
+    assert epoch["n_members"] == 2
+    write_epoch_receipt(epoch, corpus)
+    (corpus / "runs" / "nested.json").unlink()
+    errors = check_epoch_chain(corpus)["errors"]
+    assert any("head_member_missing_live:runs/nested.json" in e for e in errors)
+
+
+def test_chains_partition_by_pattern(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    (corpus / "report.md").write_text("# run report\n")
+    # Two independent chains over the same dir: one over *.json, one *.md.
+    json_epoch = corpus_epoch(corpus, pattern="*.json")
+    md_epoch = corpus_epoch(corpus, pattern="*.md")
+    assert set(m["name"] for m in json_epoch["members"]) == {"a.json"}
+    assert [m["name"] for m in md_epoch["members"]] == ["report.md"]
+    write_epoch_receipt(json_epoch, corpus)
+    md_path = write_epoch_receipt(md_epoch, corpus)
+    json_check = check_epoch_chain(corpus, pattern="*.json")
+    md_check = check_epoch_chain(corpus, pattern="*.md")
+    assert json_check["errors"] == []
+    # The md-chain's epoch file is a *.json arrival not yet stamped by the
+    # json chain — reported as unstamped, not an error.
+    assert json_check["unstamped"] == [md_path.name]
+    assert md_check["errors"] == []
+    assert md_check["unstamped"] == []
+    # A new *.md arrival shows up only on the md chain.
+    (corpus / "new_report.md").write_text("# more\n")
+    assert check_epoch_chain(corpus, pattern="*.md")["unstamped"] == ["new_report.md"]
+    assert check_epoch_chain(corpus, pattern="*.json")["errors"] == []
+
+
+def test_contract_rejects_bad_params(corpus_dir: Path) -> None:
+    epoch = corpus_epoch(corpus_dir)
+    bad = dict(epoch)
+    bad["params"] = {"pattern": 42}
+    assert "params_pattern_not_str" in epoch_contract_errors(bad)
+    bad2 = dict(epoch)
+    bad2["params"] = "nope"
+    assert "params_not_mapping" in epoch_contract_errors(bad2)
+
+
 @pytest.fixture()
 def corpus_dir(tmp_path: Path) -> Path:
     root = tmp_path / "corpus"

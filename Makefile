@@ -202,6 +202,7 @@ receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verif
 evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
 	uv run dipcatcher corpus-epoch --corpus-dir receipts --check
+	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

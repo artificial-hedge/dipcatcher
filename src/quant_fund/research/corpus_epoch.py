@@ -39,14 +39,22 @@ EPOCH_SCHEMA = "corpus_epoch.v1"
 GENESIS_PREV = "0" * 64
 
 
-def member_digests(corpus_dir: Path | str) -> dict[str, str]:
-    """``{filename: sha256-of-bytes}`` for every ``*.json`` in the corpus."""
+def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
+    """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
+
+    Recursive — member keys are POSIX relative paths so nested evidence dirs
+    (``verifier/runs/*.md``) are covered and digests are stable across OSes.
+    On a flat dir the keys equal the plain filenames, so existing chains are
+    unchanged. ``corpus_epoch_*.json`` receipts are members like any other —
+    epochs stamp each other, which is what lets the chain detect a stamped
+    epoch's own deletion or mutation.
+    """
     root = Path(corpus_dir)
     if not root.is_dir():
         raise ValueError(f"corpus dir {root} does not exist")
     return {
-        path.name: hash_bytes(path.read_bytes())
-        for path in sorted(root.glob("*.json"))
+        path.relative_to(root).as_posix(): hash_bytes(path.read_bytes())
+        for path in sorted(root.rglob(pattern))
         if path.is_file()
     }
 
@@ -96,15 +104,25 @@ def corpus_epoch(
     corpus_dir: Path | str,
     *,
     head_sha: str | None = None,
+    pattern: str = "*.json",
 ) -> dict[str, Any]:
     """Build the epoch receipt over the corpus's current membership.
 
     Links to the newest committed epoch receipt (highest chain position) as
-    ``prev``; membership delta is computed against it.
+    ``prev``; membership delta is computed against it. ``pattern`` selects
+    which files count as members (default ``*.json``); evidence dirs that
+    aren't JSON (e.g. ``verifier/`` markdown reports) stamp the same way.
     """
     root = Path(corpus_dir)
-    members = member_digests(root)
-    epochs = _epoch_receipts(root)
+    members = member_digests(root, pattern=pattern)
+    # Chains are per-(dir, pattern): only epochs stamped with the same member
+    # glob participate. Absent params.pattern means the default "*.json".
+    epochs = [
+        (p, e)
+        for p, e in _epoch_receipts(root)
+        if (e.get("params") or {}).get("pattern", "*.json") == pattern
+        if isinstance(e.get("params") or {}, Mapping)
+    ]
     # The chain head is the epoch no other epoch names as prev.
     prevs = {e.get("prev_epoch_receipt") for _, e in epochs}
     heads = [(p, e) for p, e in epochs if p.name not in prevs]
@@ -132,8 +150,10 @@ def corpus_epoch(
         "live_pnl_claim": False,
         "data_label": "CORPUS",
         "simulated_only": False,
-        "inputs_sha256": hash_bytes(canonical_json_bytes({"corpus_dir": str(root)})),
-        "params": {"head_sha": head_sha} if head_sha else {},
+        "inputs_sha256": hash_bytes(
+            canonical_json_bytes({"corpus_dir": str(root), "pattern": pattern})
+        ),
+        "params": ({"head_sha": head_sha} if head_sha else {}) | {"pattern": pattern},
         "epoch_root_sha256": epoch_root(members),
         "members": [{"name": n, "sha256": s} for n, s in members.items()],
         "n_members": len(members),
@@ -206,6 +226,13 @@ def epoch_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             errors.append("verdict_shrinking_without_removals")
         if verdict == "advancing" and (removed or prev_name is None):
             errors.append("verdict_advancing_invalid")
+    params = payload.get("params")
+    if params is not None and not isinstance(params, Mapping):
+        errors.append("params_not_mapping")
+    elif isinstance(params, Mapping):
+        pat = params.get("pattern")
+        if pat is not None and not isinstance(pat, str):
+            errors.append("params_pattern_not_str")
     inputs = payload.get("inputs_sha256")
     if not (isinstance(inputs, str) and len(inputs) == 64):
         errors.append("inputs_sha256")
@@ -216,6 +243,7 @@ def check_epoch_chain(
     corpus_dir: Path | str,
     *,
     allowed_removals: Mapping[str, str] | None = None,
+    pattern: str = "*.json",
 ) -> dict[str, Any]:
     """Walk the committed epoch chain against the live corpus.
 
@@ -230,7 +258,14 @@ def check_epoch_chain(
     root = Path(corpus_dir)
     errors: list[str] = []
     unstamped: list[str] = []
-    epochs = _epoch_receipts(root)
+    # Chains are per-(dir, pattern) — epochs stamped under a different member
+    # glob form their own chain and are ignored here.
+    epochs = [
+        (p, e)
+        for p, e in _epoch_receipts(root)
+        if isinstance(e.get("params") or {}, Mapping)
+        and (e.get("params") or {}).get("pattern", "*.json") == pattern
+    ]
     if not epochs:
         return {
             "errors": ["no_epoch_receipts"],
@@ -309,7 +344,7 @@ def check_epoch_chain(
         head = by_name[head_name]
         root_val = head.get("epoch_root_sha256")
         head_root = root_val if isinstance(root_val, str) else None
-        live = member_digests(root)
+        live = member_digests(root, pattern=pattern)
         head_members = _member_maps(head)
         stamped = set(head_members)
         for name in stamped - set(live):

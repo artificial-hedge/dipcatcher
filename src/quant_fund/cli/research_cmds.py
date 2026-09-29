@@ -1527,6 +1527,12 @@ def corpus_epoch(
         "--receipt-version",
         help="Receipt schema version: 1 = corpus_epoch.v1 (default), 2 = unified receipt.v2 envelope.",
     ),
+    glob: str = typer.Option(
+        "*.json",
+        "--glob",
+        help="Member file pattern — chains are per-(dir, glob); stamp non-JSON evidence "
+        "dirs with e.g. --glob '*.md' or '*'.",
+    ),
 ) -> None:
     """Corpus epoch: hash-chained integrity root over the evidence store.
 
@@ -1563,7 +1569,7 @@ def corpus_epoch(
             )
         allowed = dict(raw_allowed)
     if check:
-        result = check_epoch_chain(root, allowed_removals=allowed)
+        result = check_epoch_chain(root, allowed_removals=allowed, pattern=glob)
         typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
         for name in result["unstamped"]:
             typer.echo(f"epoch-chain info: unstamped member {name}")
@@ -1573,7 +1579,7 @@ def corpus_epoch(
             raise typer.Exit(code=1)
         typer.echo("epoch-chain intact")
         return
-    receipt = corpus_epoch(root, head_sha=None)
+    receipt = corpus_epoch(root, head_sha=None, pattern=glob)
     try:
         path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
     except ValueError as exc:
