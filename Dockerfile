@@ -6,7 +6,10 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
-RUN pip install --no-cache-dir uv==0.11.23
+RUN pip install --no-cache-dir --no-deps --require-hashes \
+    uv==0.11.23 \
+    --hash=sha256:7a85330de0a7eb0d5c6cf03c80edfb86facad19df367a0b52fc906db1ab15ce9 \
+    --hash=sha256:d256f90513d01ff6cbc2f17d88c0ccde65d138500df547ece214e6a50731c4b7
 COPY pyproject.toml uv.lock README.md ./
 # Dependencies first (cache-friendly), project last.
 RUN --mount=type=cache,target=/root/.cache/uv \

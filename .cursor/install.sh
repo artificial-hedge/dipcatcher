@@ -5,9 +5,9 @@
 # FastAPI service are all runnable out of the box.
 set -euo pipefail
 
-# 1. Ensure uv is available (pinned major line; installer is a no-op if present).
+# 1. Ensure the locked uv version is available (installer is a no-op if present).
 if ! command -v uv >/dev/null 2>&1; then
-  curl -LsSf https://astral.sh/uv/install.sh | sh
+  curl -LsSf https://astral.sh/uv/install.sh | UV_VERSION=0.11.23 sh
 fi
 # Make uv visible in this shell regardless of prior PATH state.
 # shellcheck disable=SC1090

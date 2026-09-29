@@ -228,6 +228,25 @@ def test_readiness_does_not_mask_internal_bugs_as_config_invalid(
         )
 
 
+def test_doctor_endpoints_redact_import_exception_details(monkeypatch) -> None:
+    import importlib
+
+    api = importlib.import_module("quant_fund.api.app")
+    private_detail = "/private/runtime/site-packages/internal_module.py"
+    monkeypatch.setattr(api, "doctor", lambda _path: {"core_imports": f"fail:{private_detail}"})
+    client = TestClient(api.app)
+
+    ready = client.get("/ready", params={"config_path": "configs/research.yaml"})
+    doctor_response = client.get("/doctor", params={"config_path": "configs/research.yaml"})
+
+    assert ready.status_code == 503
+    assert ready.json()["report"]["core_imports"] == "fail"
+    assert doctor_response.status_code == 200
+    assert doctor_response.json()["core_imports"] == "fail"
+    assert private_detail not in ready.text
+    assert private_detail not in doctor_response.text
+
+
 def test_models_endpoint_reports_backend_availability() -> None:
     payload = TestClient(app).get("/models").json()
     assert "xgboost" in payload["backend_availability"]

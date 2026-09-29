@@ -42,3 +42,8 @@ updates:
       actions:
         patterns:
           - "*"
+  - package-ecosystem: cargo
+    directory: /rust/quant_core
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

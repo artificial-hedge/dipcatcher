@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import stat
 from pathlib import Path
 
 import pytest
@@ -125,6 +127,18 @@ def test_honest_ledger_verifies_and_proves(tmp_path: Path) -> None:
         "risk_decision",
     ]
     assert ledger.entries()[0].prev_hash == GENESIS_HASH
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file mode semantics")
+def test_ledger_files_are_owner_only_and_existing_files_are_tightened(tmp_path: Path) -> None:
+    ledger, _signer = _build(tmp_path)
+    paths = (ledger.entries_path, ledger.checkpoints_path)
+    assert all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in paths)
+
+    for path in paths:
+        path.chmod(0o644)
+    ledger.append("risk_decision", {"accepted": True, "simulation_only": True})
+    assert all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in paths)
 
 
 def test_append_does_not_rewrite_earlier_bytes(tmp_path: Path) -> None:

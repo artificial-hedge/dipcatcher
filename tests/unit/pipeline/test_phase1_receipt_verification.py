@@ -149,6 +149,48 @@ def test_completed_runs_and_index_survive_relocation(runs):
     assert response.exit_code == 0, response.output
 
 
+def test_phase1_index_rejects_paths_outside_evidence_root(runs):
+    index_path = runs / "research/index.json"
+    index = json.loads(index_path.read_text())
+    index["runs"][0]["path"] = "../../../../etc"
+    index["runs"][0]["config_path"] = "../../../../etc/passwd"
+    _write(
+        index_path, _seal({key: value for key, value in index.items() if key != "receipt_sha256"})
+    )
+
+    result = verify_phase1_index(index_path)
+    assert not result["valid"]
+    assert any("escapes evidence root" in error for error in result["errors"])
+
+
+def test_phase1_run_rejects_manifest_dataset_path_outside_root(runs, tmp_path):
+    manifest_path = runs / "benchmark/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["protocol"]["dataset_path"] = str(tmp_path / "outside.parquet")
+    _write(
+        manifest_path,
+        _seal({key: value for key, value in manifest.items() if key != "receipt_sha256"}),
+    )
+
+    result = verify_phase1_run(runs / "benchmark", allowed_root=runs)
+    assert not result["valid"]
+    assert "source dataset path escapes evidence root" in result["errors"]
+
+
+def test_phase1_run_rejects_manifest_parent_path_outside_root(runs):
+    manifest_path = runs / "tournament/manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["benchmark_run"] = "../../../../etc"
+    _write(
+        manifest_path,
+        _seal({key: value for key, value in manifest.items() if key != "receipt_sha256"}),
+    )
+
+    result = verify_phase1_run(runs / "tournament", allowed_root=runs)
+    assert not result["valid"]
+    assert "tournament: benchmark_run path escapes evidence root" in result["errors"]
+
+
 def test_modified_dataset_and_missing_phase_fail_closed(runs):
     (runs / "bars.parquet").write_bytes((runs / "bars.parquet").read_bytes() + b"changed")
     assert any(
