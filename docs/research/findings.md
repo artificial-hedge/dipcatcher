@@ -42,6 +42,7 @@ does not score them.
 - `receipts/fast_replay_p42_conformance_20260927.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fast_replay_p42_conformance_20260928.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/fleet_race_real_drill.json`: fleet_race.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/incumbent_bench_qlib.json`: incumbent_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/loss_cs_real_drill_conf_t_vs_empirical.json`: loss_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/loss_cs_real_drill_gaussian_vs_conf_t.json`: loss_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
