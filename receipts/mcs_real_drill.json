@@ -1,0 +1,49 @@
+{
+  "alpha": 0.05,
+  "champion": null,
+  "coverage_guarantee": "P(set contains an optimal head at every origin) >= 1 - alpha",
+  "data_label": "yahoo_eod",
+  "drill": {
+    "horizon": 1,
+    "min_history": 500,
+    "model_errors": {
+      "har": "rv must be finite, positive, >= 60 obs"
+    },
+    "n_origins": 200,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "parkinson_construction": "ln(H/L)^2 / (4 ln 2)",
+      "rv_construction": "daily_log_return_squared",
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "source": "vol_bench._eval_shard_model per-origin QLIKE on real tape",
+    "stride": 5,
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "eliminated": {},
+  "evidence": [
+    "ville_inequality",
+    "pairwise_supermartingales",
+    "union_bound_k_minus_1",
+    "permanent_elimination",
+    "anytime_valid"
+  ],
+  "kind": "mcs_seq.v1",
+  "lam": 0.5,
+  "live_pnl_claim": false,
+  "n_eliminated": 0,
+  "n_heads": 4,
+  "n_origins": 200,
+  "receipt_sha256": "c89b7550a03099d1cd2170a3fcdb07bf8d39a3c0fa0c7409400df0de406a2462",
+  "research_only": true,
+  "survivors": [
+    "dip_garch_t",
+    "realized_garch",
+    "rv_ewma",
+    "rv_roll"
+  ]
+}
