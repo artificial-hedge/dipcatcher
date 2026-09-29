@@ -194,12 +194,21 @@ def receipt_lattice(
     glob: str = "*.json",
     float_rel_tol: float = _FLOAT_DRIFT_RTOL,
     float_abs_tol: float = _FLOAT_DRIFT_ATOL,
+    known_inconsistent: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Audit an evidence corpus for cross-receipt consistency.
 
     Returns a ``receipt_lattice.v1`` receipt dict. Fails closed on a missing
     directory; unreadable receipts are recorded and downgrade the verdict to
     at most ``"partially_unreadable"``.
+
+    ``known_inconsistent`` maps receipt filename -> sha256 of the file's
+    bytes. A claim group whose members are *all* pinned with byte-exact
+    digests is reported with ``verdict: "inconsistent"`` plus
+    ``known: true`` and does not drive the top-level verdict — the
+    mechanism for committing deliberate demonstration artifacts. A pin
+    whose digest does not match the file on disk applies to nothing, so
+    a tampered pinned receipt re-enters the gate.
     """
     root = Path(receipts_dir)
     if not root.is_dir():
@@ -251,6 +260,7 @@ def receipt_lattice(
 
     groups: list[dict[str, Any]] = []
     n_consistent = n_drift = n_inconsistent = 0
+    n_known_inconsistent = 0
     for (tier, fingerprint, claim_path), seen in sorted(edges.items()):
         if len(seen) < 2:
             continue
@@ -276,7 +286,12 @@ def receipt_lattice(
                 )
         if inconsistent:
             verdict = "inconsistent"
-            n_inconsistent += 1
+            if known_inconsistent and all(
+                known_inconsistent.get(f) == digests.get(f) for f in files
+            ):
+                n_known_inconsistent += 1
+            else:
+                n_inconsistent += 1
         elif pairwise_drift:
             verdict = "numeric_drift"
             n_drift += 1
@@ -293,6 +308,12 @@ def receipt_lattice(
         }
         if detail:
             group["disagreements"] = detail[:8]
+        if (
+            verdict == "inconsistent"
+            and known_inconsistent
+            and all(known_inconsistent.get(f) == digests.get(f) for f in files)
+        ):
+            group["known"] = True
         groups.append(group)
 
     n_singleton_claims = sum(1 for seen in edges.values() if len(seen) == 1)
@@ -310,6 +331,7 @@ def receipt_lattice(
         "float_rel_tol": float_rel_tol,
         "float_abs_tol": float_abs_tol,
         "head_sha": head_sha,
+        "n_known_inconsistent_pins": len(known_inconsistent or {}),
     }
     inputs_sha256 = hash_bytes(canonical_json_bytes({"digests": digests, "params": params}))
     return {
@@ -336,6 +358,7 @@ def receipt_lattice(
         "n_consistent_groups": n_consistent,
         "n_drift_groups": n_drift,
         "n_inconsistent_groups": n_inconsistent,
+        "n_known_inconsistent_groups": n_known_inconsistent,
         "n_singleton_claims": n_singleton_claims,
         "groups": groups,
         "evidence": [
@@ -390,18 +413,28 @@ def lattice_contract_errors(payload: Mapping[str, Any]) -> list[str]:
                     if not isinstance(dv, list) or len(dv) < 2 or dv[0] == dv[1]:
                         errors.append(f"groups[{index}].disagreements_not_real")
                         break
+    n_known = 0
+    for index, group in enumerate(groups):
+        if not isinstance(group, Mapping) or group.get("known") is not True:
+            continue
+        if group.get("verdict") != "inconsistent":
+            errors.append(f"groups[{index}].known_not_inconsistent")
+        else:
+            n_known += 1
+    if payload.get("n_known_inconsistent_groups", 0) != n_known:
+        errors.append("n_known_inconsistent_groups")
     if payload.get("n_consistent_groups") != counts["consistent"]:
         errors.append("n_consistent_groups")
     if payload.get("n_drift_groups") != counts["numeric_drift"]:
         errors.append("n_drift_groups")
-    if payload.get("n_inconsistent_groups") != counts["inconsistent"]:
+    if payload.get("n_inconsistent_groups") != counts["inconsistent"] - n_known:
         errors.append("n_inconsistent_groups")
 
     expected_verdict = (
         "partially_unreadable"
         if payload.get("n_parse_errors", 0) > 0
         else "inconsistent"
-        if counts["inconsistent"] > 0
+        if counts["inconsistent"] - n_known > 0
         else "drift_or_stale"
         if counts["numeric_drift"] > 0 or payload.get("n_stale_code", 0) > 0
         else "consistent"

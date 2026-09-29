@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 
 from quant_fund.research import lane_power
 from quant_fund.research.lane_power import LANE_POWER_SCHEMA, lane_power_bench
@@ -55,6 +56,27 @@ def test_null_control_is_bounded() -> None:
     frame, receipt = lane_power_bench(defects=(0.0,), n_steps=200, n_seeds=10, alpha=0.05)
     for lane, rate in receipt["null_alarm_rate"].items():
         assert rate <= 0.4, f"{lane} false-alarmed at {rate}"
+
+
+def test_dataset_sha256_tracks_streams_not_alpha() -> None:
+    """dataset_sha256 digests the exact per-cell update streams: identical
+    (lane, defect, seed) grids agree regardless of alpha; a different
+    defect grid digests different streams."""
+    _, r1 = lane_power_bench(
+        defects=(0.0, 0.5), n_steps=48, n_seeds=3, alpha=0.05, lanes=("drift_alarm",)
+    )
+    if r1["n_lanes_ok"] == 0:
+        pytest.skip("drift_alarm lane absent on this checkout")
+    _, r2 = lane_power_bench(
+        defects=(0.0, 0.5), n_steps=48, n_seeds=3, alpha=0.1, lanes=("drift_alarm",)
+    )
+    _, r3 = lane_power_bench(
+        defects=(0.0, 0.75), n_steps=48, n_seeds=3, alpha=0.05, lanes=("drift_alarm",)
+    )
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # alpha is a run param, not data
+    assert d1 != d3
 
 
 # Monitor-family modules that are deliberately NOT power-bench lanes —

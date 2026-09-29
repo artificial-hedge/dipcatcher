@@ -33,6 +33,7 @@ from quant_fund.cli.data_cmds import (
     collect,
     build_features_cmd,
     build_labels_cmd,
+    membership_coverage_cmd,
 )
 from quant_fund.cli.forecast_cmds import (
     validate,
@@ -48,6 +49,7 @@ from quant_fund.cli.micro_cmds import (
 from quant_fund.cli.research_cmds import (
     research,
     execution_sensitivity_cmd,
+    verify_all_cmd,
     verify_identities,
     verify_receipt_cmd,
     fleet,
@@ -153,6 +155,7 @@ __all__ = [
     "collect",
     "build_features_cmd",
     "build_labels_cmd",
+    "membership_coverage_cmd",
     "train_callback",
     "train_ranking",
     "train_distribution",
@@ -173,6 +176,7 @@ __all__ = [
     "kyle_ofi",
     "research",
     "execution_sensitivity_cmd",
+    "verify_all_cmd",
     "verify_identities",
     "verify_receipt_cmd",
     "fleet",

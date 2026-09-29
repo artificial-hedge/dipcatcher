@@ -409,6 +409,8 @@ def test_fleet_registry_covers_default_heads() -> None:
         "hstep_emp",
         "nbeats",
         "nhits",
+        "sundial",
+        "toto2",
         "tirex2",
         "kronos_base",
         "moirai2",
@@ -533,3 +535,62 @@ def test_fleet_v1_audit_catches_tampering() -> None:
     tampered = json.loads(json.dumps(receipt))
     tampered["shards"]["iid_gaussian"]["x_sha256"] = "nothex"
     assert any(e.startswith("shard_digest_invalid") for e in fleet_v1_audit_errors(tampered))
+
+
+def test_dataset_sha256_tracks_shards_not_run_params() -> None:
+    """dataset_sha256 digests only evaluated shard content: identical shards
+    under different model sets edge together; a data swap changes it."""
+    _, r1 = run_distribution_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian", "heavy_tail"],
+        n_train=128,
+        n_eval=64,
+        seed=7,
+        taus=TAUS,
+    )
+    _, r2 = run_distribution_fleet(
+        {"empirical": lambda: EmpiricalDistribution(list(TAUS))},
+        shards=["iid_gaussian", "heavy_tail"],
+        n_train=128,
+        n_eval=64,
+        seed=7,
+        taus=TAUS,
+    )
+    _, r3 = run_distribution_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian", "bimodal_mixture"],
+        n_train=128,
+        n_eval=64,
+        seed=7,
+        taus=TAUS,
+    )
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # same data, different model set -> same dataset digest
+    assert r1["inputs_sha256"] != r2["inputs_sha256"]  # run params still differ
+    assert d1 != d3  # data swap must change it
+
+
+def test_dataset_sha256_edges_monitor_run_on_same_shards() -> None:
+    """Cross-lane edge: monitor_fleet digests the same per-shard x/y content,
+    so the same shard set + seed produces the identical dataset_sha256."""
+    from quant_fund.research.monitor_run import monitor_fleet
+
+    _, fleet_receipt = run_distribution_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian"],
+        n_train=128,
+        n_eval=64,
+        seed=3,
+        taus=TAUS,
+    )
+    _, mon_receipt = monitor_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian"],
+        n_train=128,
+        n_eval=64,
+        seed=3,
+        taus=TAUS,
+    )
+    assert fleet_receipt["dataset_sha256"] == mon_receipt["dataset_sha256"]
+    assert fleet_receipt["inputs_sha256"] != mon_receipt["inputs_sha256"]

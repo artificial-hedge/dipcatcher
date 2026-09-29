@@ -31,7 +31,11 @@ from quant_fund.execution.spread_calibration import (
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
-from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.hashing import (
+    canonical_frame_fingerprint,
+    canonical_json_bytes,
+    hash_bytes,
+)
 from quant_fund.utils.reproducibility import git_revision
 
 COST_CALIBRATION_SCHEMA = "cost_calibration.v1"
@@ -227,6 +231,21 @@ def run_cost_calibration_trials(
                     "lookback": int(lookback),
                     "planted_rel_spread": float(planted_rel_spread),
                     "estimators": names,
+                }
+            )
+        ),
+        # Corpus-level fingerprint: digest over the evaluated frame content
+        # only — receipts across lanes that evaluated the same book agree on
+        # it, which is what the cross-receipt lattice edges on.
+        "dataset_sha256": hash_bytes(
+            canonical_json_bytes(
+                {
+                    "shards": {
+                        "synthetic_ohlc": {
+                            "bars_sha256": canonical_frame_fingerprint(bars),
+                            "weights_sha256": canonical_frame_fingerprint(weights),
+                        }
+                    }
                 }
             )
         ),

@@ -150,3 +150,18 @@ def test_suite_health_receipt_v2_round_trip(tmp_path: Path) -> None:
     assert payload["payload"]["kind"] == "suite_health"
     assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
     assert verify_receipt_file(path)["valid"] is True
+
+
+def test_dataset_sha256_tracks_corpus_bytes(tmp_path: Path) -> None:
+    """Identical corpora share dataset_sha256 across audits and alpha;
+    adding a file changes it."""
+    _sealed(tmp_path, "a.json")
+    _sealed(tmp_path, "b.json")
+    _, r1 = suite_health(tmp_path)
+    _, r2 = suite_health(tmp_path, alpha=0.1)
+    d = r1["dataset_sha256"]
+    assert len(d) == 64 and all(c in "0123456789abcdef" for c in d)
+    assert r2["dataset_sha256"] == d  # alpha is a run param, not data
+    _sealed(tmp_path, "c.json")
+    _, r3 = suite_health(tmp_path)
+    assert r3["dataset_sha256"] != d

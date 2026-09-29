@@ -298,6 +298,13 @@ def run_capacity_bench(
             f"{sorted(labels)}; run mixed corpora as separate receipts"
         )
     data_label = next(iter(labels)) if labels else "UNKNOWN"
+    book_digests = {
+        str(m["name"]): {
+            "weights_sha256": m["weights_sha256"],
+            "adv_sha256": m["adv_sha256"],
+        }
+        for m in book_meta
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
@@ -309,6 +316,10 @@ def run_capacity_bench(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated book content only —
+    # receipts across lanes that evaluated the same books agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": book_digests}))
     receipt: dict[str, object] = {
         "schema": CAPACITY_SCHEMA,
         "kind": "capacity_overlay_eval",
@@ -320,6 +331,7 @@ def run_capacity_bench(
         "seed": int(seed),
         "books": book_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "results": rows,
     }
@@ -475,6 +487,11 @@ def capacity_contract_errors(receipt: Mapping[str, object]) -> list[str]:
         errors.append("dev_only_not_true")
     if not family_blob_forbidden_metrics_absent(research_blob):
         errors.append("forbidden_metric_keys")
+    results = receipt.get("results")
+    if isinstance(results, list):
+        n_rows = receipt.get("n_rows")
+        if n_rows is not None and n_rows != len(results):
+            errors.append("n_rows_mismatch")
     return errors
 
 

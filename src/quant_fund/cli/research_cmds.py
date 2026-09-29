@@ -436,6 +436,49 @@ def verify_receipt_cmd(
     raise typer.Exit(code=0 if result["valid"] else 1)
 
 
+@app.command("verify-all")
+def verify_all_cmd(
+    receipts_dir: Path = typer.Option(Path("receipts"), help="Receipt directory to audit."),
+    check_index: bool = typer.Option(
+        True, help="Byte-compare docs/evidence/index.md against a fresh regen."
+    ),
+    write: bool = typer.Option(True, help="Write the sealed evidence_audit receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Audit receipt output dir."),
+) -> None:
+    """Chain-of-custody audit over the whole receipts directory.
+
+    Per-file verification via ``verify_receipt_file`` (v2 deep verification,
+    v1 seal check); set-level checks a single-file verifier cannot express:
+    filename↔digest binding, duplicate seals across files, unsealed-legacy
+    accounting, and evidence-index staleness. Writes a sealed
+    ``evidence_audit_<digest16>.json`` receipt. Exits non-zero on any hard
+    finding — sealed-invalid, unparseable, filename mismatch, duplicate seal,
+    or stale index.
+    """
+    from quant_fund.research.evidence_audit import (
+        format_evidence_audit_table,
+        run_evidence_audit,
+        write_evidence_audit_receipt,
+    )
+
+    try:
+        rows, receipt = run_evidence_audit(receipts_dir, check_index=check_index, root=Path.cwd())
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_evidence_audit_table(rows))
+    payload = receipt["payload"]
+    typer.echo(
+        f"files={payload['n_files']} sealed={payload['n_sealed']} "
+        f"unsealed={payload['n_unsealed']} index_fresh={payload['index_fresh']}"
+    )
+    if payload["findings"]:
+        typer.echo("findings: " + "; ".join(payload["findings"]))
+    if write:
+        path = write_evidence_audit_receipt(receipt, out_dir)
+        typer.echo(f"receipt={path}")
+    raise typer.Exit(code=0 if receipt["verdict"] == "pass" else 1)
+
+
 @app.command("vol-bench")
 def vol_bench(
     config: Path = typer.Option(Path("configs/research.yaml")),
@@ -503,7 +546,14 @@ def vol_bench(
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_vol_bench_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     typer.echo(frame)
     typer.echo(f"receipt={path}")
 
@@ -563,8 +613,14 @@ def rankic(
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_rankic_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    typer.echo("SYNTHETIC")
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     typer.echo(format_rankic_table(frame))
     typer.echo(f"receipt={path}")
 
@@ -625,7 +681,14 @@ def capacity(
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_capacity_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     typer.echo(format_capacity_table(frame))
     typer.echo(f"receipt={path}")
 
@@ -803,14 +866,20 @@ def suite_health_cmd(
     if strict:
         import polars as pl
 
-        from quant_fund.research.legacy_unsealed import is_known_unsealed
+        from quant_fund.research.legacy_unsealed import (
+            is_known_contract_legacy,
+            is_known_unsealed,
+        )
         from quant_fund.research.receipt_v2 import verify_receipt_file
 
         bad: list[str] = []
         for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
             p = receipts_dir / str(row["file"])
             result = verify_receipt_file(p)
-            if not is_known_unsealed(p, result["errors"]):
+            if not (
+                is_known_unsealed(p, result["errors"])
+                or is_known_contract_legacy(p, result["errors"])
+            ):
                 bad.append(f"{row['file']}: {result['errors']}")
         if bad:
             typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
@@ -1277,6 +1346,12 @@ __all__ = [
     "serial_watch_cmd",
     "suite_health_cmd",
     "verdict",
+    "lane_power",
+    "mcs",
+    "monitor",
+    "suite_health_cmd",
+    "verdict",
+    "race",
     "race",
     "race",
     "race",
@@ -1287,6 +1362,7 @@ __all__ = [
     "research",
     "verdict",
     "verify_identities",
+    "verify_all_cmd",
     "verify_receipt_cmd",
     "vol_bench",
 ]
@@ -1309,6 +1385,17 @@ def lattice_cmd(
         "--receipt-version",
         help="Receipt schema version: 1 = receipt_lattice.v1 (default), 2 = unified receipt.v2 envelope.",
     ),
+    known_inconsistent: Path | None = typer.Option(
+        None,
+        "--known-inconsistent",
+        help="JSON map of receipt filename -> sha256 whose byte-exact "
+        "inconsistent claim groups are acknowledged (demo artifacts).",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero iff the verdict is 'inconsistent' (stale/drift/known-pinned pass).",
+    ),
 ) -> None:
     """Cross-receipt consistency lattice over a receipts directory.
 
@@ -1322,10 +1409,26 @@ def lattice_cmd(
     root = Path(receipts_dir)
     if not root.is_dir():
         raise typer.BadParameter(f"receipts dir {root} does not exist")
+    pins: dict[str, str] | None = None
+    if known_inconsistent is not None:
+        if not known_inconsistent.is_file():
+            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
+        try:
+            raw_pins = json.loads(known_inconsistent.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+        if not isinstance(raw_pins, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+        ):
+            raise typer.BadParameter(
+                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        pins = dict(raw_pins)
     receipt = receipt_lattice(
         root,
         head_sha=head_sha or git_revision(),
         float_rel_tol=float_rel_tol,
+        known_inconsistent=pins,
     )
     try:
         path = write_lattice_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -1337,3 +1440,5 @@ def lattice_cmd(
         f"verdict={receipt['verdict']}"
     )
     typer.echo(f"receipt={path}")
+    if strict and receipt["verdict"] == "inconsistent":
+        raise typer.Exit(code=1)

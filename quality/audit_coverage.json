@@ -11,7 +11,7 @@
     },
     "backtest": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "calendars": {
@@ -60,7 +60,7 @@
     },
     "hedge_lab": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "hmm": {
@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 175,
+      "n_modules": 176,
       "status": "audited"
     },
     "monitoring": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 76,
+      "n_modules": 87,
       "status": "audited"
     },
     "risk": {
