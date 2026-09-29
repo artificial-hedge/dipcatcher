@@ -1,0 +1,48 @@
+{
+  "code_revision": "75266bae332263fa2b87244525c85cca557f08d0",
+  "data_label": "SYNTHETIC",
+  "evidence": [
+    "anytime_valid_monitor_lanes",
+    "per_shard_head_independence",
+    "fleet_median_drift_pairing",
+    "lazy_lane_resolution",
+    "proper_score_only"
+  ],
+  "inputs_sha256": "49bdfd5d88bcaeb229e973c883cb3400b19cb90ba0b31d94a55b13ddc4ea0297",
+  "kind": "monitor_run",
+  "lanes_available": {
+    "calibration": true,
+    "conformal": true,
+    "coverage": true,
+    "drift": true,
+    "emerge": true,
+    "tail": true
+  },
+  "level": "research",
+  "live_pnl_claim": false,
+  "n_alarm_rows": 5,
+  "n_rows": 6,
+  "params": {
+    "alpha": 0.05,
+    "heads": [
+      "biased_gaussian",
+      "gaussian",
+      "qar"
+    ],
+    "level": 0.9,
+    "n_eval": 60,
+    "n_train": 120,
+    "seed": 3,
+    "shards": [
+      "iid_gaussian",
+      "regime_switch"
+    ],
+    "tail_cell": [
+      0.05,
+      0.5
+    ]
+  },
+  "receipt_sha256": "5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55",
+  "research_only": true,
+  "schema": "monitor_run.v1"
+}
