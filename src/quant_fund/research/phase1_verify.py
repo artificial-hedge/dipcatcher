@@ -797,7 +797,12 @@ def verify_phase1_run(
 def verify_phase1_index(path: Path) -> dict[str, Any]:
     """Verify an index binding run receipts to source configs and code provenance."""
     path = Path(path).resolve()
-    allowed_root = _REPO_ROOT if path.is_relative_to(_REPO_ROOT) else path.parent.parent
+    if path.is_relative_to(_REPO_ROOT):
+        allowed_root = _REPO_ROOT
+    elif path.parent.name == "research":
+        allowed_root = path.parent.parent
+    else:
+        allowed_root = path.parent
     allowed_root = allowed_root.resolve()
     errors: list[str] = []
     index = _receipt(path, errors, root=allowed_root)

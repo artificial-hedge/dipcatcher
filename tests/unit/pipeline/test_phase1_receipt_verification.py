@@ -163,6 +163,34 @@ def test_phase1_index_rejects_paths_outside_evidence_root(runs):
     assert any("escapes evidence root" in error for error in result["errors"])
 
 
+def test_phase1_index_at_workspace_root_cannot_escape_to_parent(tmp_path):
+    index_path = tmp_path / "index.json"
+    _write(
+        index_path,
+        _seal(
+            {
+                "kind": "phase1_evidence_index",
+                "schema_version": 1,
+                "created_at": datetime.now(UTC).isoformat(),
+                "git_revision": git_revision(),
+                "git_worktree_sha256": git_worktree_sha256(),
+                "benchmark_catalog_version": BENCHMARK_CATALOG_VERSION,
+                "runs": [
+                    {
+                        "kind": "real_benchmark",
+                        "path": "../outside",
+                        "config_path": "../outside",
+                    }
+                ],
+            }
+        ),
+    )
+
+    result = verify_phase1_index(index_path)
+    assert not result["valid"]
+    assert any("run or config path escapes evidence root" in error for error in result["errors"])
+
+
 def test_phase1_run_rejects_manifest_dataset_path_outside_root(runs, tmp_path):
     manifest_path = runs / "benchmark/manifest.json"
     manifest = json.loads(manifest_path.read_text())
