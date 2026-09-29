@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 790,
+  "module_count": 791,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -8602,6 +8602,7 @@
     "quant_fund.research.catalog.session",
     "quant_fund.research.catalog.sweep",
     "quant_fund.research.coherence",
+    "quant_fund.research.conformal_monitor",
     "quant_fund.research.corpus_inference",
     "quant_fund.research.cost_allocation",
     "quant_fund.research.cost_calibration",
