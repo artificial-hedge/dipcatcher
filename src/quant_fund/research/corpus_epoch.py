@@ -51,11 +51,15 @@ GENESIS_PREV = "0" * 64
 HEADS_PIN_BASENAME = "epoch_heads.json"
 
 # Basenames never admitted as members — bookkeeping that the chain governs
-# rather than measures: the heads pin (stamping rewrites it) and the
-# timestamp-anchor manifest (each anchor request rewrites it; its integrity
-# comes from the .tsr tokens' imprint binding + committed TSA certs, not the
-# corpus chain — as a member it could never stay fresh, by design).
-EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME, "anchors.json"})
+# rather than measures: the heads pin is rewritten on every stamp.
+EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME})
+
+# Member rel-paths exempt per corpus dir — exact paths, not basenames, so a
+# real member can never hide behind a shared filename: the timestamp-anchor
+# manifest is rewritten by each anchor request and authenticates itself via
+# the .tsr imprints + pinned TSA certs; chained membership would just stale
+# every anchor instantly.
+EXEMPT_RELPATHS: frozenset[str] = frozenset({"timestamps/anchors.json"})
 
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
@@ -66,8 +70,10 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     On a flat dir the keys equal the plain filenames, so existing chains are
     unchanged. ``corpus_epoch_*.json`` receipts are members like any other —
     epochs stamp each other, which is what lets the chain detect a stamped
-    epoch's own deletion or mutation. Basenames in ``EXEMPT_BASENAMES`` are
-    skipped: they are chain bookkeeping, not corpus content.
+    epoch's own deletion or mutation. ``EXEMPT_BASENAMES`` and
+    ``EXEMPT_RELPATHS`` are skipped: they are chain bookkeeping, not corpus
+    content. Exempt rel-paths are exact corpus-relative paths — a basename
+    exemption would let a real member hide under a shared filename.
     """
     root = Path(corpus_dir)
     if not root.is_dir():
@@ -75,7 +81,9 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     return {
         path.relative_to(root).as_posix(): hash_bytes(path.read_bytes())
         for path in sorted(root.rglob(pattern))
-        if path.is_file() and path.name not in EXEMPT_BASENAMES
+        if path.is_file()
+        and path.name not in EXEMPT_BASENAMES
+        and path.relative_to(root).as_posix() not in EXEMPT_RELPATHS
     }
 
 

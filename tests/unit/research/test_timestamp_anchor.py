@@ -131,17 +131,20 @@ def test_malformed_manifest_fails_closed(tmp_path: Path) -> None:
 
 
 def test_anchors_manifest_is_chain_exempt(tmp_path: Path) -> None:
-    """``anchors.json`` is exempt like ``epoch_heads.json``: each anchor
-    rewrites it, so membership would stale every anchor instantly. Its
-    integrity rides on the .tsr imprint binding + the pinned TSA certs."""
+    """``timestamps/anchors.json`` is exempt — each anchor rewrites it, so
+    membership would stale every anchor instantly; its integrity rides on
+    the .tsr imprint binding + pinned TSA certs. The exemption is an exact
+    rel-path, NOT a basename: a top-level ``anchors.json`` is a member —
+    a real corpus file can never hide behind the exempt name."""
     from quant_fund.research.corpus_epoch import member_digests
 
     q = tmp_path / "quality"
-    q.mkdir()
+    (q / "timestamps").mkdir(parents=True)
     (q / "x.json").write_text("{}")
-    (q / "anchors.json").write_text("{}")
+    (q / "anchors.json").write_text("{}")  # basename alone does NOT exempt
+    (q / "timestamps" / "anchors.json").write_text("{}")
     (q / "epoch_heads.json").write_text("{}")
-    assert set(member_digests(q)) == {"x.json"}
+    assert set(member_digests(q)) == {"anchors.json", "x.json"}
 
 
 def test_real_committed_token_extracts(tmp_path: Path) -> None:

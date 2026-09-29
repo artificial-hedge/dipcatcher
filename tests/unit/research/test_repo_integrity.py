@@ -53,6 +53,16 @@ def _git_repo(tmp_path: Path) -> Path:
     # Re-stamp quality: the pin and jewels file now exist as members.
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
     update_heads_pin(pin, "quality", "*.json", ep)
+    # The committed pubkey is a crown jewel — sign the pins for real so the
+    # gate isn't testing a stub. Priv key is test-local only.
+    from quant_fund.research.gate_signatures import generate_keypair, sign_pins
+
+    priv, pub = generate_keypair()
+    sign_pins(root, priv, pub)
+    write_crown_jewels_pin(root)
+    ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
+    update_heads_pin(pin, "quality", "*.json", ep)
+    sign_pins(root, priv, pub)
     return root
 
 
@@ -60,9 +70,9 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     root = _git_repo(tmp_path)
     res = verify_repo(root)
     assert res["ok"], res
-    # Unsigned pins are a neutral gate state — signing is opt-in but a forged
-    # signature must fail closed.
-    assert res["gates"]["pin_signatures"] == {"ok": True, "signed": False, "errors": []}
+    # Fixture signs the pins for real (the pubkey is a jewel, so an unsigned
+    # fixture would leave a stub pubkey failing the gate).
+    assert res["gates"]["pin_signatures"] == {"ok": True, "signed": True, "errors": []}
     # No timestamp anchors committed — neutral gate state, same contract as
     # unsigned pins: absence is fine, a malformed one must fail closed.
     assert res["gates"]["timestamp_anchors"]["anchored"] is False
