@@ -1,0 +1,129 @@
+{
+  "alpha": 0.05,
+  "components": {
+    "calibration": {
+      "alarm_origin": 55,
+      "channel_wealths": {
+        "grapa_disp": 9.9404982299593e-10,
+        "grapa_loc": 0.08989853425612236,
+        "loc_hi": 4.2369814764492724e-55,
+        "loc_lo": 3.5490965539306085e-25,
+        "overconf": 8.348160312778904e-118,
+        "underconf": 0.0
+      },
+      "final_evalue": 0.01498308920836203,
+      "miscalibrated": true
+    },
+    "drift": {
+      "alarm_index": null,
+      "eprocess_alarmed": false,
+      "final_evalue": 1.8646262134237022e-80,
+      "page_hinkley_alarmed": true
+    },
+    "localize": {
+      "skipped": "no_drift_alarm"
+    },
+    "magnitude": {
+      "alpha": 0.05,
+      "bound": 0.0014844874374953868,
+      "challenger": "challenger",
+      "cs_high": 1.9939702001926377e-05,
+      "cs_low": -2.82371873046754e-05,
+      "evidence": [
+        "ville_inequality",
+        "betting_confidence_sequence",
+        "bounded_increments",
+        "time_uniform_coverage"
+      ],
+      "excludes_zero": false,
+      "incumbent": "incumbent",
+      "interpretation": "inconclusive",
+      "kind": "loss_cs.v1",
+      "lam": 0.5,
+      "mean_diff": -2.8032155507192686e-06,
+      "n": 2048,
+      "schema": "loss_cs.v1"
+    },
+    "promotion": {
+      "anytime_p": 1.0,
+      "final_evalue": 2.6761227190973234e-126,
+      "promoted": false,
+      "promotion_origin": null,
+      "runner_up": "empirical"
+    },
+    "winner_curse": {
+      "corrected_score": 0.0037945820141446775,
+      "honest_score": 0.003796802010356682,
+      "naive_score": 0.0037927121938229726,
+      "selected_head": "gaussian",
+      "selection_aware_ci": [
+        0.0036267381702576335,
+        0.003980230483133574
+      ],
+      "selection_bias": 1.8698203217049243e-06
+    }
+  },
+  "data_label": "yahoo_eod",
+  "evidence": [
+    "selection_bias_corrected",
+    "anytime_valid_promotion",
+    "level_shift_monitor",
+    "magnitude_confidence_sequence",
+    "pit_uniformity_when_supplied",
+    "changepoint_localization_when_drifted",
+    "proper_score_only"
+  ],
+  "inputs_sha256": "d11aa6b1651a8811a70ec39a2ed1f914f9456e4040dbbef4cc9435bcaf649218",
+  "kind": "honest_verdict.v1",
+  "live_pnl_claim": false,
+  "n_heads": 8,
+  "n_obs": 2048,
+  "receipt_sha256": "d6bed78a0de6ab91dc043f0158da1a3a22c8e85c139066f75dc9b8f11cbeecd2",
+  "research_only": true,
+  "run": {
+    "code_revision": "92a0cfce8c869665e46e7570fe5913c2ecc7af6f",
+    "excluded_heads": [],
+    "params": {
+      "alpha": 0.05,
+      "data_labels": {
+        "yahoo_cboe": "yahoo_eod",
+        "yahoo_cf": "yahoo_eod",
+        "yahoo_expd": "yahoo_eod",
+        "yahoo_kmx": "yahoo_eod",
+        "yahoo_mar": "yahoo_eod",
+        "yahoo_nee": "yahoo_eod",
+        "yahoo_nem": "yahoo_eod",
+        "yahoo_spg": "yahoo_eod"
+      },
+      "heads": [
+        "conf_t",
+        "empirical",
+        "fhs_skew",
+        "gaussian",
+        "gmm",
+        "isotonic",
+        "regime",
+        "skew_t"
+      ],
+      "n_boot": 2000,
+      "n_eval": 256,
+      "n_train": 512,
+      "seed": 0,
+      "shards": [
+        "yahoo_cboe",
+        "yahoo_cf",
+        "yahoo_expd",
+        "yahoo_kmx",
+        "yahoo_mar",
+        "yahoo_nee",
+        "yahoo_nem",
+        "yahoo_spg"
+      ]
+    },
+    "schema": "honest_verdict_run.v1",
+    "status_sha256": "404388e6f46dbf3e3980557f5c4dbdb876104e2075017da481dbf118a15b5b09"
+  },
+  "unavailable_lanes": [],
+  "verdict": "not_supported",
+  "winner": "gaussian"
+}
