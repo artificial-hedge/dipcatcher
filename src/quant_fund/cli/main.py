@@ -53,6 +53,13 @@ from quant_fund.cli.research_cmds import (
     fleet,
     vol_bench,
     capacity,
+    mcs,
+    lane_power,
+    suite_health_cmd,
+    cost_calibration,
+    corpus,
+    lattice_cmd,
+    online_fdr_cmd,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,
@@ -65,6 +72,7 @@ from quant_fund.cli.report_cmds import (
     lab,
     report,
     tearsheet_cmd,
+    regime_performance_cmd,
 )
 from quant_fund.cli.lake_cmds import (
     lake_import,
@@ -168,6 +176,13 @@ __all__ = [
     "fleet",
     "vol_bench",
     "capacity",
+    "mcs",
+    "lane_power",
+    "suite_health_cmd",
+    "cost_calibration",
+    "corpus",
+    "lattice_cmd",
+    "online_fdr_cmd",
     "session_book_cmd",
     "vendor_book_map_cmd",
     "book_panel_cmd",
@@ -176,6 +191,7 @@ __all__ = [
     "lab",
     "report",
     "tearsheet_cmd",
+    "regime_performance_cmd",
     "lake_import",
     "lake_quality",
     "lineage_show",
