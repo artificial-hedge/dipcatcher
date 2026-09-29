@@ -65,6 +65,26 @@ Components are lazily imported and degrade gracefully — a missing lane
 is named in `unavailable_lanes` and forces `inconclusive`, never a
 silent pass.
 
+## Running the suite
+
+`research/verdict_run.py` replays the fleet tournament keeping the
+per-origin streams the aggregates discard, then composites the verdict —
+`dipcatcher verdict` writes a sealed `honest_verdict.v1` receipt.
+
+`research/monitor_run.py` (`dipcatcher fleet-monitor`) streams every
+(shard, head) cell through the whole anytime-valid family — coverage
+breach rate, nested tail depth, PIT calibration, conformal
+exchangeability, loss drift vs the fleet median — and pools the lane
+e-values per cell via `emerge_mean` (valid under arbitrary dependence).
+Lanes not yet merged report `lane_missing` on the `monitor_run.v1`
+receipt rather than failing silently.
+
+`research/lane_power.py` (`dipcatcher lane-power`) is the suite's own
+capability bench: measured alarm rate and time-to-alarm per lane per
+injected defect size, with the defect=0 row bounding the false-alarm
+rate by α — the sequential claim is only useful if the lanes actually
+fire.
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
