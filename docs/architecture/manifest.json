@@ -7519,6 +7519,10 @@
       "src": "quant_fund.research.receipt_v2"
     },
     {
+      "dst": "quant_fund.research.ranker_probability",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
       "dst": "quant_fund.research.vol_bench",
       "src": "quant_fund.research.receipt_v2"
     },
@@ -10541,7 +10545,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 176,
+      "imports": 177,
       "src": "quant_fund.research"
     },
     {

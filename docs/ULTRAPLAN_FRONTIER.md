@@ -271,9 +271,15 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       receipt. Result: empirical_ratio wins clustered/break shards, native
       hstep wins where horizon structure matters — the construction
       discriminates as designed. 4h {1,6} remains remote-gated (P3.1 bars).
-- [ ] P3.3 Second domain: Stooq US equity dailies (remote `data/file_us`
-      tapes) OR Binance non-USDT quotes — requires same bar-integrity
-      hashing + availability-time discipline.
+- [x] P3.3 Second domain: US equity dailies — the committed 424-name
+      `data/file_us_wide` yahoo corpus ran through `real_benchmark`'s
+      preregistered two-phase harness (protocol hash-pins the parquet;
+      prepare audits splits, then validation scores before test).
+      Verdict: honest negative — on 495 validation dates / 431 test
+      dates, no baseline (ridge, rolling_mean_20, historical_mean) beat
+      the zero-return forecast on equal-weight MSE; `promote: false`,
+      `claim: fixed_split_forecast_diagnostic`. Sealed receipts:
+      `receipts/real_benchmark_us_wide_{manifest,validation,test}.json`.
 - [x] P3.4 Cross-sectional lane: rank-IC eval vs targets on the panel
       (existing ranking bench + northset) — a different claim axis.
       Harness landed: `research/cross_sectional.py` + `dipcatcher rankic` —
