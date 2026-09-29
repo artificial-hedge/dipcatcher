@@ -348,6 +348,72 @@ def fleet(
     typer.echo(f"receipt={path}")
 
 
+@app.command("calibration-eval")
+def calibration_eval_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    models: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(512, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(256, help="Trailing scored rows per shard."),
+    pit_bins: int = typer.Option(10, help="PIT histogram bins (5-50)."),
+    seed: int | None = typer.Option(
+        None, help="Base seed (default: train.random_seed from config)."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = calibration_eval.v1 (default), "
+        "2 = unified receipt.v2 envelope.",
+    ),
+) -> None:
+    """Run the SYNTHETIC distribution-fleet calibration lane and write a receipt.
+
+    PIT histograms, central-interval coverage, and reliability/calibration
+    slopes on the same origins as ``fleet`` — calibration diagnostics only,
+    never market or live-P&L claims.
+    """
+    from quant_fund.research.calibration_eval import (
+        run_calibration_eval,
+        write_calibration_receipt,
+    )
+    from quant_fund.research.fleet_eval import (
+        fleet_head_factories,
+        resolve_shard_generators,
+    )
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    try:
+        factories = fleet_head_factories(
+            cfg.quantiles.levels,
+            base_seed,
+            None if models is None else models.split(","),
+        )
+        resolved_shards = resolve_shard_generators(None if shards is None else shards.split(","))
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    frame, receipt = run_calibration_eval(
+        factories,
+        resolved_shards,
+        n_train=n_train,
+        n_eval=n_eval,
+        seed=base_seed,
+        taus=cfg.quantiles.levels,
+        pit_bins=pit_bins,
+    )
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    path = write_calibration_receipt(receipt, out_dir, receipt_version=receipt_version)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(frame)
+    typer.echo(f"receipt={path}")
+
+
 @app.command("verify-receipt")
 def verify_receipt_cmd(
     path: Path = typer.Argument(..., help="Receipt JSON file to verify."),
@@ -772,6 +838,44 @@ def suite_health_cmd(
             raise typer.Exit(code=1)
 
 
+@app.command()
+def mcs(
+    streams: Path = typer.Argument(
+        ...,
+        help="Loss streams: JSON {head: [per-origin losses]} or parquet/csv "
+        "(numeric column per head). Lower loss = better head.",
+    ),
+    alpha: float = typer.Option(0.05, help="Coverage failure level."),
+    lam: float = typer.Option(0.5, help="Betting fraction per pair-process."),
+    data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on the receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Sequential model confidence set over per-origin proper losses.
+
+    Maintains a survivor set containing an optimal head with probability
+    >= 1 - alpha *uniformly over time* (Ville + union bound over pairwise
+    e-processes; permanent elimination). Writes a sealed mcs_seq.v1
+    receipt — proper-score evidence only.
+    """
+    from quant_fund.research.mcs_seq import load_loss_streams, mcs_report, write_mcs_receipt
+
+    try:
+        loss_streams = load_loss_streams(streams)
+        receipt = mcs_report(loss_streams, alpha=alpha, lam=lam, data_label=data_label)
+    except (ValueError, FileNotFoundError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_mcs_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    typer.echo(f"survivors={receipt['survivors']}")
+    typer.echo(f"eliminated={receipt['eliminated']}")
+    typer.echo(f"champion={receipt['champion']}")
+    typer.echo(f"receipt={path}")
+
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -1103,6 +1207,10 @@ __all__ = [
     "execution_sensitivity_cmd",
     "fleet",
     "lane_power",
+    "mcs",
+    "monitor",
+    "verdict",
+    "race",
     "race",
     "suite_health_cmd",
     "monitor",
@@ -1114,3 +1222,49 @@ __all__ = [
     "verify_receipt_cmd",
     "vol_bench",
 ]
+
+
+@app.command("lattice")
+def lattice_cmd(
+    receipts_dir: Path = typer.Option(
+        Path("receipts"), "--receipts-dir", help="Directory of receipts to lattice."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    float_rel_tol: float = typer.Option(
+        1e-9, "--float-rel-tol", help="Relative tolerance for numeric-drift edges."
+    ),
+    head_sha: str | None = typer.Option(
+        None, "--head-sha", help="Current HEAD sha for stale-code flags (default: auto)."
+    ),
+) -> None:
+    """Cross-receipt consistency lattice over a receipts directory.
+
+    Edges receipts that claim the same inputs/dataset fingerprints and
+    compares their shared claim paths: consistent / numeric_drift /
+    inconsistent. Provenance claims only — no P&L.
+    """
+    import json
+
+    from quant_fund.research.receipt_lattice import receipt_lattice
+    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.utils.reproducibility import git_revision
+
+    root = Path(receipts_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"receipts dir {root} does not exist")
+    receipt = receipt_lattice(
+        root,
+        head_sha=head_sha or git_revision(),
+        float_rel_tol=float_rel_tol,
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sealed = seal_receipt(receipt)
+    digest = str(sealed["receipt_sha256"])[:16]
+    path = out_dir / f"receipt_lattice_{digest}.json"
+    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"lattice receipts={receipt['n_receipts']} groups={receipt['n_claim_groups']} "
+        f"verdict={receipt['verdict']}"
+    )
+    typer.echo(f"receipt={path}")
