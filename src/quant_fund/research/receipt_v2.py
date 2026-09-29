@@ -37,6 +37,8 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
+from quant_fund.research.impossible_fit import impossible_fit_scan
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -319,7 +321,12 @@ def _strict_digest(body: Mapping[str, Any]) -> str:
 
 
 class ReceiptVerification(TypedDict):
-    """``verify-receipt`` result. ``kind`` is untrusted until errors is empty."""
+    """``verify-receipt`` result. ``kind`` is untrusted until errors is empty.
+
+    ``warnings`` are informational statistical-leakage canaries from
+    ``impossible_fit_scan``: scores too good to be honest. They never affect
+    ``valid`` — a degenerate synthetic shard can legitimately trip them.
+    """
 
     valid: bool
     path: str
@@ -328,6 +335,7 @@ class ReceiptVerification(TypedDict):
     verdict: object
     digest_convention: str | None
     errors: list[str]
+    warnings: list[str]
 
 
 def _result(
@@ -343,6 +351,7 @@ def _result(
         "verdict": body.get("verdict"),
         "digest_convention": digest_convention,
         "errors": errors,
+        "warnings": impossible_fit_scan(payload),
     }
 
 
@@ -426,6 +435,9 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         if looks_hstep and kind != "hstep_bench":
             errors = [*errors, "kind_fingerprint_mismatch"]
         return errors
+    if kind == "coherence_eval":
+        from quant_fund.research.coherence import coherence_v2_consistency_errors
+        return coherence_v2_consistency_errors(payload)
     return []
 
 
@@ -458,6 +470,11 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         inner_claim = payload_body.get("live_pnl_claim")
         if inner_claim is not None and inner_claim is not False:
             errors.append("payload_live_pnl_claim_not_false")
+        # The inner body claims its own schema/kind — lane contracts apply
+        # regardless of what the envelope's ``kind`` was renamed to.
+        from quant_fund.research.lane_contracts import lane_contract_errors
+
+        errors.extend(lane_contract_errors(payload_body))
     errors.extend(_kind_consistency_errors(body))
     return _result(path, payload, convention, errors)
 
@@ -519,6 +536,19 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.hstep_bench import hstep_bench_v1_contract_errors
 
         errors.extend(hstep_bench_v1_contract_errors(payload))
+    if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
+        from quant_fund.paper.sim_live import sim_live_contract_errors
+        errors.extend(sim_live_contract_errors(payload))
+    if payload.get("schema") == "cost_calibration.v1":
+        from quant_fund.research.cost_calibration import (
+            cost_calibration_contract_errors,
+        )
+        errors.extend(cost_calibration_contract_errors(payload))
+    from quant_fund.research.lane_contracts import lane_contract_errors
+    errors.extend(lane_contract_errors(payload))
+    if payload.get("kind") in EVALUE_FAMILY_KINDS:
+        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+        errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
@@ -541,15 +571,37 @@ def verify_receipt_payload(
     return _verify_v1(path, payload)
 
 
+def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    seen: set[str] = set()
+    obj: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in seen:
+            raise ValueError(f"duplicate_json_key:{key}")
+        seen.add(key)
+        obj[key] = value
+    return obj
+
+
 def _reject_json_constant(value: str) -> Any:
     """``NaN``/``Infinity`` are not JSON literals; a receipt containing one is malformed."""
     raise ValueError(f"nonstandard JSON constant in receipt: {value}")
 
 
 def verify_receipt_file(path: Path | str) -> ReceiptVerification:
-    """Read a receipt JSON file and verify it. Fails closed on unreadable input."""
+    """Read a receipt JSON file and verify it. Fails closed on unreadable input.
+
+    Duplicate object keys are rejected: ``{"k": 1, "k": 2}`` parses to ``2``
+    in Python but would let a file carry two readable claims while only one
+    is sealed — the bytes must determine a unique payload.
+    """
     file_path = Path(path)
     try:
+        payload: object = json.loads(file_path.read_text(), object_pairs_hook=_no_duplicate_keys)
+    except ValueError as exc:
+        if str(exc).startswith("duplicate_json_key:"):
+            return _result(file_path, {}, None, [str(exc)])
+        return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
+    except (OSError, UnicodeError) as exc:
         payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
     except (OSError, UnicodeError, ValueError) as exc:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
