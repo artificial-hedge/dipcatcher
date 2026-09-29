@@ -215,14 +215,29 @@ fleet contract.
 Each: pinned artifact + sha256, zero-shot, native output honored
 (quantile/sample/path), per-model coverage disclosed.
 
-- [ ] P2.1 `moirai2` — Salesforce/moirai-2.0-R-small via uni2ts; quantile
-      head maps directly onto our CRPS/pinball path.
+- [~] P2.1 `moirai2` — Salesforce/moirai-2.0-R-small via uni2ts; quantile
+      head maps directly onto our CRPS/pinball path. Adapter landed:
+      `Moirai2Distribution` (`models/moirai2.py`) — lazy fail-closed
+      import, `availability()` gate, causal-window `predict_from_history`,
+      registered in `FLEET_HEAD_REGISTRY`. Dep evidence: `uv add uni2ts`
+      fails resolution — every published uni2ts (1.1.0–2.0.0) pins
+      `scipy>=1.11.3,<1.12.dev0` and `numpy~=1.26.0` against pinned
+      `scipy>=1.14` / `numpy>=2.0` (upstream main pins the same ranges, so
+      git install does not help either), plus `gluonts~=0.14.3` → `toolz<1`
+      vs `exchange-calendars==4.13.2` → `toolz>=1`. Lane stays fail-closed
+      until upstream loosens. Fleet cell open pending a resolvable dep.
 - [ ] P2.2 `tirex2` — NX-AI TiRex-2; prefer a decontaminated checkpoint for
       the fev-bench/GIFT overlap question; sample-path → distribution.
 - [ ] P2.3 `sundial` — THU-MT flow-matching; sample paths → empirical dist.
 - [ ] P2.4 `toto` — Datadog Toto if public weights resolve; else document
       unavailable.
-- [ ] P2.5 `tabpfn_ts` — PriorLabs tabpfn-time-series (CPU-feasible, 11M).
+- [~] P2.5 `tabpfn_ts` — PriorLabs tabpfn-time-series (CPU-feasible, 11M).
+      Adapter landed: `TabpfnTsDistribution` (`models/tabpfn_ts.py`) — lazy
+      fail-closed import, causal-window `predict_from_history`, registered in
+      `FLEET_HEAD_REGISTRY`. Dep evidence: `tabpfn-time-series` transitively
+      pins `toolz<1` (via gluonts) while `exchange-calendars==4.13.2` requires
+      `toolz>=1` — unsatisfiable in uv.lock, so the lane stays fail-closed
+      until upstream loosens. Fleet cell open pending a resolvable dep.
 - [ ] P2.6 `kronos_base` in the v5 fleet (only the v1 3-asset run beat it;
       fleet-scale evidence missing).
 - [ ] P2.7 Classical neural baselines: N-BEATS / N-HiTS / DLinear via a small
@@ -277,6 +292,33 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       on a pooled lane standardized by per-shard cross-head std. Answers
       "which heads are actually distinguishable", not just ranked — error
       heads recorded and excluded; sealed receipt.v2.
+- [x] P3.7 Distributional coherence bench: `dipcatcher coherence-bench` —
+      `research/coherence.py` reconciles per-name marginal quantile grids
+      to the aggregate distribution on SYNTHETIC correlated panels
+      (gauss/independent/heavy-tail/regime-break copulas). Methods:
+      direct aggregate fit, naive sum-of-quantiles (comonotone bound),
+      independent MC convolution, and a Gaussian copula MC fit on
+      in-sample PIT z-scores. Proper scores only; sealed receipt.v2.
+
+### P3b — Sequential inference suite (new statistical layer)
+
+- [~] Anytime-valid head promotion: `research/evalues.py` `LossEProcess`
+      (betting e-process, Ville/Ramdas) wired into `vol_bench` — PR #380.
+- [~] Sequential fleet elimination: `research/fleet_race.py` + `dipcatcher
+      race` (two e-processes per head vs fixed incumbent) — PR #381.
+- [~] Corpus-level inference: `research/corpus_inference.py` harvests all
+      committed receipts → pooled BH-FDR + e-value product — PR #382.
+- [~] Online FDR over the receipt stream: `research/online_fdr.py`
+      Foster–Stine alpha-investing — PR #383.
+- [~] Verifier contracts for the family: `research/evalue_contracts.py`
+      deep-checks all four kinds — PR #384.
+- [~] Winner's-curse correction: `research/winner_curse.py` bootstrap
+      selection-bias + split-half honest control — PR #385.
+- [~] Anytime-valid drift alarms: `research/drift_alarm.py` level-shift
+      e-process + Page–Hinkley diagnostic — PR #386.
+- [~] Composite verdict: `research/honest_verdict.py` — PR #387.
+- [~] Registry completeness ratchet (no orphan heads) — PR #388.
+      See `docs/SEQUENTIAL_INFERENCE.md` for the architecture.
 
 ### P4 — Industry-grade bar (the open one)
 
@@ -416,15 +458,29 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       Partially landed: every `receipt.v2` envelope carries an `environment`
       block (python/numpy/polars/scipy versions, BLAS/LAPACK build from
       `np.__config__.CONFIG`, loaded BLAS threadpools via threadpoolctl) with
+      a `fingerprint_sha256` digest over the block. Cross-process determinism
+      is proven for sealed receipts: `sim_live` produces byte-identical
+      content (modulo the absolute paths the seal covers) under different
+      PYTHONHASHSEED values — `tests/unit/determinism/`. Still open: adopt
+      v2 in the remaining lanes and sweep fingerprints across machines.
       a `fingerprint_sha256` digest over the block. Adopted by every
       receipt-producing lane (`fleet_eval`, `capacity_overlay`,
       `cross_sectional`, `vol_bench` via `--receipt-version 2`; v1 remains the
       default seal and still verifies). Still open: cross-machine fingerprint
       sweeps.
-- [ ] P7.5 Remote-fleet ops: consolidate `spawn_*.ps1` into one parametrized
+- [x] P7.5 Remote-fleet ops: consolidate `spawn_*.ps1` into one parametrized
       launcher + watchdog (auto-respawn dead shards, heartbeat file).
-- [ ] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
+      Landed: `scripts/fleet_spawn.ps1` (JSON-manifest WMI launcher, same
+      Win32_Process + cmd /c redirect pattern, dry-run + spawn receipt) +
+      `scripts/fleet_watchdog.ps1` (PID liveness, output-file staleness,
+      bounded respawn, `.dsh-24x7/fleet_heartbeat.json` heartbeat) +
+      `scripts/fleet_manifest_sota.ps1` (regenerates the spawn_sota_all job
+      list as a manifest).
+- [x] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
       spawn, Defender exclusions, durable paths), durable staging dirs.
+      Landed: AGENTS.md "Remote fleet" section — PowerShell-only, WMI spawn
+      survives ssh teardown, parametrized launcher + watchdog, `.dsh-24x7`
+      durable paths, thread-pinning env block, Defender exclusions.
 
 ## Execution rules
 
