@@ -314,7 +314,12 @@ def fleet(
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_fleet_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     typer.echo(frame)
     typer.echo(f"receipt={path}")
 
@@ -401,7 +406,12 @@ def vol_bench(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     path = write_vol_bench_receipt(receipt, out_dir)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     typer.echo(frame)
     typer.echo(f"receipt={path}")
 
@@ -454,8 +464,14 @@ def rankic(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
     path = write_rankic_receipt(receipt, out_dir)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    typer.echo("SYNTHETIC")
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     typer.echo(format_rankic_table(frame))
     typer.echo(f"receipt={path}")
 
@@ -509,7 +525,12 @@ def capacity(
         impact_coeff=impact_coeff,
     )
     path = write_capacity_receipt(receipt, out_dir)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     typer.echo(format_capacity_table(frame))
     typer.echo(f"receipt={path}")
 
