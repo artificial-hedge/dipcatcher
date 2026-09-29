@@ -49,13 +49,12 @@ def test_report_shape_and_stamps() -> None:
 
 
 def test_verdict_inconclusive_when_lanes_missing_or_confirmed() -> None:
-    """On main (lanes on branches) components are unavailable → inconclusive;
-    once merged, a dominant winner with stable edge → confirmed-ish."""
+    """Any unavailable lane forces inconclusive; once every lane merges,
+    a dominant winner with stable edge → confirmed-ish."""
     rep = honest_verdict(_streams(), seed=1, n_boot=300)
     unavailable = rep["unavailable_lanes"]
     if unavailable:
         assert rep["verdict"] == "inconclusive"
-        assert {"winner_curse", "promotion", "drift"} <= set(unavailable)
     else:
         assert rep["verdict"] in {"confirmed", "supported_with_caveats"}
 
@@ -102,15 +101,26 @@ def test_alpha_validated() -> None:
         honest_verdict(_streams(), alpha=1.5, n_boot=200)
 
 
-def test_extension_lanes_never_veto_core_verdict() -> None:
-    """A missing extension lane is recorded but must not flip inconclusive."""
+def test_any_unavailable_lane_forces_inconclusive() -> None:
+    """A missing lane — core or extension — is recorded AND vetoes: an
+    un-runnable component cannot vouch for the claim."""
     rep = honest_verdict(_streams(11), seed=0, n_boot=300)
-    core_missing = {"winner_curse", "promotion", "drift"} & set(rep["unavailable_lanes"])
-    if not core_missing:
-        assert rep["verdict"] != "inconclusive"
+    if rep["unavailable_lanes"]:
+        assert rep["verdict"] == "inconclusive"
     # extension lanes recorded when absent
     for lane in ("magnitude", "calibration", "localize"):
         assert lane in rep["components"]
+
+
+def test_unavailable_lanes_recorded_and_nonempty_means_inconclusive() -> None:
+    """Skipped lanes (no runner-up, pits not supplied, no drift) do NOT
+    veto — only a lane that cannot be imported/executed does."""
+    rep = honest_verdict(_streams(11), seed=0, n_boot=300)
+    # on a checkout without every extension module this must be inconclusive
+    assert (rep["verdict"] == "inconclusive") == bool(rep["unavailable_lanes"])
+    calib = rep["components"]["calibration"]
+    if calib.get("skipped"):
+        assert "calibration" not in rep["unavailable_lanes"]
 
 
 def test_pits_unlock_calibration_lane() -> None:
