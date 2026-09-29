@@ -307,6 +307,34 @@ _BASE_HONEST_VERDICT = {
     "unavailable_lanes": ["calibration", "magnitude"],
 }
 
+_BASE_MONITOR_RUN = {
+    "kind": "monitor_run",
+    "data_label": "SYNTHETIC",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "inputs_sha256": _SHA,
+    "n_rows": 18,
+    "n_alarm_rows": 2,
+    "lanes_available": {
+        "coverage": True,
+        "tail": True,
+        "calibration": True,
+        "conformal": False,
+        "drift": True,
+    },
+    "params": {
+        "n_train": 512,
+        "n_eval": 256,
+        "seed": 0,
+        "alpha": 0.05,
+        "level": 0.9,
+        "tail_cell": [0.05, 0.1],
+        "heads": ["gaussian", "gmm"],
+        "shards": ["iid_gaussian", "heavy_tail"],
+    },
+    "evidence": ["anytime_valid_monitor_lanes"],
+}
+
 
 def test_new_kind_fixtures_pass() -> None:
     for base in (
@@ -316,6 +344,7 @@ def test_new_kind_fixtures_pass() -> None:
         _BASE_TAIL,
         _BASE_LANE_POWER,
         _BASE_HONEST_VERDICT,
+        _BASE_MONITOR_RUN,
     ):
         assert evalue_family_contract_errors(base) == [], base.get("kind")
 
@@ -381,3 +410,17 @@ def test_honest_verdict_contract() -> None:
     assert "confirmed_without_promotion_flag" in evalue_family_contract_errors(bad3)
     bad4 = dict(_BASE_HONEST_VERDICT, verdict="winning")
     assert "verdict_not_in_enum" in evalue_family_contract_errors(bad4)
+
+
+def test_monitor_run_contract() -> None:
+    bad = dict(_BASE_MONITOR_RUN, n_alarm_rows=99)
+    assert "n_alarm_rows_exceeds_n_rows" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_MONITOR_RUN)
+    bad2["lanes_available"] = dict(_BASE_MONITOR_RUN["lanes_available"], bogus_lane=True)
+    assert "lanes_available_unknown:bogus_lane" in evalue_family_contract_errors(bad2)
+    bad3 = dict(_BASE_MONITOR_RUN)
+    bad3["params"] = dict(_BASE_MONITOR_RUN["params"], tail_cell=[0.5, 0.1])
+    assert "tail_cell_not_ordered_pair" in evalue_family_contract_errors(bad3)
+    bad4 = dict(_BASE_MONITOR_RUN)
+    bad4["params"] = dict(_BASE_MONITOR_RUN["params"], level=1.2)
+    assert "params.level_out_of_unit_interval" in evalue_family_contract_errors(bad4)

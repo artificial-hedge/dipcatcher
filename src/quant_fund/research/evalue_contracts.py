@@ -37,6 +37,7 @@ EVALUE_FAMILY_KINDS = frozenset(
         "tail_audit",
         "lane_power",
         "honest_verdict.v1",
+        "monitor_run",
     }
 )
 
@@ -536,6 +537,67 @@ def _honest_verdict_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+_MONITOR_LANES = frozenset({"coverage", "tail", "calibration", "conformal", "drift"})
+
+
+def _monitor_run_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if p.get("data_label") != "SYNTHETIC":
+        errors.append("data_label_not_synthetic")
+    if p.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if p.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if not _is_sha256(p.get("inputs_sha256")):
+        errors.append("inputs_sha256_invalid")
+    n_rows = p.get("n_rows")
+    if not isinstance(n_rows, int) or isinstance(n_rows, bool) or n_rows < 1:
+        errors.append("n_rows_not_positive_int")
+        n_rows = None
+    n_alarms = p.get("n_alarm_rows")
+    if not isinstance(n_alarms, int) or isinstance(n_alarms, bool) or n_alarms < 0:
+        errors.append("n_alarm_rows_not_nonnegative_int")
+    elif n_rows is not None and n_alarms > n_rows:
+        errors.append("n_alarm_rows_exceeds_n_rows")
+    lanes = p.get("lanes_available")
+    if not isinstance(lanes, Mapping):
+        errors.append("lanes_available_not_mapping")
+    else:
+        for lane in lanes:
+            if lane not in _MONITOR_LANES:
+                errors.append(f"lanes_available_unknown:{lane}")
+        for lane, flag in lanes.items():
+            if not isinstance(flag, bool):
+                errors.append(f"lane_flag_not_bool:{lane}")
+    params = p.get("params")
+    if not isinstance(params, Mapping):
+        errors.append("params_not_mapping")
+    else:
+        alpha = _num(params.get("alpha"))
+        level = _num(params.get("level"))
+        if alpha is None or not (0.0 < alpha < 1.0):
+            errors.append("params.alpha_out_of_unit_interval")
+        if level is None or not (0.0 < level < 1.0):
+            errors.append("params.level_out_of_unit_interval")
+        cell = params.get("tail_cell")
+        if (
+            not isinstance(cell, list)
+            or len(cell) != 2
+            or not all(_finite(x) for x in cell)
+            or not (0.0 < cell[0] < cell[1] < 1.0)
+        ):
+            errors.append("tail_cell_not_ordered_pair")
+        for field in ("n_train", "n_eval", "seed"):
+            v = params.get(field)
+            if not isinstance(v, int) or isinstance(v, bool) or (field != "seed" and v < 1):
+                errors.append(f"params.{field}_bad")
+        for field in ("heads", "shards"):
+            v = params.get(field)
+            if not isinstance(v, list) or not v or not all(isinstance(x, str) for x in v):
+                errors.append(f"params.{field}_not_str_list")
+    return errors
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
@@ -569,4 +631,6 @@ def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         return _lane_power_errors(receipt)
     if kind == "honest_verdict.v1":
         return _honest_verdict_errors(receipt)
+    if kind in ("monitor_run", "monitor_run.v1"):
+        return _monitor_run_errors(receipt)
     return []
