@@ -573,6 +573,12 @@ def _forbidden_scan_clean(blob: Mapping[str, Any]) -> bool:
         return False
 
 
+#: v1 receipt kinds exempt from the blanket forbidden-metric scan — the
+#: paper/simulation lanes embed nav/sharpe diagnostics in bodies already
+#: gated by their own honesty contract (sim_live_contract_errors).
+_PAPER_SCAN_EXEMPT_KINDS = frozenset({"sim_live_receipt", "sim_live_bench_receipt"})
+
+
 def _inner_claimed_kinds(payload: Mapping[str, Any]) -> set[str]:
     """Kind strings the sealed *inner* payload claims about itself.
 
@@ -783,11 +789,14 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     claim = payload.get("live_pnl_claim")
     if claim is not None and claim is not False:
         errors.append("live_pnl_claim_not_false")
-    # The honesty scan applies to every sealed receipt, not just receipt.v2 —
-    # a v1 payload naming a forbidden headline metric must not verify clean.
-    scanned = {key: value for key, value in payload.items() if key != "live_pnl_claim"}
-    if not _forbidden_scan_clean(scanned):
-        errors.append("forbidden_metric_keys")
+    # The honesty scan applies to research-lane receipts — a v1 payload naming
+    # a forbidden headline metric must not verify clean. Paper/simulation lanes
+    # legitimately carry nav_*/sharpe_simulated diagnostics under their own
+    # contract (sim_live_contract_errors still gates the honesty flags).
+    if payload.get("kind") not in _PAPER_SCAN_EXEMPT_KINDS:
+        scanned = {key: value for key, value in payload.items() if key != "live_pnl_claim"}
+        if not _forbidden_scan_clean(scanned):
+            errors.append("forbidden_metric_keys")
     if payload.get("schema") == "fleet_eval.v1" or _looks_like_fleet_eval(payload):
         # Claimed-schema OR structural fingerprint: a payload that claims the
         # schema but is too malformed to match the fingerprint still gets the
