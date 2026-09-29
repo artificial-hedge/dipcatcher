@@ -192,6 +192,7 @@ nav:
       - Frontier audit: AUDIT_FRONTIER.md
       - Audit ledger: AUDIT_LEDGER.md
       - Scenario Monte Carlo: MC_ENGINE.md
+      - Run comparison: RUN_COMPARE.md
       - Fast replay conformance: FAST_REPLAY_P42.md
       - Fast-path latency argument: P4_3_FAST_PATH_ARGUMENT.md
       - Explainability: EXPLAINABILITY.md
