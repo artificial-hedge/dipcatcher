@@ -33,6 +33,7 @@ does not score them.
 - `receipts/basis_reversion_screen_20asset_1d_20260922.json`: basis_reversion_screen.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/coverage_real_drill.json`: coverage_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/dip_bench_crypto_1d_20260925.json`: fx1.dip_bench/v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fast_replay_p42_conformance_20260927.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -59,4 +60,5 @@ does not score them.
 - `receipts/serial_watch_d311f5ea367a66a9.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/serial_watch_dbd21a6c99c81e00.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/suite_health_drill.json`: suite_health.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - draft PR #202 survivorship-corrected batch: not on this tree; listed as pending, not merged, with no measured figures
