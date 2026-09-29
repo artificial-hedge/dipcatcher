@@ -35,6 +35,7 @@ from quant_fund.metrics.returns import (
     sortino_ratio,
 )
 from quant_fund.metrics.risk import historical_es, historical_var
+from quant_fund.utils.atomicio import atomic_write_text
 
 
 def _nav_and_returns(equity: pl.DataFrame) -> tuple[np.ndarray, np.ndarray]:
@@ -159,13 +160,8 @@ def build_tearsheet(
         ]
         sheet["execution"] = {
             "n_fills": int(fills.height),
-            "cost_totals": {
-                c: float(fills[c].sum())
-                for c in cost_cols  # type: ignore[index]
-            },
-            "total_cost": float(
-                sum(fills[c].sum() for c in cost_cols)  # type: ignore[arg-type]
-            ),
+            "cost_totals": {c: float(fills[c].sum()) for c in cost_cols},
+            "total_cost": float(sum(fills[c].sum() for c in cost_cols)),
         }
     if "turnover" in equity.columns:
         sheet.setdefault("execution", {})["mean_turnover"] = float(
@@ -281,5 +277,5 @@ def tearsheet_markdown(sheet: dict[str, Any]) -> str:
 
 def write_tearsheet_md(path: Path, sheet: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(tearsheet_markdown(sheet))
+    atomic_write_text(path, tearsheet_markdown(sheet))
     return path
