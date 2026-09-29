@@ -594,7 +594,12 @@ def race(
     sealed = seal_receipt(receipt)
     path = out_dir / f"fleet_race_{receipt['inputs_sha256'][:16]}.json"
     path.write_text(_json.dumps(sealed, indent=2, sort_keys=True) + "\n")
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     typer.echo(
         frame.select(
             "shard", "model", "status", "promoted_at", "eliminated_at", "shard_winner", "verdict"
