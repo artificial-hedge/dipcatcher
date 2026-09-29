@@ -8,6 +8,7 @@ import polars as pl
 import pytest
 
 import quant_fund.paper.ledger as ledger_module
+import quant_fund.utils.atomicio as atomicio
 from quant_fund.config.loader import load_config
 from quant_fund.monitoring.kill_switch import HALT_NEW_ORDERS
 from quant_fund.paper.ledger import PaperLedger, load_broker_state, promotion_dry_run
@@ -216,7 +217,7 @@ def test_paper_receipt_atomic_publish_preserves_previous_on_replace_failure(tmp_
     def fail_replace(_source, _destination):
         raise OSError("simulated receipt publish failure")
 
-    monkeypatch.setattr(ledger_module.os, "replace", fail_replace)
+    monkeypatch.setattr(atomicio.os, "replace", fail_replace)
     with pytest.raises(OSError, match="simulated receipt publish failure"):
         ledger.write_promotion_dry_run({"version": 2, "status": "complete"})
 
@@ -236,7 +237,7 @@ def test_paper_ledger_atomic_parquet_publish_preserves_previous_on_replace_failu
     def fail_replace(_source, _destination):
         raise OSError("simulated parquet publish failure")
 
-    monkeypatch.setattr(ledger_module.os, "replace", fail_replace)
+    monkeypatch.setattr(atomicio.os, "replace", fail_replace)
     ledger.record_shadow_equity({"event_time": "2024-01-02", "nav": 1.1})
     with pytest.raises(OSError, match="simulated parquet publish failure"):
         ledger.flush()
@@ -255,7 +256,7 @@ def test_paper_analytics_export_atomic_publish_preserves_previous_on_replace_fai
     def fail_replace(_source, _destination):
         raise OSError("simulated analytics publish failure")
 
-    monkeypatch.setattr(ledger_module.os, "replace", fail_replace)
+    monkeypatch.setattr(atomicio.os, "replace", fail_replace)
     with pytest.raises(OSError, match="simulated analytics publish failure"):
         ledger.write_analytics_export({"version": 2, "status": "complete"})
 
@@ -749,3 +750,77 @@ def test_promotion_dry_run_rejects_high_divergence():
         data_source="SYNTHETIC",
     )
     assert receipt["would_promote_paper"] is False
+
+
+def _run_once(tmp_path: Path, run_id: str) -> None:
+    cfg = _cfg(tmp_path)
+    run_paper_loop(
+        _bars(8),
+        cfg,
+        champion_weights=_weights(7),
+        initial_nav=100_000.0,
+        max_steps=2,
+        run_id=run_id,
+        prefer_latest=False,
+    )
+
+
+def _corrupt_state_field(tmp_path: Path, run_id: str, key: str, value: object) -> None:
+    path = tmp_path / "metadata" / "paper" / run_id / "broker_state.json"
+    state = json.loads(path.read_text())
+    state[key] = value
+    path.write_text(json.dumps(state))
+
+
+def test_paper_resume_rejects_unparseable_last_exec(tmp_path):
+    """A corrupt last_exec must fail closed, not skip the fingerprint check."""
+    run_id = "paper-bad-last-exec"
+    _run_once(tmp_path, run_id)
+    _corrupt_state_field(tmp_path, run_id, "last_exec", "not-a-timestamp")
+    cfg = _cfg(tmp_path)
+    with pytest.raises(ValueError, match="last_exec"):
+        run_paper_loop(
+            _bars(8),
+            cfg,
+            champion_weights=_weights(7),
+            initial_nav=100_000.0,
+            max_steps=1,
+            resume=True,
+            resume_run_id=run_id,
+        )
+
+
+def test_paper_resume_rejects_missing_last_exec_with_fingerprint(tmp_path):
+    """last_exec: null with a live fingerprint also fails closed."""
+    run_id = "paper-null-last-exec"
+    _run_once(tmp_path, run_id)
+    _corrupt_state_field(tmp_path, run_id, "last_exec", None)
+    cfg = _cfg(tmp_path)
+    with pytest.raises(ValueError, match="last_exec"):
+        run_paper_loop(
+            _bars(8),
+            cfg,
+            champion_weights=_weights(7),
+            initial_nav=100_000.0,
+            max_steps=1,
+            resume=True,
+            resume_run_id=run_id,
+        )
+
+
+def test_paper_resume_rejects_unparseable_last_decision(tmp_path):
+    """A corrupt last_decision cursor must fail closed, not silently replay."""
+    run_id = "paper-bad-last-decision"
+    _run_once(tmp_path, run_id)
+    _corrupt_state_field(tmp_path, run_id, "last_decision", "2024-13-99Tbad")
+    cfg = _cfg(tmp_path)
+    with pytest.raises(ValueError, match="last_decision"):
+        run_paper_loop(
+            _bars(8),
+            cfg,
+            champion_weights=_weights(7),
+            initial_nav=100_000.0,
+            max_steps=1,
+            resume=True,
+            resume_run_id=run_id,
+        )
