@@ -20,7 +20,7 @@ import hashlib
 import json
 import platform
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -37,6 +37,7 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.impossible_fit import impossible_fit_scan
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -319,7 +320,12 @@ def _strict_digest(body: Mapping[str, Any]) -> str:
 
 
 class ReceiptVerification(TypedDict):
-    """``verify-receipt`` result. ``kind`` is untrusted until errors is empty."""
+    """``verify-receipt`` result. ``kind`` is untrusted until errors is empty.
+
+    ``warnings`` are informational statistical-leakage canaries from
+    ``impossible_fit_scan``: scores too good to be honest. They never affect
+    ``valid`` — a degenerate synthetic shard can legitimately trip them.
+    """
 
     valid: bool
     path: str
@@ -328,6 +334,7 @@ class ReceiptVerification(TypedDict):
     verdict: object
     digest_convention: str | None
     errors: list[str]
+    warnings: list[str]
 
 
 def _result(
@@ -343,6 +350,7 @@ def _result(
         "verdict": body.get("verdict"),
         "digest_convention": digest_convention,
         "errors": errors,
+        "warnings": impossible_fit_scan(payload),
     }
 
 
@@ -398,38 +406,13 @@ def _code_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     return []
 
 
-_AUDITOR_ERRORS = (ValueError, TypeError, KeyError, RecursionError, AttributeError)
-
-
-def _guarded(
-    audit: Callable[[Mapping[str, Any]], list[str]], label: str
-) -> Callable[[Mapping[str, Any]], list[str]]:
-    """A payload that crashes a kind auditor fails that audit — never the gate."""
-
-    def _run(payload: Mapping[str, Any]) -> list[str]:
-        try:
-            return audit(payload)
-        except _AUDITOR_ERRORS:
-            return [f"{label}_audit_crash"]
-
-    return _run
-
-
-def _forbidden_scan_clean(blob: Mapping[str, Any]) -> bool:
-    """Key scan must fail closed, not crash, on pathological nesting."""
-    try:
-        return family_blob_forbidden_metrics_absent(blob)
-    except _AUDITOR_ERRORS:
-        return False
-
-
 def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     """Lane-specific re-derivation of the bound digests, where defined."""
     kind = payload.get("kind")
     if kind == "distribution_fleet_eval":
         from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
-        return _guarded(fleet_v2_consistency_errors, "fleet_v2_consistency")(payload)
+        return fleet_v2_consistency_errors(payload)
     if kind == "capacity_overlay_eval":
         from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
 
@@ -450,8 +433,6 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     body = {key: value for key, value in payload.items() if key != "receipt_sha256"}
     try:
         ReceiptV2.model_validate(payload)
-    except RecursionError:
-        return _result(path, payload, None, ["receipt_v2_schema:nesting_depth"])
     except ValidationError as exc:
         for issue in exc.errors():
             location = ".".join(str(part) for part in issue["loc"]) or "envelope"
@@ -466,7 +447,7 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         # Same exemption as the writers: the envelope honesty flag carries a
         # forbidden token but is required, so it is excluded from the scan.
         scanned = {key: value for key, value in payload_body.items() if key != "live_pnl_claim"}
-        if not _forbidden_scan_clean(scanned):
+        if not family_blob_forbidden_metrics_absent(scanned):
             errors.append("payload_forbidden_metrics")
         # Envelope/payload agreement: a payload that echoes either honesty
         # field must not contradict the sealed envelope under a fresh seal.
@@ -476,6 +457,11 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         inner_claim = payload_body.get("live_pnl_claim")
         if inner_claim is not None and inner_claim is not False:
             errors.append("payload_live_pnl_claim_not_false")
+        # The inner body claims its own schema/kind — lane contracts apply
+        # regardless of what the envelope's ``kind`` was renamed to.
+        from quant_fund.research.lane_contracts import lane_contract_errors
+
+        errors.extend(lane_contract_errors(payload_body))
     errors.extend(_kind_consistency_errors(body))
     return _result(path, payload, convention, errors)
 
@@ -505,27 +491,19 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     claim = payload.get("live_pnl_claim")
     if claim is not None and claim is not False:
         errors.append("live_pnl_claim_not_false")
-    # The honesty scan applies to every sealed receipt, not just receipt.v2 —
-    # a v1 payload naming a forbidden headline metric must not verify clean.
-    scanned = {key: value for key, value in payload.items() if key != "live_pnl_claim"}
-    if not _forbidden_scan_clean(scanned):
-        errors.append("forbidden_metric_keys")
     if payload.get("schema") == "fleet_eval.v1":
-        from quant_fund.research.fleet_eval import (
-            fleet_v1_audit_errors,
-            fleet_v1_contract_errors,
+        from quant_fund.research.fleet_eval import fleet_v1_contract_errors
+
+        errors.extend(fleet_v1_contract_errors(payload))
+    if payload.get("schema") == "cost_calibration.v1":
+        from quant_fund.research.cost_calibration import (
+            cost_calibration_contract_errors,
         )
 
-        errors.extend(_guarded(fleet_v1_contract_errors, "fleet_v1_contract")(payload))
-        errors.extend(_guarded(fleet_v1_audit_errors, "fleet_v1")(payload))
-    elif payload.get("schema") == "capacity_overlay.v1":
-        from quant_fund.research.capacity_overlay import capacity_v1_audit_errors
+        errors.extend(cost_calibration_contract_errors(payload))
+    from quant_fund.research.lane_contracts import lane_contract_errors
 
-        errors.extend(_guarded(capacity_v1_audit_errors, "capacity_v1")(payload))
-    elif payload.get("schema") == "cross_sectional_rankic.v1":
-        from quant_fund.research.cross_sectional import rankic_v1_audit_errors
-
-        errors.extend(_guarded(rankic_v1_audit_errors, "rankic_v1")(payload))
+    errors.extend(lane_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
@@ -558,7 +536,7 @@ def verify_receipt_file(path: Path | str) -> ReceiptVerification:
     file_path = Path(path)
     try:
         payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
-    except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+    except (OSError, UnicodeError, ValueError) as exc:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     return verify_receipt_payload(payload, file_path)
 
