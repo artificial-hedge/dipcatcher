@@ -44,6 +44,15 @@ def _lazy_corpus() -> Any:
         return None
 
 
+def _lazy_epoch_check() -> Any:
+    try:
+        import importlib
+
+        return importlib.import_module("quant_fund.research.corpus_epoch").check_epoch_chain
+    except ImportError:
+        return None
+
+
 def suite_health(
     receipts_dir: Path | str = "receipts",
     *,
@@ -122,6 +131,25 @@ def suite_health(
     pooled = float(emerge_mean(evalues)) if evalues and n_failed == 0 else None
     pooled_alarmed = bool(pooled is not None and pooled >= 1.0 / alpha)
 
+    # Epoch-chain attestation: the health receipt pins the membership-chain
+    # state it ran under, so a stamped-then-tampered corpus is visible in the
+    # audit record itself, not only via `corpus-epoch --check`.
+    epoch_check = _lazy_epoch_check()
+    if epoch_check is None:
+        epoch_state: dict[str, Any] = {"available": False}
+    else:
+        chain = epoch_check(root)
+        epoch_state = {
+            "available": True,
+            "head": chain.get("head"),
+            "head_epoch_root": chain.get("head_epoch_root"),
+            "errors": list(chain["errors"]),
+            "n_unstamped": len(chain["unstamped"]),
+            # "no_epoch_receipts" = unstamped corpus — benign; a stamped chain
+            # that is broken is the integrity violation.
+            "chain_ok": not [e for e in chain["errors"] if e != "no_epoch_receipts"],
+        }
+
     receipt: dict[str, Any] = {
         "schema": SUITE_HEALTH_SCHEMA,
         "kind": "suite_health",
@@ -148,6 +176,7 @@ def suite_health(
         "n_receipts": frame.height,
         "n_ok": n_ok,
         "n_failed": n_failed,
+        "corpus_epoch": epoch_state,
         "corpus_lane_available": corpus_mod is not None,
         "n_findings_harvested": findings_total,
         "n_evalues_pooled": len(evalues),

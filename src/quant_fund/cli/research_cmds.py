@@ -936,6 +936,10 @@ def suite_health_cmd(
                 or is_known_contract_legacy(p, result["errors"])
             ):
                 bad.append(f"{row['file']}: {result['errors']}")
+        epoch_state = receipt.get("corpus_epoch")
+        if isinstance(epoch_state, dict) and epoch_state.get("chain_ok") is False:
+            for err in epoch_state.get("errors") or []:
+                bad.append(f"corpus_epoch: {err}")
         if bad:
             typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
             for line in bad:
