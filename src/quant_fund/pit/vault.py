@@ -240,9 +240,14 @@ class PitVault:
                     delete=False,
                 ) as temporary:
                     temporary_path = Path(temporary.name)
-                frame.write_parquet(temporary_path)
-                with temporary_path.open("rb") as handle:
-                    os.fsync(handle.fileno())
+                    frame.write_parquet(temporary)
+                    temporary.flush()
+                    # fsync must run on the *write* descriptor, before it closes.
+                    # Reopening the part read-only and fsyncing that handle is a
+                    # no-op durability guarantee: POSIX accepts it without
+                    # flushing the writer's pages, and Windows rejects it outright
+                    # (_commit requires a writable fd -> OSError EBADF).
+                    os.fsync(temporary.fileno())
                 # link() is an atomic exclusive publish: it cannot replace a part
                 # created by another writer or a crashed earlier append.
                 try:
