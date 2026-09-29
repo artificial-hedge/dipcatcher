@@ -1661,6 +1661,79 @@ def corpus_epoch(
     typer.echo(f"receipt={path}")
 
 
+@app.command("corpus-proof")
+def corpus_proof_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Chained corpus the member lives in."
+    ),
+    member: str | None = typer.Option(
+        None, "--member", help="Member name (corpus-relative, e.g. a receipt filename)."
+    ),
+    epoch: str | None = typer.Option(
+        None, "--epoch", help="Epoch receipt name to bind to (default: chain head)."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed corpus_proof.v1 receipt here (default: inside the corpus).",
+    ),
+    check: Path | None = typer.Option(
+        None, "--check", help="Verify an existing corpus_proof receipt file instead of making one."
+    ),
+) -> None:
+    """Merkle inclusion proof: this member sat in the corpus at epoch N.
+
+    Emits an O(log n) ``corpus_proof.v1`` receipt — sibling path from the
+    member's leaf to the epoch's Merkle root — so "was this file in the
+    corpus then?" verifies offline without re-sending the epoch's whole
+    member map. ``--check`` re-derives the root from the path *and* from
+    the referenced epoch receipt and requires both to agree.
+    """
+    import json as _json
+
+    from quant_fund.research.epoch_merkle import (
+        member_proof,
+        verify_epoch_proof,
+    )
+
+    if check is not None:
+        payload = _json.loads(check.read_text(encoding="utf-8"))
+        # Unwrap the receipt.v2 envelope — the proof body lives in "payload".
+        body_payload = payload.get("payload", payload)
+        errors = verify_epoch_proof(body_payload, check.parent)
+        for err in errors:
+            typer.echo(f"corpus-proof error: {err}")
+        if errors:
+            raise typer.Exit(code=1)
+        typer.echo(
+            f"corpus-proof verified: {body_payload.get('member')} in "
+            f"{body_payload.get('epoch_receipt')} (n={body_payload.get('n_members')})"
+        )
+        return
+
+    if member is None:
+        raise typer.BadParameter("--member is required unless --check is passed")
+    body = member_proof(corpus_dir, member, epoch_receipt=epoch)
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    sealed = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(__file__).parent.parent / "research" / "epoch_merkle.py",),
+            verdict="pass",
+        )
+    )
+    dest = out or (corpus_dir / f"corpus_proof_{sealed['receipt_sha256'][:16]}.json")
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"corpus-proof member={member} epoch={body['epoch_receipt']} "
+        f"depth={len(body['path'])} receipt={dest}"
+    )
+
+
 @app.command("crown-jewels")
 def crown_jewels_cmd(
     root: Path = typer.Option(Path("."), "--root", help="Repo root the jewels live under."),
