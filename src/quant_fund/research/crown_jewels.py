@@ -51,15 +51,56 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     # --- the verifier itself: a silent rewrite beats every layer above ---
     "src/quant_fund/research/corpus_epoch.py",
     "src/quant_fund/research/crown_jewels.py",
+    "src/quant_fund/research/epoch_consistency.py",
     "src/quant_fund/research/epoch_merkle.py",
     "src/quant_fund/research/gate_signatures.py",
     "src/quant_fund/research/lane_contracts.py",
+    "src/quant_fund/research/receipt_lattice.py",
     "src/quant_fund/research/receipt_v2.py",
     "src/quant_fund/research/repo_integrity.py",
     "src/quant_fund/research/timestamp_anchor.py",
     "src/quant_fund/utils/atomicio.py",
     "src/quant_fund/utils/hashing.py",
 )
+
+
+# File-name vocabulary that marks a module as verifier-critical — the
+# coverage check below derives the required-jewel set from it, so a future
+# integrity module can't dodge the pin by simply not being listed here.
+_VERIFIER_VOCABULARY = (
+    "epoch",  # corpus_epoch, epoch_merkle, epoch_consistency
+    "merkle",
+    "signature",
+    "integrity",
+    "anchor",
+    "crown",
+    "lattice",
+    "receipt_v2",
+    "lane_contracts",
+    "admission",
+    "receipt_graph",
+)
+
+
+def verifier_coverage_errors(
+    root: Path | str,
+    jewels: tuple[str, ...] = DEFAULT_JEWELS,
+) -> list[str]:
+    """Every integrity-critical module must itself be a pinned jewel.
+
+    A verifier module that isn't in ``DEFAULT_JEWELS`` is a hole: it could be
+    silently rewritten without tripping ``jewel_mutated``. The covered set is
+    *derived* — any ``research/`` module whose name matches the integrity
+    vocabulary must be pinned — so new verifier modules can't dodge the
+    pin by omission.
+    """
+    src = Path(root) / "src" / "quant_fund" / "research"
+    required = {
+        f"src/quant_fund/research/{p.name}"
+        for p in src.glob("*.py")
+        if any(tok in p.stem for tok in _VERIFIER_VOCABULARY)
+    }
+    return [f"verifier_unpinned:{j}" for j in sorted(required - set(jewels))]
 
 
 def crown_jewel_digests(
@@ -137,6 +178,9 @@ def crown_jewels_errors(
     except (OSError, ValueError) as exc:
         return [f"pin_malformed:{exc}"]
     errors: list[str] = []
+    # Coverage first: a verifier module that dodges DEFAULT_JEWELS is a
+    # self-reference hole even when every pinned jewel is intact.
+    errors.extend(verifier_coverage_errors(base, jewels))
     for name in sorted(set(jewels) - set(pinned)):
         errors.append(f"jewel_unpinned:{name}")
     for name in sorted(set(pinned) - set(jewels)):

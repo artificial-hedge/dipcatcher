@@ -34,7 +34,7 @@
     },
     "data": {
       "doc": "docs/AUDIT_P63_DATA.md",
-      "n_modules": 34,
+      "n_modules": 42,
       "status": "audited"
     },
     "diffbacktest": {
@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 176,
+      "n_modules": 179,
       "status": "audited"
     },
     "monitoring": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 115,
+      "n_modules": 119,
       "status": "audited"
     },
     "risk": {

@@ -1734,6 +1734,91 @@ def corpus_proof_cmd(
     )
 
 
+@app.command("corpus-consistency")
+def corpus_consistency_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Chained corpus to prove extension over."
+    ),
+    from_receipt: str | None = typer.Option(
+        None,
+        "--from-epoch",
+        help="Older epoch receipt name the chain must extend (default: genesis).",
+    ),
+    held_sha256: str | None = typer.Option(
+        None,
+        "--held",
+        help="Digest of the from-head bytes a verifier already trusts — proves the "
+        "live chain extends that exact state, not a rewritten one.",
+    ),
+    glob: str = typer.Option("*.json", "--glob", help="Member glob of the chain."),
+    out: Path | None = typer.Option(
+        None, "--out", help="Write the consistency proof JSON here (stdout otherwise)."
+    ),
+    check: Path | None = typer.Option(
+        None, "--check", help="Verify an existing proof file against the live corpus."
+    ),
+) -> None:
+    """Chain-consistency proof: the current head *extends* a held older head.
+
+    The RFC 6962 mirror of ``corpus-proof``: inclusion asks "was member m in
+    epoch N?", consistency asks "does the live chain still contain the head
+    I already verified?". A rewritten history can only satisfy the proof by
+    keeping every real intermediate receipt verbatim — at which point it is
+    the real history. Pass ``--held`` with the old head's digest (from an
+    anchored pin or an earlier clone) to bind the proof to held state.
+    Provenance evidence only.
+    """
+    import json as _json
+
+    from quant_fund.research.epoch_consistency import (
+        consistency_proof,
+        verify_consistency,
+    )
+
+    if check is not None:
+        proof = _json.loads(check.read_text(encoding="utf-8"))
+        errors = verify_consistency(proof, corpus_dir, held_sha256=held_sha256)
+        for err in errors:
+            typer.echo(f"corpus-consistency error: {err}")
+        if errors:
+            raise typer.Exit(code=1)
+        typer.echo(
+            f"corpus-consistency verified: {proof.get('from_receipt', {}).get('name')} "
+            f"-> {proof.get('to_receipt', {}).get('name')} "
+            f"({proof.get('n_hops')} hops)"
+        )
+        return
+
+    if from_receipt is None:
+        # Genesis = the hop no epoch names as its successor's prev.
+        from quant_fund.research.epoch_consistency import chain_index
+
+        index = chain_index(corpus_dir, pattern=glob)
+        if not index:
+            raise typer.BadParameter(f"no epoch receipts in {corpus_dir} for {glob}")
+        candidates = [
+            name
+            for name in index
+            if index[name][1].get("prev_epoch_receipt") is None
+            or index[name][1].get("prev_epoch_receipt") not in index
+        ]
+        if not candidates:
+            raise typer.BadParameter("no genesis receipt reachable")
+        from_receipt = sorted(candidates)[0]
+    proof = consistency_proof(corpus_dir, from_receipt, pattern=glob)
+    if held_sha256 is not None and proof["from_receipt"]["sha256"] != held_sha256:
+        typer.echo("corpus-consistency error: held_head_digest_mismatch")
+        raise typer.Exit(code=1)
+    text = _json.dumps(proof, indent=2, sort_keys=True) + "\n"
+    if out is not None:
+        from quant_fund.utils.atomicio import atomic_write_text
+
+        atomic_write_text(out, text)
+    else:
+        typer.echo(text.rstrip())
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+
+
 @app.command("crown-jewels")
 def crown_jewels_cmd(
     root: Path = typer.Option(Path("."), "--root", help="Repo root the jewels live under."),

@@ -53,6 +53,7 @@ _META_AUDIT_KINDS = frozenset(
     {
         "corpus_epoch.v1",
         "corpus_proof.v1",
+        "epoch_consistency.v1",
         "repo_integrity.v1",
         "receipt_admission.v1",
         "receipt_lattice.v1",

@@ -1,11 +1,11 @@
 {
   "anchors": {
     "quality__crown_jewels.json.tsr": {
-      "sha256": "c4ca5fad40aabb8fd43433c8ef1b210562fb1b0295afa54ebe9a06f8148e2a3f",
+      "sha256": "cd4dacefd4ceba029012c0e6c231cd289187c31e4e13273047273a5b2a58fca7",
       "target": "quality/crown_jewels.json"
     },
     "quality__epoch_heads.json.tsr": {
-      "sha256": "ed0dfcadacf912925e3587abfe3546108716e30e4987473b83ffec56a3e18698",
+      "sha256": "d5e44bb6253bdf936e0c6b24072ccd76d19f1baf06059932d1dbd10272e08164",
       "target": "quality/epoch_heads.json"
     }
   },

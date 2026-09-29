@@ -17,6 +17,8 @@ detects, and the boundary where detection stops.
 | Pin signature | `gate_pins.sig` + `quality/gate_signing.pub` | `verify-repo` (`pin_signatures` gate) | Forged pins: an editor can re-pin after rewriting a gate file, but cannot re-sign — Ed25519 covers both pin files' bytes |
 | Timestamp anchor | `quality/timestamps/*.tsr` + `anchors.json` | `verify-repo` (`timestamp_anchors` gate) | Retroactive history fabrication: an RFC 3161 TSA signature proves the pinned state existed by wall-clock time T — the chain can't be minted after the fact |
 | Inclusion proof | `corpus_proof_*.json` (RFC 6962 merkle path) | `dipcatcher corpus-proof --check` | "Was this file in epoch N?" in O(log n) — the path recomputes the epoch's Merkle root and binds to the named chained receipt |
+| Consistency proof | `epoch_consistency.v1` (hop digest list) | `dipcatcher corpus-consistency --check [--held]` | History rewrite: proves the live chain *extends* an old head digest a verifier already holds (anchored pin, earlier clone) — a rewritten chain can't reach the held bytes without keeping every real hop verbatim |
+| Verifier coverage | derived jewel set | inside `crown-jewels --check` | A new integrity-critical module (`*_epoch*`, `*merkle*`, `*anchor*`, …) that dodges `DEFAULT_JEWELS` fails `verifier_unpinned` — the pin can't be dodged by omission |
 | Admission | `receipt_admission.v1` | `dipcatcher admit-batch --strict` | A new receipt that breaks lattice/FDR on entry |
 | Capstone | `repo_integrity.v1` | `dipcatcher verify-repo` | One sealed verdict over all of the above — contract-checked so the attestation can't claim `ok` while a gate lists errors, hide a gate entirely, or disagree with its own digest pins |
 
