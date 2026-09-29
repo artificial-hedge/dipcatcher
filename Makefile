@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit
 
 .DEFAULT_GOAL := help
 
@@ -103,6 +103,15 @@ simtest: ## Bounded deterministic-simulation tests and swarm (CI size)
 simtest-large: ## Large seeded swarm (workflow_dispatch size; not the PR default)
 	MLFLOW_DISABLE_AGENT_HINT=1 uv run python scripts/simtest_swarm.py --seeds 4000 --days 8 --base-seed 0
 
+# Timings are machine-local: the CI gate (.github/workflows/perf-baseline.yml)
+# records its baseline on CI runners; these targets are for local self-checks.
+perf-record: ## Record a local perf baseline over the scoring/inference hot paths
+	uv run python scripts/perf_baseline.py record --output data/metadata/perf-baseline.json
+
+perf-check: ## Compare current timings against the stored local baseline (1.5x gate)
+	uv run python scripts/perf_baseline.py record --output data/metadata/perf-current.json
+	uv run python scripts/perf_baseline.py compare --baseline data/metadata/perf-baseline.json --current data/metadata/perf-current.json
+
 # --- fx-1 (the model) lifecycle — dipcatcher is the harness ---------------
 fx1-test: ## fx-1 test suite
 	PYTHONPATH=src uv run pytest tests/fx1 -q
@@ -189,6 +198,12 @@ reality-gate: ## Reality-filter gate: score trials; absent DB or empty export sk
 
 receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verifiers pending
 	uv run python -m quant_fund.proofcore.ci receipts-reverify receipts
+
+evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
+	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
+
+lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
+	uv run dipcatcher lattice --strict --out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

@@ -17,8 +17,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any, cast
 
 import numpy as np
@@ -41,6 +44,7 @@ from quant_fund.models.robinhood_plus.engine import (
 )
 from quant_fund.research.benches import bench_conformal, bench_distribution, bench_jackknife_plus
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 KRONOS_PAPER_TSFM = (
     "PatchTST",
@@ -90,6 +94,29 @@ def load_sota_protocol(path: str | Path) -> SotaProtocol:
 def protocol_sha256(protocol: SotaProtocol) -> str:
     payload = json.dumps(protocol.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Publish a complete text artifact without exposing partial bytes."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            mode="w",
+            encoding="utf-8",
+            delete=False,
+        ) as temporary:
+            temporary_path = Path(temporary.name)
+            temporary.write(content)
+            temporary.flush()
+            os.fsync(temporary.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def apply_protocol(config: AppConfig, protocol: SotaProtocol) -> AppConfig:
@@ -400,8 +427,59 @@ def run_sota_protocol(
     }
     if not family_blob_forbidden_metrics_absent(receipt):
         raise AssertionError("sota protocol receipt leaked forbidden research keys")
+    canonical = json.loads(canonical_json_bytes(receipt))
+    digest = hash_bytes(canonical_json_bytes(canonical))
+    payload = {**canonical, "receipt_sha256": digest}
     dest = Path(cfg.data.root) / "metadata" / "sota_receipt.json"
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(json.dumps(receipt, indent=2, default=str), encoding="utf-8")
-    receipt["receipt_path"] = str(dest)
-    return receipt
+    _atomic_write_text(dest, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    payload["receipt_path"] = str(dest)
+    return payload
+
+
+SOTA_RECEIPT_REQUIRED_KEYS = (
+    "protocol_id",
+    "protocol_sha256",
+    "frozen",
+    "data_source",
+    "g1",
+    "promotion",
+    "receipt_sha256",
+)
+
+
+def sota_receipt_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Contract errors for a written ``sota_receipt.json`` payload."""
+    errors = [key for key in SOTA_RECEIPT_REQUIRED_KEYS if key not in receipt]
+    if receipt.get("research_only") is not True:
+        errors.append("research_only")
+    if receipt.get("execution_claim") != "research_only":
+        errors.append("execution_claim")
+    if receipt.get("claim") != "research_metric_only":
+        errors.append("claim")
+    if receipt.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim")
+    if not family_blob_forbidden_metrics_absent(dict(receipt)):
+        errors.append("forbidden_metrics")
+    return errors
+
+
+def sota_receipt_seal_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Digest errors for a written receipt (``receipt_path`` is post-seal)."""
+    unsigned = {
+        key: value
+        for key, value in receipt.items()
+        if key not in ("receipt_sha256", "receipt_path")
+    }
+    expected = hash_bytes(canonical_json_bytes(unsigned))
+    return [] if receipt.get("receipt_sha256") == expected else ["receipt_sha256"]
+
+
+def verify_sota_receipt(path: str | Path) -> list[str]:
+    """Fail-closed verification of a written ``sota_receipt.json`` file."""
+    try:
+        loaded = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"unreadable:{exc}"]
+    if not isinstance(loaded, dict):
+        return ["not_an_object"]
+    return sota_receipt_contract_errors(loaded) + sota_receipt_seal_errors(loaded)
