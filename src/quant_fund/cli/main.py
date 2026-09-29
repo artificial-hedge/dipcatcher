@@ -58,6 +58,7 @@ from quant_fund.cli.research_cmds import (
     suite_health_cmd,
     cost_calibration,
     corpus,
+    lattice_cmd,
     online_fdr_cmd,
 )
 from quant_fund.cli.book_cmds import (
@@ -180,6 +181,7 @@ __all__ = [
     "suite_health_cmd",
     "cost_calibration",
     "corpus",
+    "lattice_cmd",
     "online_fdr_cmd",
     "session_book_cmd",
     "vendor_book_map_cmd",

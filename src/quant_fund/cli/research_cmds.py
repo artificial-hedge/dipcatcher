@@ -1156,3 +1156,49 @@ __all__ = [
     "verify_receipt_cmd",
     "vol_bench",
 ]
+
+
+@app.command("lattice")
+def lattice_cmd(
+    receipts_dir: Path = typer.Option(
+        Path("receipts"), "--receipts-dir", help="Directory of receipts to lattice."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    float_rel_tol: float = typer.Option(
+        1e-9, "--float-rel-tol", help="Relative tolerance for numeric-drift edges."
+    ),
+    head_sha: str | None = typer.Option(
+        None, "--head-sha", help="Current HEAD sha for stale-code flags (default: auto)."
+    ),
+) -> None:
+    """Cross-receipt consistency lattice over a receipts directory.
+
+    Edges receipts that claim the same inputs/dataset fingerprints and
+    compares their shared claim paths: consistent / numeric_drift /
+    inconsistent. Provenance claims only — no P&L.
+    """
+    import json
+
+    from quant_fund.research.receipt_lattice import receipt_lattice
+    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.utils.reproducibility import git_revision
+
+    root = Path(receipts_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"receipts dir {root} does not exist")
+    receipt = receipt_lattice(
+        root,
+        head_sha=head_sha or git_revision(),
+        float_rel_tol=float_rel_tol,
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sealed = seal_receipt(receipt)
+    digest = str(sealed["receipt_sha256"])[:16]
+    path = out_dir / f"receipt_lattice_{digest}.json"
+    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"lattice receipts={receipt['n_receipts']} groups={receipt['n_claim_groups']} "
+        f"verdict={receipt['verdict']}"
+    )
+    typer.echo(f"receipt={path}")
