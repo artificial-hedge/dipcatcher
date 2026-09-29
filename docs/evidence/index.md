@@ -25090,6 +25090,86 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - Historical availability timestamps were reconstructed.
 - `receipt_sha256`: 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7
 
+### `receipts/replay_proof_7e1d9b632f022f5a.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_7e1d9b632f022f5a.json | a3a21f8a745cb80cac90f8e53f9512294c297e0caf5d3a4665d5f07214de4517 | 7e1d9b632f022f5ab6a81e191f8f337197bbdcd3c60993b8d167a893fe6c6ba3 | not_checked | c0194c18e3d54182d305da821214c8b1479818df | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 99ef4dfb2d3735fc1a615e2766453808340ca477782f51ce084119704c457f2c
+- `data_label`: SYNTHETIC
+- `dataset_hash`: e0321f38590d1bd7d2873151e9badcd1608500bbc73e953c199ef4429203abe7
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T21:51:07.844789+00:00
+- `git_revision`: c0194c18e3d54182d305da821214c8b1479818df
+- `kind`: replay_proof
+- `params_hash`: 2fea0b96b9f669237c72fdf33e91b98c41061dd0b0ed559bc526d94cabfc8d4e
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - serial-watch
+    - tests/fixtures/replay/serial_pits.json
+    - --data-label
+    - SYNTHETIC
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
+      - `match`: true
+      - `observed_sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
+      - `path`: data/metadata/replay/serial_watch_e4787cdf189656a3.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 0.224175
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/serial_watch_78dd891261e2aae9.json
+  - `receipt_sha256`: ef5e06b7998882ce77161d89b0405faa215956f651ff2b9437d6988a88e842f7
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - serial-watch
+    - tests/fixtures/replay/serial_pits.json
+    - --data-label
+    - SYNTHETIC
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940
+  - `source_receipt_sha256`: cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: 7e1d9b632f022f5ab6a81e191f8f337197bbdcd3c60993b8d167a893fe6c6ba3
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/serial_watch_140b073ea589b0c7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -25508,6 +25588,68 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `pooled_alarmed`: false
 - `pooled_evalue`: 1.267130129950862e-10
 - `receipt_sha256`: 771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3
+- `research_only`: true
+
+### `receipts/serial_watch_78dd891261e2aae9.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_78dd891261e2aae9.json | cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f | 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+  - `lag1_pos`: 89
+- `alarmed_lags`:
+  - 1
+- `alpha`: 0.05
+- `any_lag_alarmed`: true
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 256
+- `per_lag`:
+  - `1`:
+    - `alarmed`: true
+    - `neg`: 1.5075232903345804e-34
+    - `pos`: 91.69763492148864
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 5.341064566257998e-29
+    - `pos`: 0.00034509055538239854
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 1.70307641649403e-22
+    - `pos`: 1.4429972487063937e-10
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 6.033897559053358e-17
+    - `pos`: 5.430507803148022e-16
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 4.469553747446933e-18
+    - `pos`: 9.77491404566644e-15
+- `pooled_alarmed`: false
+- `pooled_evalue`: 9.169798001218833
+- `receipt_sha256`: 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - serial-watch
+    - tests/fixtures/replay/serial_pits.json
+    - --data-label
+    - SYNTHETIC
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/serial_watch_e4787cdf189656a3.json
+      - `sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
 - `research_only`: true
 
 ### `receipts/serial_watch_85db152db863d25d.json`

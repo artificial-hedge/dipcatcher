@@ -223,4 +223,11 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.xwatch import xwatch_contract_errors
 
         return xwatch_contract_errors(payload)
+    if schema == "replay_proof.v1" or payload.get("kind") in (
+        "replay_proof",
+        "replay_proof.v1",
+    ):
+        from quant_fund.research.replay_proof import replay_proof_contract_errors
+
+        return replay_proof_contract_errors(payload)
     return []

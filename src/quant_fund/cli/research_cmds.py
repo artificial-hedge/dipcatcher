@@ -479,6 +479,76 @@ def verify_all_cmd(
     raise typer.Exit(code=0 if receipt["verdict"] == "pass" else 1)
 
 
+@app.command("replay")
+def replay_cmd(
+    receipt_path: Path = typer.Argument(
+        ..., help="Replay-declared receipt JSON to re-execute and prove."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Proof receipt path (default: receipts/replay_proof_<digest16>.json).",
+    ),
+    timeout: float = typer.Option(
+        120.0, "--timeout", help="Subprocess timeout in seconds for the replayed lane."
+    ),
+) -> None:
+    """Re-execute a receipt's declared lane argv and seal a ``replay_proof.v1`` receipt.
+
+    Reads the optional ``replay`` manifest ``{argv, artifacts, cwd?}``, runs
+    argv under the repo root (``dipcatcher``/``quant`` resolve to this
+    interpreter's ``quant_fund.cli.main``), re-hashes each declared artifact
+    file, and compares observed bytes against the pinned digests. The
+    ``replay_proof.v1`` body is wrapped in a sealed ``receipt.v2`` envelope;
+    the envelope verdict is pass iff the lane exits 0 AND every artifact
+    matches — fail closed on any deviation. Exits non-zero on a fail
+    verdict or a non-declared receipt.
+    """
+    import quant_fund.research.replay_proof as _replay_proof_mod
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    root = Path.cwd()
+    try:
+        body = _replay_proof_mod.run_replay(receipt_path, root=root, timeout_s=timeout)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    document = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(_replay_proof_mod.__file__),),
+            verdict=body["verdict"],
+            dataset={
+                "receipt": body["receipt"],
+                "source_receipt_sha256": body["source_receipt_sha256"],
+            },
+            params={"argv": body["argv"], "timeout_s": body["timeout_s"]},
+        )
+    )
+    digest = str(document["receipt_sha256"])
+    out_path = out if out is not None else Path("receipts") / f"replay_proof_{digest[:16]}.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_text(out_path, json.dumps(document, indent=2, sort_keys=True) + "\n")
+    typer.echo(
+        format_data_label(
+            synthetic=body["data_label"] == "SYNTHETIC", data_source=body["data_label"]
+        )
+    )
+    typer.echo(
+        f"argv={' '.join(body['argv'])} exit_code={body['exit_code']} "
+        f"timed_out={body['timed_out']} elapsed_s={body['elapsed_s']}"
+    )
+    for row in body["artifacts"]:
+        typer.echo(
+            f"artifact {row['path']}: match={row['match']} "
+            f"expected={row['expected_sha256'][:16]} observed={(row['observed_sha256'] or '-')[:16]}"
+        )
+    typer.echo(f"all_match={body['all_match']} verdict={body['verdict']}")
+    typer.echo(f"receipt={out_path}")
+    raise typer.Exit(code=0 if body["verdict"] == "pass" else 1)
+
+
 @app.command("vol-bench")
 def vol_bench(
     config: Path = typer.Option(Path("configs/research.yaml")),
@@ -1420,6 +1490,7 @@ __all__ = [
     "verify_identities",
     "verify_all_cmd",
     "verify_receipt_cmd",
+    "replay_cmd",
     "vol_bench",
 ]
 
