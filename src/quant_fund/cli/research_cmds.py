@@ -1703,3 +1703,38 @@ def crown_jewels_cmd(
     if errors:
         raise typer.Exit(code=1)
     typer.echo("crown-jewels intact")
+
+
+@app.command("verify-repo")
+def verify_repo_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo root to verify."),
+    heads_pin: Path = typer.Option(
+        Path("quality/epoch_heads.json"),
+        "--heads-pin",
+        help="Committed epoch-heads pin file.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed repo_integrity.v1 attestation here (e.g. quality/).",
+    ),
+) -> None:
+    """Repo integrity capstone: compose every evidence-integrity gate —
+    crown-jewels byte pins plus all corpus epoch chains under the committed
+    heads pin — into one verdict, optionally sealed as a repo_integrity.v1
+    receipt. Provenance evidence only; never a market or P&L claim.
+    """
+    from quant_fund.research.repo_integrity import verify_repo, write_repo_integrity_receipt
+
+    if out is not None:
+        path = write_repo_integrity_receipt(out, root, heads_pin=heads_pin)
+        typer.echo(f"receipt={path}")
+    result = verify_repo(root, heads_pin=heads_pin)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for name, gate in result["gates"].items():
+        typer.echo(
+            f"verify-repo {name}: {'ok' if gate['ok'] else 'FAIL ' + ','.join(gate['errors'])}"
+        )
+    if not result["ok"]:
+        raise typer.Exit(code=1)
+    typer.echo("repo integrity: all gates intact")

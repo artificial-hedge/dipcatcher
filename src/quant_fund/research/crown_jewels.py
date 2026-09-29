@@ -69,6 +69,8 @@ def write_crown_jewels_pin(
 
     payload = {"schema": CROWN_JEWELS_SCHEMA, "files": crown_jewel_digests(root)}
     path = Path(pin_path)
+    if not path.is_absolute():
+        path = Path(root) / path
     atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path
 
@@ -110,6 +112,8 @@ def crown_jewels_errors(
     """
     base = Path(root)
     pin = Path(pin_path)
+    if not pin.is_absolute():
+        pin = base / pin
     if not pin.is_file():
         return ["pin_missing"]
     try:

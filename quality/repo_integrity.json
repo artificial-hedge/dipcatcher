@@ -1,0 +1,41 @@
+{
+  "data_label": "SYNTHETIC",
+  "gates": {
+    "crown_jewels": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.github/workflows": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:quality": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:receipts": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:verifier": {
+      "errors": [],
+      "ok": true
+    }
+  },
+  "kind": "repo_integrity",
+  "ok": true,
+  "params": {
+    "corpora": [
+      "receipts",
+      "verifier",
+      "quality",
+      ".github/workflows"
+    ]
+  },
+  "pins": {
+    "crown_jewels_sha256": "dafe60c62d23762e400a2595a3b9a66e86a3f6f9330dad6ac562ece2f40b15ae",
+    "epoch_heads_sha256": "68795389884842c60bca73534ee4cd1448f45fa4ce37f4800e2fa850e2e63501"
+  },
+  "receipt_sha256": "0b5c74c19e61014da53d3ee3c06e03328a78d60f20a66ac3ddee710b8a3aff5c",
+  "schema": "repo_integrity.v1"
+}
