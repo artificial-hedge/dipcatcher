@@ -86,18 +86,32 @@ class _GrapaChannel:
     """Predictable-mixture bet on a centered PIT moment.
 
     λ_t is fitted from the moment's running mean/variance *before* seeing
-    u_t (GRAPA-style plug-in, Merton-fraction clipped for non-negativity),
-    so the bet is F_{t-1}-measurable — valid even when the underlying
-    series is serially dependent, since only the *PIT* stream enters the
-    history. ``moment(u)`` must satisfy E_U[moment]=0 and |moment|<=1.
+    u_t (GRAPA-style plug-in, clipped to ±lam_max), so the bet is
+    F_{t-1}-measurable — valid even when the underlying series is serially
+    dependent, since only the *PIT* stream enters the history.
+    ``moment(u)`` must satisfy E_U[moment]=0 and |moment|<=1.
+
+    The factor ``1 + λ·moment(u)`` is floored at 0 on return, but flooring
+    is NOT the safety mechanism — ``max(0, 1+λd) ≥ 1+λd``, so if the floor
+    ever bound, E[factor|null] could exceed 1. Validity therefore requires
+    ``lam_max · sup_u|moment(u)| ≤ 1``, which ``__init__`` certifies
+    numerically on a dense grid (the shipped moments are low-order
+    polynomials; callers adding a moment must keep it bounded).
     """
 
-    def __init__(
-        self, moment: Callable[[float], float], lam_max: float, scale_max: float = 1.0
-    ) -> None:
+    _CERT_GRID = 10_001
+
+    def __init__(self, moment: Callable[[float], float], lam_max: float) -> None:
+        if not (np.isfinite(lam_max) and 0.0 < lam_max < 1.0):
+            raise ValueError("lam_max must be in (0, 1)")
+        grid = np.linspace(0.0, 1.0, self._CERT_GRID)
+        m_max = float(np.max(np.abs([moment(float(u)) for u in grid])))
+        if not np.isfinite(m_max):
+            raise ValueError("moment must be finite on [0, 1]")
+        if lam_max * m_max > 1.0:
+            raise ValueError(f"uncertified bet: lam_max({lam_max}) * sup|moment|({m_max:.4f}) > 1")
         self._moment = moment
         self._lam_max = lam_max
-        self._scale_max = scale_max
         self._sum = 0.0
         self._sum2 = 0.0
         self._n = 0
