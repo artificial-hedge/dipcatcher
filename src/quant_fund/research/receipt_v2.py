@@ -17,6 +17,7 @@ form used by ``real_benchmark``.
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import platform
 import sys
@@ -407,28 +408,68 @@ def _code_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     return []
 
 
+def _inner_claimed_kinds(payload: Mapping[str, Any]) -> set[str]:
+    """Kind strings the sealed *inner* payload claims about itself.
+
+    The envelope ``kind`` is attacker-renameable at zero cost; the inner
+    body's own ``kind``/``schema`` are inside the seal, so a renamed outer
+    kind must not strip the deep checks. ``<base>.vN`` schemas map to both
+    ``<base>`` and ``<base>_eval`` (the lane naming convention).
+    """
+    inner = payload.get("payload")
+    claims: set[str] = set()
+    if not isinstance(inner, Mapping):
+        return claims
+    for key in ("kind", "schema"):
+        value = inner.get(key)
+        if isinstance(value, str) and value:
+            claims.add(value)
+            base, sep, suffix = value.rpartition(".v")
+            if sep and suffix.isdigit() and base:
+                claims.add(base)
+                claims.add(f"{base}_eval")
+    return claims
+
+
+_LANE_CONSISTENCY: dict[str, str] = {
+    "distribution_fleet_eval": "quant_fund.research.fleet_eval.fleet_v2_consistency_errors",
+    "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
+    "cross_sectional_rankic_eval": "quant_fund.research.cross_sectional.rankic_v2_consistency_errors",
+    "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
+}
+
+
 def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
-    """Lane-specific re-derivation of the bound digests, where defined."""
+    """Lane-specific re-derivation of the bound digests, where defined.
+
+    Dispatches on the envelope ``kind`` *and* on the sealed inner payload's
+    claimed ``kind``/``schema``: renaming the outer kind no longer strips a
+    lane's deep checks, and the mismatch is flagged.
+    """
     kind = payload.get("kind")
+    for claimed in sorted({kind, *_inner_claimed_kinds(payload)}, key=str):
+        if claimed in _LANE_CONSISTENCY:
+            path = _LANE_CONSISTENCY[claimed]
+            module, _, func = path.rpartition(".")
+            errors = getattr(importlib.import_module(module), func)(payload)
+            if claimed != kind:
+                errors = [*errors, "kind_fingerprint_mismatch"]
+            return errors
     if kind == "distribution_fleet_eval":
         from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
         return fleet_v2_consistency_errors(payload)
     if kind == "capacity_overlay_eval":
         from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
-
         return capacity_v2_consistency_errors(payload)
     if kind == "cross_sectional_rankic_eval":
         from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
-
         return rankic_v2_consistency_errors(payload)
     if kind == "vol_bench":
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
-
         return vol_bench_v2_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
-
         return coherence_v2_consistency_errors(payload)
     return []
 
