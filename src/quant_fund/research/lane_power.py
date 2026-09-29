@@ -10,13 +10,18 @@ simulates streams under a grid of defect magnitudes, runs the real
 process class, and records whether/when the alarm fired:
 
 - ``coverage_watch.CoverageEProcess`` — breach rate inflated by (1+d)
+- ``coverage_cs.CoverageCS`` — same stream; alarm = CS excludes nominal
 - ``tail_watch.TailDepthEProcess`` — conditional deep share inflated
-- ``calibration_eprocess.CalibrationEProcess`` — PIT stream biased right
-- ``drift_alarm.DriftEProcess`` — level shift of size d in the stream
+- ``calibration_eprocess.CalibrationEProcess`` — PIT stream compressed
+  toward 0.5 + location shift (overconfident-interval signature)
+- ``drift_alarm.EProcessDriftAlarm`` — level shift of size d in the stream
 - ``changepoint_localize.localizer`` — shift at mid-stream; measured by
   median |argmax - planted tau| rather than alarm rate
-- ``loss_cs.LossCS``-style mean-difference CS — diffs ~ N(d, 1): whether
-  the CS excludes zero within the stream
+- ``loss_cs.MeanDiffCS`` — diffs ~ clipped N(d, 1): whether the CS
+  excludes zero within the stream
+- ``conformal_monitor.ConformalMartingale`` — level-shifted stream
+- ``promotion`` (evalues.LossEProcess) — challenger beats incumbent by d
+  per origin
 
 Every lane is lazy-imported: on a checkout where a lane's branch hasn't
 merged, that lane is reported with ``status: lane_missing`` — never
@@ -84,12 +89,16 @@ def _run_tail(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
 
 
 def _run_calibration(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """PIT-uniformity lane: defect=0 must feed a *uniform* stream (the
+    calibrated-head null); defect compresses PITs toward 0.5 plus a small
+    location shift — the overconfident-interval signature."""
     from quant_fund.research.calibration_eprocess import CalibrationEProcess
 
     rng = np.random.default_rng(seed)
     proc = CalibrationEProcess(alpha=alpha)
     t_alarm = float("nan")
-    pits = np.clip(rng.normal(0.5 + defect * 0.5, 0.28, n), 0.0, 1.0)
+    u0 = rng.uniform(0.0, 1.0, n)
+    pits = np.clip(0.5 + (u0 - 0.5) * (1.0 - 0.8 * defect) + 0.15 * defect, 0.0, 1.0)
     for i, u in enumerate(pits):
         proc.update(float(u))
         if proc.alarmed and not np.isfinite(t_alarm):
@@ -98,31 +107,35 @@ def _run_calibration(defect: float, seed: int, n: int, alpha: float) -> _LaneRes
 
 
 def _run_drift(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
-    from quant_fund.research.drift_alarm import DriftEProcess
+    from quant_fund.research.drift_alarm import EProcessDriftAlarm
 
     rng = np.random.default_rng(seed)
-    proc = DriftEProcess(alpha=alpha)
+    proc = EProcessDriftAlarm(alpha=alpha)
     t_alarm = float("nan")
+    stat = float("nan")
     for i in range(n):
         x = rng.normal(defect * 2.0, 1.0)  # level shift of 2d sigma
-        proc.update(float(x))
+        step = proc.update(float(x))
+        stat = float(step.statistic)
         if proc.alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(proc.alarmed, t_alarm, float(getattr(proc, "evalue", float("nan"))))
+    return _LaneResult(proc.alarmed, t_alarm, stat)
 
 
 def _run_loss_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
-    """Mean-difference CS: diffs ~ N(d, 1); alarm = CS excludes 0."""
-    try:
-        from quant_fund.research.loss_cs import LossCS
-    except ImportError:
-        from quant_fund.research.loss_cs import LossDiffCS as LossCS  # type: ignore[no-redef]
+    """Mean-difference CS: diffs ~ clipped N(d, 1); alarm = CS excludes 0.
 
+    ``MeanDiffCS`` requires a true per-step bound, so the bench draws a
+    clipped normal — the CS is only valid while |d| <= bound.
+    """
+    from quant_fund.research.loss_cs import MeanDiffCS
+
+    bound = 4.0
     rng = np.random.default_rng(seed)
-    proc = LossCS(alpha=alpha)  # type: ignore[call-arg]
+    proc = MeanDiffCS(alpha=alpha, bound=bound)
     t_alarm = float("nan")
     for i in range(n):
-        d = float(rng.normal(defect, 1.0))
+        d = float(np.clip(rng.normal(defect, 1.0), -bound, bound))
         proc.update(d)
         lo, hi = proc.interval()
         if np.isfinite(lo) and lo > 0.0 and not np.isfinite(t_alarm):
@@ -163,6 +176,41 @@ def _run_promotion(defect: float, seed: int, n: int, alpha: float) -> _LaneResul
     )
 
 
+def _run_conformal(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """Conformal martingale on a level-shifted stream: x ~ N(d, 1)."""
+    from quant_fund.research.conformal_monitor import ConformalMartingale
+
+    rng = np.random.default_rng(seed)
+    proc = ConformalMartingale(alpha=alpha, window=min(50, max(5, n // 3)))
+    t_alarm = float("nan")
+    for i in range(n):
+        proc.update(float(rng.normal(defect * 2.0, 1.0)))
+        if proc.alarmed and not np.isfinite(t_alarm):
+            t_alarm = float(i)
+    return _LaneResult(proc.alarmed, t_alarm, float(proc.martingale))
+
+
+def _run_coverage_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """CoverageCS on the same breach stream as coverage_watch; alarm = CS
+    excludes the nominal rate (either direction — both are violations)."""
+    from quant_fund.research.coverage_cs import CoverageCS
+
+    rng = np.random.default_rng(seed)
+    p0 = 0.10
+    rate = min(1.0, p0 * (1.0 + defect))
+    proc = CoverageCS(alpha=alpha)
+    t_alarm = float("nan")
+    excluded = False
+    width = float("nan")
+    for i in range(n):
+        lo, hi = proc.update(bool(rng.uniform() < rate))
+        excluded = bool(np.isfinite(lo) and (lo > p0 or hi < p0))
+        if excluded and not np.isfinite(t_alarm):
+            t_alarm = float(i)
+            width = float(hi - lo)
+    return _LaneResult(excluded, t_alarm, width)
+
+
 _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "coverage_watch": _run_coverage,
     "tail_watch": _run_tail,
@@ -171,6 +219,8 @@ _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "loss_cs": _run_loss_cs,
     "changepoint_localize": _run_localize,
     "promotion": _run_promotion,
+    "conformal_monitor": _run_conformal,
+    "coverage_cs": _run_coverage_cs,
 }
 
 # lane key → the module its runner lazy-imports (test ratchet scans the
