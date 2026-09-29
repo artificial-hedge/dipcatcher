@@ -810,6 +810,7 @@ def mcs(
     typer.echo(f"champion={receipt['champion']}")
     typer.echo(f"receipt={path}")
 
+
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -1170,6 +1171,11 @@ def lattice_cmd(
     head_sha: str | None = typer.Option(
         None, "--head-sha", help="Current HEAD sha for stale-code flags (default: auto)."
     ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero iff the verdict is 'inconsistent' (stale/drift pass).",
+    ),
 ) -> None:
     """Cross-receipt consistency lattice over a receipts directory.
 
@@ -1202,3 +1208,5 @@ def lattice_cmd(
         f"verdict={receipt['verdict']}"
     )
     typer.echo(f"receipt={path}")
+    if strict and receipt["verdict"] == "inconsistent":
+        raise typer.Exit(code=1)
