@@ -50,7 +50,9 @@ def _paginated_klines(
     client: Any,
     endpoint: str,
     *,
-    symbol: str,
+    symbol: str | None = None,
+    pair: str | None = None,
+    contract_type: str | None = None,
     interval: str,
     start_time: int | None,
     end_time: int | None,
@@ -81,18 +83,18 @@ def _paginated_klines(
     cursor = int(start_time) if start_time is not None else earliest_ms
     rows: list[list[Any]] = []
     for _ in range(max_pages):
-        payload = client.get_json(
-            query_url(
-                endpoint,
-                {
-                    "symbol": symbol.upper(),
-                    "interval": interval,
-                    "startTime": cursor,
-                    "endTime": end_time,
-                    "limit": limit,
-                },
-            )
-        )
+        params: dict[str, Any] = {
+            "interval": interval,
+            "startTime": cursor,
+            "endTime": end_time,
+            "limit": limit,
+        }
+        if pair is not None:
+            params["pair"] = pair.upper()
+            params["contractType"] = contract_type
+        else:
+            params["symbol"] = str(symbol).upper()
+        payload = client.get_json(query_url(endpoint, params))
         payload = _require_kline_rows(payload)
         if not payload:
             break
@@ -414,6 +416,224 @@ class BinancePerpUniverseSource(SourceAdapter):
         if not rows:
             raise SourceError("Binance perp universe resolved to zero symbols")
         return pit_frame(rows, source=self.name, revision_id="v1").sort(["rank"])
+
+
+# Binance COIN-M delivery futures launched late August 2020; nothing predates this.
+DELIVERY_EARLIEST_MS = 1595721600000  # 2020-07-26T00:00:00Z (first listed quarterlies)
+# contractType values the continuousKlines endpoint accepts for spliced series.
+DELIVERY_CONTRACT_TYPES = frozenset({"PERPETUAL", "CURRENT_QUARTERLY", "NEXT_QUARTERLY"})
+
+
+def _require_delivery_symbol(symbol: str) -> str:
+    """Named COIN-M contracts look like ``BTCUSD_250926`` (pair_deliveryYYMMDD)."""
+    token = symbol.upper()
+    left, sep, right = token.rpartition("_")
+    if (
+        not sep
+        or not left
+        or not left.replace("_", "").isalnum()
+        or not (len(right) == 6 and right.isdigit())
+    ):
+        raise ValueError(f"delivery contract symbols look like 'BTCUSD_250926', got {symbol!r}")
+    return token
+
+
+class BinanceDeliveryKlinesSource(SourceAdapter):
+    """Binance COIN-M delivery-futures klines for one named contract.
+
+    ``symbol`` is the deliverable contract (``BTCUSD_250926``): the series is
+    complete for that contract alone — it lists and expires, it does not roll.
+    Full-history pagination forward from ``start_time`` (default: the COIN-M
+    listing floor). The still-open bar is dropped, same as spot/perp — its
+    close time lies in the future and its OHLCV mutates.
+    """
+
+    name = "binance_delivery_klines"
+    endpoint = "https://dapi.binance.com/dapi/v1/klines"
+
+    def fetch(
+        self,
+        *,
+        symbol: str = "BTCUSD_QUARTERLY",
+        interval: str = "1d",
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int = 1500,
+        max_pages: int = 200,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        contract = _require_delivery_symbol(symbol)
+        now_ms = int(utc_now().timestamp() * 1000)
+        payload = _paginated_klines(
+            self.client,
+            self.endpoint,
+            symbol=contract,
+            interval=interval,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+            max_pages=max_pages,
+            pause_seconds=pause_seconds,
+            earliest_ms=DELIVERY_EARLIEST_MS,
+        )
+        rows = [
+            {
+                "security_id": contract,
+                "event_time": item[0],
+                "open": item[1],
+                "high": item[2],
+                "low": item[3],
+                "close": item[4],
+                "volume": item[5],
+                "available_time": item[6],
+            }
+            for item in payload
+            if int(item[6]) <= now_ms
+        ]
+        if not rows:
+            raise SourceError("Binance delivery returned only an in-progress kline")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{interval}.coinm")
+
+
+class BinanceDeliveryContinuousSource(SourceAdapter):
+    """Binance COIN-M continuous klines spliced over successive quarterlies.
+
+    The ``continuousKlines`` endpoint stitches the front ``contractType``
+    series (``CURRENT_QUARTERLY`` or ``NEXT_QUARTERLY``), so rows cross
+    contract boundaries — the series rolls at delivery without an explicit
+    roll flag from Binance. Rows carry ``contract_type`` so downstream code
+    can never mistake the splice for one instrument; treat step changes near
+    published delivery dates as roll artifacts, not price moves.
+    """
+
+    name = "binance_delivery_continuous"
+    endpoint = "https://dapi.binance.com/dapi/v1/continuousKlines"
+
+    def fetch(
+        self,
+        *,
+        pair: str = "BTCUSD",
+        contract_type: str = "CURRENT_QUARTERLY",
+        interval: str = "1d",
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int = 1500,
+        max_pages: int = 200,
+        pause_seconds: float = 0.3,
+    ) -> pl.DataFrame:
+        if contract_type.upper() not in DELIVERY_CONTRACT_TYPES:
+            raise ValueError(f"contract_type must be one of {sorted(DELIVERY_CONTRACT_TYPES)}")
+        if not pair or not pair.upper().isalnum():
+            raise ValueError(f"malformed Binance pair {pair!r}")
+        pair = pair.upper()
+        contract_type = contract_type.upper()
+        now_ms = int(utc_now().timestamp() * 1000)
+        payload = _paginated_klines(
+            self.client,
+            self.endpoint,
+            pair=pair,
+            contract_type=contract_type,
+            interval=interval,
+            start_time=start_time,
+            end_time=end_time,
+            limit=limit,
+            max_pages=max_pages,
+            pause_seconds=pause_seconds,
+            earliest_ms=DELIVERY_EARLIEST_MS,
+        )
+        security_id = f"{pair}@{contract_type}"
+        rows = [
+            {
+                "security_id": security_id,
+                "event_time": item[0],
+                "open": item[1],
+                "high": item[2],
+                "low": item[3],
+                "close": item[4],
+                "volume": item[5],
+                "available_time": item[6],
+                "contract_type": contract_type,
+            }
+            for item in payload
+            if int(item[6]) <= now_ms
+        ]
+        if not rows:
+            raise SourceError("Binance continuous returned only an in-progress kline")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{interval}.coinm")
+
+
+class BinanceDeliveryUniverseSource(SourceAdapter):
+    """COIN-M delivery-futures universe: contract listings + delivery dates.
+
+    ``exchangeInfo`` only exposes contracts currently listed — a survivorship-
+    truncated snapshot of deliverable quarterlies. Rows carry ``delivery_ms``
+    (expiry) and ``onboard_ms`` (listing) so cash-and-carry lanes can align
+    spot/future pairs on their true windows; ``available_time = now`` so PIT
+    logic can never pretend the listing was known earlier.
+    """
+
+    name = "binance_delivery_universe"
+    info_endpoint = "https://dapi.binance.com/dapi/v1/exchangeInfo"
+
+    def fetch(
+        self,
+        *,
+        base_asset: str | None = None,
+        statuses: tuple[str, ...] = ("TRADING",),
+    ) -> pl.DataFrame:
+        info = self.client.get_json(self.info_endpoint)
+        symbols = info.get("symbols") if isinstance(info, dict) else None
+        if not isinstance(symbols, list):
+            raise SourceError("Binance exchangeInfo response has no symbols list")
+        wanted = frozenset(s.upper() for s in statuses)
+        now = utc_now()
+        rows: list[dict[str, Any]] = []
+        for item in symbols:
+            if not isinstance(item, dict):
+                continue
+            contract_type = str(item.get("contractType", "")).upper()
+            if contract_type not in DELIVERY_CONTRACT_TYPES - {"PERPETUAL"}:
+                continue
+            if wanted and str(item.get("status", "")).upper() not in wanted:
+                continue
+            if (
+                base_asset is not None
+                and str(item.get("baseAsset", "")).upper() != base_asset.upper()
+            ):
+                continue
+            symbol = str(item.get("symbol", "")).upper()
+            if not symbol:
+                continue
+            try:
+                delivery_ms = int(item["deliveryDate"])
+                onboard_ms = int(item["onboardDate"])
+            except KeyError as exc:
+                raise SourceError(
+                    f"delivery universe member {symbol!r} is missing a date field"
+                ) from exc
+            except (TypeError, ValueError) as exc:
+                raise SourceError(
+                    f"delivery universe member {symbol!r} has invalid date fields"
+                ) from exc
+            if delivery_ms <= onboard_ms:
+                raise SourceError(f"delivery universe member {symbol!r} delivers before it lists")
+            rows.append(
+                {
+                    "security_id": symbol,
+                    "event_time": delivery_ms,
+                    "available_time": now,
+                    "value": float(delivery_ms - onboard_ms) / 86_400_000.0,
+                    "contract_type": contract_type,
+                    "base_asset": str(item.get("baseAsset", "")).upper(),
+                    "pair": str(item.get("pair", "")).upper(),
+                    "onboard_ms": onboard_ms,
+                    "delivery_ms": delivery_ms,
+                }
+            )
+        rows.sort(key=lambda r: (r["delivery_ms"], r["security_id"]))
+        if not rows:
+            raise SourceError("Binance delivery universe resolved to zero contracts")
+        return pit_frame(rows, source=self.name, revision_id="v1")
 
 
 class GdeltSource(SourceAdapter):
