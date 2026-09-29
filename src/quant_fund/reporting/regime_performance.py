@@ -30,7 +30,6 @@ from numpy.typing import NDArray
 from quant_fund.metrics.conformal import assign_terciles
 from quant_fund.metrics.returns import drawdown_series
 from quant_fund.native import rolling_std
-from quant_fund.stress.bundle import YIELD_FACTORS, load_bundle
 
 Array = NDArray[np.float64]
 
@@ -141,6 +140,8 @@ def bundled_h15_rate_map(series_id: str = _DEFAULT_H15_SERIES) -> dict[str, floa
     Duplicate dates across windows keep the first observed print (windows are
     crisis extracts; overlapping dates should agree within a vintage).
     """
+    from quant_fund.stress.bundle import YIELD_FACTORS, load_bundle
+
     if series_id not in YIELD_FACTORS:
         raise KeyError(
             f"series {series_id!r} is not an H.15 yield series in the public-domain bundle"

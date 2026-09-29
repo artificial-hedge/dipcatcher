@@ -38,8 +38,6 @@ from typing import Any
 
 import polars as pl
 
-from quant_fund.research.receipt_v2 import build_receipt_v2, seal_receipt
-
 NAUTILUS_CONFORMANCE_SCHEMA = "nautilus_conformance.v1"
 NAUTILUS_CONFORMANCE_KIND = "nautilus_conformance"
 
@@ -272,6 +270,8 @@ def run_nautilus_conformance_eval(*, seed: int = 0) -> dict[str, Any]:
     """Run the attempt and seal the outcome — pass/fail/blocked."""
     result = run_nautilus_conformance(seed=seed)
     verdict = {"matched": "pass", "diverged": "fail"}.get(result.outcome, "blocked")
+    from quant_fund.research.receipt_v2 import build_receipt_v2
+
     return build_receipt_v2(
         kind=NAUTILUS_CONFORMANCE_KIND,
         data_label="META",
@@ -342,6 +342,8 @@ def nautilus_conformance_consistency_errors(body: Mapping[str, Any]) -> list[str
 
 def write_nautilus_conformance_receipt(receipt: Mapping[str, Any], out_dir: Path) -> Path:
     """Persist as ``nautilus_conformance_<sha16>.json``."""
+    from quant_fund.research.receipt_v2 import seal_receipt
+
     sealed = seal_receipt(receipt)
     digest = str(sealed["receipt_sha256"])
     out_dir.mkdir(parents=True, exist_ok=True)

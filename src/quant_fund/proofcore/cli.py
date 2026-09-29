@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import typer
@@ -36,11 +38,36 @@ _TRIAL_CSV_FIELDS: tuple[str, ...] = (
 )
 
 
+def _fsync_directory(path: Path) -> None:
+    try:
+        fd = os.open(path, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """tmp file + fsync + rename — a crash mid-write leaves no truncated artifact."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary_path = Path(temporary)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        _fsync_directory(path.parent)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def write_trial_csv(rows: list[TrialLedgerRow], path: Path) -> None:
     """Write trial rows as CSV. Same columns the JSONL export carries."""
     import io
-
-    from quant_fund.utils.atomicio import atomic_write_text
 
     buffer = io.StringIO()
     writer = csv.DictWriter(buffer, fieldnames=_TRIAL_CSV_FIELDS, lineterminator="\n")
@@ -49,7 +76,7 @@ def write_trial_csv(rows: list[TrialLedgerRow], path: Path) -> None:
         payload = row.model_dump(mode="json")
         writer.writerow({name: payload[name] for name in _TRIAL_CSV_FIELDS})
     path.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(path, buffer.getvalue())
+    _atomic_write_text(path, buffer.getvalue())
 
 
 _DB_OPTION = typer.Option(
@@ -123,10 +150,8 @@ def export(
     with ProvenanceDB(db) as prov:
         trials = prov.trials()
         bundles = prov.bundles()
-    from quant_fund.utils.atomicio import atomic_write_text
-
     out.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(
+    _atomic_write_text(
         out,
         "".join(json.dumps(row.model_dump(mode="json"), sort_keys=True) + "\n" for row in trials),
     )
@@ -136,7 +161,7 @@ def export(
         typer.echo(f"exported {len(trials)} trial rows -> {csv_out}")
     if bundles_out is not None:
         bundles_out.parent.mkdir(parents=True, exist_ok=True)
-        atomic_write_text(
+        _atomic_write_text(
             bundles_out,
             "".join(
                 json.dumps(bundle_row, sort_keys=True, default=str) + "\n" for bundle_row in bundles

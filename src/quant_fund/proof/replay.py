@@ -127,9 +127,9 @@ def _current_env_fingerprint_contracts() -> str:
     """Contracts-style variant (§2.2): real ``quant_fund.__version__`` or dev."""
     version = "dev"
     try:
-        import quant_fund
-
-        version = str(getattr(quant_fund, "__version__", "dev") or "dev")
+        # Distribution version == quant_fund.__version__ ([tool.hatch.version]
+        # derives it) — probed via metadata so replay never pulls the facade.
+        version = str(importlib_metadata.version("fx-1") or "dev")
     except Exception:  # never let a version probe break the gate
         version = "dev"
     return f"{platform.platform()}|{platform.python_version()}|{version}"
