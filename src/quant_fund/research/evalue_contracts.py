@@ -773,6 +773,99 @@ def _mcs_seq_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _serial_watch_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if p.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if p.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    alpha = _num(p.get("alpha"))
+    if alpha is None or not (0.0 < alpha < 1.0):
+        errors.append("alpha_out_of_unit_interval")
+    lam = _num(p.get("lam"))
+    if lam is None or not (0.0 < lam < 1.0):
+        errors.append("lam_out_of_unit_interval")
+    n_lags = p.get("n_lags")
+    if not isinstance(n_lags, int) or isinstance(n_lags, bool) or n_lags < 1:
+        errors.append("n_lags_not_positive_int")
+        n_lags = None
+    n_origins = p.get("n_origins")
+    if not isinstance(n_origins, int) or isinstance(n_origins, bool) or n_origins < 1:
+        errors.append("n_origins_not_positive_int")
+        n_origins = None
+    per_lag = p.get("per_lag")
+    if not isinstance(per_lag, Mapping) or not per_lag:
+        errors.append("per_lag_not_mapping")
+        per_lag = {}
+    else:
+        for key, entry in per_lag.items():
+            try:
+                k = int(key)
+            except (TypeError, ValueError):
+                errors.append(f"per_lag_key_not_int:{key}")
+                continue
+            if n_lags is not None and not (1 <= k <= n_lags):
+                errors.append(f"per_lag_out_of_range:{key}")
+            if not isinstance(entry, Mapping):
+                errors.append(f"per_lag_entry_not_mapping:{key}")
+                continue
+            for side in ("pos", "neg"):
+                v = _num(entry.get(side))
+                if v is None or not (v > 0.0):
+                    errors.append(f"per_lag_{side}_not_positive:{key}")
+            if not isinstance(entry.get("alarmed"), bool):
+                errors.append(f"per_lag_alarmed_not_bool:{key}")
+    alarmed_lags = p.get("alarmed_lags")
+    if not isinstance(alarmed_lags, list) or not all(
+        isinstance(x, int) and not isinstance(x, bool) for x in alarmed_lags
+    ):
+        errors.append("alarmed_lags_not_int_list")
+        alarmed_lags = []
+    elif n_lags is not None:
+        for k in alarmed_lags:
+            if not (1 <= k <= n_lags):
+                errors.append(f"alarmed_lag_out_of_range:{k}")
+    alarm_origins = p.get("alarm_origins")
+    if not isinstance(alarm_origins, Mapping):
+        errors.append("alarm_origins_not_mapping")
+    elif n_origins is not None:
+        for key, origin in alarm_origins.items():
+            if (
+                not isinstance(key, str)
+                or not key.startswith("lag")
+                or not key.endswith(("_pos", "_neg"))
+                or not isinstance(origin, int)
+                or not (0 <= origin < n_origins)
+            ):
+                errors.append(f"alarm_origin_bad:{key}")
+    for flag in ("any_lag_alarmed", "pooled_alarmed"):
+        if not isinstance(p.get(flag), bool):
+            errors.append(f"{flag}_not_bool")
+    if (
+        isinstance(alarmed_lags, list)
+        and isinstance(p.get("any_lag_alarmed"), bool)
+        and p["any_lag_alarmed"] != bool(alarmed_lags)
+    ):
+        errors.append("any_lag_alarmed_mismatch")
+    pooled = _num(p.get("pooled_evalue"))
+    if pooled is None or not (pooled > 0.0):
+        errors.append("pooled_evalue_not_positive")
+    elif (
+        isinstance(p.get("pooled_alarmed"), bool)
+        and p["pooled_alarmed"]
+        and alpha is not None
+        and pooled < 1.0 / alpha
+    ):
+        errors.append("pooled_alarmed_below_threshold")
+    data_label = p.get("data_label")
+    if not isinstance(data_label, str) or not data_label.strip():
+        errors.append("data_label_not_nonempty_str")
+    evidence = p.get("evidence")
+    if not isinstance(evidence, list) or "anytime_valid" not in evidence:
+        errors.append("evidence_missing_anytime_valid")
+    return errors
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
@@ -812,4 +905,6 @@ def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         return _suite_health_errors(receipt)
     if kind in ("mcs_seq", "mcs_seq.v1"):
         return _mcs_seq_errors(receipt)
+    if kind in ("serial_watch", "serial_watch.v1"):
+        return _serial_watch_errors(receipt)
     return []
