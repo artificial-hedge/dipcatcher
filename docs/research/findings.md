@@ -61,5 +61,6 @@ does not score them.
 - `receipts/serial_watch_d311f5ea367a66a9.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/serial_watch_dbd21a6c99c81e00.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/suite_health_drill.json`: suite_health.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/tail_real_drill.json`: tail_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - draft PR #202 survivorship-corrected batch: not on this tree; listed as pending, not merged, with no measured figures
