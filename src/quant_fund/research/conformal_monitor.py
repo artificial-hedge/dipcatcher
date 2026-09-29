@@ -145,6 +145,7 @@ def monitor(
     kappa: float = 0.5,
     window: int = 50,
     mode: str = "fixed",
+    data_label: str = "UNKNOWN",
 ) -> dict[str, object]:
     """Run the conformal martingale over a stream → conformal_monitor.v1."""
     cm = ConformalMartingale(alpha=alpha, kappa=kappa, window=window, mode=mode)
@@ -153,7 +154,7 @@ def monitor(
         _, last_m = cm.update(float(x))
     return {
         "kind": CONFORMAL_MONITOR_SCHEMA,
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "research_only": True,
         "live_pnl_claim": False,
         "n_obs": len(cm._pvals),
