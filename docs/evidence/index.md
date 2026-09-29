@@ -1550,6 +1550,80 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema_version`: 2
 - `verdict`: pass
 
+### `receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json | 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9 | f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_index`: null
+- `alarmed`: false
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `stream`: gaussian_minus_conf_t_pinball
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - conformal_pvalues_exchangeability
+  - kappa_martingale_stopping_valid
+  - nonparametric_distribution_shift
+- `final_martingale`: 1.9967505694246255e-28
+- `kappa`: 0.5
+- `kind`: conformal_monitor.v1
+- `mode`: fixed
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `receipt_sha256`: f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d
+- `research_only`: true
+- `window`: 50
+
+### `receipts/conformal_real_drill_gaussian_pit.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/conformal_real_drill_gaussian_pit.json | 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e | 7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_index`: 55
+- `alarmed`: true
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `stream`: gaussian_pit
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - conformal_pvalues_exchangeability
+  - kappa_martingale_stopping_valid
+  - nonparametric_distribution_shift
+- `final_martingale`: 9.394953747251887e-27
+- `kappa`: 0.5
+- `kind`: conformal_monitor.v1
+- `mode`: fixed
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `receipt_sha256`: 7c8520d38190357f3f66c293c74c1666582833d809e854845176022ecafcd701
+- `research_only`: true
+- `window`: 50
+
 ### `receipts/corpus_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1699,6 +1773,684 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `turnover`: 0.0
 - `schema`: cost_calibration.v1
 - `seed`: 7
+
+### `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json | 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7 | f09ca8a1217458efc40a53f6c28ba11113e70a3f89a75babb6a44a4aae59eaef | not_checked | absent | absent | unspecified | absent | absent | absent |
+
+- `alarmed`: true
+- `alpha`: 0.05
+- `cs_hi`: 220
+- `cs_lo`: 220
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - evalue_confidence_set
+  - backward_scan
+  - bounded_bets
+  - proper_scores_only
+- `kind`: changepoint_localize.v1
+- `lam`: 0.5
+- `log_evalues`:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 6.0164065280001875
+  - 7.108701614889019
+  - 2.4097629868907275
+  - 4.065960330487947
+  - 4.588083205226585
+  - 5.368521231280383
+  - 5.865730848972551
+  - 6.005473017202898
+  - 6.894405111023585
+  - 7.795131062019319
+  - 8.280193575589534
+  - 7.652578778704516
+  - 4.771283163566788
+  - 5.654542293697166
+  - 5.729846495707705
+  - 4.752170486653064
+  - 5.979138103131451
+  - 3.3214946035456885
+  - 4.200258997943391
+  - 4.419302983214813
+  - 5.129705884594189
+  - 2.8070454408715455
+  - 2.4805500381001164
+  - 2.9942625623201584
+  - 3.7146116520994577
+  - 3.1411731318196296
+  - 1.5903758994544872
+  - 1.6942311446643328
+  - 2.7090963154025562
+  - 2.0152005721800497
+  - 2.0502834003949983
+  - 2.05480429250677
+  - 0.9273944692724619
+  - 1.1093979262186342
+  - 1.303832211741577
+  - -0.25779881056452597
+  - 0.27926293564181215
+  - -0.2764329454968113
+  - -0.44030370492389553
+  - 0.7537888290107738
+  - 0.4882018296722749
+  - 0.37910263512021125
+  - 0.6082395095443532
+  - 0.8612842877141665
+  - 1.2576541138663857
+  - 0.8243160072690737
+  - 0.8048589595092545
+  - 1.0654464445102696
+  - 0.7617156123705403
+  - 1.332594511614829
+  - 0.5199020909838713
+  - 0.4209161092428516
+  - -0.04642442879242237
+  - -0.37574321072269656
+  - 0.20043386434668953
+  - -0.2667613437558124
+  - -0.22868396914084094
+  - 0.02922670743498157
+  - 0.06712066065179856
+  - 0.35550617257611783
+  - 0.4114246834144021
+  - 0.665242146204983
+  - -0.5522277196824799
+  - -0.5506726973502937
+  - -0.8053795914997297
+  - -0.32679063053056046
+  - -0.23915932650262695
+  - -0.7245560361341508
+  - -0.42228599442219616
+  - 0.24648268045777388
+  - -0.12799004457444274
+  - -0.002170879962624661
+  - -0.10644571744797482
+  - 0.10273880821408399
+  - -0.4166925091056745
+  - -0.2524592677086343
+  - -0.44321465626849343
+  - -0.07740961533729063
+  - 0.492563663154829
+  - 0.29927875167267615
+  - 0.3322865631910822
+  - 0.3675077470396447
+  - 0.18110022002039683
+  - -0.3258765891113272
+  - -0.4602279369142831
+  - 0.4371436306632156
+  - 0.4062493409612721
+  - -0.2682965452672992
+  - 0.24621590049602393
+  - 0.005516404070363912
+  - 0.08040443905296402
+  - 0.44230075390196755
+  - 1.1296573127435026
+  - 0.49553978231916995
+  - 0.9234080636006
+  - 1.0052668294580425
+  - 0.8221003487274107
+  - 0.8347014900616753
+  - 0.33759191023575885
+  - 0.48920245268569984
+  - 0.31526180638904855
+  - 0.24518232789537897
+  - 1.374672029278647
+  - 1.307262831906705
+  - 0.8930797039971311
+  - 0.5445947513598689
+  - 0.36187551511759775
+  - 0.44002598039169405
+  - -0.0613944283872937
+  - -0.4622774270847662
+  - 0.050675646706370814
+  - -0.11331985452276039
+  - -0.3407819877384156
+  - -0.3085519236380364
+  - -0.37827271804108664
+  - 0.06504246803981406
+  - 0.04993605209888574
+  - 0.4958327966495303
+  - 0.456260131397887
+  - 0.9702170585618032
+  - 0.9898268941550391
+  - 0.5086961720677282
+  - 0.6568015555888799
+  - 0.07633726925792272
+  - 0.11128855070847665
+  - 0.8321202710349375
+  - 0.4782752044773212
+  - 1.139041715387413
+  - 1.4669986443418064
+  - 1.0856307591145367
+  - 1.0144766904310072
+  - 0.29859502848897534
+  - 1.3589551423052662
+  - 0.9564353650481966
+  - 0.9586178521334984
+  - 0.9408640116641623
+  - -0.008842262137096712
+  - 0.9815692267209556
+  - 0.5923114907434194
+  - 1.1088130566560102
+  - 0.08109690294368765
+  - -0.052079374038425885
+  - 1.0200733768057533
+  - 1.0303218152660527
+  - 0.9756570183060628
+  - 0.34072513159913986
+  - -0.7090781293149289
+  - -0.8494737990255559
+  - -0.8090196717722344
+  - -0.05844862180406063
+  - -0.12979407580126623
+  - -0.9285602517707245
+  - -0.25200815382455055
+  - -0.3196995665888764
+  - -0.38628204630988666
+  - -0.45168016524773574
+  - 0.26209798575582166
+  - 0.2068408609507303
+  - 0.21776419118839407
+  - 0.19280827208213003
+  - -0.23029263589825444
+  - 0.28757875616249284
+  - -0.2667723374148617
+  - 0.8953742452717425
+  - 1.0042237197905326
+  - 0.242649249184543
+  - 0.4238530834795745
+  - -0.7076155558266348
+  - -0.6517914466705699
+  - -1.1346499494487292
+  - -1.6037119337995422
+  - -1.0782405503005115
+  - -0.9622506267709787
+  - -0.8796628641811021
+  - -1.002322273489732
+  - -0.5666978213778162
+  - -0.44561614856237275
+  - -0.40334932747441976
+  - 0.19748739005489424
+  - 0.8130641389077587
+  - 1.533636610042044
+  - 1.4843961826087515
+  - 1.501215597815205
+  - 1.5838780234435386
+  - 1.5356963428862116
+  - 2.167705626749261
+  - 3.3141226868846427
+  - 3.2653086936861087
+  - 3.470968678032267
+  - 3.3433829048331303
+  - 3.216191516108498
+  - 4.123215831771544
+  - 3.7980876531843393
+  - 3.6698441457101003
+  - 3.5419683905792914
+  - 2.3961729909519454
+  - 2.5873847211181813
+  - 2.6054820852941534
+  - 2.4806233465367327
+  - 2.4203495142941187
+  - 2.702457400805362
+  - 3.382578713027579
+  - 4.147161340794186
+  - 4.062934313369279
+  - 5.219090367939224
+  - 5.8813588620230055
+  - 5.839172090801109
+  - 6.9946144315246075
+  - 7.7779270361677835
+  - 7.840099744347409
+  - 9.000253025589926
+  - 8.132140145032484
+  - 8.047187295942365
+  - 7.861156470371899
+  - 7.886088364564827
+  - 7.767899366318412
+  - 7.690797929398361
+  - 7.374620348515517
+  - 7.256736545318893
+  - 6.119517271018405
+  - 5.301014142481051
+  - 5.330495064922277
+  - 5.280987189511127
+  - 6.290181224210002
+  - 5.633183066426081
+  - 5.596960977946567
+  - 5.545721231495754
+  - 4.738945706487687
+  - 3.610336651664591
+  - 3.638640965638807
+  - 3.602749244305791
+  - 3.869206147225812
+  - 3.3204454810899575
+  - 3.3492744635188405
+  - 2.3280179905512384
+  - 2.393751754558884
+  - 2.15191799760247
+  - 1.1068293106608604
+  - 0.8561627930384162
+  - 0.8105523079304343
+  - 0.7787118644652257
+  - 0.08324401675009407
+  - 0.3915660031754796
+  - -0.27734021684686533
+  - -0.2502238140519578
+  - -0.2942990310166854
+  - -0.2921421298189212
+  - -0.7556271155181465
+  - -1.0057413931097121
+  - -1.2566938099942195
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+- `min_left`: 10
+- `n`: 300
+- `receipt_sha256`: f09ca8a1217458efc40a53f6c28ba11113e70a3f89a75babb6a44a4aae59eaef
+- `schema`: changepoint_localize.v1
+- `stream`: gaussian_minus_conf_t_pinball
+- `tau_hat`: 220
+- `window`: 40
+
+### `receipts/cp_real_drill_gaussian_pit.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cp_real_drill_gaussian_pit.json | 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62 | 04c643c65b212e881c450f13f7391094a49538556df4d4bca028b8bdb4b65abf | not_checked | absent | absent | unspecified | absent | absent | absent |
+
+- `alarmed`: true
+- `alpha`: 0.05
+- `cs_hi`: 46
+- `cs_lo`: 11
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - evalue_confidence_set
+  - backward_scan
+  - bounded_bets
+  - proper_scores_only
+- `kind`: changepoint_localize.v1
+- `lam`: 0.5
+- `log_evalues`:
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - 7.683885687766905
+  - 9.096293757920128
+  - 8.155596130281436
+  - 7.318392400385287
+  - 7.875542238695786
+  - 8.34941069762791
+  - 9.841438051192203
+  - 10.555307091267933
+  - 11.318122948287257
+  - 11.875162021346165
+  - 12.14961915842746
+  - 11.406389432303934
+  - 10.80215151726219
+  - 11.222715751074961
+  - 12.440621930602891
+  - 11.88388900274495
+  - 11.551878963661602
+  - 11.415339397987756
+  - 11.866958118015212
+  - 12.376267493034193
+  - 12.746682569175421
+  - 12.497076389714433
+  - 12.736062863031245
+  - 12.951455547205702
+  - 13.324020727451078
+  - 13.021037029871483
+  - 12.94748344064099
+  - 12.741795629471532
+  - 12.291989835721523
+  - 11.707557022566972
+  - 11.302102371200515
+  - 10.92670278096559
+  - 10.742593571114513
+  - 9.814706459379872
+  - 9.432121759017614
+  - 9.579067361803242
+  - 8.902777550215378
+  - 8.445423824066548
+  - 8.036051794569522
+  - 7.832356338492815
+  - 6.490411014548895
+  - 5.561503054872317
+  - 4.756472522355451
+  - 4.038753834098214
+  - 3.5321205921857004
+  - 3.0350828317124576
+  - 1.9407598451055166
+  - 1.4993122999151383
+  - 1.2743114829272906
+  - 1.321048074437528
+  - 0.6843003708130936
+  - 0.10032943825310758
+  - 0.2299080106057919
+  - -0.11932188677103739
+  - 0.06367202517966752
+  - -0.6176465645804876
+  - -0.530415762076064
+  - -0.25239712572186146
+  - -1.121256813484866
+  - -0.7123282966934099
+  - -1.5888787736372523
+  - -0.783332918360317
+  - -1.1233284151123422
+  - -0.9300331471867096
+  - -1.099611403113917
+  - -1.392949954818671
+  - -1.643806832449799
+  - -2.128353844415974
+  - -1.481340112813974
+  - -1.1643436091300177
+  - 0.05217152230231714
+  - -0.7220353779272176
+  - -0.39726534058064633
+  - -0.4344381398837319
+  - -1.1578015206513632
+  - -1.074433244081312
+  - -1.1961331513290114
+  - -1.1681123898154735
+  - -0.22826447551485313
+  - -0.3769192926022548
+  - -0.5042357863251433
+  - -0.6633746359592403
+  - -0.8005141746188712
+  - -1.2683373399791378
+  - -1.420569853783043
+  - -0.15798594702734203
+  - -0.1179450549992106
+  - -1.3638747113609595
+  - -1.6188438626988786
+  - -2.5832294809014145
+  - -2.9378294752170517
+  - -3.246349712856288
+  - -2.0800704656521884
+  - -3.111732695774095
+  - -2.076625781033552
+  - -1.9733478143262646
+  - -1.7028839687173574
+  - -2.00295538830296
+  - -2.259757676899749
+  - -1.9017110207533738
+  - -1.4366389188695226
+  - -1.4051798675655105
+  - -1.3226563971449736
+  - -0.5500070342684776
+  - -0.9961132380607904
+  - -1.5494812109740441
+  - -0.9946902838037215
+  - -1.4216148727046805
+  - -2.5872429857492882
+  - -1.7270780820961025
+  - -2.1415448311977583
+  - -1.8640349348864667
+  - -1.4803859687573202
+  - -2.1875464617892617
+  - -2.179815910245379
+  - -1.4357368263463952
+  - -1.4984664197054554
+  - -0.6504787571663403
+  - -0.7133853132783655
+  - -1.2848553952855848
+  - -1.6512332516266857
+  - -1.3689208230541756
+  - -1.5521690777532977
+  - -1.1351384676632876
+  - -1.2622407503228406
+  - -2.4235494538981586
+  - -2.9180033095682725
+  - -2.745640436874141
+  - -2.8426219463905174
+  - -2.96052523760015
+  - -2.9931354851762255
+  - -2.6255938872353286
+  - -3.013132783007018
+  - -3.0196381846011855
+  - -3.3198276688570005
+  - -3.2327361591601833
+  - -2.900607495315822
+  - -3.1803138357756993
+  - -3.1205709173691325
+  - -3.2549483483067023
+  - -3.0150016473506835
+  - -2.7593751583609665
+  - -3.085113482868971
+  - -3.077529898123632
+  - -3.0391002133931435
+  - -3.021803706888491
+  - -2.4431086170330603
+  - -2.3549704515603063
+  - -1.6945268221810963
+  - -2.4992835174543258
+  - -2.5513493145118784
+  - -2.205746824333169
+  - -2.872237031352499
+  - -2.906582751465349
+  - -2.8518505517150814
+  - -2.898522582084105
+  - -3.50584801408885
+  - -3.2522039053838467
+  - -2.928820481952636
+  - -2.462687740275918
+  - -2.449850953871202
+  - -2.539154936981071
+  - -2.45158894477847
+  - -2.217106909339391
+  - -2.361323025332431
+  - -2.5246157922585306
+  - -3.3873031543875785
+  - -3.4993806818339612
+  - -3.588023002221459
+  - -3.239004442467711
+  - -2.6041447391739165
+  - -3.3778398152461793
+  - -2.9566730050014125
+  - -2.682331964818462
+  - -2.731830320610255
+  - -2.646438894364969
+  - -2.856309782190498
+  - -2.9425421282664
+  - -2.797585283766041
+  - -3.1727205442722775
+  - -4.019733384297445
+  - -4.243552879170653
+  - -4.42247605322786
+  - -4.443158185922632
+  - -4.394635171959568
+  - -4.381601527000746
+  - -5.013402617575628
+  - -4.881625290572566
+  - -5.197062097599219
+  - -4.9870904868478
+  - -4.910443577749937
+  - -5.658725362270411
+  - -5.3009433178783985
+  - -5.560980298927252
+  - -5.635132704269806
+  - -5.108458028791854
+  - -4.5780307776134865
+  - -4.9972934851331265
+  - -4.633887782511162
+  - -4.400332660215622
+  - -4.686777703264047
+  - -4.103376057241462
+  - -5.11008133037585
+  - -4.417045153436489
+  - -5.175870622951681
+  - -4.3711615061798375
+  - -4.151997522701168
+  - -4.913457329060589
+  - -5.432425431639243
+  - -5.55019547833462
+  - -6.690976666724571
+  - -5.442462664749375
+  - -4.800265456457247
+  - -4.9738196945567035
+  - -5.310289875310832
+  - -4.851937030101092
+  - -5.828501225313262
+  - -6.221920385128071
+  - -5.966955590094773
+  - -5.534697790039917
+  - -4.341801201894218
+  - -4.741680790997928
+  - -4.395584101602337
+  - -5.330150236437878
+  - -5.968147847952763
+  - -6.0024752573449645
+  - -6.085080742453193
+  - -5.981183265813932
+  - -5.220173580947794
+  - -5.54306118457867
+  - -5.414254624929409
+  - -4.928994867097488
+  - -3.738550108106373
+  - -4.151203066261555
+  - -3.7340595732708093
+  - -3.7169521601252695
+  - -4.321399904814163
+  - -3.644678471281326
+  - -4.252794039319084
+  - -4.231203612037958
+  - -4.16980488677723
+  - -4.229552089597243
+  - -4.168379835587486
+  - -3.6591089684894147
+  - -3.4575622478112327
+  - -2.7154594824486002
+  - -2.909244057318858
+  - -2.5136084717742917
+  - -1.4990960554936064
+  - -1.1892685402462622
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+  - null
+- `min_left`: 10
+- `n`: 300
+- `receipt_sha256`: 04c643c65b212e881c450f13f7391094a49538556df4d4bca028b8bdb4b65abf
+- `schema`: changepoint_localize.v1
+- `stream`: gaussian_pit
+- `tau_hat`: 34
+- `window`: 40
 
 ### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
@@ -1928,7 +2680,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/fast_replay_p42_conformance_20260928.json | 7151a551c4ff7d47e8b8d36b4b866f6e487a2ca7f0275ce429edeeaaf933f6ab | absent | no_embedded_seal | absent | absent | unspecified | absent | true | false |
+| receipts/fast_replay_p42_conformance_20260928.json | e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6 | 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `receipt`: fast_replay_p42_conformance
 - `generated`: 2026-09-28T00:00:00Z
@@ -1955,6 +2707,11 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - empty/duplicate-key/non-Datetime/mismatched-unit panels
 - `rerun`: uv run pytest tests/unit/backtest/test_fast_replay.py tests/property/test_fast_replay_byte_identity.py tests/unit/test_perf_equivalence.py -x -q
 - `research_only`: true
+- `disclaimer`:
+<!-- verbatim-receipt-text -->
+> All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
+<!-- /verbatim-receipt-text -->
+- `receipt_sha256`: 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc
 
 ### `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`
 
@@ -4625,6 +5382,307 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.9
   - 0.95
 
+### `receipts/fleet_race_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/fleet_race_real_drill.json | 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def | b935e1eea32930eb4e048450b30f12a1b2090955d1ab5073b9f677517ff8486a | not_checked | absent | inputs_sha256=b134452657e2481d518ad2673c956446e8c0798cbc9ba1ecd261ce0a770f1146 | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `evidence`:
+  - anytime_valid_promotion
+  - anytime_valid_elimination
+  - successive_chunk_stream
+  - proper_scores_only
+- `generated_at_commit`: 4bf87074bedde7b4120704fa7fbbab37e41bb2f4
+- `global_evidence`:
+  - `conf_t`:
+    - `demote_evalue_product`: 188.2571445410747
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 3.086886724836204e-07
+  - `empirical`:
+    - `demote_evalue_product`: 5211.551431088947
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.693616137557909e-09
+  - `fhs_skew`:
+    - `demote_evalue_product`: 0.06212585619821356
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 0.5792555840446916
+  - `gaussian`:
+    - `demote_evalue_product`: 1107683.6297440543
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.857465259372908e-11
+  - `gmm`:
+    - `demote_evalue_product`: 6510.166138655656
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 1.46608988650646e-09
+  - `isotonic`:
+    - `demote_evalue_product`: 5177.98484445743
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.7103793958827616e-09
+  - `regime`:
+    - `demote_evalue_product`: 23338.35790747722
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 3.5626679840873747e-10
+  - `skew_t`:
+    - `demote_evalue_product`: 2822.7365076559704
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 4.078534133600114e-09
+- `kind`: fleet_race.v1
+- `n_models`: 8
+- `n_shards`: 8
+- `params`:
+  - `alpha`: 0.05
+  - `n_chunks`: 8
+  - `n_eval`: 128
+  - `n_train`: 256
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: b935e1eea32930eb4e048450b30f12a1b2090955d1ab5073b9f677517ff8486a
+- `research_only`: true
+- `schema`: fleet_race.v1
+- `shard_meta`:
+  - `yahoo_bkng`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 6
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 3173c39ac05896341c2fdd420eee6f2d5be3152e3f23d9dd155d19e6c1ae9bc9
+  - `yahoo_blk`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 5
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 92047bb4e72589d944cbbfc12f2cb223d15e967173ad0aadae802376e4f7acef
+  - `yahoo_bxp`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 0
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 2061b1ae04619b9fcbeddee3eae490fd098ad2015076c5551198732e5a2aa539
+  - `yahoo_enph`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 2
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 89d4c5edb1cc451d314d3d5f26846a0eca0c89eeaf0ba2557631451e305e763e
+  - `yahoo_gen`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 7
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 78629ac3f63f9194daeaf0ce17ad15208e00c38a9e883b5395d5553083c8f0cc
+  - `yahoo_lin`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 3
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 9129d2f7b546f54dc7d9d21c98ce496012a8a660e70d9e90939e171ec07f9748
+  - `yahoo_maa`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 1
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 50b426ed08d8d6091fa779c304fbd62516d452da7cb0ddb8147df5f495f999dc
+  - `yahoo_rjf`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 4
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: ded9c9885a8a115e4c7d57c725fc096893f9ede7f8d1bb733820915bc3ea9a3c
+- `shard_winners`:
+  - `yahoo_bkng`: fhs_skew
+  - `yahoo_blk`: fhs_skew
+  - `yahoo_bxp`: fhs_skew
+  - `yahoo_enph`: gmm
+  - `yahoo_gen`: isotonic
+  - `yahoo_lin`: fhs_skew
+  - `yahoo_maa`: fhs_skew
+  - `yahoo_rjf`: fhs_skew
+
+### `receipts/honest_verdict_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/honest_verdict_real_drill.json | f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca | d6bed78a0de6ab91dc043f0158da1a3a22c8e85c139066f75dc9b8f11cbeecd2 | not_checked | absent | inputs_sha256=d11aa6b1651a8811a70ec39a2ed1f914f9456e4040dbbef4cc9435bcaf649218 | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `components`:
+  - `calibration`:
+    - `alarm_origin`: 55
+    - `channel_wealths`:
+      - `grapa_disp`: 9.9404982299593e-10
+      - `grapa_loc`: 0.08989853425612236
+      - `loc_hi`: 4.2369814764492724e-55
+      - `loc_lo`: 3.5490965539306085e-25
+      - `overconf`: 8.348160312778904e-118
+      - `underconf`: 0.0
+    - `final_evalue`: 0.01498308920836203
+    - `miscalibrated`: true
+  - `drift`:
+    - `alarm_index`: null
+    - `eprocess_alarmed`: false
+    - `final_evalue`: 1.8646262134237022e-80
+    - `page_hinkley_alarmed`: true
+  - `localize`:
+    - `skipped`: no_drift_alarm
+  - `magnitude`:
+    - `alpha`: 0.05
+    - `bound`: 0.0014844874374953868
+    - `challenger`: challenger
+    - `cs_high`: 1.9939702001926377e-05
+    - `cs_low`: -2.82371873046754e-05
+    - `evidence`:
+      - ville_inequality
+      - betting_confidence_sequence
+      - bounded_increments
+      - time_uniform_coverage
+    - `excludes_zero`: false
+    - `incumbent`: incumbent
+    - `interpretation`: inconclusive
+    - `kind`: loss_cs.v1
+    - `lam`: 0.5
+    - `mean_diff`: -2.8032155507192686e-06
+    - `n`: 2048
+    - `schema`: loss_cs.v1
+  - `promotion`:
+    - `anytime_p`: 1.0
+    - `final_evalue`: 2.6761227190973234e-126
+    - `promoted`: false
+    - `promotion_origin`: null
+    - `runner_up`: empirical
+  - `winner_curse`:
+    - `corrected_score`: 0.0037945820141446775
+    - `honest_score`: 0.003796802010356682
+    - `naive_score`: 0.0037927121938229726
+    - `selected_head`: gaussian
+    - `selection_aware_ci`:
+      - 0.0036267381702576335
+      - 0.003980230483133574
+    - `selection_bias`: 1.8698203217049243e-06
+- `data_label`: yahoo_eod
+- `evidence`:
+  - selection_bias_corrected
+  - anytime_valid_promotion
+  - level_shift_monitor
+  - magnitude_confidence_sequence
+  - pit_uniformity_when_supplied
+  - changepoint_localization_when_drifted
+  - proper_score_only
+- `kind`: honest_verdict.v1
+- `n_heads`: 8
+- `n_obs`: 2048
+- `receipt_sha256`: d6bed78a0de6ab91dc043f0158da1a3a22c8e85c139066f75dc9b8f11cbeecd2
+- `research_only`: true
+- `run`:
+  - `code_revision`: 92a0cfce8c869665e46e7570fe5913c2ecc7af6f
+  - `excluded_heads`:
+  - `params`:
+    - `alpha`: 0.05
+    - `data_labels`:
+      - `yahoo_cboe`: yahoo_eod
+      - `yahoo_cf`: yahoo_eod
+      - `yahoo_expd`: yahoo_eod
+      - `yahoo_kmx`: yahoo_eod
+      - `yahoo_mar`: yahoo_eod
+      - `yahoo_nee`: yahoo_eod
+      - `yahoo_nem`: yahoo_eod
+      - `yahoo_spg`: yahoo_eod
+    - `heads`:
+      - conf_t
+      - empirical
+      - fhs_skew
+      - gaussian
+      - gmm
+      - isotonic
+      - regime
+      - skew_t
+    - `n_boot`: 2000
+    - `n_eval`: 256
+    - `n_train`: 512
+    - `seed`: 0
+    - `shards`:
+      - yahoo_cboe
+      - yahoo_cf
+      - yahoo_expd
+      - yahoo_kmx
+      - yahoo_mar
+      - yahoo_nee
+      - yahoo_nem
+      - yahoo_spg
+  - `schema`: honest_verdict_run.v1
+  - `status_sha256`: 404388e6f46dbf3e3980557f5c4dbdb876104e2075017da481dbf118a15b5b09
+- `unavailable_lanes`:
+- `verdict`: not_supported
+- `winner`: gaussian
+
+### `receipts/lane_power_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/lane_power_drill.json | f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e | 8d91f50d308726296d79349ce4f24d37768edd6355b9db45bf57b137d8ed9b91 | not_checked | absent | inputs_sha256=29f57ae06d9155ab5b3b8fd4174059a1a0f33b9c73273b76c585b12c5f1b4faa | unspecified | absent | absent | absent |
+
+- `claims`:
+  - [0]
+    - `kind`: empirical_synthetic
+    - `text`: measured alarm rate/time per lane per defect size; defect=0 rows bound the false-alarm rate by alpha
+- `code_revision`: 24f979d48f657c21b0192e364d239edb6311ece1
+- `evidence`:
+  - sequential_power_measurement
+  - defect_injection_grid
+  - null_control_row_per_lane
+  - lazy_lane_resolution
+- `kind`: lane_power
+- `level`: research
+- `n_lanes_ok`: 9
+- `null_alarm_rate`:
+  - `calibration_eprocess`: 0.0
+  - `changepoint_localize`: 0.0
+  - `conformal_monitor`: 0.0
+  - `coverage_cs`: 0.0
+  - `coverage_watch`: 0.0
+  - `drift_alarm`: 0.0
+  - `loss_cs`: 0.0
+  - `promotion`: 0.125
+  - `tail_watch`: 0.0
+- `params`:
+  - `alpha`: 0.05
+  - `defects`:
+    - 0.0
+    - 0.1
+    - 0.25
+    - 0.5
+    - 1.0
+  - `lanes`:
+    - coverage_watch
+    - tail_watch
+    - calibration_eprocess
+    - drift_alarm
+    - loss_cs
+    - changepoint_localize
+    - promotion
+    - conformal_monitor
+    - coverage_cs
+  - `n_seeds`: 8
+  - `n_steps`: 200
+- `receipt_sha256`: 8d91f50d308726296d79349ce4f24d37768edd6355b9db45bf57b137d8ed9b91
+- `schema`: lane_power.v1
+
 ### `receipts/monitor_run_drill_clean.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -4713,6 +5771,144 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `receipt_sha256`: 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55
 - `research_only`: true
 - `schema`: monitor_run.v1
+
+### `receipts/monitor_run_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_real_drill.json | 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1 | 5b3816febdaec3818671bf50c6bf18bea2bd516eb150ba94d9763de64ecb3b86 | not_checked | absent | inputs_sha256=27fb9d606d1e5308304288c900c5d4bd95990c8266f90b705d12b1329e5335d7 | unspecified | absent | true | false |
+
+- `code_revision`: 31ef76dea10b8bd58091c8086faae417be3d92c8
+- `data_label`: yahoo_eod
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 60
+- `n_rows`: 64
+- `params`:
+  - `alpha`: 0.05
+  - `data_labels`:
+    - `yahoo_aal`: yahoo_eod
+    - `yahoo_aos`: yahoo_eod
+    - `yahoo_chrw`: yahoo_eod
+    - `yahoo_lhx`: yahoo_eod
+    - `yahoo_mas`: yahoo_eod
+    - `yahoo_mgm`: yahoo_eod
+    - `yahoo_pwr`: yahoo_eod
+    - `yahoo_spy`: yahoo_eod
+  - `heads`:
+    - conf_t
+    - empirical
+    - fhs_skew
+    - gaussian
+    - gmm
+    - isotonic
+    - regime
+    - skew_t
+  - `level`: 0.9
+  - `n_eval`: 256
+  - `n_train`: 512
+  - `seed`: 0
+  - `shards`:
+    - yahoo_aal
+    - yahoo_aos
+    - yahoo_chrw
+    - yahoo_lhx
+    - yahoo_mas
+    - yahoo_mgm
+    - yahoo_pwr
+    - yahoo_spy
+  - `tail_cell`:
+    - 0.05
+    - 0.1
+- `receipt_sha256`: 5b3816febdaec3818671bf50c6bf18bea2bd516eb150ba94d9763de64ecb3b86
+- `research_only`: true
+- `schema`: monitor_run.v1
+
+### `receipts/nautilus_conformance_7bf19a08c147547b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/nautilus_conformance_7bf19a08c147547b.json | 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960 | 7bf19a08c147547b97f79161507841130740a8b06d1af1e0fa27854e731da207 | not_checked | 3246b8d37c1ffda200754c943d9c97879cddd5a6 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `nautilus_conformance.py`: 8113bd16655abaa382ae235a6100eb02e077458e2c3076f9d0a4293df3ecd0d9
+- `data_label`: META
+- `dataset_hash`: d17b2f4c64b94b62d74a55e0a45ca537a9db4707c932f26abeb8f2c691be4a54
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-28T06:43:25.861579+00:00
+- `git_revision`: 3246b8d37c1ffda200754c943d9c97879cddd5a6
+- `kind`: nautilus_conformance
+- `params_hash`: 0b11574d69adce3cdd1d5fe30701f2ff5ad5e0bc42bbe308ba08b4d7da4b3d22
+- `payload`:
+  - `detail`: nautilus_trader is not installed in this environment (pinned target: 1.220.0); the conformance replay cannot run here — install it on the execution box and re-run to obtain a matched/not-fair verdict
+  - `engine_installed`: false
+  - `engine_version`: null
+  - `equivalence_spec`:
+    - `compare`: canonical row digest over the fill ledger, byte-identical
+    - `cost_model`: maker/taker fee_bps on traded notional
+    - `fill_key`:
+      - ts
+      - asset
+      - signed_qty
+      - exec_px
+      - fee
+    - `fill_rules`:
+      - one fill per asset per bar (dedup gate)
+      - exec price null => mark-only bar, no fill
+      - participation cap clips signed qty
+      - non-executing names valued at pre-update mark
+    - `reference_result_fills_columns`:
+      - fill_time
+      - signal_time
+      - security_id
+      - quantity
+      - price
+      - fee
+      - spread_cost
+      - impact_cost
+      - turnover_cost
+      - decision_price
+  - `mismatches`:
+  - `n_fills_compared`: 0
+  - `outcome`: engine_absent
+  - `schema`: nautilus_conformance.v1
+  - `seed`: 0
+- `receipt_sha256`: 7bf19a08c147547b97f79161507841130740a8b06d1af1e0fa27854e731da207
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: blocked
 
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
@@ -5843,6 +7039,56 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `t_spearman`: -4.75560366545392
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
+
+### `receipts/suite_health_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/suite_health_drill.json | 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4 | 0c4f5f15f7920a871bd6438124d47daade6801fd6007c6a78dfc545da88f5eb5 | not_checked | absent | inputs_sha256=d3332ed3cffff6e1193f1291a1d56b803073b9355a459f8551af86eb929423f8 | unspecified | absent | true | false |
+
+- `claims`:
+  - [0]
+    - `kind`: empirical_synthetic
+    - `text`: all committed receipts re-verify and harvested evidence is pooled under arbitrary dependence
+- `code_revision`: 8581217810e5a7c18f8a2bda5c6e61aeb82e720a
+- `corpus_lane_available`: false
+- `data_label`: MIXED
+- `evidence`:
+  - per_receipt_reverification
+  - arbitrary_dependence_pooling
+  - fail_closed_on_corruption
+  - lazy_corpus_harvest
+- `kind`: suite_health
+- `level`: research
+- `n_evalues_pooled`: 0
+- `n_failed`: 7
+- `n_findings_harvested`: 0
+- `n_ok`: 7
+- `n_receipts`: 14
+- `params`:
+  - `alpha`: 0.05
+  - `input_labels`:
+    - `adaptive_mix_20asset_1d_20260922.json`: UNKNOWN
+    - `adaptive_mix_band_search_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_pair_candidate_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_reversion_screen_20asset_1d_20260922.json`: UNKNOWN
+    - `capacity_eval_cd0854242ed8a9ec.json`: SYNTHETIC
+    - `dip_bench_crypto_1d_20260925.json`: UNKNOWN
+    - `fast_replay_p42_conformance_20260927.json`: UNKNOWN
+    - `fleet_eval_5ddf15b0dc7d3ca1.json`: SYNTHETIC
+    - `honest_verdict_real_drill.json`: yahoo_eod
+    - `incumbent_bench_qlib.json`: UNKNOWN
+    - `lane_power_drill.json`: UNKNOWN
+    - `monitor_run_real_drill.json`: yahoo_eod
+    - `rankic_eval_9ebdad7da83e7348.json`: SYNTHETIC
+    - `suite_health_drill.json`: SYNTHETIC
+  - `n_files`: 14
+  - `receipts_dir`: receipts
+- `pooled_alarmed`: false
+- `pooled_evalue`: null
+- `receipt_sha256`: 0c4f5f15f7920a871bd6438124d47daade6801fd6007c6a78dfc545da88f5eb5
+- `research_only`: true
+- `schema`: suite_health.v1
 
 ### `receipts/verdict_real_drill.json`
 
