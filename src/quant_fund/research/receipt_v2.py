@@ -558,6 +558,8 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.quantile_ladder import _quantile_ladder_errors
 
         errors.extend(_quantile_ladder_errors(payload))
+    if payload.get("kind") in EVALUE_FAMILY_KINDS:
+        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
     elif schema == "vol_bench.v1":
         from quant_fund.research.vol_bench import vol_bench_contract_errors
         errors.extend(vol_bench_contract_errors(payload))
@@ -578,6 +580,8 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
         from quant_fund.paper.sim_live import sim_live_contract_errors
+
+        errors.extend(evalue_family_contract_errors(payload))
         errors.extend(sim_live_contract_errors(payload))
     if payload.get("schema") == "cost_calibration.v1":
         from quant_fund.research.cost_calibration import (
