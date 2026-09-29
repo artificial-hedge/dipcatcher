@@ -22,6 +22,7 @@ from quant_fund.hedge_lab._receipt import seal_receipt
 from quant_fund.hedge_lab.scoreboard import book_economic_scoreboard
 from quant_fund.models.asset_pricing import date_groups
 from quant_fund.models.cs_papers import _mean_date_ic
+from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.validation.walk_forward import timestamp_ns, walk_forward
 
 Array = NDArray[np.float64]
@@ -320,11 +321,11 @@ def run_file_tape_mirror(
     out = Path(root) / "metadata" / f"mirror_anti_{label}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     sealed = seal_receipt(receipt)
-    payload = json.dumps(sealed, indent=2, default=str)
-    out.write_text(payload, encoding="utf-8")
+    atomic_write_text(out, json.dumps(sealed, indent=2, default=str))
+
     public = Path("artifacts") / "hedge_lab" / "mirror_latest.json"
     public.parent.mkdir(parents=True, exist_ok=True)
-    public.write_text(payload, encoding="utf-8")
+    atomic_write_text(public, json.dumps(sealed, indent=2, default=str))
     sealed["receipt_path"] = str(out)
     sealed["artifact_path"] = str(public)
     return sealed

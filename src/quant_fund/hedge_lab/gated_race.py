@@ -26,6 +26,7 @@ from quant_fund.hedge_lab.scoreboard import book_economic_scoreboard
 from quant_fund.lightspeed.specs import HOLDOUT_START, SELECTION_END
 from quant_fund.metrics.inference import mean_tstat, overlap_aware_hac_lags
 from quant_fund.risk.gates import GateSpec, apply_gate_stack
+from quant_fund.utils.atomicio import atomic_write_text
 
 Array = NDArray[np.float64]
 
@@ -272,10 +273,9 @@ def run_gated_race(
     out.parent.mkdir(parents=True, exist_ok=True)
     sealed = seal_receipt(receipt)
     payload = json.dumps(sealed, indent=2, default=str)
-    out.write_text(payload, encoding="utf-8")
+    atomic_write_text(out, payload)
     public = Path("artifacts") / "hedge_lab" / artifact_name
-    public.parent.mkdir(parents=True, exist_ok=True)
-    public.write_text(payload, encoding="utf-8")
+    atomic_write_text(public, payload)
     sealed["receipt_path"] = str(out)
     sealed["artifact_path"] = str(public)
     return sealed
@@ -421,10 +421,9 @@ def run_holdout_confirm(
     out.parent.mkdir(parents=True, exist_ok=True)
     sealed = seal_receipt(receipt)
     payload = json.dumps(sealed, indent=2, default=str)
-    out.write_text(payload, encoding="utf-8")
+    atomic_write_text(out, payload)
     public = Path("artifacts") / "hedge_lab" / "holdout_confirm.json"
-    public.parent.mkdir(parents=True, exist_ok=True)
-    public.write_text(payload, encoding="utf-8")
+    atomic_write_text(public, payload)
     sealed["receipt_path"] = str(out)
     sealed["artifact_path"] = str(public)
     return sealed
