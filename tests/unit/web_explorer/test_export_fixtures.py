@@ -70,6 +70,8 @@ def test_fixtures_cover_every_sealed_receipt() -> None:
 def test_receipts_declare_non_live_evidence() -> None:
     """Receipts must never claim live P&L and must carry at least one
     non-live marker (research_only, SYNTHETIC data_label, or dev_only)."""
+
+
 def test_every_committed_receipt_is_exported() -> None:
     """A new receipts/*.json without a fixture export silently drops evidence
     from the explorer. Completeness is pinned both directions."""
