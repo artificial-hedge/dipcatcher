@@ -1542,6 +1542,12 @@ def corpus_epoch(
         "enforces it (missing/mutated/rolled-back head is an error); write mode "
         "updates it so the pin and the new epoch land in the same commit.",
     ),
+    require_stamped: bool = typer.Option(
+        False,
+        "--require-stamped",
+        help="With --check: unstamped members are errors, not informational — "
+        "for corpora where every member is security-critical (e.g. CI workflows).",
+    ),
 ) -> None:
     """Corpus epoch: hash-chained integrity root over the evidence store.
 
@@ -1594,11 +1600,16 @@ def corpus_epoch(
             )
     if check:
         result = check_epoch_chain(
-            root, allowed_removals=allowed, pattern=glob, expected_head=expected_head
+            root,
+            allowed_removals=allowed,
+            pattern=glob,
+            expected_head=expected_head,
+            require_stamped=require_stamped,
         )
         typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-        for name in result["unstamped"]:
-            typer.echo(f"epoch-chain info: unstamped member {name}")
+        if not require_stamped:
+            for name in result["unstamped"]:
+                typer.echo(f"epoch-chain info: unstamped member {name}")
         if result["errors"]:
             for err in result["errors"]:
                 typer.echo(f"epoch-chain error: {err}")

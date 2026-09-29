@@ -296,3 +296,18 @@ def test_heads_pin_file_is_never_a_member(tmp_path: Path) -> None:
     pin = corpus / "epoch_heads.json"  # pin can even live inside the corpus dir
     update_heads_pin(pin, corpus, "*.json", first)
     assert check_epoch_chain(corpus)["errors"] == []
+
+
+def test_require_stamped_promotes_arrivals_to_errors(tmp_path: Path) -> None:
+    """Critical corpora: an unstamped arrival is the tamper, not a pending stamp."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    assert check_epoch_chain(corpus, require_stamped=True)["errors"] == []
+    _receipt(corpus, "rogue.json", "2")
+    res = check_epoch_chain(corpus, require_stamped=True)
+    assert res["errors"] == ["unstamped_member:rogue.json"]
+    # Default mode stays informational for accumulative corpora.
+    assert check_epoch_chain(corpus)["errors"] == []
+    assert check_epoch_chain(corpus)["unstamped"] == ["rogue.json"]

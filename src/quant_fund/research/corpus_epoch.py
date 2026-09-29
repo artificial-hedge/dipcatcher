@@ -319,6 +319,7 @@ def check_epoch_chain(
     allowed_removals: Mapping[str, str] | None = None,
     pattern: str = "*.json",
     expected_head: Mapping[str, str] | None = None,
+    require_stamped: bool = False,
 ) -> dict[str, Any]:
     """Walk the committed epoch chain against the live corpus.
 
@@ -336,6 +337,11 @@ def check_epoch_chain(
     of its descendants → ``epoch_head_rollback`` — closing the hole where
     deleting the newest epoch receipts silently reverts the chain to an
     older (pre-tamper) head.
+
+    ``require_stamped`` promotes ``unstamped`` members to
+    ``unstamped_member:`` errors — for corpora whose *every* member is
+    security-critical (e.g. CI workflow definitions), an unstamped arrival
+    is itself the tamper, not a pending stamp.
     """
     root = Path(corpus_dir)
     errors: list[str] = []
@@ -454,6 +460,8 @@ def check_epoch_chain(
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name}")
         unstamped = sorted(set(live) - stamped - set(by_name))
+        if require_stamped:
+            errors.extend(f"unstamped_member:{name}" for name in unstamped)
     elif len(heads) > 1:
         errors.append(f"epoch_multiple_heads:{','.join(sorted(heads))}")
 

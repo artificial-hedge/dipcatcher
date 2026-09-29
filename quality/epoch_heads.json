@@ -1,5 +1,9 @@
 {
   "heads": {
+    ".github/workflows/*.yml": {
+      "receipt": "corpus_epoch_419fbe12ca9dfd1f.json",
+      "sha256": "3b001684cd2be2c1921c7846523d0dc5a047e619b656a4c545984a2605f8a1ce"
+    },
     "quality/*.json": {
       "receipt": "corpus_epoch_a6a2f06843a428b3.json",
       "sha256": "c7a66291df9a8755827a079939b13608535727816df68b75cde7723e154596a9"
