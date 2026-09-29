@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 812,
+  "module_count": 814,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1628,6 +1628,10 @@
     },
     {
       "dst": "quant_fund.research.agent",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.calibration_eval",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -4287,6 +4291,10 @@
       "src": "quant_fund.paper.sim_live"
     },
     {
+      "dst": "quant_fund.paper.ledger",
+      "src": "quant_fund.paper.sim_live"
+    },
+    {
       "dst": "quant_fund.paper.loop",
       "src": "quant_fund.paper.sim_live"
     },
@@ -6439,6 +6447,34 @@
       "src": "quant_fund.research.calibration_eprocess"
     },
     {
+      "dst": "quant_fund.metrics.density_forecast",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.calibration_eval"
+    },
+    {
       "dst": "quant_fund.research.catalog",
       "src": "quant_fund.research.capacity_overlay"
     },
@@ -7396,6 +7432,10 @@
     },
     {
       "dst": "quant_fund.paper.sim_live",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
+      "dst": "quant_fund.research.calibration_eval",
       "src": "quant_fund.research.receipt_v2"
     },
     {
@@ -8831,6 +8871,7 @@
     "quant_fund.research.benches_extra",
     "quant_fund.research.benches_w810",
     "quant_fund.research.calibration_eprocess",
+    "quant_fund.research.calibration_eval",
     "quant_fund.research.capacity_overlay",
     "quant_fund.research.catalog",
     "quant_fund.research.catalog._helpers",
@@ -8905,6 +8946,7 @@
     "quant_fund.research.research100",
     "quant_fund.research.research100_benchmark",
     "quant_fund.research.research100_cli",
+    "quant_fund.research.script_receipts",
     "quant_fund.research.shadow_journal",
     "quant_fund.research.sota_evidence",
     "quant_fund.research.sota_protocol",
@@ -9448,7 +9490,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 22,
+      "imports": 23,
       "src": "quant_fund.cli"
     },
     {
@@ -10008,7 +10050,7 @@
     },
     {
       "dst": "quant_fund.paper",
-      "imports": 9,
+      "imports": 10,
       "src": "quant_fund.paper"
     },
     {
@@ -10383,7 +10425,7 @@
     },
     {
       "dst": "quant_fund.metrics",
-      "imports": 65,
+      "imports": 67,
       "src": "quant_fund.research"
     },
     {
@@ -10438,7 +10480,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 167,
+      "imports": 171,
       "src": "quant_fund.research"
     },
     {
@@ -10453,7 +10495,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 57,
+      "imports": 59,
       "src": "quant_fund.research"
     },
     {
