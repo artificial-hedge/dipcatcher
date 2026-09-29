@@ -166,11 +166,14 @@ def audit_tail_depth(
     seed: int = 0,
     alpha: float = 0.05,
     alt_grid: Sequence[float] = DEFAULT_ALT_GRID,
+    data_label: str | None = None,
 ) -> tuple[pl.DataFrame, dict[str, object]]:
     """Audit nested-quantile consistency per (head, shard).
 
     The cell is the deepest adjacent tau pair on the grid. Fails closed
-    if the grid has fewer than two taus.
+    if the grid has fewer than two taus. ``data_label`` stamps the
+    receipt's provenance; when None it is derived from the shard configs
+    (all-SYNTHETIC → SYNTHETIC, mixed → MIXED, unlabeled → UNKNOWN).
     """
     tau_arr = np.asarray(taus if taus is not None else DEFAULT_TAUS, dtype=float)
     if tau_arr.size < 2:
@@ -194,12 +197,15 @@ def audit_tail_depth(
     if not resolved:
         raise ValueError("no shard generators resolved")
     rows: list[dict[str, object]] = []
+    shard_labels: set[str] = set()
     n_shard = n_train + n_eval
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
         shard = generator(n_shard, int(seed) + shard_index)
+        shard_labels.add(str(shard.config.get("data_label") or "UNKNOWN"))
         y_eval = np.asarray(shard.y[n_train : n_train + n_eval], dtype=float)
         for name in sorted(factories):
             factory = factories[name]
+            err: str | None = None
             try:
                 model = factory()
                 model.fit(shard.x[:n_train], shard.y[:n_train])
@@ -208,8 +214,9 @@ def audit_tail_depth(
                     q = np.asarray(model.predict(lag_x), dtype=float)
                 else:
                     q = np.asarray(model.predict(shard.x[n_train : n_train + n_eval]), dtype=float)
-            except Exception:
+            except Exception as exc:
                 q = None
+                err = str(exc)
             if q is None or q.ndim != 2 or q.shape[1] != tau_arr.shape[0]:
                 rows.append(
                     {
@@ -217,6 +224,7 @@ def audit_tail_depth(
                         "head": name,
                         "cell": f"[{tau_lo}, {tau_hi})",
                         "status": "error",
+                        "error": err,
                         "n_eval": 0,
                         "n_outer": 0,
                         "n_deep": 0,
@@ -244,6 +252,7 @@ def audit_tail_depth(
                     "head": name,
                     "cell": f"[{tau_lo}, {tau_hi})",
                     "status": "ok" if ep.n_outer else "inconclusive",
+                    "error": err,
                     "n_eval": ep.n_eval,
                     "n_outer": ep.n_outer,
                     "n_deep": ep.n_deep,
@@ -254,10 +263,18 @@ def audit_tail_depth(
                     "alarm_origin": alarm_origin,
                 }
             )
+    if data_label is None:
+        if shard_labels == {"SYNTHETIC"}:
+            data_label = "SYNTHETIC"
+        elif len(shard_labels) > 1:
+            data_label = "MIXED"
+        else:
+            data_label = next(iter(shard_labels), "UNKNOWN")
     frame = pl.DataFrame(rows)
     receipt: dict[str, object] = {
         "schema": TAIL_AUDIT_SCHEMA,
         "kind": "tail_audit",
+        "data_label": data_label,
         "level": "research",
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         "code_revision": git_revision(),
