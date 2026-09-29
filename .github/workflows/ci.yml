@@ -666,6 +666,12 @@ jobs:
         run: uv sync --frozen --all-groups
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
+      - name: Fetch PR base for chain-extension proofs
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Chain-consistency proofs — a PR may extend, never rewrite
+        if: github.event_name == 'pull_request'
+        run: EPOCH_BASE=FETCH_HEAD make epoch-consistency
       - name: Cross-receipt consistency lattice
         run: make lattice-check
 

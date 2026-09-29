@@ -209,6 +209,17 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher crown-jewels --check
 	uv run dipcatcher verify-repo
 
+epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
+	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
+	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*"; do \
+	  dir=$${spec%%:*}; glob=$${spec##*:}; \
+	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
+	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
+	  proof="$${RUNNER_TEMP:-/tmp}/consistency_$$(echo $$dir | tr '/.' '__').json"; \
+	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --from-epoch "$$head" --out "$$proof" >/dev/null || exit 1; \
+	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --check "$$proof" || exit 1; \
+	done
+
 stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching receipts/, verifier/*.md, quality/*.json, .github/workflows/*.yml, or configs/
 	uv run dipcatcher corpus-epoch --corpus-dir receipts --out-dir receipts --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --out-dir verifier --heads-pin quality/epoch_heads.json

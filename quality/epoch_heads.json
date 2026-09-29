@@ -1,16 +1,16 @@
 {
   "heads": {
     ".github/workflows/*.yml": {
-      "receipt": "corpus_epoch_4ea2cd1ee8a44845.json",
-      "sha256": "b6e354c294514a551fd21cc3caf955e3d54cf19655c73aab80d4a62720532224"
+      "receipt": "corpus_epoch_db9f2a0717a5b548.json",
+      "sha256": "e98969506361bbcc74db32eb4b5cbd2c6ad74482962ca5752e5db4fb41f4bed0"
     },
     "configs/*": {
       "receipt": "corpus_epoch_04c0883bc2991757.json",
       "sha256": "08fbe933abe93516eea0acd20e4b49483646934af2648f8a2c9382240d33aee9"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_3991195909a79e46.json",
-      "sha256": "43f2ac5d26a9f10511c2c354cc145dccd247244781bcbfc0e5e2819fc399b032"
+      "receipt": "corpus_epoch_852085a8059aeecd.json",
+      "sha256": "12eb5be33474067bbdfad76f674af7bcafeea722448b6a7c77f617857d7e242b"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_96ba030697ddf0ff.json",
