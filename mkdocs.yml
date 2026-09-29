@@ -138,6 +138,7 @@ nav:
       - Data contracts: DATA_CONTRACTS.md
       - Receipt verification: RECEIPT_VERIFICATION.md
       - Receipt v2: RECEIPT_V2.md
+      - Receipt sealing conventions: RECEIPT_SEALING.md
       - Robustness certification: ROBUSTNESS.md
       - Validation: VALIDATION.md
       - Formal verification: FORMAL_VERIFICATION.md
@@ -185,6 +186,7 @@ nav:
       - Model cards: MODEL_CARDS.md
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
+      - Audit ledger: AUDIT_LEDGER.md
       - Scenario Monte Carlo: MC_ENGINE.md
       - Fast replay conformance: FAST_REPLAY_P42.md
       - Fast-path latency argument: P4_3_FAST_PATH_ARGUMENT.md
