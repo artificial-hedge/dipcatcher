@@ -224,15 +224,30 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
         if spine_claim.get("tip") != expected_tip:
             errors.append("spine_tip_mismatch")
 
-    # Witness extent: the checkpoint signs the proof count at write time;
-    # the proof for the checkpoint itself lands right after it, so the
-    # legal counts are claim and claim+1 — below that is deletion.
-    n_proofs = len(list(wdir.glob(f"{CHECKPOINT_PATH.name}_*.json"))) if wdir.is_dir() else 0
+    # Witness extent: the checkpoint signs the proof name set at write
+    # time; the live proof lands right after it, so the legal set is the
+    # claim or the claim plus one new name that must witness this head.
+    live_names = (
+        {p.name for p in wdir.glob(f"{CHECKPOINT_PATH.name}_*.json")} if wdir.is_dir() else set()
+    )
     witness_claim = live_payload.get("witness")
     if isinstance(witness_claim, dict):
-        n_claim = witness_claim.get("n_proofs")
-        if isinstance(n_claim, int) and not (n_claim <= n_proofs <= n_claim + 1):
-            errors.append(f"witness_count:{n_proofs} not in [{n_claim},{n_claim + 1}]")
+        claimed = set(witness_claim.get("proofs") or [])
+        missing_claimed = sorted(claimed - live_names)
+        extra = sorted(live_names - claimed)
+        if missing_claimed:
+            errors.append(f"witness_proof_deleted:{','.join(missing_claimed)}")
+        if len(extra) > 1:
+            errors.append(f"witness_proof_unpinned:{','.join(extra)}")
+        elif len(extra) == 1:
+            # The one legal extra must be the proof for the live head.
+            try:
+                extra_body = json.loads((wdir / extra[0]).read_text())
+                extra_target = (extra_body.get("target") or {}).get("sha256")
+            except (OSError, json.JSONDecodeError):
+                extra_target = None
+            if extra_target != head_digest_claim:
+                errors.append(f"witness_proof_unpinned:{extra[0]}")
     head_digest = head_digest_claim
     if witnessed_idx and head_digest not in witnessed_idx:
         errors.append("head_unwitnessed")
