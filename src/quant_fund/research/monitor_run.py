@@ -128,10 +128,15 @@ def monitor_fleet(
     n_shard = n_train + n_eval
     rows: list[dict[str, Any]] = []
     shard_names: list[str] = []
+    shard_labels: dict[str, str] = {}
 
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
         shard = generator(n_shard, int(seed) + shard_index)
         shard_names.append(shard_name)
+        label = str(shard.config.get("data_label") or "").strip()
+        if not label:
+            label = "UNKNOWN"
+        shard_labels[shard_name] = label
         y_eval = np.asarray(shard.y[n_train : n_train + n_eval], dtype=float)
 
         # pass 1: collect per-origin streams per head
@@ -247,11 +252,18 @@ def monitor_fleet(
             rows.append(row)
 
     frame = pl.DataFrame(rows)
+    distinct_labels = set(shard_labels.values())
+    if len(distinct_labels) > 1:
+        raise ValueError(
+            "shards carry mixed data_label values "
+            f"{sorted(distinct_labels)}; run mixed corpora as separate receipts"
+        )
+    data_label = distinct_labels.pop() if distinct_labels else "UNKNOWN"
     receipt: dict[str, Any] = {
         "schema": MONITOR_RUN_SCHEMA,
         "kind": "monitor_run",
         "level": "research",
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "research_only": True,
         "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
@@ -265,6 +277,7 @@ def monitor_fleet(
             "tail_cell": [tail_lo, tail_hi],
             "heads": sorted(map(str, factories)),
             "shards": shard_names if shards is None else resolved_names(shards),
+            "data_labels": shard_labels,
         },
         "lanes_available": lanes_available,
         "n_rows": frame.height,

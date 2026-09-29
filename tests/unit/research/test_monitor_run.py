@@ -66,6 +66,25 @@ def test_frame_shape_and_columns() -> None:
         assert col in frame.columns
 
 
+def test_deterministic_replay_is_byte_identical() -> None:
+    """The monitor is a deterministic function of (factories, shards, seed):
+    two runs must produce byte-identical frames and receipts — otherwise the
+    sealed receipt could not be reproduced as evidence."""
+    kwargs = dict(
+        n_train=256,
+        n_eval=64,
+        taus=[0.05, 0.1, 0.5, 0.9, 0.95],
+        seed=7,
+        alpha=0.05,
+        level=0.9,
+    )
+    factories = {"tight": _GaussianFactory(1.0), "wide": _GaussianFactory(2.0)}
+    frame_a, receipt_a = monitor_fleet(dict(factories), _shards(), **kwargs)
+    frame_b, receipt_b = monitor_fleet(dict(factories), _shards(), **kwargs)
+    assert frame_a.write_csv() == frame_b.write_csv()
+    assert receipt_a == receipt_b
+
+
 def test_broken_head_rows_status_error() -> None:
     class _Broken:
         def __call__(self):
@@ -108,3 +127,52 @@ def test_tau_validation_fails_closed() -> None:
         )
     with pytest.raises(ValueError, match="level"):
         monitor_fleet({"a": _GaussianFactory(1.0)}, _shards(), level=1.2)
+
+
+def _labeled_shard(label: str):
+    def gen(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(
+            name="lab",
+            x=np.zeros((n, 1)),
+            y=rng.normal(0.0, 1.0, n),
+            config={"data_label": label},
+        )
+
+    return gen
+
+
+def test_data_label_derived_from_shards_not_hardcoded() -> None:
+    _, receipt = monitor_fleet(
+        {"a": _GaussianFactory(1.0)},
+        {"real": _labeled_shard("yahoo_eod")},
+        n_train=64,
+        n_eval=32,
+        taus=[0.05, 0.1, 0.5, 0.9, 0.95],
+    )
+    assert receipt["data_label"] == "yahoo_eod"
+    assert receipt["params"]["data_labels"] == {"real": "yahoo_eod"}
+
+
+def test_mixed_data_labels_fail_closed() -> None:
+    with pytest.raises(ValueError, match="mixed data_label"):
+        monitor_fleet(
+            {"a": _GaussianFactory(1.0)},
+            {"s": _shard, "r": _labeled_shard("yahoo_eod")},
+            n_train=64,
+            n_eval=32,
+        )
+
+
+def test_missing_data_label_stamps_unknown() -> None:
+    def unlabeled(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(name="u", x=np.zeros((n, 1)), y=rng.normal(0.0, 1.0, n), config={})
+
+    _, receipt = monitor_fleet(
+        {"a": _GaussianFactory(1.0)},
+        {"u": unlabeled},
+        n_train=64,
+        n_eval=32,
+    )
+    assert receipt["data_label"] == "UNKNOWN"
