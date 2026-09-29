@@ -310,7 +310,7 @@ flowchart LR
   quant_fund_paper -->|2| quant_fund_portfolio
   quant_fund_paper -->|3| quant_fund_research
   quant_fund_paper -->|1| quant_fund_schemas
-  quant_fund_paper -->|6| quant_fund_utils
+  quant_fund_paper -->|7| quant_fund_utils
   quant_fund_parity -->|4| quant_fund_config
   quant_fund_parity -->|2| quant_fund_execution
   quant_fund_parity -->|1| quant_fund_schemas
@@ -369,10 +369,11 @@ flowchart LR
   quant_fund_research -->|12| quant_fund_config
   quant_fund_research -->|1| quant_fund_data
   quant_fund_research -->|3| quant_fund_execution
-  quant_fund_research -->|52| quant_fund_metrics
+  quant_fund_research -->|56| quant_fund_metrics
   quant_fund_research -->|4| quant_fund_microstructure
-  quant_fund_research -->|58| quant_fund_models
+  quant_fund_research -->|59| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
+  quant_fund_research -->|1| quant_fund_paper
   quant_fund_research -->|13| quant_fund_pipeline
   quant_fund_research -->|5| quant_fund_portfolio
   quant_fund_research -->|1| quant_fund_proof
@@ -630,7 +631,7 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 60 |
 | `quant_fund.microstructure` | 7 |
-| `quant_fund.models` | 162 |
+| `quant_fund.models` | 163 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -648,7 +649,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 2 |
 | `quant_fund.reporting` | 4 |
-| `quant_fund.research` | 74 |
+| `quant_fund.research` | 75 |
 | `quant_fund.risk` | 5 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -657,9 +658,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 11 |
 
-- Modules scanned: **766**
+- Modules scanned: **768**
 - Packages: **65**
-- Cross-package import edges: **269**
+- Cross-package import edges: **270**
 
 <!-- END GENERATED: coverage -->
 
