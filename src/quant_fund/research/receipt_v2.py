@@ -37,6 +37,7 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -433,6 +434,10 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
+    if payload.get("kind") in EVALUE_FAMILY_KINDS:
+        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+
+        errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
