@@ -452,11 +452,10 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         if claimed in _LANE_CONSISTENCY:
             path = _LANE_CONSISTENCY[claimed]
             module, _, func = path.rpartition(".")
-            errors: list[str] = list(getattr(importlib.import_module(module), func)(payload))
-            errors: list[str] = getattr(importlib.import_module(module), func)(payload)
+            lane_errors = list(getattr(importlib.import_module(module), func)(payload))
             if claimed != kind:
-                errors = [*errors, "kind_fingerprint_mismatch"]
-            return errors
+                lane_errors = [*lane_errors, "kind_fingerprint_mismatch"]
+            return lane_errors
     if kind == "distribution_fleet_eval":
         from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
