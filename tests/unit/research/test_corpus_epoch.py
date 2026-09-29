@@ -201,3 +201,80 @@ def corpus_dir(tmp_path: Path) -> Path:
     _receipt(root, "a.json", "1")
     _receipt(root, "b.json", "2")
     return root
+
+
+def test_heads_pin_round_trip(tmp_path: Path) -> None:
+    """Stamp → pin → check: the pinned head passes, a descendant does too."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    first = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", first)
+    heads = load_heads_pin(pin)
+    assert epoch_heads_key(corpus, "*.json") in heads
+    exp = heads[epoch_heads_key(corpus, "*.json")]
+    assert exp["receipt"] == first.name
+    res = check_epoch_chain(corpus, expected_head=exp)
+    assert res["errors"] == [] and res["head"] == first.name
+    # A newer epoch re-heads the chain; the old pin must accept it as a
+    # descendant (stamping is append-only, pin follows in the same commit).
+    _receipt(corpus, "b.json", "2")
+    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    res2 = check_epoch_chain(corpus, expected_head=exp)
+    assert res2["errors"] == [] and res2["head"] == second.name
+
+
+def test_heads_pin_missing_and_mutated(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    first = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    exp = {"receipt": first.name, "sha256": "0" * 64}
+    errors = check_epoch_chain(corpus, expected_head=exp)["errors"]
+    assert any(e.startswith("epoch_head_mutated:") for e in errors)
+    (corpus / first.name).unlink()
+    errors = check_epoch_chain(corpus, expected_head=exp)["errors"]
+    assert any(e.startswith("epoch_head_missing:") for e in errors)
+    assert any(e.startswith("epoch_head_rollback:") for e in errors)
+
+
+def test_heads_pin_rollback_detected(tmp_path: Path) -> None:
+    """Deleting the newest epoch silently reverts to the old head — pinned."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    first = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    _receipt(corpus, "b.json", "2")
+    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    from quant_fund.utils.hashing import hash_bytes
+
+    exp = {"receipt": second.name, "sha256": hash_bytes(second.read_bytes())}
+    assert check_epoch_chain(corpus, expected_head=exp)["errors"] == []
+    # Attack: delete the head epoch — without the pin this rewinds silently.
+    second.unlink()
+    errors = check_epoch_chain(corpus, expected_head=exp)["errors"]
+    assert any(e.startswith("epoch_head_missing:") for e in errors)
+    assert any(e.startswith("epoch_head_rollback:") for e in errors)
+    # And unpinned, the same rollback is silent — documenting why the pin exists.
+    unpinned = check_epoch_chain(corpus)
+    assert unpinned["head"] == first.name and unpinned["errors"] == []
+
+
+def test_heads_pin_validates_schema(tmp_path: Path) -> None:
+    from quant_fund.research.corpus_epoch import load_heads_pin
+
+    bad = tmp_path / "bad.json"
+    bad.write_text(json.dumps({"schema": "other.v1", "heads": []}))
+    with pytest.raises(ValueError, match="heads"):
+        load_heads_pin(bad)
+    bad2 = tmp_path / "bad2.json"
+    bad2.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {"k/*": {"receipt": 1}}}))
+    with pytest.raises(ValueError, match="malformed"):
+        load_heads_pin(bad2)

@@ -1535,6 +1535,13 @@ def corpus_epoch(
         help="Member file pattern — chains are per-(dir, glob); stamp non-JSON evidence "
         "dirs with e.g. --glob '*.md' or '*'.",
     ),
+    heads_pin: Path | None = typer.Option(
+        None,
+        "--heads-pin",
+        help="Committed epoch-heads pin (e.g. quality/epoch_heads.json). --check "
+        "enforces it (missing/mutated/rolled-back head is an error); write mode "
+        "updates it so the pin and the new epoch land in the same commit.",
+    ),
 ) -> None:
     """Corpus epoch: hash-chained integrity root over the evidence store.
 
@@ -1548,6 +1555,9 @@ def corpus_epoch(
     from quant_fund.research.corpus_epoch import (
         check_epoch_chain,
         corpus_epoch,
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
         write_epoch_receipt,
     )
 
@@ -1570,8 +1580,22 @@ def corpus_epoch(
                 "allowed-removals must be a JSON object mapping filename -> 64-hex sha256"
             )
         allowed = dict(raw_allowed)
+    expected_head: dict[str, str] | None = None
+    if heads_pin is not None:
+        if not heads_pin.is_file():
+            raise typer.BadParameter(f"heads-pin file {heads_pin} does not exist")
+        try:
+            expected_head = load_heads_pin(heads_pin).get(epoch_heads_key(root, glob))
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"heads-pin is not a valid pin file: {exc}") from exc
+        if check and expected_head is None:
+            raise typer.BadParameter(
+                f"heads-pin {heads_pin} has no entry for {epoch_heads_key(root, glob)}"
+            )
     if check:
-        result = check_epoch_chain(root, allowed_removals=allowed, pattern=glob)
+        result = check_epoch_chain(
+            root, allowed_removals=allowed, pattern=glob, expected_head=expected_head
+        )
         typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
         for name in result["unstamped"]:
             typer.echo(f"epoch-chain info: unstamped member {name}")
@@ -1596,11 +1620,19 @@ def corpus_epoch(
             head_sha = proc.stdout.strip() or None
     except (OSError, subprocess.SubprocessError):
         head_sha = None
+    if heads_pin is not None and Path(out_dir) != root:
+        raise typer.BadParameter(
+            "--heads-pin requires --out-dir == --corpus-dir (the pinned head must "
+            "be a corpus member)"
+        )
     receipt = corpus_epoch(root, head_sha=head_sha, pattern=glob)
     try:
         path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    if heads_pin is not None:
+        update_heads_pin(heads_pin, root, glob, path)
+        typer.echo(f"heads-pin={heads_pin}")
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"epoch members={receipt['n_members']} "

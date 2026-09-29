@@ -22,6 +22,13 @@ discipline: epochs form one fork-free chain, membership is non-decreasing
 matches the live corpus — so a receipt modified or dropped after the last
 epoch stamp surfaces as ``corpus_drift_since_head_epoch``.
 
+The chain alone cannot see its *own* head being deleted: rewind to an older
+epoch still verifies internally while unstamping any members committed since.
+``quality/epoch_heads.json`` therefore pins each chain's newest receipt —
+stamping updates the pin in the same commit, and ``--check --heads-pin``
+turns head deletion into ``epoch_head_missing``/``epoch_head_rollback``
+instead of a silent rewind.
+
 Verdicts: ``genesis`` (no previous epoch), ``advancing`` (monotone growth),
 ``shrinking`` (members removed — recorded fact, honest when intentional).
 """
@@ -248,11 +255,67 @@ def epoch_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def epoch_heads_key(corpus_dir: Path | str, pattern: str) -> str:
+    """Pin-file key for one (dir, pattern) chain, e.g. ``receipts/*.json``."""
+    return f"{Path(corpus_dir).as_posix()}/{pattern}"
+
+
+def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
+    """Load ``quality/epoch_heads.json`` → ``{key: {"receipt", "sha256"}}``."""
+    path = Path(pin_path)
+    raw = json.loads(path.read_text())
+    if not isinstance(raw, dict) or not isinstance(raw.get("heads"), dict):
+        raise ValueError("heads pin must be an object with a 'heads' map")
+    heads: dict[str, dict[str, str]] = {}
+    for key, entry in raw["heads"].items():
+        if (
+            isinstance(key, str)
+            and isinstance(entry, Mapping)
+            and isinstance(entry.get("receipt"), str)
+            and isinstance(entry.get("sha256"), str)
+            and len(entry["sha256"]) == 64
+        ):
+            heads[key] = {"receipt": entry["receipt"], "sha256": entry["sha256"]}
+        else:
+            raise ValueError(f"heads pin entry {key!r} malformed")
+    return heads
+
+
+def update_heads_pin(
+    pin_path: Path | str,
+    corpus_dir: Path | str,
+    pattern: str,
+    head_receipt: Path,
+) -> Path:
+    """Record ``head_receipt`` as the pinned chain head for (dir, pattern).
+
+    Called by the stamping path so the pin and the epoch receipt land in the
+    same commit — the committed pin is then the authoritative statement of
+    which epoch is the newest, making head deletion a detectable rollback.
+    """
+    path = Path(pin_path)
+    key = epoch_heads_key(corpus_dir, pattern)
+    try:
+        heads = load_heads_pin(path) if path.is_file() else {}
+    except (OSError, ValueError):
+        heads = {}
+    heads[key] = {
+        "receipt": head_receipt.name,
+        "sha256": hash_bytes(head_receipt.read_bytes()),
+    }
+    from quant_fund.research.fleet_eval import _atomic_write_text
+
+    payload = {"schema": "epoch_heads.v1", "heads": heads}
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
 def check_epoch_chain(
     corpus_dir: Path | str,
     *,
     allowed_removals: Mapping[str, str] | None = None,
     pattern: str = "*.json",
+    expected_head: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Walk the committed epoch chain against the live corpus.
 
@@ -263,10 +326,32 @@ def check_epoch_chain(
     stamped members mutated, and dishonest delta fields. ``unstamped`` lists
     corpus members not covered by the head epoch — arrivals between stamps
     are the normal state, recorded not flagged.
+
+    ``expected_head`` (from ``load_heads_pin``) pins which epoch receipt is
+    the committed head: missing file → ``epoch_head_missing``, byte-drift →
+    ``epoch_head_mutated``, and an observed head that isn't the pin or one
+    of its descendants → ``epoch_head_rollback`` — closing the hole where
+    deleting the newest epoch receipts silently reverts the chain to an
+    older (pre-tamper) head.
     """
     root = Path(corpus_dir)
     errors: list[str] = []
     unstamped: list[str] = []
+
+    # Committed head pin (phase 1, chain-free): the pin file states which
+    # epoch receipt is the newest — a missing or byte-drifted pinned file is
+    # a violation even when no chain is left to check. The ancestry walk runs
+    # below once the chain resolves, catching rollback to an older head.
+    exp_name: str | None = None
+    if expected_head is not None:
+        exp_name = str(expected_head.get("receipt") or "") or None
+        exp_sha = str(expected_head.get("sha256") or "")
+        exp_path = root / exp_name if exp_name else root / ""
+        if exp_name is None or not exp_path.is_file():
+            errors.append(f"epoch_head_missing:{exp_name or ''}")
+        elif hash_bytes(exp_path.read_bytes()) != exp_sha:
+            errors.append(f"epoch_head_mutated:{exp_name}")
+
     # Chains are per-(dir, pattern) — epochs stamped under a different member
     # glob form their own chain and are ignored here.
     epochs = [
@@ -276,8 +361,11 @@ def check_epoch_chain(
         and (e.get("params") or {}).get("pattern", "*.json") == pattern
     ]
     if not epochs:
+        if exp_name is not None:
+            errors.append(f"epoch_head_rollback:{exp_name}")
+        errors.append("no_epoch_receipts")
         return {
-            "errors": ["no_epoch_receipts"],
+            "errors": errors,
             "unstamped": [],
             "head": None,
             "head_epoch_root": None,
@@ -365,6 +453,24 @@ def check_epoch_chain(
         unstamped = sorted(set(live) - stamped - set(by_name))
     elif len(heads) > 1:
         errors.append(f"epoch_multiple_heads:{','.join(sorted(heads))}")
+
+    # Committed head pin (phase 2): the observed head must be the pinned head
+    # or one of its descendants — a shorter or forked chain means head epochs
+    # were deleted to rewind past a committed corpus state.
+    if exp_name is not None:
+        cur = head_name
+        seen: set[str] = set()
+        ancestor = False
+        while cur is not None and cur not in seen:
+            if cur == exp_name:
+                ancestor = True
+                break
+            seen.add(cur)
+            prev_ref = by_name.get(cur)
+            prev = prev_ref.get("prev_epoch_receipt") if isinstance(prev_ref, Mapping) else None
+            cur = prev if isinstance(prev, str) else None
+        if not ancestor:
+            errors.append(f"epoch_head_rollback:{exp_name}")
     return {
         "errors": errors,
         "unstamped": unstamped,
