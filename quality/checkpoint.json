@@ -2,7 +2,7 @@
   "algorithm": "ed25519",
   "key_id": "bc3bcff676056adf",
   "payload": {
-    "at": "2026-09-29T22:27:48+00:00",
+    "at": "2026-09-29T22:31:37+00:00",
     "heads": {
       ".github/workflows/*.yml": {
         "receipt": "corpus_epoch_db9f2a0717a5b548.json",
@@ -13,8 +13,8 @@
         "sha256": "08fbe933abe93516eea0acd20e4b49483646934af2648f8a2c9382240d33aee9"
       },
       "quality/*.json": {
-        "receipt": "corpus_epoch_cb4deea438ceaeff.json",
-        "sha256": "d7b53a46e4af4c61d5663275d4d2bd73ff818e753caa5b1dbb3cd8dc95fc6549"
+        "receipt": "corpus_epoch_63ede25ab03e0694.json",
+        "sha256": "ee2e81bfdc1d3dba5bed7a154007aea0da6ea6eb103514dd2234df63d343c18e"
       },
       "receipts/*.json": {
         "receipt": "corpus_epoch_96ba030697ddf0ff.json",
@@ -27,12 +27,12 @@
     },
     "missing_pins": [],
     "pins": {
-      "gate_pins.sig": "1ab246431a9aabae353e863de822ad58fa345a5d6e1dd550c91e1f7ef8a7f537",
-      "quality/crown_jewels.json": "54292b5676b1b6cf938824a671bdcff7f810be6328a42d220244034720b39fc8",
-      "quality/epoch_heads.json": "cdd8c2cf79454b6c8783f423d316518ff3460ea565b56b66963744b2552686a0"
+      "gate_pins.sig": "537193c7f2028bf2042a441d8ede16f925363714f3fe8c36b2ca6eaffb0b37b3",
+      "quality/crown_jewels.json": "c364c55055ee993f8cec44768dc90ffdcddcd9aab12da472825e5f32f0db95ff",
+      "quality/epoch_heads.json": "a4649636d985358e6502cbec4171ad3b3deff633300ed2d50c76d25df6c12b37"
     },
     "schema": "integrity_checkpoint.v1"
   },
   "schema": "integrity_checkpoint_sig.v1",
-  "signature": "6bfa534288ba2d3c4b0de890ad1501b8209ee1ab43dbcb33a1fef048d6788baebebefae063e94a5e14df6c82fe61537686a9d4b571c712a1962d131b2baca702"
+  "signature": "e991e30012e9c15b1d097758bf91776004e12151c14aa2f9003addbfc811989077393ccf964ab60dd854e580de2bc5d86f41e99a8b5eab42efd12da11452540c"
 }
