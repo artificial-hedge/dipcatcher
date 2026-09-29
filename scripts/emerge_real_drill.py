@@ -37,11 +37,7 @@ from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.research.tail_watch import audit_tail_depth
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-BARS = (
-    Path(sys.argv[1])
-    if len(sys.argv) > 1
-    else Path("data/file_us_wide/bronze/bars.parquet")
-)
+BARS = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/file_us_wide/bronze/bars.parquet")
 SYMBOL = "NVDA"
 N_TRAIN = 1000
 N_EVAL = 300

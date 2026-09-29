@@ -24,8 +24,15 @@ lines = [
 ]
 for r in load_catalog():
     module, symbol = r["entrypoint"].split(":")
-    path = "https://github.com/artificial-hedge/dipcatcher/blob/main/src/" + module.replace(".", "/") + ".py"
-    tests = ", ".join(f"[{Path(t).name}](https://github.com/artificial-hedge/dipcatcher/blob/main/{t})" for t in r["test_paths"])
+    path = (
+        "https://github.com/artificial-hedge/dipcatcher/blob/main/src/"
+        + module.replace(".", "/")
+        + ".py"
+    )
+    tests = ", ".join(
+        f"[{Path(t).name}](https://github.com/artificial-hedge/dipcatcher/blob/main/{t})"
+        for t in r["test_paths"]
+    )
     title = r["title"].replace("|", "/")
     lines.append(
         f"| {r['id']} | [{title}]({r['source_url']}) — {r['authors']} | [{symbol}]({path}) | {r['implementation_status']} | {tests} |"

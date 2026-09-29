@@ -22,9 +22,9 @@ from typing import Any
 
 import numpy as np
 import polars as pl
-from quant_fund.research.monitor_run import monitor_fleet
 
 from quant_fund.research.fleet_eval import FLEET_HEAD_REGISTRY, SyntheticShard
+from quant_fund.research.monitor_run import monitor_fleet
 from quant_fund.research.receipt_v2 import seal_receipt
 
 _DRILL_HEADS = (
