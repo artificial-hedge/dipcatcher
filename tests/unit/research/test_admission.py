@@ -168,7 +168,9 @@ def test_empty_corpus_admits_first_clean_receipt(tmp_path: Path) -> None:
 
 def test_epoch_chain_check_present_or_skipped(corpus: Path, tmp_path: Path) -> None:
     """The epoch-chain check always runs — skipped only if corpus_epoch is absent."""
-    candidate = _write(tmp_path, "c.json", _claim_body(2.0))
+    # Distinct inputs/dataset fingerprints so the lattice check does not flag a
+    # claim contradiction — this test exercises the epoch check, not lattice.
+    candidate = _write(tmp_path, "c.json", _claim_body(2.0, dataset="ee" * 32, inputs="ff" * 32))
     result = admission_check(candidate, corpus)
     epoch_check = next(c for c in result["checks"] if c["name"] == "epoch_chain")
     assert epoch_check["ok"] is True
