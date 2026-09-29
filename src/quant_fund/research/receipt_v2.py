@@ -346,37 +346,27 @@ def _result(
     }
 
 
-def _digest_or_none(
-    body: Mapping[str, Any], digest: Callable[[Mapping[str, Any]], str]
-) -> str | None:
-    """Hash a body that may be unhashable (NaN, unserializable, deep nest).
-
-    ``json.loads`` accepts literals canonical digests reject — NaN floats,
-    >4300-digit ints already fail at load, but a NaN *inside* a parsed body
-    reaches the digester, where ``allow_nan=False`` raises. The verifier must
-    degrade to a verdict, never crash on hostile input.
-    """
-    try:
-        return digest(body)
-    except (ValueError, RecursionError, TypeError):
-        return None
-
-
 def _seal_errors(payload: Mapping[str, Any]) -> tuple[str | None, list[str]]:
-    """Check ``receipt_sha256``; report which digest convention matched."""
+    """Check ``receipt_sha256``; report which digest convention matched.
+
+    A convention that cannot digest the body at all (e.g. ``json.dumps``
+    refusing a non-finite float that survived into a programmatic payload)
+    simply does not match — uncomputable digests are an error, not a crash.
+    """
     seal = payload.get("receipt_sha256")
     if not _is_sha256(seal):
         return None, ["receipt_sha256_missing_or_invalid"]
     body = {key: value for key, value in payload.items() if key != "receipt_sha256"}
-    canonical = _digest_or_none(body, _canonical_digest)
-    strict = _digest_or_none(body, _strict_digest)
-    if canonical is None and strict is None:
-        return None, ["receipt_body_unhashable"]
-    if canonical == seal:
-        return "canonical_json", []
-    if strict == seal:
-        return "strict_json", []
-    return None, ["receipt_sha256_mismatch"]
+    computable = False
+    for name, digest in (("canonical_json", _canonical_digest), ("strict_json", _strict_digest)):
+        try:
+            actual = digest(body)
+        except (TypeError, ValueError):
+            continue
+        computable = True
+        if actual == seal:
+            return name, []
+    return None, ["receipt_sha256_mismatch" if computable else "receipt_sha256_uncomputable"]
 
 
 def _env_fingerprint_errors(environment: object) -> list[str]:
@@ -386,8 +376,11 @@ def _env_fingerprint_errors(environment: object) -> list[str]:
     if not _is_sha256(stamp):
         return ["environment_fingerprint_missing"]
     body = {key: value for key, value in environment.items() if key != "fingerprint_sha256"}
-    body_digest = _digest_or_none(body, _canonical_digest)
-    if body_digest is None or body_digest != stamp:
+    try:
+        actual = _canonical_digest(body)
+    except (TypeError, ValueError):
+        return ["environment_fingerprint_uncomputable"]
+    if actual != stamp:
         return ["environment_fingerprint_mismatch"]
     return []
 
@@ -396,8 +389,11 @@ def _code_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     files = payload.get("code_files")
     if not isinstance(files, dict) or not files:
         return ["code_files_invalid"]
-    files_digest = _digest_or_none(files, _canonical_digest)
-    if files_digest is None or files_digest != payload.get("code_sha256"):
+    try:
+        actual = _canonical_digest(files)
+    except (TypeError, ValueError):
+        return ["code_sha256_uncomputable"]
+    if actual != payload.get("code_sha256"):
         return ["code_sha256_mismatch"]
     return []
 
@@ -429,10 +425,23 @@ def _forbidden_scan_clean(blob: Mapping[str, Any]) -> bool:
 
 def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     """Lane-specific re-derivation of the bound digests, where defined."""
-    if payload.get("kind") == "distribution_fleet_eval":
+    kind = payload.get("kind")
+    if kind == "distribution_fleet_eval":
         from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
         return _guarded(fleet_v2_consistency_errors, "fleet_v2_consistency")(payload)
+    if kind == "capacity_overlay_eval":
+        from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
+
+        return capacity_v2_consistency_errors(payload)
+    if kind == "cross_sectional_rankic_eval":
+        from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
+
+        return rankic_v2_consistency_errors(payload)
+    if kind == "vol_bench":
+        from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
+
+        return vol_bench_v2_consistency_errors(payload)
     return []
 
 
@@ -471,11 +480,30 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     return _result(path, payload, convention, errors)
 
 
+def _carries_v2_evidence(payload: Mapping[str, Any]) -> bool:
+    """Whether a v1-dispatched blob still carries the v2 envelope's bound fields.
+
+    A ``receipt.v2`` envelope with ``schema``/``schema_version`` stripped and
+    re-sealed digests fine under the weaker v1 contract while silently losing
+    its environment/code/dataset verification. Legit v1 receipts never carry
+    this joint signature (checked against every committed receipt).
+    """
+    return (
+        isinstance(payload.get("payload"), Mapping)
+        and isinstance(payload.get("code_files"), Mapping)
+        and _is_sha256(payload.get("dataset_hash"))
+        and _is_sha256(payload.get("params_hash"))
+    )
+
+
 def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     errors: list[str] = []
     convention, seal_errors = _seal_errors(payload)
     errors.extend(seal_errors)
-    if payload.get("live_pnl_claim") is not None and payload.get("live_pnl_claim") is not False:
+    if _carries_v2_evidence(payload):
+        errors.append("possible_v2_downgrade")
+    claim = payload.get("live_pnl_claim")
+    if claim is not None and claim is not False:
         errors.append("live_pnl_claim_not_false")
     # The honesty scan applies to every sealed receipt, not just receipt.v2 —
     # a v1 payload naming a forbidden headline metric must not verify clean.
@@ -520,16 +548,17 @@ def verify_receipt_payload(
     return _verify_v1(path, payload)
 
 
+def _reject_json_constant(value: str) -> Any:
+    """``NaN``/``Infinity`` are not JSON literals; a receipt containing one is malformed."""
+    raise ValueError(f"nonstandard JSON constant in receipt: {value}")
+
+
 def verify_receipt_file(path: Path | str) -> ReceiptVerification:
     """Read a receipt JSON file and verify it. Fails closed on unreadable input."""
     file_path = Path(path)
     try:
-        payload: object = json.loads(file_path.read_text())
+        payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
     except (OSError, UnicodeError, ValueError, RecursionError) as exc:
-        # ValueError covers JSONDecodeError plus load-time failures it does not
-        # subclass (e.g. ints exceeding the 4300-digit limit); RecursionError
-        # covers pathological nesting depth. Corrupt input must degrade to a
-        # verdict, never crash the gate.
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     return verify_receipt_payload(payload, file_path)
 
