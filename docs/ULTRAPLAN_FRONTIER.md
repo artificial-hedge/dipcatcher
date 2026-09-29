@@ -283,6 +283,13 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       HAR-RV, realized-GARCH, dip_garch_t and RV baselines with QLIKE/MSE on
       cumulative h-step realized variance, NW loss diffs vs `har`, sealed
       receipts). Real-data vol cells still open.
+- [x] P3.9 Selection-concordance lane: does "head X wins" survive the choice
+      of multiple-comparison correction? `research/concordance.py` +
+      `dipcatcher concordance` runs MCS / Romano–Wolf StepM / pairwise DM on
+      the same pinball loss tensor per shard — eliminated-set Jaccard,
+      Kendall-τ on elimination confidence, SPA/Reality-Check decisiveness on
+      differentials-vs-best. A head MCS keeps but StepM rejects is flagged:
+      dependence-fragile selection, not evidence.
 - [x] P3.7 Distributional coherence bench: `dipcatcher coherence-bench` —
       `research/coherence.py` reconciles per-name marginal quantile grids
       to the aggregate distribution on SYNTHETIC correlated panels
