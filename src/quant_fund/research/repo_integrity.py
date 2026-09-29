@@ -43,6 +43,9 @@ CORPORA: tuple[tuple[str, str, bool, bool], ...] = (
     ("verifier", "*.md", False, False),
     ("quality", "*.json", False, True),
     (".github/workflows", "*.yml", True, True),
+    # Declared experiment inputs — a post-hoc config edit silently rewrites
+    # what a sealed bench measured; mutable corpus, arrivals are normal.
+    ("configs", "*", False, True),
 )
 
 

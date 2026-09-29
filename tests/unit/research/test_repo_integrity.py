@@ -41,10 +41,12 @@ def _git_repo(tmp_path: Path) -> Path:
         ("verifier", "*.md"),
         ("quality", "*.json"),
         (".github/workflows", "*.yml"),
+        ("configs", "*"),
     ):
         d = root / corpus_dir
         d.mkdir(parents=True, exist_ok=True)
-        (d / f"seed.{pattern[2:]}").write_text("seed")
+        seed = f"seed.{pattern[2:]}" if len(pattern) > 1 else "seed"
+        (d / seed).write_text("seed")
         ep = write_epoch_receipt(corpus_epoch(d, pattern=pattern), d)
         update_heads_pin(pin, corpus_dir, pattern, ep)
     write_crown_jewels_pin(root)
@@ -64,6 +66,7 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
         "epoch:verifier",
         "epoch:quality",
         "epoch:.github/workflows",
+        "epoch:configs",
     }
 
 

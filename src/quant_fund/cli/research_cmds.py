@@ -1726,10 +1726,12 @@ def verify_repo_cmd(
     """
     from quant_fund.research.repo_integrity import verify_repo, write_repo_integrity_receipt
 
+    # Verify first: --out writes into a chain-covered corpus dir, so a
+    # post-write verify would flag the attestation itself as drift.
+    result = verify_repo(root, heads_pin=heads_pin)
     if out is not None:
         path = write_repo_integrity_receipt(out, root, heads_pin=heads_pin)
         typer.echo(f"receipt={path}")
-    result = verify_repo(root, heads_pin=heads_pin)
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for name, gate in result["gates"].items():
         typer.echo(

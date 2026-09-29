@@ -205,13 +205,15 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir quality --check --heads-pin quality/epoch_heads.json --allow-member-updates
 	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
+	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --allow-member-updates
 	uv run dipcatcher crown-jewels --check
 
-stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching receipts/, verifier/*.md, quality/*.json, or .github/workflows/*.yml
+stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching receipts/, verifier/*.md, quality/*.json, .github/workflows/*.yml, or configs/
 	uv run dipcatcher corpus-epoch --corpus-dir receipts --out-dir receipts --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --out-dir verifier --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir quality --out-dir quality --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --out-dir .github/workflows --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --out-dir configs --heads-pin quality/epoch_heads.json
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

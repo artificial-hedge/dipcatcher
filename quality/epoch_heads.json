@@ -4,9 +4,13 @@
       "receipt": "corpus_epoch_419fbe12ca9dfd1f.json",
       "sha256": "3b001684cd2be2c1921c7846523d0dc5a047e619b656a4c545984a2605f8a1ce"
     },
+    "configs/*": {
+      "receipt": "corpus_epoch_dcf0d8e9d5337c24.json",
+      "sha256": "b947be50a8b9288521a245481f4e6a93d8e40c49433d28347ab039c252483d05"
+    },
     "quality/*.json": {
-      "receipt": "corpus_epoch_6d264d37f201b084.json",
-      "sha256": "ad4c5b0c5a349858754aefb179d860179cfb1526d8fa529ea8386575f2c8e37b"
+      "receipt": "corpus_epoch_04a4a3584e800319.json",
+      "sha256": "6bf1a9d0c1382c69f5313876416983d06e0362c17e72c3792d1d6a8e6493393b"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_d479e96760271bba.json",

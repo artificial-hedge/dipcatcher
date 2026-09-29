@@ -31,6 +31,8 @@ Five corpora are epoch-chained under `quality/epoch_heads.json`:
 - `.github/workflows/*.yml` — mutable *and* security-critical:
   `--require-stamped` makes every unstamped `.yml` arrival a CI error plus
   `--allow-member-updates` for edits.
+- `configs/*` — mutable: post-hoc config edits would silently rewrite what a
+  sealed bench measured, so each change needs a stamp like the quality corpus.
 
 After touching a covered file: `make stamp-epochs` (advances all chains +
 pin) and `dipcatcher crown-jewels --write` if a jewel changed. Both must land

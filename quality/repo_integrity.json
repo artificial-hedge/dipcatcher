@@ -9,6 +9,10 @@
       "errors": [],
       "ok": true
     },
+    "epoch:configs": {
+      "errors": [],
+      "ok": true
+    },
     "epoch:quality": {
       "errors": [],
       "ok": true
@@ -29,13 +33,14 @@
       "receipts",
       "verifier",
       "quality",
-      ".github/workflows"
+      ".github/workflows",
+      "configs"
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "dafe60c62d23762e400a2595a3b9a66e86a3f6f9330dad6ac562ece2f40b15ae",
-    "epoch_heads_sha256": "68795389884842c60bca73534ee4cd1448f45fa4ce37f4800e2fa850e2e63501"
+    "crown_jewels_sha256": "42eab6d28f025909e6fc141a128f1733b9cf4e13350a92f07a6650a7b7100a86",
+    "epoch_heads_sha256": "d31753b79217515933c7e0e805bb2b7e3a5fe8e539dc1916ebb2c849de61f04f"
   },
-  "receipt_sha256": "0b5c74c19e61014da53d3ee3c06e03328a78d60f20a66ac3ddee710b8a3aff5c",
+  "receipt_sha256": "e1c66a9bac83b92a3f20b96c5962bc36ac2ec03c77705e4eafabb17655f57ff0",
   "schema": "repo_integrity.v1"
 }
