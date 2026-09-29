@@ -84,31 +84,27 @@ def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
                 "digest_convention": result["digest_convention"],
                 "filename_digest_ok": _filename_digest_status(path, seal),
                 "errors": list(result["errors"]),
+                # byte-pinned legacy contracts predating their lane's schema —
+                # exempt from sealed_receipt_invalid (KNOWN_CONTRACT_LEGACY
+                # sha256-pins both file and error set; any other failure or a
+                # tampered byte still surfaces).
+                "contract_legacy": is_known_contract_legacy(path, result["errors"]),
             }
         )
     return rows
 
 
 def evidence_audit_findings(
-    rows: list[dict[str, Any]],
-    *,
-    receipts_dir: Path | None = None,
-    index_fresh: bool | None = None,
+    rows: list[dict[str, Any]], *, index_fresh: bool | None = None
 ) -> list[str]:
     """Set-level findings: hard violations only (unsealed files are reported
-    in the payload, not failed). Byte-pinned ``KNOWN_CONTRACT_LEGACY``
-    receipts are exempt — the same ratchet the committed-receipts test and
-    ``suite-health --strict`` apply."""
+    in the payload, not failed)."""
     findings: list[str] = []
     if not rows:
         findings.append("no_receipts_found")
     for row in rows:
-        if row["sealed"] and not row["valid"]:
-            exempt = receipts_dir is not None and is_known_contract_legacy(
-                receipts_dir / row["file"], row["errors"]
-            )
-            if not exempt:
-                findings.append(f"{row['file']}:sealed_receipt_invalid")
+        if row["sealed"] and not row["valid"] and not row.get("contract_legacy"):
+            findings.append(f"{row['file']}:sealed_receipt_invalid")
         if any(e.startswith("receipt_unreadable") for e in row["errors"]):
             findings.append(f"{row['file']}:unparseable")
         if row["filename_digest_ok"] is False:
@@ -173,7 +169,7 @@ def run_evidence_audit(
         check_evidence_index_fresh(Path(root)) if check_index and root is not None else None
     )
 
-    findings = evidence_audit_findings(rows, receipts_dir=directory, index_fresh=index_fresh)
+    findings = evidence_audit_findings(rows, index_fresh=index_fresh)
     findings.extend(
         f"duplicate_seal:{seal[:16]}:{','.join(names)}"
         for seal, names in sorted(duplicate_seals.items())
@@ -269,7 +265,10 @@ def evidence_audit_consistency_errors(body: object) -> list[str]:
         expected = [
             f"{r['file']}:sealed_receipt_invalid"
             for r in files
-            if isinstance(r, dict) and r.get("sealed") and not r.get("valid")
+            if isinstance(r, dict)
+            and r.get("sealed")
+            and not r.get("valid")
+            and not r.get("contract_legacy")
         ]
         embedded = {str(f) for f in findings}
         for want_finding in expected:
