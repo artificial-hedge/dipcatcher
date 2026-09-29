@@ -1,112 +1,99 @@
-from pathlib import Path
+"""evalues: anytime-valid head promotion — martingale, causality, validity."""
+
+from __future__ import annotations
 
 import numpy as np
+import pytest
 
-from quant_fund.metrics import evalues
-from quant_fund.metrics.evalues import (
-    bench_e_coverage,
-    e_process,
-    e_process_threshold,
-    e_value_bernoulli,
-)
+from quant_fund.research.evalues import LossEProcess, promotion_report
 
 
-def test_e_process_nonnegative_unit_start() -> None:
-    unit = e_process(np.asarray([], dtype=float), 0.10)
-    assert unit.shape == (1,)
-    assert unit[0] == 1.0
-    path = e_process(np.array([0.0, 1.0, 0.0, 0.0]), 0.10)
-    assert np.all(path >= 0.0)
-    assert np.all(np.isfinite(path))
-    assert np.isclose(path[0], e_value_bernoulli(0.0, 0.10))
+def test_identical_streams_never_promote() -> None:
+    proc = LossEProcess(alpha=0.05)
+    for _ in range(200):
+        st = proc.update(0.5, 0.5)
+    assert st.evalue == pytest.approx(1.0)
+    assert st.anytime_p == pytest.approx(1.0)
+    assert proc.promotion_origin is None
 
 
-def test_one_step_is_unit_mean_under_null() -> None:
-    e_miss = e_value_bernoulli(1.0, 0.10)
-    e_hit = e_value_bernoulli(0.0, 0.10)
-    assert e_miss > 1.0
-    assert 0.0 < e_hit < 1.0
-    assert np.isclose(0.10 * e_miss + 0.90 * e_hit, 1.0)
+def test_better_challenger_promotes() -> None:
+    rng = np.random.default_rng(0)
+    chall = 0.5 + rng.normal(0, 0.01, size=400)
+    inc = 0.5 + rng.normal(0, 0.01, size=400) + 0.005
+    rep = promotion_report(chall, inc, challenger="new", incumbent="old")
+    assert rep["promoted"] is True
+    assert rep["anytime_p"] < 0.05
+    assert rep["promotion_origin"] is not None and rep["promotion_origin"] < 400
+    assert rep["mean_loss_diff"] < 0
 
 
-def test_null_bernoulli_rarely_crosses_twenty() -> None:
-    rng = np.random.default_rng(42)
-    misses = (rng.random(80) < 0.10).astype(float)
-    path = e_process(misses, 0.10)
-    out = e_process_threshold(path, level=0.05)
-    assert out["threshold"] == 20.0
-    assert out["reject"] is False
-    assert out["first_cross"] is None
-    assert float(np.max(path)) < 20.0
+def test_worse_challenger_shrinks() -> None:
+    proc = LossEProcess()
+    for _ in range(50):
+        st = proc.update(1.0, 0.5)
+    assert st.evalue < 0.5
+    assert st.anytime_p == pytest.approx(1.0)
+    assert proc.promotion_origin is None
 
 
-def test_miss_streak_raises_e() -> None:
-    path = e_process(np.ones(12), 0.10)
-    assert path[-1] > path[0]
-    assert path[-1] > 1.0
-    assert np.all(np.diff(path) > 0.0)
-
-
-def test_threshold_rejects_after_cross() -> None:
-    path = e_process(np.ones(16), 0.10)
-    out = e_process_threshold(path, level=0.05)
-    assert out["reject"] is True
-    assert out["first_cross"] is not None
-    assert int(out["first_cross"]) < path.size
-    assert float(path[int(out["first_cross"])]) >= 20.0
-
-
-def test_bench_e_coverage_keys_and_seeded_final() -> None:
+def test_causality_prefix_invariant() -> None:
     rng = np.random.default_rng(7)
-    covered = (rng.random(32) >= 0.10).astype(float)
-    bench = bench_e_coverage(covered, alpha=0.10)
-    assert set(bench) == {"coverage", "e_final", "ever_cross", "n"}
-    assert bench["n"] == 32
-    assert bench["ever_cross"] is False
-    assert np.isclose(float(bench["coverage"]), float(np.mean(covered)))
-    assert np.isclose(float(bench["e_final"]), 0.26282509860274916)
+    c = rng.normal(0.5, 0.02, size=80)
+    b = rng.normal(0.5, 0.02, size=80)
+    proc_a = LossEProcess()
+    states_full = [proc_a.update(ci, bi) for ci, bi in zip(c, b, strict=True)]
+    proc_b = LossEProcess()
+    states_prefix = [proc_b.update(ci, bi) for ci, bi in zip(c[:40], b[:40], strict=True)]
+    # Editing the suffix cannot change any prefix state.
+    for sf, sp in zip(states_full[:40], states_prefix, strict=True):
+        assert sf.evalue == pytest.approx(sp.evalue)
+        assert sf.anytime_p == pytest.approx(sp.anytime_p)
 
 
-def test_module_has_no_sharpe() -> None:
-    text = Path(evalues.__file__).read_text(encoding="utf-8").lower()
-    assert "sharpe" not in text
-    assert not any("sharpe" in name.lower() for name in dir(evalues))
+def test_determinism() -> None:
+    rng = np.random.default_rng(3)
+    c = rng.normal(0.5, 0.05, size=60).tolist()
+    b = rng.normal(0.5, 0.05, size=60).tolist()
+    r1 = promotion_report(c, b)
+    r2 = promotion_report(c, b)
+    assert r1 == r2
 
 
-def test_bad_alpha_fail_closed() -> None:
-    import pytest
-
-    for alpha in (0.0, 1.0, -0.1, 1.5):
-        with pytest.raises(ValueError, match="alpha"):
-            e_value_bernoulli(0.0, alpha)
-        with pytest.raises(ValueError, match="alpha"):
-            e_process(np.array([0.0, 1.0]), alpha)
-        with pytest.raises(ValueError, match="alpha"):
-            bench_e_coverage(np.array([1.0, 0.0]), alpha=alpha)
-
-
-def test_bad_level_fail_closed() -> None:
-    import pytest
-
-    path = e_process(np.array([0.0, 1.0]), 0.10)
-    for level in (0.0, 1.0, -0.05, 2.0):
-        with pytest.raises(ValueError, match="level"):
-            e_process_threshold(path, level=level)
+def test_martingale_validity_under_symmetric_null() -> None:
+    """Under a symmetric zero-mean differential the promotion rate is <= alpha + slack."""
+    promoted = 0
+    trials = 200
+    for seed in range(trials):
+        rng = np.random.default_rng(1000 + seed)
+        d = rng.normal(0.0, 0.02, size=120)
+        proc = LossEProcess(alpha=0.05)
+        for di in d:
+            proc.update(float(di), 0.0)
+        if proc.promotion_origin is not None:
+            promoted += 1
+    # Ville bound guarantees <=5%; e-processes are conservative in practice.
+    assert promoted / trials <= 0.10
 
 
-def test_bench_empty_coverage_honest() -> None:
-    bench = bench_e_coverage(np.asarray([], dtype=float), alpha=0.10)
-    assert bench["n"] == 0
-    assert bench["e_final"] == 1.0
-    assert bench["ever_cross"] is False
-    assert bench["coverage"] != bench["coverage"]  # NaN
+def test_fails_closed_on_bad_input() -> None:
+    with pytest.raises(ValueError, match="equal length"):
+        promotion_report([1.0], [1.0, 2.0])
+    with pytest.raises(ValueError, match="nonempty"):
+        promotion_report([], [])
+    with pytest.raises(ValueError, match="finite"):
+        promotion_report([np.nan, 1.0], [1.0, 1.0])
+    with pytest.raises(ValueError, match="lam"):
+        LossEProcess(lam=1.5)
+    with pytest.raises(ValueError, match="alpha"):
+        LossEProcess(alpha=0.0)
 
 
-def test_miss_out_of_range_clips_like_soft_coverage() -> None:
-    """Out-of-range miss matches clipped [0,1] — documented soft clip, no API change."""
-    alpha = 0.10
-    assert e_value_bernoulli(-0.5, alpha) == e_value_bernoulli(0.0, alpha)
-    assert e_value_bernoulli(1.5, alpha) == e_value_bernoulli(1.0, alpha)
-    # Fractional miss (soft coverage) stays interior — intentional, not fail-closed.
-    mid = e_value_bernoulli(0.25, alpha)
-    assert e_value_bernoulli(0.0, alpha) < mid < e_value_bernoulli(1.0, alpha)
+def test_report_schema() -> None:
+    rng = np.random.default_rng(11)
+    rep = promotion_report(rng.normal(0.4, 0.02, 50), rng.normal(0.5, 0.02, 50), alpha=0.01)
+    assert rep["kind"] == "evalue_promotion.v1"
+    assert rep["alpha"] == 0.01
+    assert rep["n_origins"] == 50
+    assert "ville_inequality" in rep["evidence"]
+    assert rep["final_evalue"] > 0
