@@ -1579,7 +1579,22 @@ def corpus_epoch(
             raise typer.Exit(code=1)
         typer.echo("epoch-chain intact")
         return
-    receipt = corpus_epoch(root, head_sha=None, pattern=glob)
+    head_sha: str | None = None
+    try:
+        import subprocess
+
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if proc.returncode == 0:
+            head_sha = proc.stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        head_sha = None
+    receipt = corpus_epoch(root, head_sha=head_sha, pattern=glob)
     try:
         path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
     except ValueError as exc:

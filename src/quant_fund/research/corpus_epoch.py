@@ -233,6 +233,15 @@ def epoch_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         pat = params.get("pattern")
         if pat is not None and not isinstance(pat, str):
             errors.append("params_pattern_not_str")
+        head_sha = params.get("head_sha")
+        if head_sha is not None:
+            hex40 = (
+                isinstance(head_sha, str)
+                and len(head_sha) == 40
+                and all(c in "0123456789abcdef" for c in head_sha)
+            )
+            if not hex40:
+                errors.append("params_head_sha_not_sha1")
     inputs = payload.get("inputs_sha256")
     if not (isinstance(inputs, str) and len(inputs) == 64):
         errors.append("inputs_sha256")
