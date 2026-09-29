@@ -5,6 +5,7 @@ from __future__ import annotations
 import calendar
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -633,6 +634,253 @@ class BinanceDeliveryUniverseSource(SourceAdapter):
         rows.sort(key=lambda r: (r["delivery_ms"], r["security_id"]))
         if not rows:
             raise SourceError("Binance delivery universe resolved to zero contracts")
+        return pit_frame(rows, source=self.name, revision_id="v1")
+
+
+# Kraken futures contracts look like ``FI_XBTUSD_261225`` / ``PF_XBTUSD``:
+# 2-letter family code (FI inverse dated, FF flexible dated, PI/PF perpetuals),
+# an uppercase pair, and an optional dated tail.
+_KRAKEN_CONTRACT_RE = re.compile(r"^[A-Z]{2}_[A-Z0-9]+(_[A-Z0-9]+)?$")
+
+# Kraken public OHLC accepts these ``interval`` values (minutes).
+_KRAKEN_SPOT_INTERVALS_MIN = frozenset({1, 5, 15, 30, 60, 240, 1440, 10080, 21600})
+
+# Kraken charts resolutions -> candle span in ms, for in-progress filtering.
+_KRAKEN_CHART_RESOLUTION_MS = {
+    "1m": 60_000,
+    "5m": 300_000,
+    "15m": 900_000,
+    "30m": 1_800_000,
+    "1h": 3_600_000,
+    "4h": 14_400_000,
+    "1d": 86_400_000,
+    "1w": 604_800_000,
+}
+
+
+def _require_kraken_contract(symbol: str) -> str:
+    """Kraken contract symbols look like ``FI_XBTUSD_261225`` / ``PF_XBTUSD``."""
+    token = symbol.upper()
+    if not _KRAKEN_CONTRACT_RE.match(token):
+        raise ValueError(f"Kraken contract symbols look like 'FI_XBTUSD_261225', got {symbol!r}")
+    return token
+
+
+class KrakenSpotOhlcSource(SourceAdapter):
+    """Kraken spot OHLC candles for one public pair (no API key needed).
+
+    ``pair`` is the public pair code (``XBTUSD``, ``ETHUSD``); the response
+    keys rows under an internal pair name (``XXBTZUSD``) we never assume —
+    exactly one series per request is required or the fetch fails closed.
+    Kraken appends the still-forming candle as the last row — its close
+    (``time + interval``) lies in the future, so it is dropped the same way
+    Binance's in-progress kline is.
+    """
+
+    name = "kraken_spot"
+    endpoint = "https://api.kraken.com/0/public/OHLC"
+
+    def fetch(
+        self,
+        *,
+        pair: str = "XBTUSD",
+        interval: int = 1440,
+        since: int | None = None,
+    ) -> pl.DataFrame:
+        if not pair or not pair.upper().isalnum():
+            raise ValueError(f"malformed Kraken pair {pair!r}")
+        if interval not in _KRAKEN_SPOT_INTERVALS_MIN:
+            raise ValueError(f"interval must be one of {sorted(_KRAKEN_SPOT_INTERVALS_MIN)}")
+        pair = pair.upper()
+        payload = self.client.get_json(
+            query_url(self.endpoint, {"pair": pair, "interval": interval, "since": since})
+        )
+        if not isinstance(payload, dict):
+            raise SourceError("Kraken OHLC response is not an object")
+        errors = payload.get("error")
+        if not isinstance(errors, list) or errors:
+            raise SourceError(f"Kraken OHLC API error: {errors!r}")
+        result = payload.get("result")
+        if not isinstance(result, dict):
+            raise SourceError("Kraken OHLC response has no result object")
+        data_keys = [key for key in result if key != "last"]
+        if len(data_keys) != 1:
+            raise SourceError(f"Kraken OHLC returned {len(data_keys)} pair series, expected 1")
+        candles = result[data_keys[0]]
+        if not isinstance(candles, list) or not candles:
+            raise SourceError(f"Kraken OHLC returned no candles for {pair}")
+        now_s = int(utc_now().timestamp())
+        span_s = interval * 60
+        rows: list[dict[str, Any]] = []
+        for item in candles:
+            if not (isinstance(item, list) and len(item) >= 8):
+                raise SourceError("malformed Kraken OHLC row")
+            try:
+                open_s = int(item[0])
+            except (TypeError, ValueError) as exc:
+                raise SourceError("malformed Kraken OHLC row") from exc
+            if open_s + span_s > now_s:
+                continue  # still-forming candle — its close time is in the future
+            rows.append(
+                {
+                    "security_id": pair,
+                    "event_time": open_s,
+                    "open": item[1],
+                    "high": item[2],
+                    "low": item[3],
+                    "close": item[4],
+                    "volume": item[6],
+                    "available_time": open_s + span_s,
+                }
+            )
+        if not rows:
+            raise SourceError(f"Kraken OHLC returned only an in-progress candle for {pair}")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{interval}m")
+
+
+class KrakenFuturesMarkSource(SourceAdapter):
+    """Kraken futures mark-price candles for one contract.
+
+    The ``charts/v1`` ``mark`` series is a mark (index-derived fair price),
+    not the last trade: for illiquid dated contracts the ``trade`` series is
+    empty while mark always serves history, but mark != executed tape — the
+    series is a settlement proxy, never fills. Kraken marks carry ``volume``
+    ``'0'`` by construction.
+
+    The still-forming candle (close time in the future) is dropped; an empty
+    candle list fails closed — callers pick symbols from the
+    ``kraken_futures_universe`` snapshot by ``lastTradingTime`` so expired or
+    unlisted contracts never reach this fetch.
+    """
+
+    name = "kraken_futures_mark"
+    endpoint = "https://futures.kraken.com/api/charts/v1/{tick_type}/{symbol}/{resolution}"
+
+    def fetch(
+        self,
+        *,
+        symbol: str,
+        tick_type: str = "mark",
+        resolution: str = "1d",
+    ) -> pl.DataFrame:
+        contract = _require_kraken_contract(symbol)
+        if tick_type not in {"mark", "trade", "spot"}:
+            raise ValueError("tick_type must be mark, trade, or spot")
+        if resolution not in _KRAKEN_CHART_RESOLUTION_MS:
+            raise ValueError(f"resolution must be one of {sorted(_KRAKEN_CHART_RESOLUTION_MS)}")
+        url = self.endpoint.format(tick_type=tick_type, symbol=contract, resolution=resolution)
+        payload = self.client.get_json(url)
+        candles = payload.get("candles") if isinstance(payload, dict) else None
+        if not isinstance(candles, list) or not candles:
+            raise SourceError(f"Kraken charts returned no candles for {contract}")
+        span_ms = _KRAKEN_CHART_RESOLUTION_MS[resolution]
+        now_ms = int(utc_now().timestamp() * 1000)
+        rows: list[dict[str, Any]] = []
+        for item in candles:
+            if not isinstance(item, dict):
+                raise SourceError("malformed Kraken chart candle")
+            try:
+                open_ms = int(item["time"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise SourceError("malformed Kraken chart candle") from exc
+            if open_ms + span_ms > now_ms:
+                continue
+            rows.append(
+                {
+                    "security_id": contract,
+                    "event_time": open_ms,
+                    "open": item.get("open"),
+                    "high": item.get("high"),
+                    "low": item.get("low"),
+                    "close": item.get("close"),
+                    "volume": item.get("volume", "0"),
+                    "available_time": open_ms + span_ms,
+                }
+            )
+        if not rows:
+            raise SourceError(f"Kraken charts returned only an in-progress candle for {contract}")
+        return normalize_ohlcv(rows, source=self.name, revision_id=f"{tick_type}.{resolution}")
+
+
+class KrakenFuturesUniverseSource(SourceAdapter):
+    """Kraken futures instrument universe: listings + delivery instants.
+
+    ``instruments`` only exposes contracts currently listed — a survivorship-
+    truncated snapshot, so expired dated contracts never appear and delivery
+    instants for them must be derived elsewhere (e.g. the symbol tail). Row
+    ``event_time`` is the snapshot instant (the listed state observed at
+    ``serverTime``); the settlement instant rides as ``last_trading_time`` /
+    ``last_trading_ms`` — null for perpetuals and other undated instruments.
+    With ``include_undated`` off (default) undated instruments are filtered
+    out — they have no delivery to anchor. ``available_time`` is the snapshot
+    instant, so PIT logic can never pretend a listing was known earlier.
+    """
+
+    name = "kraken_futures_universe"
+    endpoint = "https://futures.kraken.com/derivatives/api/v3/instruments"
+
+    def fetch(self, *, include_undated: bool = False) -> pl.DataFrame:
+        payload = self.client.get_json(self.endpoint)
+        instruments = payload.get("instruments") if isinstance(payload, dict) else None
+        if not isinstance(instruments, list):
+            raise SourceError("Kraken instruments response has no instruments list")
+        server_raw = payload.get("serverTime")
+        now = utc_now()
+        try:
+            server_time = parse_time(server_raw) if server_raw is not None else now
+        except (TypeError, ValueError, OverflowError, OSError) as exc:
+            raise SourceError("Kraken instruments serverTime is unparseable") from exc
+        snapshot = min(server_time, now)  # clamp skew — future instants fail PIT
+        rows: list[dict[str, Any]] = []
+        for item in instruments:
+            if not isinstance(item, dict):
+                raise SourceError("malformed Kraken instrument entry")
+            try:
+                symbol = str(item["symbol"]).upper()
+                instrument_type = str(item["type"])
+                tradeable = bool(item["tradeable"])
+            except KeyError as exc:
+                raise SourceError("Kraken instrument entry is missing required fields") from exc
+            # lastTradingTime is absent on perpetuals/undated instruments.
+            last_trading = item.get("lastTradingTime")
+            if not symbol or (last_trading is not None and not isinstance(last_trading, str)):
+                raise SourceError(f"malformed Kraken instrument {symbol!r}")
+            dated = last_trading is not None
+            if dated:
+                try:
+                    delivery = parse_time(last_trading)
+                except (TypeError, ValueError, OverflowError, OSError) as exc:
+                    raise SourceError(
+                        f"Kraken instrument {symbol!r} has unparseable lastTradingTime"
+                    ) from exc
+                delivery_ms = int(delivery.timestamp() * 1000)
+                value = (delivery - snapshot).total_seconds() / 86_400.0
+            else:
+                if not include_undated:
+                    continue
+                delivery_ms = None
+                value = None
+            underlying = item.get("underlying")
+            rows.append(
+                {
+                    "security_id": symbol,
+                    "event_time": snapshot,
+                    "available_time": snapshot,
+                    "value": value,
+                    "contract_type": instrument_type,
+                    "underlying": str(underlying).upper() if underlying else None,
+                    "last_trading_ms": delivery_ms,
+                    "tradeable": tradeable,
+                }
+            )
+        rows.sort(
+            key=lambda r: (
+                r["last_trading_ms"] if r["last_trading_ms"] is not None else 2**63,
+                r["security_id"],
+            )
+        )
+        if not rows:
+            raise SourceError("Kraken futures universe resolved to zero instruments")
         return pit_frame(rows, source=self.name, revision_id="v1")
 
 

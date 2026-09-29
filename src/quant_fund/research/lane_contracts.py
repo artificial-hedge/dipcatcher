@@ -223,4 +223,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.xwatch import xwatch_contract_errors
 
         return xwatch_contract_errors(payload)
+    if schema == "basis_carry.v1" or payload.get("kind") == "basis_carry":
+        from quant_fund.research.basis_carry import basis_carry_contract_errors
+
+        return basis_carry_contract_errors(payload)
     return []

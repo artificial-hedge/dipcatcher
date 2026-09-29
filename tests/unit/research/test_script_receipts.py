@@ -218,6 +218,7 @@ _LANE_COVERED_SCHEMAS = frozenset(
         "calibration_eval.v1",
         "cost_calibration.v1",
         "receipt_lattice.v1",
+        "basis_carry.v1",
     }
 )
 #: schemas whose receipts dispatch to evalue_family_contract_errors via their

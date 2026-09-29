@@ -1498,3 +1498,209 @@ def lattice_cmd(
     typer.echo(f"receipt={path}")
     if strict and receipt["verdict"] == "inconsistent":
         raise typer.Exit(code=1)
+
+
+@app.command("basis-carry")
+def basis_carry_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    spot_path: Path | None = typer.Option(
+        None,
+        "--spot",
+        help="Spot daily frame (parquet/CSV with event_time|date + close).",
+    ),
+    spot_source: str | None = typer.Option(
+        None,
+        "--spot-source",
+        help="Collect the spot frame inline via a registered source (e.g. kraken_spot).",
+    ),
+    pair: str = typer.Option(
+        "XBTUSD", "--pair", help="Spot pair passed to --spot-source (kraken_spot default XBTUSD)."
+    ),
+    contract: list[str] = typer.Option(
+        [],
+        "--contract",
+        help="Dated contract symbol, collected via kraken_futures_mark (repeatable).",
+    ),
+    contracts_file: Path | None = typer.Option(
+        None,
+        "--contracts-file",
+        help="Text file with one contract symbol per line (# comments allowed).",
+    ),
+    contract_path: list[str] = typer.Option(
+        [],
+        "--contract-path",
+        help="SYM=PATH future mark frame inputs, parquet/CSV (repeatable).",
+    ),
+    delivery: list[str] = typer.Option(
+        [],
+        "--delivery",
+        help="SYM=ISO8601 delivery-instant override (repeatable); default derives "
+        "the Kraken FI_/FF_ symbol tail (FI 16:00Z, FF 08:00Z on the dated day).",
+    ),
+    data_label: str | None = typer.Option(
+        None,
+        "--data-label",
+        help="Provenance label sealed into the receipt; every declared input shares "
+        "it (default 'kraken' when inputs are collected from Kraken sources, "
+        "required for file inputs — e.g. SYNTHETIC for fixtures).",
+    ),
+    tolerance: float = typer.Option(
+        0.005,
+        "--tolerance",
+        help="|convergence_residual| share-of-spot tolerance for the settlement anchor.",
+    ),
+    min_overlap: int = typer.Option(5, "--min-overlap", help="Minimum shared dates per contract."),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = basis_carry.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero when any contract fails to produce a measured row.",
+    ),
+) -> None:
+    """Settlement-anchored cash-and-carry bench (P5.3).
+
+    Inner-joins spot and dated-future mark closes on calendar date, reports the
+    annualized basis curve by days-to-delivery, the basis at fixed dte buckets,
+    and the convergence residual at the last observed date — for delivered
+    contracts that is the true terminal settlement anchor. Descriptive
+    statistics only, sealed as a ``basis_carry.v1`` receipt; never P&L.
+    """
+    import polars as pl
+
+    from quant_fund.data.collector import collect_source
+    from quant_fund.research.basis_carry import (
+        CarryContractInput,
+        kraken_delivery_from_symbol,
+        run_basis_carry,
+        write_basis_carry_receipt,
+    )
+
+    cfg = _cfg(config)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+
+    def load_frame(path: Path) -> pl.DataFrame:
+        if not path.is_file():
+            raise typer.BadParameter(f"frame path {path} does not exist")
+        if path.suffix == ".parquet":
+            return pl.read_parquet(path)
+        return pl.read_csv(path)
+
+    # --delivery SYM=ISO8601 overrides.
+    delivery_overrides: dict[str, str] = {}
+    for item in delivery:
+        key, sep, value = item.partition("=")
+        if not sep or not key.strip() or not value.strip():
+            raise typer.BadParameter(f"--delivery must be SYM=ISO8601, got {item!r}")
+        delivery_overrides[key.strip().upper()] = value.strip()
+
+    if spot_path is not None and spot_source is not None:
+        raise typer.BadParameter("pass either --spot or --spot-source, not both")
+    used_files = spot_path is not None or bool(contract_path)
+    if data_label is None and used_files:
+        raise typer.BadParameter("file inputs need --data-label (e.g. SYNTHETIC for fixtures)")
+    resolved_label = data_label or "kraken"
+    if spot_source is not None:
+        spot_result = collect_source(
+            spot_source, cfg.data.root, fetch_kwargs={"pair": pair, "interval": 1440}
+        )
+        spot_frame = spot_result.frame
+        typer.echo(f"spot source={spot_source} rows={spot_frame.height} data={spot_result.data}")
+    elif spot_path is not None:
+        spot_frame = load_frame(spot_path)
+    else:
+        raise typer.BadParameter("a spot input is required: --spot PATH or --spot-source NAME")
+
+    contract_symbols = [symbol.strip() for symbol in contract if symbol.strip()]
+    if contracts_file is not None:
+        if not contracts_file.is_file():
+            raise typer.BadParameter(f"contracts file {contracts_file} does not exist")
+        contract_symbols.extend(
+            line.strip().split("#")[0].strip()
+            for line in contracts_file.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        )
+
+    inputs: list[CarryContractInput] = []
+    seen: set[str] = set()
+    for spec in contract_path:
+        key, sep, value = spec.partition("=")
+        if not sep or not key.strip():
+            raise typer.BadParameter(f"--contract-path must be SYM=PATH, got {spec!r}")
+        symbol = key.strip().upper()
+        if symbol in seen:
+            raise typer.BadParameter(f"duplicate contract {symbol!r}")
+        seen.add(symbol)
+        if symbol in delivery_overrides:
+            delivery_instant: str = delivery_overrides[symbol]
+        else:
+            try:
+                delivery_instant = kraken_delivery_from_symbol(symbol).isoformat()
+            except ValueError:
+                delivery_instant = "UNRESOLVED"
+        inputs.append(
+            CarryContractInput(
+                symbol=symbol,
+                frame=load_frame(Path(value)),
+                delivery=delivery_instant,
+                data_label=resolved_label,
+            )
+        )
+    for symbol_raw in contract_symbols:
+        symbol = symbol_raw.upper()
+        if symbol in seen:
+            raise typer.BadParameter(f"duplicate contract {symbol!r}")
+        seen.add(symbol)
+        mark_result = collect_source(
+            "kraken_futures_mark", cfg.data.root, fetch_kwargs={"symbol": symbol}
+        )
+        typer.echo(f"mark {symbol} rows={mark_result.frame.height} data={mark_result.data}")
+        if symbol in delivery_overrides:
+            delivery_instant = delivery_overrides[symbol]
+        else:
+            try:
+                delivery_instant = kraken_delivery_from_symbol(symbol).isoformat()
+            except ValueError:
+                delivery_instant = "UNRESOLVED"
+        inputs.append(
+            CarryContractInput(
+                symbol=symbol,
+                frame=mark_result.frame,
+                delivery=delivery_instant,
+                data_label=resolved_label,
+            )
+        )
+    if not inputs:
+        raise typer.BadParameter(
+            "no contract inputs: pass --contract, --contracts-file, or --contract-path"
+        )
+
+    try:
+        frame, receipt = run_basis_carry(
+            spot=spot_frame,
+            spot_label=resolved_label,
+            contracts=inputs,
+            tolerance=tolerance,
+            min_overlap=min_overlap,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_basis_carry_receipt(receipt, out_dir, receipt_version=receipt_version)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
+    typer.echo(frame)
+    typer.echo(f"verdict={receipt['verdict']}")
+    typer.echo(f"receipt={path}")
+    if strict and receipt["n_error_rows"]:
+        raise typer.Exit(code=1)

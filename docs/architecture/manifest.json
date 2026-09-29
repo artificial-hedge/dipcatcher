@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 824,
+  "module_count": 832,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1623,6 +1623,10 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
+      "dst": "quant_fund.data.collector",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
       "dst": "quant_fund.features.engine",
       "src": "quant_fund.cli.research_cmds"
     },
@@ -1636,6 +1640,10 @@
     },
     {
       "dst": "quant_fund.research.agent",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.basis_carry",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -1692,6 +1700,10 @@
     },
     {
       "dst": "quant_fund.research.online_fdr",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.pairs",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -6083,6 +6095,30 @@
       "src": "quant_fund.research.allocation.receipt"
     },
     {
+      "dst": "quant_fund.data.sources.base",
+      "src": "quant_fund.research.basis_carry"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "quant_fund.research.basis_carry"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.basis_carry"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
+      "src": "quant_fund.research.basis_carry"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.basis_carry"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.basis_carry"
+    },
+    {
       "dst": "quant_fund.config.models",
       "src": "quant_fund.research.benches"
     },
@@ -7191,6 +7227,10 @@
       "src": "quant_fund.research.identity_sweep"
     },
     {
+      "dst": "quant_fund.research.basis_carry",
+      "src": "quant_fund.research.lane_contracts"
+    },
+    {
       "dst": "quant_fund.research.receipt_lattice",
       "src": "quant_fund.research.lane_contracts"
     },
@@ -7341,6 +7381,78 @@
     {
       "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.research.online_fdr"
+    },
+    {
+      "dst": "quant_fund.research.pairs.cointegration",
+      "src": "quant_fund.research.pairs"
+    },
+    {
+      "dst": "quant_fund.research.pairs.evaluation",
+      "src": "quant_fund.research.pairs"
+    },
+    {
+      "dst": "quant_fund.research.pairs.fixtures",
+      "src": "quant_fund.research.pairs"
+    },
+    {
+      "dst": "quant_fund.research.pairs.hedge",
+      "src": "quant_fund.research.pairs"
+    },
+    {
+      "dst": "quant_fund.research.pairs.pit",
+      "src": "quant_fund.research.pairs"
+    },
+    {
+      "dst": "quant_fund.research.pairs.spread",
+      "src": "quant_fund.research.pairs"
+    },
+    {
+      "dst": "quant_fund.research.pairs.hedge",
+      "src": "quant_fund.research.pairs.cointegration"
+    },
+    {
+      "dst": "quant_fund.research.pairs.spread",
+      "src": "quant_fund.research.pairs.cointegration"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.research.pairs.cointegration",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.research.pairs.fixtures",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.research.pairs.pit",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.research.pairs.spread",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.pairs.evaluation"
+    },
+    {
+      "dst": "quant_fund.research.pairs.hedge",
+      "src": "quant_fund.research.pairs.pit"
+    },
+    {
+      "dst": "quant_fund.research.pairs.spread",
+      "src": "quant_fund.research.pairs.pit"
     },
     {
       "dst": "quant_fund.metrics.inference",
@@ -9064,6 +9176,7 @@
     "quant_fund.research.allocation.engines",
     "quant_fund.research.allocation.evaluation",
     "quant_fund.research.allocation.receipt",
+    "quant_fund.research.basis_carry",
     "quant_fund.research.benches",
     "quant_fund.research.benches.common",
     "quant_fund.research.benches.families",
@@ -9137,6 +9250,13 @@
     "quant_fund.research.net_replay",
     "quant_fund.research.net_tournament",
     "quant_fund.research.online_fdr",
+    "quant_fund.research.pairs",
+    "quant_fund.research.pairs.cointegration",
+    "quant_fund.research.pairs.evaluation",
+    "quant_fund.research.pairs.fixtures",
+    "quant_fund.research.pairs.hedge",
+    "quant_fund.research.pairs.pit",
+    "quant_fund.research.pairs.spread",
     "quant_fund.research.phase1_verify",
     "quant_fund.research.prospective_sota",
     "quant_fund.research.quantile_ladder",
@@ -9611,7 +9731,7 @@
     },
     {
       "dst": "quant_fund.data",
-      "imports": 11,
+      "imports": 12,
       "src": "quant_fund.cli"
     },
     {
@@ -9696,7 +9816,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 25,
+      "imports": 27,
       "src": "quant_fund.cli"
     },
     {
@@ -10621,7 +10741,7 @@
     },
     {
       "dst": "quant_fund.data",
-      "imports": 3,
+      "imports": 4,
       "src": "quant_fund.research"
     },
     {
@@ -10686,7 +10806,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 199,
+      "imports": 218,
       "src": "quant_fund.research"
     },
     {
@@ -10701,7 +10821,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 66,
+      "imports": 71,
       "src": "quant_fund.research"
     },
     {

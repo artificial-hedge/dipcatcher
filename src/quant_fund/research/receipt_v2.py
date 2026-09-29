@@ -607,6 +607,8 @@ _LANE_CONSISTENCY: dict[str, str] = {
     "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
     "cross_sectional_rankic_eval": "quant_fund.research.cross_sectional.rankic_v2_consistency_errors",
     "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
+    "basis_carry": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
+    "basis_carry_eval": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
 }
 
 
