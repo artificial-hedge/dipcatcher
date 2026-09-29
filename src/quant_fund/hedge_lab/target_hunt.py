@@ -16,6 +16,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
+from quant_fund.hedge_lab._receipt import seal_receipt
 from quant_fund.hedge_lab.directional import (
     ETF_BASKET,
     antonacci_returns,
@@ -427,6 +428,7 @@ def run_target_hunt(
     }
     out = Path("artifacts") / "hedge_lab" / artifact_name
     out.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(out, json.dumps(receipt, indent=2, default=str))
-    receipt["artifact_path"] = str(out)
-    return receipt
+    sealed = seal_receipt(receipt)
+    atomic_write_text(out, json.dumps(sealed, indent=2, default=str))
+    sealed["artifact_path"] = str(out)
+    return sealed

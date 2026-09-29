@@ -23,6 +23,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
+from quant_fund.hedge_lab._receipt import seal_receipt
 from quant_fund.hedge_lab.mirror import long_short_path
 from quant_fund.hedge_lab.promotion import ALPHA, clears_cs_promotion
 from quant_fund.hedge_lab.scoreboard import book_economic_scoreboard
@@ -461,9 +462,11 @@ def run_lightspeed_file_book(
     root = Path(cfg.data.root)
     out = root / "metadata" / "lightspeed_book.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(out, json.dumps(receipt, indent=2, default=str))
+    sealed = seal_receipt(receipt)
+    atomic_write_text(out, json.dumps(sealed, indent=2, default=str))
+
     public = Path("artifacts") / "hedge_lab" / "lightspeed_book.json"
-    atomic_write_text(public, json.dumps(receipt, indent=2, default=str))
-    receipt["receipt_path"] = str(out)
-    receipt["artifact_path"] = str(public)
-    return receipt
+    atomic_write_text(public, json.dumps(sealed, indent=2, default=str))
+    sealed["receipt_path"] = str(out)
+    sealed["artifact_path"] = str(public)
+    return sealed
