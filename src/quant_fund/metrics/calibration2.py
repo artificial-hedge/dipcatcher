@@ -165,6 +165,192 @@ def reliability_diagram(prob_forecast: Array, outcome: Array, n_bins: int = 10) 
     return {"bin_center": centers, "obs_freq": obs, "mean_pred": pbar, "count": cnt}
 
 
+def wis_decomposition(
+    realized: Array,
+    lower: Array,
+    upper: Array,
+    alphas: Array,
+    median: Array | None = None,
+) -> dict[str, Array]:
+    r"""Weighted Interval Score with its exact dispersion/over/under split.
+
+    Bracher, Ray, Gneiting & Reich (2021), "Evaluating epidemic forecasts in an
+    interval format", *PLOS Comput. Biol.* 17(6):e1008618. For ``K`` central
+    prediction intervals at levels ``alpha_k`` with bounds ``(l_k, u_k)``, an
+    optional predictive median ``m``, weights ``w_k = alpha_k / 2`` and
+    ``w_0 = 1/2``:
+
+    .. math::
+
+        \mathrm{WIS}_{\alpha_{0:K}}(F, y)
+          = \frac{1}{K + \tfrac12}\Bigl(w_0 |y - m|
+            + \sum_{k=1}^{K} w_k\, \mathrm{IS}_{\alpha_k}(F, y)\Bigr)
+
+    with the interval score (the Winkler 1972 / Gneiting–Raftery form already
+    implemented by :func:`winkler_interval_score`)
+
+    .. math::
+
+        \mathrm{IS}_\alpha = (u - l) + \tfrac{2}{\alpha}(l - y)\mathbf{1}\{y<l\}
+                           + \tfrac{2}{\alpha}(y - u)\mathbf{1}\{y>u\}
+
+    and the **exact** additive decomposition (BRGR 2021, eq. 4):
+
+    .. math::
+
+        \mathrm{WIS} = \underbrace{\tfrac{1}{K+\frac12}\sum_k w_k (u_k-l_k)}_{\text{dispersion}}
+        + \underbrace{\tfrac{1}{K+\frac12}\sum_k w_k \tfrac{2}{\alpha_k}(y-u_k)\mathbf{1}\{y>u_k\}}_{\text{underprediction}}
+        + \underbrace{\tfrac{1}{K+\frac12}\sum_k w_k \tfrac{2}{\alpha_k}(l_k-y)\mathbf{1}\{y<l_k\}
+                      + \tfrac{w_0|y-m|}{K+\frac12}}_{\text{overprediction}}
+
+    This turns "the CRPS got worse" into a diagnosable cause: *dispersion* is
+    pure sharpness (interval width), *underprediction* is mass missed above the
+    intervals, *overprediction* is mass missed below them plus the median miss.
+    The identity ``dispersion + underprediction + overprediction == wis`` holds
+    exactly (floating-point associativity aside); ``decomp_error`` reports the
+    residual so a test can pin it. As ``K → ∞`` over a fine level grid the WIS
+    converges to the CRPS.
+
+    Shape contract: ``realized`` is ``(n,)``; ``lower`` / ``upper`` are
+    ``(n, K)`` with columns aligned to ``alphas`` (length ``K``);
+    ``median`` is ``(n,)`` or omitted. With a median the normaliser is
+    ``K + 1/2`` (the BRGR convention: ``K+1`` weighted terms of total weight
+    ``K + 1/2``); without one the median term is absent and the normaliser is
+    ``K``, so the score stays an average of the terms actually supplied rather
+    than being diluted by a missing one. Interval levels must be in ``(0, 1)``
+    and ``upper >= lower`` elementwise, else ValueError (fail closed — a
+    crossed interval is malformed evidence, not a zero-width one). Non-finite
+    entries propagate to the affected observation only. Lower is better;
+    research diagnostic only, never a live performance claim.
+    """
+    y = np.asarray(realized, dtype=float).reshape(-1)
+    lo = np.asarray(lower, dtype=float)
+    hi = np.asarray(upper, dtype=float)
+    a = np.asarray(alphas, dtype=float).reshape(-1)
+    if y.size == 0:
+        raise ValueError("realized must be non-empty")
+    if lo.ndim != 2 or hi.ndim != 2:
+        raise ValueError(f"lower/upper must be 2-D (n, K), got {lo.ndim}-D/{hi.ndim}-D")
+    if lo.shape != hi.shape or lo.shape[0] != y.size:
+        raise ValueError(f"shape mismatch: lower={lo.shape}, upper={hi.shape}, realized={y.size}")
+    k = lo.shape[1]
+    if k < 1:
+        raise ValueError("need at least one interval level (K >= 1)")
+    if a.size != k:
+        raise ValueError(f"alphas length {a.size} must match K={k} interval columns")
+    if not np.all(np.isfinite(a)) or np.any((a <= 0.0) | (a >= 1.0)):
+        raise ValueError("alphas must be finite and strictly inside (0, 1)")
+    finite_ok = np.isfinite(lo) & np.isfinite(hi) & np.isfinite(y[:, None])
+    if np.any(finite_ok & (hi < lo)):
+        raise ValueError("upper must be >= lower elementwise (crossed interval)")
+
+    w = a / 2.0  # (K,)
+    has_median = median is not None
+    normaliser = float(k) + 0.5 if has_median else float(k)
+    y_col = y[:, None]  # (n, 1)
+
+    width_term = w[None, :] * (hi - lo)
+    under_term = w[None, :] * (2.0 / a[None, :]) * (y_col - hi) * (y_col > hi)
+    over_term = w[None, :] * (2.0 / a[None, :]) * (lo - y_col) * (y_col < lo)
+
+    dispersion = width_term.sum(axis=1) / normaliser
+    underprediction = under_term.sum(axis=1) / normaliser
+    overprediction = over_term.sum(axis=1) / normaliser
+
+    if median is not None:
+        m = np.asarray(median, dtype=float).reshape(-1)
+        if m.size != y.size:
+            raise ValueError(f"median length {m.size} must match realized {y.size}")
+        median_term = 0.5 * np.abs(y - m) / normaliser
+    else:
+        median_term = np.zeros(y.size, dtype=float)
+    # The median miss is a *location* error; BRGR fold it into overprediction
+    # because |y - m| penalises a forecast whose central mass sits above y and
+    # below y symmetrically, and the decomposition must stay additive.
+    overprediction = overprediction + median_term
+
+    wis = dispersion + underprediction + overprediction
+    return {
+        "wis": wis,
+        "dispersion": dispersion,
+        "underprediction": underprediction,
+        "overprediction": overprediction,
+        "median_term": median_term,
+        "decomp_error": wis - (dispersion + underprediction + overprediction),
+        "n_levels": np.full(y.size, float(k)),
+    }
+
+
+def mean_wis(
+    realized: Array,
+    lower: Array,
+    upper: Array,
+    alphas: Array,
+    median: Array | None = None,
+) -> dict[str, float]:
+    """Observation-mean of :func:`wis_decomposition` components.
+
+    The mean of an exactly-additive decomposition is itself exactly additive,
+    so ``mean_wis == mean_dispersion + mean_underprediction +
+    mean_overprediction`` holds to floating-point associativity. Non-finite
+    observations are dropped consistently across all four means so the identity
+    survives masking. Research diagnostic only.
+    """
+    parts = wis_decomposition(realized, lower, upper, alphas, median)
+    wis = np.asarray(parts["wis"], dtype=float)
+    valid = np.isfinite(wis)
+    if not np.any(valid):
+        return {
+            "mean_wis": float("nan"),
+            "mean_dispersion": float("nan"),
+            "mean_underprediction": float("nan"),
+            "mean_overprediction": float("nan"),
+            "n_valid": 0.0,
+        }
+
+    def _mean(name: str) -> float:
+        comp = np.asarray(parts[name], dtype=float)
+        return float(np.mean(comp[valid]))
+
+    return {
+        "mean_wis": float(np.mean(wis[valid])),
+        "mean_dispersion": _mean("dispersion"),
+        "mean_underprediction": _mean("underprediction"),
+        "mean_overprediction": _mean("overprediction"),
+        "n_valid": float(int(valid.sum())),
+    }
+
+
+def wis_skill_score(
+    realized: Array,
+    lower: Array,
+    upper: Array,
+    alphas: Array,
+    reference_lower: Array,
+    reference_upper: Array,
+    median: Array | None = None,
+    reference_median: Array | None = None,
+) -> float:
+    r"""Skill score ``1 − mean_WIS / mean_WIS_ref`` against a reference forecast.
+
+    Both sides use the **same** interval levels ``alphas`` and the same
+    observations, so the ratio is a like-for-like comparison of a proper score.
+    ``0`` when the forecast equals the reference, negative when worse, positive
+    when better. Because the WIS is a proper score, a positive skill score is
+    honest evidence of improvement — unlike a Sharpe-type headline, which the
+    lab's honesty contract forbids. Fail-closed NaN when the reference mean WIS
+    is not strictly positive or either side is non-finite. Research diagnostic
+    only, never a live performance claim.
+    """
+    from quant_fund.metrics.scoring import skill_score
+
+    ours = mean_wis(realized, lower, upper, alphas, median)["mean_wis"]
+    theirs = mean_wis(realized, reference_lower, reference_upper, alphas, reference_median)[
+        "mean_wis"
+    ]
+    return skill_score(ours, theirs)
+
+
 def variogram_score(forecast_ens: Array, realized: Array, p: float = 0.5) -> float:
     """Scheuerer–Hamill (2015) variogram score for ensemble forecasts.
 

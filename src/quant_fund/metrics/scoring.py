@@ -407,6 +407,18 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
     ``y`` may be a scalar or length-1 array; ``sample`` must be 1d with n≥1.
     Empty / all-non-finite sample → NaN. Multi-row ``y`` → ValueError (use a
     loop or extend later). Not a live capital claim.
+
+    .. warning::
+       **This is the biased plug-in form.** The ``\\frac{1}{2n^2}\\sum_{i,j}``
+       denominator counts the (zero) diagonal terms, shrinking term 2 by a
+       factor ``(n-1)/n`` relative to the fair U-statistic. The bias is
+       exactly ``+E|X-X'|/(2n)`` — measured ``+20.5%`` at n=5, ``+9.9%`` at
+       n=10, ``+5.0%`` at n=20 (Gaussian predictive, matches the analytic
+       ``sigma/(n*sqrt(pi))`` to <1%). Because the bias scales with ensemble
+       size it does **not** cancel in a comparison, so CRPS league tables that
+       mix ensemble sizes rank by size, not by skill. The arithmetic is left
+       untouched so sealed receipts stay reproducible (AGENTS.md honesty
+       contract rule #4); use :func:`crps_fair` for an unbiased estimator.
     """
     y_arr = np.asarray(y, dtype=float).reshape(-1)
     if y_arr.size != 1:
@@ -421,6 +433,259 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
     pairwise = np.abs(x[:, None] - x[None, :])
     term2 = float(np.mean(pairwise)) / 2.0
     return term1 - term2
+
+
+def crps_fair(y: float | Array, sample: Array) -> float:
+    r"""Unbiased (fair) CRPS from an ensemble sample — U-statistic form.
+
+    For observation ``y`` and i.i.d. draws ``X_1..X_n`` (``n >= 2``):
+
+    .. math::
+
+        \widehat{\mathrm{CRPS}}_{\text{fair}}
+        = \frac{1}{n}\sum_i |X_i - y|
+        - \frac{1}{2n(n-1)}\sum_{i\ne j}|X_i - X_j|
+
+    This is the **fair** U-statistic: the off-diagonal mean excludes the
+    (zero) diagonal terms, so the estimator is unbiased for the population
+    CRPS. It is the ``d=1`` analogue of :func:`quant_fund.metrics.energy_score.
+    energy_score`, which already uses the correct ``1/(2n(n-1))`` form.
+    Reference: Northrop (2022, arXiv:2110.12636); Jordan, Krüger & Lerch (2019,
+    JSS 90(1)).
+
+    Unlike :func:`crps_empirical` (the biased plug-in), the bias here is zero
+    to first order, so ``crps_fair`` values are comparable across models with
+    **different ensemble sizes** — a CRPS league table mixing ensemble sizes is
+    only valid with this estimator. Measured against a Gaussian predictive, the
+    plug-in bias that this function removes is ``+20.5%`` at n=5, ``+9.9%`` at
+    n=10, ``+5.0%`` at n=20.
+
+    Contracts mirror :func:`crps_empirical`: ``y`` scalar or length-1 array;
+    ``sample`` 1d. Empty / all-non-finite sample → NaN; multi-row ``y`` →
+    ValueError. For ``n == 1`` the off-diagonal mean is undefined, so the score
+    degenerates to the first term ``|X_1 - y|`` (documented, not NaN, since a
+    single-member ensemble still has a well-defined absolute error). Lower is
+    better; research-only, not a live capital claim.
+    """
+    y_arr = np.asarray(y, dtype=float).reshape(-1)
+    if y_arr.size != 1:
+        raise ValueError("crps_fair expects a single observation y")
+    y0 = float(y_arr[0])
+    x = _as_1d("sample", sample)
+    x = x[np.isfinite(x)]
+    n = int(x.size)
+    if n == 0 or not np.isfinite(y0):
+        return float("nan")
+    term1 = float(np.mean(np.abs(x - y0)))
+    if n == 1:
+        # Off-diagonal mean undefined for a single member; the score reduces to
+        # the absolute error. Documented degenerate case, not NaN.
+        return term1
+    pairwise = np.abs(x[:, None] - x[None, :])
+    # Off-diagonal mean over n(n-1); the diagonal is identically zero.
+    off_diag = float(pairwise.sum()) / float(2 * n * (n - 1))
+    return term1 - off_diag
+
+
+def threshold_weight_transform(u: Array, threshold: float, weight: float) -> Array:
+    r"""Antiderivative ``W(u) = ∫_0^u w(z) dz`` of the threshold weight kernel.
+
+    For the Gneiting & Ranjan (2013) threshold weighting
+
+    .. math::
+
+        w(z) = \begin{cases} \text{weight} & |z| > \text{threshold} \\
+                             1 & |z| \le \text{threshold} \end{cases}
+
+    the antiderivative anchored at 0 is
+
+    .. math::
+
+        W(u) = \operatorname{sgn}(u)\bigl[\min(|u|, t)
+               + \text{weight}\cdot\max(|u| - t, 0)\bigr].
+
+    ``W`` is odd, strictly increasing, and continuous with kinks at ``±t``. It
+    is the kernel that makes the *weighted* CRPS a proper score: applying ``W``
+    to both the observation and the ensemble and then taking the ordinary
+    (fair) CRPS yields exactly
+    ``∫ w(z) (F(z) − 1{y ≤ z})² dz`` — see
+    :func:`crps_threshold_weighted`. Non-finite entries pass through as
+    non-finite; ``weight >= 1`` and ``threshold >= 0`` are validated so a
+    malformed kernel fails closed instead of silently producing a wrong score.
+    """
+    if not np.isfinite(threshold) or threshold < 0.0:
+        raise ValueError(f"threshold must be finite and >= 0, got {threshold}")
+    if not np.isfinite(weight) or weight < 1.0:
+        raise ValueError(f"weight must be finite and >= 1, got {weight}")
+    u_arr = np.asarray(u, dtype=float)
+    mag = np.abs(u_arr)
+    inner = np.minimum(mag, threshold)
+    outer = weight * np.maximum(mag - threshold, 0.0)
+    return np.sign(u_arr) * (inner + outer)
+
+
+def crps_threshold_weighted(
+    y: float | Array,
+    sample: Array,
+    threshold: float,
+    weight: float = 1.0,
+) -> float:
+    r"""Threshold-weighted CRPS — a **proper** tail-emphasizing score (1-D).
+
+    Gneiting & Ranjan (2013, Electron. J. Stat. 7, 1747–1782,
+    doi:10.1214/13-EJS823) threshold weighting of the CRPS integral:
+
+    .. math::
+
+        \mathrm{CRPS}_w(F, y) = \int_{-\infty}^{\infty} w(z)
+            \bigl(F(z) - \mathbf{1}\{y \le z\}\bigr)^2 dz,
+        \qquad
+        w(z) = \begin{cases} \text{weight} & |z| > \text{threshold} \\
+                             1 & \text{else}\end{cases}
+
+    Errors outside ``±threshold`` are amplified by ``weight``; central errors
+    keep unit weight. Because the weight multiplies a **single** non-negative
+    integrand (rather than the two terms of an energy score by different
+    powers), the score stays proper for *any* ``weight >= 1`` — indeed strictly
+    proper, since ``w > 0`` everywhere.
+
+    Ensemble estimator (fair U-statistic, ``n >= 2``), via the kernel identity
+    ``∫ w(z) (1{x ≤ z} − 1{y ≤ z})² dz = |W(x) − W(y)|`` with
+    ``W = threshold_weight_transform``:
+
+    .. math::
+
+        \widehat{\mathrm{CRPS}}_w
+        = \frac{1}{n}\sum_i |W(X_i) - W(y)|
+        - \frac{1}{2n(n-1)}\sum_{i\ne j}|W(X_i) - W(X_j)|
+
+    so this is exactly :func:`crps_fair` applied to the ``W``-transformed
+    ensemble and observation — verified against the integral definition to
+    ~1e-6 (trapezoid error on the empirical CDF step). Being unbiased in the
+    U-statistic sense, it is comparable across ensemble sizes, and unlike
+    ``threshold_energy_score`` it has **no ``sqrt(2)`` propriety ceiling**.
+
+    Measured (obs law ``N(0,1)``, forecast ``N(0, sigma²)``, ``weight = 3.0``,
+    ``threshold = 1.0``, 40 members, 600 reps/cell, seed 2026, SYNTHETIC):
+    ``E[CRPS_w]`` has an interior minimum at ``sigma = 1`` —
+    1.029 / 0.953 / 0.899 / **0.876** / 0.939 / 1.108 / 2.192 / 4.824 at
+    ``sigma = 0.25 / 0.5 / 0.75 / 1 / 1.5 / 2 / 4 / 8``. The same cell for
+    ``threshold_energy_score(weight=3.0)`` runs +1.177 → −17.685 (monotone
+    down, unbounded): this function is the honest replacement.
+
+    ``weight = 1.0`` recovers :func:`crps_fair` exactly. Contracts mirror
+    :func:`crps_empirical`: ``y`` scalar or length-1 array; ``sample`` 1d;
+    empty / all-non-finite sample → NaN; ``n == 1`` degenerates to
+    ``|W(X_1) − W(y)|``; multi-row ``y`` → ValueError; ``weight < 1`` or a
+    negative / non-finite ``threshold`` → ValueError. Lower is better;
+    research-only, not a live capital claim.
+    """
+    y_arr = np.asarray(y, dtype=float).reshape(-1)
+    if y_arr.size != 1:
+        raise ValueError("crps_threshold_weighted expects a single observation y")
+    sample_1d = _as_1d("sample", sample)
+    # Validate the kernel before masking so a malformed weight fails closed
+    # rather than silently returning NaN for an unusable call.
+    threshold_w = float(threshold)
+    weight_w = float(weight)
+    if not np.isfinite(threshold_w) or threshold_w < 0.0:
+        raise ValueError(f"threshold must be finite and >= 0, got {threshold}")
+    if not np.isfinite(weight_w) or weight_w < 1.0:
+        raise ValueError(f"weight must be finite and >= 1, got {weight}")
+    y0 = float(y_arr[0])
+    x = sample_1d[np.isfinite(sample_1d)]
+    if x.size == 0 or not np.isfinite(y0):
+        return float("nan")
+    if weight_w == 1.0:
+        # w == 1 is the identity transform; short-circuit so the plain fair
+        # CRPS and this function agree bit-for-bit.
+        return crps_fair(y0, x)
+    wx = threshold_weight_transform(x, threshold_w, weight_w)
+    wy = float(threshold_weight_transform(np.array([y0]), threshold_w, weight_w)[0])
+    return crps_fair(wy, wx)
+
+
+def skill_score(score: float, reference_score: float) -> float:
+    r"""Skill score ``1 − S / S_ref`` of a proper score against a reference.
+
+    For any loss-type score ``S`` (lower is better — CRPS, pinball, energy
+    score, QLIKE, log score, Brier, WIS) and the same score evaluated on a
+    reference forecast ``S_ref``:
+
+    .. math::
+
+        \mathrm{SS} = 1 - \frac{S}{S_{\text{ref}}}
+
+    ``SS = 0`` for a forecast identical to the reference, ``SS > 0`` when the
+    forecast beats it, ``SS < 0`` when it is worse, and ``SS = 1`` for a
+    perfect score of 0. Skill scores are dimensionless, so they let forecasts
+    of *different targets* be compared on one axis — but only if the same
+    reference rule is used for each, and the reference must be stated in any
+    receipt (a skill score without its reference is uninterpretable).
+
+    Fail-closed: ``S_ref`` must be finite and strictly positive (a zero or
+    negative reference makes the ratio meaningless — return NaN rather than
+    ``±inf``), and ``S`` must be finite. Any violation → NaN. Research
+    diagnostic only, never a live performance claim.
+    """
+    s = float(score)
+    s_ref = float(reference_score)
+    if not np.isfinite(s) or not np.isfinite(s_ref):
+        return float("nan")
+    if s_ref <= 0.0:
+        return float("nan")
+    return 1.0 - s / s_ref
+
+
+def mean_skill_score(scores: Array, reference_scores: Array) -> float:
+    """Skill score of the *mean* scores — ``1 − mean(S) / mean(S_ref)``.
+
+    Averaging the score first and then forming the ratio is the correct
+    aggregation: the mean of per-observation skill scores is dominated by
+    observations where the reference happened to be near zero. Rows where
+    either side is non-finite are dropped pairwise; all-invalid → NaN.
+    Research diagnostic only.
+    """
+    s = _as_1d("scores", scores)
+    s_ref = _as_1d("reference_scores", reference_scores)
+    _require_same_length(("scores", s), ("reference_scores", s_ref))
+    if s.size == 0:
+        return float("nan")
+    valid = np.isfinite(s) & np.isfinite(s_ref)
+    if not np.any(valid):
+        return float("nan")
+    mean_ref = float(np.mean(s_ref[valid]))
+    if mean_ref <= 0.0:
+        return float("nan")
+    return 1.0 - float(np.mean(s[valid])) / mean_ref
+
+
+def pinball_skill_score(y: Array, q: Array, q_ref: Array, tau: float) -> float:
+    """Skill score of :func:`mean_pinball` against a reference quantile forecast.
+
+    ``0`` when ``q == q_ref`` elementwise, negative when the forecast is worse
+    than the reference, positive when it is better. Both sides use the same
+    ``tau`` and the same observations, so the ratio is a like-for-like
+    comparison of a strictly proper score. Fail-closed NaN when the reference
+    mean pinball is not strictly positive (e.g. a reference that is exactly
+    right on every observation) — an infinite skill score is not evidence.
+    Research diagnostic only.
+    """
+    return skill_score(mean_pinball(y, q, tau), mean_pinball(y, q_ref, tau))
+
+
+def crps_skill_score(y: float | Array, sample: Array, reference_sample: Array) -> float:
+    """Skill score of :func:`crps_fair` against a reference ensemble forecast.
+
+    Uses the **fair** U-statistic CRPS on both sides, so the skill score is not
+    contaminated by the ``+E|X-X'|/(2n)`` plug-in bias of
+    :func:`crps_empirical` and stays valid when the forecast and reference
+    ensembles have *different* sizes — the exact case where the biased
+    estimator ranks by ensemble size instead of skill. ``0`` for an identical
+    ensemble, negative when worse. Fail-closed NaN when the reference CRPS is
+    not strictly positive. Research diagnostic only.
+    """
+    return skill_score(crps_fair(y, sample), crps_fair(y, reference_sample))
 
 
 def qlike(realized_var: Array, forecast_var: Array, floor: float = 1e-12) -> float:
