@@ -459,6 +459,10 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
 
         return fleet_v2_consistency_errors(payload)
+    if payload.get("kind") == "calibration_eval":
+        from quant_fund.research.calibration_eval import calibration_v2_consistency_errors
+
+        return calibration_v2_consistency_errors(payload)
     if kind == "capacity_overlay_eval":
         from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
         return capacity_v2_consistency_errors(payload)
@@ -548,9 +552,12 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
+    elif payload.get("schema") == "calibration_eval.v1":
+        from quant_fund.research.calibration_eval import calibration_contract_errors
+
+        errors.extend(calibration_contract_errors(payload))
     elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
         from quant_fund.data.ingest import data_manifest_contract_errors
-
         errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
         from quant_fund.paper.sim_live import sim_live_contract_errors
