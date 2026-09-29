@@ -2970,6 +2970,151 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `stream`: gaussian_pit
 
+### `receipts/emerge_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/emerge_real_drill.json | a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d | 7f2a89cda252f413dcc3e8fefb8b863dc95c29881a8027c21d90d58b716fba96 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `claim`: under arbitrary dependence across lanes (shared tape), the pooled evidence against head h's interval honesty is e_mean/e_harmonic; family-level e-value via e-Bonferroni
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - e_value_merge_under_arbitrary_dependence
+  - harmonic_mean_valid
+  - product_rule_flagged_dependence_violation
+  - proper_scores_only
+- `family_evalue`: 7.0437171618133885
+- `kind`: emerge_drill.v1
+- `n_heads`: 12
+- `pooled_per_head`:
+  - `conf_t`:
+    - `e_harmonic`: 0.45342996891813275
+    - `e_mean`: 0.5869764301511157
+    - `e_product_diagnostics_only`: 0.14351319951543673
+    - `lanes`:
+      - `coverage@0.8`: 0.7624141944668746
+      - `coverage@0.9`: 0.7462856529135229
+      - `tail_depth`: 0.2522294430729494
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `empirical`:
+    - `e_harmonic`: 0.7094831667829843
+    - `e_mean`: 215848.2521666982
+    - `e_product_diagnostics_only`: 42751506.58129629
+    - `lanes`:
+      - `coverage@0.8`: 647265.4712600198
+      - `coverage@0.9`: 279.04854499950363
+      - `tail_depth`: 0.23669507511985965
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `fhs_skew`:
+    - `e_harmonic`: 661.1127565226737
+    - `e_mean`: 6.007796049367849e+22
+    - `e_product_diagnostics_only`: 3.2902077677484263e+44
+    - `lanes`:
+      - `coverage@0.8`: 1.8022559724303303e+23
+      - `coverage@0.9`: 8.284238002422384e+18
+      - `tail_depth`: 220.37091884089125
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `gaussian`:
+    - `e_harmonic`: 0.19848672275368354
+    - `e_mean`: 1.679835890956598
+    - `e_product_diagnostics_only`: 0.09472073773847399
+    - `lanes`:
+      - `coverage@0.8`: 0.19556212997050715
+      - `coverage@0.9`: 4.741800562522743
+      - `tail_depth`: 0.10214498037654483
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `gmm`:
+    - `e_harmonic`: 0.16353067387911266
+    - `e_mean`: 84593.60127389137
+    - `e_product_diagnostics_only`: 17343428.64756803
+    - `lanes`:
+      - `coverage@0.8`: 252520.8353577879
+      - `coverage@0.9`: 1259.9139512913198
+      - `tail_depth`: 0.05451259488316597
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `hstep_emp`:
+    - `e_harmonic`: 0.7094831667829843
+    - `e_mean`: 215848.2521666982
+    - `e_product_diagnostics_only`: 42751506.58129629
+    - `lanes`:
+      - `coverage@0.8`: 647265.4712600198
+      - `coverage@0.9`: 279.04854499950363
+      - `tail_depth`: 0.23669507511985965
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `hstep_t`:
+    - `e_harmonic`: 6.437648466687489
+    - `e_mean`: 2787369.619538239
+    - `e_product_diagnostics_only`: 37353641274566.17
+    - `lanes`:
+      - `coverage@0.8`: 4453274.630744975
+      - `coverage@0.9`: 3908832.081984708
+      - `tail_depth`: 2.1458850343134297
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `isotonic`:
+    - `e_harmonic`: 0.7094831667829843
+    - `e_mean`: 215848.2521666982
+    - `e_product_diagnostics_only`: 42751506.58129629
+    - `lanes`:
+      - `coverage@0.8`: 647265.4712600198
+      - `coverage@0.9`: 279.04854499950363
+      - `tail_depth`: 0.23669507511985965
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `qar`:
+    - `e_harmonic`: 0.18076062643784807
+    - `e_mean`: 3717.7176127389816
+    - `e_product_diagnostics_only`: 751074.0098036925
+    - `lanes`:
+      - `coverage@0.8`: 9893.178630134798
+      - `coverage@0.9`: 1259.9139512913198
+      - `tail_depth`: 0.06025679082757998
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `regime`:
+    - `e_harmonic`: 1.2783375417928997
+    - `e_mean`: 1845.5862935903988
+    - `e_product_diagnostics_only`: 93953.13491605424
+    - `lanes`:
+      - `coverage@0.8`: 5496.648633232818
+      - `coverage@0.9`: 39.679475628859294
+      - `tail_depth`: 0.4307719095197023
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `skew_t`:
+    - `e_harmonic`: 1.1165635152671884
+    - `e_mean`: 614094.1194055334
+    - `e_product_diagnostics_only`: 96170091551.54
+    - `lanes`:
+      - `coverage@0.8`: 1689327.2567629656
+      - `coverage@0.9`: 152954.7292648086
+      - `tail_depth`: 0.3721888260765968
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `stack`:
+    - `e_harmonic`: 4.77009718109709
+    - `e_mean`: 264128.7170992591
+    - `e_product_diagnostics_only`: 24188154478.070633
+    - `lanes`:
+      - `coverage@0.8`: 19685.68386843399
+      - `coverage@0.9`: 772698.8772652383
+      - `tail_depth`: 1.59016410502913
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+- `receipt_sha256`: 7f2a89cda252f413dcc3e8fefb8b863dc95c29881a8027c21d90d58b716fba96
+- `research_only`: true
+- `schema`: emerge_drill.v1
+
 ### `receipts/evidence_audit_3464d8f8197bf737.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -6157,6 +6302,1090 @@ counted. Prose that contains such a token is quoted verbatim.
   - `n_steps`: 200
 - `receipt_sha256`: 8d91f50d308726296d79349ce4f24d37768edd6355b9db45bf57b137d8ed9b91
 - `schema`: lane_power.v1
+
+### `receipts/lattice_drill_verdict.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/lattice_drill_verdict.json | 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978 | 0320c1ccb34db8ec154a66b9fcdbb37189def4f1d7eab8736b589016ecc01d44 | not_checked | absent | inputs_sha256=8cc8a9b05d889df404369c02eda15ac34f621b162acfabbbdf8a5e922a8c9086 | unspecified | absent | true | false |
+
+- `data_label`: CORPUS
+- `dataset_unspecified`:
+- `evidence`:
+  - cross_receipt_claim_equality
+  - inputs_fingerprint_edges
+  - code_staleness_audit
+- `file_digests`:
+  - `lattice_drill_vol_bench_a.json`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+  - `lattice_drill_vol_bench_b.json`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+- `generated_at_commit`: 3ed517880c5e600b48a8f43494c1f4c138427109
+- `groups`:
+  - [0]
+    - `claim_path`: results[0].dm_qlike_mean
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[0].dm_qlike_mean
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.04633954712413588
+          - 0.036929924620796604
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [1]
+    - `claim_path`: results[0].dm_qlike_se
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[0].dm_qlike_se
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.010288210847160438
+          - 0.008602752619556994
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [2]
+    - `claim_path`: results[0].dm_qlike_t
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[0].dm_qlike_t
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 4.504140497560435
+          - 4.292803275179885
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [3]
+    - `claim_path`: results[0].epromotion_anytime_p
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [4]
+    - `claim_path`: results[0].epromotion_evalue
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [5]
+    - `claim_path`: results[0].horizon
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [6]
+    - `claim_path`: results[0].model
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [7]
+    - `claim_path`: results[0].mse
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[0].mse
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 1.5964757045866172e-08
+          - 1.3257127418799274e-08
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [8]
+    - `claim_path`: results[0].n_origins
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[0].n_origins
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 48
+          - 64
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [9]
+    - `claim_path`: results[0].qlike
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[0].qlike
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.10780923167964705
+          - 0.09108392870118556
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [10]
+    - `claim_path`: results[0].seed
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [11]
+    - `claim_path`: results[0].shard
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [12]
+    - `claim_path`: results[0].status
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [13]
+    - `claim_path`: results[1].dm_qlike_mean
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[1].dm_qlike_mean
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.046041483471145554
+          - 0.035829020985259405
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [14]
+    - `claim_path`: results[1].dm_qlike_se
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[1].dm_qlike_se
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.013186723334349061
+          - 0.011023498936181472
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [15]
+    - `claim_path`: results[1].dm_qlike_t
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[1].dm_qlike_t
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 3.4915029536727826
+          - 3.250240344983472
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [16]
+    - `claim_path`: results[1].epromotion_anytime_p
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [17]
+    - `claim_path`: results[1].epromotion_evalue
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [18]
+    - `claim_path`: results[1].horizon
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [19]
+    - `claim_path`: results[1].model
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [20]
+    - `claim_path`: results[1].mse
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[1].mse
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 1.4708880474877249e-08
+          - 1.2144444512517402e-08
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [21]
+    - `claim_path`: results[1].n_origins
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[1].n_origins
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 48
+          - 64
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [22]
+    - `claim_path`: results[1].qlike
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[1].qlike
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.10751116802665672
+          - 0.08998302506564836
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [23]
+    - `claim_path`: results[1].seed
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [24]
+    - `claim_path`: results[1].shard
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [25]
+    - `claim_path`: results[1].status
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [26]
+    - `claim_path`: results[2].horizon
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [27]
+    - `claim_path`: results[2].model
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [28]
+    - `claim_path`: results[2].mse
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[2].mse
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 9.508139071862291e-09
+          - 8.02611350968144e-09
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [29]
+    - `claim_path`: results[2].n_origins
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[2].n_origins
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 48
+          - 64
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [30]
+    - `claim_path`: results[2].qlike
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[2].qlike
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.06146968455551116
+          - 0.05415400408038895
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [31]
+    - `claim_path`: results[2].seed
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [32]
+    - `claim_path`: results[2].shard
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [33]
+    - `claim_path`: results[2].status
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [34]
+    - `claim_path`: results[3].dm_qlike_mean
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[3].dm_qlike_mean
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.042155951814459164
+          - 0.034268668137320185
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [35]
+    - `claim_path`: results[3].dm_qlike_se
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[3].dm_qlike_se
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.012539227473735166
+          - 0.010190995103279012
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [36]
+    - `claim_path`: results[3].dm_qlike_t
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[3].dm_qlike_t
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 3.3619257568107437
+          - 3.3626419981591438
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [37]
+    - `claim_path`: results[3].epromotion_anytime_p
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [38]
+    - `claim_path`: results[3].epromotion_evalue
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [39]
+    - `claim_path`: results[3].horizon
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [40]
+    - `claim_path`: results[3].model
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [41]
+    - `claim_path`: results[3].mse
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[3].mse
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 1.4058917591298095e-08
+          - 1.1811529853278772e-08
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [42]
+    - `claim_path`: results[3].n_origins
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[3].n_origins
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 48
+          - 64
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [43]
+    - `claim_path`: results[3].qlike
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[3].qlike
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.10362563636997031
+          - 0.08842267221770914
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [44]
+    - `claim_path`: results[3].seed
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [45]
+    - `claim_path`: results[3].shard
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [46]
+    - `claim_path`: results[3].status
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [47]
+    - `claim_path`: results[4].dm_qlike_mean
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[4].dm_qlike_mean
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.0739795165866113
+          - 0.05926575645053096
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [48]
+    - `claim_path`: results[4].dm_qlike_se
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[4].dm_qlike_se
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.022007474616159053
+          - 0.017908563988808652
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [49]
+    - `claim_path`: results[4].dm_qlike_t
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[4].dm_qlike_t
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 3.361563190548525
+          - 3.3093528039192357
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [50]
+    - `claim_path`: results[4].epromotion_anytime_p
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [51]
+    - `claim_path`: results[4].epromotion_evalue
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [52]
+    - `claim_path`: results[4].horizon
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [53]
+    - `claim_path`: results[4].model
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [54]
+    - `claim_path`: results[4].mse
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[4].mse
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 1.8365818440903653e-08
+          - 1.5245770199440637e-08
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [55]
+    - `claim_path`: results[4].n_origins
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[4].n_origins
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 48
+          - 64
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [56]
+    - `claim_path`: results[4].qlike
+    - `disagreements`:
+      - [0]
+        - `claim_path`: results[4].qlike
+        - `files`:
+          - lattice_drill_vol_bench_a.json
+          - lattice_drill_vol_bench_b.json
+        - `values`:
+          - 0.13544920114212247
+          - 0.11341976053091991
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: inconsistent
+  - [57]
+    - `claim_path`: results[4].seed
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [58]
+    - `claim_path`: results[4].shard
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+  - [59]
+    - `claim_path`: results[4].status
+    - `files`:
+      - lattice_drill_vol_bench_a.json
+      - lattice_drill_vol_bench_b.json
+    - `fingerprint`: 7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b
+    - `n_receipts`: 2
+    - `tier`: dataset
+    - `verdict`: consistent
+- `inputs_unspecified`:
+- `kind`: receipt_lattice.v1
+- `n_claim_groups`: 60
+- `n_consistent_groups`: 33
+- `n_dataset_unspecified`: 0
+- `n_drift_groups`: 0
+- `n_inconsistent_groups`: 27
+- `n_inputs_unspecified`: 0
+- `n_parse_errors`: 0
+- `n_receipts`: 2
+- `n_singleton_claims`: 120
+- `n_stale_code`: 0
+- `params`:
+  - `float_abs_tol`: 1e-12
+  - `float_rel_tol`: 1e-09
+  - `glob`: lattice_drill_*.json
+  - `head_sha`: 3ed517880c5e600b48a8f43494c1f4c138427109
+- `parse_errors`:
+- `receipt_sha256`: 0320c1ccb34db8ec154a66b9fcdbb37189def4f1d7eab8736b589016ecc01d44
+- `research_only`: true
+- `schema`: receipt_lattice.v1
+- `stale_code`:
+- `verdict`: inconsistent
+
+### `receipts/lattice_drill_vol_bench_a.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/lattice_drill_vol_bench_a.json | 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481 | bdaa605aa09646ff57a0a814837002298a56b27f937e78f005d6cb4996e2225b | not_checked | 3ed517880c5e600b48a8f43494c1f4c138427109 | inputs_sha256=94df8056cb13f5ea5734394b4b10831c3fb2e3326e632b0efabb4f365bb98631 | unspecified | absent | absent | false |
+
+- `claim`: research_only
+- `data_label`: SYNTHETIC
+- `dm_reference`: har
+- `generated_at`: 2026-09-29T13:45:09.489305+00:00
+- `git_revision`: 3ed517880c5e600b48a8f43494c1f4c138427109
+- `horizons`:
+  - 1
+- `kind`: vol_bench
+- `min_history`: 120
+- `models`:
+  - dip_garch_t
+  - har
+  - realized_garch
+  - rv_ewma
+  - rv_roll
+- `n_bars`: 512
+- `n_error_rows`: 0
+- `n_origins`: 48
+- `n_rows`: 5
+- `receipt_sha256`: bdaa605aa09646ff57a0a814837002298a56b27f937e78f005d6cb4996e2225b
+- `results`:
+  - [0]
+    - `dm_qlike_mean`: 0.04633954712413588
+    - `dm_qlike_se`: 0.010288210847160438
+    - `dm_qlike_t`: 4.504140497560435
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 0.8
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_roll
+    - `mse`: 1.5964757045866172e-08
+    - `n_origins`: 48
+    - `qlike`: 0.10780923167964705
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [1]
+    - `dm_qlike_mean`: 0.046041483471145554
+    - `dm_qlike_se`: 0.013186723334349061
+    - `dm_qlike_t`: 3.4915029536727826
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 0.8
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_ewma
+    - `mse`: 1.4708880474877249e-08
+    - `n_origins`: 48
+    - `qlike`: 0.10751116802665672
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [2]
+    - `dm_qlike_mean`: null
+    - `dm_qlike_se`: null
+    - `dm_qlike_t`: null
+    - `epromotion_anytime_p`: null
+    - `epromotion_evalue`: null
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: har
+    - `mse`: 9.508139071862291e-09
+    - `n_origins`: 48
+    - `qlike`: 0.06146968455551116
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [3]
+    - `dm_qlike_mean`: 0.042155951814459164
+    - `dm_qlike_se`: 0.012539227473735166
+    - `dm_qlike_t`: 3.3619257568107437
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 1.0
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: realized_garch
+    - `mse`: 1.4058917591298095e-08
+    - `n_origins`: 48
+    - `qlike`: 0.10362563636997031
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [4]
+    - `dm_qlike_mean`: 0.0739795165866113
+    - `dm_qlike_se`: 0.022007474616159053
+    - `dm_qlike_t`: 3.361563190548525
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 1.0
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: dip_garch_t
+    - `mse`: 1.8365818440903653e-08
+    - `n_origins`: 48
+    - `qlike`: 0.13544920114212247
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+- `schema`: vol_bench.v1
+- `seed`: 11
+- `shards`:
+  - `garch_vol`:
+    - `config`:
+      - `alpha`: 0.05
+      - `beta`: 0.9
+      - `burn`: 128
+      - `data_label`: SYNTHETIC
+      - `gamma`: 0.08
+      - `intraday_steps`: 24
+      - `omega`: 4e-06
+      - `persistence`: 0.99
+      - `process`: gjr_garch_1_1
+      - `seed`: 11
+    - `n`: 512
+    - `parkinson_sha256`: cad509db2cfa6de2638ca21e0b1976a8173ef3c682043f63135a212f8c569f74
+    - `returns_sha256`: 9997af877561996822726dc7432c0e6b054926068f08d9d6f5c88a8a39ef6b10
+    - `rv_sha256`: 0967e2bfa3ec3e367523611253e546f72364645cdf3e75096903331927c1bdb0
+    - `seed`: 11
+- `stride`: 4
+- `target`: cumulative_realized_variance
+
+### `receipts/lattice_drill_vol_bench_b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/lattice_drill_vol_bench_b.json | 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988 | 493c92473f7c4cf698efe4bc33ba885b8551a6fa987a658b41aaee0e6318ba91 | not_checked | 3ed517880c5e600b48a8f43494c1f4c138427109 | inputs_sha256=bcfd376b2f8ccf063dff0519bc66f94901724957a634d7048b20927abda77c03 | unspecified | absent | absent | false |
+
+- `claim`: research_only
+- `data_label`: SYNTHETIC
+- `dm_reference`: har
+- `generated_at`: 2026-09-29T13:45:29.931369+00:00
+- `git_revision`: 3ed517880c5e600b48a8f43494c1f4c138427109
+- `horizons`:
+  - 1
+- `kind`: vol_bench
+- `min_history`: 120
+- `models`:
+  - dip_garch_t
+  - har
+  - realized_garch
+  - rv_ewma
+  - rv_roll
+- `n_bars`: 512
+- `n_error_rows`: 0
+- `n_origins`: 64
+- `n_rows`: 5
+- `receipt_sha256`: 493c92473f7c4cf698efe4bc33ba885b8551a6fa987a658b41aaee0e6318ba91
+- `results`:
+  - [0]
+    - `dm_qlike_mean`: 0.036929924620796604
+    - `dm_qlike_se`: 0.008602752619556994
+    - `dm_qlike_t`: 4.292803275179885
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 0.8
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_roll
+    - `mse`: 1.3257127418799274e-08
+    - `n_origins`: 64
+    - `qlike`: 0.09108392870118556
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [1]
+    - `dm_qlike_mean`: 0.035829020985259405
+    - `dm_qlike_se`: 0.011023498936181472
+    - `dm_qlike_t`: 3.250240344983472
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 0.8
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_ewma
+    - `mse`: 1.2144444512517402e-08
+    - `n_origins`: 64
+    - `qlike`: 0.08998302506564836
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [2]
+    - `dm_qlike_mean`: null
+    - `dm_qlike_se`: null
+    - `dm_qlike_t`: null
+    - `epromotion_anytime_p`: null
+    - `epromotion_evalue`: null
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: har
+    - `mse`: 8.02611350968144e-09
+    - `n_origins`: 64
+    - `qlike`: 0.05415400408038895
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [3]
+    - `dm_qlike_mean`: 0.034268668137320185
+    - `dm_qlike_se`: 0.010190995103279012
+    - `dm_qlike_t`: 3.3626419981591438
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 1.0
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: realized_garch
+    - `mse`: 1.1811529853278772e-08
+    - `n_origins`: 64
+    - `qlike`: 0.08842267221770914
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+  - [4]
+    - `dm_qlike_mean`: 0.05926575645053096
+    - `dm_qlike_se`: 0.017908563988808652
+    - `dm_qlike_t`: 3.3093528039192357
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 1.0
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: dip_garch_t
+    - `mse`: 1.5245770199440637e-08
+    - `n_origins`: 64
+    - `qlike`: 0.11341976053091991
+    - `seed`: 11
+    - `shard`: garch_vol
+    - `status`: ok
+- `schema`: vol_bench.v1
+- `seed`: 11
+- `shards`:
+  - `garch_vol`:
+    - `config`:
+      - `alpha`: 0.05
+      - `beta`: 0.9
+      - `burn`: 128
+      - `data_label`: SYNTHETIC
+      - `gamma`: 0.08
+      - `intraday_steps`: 24
+      - `omega`: 4e-06
+      - `persistence`: 0.99
+      - `process`: gjr_garch_1_1
+      - `seed`: 11
+    - `n`: 512
+    - `parkinson_sha256`: cad509db2cfa6de2638ca21e0b1976a8173ef3c682043f63135a212f8c569f74
+    - `returns_sha256`: 9997af877561996822726dc7432c0e6b054926068f08d9d6f5c88a8a39ef6b10
+    - `rv_sha256`: 0967e2bfa3ec3e367523611253e546f72364645cdf3e75096903331927c1bdb0
+    - `seed`: 11
+- `stride`: 4
+- `target`: cumulative_realized_variance
 
 ### `receipts/legacy-unsealed/adaptive_mix_20asset_1d_20260922.json`
 
@@ -23379,6 +24608,242 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: blocked
+
+### `receipts/panel_audit_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/panel_audit_real_drill.json | 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de | 3cd9ced55512a1e1d1a2f87f0c881133172876c91695859c6147611c350c6eda | not_checked | absent | inputs_sha256=953f758d16172c6a82452e2219903e5898aa1872e8ddd56c48c01eb3335592db | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `symbols_sampled`:
+    - A
+    - ALB
+    - APTV
+    - BLK
+    - CDW
+    - CNP
+    - D
+    - DVA
+    - ERIE
+    - FFIV
+    - GOOGL
+    - HST
+    - IT
+    - KMX
+    - LVS
+    - MLM
+    - NCLH
+    - NXPI
+    - PGR
+    - PWR
+    - SHW
+    - SYF
+    - TROW
+    - URI
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - bernoulli_lr_bet
+  - exact_evalue_under_h0
+  - evalue_arithmetic_mean_valid_under_arbitrary_dependence
+  - bonferroni_family_bound
+  - cross_sectional_panel
+- `excluded_heads`:
+  - nbeats
+  - nhits
+  - lgbm_q2
+- `family`:
+  - `bonferroni_threshold`: 240.0
+  - `family_alarmed`: true
+  - `max_head_pooled_evalue`: 2.7684869400254558e+47
+- `heads`:
+  - [0]
+    - `alarm_share`: 0.9583333333333334
+    - `head`: fhs_skew
+    - `mean_breach_rate`: 0.49291666666666667
+    - `n_symbols`: 24
+    - `pooled_evalue`: 2.7684869400254558e+47
+  - [1]
+    - `alarm_share`: 1.0
+    - `head`: qar
+    - `mean_breach_rate`: 0.43180555555555555
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.556932348136527e+40
+  - [2]
+    - `alarm_share`: 1.0
+    - `head`: gmm
+    - `mean_breach_rate`: 0.4315277777777778
+    - `n_symbols`: 24
+    - `pooled_evalue`: 5.838398290990208e+39
+  - [3]
+    - `alarm_share`: 1.0
+    - `head`: hstep_t
+    - `mean_breach_rate`: 0.4365277777777778
+    - `n_symbols`: 24
+    - `pooled_evalue`: 5.838392834530039e+39
+  - [4]
+    - `alarm_share`: 0.9583333333333334
+    - `head`: conf_t
+    - `mean_breach_rate`: 0.39013888888888887
+    - `n_symbols`: 24
+    - `pooled_evalue`: 2.2330077573194367e+39
+  - [5]
+    - `alarm_share`: 1.0
+    - `head`: skew_t
+    - `mean_breach_rate`: 0.43388888888888894
+    - `n_symbols`: 24
+    - `pooled_evalue`: 8.21040798410437e+38
+  - [6]
+    - `alarm_share`: 1.0
+    - `head`: hstep_emp
+    - `mean_breach_rate`: 0.43027777777777776
+    - `n_symbols`: 24
+    - `pooled_evalue`: 3.079063381441966e+38
+  - [7]
+    - `alarm_share`: 1.0
+    - `head`: isotonic
+    - `mean_breach_rate`: 0.43027777777777776
+    - `n_symbols`: 24
+    - `pooled_evalue`: 3.079063381441966e+38
+  - [8]
+    - `alarm_share`: 1.0
+    - `head`: empirical
+    - `mean_breach_rate`: 0.43027777777777776
+    - `n_symbols`: 24
+    - `pooled_evalue`: 3.079063381441966e+38
+  - [9]
+    - `alarm_share`: 1.0
+    - `head`: regime
+    - `mean_breach_rate`: 0.41097222222222224
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.154585451041205e+38
+  - [10]
+    - `alarm_share`: 1.0
+    - `head`: stack
+    - `mean_breach_rate`: 0.4261111111111111
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.2040355227282502e+35
+  - [11]
+    - `alarm_share`: 0.9166666666666666
+    - `head`: gaussian
+    - `mean_breach_rate`: 0.35986111111111113
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.2040354966421244e+35
+- `kind`: panel_audit.v1
+- `level`: 0.8
+- `n_cells_ok`: 288
+- `n_cells_total`: 288
+- `n_heads`: 12
+- `n_symbols`: 24
+- `params`:
+  - `data_labels`:
+    - `yahoo_eod`: 288
+  - `pooling`: arithmetic_mean_evalues
+- `receipt_sha256`: 3cd9ced55512a1e1d1a2f87f0c881133172876c91695859c6147611c350c6eda
+- `research_only`: true
+- `schema`: panel_audit.v1
+- `symbols`:
+  - [0]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.429491576443706e+47
+    - `shard`: HST
+  - [1]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.0737094272933634e+46
+    - `shard`: NCLH
+  - [2]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.1197124264891178e+43
+    - `shard`: SYF
+  - [3]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.6420429716062135e+39
+    - `shard`: LVS
+  - [4]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 6.421472988416791e+35
+    - `shard`: NXPI
+  - [5]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.3242762948799495e+31
+    - `shard`: BLK
+  - [6]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 4.9660362126001744e+30
+    - `shard`: MLM
+  - [7]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.8622635396749235e+30
+    - `shard`: URI
+  - [8]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.178795431934382e+27
+    - `shard`: CDW
+  - [9]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.178795320218089e+27
+    - `shard`: GOOGL
+  - [10]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 2.7310264681205572e+26
+    - `shard`: APTV
+  - [11]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 8.940596876708958e+24
+    - `shard`: CNP
+  - [12]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.400741731960286e+24
+    - `shard`: ALB
+  - [13]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.400676764568877e+24
+    - `shard`: PWR
+  - [14]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.632051996390216e+21
+    - `shard`: D
+  - [15]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 2.9700263502236405e+20
+    - `shard`: TROW
+  - [16]
+    - `n_heads_alarmed`: 11
+    - `pooled_evalue`: 4.176599515002312e+19
+    - `shard`: A
+  - [17]
+    - `n_heads_alarmed`: 10
+    - `pooled_evalue`: 8.259388708223693e+17
+    - `shard`: DVA
+  - [18]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 8.259388690830621e+17
+    - `shard`: SHW
+  - [19]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 3.2606400804820486e+17
+    - `shard`: PGR
+  - [20]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5831117250221637.0
+    - `shard`: IT
+  - [21]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 17041822305849.928
+    - `shard`: ERIE
+  - [22]
+    - `n_heads_alarmed`: 11
+    - `pooled_evalue`: 51790425467.30482
+    - `shard`: KMX
+  - [23]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 9059835319.321789
+    - `shard`: FFIV
 
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
