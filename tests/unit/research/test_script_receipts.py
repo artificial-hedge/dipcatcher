@@ -217,6 +217,27 @@ _LANE_COVERED_SCHEMAS = frozenset(
         "hstep_bench.v1",
         "calibration_eval.v1",
         "cost_calibration.v1",
+        "receipt_lattice.v1",
+    }
+)
+#: schemas whose receipts dispatch to evalue_family_contract_errors via their
+#: ``kind`` field — deep-checked even though the schema tag itself is not a
+#: dispatch key.
+_KIND_DISPATCHED_SCHEMAS = frozenset(
+    {
+        "calibration_audit.v1",
+        "corpus_inference.v1",
+        "coverage_audit.v1",
+        "coverage_cs.v1",
+        "changepoint_localize.v1",
+        "emerge_drill.v1",
+        "fleet_race.v1",
+        "lane_power.v1",
+        "loss_cs.v1",
+        "monitor_run.v1",
+        "panel_audit.v1",
+        "suite_health.v1",
+        "tail_audit.v1",
     }
 )
 
@@ -229,7 +250,11 @@ def test_every_committed_receipt_schema_is_contract_covered() -> None:
         schema = json.loads(path.read_text()).get("schema")
         if schema in ("receipt.v2", None):
             continue  # v2 inners dispatch by kind fingerprint
-        if schema in SCRIPT_RECEIPT_CONTRACTS or schema in _LANE_COVERED_SCHEMAS:
+        if (
+            schema in SCRIPT_RECEIPT_CONTRACTS
+            or schema in _LANE_COVERED_SCHEMAS
+            or schema in _KIND_DISPATCHED_SCHEMAS
+        ):
             continue
         uncovered.append(f"{path.name}:{schema}")
     assert uncovered == []
