@@ -40,7 +40,7 @@ def test_good_head_promotes_bad_heads_eliminated() -> None:
         shards={"iid_gaussian": SHARD_G},
         n_train=64,
         n_eval=32,
-        n_chunks=8,
+        n_chunks=16,
         seed=0,
     )
     assert receipt["kind"] == "fleet_race.v1"
@@ -152,6 +152,19 @@ def test_global_evidence_product_pooling() -> None:
         )
     # oracle is never worse than any head -> its demote product should be 1
     assert ge["oracle"]["demote_evalue_product"] <= 1.0 + 1e-9
+
+
+def test_short_shard_fails_closed() -> None:
+    """A shard shorter than n_train + n_eval raises before any racing."""
+    with pytest.raises(ValueError, match="produced .* rows"):
+        fleet_race(
+            _factories({"oracle": 0.0}),
+            shards={"iid_gaussian": SHARD_G},
+            n_train=64,
+            n_eval=64,  # needs 128 rows; SHARD_G yields 96
+            n_chunks=16,
+            seed=0,
+        )
 
 
 def test_race_data_label_derived_and_mixed_refused() -> None:

@@ -149,6 +149,11 @@ def fleet_race(
         shard = generator(n_train + n_eval, shard_seed)
         if not isinstance(shard, SyntheticShard) or not np.isfinite(shard.y).all():
             raise ValueError(f"shard {shard_name!r} did not produce a finite SyntheticShard")
+        if shard.y.shape[0] < n_train + n_eval:
+            raise ValueError(
+                f"shard {shard_name!r} produced {shard.y.shape[0]} rows; "
+                f"the race needs n_train + n_eval = {n_train + n_eval}"
+            )
         x = np.asarray(shard.x, dtype=np.float64)
         y = np.asarray(shard.y, dtype=np.float64).reshape(-1)
         x_tr, y_tr = x[:n_train], y[:n_train]
