@@ -410,6 +410,7 @@ def test_fleet_registry_covers_default_heads() -> None:
         "nbeats",
         "nhits",
         "sundial",
+        "toto2",
         "tirex2",
         "kronos_base",
         "moirai2",
