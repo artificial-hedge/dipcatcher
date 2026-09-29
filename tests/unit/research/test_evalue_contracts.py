@@ -598,3 +598,60 @@ def test_mcs_seq_contract_partitions() -> None:
     bad = dict(_BASE_MCS)
     bad["evidence"] = []
     assert "evidence_missing_anytime_valid" in evalue_family_contract_errors(bad)
+
+
+_BASE_SERIAL = {
+    "kind": "serial_watch.v1",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "data_label": "SYNTHETIC",
+    "alpha": 0.05,
+    "lam": 0.5,
+    "n_lags": 5,
+    "n_origins": 400,
+    "per_lag": {str(k): {"pos": 1.2, "neg": 0.8, "alarmed": k == 1} for k in range(1, 6)},
+    "alarmed_lags": [1],
+    "alarm_origins": {"lag1_pos": 88},
+    "pooled_evalue": 2.4,
+    "any_lag_alarmed": True,
+    "pooled_alarmed": False,
+    "evidence": ["ville_inequality", "anytime_valid"],
+}
+
+
+def test_serial_watch_contract() -> None:
+    assert evalue_family_contract_errors(dict(_BASE_SERIAL)) == []
+
+
+def test_serial_watch_contract_guards() -> None:
+    # alarm lag outside the declared family
+    bad = dict(_BASE_SERIAL)
+    bad["alarmed_lags"] = [9]
+    assert "alarmed_lag_out_of_range:9" in evalue_family_contract_errors(bad)
+
+    # any_lag_alarmed must equal bool(alarmed_lags)
+    bad = dict(_BASE_SERIAL)
+    bad["any_lag_alarmed"] = False
+    assert "any_lag_alarmed_mismatch" in evalue_family_contract_errors(bad)
+
+    # pooled_alarmed requires pooled >= 1/alpha
+    bad = dict(_BASE_SERIAL)
+    bad["pooled_alarmed"] = True
+    assert "pooled_alarmed_below_threshold" in evalue_family_contract_errors(bad)
+
+    # alarm origin beyond n_origins
+    bad = dict(_BASE_SERIAL)
+    bad["alarm_origins"] = {"lag2_neg": 999}
+    assert "alarm_origin_bad:lag2_neg" in evalue_family_contract_errors(bad)
+
+    # non-positive per-lag e-value
+    bad = dict(_BASE_SERIAL)
+    bad["per_lag"] = dict(
+        _BASE_SERIAL["per_lag"], **{"3": {"pos": -1.0, "neg": 1.0, "alarmed": False}}
+    )
+    assert "per_lag_pos_not_positive:3" in evalue_family_contract_errors(bad)
+
+    # missing the anytime_valid evidence tag
+    bad = dict(_BASE_SERIAL)
+    bad["evidence"] = []
+    assert "evidence_missing_anytime_valid" in evalue_family_contract_errors(bad)
