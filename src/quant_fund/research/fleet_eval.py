@@ -433,9 +433,13 @@ class _HStepOneStepHead:
 # models/distribution.py plus the landed conditional/series heads via the
 # fleet adapters above: qar (one-step lagged scoring), hstep as its two h=1
 # construction slices, the series/feature heads regime / fhs_skew /
-# lgbm_q2 / conf_t directly, and the torch-optional neural heads nbeats /
-# nhits (imported lazily inside the factory so this module never requires
+# lgbm_q2 / conf_t directly, the torch-optional neural heads nbeats / nhits,
+# and the fail-closed tabpfn_ts adapter (imported lazily inside the factory so this module never requires
 # the ``nn`` extra — no cross-PR head dependencies).
+# lgbm_q2 / conf_t directly, the torch-optional neural heads nbeats /
+# nhits, and the fail-closed moirai2 adapter (imported lazily inside the
+# factory so this module never requires the ``nn`` extra — no cross-PR
+# head dependencies).
 FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "empirical": lambda taus, seed: EmpiricalDistribution(list(taus)),
     "gaussian": lambda taus, seed: GaussianDistribution(list(taus)),
@@ -452,6 +456,8 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "hstep_emp": lambda taus, seed: _HStepOneStepHead(taus, "empirical"),
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
+    "tabpfn_ts": lambda taus, seed: _tabpfn_ts(taus, seed),
+    "moirai2": lambda taus, seed: _moirai2(taus, seed),
 }
 
 
@@ -465,6 +471,18 @@ def _nhits(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.nbeats import NHiTsDistribution
 
     return NHiTsDistribution(list(taus), seed=int(seed))
+
+
+def _tabpfn_ts(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.tabpfn_ts import TabpfnTsDistribution
+
+    return TabpfnTsDistribution(list(taus), seed=int(seed))
+
+
+def _moirai2(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.moirai2 import Moirai2Distribution
+
+    return Moirai2Distribution(list(taus), seed=int(seed))
 
 
 def resolve_shard_generators(names: Iterable[str] | None = None) -> dict[str, ShardGenerator]:
@@ -696,7 +714,9 @@ def run_distribution_fleet(
                     blob["head"] = str(head)
                 if version:
                     blob["version"] = str(version)
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except (AttributeError, ImportError, KeyError, RuntimeError, TypeError, ValueError):
+                # Metadata is a label. A missing or unreadable head stays
+                # "unknown"; scoring errors are recorded on the row above.
                 pass
 
     columns = [
@@ -781,6 +801,18 @@ def fleet_v1_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         errors.append("live_pnl_claim_not_false")
     if not isinstance(receipt.get("results"), list) or not receipt["results"]:
         errors.append("results_missing_or_empty")
+    else:
+        rows = receipt["results"]
+        n_rows = receipt.get("n_rows")
+        if isinstance(n_rows, int) and not isinstance(n_rows, bool) and n_rows != len(rows):
+            errors.append("n_rows_mismatch")
+        declared_errors = receipt.get("n_error_rows")
+        if isinstance(declared_errors, int) and not isinstance(declared_errors, bool):
+            actual_errors = sum(
+                1 for row in rows if isinstance(row, Mapping) and row.get("status") != "ok"
+            )
+            if declared_errors != actual_errors:
+                errors.append("n_error_rows_mismatch")
     if not family_blob_forbidden_metrics_absent(research_blob):
         errors.append("forbidden_metric_keys")
     return errors

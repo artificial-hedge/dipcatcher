@@ -95,7 +95,9 @@ class Ed25519Signer:
             serialization.PrivateFormat.Raw,
             serialization.NoEncryption(),
         )
-        fd = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        fd = os.open(
+            target, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0), 0o600
+        )
         try:
             os.write(fd, (raw.hex() + "\n").encode("ascii"))
             os.fsync(fd)
@@ -104,6 +106,7 @@ class Ed25519Signer:
         os.chmod(target, 0o600)
         pub = target.with_name(target.name + ".pub")
         atomic_write_text(pub, self.public_key_hex + "\n")
+        pub.write_bytes((self.public_key_hex + "\n").encode("ascii"))
 
     def sign(self, payload: bytes) -> Signature:
         signature = self._private.sign(payload)
