@@ -803,6 +803,62 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.00012397308872545248
   - 0.00011681797278370385
 
+### `receipts/calib_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/calib_real_drill.json | 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c | 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370 | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - nonnegative_test_martingale
+  - fixed_predictable_bets
+  - level_test_not_change_test
+- `generated_at_commit`: dc1e47215d316108cbd403ee0c6ad2c91ee742bb
+- `kind`: calibration_audit.v1
+- `n_models`: 12
+- `n_shards`: 1
+- `params`:
+  - `alpha`: 0.05
+  - `channels`:
+    - loc_hi
+    - loc_lo
+    - overconf
+    - underconf
+    - grapa_loc
+    - grapa_disp
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
+- `research_only`: true
+- `schema`: calibration_audit.v1
+
 ### `receipts/capacity_eval_cd0854242ed8a9ec.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1085,6 +1141,156 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: capacity_overlay.v1
 - `seed`: 11
 
+### `receipts/corpus_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_real_drill.json | 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119 | b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6 | not_checked | absent | inputs_sha256=30c129932661b7f9c36fa8822f6669bc062d383b10358a221b3073936efd440c | unspecified | absent | true | false |
+
+- `corpus_evalue`: 1.0
+- `corpus_reject_at_alpha`: false
+- `data_label`: MIXED
+- `evidence`:
+  - bh_fdr_pooled_family
+  - evalue_product_merge
+  - tagged_claim_provenance
+- `generated_at_commit`: 8096a5245da4d708771c00b7756e334a3638f14b
+- `kind`: corpus_inference.v1
+- `n_e_findings`: 0
+- `n_p_findings`: 52
+- `n_parse_errors`: 0
+- `n_receipts`: 10
+- `n_survivors`: 7
+- `params`:
+  - `glob`: *.json
+  - `input_labels`:
+    - `adaptive_mix_20asset_1d_20260922.json`: UNKNOWN
+    - `adaptive_mix_band_search_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_pair_candidate_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_reversion_screen_20asset_1d_20260922.json`: UNKNOWN
+    - `capacity_eval_cd0854242ed8a9ec.json`: SYNTHETIC
+    - `dip_bench_crypto_1d_20260925.json`: UNKNOWN
+    - `fast_replay_p42_conformance_20260927.json`: UNKNOWN
+    - `fleet_eval_5ddf15b0dc7d3ca1.json`: SYNTHETIC
+    - `incumbent_bench_qlib.json`: UNKNOWN
+    - `rankic_eval_9ebdad7da83e7348.json`: SYNTHETIC
+  - `q`: 0.05
+- `parse_errors`:
+- `receipt_sha256`: b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6
+- `research_only`: true
+- `schema`: corpus_inference.v1
+- `surviving_claims`:
+  - [0]
+    - `family`: pooled
+    - `path`: results[14].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.0003521222142801333
+  - [1]
+    - `family`: pooled
+    - `path`: results[21].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.004205896471930621
+  - [2]
+    - `family`: pooled
+    - `path`: results[24].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.00025215641774270535
+  - [3]
+    - `family`: pooled
+    - `path`: results[27].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 1.1904848878731533e-06
+  - [4]
+    - `family`: pooled
+    - `path`: results[31].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.00017886857828392145
+  - [5]
+    - `family`: pooled
+    - `path`: results[40].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.0011998006712072259
+  - [6]
+    - `family`: pooled
+    - `path`: results[47].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 1.0262118132145719e-05
+
+### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_df9b8d7068bf709b.json | 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b | df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68 | not_checked | 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f | inputs_sha256=60e4d5577d428605825c73e4be06987316aaf6a6dd92b30f75d9f7d72e9f10f9 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_relative`: 0.0008280850981386401
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-09-28T16:46:41.013669+00:00
+- `git_revision`: 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: flat
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 1850.7817080066654
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 7477.672951985385
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 9328.45465999205
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 1854.8502840709652
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 116
+    - `research_only`: true
+    - `spread`: 2944.5377726169922
+    - `spread_estimator`: roll
+    - `total_cost`: 4799.388056687958
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
 ### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1192,6 +1398,90 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: deps_hygiene.v1
 - `ultraplan_item`: P6.10+P4.6
 - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+
+### `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json | 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b | c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eprocess`:
+  - `alarm_index`: 16
+  - `alarmed`: true
+  - `final_evalue`: 0.0005858298980283407
+  - `lam`: 0.5
+- `evidence`:
+  - e_process_anytime_valid
+  - test_martingale_under_drift_null
+  - page_hinkley_diagnostic_only
+- `kind`: drift_alarm.v1
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `page_hinkley`:
+  - `alarm_index`: null
+  - `alarmed`: false
+  - `delta`: 0.1
+  - `final_statistic`: 0.13126228297147766
+  - `h`: 5.0
+- `receipt_sha256`: c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223
+- `research_only`: true
+- `stream`: gaussian_minus_conf_t_pinball
+
+### `receipts/drift_real_drill_gaussian_pit.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/drift_real_drill_gaussian_pit.json | 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64 | d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eprocess`:
+  - `alarm_index`: null
+  - `alarmed`: false
+  - `final_evalue`: 5.513038244201123e-12
+  - `lam`: 0.5
+- `evidence`:
+  - e_process_anytime_valid
+  - test_martingale_under_drift_null
+  - page_hinkley_diagnostic_only
+- `kind`: drift_alarm.v1
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `page_hinkley`:
+  - `alarm_index`: 28
+  - `alarmed`: true
+  - `delta`: 0.1
+  - `final_statistic`: 0.13020556880455408
+  - `h`: 5.0
+- `receipt_sha256`: d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107
+- `research_only`: true
+- `stream`: gaussian_pit
 
 ### `receipts/fast_replay_p42_conformance_20260927.json`
 
@@ -3926,6 +4216,175 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.9
   - 0.95
 
+### `receipts/loss_cs_real_drill_conf_t_vs_empirical.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/loss_cs_real_drill_conf_t_vs_empirical.json | 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763 | 9f302cf7adabafe372898d52e9ce9d0c88172cbca7a1e5a6d10570120408ca47 | not_checked | absent | absent | unspecified | absent | absent | absent |
+
+- `alpha`: 0.05
+- `bound`: 0.0020481814093069317
+- `challenger`: conf_t
+- `cs_high`: -5.467785399674815e-06
+- `cs_low`: -0.00030504588725783425
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - betting_confidence_sequence
+  - bounded_increments
+  - time_uniform_coverage
+- `excludes_zero`: true
+- `incumbent`: empirical
+- `interpretation`: challenger_better
+- `kind`: loss_cs.v1
+- `lam`: 0.5
+- `mean_diff`: -0.00014077544656376404
+- `n`: 300
+- `receipt_sha256`: 9f302cf7adabafe372898d52e9ce9d0c88172cbca7a1e5a6d10570120408ca47
+- `schema`: loss_cs.v1
+
+### `receipts/loss_cs_real_drill_gaussian_vs_conf_t.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/loss_cs_real_drill_gaussian_vs_conf_t.json | 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de | 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743 | not_checked | absent | absent | unspecified | absent | absent | absent |
+
+- `alpha`: 0.05
+- `bound`: 0.0005556059235267558
+- `challenger`: gaussian
+- `cs_high`: 2.103370268349208e-05
+- `cs_low`: -9.775281957945879e-05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - betting_confidence_sequence
+  - bounded_increments
+  - time_uniform_coverage
+- `excludes_zero`: false
+- `incumbent`: conf_t
+- `interpretation`: inconclusive
+- `kind`: loss_cs.v1
+- `lam`: 0.5
+- `mean_diff`: -3.308069273216095e-05
+- `n`: 300
+- `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
+- `schema`: loss_cs.v1
+
+### `receipts/monitor_run_drill_clean.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_drill_clean.json | 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c | 3ca0d758f95f507ae1bb3e1a9a80cc31a818953e66dc9e6a73b5a7a86c3f9970 | not_checked | absent | inputs_sha256=4588744277feb3af22aae86a6a4a7d400dd5501e177e9013fdfae43a002a09a9 | unspecified | absent | true | false |
+
+- `code_revision`: f99ec27c981dec240bca72f105db1733b3c0278f
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 2
+- `n_rows`: 4
+- `params`:
+  - `alpha`: 0.05
+  - `heads`:
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 60
+  - `n_train`: 120
+  - `seed`: 3
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.5
+- `receipt_sha256`: 3ca0d758f95f507ae1bb3e1a9a80cc31a818953e66dc9e6a73b5a7a86c3f9970
+- `research_only`: true
+- `schema`: monitor_run.v1
+
+### `receipts/monitor_run_drill_defect.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_drill_defect.json | e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df | 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55 | not_checked | absent | inputs_sha256=49bdfd5d88bcaeb229e973c883cb3400b19cb90ba0b31d94a55b13ddc4ea0297 | unspecified | absent | true | false |
+
+- `code_revision`: 75266bae332263fa2b87244525c85cca557f08d0
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 5
+- `n_rows`: 6
+- `params`:
+  - `alpha`: 0.05
+  - `heads`:
+    - biased_gaussian
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 60
+  - `n_train`: 120
+  - `seed`: 3
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.5
+- `receipt_sha256`: 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55
+- `research_only`: true
+- `schema`: monitor_run.v1
+
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -5055,3 +5514,116 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `t_spearman`: -4.75560366545392
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
+
+### `receipts/verdict_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/verdict_real_drill.json | 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7 | 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c | not_checked | absent | inputs_sha256=86f74196e0b8b77de389cf70b0312c77753bd74975c1600c35d114a2d5241eb2 | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `components`:
+  - `calibration`:
+    - `alarm_origin`: 17
+    - `channel_wealths`:
+      - `grapa_disp`: 0.134256778680104
+      - `grapa_loc`: 0.06354354498244345
+      - `loc_hi`: 3.2771148072993125e-05
+      - `loc_lo`: 6.271944764438012e-09
+      - `overconf`: 3.5217032438195263e-12
+      - `underconf`: 0.0
+    - `final_evalue`: 0.032972183514347816
+    - `miscalibrated`: true
+  - `drift`:
+    - `alarm_index`: null
+    - `eprocess_alarmed`: false
+    - `final_evalue`: 5.65228928707004e-13
+    - `page_hinkley_alarmed`: true
+  - `localize`:
+    - `skipped`: no_drift_alarm
+  - `magnitude`:
+    - `alpha`: 0.05
+    - `bound`: 0.0005556059235267558
+    - `challenger`: challenger
+    - `cs_high`: 2.103370268349208e-05
+    - `cs_low`: -9.775281957945879e-05
+    - `evidence`:
+      - ville_inequality
+      - betting_confidence_sequence
+      - bounded_increments
+      - time_uniform_coverage
+    - `excludes_zero`: false
+    - `incumbent`: incumbent
+    - `interpretation`: inconclusive
+    - `kind`: loss_cs.v1
+    - `lam`: 0.5
+    - `mean_diff`: -3.308069273216095e-05
+    - `n`: 300
+    - `schema`: loss_cs.v1
+  - `promotion`:
+    - `anytime_p`: 1.0
+    - `final_evalue`: 1.0
+    - `promoted`: false
+    - `promotion_origin`: null
+    - `runner_up`: conf_t
+  - `winner_curse`:
+    - `corrected_score`: 0.007786306962895035
+    - `honest_score`: 0.007774180331785465
+    - `naive_score`: 0.007783105322251523
+    - `selected_head`: gaussian
+    - `selection_aware_ci`:
+      - 0.006828763736922536
+      - 0.008883396250636
+    - `selection_bias`: 3.201640643512617e-06
+- `data_label`: yahoo_eod
+- `drill`:
+  - `computed_on`: seq-union scratch (all verdict lanes present); isolated lane branches degrade to inconclusive
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `head_errors`:
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_stream`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - selection_bias_corrected
+  - anytime_valid_promotion
+  - level_shift_monitor
+  - magnitude_confidence_sequence
+  - pit_uniformity_when_supplied
+  - changepoint_localization_when_drifted
+  - proper_score_only
+- `kind`: honest_verdict.v1
+- `n_heads`: 12
+- `n_obs`: 300
+- `receipt_sha256`: 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c
+- `research_only`: true
+- `run`:
+  - `params`:
+    - `data_labels`:
+      - `conf_t`: yahoo_eod
+      - `empirical`: yahoo_eod
+      - `fhs_skew`: yahoo_eod
+      - `gaussian`: yahoo_eod
+      - `gmm`: yahoo_eod
+      - `hstep_emp`: yahoo_eod
+      - `hstep_t`: yahoo_eod
+      - `isotonic`: yahoo_eod
+      - `qar`: yahoo_eod
+      - `regime`: yahoo_eod
+      - `skew_t`: yahoo_eod
+      - `stack`: yahoo_eod
+- `unavailable_lanes`:
+- `verdict`: not_supported
+- `winner`: gaussian
