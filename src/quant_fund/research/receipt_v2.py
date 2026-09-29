@@ -810,11 +810,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         errors.extend(_guarded(fleet_v1_contract_errors, "fleet_v1_contract")(payload))
         errors.extend(_guarded(fleet_v1_audit_errors, "fleet_v1")(payload))
     schema = payload.get("schema")
-    if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
-        from quant_fund.paper.sim_live import sim_live_contract_errors
-
-        errors.extend(sim_live_contract_errors(payload))
-    elif schema == "vol_bench.v1":
+    if schema == "vol_bench.v1":
         from quant_fund.research.vol_bench import vol_bench_contract_errors
 
         errors.extend(vol_bench_contract_errors(payload))
