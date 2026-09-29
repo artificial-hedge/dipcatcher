@@ -1,0 +1,22 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "inputs_sha256": "79433c46d780eff943025c0b3fcaf6fab0081025ff87dd8c8e4cb8b3479773cb",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "members": [],
+  "members_added": [],
+  "members_removed": [],
+  "n_members": 0,
+  "params": {
+    "head_sha": "bfb4d290f0a5acec615d41a4ca314b7111bcda76",
+    "pattern": "AGENTS.md"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "8e5039bf1cd311b3a2a35313ee7e752f04f1ec29b6da8329300fa38d0c18ff2a",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

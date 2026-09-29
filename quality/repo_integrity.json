@@ -16,8 +16,10 @@
       "ok": true
     },
     "epoch:configs": {
-      "errors": [],
-      "ok": true
+      "errors": [
+        "unstamped_member:corpus_epoch_2ce330c4a9f821da.json"
+      ],
+      "ok": false
     },
     "epoch:quality": {
       "errors": [],
@@ -61,7 +63,7 @@
     }
   },
   "kind": "repo_integrity",
-  "ok": true,
+  "ok": false,
   "params": {
     "corpora": [
       "receipts",
@@ -72,11 +74,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "3aec24b225e3bf10ba538191b6f820b77106235d1ab404dc5b47814ccc357eb8",
-    "epoch_heads_sha256": "223f8e2d432be3efa9e26ee6fa061078bacee83a6fdb37d8f762a7b97bb794e7",
+    "crown_jewels_sha256": "2497c88ebfd9e55d5e23585924db974ab70c582eb74352fc6f3ccb6d9773183b",
+    "epoch_heads_sha256": "82fd5d49898b113d694c33c2f97b796f5f0a336fe0f3b82e4c2a0c678520a3e3",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "fc2551a2ededfcb36766018eedd26cf8bee633b628f76e74475cace13ca021d8",
+  "receipt_sha256": "2ed0270a31b615098c01a91e67e763542d7ecfef6a52ceb023ac6a9c8b333e35",
   "schema": "repo_integrity.v1"
 }
