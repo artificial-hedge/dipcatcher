@@ -32,7 +32,9 @@ CROWN_JEWELS_SCHEMA = "crown_jewels.v1"
 DEFAULT_PIN_PATH = Path("quality/crown_jewels.json")
 
 # The files that define or authorize every gate — byte-pinned exactly. Adding
-# a jewel is a code change here (review-visible), not a pin edit.
+# a jewel is a code change here (review-visible), not a pin edit. The
+# verifier's own source is a jewel too: the strongest chain is useless if
+# the code that checks it can be silently rewritten to `return ok`.
 DEFAULT_JEWELS: tuple[str, ...] = (
     ".gitleaks.toml",  # secret-scan allowlist — removing a rule opens exfil lanes
     ".pre-commit-config.yaml",  # local hook stack
@@ -46,6 +48,17 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "quality/gate_signing.pub",  # the pin-signature trust root
     "quality/timestamps/freetsa_cacert.pem",  # TSA chain verify root — a swapped
     "quality/timestamps/freetsa_tsa.crt",  # cert pair would launder forged anchors
+    # --- the verifier itself: a silent rewrite beats every layer above ---
+    "src/quant_fund/research/corpus_epoch.py",
+    "src/quant_fund/research/crown_jewels.py",
+    "src/quant_fund/research/epoch_merkle.py",
+    "src/quant_fund/research/gate_signatures.py",
+    "src/quant_fund/research/lane_contracts.py",
+    "src/quant_fund/research/receipt_v2.py",
+    "src/quant_fund/research/repo_integrity.py",
+    "src/quant_fund/research/timestamp_anchor.py",
+    "src/quant_fund/utils/atomicio.py",
+    "src/quant_fund/utils/hashing.py",
 )
 
 
