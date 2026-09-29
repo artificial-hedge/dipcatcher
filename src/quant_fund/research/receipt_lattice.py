@@ -147,8 +147,10 @@ def _dataset_fingerprint(doc: Mapping[str, Any]) -> str | None:
         if not isinstance(holder, Mapping):
             continue
         value = holder.get("dataset_sha256")
-        if isinstance(value, str) and len(value) == 64 and all(
-            c in "0123456789abcdef" for c in value
+        if (
+            isinstance(value, str)
+            and len(value) == 64
+            and all(c in "0123456789abcdef" for c in value)
         ):
             return value
     return None
@@ -175,8 +177,10 @@ def _claim_values_equal(a: Any, b: Any, *, rel_tol: float, abs_tol: float) -> st
     b_num = isinstance(b, (int, float)) and not isinstance(b, bool)
     if a_num and b_num:
         fa, fb = float(a), float(b)
-        if math.isfinite(fa) and math.isfinite(fb) and math.isclose(
-            fa, fb, rel_tol=rel_tol, abs_tol=abs_tol
+        if (
+            math.isfinite(fa)
+            and math.isfinite(fb)
+            and math.isclose(fa, fb, rel_tol=rel_tol, abs_tol=abs_tol)
         ):
             return "drift"
     return "different"
@@ -242,9 +246,7 @@ def receipt_lattice(
             )
             edges.setdefault(key, []).append((path.name, value))
             if dataset is not None:
-                edges.setdefault(("dataset", dataset, claim_path), []).append(
-                    (path.name, value)
-                )
+                edges.setdefault(("dataset", dataset, claim_path), []).append((path.name, value))
 
     groups: list[dict[str, Any]] = []
     n_consistent = n_drift = n_inconsistent = 0
