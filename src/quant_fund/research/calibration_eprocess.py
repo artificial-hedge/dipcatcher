@@ -221,6 +221,7 @@ def audit_head_calibration(
     seed: int = 0,
     taus: Sequence[float] = DEFAULT_TAUS,
     alpha: float = 0.05,
+    data_label: str | None = None,
 ) -> tuple[pl.DataFrame, dict[str, Any]]:
     """Fit each head per shard; stream eval-PIT through the e-process.
 
@@ -270,6 +271,7 @@ def audit_head_calibration(
             "seed": shard_seed,
             "x_sha256": hash_bytes(x.tobytes()),
             "y_sha256": hash_bytes(y.tobytes()),
+            "data_label": str(shard.config.get("data_label") or "UNKNOWN"),
         }
 
         for model_name, factory in factories.items():
@@ -331,10 +333,18 @@ def audit_head_calibration(
             for k, v in sorted(shard_meta.items())
         ).encode()
     )
+    if data_label is None:
+        distinct = {str(m["data_label"]) for m in shard_meta.values()}
+        if distinct == {"SYNTHETIC"}:
+            data_label = "SYNTHETIC"
+        elif len(distinct) > 1:
+            data_label = "MIXED"
+        else:
+            data_label = next(iter(distinct), "UNKNOWN")
     receipt: dict[str, Any] = {
         "kind": CALIBRATION_AUDIT_SCHEMA,
         "schema": CALIBRATION_AUDIT_SCHEMA,
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "research_only": True,
         "live_pnl_claim": False,
         "generated_at_commit": git_revision(),
