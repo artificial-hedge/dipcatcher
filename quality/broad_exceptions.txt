@@ -4,7 +4,7 @@
 # Global ceiling lives in tests/unit/test_quality_ratchet.py.
 src/quant_fund/api/app.py 1
 src/quant_fund/audit/signing.py 2
-src/quant_fund/backtest/fast_replay.py 4
+src/quant_fund/backtest/fast_replay.py 3
 src/quant_fund/backtest/nautilus_conformance.py 1
 src/quant_fund/cli/ops_cmds.py 1
 src/quant_fund/compute/parallel.py 1

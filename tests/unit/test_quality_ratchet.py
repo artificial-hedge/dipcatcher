@@ -28,9 +28,10 @@ STRICT_BASELINE_SHA256 = "452034ec90dbc11dc2a8ca78f22d950c591ae0fd67b3ecbfabe08d
 MCCABE_CEILING = 74
 # `except Exception` handlers under src/quant_fund. The merge wave added
 # lane-runner guards that record failures into result rows (recorded, never
-# silent) — 93 as of the resync. New handlers that push the total above this
-# fail the test.
-EXCEPT_EXCEPTION_CEILING = 93
+# silent); four closed lazy-import guards were then narrowed to ImportError
+# (catalog ×3 + fast_replay forecast overlay). New handlers that push the
+# total above this fail the test.
+EXCEPT_EXCEPTION_CEILING = 92
 
 
 def test_mypy_strict_allowlist_only_grows() -> None:
