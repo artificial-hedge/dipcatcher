@@ -153,6 +153,21 @@ def _probes(clone: Path) -> list[tuple[str, Any]]:
             probes.append(
                 ("flip_archived_prev_checkpoint", lambda v=archive_victim: _flip_first_byte(v))
             )
+        # Drop the archive record the live checkpoint links to — the spine
+        # gate must report a dangling predecessor.
+        if archive_victim is not None:
+            probes.append(("drop_archived_prev_checkpoint", lambda v=archive_victim: v.unlink()))
+
+        # Inject a side-chain record: a copy of the live checkpoint with a
+        # corrupted signature has a different digest but claims the same
+        # prev_sha256 — the spine gate must flag the fork and the orphan.
+        def _side_chain() -> None:
+            forged = json.loads(cp.read_text())
+            sig = forged.get("signature", "")
+            forged["signature"] = ("0" if sig[:1] != "0" else "1") + sig[1:]
+            (quality / "checkpoints" / "zz_injected_fork.json").write_text(json.dumps(forged))
+
+        probes.append(("inject_side_chain_checkpoint", _side_chain))
     return probes
 
 

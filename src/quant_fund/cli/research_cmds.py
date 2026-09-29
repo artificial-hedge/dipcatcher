@@ -2208,3 +2208,32 @@ def tamper_drill_cmd(
         typer.echo(f"receipt={path}")
     if not result["ok"]:
         raise typer.Exit(code=1)
+
+
+@app.command("checkpoint-chain")
+def checkpoint_chain_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo tree to verify."),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed checkpoint_chain.v1 receipt here.",
+    ),
+) -> None:
+    """Verify the checkpoint spine end-to-end: every archived predecessor
+    resolves, every link's signature verifies, no forks, no orphans, and
+    Rekor log indexes follow the chain order."""
+    from quant_fund.research.checkpoint_chain import checkpoint_spine, write_chain_receipt
+
+    result = checkpoint_spine(root)
+    typer.echo(
+        f"checkpoint-chain: spine={result['spine_length']}/{result['n_records']} "
+        f"forks={result['n_forks']} orphans={result['n_orphans']} "
+        f"verdict={result['verdict']}"
+    )
+    for e in result["errors"]:
+        typer.echo(f"  {e}")
+    if out is not None:
+        path = write_chain_receipt(result, out)
+        typer.echo(f"receipt={path}")
+    if not result["ok"]:
+        raise typer.Exit(code=1)

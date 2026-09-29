@@ -255,4 +255,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.tamper_drill import drill_contract_errors
 
         return drill_contract_errors(payload)
+    if schema == "checkpoint_chain.v1" or payload.get("kind") == "checkpoint_chain":
+        from quant_fund.research.checkpoint_chain import chain_contract_errors
+
+        return chain_contract_errors(payload)
     return []

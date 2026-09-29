@@ -1,0 +1,338 @@
+"""Spine verification for the checkpoint archive.
+
+``verify_checkpoint`` proves the *latest* checkpoint authentic. This module
+proves the whole *sequence* coherent: every archived predecessor resolves,
+every link's signature verifies, timestamps never regress along the spine,
+no two records claim the same predecessor (a fork = a rewind attempt
+committed to disk), and no witnessed or archived checkpoint escapes the
+spine (an orphan = a side chain someone tried to hide or inject).
+
+When Rekor witness proofs are present they supply an external total order:
+consecutive spine members must appear in the log in chain order — a
+replayed or re-sequenced chain violates the logIndex ordering Rekor
+recorded.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+CHAIN_SCHEMA = "checkpoint_chain.v1"
+
+CHECKPOINT_PATH = Path("quality/checkpoint.json")
+ARCHIVE_DIR = Path("quality/checkpoints")
+_PUBKEY_PATH = Path("quality/gate_signing.pub")
+_WITNESS_DIR = Path("quality/witness")
+
+
+def _record(file: Path, rel: str) -> dict[str, Any]:
+    data = file.read_bytes()
+    rec: dict[str, Any] = {
+        "sha256": hash_bytes(data),
+        "path": rel,
+        "body": None,
+        "payload": None,
+        "sig_ok": None,
+        "errors": [],
+    }
+    try:
+        body = json.loads(data)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        rec["errors"].append("malformed_json")
+        return rec
+    rec["body"] = body
+    payload = body.get("payload")
+    if isinstance(payload, dict):
+        rec["payload"] = payload
+    else:
+        rec["errors"].append("payload_missing")
+    return rec
+
+
+def _verify_signature(rec: dict[str, Any], pubkey: Any, pub_hex: str) -> None:
+    """Verify the record's Ed25519 signature in place."""
+    from cryptography.exceptions import InvalidSignature
+
+    from quant_fund.research.gate_signatures import key_id
+
+    body = rec.get("body") or {}
+    payload = rec.get("payload")
+    if not isinstance(body, dict) or payload is None:
+        rec["sig_ok"] = False
+        return
+    if body.get("algorithm") != "ed25519":
+        rec["sig_ok"] = False
+        rec["errors"].append("algorithm_unexpected")
+        return
+    if body.get("key_id") != key_id(pub_hex):
+        rec["sig_ok"] = False
+        rec["errors"].append("key_id_mismatch")
+        return
+    try:
+        pubkey.verify(bytes.fromhex(str(body.get("signature", ""))), canonical_json_bytes(payload))
+        rec["sig_ok"] = True
+    except (InvalidSignature, ValueError):
+        rec["sig_ok"] = False
+        rec["errors"].append("signature_invalid")
+
+
+def collect_spine_records(root: Path) -> dict[str, dict[str, Any]]:
+    """All known checkpoint records keyed by content digest."""
+    records: dict[str, dict[str, Any]] = {}
+    live = root / CHECKPOINT_PATH
+    if live.is_file():
+        rec = _record(live, CHECKPOINT_PATH.as_posix())
+        records[rec["sha256"]] = rec
+    archive = root / ARCHIVE_DIR
+    if archive.is_dir():
+        for f in sorted(archive.glob("*.json")):
+            rec = _record(f, (ARCHIVE_DIR / f.name).as_posix())
+            # Digest-addressed archive: a duplicate digest is the same record.
+            records.setdefault(rec["sha256"], rec)
+    return records
+
+
+def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
+    """Verify the full checkpoint chain end-to-end.
+
+    Returns a ``checkpoint_chain.v1`` verdict payload; ``ok`` requires every
+    signature valid, the live checkpoint reachable from itself through the
+    archive to a genesis record, no forks, no orphans, no timestamp or
+    Rekor-order regressions.
+    """
+    root_path = Path(root)
+    errors: list[str] = []
+    live = root_path / CHECKPOINT_PATH
+    if not live.is_file():
+        return {
+            "schema": CHAIN_SCHEMA,
+            "ok": True,
+            "signed": False,
+            "n_records": 0,
+            "spine_length": 0,
+            "errors": [],
+            "verdict": "absent",
+        }
+    pub_file = root_path / _PUBKEY_PATH
+    if not pub_file.is_file():
+        return {
+            "schema": CHAIN_SCHEMA,
+            "ok": False,
+            "signed": True,
+            "n_records": 0,
+            "spine_length": 0,
+            "errors": ["pubkey_missing"],
+            "verdict": "unsigned_pub",
+        }
+    pub_hex = pub_file.read_text().strip()
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+        pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex))
+    except ValueError:
+        return {
+            "schema": CHAIN_SCHEMA,
+            "ok": False,
+            "signed": True,
+            "n_records": 0,
+            "spine_length": 0,
+            "errors": ["pubkey_malformed"],
+            "verdict": "unsigned_pub",
+        }
+
+    records = collect_spine_records(root_path)
+    for rec in records.values():
+        _verify_signature(rec, pubkey, pub_hex)
+
+    # Rekor proofs: digest -> (log_index, integrated_time). Loaded before
+    # the walk because a terminus that resolves only in Rekor is a valid
+    # genesis — the bytes predate the archive, the digest was witnessed.
+    witnessed_idx: dict[str, int] = {}
+    witnessed_at: dict[str, float] = {}
+    wdir = root_path / _WITNESS_DIR
+    if wdir.is_dir():
+        for proof in wdir.glob(f"{CHECKPOINT_PATH.name}_*.json"):
+            try:
+                rec = json.loads(proof.read_text())
+                digest = rec.get("target", {}).get("sha256")
+                index = rec.get("rekor", {}).get("log_index")
+                itime = rec.get("rekor", {}).get("integrated_time")
+            except (OSError, json.JSONDecodeError, AttributeError):
+                continue
+            if isinstance(digest, str) and isinstance(index, int):
+                witnessed_idx[digest] = index
+                if isinstance(itime, (int, float)):
+                    witnessed_at[digest] = float(itime)
+
+    # Walk head -> genesis through payload.prev_sha256.
+    head_digest = hash_bytes(live.read_bytes())
+    spine: list[str] = []
+    seen: set[str] = set()
+    cur: str | None = head_digest
+    notes: list[str] = []
+    genesis_source = "self"
+    while cur is not None:
+        if cur in seen:
+            errors.append(f"chain_cycle:{cur[:12]}")
+            break
+        seen.add(cur)
+        recd = records.get(cur)
+        if recd is None:
+            if cur in witnessed_idx:
+                genesis_source = "witness"
+                notes.append(f"terminus_witnessed_only:{cur[:12]}")
+            else:
+                errors.append(f"dangling_prev:{cur[:12]}")
+            break
+        spine.append(cur)
+        payload = recd.get("payload") or {}
+        prev = payload.get("prev_sha256")
+        if prev is None:
+            cur = None  # genesis reached
+        elif not isinstance(prev, str) or len(prev) != 64:
+            errors.append(f"prev_malformed:{cur[:12]}")
+            cur = None
+        else:
+            cur = prev
+
+    on_spine = set(spine)
+
+    # Forks: two records claiming the same predecessor.
+    claims: dict[str, list[str]] = {}
+    for digest, rec in records.items():
+        payload = rec.get("payload") or {}
+        prev = payload.get("prev_sha256")
+        if isinstance(prev, str):
+            claims.setdefault(prev, []).append(digest)
+    n_forks = 0
+    for prev, claimants in claims.items():
+        if len(claimants) > 1:
+            n_forks += 1
+            errors.append(f"fork:{prev[:12]}")
+
+    # Orphans: archived records unreachable from the live head — a side
+    # chain written to disk but never witnessed into the running sequence.
+    orphans = sorted(
+        digest
+        for digest, rec in records.items()
+        if digest not in on_spine and rec["path"] != CHECKPOINT_PATH.as_posix()
+    )
+    for digest in orphans:
+        errors.append(f"orphan_checkpoint:{digest[:12]}")
+
+    # Signature failures anywhere in the record set.
+    sig_failures = sorted(digest for digest, rec in records.items() if rec["sig_ok"] is False)
+    for digest in sig_failures:
+        rec = records[digest]
+        errors.append(f"signature_invalid:{digest[:12]}:{','.join(rec['errors'])}")
+
+    # Timestamp monotonicity genesis -> head (spine list is head-first).
+    ordered = list(reversed(spine))
+    order_ok = True
+    for parent, child in zip(ordered, ordered[1:], strict=False):  # adjacent pairs
+        p_at = (records[parent].get("payload") or {}).get("at")
+        c_at = (records[child].get("payload") or {}).get("at")
+        if isinstance(p_at, str) and isinstance(c_at, str) and c_at < p_at:
+            order_ok = False
+            errors.append(f"timestamp_regression:{child[:12]}")
+
+    # Rekor order: where consecutive spine members are both witnessed the
+    # log indexes must follow the chain direction.
+    witnessed = witnessed_idx
+    rekor_order_ok = True
+    n_witnessed_on_spine = 0
+    for digest in spine:
+        if digest in witnessed:
+            n_witnessed_on_spine += 1
+    for parent, child in zip(ordered, ordered[1:], strict=False):  # adjacent pairs
+        if parent in witnessed and child in witnessed and witnessed[child] <= witnessed[parent]:
+            rekor_order_ok = False
+            errors.append(f"rekor_order_violation:{child[:12]}")
+    # A proof for a checkpoint digest we hold no record of is either
+    # pre-archive history (witnessed before retention began — grandfathered
+    # to a note) or a post-era anomaly (witnessed yet not archived — error).
+    # The era boundary is the earliest integrated_time over witnessed
+    # digests that ARE recorded locally.
+    recorded_times = [witnessed_at[d] for d in spine if d in witnessed_at]
+    era_start = min(recorded_times) if recorded_times else None
+    for digest in sorted(set(witnessed) - set(records)):
+        itime = witnessed_at.get(digest)
+        if era_start is not None and itime is not None and itime < era_start:
+            notes.append(f"grandfathered_witness:{digest[:12]}")
+        else:
+            errors.append(f"witnessed_absent:{digest[:12]}")
+
+    ok = not errors
+    return {
+        "schema": CHAIN_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "CORPUS",
+        "ok": ok,
+        "signed": True,
+        "n_records": len(records),
+        "spine_length": len(spine),
+        "head_sha256": head_digest,
+        "genesis_sha256": ordered[0] if ordered else None,
+        "genesis_source": genesis_source,
+        "n_witnessed_on_spine": n_witnessed_on_spine,
+        "n_forks": n_forks,
+        "n_orphans": len(orphans),
+        "order_ok": order_ok,
+        "rekor_order_ok": rekor_order_ok,
+        "errors": sorted(errors),
+        "notes": sorted(notes),
+        "verdict": "intact" if ok else "broken",
+    }
+
+
+def chain_contract_errors(payload: Any) -> list[str]:
+    """Contract for a ``checkpoint_chain.v1`` verdict payload."""
+    if not isinstance(payload, dict) or payload.get("schema") != CHAIN_SCHEMA:
+        return ["schema_mismatch"]
+    errors: list[str] = []
+    for key in ("n_records", "spine_length", "n_forks", "n_orphans"):
+        v = payload.get(key)
+        if not isinstance(v, int) or v < 0:
+            errors.append(f"{key}_malformed")
+    if payload.get("verdict") not in {"intact", "broken", "absent", "unsigned_pub"}:
+        errors.append("verdict_malformed")
+    if (
+        payload.get("signed")
+        and payload.get("verdict") in {"intact", "broken"}
+        and payload.get("genesis_source") not in {"self", "witness"}
+    ):
+        errors.append("genesis_source_malformed")
+    if not isinstance(payload.get("ok"), bool):
+        errors.append("ok_not_bool")
+    spine_len = payload.get("spine_length")
+    n_records = payload.get("n_records")
+    if isinstance(spine_len, int) and isinstance(n_records, int):
+        if spine_len > n_records:
+            errors.append("spine_exceeds_records")
+        if payload.get("ok") and spine_len != n_records:
+            errors.append("ok_implies_full_spine")
+    errs = payload.get("errors")
+    if not isinstance(errs, list):
+        errors.append("errors_missing")
+    elif payload.get("ok") and errs:
+        errors.append("ok_with_errors")
+    elif not payload.get("ok") and isinstance(errs, list) and not errs:
+        errors.append("broken_without_errors")
+    return errors
+
+
+def write_chain_receipt(payload: dict[str, Any], out: Path) -> Path:
+    """Seal a spine verdict — even a broken one is evidence."""
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    errs = chain_contract_errors(payload)
+    if errs:
+        raise ValueError(f"checkpoint_chain contract: {errs}")
+    atomic_write_text(out, json.dumps(seal_receipt(payload), indent=2, sort_keys=True) + "\n")
+    return out

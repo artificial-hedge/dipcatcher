@@ -101,6 +101,16 @@ def verify_repo(
         "errors": wit["errors"],
     }
 
+    from quant_fund.research.checkpoint_chain import checkpoint_spine
+
+    spine = checkpoint_spine(root)
+    gates["spine"] = {
+        "ok": bool(spine["ok"]),
+        "signed": bool(spine.get("signed", False)),
+        "spine_length": spine.get("spine_length", 0),
+        "errors": spine["errors"],
+    }
+
     pin_present = pin_path.is_file()
     pin_parse_error: str | None = None
     if pin_present:
@@ -146,7 +156,7 @@ def verify_repo(
 # Gates every attestation must carry — the neutral/absent states are legal
 # (unsigned pins, unanchored timestamps report ok=True) but the gate itself
 # must be *run*: a receipt missing a gate hid the surface, not passed it.
-_REQUIRED_GATES = ("crown_jewels", "pin_signatures", "timestamp_anchors")
+_REQUIRED_GATES = ("crown_jewels", "pin_signatures", "timestamp_anchors", "spine")
 
 
 def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:

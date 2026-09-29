@@ -209,6 +209,10 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher crown-jewels --check
 	uv run dipcatcher verify-witness
 	uv run dipcatcher verify-repo
+	uv run dipcatcher checkpoint-chain
+
+checkpoint-chain: ## Walk the full checkpoint spine — every archived link verifies, no forks/orphans, Rekor order holds
+	uv run dipcatcher checkpoint-chain
 
 epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
 	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \

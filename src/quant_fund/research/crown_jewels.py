@@ -53,6 +53,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "quality/timestamps/freetsa_tsa.crt",  # cert pair would launder forged anchors
     # --- the verifier itself: a silent rewrite beats every layer above ---
     "src/quant_fund/research/auditor_bundle.py",
+    "src/quant_fund/research/checkpoint_chain.py",
     "src/quant_fund/research/corpus_epoch.py",
     "src/quant_fund/research/crown_jewels.py",
     "src/quant_fund/research/epoch_consistency.py",
@@ -64,6 +65,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/receipt_lattice.py",
     "src/quant_fund/research/receipt_v2.py",
     "src/quant_fund/research/repo_integrity.py",
+    "src/quant_fund/research/tamper_drill.py",
     "src/quant_fund/research/timestamp_anchor.py",
     "src/quant_fund/utils/atomicio.py",
     "src/quant_fund/utils/hashing.py",
@@ -87,6 +89,9 @@ _VERIFIER_VOCABULARY = (
     "lane_contracts",
     "admission",
     "receipt_graph",
+    "checkpoint",
+    "tamper",
+    "witness",
 )
 
 
