@@ -275,3 +275,17 @@ def test_empty_label_rejected() -> None:
             description=p.description,
             data_label=" ",
         )
+
+
+def test_dataset_sha256_tracks_panels_not_run_params() -> None:
+    """Same panels under a different challenger set share dataset_sha256;
+    a different seed regenerates the panels and changes it."""
+    chal = list(CHALLENGERS)[:1]
+    _, r1 = run_cross_sectional_bench(seed=42, challengers=chal)
+    _, r2 = run_cross_sectional_bench(seed=42)
+    _, r3 = run_cross_sectional_bench(seed=43, challengers=chal)
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # challenger set is a run param, not data
+    assert r1["inputs_sha256"] != r2["inputs_sha256"]
+    assert d1 != d3

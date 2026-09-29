@@ -453,6 +453,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
             path = _LANE_CONSISTENCY[claimed]
             module, _, func = path.rpartition(".")
             errors: list[str] = list(getattr(importlib.import_module(module), func)(payload))
+            errors: list[str] = getattr(importlib.import_module(module), func)(payload)
             if claimed != kind:
                 errors = [*errors, "kind_fingerprint_mismatch"]
             return errors
