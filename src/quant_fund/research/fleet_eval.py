@@ -453,6 +453,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "hstep_emp": lambda taus, seed: _HStepOneStepHead(taus, "empirical"),
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
+    "kronos_base": lambda taus, seed: _kronos_base(taus, seed),
 }
 
 
@@ -460,6 +461,12 @@ def _nbeats(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.nbeats import NBeatsDistribution
 
     return NBeatsDistribution(list(taus), seed=int(seed))
+
+
+def _kronos_base(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.kronos_fleet import KronosFleetDistribution
+
+    return KronosFleetDistribution(list(taus), seed=int(seed))
 
 
 def _nhits(taus: Sequence[float], seed: int) -> Any:
