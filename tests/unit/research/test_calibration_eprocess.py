@@ -82,6 +82,20 @@ def test_grapa_channels_are_valid_evalues() -> None:
         assert np.mean(bets[1000:]) == pytest.approx(1.0, abs=0.05)
 
 
+def test_grapa_certifies_lam_max_times_moment_bound() -> None:
+    """max(0, 1+λd) can only INCREASE E[factor] past 1 — the bet is valid
+    only because lam_max·sup|moment| <= 1 keeps the floor unbound. The
+    constructor must refuse a moment/lam pair that breaks the bound."""
+    from quant_fund.research.calibration_eprocess import _GrapaChannel, _loc_moment
+
+    _GrapaChannel(_loc_moment, lam_max=0.9)  # 0.9·1 <= 1 — certified
+    big_moment = lambda u: 1.5 * (2.0 * u - 1.0)  # noqa: E731 — sup|d| = 1.5
+    with pytest.raises(ValueError, match="uncertified"):
+        _GrapaChannel(big_moment, lam_max=0.9)  # 0.9·1.5 > 1 — floor can bind
+    with pytest.raises(ValueError, match="lam_max"):
+        _GrapaChannel(_loc_moment, lam_max=0.0)
+
+
 def test_grapa_learns_and_beats_fixed_on_bias() -> None:
     """On a biased PIT stream the adaptive channel should out-grow fixed."""
     rng = np.random.default_rng(0)
