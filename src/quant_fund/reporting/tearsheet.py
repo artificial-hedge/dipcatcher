@@ -35,19 +35,24 @@ from quant_fund.metrics.returns import (
     sortino_ratio,
 )
 from quant_fund.metrics.risk import historical_es, historical_var
+from quant_fund.utils.atomicio import atomic_write_text
 
 
 def _nav_and_returns(equity: pl.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     if "nav" not in equity.columns:
         raise ValueError("equity frame requires a 'nav' column")
     nav = equity["nav"].to_numpy().astype(float)
-    nav = nav[np.isfinite(nav)]
-    if nav.size < 2:
-        return nav, np.array([], dtype=float)
+    finite = np.isfinite(nav)
+    if finite.sum() < 2:
+        return nav[finite], np.array([], dtype=float)
+    # A bar return is only measurable when both endpoints are observed.
+    # Non-finite interior rows break the chain instead of silently joining
+    # a multi-bar gap into one "1-bar" return.
+    pair_ok = finite[:-1] & finite[1:]
     with np.errstate(divide="ignore", invalid="ignore"):
-        rets = nav[1:] / nav[:-1] - 1.0
-    rets = rets[np.isfinite(rets)]
-    return nav, rets
+        raw = nav[1:] / nav[:-1] - 1.0
+    rets = raw[pair_ok & np.isfinite(raw)]
+    return nav[finite], rets
 
 
 def period_returns_table(equity: pl.DataFrame) -> dict[str, float]:
@@ -276,5 +281,5 @@ def tearsheet_markdown(sheet: dict[str, Any]) -> str:
 
 def write_tearsheet_md(path: Path, sheet: dict[str, Any]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(tearsheet_markdown(sheet))
+    atomic_write_text(path, tearsheet_markdown(sheet))
     return path
