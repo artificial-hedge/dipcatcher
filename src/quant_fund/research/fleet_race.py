@@ -158,6 +158,7 @@ def fleet_race(
             "seed": shard_seed,
             "x_sha256": hash_bytes(x.tobytes()),
             "y_sha256": hash_bytes(y.tobytes()),
+            "data_label": str(shard.config.get("data_label") or "UNKNOWN"),
         }
 
         lanes: list[_Lane] = []
@@ -275,10 +276,16 @@ def fleet_race(
             }
         )
     )
+    distinct_labels = {m["data_label"] for m in shard_meta.values()}
+    if len(distinct_labels) > 1:
+        raise ValueError(
+            "shards carry mixed data_label values "
+            f"{sorted(distinct_labels)}; run mixed corpora as separate receipts"
+        )
     receipt: dict[str, Any] = {
         "kind": FLEET_RACE_SCHEMA,
         "schema": "fleet_race.v1",
-        "data_label": "SYNTHETIC",
+        "data_label": distinct_labels.pop() if distinct_labels else "UNKNOWN",
         "research_only": True,
         "live_pnl_claim": False,
         "generated_at_commit": git_revision(),
@@ -293,6 +300,7 @@ def fleet_race(
         },
         "n_shards": len(shard_meta),
         "n_models": len(factories),
+        "shard_meta": shard_meta,
         "shard_winners": shard_winners,
         "global_evidence": {
             head: {
