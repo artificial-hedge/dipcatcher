@@ -23534,6 +23534,726 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
 
+### `receipts/serial_watch_140b073ea589b0c7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_140b073ea589b0c7.json | b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e | 140b073ea589b0c79cbd473d3de7480420aa364dc801b010c08b06d0794ea691 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: hstep_emp
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: 140b073ea589b0c79cbd473d3de7480420aa364dc801b010c08b06d0794ea691
+- `research_only`: true
+
+### `receipts/serial_watch_1e8e1446e506fce1.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_1e8e1446e506fce1.json | 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976 | 1e8e1446e506fce11c3a75b7a776fb8c3110b63d75412675929c9d6f5f112c4b | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: conf_t
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 1.4073499090046617e-10
+    - `pos`: 3.125472375522447e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 9.966024988320148e-22
+    - `pos`: 5.884838095353163e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 2.4607469106963328e-23
+    - `pos`: 3.177812571490708e-15
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 5.148056365814948e-13
+    - `pos`: 2.0253060993385455e-25
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 2.6576066635520394e-21
+    - `pos`: 5.230967195869479e-17
+- `pooled_alarmed`: false
+- `pooled_evalue`: 1.4125308551135108e-11
+- `receipt_sha256`: 1e8e1446e506fce11c3a75b7a776fb8c3110b63d75412675929c9d6f5f112c4b
+- `research_only`: true
+
+### `receipts/serial_watch_2c14615c26efd19b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_2c14615c26efd19b.json | b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e | 2c14615c26efd19b49fad1e97fcda3261d53d9c959a3aab3dc5229c06d0d4e95 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: regime
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: 2c14615c26efd19b49fad1e97fcda3261d53d9c959a3aab3dc5229c06d0d4e95
+- `research_only`: true
+
+### `receipts/serial_watch_46445c3b227aa15e.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_46445c3b227aa15e.json | 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0 | 46445c3b227aa15e35e334c50a7391b1cb826f77be4c96b62efc2b510b6afb9b | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: stack
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: 46445c3b227aa15e35e334c50a7391b1cb826f77be4c96b62efc2b510b6afb9b
+- `research_only`: true
+
+### `receipts/serial_watch_47297eff3cb55178.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_47297eff3cb55178.json | a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7 | 47297eff3cb551784d2fcc3001913b50f6a1c31639a470c7d7c77bd6ae471a8c | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: fhs_skew
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: 47297eff3cb551784d2fcc3001913b50f6a1c31639a470c7d7c77bd6ae471a8c
+- `research_only`: true
+
+### `receipts/serial_watch_4f4a495b59d022fb.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_4f4a495b59d022fb.json | 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9 | 4f4a495b59d022fb7975eb0e8f4e809dbf3f80f0b40d93198d70a2fd9dabfa2f | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: qar
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 6.435070457268685e-14
+    - `pos`: 6.835408085267591e-25
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.1795696649456162e-18
+    - `pos`: 2.6908267468464398e-20
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 4.843488144323591e-19
+    - `pos`: 1.6144960481078638e-19
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.389975218770036e-11
+    - `pos`: 7.501133701253872e-27
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 9.842987642785331e-23
+    - `pos`: 1.4123611428847591e-15
+- `pooled_alarmed`: false
+- `pooled_evalue`: 1.3965518105791404e-12
+- `receipt_sha256`: 4f4a495b59d022fb7975eb0e8f4e809dbf3f80f0b40d93198d70a2fd9dabfa2f
+- `research_only`: true
+
+### `receipts/serial_watch_771602cd1580476c.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_771602cd1580476c.json | 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866 | 771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: hstep_t
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 1.2666149181041955e-09
+    - `pos`: 3.4727470839138303e-29
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 8.072480240539319e-20
+    - `pos`: 7.265232216485387e-19
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 2.2146722196266995e-22
+    - `pos`: 3.530902857211898e-16
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 5.148056365814948e-13
+    - `pos`: 2.0253060993385455e-25
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 2.6576066635520394e-21
+    - `pos`: 5.230967195869479e-17
+- `pooled_alarmed`: false
+- `pooled_evalue`: 1.267130129950862e-10
+- `receipt_sha256`: 771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3
+- `research_only`: true
+
+### `receipts/serial_watch_85db152db863d25d.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_85db152db863d25d.json | 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1 | 85db152db863d25d5b292aaf2a4e28083d804397191c2c80e3aca15e04f5b527 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: empirical
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: 85db152db863d25d5b292aaf2a4e28083d804397191c2c80e3aca15e04f5b527
+- `research_only`: true
+
+### `receipts/serial_watch_8977244ef78bfd2f.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_8977244ef78bfd2f.json | 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f | 8977244ef78bfd2f5e8e1f117ead7f1c35d3194c805171c7a74143f42c4ea37b | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: isotonic
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: 8977244ef78bfd2f5e8e1f117ead7f1c35d3194c805171c7a74143f42c4ea37b
+- `research_only`: true
+
+### `receipts/serial_watch_a6fd40311ce0fa04.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_a6fd40311ce0fa04.json | dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490 | a6fd40311ce0fa04bfc56e19e8c3e17bb32d05e1864a2b42839a48da6007a8ff | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: gaussian
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 1.2666149181041955e-09
+    - `pos`: 3.4727470839138303e-29
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 8.072480240539319e-20
+    - `pos`: 7.265232216485387e-19
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 2.2146722196266995e-22
+    - `pos`: 3.530902857211898e-16
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 5.148056365814948e-13
+    - `pos`: 2.0253060993385455e-25
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 2.6576066635520394e-21
+    - `pos`: 5.230967195869479e-17
+- `pooled_alarmed`: false
+- `pooled_evalue`: 1.267130129950862e-10
+- `receipt_sha256`: a6fd40311ce0fa04bfc56e19e8c3e17bb32d05e1864a2b42839a48da6007a8ff
+- `research_only`: true
+
+### `receipts/serial_watch_d311f5ea367a66a9.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_d311f5ea367a66a9.json | 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f | d311f5ea367a66a98cca9df522959817d59793240b75ae3a29672ec34ca2a6db | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: skew_t
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: d311f5ea367a66a98cca9df522959817d59793240b75ae3a29672ec34ca2a6db
+- `research_only`: true
+
+### `receipts/serial_watch_dbd21a6c99c81e00.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_dbd21a6c99c81e00.json | 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f | dbd21a6c99c81e0060ba02a19a788dfefadded2f612faccc5414daf9721c4916 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+- `alarmed_lags`:
+- `alpha`: 0.05
+- `any_lag_alarmed`: false
+- `data_label`: yahoo_eod
+- `drill`:
+  - `head`: gmm
+  - `n_pit`: 300
+  - `n_pit_nan_dropped`: 0
+  - `n_train`: 1000
+  - `pit_construction`: pit_values interp, clipped to (1e-9, 1-1e-9)
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 300
+- `per_lag`:
+  - `1`:
+    - `alarmed`: false
+    - `neg`: 4.222049727013985e-10
+    - `pos`: 1.041824125174149e-28
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 2.9898074964960444e-21
+    - `pos`: 1.9616126984510546e-17
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 5.979614992992089e-21
+    - `pos`: 1.3077417989673698e-17
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 1.906687542894425e-14
+    - `pos`: 5.468326468214073e-24
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 8.858688878506798e-22
+    - `pos`: 1.5692901587608437e-16
+- `pooled_alarmed`: false
+- `pooled_evalue`: 4.22224229209249e-11
+- `receipt_sha256`: dbd21a6c99c81e0060ba02a19a788dfefadded2f612faccc5414daf9721c4916
+- `research_only`: true
+
 ### `receipts/suite_health_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -23583,6 +24303,59 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `receipt_sha256`: 0c4f5f15f7920a871bd6438124d47daade6801fd6007c6a78dfc545da88f5eb5
 - `research_only`: true
 - `schema`: suite_health.v1
+
+### `receipts/tail_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/tail_real_drill.json | 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4 | a936b4b39fa051d9b5e3b515b24379c62e401b42b30d4dfad290f285c08e75e7 | not_checked | absent | inputs_sha256=4239dcdb9bccea13e150bcee593d30751abc620f84a45d3f8d0b2f506c632fd5 | unspecified | absent | absent | absent |
+
+- `claims`:
+  - [0]
+    - `kind`: theoretical
+    - `text`: anytime-valid verdict on tail depth: conditional deep-share of breaches matches tau_lo/tau_hi under any correct tail
+- `code_revision`: 5aec2df7922758a9567779c6e5c3db5238d49e7b
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - nested_quantile_consistency
+  - bernoulli_lr_bet
+  - exact_evalue_under_h0
+  - shape_free_tail_depth
+  - alternative_mixture_two_sided
+- `kind`: tail_audit
+- `level`: research
+- `params`:
+  - `alpha`: 0.05
+  - `alt_grid`:
+    - 0.5
+    - 0.75
+    - 1.35
+    - 1.9
+  - `cell`:
+    - 0.05
+    - 0.1
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `p0_deep_share`: 0.5
+  - `seed`: 0
+- `receipt_sha256`: a936b4b39fa051d9b5e3b515b24379c62e401b42b30d4dfad290f285c08e75e7
+- `schema`: tail_audit.v1
 
 ### `receipts/verdict_real_drill.json`
 
