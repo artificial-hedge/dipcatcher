@@ -62,7 +62,7 @@ from quant_fund.research.fleet_eval import (
     SyntheticShard,
     resolve_shard_generators,
 )
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 CALIBRATION_AUDIT_SCHEMA = "calibration_audit.v1"
@@ -347,6 +347,18 @@ def audit_head_calibration(
             for k, v in sorted(shard_meta.items())
         ).encode()
     )
+    # Cross-receipt dataset fingerprint: evaluated-stream digests only —
+    # receipts over the same shard content edge in the consistency lattice.
+    dataset_sha256 = hash_bytes(
+        canonical_json_bytes(
+            {
+                "shards": {
+                    name: {"x_sha256": m["x_sha256"], "y_sha256": m["y_sha256"]}
+                    for name, m in shard_meta.items()
+                }
+            }
+        )
+    )
     if data_label is None:
         distinct = {str(m["data_label"]) for m in shard_meta.values()}
         if distinct == {"SYNTHETIC"}:
@@ -363,6 +375,7 @@ def audit_head_calibration(
         "live_pnl_claim": False,
         "generated_at_commit": git_revision(),
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "params": {
             "n_train": n_train,
             "n_eval": n_eval,
