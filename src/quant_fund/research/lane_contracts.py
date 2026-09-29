@@ -223,6 +223,10 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.epoch_merkle import corpus_proof_errors
 
         return corpus_proof_errors(payload)
+    if schema == "repo_integrity.v1" or payload.get("kind") == "repo_integrity":
+        from quant_fund.research.repo_integrity import repo_integrity_contract_errors
+
+        return repo_integrity_contract_errors(payload)
     if schema == "receipt_lattice.v1" or payload.get("kind") == "receipt_lattice.v1":
         from quant_fund.research.receipt_lattice import lattice_contract_errors
 

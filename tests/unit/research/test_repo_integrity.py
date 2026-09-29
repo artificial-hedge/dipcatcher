@@ -122,3 +122,55 @@ def test_verify_repo_missing_pin_fails_closed(tmp_path: Path) -> None:
     assert res["gates"]["crown_jewels"]["ok"]
     assert not res["gates"]["epoch:receipts"]["ok"]
     assert not res["gates"]["epoch:quality"]["ok"]
+
+
+def test_repo_integrity_contract_clean_fixture(tmp_path: Path) -> None:
+    """The contract accepts a fresh attestation — verify-receipt calls it."""
+    from quant_fund.research.repo_integrity import (
+        repo_integrity_contract_errors,
+        repo_integrity_receipt,
+    )
+
+    root = _git_repo(tmp_path)
+    body = repo_integrity_receipt(root)
+    assert repo_integrity_contract_errors(body) == []
+    # verify-receipt must dispatch to the contract — this is the bound that
+    # makes a forged verdict catchable instead of structure-only.
+    out = root / "quality" / "repo_integrity.json"
+    write_repo_integrity_receipt(out, root)
+    assert verify_receipt_file(out)["valid"]
+
+
+def test_repo_integrity_contract_catches_forged_ok(tmp_path: Path) -> None:
+    from quant_fund.research.repo_integrity import (
+        repo_integrity_contract_errors,
+        repo_integrity_receipt,
+    )
+
+    root = _git_repo(tmp_path)
+    body = repo_integrity_receipt(root)
+    # Forge: claim ok while a gate lists its failures.
+    forged = dict(body)
+    gates = dict(body["gates"])
+    gates["crown_jewels"] = {"ok": False, "errors": ["jewel_mutated:x"]}
+    forged["gates"] = gates
+    forged["ok"] = True  # the lie: top-level ok despite a failed gate
+    errs = repo_integrity_contract_errors(forged)
+    assert "ok_incoherent" in errs
+    # Also incoherent: gate ok=True while listing errors.
+    forged2 = dict(body)
+    g2 = dict(body["gates"])
+    g2["epoch:receipts"] = {"ok": True, "errors": ["member_removed:x.json"]}
+    forged2["gates"] = g2
+    assert "gate_ok_incoherent:epoch:receipts" in repo_integrity_contract_errors(forged2)
+    # Hidden surface: drop a required gate, keep ok=true.
+    forged3 = dict(body)
+    g3 = dict(body["gates"])
+    del g3["pin_signatures"]
+    forged3["gates"] = g3
+    errs3 = repo_integrity_contract_errors(forged3)
+    assert "gate_missing:pin_signatures" in errs3
+    # Pin coherence: attestation can't disagree with its own gate.
+    forged4 = dict(body)
+    forged4["pins"] = dict(body["pins"], gate_pins_signed=not body["pins"]["gate_pins_signed"])
+    assert "pins_sig_incoherent" in repo_integrity_contract_errors(forged4)

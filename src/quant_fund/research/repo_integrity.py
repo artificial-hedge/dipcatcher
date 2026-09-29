@@ -17,6 +17,7 @@ Provenance evidence only; never a market or P&L claim.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -113,6 +114,83 @@ def verify_repo(
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}
 
 
+# Gates every attestation must carry — the neutral/absent states are legal
+# (unsigned pins, unanchored timestamps report ok=True) but the gate itself
+# must be *run*: a receipt missing a gate hid the surface, not passed it.
+_REQUIRED_GATES = ("crown_jewels", "pin_signatures", "timestamp_anchors")
+
+
+def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Contract check for a ``repo_integrity.v1`` receipt body.
+
+    Re-verifying the live gates would need the whole repo; the contract
+    instead proves the attestation is internally coherent — that the claimed
+    ``ok`` verdict is what the recorded gate verdicts actually imply, and
+    that the digest pins can't disagree with the gates they summarize.
+    """
+    errors: list[str] = []
+    if payload.get("schema") != REPO_INTEGRITY_SCHEMA:
+        errors.append("schema_mismatch")
+    gates = payload.get("gates")
+    if not isinstance(gates, Mapping) or not gates:
+        errors.append("gates_missing")
+        gates = {}
+    for name in _REQUIRED_GATES:
+        if name not in gates:
+            errors.append(f"gate_missing:{name}")
+    for name, gate in gates.items():
+        if not isinstance(gate, Mapping):
+            errors.append(f"gate_malformed:{name}")
+            continue
+        g_errors = gate.get("errors")
+        if not isinstance(gate.get("ok"), bool) or not isinstance(g_errors, list):
+            errors.append(f"gate_malformed:{name}")
+            continue
+        if not all(isinstance(e, str) for e in g_errors):
+            errors.append(f"gate_errors_not_strings:{name}")
+        # The gate's own verdict must match its listed errors — a receipt
+        # can't claim ok while listing the errors it failed on.
+        if bool(gate["ok"]) != (not g_errors):
+            errors.append(f"gate_ok_incoherent:{name}")
+    expected_ok = bool(gates) and all(
+        bool(g.get("ok")) for g in gates.values() if isinstance(g, Mapping)
+    )
+    if payload.get("ok") != expected_ok:
+        errors.append("ok_incoherent")
+    pins = payload.get("pins")
+    if isinstance(pins, Mapping):
+        sig_gate = gates.get("pin_signatures", {})
+        ts_gate = gates.get("timestamp_anchors", {})
+        if (
+            isinstance(sig_gate, Mapping)
+            and "signed" in sig_gate
+            and pins.get("gate_pins_signed") != sig_gate["signed"]
+        ):
+            errors.append("pins_sig_incoherent")
+        if (
+            isinstance(ts_gate, Mapping)
+            and "anchored" in ts_gate
+            and pins.get("timestamps_anchored") != ts_gate["anchored"]
+        ):
+            errors.append("pins_anchor_incoherent")
+        for key in ("epoch_heads_sha256", "crown_jewels_sha256"):
+            v = pins.get(key)
+            if v is not None and not (isinstance(v, str) and len(v) == 64):
+                errors.append(f"pin_malformed:{key}")
+    else:
+        errors.append("pins_missing")
+    params = payload.get("params")
+    if isinstance(params, Mapping):
+        corpora = params.get("corpora")
+        if isinstance(corpora, list):
+            for c in corpora:
+                if f"epoch:{c}" not in gates:
+                    errors.append(f"corpus_gate_missing:{c}")
+    if not isinstance(payload.get("data_label"), str):
+        errors.append("data_label_missing")
+    return errors
+
+
 def repo_integrity_receipt(
     root: Path | str = ".", *, heads_pin: Path | str = "quality/epoch_heads.json"
 ) -> dict[str, Any]:
@@ -128,7 +206,13 @@ def repo_integrity_receipt(
         "data_label": "SYNTHETIC",
         "ok": verdict["ok"],
         "gates": {
-            name: {"ok": g["ok"], "errors": sorted(g["errors"])}
+            # signed/anchored are verdict state, not metadata — an unsigned-
+            # tree attestation must be distinguishable from a signed one.
+            name: {
+                "ok": g["ok"],
+                "errors": sorted(g["errors"]),
+                **{k: g[k] for k in ("signed", "anchored", "fresh") if k in g},
+            }
             for name, g in verdict["gates"].items()
         },
         "pins": {
