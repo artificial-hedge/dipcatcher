@@ -4267,6 +4267,139 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.9
   - 0.95
 
+### `receipts/fleet_race_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/fleet_race_real_drill.json | 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def | b935e1eea32930eb4e048450b30f12a1b2090955d1ab5073b9f677517ff8486a | not_checked | absent | inputs_sha256=b134452657e2481d518ad2673c956446e8c0798cbc9ba1ecd261ce0a770f1146 | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `evidence`:
+  - anytime_valid_promotion
+  - anytime_valid_elimination
+  - successive_chunk_stream
+  - proper_scores_only
+- `generated_at_commit`: 4bf87074bedde7b4120704fa7fbbab37e41bb2f4
+- `global_evidence`:
+  - `conf_t`:
+    - `demote_evalue_product`: 188.2571445410747
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 3.086886724836204e-07
+  - `empirical`:
+    - `demote_evalue_product`: 5211.551431088947
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.693616137557909e-09
+  - `fhs_skew`:
+    - `demote_evalue_product`: 0.06212585619821356
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 0.5792555840446916
+  - `gaussian`:
+    - `demote_evalue_product`: 1107683.6297440543
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.857465259372908e-11
+  - `gmm`:
+    - `demote_evalue_product`: 6510.166138655656
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 1.46608988650646e-09
+  - `isotonic`:
+    - `demote_evalue_product`: 5177.98484445743
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.7103793958827616e-09
+  - `regime`:
+    - `demote_evalue_product`: 23338.35790747722
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 3.5626679840873747e-10
+  - `skew_t`:
+    - `demote_evalue_product`: 2822.7365076559704
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 4.078534133600114e-09
+- `kind`: fleet_race.v1
+- `n_models`: 8
+- `n_shards`: 8
+- `params`:
+  - `alpha`: 0.05
+  - `n_chunks`: 8
+  - `n_eval`: 128
+  - `n_train`: 256
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: b935e1eea32930eb4e048450b30f12a1b2090955d1ab5073b9f677517ff8486a
+- `research_only`: true
+- `schema`: fleet_race.v1
+- `shard_meta`:
+  - `yahoo_bkng`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 6
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 3173c39ac05896341c2fdd420eee6f2d5be3152e3f23d9dd155d19e6c1ae9bc9
+  - `yahoo_blk`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 5
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 92047bb4e72589d944cbbfc12f2cb223d15e967173ad0aadae802376e4f7acef
+  - `yahoo_bxp`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 0
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 2061b1ae04619b9fcbeddee3eae490fd098ad2015076c5551198732e5a2aa539
+  - `yahoo_enph`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 2
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 89d4c5edb1cc451d314d3d5f26846a0eca0c89eeaf0ba2557631451e305e763e
+  - `yahoo_gen`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 7
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 78629ac3f63f9194daeaf0ce17ad15208e00c38a9e883b5395d5553083c8f0cc
+  - `yahoo_lin`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 3
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 9129d2f7b546f54dc7d9d21c98ce496012a8a660e70d9e90939e171ec07f9748
+  - `yahoo_maa`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 1
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 50b426ed08d8d6091fa779c304fbd62516d452da7cb0ddb8147df5f495f999dc
+  - `yahoo_rjf`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 4
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: ded9c9885a8a115e4c7d57c725fc096893f9ede7f8d1bb733820915bc3ea9a3c
+- `shard_winners`:
+  - `yahoo_bkng`: fhs_skew
+  - `yahoo_blk`: fhs_skew
+  - `yahoo_bxp`: fhs_skew
+  - `yahoo_enph`: gmm
+  - `yahoo_gen`: isotonic
+  - `yahoo_lin`: fhs_skew
+  - `yahoo_maa`: fhs_skew
+  - `yahoo_rjf`: fhs_skew
+
 ### `receipts/monitor_run_drill_clean.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
