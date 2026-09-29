@@ -1515,6 +1515,10 @@
       "src": "quant_fund.cli.report_cmds"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.cli.report_cmds"
+    },
+    {
       "dst": "quant_fund.backtest.event_sim",
       "src": "quant_fund.cli.research_cmds"
     },
@@ -2827,6 +2831,10 @@
       "src": "quant_fund.mc_engine.engine"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.mc_engine.engine"
+    },
+    {
       "dst": "quant_fund.mc_engine.aggregate",
       "src": "quant_fund.mc_engine.report"
     },
@@ -4068,6 +4076,10 @@
     },
     {
       "dst": "quant_fund.parity.trace",
+      "src": "quant_fund.parity.report"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.parity.report"
     },
     {
@@ -6779,6 +6791,10 @@
       "src": "quant_fund.robustness.schema"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.robustness.schema"
+    },
+    {
       "dst": "quant_fund.robustness.analytic",
       "src": "quant_fund.robustness.sensitivity"
     },
@@ -6976,6 +6992,10 @@
     },
     {
       "dst": "quant_fund.stress.strategy",
+      "src": "quant_fund.stress.cli"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.stress.cli"
     },
     {
@@ -8352,7 +8372,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 3,
+      "imports": 4,
       "src": "quant_fund.cli"
     },
     {
@@ -8671,6 +8691,11 @@
       "src": "quant_fund.mc_engine"
     },
     {
+      "dst": "quant_fund.utils",
+      "imports": 1,
+      "src": "quant_fund.mc_engine"
+    },
+    {
       "dst": "quant_fund.metrics",
       "imports": 22,
       "src": "quant_fund.metrics"
@@ -8912,6 +8937,11 @@
     },
     {
       "dst": "quant_fund.schemas",
+      "imports": 1,
+      "src": "quant_fund.parity"
+    },
+    {
+      "dst": "quant_fund.utils",
       "imports": 1,
       "src": "quant_fund.parity"
     },
@@ -9311,6 +9341,11 @@
       "src": "quant_fund.robustness"
     },
     {
+      "dst": "quant_fund.utils",
+      "imports": 1,
+      "src": "quant_fund.robustness"
+    },
+    {
       "dst": "quant_fund.schemas",
       "imports": 8,
       "src": "quant_fund.schemas"
@@ -9373,6 +9408,11 @@
     {
       "dst": "quant_fund.stress",
       "imports": 17,
+      "src": "quant_fund.stress"
+    },
+    {
+      "dst": "quant_fund.utils",
+      "imports": 1,
       "src": "quant_fund.stress"
     },
     {
