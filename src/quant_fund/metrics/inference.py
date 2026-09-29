@@ -804,14 +804,16 @@ def pairwise_diebold_mariano_corrected(
 ) -> CorrectedPairwiseDM:
     r"""Pairwise DM tests **with multiplicity control** (opt-in API).
 
-    Motivation (measured, SYNTHETIC): :func:`pairwise_diebold_mariano` emits raw
-    p-values only. With eight *identical* models — every H0 true by
-    construction, n = 120–150 squared-normal losses — the raw rejection rate is
-    0.068 across 8400 tests and the **family-wise error rate is 0.622**: a 62%
-    chance that an experiment with eight indistinguishable models yields at least
-    one "significant" pairwise claim. Applying BH(0.05) to the same p-values
-    post-hoc drops that to 0.088. With 15–20 candidates (the arena norm here)
-    the unadjusted expectation is 5–10 spurious "A beats B" findings per
+    Motivation (measured, SYNTHETIC, reproducible via
+    ``tests/unit/research/test_pairwise_dm_multiplicity.py``):
+    :func:`pairwise_diebold_mariano` emits raw p-values only. With eight
+    *identical* models — every H0 true by construction, n = 120–150 squared-normal
+    losses, 300 experiments × 28 pairs = 8400 tests — the raw per-test rejection
+    rate is 0.067 and the **family-wise error rate is 0.617**: a 62% chance that
+    an experiment with eight indistinguishable models yields at least one
+    "significant" pairwise claim. Applying BH(0.05) to the same p-values drops
+    that to 0.087 (Holm/Bonferroni 0.080). Scaling to 15–20 candidates (the arena
+    norm here) gives 105–190 pairs and ~7–13 expected spurious rejections per
     experiment, and those would be sealed into a receipt as reproducible — but
     false — evidence. Reproducibility is not validity.
 

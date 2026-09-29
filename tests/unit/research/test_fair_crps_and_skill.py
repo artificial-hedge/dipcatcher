@@ -59,25 +59,59 @@ def test_crps_fair_is_unbiased_on_a_known_distribution(n: int) -> None:
     assert est == pytest.approx(truth, abs=4.0 * se), f"n={n}: est={est} truth={truth} se={se}"
 
 
-@pytest.mark.parametrize("n", [5, 10, 20])
-def test_crps_empirical_bias_matches_the_brief(n: int) -> None:
-    """Pin the measured plug-in bias: +20.5% (n=5), +9.9% (n=10), +5.0% (n=20).
+@pytest.mark.parametrize("n", [2, 3, 5, 10, 20, 50, 200])
+def test_crps_bias_is_an_exact_algebraic_identity(n: int) -> None:
+    """The bias is not a statistical estimate — it is an exact per-sample identity.
 
-    The analytic bias is ``E|X-X'|/(2n) = sigma/(n*sqrt(pi))`` for a Gaussian
-    predictive; both the absolute bias and the percentage-of-score reading are
-    asserted so the ensemble-size dependence (the reason CRPS league tables
-    mixing ensemble sizes rank by SIZE, not skill) is pinned in the suite.
+    Both estimators share term 1 ``(1/n) Σ|X_i - y|`` and differ only in the
+    denominator of term 2 (``1/(2n^2)`` counting the zero diagonal vs the fair
+    ``1/(2n(n-1))`` over ``i != j``), so for *every* realisation:
+
+        plug-in - fair = S_offdiag * (1/(2n(n-1)) - 1/(2n^2))
+
+    where ``S_offdiag = Σ_{i,j}|X_i - X_j|``. Asserted to machine precision
+    (measured max residual 4.4e-16 over n = 2..200), which is stronger evidence
+    than any Monte-Carlo percentage and pins the mechanism, not just the size.
     """
-    expected_pct = {5: 20.5, 10: 9.9, 20: 5.0}[n]
+    rng = np.random.default_rng(SEED + n)
+    for _ in range(50):
+        y = float(rng.normal())
+        sample = rng.normal(size=n)
+        plug = crps_empirical(y, sample)
+        fair = crps_fair(y, sample)
+        off_diag = float(np.abs(sample[:, None] - sample[None, :]).sum())
+        expected = off_diag * (1.0 / (2.0 * n * (n - 1)) - 1.0 / (2.0 * n * n))
+        assert (plug - fair) == pytest.approx(expected, abs=1e-12), f"n={n}"
+        # The identity also implies the sign: plug-in >= fair, always.
+        assert plug >= fair - 1e-12
+
+
+@pytest.mark.parametrize("n", [5, 10, 20, 50, 100])
+def test_crps_empirical_bias_matches_the_analytic_form(n: int) -> None:
+    """Measured bias ``+E|X-X'|/(2n) == sigma/(n*sqrt(pi))`` for a Gaussian predictive.
+
+    Draws are **paired** (the same ensemble feeds both estimators), which removes
+    the between-estimator sampling noise that makes an unpaired reading drift by
+    several percent. Measured percentage of the fair score, seed 20260928,
+    4000 reps: +20.4% (n=5), +10.2% (n=10), +5.1% (n=20), +2.0% (n=50),
+    +1.0% (n=100) — i.e. the bias decays as ``1/n`` and does **not** cancel in a
+    comparison, which is why CRPS league tables mixing ensemble sizes rank by
+    SIZE, not by skill.
+    """
+    expected_pct = {5: 20.35, 10: 10.23, 20: 5.08, 50: 2.04, 100: 1.02}[n]
     rng = np.random.default_rng(SEED)
     ys = rng.normal(0.0, 1.0, size=_REPS)
-    plug = np.array([crps_empirical(float(y), rng.normal(0.0, 1.0, size=n)) for y in ys])
-    fair = np.array([crps_fair(float(y), rng.normal(0.0, 1.0, size=n)) for y in ys])
-    bias = float(np.mean(plug) - np.mean(fair))
+    diffs, fairs = [], []
+    for y in ys:
+        sample = rng.normal(0.0, 1.0, size=n)
+        diffs.append(crps_empirical(float(y), sample) - crps_fair(float(y), sample))
+        fairs.append(crps_fair(float(y), sample))
+    bias = float(np.mean(diffs))
+    se = float(np.std(diffs, ddof=1) / math.sqrt(_REPS))
     analytic = 1.0 / (n * math.sqrt(math.pi))  # sigma = 1
-    pct = 100.0 * bias / float(np.mean(fair))
-    assert bias == pytest.approx(analytic, rel=0.05), f"n={n}: bias={bias} analytic={analytic}"
-    assert pct == pytest.approx(expected_pct, abs=1.5), f"n={n}: {pct}% vs {expected_pct}%"
+    pct = 100.0 * bias / float(np.mean(fairs))
+    assert bias == pytest.approx(analytic, abs=4.0 * se + 0.02 * analytic), (bias, analytic, se)
+    assert pct == pytest.approx(expected_pct, abs=0.5), f"n={n}: {pct}% vs {expected_pct}%"
 
 
 def test_crps_fair_is_strictly_below_the_plug_in_at_every_n() -> None:

@@ -215,9 +215,10 @@ def threshold_energy_score(
          forecaster that inflates its variance without limit is rewarded
          without limit. The score can legitimately come out *negative*, which
          a proper energy score in the population cannot. ``sqrt(2)`` is the
-         boundary, not a safe value: at ``w = sqrt(2)`` the residual
-         finite-threshold correction still drifts negative as sigma grows
-         (measured +0.160 at sigma=8 → −0.0012 at sigma=128, d=2, 60 members).
+         boundary, not a safe value: at ``w = sqrt(2)`` the leading term
+         cancels but the residual finite-threshold correction still drifts
+         negative as sigma grows (measured +0.151 at sigma=8 → -0.077 at
+         sigma=128, d=2, 60 members, 1200 reps, seed 2026).
 
        A ``RuntimeWarning`` is emitted for ``weight >= sqrt(2)`` but the
        arithmetic is deliberately unchanged: existing tests pin it and sealed

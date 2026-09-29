@@ -4,14 +4,19 @@ SYNTHETIC, seeded, deterministic — correctness evidence about test *size* and
 estimator behaviour, never market evidence. Nothing here is a live-trading or
 P&L claim.
 
-Motivation, measured (eight IDENTICAL models, every H0 true by construction,
-n = 120..150 squared-normal losses, 300 experiments, 28 pairs each):
+Motivation, measured with exactly this test's generator (eight IDENTICAL models,
+every H0 true by construction, n = 120..150 squared-normal losses, 300
+experiments, 28 pairs each = 8400 tests, seeds 50_000..50_299):
 
-    raw per-test rejection rate = 0.0644  (nominal 0.05; mild HAC size drift)
-    raw  FWER = 0.687   <- a 69% chance of a spurious "A beats B" finding
-    BH   FWER = 0.073
-    Holm FWER = 0.067
-    Bonf FWER = 0.067
+    raw per-test rejection rate = 0.0673  (nominal 0.05; mild HAC size drift)
+    raw  FWER = 0.617   <- a 62% chance of a spurious "A beats B" finding
+    BH   FWER = 0.087
+    Holm FWER = 0.080
+    Bonf FWER = 0.080
+
+The assertions below are written against stream-robust bounds (raw FWER > 0.40,
+corrected < raw/3 and < 0.20) rather than these exact digits, so the test pins
+the order-of-magnitude fix and survives an RNG-stream change.
 
 This is honesty-contract-adjacent: pairwise DM matrices are exactly what gets
 written into a receipt, so an unadjusted matrix would seal multiplicity
@@ -123,9 +128,9 @@ def test_adjusters_handle_empty_and_all_nan() -> None:
 def test_corrected_api_cuts_fwer_under_a_global_null() -> None:
     """The central claim: eight identical models must stop producing findings.
 
-    Raw FWER is ~0.69 (brief measured 0.62 on a different seed); every
-    correction must bring it to ~nominal. Tolerances are set at 4x the
-    Monte-Carlo s.e. of a ~0.07 rate over 300 reps (~0.015), so the test is
+    Raw FWER is ~0.62 (module docstring, same seed stream); every correction
+    must bring it to ~nominal (~0.08). Tolerances are set well outside the
+    Monte-Carlo s.e. of a ~0.08 rate over 300 reps (~0.016), so the test is
     about the order-of-magnitude fix, not a specific RNG stream.
     """
     raw_any = 0

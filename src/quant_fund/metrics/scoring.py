@@ -412,12 +412,15 @@ def crps_empirical(y: float | Array, sample: Array) -> float:
        **This is the biased plug-in form.** The ``\\frac{1}{2n^2}\\sum_{i,j}``
        denominator counts the (zero) diagonal terms, shrinking term 2 by a
        factor ``(n-1)/n`` relative to the fair U-statistic. The bias is
-       exactly ``+E|X-X'|/(2n)`` — measured ``+20.5%`` at n=5, ``+9.9%`` at
-       n=10, ``+5.0%`` at n=20 (Gaussian predictive, matches the analytic
-       ``sigma/(n*sqrt(pi))`` to <1%). Because the bias scales with ensemble
-       size it does **not** cancel in a comparison, so CRPS league tables that
-       mix ensemble sizes rank by size, not by skill. The arithmetic is left
-       untouched so sealed receipts stay reproducible (AGENTS.md honesty
+       exactly ``+E|X-X'|/(2n)``, and for any single realisation
+       ``plug-in - fair = S_offdiag * (1/(2n(n-1)) - 1/(2n^2))`` holds to
+       machine precision — an identity, not an estimate. Measured on a Gaussian
+       predictive (paired draws, seed 20260928, 4000 reps): ``+20.4%`` at n=5,
+       ``+10.2%`` at n=10, ``+5.1%`` at n=20, matching the analytic
+       ``sigma/(n*sqrt(pi))`` within Monte-Carlo error. Because the bias scales
+       with ensemble size it does **not** cancel in a comparison, so CRPS league
+       tables that mix ensemble sizes rank by size, not by skill. The arithmetic
+       is left untouched so sealed receipts stay reproducible (AGENTS.md honesty
        contract rule #4); use :func:`crps_fair` for an unbiased estimator.
     """
     y_arr = np.asarray(y, dtype=float).reshape(-1)
@@ -456,9 +459,10 @@ def crps_fair(y: float | Array, sample: Array) -> float:
     Unlike :func:`crps_empirical` (the biased plug-in), the bias here is zero
     to first order, so ``crps_fair`` values are comparable across models with
     **different ensemble sizes** — a CRPS league table mixing ensemble sizes is
-    only valid with this estimator. Measured against a Gaussian predictive, the
-    plug-in bias that this function removes is ``+20.5%`` at n=5, ``+9.9%`` at
-    n=10, ``+5.0%`` at n=20.
+    only valid with this estimator. The plug-in bias this removes is exactly
+    ``S_offdiag * (1/(2n(n-1)) - 1/(2n^2))`` per realisation (machine-precision
+    identity, pinned by test); on a Gaussian predictive that is ``+20.4%`` at
+    n=5, ``+10.2%`` at n=10, ``+5.1%`` at n=20 of the score.
 
     Contracts mirror :func:`crps_empirical`: ``y`` scalar or length-1 array;
     ``sample`` 1d. Empty / all-non-finite sample → NaN; multi-row ``y`` →
@@ -569,9 +573,11 @@ def crps_threshold_weighted(
     ``threshold = 1.0``, 40 members, 600 reps/cell, seed 2026, SYNTHETIC):
     ``E[CRPS_w]`` has an interior minimum at ``sigma = 1`` —
     1.029 / 0.953 / 0.899 / **0.876** / 0.939 / 1.108 / 2.192 / 4.824 at
-    ``sigma = 0.25 / 0.5 / 0.75 / 1 / 1.5 / 2 / 4 / 8``. The same cell for
-    ``threshold_energy_score(weight=3.0)`` runs +1.177 → −17.685 (monotone
-    down, unbounded): this function is the honest replacement.
+    ``sigma = 0.25 / 0.5 / 0.75 / 1 / 1.5 / 2 / 4 / 8``. The same cell for the
+    1-D ``threshold_energy_score(weight=3.0, threshold=1.0)`` runs +1.418 →
+    −17.608 over the identical ``sigma`` grid (monotone down, unbounded below):
+    this function is the honest replacement. (In ``d = 2`` the divergence is
+    worse: +2.138 → −33.065.)
 
     ``weight = 1.0`` recovers :func:`crps_fair` exactly. Contracts mirror
     :func:`crps_empirical`: ``y`` scalar or length-1 array; ``sample`` 1d;
