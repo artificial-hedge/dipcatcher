@@ -504,6 +504,18 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       list as a manifest).
 - [x] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
       spawn, Defender exclusions, durable paths), durable staging dirs.
+- [x] P7.7 Evidence chain-of-custody: `research/evidence_audit.py` +
+      `dipcatcher verify-all` — set-level receipt audit (filename↔digest
+      binding, duplicate-seal detection, unsealed-legacy accounting,
+      evidence-index freshness via byte-compared regen) emitting a sealed
+      `evidence_audit` receipt. Also fixed `receipts-reverify` dispatch:
+      v2 envelopes and sealed v1 receipts now route to `verify-receipt`
+      instead of the notebook-schema `verify-research`, which had never
+      verified a sealed receipt correctly. The 7 committed pre-envelope
+      artifacts (no `receipt_sha256`, wrong schema family for
+      `verify-research`) moved to `receipts/legacy-unsealed/` — retained
+      for provenance, still rendered on the evidence page, outside the
+      seal-verified set. `make receipts-reverify` is green again.
       Landed: AGENTS.md "Remote fleet" section — PowerShell-only, WMI spawn
       survives ssh teardown, parametrized launcher + watchdog, `.dsh-24x7`
       durable paths, thread-pinning env block, Defender exclusions.

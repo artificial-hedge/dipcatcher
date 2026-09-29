@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 819,
+  "module_count": 820,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1648,6 +1648,10 @@
     },
     {
       "dst": "quant_fund.research.cross_sectional",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.evidence_audit",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -6819,6 +6823,14 @@
       "src": "quant_fund.research.cross_sectional"
     },
     {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.evidence_audit"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.evidence_audit"
+    },
+    {
       "dst": "quant_fund.metrics.probability",
       "src": "quant_fund.research.expert_mixture"
     },
@@ -7523,6 +7535,10 @@
       "src": "quant_fund.research.receipt_v2"
     },
     {
+      "dst": "quant_fund.research.evidence_audit",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
       "dst": "quant_fund.research.fleet_eval",
       "src": "quant_fund.research.receipt_v2"
     },
@@ -7536,6 +7552,10 @@
     },
     {
       "dst": "quant_fund.research.lane_contracts",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
+      "dst": "quant_fund.research.ranker_probability",
       "src": "quant_fund.research.receipt_v2"
     },
     {
@@ -8986,6 +9006,7 @@
     "quant_fund.research.emerge",
     "quant_fund.research.evalue_contracts",
     "quant_fund.research.evalues",
+    "quant_fund.research.evidence_audit",
     "quant_fund.research.expert_mixture",
     "quant_fund.research.explainability",
     "quant_fund.research.explainability.attribution",
@@ -9571,7 +9592,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 25,
+      "imports": 26,
       "src": "quant_fund.cli"
     },
     {
@@ -10561,7 +10582,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 176,
+      "imports": 180,
       "src": "quant_fund.research"
     },
     {
