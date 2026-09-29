@@ -85,6 +85,25 @@ injected defect size, with the defect=0 row bounding the false-alarm
 rate by α — the sequential claim is only useful if the lanes actually
 fire.
 
+`research/suite_health.py` (`dipcatcher suite-health`) audits the whole
+evidence trail in one pass: every receipt under `--receipts-dir` is
+re-verified (seal + kind contract), harvestable p-values/e-values are
+pooled via `emerge_mean` (valid under the arbitrary dependence between
+receipts), and a single corrupt artifact withholds the pooled claim —
+the `suite_health.v1` receipt is itself sealed and verifiable.
+
+### Self-drill evidence
+
+`receipts/monitor_run_drill_clean.json` and
+`receipts/monitor_run_drill_defect.json` are committed `monitor_run.v1`
+receipts from a six-lane live pass over `iid_gaussian`/`regime_switch`
+shards. Clean run: the only alarm is `qar` on `regime_switch` — a real
+calibration miss the union drill detected (pooled e ≈ 1.7×10⁵). Defect
+run: an injected biased quantile head fires coverage, tail, and
+calibration on both shards (pooled e ≈ 9.9×10¹⁶) while drift correctly
+stays silent on `regime_switch` — a persistent-from-start defect is
+absorbed by the level-shift contract, not an alarm.
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
