@@ -28,7 +28,8 @@ def test_report_shape_and_stamps() -> None:
     assert rep["kind"] == HONEST_VERDICT_SCHEMA
     assert rep["research_only"] is True
     assert rep["live_pnl_claim"] is False
-    assert rep["data_label"] == "SYNTHETIC"
+    # unlabeled streams stamp UNKNOWN, never claim synthetic provenance
+    assert rep["data_label"] == "UNKNOWN"
     assert rep["winner"] == "winner"
     assert len(str(rep["inputs_sha256"])) == 64
     assert set(rep["components"]) == {

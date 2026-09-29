@@ -164,7 +164,32 @@ def run_verdict(
     if not scores:
         raise ValueError("no head produced a stream — verdict impossible")
     excluded = sorted(set(map(str, factories)) - set(scores))
-    verdict = honest_verdict(scores, pits=pits, alpha=alpha, seed=seed, n_boot=n_boot)
+
+    # stamp the receipt with the shards' own data_label — generators are
+    # pure, so re-instantiating each resolved shard is the same draw
+    resolved: Mapping[str, ShardGenerator]
+    if shards is None:
+        resolved = resolve_shard_generators(None)
+    elif isinstance(shards, Mapping):
+        resolved = shards
+    else:
+        resolved = resolve_shard_generators(shards)
+    n_shard = n_train + n_eval
+    shard_labels = {
+        str(name): str(gen(n_shard, int(seed) + i).config.get("data_label") or "UNKNOWN")
+        for i, (name, gen) in enumerate(resolved.items())
+    }
+    distinct = set(shard_labels.values())
+    if len(distinct) > 1:
+        raise ValueError(
+            "shards carry mixed data_label values "
+            f"{sorted(distinct)}; run mixed corpora as separate receipts"
+        )
+    data_label = distinct.pop() if distinct else "UNKNOWN"
+
+    verdict = honest_verdict(
+        scores, pits=pits, alpha=alpha, seed=seed, n_boot=n_boot, data_label=data_label
+    )
     # keep the verdict's own schema/kind (contract-checked); the run context
     # rides under `run` so verify-receipt dispatch is unaffected
     verdict["run"] = {
@@ -179,6 +204,7 @@ def run_verdict(
             "n_boot": n_boot,
             "heads": sorted(map(str, scores)),
             "shards": resolved_names(shards),
+            "data_labels": shard_labels,
         },
         "excluded_heads": excluded,
     }

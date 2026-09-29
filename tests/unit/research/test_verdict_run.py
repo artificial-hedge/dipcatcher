@@ -111,3 +111,50 @@ def test_run_verdict_fails_closed_no_heads() -> None:
             seed=0,
             n_boot=50,
         )
+
+
+def test_run_verdict_propagates_shard_label() -> None:
+    from quant_fund.research.fleet_eval import SyntheticShard
+
+    def real_shard(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(
+            name="r",
+            x=np.zeros((n, 1)),
+            y=rng.normal(0.0, 1.0, n),
+            config={"data_label": "yahoo_eod"},
+        )
+
+    verdict, _ = run_verdict(
+        {"a": _GaussianFactory(1.0)},
+        {"r": real_shard},
+        n_train=64,
+        n_eval=64,
+        n_boot=50,
+    )
+    assert verdict["data_label"] == "yahoo_eod"
+    assert verdict["run"]["params"]["data_labels"] == {"r": "yahoo_eod"}
+
+
+def test_run_verdict_refuses_mixed_labels() -> None:
+    import pytest
+
+    from quant_fund.research.fleet_eval import SyntheticShard
+
+    def real_shard(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(
+            name="r",
+            x=np.zeros((n, 1)),
+            y=rng.normal(0.0, 1.0, n),
+            config={"data_label": "yahoo_eod"},
+        )
+
+    with pytest.raises(ValueError, match="mixed data_label"):
+        run_verdict(
+            {"a": _GaussianFactory(1.0)},
+            {"s": _gauss_shard, "r": real_shard},
+            n_train=64,
+            n_eval=64,
+            n_boot=50,
+        )
