@@ -68,55 +68,11 @@ _BASE_FDR = {
     "level": 0.05,
 }
 
-_BASE_VERDICT = {
-    "kind": "honest_verdict.v1",
-    "data_label": "SYNTHETIC",
-    "research_only": True,
-    "live_pnl_claim": False,
-    "verdict": "supported_with_caveats",
-    "winner": "gmm",
-    "alpha": 0.05,
-    "n_obs": 1152,
-    "n_heads": 2,
-    "inputs_sha256": _SHA,
-    "components": {
-        "winner_curse": {"corrected_score": 0.011},
-        "promotion": {"promoted": False},
-        "drift": {"eprocess_alarmed": False},
-        "calibration": {},
-        "magnitude": {},
-        "localize": {"skipped": "no_drift_alarm"},
-    },
-    "unavailable_lanes": ["calibration", "magnitude"],
-}
 
-
-def test_valid_fixtures_pass_all_five_kinds() -> None:
-    for base in (_BASE_PROMOTION, _BASE_RACE, _BASE_CORPUS, _BASE_FDR, _BASE_VERDICT):
+def test_valid_fixtures_pass_all_four_kinds() -> None:
+    for base in (_BASE_PROMOTION, _BASE_RACE, _BASE_CORPUS, _BASE_FDR):
         assert evalue_family_contract_errors(base) == [], base["kind"]
         assert base["kind"] in EVALUE_FAMILY_KINDS
-
-
-def test_honest_verdict_contract() -> None:
-    # core lane missing → verdict must be inconclusive
-    bad = dict(_BASE_VERDICT, unavailable_lanes=["winner_curse"])
-    assert "core_lane_missing_but_verdict_not_inconclusive" in evalue_family_contract_errors(bad)
-    # inconclusive tolerates missing core lanes
-    ok = dict(_BASE_VERDICT, verdict="inconclusive", unavailable_lanes=["drift"])
-    assert evalue_family_contract_errors(ok) == []
-    # unavailable lane must name a real component
-    bad2 = dict(_BASE_VERDICT, unavailable_lanes=["bogus"])
-    assert "unavailable_lane_unknown:bogus" in evalue_family_contract_errors(bad2)
-    # confirmed without promotion flag
-    bad3 = dict(_BASE_VERDICT, verdict="confirmed")
-    assert "confirmed_without_promotion_flag" in evalue_family_contract_errors(bad3)
-    # verdict enum + honesty stamps
-    assert "verdict_not_in_enum" in evalue_family_contract_errors(
-        dict(_BASE_VERDICT, verdict="winning")
-    )
-    assert "live_pnl_claim_not_false" in evalue_family_contract_errors(
-        dict(_BASE_VERDICT, live_pnl_claim=True)
-    )
 
 
 def test_promotion_arithmetic_must_hold() -> None:

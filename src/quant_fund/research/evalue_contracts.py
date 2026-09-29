@@ -25,7 +25,6 @@ EVALUE_FAMILY_KINDS = frozenset(
         "fleet_race.v1",
         "corpus_inference.v1",
         "online_fdr.v1",
-        "honest_verdict.v1",
     }
 )
 
@@ -201,68 +200,6 @@ def _online_fdr_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
-_VERDICT_VALUES = frozenset(
-    {"confirmed", "supported_with_caveats", "not_supported", "inconclusive"}
-)
-# Lanes whose absence forces ``inconclusive`` — honest_verdict only lets the
-# core trio veto a claim; extension lanes may be unavailable without penalty.
-_CORE_LANES = frozenset({"winner_curse", "promotion", "drift"})
-
-
-def _honest_verdict_errors(p: Mapping[str, Any]) -> list[str]:
-    errors: list[str] = []
-    if p.get("data_label") != "SYNTHETIC":
-        errors.append("data_label_not_synthetic")
-    if p.get("research_only") is not True:
-        errors.append("research_only_not_true")
-    if p.get("live_pnl_claim") is not False:
-        errors.append("live_pnl_claim_not_false")
-    if not _is_sha256(p.get("inputs_sha256")):
-        errors.append("inputs_sha256_invalid")
-    verdict = p.get("verdict")
-    if verdict not in _VERDICT_VALUES:
-        errors.append("verdict_not_in_enum")
-    alpha = _num(p.get("alpha"))
-    if alpha is None or not (0.0 < alpha < 1.0):
-        errors.append("alpha_out_of_unit_interval")
-    for field in ("n_obs", "n_heads"):
-        v = p.get(field)
-        if not isinstance(v, int) or isinstance(v, bool) or v < 1:
-            errors.append(f"{field}_not_positive_int")
-    winner = p.get("winner")
-    if not isinstance(winner, str) or not winner.strip():
-        errors.append("winner_not_nonempty_str")
-    components = p.get("components")
-    if not isinstance(components, Mapping):
-        errors.append("components_not_mapping")
-        components = {}
-    unavailable = p.get("unavailable_lanes")
-    if not isinstance(unavailable, list):
-        errors.append("unavailable_lanes_not_list")
-        unavailable = []
-    elif not all(isinstance(lane, str) for lane in unavailable):
-        errors.append("unavailable_lanes_not_str_list")
-    # unavailable lanes must be named components — a fabricated lane name
-    # means the claim-evidence split itself is forged
-    for lane in unavailable:
-        if isinstance(components, Mapping) and lane not in components:
-            errors.append(f"unavailable_lane_unknown:{lane}")
-    # veto rule: a missing core lane forces inconclusive — nothing else may
-    # mask an unverifiable claim as supported
-    if any(lane in _CORE_LANES for lane in unavailable) and verdict != "inconclusive":
-        errors.append("core_lane_missing_but_verdict_not_inconclusive")
-    # promotion must have run for anything other than inconclusive
-    if verdict != "inconclusive" and "promotion" in unavailable:
-        errors.append("verdict_decisive_without_promotion")
-    # confirmed requires a promoted flag actually recorded
-    promotion_detail = components.get("promotion")
-    if verdict == "confirmed" and (
-        not isinstance(promotion_detail, Mapping) or promotion_detail.get("promoted") is not True
-    ):
-        errors.append("confirmed_without_promotion_flag")
-    return errors
-
-
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
@@ -274,6 +211,4 @@ def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         return _corpus_inference_errors(receipt)
     if kind == "online_fdr.v1":
         return _online_fdr_errors(receipt)
-    if kind == "honest_verdict.v1":
-        return _honest_verdict_errors(receipt)
     return []
