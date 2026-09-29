@@ -227,16 +227,30 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
     # Witness extent: the checkpoint signs the proof name set at write
     # time; the live proof lands right after it, so the legal set is the
     # claim or the claim plus one new name that must witness this head.
-    live_names = (
-        {p.name for p in wdir.glob(f"{CHECKPOINT_PATH.name}_*.json")} if wdir.is_dir() else set()
+    live_files = (
+        {p.name: p for p in wdir.glob(f"{CHECKPOINT_PATH.name}_*.json")} if wdir.is_dir() else {}
     )
     witness_claim = live_payload.get("witness")
     if isinstance(witness_claim, dict):
-        claimed = set(witness_claim.get("proofs") or [])
-        missing_claimed = sorted(claimed - live_names)
-        extra = sorted(live_names - claimed)
+        claimed_raw = witness_claim.get("proofs")
+        # Current schema: name -> sha256 map; tolerate the earlier
+        # name-list shape (digests unchecked) for legacy checkpoints.
+        claimed = (
+            dict(claimed_raw)
+            if isinstance(claimed_raw, dict)
+            else {n: None for n in (claimed_raw or [])}
+        )
+        missing_claimed = sorted(set(claimed) - set(live_files))
+        extra = sorted(set(live_files) - set(claimed))
         if missing_claimed:
             errors.append(f"witness_proof_deleted:{','.join(missing_claimed)}")
+        for name, claimed_digest in sorted(claimed.items()):
+            if (
+                claimed_digest is not None
+                and name in live_files
+                and hash_bytes(live_files[name].read_bytes()) != claimed_digest
+            ):
+                errors.append(f"witness_proof_drift:{name}")
         if len(extra) > 1:
             errors.append(f"witness_proof_unpinned:{','.join(extra)}")
         elif len(extra) == 1:

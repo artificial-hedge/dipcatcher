@@ -83,10 +83,13 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
     from quant_fund.research.integrity_witness import WITNESS_DIR
 
     wdir = root_path / WITNESS_DIR
-    proof_names = (
-        sorted(p.name for p in wdir.glob(f"{DEFAULT_CHECKPOINT_PATH.name}_*.json"))
+    proofs = (
+        {
+            p.name: hash_bytes(p.read_bytes())
+            for p in wdir.glob(f"{DEFAULT_CHECKPOINT_PATH.name}_*.json")
+        }
         if wdir.is_dir()
-        else []
+        else {}
     )
     from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 
@@ -101,7 +104,10 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
             "n_archives": len(archives),
             "tip": archives[-1] if archives else None,
         },
-        "witness": {"n_proofs": len(proof_names), "proofs": proof_names},
+        "witness": {
+            "n_proofs": len(proofs),
+            "proofs": proofs,
+        },
         # The pins are only as strong as the verifier that minted them —
         # record WHICH code produced this state: HEAD revision plus a
         # fingerprint over tracked diffs + untracked files. A tampered
