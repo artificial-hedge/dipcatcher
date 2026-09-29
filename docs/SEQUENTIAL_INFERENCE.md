@@ -139,6 +139,17 @@ fires on nearly every (symbol, unconditional-head) cell — a static
 martingale never alarms and the drift lane separates only the heads
 that degrade relative to the fleet median.
 
+`receipts/honest_verdict_real_drill.json` carries the composite verdict
+on the same tape (`scripts/verdict_real_drill.py`): **not_supported**.
+On real fat-tailed returns the gaussian head wins the raw tournament,
+but the promotion e-process finds no evidence it beats the empirical
+runner-up (E ≈ 0), calibration fires nearly everywhere, and Page–Hinkley
+flags the regime structure the drift e-process correctly cannot confirm —
+a genuinely honest negative claim, sealed. The bench inputs now carry the
+same provenance gate: `SyntheticBook`/`CrossSectionalPanel` constructors
+must declare `data_label`, and a mixed corpus fails closed rather than
+inheriting a hard-coded SYNTHETIC stamp.
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
