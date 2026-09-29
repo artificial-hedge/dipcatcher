@@ -96,12 +96,14 @@ def monitor_fleet(
     calib_mod = _lazy("calibration_eprocess")
     conformal_mod = _lazy("conformal_monitor")
     drift_mod = _lazy("drift_alarm")
+    emerge_mod = _lazy("emerge")
     lanes_available = {
         "coverage": coverage_mod is not None,
         "tail": tail_mod is not None,
         "calibration": calib_mod is not None,
         "conformal": conformal_mod is not None,
         "drift": drift_mod is not None,
+        "emerge": emerge_mod is not None,
     }
 
     cov_pair = _central_pair(tau_arr, level)
@@ -183,6 +185,7 @@ def monitor_fleet(
                 rows.append(row)
                 continue
             q = v["q"]
+            evals: list[float] = []
 
             if coverage_mod is not None and cov_pair is not None:
                 ep = coverage_mod.CoverageEProcess(alpha=alpha, p0=1.0 - level)
@@ -191,6 +194,7 @@ def monitor_fleet(
                     ep.update(bool(y_eval[i] < lo_q[i] or y_eval[i] > hi_q[i]))
                 row["coverage_alarmed"] = ep.alarmed
                 row["coverage_breach_rate"] = ep.breach_rate
+                evals.append(ep.evalue)
             elif coverage_mod is not None:
                 row["coverage_alarmed"] = None  # no central pair on this tau grid
 
@@ -201,6 +205,7 @@ def monitor_fleet(
                 for i in range(n_eval):
                     tep.update(bool(y_eval[i] < q[i, j_hi]), bool(y_eval[i] < q[i, j_lo]))
                 row["tail_alarmed"] = tep.alarmed
+                evals.append(tep.evalue)
 
             if calib_mod is not None:
                 cep = calib_mod.CalibrationEProcess(alpha=alpha)
@@ -208,6 +213,7 @@ def monitor_fleet(
                     cep.update(float(u))
                 row["calibration_evalue"] = cep.wealth
                 row["calibration_alarmed"] = cep.alarmed
+                evals.append(cep.wealth)
 
             if conformal_mod is not None:
                 cm = conformal_mod.ConformalMartingale(alpha=alpha)
@@ -216,14 +222,27 @@ def monitor_fleet(
                     _, last_m = cm.update(float(u))
                 row["conformal_alarmed"] = cm.alarmed
                 row["conformal_final_m"] = last_m
+                evals.append(last_m)
 
             if drift_mod is not None and fleet_median is not None:
                 dep = drift_mod.EProcessDriftAlarm(alpha=alpha)
                 diffs = np.asarray(v["loss"]) - fleet_median
+                last_e = 1.0
                 for d in diffs:
-                    dep.update(float(d))
+                    step = dep.update(float(d))
+                    last_e = float(step.statistic)
                 row["drift_alarmed"] = dep.alarmed
                 row["drift_alarm_index"] = dep.alarm_index
+                row["drift_evalue"] = last_e
+                evals.append(last_e)
+
+            if emerge_mod is not None and evals:
+                pooled = emerge_mod.emerge_mean(evals)
+                # arithmetic mean is a valid e-value under arbitrary
+                # dependence between the lanes (Vovk & Wang 2021)
+                row["pooled_evalue"] = pooled
+                row["pooled_alarmed"] = bool(pooled >= 1.0 / alpha)
+                row["n_lanes_evidence"] = len(evals)
 
             rows.append(row)
 
