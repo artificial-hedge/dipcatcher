@@ -132,3 +132,71 @@ def test_verify_receipt_dispatch() -> None:
     result = verify_receipt_payload(tampered)
     assert result["valid"] is False
     assert any("anytime_p" in e for e in result["errors"])
+
+
+_BASE_CALIBRATION = {
+    "kind": "calibration_audit.v1",
+    "inputs_sha256": "a" * 64,
+    "params": {"alpha": 0.05, "channels": ["loc_hi", "loc_lo"], "n_eval": 256},
+}
+
+_BASE_LOSS_CS = {
+    "kind": "loss_cs.v1",
+    "alpha": 0.05,
+    "lam": 0.5,
+    "bound": 1.0,
+    "n": 200,
+    "cs_low": -0.4,
+    "cs_high": -0.02,
+    "excludes_zero": True,
+    "interpretation": "challenger_better",
+}
+
+_BASE_LOCALIZE = {
+    "kind": "changepoint_localize.v1",
+    "params": {"alpha": 0.05, "window": 40, "min_left": 10},
+    "result": {"tau_hat": 200, "cs_lo": 150, "cs_hi": 210, "n": 400, "alarmed": True},
+}
+
+_BASE_COV_AUDIT = {
+    "kind": "coverage_audit.v1",
+    "inputs_sha256": "b" * 64,
+    "params": {"alpha": 0.05, "levels": [0.8, 0.9], "n_eval": 256},
+}
+
+
+def test_calibration_audit_contract() -> None:
+    assert evalue_family_contract_errors(_BASE_CALIBRATION) == []
+    bad = dict(_BASE_CALIBRATION, params={"alpha": 0.9, "channels": []})
+    errs = evalue_family_contract_errors(bad)
+    assert "channels_empty" in errs
+    bad2 = dict(_BASE_CALIBRATION, inputs_sha256="zz")
+    assert "inputs_sha256_malformed" in evalue_family_contract_errors(bad2)
+
+
+def test_loss_cs_contract() -> None:
+    assert evalue_family_contract_errors(_BASE_LOSS_CS) == []
+    bad = dict(_BASE_LOSS_CS, cs_low=0.5, cs_high=0.1)
+    assert "cs_bounds_malformed" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_LOSS_CS, interpretation="surely_wins")
+    assert "interpretation_unknown" in evalue_family_contract_errors(bad2)
+    bad3 = dict(_BASE_LOSS_CS, bound=0.0)
+    assert "bound_invalid" in evalue_family_contract_errors(bad3)
+
+
+def test_changepoint_localize_contract() -> None:
+    assert evalue_family_contract_errors(_BASE_LOCALIZE) == []
+    bad = dict(_BASE_LOCALIZE, result={"tau_hat": 5, "cs_lo": 300, "cs_hi": 100, "n": 400})
+    assert "cs_bounds_inverted" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_LOCALIZE, params={"alpha": 0.05, "window": 0, "min_left": 10})
+    assert "window_not_positive_int" in evalue_family_contract_errors(bad2)
+
+
+def test_coverage_audit_contract() -> None:
+    assert evalue_family_contract_errors(_BASE_COV_AUDIT) == []
+    bad = dict(_BASE_COV_AUDIT, params={"alpha": 0.05, "levels": [1.5]})
+    assert "levels_malformed" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_COV_AUDIT, kind="coverage_cs.v1", inputs_sha256="x")
+    assert "inputs_sha256_malformed" in evalue_family_contract_errors(bad2)
+    good2 = dict(_BASE_COV_AUDIT, kind="coverage_cs.v1")
+    assert evalue_family_contract_errors(good2) == []

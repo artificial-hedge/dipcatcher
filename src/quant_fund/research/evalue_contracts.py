@@ -25,6 +25,11 @@ EVALUE_FAMILY_KINDS = frozenset(
         "fleet_race.v1",
         "corpus_inference.v1",
         "online_fdr.v1",
+        "calibration_audit.v1",
+        "loss_cs.v1",
+        "changepoint_localize.v1",
+        "coverage_audit.v1",
+        "coverage_cs.v1",
     }
 )
 
@@ -200,6 +205,91 @@ def _online_fdr_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _calibration_audit_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    params = p.get("params")
+    if not isinstance(params, Mapping):
+        return ["missing_params"]
+    for field in ("alpha",):
+        v = _num(params.get(field))
+        if v is None or not (0.0 < v < 1.0):
+            errors.append(f"{field}_out_of_unit_interval")
+    channels = params.get("channels")
+    if not isinstance(channels, list) or not channels:
+        errors.append("channels_empty")
+    if not _is_sha256(p.get("inputs_sha256")):
+        errors.append("inputs_sha256_malformed")
+    return errors
+
+
+def _loss_cs_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    for field in ("alpha", "lam", "bound"):
+        v = _num(p.get(field))
+        if v is None or not (0.0 < v < 1.0 if field != "bound" else v > 0.0):
+            errors.append(f"{field}_invalid")
+    lo, hi = _num(p.get("cs_low")), _num(p.get("cs_high"))
+    if lo is None or hi is None or not (np.isfinite(lo) and np.isfinite(hi)) or lo > hi:
+        errors.append("cs_bounds_malformed")
+    n = p.get("n")
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+        errors.append("n_not_positive_int")
+    if p.get("interpretation") not in {
+        "challenger_better",
+        "incumbent_better",
+        "inconclusive",
+    }:
+        errors.append("interpretation_unknown")
+    return errors
+
+
+def _changepoint_localize_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    params = p.get("params")
+    if not isinstance(params, Mapping):
+        return ["missing_params"]
+    for field in ("alpha",):
+        v = _num(params.get(field))
+        if v is None or not (0.0 < v < 1.0):
+            errors.append(f"{field}_out_of_unit_interval")
+    for field in ("window", "min_left"):
+        v = params.get(field)
+        if not isinstance(v, int) or isinstance(v, bool) or v < 1:
+            errors.append(f"{field}_not_positive_int")
+    result = p.get("result")
+    if isinstance(result, Mapping):
+        lo, hi = _num(result.get("cs_lo")), _num(result.get("cs_hi"))
+        n = _num(result.get("n"))
+        if lo is not None and hi is not None and lo > hi:
+            errors.append("cs_bounds_inverted")
+        if n is None or n < 1:
+            errors.append("n_not_positive")
+    return errors
+
+
+def _coverage_audit_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    params = p.get("params")
+    if not isinstance(params, Mapping):
+        return ["missing_params"]
+    alpha = _num(params.get("alpha"))
+    if alpha is None or not (0.0 < alpha < 1.0):
+        errors.append("alpha_out_of_unit_interval")
+    levels = params.get("levels")
+    if not isinstance(levels, list) or not all(
+        isinstance(lv, (int, float)) and 0.0 < float(lv) < 1.0 for lv in levels
+    ):
+        errors.append("levels_malformed")
+    if not _is_sha256(p.get("inputs_sha256")):
+        errors.append("inputs_sha256_malformed")
+    return errors
+
+
+def _coverage_cs_errors(p: Mapping[str, Any]) -> list[str]:
+    # same envelope shape as coverage_audit
+    return _coverage_audit_errors(p)
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
@@ -211,4 +301,14 @@ def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         return _corpus_inference_errors(receipt)
     if kind == "online_fdr.v1":
         return _online_fdr_errors(receipt)
+    if kind == "calibration_audit.v1":
+        return _calibration_audit_errors(receipt)
+    if kind == "loss_cs.v1":
+        return _loss_cs_errors(receipt)
+    if kind == "changepoint_localize.v1":
+        return _changepoint_localize_errors(receipt)
+    if kind == "coverage_audit.v1":
+        return _coverage_audit_errors(receipt)
+    if kind == "coverage_cs.v1":
+        return _coverage_cs_errors(receipt)
     return []
