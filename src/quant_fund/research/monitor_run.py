@@ -11,8 +11,9 @@ per-origin observation through the anytime-valid monitor family:
 - ``EProcessDriftAlarm`` — head-vs-fleet-median loss drift (drift_alarm)
 
 Each monitor is lazy-imported and probed per (shard, head) cell; a lane
-whose module is not merged yet contributes ``lane_missing`` rows instead
-of being silently skipped — the receipt records which lanes ran.
+whose module is not merged yet contributes ``None`` columns (recorded as
+``lanes_available[...] = false`` on the receipt) instead of being
+silently skipped — the receipt records which lanes ran.
 
 Drift pairing: every head's loss diff is taken against the fleet median
 at the same origin (computed across the cell's heads), so a head that
@@ -77,7 +78,8 @@ def monitor_fleet(
 
     Returns (row frame, ``monitor_run.v1`` receipt). Each cell row carries
     one column per lane's alarm flag; a lane that cannot be imported shows
-    ``lane_missing`` rather than an error or a fabricated pass.
+    ``None`` rather than an error or a fabricated pass, and the receipt's
+    ``lanes_available`` map records the miss.
     """
     from quant_fund.research.verdict_run import resolved_names
 

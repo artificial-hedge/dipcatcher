@@ -194,6 +194,13 @@ class EDetectorGaussian(_MixtureSRDetector):
     roughly [0.25 sigma, 4 sigma]; pass lambda_grid (absolute lambdas, not
     divided by sigma) to target other shifts, e.g. negative lambdas for
     downward shifts. Mixing follows the module-doc construction.
+
+    VALIDITY SCOPE: the null is *x is sigma-sub-Gaussian with mean <= 0*
+    — the stated sigma must be a true scale bound for the stream. The
+    e-value is NOT distribution-free: meta-audit measured ~95% false-alarm
+    at alpha=0.05 on a centered t3 stream with sigma=1 (tails violate the
+    sub-Gaussian premise). For heavy-tailed or unknown-scale streams use
+    ``EDetectorBounded`` (needs a hard bound) or a rank/sign bet.
     """
 
     def __init__(
