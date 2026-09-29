@@ -1774,6 +1774,52 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: cost_calibration.v1
 - `seed`: 7
 
+### `receipts/coverage_cs_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/coverage_cs_real_drill.json | 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7 | 86c888a2c61fcdc1c0eb9bac0162f396dc468192ede2b3700db4114757782e00 | not_checked | absent | inputs_sha256=73fdc0206eeccdbc9c967dd058744d085fd7c4b999e2ae523e7f76c520b2b1fc | unspecified | absent | absent | absent |
+
+- `claims`:
+  - [0]
+    - `kind`: theoretical
+    - `text`: time-uniform (lo, hi) on each head's true breach rate; nominal_inside is the coverage claim's bounded answer
+- `code_revision`: 13f93ca3dd92d8d93d38335056c81b754a745045
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - time_uniform_confidence_sequence
+  - bernoulli_lr_inversion
+  - waudby_smith_ramdas
+  - two_sided_interval_not_point_test
+- `kind`: coverage_cs
+- `level`: research
+- `params`:
+  - `alpha`: 0.05
+  - `levels`:
+    - 0.8
+    - 0.9
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `seed`: 0
+- `receipt_sha256`: 86c888a2c61fcdc1c0eb9bac0162f396dc468192ede2b3700db4114757782e00
+- `schema`: coverage_cs.v1
+
 ### `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -5762,6 +5808,101 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `n`: 300
 - `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
 - `schema`: loss_cs.v1
+
+### `receipts/mcs_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/mcs_real_drill.json | 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53 | f0b72cb3aa796bbff4cc8744e72d6ef40c4539b4e3445e0356ddee5452dc4411 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `champion`: null
+- `coverage_guarantee`: P(set contains an optimal head at every origin) >= 1 - alpha
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `score`: mean pinball over DEFAULT_TAUS
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eliminated`:
+  - `conf_t`: 29
+  - `empirical`: 14
+  - `gaussian`: 271
+  - `gmm`: 14
+  - `hstep_emp`: 14
+  - `isotonic`: 17
+  - `regime`: 14
+  - `skew_t`: 17
+  - `stack`: 20
+- `evidence`:
+  - ville_inequality
+  - pairwise_supermartingales
+  - union_bound_k_minus_1
+  - permanent_elimination
+  - anytime_valid
+- `kind`: mcs_seq.v1
+- `lam`: 0.5
+- `n_eliminated`: 9
+- `n_heads`: 12
+- `n_origins`: 300
+- `receipt_sha256`: f0b72cb3aa796bbff4cc8744e72d6ef40c4539b4e3445e0356ddee5452dc4411
+- `research_only`: true
+- `survivors`:
+  - fhs_skew
+  - hstep_t
+  - qar
+
+### `receipts/mcs_vol_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/mcs_vol_drill.json | 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0 | 682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `champion`: null
+- `coverage_guarantee`: P(set contains an optimal head at every origin) >= 1 - alpha
+- `data_label`: SYNTHETIC
+- `drill`:
+  - `horizon`: 1
+  - `min_history`: 200
+  - `model_errors`:
+  - `n_origins`: 96
+  - `seed`: 7
+  - `shard`: garch_vol
+  - `source`: vol_bench._eval_shard_model per-origin QLIKE
+  - `stride`: 4
+- `eliminated`:
+- `evidence`:
+  - ville_inequality
+  - pairwise_supermartingales
+  - union_bound_k_minus_1
+  - permanent_elimination
+  - anytime_valid
+- `kind`: mcs_seq.v1
+- `lam`: 0.5
+- `n_eliminated`: 0
+- `n_heads`: 5
+- `n_origins`: 96
+- `receipt_sha256`: 682e8ffac5176756f26ac2afb92185b28c3ae4f33c56b9e2cabf4f4f43cbfc5e
+- `research_only`: true
+- `survivors`:
+  - dip_garch_t
+  - har
+  - realized_garch
+  - rv_ewma
+  - rv_roll
 
 ### `receipts/monitor_run_drill_clean.json`
 

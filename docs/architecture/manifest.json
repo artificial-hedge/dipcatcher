@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 793,
+  "module_count": 797,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -1667,11 +1667,19 @@
       "src": "quant_fund.cli.research_cmds"
     },
     {
+      "dst": "quant_fund.research.mcs_seq",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
       "dst": "quant_fund.research.monitor_run",
       "src": "quant_fund.cli.research_cmds"
     },
     {
       "dst": "quant_fund.research.online_fdr",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.receipt_lattice",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -6607,6 +6615,18 @@
       "src": "quant_fund.research.cost_calibration"
     },
     {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.coverage_cs"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.coverage_cs"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.coverage_cs"
+    },
+    {
       "dst": "quant_fund.metrics.cross_section",
       "src": "quant_fund.research.cross_sectional"
     },
@@ -6911,6 +6931,10 @@
       "src": "quant_fund.research.identity_sweep"
     },
     {
+      "dst": "quant_fund.research.receipt_lattice",
+      "src": "quant_fund.research.lane_contracts"
+    },
+    {
       "dst": "quant_fund.research.xwatch",
       "src": "quant_fund.research.lane_contracts"
     },
@@ -6961,6 +6985,14 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.research.lane_power"
+    },
+    {
+      "dst": "quant_fund.research.evalues",
+      "src": "quant_fund.research.mcs_seq"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.mcs_seq"
     },
     {
       "dst": "quant_fund.metrics.scoring",
@@ -7165,6 +7197,14 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.research.reality_sweep"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.receipt_lattice"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.receipt_lattice"
     },
     {
       "dst": "quant_fund.research.catalog",
@@ -8628,6 +8668,7 @@
     "quant_fund.research.corpus_inference",
     "quant_fund.research.cost_allocation",
     "quant_fund.research.cost_calibration",
+    "quant_fund.research.coverage_cs",
     "quant_fund.research.cross_sectional",
     "quant_fund.research.drift_alarm",
     "quant_fund.research.emerge",
@@ -8653,6 +8694,7 @@
     "quant_fund.research.lane_power",
     "quant_fund.research.legacy_unsealed",
     "quant_fund.research.loss_cs",
+    "quant_fund.research.mcs_seq",
     "quant_fund.research.monitor_run",
     "quant_fund.research.net_replay",
     "quant_fund.research.net_tournament",
@@ -8662,6 +8704,7 @@
     "quant_fund.research.ranker_probability",
     "quant_fund.research.real_benchmark",
     "quant_fund.research.reality_sweep",
+    "quant_fund.research.receipt_lattice",
     "quant_fund.research.receipt_schema",
     "quant_fund.research.receipt_v2",
     "quant_fund.research.research100",
@@ -9210,7 +9253,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 20,
+      "imports": 22,
       "src": "quant_fund.cli"
     },
     {
@@ -10200,7 +10243,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 148,
+      "imports": 151,
       "src": "quant_fund.research"
     },
     {
@@ -10215,7 +10258,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 50,
+      "imports": 55,
       "src": "quant_fund.research"
     },
     {
