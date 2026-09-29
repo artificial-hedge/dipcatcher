@@ -216,22 +216,28 @@ def check_epoch_chain(
     corpus_dir: Path | str,
     *,
     allowed_removals: Mapping[str, str] | None = None,
-) -> dict[str, list[str]]:
+) -> dict[str, Any]:
     """Walk the committed epoch chain against the live corpus.
 
-    Returns ``{"errors": [...], "unstamped": [...]}``. Errors are integrity
-    violations the chain is authoritative over: forked/disconnected/invalid
-    epoch receipts, stamped members removed (outside ``allowed_removals``
-    name→sha256 pins), stamped members mutated, and dishonest delta fields.
-    ``unstamped`` lists corpus members not covered by the head epoch —
-    arrivals between stamps are the normal state, recorded not flagged.
+    Returns ``{"errors": [...], "unstamped": [...], "head": <name|None>,
+    "head_epoch_root": <hex|None>}``. Errors are integrity violations the
+    chain is authoritative over: forked/disconnected/invalid epoch receipts,
+    stamped members removed (outside ``allowed_removals`` name→sha256 pins),
+    stamped members mutated, and dishonest delta fields. ``unstamped`` lists
+    corpus members not covered by the head epoch — arrivals between stamps
+    are the normal state, recorded not flagged.
     """
     root = Path(corpus_dir)
     errors: list[str] = []
     unstamped: list[str] = []
     epochs = _epoch_receipts(root)
     if not epochs:
-        return {"errors": ["no_epoch_receipts"], "unstamped": []}
+        return {
+            "errors": ["no_epoch_receipts"],
+            "unstamped": [],
+            "head": None,
+            "head_epoch_root": None,
+        }
 
     # Seal-verify every epoch receipt before trusting its claims.
     from quant_fund.research.receipt_v2 import verify_receipt_file
@@ -245,7 +251,12 @@ def check_epoch_chain(
         sealed[path.name] = payload
     if not sealed:
         errors.append("no_valid_epoch_receipts")
-        return {"errors": errors, "unstamped": unstamped}
+        return {
+            "errors": errors,
+            "unstamped": unstamped,
+            "head": None,
+            "head_epoch_root": None,
+        }
 
     # Link the chain: each non-genesis epoch names prev_epoch_receipt.
     by_name = sealed
@@ -291,8 +302,13 @@ def check_epoch_chain(
     # Head vs live corpus: stamped membership must hold exactly; files added
     # after the head stamp are unstamped (normal), not violations.
     heads = set(by_name) - set(child_of)
+    head_name: str | None = None
+    head_root: str | None = None
     if len(heads) == 1:
-        head = by_name[next(iter(heads))]
+        head_name = next(iter(heads))
+        head = by_name[head_name]
+        root_val = head.get("epoch_root_sha256")
+        head_root = root_val if isinstance(root_val, str) else None
         live = member_digests(root)
         head_members = _member_maps(head)
         stamped = set(head_members)
@@ -305,7 +321,12 @@ def check_epoch_chain(
         unstamped = sorted(set(live) - stamped - set(by_name))
     elif len(heads) > 1:
         errors.append(f"epoch_multiple_heads:{','.join(sorted(heads))}")
-    return {"errors": errors, "unstamped": unstamped}
+    return {
+        "errors": errors,
+        "unstamped": unstamped,
+        "head": head_name,
+        "head_epoch_root": head_root,
+    }
 
 
 def write_epoch_receipt(

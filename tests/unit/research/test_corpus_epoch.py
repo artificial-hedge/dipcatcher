@@ -64,7 +64,9 @@ def test_chain_advances_on_growth(corpus_dir: Path) -> None:
     assert any(n.startswith("corpus_epoch_") for n in receipt["members_added"])
     assert receipt["members_removed"] == []
     _stamp(corpus_dir)
-    assert check_epoch_chain(corpus_dir) == {"errors": [], "unstamped": []}
+    result = check_epoch_chain(corpus_dir)
+    assert result["errors"] == [] and result["unstamped"] == []
+    assert result["head"] is not None and result["head_epoch_root"] is not None
 
 
 def test_deleted_member_detected(corpus_dir: Path) -> None:
