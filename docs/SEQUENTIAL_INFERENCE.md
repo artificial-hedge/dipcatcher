@@ -129,6 +129,16 @@ committed corpus itself: every sealed `receipts/*.json` is perturbed
 five ways (seal flip, seal removal, kind/schema rename, claim-digit
 edit, top-level drop) and must come back invalid — zero survive.
 
+`receipts/monitor_run_real_drill.json` is the suite's first non-synthetic
+evidence: the six-lane monitor over 2,693-day Yahoo EOD return series
+(8 symbols × 8 fleet heads, sealed with `data_label: yahoo_eod` — the
+receipt label is derived from shard configs, never hard-coded). The
+lanes discriminate correctly on real data: the calibration e-process
+fires on nearly every (symbol, unconditional-head) cell — a static
+512-day window cannot track vol clustering — while the conformal
+martingale never alarms and the drift lane separates only the heads
+that degrade relative to the fleet median.
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
