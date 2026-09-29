@@ -38,15 +38,7 @@ def test_runner_contract_when_lanes_present() -> None:
     import importlib
 
     for lane, runner in lane_power._LANES.items():
-        mod_name = {
-            "coverage_watch": "quant_fund.research.coverage_watch",
-            "tail_watch": "quant_fund.research.tail_watch",
-            "calibration_eprocess": "quant_fund.research.calibration_eprocess",
-            "drift_alarm": "quant_fund.research.drift_alarm",
-            "loss_cs": "quant_fund.research.loss_cs",
-            "changepoint_localize": "quant_fund.research.changepoint_localize",
-            "promotion": "quant_fund.research.evalues",
-        }[lane]
+        mod_name = lane_power._LANE_MODULES[lane]
         try:
             importlib.import_module(mod_name)
         except ImportError:
@@ -63,3 +55,44 @@ def test_null_control_is_bounded() -> None:
     frame, receipt = lane_power_bench(defects=(0.0,), n_steps=200, n_seeds=10, alpha=0.05)
     for lane, rate in receipt["null_alarm_rate"].items():
         assert rate <= 0.4, f"{lane} false-alarmed at {rate}"
+
+
+# Monitor-family modules that are deliberately NOT power-bench lanes —
+# each exclusion is annotated; merging a lane-shaped module without
+# registering it in _LANES fails this suite.
+_EXCLUDED_LANE_MODULES = {
+    "emerge": "e-value mergers — primitives, not a monitor lane",
+    "lane_power": "the bench itself",
+    "monitor_run": "the runner that drives lanes, not a lane",
+    "verdict_run": "stream producer for honest_verdict",
+    "honest_verdict": "composite claim over lanes — measured via components",
+    "evalue_contracts": "verifier contracts, not a monitor lane",
+    "corpus_inference": "operates on the receipt corpus, not a stream",
+    "online_fdr": "operates on the receipt corpus, not a stream",
+    "winner_curse": "batch correction, not sequential",
+    "fleet_race": "head-elimination driver — uses LossEProcess internally",
+}
+
+_LANE_SUFFIXES = ("_watch", "_eprocess", "_alarm", "_monitor", "_localize", "_cs")
+_LANE_NAMES = ("evalues", "emerge")
+
+
+def test_monitor_lane_completeness_ratchet() -> None:
+    """Every monitor-family module in research/ must be a registered
+    power-bench lane or carry an explicit exclusion — a new sequential
+    lane cannot land silently unmeasured by lane_power."""
+    import pathlib
+
+    research_dir = pathlib.Path(lane_power.__file__).resolve().parent
+    discovered: set[str] = set()
+    for path in research_dir.glob("*.py"):
+        stem = path.stem
+        if stem in _LANE_NAMES or stem.endswith(_LANE_SUFFIXES):
+            discovered.add(stem)
+    registered = {mod.rsplit(".", 1)[-1] for mod in lane_power._LANE_MODULES.values()}
+    unregistered = discovered - registered - set(_EXCLUDED_LANE_MODULES)
+    assert not unregistered, (
+        f"monitor-family module(s) not in lane_power._LANES and not "
+        f"excluded: {sorted(unregistered)} — add a runner or a "
+        f"_EXCLUDED_LANE_MODULES entry"
+    )

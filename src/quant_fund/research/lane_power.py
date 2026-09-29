@@ -173,6 +173,14 @@ _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "promotion": _run_promotion,
 }
 
+# lane key → the module its runner lazy-imports (test ratchet scans the
+# research/ package for monitor-family modules and fails if one is not
+# registered here or explicitly excluded)
+_LANE_MODULES: dict[str, str] = {
+    lane: ("quant_fund.research.evalues" if lane == "promotion" else f"quant_fund.research.{lane}")
+    for lane in _LANES
+}
+
 
 def lane_power_bench(
     *,
