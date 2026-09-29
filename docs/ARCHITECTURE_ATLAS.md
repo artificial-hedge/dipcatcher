@@ -181,7 +181,7 @@ flowchart LR
   quant_fund_api -->|3| quant_fund_research
   quant_fund_api -->|2| quant_fund_schemas
   quant_fund_audit -->|2| quant_fund_research
-  quant_fund_audit -->|1| quant_fund_utils
+  quant_fund_audit -->|2| quant_fund_utils
   quant_fund_backtest -->|7| quant_fund_config
   quant_fund_backtest -->|6| quant_fund_execution
   quant_fund_backtest -->|6| quant_fund_metrics
@@ -192,6 +192,7 @@ flowchart LR
   quant_fund_backtest -->|5| quant_fund_portfolio
   quant_fund_backtest -->|2| quant_fund_risk
   quant_fund_backtest -->|8| quant_fund_schemas
+  quant_fund_backtest -->|1| quant_fund_utils
   quant_fund_cli -->|2| quant_fund_audit
   quant_fund_cli -->|3| quant_fund_backtest
   quant_fund_cli -->|3| quant_fund_config
@@ -215,7 +216,7 @@ flowchart LR
   quant_fund_cli -->|11| quant_fund_research
   quant_fund_cli -->|1| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
-  quant_fund_cli -->|3| quant_fund_utils
+  quant_fund_cli -->|4| quant_fund_utils
   quant_fund_cli -->|1| quant_fund_validation
   quant_fund_config -->|1| quant_fund_models
   quant_fund_data -->|4| quant_fund_config
@@ -245,6 +246,7 @@ flowchart LR
   quant_fund_hedge_lab -->|1| quant_fund_reality
   quant_fund_hedge_lab -->|6| quant_fund_research
   quant_fund_hedge_lab -->|5| quant_fund_risk
+  quant_fund_hedge_lab -->|2| quant_fund_utils
   quant_fund_hedge_lab -->|1| quant_fund_validation
   quant_fund_labels -->|1| quant_fund_config
   quant_fund_labels -->|1| quant_fund_data
@@ -264,6 +266,7 @@ flowchart LR
   quant_fund_market_sim -->|3| quant_fund_metrics
   quant_fund_market_sim -->|1| quant_fund_research
   quant_fund_mc_engine -->|1| quant_fund_metrics
+  quant_fund_mc_engine -->|1| quant_fund_utils
   quant_fund_metrics -->|1| quant_fund_models
   quant_fund_metrics -->|1| quant_fund_portfolio
   quant_fund_metrics -->|13| quant_fund_utils
@@ -272,6 +275,7 @@ flowchart LR
   quant_fund_microstructure -->|1| quant_fund_metrics
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
+  quant_fund_microstructure -->|1| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|36| quant_fund_metrics
@@ -300,10 +304,11 @@ flowchart LR
   quant_fund_paper -->|2| quant_fund_portfolio
   quant_fund_paper -->|3| quant_fund_research
   quant_fund_paper -->|1| quant_fund_schemas
-  quant_fund_paper -->|4| quant_fund_utils
+  quant_fund_paper -->|5| quant_fund_utils
   quant_fund_parity -->|4| quant_fund_config
   quant_fund_parity -->|2| quant_fund_execution
   quant_fund_parity -->|1| quant_fund_schemas
+  quant_fund_parity -->|1| quant_fund_utils
   quant_fund_pipeline -->|1| quant_fund
   quant_fund_pipeline -->|17| quant_fund_config
   quant_fund_pipeline -->|8| quant_fund_data
@@ -318,10 +323,10 @@ flowchart LR
   quant_fund_pipeline -->|2| quant_fund_reporting
   quant_fund_pipeline -->|2| quant_fund_research
   quant_fund_pipeline -->|14| quant_fund_schemas
-  quant_fund_pipeline -->|14| quant_fund_utils
+  quant_fund_pipeline -->|15| quant_fund_utils
   quant_fund_pipeline -->|4| quant_fund_validation
   quant_fund_pit -->|1| quant_fund_data
-  quant_fund_pit -->|5| quant_fund_proofcore
+  quant_fund_pit -->|6| quant_fund_proofcore
   quant_fund_pit -->|2| quant_fund_schemas
   quant_fund_portfolio -->|2| quant_fund_config
   quant_fund_portfolio -->|3| quant_fund_metrics
@@ -346,6 +351,7 @@ flowchart LR
   quant_fund_reporting -->|1| quant_fund_native
   quant_fund_reporting -->|1| quant_fund_portfolio
   quant_fund_reporting -->|1| quant_fund_stress
+  quant_fund_reporting -->|1| quant_fund_utils
   quant_fund_research -->|1| quant_fund
   quant_fund_research -->|3| quant_fund_audit
   quant_fund_research -->|2| quant_fund_backtest
@@ -354,9 +360,8 @@ flowchart LR
   quant_fund_research -->|2| quant_fund_execution
   quant_fund_research -->|49| quant_fund_metrics
   quant_fund_research -->|4| quant_fund_microstructure
-  quant_fund_research -->|57| quant_fund_models
+  quant_fund_research -->|58| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
-  quant_fund_research -->|1| quant_fund_paper
   quant_fund_research -->|11| quant_fund_pipeline
   quant_fund_research -->|5| quant_fund_portfolio
   quant_fund_research -->|1| quant_fund_proof
@@ -365,13 +370,14 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|1| quant_fund_schemas
-  quant_fund_research -->|22| quant_fund_utils
+  quant_fund_research -->|26| quant_fund_utils
   quant_fund_research -->|7| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
   quant_fund_risk -->|2| quant_fund_utils
   quant_fund_robustness -->|1| quant_fund_leakage
   quant_fund_robustness -->|1| quant_fund_research
+  quant_fund_robustness -->|1| quant_fund_utils
   quant_fund_simtest -->|1| quant_fund_backtest
   quant_fund_simtest -->|2| quant_fund_config
   quant_fund_simtest -->|1| quant_fund_execution
@@ -382,6 +388,7 @@ flowchart LR
   quant_fund_stress -->|7| quant_fund_metrics
   quant_fund_stress -->|2| quant_fund_models
   quant_fund_stress -->|1| quant_fund_research
+  quant_fund_stress -->|1| quant_fund_utils
   quant_fund_utils -->|1| quant_fund_native
   quant_fund_validation -->|2| quant_fund_config
   quant_fund_validation -->|6| quant_fund_metrics
@@ -612,7 +619,7 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 58 |
 | `quant_fund.microstructure` | 7 |
-| `quant_fund.models` | 152 |
+| `quant_fund.models` | 153 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -641,7 +648,7 @@ sequenceDiagram
 
 - Modules scanned: **736**
 - Packages: **65**
-- Cross-package import edges: **251**
+- Cross-package import edges: **254**
 
 <!-- END GENERATED: coverage -->
 
