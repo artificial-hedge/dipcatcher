@@ -66,7 +66,8 @@ def test_corpus_audit_end_to_end(tmp_path: Path) -> None:
     # e-value product merge: 30.0 ≥ 1/0.05 → corpus rejects null.
     assert rep["corpus_evalue"] == 30.0
     assert rep["corpus_reject_at_alpha"] is True
-    assert rep["data_label"] == "SYNTHETIC"
+    # inputs carry no data_label — the corpus honestly reports UNKNOWN
+    assert rep["data_label"] == "UNKNOWN"
 
 
 def test_parse_error_recorded(tmp_path: Path) -> None:
@@ -92,3 +93,22 @@ def test_real_receipts_dir_parses() -> None:
     rep = corpus_audit(root, glob="*.json")
     assert rep["n_receipts"] >= 1
     assert rep["n_parse_errors"] == 0
+
+
+def test_corpus_label_derived_from_inputs(tmp_path: Path) -> None:
+    """Corpus receipts inherit the input labels; mixed corpora say MIXED."""
+    import json
+
+    for name, label in (("a", "yahoo_eod"), ("b", "yahoo_eod")):
+        (tmp_path / f"{name}.json").write_text(
+            json.dumps({"kind": "x", "data_label": label, "p_value": 0.01})
+        )
+    rep = corpus_audit(tmp_path)
+    assert rep["data_label"] == "yahoo_eod"
+    assert rep["params"]["input_labels"] == {"a.json": "yahoo_eod", "b.json": "yahoo_eod"}
+
+    (tmp_path / "c.json").write_text(
+        json.dumps({"kind": "x", "data_label": "stooq", "p_value": 0.02})
+    )
+    rep2 = corpus_audit(tmp_path)
+    assert rep2["data_label"] == "MIXED"
