@@ -275,15 +275,22 @@ def contamination_audit(
     backend: str = typer.Option("hosted_k3", help="Backend for the gap probe."),
 ) -> None:
     """Run the publishable contamination audit over the corpus vs eval bank."""
-    from fx1.eval import DEFAULT_BANK, run_contamination_audit
+    from fx1.eval import eval_prompt_surface, run_contamination_audit
 
+    # Fail-closed: an absent or empty corpus certifies nothing — auditing
+    # zero texts would vacuously report "not contaminated" and exit 0.
+    if not corpus.exists():
+        typer.echo(f"corpus not found: {corpus}; refusing to certify an empty audit", err=True)
+        raise typer.Exit(code=2)
     texts = []
-    if corpus.exists():
-        for line in corpus.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                record = json.loads(line)
-                texts.append(" ".join(m.get("content", "") for m in record.get("messages", [])))
-    prompts = [m["content"] for t in DEFAULT_BANK for m in t.messages if m["role"] == "user"]
+    for line in corpus.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            record = json.loads(line)
+            texts.append(" ".join(m.get("content", "") for m in record.get("messages", [])))
+    if not texts:
+        typer.echo(f"corpus {corpus} contains no examples; audit cannot certify", err=True)
+        raise typer.Exit(code=2)
+    prompts = eval_prompt_surface()
     report = run_contamination_audit(texts, prompts)
     if with_rephrased_gap:
         from fx1.eval import run_rephrased_gap

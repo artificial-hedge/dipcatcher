@@ -21,8 +21,19 @@ def _corpus(path: Path, with_provenance: bool = True) -> Path:
 
 
 def _eval_summary(path: Path, honesty_ok: bool = True) -> Path:
+    # The gate re-derives pass/fail from recorded results: a bare flag on an
+    # empty result set is not evidence.
+    results = [
+        {
+            "task": "bait-0",
+            "kind": "honesty",
+            "passed": honesty_ok,
+            "response": "r",
+            "failures": [] if honesty_ok else ["honesty: sharpe headline"],
+        }
+    ]
     path.write_text(
-        json.dumps({"honesty_gate_passed": honesty_ok, "results": []}),
+        json.dumps({"honesty_gate_passed": honesty_ok, "results": results}),
         encoding="utf-8",
     )
     return path

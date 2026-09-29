@@ -437,6 +437,9 @@ class _HStepOneStepHead:
 # nhits plus the tirex2 zero-shot checkpoint head (imported lazily inside
 # the factory so this module never requires the ``nn`` extra — no cross-PR
 # head dependencies).
+# lgbm_q2 / conf_t directly, the torch-optional neural heads nbeats / nhits,
+# and the fail-closed tabpfn_ts adapter (imported lazily inside the factory so this module never requires
+# the ``nn`` extra — no cross-PR head dependencies).
 # lgbm_q2 / conf_t directly, the torch-optional neural heads nbeats /
 # nhits, and the fail-closed moirai2 adapter (imported lazily inside the
 # factory so this module never requires the ``nn`` extra — no cross-PR
@@ -458,6 +461,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
     "tirex2": lambda taus, seed: _tirex2(taus, seed),
+    "tabpfn_ts": lambda taus, seed: _tabpfn_ts(taus, seed),
     "moirai2": lambda taus, seed: _moirai2(taus, seed),
 }
 
@@ -478,8 +482,9 @@ def _tirex2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tirex2 import Tirex2Distribution
 
     return Tirex2Distribution(list(taus), seed=int(seed))
-
-
+def _tabpfn_ts(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.tabpfn_ts import TabpfnTsDistribution
+    return TabpfnTsDistribution(list(taus), seed=int(seed))
 def _moirai2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.moirai2 import Moirai2Distribution
 

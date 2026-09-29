@@ -16,9 +16,12 @@ Procedure:
 - p-values are pooled into one Benjamini-Hochberg family at level ``q``
   (calibration/discovery families stay distinct when the receipt declares
   one — pooling a bound claim with a discovery claim inflates power).
-- e-values are kept in a separate bucket and merged by product: a
-  product of independent e-values is an e-value (Shafer 2021), giving a
-  single corpus-level e-value per bucket.
+- e-values are kept in a separate bucket and merged by arithmetic mean:
+  the mean of e-values is an e-value under *arbitrary dependence*
+  (Vovk–Wang 2021), which receipts require — they are produced by
+  correlated experiments on overlapping data, so the independence a
+  product merge needs cannot be assumed. The product is still reported
+  as a labeled diagnostic (valid only under independence).
 - The output is a receipt-shaped dict (``corpus_inference.v1``) listing
   which receipt claims survive, the BH critical value, per-claim
   adjusted status, and the merged corpus e-value.
@@ -149,9 +152,10 @@ def corpus_audit(
     """Pool every committed receipt's claims into one FDR family.
 
     Returns a ``corpus_inference.v1`` receipt dict: per-claim survival
-    flags, the merged corpus e-value (product of independent e-values),
-    and counts. Fails closed on a missing dir; unreadable receipts are
-    recorded as errors rather than silently skipped.
+    flags, the merged corpus e-value (arithmetic mean — valid under
+    arbitrary dependence), and counts. Fails closed on a missing dir;
+    unreadable receipts are recorded as errors rather than silently
+    skipped.
     """
     root = Path(receipts_dir)
     if not root.is_dir():
@@ -184,11 +188,17 @@ def corpus_audit(
     for f, ok in zip(p_findings, flags, strict=True):
         f["survives_fdr"] = bool(ok)
 
-    corpus_e = 1.0
+    corpus_evalue_product = 1.0
     for f in e_findings:
-        corpus_e *= float(f["value"])
-    # Product of independent e-values is an e-value (Shafer 2021).
-    corpus_evalue = float(min(corpus_e, math.inf)) if math.isfinite(corpus_e) else float("inf")
+        corpus_evalue_product *= float(f["value"])
+    if e_findings:
+        # Mean of e-values is an e-value under arbitrary dependence
+        # (Vovk & Wang 2021) — receipts share data and models, so the
+        # independence a product merge requires cannot be assumed. The
+        # product is kept as a labeled diagnostic only.
+        corpus_evalue = float(np.mean([float(f["value"]) for f in e_findings]))
+    else:
+        corpus_evalue = 1.0
 
     surviving = [f for f in p_findings if f.get("survives_fdr")]
     inputs_sha256 = hash_bytes(canonical_json_bytes({"digests": digests, "q": q}))
@@ -224,10 +234,13 @@ def corpus_audit(
             for f in surviving
         ],
         "corpus_evalue": corpus_evalue,
+        # diagnostic only — a valid e-value solely under independence
+        "corpus_evalue_product_dependence_assuming": corpus_evalue_product,
         "corpus_reject_at_alpha": corpus_evalue >= 1.0 / q if e_findings else False,
         "evidence": [
             "bh_fdr_pooled_family",
-            "evalue_product_merge",
+            "evalue_mean_merge",
+            "evalue_product_merge_diagnostic_only",
             "tagged_claim_provenance",
         ],
     }
