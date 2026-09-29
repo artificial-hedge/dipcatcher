@@ -45,6 +45,7 @@ from quant_fund.mc_engine.summary import (
 )
 from quant_fund.mc_engine.tails import path_risk_stats
 from quant_fund.mc_engine.variance import draw_standard_normals
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 ProgressCallback = Callable[[dict[str, float | int]], None]
 
@@ -271,6 +272,8 @@ def _chunk_file(directory: Path, chunk_id: int) -> Path:
 
 def _write_manifest(directory: Path, manifest: dict[str, Any]) -> None:
     directory.mkdir(parents=True, exist_ok=True)
+    body = {k: v for k, v in manifest.items() if k != "receipt_sha256"}
+    manifest = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
     target = directory / "manifest.json"
     tmp = directory / "manifest.json.tmp"
     tmp.write_text(json.dumps(manifest, sort_keys=True, indent=2), encoding="utf-8")
@@ -284,6 +287,11 @@ def _load_manifest(directory: Path) -> dict[str, Any] | None:
     loaded = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(loaded, dict):
         raise ValueError("checkpoint manifest is not an object")
+    seal = loaded.get("receipt_sha256")
+    if seal is not None:
+        body = {k: v for k, v in loaded.items() if k != "receipt_sha256"}
+        if seal != hash_bytes(canonical_json_bytes(body)):
+            raise ValueError("checkpoint manifest seal mismatch — refusing to resume")
     return cast(dict[str, Any], loaded)
 
 
