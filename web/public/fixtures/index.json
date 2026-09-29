@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-29T02:39:36.646922+00:00",
+ "generated_at": "2026-09-28T22:21:20.055887+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "2728625ace9f0951684988f6a6013cc8de040d4a9c7d1d6d084ce6c075b0a9ed": "src/quant_fund/public.py"
@@ -62,7 +62,7 @@
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 10,
-   "research_only": null,
+   "research_only": true,
    "schema": "capacity_overlay.v1"
   },
   {
@@ -95,7 +95,7 @@
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 20,
-   "research_only": null,
+   "research_only": true,
    "schema": "fleet_eval.v1"
   },
   {
@@ -117,11 +117,11 @@
    "live_pnl_claim": false,
    "n_hash_matches": 0,
    "n_hashes": 22,
-   "research_only": null,
+   "research_only": true,
    "schema": "cross_sectional_rankic.v1"
   }
  ],
- "repo_revision": "0e05f653c776d293e07c978b22ff31892d689458",
+ "repo_revision": "92c154c8d563058c301dfb0de284dcb5ebe5f61e",
  "strategies": [
   {
    "data_source": "UNVERIFIED",
