@@ -76,6 +76,15 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
     # archive record would otherwise leave a self-consistent shorter chain.
     archive_dir = root_path / CHECKPOINT_ARCHIVE_DIR
     archives = sorted(p.name for p in archive_dir.glob("*.json")) if archive_dir.is_dir() else []
+    # Witness extent: the proof for THIS checkpoint lands after it is
+    # written, so the verifier accepts claim or claim+1 — deleting an
+    # older proof still drops below the signed floor.
+    from quant_fund.research.integrity_witness import WITNESS_DIR
+
+    wdir = root_path / WITNESS_DIR
+    n_proofs = (
+        len(list(wdir.glob(f"{DEFAULT_CHECKPOINT_PATH.name}_*.json"))) if wdir.is_dir() else 0
+    )
     from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 
     return {
@@ -89,6 +98,7 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
             "n_archives": len(archives),
             "tip": archives[-1] if archives else None,
         },
+        "witness": {"n_proofs": n_proofs},
         # The pins are only as strong as the verifier that minted them —
         # record WHICH code produced this state: HEAD revision plus a
         # fingerprint over tracked diffs + untracked files. A tampered
