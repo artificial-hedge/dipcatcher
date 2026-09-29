@@ -31,12 +31,14 @@ def _blocked_scores(sizes: list[int], means: list[float], std: float, seed: int)
 
 
 def _contradiction_report() -> dict:
-    """A strictly better in regime 'bull' only, placed LAST so the pooled
-    predictable bound is already inflated by the heavy-noise 'bear' regime
-    when the bull segment starts (pooled path stays below threshold)."""
+    """A strictly better in regime 'bull' only. The 'bear' segment is a
+    null stream with negative median (exponential noise recentered at its
+    mean), so the pooled win-rate stays <= 1/2 even once the bull wins
+    accrue — the pooled sign-bet lam_t stays 0 and the pooled path never
+    grows, while the all-positive bull segment crosses quickly."""
     rng = np.random.default_rng(21)
     n_bear, n_bull = 540, 60
-    d_bear = rng.normal(0.0, 10.0, n_bear)  # null, large scale inflates pooled bound
+    d_bear = rng.exponential(10.0, n_bear) - 10.0  # null mean, median < 0
     d_bull = np.full(n_bull, 2.0)  # A better by 2 units of loss
     d = np.concatenate([d_bear, d_bull])
     regimes = _blocked_regimes([n_bear, n_bull], ["bear", "bull"])
