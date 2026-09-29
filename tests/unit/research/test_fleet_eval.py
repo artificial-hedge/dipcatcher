@@ -409,6 +409,7 @@ def test_fleet_registry_covers_default_heads() -> None:
         "hstep_emp",
         "nbeats",
         "nhits",
+        "tirex2",
         "kronos_base",
         "moirai2",
     }

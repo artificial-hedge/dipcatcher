@@ -135,6 +135,7 @@ nav:
   - Concepts:
       - Architecture: ARCHITECTURE.md
       - Architecture atlas: ARCHITECTURE_ATLAS.md
+      - Architecture guards: ARCHITECTURE_GUARDS.md
       - Data contracts: DATA_CONTRACTS.md
       - Receipt verification: RECEIPT_VERIFICATION.md
       - Receipt v2: RECEIPT_V2.md
@@ -192,9 +193,11 @@ nav:
       - Frontier audit: AUDIT_FRONTIER.md
       - Audit ledger: AUDIT_LEDGER.md
       - Scenario Monte Carlo: MC_ENGINE.md
+      - Run comparison: RUN_COMPARE.md
       - Fast replay conformance: FAST_REPLAY_P42.md
       - Fast-path latency argument: P4_3_FAST_PATH_ARGUMENT.md
       - Explainability: EXPLAINABILITY.md
+      - Allocation pack: ALLOCATION_PACK.md
       - Reality pre-registration: REALITY_PREREGISTRATION.md
       - Reality trial 2026: REALITY_TRIAL_2026.md
       - Recorded trial batches: research/findings.md
