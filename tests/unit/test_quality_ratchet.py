@@ -97,6 +97,38 @@ def test_no_bare_except_and_exception_ceiling() -> None:
     assert broad <= EXCEPT_EXCEPTION_CEILING
 
 
+def test_type_ignore_manifest_matches_tree() -> None:
+    import runpy
+
+    module = runpy.run_path(str(ROOT / "scripts" / "check_type_ignores.py"))
+    manifest = module["manifest_counts"]()
+    actual = module["actual_counts"]()
+    assert manifest == actual, (
+        "quality/type_ignores.txt drifted; run `python scripts/update_type_ignores.py` "
+        "and justify the new suppressions in review"
+    )
+
+
+def test_type_ignore_manifest_rejects_drift_and_dupes(tmp_path) -> None:
+    import runpy
+
+    module = runpy.run_path(str(ROOT / "scripts" / "check_type_ignores.py"))
+    parser = module["manifest_counts"]
+    bad = tmp_path / "type_ignores.txt"
+    bad.write_text("src/x.py 1\nsrc/x.py 2\n")
+    with pytest.raises(SystemExit):
+        parser(bad)
+    bad.write_text("src/x.py 0\n")
+    with pytest.raises(SystemExit):
+        parser(bad)
+    bad.write_text("src/x.py notanint\n")
+    with pytest.raises(SystemExit):
+        parser(bad)
+    good = tmp_path / "ok.txt"
+    good.write_text("# comment\n\nsrc/x.py 3\nsrc/y.py 1\n")
+    assert parser(good) == {"src/x.py": 3, "src/y.py": 1}
+
+
 def test_broad_exception_manifest_matches_tree() -> None:
     """The global ceiling alone lets a new handler trade against an unrelated
     narrowing. The manifest pins the count per file so every broad catch is
