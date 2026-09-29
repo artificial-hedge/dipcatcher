@@ -104,6 +104,31 @@ calibration on both shards (pooled e ≈ 9.9×10¹⁶) while drift correctly
 stays silent on `regime_switch` — a persistent-from-start defect is
 absorbed by the level-shift contract, not an alarm.
 
+`receipts/lane_power_drill.json` is the suite's measured power curve:
+nine lanes × defect ∈ {0, 0.5, 1.0} × 8 seeds at n=200. Every lane's
+defect-0 alarm rate is 0/8 (within the α bound); calibration,
+changepoint, loss-CS and promotion all fire at defect 0.5, and the
+slower Bernoulli lanes (coverage, tail, conformal, drift) fire by
+defect 1.0 — the conservative-null / real-power asymmetry is the
+signature of valid e-processes, not a bug.
+
+Two failure modes the drill surfaced and fixed:
+
+- `changepoint_localize` alarmed on 25% of *stationary* streams — the
+  per-split e-value threshold was applied to a max over ~75 candidate
+  splits. The threshold is now scan-corrected (`log(n_candidates/α)`,
+  Bonferroni over the overlapping windows): null alarm 0/40, detection
+  of a planted 1.5σ shift preserved.
+- All three Bernoulli lanes (`coverage_watch`, `coverage_cs`,
+  `tail_watch`) coerced `None`/`2`/`NaN` into a non-breach — a missing
+  observation silently deflated the measured breach rate. They now take
+  a strict {bool, 0/1 int} flag and raise on anything else.
+
+`test_committed_sealed_receipts_reject_tampering` mutation-tests the
+committed corpus itself: every sealed `receipts/*.json` is perturbed
+five ways (seal flip, seal removal, kind/schema rename, claim-digit
+edit, top-level drop) and must come back invalid — zero survive.
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
