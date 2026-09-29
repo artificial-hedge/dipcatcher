@@ -257,10 +257,16 @@ def _forecast_rv_ewma(rets: Array, rv: Array, park: Array, h: int, seed: int) ->
 
 
 def _forecast_har(rets: Array, rv: Array, park: Array, h: int, seed: int) -> float:
-    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1."""
+    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1.
+
+    Zero-return days (rv == 0 on real EOD tape) are floored at
+    ``_VARIANCE_FLOOR`` before the fit — a zero rv is unobserved variance,
+    not literal zero; the model's own strict-positivity contract stays.
+    """
     del rets, park, seed
-    fit = har_rv_fit(np.asarray(rv, dtype=float))
-    history = list(np.asarray(rv, dtype=float))
+    floored = np.maximum(np.asarray(rv, dtype=float), _VARIANCE_FLOOR)
+    fit = har_rv_fit(floored)
+    history = list(floored)
     total = 0.0
     for _ in range(h):
         step = har_forecast(fit, np.asarray(history, dtype=float))
@@ -560,17 +566,18 @@ def run_vol_bench(
         orient="row",
     ).select(columns)
 
+    shard_digests = {
+        name: {
+            "returns_sha256": meta["returns_sha256"],
+            "rv_sha256": meta["rv_sha256"],
+            "parkinson_sha256": meta["parkinson_sha256"],
+        }
+        for name, meta in shard_meta.items()
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
-                "shards": {
-                    name: {
-                        "returns_sha256": meta["returns_sha256"],
-                        "rv_sha256": meta["rv_sha256"],
-                        "parkinson_sha256": meta["parkinson_sha256"],
-                    }
-                    for name, meta in shard_meta.items()
-                },
+                "shards": shard_digests,
                 "models": sorted(str(k) for k in forecasters),
                 "horizons": [int(h) for h in horizon_set],
                 "min_history": min_history,
@@ -581,6 +588,10 @@ def run_vol_bench(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated stream content only —
+    # receipts across lanes that evaluated the same shard set agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": shard_digests}))
     receipt: dict[str, Any] = {
         "schema": VOL_BENCH_SCHEMA,
         "kind": "vol_bench",
@@ -600,6 +611,7 @@ def run_vol_bench(
         "models": sorted(str(k) for k in forecasters),
         "shards": shard_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
         "results": rows,
