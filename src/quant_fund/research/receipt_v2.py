@@ -473,9 +473,12 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     if kind == "vol_bench":
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
         return vol_bench_v2_consistency_errors(payload)
+    if kind == "evidence_audit":
+        from quant_fund.research.evidence_audit import evidence_audit_consistency_errors
+
+        return evidence_audit_consistency_errors(payload)
     if kind == "selection_concordance":
         from quant_fund.research.concordance import concordance_consistency_errors
-
         return concordance_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
@@ -546,7 +549,8 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     claim = payload.get("live_pnl_claim")
     if claim is not None and claim is not False:
         errors.append("live_pnl_claim_not_false")
-    if payload.get("schema") == "fleet_eval.v1":
+    schema = payload.get("schema")
+    if schema == "fleet_eval.v1":
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
@@ -554,6 +558,18 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.quantile_ladder import _quantile_ladder_errors
 
         errors.extend(_quantile_ladder_errors(payload))
+    elif schema == "vol_bench.v1":
+        from quant_fund.research.vol_bench import vol_bench_contract_errors
+        errors.extend(vol_bench_contract_errors(payload))
+    elif schema == "capacity_overlay.v1":
+        from quant_fund.research.capacity_overlay import capacity_contract_errors
+        errors.extend(capacity_contract_errors(payload))
+    elif schema == "cross_sectional_rankic.v1":
+        from quant_fund.research.cross_sectional import rankic_contract_errors
+        errors.extend(rankic_contract_errors(payload))
+    elif payload.get("kind") == "ranker_probability_experiment":
+        from quant_fund.research.ranker_probability import ranker_prob_contract_errors
+        errors.extend(ranker_prob_contract_errors(payload))
     elif payload.get("schema") == "calibration_eval.v1":
         from quant_fund.research.calibration_eval import calibration_contract_errors
         errors.extend(calibration_contract_errors(payload))
