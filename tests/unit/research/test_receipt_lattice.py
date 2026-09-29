@@ -221,3 +221,26 @@ def test_contract_rejects_fake_inconsistency(tmp_path: Path) -> None:
     forged["verdict"] = "inconsistent"
     errors = lattice_contract_errors(forged)
     assert "groups[0].disagreements_not_real" in errors
+
+
+def test_lattice_cli_emits_sealed_receipt(tmp_path: Path) -> None:
+    """`dipcatcher lattice` writes a seal-verified receipt_lattice.v1 artifact."""
+
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    src = tmp_path / "src"
+    src.mkdir()
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    _write(src, "a.json", _receipt("aa" * 32, 0.5))
+    runner = CliRunner()
+    result = runner.invoke(app, ["lattice", "--receipts-dir", str(src), "--out-dir", str(out_dir)])
+    assert result.exit_code == 0, result.output
+    emitted = list(out_dir.glob("receipt_lattice_*.json"))
+    assert len(emitted) == 1
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    verification = verify_receipt_file(emitted[0])
+    assert verification["valid"], verification["errors"]
