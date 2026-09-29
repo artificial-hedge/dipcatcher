@@ -409,6 +409,7 @@ def test_fleet_registry_covers_default_heads() -> None:
         "hstep_emp",
         "nbeats",
         "nhits",
+        "kronos_base",
         "moirai2",
     }
     for factory in factories.values():
