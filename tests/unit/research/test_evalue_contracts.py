@@ -321,6 +321,7 @@ _BASE_MONITOR_RUN = {
         "calibration": True,
         "conformal": False,
         "drift": True,
+        "emerge": True,
     },
     "params": {
         "n_train": 512,
