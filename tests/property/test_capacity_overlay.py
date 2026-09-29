@@ -47,8 +47,8 @@ def test_relabeling_invariance() -> None:
     w /= w.sum(axis=1, keepdims=True)
     adv = np.exp(rng.normal(np.log(1e8), 0.5, (t, n)))
     perm = rng.permutation(n)
-    b1 = SyntheticBook("a", w, adv)
-    b2 = SyntheticBook("b", w[:, perm], adv[:, perm])
+    b1 = SyntheticBook("a", w, adv, "SYNTHETIC")
+    b2 = SyntheticBook("b", w[:, perm], adv[:, perm], "SYNTHETIC")
     m1 = capacity_metrics(b1, aum=1e7, participation_cap=0.1)
     m2 = capacity_metrics(b2, aum=1e7, participation_cap=0.1)
     for key in ("feasible", "max_participation", "days_to_trade", "impact_bps"):
@@ -67,7 +67,7 @@ def test_participation_monotone_in_aum(a1: float, a2: float) -> None:
     w[::6] *= 2
     w /= w.sum(axis=1, keepdims=True)
     adv = np.exp(rng.normal(np.log(1e8), 0.3, (t, n)))
-    book = SyntheticBook("m", w, adv)
+    book = SyntheticBook("m", w, adv, "SYNTHETIC")
     lo, hi = min(a1, a2), max(a1, a2)
     m_lo = capacity_metrics(book, aum=lo, participation_cap=0.1)
     m_hi = capacity_metrics(book, aum=hi, participation_cap=0.1)
