@@ -6,6 +6,8 @@ References:
 - Haas (2001): TUFF — time until first failure.
 - Basel Committee (1996): traffic-light zones for 99% VaR over 250 days.
 - Berkowitz, Christoffersen & Pelletier (2011): censored-normal transform.
+- Kratz, Lok & McNeil (2018): multinomial test across nested VaR levels —
+  evaluates tail shape, not just the violation rate at one level.
 - Engle & Manganelli (2004): Dynamic Quantile test — joint conditional-coverage
   Wald test on the hit regression (JBES 22(4)).
 """
@@ -154,6 +156,121 @@ def basel_zone(hits: Array, alpha: float = 0.99) -> dict[str, float | str]:
         "failures": float(x),
         "n": float(n),
         "tail_prob": tail,
+    }
+
+
+def kratz_test(returns: Array, var_levels: Array, alphas: Array) -> dict[str, float | Array]:
+    """Kratz–Lok–McNeil (2018) multinomial tail test.
+
+    Instead of one VaR level, takes forecasts at ``K`` nested levels
+    ``alphas`` (strictly increasing, e.g. ``[0.95, 0.975, 0.99, 0.999]``).
+    Each day lands in one of ``K+1`` bands between consecutive VaR
+    forecasts; under correct specification the band probabilities are
+    the fixed differences ``pi_j = alpha_{j+1} - alpha_j`` regardless of
+    how the VaR moves in time, so band counts are multinomial and a
+    Pearson X^2 (and LR) statistic is ~ chi2(K). Detects tail-shape
+    misspecification that a single-level Kupiec test cannot.
+
+    Loss convention like the rest of the module: ``r_t > var_t`` is an
+    exceedance, so ``var_levels`` must be non-decreasing across columns.
+    """
+    r = np.asarray(returns, dtype=float).reshape(-1)
+    v = np.asarray(var_levels, dtype=float)
+    a = np.asarray(alphas, dtype=float).reshape(-1)
+    if r.size < 50:
+        raise ValueError("returns must have length >= 50")
+    if v.ndim != 2 or v.shape[0] != r.size or v.shape[1] < 2:
+        raise ValueError("var_levels must be (n, K) with K >= 2")
+    if a.size != v.shape[1]:
+        raise ValueError("alphas must match var_levels columns")
+    if not (np.all(np.isfinite(r)) and np.all(np.isfinite(v)) and np.all(np.isfinite(a))):
+        raise ValueError("inputs must be finite")
+    if np.any(a <= 0.0) or np.any(a >= 1.0) or np.any(np.diff(a) <= 0.0):
+        raise ValueError("alphas must be strictly increasing in (0, 1)")
+    if np.any(np.diff(v, axis=1) < 0.0):
+        raise ValueError("var_levels must be non-decreasing across levels each day")
+    k = a.size
+    n = r.size
+    # Band j: r_t in (var_{j-1}, var_j]; band 0 is (-inf, var_1],
+    # band K is (var_K, +inf). Fixed probabilities under correct spec.
+    edges = np.concatenate([np.full((n, 1), -np.inf), v, np.full((n, 1), np.inf)], axis=1)
+    band = np.sum(r[:, None] > edges[:, 1:], axis=1)  # count of thresholds exceeded
+    counts = np.bincount(band, minlength=k + 1).astype(float)
+    pi = np.diff(np.concatenate([[0.0], a, [1.0]]))
+    expected = n * pi
+    if np.any(expected < 1.0):
+        raise ValueError("expected band counts < 1 — raise n or drop extreme levels")
+    x2 = float(np.sum((counts - expected) ** 2 / expected))
+    nz = counts > 0
+    g2 = float(2.0 * np.sum(counts[nz] * np.log(counts[nz] / expected[nz])))
+    return {
+        "statistic": x2,
+        "lr": g2,
+        "pvalue": float(1.0 - stats.chi2.cdf(x2, k)),
+        "pvalue_lr": float(1.0 - stats.chi2.cdf(g2, k)),
+        "df": float(k),
+        "n": float(n),
+        "counts": counts,
+        "expected": expected,
+    }
+
+
+def _kupiec_lr(x: Array, n: int, p: float) -> Array:
+    """Kupiec LR_uc as a function of the violation count x (vectorized)."""
+    x = np.asarray(x, dtype=float)
+    ll_null = (n - x) * np.log1p(-p) + x * np.log(p)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        phat = x / n
+        ll_alt = np.where(
+            (x > 0) & (x < n),
+            (n - x) * np.log1p(-phat) + x * np.log(phat),
+            np.where(x == 0, n * np.log1p(-0.0), n * np.log(1.0)),
+        )
+    return np.asarray(-2.0 * (ll_null - ll_alt), dtype=float)
+
+
+def dumitrescu_hurlin_test(hits_panel: Array, alpha: float = 0.99) -> dict[str, float]:
+    """Dumitrescu–Hurlin (2012) panel VaR coverage test.
+
+    Pools per-series Kupiec LR_uc statistics across ``N`` series:
+    ``Z = (mean_i LR_i - mean_i E_i) / sqrt(sum_i V_i / N^2) ~ N(0,1)``,
+    where ``E_i``/``V_i`` are the exact binomial moments of the LR
+    statistic under H0 for series length ``n_i`` — LR_uc is a pure
+    function of the count ``x ~ Binomial(n_i, 1-alpha)``, so the
+    correction is computed exactly rather than by simulation as in the
+    original paper.
+
+    ``hits_panel`` is (T, N): column i is series i's hit sequence
+    (binary, finite). Series may have leading all-zero padding; each
+    column's effective length is its full T — ragged panels should be
+    pre-trimmed by the caller.
+    """
+    h = np.asarray(hits_panel, dtype=float)
+    if h.ndim != 2 or h.shape[0] < 30 or h.shape[1] < 2:
+        raise ValueError("hits_panel must be (T, N) with T >= 30, N >= 2")
+    if not np.all(np.isfinite(h)) or not np.all((h == 0.0) | (h == 1.0)):
+        raise ValueError("hits_panel must be finite binary 0/1")
+    if not (0.5 < alpha < 1.0):
+        raise ValueError("alpha must be in (0.5, 1)")
+    t, n_series = h.shape
+    p = 1.0 - alpha
+    lr_i = _kupiec_lr(h.sum(axis=0), t, p)
+    # Exact moments of LR_uc under H0: x ~ Binomial(t, p).
+    xs = np.arange(t + 1, dtype=float)
+    pmf = stats.binom.pmf(xs, t, p)
+    lr_x = _kupiec_lr(xs, t, p)
+    e_lr = float(np.sum(pmf * lr_x))
+    v_lr = float(np.sum(pmf * lr_x * lr_x) - e_lr * e_lr)
+    if v_lr <= 0.0:
+        raise ValueError("degenerate null distribution")
+    z = float((lr_i.mean() - e_lr) / math.sqrt(v_lr / n_series))
+    return {
+        "statistic": z,
+        "pvalue": float(2.0 * stats.norm.sf(abs(z))),
+        "n_series": float(n_series),
+        "t": float(t),
+        "mean_lr": float(lr_i.mean()),
+        "expected_lr": e_lr,
     }
 
 

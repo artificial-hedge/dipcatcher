@@ -12,14 +12,28 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+_TOKEN_RE = re.compile(r"\w+")
+
+
+def _tokens(text: str) -> list[str]:
+    """NFKC-folded, punctuation-free tokens.
+
+    Formatting variation (punctuation, full-width characters, hyphenation)
+    must not let a corpus copy of an eval prompt escape containment — e.g.
+    "ratio, please" and "ratio; please" tokenize identically here.
+    """
+    return _TOKEN_RE.findall(unicodedata.normalize("NFKC", text).lower())
+
 
 def _shingles(text: str, n: int = 8) -> set[str]:
-    tokens = text.lower().split()
+    tokens = _tokens(text)
     if len(tokens) < n:
         return {" ".join(tokens)} if tokens else set()
     return {" ".join(tokens[i : i + n]) for i in range(len(tokens) - n + 1)}

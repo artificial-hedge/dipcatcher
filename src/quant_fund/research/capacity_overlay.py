@@ -102,17 +102,24 @@ def vol_target_scales(
 
 @dataclass(frozen=True)
 class SyntheticBook:
-    """One seeded SYNTHETIC book: target weights (T×N) + dollar ADV (T×N)."""
+    """One seeded book: target weights (T×N) + dollar ADV (T×N).
+
+    ``data_label`` declares the provenance the receipt will carry —
+    constructors must name their source; the bench refuses a mixed corpus.
+    """
 
     name: str
     weights: Array
     adv_dollar: Array
+    data_label: str
 
     def __post_init__(self) -> None:
         if self.weights.ndim != 2 or self.adv_dollar.shape != self.weights.shape:
             raise ValueError("weights and adv_dollar must share a 2-D shape")
         if self.weights.shape[1] < 2 or self.weights.shape[0] < 2:
             raise ValueError("book needs >= 2 dates and >= 2 names")
+        if not str(self.data_label).strip():
+            raise ValueError("data_label must be a nonempty string")
 
 
 def _prices_and_adv(n_dates: int, n_names: int, seed: int) -> tuple[Array, Array]:
@@ -127,7 +134,7 @@ def uniform_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
 
     _, adv = _prices_and_adv(n_dates, n_names, seed)
     w = np.full((n_dates, n_names), 1.0 / n_names)
-    return SyntheticBook("uniform", w, adv)
+    return SyntheticBook("uniform", w, adv, "SYNTHETIC")
 
 
 def concentrated_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
@@ -136,7 +143,7 @@ def concentrated_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
     _, adv = _prices_and_adv(n_dates, n_names, seed)
     w = np.full((n_dates, n_names), 0.10 / (n_names - 1))
     w[:, 0] = 0.90
-    return SyntheticBook("concentrated", w, adv)
+    return SyntheticBook("concentrated", w, adv, "SYNTHETIC")
 
 
 def thin_adv_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
@@ -145,7 +152,7 @@ def thin_adv_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
     _, adv = _prices_and_adv(n_dates, n_names, seed)
     adv[:, -1] *= 0.01
     w = np.full((n_dates, n_names), 1.0 / n_names)
-    return SyntheticBook("thin_adv", w, adv)
+    return SyntheticBook("thin_adv", w, adv, "SYNTHETIC")
 
 
 def rotating_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
@@ -159,7 +166,7 @@ def rotating_book(n_dates: int, n_names: int, seed: int) -> SyntheticBook:
             w[t, :half] = 1.0 / half
         else:
             w[t, half:] = 1.0 / (n_names - half)
-    return SyntheticBook("rotating", w, adv)
+    return SyntheticBook("rotating", w, adv, "SYNTHETIC")
 
 
 BOOK_GENERATORS: dict[str, Callable[[int, int, int], SyntheticBook]] = {
@@ -261,6 +268,7 @@ def run_capacity_bench(
         book_meta.append(
             {
                 "name": book.name,
+                "data_label": str(book.data_label),
                 "n_dates": int(book.weights.shape[0]),
                 "n_names": int(book.weights.shape[1]),
                 "weights_sha256": hash_bytes(np.ascontiguousarray(book.weights).tobytes()),
@@ -281,6 +289,13 @@ def run_capacity_bench(
                 }
             )
     frame = pl.DataFrame(rows)
+    labels = {str(m["data_label"]) for m in book_meta}
+    if len(labels) > 1:
+        raise ValueError(
+            "books carry mixed data_label values "
+            f"{sorted(labels)}; run mixed corpora as separate receipts"
+        )
+    data_label = next(iter(labels)) if labels else "UNKNOWN"
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
@@ -295,7 +310,7 @@ def run_capacity_bench(
     receipt: dict[str, object] = {
         "schema": CAPACITY_SCHEMA,
         "kind": "capacity_overlay_eval",
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "live_pnl_claim": False,
         "dev_only": True,
         "generated_at": datetime.now(UTC).isoformat(),
