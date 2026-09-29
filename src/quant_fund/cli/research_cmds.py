@@ -318,7 +318,12 @@ def fleet(
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_fleet_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     typer.echo(frame)
     typer.echo(f"receipt={path}")
 
@@ -409,6 +414,13 @@ def vol_bench(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    path = write_vol_bench_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_vol_bench_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -469,6 +481,15 @@ def rankic(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    path = write_rankic_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_rankic_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -531,11 +552,91 @@ def capacity(
         participation_cap=participation_cap,
         impact_coeff=impact_coeff,
     )
+    path = write_capacity_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_capacity_receipt(receipt, out_dir, receipt_version=receipt_version)
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(format_capacity_table(frame))
+    typer.echo(f"receipt={path}")
+
+
+@app.command()
+def race(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    models: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(256, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(128, help="Trailing eval rows, sliced into chunks."),
+    n_chunks: int = typer.Option(8, help="Ordered eval chunks per shard (>=4, divides n_eval)."),
+    alpha: float = typer.Option(0.05, help="Anytime-valid promotion level."),
+    seed: int | None = typer.Option(
+        None, help="Base seed (default: train.random_seed from config)."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Sequential fleet elimination race on SYNTHETIC shards.
+
+    Each head fits the leading slice and predicts the eval slice once;
+    eval rows split into time-ordered chunks and two e-processes per head
+    vs the chunk-0 incumbent give anytime-valid promotion/elimination
+    verdicts (proper scores only — correctness evidence, never P&L).
+    """
+    from quant_fund.research.fleet_eval import (
+        fleet_head_factories,
+        resolve_shard_generators,
+    )
+    from quant_fund.research.fleet_race import fleet_race
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    try:
+        factories = fleet_head_factories(
+            cfg.quantiles.levels,
+            base_seed,
+            None if models is None else models.split(","),
+        )
+        resolved = resolve_shard_generators(None if shards is None else shards.split(","))
+        frame, receipt = fleet_race(
+            factories,
+            resolved,
+            n_train=n_train,
+            n_eval=n_eval,
+            n_chunks=n_chunks,
+            alpha=alpha,
+            seed=base_seed,
+            taus=cfg.quantiles.levels,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    out_dir.mkdir(parents=True, exist_ok=True)
+    import json as _json
+
+    sealed = seal_receipt(receipt)
+    path = out_dir / f"fleet_race_{receipt['inputs_sha256'][:16]}.json"
+    path.write_text(_json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    typer.echo(
+        frame.select(
+            "shard", "model", "status", "promoted_at", "eliminated_at", "shard_winner", "verdict"
+        )
+    )
     typer.echo(f"receipt={path}")
 
 
@@ -720,6 +821,7 @@ __all__ = [
     "cost_calibration",
     "execution_sensitivity_cmd",
     "fleet",
+    "race",
     "monitor",
     "rankic",
     "research",
