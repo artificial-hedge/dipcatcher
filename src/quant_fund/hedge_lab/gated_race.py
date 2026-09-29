@@ -17,6 +17,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.hedge_lab._receipt import seal_receipt
 from quant_fund.hedge_lab.lightspeed_book import _align_ic, _date_key, _gates, _ic_card
 from quant_fund.hedge_lab.mirror import long_short_path
 from quant_fund.hedge_lab.promotion import names_clearing_both
@@ -270,13 +271,14 @@ def run_gated_race(
     root = Path(cfg.data.root)
     out = root / "metadata" / artifact_name
     out.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(receipt, indent=2, default=str)
+    sealed = seal_receipt(receipt)
+    payload = json.dumps(sealed, indent=2, default=str)
     atomic_write_text(out, payload)
     public = Path("artifacts") / "hedge_lab" / artifact_name
     atomic_write_text(public, payload)
-    receipt["receipt_path"] = str(out)
-    receipt["artifact_path"] = str(public)
-    return receipt
+    sealed["receipt_path"] = str(out)
+    sealed["artifact_path"] = str(public)
+    return sealed
 
 
 def _window_bundle(
@@ -417,10 +419,11 @@ def run_holdout_confirm(
     root = Path(cfg.data.root)
     out = root / "metadata" / "holdout_confirm.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(receipt, indent=2, default=str)
+    sealed = seal_receipt(receipt)
+    payload = json.dumps(sealed, indent=2, default=str)
     atomic_write_text(out, payload)
     public = Path("artifacts") / "hedge_lab" / "holdout_confirm.json"
     atomic_write_text(public, payload)
-    receipt["receipt_path"] = str(out)
-    receipt["artifact_path"] = str(public)
-    return receipt
+    sealed["receipt_path"] = str(out)
+    sealed["artifact_path"] = str(public)
+    return sealed
