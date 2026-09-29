@@ -92,8 +92,14 @@ def coverage_gate(
 
 
 def receipt_paths(receipts_dir: Path) -> list[Path]:
-    """Committed receipt files, sorted for deterministic CI logs."""
-    return sorted(Path(receipts_dir).glob("*.json"))
+    """Committed receipt files, sorted for deterministic CI logs.
+
+    Recursive (epoch-chain member semantics): a receipt under a
+    subdirectory is still evidence; quarantined subdirs are governed by
+    ``quality/legacy_quarantine.json`` instead."""
+    from quant_fund.utils.receipt import verified_corpus_files
+
+    return verified_corpus_files(Path(receipts_dir))
 
 
 # ---------------------------------------------------------------------------

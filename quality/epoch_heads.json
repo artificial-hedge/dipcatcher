@@ -1,0 +1,13 @@
+{
+  "heads": {
+    "receipts/*.json": {
+      "receipt": "corpus_epoch_d479e96760271bba.json",
+      "sha256": "5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23"
+    },
+    "verifier/*.md": {
+      "receipt": "corpus_epoch_2d7ff04b70e614eb.json",
+      "sha256": "fc11d2a543c9190e04b21829bfe5bdfa1bc8d8142d240bf79983d6bb78b9d691"
+    }
+  },
+  "schema": "epoch_heads.v1"
+}
