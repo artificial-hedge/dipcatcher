@@ -5729,6 +5729,86 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `receipt_sha256`: 8d91f50d308726296d79349ce4f24d37768edd6355b9db45bf57b137d8ed9b91
 - `schema`: lane_power.v1
 
+### `receipts/loss_cs_real_drill_conf_t_vs_empirical.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/loss_cs_real_drill_conf_t_vs_empirical.json | 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763 | 9f302cf7adabafe372898d52e9ce9d0c88172cbca7a1e5a6d10570120408ca47 | not_checked | absent | absent | unspecified | absent | absent | absent |
+
+- `alpha`: 0.05
+- `bound`: 0.0020481814093069317
+- `challenger`: conf_t
+- `cs_high`: -5.467785399674815e-06
+- `cs_low`: -0.00030504588725783425
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - betting_confidence_sequence
+  - bounded_increments
+  - time_uniform_coverage
+- `excludes_zero`: true
+- `incumbent`: empirical
+- `interpretation`: challenger_better
+- `kind`: loss_cs.v1
+- `lam`: 0.5
+- `mean_diff`: -0.00014077544656376404
+- `n`: 300
+- `receipt_sha256`: 9f302cf7adabafe372898d52e9ce9d0c88172cbca7a1e5a6d10570120408ca47
+- `schema`: loss_cs.v1
+
+### `receipts/loss_cs_real_drill_gaussian_vs_conf_t.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/loss_cs_real_drill_gaussian_vs_conf_t.json | 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de | 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743 | not_checked | absent | absent | unspecified | absent | absent | absent |
+
+- `alpha`: 0.05
+- `bound`: 0.0005556059235267558
+- `challenger`: gaussian
+- `cs_high`: 2.103370268349208e-05
+- `cs_low`: -9.775281957945879e-05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - betting_confidence_sequence
+  - bounded_increments
+  - time_uniform_coverage
+- `excludes_zero`: false
+- `incumbent`: conf_t
+- `interpretation`: inconclusive
+- `kind`: loss_cs.v1
+- `lam`: 0.5
+- `mean_diff`: -3.308069273216095e-05
+- `n`: 300
+- `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
+- `schema`: loss_cs.v1
+
 ### `receipts/mcs_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
