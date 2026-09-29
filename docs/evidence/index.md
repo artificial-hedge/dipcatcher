@@ -1085,414 +1085,113 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: capacity_overlay.v1
 - `seed`: 11
 
-### `receipts/coherence_2dd641ab766a536a.json`
+### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/coherence_2dd641ab766a536a.json | dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd | 2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846 | not_checked | 7219a9de1414cea701fa1a3471e4ca8534583f84 | absent | unspecified | absent | absent | false |
+| receipts/deps_security_hygiene_f3b4e6fd22e439b7.json | 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7 | f3b4e6fd22e439b7932ef3b9084387ee9c91274a24d17af248bebbc10b68a167 | not_checked | absent | absent | unspecified | absent | true | false |
 
-- `code_files`:
-  - `coherence.py`: 34426af79063621d753bdb81e35567731206488613bf35d996fb5ed2ed5fc720
+- `artifact_sha256`:
+  - `bandit_report.json`: 809cd6121547aa0fe7ba43a02bee5b7d032cf7677b4e186f697e3afad325118c
+  - `bandit_strict.txt`: 87a0d55d41533af09c000df7e63d6fa0aa38f2a585fda3748f2d824c1713a822
+  - `deptry_src.txt`: ff6a683d5c49cc51f281f71b0d33bdd6b3b3f6a98cc32e827d42489cdb26b6a9
+  - `environment.txt`: 51db324590116cdb29cde79a5e84e163b558ad5205ca99de5982ca5bd9413649
+  - `export_all.txt`: 9fbf64df6666d2cfa7f4c6e7ffb8da02d4f0a55c16c8fc6519c46d851518730b
+  - `gitleaks_report.json`: 37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570
+  - `licenses_all.json`: a6fd604a5b417cae275fab6b11a080394bc8d3081e7c647ea1022caa4efd5121
+  - `pip_audit.json`: 049e4778f823e4f6e95ea20dc9426dde053a1920d865b5912e5509c74ec29ba6
+  - `uv_audit.json`: 737891e2dfea09ce5a31b82b8a023663d03d6f2de336f16f2d8e492275e04e21
+- `base_commit`: 2ed19c2a39b9c5521250e5e0cf53db188bc76b54
+- `ci_gates`:
+  - `dependency_review`: .github/workflows/dependency-review.yml (fail-on-severity moderate)
+  - `secret_scan`: .github/workflows/secret-scan.yml (gitleaks 8.30.1, sha256-pinned, --full-history)
+- `commands`:
+  - `bandit`: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
+  - `deptry`: uv run --with deptry==0.25.1 deptry src
+  - `gitleaks`: gitleaks detect --source . --redact --no-banner --config .gitleaks.toml --log-opts=--full-history
+  - `licenses`: importlib.metadata scan of installed env + PyPI metadata for 22 platform-only pins
+  - `lock_check`: uv lock --check
+  - `pip_audit`: uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups | uvx --from pip-audit==2.10.1 pip-audit --strict -r /dev/stdin
+  - `uv_audit`: uv audit --output-format json
 - `data_label`: SYNTHETIC
-- `dataset_hash`: e144858c3049f52e1d8f2612ed7a7e57d806973bed61b6beb6dc6ee4347380f8
+- `dependency_changes`:
+  - `declared_direct`:
+    - cryptography>=44
+    - threadpoolctl>=3.5
+  - `note`: no advisory-driven bump needed — both auditors report zero findings
+  - `removed_direct`:
+    - pydantic-settings
+    - python-dotenv
+  - `vulnerability_bumps`:
+- `docs`:
+  - docs/AUDIT_P610_DEPS.md
+  - docs/SECURITY_EVIDENCE.md
 - `environment`:
-  - `blas`:
-    - `found`: true
-    - `name`: accelerate
-    - `version`: null
-  - `byteorder`: little
-  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
-  - `implementation`: CPython
-  - `lapack`:
-    - `found`: true
-    - `name`: accelerate
-    - `version`: null
-  - `machine`: arm64
-  - `packages`:
-    - `numpy`: 2.5.3
-    - `polars`: 1.44.2
-    - `scipy`: 1.18.1
-  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `bandit`: 1.9.4
+  - `deptry`: 0.25.1
+  - `gitleaks`: 8.30.1
+  - `pip_audit`: 2.10.1
+  - `platform`: macOS arm64
   - `python`: 3.12.14
-  - `threadpools`:
-- `generated_at`: 2026-09-28T05:23:29.931907+00:00
-- `git_revision`: 7219a9de1414cea701fa1a3471e4ca8534583f84
-- `kind`: coherence_eval
-- `params_hash`: d29eea5b4b60b58d8ed4003ac2ef9085d2b1cf2378332c6d659a4cf94d0d1106
-- `payload`:
-  - `data_label`: SYNTHETIC
-  - `kind`: coherence_eval
-  - `methods`:
-    - direct
-    - naive_sum
-    - independent_mc
-    - copula_mc
-  - `n_error_rows`: 0
-  - `n_eval`: 128
-  - `n_mc`: 512
-  - `n_train`: 384
-  - `panels`:
-    - `gauss_factor`:
-      - `config`:
-        - `data_label`: SYNTHETIC
-        - `df`: null
-        - `generator`: gauss_factor
-        - `rho`: 0.3
-      - `n`: 512
-      - `n_names`: 4
-      - `seed`: 0
-      - `y_sha256`: 413a704b49ca509d4f214d45a19e9ff56751f4fd034ca823ba0a07905686e75a
-    - `heavy_tail_factor`:
-      - `config`:
-        - `data_label`: SYNTHETIC
-        - `df`: 5.0
-        - `generator`: heavy_tail_factor
-        - `rho`: 0.5
-      - `n`: 512
-      - `n_names`: 4
-      - `seed`: 2
-      - `y_sha256`: f53c164baa7befe7267dc66f46e0a85c0575ca6a18076af2f18cd21626bf93ad
-    - `independent`:
-      - `config`:
-        - `data_label`: SYNTHETIC
-        - `df`: null
-        - `generator`: independent
-        - `rho`: 0.0
-      - `n`: 512
-      - `n_names`: 4
-      - `seed`: 1
-      - `y_sha256`: bb4f56c8aee7532f99cb72fae014bc0ba0803ab49dc4ab03b391b0affd4f0816
-    - `regime_copula`:
-      - `config`:
-        - `data_label`: SYNTHETIC
-        - `generator`: regime_copula
-        - `rho_break`:
-          - 0.1
-          - 0.9
-      - `n`: 512
-      - `n_names`: 4
-      - `seed`: 3
-      - `y_sha256`: 4216df759a82d6245551a63ff7f7cccab39bcad2c72e61f602dd99fa14f64c5c
-  - `results`:
-    - [0]
-      - `coverage_80`: 0.828125
-      - `coverage_90`: 0.90625
-      - `crps`: 1.527733912667004
-      - `error`: null
-      - `method`: direct
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: gauss_factor
-      - `pinball_0.05`: 0.336257323222546
-      - `pinball_0.10`: 0.5457259397972611
-      - `pinball_0.25`: 0.9367296280908056
-      - `pinball_0.50`: 1.1256548515465827
-      - `pinball_0.75`: 0.8316299701473925
-      - `pinball_0.90`: 0.49793880903424226
-      - `pinball_0.95`: 0.3049264438052125
-      - `pit_ks`: 0.07741899273173558
-      - `pit_ks_p`: 0.4062767309115065
-      - `status`: ok
-    - [1]
-      - `coverage_80`: 0.9375
-      - `coverage_90`: 0.96875
-      - `crps`: 1.6365584277109817
-      - `error`: null
-      - `method`: naive_sum
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: gauss_factor
-      - `pinball_0.05`: 0.38295045840656994
-      - `pinball_0.10`: 0.6096298489081329
-      - `pinball_0.25`: 0.9835790093938537
-      - `pinball_0.50`: 1.1233532328184062
-      - `pinball_0.75`: 0.9283612112317307
-      - `pinball_0.90`: 0.5970627635234527
-      - `pinball_0.95`: 0.3725064307925114
-      - `pit_ks`: 0.16085769284708307
-      - `pit_ks_p`: 0.0023207300752640103
-      - `status`: ok
-    - [2]
-      - `coverage_80`: 0.7109375
-      - `coverage_90`: 0.7890625
-      - `crps`: 1.5361016857362257
-      - `error`: null
-      - `method`: independent_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: gauss_factor
-      - `pinball_0.05`: 0.4107122982431909
-      - `pinball_0.10`: 0.6148816002949425
-      - `pinball_0.25`: 0.9599023616955286
-      - `pinball_0.50`: 1.114370312777895
-      - `pinball_0.75`: 0.8272810645862314
-      - `pinball_0.90`: 0.48044887932361957
-      - `pinball_0.95`: 0.30611234894604755
-      - `pit_ks`: 0.148437499
-      - `pit_ks_p`: 0.00631348904828366
-      - `status`: ok
-    - [3]
-      - `coverage_80`: 0.8046875
-      - `coverage_90`: 0.8828125
-      - `crps`: 1.53387629489384
-      - `error`: null
-      - `method`: copula_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: gauss_factor
-      - `pinball_0.05`: 0.3469516190383076
-      - `pinball_0.10`: 0.5543394092464821
-      - `pinball_0.25`: 0.936489060326589
-      - `pinball_0.50`: 1.1280232120100429
-      - `pinball_0.75`: 0.8312395825973113
-      - `pinball_0.90`: 0.50873356908363
-      - `pinball_0.95`: 0.30549005938618273
-      - `pit_ks`: 0.085937499
-      - `pit_ks_p`: 0.2843716691394693
-      - `status`: ok
-    - [4]
-      - `coverage_80`: 0.7890625
-      - `coverage_90`: 0.84375
-      - `crps`: 1.348270340459833
-      - `error`: null
-      - `method`: direct
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: independent
-      - `pinball_0.05`: 0.23473572580231133
-      - `pinball_0.10`: 0.408021186744371
-      - `pinball_0.25`: 0.7476148777894998
-      - `pinball_0.50`: 0.9648584050877036
-      - `pinball_0.75`: 0.8258646267698515
-      - `pinball_0.90`: 0.4555088613067841
-      - `pinball_0.95`: 0.27696011547501975
-      - `pit_ks`: 0.11718749900000003
-      - `pit_ks_p`: 0.054718948064996886
-      - `status`: ok
-    - [5]
-      - `coverage_80`: 0.9765625
-      - `coverage_90`: 1.0
-      - `crps`: 1.515989317763184
-      - `error`: null
-      - `method`: naive_sum
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: independent
-      - `pinball_0.05`: 0.3741727013614854
-      - `pinball_0.10`: 0.5941823328720095
-      - `pinball_0.25`: 0.8928674577412994
-      - `pinball_0.50`: 0.9648822994113118
-      - `pinball_0.75`: 0.9142517252654034
-      - `pinball_0.90`: 0.581926817278036
-      - `pinball_0.95`: 0.37148519495676424
-      - `pit_ks`: 0.1782395415636433
-      - `pit_ks_p`: 0.0004985802922539563
-      - `status`: ok
-    - [6]
-      - `coverage_80`: 0.7578125
-      - `coverage_90`: 0.8125
-      - `crps`: 1.357505176998713
-      - `error`: null
-      - `method`: independent_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: independent
-      - `pinball_0.05`: 0.2396529144840202
-      - `pinball_0.10`: 0.40752024382277174
-      - `pinball_0.25`: 0.7478983606423518
-      - `pinball_0.50`: 0.9784169637645517
-      - `pinball_0.75`: 0.8253984770546039
-      - `pinball_0.90`: 0.46097410868041777
-      - `pinball_0.95`: 0.2821839996162492
-      - `pit_ks`: 0.11718749900000003
-      - `pit_ks_p`: 0.054718948064996886
-      - `status`: ok
-    - [7]
-      - `coverage_80`: 0.75
-      - `coverage_90`: 0.8203125
-      - `crps`: 1.3526113786865404
-      - `error`: null
-      - `method`: copula_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: independent
-      - `pinball_0.05`: 0.2340760665621075
-      - `pinball_0.10`: 0.40755832583908347
-      - `pinball_0.25`: 0.7468513881535932
-      - `pinball_0.50`: 0.9665651880804824
-      - `pinball_0.75`: 0.8283738455205474
-      - `pinball_0.90`: 0.46349424267399186
-      - `pinball_0.95`: 0.2787473339763106
-      - `pit_ks`: 0.11718749900000003
-      - `pit_ks_p`: 0.054718948064996886
-      - `status`: ok
-    - [8]
-      - `coverage_80`: 0.796875
-      - `coverage_90`: 0.90625
-      - `crps`: 2.412437033434454
-      - `error`: null
-      - `method`: direct
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: heavy_tail_factor
-      - `pinball_0.05`: 0.4907876287415711
-      - `pinball_0.10`: 0.7841596249015022
-      - `pinball_0.25`: 1.3744341025299498
-      - `pinball_0.50`: 1.701512589039056
-      - `pinball_0.75`: 1.4235154845694344
-      - `pinball_0.90`: 0.8583724803575002
-      - `pinball_0.95`: 0.5258629639966648
-      - `pit_ks`: 0.0652874634561107
-      - `pit_ks_p`: 0.6224317850634448
-      - `status`: ok
-    - [9]
-      - `coverage_80`: 0.8828125
-      - `coverage_90`: 0.9453125
-      - `crps`: 2.442632167016388
-      - `error`: null
-      - `method`: naive_sum
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: heavy_tail_factor
-      - `pinball_0.05`: 0.5336878076450571
-      - `pinball_0.10`: 0.8230553506036653
-      - `pinball_0.25`: 1.3918619908003547
-      - `pinball_0.50`: 1.7019589221593878
-      - `pinball_0.75`: 1.4517724276263029
-      - `pinball_0.90`: 0.8626135799817811
-      - `pinball_0.95`: 0.5374950506402962
-      - `pit_ks`: 0.08650170386846767
-      - `pit_ks_p`: 0.2773182753291171
-      - `status`: ok
-    - [10]
-      - `coverage_80`: 0.6171875
-      - `coverage_90`: 0.6875
-      - `crps`: 2.4837151889399536
-      - `error`: null
-      - `method`: independent_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: heavy_tail_factor
-      - `pinball_0.05`: 0.6014542247793266
-      - `pinball_0.10`: 0.8752245891635577
-      - `pinball_0.25`: 1.4168950201527717
-      - `pinball_0.50`: 1.7005184035926662
-      - `pinball_0.75`: 1.4202139782392107
-      - `pinball_0.90`: 0.9474554695257784
-      - `pinball_0.95`: 0.6637596972616195
-      - `pit_ks`: 0.164062499
-      - `pit_ks_p`: 0.0017689770926977433
-      - `status`: ok
-    - [11]
-      - `coverage_80`: 0.71875
-      - `coverage_90`: 0.84375
-      - `crps`: 2.4182472248279803
-      - `error`: null
-      - `method`: copula_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: heavy_tail_factor
-      - `pinball_0.05`: 0.4956035287124751
-      - `pinball_0.10`: 0.7937282134752333
-      - `pinball_0.25`: 1.3819188911331999
-      - `pinball_0.50`: 1.6999201483091202
-      - `pinball_0.75`: 1.4229470645912725
-      - `pinball_0.90`: 0.8613684395963457
-      - `pinball_0.95`: 0.5489424494014907
-      - `pit_ks`: 0.08593749900000003
-      - `pit_ks_p`: 0.2843716691394699
-      - `status`: ok
-    - [12]
-      - `coverage_80`: 0.6640625
-      - `coverage_90`: 0.765625
-      - `crps`: 2.3323428275625346
-      - `error`: null
-      - `method`: direct
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: regime_copula
-      - `pinball_0.05`: 0.5336749477881153
-      - `pinball_0.10`: 0.8343713558333259
-      - `pinball_0.25`: 1.4023309011431797
-      - `pinball_0.50`: 1.6274120823219849
-      - `pinball_0.75`: 1.3673910265771323
-      - `pinball_0.90`: 0.7667670523779867
-      - `pinball_0.95`: 0.47407256694481836
-      - `pit_ks`: 0.12499999900000003
-      - `pit_ks_p`: 0.03345597047505522
-      - `status`: ok
-    - [13]
-      - `coverage_80`: 0.84375
-      - `coverage_90`: 0.9140625
-      - `crps`: 2.275676369680166
-      - `error`: null
-      - `method`: naive_sum
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: regime_copula
-      - `pinball_0.05`: 0.5094326909681924
-      - `pinball_0.10`: 0.8131781932890844
-      - `pinball_0.25`: 1.4073536899861019
-      - `pinball_0.50`: 1.6272817290653356
-      - `pinball_0.75`: 1.308216628519
-      - `pinball_0.90`: 0.7077570509950017
-      - `pinball_0.95`: 0.41132880167938857
-      - `pit_ks`: 0.1264837859140729
-      - `pit_ks_p`: 0.030361977877610413
-      - `status`: ok
-    - [14]
-      - `coverage_80`: 0.421875
-      - `coverage_90`: 0.5859375
-      - `crps`: 2.5162522742796547
-      - `error`: null
-      - `method`: independent_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: regime_copula
-      - `pinball_0.05`: 0.6628833498267979
-      - `pinball_0.10`: 0.9376100025390922
-      - `pinball_0.25`: 1.4051434375948415
-      - `pinball_0.50`: 1.6353887114008563
-      - `pinball_0.75`: 1.4581457387651808
-      - `pinball_0.90`: 1.0426009196941255
-      - `pinball_0.95`: 0.7511240677335685
-      - `pit_ks`: 0.24999999900000003
-      - `pit_ks_p`: 1.5531427723103203e-07
-      - `status`: ok
-    - [15]
-      - `coverage_80`: 0.640625
-      - `coverage_90`: 0.734375
-      - `crps`: 2.3431744057746666
-      - `error`: null
-      - `method`: copula_mc
-      - `n_eval`: 128
-      - `n_train`: 384
-      - `panel`: regime_copula
-      - `pinball_0.05`: 0.5763209813773038
-      - `pinball_0.10`: 0.8488836186989961
-      - `pinball_0.25`: 1.4024688512495642
-      - `pinball_0.50`: 1.625481881147619
-      - `pinball_0.75`: 1.352902355029614
-      - `pinball_0.90`: 0.8085505011924214
-      - `pinball_0.95`: 0.4815602194582437
-      - `pit_ks`: 0.14062499900000003
-      - `pit_ks_p`: 0.011365189850154112
-      - `status`: ok
-  - `schema`: coherence_eval.v1
-  - `scope_note`: Distributional reconciliation on SYNTHETIC correlated panels: marginal quantile grids reconciled to the aggregate via naive-sum, independent-MC, and a Gaussian-copula MC fit on in-sample residual z-scores. Proper scores only.
-  - `seed`: 0
-  - `taus`:
-    - 0.05
-    - 0.1
-    - 0.25
-    - 0.5
-    - 0.75
-    - 0.9
-    - 0.95
-- `receipt_sha256`: 2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846
-- `schema`: receipt.v2
-- `schema_version`: 2
-- `verdict`: pass
+  - `uv`: 0.12.19
+- `evidence_dir`: data/metadata/reports/deps_hygiene_20260928/
+- `generated`: 2026-09-28T00:00:00Z
+- `receipt`: deps_security_hygiene
+- `receipt_sha256`: f3b4e6fd22e439b7932ef3b9084387ee9c91274a24d17af248bebbc10b68a167
+- `research_only`: true
+- `results`:
+  - `bandit`:
+    - `loc`: 158122
+    - `severity_medium_or_high_findings`: 0
+  - `deptry`:
+    - `accepted`:
+      - statsmodels (tests/scripts only)
+      - clarabel (cvxpy solver)
+      - optional imports sigstore/huggingface_hub/ray/quant_core/kronos-model
+    - `dep002_fixed`:
+      - pydantic-settings
+      - python-dotenv
+    - `dep003_fixed`:
+      - cryptography
+      - threadpoolctl
+    - `findings_total`: 14
+  - `eval_exec_pickle`:
+    - `eval_exec_hits`: 0
+    - `pickle_path`: fx1.forecast.artifacts behind allow_unsafe_deserialization + trusted_checkpoint_sha256
+  - `gitleaks`:
+    - `bytes_scanned`: 49307356
+    - `commits_scanned`: 408
+    - `leaks`: 0
+  - `licenses`:
+    - `blank_metadata`:
+      - huey (bundled MIT)
+      - cuda-toolkit
+      - nvidia-cuda-runtime
+      - nvidia-cudnn-cu13
+      - nvidia-nccl-cu13
+      - nvidia-nvshmem-cu13
+    - `gpl_family_runtime`: 0
+    - `installed_scanned`: 184
+    - `mpl_2_0`:
+      - certifi
+      - hypothesis
+      - pathspec
+      - tqdm
+    - `pins_covered`: 206
+    - `platform_only_via_pypi`: 22
+  - `pin_audit`:
+    - `duplicate_names_in_export`: 0
+    - `uv_lock_check`: pass
+  - `pip_audit`:
+    - `audited_dependencies`: 182
+    - `vulnerabilities`: 0
+  - `uv_audit`:
+    - `adverse_statuses`: 0
+    - `audited_packages`: 206
+    - `vulnerabilities`: 0
+- `schema`: deps_hygiene.v1
+- `ultraplan_item`: P6.10+P4.6
+- `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
 
 ### `receipts/fast_replay_p42_conformance_20260927.json`
 
