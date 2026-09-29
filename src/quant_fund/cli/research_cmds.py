@@ -1559,10 +1559,12 @@ def corpus_epoch(
             )
         allowed = dict(raw_allowed)
     if check:
-        errors = check_epoch_chain(root, allowed_removals=allowed)
+        result = check_epoch_chain(root, allowed_removals=allowed)
         typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-        if errors:
-            for err in errors:
+        for name in result["unstamped"]:
+            typer.echo(f"epoch-chain info: unstamped member {name}")
+        if result["errors"]:
+            for err in result["errors"]:
                 typer.echo(f"epoch-chain error: {err}")
             raise typer.Exit(code=1)
         typer.echo("epoch-chain intact")

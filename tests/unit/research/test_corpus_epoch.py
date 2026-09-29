@@ -64,7 +64,7 @@ def test_chain_advances_on_growth(corpus_dir: Path) -> None:
     assert any(n.startswith("corpus_epoch_") for n in receipt["members_added"])
     assert receipt["members_removed"] == []
     _stamp(corpus_dir)
-    assert check_epoch_chain(corpus_dir) == []
+    assert check_epoch_chain(corpus_dir) == {"errors": [], "unstamped": []}
 
 
 def test_deleted_member_detected(corpus_dir: Path) -> None:
@@ -74,7 +74,7 @@ def test_deleted_member_detected(corpus_dir: Path) -> None:
     assert receipt["verdict"] == "shrinking"
     assert receipt["members_removed"] == ["a.json"]
     _stamp(corpus_dir)
-    errors = check_epoch_chain(corpus_dir)
+    errors = check_epoch_chain(corpus_dir)["errors"]
     assert any("member_removed:a.json" in e for e in errors)
 
 
@@ -83,7 +83,7 @@ def test_allowed_removal_pin(corpus_dir: Path) -> None:
     digest = member_digests(corpus_dir)["a.json"]
     (corpus_dir / "a.json").unlink()
     _stamp(corpus_dir)
-    errors = check_epoch_chain(corpus_dir, allowed_removals={"a.json": digest})
+    errors = check_epoch_chain(corpus_dir, allowed_removals={"a.json": digest})["errors"]
     assert not any("member_removed:a.json" in e for e in errors)
 
 
@@ -91,15 +91,16 @@ def test_mutated_member_detected(corpus_dir: Path) -> None:
     _stamp(corpus_dir)
     (corpus_dir / "a.json").write_text('{"mutated": true}')
     _stamp(corpus_dir)  # same name, new digest — mutation, not removal
-    errors = check_epoch_chain(corpus_dir)
+    errors = check_epoch_chain(corpus_dir)["errors"]
     assert any("member_mutated:a.json" in e for e in errors)
 
 
-def test_drift_since_head_detected(corpus_dir: Path) -> None:
+def test_post_stamp_arrival_is_unstamped_not_error(corpus_dir: Path) -> None:
     _stamp(corpus_dir)
     _receipt(corpus_dir, "late.json", "sneaked in post-stamp")
-    errors = check_epoch_chain(corpus_dir)
-    assert any("corpus_drift_since_head_epoch:late.json" in e for e in errors)
+    result = check_epoch_chain(corpus_dir)
+    assert result["errors"] == []
+    assert "late.json" in result["unstamped"]
 
 
 def test_dishonest_delta_flagged(corpus_dir: Path) -> None:
@@ -108,7 +109,7 @@ def test_dishonest_delta_flagged(corpus_dir: Path) -> None:
     epoch = corpus_epoch(corpus_dir)
     epoch["members_added"] = []  # lie about the delta
     write_epoch_receipt(epoch, corpus_dir)
-    errors = check_epoch_chain(corpus_dir)
+    errors = check_epoch_chain(corpus_dir)["errors"]
     assert any("members_added_dishonest" in e for e in errors)
 
 
@@ -132,7 +133,7 @@ def test_written_epoch_verifies(corpus_dir: Path) -> None:
 def test_no_epochs_reports_missing(tmp_path: Path) -> None:
     corpus = tmp_path / "corpus"
     corpus.mkdir()
-    assert check_epoch_chain(corpus) == ["no_epoch_receipts"]
+    assert check_epoch_chain(corpus)["errors"] == ["no_epoch_receipts"]
 
 
 def test_fails_closed_on_missing_dir(tmp_path: Path) -> None:

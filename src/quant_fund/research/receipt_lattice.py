@@ -248,6 +248,11 @@ def receipt_lattice(
             dataset_unspecified.append(path.name)
         body = doc.get("payload")
         inner = body if isinstance(body, Mapping) else doc
+        if inner.get("kind") == "corpus_epoch.v1":
+            # Epoch receipts attest corpus integrity, not measured claims —
+            # their `verdict` encodes chain position, so grouping epochs of
+            # one corpus dir would false-flag legitimate advancing stamps.
+            continue
         for claim_path, value in _walk_claims(inner, ""):
             key = (
                 "inputs",

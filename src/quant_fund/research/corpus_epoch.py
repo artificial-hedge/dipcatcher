@@ -216,18 +216,22 @@ def check_epoch_chain(
     corpus_dir: Path | str,
     *,
     allowed_removals: Mapping[str, str] | None = None,
-) -> list[str]:
-    """Walk the committed epoch chain; ``[]`` when the corpus is intact.
+) -> dict[str, list[str]]:
+    """Walk the committed epoch chain against the live corpus.
 
-    Errors: forked/disconnected epochs, removed members (outside
-    ``allowed_removals`` name→sha256 pins), mutated members, and drift
-    between the head epoch and the live corpus.
+    Returns ``{"errors": [...], "unstamped": [...]}``. Errors are integrity
+    violations the chain is authoritative over: forked/disconnected/invalid
+    epoch receipts, stamped members removed (outside ``allowed_removals``
+    name→sha256 pins), stamped members mutated, and dishonest delta fields.
+    ``unstamped`` lists corpus members not covered by the head epoch —
+    arrivals between stamps are the normal state, recorded not flagged.
     """
     root = Path(corpus_dir)
     errors: list[str] = []
+    unstamped: list[str] = []
     epochs = _epoch_receipts(root)
     if not epochs:
-        return ["no_epoch_receipts"]
+        return {"errors": ["no_epoch_receipts"], "unstamped": []}
 
     # Seal-verify every epoch receipt before trusting its claims.
     from quant_fund.research.receipt_v2 import verify_receipt_file
@@ -240,7 +244,8 @@ def check_epoch_chain(
             continue
         sealed[path.name] = payload
     if not sealed:
-        return errors + ["no_valid_epoch_receipts"]
+        errors.append("no_valid_epoch_receipts")
+        return {"errors": errors, "unstamped": unstamped}
 
     # Link the chain: each non-genesis epoch names prev_epoch_receipt.
     by_name = sealed
@@ -283,29 +288,24 @@ def check_epoch_chain(
             if prev_members[kept] != cur_members[kept]:
                 errors.append(f"member_mutated:{kept}@{cur_name}")
 
-    # Head vs live corpus.
+    # Head vs live corpus: stamped membership must hold exactly; files added
+    # after the head stamp are unstamped (normal), not violations.
     heads = set(by_name) - set(child_of)
     if len(heads) == 1:
         head = by_name[next(iter(heads))]
         live = member_digests(root)
         head_members = _member_maps(head)
-        # The head epoch receipts are themselves corpus members — verify the
-        # stamped membership against the live dir modulo epoch receipts written
-        # after it (they legitimately post-date the stamp).
         stamped = set(head_members)
-        epoch_names = set(by_name)
         for name in stamped - set(live):
             if allowed.get(name) != head_members[name]:
                 errors.append(f"head_member_missing_live:{name}")
         for name, sha in head_members.items():
             if name in live and live[name] != sha:
                 errors.append(f"head_member_digest_drift:{name}")
-        for name in set(live) - stamped:
-            if name not in epoch_names:
-                errors.append(f"corpus_drift_since_head_epoch:{name}")
+        unstamped = sorted(set(live) - stamped - set(by_name))
     elif len(heads) > 1:
         errors.append(f"epoch_multiple_heads:{','.join(sorted(heads))}")
-    return errors
+    return {"errors": errors, "unstamped": unstamped}
 
 
 def write_epoch_receipt(
