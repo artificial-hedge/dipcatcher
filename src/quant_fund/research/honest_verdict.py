@@ -94,21 +94,21 @@ def _promotion_component(
     if not means:
         return ComponentResult("promotion", True, detail={"skipped": "no_runner_up"})
     runner_up = min(means, key=lambda h: means[h])
-    proc = LossEProcess(alpha=alpha)
-    scale = float(np.std(challenger - scores[runner_up])) or 1e-3
-    proc.init_scale = scale  # type: ignore[attr-defined]
+    proc = LossEProcess(
+        alpha=alpha, init_scale=float(np.std(challenger - scores[runner_up])) or 1e-3
+    )
     for c, r in zip(challenger, scores[runner_up], strict=True):
         proc.update(float(c), float(r))
-    rep = proc.promotion_report()
+    final = proc.states[-1]
     return ComponentResult(
         "promotion",
         True,
         detail={
             "runner_up": runner_up,
-            "final_evalue": rep["final_evalue"],
-            "promoted": rep["promoted"],
-            "promotion_origin": rep["promotion_origin"],
-            "anytime_p": rep["anytime_p"],
+            "final_evalue": final.evalue,
+            "promoted": proc.promotion_origin is not None,
+            "promotion_origin": proc.promotion_origin,
+            "anytime_p": final.anytime_p,
         },
     )
 
