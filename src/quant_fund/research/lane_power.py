@@ -143,6 +143,26 @@ def _run_localize(defect: float, seed: int, n: int, alpha: float) -> _LaneResult
     return _LaneResult(bool(res.alarmed), float(res.tau_hat), float(err))
 
 
+def _run_promotion(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
+    """Promotion lane: challenger beats the incumbent by `defect` per origin."""
+    from quant_fund.research.evalues import LossEProcess
+
+    rng = np.random.default_rng(seed)
+    proc = LossEProcess(alpha=alpha)
+    t_alarm = float("nan")
+    for _ in range(n):
+        c = float(rng.normal(0.5 - defect, 0.5))
+        b = float(rng.normal(0.5, 0.5))
+        st = proc.update(c, b)
+        if st.promoted and not np.isfinite(t_alarm):
+            t_alarm = float(proc.promotion_origin)
+    return _LaneResult(
+        proc.promotion_origin is not None,
+        t_alarm,
+        float(proc.states[-1].evalue) if proc.states else 1.0,
+    )
+
+
 _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "coverage_watch": _run_coverage,
     "tail_watch": _run_tail,
@@ -150,6 +170,7 @@ _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
     "drift_alarm": _run_drift,
     "loss_cs": _run_loss_cs,
     "changepoint_localize": _run_localize,
+    "promotion": _run_promotion,
 }
 
 

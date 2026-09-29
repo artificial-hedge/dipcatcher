@@ -45,6 +45,7 @@ def test_runner_contract_when_lanes_present() -> None:
             "drift_alarm": "quant_fund.research.drift_alarm",
             "loss_cs": "quant_fund.research.loss_cs",
             "changepoint_localize": "quant_fund.research.changepoint_localize",
+            "promotion": "quant_fund.research.evalues",
         }[lane]
         try:
             importlib.import_module(mod_name)
