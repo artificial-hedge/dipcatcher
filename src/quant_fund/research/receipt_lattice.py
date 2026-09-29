@@ -43,6 +43,20 @@ from quant_fund.utils.reproducibility import git_revision
 
 LATTICE_SCHEMA = "receipt_lattice.v1"
 
+# Kinds that attest corpus/process state rather than measured claims — their
+# payloads describe the corpus itself (chain position, admission verdicts,
+# prior audit verdicts), so grouping them would false-flag legitimate
+# advancing stamps, a mix of admit/quarantine decisions, or successive
+# lattice runs disagreeing as the corpus evolves.
+_META_AUDIT_KINDS = frozenset(
+    {
+        "corpus_epoch.v1",
+        "receipt_admission.v1",
+        "receipt_lattice.v1",
+        "receipt_graph.v1",
+    }
+)
+
 # Subtree roots that carry measured claims. Provenance lives elsewhere.
 _CLAIM_REGIONS = (
     "results",
@@ -248,10 +262,7 @@ def receipt_lattice(
             dataset_unspecified.append(path.name)
         body = doc.get("payload")
         inner = body if isinstance(body, Mapping) else doc
-        if inner.get("kind") == "corpus_epoch.v1":
-            # Epoch receipts attest corpus integrity, not measured claims —
-            # their `verdict` encodes chain position, so grouping epochs of
-            # one corpus dir would false-flag legitimate advancing stamps.
+        if inner.get("kind") in _META_AUDIT_KINDS:
             continue
         for claim_path, value in _walk_claims(inner, ""):
             key = (
