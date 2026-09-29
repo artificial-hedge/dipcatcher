@@ -54,6 +54,7 @@ from quant_fund.cli.research_cmds import (
     fleet,
     vol_bench,
     capacity,
+    cost_calibration,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,
@@ -171,6 +172,7 @@ __all__ = [
     "fleet",
     "vol_bench",
     "capacity",
+    "cost_calibration",
     "session_book_cmd",
     "vendor_book_map_cmd",
     "book_panel_cmd",

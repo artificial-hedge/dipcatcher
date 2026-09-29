@@ -3356,6 +3356,10 @@
     },
     {
       "dst": "quant_fund.models.base",
+      "src": "quant_fund.models.moirai2"
+    },
+    {
+      "dst": "quant_fund.models.base",
       "src": "quant_fund.models.nbeats"
     },
     {
@@ -6319,6 +6323,10 @@
       "src": "quant_fund.research.fleet_eval"
     },
     {
+      "dst": "quant_fund.models.moirai2",
+      "src": "quant_fund.research.fleet_eval"
+    },
+    {
       "dst": "quant_fund.models.nbeats",
       "src": "quant_fund.research.fleet_eval"
     },
@@ -7662,6 +7670,7 @@
     "quant_fund.models.market_making",
     "quant_fund.models.mfdfa",
     "quant_fund.models.mixture",
+    "quant_fund.models.moirai2",
     "quant_fund.models.momentum",
     "quant_fund.models.nbeats",
     "quant_fund.models.ngboost_lite",
@@ -8855,7 +8864,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 65,
+      "imports": 66,
       "src": "quant_fund.models"
     },
     {
@@ -9340,7 +9349,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 57,
+      "imports": 58,
       "src": "quant_fund.research"
     },
     {
