@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.research.legacy_unsealed import is_known_contract_legacy
 from quant_fund.research.receipt_v2 import (
     build_receipt_v2,
     seal_receipt,
@@ -89,16 +90,25 @@ def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
 
 
 def evidence_audit_findings(
-    rows: list[dict[str, Any]], *, index_fresh: bool | None = None
+    rows: list[dict[str, Any]],
+    *,
+    receipts_dir: Path | None = None,
+    index_fresh: bool | None = None,
 ) -> list[str]:
     """Set-level findings: hard violations only (unsealed files are reported
-    in the payload, not failed)."""
+    in the payload, not failed). Byte-pinned ``KNOWN_CONTRACT_LEGACY``
+    receipts are exempt — the same ratchet the committed-receipts test and
+    ``suite-health --strict`` apply."""
     findings: list[str] = []
     if not rows:
         findings.append("no_receipts_found")
     for row in rows:
         if row["sealed"] and not row["valid"]:
-            findings.append(f"{row['file']}:sealed_receipt_invalid")
+            exempt = receipts_dir is not None and is_known_contract_legacy(
+                receipts_dir / row["file"], row["errors"]
+            )
+            if not exempt:
+                findings.append(f"{row['file']}:sealed_receipt_invalid")
         if any(e.startswith("receipt_unreadable") for e in row["errors"]):
             findings.append(f"{row['file']}:unparseable")
         if row["filename_digest_ok"] is False:
@@ -163,7 +173,7 @@ def run_evidence_audit(
         check_evidence_index_fresh(Path(root)) if check_index and root is not None else None
     )
 
-    findings = evidence_audit_findings(rows, index_fresh=index_fresh)
+    findings = evidence_audit_findings(rows, receipts_dir=directory, index_fresh=index_fresh)
     findings.extend(
         f"duplicate_seal:{seal[:16]}:{','.join(names)}"
         for seal, names in sorted(duplicate_seals.items())
