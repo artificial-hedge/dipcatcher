@@ -714,6 +714,65 @@ def _suite_health_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _mcs_seq_errors(p: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    if p.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if p.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    alpha = _num(p.get("alpha"))
+    if alpha is None or not (0.0 < alpha < 1.0):
+        errors.append("alpha_out_of_unit_interval")
+    lam = _num(p.get("lam"))
+    if lam is None or not (0.0 < lam < 1.0):
+        errors.append("lam_out_of_unit_interval")
+    n_heads = p.get("n_heads")
+    if not isinstance(n_heads, int) or isinstance(n_heads, bool) or n_heads < 2:
+        errors.append("n_heads_lt_2")
+        n_heads = None
+    n_origins = p.get("n_origins")
+    if not isinstance(n_origins, int) or isinstance(n_origins, bool) or n_origins < 1:
+        errors.append("n_origins_not_positive_int")
+        n_origins = None
+    survivors = p.get("survivors")
+    eliminated = p.get("eliminated")
+    if not isinstance(survivors, list) or not all(isinstance(s, str) for s in survivors):
+        errors.append("survivors_not_str_list")
+        survivors = []
+    if not isinstance(eliminated, Mapping):
+        errors.append("eliminated_not_mapping")
+        eliminated = {}
+    else:
+        overlap = set(survivors) & set(eliminated)
+        if overlap:
+            errors.append(f"survivor_and_eliminated_overlap:{sorted(overlap)}")
+        for head, origin in eliminated.items():
+            if not isinstance(head, str) or not isinstance(origin, int):
+                errors.append("eliminated_entry_bad_shape")
+                break
+            if n_origins is not None and not (0 <= origin < n_origins):
+                errors.append(f"eliminated_origin_out_of_range:{head}")
+    if n_heads is not None and len(survivors) + len(eliminated) != n_heads:
+        errors.append("survivor_eliminated_partition_mismatch")
+    n_eliminated = p.get("n_eliminated")
+    if n_eliminated != len(eliminated):
+        errors.append("n_eliminated_mismatch")
+    champion = p.get("champion")
+    if champion is not None and champion not in survivors:
+        errors.append("champion_not_in_survivors")
+    if len(survivors) == 1 and champion != survivors[0]:
+        errors.append("sole_survivor_not_champion")
+    if len(survivors) != 1 and champion is not None:
+        errors.append("champion_with_multiple_survivors")
+    data_label = p.get("data_label")
+    if not isinstance(data_label, str) or not data_label.strip():
+        errors.append("data_label_not_nonempty_str")
+    evidence = p.get("evidence")
+    if not isinstance(evidence, list) or "anytime_valid" not in evidence:
+        errors.append("evidence_missing_anytime_valid")
+    return errors
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
@@ -751,4 +810,6 @@ def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         return _monitor_run_errors(receipt)
     if kind in ("suite_health", "suite_health.v1"):
         return _suite_health_errors(receipt)
+    if kind in ("mcs_seq", "mcs_seq.v1"):
+        return _mcs_seq_errors(receipt)
     return []

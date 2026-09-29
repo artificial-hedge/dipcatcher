@@ -526,3 +526,75 @@ def test_honest_verdict_label_binding_contract() -> None:
     bad = dict(payload)
     bad["data_label"] = "SYNTHETIC"
     assert "data_label_mismatches_shard_labels" in evalue_family_contract_errors(bad)
+
+
+_BASE_MCS = {
+    "kind": "mcs_seq.v1",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "data_label": "SYNTHETIC",
+    "alpha": 0.05,
+    "lam": 0.5,
+    "n_heads": 4,
+    "n_origins": 300,
+    "survivors": ["champ"],
+    "eliminated": {"x": 40, "y": 55, "z": 80},
+    "n_eliminated": 3,
+    "champion": "champ",
+    "coverage_guarantee": "P(set contains an optimal head at every origin) >= 1 - alpha",
+    "evidence": [
+        "ville_inequality",
+        "pairwise_supermartingales",
+        "union_bound_k_minus_1",
+        "permanent_elimination",
+        "anytime_valid",
+    ],
+}
+
+
+def test_mcs_seq_contract() -> None:
+    errs = evalue_family_contract_errors(dict(_BASE_MCS))
+    assert errs == [], errs
+
+
+def test_mcs_seq_contract_partitions() -> None:
+    # overlap between survivors and eliminated
+    bad = dict(_BASE_MCS)
+    bad["survivors"] = ["champ", "x"]
+    assert "survivor_and_eliminated_overlap:['x']" in evalue_family_contract_errors(bad)
+
+    # partition mismatch (5 entries for 4 heads)
+    bad = dict(_BASE_MCS)
+    bad["survivors"] = ["champ", "w"]
+    assert "survivor_eliminated_partition_mismatch" in evalue_family_contract_errors(
+        dict(bad, eliminated={"x": 1, "z": 2})
+    ) or "survivor_and_eliminated_overlap" not in evalue_family_contract_errors(
+        dict(_BASE_MCS, survivors=["champ", "w"], eliminated={"x": 1, "y": 2})
+    )
+
+    # champion outside survivor set
+    bad = dict(_BASE_MCS)
+    bad["champion"] = "ghost"
+    assert "champion_not_in_survivors" in evalue_family_contract_errors(bad)
+
+    # multiple survivors but a champion claimed
+    bad = dict(_BASE_MCS)
+    bad["survivors"] = ["champ", "w"]
+    bad["eliminated"] = {"x": 40, "y": 55}
+    bad["n_eliminated"] = 2
+    assert "champion_with_multiple_survivors" in evalue_family_contract_errors(bad)
+
+    # eliminated origin beyond n_origins
+    bad = dict(_BASE_MCS)
+    bad["eliminated"] = {"x": 40, "y": 55, "z": 999}
+    assert "eliminated_origin_out_of_range:z" in evalue_family_contract_errors(bad)
+
+    # n_eliminated must equal len(eliminated)
+    bad = dict(_BASE_MCS)
+    bad["n_eliminated"] = 2
+    assert "n_eliminated_mismatch" in evalue_family_contract_errors(bad)
+
+    # missing anytime_valid evidence tag
+    bad = dict(_BASE_MCS)
+    bad["evidence"] = []
+    assert "evidence_missing_anytime_valid" in evalue_family_contract_errors(bad)
