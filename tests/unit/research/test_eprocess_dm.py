@@ -28,12 +28,12 @@ def test_constant_positive_diff_grows_wealth() -> None:
     assert np.all(np.diff(path) > 0.0)
 
 
-def test_constant_negative_diff_shrinks_wealth() -> None:
-    """A better → d < 0 → capital shrinks (no evidence against H0)."""
+def test_constant_negative_diff_no_evidence() -> None:
+    """A better → d < 0 → sign bet stays folded (lam_t = 0 with no wins),
+    capital holds at 1 — never claims evidence against the median null."""
     d = np.full(40, -0.5, dtype=float)
     path = e_process_loss_diff(d=d, lam=0.25, initial_bound=1.0)
-    assert path[-1] < 1.0
-    assert path[-1] < path[0]
+    assert np.all(path == 1.0)
     out = e_process_threshold(path, level=0.05)
     assert out["reject"] is False
 
@@ -132,9 +132,35 @@ def test_pairwise_optional_e_process_fields() -> None:
 
 
 def test_one_step_factor_closed_form() -> None:
-    """Single obs x=1, λ=0.25 → e = exp(λ − ψ_E(λ))."""
+    """Sign bet: lam_0 = 0 (Laplace p̂ = 1/2) → first factor = 1; after one
+    win lam_1 = clip(2·(2/3)−1, 0, λ) = 1/3 clipped to λ → e = 1 + λ."""
     lam = 0.25
-    psi = float(-np.log(1.0 - lam) - lam)
-    expected = float(np.exp(lam * 1.0 - psi * 1.0))
     path = e_process_loss_diff(d=np.array([1.0]), lam=lam, initial_bound=1.0)
-    assert np.isclose(path[0], expected)
+    assert np.isclose(path[0], 1.0)
+    path = e_process_loss_diff(d=np.array([1.0, 1.0]), lam=lam, initial_bound=1.0)
+    assert np.isclose(path[1], 1.0 + lam)
+
+
+def test_sign_bet_factor_bounds() -> None:
+    """Every factor lies in (1 − λ, 1 + λ): strictly positive, and the
+    running wealth is a nonnegative supermartingale under median(d) ≤ 0."""
+    rng = np.random.default_rng(3)
+    d = rng.standard_t(2.5, size=200)  # median 0, unbounded, heavy tails
+    path = e_process_loss_diff(d=d, lam=0.25, initial_bound=1.0)
+    assert np.all(path > 0.0)
+    factors = path[1:] / path[:-1]
+    assert np.all(factors >= 1.0 - 0.25)
+    assert np.all(factors <= 1.0 + 0.25)
+
+
+def test_skewed_inside_null_does_not_cross() -> None:
+    """Right-skewed stream inside the median null (median < 0, mean 0):
+    the sign bet cannot accumulate evidence — the clip bet it replaces
+    crossed here because clipping skew is asymmetric."""
+    rng = np.random.default_rng(17)
+    crosses = 0
+    for _ in range(60):
+        d = np.abs(rng.normal(0.0, 1.0, 200)) - np.sqrt(2.0 / np.pi)
+        path = e_process_loss_diff(d=d, lam=0.25)
+        crosses += int(float(np.max(path)) >= 20.0)
+    assert crosses == 0
