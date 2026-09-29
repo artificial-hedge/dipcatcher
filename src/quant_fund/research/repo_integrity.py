@@ -44,13 +44,16 @@ REPO_INTEGRITY_SCHEMA = "repo_integrity.v1"
 # (corpus_dir, member glob, require_stamped, allow_member_updates) — the same
 # policy the evidence-audit Makefile target enforces; keep in sync.
 CORPORA: tuple[tuple[str, str, bool, bool], ...] = (
-    ("receipts", "*.json", False, False),
-    ("verifier", "*.md", False, False),
-    ("quality", "*.json", False, True),
+    # require_stamped=True everywhere: an unstamped member is a silent
+    # injection vector — the fuzz drill demonstrated arrivals passed as
+    # notes. Arrivals are errors until the epoch restamp commits them.
+    ("receipts", "*.json", True, False),
+    ("verifier", "*.md", True, False),
+    ("quality", "*.json", True, True),
     (".github/workflows", "*.yml", True, True),
     # Declared experiment inputs — a post-hoc config edit silently rewrites
-    # what a sealed bench measured; mutable corpus, arrivals are normal.
-    ("configs", "*", False, True),
+    # what a sealed bench measured; mutable corpus, stamped arrivals only.
+    ("configs", "*", True, True),
 )
 
 

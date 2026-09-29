@@ -71,6 +71,11 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
     # "current" checkpoint can't claim continuity it never had.
     prev_file = root_path / DEFAULT_CHECKPOINT_PATH
     prev_sha256 = hash_bytes(prev_file.read_bytes()) if prev_file.exists() else None
+    # Spine extent: the archive set itself is corpus-exempt (the spine gate
+    # covers it), so the checkpoint pins its count and tip — truncating an
+    # archive record would otherwise leave a self-consistent shorter chain.
+    archive_dir = root_path / CHECKPOINT_ARCHIVE_DIR
+    archives = sorted(p.name for p in archive_dir.glob("*.json")) if archive_dir.is_dir() else []
     from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 
     return {
@@ -80,6 +85,10 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
         "heads": heads,
         "missing_pins": missing,
         "prev_sha256": prev_sha256,
+        "spine": {
+            "n_archives": len(archives),
+            "tip": archives[-1] if archives else None,
+        },
         # The pins are only as strong as the verifier that minted them —
         # record WHICH code produced this state: HEAD revision plus a
         # fingerprint over tracked diffs + untracked files. A tampered
@@ -150,6 +159,23 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
     cp_file = root_path / DEFAULT_CHECKPOINT_PATH
     pub_file = root_path / DEFAULT_PUBKEY_PATH
     if not cp_file.exists():
+        # Neutral only on trees that never checkpointed — an archive
+        # record or witness proof means the layer was set up and the
+        # checkpoint was deleted out from under it. (Pins-signed,
+        # no-checkpoint trees are legal.)
+        archive_dir = root_path / CHECKPOINT_ARCHIVE_DIR
+        has_archive = archive_dir.is_dir() and any(archive_dir.glob("*.json"))
+        from quant_fund.research.integrity_witness import WITNESS_DIR
+
+        wdir = root_path / WITNESS_DIR
+        has_witness = wdir.is_dir() and any(wdir.glob(f"{DEFAULT_CHECKPOINT_PATH.name}_*.json"))
+        if has_archive or has_witness:
+            return {
+                "ok": False,
+                "signed": True,
+                "current": False,
+                "errors": ["checkpoint_absent"],
+            }
         return {"ok": True, "signed": False, "current": False, "errors": []}
     if not pub_file.exists():
         return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}

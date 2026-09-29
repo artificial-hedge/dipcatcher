@@ -109,6 +109,23 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
     errors: list[str] = []
     live = root_path / CHECKPOINT_PATH
     if not live.is_file():
+        # Neutral only on trees that never checkpointed. An archive record
+        # or witness proof means the checkpoint existed — deleting it must
+        # fail closed. (A pins-signed tree without checkpoints is legal.)
+        archive_dir0 = root_path / ARCHIVE_DIR
+        has_archive = archive_dir0.is_dir() and any(archive_dir0.glob("*.json"))
+        wdir0 = root_path / _WITNESS_DIR
+        has_witness = wdir0.is_dir() and any(wdir0.glob(f"{CHECKPOINT_PATH.name}_*.json"))
+        if has_archive or has_witness:
+            return {
+                "schema": CHAIN_SCHEMA,
+                "ok": False,
+                "signed": True,
+                "n_records": 0,
+                "spine_length": 0,
+                "errors": ["checkpoint_absent"],
+                "verdict": "truncated",
+            }
         return {
             "schema": CHAIN_SCHEMA,
             "ok": True,
@@ -189,8 +206,26 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
                 if isinstance(itime, (int, float)):
                     witnessed_at[digest] = float(itime)
 
+    # Extent pin: the live checkpoint signs the archive set's count and tip,
+    # so deleting even an orphaned record moves a signed value.
+    live_rec = records.get(head_digest_claim := hash_bytes(live.read_bytes()))
+    live_payload = (live_rec or {}).get("payload") or {}
+    spine_claim = live_payload.get("spine")
+    archive_dir = root_path / ARCHIVE_DIR
+    archive_names = (
+        sorted(p.name for p in archive_dir.glob("*.json")) if archive_dir.is_dir() else []
+    )
+    if isinstance(spine_claim, dict):
+        expected_tip = archive_names[-1] if archive_names else None
+        if spine_claim.get("n_archives") != len(archive_names):
+            errors.append(
+                f"spine_archive_count:{spine_claim.get('n_archives')}!={len(archive_names)}"
+            )
+        if spine_claim.get("tip") != expected_tip:
+            errors.append("spine_tip_mismatch")
+
     # Walk head -> genesis through payload.prev_sha256.
-    head_digest = hash_bytes(live.read_bytes())
+    head_digest = head_digest_claim
     spine: list[str] = []
     seen: set[str] = set()
     cur: str | None = head_digest

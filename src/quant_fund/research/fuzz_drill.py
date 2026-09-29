@@ -130,6 +130,10 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
     if wit:
         v = rng.choice(wit)
         out.append(("witness_proof_flip", _EXPECT_FAIL, lambda v=v: _flip_byte(v, rng)))
+        out.append(("witness_proof_delete", _EXPECT_FAIL, lambda v=v: v.unlink()))
+    live_cp = clone / "quality/checkpoint.json"
+    if live_cp.is_file():
+        out.append(("checkpoint_delete", _EXPECT_FAIL, lambda: live_cp.unlink()))
     # Unstamped corpus arrival (immutable corpus): must fail.
     receipts = clone / "receipts"
     if receipts.is_dir():
