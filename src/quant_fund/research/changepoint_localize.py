@@ -60,7 +60,7 @@ class LocalizeResult:
     cs_lo: int
     cs_hi: int
     n: int
-    alarmed: bool  # any candidate crossed 1/alpha
+    alarmed: bool  # any candidate crossed the scan-corrected threshold
     log_evalues: list[float] = field(default_factory=list)
 
 
@@ -91,7 +91,13 @@ def localize_changepoint(
     n = int(x.size)
     if n < min_left + window:
         raise ValueError(f"stream too short to localize: n={n}, need >= {min_left + window}")
-    threshold = np.log(1.0 / alpha)
+    # Scan correction: each candidate split is its own e-value, and the
+    # alarm is "did ANY candidate cross" — a max over the scan, so the
+    # per-candidate threshold must spend alpha across the family
+    # (Bonferroni/union bound; valid under arbitrary dependence between
+    # overlapping windows).
+    n_candidates = max(1, n - window - min_left)
+    threshold = np.log(n_candidates / alpha)
 
     log_e = np.full(n, np.nan)
     for s in range(min_left, n - window):
