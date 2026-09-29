@@ -68,6 +68,19 @@ def verify_repo(
     """
     root = Path(root)
     pin_path = root / heads_pin if not Path(heads_pin).is_absolute() else Path(heads_pin)
+    # Committed removal acknowledgments — moving a stamped member (e.g. to
+    # legacy-unsealed/) or a transient corpus blip is recorded history, not
+    # an error, when name->sha256 is declared here. The file is itself a
+    # corpus member: silently editing it still trips the epoch gate.
+    allowed_removals: dict[str, str] = {}
+    ar_path = root / "quality/epoch_allowed_removals.json"
+    if ar_path.is_file():
+        try:
+            raw_ar = json.loads(ar_path.read_text())
+            if isinstance(raw_ar, dict):
+                allowed_removals = {str(k): str(v) for k, v in raw_ar.items() if isinstance(v, str)}
+        except (OSError, json.JSONDecodeError):
+            allowed_removals = {}
     gates: dict[str, dict[str, Any]] = {}
 
     jewel_errs = crown_jewels_errors(root, pin_path=root / JEWELS_PIN)
@@ -158,6 +171,7 @@ def verify_repo(
             expected_head=expected,
             require_stamped=require_stamped,
             allow_member_updates=allow_updates,
+            allowed_removals=allowed_removals,
         )
         errs = pin_errors + list(res["errors"])
         gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
