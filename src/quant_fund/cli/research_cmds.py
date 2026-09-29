@@ -348,6 +348,72 @@ def fleet(
     typer.echo(f"receipt={path}")
 
 
+@app.command("calibration-eval")
+def calibration_eval_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    models: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(512, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(256, help="Trailing scored rows per shard."),
+    pit_bins: int = typer.Option(10, help="PIT histogram bins (5-50)."),
+    seed: int | None = typer.Option(
+        None, help="Base seed (default: train.random_seed from config)."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = calibration_eval.v1 (default), "
+        "2 = unified receipt.v2 envelope.",
+    ),
+) -> None:
+    """Run the SYNTHETIC distribution-fleet calibration lane and write a receipt.
+
+    PIT histograms, central-interval coverage, and reliability/calibration
+    slopes on the same origins as ``fleet`` — calibration diagnostics only,
+    never market or live-P&L claims.
+    """
+    from quant_fund.research.calibration_eval import (
+        run_calibration_eval,
+        write_calibration_receipt,
+    )
+    from quant_fund.research.fleet_eval import (
+        fleet_head_factories,
+        resolve_shard_generators,
+    )
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    try:
+        factories = fleet_head_factories(
+            cfg.quantiles.levels,
+            base_seed,
+            None if models is None else models.split(","),
+        )
+        resolved_shards = resolve_shard_generators(None if shards is None else shards.split(","))
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    frame, receipt = run_calibration_eval(
+        factories,
+        resolved_shards,
+        n_train=n_train,
+        n_eval=n_eval,
+        seed=base_seed,
+        taus=cfg.quantiles.levels,
+        pit_bins=pit_bins,
+    )
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    path = write_calibration_receipt(receipt, out_dir, receipt_version=receipt_version)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(frame)
+    typer.echo(f"receipt={path}")
+
+
 @app.command("verify-receipt")
 def verify_receipt_cmd(
     path: Path = typer.Argument(..., help="Receipt JSON file to verify."),
@@ -368,6 +434,49 @@ def verify_receipt_cmd(
     result = verify_receipt_file(path)
     typer.echo(json.dumps(result, indent=2))
     raise typer.Exit(code=0 if result["valid"] else 1)
+
+
+@app.command("verify-all")
+def verify_all_cmd(
+    receipts_dir: Path = typer.Option(Path("receipts"), help="Receipt directory to audit."),
+    check_index: bool = typer.Option(
+        True, help="Byte-compare docs/evidence/index.md against a fresh regen."
+    ),
+    write: bool = typer.Option(True, help="Write the sealed evidence_audit receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Audit receipt output dir."),
+) -> None:
+    """Chain-of-custody audit over the whole receipts directory.
+
+    Per-file verification via ``verify_receipt_file`` (v2 deep verification,
+    v1 seal check); set-level checks a single-file verifier cannot express:
+    filename↔digest binding, duplicate seals across files, unsealed-legacy
+    accounting, and evidence-index staleness. Writes a sealed
+    ``evidence_audit_<digest16>.json`` receipt. Exits non-zero on any hard
+    finding — sealed-invalid, unparseable, filename mismatch, duplicate seal,
+    or stale index.
+    """
+    from quant_fund.research.evidence_audit import (
+        format_evidence_audit_table,
+        run_evidence_audit,
+        write_evidence_audit_receipt,
+    )
+
+    try:
+        rows, receipt = run_evidence_audit(receipts_dir, check_index=check_index, root=Path.cwd())
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_evidence_audit_table(rows))
+    payload = receipt["payload"]
+    typer.echo(
+        f"files={payload['n_files']} sealed={payload['n_sealed']} "
+        f"unsealed={payload['n_unsealed']} index_fresh={payload['index_fresh']}"
+    )
+    if payload["findings"]:
+        typer.echo("findings: " + "; ".join(payload["findings"]))
+    if write:
+        path = write_evidence_audit_receipt(receipt, out_dir)
+        typer.echo(f"receipt={path}")
+    raise typer.Exit(code=0 if receipt["verdict"] == "pass" else 1)
 
 
 @app.command("vol-bench")
@@ -810,6 +919,55 @@ def mcs(
     typer.echo(f"champion={receipt['champion']}")
     typer.echo(f"receipt={path}")
 
+@app.command("serial-watch")
+def serial_watch_cmd(
+    pits: Path = typer.Argument(..., help="JSON file: a list of PITs in (0,1), or {name: [pits]}."),
+    n_lags: int = typer.Option(5, help="Max lag for the sign-product families."),
+    alpha: float = typer.Option(0.05, help="Per-family claim level."),
+    lam: float = typer.Option(0.5, help="Bet cap λ ∈ (0,1)."),
+    data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on each receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Anytime-valid PIT serial-independence audit; sealed receipt per stream.
+
+    Proper-scores evidence only — reports the per-lag family claim and the
+    pooled e-value claim separately (never one merged flag; the joint claim
+    boundary is per-family level α AND pooled level α, not one shared level).
+    """
+    import json
+
+    from quant_fund.research.serial_watch import serial_report, write_serial_receipt
+
+    try:
+        raw = json.loads(pits.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"cannot read PIT file {pits}: {exc}") from exc
+    streams: dict[str, object] = (
+        {"stream": raw}
+        if isinstance(raw, list)
+        else {str(k): v for k, v in raw.items()}
+        if isinstance(raw, dict)
+        else {}
+    )
+    if not streams:
+        raise typer.BadParameter("PIT file must be a JSON list or {name: [pits]} mapping")
+    try:
+        for name, stream in streams.items():
+            receipt = serial_report(
+                stream, n_lags=n_lags, alpha=alpha, lam=lam, data_label=data_label
+            )
+            path = write_serial_receipt(receipt, out_dir)
+            typer.echo(
+                format_data_label(synthetic=data_label == "SYNTHETIC", data_source=data_label)
+            )
+            typer.echo(
+                f"{name}: alarmed_lags={receipt['alarmed_lags']} "
+                f"(per-family claim, level {alpha}) pooled_evalue={receipt['pooled_evalue']:.4g} "
+                f"pooled_alarmed={receipt['pooled_alarmed']} (separate pooled claim, level {alpha})"
+            )
+            typer.echo(f"receipt={path}")
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -1144,6 +1302,12 @@ __all__ = [
     "mcs",
     "monitor",
     "verdict",
+    "lane_power",
+    "monitor",
+    "serial_watch_cmd",
+    "suite_health_cmd",
+    "verdict",
+    "race",
     "race",
     "race",
     "suite_health_cmd",
@@ -1153,6 +1317,7 @@ __all__ = [
     "research",
     "verdict",
     "verify_identities",
+    "verify_all_cmd",
     "verify_receipt_cmd",
     "vol_bench",
 ]
