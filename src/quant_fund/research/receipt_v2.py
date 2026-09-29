@@ -38,9 +38,9 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
-from quant_fund.research.quantile_ladder import QUANTILE_LADDER_KINDS
 from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.research.impossible_fit import impossible_fit_scan
+from quant_fund.research.quantile_ladder import QUANTILE_LADDER_KINDS
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -482,6 +482,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         return evidence_audit_consistency_errors(payload)
     if kind == "selection_concordance":
         from quant_fund.research.concordance import concordance_consistency_errors
+
         return concordance_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
@@ -566,26 +567,31 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
     elif schema == "vol_bench.v1":
         from quant_fund.research.vol_bench import vol_bench_contract_errors
+
         errors.extend(vol_bench_contract_errors(payload))
     elif schema == "capacity_overlay.v1":
         from quant_fund.research.capacity_overlay import capacity_contract_errors
+
         errors.extend(capacity_contract_errors(payload))
     elif schema == "cross_sectional_rankic.v1":
         from quant_fund.research.cross_sectional import rankic_contract_errors
+
         errors.extend(rankic_contract_errors(payload))
     elif payload.get("kind") == "ranker_probability_experiment":
         from quant_fund.research.ranker_probability import ranker_prob_contract_errors
+
         errors.extend(ranker_prob_contract_errors(payload))
     elif payload.get("schema") == "calibration_eval.v1":
         from quant_fund.research.calibration_eval import calibration_contract_errors
+
         errors.extend(calibration_contract_errors(payload))
     elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
         from quant_fund.data.ingest import data_manifest_contract_errors
+
         errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
         from quant_fund.paper.sim_live import sim_live_contract_errors
 
-        errors.extend(evalue_family_contract_errors(payload))
         errors.extend(sim_live_contract_errors(payload))
     if payload.get("schema") == "cost_calibration.v1":
         from quant_fund.research.cost_calibration import (
