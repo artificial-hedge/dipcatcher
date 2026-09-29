@@ -158,3 +158,46 @@ def test_witness_contract_rejects_forged_shape() -> None:
         {"schema": "integrity_witness.v1", "target": {"sha256": "x" * 64}}
     )
     assert "schema_mismatch" in witness_contract_errors({"schema": "other"})
+
+
+def test_consistency_kat_on_real_rekor_proof() -> None:
+    """Offline KAT: a real RFC 6962 consistency proof fetched from Rekor must
+    verify between the two committed proofs' recorded tree sizes; a flipped
+    root bit must fail."""
+    from quant_fund.research.integrity_witness import _consistency_ok
+
+    kat = json.loads(
+        (REPO_ROOT / "tests/unit/research/fixtures/rekor_consistency_kat.json").read_text()
+    )
+    path = [bytes.fromhex(h) for h in kat["hashes"]]
+    assert _consistency_ok(
+        kat["first_size"],
+        bytes.fromhex(kat["first_root"]),
+        kat["second_size"],
+        bytes.fromhex(kat["second_root"]),
+        path,
+    )
+    bad_root = bytes.fromhex("00" + kat["second_root"][2:])
+    assert not _consistency_ok(
+        kat["first_size"], bytes.fromhex(kat["first_root"]), kat["second_size"], bad_root, path
+    )
+    # Truncated path must not verify either.
+    assert not _consistency_ok(
+        kat["first_size"],
+        bytes.fromhex(kat["first_root"]),
+        kat["second_size"],
+        bytes.fromhex(kat["second_root"]),
+        path[:-1],
+    )
+
+
+@pytest.mark.network
+def test_online_consistency_against_live_rekor() -> None:
+    """Live: every committed proof's tree must still be a prefix of Rekor's
+    current signed tree head (consistency path + STH signature)."""
+    from quant_fund.research.integrity_witness import verify_witness_online
+
+    res = verify_witness_online(REPO_ROOT)
+    assert res["online"] is True
+    assert res["errors"] == []
+    assert all(res["consistent"].values())

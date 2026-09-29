@@ -2090,11 +2090,32 @@ def witness_checkpoint_cmd(
 @app.command("verify-witness")
 def verify_witness_cmd(
     root: Path = typer.Option(Path("."), "--root"),
+    online: bool = typer.Option(
+        False,
+        "--online",
+        help="Also check the live log: committed tree must be a prefix of "
+        "Rekor's current signed tree head (network).",
+    ),
 ) -> None:
     """Verify every committed ``quality/witness/*.json`` proof offline:
     digest + our witness signature + RFC 6962 inclusion + Rekor SET and
-    checkpoint-note signatures. No proofs committed is neutral.
+    checkpoint-note signatures. ``--online`` additionally proves the log
+    still contains our tree (RFC 6962 consistency to the current STH).
     """
+    if online:
+        from quant_fund.research.integrity_witness import verify_witness_online
+
+        res = verify_witness_online(root)
+        if not res["witnessed"]:
+            typer.echo("witness: none committed")
+            return
+        typer.echo(f"witness: {'ok' if res['ok'] else 'FAIL'} log_size={res.get('log_size')}")
+        for err in res["errors"]:
+            typer.echo(f"  {err}")
+        if not res["ok"]:
+            raise typer.Exit(code=1)
+        return
+
     from quant_fund.research.integrity_witness import verify_witnesses
 
     res = verify_witnesses(root)

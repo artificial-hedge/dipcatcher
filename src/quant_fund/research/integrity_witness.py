@@ -277,6 +277,142 @@ def verify_witness_file(root: str | Path, proof_path: str | Path) -> dict[str, A
     return {"ok": not errors, "current": current, "errors": sorted(errors)}
 
 
+def _h(left: bytes, right: bytes) -> bytes:
+    return hashlib.sha256(b"\x01" + left + right).digest()
+
+
+def _consistency_ok(
+    old_size: int, old_root: bytes, new_size: int, new_root: bytes, path: list[bytes]
+) -> bool:
+    """RFC 6962 §2.1.4.2: ``old_root`` is a prefix-tree of ``new_root``.
+
+    ``fr`` accumulates toward the new root, ``sr`` toward the old — the
+    first path hash serves both walks (it is the old tree's "frontier" node).
+    """
+    if old_size == 0:
+        return True
+    if old_size == new_size:
+        return old_root == new_root and not path
+    if not path:
+        return False
+    fn, sn = old_size - 1, new_size - 1
+    while fn & 1:
+        fn >>= 1
+        sn >>= 1
+    fr = sr = path[0]
+    for c in path[1:]:
+        if sn == 0:
+            return False
+        if (fn & 1) or fn == sn:
+            fr = _h(c, fr)
+            sr = _h(c, sr)
+            while fn and not (fn & 1):
+                fn >>= 1
+                sn >>= 1
+        else:
+            fr = _h(fr, c)
+        fn >>= 1
+        sn >>= 1
+    return fr == new_root and sr == old_root
+
+
+def _parse_checkpoint_note(note: str) -> tuple[int, bytes] | None:
+    """``size, rootHash`` from a signed checkpoint's payload text."""
+    payload = note.split("\n\n")[0]
+    lines = payload.split("\n")
+    if len(lines) != 3:
+        return None
+    try:
+        return int(lines[1]), base64.b64decode(lines[2])
+    except (ValueError, TypeError):
+        return None
+
+
+def verify_witness_online(
+    root: str | Path,
+    *,
+    rekor_url: str = DEFAULT_REKOR_URL,
+    timeout: int = 30,
+) -> dict[str, Any]:
+    """Live-log check: is the committed proof's tree still *part of* Rekor's
+    current signed tree head?
+
+    The offline proofs bind our entry to the rootHash the log produced at
+    submission time; this check proves the log still stands behind that
+    state — i.e. the committed tree is a prefix of today's signed root (a
+    dropped/rewritten segment breaks the RFC 6962 consistency path), and
+    the current STH signature verifies under the pinned Rekor pubkey.
+    """
+    res = verify_witnesses(root)
+    if not res["witnessed"]:
+        return {"ok": True, "online": False, "witnessed": False, "errors": []}
+    pub_file = Path(root) / REKOR_PUBKEY_PATH
+    errors: list[str] = []
+    try:
+        with urllib.request.urlopen(  # noqa: S310  # nosec B310
+            rekor_url.rstrip("/") + "/api/v1/log", timeout=timeout
+        ) as resp:
+            log = json.loads(resp.read())
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"ok": False, "online": False, "errors": [f"log_unreachable:{exc}"]}
+    note = str(log.get("signedTreeHead", ""))
+    parsed = _parse_checkpoint_note(note)
+    if parsed is None:
+        return {"ok": False, "online": True, "errors": ["sth_malformed"]}
+    cur_size, cur_root = parsed
+    if cur_root.hex() != str(log.get("rootHash", "")):
+        errors.append("sth_root_mismatch")
+    if pub_file.is_file():
+        payload, _, sig_block = note.partition("\n\n")
+        raw = base64.b64decode(sig_block.strip().split(" ")[-1]) if sig_block else b""
+        if not sig_block or not _ecdsa_verify(
+            pub_file.read_bytes(), base64.b64encode(raw[4:]).decode(), (payload + "\n").encode()
+        ):
+            errors.append("sth_signature_invalid")
+    else:
+        errors.append("rekor_pubkey_missing")
+
+    proofs = res["proofs"]
+    consistent: dict[str, bool] = {}
+    for name, pres in proofs.items():
+        ip = pres.get("inclusion_proof") or {}
+        # proofs from verify_witness_file don't carry ip; reload the record
+        record = json.loads((Path(root) / WITNESS_DIR / name).read_text())
+        ip = record["rekor"]["inclusion_proof"]
+        old_size, old_root = int(ip["tree_size"]), bytes.fromhex(str(ip["root_hash"]))
+        if old_size > cur_size:
+            errors.append(f"{name}:log_shrunk")
+            consistent[name] = False
+            continue
+        if old_size == cur_size:
+            consistent[name] = old_root == cur_root
+            if not consistent[name]:
+                errors.append(f"{name}:root_diverged")
+            continue
+        try:
+            with urllib.request.urlopen(  # noqa: S310  # nosec B310
+                rekor_url.rstrip("/")
+                + f"/api/v1/log/proof?firstSize={old_size}&lastSize={cur_size}",
+                timeout=timeout,
+            ) as resp:
+                path = [bytes.fromhex(h) for h in json.loads(resp.read())["hashes"]]
+        except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
+            errors.append(f"{name}:proof_fetch_failed:{exc}")
+            continue
+        ok = _consistency_ok(old_size, old_root, cur_size, cur_root, path)
+        consistent[name] = ok
+        if not ok:
+            errors.append(f"{name}:consistency_proof_invalid")
+    return {
+        "ok": not errors,
+        "online": True,
+        "witnessed": True,
+        "errors": sorted(errors),
+        "consistent": consistent,
+        "log_size": cur_size,
+    }
+
+
 def verify_witnesses(root: str | Path) -> dict[str, Any]:
     """All committed proofs under ``quality/witness/``; neutral when absent."""
     wdir = Path(root) / WITNESS_DIR
