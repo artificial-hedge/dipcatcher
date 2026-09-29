@@ -803,6 +803,62 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.00012397308872545248
   - 0.00011681797278370385
 
+### `receipts/calib_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/calib_real_drill.json | 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c | 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370 | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - nonnegative_test_martingale
+  - fixed_predictable_bets
+  - level_test_not_change_test
+- `generated_at_commit`: dc1e47215d316108cbd403ee0c6ad2c91ee742bb
+- `kind`: calibration_audit.v1
+- `n_models`: 12
+- `n_shards`: 1
+- `params`:
+  - `alpha`: 0.05
+  - `channels`:
+    - loc_hi
+    - loc_lo
+    - overconf
+    - underconf
+    - grapa_loc
+    - grapa_disp
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
+- `research_only`: true
+- `schema`: calibration_audit.v1
+
 ### `receipts/capacity_eval_cd0854242ed8a9ec.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1085,6 +1141,348 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: capacity_overlay.v1
 - `seed`: 11
 
+### `receipts/corpus_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_real_drill.json | 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119 | b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6 | not_checked | absent | inputs_sha256=30c129932661b7f9c36fa8822f6669bc062d383b10358a221b3073936efd440c | unspecified | absent | true | false |
+
+- `corpus_evalue`: 1.0
+- `corpus_reject_at_alpha`: false
+- `data_label`: MIXED
+- `evidence`:
+  - bh_fdr_pooled_family
+  - evalue_product_merge
+  - tagged_claim_provenance
+- `generated_at_commit`: 8096a5245da4d708771c00b7756e334a3638f14b
+- `kind`: corpus_inference.v1
+- `n_e_findings`: 0
+- `n_p_findings`: 52
+- `n_parse_errors`: 0
+- `n_receipts`: 10
+- `n_survivors`: 7
+- `params`:
+  - `glob`: *.json
+  - `input_labels`:
+    - `adaptive_mix_20asset_1d_20260922.json`: UNKNOWN
+    - `adaptive_mix_band_search_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_pair_candidate_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_reversion_screen_20asset_1d_20260922.json`: UNKNOWN
+    - `capacity_eval_cd0854242ed8a9ec.json`: SYNTHETIC
+    - `dip_bench_crypto_1d_20260925.json`: UNKNOWN
+    - `fast_replay_p42_conformance_20260927.json`: UNKNOWN
+    - `fleet_eval_5ddf15b0dc7d3ca1.json`: SYNTHETIC
+    - `incumbent_bench_qlib.json`: UNKNOWN
+    - `rankic_eval_9ebdad7da83e7348.json`: SYNTHETIC
+  - `q`: 0.05
+- `parse_errors`:
+- `receipt_sha256`: b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6
+- `research_only`: true
+- `schema`: corpus_inference.v1
+- `surviving_claims`:
+  - [0]
+    - `family`: pooled
+    - `path`: results[14].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.0003521222142801333
+  - [1]
+    - `family`: pooled
+    - `path`: results[21].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.004205896471930621
+  - [2]
+    - `family`: pooled
+    - `path`: results[24].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.00025215641774270535
+  - [3]
+    - `family`: pooled
+    - `path`: results[27].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 1.1904848878731533e-06
+  - [4]
+    - `family`: pooled
+    - `path`: results[31].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.00017886857828392145
+  - [5]
+    - `family`: pooled
+    - `path`: results[40].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.0011998006712072259
+  - [6]
+    - `family`: pooled
+    - `path`: results[47].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 1.0262118132145719e-05
+
+### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_df9b8d7068bf709b.json | 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b | df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68 | not_checked | 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f | inputs_sha256=60e4d5577d428605825c73e4be06987316aaf6a6dd92b30f75d9f7d72e9f10f9 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_relative`: 0.0008280850981386401
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-09-28T16:46:41.013669+00:00
+- `git_revision`: 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: flat
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 1850.7817080066654
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 7477.672951985385
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 9328.45465999205
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 1854.8502840709652
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 116
+    - `research_only`: true
+    - `spread`: 2944.5377726169922
+    - `spread_estimator`: roll
+    - `total_cost`: 4799.388056687958
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
+### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/deps_security_hygiene_f3b4e6fd22e439b7.json | 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7 | f3b4e6fd22e439b7932ef3b9084387ee9c91274a24d17af248bebbc10b68a167 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `artifact_sha256`:
+  - `bandit_report.json`: 809cd6121547aa0fe7ba43a02bee5b7d032cf7677b4e186f697e3afad325118c
+  - `bandit_strict.txt`: 87a0d55d41533af09c000df7e63d6fa0aa38f2a585fda3748f2d824c1713a822
+  - `deptry_src.txt`: ff6a683d5c49cc51f281f71b0d33bdd6b3b3f6a98cc32e827d42489cdb26b6a9
+  - `environment.txt`: 51db324590116cdb29cde79a5e84e163b558ad5205ca99de5982ca5bd9413649
+  - `export_all.txt`: 9fbf64df6666d2cfa7f4c6e7ffb8da02d4f0a55c16c8fc6519c46d851518730b
+  - `gitleaks_report.json`: 37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570
+  - `licenses_all.json`: a6fd604a5b417cae275fab6b11a080394bc8d3081e7c647ea1022caa4efd5121
+  - `pip_audit.json`: 049e4778f823e4f6e95ea20dc9426dde053a1920d865b5912e5509c74ec29ba6
+  - `uv_audit.json`: 737891e2dfea09ce5a31b82b8a023663d03d6f2de336f16f2d8e492275e04e21
+- `base_commit`: 2ed19c2a39b9c5521250e5e0cf53db188bc76b54
+- `ci_gates`:
+  - `dependency_review`: .github/workflows/dependency-review.yml (fail-on-severity moderate)
+  - `secret_scan`: .github/workflows/secret-scan.yml (gitleaks 8.30.1, sha256-pinned, --full-history)
+- `commands`:
+  - `bandit`: uvx --from bandit==1.9.4 bandit -q -r src --severity-level medium --confidence-level medium
+  - `deptry`: uv run --with deptry==0.25.1 deptry src
+  - `gitleaks`: gitleaks detect --source . --redact --no-banner --config .gitleaks.toml --log-opts=--full-history
+  - `licenses`: importlib.metadata scan of installed env + PyPI metadata for 22 platform-only pins
+  - `lock_check`: uv lock --check
+  - `pip_audit`: uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups | uvx --from pip-audit==2.10.1 pip-audit --strict -r /dev/stdin
+  - `uv_audit`: uv audit --output-format json
+- `data_label`: SYNTHETIC
+- `dependency_changes`:
+  - `declared_direct`:
+    - cryptography>=44
+    - threadpoolctl>=3.5
+  - `note`: no advisory-driven bump needed — both auditors report zero findings
+  - `removed_direct`:
+    - pydantic-settings
+    - python-dotenv
+  - `vulnerability_bumps`:
+- `docs`:
+  - docs/AUDIT_P610_DEPS.md
+  - docs/SECURITY_EVIDENCE.md
+- `environment`:
+  - `bandit`: 1.9.4
+  - `deptry`: 0.25.1
+  - `gitleaks`: 8.30.1
+  - `pip_audit`: 2.10.1
+  - `platform`: macOS arm64
+  - `python`: 3.12.14
+  - `uv`: 0.12.19
+- `evidence_dir`: data/metadata/reports/deps_hygiene_20260928/
+- `generated`: 2026-09-28T00:00:00Z
+- `receipt`: deps_security_hygiene
+- `receipt_sha256`: f3b4e6fd22e439b7932ef3b9084387ee9c91274a24d17af248bebbc10b68a167
+- `research_only`: true
+- `results`:
+  - `bandit`:
+    - `loc`: 158122
+    - `severity_medium_or_high_findings`: 0
+  - `deptry`:
+    - `accepted`:
+      - statsmodels (tests/scripts only)
+      - clarabel (cvxpy solver)
+      - optional imports sigstore/huggingface_hub/ray/quant_core/kronos-model
+    - `dep002_fixed`:
+      - pydantic-settings
+      - python-dotenv
+    - `dep003_fixed`:
+      - cryptography
+      - threadpoolctl
+    - `findings_total`: 14
+  - `eval_exec_pickle`:
+    - `eval_exec_hits`: 0
+    - `pickle_path`: fx1.forecast.artifacts behind allow_unsafe_deserialization + trusted_checkpoint_sha256
+  - `gitleaks`:
+    - `bytes_scanned`: 49307356
+    - `commits_scanned`: 408
+    - `leaks`: 0
+  - `licenses`:
+    - `blank_metadata`:
+      - huey (bundled MIT)
+      - cuda-toolkit
+      - nvidia-cuda-runtime
+      - nvidia-cudnn-cu13
+      - nvidia-nccl-cu13
+      - nvidia-nvshmem-cu13
+    - `gpl_family_runtime`: 0
+    - `installed_scanned`: 184
+    - `mpl_2_0`:
+      - certifi
+      - hypothesis
+      - pathspec
+      - tqdm
+    - `pins_covered`: 206
+    - `platform_only_via_pypi`: 22
+  - `pin_audit`:
+    - `duplicate_names_in_export`: 0
+    - `uv_lock_check`: pass
+  - `pip_audit`:
+    - `audited_dependencies`: 182
+    - `vulnerabilities`: 0
+  - `uv_audit`:
+    - `adverse_statuses`: 0
+    - `audited_packages`: 206
+    - `vulnerabilities`: 0
+- `schema`: deps_hygiene.v1
+- `ultraplan_item`: P6.10+P4.6
+- `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+
+### `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json | 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b | c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eprocess`:
+  - `alarm_index`: 16
+  - `alarmed`: true
+  - `final_evalue`: 0.0005858298980283407
+  - `lam`: 0.5
+- `evidence`:
+  - e_process_anytime_valid
+  - test_martingale_under_drift_null
+  - page_hinkley_diagnostic_only
+- `kind`: drift_alarm.v1
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `page_hinkley`:
+  - `alarm_index`: null
+  - `alarmed`: false
+  - `delta`: 0.1
+  - `final_statistic`: 0.13126228297147766
+  - `h`: 5.0
+- `receipt_sha256`: c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223
+- `research_only`: true
+- `stream`: gaussian_minus_conf_t_pinball
+
+### `receipts/drift_real_drill_gaussian_pit.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/drift_real_drill_gaussian_pit.json | 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64 | d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eprocess`:
+  - `alarm_index`: null
+  - `alarmed`: false
+  - `final_evalue`: 5.513038244201123e-12
+  - `lam`: 0.5
+- `evidence`:
+  - e_process_anytime_valid
+  - test_martingale_under_drift_null
+  - page_hinkley_diagnostic_only
+- `kind`: drift_alarm.v1
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `page_hinkley`:
+  - `alarm_index`: 28
+  - `alarmed`: true
+  - `delta`: 0.1
+  - `final_statistic`: 0.13020556880455408
+  - `h`: 5.0
+- `receipt_sha256`: d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107
+- `research_only`: true
+- `stream`: gaussian_pit
+
 ### `receipts/fast_replay_p42_conformance_20260927.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1116,6 +1514,38 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 <!-- verbatim-receipt-text -->
 > All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
 <!-- /verbatim-receipt-text -->
+
+### `receipts/fast_replay_p42_conformance_20260928.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/fast_replay_p42_conformance_20260928.json | 7151a551c4ff7d47e8b8d36b4b866f6e487a2ca7f0275ce429edeeaaf933f6ab | absent | no_embedded_seal | absent | absent | unspecified | absent | true | false |
+
+- `receipt`: fast_replay_p42_conformance
+- `generated`: 2026-09-28T00:00:00Z
+- `ultraplan_item`: P4.2
+- `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
+- `supersedes`: receipts/fast_replay_p42_conformance_20260927.json
+- `supersedes_reason`: code_sha256 pins were bound to 7d2e01e4; fast_replay.py changed under the mark-only-bar fill fix (#215). Re-verified byte-identical on current main under the same rerun suite.
+- `base_commit`: 92c154c8d563058c301dfb0de284dcb5ebe5f61e
+- `evidence`:
+  - tests/property/test_fast_replay_byte_identity.py: hypothesis-generated matched-class workloads (adversarial profile, seeded); equity/fills Arrow-IPC bytes identical, metrics sha256 identical, interpreted fallback identical to numba kernel; reference exceptions reproduce with the same type
+  - tests/unit/backtest/test_fast_replay.py: seeded 30-workload fuzz sweep + targeted stale/close-auction/dup/kill/empty/sparse cases + flag behavior (fast=True refusals incl. garch artifact, fast=False pins event loop, auto-dispatch)
+  - tests/unit/test_perf_equivalence.py: fills/equity .equals on the perf lane workload
+  - 2026-09-28 reseal: rerun suite green on main post-#215 (36 tests incl. hypothesis byte-identity + 30-workload fuzz + perf-equivalence lane)
+- `fixes`:
+  - engine.run_backtest gained explicit fast: bool | None flag (None=auto, True=fail-closed contract, False=reference lane)
+  - run_backtest_fast now carries the dispatcher's panel/completeness refusals itself — direct calls and fast=True share one fail-closed source of truth
+  - fixed 1-ulp divergence in turnover_bps_cost: np.sum pairwise reduction replaced with sequential += fold matching the reference (caught by the new byte-identity property test, seed 394)
+  - post-receipt fix on this code state: mark-only bars now value non-executing names at the pre-update mark (#215)
+  - aggregate_shortfall top_cost_names resolves total_is ties by security_id — the receipt's former known_issue_out_of_lane (#347)
+- `gaps_refused`:
+  - allow_close_auction=True (close-auction order semantics not replicated)
+  - risk_overlay (mid-loop target scaling/flattening not replicated)
+  - GARCH/realized-GARCH market-overlay artifact present (overlay-date metric counters would read 0 — refused rather than approximate)
+  - empty/duplicate-key/non-Datetime/mismatched-unit panels
+- `rerun`: uv run pytest tests/unit/backtest/test_fast_replay.py tests/property/test_fast_replay_byte_identity.py tests/unit/test_perf_equivalence.py -x -q
+- `research_only`: true
 
 ### `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`
 
@@ -3786,6 +4216,95 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.9
   - 0.95
 
+### `receipts/monitor_run_drill_clean.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_drill_clean.json | 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c | 3ca0d758f95f507ae1bb3e1a9a80cc31a818953e66dc9e6a73b5a7a86c3f9970 | not_checked | absent | inputs_sha256=4588744277feb3af22aae86a6a4a7d400dd5501e177e9013fdfae43a002a09a9 | unspecified | absent | true | false |
+
+- `code_revision`: f99ec27c981dec240bca72f105db1733b3c0278f
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 2
+- `n_rows`: 4
+- `params`:
+  - `alpha`: 0.05
+  - `heads`:
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 60
+  - `n_train`: 120
+  - `seed`: 3
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.5
+- `receipt_sha256`: 3ca0d758f95f507ae1bb3e1a9a80cc31a818953e66dc9e6a73b5a7a86c3f9970
+- `research_only`: true
+- `schema`: monitor_run.v1
+
+### `receipts/monitor_run_drill_defect.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_drill_defect.json | e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df | 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55 | not_checked | absent | inputs_sha256=49bdfd5d88bcaeb229e973c883cb3400b19cb90ba0b31d94a55b13ddc4ea0297 | unspecified | absent | true | false |
+
+- `code_revision`: 75266bae332263fa2b87244525c85cca557f08d0
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 5
+- `n_rows`: 6
+- `params`:
+  - `alpha`: 0.05
+  - `heads`:
+    - biased_gaussian
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 60
+  - `n_train`: 120
+  - `seed`: 3
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.5
+- `receipt_sha256`: 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55
+- `research_only`: true
+- `schema`: monitor_run.v1
+
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -4915,3 +5434,116 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `t_spearman`: -4.75560366545392
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
+
+### `receipts/verdict_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/verdict_real_drill.json | 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7 | 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c | not_checked | absent | inputs_sha256=86f74196e0b8b77de389cf70b0312c77753bd74975c1600c35d114a2d5241eb2 | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `components`:
+  - `calibration`:
+    - `alarm_origin`: 17
+    - `channel_wealths`:
+      - `grapa_disp`: 0.134256778680104
+      - `grapa_loc`: 0.06354354498244345
+      - `loc_hi`: 3.2771148072993125e-05
+      - `loc_lo`: 6.271944764438012e-09
+      - `overconf`: 3.5217032438195263e-12
+      - `underconf`: 0.0
+    - `final_evalue`: 0.032972183514347816
+    - `miscalibrated`: true
+  - `drift`:
+    - `alarm_index`: null
+    - `eprocess_alarmed`: false
+    - `final_evalue`: 5.65228928707004e-13
+    - `page_hinkley_alarmed`: true
+  - `localize`:
+    - `skipped`: no_drift_alarm
+  - `magnitude`:
+    - `alpha`: 0.05
+    - `bound`: 0.0005556059235267558
+    - `challenger`: challenger
+    - `cs_high`: 2.103370268349208e-05
+    - `cs_low`: -9.775281957945879e-05
+    - `evidence`:
+      - ville_inequality
+      - betting_confidence_sequence
+      - bounded_increments
+      - time_uniform_coverage
+    - `excludes_zero`: false
+    - `incumbent`: incumbent
+    - `interpretation`: inconclusive
+    - `kind`: loss_cs.v1
+    - `lam`: 0.5
+    - `mean_diff`: -3.308069273216095e-05
+    - `n`: 300
+    - `schema`: loss_cs.v1
+  - `promotion`:
+    - `anytime_p`: 1.0
+    - `final_evalue`: 1.0
+    - `promoted`: false
+    - `promotion_origin`: null
+    - `runner_up`: conf_t
+  - `winner_curse`:
+    - `corrected_score`: 0.007786306962895035
+    - `honest_score`: 0.007774180331785465
+    - `naive_score`: 0.007783105322251523
+    - `selected_head`: gaussian
+    - `selection_aware_ci`:
+      - 0.006828763736922536
+      - 0.008883396250636
+    - `selection_bias`: 3.201640643512617e-06
+- `data_label`: yahoo_eod
+- `drill`:
+  - `computed_on`: seq-union scratch (all verdict lanes present); isolated lane branches degrade to inconclusive
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `head_errors`:
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_stream`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - selection_bias_corrected
+  - anytime_valid_promotion
+  - level_shift_monitor
+  - magnitude_confidence_sequence
+  - pit_uniformity_when_supplied
+  - changepoint_localization_when_drifted
+  - proper_score_only
+- `kind`: honest_verdict.v1
+- `n_heads`: 12
+- `n_obs`: 300
+- `receipt_sha256`: 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c
+- `research_only`: true
+- `run`:
+  - `params`:
+    - `data_labels`:
+      - `conf_t`: yahoo_eod
+      - `empirical`: yahoo_eod
+      - `fhs_skew`: yahoo_eod
+      - `gaussian`: yahoo_eod
+      - `gmm`: yahoo_eod
+      - `hstep_emp`: yahoo_eod
+      - `hstep_t`: yahoo_eod
+      - `isotonic`: yahoo_eod
+      - `qar`: yahoo_eod
+      - `regime`: yahoo_eod
+      - `skew_t`: yahoo_eod
+      - `stack`: yahoo_eod
+- `unavailable_lanes`:
+- `verdict`: not_supported
+- `winner`: gaussian
