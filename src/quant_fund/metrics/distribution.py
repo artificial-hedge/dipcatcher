@@ -25,14 +25,13 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy import stats as sstats
 
+from quant_fund.utils.series import finite_series
+
 Array = NDArray[np.float64]
 
 
 def _v(x: Array, n: int = 8) -> Array:
-    v = np.asarray(x, dtype=float).reshape(-1)
-    if v.size < n or not np.all(np.isfinite(v)):
-        raise ValueError(f"series must be finite with length >= {n}")
-    return v
+    return finite_series(x, n)
 
 
 def shapiro_wilk(x: Array) -> dict[str, float]:
@@ -195,7 +194,7 @@ def qn_scale(x: Array) -> float:
     q = float(np.quantile(tri, 0.25))
     # Finite-sample consistency factor (approximate c_n).
     c_n = 1.0 / (math.sqrt(2.0) * sstats.norm.ppf(5.0 / 8.0))
-    return q * c_n
+    return float(q * c_n)
 
 
 def robust_shape(x: Array) -> dict[str, float]:

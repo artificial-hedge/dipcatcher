@@ -15,6 +15,7 @@ References:
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -42,7 +43,7 @@ def pseudo_observations(x: Array) -> Array:
         raise ValueError("x must be a finite n x d array")
     if m.shape[0] < 10 or m.shape[1] < 2:
         raise ValueError("x must have >= 10 rows and >= 2 columns")
-    return sstats.rankdata(m, axis=0) / (m.shape[0] + 1.0)
+    return np.asarray(sstats.rankdata(m, axis=0) / (m.shape[0] + 1.0), dtype=float)
 
 
 def kendall_tau(u: Array) -> float:
@@ -101,13 +102,13 @@ def fit_t_copula(u: Array, nu_grid: Array | None = None) -> tuple[float, float]:
         raise ValueError("nu_grid must be a finite vector with values > 2")
     from scipy.special import gammaln
 
-    def _make_nll(z: Array, nu: float, const: float, marg: float):
+    def _make_nll(z: Array, nu: float, const: float, marg: float) -> Callable[[float], float]:
         n_obs = z.shape[0]
 
         def _nll(r: float) -> float:
             rho = float(np.clip(r, -0.98, 0.98))
             d = (z[:, 0] ** 2 + z[:, 1] ** 2 - 2 * rho * z[:, 0] * z[:, 1]) / (1.0 - rho**2)
-            return -(
+            return -float(
                 const
                 + marg
                 - 0.5 * n_obs * math.log(1.0 - rho**2)
@@ -169,7 +170,7 @@ def gaussian_copula_sim(rho: float, n: int, seed: int | None = None) -> Array:
     rng = np.random.default_rng(seed)
     cov = np.array([[1.0, r], [r, 1.0]])
     z = rng.multivariate_normal(np.zeros(2), cov, size=n)
-    return sstats.norm.cdf(z)
+    return np.asarray(sstats.norm.cdf(z), dtype=float)
 
 
 def t_copula_sim(rho: float, nu: float, n: int, seed: int | None = None) -> Array:
@@ -184,7 +185,7 @@ def t_copula_sim(rho: float, nu: float, n: int, seed: int | None = None) -> Arra
     z = rng.multivariate_normal(np.zeros(2), cov, size=n)
     w = rng.chisquare(nu, size=n) / nu
     t = z / np.sqrt(w)[:, None]
-    return sstats.t.cdf(t, df=nu)
+    return np.asarray(sstats.t.cdf(t, df=nu), dtype=float)
 
 
 def clayton_copula_sim(theta: float, n: int, seed: int | None = None) -> Array:

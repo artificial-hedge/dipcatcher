@@ -18,16 +18,13 @@ from numpy.typing import NDArray
 from scipy import optimize as opt
 from scipy import stats
 
+from quant_fund.utils.series import require_panel
+
 Array = NDArray[np.float64]
 
 
 def _panel(x: Array, min_n: int = 5, min_t: int = 8) -> Array:
-    p = np.asarray(x, dtype=float)
-    if p.ndim != 2 or p.shape[0] < min_t or p.shape[1] < min_n:
-        raise ValueError(f"panel must be (T >= {min_t}, N >= {min_n})")
-    if not np.all(np.isfinite(p)):
-        raise ValueError("panel must be finite")
-    return p
+    return require_panel(x, min_n=min_n, min_t=min_t)
 
 
 def anderson_hsiao(y: Array, X: Array | None = None) -> dict[str, Array | float]:
@@ -122,7 +119,7 @@ def arellano_bond(y: Array, max_lag_inst: int = 3) -> dict[str, Array | float]:
         return dep_mat - rho * end_mat
 
     def gmm_rho(rho: float) -> Array:
-        return np.einsum("ntm,tn->m", Zi, resid(rho)) / N
+        return np.asarray(np.einsum("ntm,tn->m", Zi, resid(rho)) / N, dtype=float)
 
     def obj(rho: float) -> float:
         g = gmm_rho(rho)

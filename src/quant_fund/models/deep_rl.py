@@ -9,10 +9,14 @@ the optional ``nn`` dependency.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol, cast
 
 import numpy as np
 from numpy.typing import NDArray
+
+
+class _Backward(Protocol):
+    def backward(self) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -103,7 +107,7 @@ class PolicyGradientRanker:
                 entropy = -torch.sum(probs * torch.log(probs.clamp_min(1e-8)))
                 losses.append(-expected - self.entropy_weight * entropy)
             self.optimizer.zero_grad()
-            torch.stack(losses).mean().backward()
+            cast(_Backward, torch.stack(losses).mean()).backward()
             self.optimizer.step()
         return self
 
@@ -116,7 +120,7 @@ class PolicyGradientRanker:
         self.model.eval()
         with torch.no_grad():
             scores = self.model(torch.as_tensor(np.nan_to_num(xx))).reshape(-1)
-        return scores.cpu().numpy().astype(float)
+        return np.asarray(scores.cpu().numpy(), dtype=float)
 
     def metadata(self) -> dict[str, Any]:
         return {

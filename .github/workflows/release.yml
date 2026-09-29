@@ -1,0 +1,134 @@
+name: Release
+
+# Tag push (v1.2.3, v1.2.3-rc1, …) builds the sdist and wheel, writes a
+# CycloneDX SBOM, signs the distributions with Sigstore, and emits SLSA
+# build provenance. This workflow does not publish to PyPI and does not
+# create a GitHub Release. Artifacts are uploaded as workflow artifacts
+# only. Verify downloaded bundles with:
+#   uv run python scripts/verify_release_artifacts.py <dist-dir>
+# Optional Sigstore identity check (needs network or --offline + bundles):
+#   uv run python scripts/verify_release_artifacts.py <dist-dir> --sigstore \
+#     --cert-identity \
+#     "https://github.com/<owner>/<repo>/.github/workflows/release.yml@refs/tags/vX.Y.Z"
+# SLSA provenance from GitHub artifact attestations:
+#   gh attestation verify <artifact> --repo <owner>/<repo>
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, SBOM, sign, attest
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Build sdist and wheel
+        run: uv build --out-dir dist
+
+      - name: Smoke-test the wheel
+        run: |
+          set -euo pipefail
+          uv sync --frozen --all-groups --no-install-project
+          uv pip install --python .venv/bin/python --no-deps dist/*.whl
+          .venv/bin/fx1 --help
+          .venv/bin/dipcatcher --help
+
+      - name: CycloneDX SBOM from the locked runtime set
+        run: |
+          set -euo pipefail
+          # Default install plus optional extras (including nn). Dev group
+          # excluded. uv writes CycloneDX 1.5 from uv.lock; no extra tool.
+          uv export --format cyclonedx1.5 --frozen --no-dev --all-extras \
+            --no-emit-project --output-file dist/sbom.cdx.json >/dev/null
+          python - << 'PY'
+          import json
+          from pathlib import Path
+
+          doc = json.loads(Path("dist/sbom.cdx.json").read_text())
+          if doc.get("bomFormat") != "CycloneDX" or doc.get("specVersion") != "1.5":
+              raise SystemExit(f"unexpected SBOM header: {doc.get('bomFormat')} {doc.get('specVersion')}")
+          components = doc.get("components") or []
+          if not components:
+              raise SystemExit("SBOM has no components")
+          print(f"CycloneDX {doc['specVersion']} components={len(components)}")
+          PY
+
+      - name: Checksums
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          sha256sum -- *.whl *.tar.gz sbom.cdx.json > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Sign distributions with Sigstore
+        # setup-uv exports VIRTUAL_ENV. uvx with those variables unset uses
+        # its own environment. sigstore 4.5 has no --oidc switch; on Actions
+        # it takes the ambient OIDC token (id-token: write). The certificate
+        # identity is the workflow file at GITHUB_REF (refs/tags/v…). Bundles
+        # land next to each file as <name>.sigstore.json.
+        run: |
+          set -euo pipefail
+          unset VIRTUAL_ENV UV_PYTHON UV_PROJECT_ENVIRONMENT
+          shopt -s nullglob
+          dists=(dist/*.whl dist/*.tar.gz)
+          if [ "${#dists[@]}" -eq 0 ]; then
+            echo "no distributions to sign" >&2
+            exit 1
+          fi
+          uvx --from sigstore==4.5.0 sigstore sign "${dists[@]}"
+          identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}"
+          echo "verifying certificate identity ${identity}"
+          uvx --from sigstore==4.5.0 sigstore verify identity \
+            --cert-identity "${identity}" \
+            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${dists[@]}"
+
+      - name: SLSA build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/sbom.cdx.json
+            dist/SHA256SUMS
+
+      - name: Attest the SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
+          sbom-path: dist/sbom.cdx.json
+
+      - name: Local checksum verification
+        run: uv run --no-project python scripts/verify_release_artifacts.py dist
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-dists
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14

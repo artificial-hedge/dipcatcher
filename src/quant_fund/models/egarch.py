@@ -59,6 +59,8 @@ def egarch_fit(y: Array) -> dict[str, Array | float]:
 
     th0 = np.array([0.02 * np.log(v0 + 1e-8) - 0.05, -0.1, 0.1, 0.95, float(yy.mean())])
     res = optimize.minimize(nll, th0, method="Nelder-Mead", options={"maxiter": 6000})
+    if not np.isfinite(res.fun) or res.fun >= 1e11:
+        raise ValueError("EGARCH QMLE failed to converge")
     w, a, g, b, mu = (float(v) for v in res.x)
     s2 = _egarch_path(yy, w, a, g, b, mu)
     if s2 is None:
@@ -105,6 +107,8 @@ def gjr_garch_fit(y: Array) -> dict[str, Array | float]:
 
     th0 = np.array([0.05 * v0, 0.02, 0.1, 0.9, float(yy.mean())])
     res = optimize.minimize(nll, th0, method="Nelder-Mead", options={"maxiter": 6000})
+    if not np.isfinite(res.fun) or res.fun >= 1e11:
+        raise ValueError("GJR QMLE failed to converge")
     w, a, g, b, mu = (float(v) for v in res.x)
     s2 = _gjr_path(yy, w, a, g, b, mu)
     if s2 is None:
@@ -136,9 +140,11 @@ def news_impact_curve(fit: dict[str, Array | float], model: str, shocks: Array) 
         w = float(fit["omega"])
         a, g = float(fit["alpha"]), float(fit["gamma"])
         s2bar = float(np.asarray(fit["sig2"]).mean())
-        return w + (a + g * (eps < 0)) * eps**2 + float(fit["beta"]) * s2bar
+        return np.asarray(
+            w + (a + g * (eps < 0)) * eps**2 + float(fit["beta"]) * s2bar, dtype=float
+        )
     if model == "egarch":
         w, a, g, b = (float(fit[k]) for k in ("omega", "alpha", "gamma", "beta"))
         lnbar = float(np.mean(np.log(np.asarray(fit["sig2"]))))
-        return np.exp(w + b * lnbar + a * eps + g * (np.abs(eps) - _EZ))
+        return np.asarray(np.exp(w + b * lnbar + a * eps + g * (np.abs(eps) - _EZ)), dtype=float)
     raise ValueError("model must be gjr|egarch")

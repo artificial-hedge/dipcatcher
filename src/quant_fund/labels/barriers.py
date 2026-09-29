@@ -17,16 +17,14 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from quant_fund.utils.series import finite_observations
+
 Array = NDArray[np.float64]
 IdxArray = NDArray[np.intp]
 
 
 def _as_vector(x: Array, name: str = "x", *, min_obs: int = 2) -> Array:
-    v = np.asarray(x, dtype=float).reshape(-1)
-    v = v[np.isfinite(v)]
-    if v.size < min_obs:
-        raise ValueError(f"{name} must contain at least {min_obs} finite observations")
-    return v
+    return finite_observations(x, name, min_obs=min_obs)
 
 
 def cusum_filter(x: Array, h: float) -> IdxArray:
@@ -78,6 +76,8 @@ def triple_barrier(
     without it barriers are absolute fractions of the event price.  Returns
     per-event ``label``, ``ret`` (touch/horizon return), ``touch`` (barrier
     id: +1/-1/0) and ``t_touch`` (index of first touch or horizon end).
+    An event on the final bar has no forward path: ``label``/``ret`` are NaN
+    (unobservable), never a fabricated flat outcome.
     """
     c = _as_vector(close, "close")
     if not np.isfinite(pt) or pt <= 0.0 or not np.isfinite(sl) or sl <= 0.0:
@@ -103,7 +103,11 @@ def triple_barrier(
         end = min(int(t) + horizon, c.size - 1)
         path = c[int(t) + 1 : end + 1] / c[int(t)] - 1.0
         if path.size == 0:
-            ret_out[i] = 0.0
+            # Event at the final bar: no forward path exists to evaluate.
+            # NaN marks the label unobservable; a fabricated flat label would
+            # silently enter meta-labels and sample weights.
+            labels[i] = np.nan
+            ret_out[i] = np.nan
             t_touch[i] = t
             continue
         up = pt * sigma[t]
@@ -146,7 +150,7 @@ def meta_labels(side: Array, barrier_labels: Array) -> Array:
         raise ValueError("side and barrier_labels must be finite")
     if not np.all(np.isin(np.unique(s), (-1.0, 0.0, 1.0))):
         raise ValueError("side must take values in {-1, 0, +1}")
-    return (s * label > 0.0).astype(float)
+    return np.asarray(s * label > 0.0, dtype=float)
 
 
 def trend_scanning_labels(close: Array, window: int = 20, *, min_t: float = 0.0) -> Array:

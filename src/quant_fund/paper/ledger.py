@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
-import tempfile
 from datetime import datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
@@ -14,7 +12,9 @@ import polars as pl
 
 from quant_fund.execution.simulated_broker import BrokerSnapshot, OrderRecord, SimulatedBroker
 from quant_fund.metrics.analytics import analytics_export_digest, validate_analytics_export
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils import atomicio
+from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
+from quant_fund.utils.hashing import hash_bytes, receipt_tree
 
 
 def _safe_run_id(run_id: str) -> str:
@@ -31,10 +31,13 @@ def _safe_run_id(run_id: str) -> str:
 
 def _promotion_receipt_digest(receipt: dict[str, Any]) -> str:
     """Canonical self-excluding digest for a paper promotion receipt."""
-    normalized = dict(receipt)
-    normalized.pop("receipt_sha256", None)
+    normalized = receipt_tree(dict(receipt))
+    if isinstance(normalized, dict):
+        normalized.pop("receipt_sha256", None)
     return hash_bytes(
-        json.dumps(normalized, sort_keys=True, separators=(",", ":"), allow_nan=True).encode()
+        json.dumps(
+            normalized, sort_keys=True, separators=(",", ":"), allow_nan=True, default=str
+        ).encode()
     )
 
 
@@ -61,43 +64,15 @@ def _nan() -> float:
 
 
 def _fsync_directory(path: Path) -> None:
-    """Make an atomic replacement visible after a host crash when supported."""
-    try:
-        fd = os.open(path, os.O_RDONLY)
-    except OSError:
-        return
-    try:
-        os.fsync(fd)
-    finally:
-        os.close(fd)
+    atomicio._fsync_directory(path)
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
-    temporary_path = Path(temporary)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            handle.write(text)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary_path, path)
-        _fsync_directory(path.parent)
-    finally:
-        temporary_path.unlink(missing_ok=True)
+    atomic_write_text(path, text)
 
 
 def _atomic_write_parquet(frame: pl.DataFrame, path: Path) -> None:
-    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".parquet", dir=path.parent)
-    temporary_path = Path(temporary)
-    try:
-        with os.fdopen(fd, "wb") as handle:
-            frame.write_parquet(handle)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary_path, path)
-        _fsync_directory(path.parent)
-    finally:
-        temporary_path.unlink(missing_ok=True)
+    atomic_write_parquet(frame, path)
 
 
 def _order_row(rec: OrderRecord, asof: datetime | None) -> dict[str, Any]:
@@ -208,7 +183,15 @@ class PaperLedger:
             fill = rec.fill
             if fill is not None:
                 notional = float(fill.quantity) * float(fill.price)
-                fee_tot = float(fill.fee) + float(fill.spread_cost) + float(fill.impact_cost)
+                # ``slippage`` is adverse drift, not a cash charge. Turnover bps
+                # is deducted from broker cash inside ``total_cost`` and must
+                # be included here or the cash ledger understates the debit.
+                fee_tot = (
+                    float(fill.fee)
+                    + float(fill.spread_cost)
+                    + float(fill.impact_cost)
+                    + float(fill.turnover_cost)
+                )
                 side = str(rec.order.side.value)
                 cash_delta = -notional - fee_tot if side == "buy" else notional - fee_tot
                 self._cash_events.append(
@@ -409,7 +392,7 @@ def promotion_dry_run(
     if n_steps < int(min_steps):
         ok = False
         reasons.append(f"insufficient_steps:{n_steps}<{min_steps}")
-    if mean_l1 != mean_l1:  # NaN
+    if mean_l1 != mean_l1 or max_l1 != max_l1:  # NaN in either divergence stat
         ok = False
         reasons.append("missing_divergence")
     elif mean_l1 > float(max_mean_l1):

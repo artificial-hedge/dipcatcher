@@ -25,6 +25,7 @@ import math
 import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize as opt
+from scipy import sparse
 from scipy.cluster.hierarchy import leaves_list, linkage
 from scipy.spatial.distance import squareform
 
@@ -37,6 +38,8 @@ def _as_cov(cov: Array) -> Array:
         raise ValueError("cov must be a finite square matrix (n >= 2)")
     if np.max(np.abs(m - m.T)) > 1e-6 * max(1.0, float(np.abs(m).max())):
         raise ValueError("cov must be symmetric")
+    if np.linalg.eigvalsh(m).min() < -1e-12 * max(float(np.abs(m).max()), 1e-12):
+        raise ValueError("cov must be positive semidefinite")
     return m
 
 
@@ -62,7 +65,7 @@ def _cov_to_corr(cov: Array) -> Array:
     sd = np.sqrt(np.diag(cov))
     if np.any(sd <= 0.0):
         raise ValueError("cov must have positive diagonal")
-    return cov / np.outer(sd, sd)
+    return np.asarray(cov / np.outer(sd, sd), dtype=float)
 
 
 def inverse_volatility(cov: Array) -> Array:
@@ -134,8 +137,7 @@ def equal_risk_contribution(cov: Array, x0: Array | None = None) -> Array:
         total = float(rc.sum())
         if total <= 0.0:
             return 1e6
-        target = total / n
-        return float(np.sum((rc - target) ** 2))
+        return float(np.sum((rc / total - 1.0 / n) ** 2))
 
     start = inverse_volatility(m) if x0 is None else np.asarray(x0, dtype=float).reshape(-1)
     if start.size != n or not np.all(np.isfinite(start)) or np.any(start <= 0.0):
@@ -148,7 +150,9 @@ def equal_risk_contribution(cov: Array, x0: Array | None = None) -> Array:
         constraints=[{"type": "eq", "fun": lambda w: float(w.sum() - 1.0)}],
         options={"maxiter": 500, "ftol": 1e-14},
     )
-    w = np.clip(res.x, 0.0, None)
+    if not res.success:
+        raise ValueError(f"portfolio optimization failed: {res.message}")
+    w: Array = np.clip(np.asarray(res.x, dtype=float), 0.0, None)
     s = w.sum()
     if s <= 0.0:
         raise ValueError("ERC optimization failed to find feasible weights")
@@ -180,7 +184,9 @@ def maximum_diversification(cov: Array) -> Array:
         constraints=[{"type": "eq", "fun": lambda w: float(w.sum() - 1.0)}],
         options={"maxiter": 500, "ftol": 1e-12},
     )
-    w = np.clip(res.x, 0.0, None)
+    if not res.success:
+        raise ValueError(f"portfolio optimization failed: {res.message}")
+    w: Array = np.clip(np.asarray(res.x, dtype=float), 0.0, None)
     s = w.sum()
     if s <= 0.0:
         raise ValueError("max-diversification optimization failed")
@@ -283,10 +289,11 @@ def cvar_minimization(
     # Variables: [w (n), zeta (1), u_t (t)]
     c = np.concatenate([np.zeros(n), [1.0], np.full(t, 1.0 / (t * (1.0 - alpha)))])
     # u_t >= -r_t'w - zeta  ->  -r_t'w - zeta - u_t <= 0
-    a_ub = np.zeros((t, n + 1 + t))
-    a_ub[:, :n] = -r
-    a_ub[:, n] = -1.0
-    a_ub[:, n + 1 :] = -np.eye(t)
+    # Sparse auxiliaries keep scenario storage O(T*N), rather than O(T**2).
+    a_ub = sparse.hstack(
+        [sparse.csr_matrix(-r), sparse.csr_matrix(-np.ones((t, 1))), -sparse.eye(t)],
+        format="csr",
+    )
     b_ub = np.zeros(t)
     bounds: list[tuple[float | None, float | None]] = [
         (0.0, 1.0) if long_only else (None, None)
@@ -296,10 +303,12 @@ def cvar_minimization(
     a_eq[0, :n] = 1.0
     b_eq = [1.0]
     if target_return is not None:
+        if not np.isfinite(target_return):
+            raise ValueError("target_return must be finite")
         mu = r.mean(axis=0)
         row = np.zeros(n + 1 + t)
         row[:n] = mu
-        a_ub = np.vstack([a_ub, -row[np.newaxis, :]])
+        a_ub = sparse.vstack([a_ub, sparse.csr_matrix(-row[np.newaxis, :])], format="csr")
         b_ub = np.concatenate([b_ub, [-float(target_return)]])
     res = opt.linprog(
         c,
@@ -318,9 +327,10 @@ def cvar_minimization(
         raise ValueError("CVaR LP returned zero portfolio")
     w = w / w.sum()
     losses = -(r @ w)
-    var_alpha = float(np.quantile(losses, alpha))
-    tail = losses[losses >= var_alpha]
-    cvar = float(tail.mean()) if tail.size else var_alpha
+    var_alpha = float(np.quantile(losses, alpha, method="inverted_cdf"))
+    # Empirical ES includes fractional mass at VaR; averaging all tail rows
+    # is wrong when T*(1-alpha) is nonintegral or losses tie at the boundary.
+    cvar = var_alpha + float(np.maximum(losses - var_alpha, 0).mean()) / (1 - alpha)
     return w, cvar
 
 
