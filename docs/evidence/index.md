@@ -4356,6 +4356,242 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `research_only`: true
 - `schema`: monitor_run.v1
 
+### `receipts/panel_audit_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/panel_audit_real_drill.json | 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de | 3cd9ced55512a1e1d1a2f87f0c881133172876c91695859c6147611c350c6eda | not_checked | absent | inputs_sha256=953f758d16172c6a82452e2219903e5898aa1872e8ddd56c48c01eb3335592db | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `symbols_sampled`:
+    - A
+    - ALB
+    - APTV
+    - BLK
+    - CDW
+    - CNP
+    - D
+    - DVA
+    - ERIE
+    - FFIV
+    - GOOGL
+    - HST
+    - IT
+    - KMX
+    - LVS
+    - MLM
+    - NCLH
+    - NXPI
+    - PGR
+    - PWR
+    - SHW
+    - SYF
+    - TROW
+    - URI
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - bernoulli_lr_bet
+  - exact_evalue_under_h0
+  - evalue_arithmetic_mean_valid_under_arbitrary_dependence
+  - bonferroni_family_bound
+  - cross_sectional_panel
+- `excluded_heads`:
+  - nbeats
+  - nhits
+  - lgbm_q2
+- `family`:
+  - `bonferroni_threshold`: 240.0
+  - `family_alarmed`: true
+  - `max_head_pooled_evalue`: 2.7684869400254558e+47
+- `heads`:
+  - [0]
+    - `alarm_share`: 0.9583333333333334
+    - `head`: fhs_skew
+    - `mean_breach_rate`: 0.49291666666666667
+    - `n_symbols`: 24
+    - `pooled_evalue`: 2.7684869400254558e+47
+  - [1]
+    - `alarm_share`: 1.0
+    - `head`: qar
+    - `mean_breach_rate`: 0.43180555555555555
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.556932348136527e+40
+  - [2]
+    - `alarm_share`: 1.0
+    - `head`: gmm
+    - `mean_breach_rate`: 0.4315277777777778
+    - `n_symbols`: 24
+    - `pooled_evalue`: 5.838398290990208e+39
+  - [3]
+    - `alarm_share`: 1.0
+    - `head`: hstep_t
+    - `mean_breach_rate`: 0.4365277777777778
+    - `n_symbols`: 24
+    - `pooled_evalue`: 5.838392834530039e+39
+  - [4]
+    - `alarm_share`: 0.9583333333333334
+    - `head`: conf_t
+    - `mean_breach_rate`: 0.39013888888888887
+    - `n_symbols`: 24
+    - `pooled_evalue`: 2.2330077573194367e+39
+  - [5]
+    - `alarm_share`: 1.0
+    - `head`: skew_t
+    - `mean_breach_rate`: 0.43388888888888894
+    - `n_symbols`: 24
+    - `pooled_evalue`: 8.21040798410437e+38
+  - [6]
+    - `alarm_share`: 1.0
+    - `head`: hstep_emp
+    - `mean_breach_rate`: 0.43027777777777776
+    - `n_symbols`: 24
+    - `pooled_evalue`: 3.079063381441966e+38
+  - [7]
+    - `alarm_share`: 1.0
+    - `head`: isotonic
+    - `mean_breach_rate`: 0.43027777777777776
+    - `n_symbols`: 24
+    - `pooled_evalue`: 3.079063381441966e+38
+  - [8]
+    - `alarm_share`: 1.0
+    - `head`: empirical
+    - `mean_breach_rate`: 0.43027777777777776
+    - `n_symbols`: 24
+    - `pooled_evalue`: 3.079063381441966e+38
+  - [9]
+    - `alarm_share`: 1.0
+    - `head`: regime
+    - `mean_breach_rate`: 0.41097222222222224
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.154585451041205e+38
+  - [10]
+    - `alarm_share`: 1.0
+    - `head`: stack
+    - `mean_breach_rate`: 0.4261111111111111
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.2040355227282502e+35
+  - [11]
+    - `alarm_share`: 0.9166666666666666
+    - `head`: gaussian
+    - `mean_breach_rate`: 0.35986111111111113
+    - `n_symbols`: 24
+    - `pooled_evalue`: 1.2040354966421244e+35
+- `kind`: panel_audit.v1
+- `level`: 0.8
+- `n_cells_ok`: 288
+- `n_cells_total`: 288
+- `n_heads`: 12
+- `n_symbols`: 24
+- `params`:
+  - `data_labels`:
+    - `yahoo_eod`: 288
+  - `pooling`: arithmetic_mean_evalues
+- `receipt_sha256`: 3cd9ced55512a1e1d1a2f87f0c881133172876c91695859c6147611c350c6eda
+- `research_only`: true
+- `schema`: panel_audit.v1
+- `symbols`:
+  - [0]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.429491576443706e+47
+    - `shard`: HST
+  - [1]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.0737094272933634e+46
+    - `shard`: NCLH
+  - [2]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.1197124264891178e+43
+    - `shard`: SYF
+  - [3]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.6420429716062135e+39
+    - `shard`: LVS
+  - [4]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 6.421472988416791e+35
+    - `shard`: NXPI
+  - [5]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.3242762948799495e+31
+    - `shard`: BLK
+  - [6]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 4.9660362126001744e+30
+    - `shard`: MLM
+  - [7]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 1.8622635396749235e+30
+    - `shard`: URI
+  - [8]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.178795431934382e+27
+    - `shard`: CDW
+  - [9]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.178795320218089e+27
+    - `shard`: GOOGL
+  - [10]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 2.7310264681205572e+26
+    - `shard`: APTV
+  - [11]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 8.940596876708958e+24
+    - `shard`: CNP
+  - [12]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.400741731960286e+24
+    - `shard`: ALB
+  - [13]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.400676764568877e+24
+    - `shard`: PWR
+  - [14]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5.632051996390216e+21
+    - `shard`: D
+  - [15]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 2.9700263502236405e+20
+    - `shard`: TROW
+  - [16]
+    - `n_heads_alarmed`: 11
+    - `pooled_evalue`: 4.176599515002312e+19
+    - `shard`: A
+  - [17]
+    - `n_heads_alarmed`: 10
+    - `pooled_evalue`: 8.259388708223693e+17
+    - `shard`: DVA
+  - [18]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 8.259388690830621e+17
+    - `shard`: SHW
+  - [19]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 3.2606400804820486e+17
+    - `shard`: PGR
+  - [20]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 5831117250221637.0
+    - `shard`: IT
+  - [21]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 17041822305849.928
+    - `shard`: ERIE
+  - [22]
+    - `n_heads_alarmed`: 11
+    - `pooled_evalue`: 51790425467.30482
+    - `shard`: KMX
+  - [23]
+    - `n_heads_alarmed`: 12
+    - `pooled_evalue`: 9059835319.321789
+    - `shard`: FFIV
+
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
