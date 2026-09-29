@@ -47,6 +47,9 @@ class CrossSectionalPanel:
 
     ``signal`` is observed at date ``t`` before the horizon-``h`` forward
     return ``fwd[t, i, h]`` is realized — no look-ahead inside a shard.
+
+    ``data_label`` declares the provenance the receipt will carry —
+    constructors must name their source; the bench refuses a mixed corpus.
     """
 
     dates: NDArray[Any]
@@ -54,6 +57,11 @@ class CrossSectionalPanel:
     signal: Array
     forward: dict[int, Array]
     description: str
+    data_label: str
+
+    def __post_init__(self) -> None:
+        if not str(self.data_label).strip():
+            raise ValueError("data_label must be a nonempty string")
 
 
 PanelGenerator = Callable[[int, int, int, Sequence[int]], CrossSectionalPanel]
@@ -127,6 +135,7 @@ def _panel(
         signal=signal,
         forward=forward,
         description=f"{name}: {description}",
+        data_label="SYNTHETIC",
     )
 
 
@@ -308,6 +317,7 @@ def run_cross_sectional_bench(
         shard_seed = int(seed) + 104729 * shard_index
         panel = generator(n_dates, n_assets, shard_seed, horizons)
         panel_meta[name] = {
+            "data_label": str(panel.data_label),
             "n_dates": n_dates,
             "n_assets": n_assets,
             "seed": shard_seed,
@@ -385,6 +395,13 @@ def run_cross_sectional_bench(
     }
     frame = pl.DataFrame(rows, schema=schema, orient="row").select(columns)
 
+    labels = {str(meta["data_label"]) for meta in panel_meta.values()}
+    if len(labels) > 1:
+        raise ValueError(
+            "panels carry mixed data_label values "
+            f"{sorted(labels)}; run mixed corpora as separate receipts"
+        )
+    data_label = next(iter(labels)) if labels else "UNKNOWN"
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
@@ -406,7 +423,7 @@ def run_cross_sectional_bench(
     receipt: dict[str, Any] = {
         "schema": RANKIC_SCHEMA,
         "kind": "cross_sectional_rankic_eval",
-        "data_label": "SYNTHETIC",
+        "data_label": data_label,
         "live_pnl_claim": False,
         "generated_at": datetime.now(UTC).isoformat(),
         "git_revision": git_revision(),
