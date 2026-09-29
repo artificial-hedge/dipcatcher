@@ -159,8 +159,11 @@ def test_committed_page_matches_the_generator_and_the_reality_receipt() -> None:
     assert json.dumps(prereg["reality_filter"]["dsr_pass"]) in text
     rows, _notes = collect_batches(_ROOT)
     assert_pending_has_no_measured_figures(rows)
-    pending = next(row for row in rows if isinstance(row, BatchRow) and row.pending)
-    assert pending.batch == SURVIVORSHIP_PR
+    pending_rows = [row for row in rows if isinstance(row, BatchRow) and row.pending]
+    if pending_rows:
+        # the draft stub only exists until a survivorship receipt lands —
+        # once realized, the pending row is intentionally absent
+        assert all(row.batch == SURVIVORSHIP_PR for row in pending_rows)
     scrubbed = re.sub(r"live_pnl_claim", "", text, flags=re.IGNORECASE)
     tokens = {token.lower() for token in re.split(r"[^A-Za-z]+", scrubbed) if token}
     assert tokens.isdisjoint(FORBIDDEN_RESEARCH_METRIC_KEYS)

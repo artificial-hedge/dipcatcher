@@ -70,6 +70,18 @@ def _install_corpus_module(
     mod = types.ModuleType(CORPUS_MODULE)
     mod.corpus_audit = _fake_corpus_audit
     mod.harvest_findings = harvest or (lambda payload, source: list(payload.get("findings", [])))
+
+    def _write(receipt: Any, receipts_dir: Any, *, receipt_version: int = 1) -> Path:
+        from quant_fund.research.receipt_v2 import seal_receipt
+
+        sealed = seal_receipt(dict(receipt))
+        digest = str(receipt.get("inputs_sha256", ""))[:16]
+        path = Path(receipts_dir) / f"corpus_inference_{digest}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(sealed))
+        return path
+
+    mod.write_corpus_receipt = _write
     monkeypatch.setitem(sys.modules, CORPUS_MODULE, mod)
 
 
@@ -107,6 +119,18 @@ def _install_online_module(monkeypatch: pytest.MonkeyPatch) -> None:
     _FakeOnlineFDR.instances = []
     mod = types.ModuleType(ONLINE_MODULE)
     mod.OnlineFDR = _FakeOnlineFDR
+
+    def _write(receipt: Any, receipts_dir: Any, *, receipt_version: int = 1) -> Path:
+        from quant_fund.research.receipt_v2 import seal_receipt
+
+        sealed = seal_receipt(dict(receipt))
+        digest = str(receipt.get("inputs_sha256", ""))[:16]
+        path = Path(receipts_dir) / f"online_fdr_{digest}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(sealed))
+        return path
+
+    mod.write_online_fdr_receipt = _write
     monkeypatch.setitem(sys.modules, ONLINE_MODULE, mod)
 
 

@@ -155,7 +155,9 @@ class TestReceipt:
         _, receipt = run_capacity_bench(seed=5, n_dates=30, n_names=6)
         p1 = write_capacity_receipt(receipt, tmp_path)
         tampered = dict(receipt)
-        tampered["results"] = list(receipt["results"]) + [{"book": "x"}]
+        # tamper a digest-bound field the contract leaves unconstrained —
+        # a contract-invalid receipt is refused outright (separate test).
+        tampered["seed"] = 999
         p2 = write_capacity_receipt(tampered, tmp_path)
         assert p1 != p2 and p1.exists()
 
