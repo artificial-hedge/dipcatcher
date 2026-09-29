@@ -127,3 +127,52 @@ def test_tau_validation_fails_closed() -> None:
         )
     with pytest.raises(ValueError, match="level"):
         monitor_fleet({"a": _GaussianFactory(1.0)}, _shards(), level=1.2)
+
+
+def _labeled_shard(label: str):
+    def gen(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(
+            name="lab",
+            x=np.zeros((n, 1)),
+            y=rng.normal(0.0, 1.0, n),
+            config={"data_label": label},
+        )
+
+    return gen
+
+
+def test_data_label_derived_from_shards_not_hardcoded() -> None:
+    _, receipt = monitor_fleet(
+        {"a": _GaussianFactory(1.0)},
+        {"real": _labeled_shard("yahoo_eod")},
+        n_train=64,
+        n_eval=32,
+        taus=[0.05, 0.1, 0.5, 0.9, 0.95],
+    )
+    assert receipt["data_label"] == "yahoo_eod"
+    assert receipt["params"]["data_labels"] == {"real": "yahoo_eod"}
+
+
+def test_mixed_data_labels_fail_closed() -> None:
+    with pytest.raises(ValueError, match="mixed data_label"):
+        monitor_fleet(
+            {"a": _GaussianFactory(1.0)},
+            {"s": _shard, "r": _labeled_shard("yahoo_eod")},
+            n_train=64,
+            n_eval=32,
+        )
+
+
+def test_missing_data_label_stamps_unknown() -> None:
+    def unlabeled(n: int, seed: int) -> SyntheticShard:
+        rng = np.random.default_rng(seed)
+        return SyntheticShard(name="u", x=np.zeros((n, 1)), y=rng.normal(0.0, 1.0, n), config={})
+
+    _, receipt = monitor_fleet(
+        {"a": _GaussianFactory(1.0)},
+        {"u": unlabeled},
+        n_train=64,
+        n_eval=32,
+    )
+    assert receipt["data_label"] == "UNKNOWN"
