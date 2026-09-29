@@ -31,7 +31,14 @@ def test_report_shape_and_stamps() -> None:
     assert rep["data_label"] == "SYNTHETIC"
     assert rep["winner"] == "winner"
     assert len(str(rep["inputs_sha256"])) == 64
-    assert set(rep["components"]) == {"winner_curse", "promotion", "drift"}
+    assert set(rep["components"]) == {
+        "winner_curse",
+        "promotion",
+        "drift",
+        "magnitude",
+        "calibration",
+        "localize",
+    }
     assert rep["verdict"] in {
         "confirmed",
         "supported_with_caveats",
@@ -47,7 +54,7 @@ def test_verdict_inconclusive_when_lanes_missing_or_confirmed() -> None:
     unavailable = rep["unavailable_lanes"]
     if unavailable:
         assert rep["verdict"] == "inconclusive"
-        assert set(unavailable) == {"winner_curse", "promotion", "drift"}
+        assert {"winner_curse", "promotion", "drift"} <= set(unavailable)
     else:
         assert rep["verdict"] in {"confirmed", "supported_with_caveats"}
 
@@ -69,7 +76,8 @@ def test_json_serializable() -> None:
     payload = json.loads(honest_verdict_json(_streams(7), n_boot=200))
     assert payload["kind"] == HONEST_VERDICT_SCHEMA
     assert all(
-        isinstance(payload["components"][k], dict) for k in ("winner_curse", "promotion", "drift")
+        isinstance(payload["components"][k], dict)
+        for k in ("winner_curse", "promotion", "drift", "magnitude", "calibration", "localize")
     )
 
 
@@ -91,3 +99,27 @@ def test_fails_closed(scores: dict[str, np.ndarray]) -> None:
 def test_alpha_validated() -> None:
     with pytest.raises(ValueError):
         honest_verdict(_streams(), alpha=1.5, n_boot=200)
+
+
+def test_extension_lanes_never_veto_core_verdict() -> None:
+    """A missing extension lane is recorded but must not flip inconclusive."""
+    rep = honest_verdict(_streams(11), seed=0, n_boot=300)
+    core_missing = {"winner_curse", "promotion", "drift"} & set(rep["unavailable_lanes"])
+    if not core_missing:
+        assert rep["verdict"] != "inconclusive"
+    # extension lanes recorded when absent
+    for lane in ("magnitude", "calibration", "localize"):
+        assert lane in rep["components"]
+
+
+def test_pits_unlock_calibration_lane() -> None:
+    scores = _streams(13)
+    rng = np.random.default_rng(99)
+    rep = honest_verdict(
+        scores, pits={h: rng.uniform(0, 1, 200) for h in scores}, seed=0, n_boot=300
+    )
+    calib = rep["components"]["calibration"]
+    if "calibration" in rep["unavailable_lanes"]:
+        assert calib == {}  # lane absent on this checkout — honest empty detail
+    elif "skipped" not in calib:
+        assert "final_evalue" in calib and "miscalibrated" in calib

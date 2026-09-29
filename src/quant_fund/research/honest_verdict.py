@@ -147,14 +147,87 @@ def _drift_component(
     )
 
 
+def _magnitude_component(
+    scores: dict[str, NDArray[np.floating]], winner: str, runner_up: str | None, alpha: float
+) -> ComponentResult:
+    """Is the winner's edge materially nonzero? betting CS on the diff."""
+    if not isinstance(runner_up, str):
+        return ComponentResult("magnitude", True, detail={"skipped": "no_runner_up"})
+    try:
+        from quant_fund.research.loss_cs import cs_from_streams
+    except ImportError as exc:
+        return ComponentResult("magnitude", False, error=f"unavailable:{exc.name}")
+    rep = cs_from_streams(
+        np.asarray(scores[winner], dtype=float),
+        np.asarray(scores[runner_up], dtype=float),
+        alpha=alpha,
+    )
+    return ComponentResult("magnitude", True, detail=dict(rep))
+
+
+def _localize_component(
+    scores: dict[str, NDArray[np.floating]], winner: str, alpha: float
+) -> ComponentResult:
+    """When drift fires, where did the stream shift? fixed-window scan."""
+    try:
+        from quant_fund.research.changepoint_localize import localize_changepoint
+    except ImportError as exc:
+        return ComponentResult("localize", False, error=f"unavailable:{exc.name}")
+    diffs = np.diff(np.asarray(scores[winner], dtype=float))
+    res = localize_changepoint(diffs, alpha=alpha)
+    return ComponentResult(
+        "localize",
+        True,
+        detail={
+            "tau_hat": res.tau_hat,
+            "cs_lo": res.cs_lo,
+            "cs_hi": res.cs_hi,
+            "alarmed": res.alarmed,
+        },
+    )
+
+
+def _calibration_component(
+    pits: dict[str, NDArray[np.floating]] | None, winner: str, alpha: float
+) -> ComponentResult:
+    """When PIT values are supplied: is the winner's PIT uniform?"""
+    if pits is None:
+        return ComponentResult("calibration", True, detail={"skipped": "pits_not_supplied"})
+    try:
+        from quant_fund.research.calibration_eprocess import CalibrationEProcess
+    except ImportError as exc:
+        return ComponentResult("calibration", False, error=f"unavailable:{exc.name}")
+    u = np.asarray(pits.get(winner, np.asarray([])), dtype=float)
+    if u.size == 0:
+        return ComponentResult("calibration", True, detail={"skipped": "no_pits"})
+    ep = CalibrationEProcess(alpha=alpha)
+    for ui in u:
+        ep.update(float(ui))
+    return ComponentResult(
+        "calibration",
+        True,
+        detail={
+            "final_evalue": ep.wealth,
+            "miscalibrated": ep.alarmed,
+            "alarm_origin": ep.alarm_origin,
+            "channel_wealths": dict(ep.channel_wealths),
+        },
+    )
+
+
 def honest_verdict(
     scores: dict[str, NDArray[np.floating]],
     *,
+    pits: dict[str, NDArray[np.floating]] | None = None,
     alpha: float = 0.05,
     seed: int = 0,
     n_boot: int = 2000,
 ) -> dict[str, Any]:
-    """Composite verdict over per-head loss streams → honest_verdict.v1."""
+    """Composite verdict over per-head loss streams → honest_verdict.v1.
+
+    ``pits`` is optional: per-head PIT value streams unlock the
+    calibration lane (``calibration_eprocess``) in the composite.
+    """
     if not scores:
         raise ValueError("scores must map at least one head")
     arrays = {h: np.asarray(v, dtype=float).ravel() for h, v in scores.items()}
@@ -175,24 +248,47 @@ def honest_verdict(
 
     promo = _promotion_component(arrays, winner, alpha)
     drift = _drift_component(arrays, winner, alpha)
+    runner = promo.detail.get("runner_up") if promo.available else None
+    magnitude = _magnitude_component(
+        arrays, winner, runner if isinstance(runner, str) else None, alpha
+    )
+    calib = _calibration_component(pits, winner, alpha)
+    # localization only fires when drift alarmed — it answers "where"
+    drifted = drift.available and bool(drift.detail.get("eprocess_alarmed", False))
+    localize = (
+        _localize_component(arrays, winner, alpha)
+        if drifted
+        else ComponentResult("localize", True, detail={"skipped": "no_drift_alarm"})
+    )
 
+    components = [wc, promo, drift, magnitude, calib, localize]
+    # Only the three core lanes veto the verdict; the extension lanes are
+    # recorded in unavailable_lanes but never block (they may not exist on
+    # a checkout that predates them).
     unavailable = [c.name for c in (wc, promo, drift) if not c.available]
+    unavailable += [c.name for c in (magnitude, calib, localize) if not c.available]
 
-    if unavailable:
+    if [c.name for c in (wc, promo, drift) if not c.available]:
         verdict = "inconclusive"
     else:
         promoted = bool(promo.detail.get("promoted", False))
-        drifted = bool(drift.detail.get("eprocess_alarmed", False))
         corrected = float(wc.detail["corrected_score"])
         # Edge erased: corrected winner score at/above runner-up mean.
-        runner = promo.detail.get("runner_up")
         edge_erased = False
         if isinstance(runner, str):
             edge_erased = corrected >= float(arrays[runner].mean())
-        if drifted or edge_erased:
+        miscalibrated = bool(calib.detail.get("miscalibrated", False))
+        cs_excludes_zero = bool(magnitude.detail.get("excludes_zero", False))
+        if drifted or edge_erased or miscalibrated:
             verdict = "not_supported"
         elif promoted:
-            verdict = "confirmed"
+            # only demote when the magnitude lane actually ran and its CS
+            # still contains zero — a missing lane can't disprove size
+            verdict = (
+                "confirmed"
+                if (not magnitude.available or cs_excludes_zero)
+                else "supported_with_caveats"
+            )
         else:
             verdict = "supported_with_caveats"
 
@@ -207,12 +303,15 @@ def honest_verdict(
         "n_obs": n,
         "n_heads": len(arrays),
         "inputs_sha256": _sha256_stream(arrays),
-        "components": {c.name: c.detail for c in (wc, promo, drift)},
+        "components": {c.name: c.detail for c in components},
         "unavailable_lanes": unavailable,
         "evidence": [
             "selection_bias_corrected",
             "anytime_valid_promotion",
             "level_shift_monitor",
+            "magnitude_confidence_sequence",
+            "pit_uniformity_when_supplied",
+            "changepoint_localization_when_drifted",
             "proper_score_only",
         ],
     }
@@ -222,13 +321,14 @@ def honest_verdict(
 def honest_verdict_json(
     scores: dict[str, NDArray[np.floating]],
     *,
+    pits: dict[str, NDArray[np.floating]] | None = None,
     alpha: float = 0.05,
     seed: int = 0,
     n_boot: int = 2000,
 ) -> str:
     """Canonical JSON of the report (sealable / diffable)."""
     return json.dumps(
-        honest_verdict(scores, alpha=alpha, seed=seed, n_boot=n_boot),
+        honest_verdict(scores, pits=pits, alpha=alpha, seed=seed, n_boot=n_boot),
         sort_keys=True,
         default=float,
     )
