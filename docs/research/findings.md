@@ -37,4 +37,16 @@ does not score them.
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/incumbent_bench_qlib.json`: incumbent_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/rankic_eval_9ebdad7da83e7348.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_140b073ea589b0c7.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_1e8e1446e506fce1.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_2c14615c26efd19b.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_46445c3b227aa15e.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_47297eff3cb55178.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_4f4a495b59d022fb.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_771602cd1580476c.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_85db152db863d25d.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_8977244ef78bfd2f.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_a6fd40311ce0fa04.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_d311f5ea367a66a9.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_dbd21a6c99c81e00.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - draft PR #202 survivorship-corrected batch: not on this tree; listed as pending, not merged, with no measured figures
