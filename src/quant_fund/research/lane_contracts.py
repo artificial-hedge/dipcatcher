@@ -251,4 +251,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.xwatch import xwatch_contract_errors
 
         return xwatch_contract_errors(payload)
+    if schema == "tamper_drill.v1" or payload.get("kind") == "tamper_drill":
+        from quant_fund.research.tamper_drill import drill_contract_errors
+
+        return drill_contract_errors(payload)
     return []

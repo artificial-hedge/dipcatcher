@@ -102,7 +102,15 @@ def verify_repo(
     }
 
     pin_present = pin_path.is_file()
-    heads = load_heads_pin(pin_path) if pin_present else {}
+    pin_parse_error: str | None = None
+    if pin_present:
+        try:
+            heads = load_heads_pin(pin_path)
+        except (OSError, ValueError, json.JSONDecodeError):
+            heads = {}
+            pin_parse_error = f"heads_pin_malformed:{heads_pin}"
+    else:
+        heads = {}
     for corpus_dir, pattern, require_stamped, allow_updates in CORPORA:
         cdir = root / corpus_dir
         if not cdir.is_dir():
@@ -114,6 +122,9 @@ def verify_repo(
         if not pin_present:
             expected = None
             pin_errors = [f"heads_pin_missing:{heads_pin}"]
+        elif pin_parse_error is not None:
+            expected = None
+            pin_errors = [pin_parse_error]
         else:
             expected = heads.get(epoch_heads_key(corpus_dir, pattern))
             pin_errors = (

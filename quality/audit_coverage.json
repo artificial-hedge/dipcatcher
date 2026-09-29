@@ -175,7 +175,7 @@
   },
   "research": {
    "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 122,
+   "n_modules": 123,
    "status": "audited"
   },
   "risk": {

@@ -2177,3 +2177,34 @@ def verify_bundle_cmd(
         typer.echo(f"  {err}")
     if not res["ok"]:
         raise typer.Exit(code=1)
+
+
+@app.command("tamper-drill")
+def tamper_drill_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo tree to clone + attack."),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed tamper_drill.v1 receipt here (e.g. quality/).",
+    ),
+) -> None:
+    """Mutation-drill the integrity substrate: clone the state, attack every
+    layer (pins, jewels, chains, checkpoint, witness proofs, corpus members),
+    and prove ``verify-repo`` catches each one. A probe that escapes is the
+    finding — the receipt only seals ``fail_closed`` when all were caught."""
+    from quant_fund.research.tamper_drill import tamper_drill, write_drill_receipt
+
+    result = tamper_drill(root)
+    typer.echo(format_data_label(synthetic=True, data_source="CORPUS"))
+    typer.echo(
+        f"tamper-drill: {result['n_caught']}/{result['n_probes']} probes caught "
+        f"— verdict={result['verdict']}"
+    )
+    for p in result["probes"]:
+        if not p.get("caught"):
+            typer.echo(f"  ESCAPED: {p['probe']} {p.get('errors', p.get('error'))}")
+    if out is not None:
+        path = write_drill_receipt(result, out)
+        typer.echo(f"receipt={path}")
+    if not result["ok"]:
+        raise typer.Exit(code=1)
