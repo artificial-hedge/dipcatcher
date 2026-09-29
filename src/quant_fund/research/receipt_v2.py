@@ -500,9 +500,12 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.fleet_eval import fleet_v1_contract_errors
 
         errors.extend(fleet_v1_contract_errors(payload))
+    elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
+        from quant_fund.data.ingest import data_manifest_contract_errors
+
+        errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
         from quant_fund.paper.sim_live import sim_live_contract_errors
-
         errors.extend(sim_live_contract_errors(payload))
     if payload.get("schema") == "cost_calibration.v1":
         from quant_fund.research.cost_calibration import (
@@ -513,9 +516,12 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     from quant_fund.research.lane_contracts import lane_contract_errors
 
     errors.extend(lane_contract_errors(payload))
+    if payload.get("catalog") == "hedge_lab_analytics":
+        from quant_fund.hedge_lab._receipt import lane_receipt_contract_errors
+
+        errors.extend(lane_receipt_contract_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
-
         errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
@@ -534,7 +540,10 @@ def verify_receipt_payload(
     path = Path(path)
     if not isinstance(payload, dict):
         return _result(path, payload, None, ["receipt_not_object"])
-    if payload.get("schema") == RECEIPT_V2_SCHEMA or payload.get("schema_version") == 2:
+    # The v2 marker is the `schema: "receipt.v2"` tag alone — `schema_version`
+    # is a per-format counter (e.g. data-source receipts use 2 without being
+    # receipt.v2 envelopes), so it cannot dispatch on its own.
+    if payload.get("schema") == RECEIPT_V2_SCHEMA:
         return _verify_v2(path, payload)
     return _verify_v1(path, payload)
 

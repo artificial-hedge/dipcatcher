@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict
 from quant_fund.backtest.engine import run_backtest
 from quant_fund.config.models import AppConfig
 from quant_fund.data.lake import Lake
+from quant_fund.hedge_lab._receipt import seal_receipt
 from quant_fund.hedge_lab.mirror import negate_target_weights
 from quant_fund.hedge_lab.resources import (
     assert_disk_budget,
@@ -382,13 +383,14 @@ def run_hedge_lab(
         ),
     }
     dest = root / "metadata" / "hedge_lab_receipt.json"
-    payload = json.dumps(receipt, indent=2, default=str)
+    sealed = seal_receipt(receipt)
+    payload = json.dumps(sealed, indent=2, default=str)
     atomic_write_text(dest, payload)
     published = dest
     for art in arts:
         published = art / "latest.json"
         atomic_write_text(published, payload)
-    receipt["receipt_path"] = str(dest)
-    receipt["artifact_path"] = str(published)
+    sealed["receipt_path"] = str(dest)
+    sealed["artifact_path"] = str(published)
     del claimed
-    return receipt
+    return sealed
