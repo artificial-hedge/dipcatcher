@@ -9,8 +9,9 @@ iteration.
 
 Scope (fail-closed): this path exists for the matched-workload class used by
 the incumbent benchmarks — target-weight panels, market fills, the full
-``CostConfig`` surface, and the full ``RiskGateConfig`` surface. It refuses
-configs it does not replicate (``allow_close_auction=True``).
+flat ``CostConfig`` surface, and the full ``RiskGateConfig`` surface. It
+refuses configs it does not replicate (``allow_close_auction=True``,
+OHLC spread calibration via ``costs.spread_estimator != "flat"``).
 
 Float-order contract: NAV and exposure sums follow the reference engine's
 summation orders — shares-dict insertion order for book NAV, sorted
@@ -40,9 +41,11 @@ from quant_fund.backtest.engine import (
     _fast_replay_is_complete,
     _fast_replay_panel_supported,
     _target_weight_map,
+    _validate_bar_panel,
     run_backtest,
 )
 from quant_fund.config.models import AppConfig, FillConvention
+from quant_fund.execution.spread_calibration import is_calibrated_spread_estimator
 from quant_fund.monitoring.kill_switch import KillSwitch
 from quant_fund.portfolio.risk_gate import LIMIT_ABS_SLACK, LIMIT_REL_SLACK, exceeds_limit, funded
 from quant_fund.schemas.errors import KillSwitchActive
@@ -907,9 +910,18 @@ def run_backtest_fast(
     """
     if config.execution.allow_close_auction:
         raise ValueError("fast replay does not support allow_close_auction")
+    if is_calibrated_spread_estimator(config.costs.spread_estimator):
+        raise ValueError(
+            "fast replay does not support OHLC spread calibration "
+            f"(spread_estimator={config.costs.spread_estimator!r}); "
+            "use run_backtest(..., fast=False) for the calibrated cost path"
+        )
     if risk_overlay is not None:
         raise ValueError("fast replay does not support risk_overlay")
     _validate_panel_fast(weights)
+    # Shared with the event loop: duplicate bar keys raise the same
+    # ValueError("duplicate bars …") rather than a fast-only refuse string.
+    _validate_bar_panel(bars)
     # Panel-shape and completeness refusals mirror the dispatcher's, so a
     # direct call is guarded exactly like run_backtest(fast=True). Without
     # them the matrices would silently collapse duplicate bar keys, align
