@@ -40,6 +40,7 @@ from quant_fund.backtest.engine import (
     _fast_replay_is_complete,
     _fast_replay_panel_supported,
     _target_weight_map,
+    _validate_bar_panel,
     run_backtest,
 )
 from quant_fund.config.models import AppConfig, FillConvention
@@ -414,6 +415,11 @@ def _replay_kernel(
     for i in range(last_i):
         exec_t = i + 1 if use_next_open else i
 
+        # Sizing NAV must not see this bar's close. Snapshot the marks
+        # knowable before the fill, then update last_mark for the close.
+        pre_mark = last_mark.copy()
+        pre_ever = ever_marked.copy()
+
         # --- mark update ------------------------------------------------
         for a in range(n_assets):
             c_ok = np.isfinite(ctr[exec_t, a]) and ctr[exec_t, a] > 0
@@ -466,12 +472,15 @@ def _replay_kernel(
             )
 
         # --- nav at execution marks --------------------------------------
+        # Names without an execution print stay on the pre-bar mark.
+        # last_mark already holds this bar's close; using it here leaks
+        # that close into order sizing (AUDIT_P61 finding 7).
         for a in range(n_assets):
             e_ok = np.isfinite(exec_px[exec_t, a]) and exec_px[exec_t, a] > 0
             if e_ok:
                 npv[a] = exec_px[exec_t, a]
-            elif ever_marked[a]:
-                npv[a] = last_mark[a]
+            elif pre_ever[a]:
+                npv[a] = pre_mark[a]
             else:
                 npv[a] = 0.0
         any_share_np64 = False
@@ -902,6 +911,9 @@ def run_backtest_fast(
     if risk_overlay is not None:
         raise ValueError("fast replay does not support risk_overlay")
     _validate_panel_fast(weights)
+    # Shared with the event loop: duplicate bar keys raise the same
+    # ValueError("duplicate bars …") rather than a fast-only refuse string.
+    _validate_bar_panel(bars)
     # Panel-shape and completeness refusals mirror the dispatcher's, so a
     # direct call is guarded exactly like run_backtest(fast=True). Without
     # them the matrices would silently collapse duplicate bar keys, align
@@ -1105,9 +1117,13 @@ def run_backtest_fast(
 
             # --- mark update (close_total_return preferred, close fallback) ----
             marked_today = ctr_ok_m[exec_t] | close_ok_m[exec_t]
+            # Pre-bar marks for sizing. ``np.where`` / ``|`` allocate, so
+            # these names keep the arrays from before today's close update.
+            pre_mark = last_mark
+            pre_ever = ever_marked
             mark_age = np.where(marked_today, 0, mark_age + 1)
             last_mark = np.where(marked_today, new_mark_m[exec_t], last_mark)
-            ever_marked |= marked_today
+            ever_marked = ever_marked | marked_today
 
             # --- stale-valuation fail-closed on held positions -----------------
             # Detail order follows the reference's two dict passes over
@@ -1136,7 +1152,7 @@ def run_backtest_fast(
             # last ulp. Keep builtin sum over the same insertion-ordered terms
             # for bit-identical floats. NB the compensated path only applies to
             # exact Python floats — np.float64 terms must be coerced per-product.
-            nav_price = np.where(exec_valid, exec_src, np.where(ever_marked, last_mark, 0.0))
+            nav_price = np.where(exec_valid, exec_src, np.where(pre_ever, pre_mark, 0.0))
             # Prices coerce to Python float; shares keep their dict type so a
             # capped fill's np.float64 propagates into products exactly as the
             # reference's does (np.float64 term → sum() degrades to naive).
