@@ -11,6 +11,7 @@ from quant_fund.research.admission import (
     ADMISSION_SCHEMA,
     admission_check,
     admission_contract_errors,
+    admit_batch,
     write_admission_receipt,
 )
 from quant_fund.research.receipt_v2 import seal_receipt, verify_receipt_file
@@ -183,6 +184,81 @@ def test_epoch_chain_check_present_or_skipped(corpus: Path, tmp_path: Path) -> N
         # broken; admissions proceed normally
         assert epoch_check["errors"] == ["no_epoch_receipts"]
         assert result["verdict"] == "admit"
+
+
+def test_admit_batch_committed_candidate_is_not_vacuous(tmp_path: Path) -> None:
+    """A receipt already inside the corpus must still face a real delta.
+
+    Single-candidate ``admission_check`` on a committed file is vacuous on
+    the lattice check (before == after — the candidate is already a member).
+    ``admit_batch`` strips the changed names from the shadow corpus first.
+    """
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    contra = _write(corpus, "contra.json", _claim_body(9.9, dataset="cd" * 32))
+    _write(corpus, "a.json", _claim_body(1.0))
+    _write(corpus, "b.json", _claim_body(1.0))
+
+    # Single admission against the live corpus: vacuous admit (the
+    # contradictory file is already in both sides of the delta).
+    solo = admission_check(contra, corpus)
+    assert not solo["lattice_new_inconsistent"]
+
+    batch = admit_batch([contra], corpus)
+    assert batch["verdict"] == "quarantine"
+    assert batch["results"][0]["lattice_new_inconsistent"]
+
+
+def test_admit_batch_intra_diff_contradiction(tmp_path: Path) -> None:
+    """Two new receipts contradicting each other: the later file draws the flag."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _write(corpus, "a.json", _claim_body(1.0))
+    inbox = tmp_path / "inbox"
+    inbox.mkdir()
+    first = _write(inbox, "m1.json", _claim_body(1.0, dataset="cd" * 32, inputs="dd" * 32))
+    second = _write(inbox, "m2.json", _claim_body(9.9, dataset="cd" * 32, inputs="ee" * 32))
+
+    batch = admit_batch([second, first], corpus)  # order-independence: sorted by name
+    assert batch["verdict"] == "quarantine"
+    by_name = {r["candidate"]: r["verdict"] for r in batch["results"]}
+    assert by_name["m1.json"] == "admit"
+    assert by_name["m2.json"] == "quarantine"
+    assert batch["failures"] == ["m2.json"]
+
+
+def test_admit_batch_reject_dominates(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _write(corpus, "a.json", _claim_body(1.0))
+    inbox = tmp_path / "inbox"
+    inbox.mkdir()
+    good = _write(inbox, "g.json", _claim_body(2.0, dataset="ee" * 32, inputs="ff" * 32))
+    forged = _write(inbox, "f.json", _claim_body(1.0, dataset="ee" * 32, inputs="ab" * 32))
+    doc = json.loads(forged.read_text())
+    doc["results"][0]["qlike"] = 999.0
+    forged.write_text(json.dumps(doc))
+
+    batch = admit_batch([good, forged], corpus)
+    assert batch["verdict"] == "reject"
+    assert batch["n_candidates"] == 2
+    # f.json is rejected on its broken seal; it still lands in the shadow
+    # (post-merge coexistence), so g.json — whose dataset group now contains
+    # the forged claim — quarantines on the lattice delta. The batch as a
+    # whole must not merge, and both files carry their own verdict.
+    by_name = {r["candidate"]: r["verdict"] for r in batch["results"]}
+    assert by_name == {"f.json": "reject", "g.json": "quarantine"}
+    assert set(batch["failures"]) == {"f.json", "g.json"}
+
+
+def test_admit_batch_fails_closed(tmp_path: Path) -> None:
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    with pytest.raises(ValueError, match="does not exist"):
+        admit_batch([tmp_path / "nope.json"], corpus)
+    candidate = _write(tmp_path, "c.json", _claim_body(1.0))
+    with pytest.raises(ValueError, match="does not exist"):
+        admit_batch([candidate], tmp_path / "nope")
 
 
 def test_epoch_chain_fields_contract() -> None:

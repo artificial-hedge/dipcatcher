@@ -26,7 +26,7 @@ import json
 import os
 import shutil
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -267,6 +267,71 @@ def admission_check(
         "survivors_added": added,
         "survivors_removed": removed,
         "verdict": verdict,
+    }
+
+
+def admit_batch(
+    candidates: Iterable[Path | str],
+    corpus_dir: Path | str = Path("receipts"),
+    *,
+    q: float = 0.05,
+    known_inconsistent: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Gate a set of incoming receipts the way a merge actually lands them.
+
+    ``admission_check`` on an already-committed receipt has a vacuous lattice
+    check: the candidate is already inside the corpus, so before == after and
+    no delta is observable. For a diff of N changed receipts the honest gate
+    is sequential — each candidate is checked against
+
+        corpus − {all changed names} ∪ {changed files processed so far}
+
+    which is exactly the intermediate state each file creates, so
+    intra-diff contradictions are attributed to the file that introduces
+    them and no commit sneaks a contradiction in inside a batch.
+
+    Only top-level ``*.json`` members of the corpus are gated: quarantined
+    subtrees (``legacy-unsealed/``) and non-receipt files are not corpus
+    members and are skipped — they carry their own byte-pins elsewhere.
+
+    Fails closed: a missing candidate, a candidate inside the corpus under a
+    *different* name, or an unreadable corpus dir raises.
+    """
+    corpus_dir = Path(corpus_dir)
+    if not corpus_dir.is_dir():
+        raise ValueError(f"corpus dir {corpus_dir} does not exist")
+    ordered = sorted((Path(c) for c in candidates), key=lambda p: p.name)
+    for cand in ordered:
+        if not cand.is_file():
+            raise ValueError(f"candidate receipt {cand} does not exist")
+
+    changed_names = {c.name for c in ordered}
+    shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
+    for path in sorted(corpus_dir.glob("*.json")):
+        if path.is_file() and path.name not in changed_names:
+            _link_or_copy(path, shadow / path.name)
+
+    results: list[dict[str, Any]] = []
+    for cand in ordered:
+        result = admission_check(cand, shadow, q=q, known_inconsistent=known_inconsistent)
+        results.append(result)
+        # Post-merge coexistence: a merged diff lands all of its files
+        # together, so each later candidate must clear a corpus that already
+        # contains the earlier ones — whatever verdict they drew.
+        _link_or_copy(cand, shadow / cand.name)
+
+    verdicts = [r["verdict"] for r in results]
+    if "reject" in verdicts:
+        verdict = "reject"
+    elif "quarantine" in verdicts:
+        verdict = "quarantine"
+    else:
+        verdict = "admit"
+    return {
+        "verdict": verdict,
+        "n_candidates": len(ordered),
+        "results": results,
+        "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }
 
 
