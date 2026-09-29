@@ -803,6 +803,62 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.00012397308872545248
   - 0.00011681797278370385
 
+### `receipts/calib_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/calib_real_drill.json | 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c | 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370 | not_checked | absent | inputs_sha256=1c11a0367aa3ca772482ebd4f0e4a60ccc4c88680f185c1c19ffc5c66f081deb | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - ville_inequality
+  - nonnegative_test_martingale
+  - fixed_predictable_bets
+  - level_test_not_change_test
+- `generated_at_commit`: dc1e47215d316108cbd403ee0c6ad2c91ee742bb
+- `kind`: calibration_audit.v1
+- `n_models`: 12
+- `n_shards`: 1
+- `params`:
+  - `alpha`: 0.05
+  - `channels`:
+    - loc_hi
+    - loc_lo
+    - overconf
+    - underconf
+    - grapa_loc
+    - grapa_disp
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
+- `research_only`: true
+- `schema`: calibration_audit.v1
+
 ### `receipts/capacity_eval_cd0854242ed8a9ec.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1085,6 +1141,565 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: capacity_overlay.v1
 - `seed`: 11
 
+### `receipts/coherence_2dd641ab766a536a.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/coherence_2dd641ab766a536a.json | dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd | 2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846 | not_checked | 7219a9de1414cea701fa1a3471e4ca8534583f84 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `coherence.py`: 34426af79063621d753bdb81e35567731206488613bf35d996fb5ed2ed5fc720
+- `data_label`: SYNTHETIC
+- `dataset_hash`: e144858c3049f52e1d8f2612ed7a7e57d806973bed61b6beb6dc6ee4347380f8
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-28T05:23:29.931907+00:00
+- `git_revision`: 7219a9de1414cea701fa1a3471e4ca8534583f84
+- `kind`: coherence_eval
+- `params_hash`: d29eea5b4b60b58d8ed4003ac2ef9085d2b1cf2378332c6d659a4cf94d0d1106
+- `payload`:
+  - `data_label`: SYNTHETIC
+  - `kind`: coherence_eval
+  - `methods`:
+    - direct
+    - naive_sum
+    - independent_mc
+    - copula_mc
+  - `n_error_rows`: 0
+  - `n_eval`: 128
+  - `n_mc`: 512
+  - `n_train`: 384
+  - `panels`:
+    - `gauss_factor`:
+      - `config`:
+        - `data_label`: SYNTHETIC
+        - `df`: null
+        - `generator`: gauss_factor
+        - `rho`: 0.3
+      - `n`: 512
+      - `n_names`: 4
+      - `seed`: 0
+      - `y_sha256`: 413a704b49ca509d4f214d45a19e9ff56751f4fd034ca823ba0a07905686e75a
+    - `heavy_tail_factor`:
+      - `config`:
+        - `data_label`: SYNTHETIC
+        - `df`: 5.0
+        - `generator`: heavy_tail_factor
+        - `rho`: 0.5
+      - `n`: 512
+      - `n_names`: 4
+      - `seed`: 2
+      - `y_sha256`: f53c164baa7befe7267dc66f46e0a85c0575ca6a18076af2f18cd21626bf93ad
+    - `independent`:
+      - `config`:
+        - `data_label`: SYNTHETIC
+        - `df`: null
+        - `generator`: independent
+        - `rho`: 0.0
+      - `n`: 512
+      - `n_names`: 4
+      - `seed`: 1
+      - `y_sha256`: bb4f56c8aee7532f99cb72fae014bc0ba0803ab49dc4ab03b391b0affd4f0816
+    - `regime_copula`:
+      - `config`:
+        - `data_label`: SYNTHETIC
+        - `generator`: regime_copula
+        - `rho_break`:
+          - 0.1
+          - 0.9
+      - `n`: 512
+      - `n_names`: 4
+      - `seed`: 3
+      - `y_sha256`: 4216df759a82d6245551a63ff7f7cccab39bcad2c72e61f602dd99fa14f64c5c
+  - `results`:
+    - [0]
+      - `coverage_80`: 0.828125
+      - `coverage_90`: 0.90625
+      - `crps`: 1.527733912667004
+      - `error`: null
+      - `method`: direct
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: gauss_factor
+      - `pinball_0.05`: 0.336257323222546
+      - `pinball_0.10`: 0.5457259397972611
+      - `pinball_0.25`: 0.9367296280908056
+      - `pinball_0.50`: 1.1256548515465827
+      - `pinball_0.75`: 0.8316299701473925
+      - `pinball_0.90`: 0.49793880903424226
+      - `pinball_0.95`: 0.3049264438052125
+      - `pit_ks`: 0.07741899273173558
+      - `pit_ks_p`: 0.4062767309115065
+      - `status`: ok
+    - [1]
+      - `coverage_80`: 0.9375
+      - `coverage_90`: 0.96875
+      - `crps`: 1.6365584277109817
+      - `error`: null
+      - `method`: naive_sum
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: gauss_factor
+      - `pinball_0.05`: 0.38295045840656994
+      - `pinball_0.10`: 0.6096298489081329
+      - `pinball_0.25`: 0.9835790093938537
+      - `pinball_0.50`: 1.1233532328184062
+      - `pinball_0.75`: 0.9283612112317307
+      - `pinball_0.90`: 0.5970627635234527
+      - `pinball_0.95`: 0.3725064307925114
+      - `pit_ks`: 0.16085769284708307
+      - `pit_ks_p`: 0.0023207300752640103
+      - `status`: ok
+    - [2]
+      - `coverage_80`: 0.7109375
+      - `coverage_90`: 0.7890625
+      - `crps`: 1.5361016857362257
+      - `error`: null
+      - `method`: independent_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: gauss_factor
+      - `pinball_0.05`: 0.4107122982431909
+      - `pinball_0.10`: 0.6148816002949425
+      - `pinball_0.25`: 0.9599023616955286
+      - `pinball_0.50`: 1.114370312777895
+      - `pinball_0.75`: 0.8272810645862314
+      - `pinball_0.90`: 0.48044887932361957
+      - `pinball_0.95`: 0.30611234894604755
+      - `pit_ks`: 0.148437499
+      - `pit_ks_p`: 0.00631348904828366
+      - `status`: ok
+    - [3]
+      - `coverage_80`: 0.8046875
+      - `coverage_90`: 0.8828125
+      - `crps`: 1.53387629489384
+      - `error`: null
+      - `method`: copula_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: gauss_factor
+      - `pinball_0.05`: 0.3469516190383076
+      - `pinball_0.10`: 0.5543394092464821
+      - `pinball_0.25`: 0.936489060326589
+      - `pinball_0.50`: 1.1280232120100429
+      - `pinball_0.75`: 0.8312395825973113
+      - `pinball_0.90`: 0.50873356908363
+      - `pinball_0.95`: 0.30549005938618273
+      - `pit_ks`: 0.085937499
+      - `pit_ks_p`: 0.2843716691394693
+      - `status`: ok
+    - [4]
+      - `coverage_80`: 0.7890625
+      - `coverage_90`: 0.84375
+      - `crps`: 1.348270340459833
+      - `error`: null
+      - `method`: direct
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: independent
+      - `pinball_0.05`: 0.23473572580231133
+      - `pinball_0.10`: 0.408021186744371
+      - `pinball_0.25`: 0.7476148777894998
+      - `pinball_0.50`: 0.9648584050877036
+      - `pinball_0.75`: 0.8258646267698515
+      - `pinball_0.90`: 0.4555088613067841
+      - `pinball_0.95`: 0.27696011547501975
+      - `pit_ks`: 0.11718749900000003
+      - `pit_ks_p`: 0.054718948064996886
+      - `status`: ok
+    - [5]
+      - `coverage_80`: 0.9765625
+      - `coverage_90`: 1.0
+      - `crps`: 1.515989317763184
+      - `error`: null
+      - `method`: naive_sum
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: independent
+      - `pinball_0.05`: 0.3741727013614854
+      - `pinball_0.10`: 0.5941823328720095
+      - `pinball_0.25`: 0.8928674577412994
+      - `pinball_0.50`: 0.9648822994113118
+      - `pinball_0.75`: 0.9142517252654034
+      - `pinball_0.90`: 0.581926817278036
+      - `pinball_0.95`: 0.37148519495676424
+      - `pit_ks`: 0.1782395415636433
+      - `pit_ks_p`: 0.0004985802922539563
+      - `status`: ok
+    - [6]
+      - `coverage_80`: 0.7578125
+      - `coverage_90`: 0.8125
+      - `crps`: 1.357505176998713
+      - `error`: null
+      - `method`: independent_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: independent
+      - `pinball_0.05`: 0.2396529144840202
+      - `pinball_0.10`: 0.40752024382277174
+      - `pinball_0.25`: 0.7478983606423518
+      - `pinball_0.50`: 0.9784169637645517
+      - `pinball_0.75`: 0.8253984770546039
+      - `pinball_0.90`: 0.46097410868041777
+      - `pinball_0.95`: 0.2821839996162492
+      - `pit_ks`: 0.11718749900000003
+      - `pit_ks_p`: 0.054718948064996886
+      - `status`: ok
+    - [7]
+      - `coverage_80`: 0.75
+      - `coverage_90`: 0.8203125
+      - `crps`: 1.3526113786865404
+      - `error`: null
+      - `method`: copula_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: independent
+      - `pinball_0.05`: 0.2340760665621075
+      - `pinball_0.10`: 0.40755832583908347
+      - `pinball_0.25`: 0.7468513881535932
+      - `pinball_0.50`: 0.9665651880804824
+      - `pinball_0.75`: 0.8283738455205474
+      - `pinball_0.90`: 0.46349424267399186
+      - `pinball_0.95`: 0.2787473339763106
+      - `pit_ks`: 0.11718749900000003
+      - `pit_ks_p`: 0.054718948064996886
+      - `status`: ok
+    - [8]
+      - `coverage_80`: 0.796875
+      - `coverage_90`: 0.90625
+      - `crps`: 2.412437033434454
+      - `error`: null
+      - `method`: direct
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: heavy_tail_factor
+      - `pinball_0.05`: 0.4907876287415711
+      - `pinball_0.10`: 0.7841596249015022
+      - `pinball_0.25`: 1.3744341025299498
+      - `pinball_0.50`: 1.701512589039056
+      - `pinball_0.75`: 1.4235154845694344
+      - `pinball_0.90`: 0.8583724803575002
+      - `pinball_0.95`: 0.5258629639966648
+      - `pit_ks`: 0.0652874634561107
+      - `pit_ks_p`: 0.6224317850634448
+      - `status`: ok
+    - [9]
+      - `coverage_80`: 0.8828125
+      - `coverage_90`: 0.9453125
+      - `crps`: 2.442632167016388
+      - `error`: null
+      - `method`: naive_sum
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: heavy_tail_factor
+      - `pinball_0.05`: 0.5336878076450571
+      - `pinball_0.10`: 0.8230553506036653
+      - `pinball_0.25`: 1.3918619908003547
+      - `pinball_0.50`: 1.7019589221593878
+      - `pinball_0.75`: 1.4517724276263029
+      - `pinball_0.90`: 0.8626135799817811
+      - `pinball_0.95`: 0.5374950506402962
+      - `pit_ks`: 0.08650170386846767
+      - `pit_ks_p`: 0.2773182753291171
+      - `status`: ok
+    - [10]
+      - `coverage_80`: 0.6171875
+      - `coverage_90`: 0.6875
+      - `crps`: 2.4837151889399536
+      - `error`: null
+      - `method`: independent_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: heavy_tail_factor
+      - `pinball_0.05`: 0.6014542247793266
+      - `pinball_0.10`: 0.8752245891635577
+      - `pinball_0.25`: 1.4168950201527717
+      - `pinball_0.50`: 1.7005184035926662
+      - `pinball_0.75`: 1.4202139782392107
+      - `pinball_0.90`: 0.9474554695257784
+      - `pinball_0.95`: 0.6637596972616195
+      - `pit_ks`: 0.164062499
+      - `pit_ks_p`: 0.0017689770926977433
+      - `status`: ok
+    - [11]
+      - `coverage_80`: 0.71875
+      - `coverage_90`: 0.84375
+      - `crps`: 2.4182472248279803
+      - `error`: null
+      - `method`: copula_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: heavy_tail_factor
+      - `pinball_0.05`: 0.4956035287124751
+      - `pinball_0.10`: 0.7937282134752333
+      - `pinball_0.25`: 1.3819188911331999
+      - `pinball_0.50`: 1.6999201483091202
+      - `pinball_0.75`: 1.4229470645912725
+      - `pinball_0.90`: 0.8613684395963457
+      - `pinball_0.95`: 0.5489424494014907
+      - `pit_ks`: 0.08593749900000003
+      - `pit_ks_p`: 0.2843716691394699
+      - `status`: ok
+    - [12]
+      - `coverage_80`: 0.6640625
+      - `coverage_90`: 0.765625
+      - `crps`: 2.3323428275625346
+      - `error`: null
+      - `method`: direct
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: regime_copula
+      - `pinball_0.05`: 0.5336749477881153
+      - `pinball_0.10`: 0.8343713558333259
+      - `pinball_0.25`: 1.4023309011431797
+      - `pinball_0.50`: 1.6274120823219849
+      - `pinball_0.75`: 1.3673910265771323
+      - `pinball_0.90`: 0.7667670523779867
+      - `pinball_0.95`: 0.47407256694481836
+      - `pit_ks`: 0.12499999900000003
+      - `pit_ks_p`: 0.03345597047505522
+      - `status`: ok
+    - [13]
+      - `coverage_80`: 0.84375
+      - `coverage_90`: 0.9140625
+      - `crps`: 2.275676369680166
+      - `error`: null
+      - `method`: naive_sum
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: regime_copula
+      - `pinball_0.05`: 0.5094326909681924
+      - `pinball_0.10`: 0.8131781932890844
+      - `pinball_0.25`: 1.4073536899861019
+      - `pinball_0.50`: 1.6272817290653356
+      - `pinball_0.75`: 1.308216628519
+      - `pinball_0.90`: 0.7077570509950017
+      - `pinball_0.95`: 0.41132880167938857
+      - `pit_ks`: 0.1264837859140729
+      - `pit_ks_p`: 0.030361977877610413
+      - `status`: ok
+    - [14]
+      - `coverage_80`: 0.421875
+      - `coverage_90`: 0.5859375
+      - `crps`: 2.5162522742796547
+      - `error`: null
+      - `method`: independent_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: regime_copula
+      - `pinball_0.05`: 0.6628833498267979
+      - `pinball_0.10`: 0.9376100025390922
+      - `pinball_0.25`: 1.4051434375948415
+      - `pinball_0.50`: 1.6353887114008563
+      - `pinball_0.75`: 1.4581457387651808
+      - `pinball_0.90`: 1.0426009196941255
+      - `pinball_0.95`: 0.7511240677335685
+      - `pit_ks`: 0.24999999900000003
+      - `pit_ks_p`: 1.5531427723103203e-07
+      - `status`: ok
+    - [15]
+      - `coverage_80`: 0.640625
+      - `coverage_90`: 0.734375
+      - `crps`: 2.3431744057746666
+      - `error`: null
+      - `method`: copula_mc
+      - `n_eval`: 128
+      - `n_train`: 384
+      - `panel`: regime_copula
+      - `pinball_0.05`: 0.5763209813773038
+      - `pinball_0.10`: 0.8488836186989961
+      - `pinball_0.25`: 1.4024688512495642
+      - `pinball_0.50`: 1.625481881147619
+      - `pinball_0.75`: 1.352902355029614
+      - `pinball_0.90`: 0.8085505011924214
+      - `pinball_0.95`: 0.4815602194582437
+      - `pit_ks`: 0.14062499900000003
+      - `pit_ks_p`: 0.011365189850154112
+      - `status`: ok
+  - `schema`: coherence_eval.v1
+  - `scope_note`: Distributional reconciliation on SYNTHETIC correlated panels: marginal quantile grids reconciled to the aggregate via naive-sum, independent-MC, and a Gaussian-copula MC fit on in-sample residual z-scores. Proper scores only.
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: 2dd641ab766a536a8bc1d7a29cd3527c99cc24c148c9cee879cfc334a9a9f846
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/corpus_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/corpus_real_drill.json | 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119 | b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6 | not_checked | absent | inputs_sha256=30c129932661b7f9c36fa8822f6669bc062d383b10358a221b3073936efd440c | unspecified | absent | true | false |
+
+- `corpus_evalue`: 1.0
+- `corpus_reject_at_alpha`: false
+- `data_label`: MIXED
+- `evidence`:
+  - bh_fdr_pooled_family
+  - evalue_product_merge
+  - tagged_claim_provenance
+- `generated_at_commit`: 8096a5245da4d708771c00b7756e334a3638f14b
+- `kind`: corpus_inference.v1
+- `n_e_findings`: 0
+- `n_p_findings`: 52
+- `n_parse_errors`: 0
+- `n_receipts`: 10
+- `n_survivors`: 7
+- `params`:
+  - `glob`: *.json
+  - `input_labels`:
+    - `adaptive_mix_20asset_1d_20260922.json`: UNKNOWN
+    - `adaptive_mix_band_search_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_pair_candidate_20asset_1d_20260922.json`: UNKNOWN
+    - `basis_reversion_screen_20asset_1d_20260922.json`: UNKNOWN
+    - `capacity_eval_cd0854242ed8a9ec.json`: SYNTHETIC
+    - `dip_bench_crypto_1d_20260925.json`: UNKNOWN
+    - `fast_replay_p42_conformance_20260927.json`: UNKNOWN
+    - `fleet_eval_5ddf15b0dc7d3ca1.json`: SYNTHETIC
+    - `incumbent_bench_qlib.json`: UNKNOWN
+    - `rankic_eval_9ebdad7da83e7348.json`: SYNTHETIC
+  - `q`: 0.05
+- `parse_errors`:
+- `receipt_sha256`: b96b612f8e4494ecb380b24fea20ee3468bc2a251b14697239e5f4ed38b1e7c6
+- `research_only`: true
+- `schema`: corpus_inference.v1
+- `surviving_claims`:
+  - [0]
+    - `family`: pooled
+    - `path`: results[14].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.0003521222142801333
+  - [1]
+    - `family`: pooled
+    - `path`: results[21].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.004205896471930621
+  - [2]
+    - `family`: pooled
+    - `path`: results[24].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.00025215641774270535
+  - [3]
+    - `family`: pooled
+    - `path`: results[27].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 1.1904848878731533e-06
+  - [4]
+    - `family`: pooled
+    - `path`: results[31].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.00017886857828392145
+  - [5]
+    - `family`: pooled
+    - `path`: results[40].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 0.0011998006712072259
+  - [6]
+    - `family`: pooled
+    - `path`: results[47].pit_ks_p
+    - `source`: fleet_eval_5ddf15b0dc7d3ca1.json
+    - `value`: 1.0262118132145719e-05
+
+### `receipts/cost_calibration_eval_df9b8d7068bf709b.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_df9b8d7068bf709b.json | 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b | df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68 | not_checked | 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f | inputs_sha256=60e4d5577d428605825c73e4be06987316aaf6a6dd92b30f75d9f7d72e9f10f9 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_half_spread_bps`: 4.1404254906932
+  - `corwin_schultz_relative`: 0.0008280850981386401
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-09-28T16:46:41.013669+00:00
+- `git_revision`: 368ac9021f1407ffc0e9ef3d84fb4134c826ef4f
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: df9b8d7068bf709b2574f7dbbdd1793f45341a0a2121ec250270e375f5e6fc68
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: flat
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 1850.7817080066654
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 7477.672951985385
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 9328.45465999205
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 1855.464279983312
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 115
+    - `research_only`: true
+    - `spread`: 1855.464279983312
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 3710.928559966624
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 1854.8502840709652
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 116
+    - `research_only`: true
+    - `spread`: 2944.5377726169922
+    - `spread_estimator`: roll
+    - `total_cost`: 4799.388056687958
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
 ### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1193,6 +1808,90 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `ultraplan_item`: P6.10+P4.6
 - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
 
+### `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json | 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b | c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eprocess`:
+  - `alarm_index`: 16
+  - `alarmed`: true
+  - `final_evalue`: 0.0005858298980283407
+  - `lam`: 0.5
+- `evidence`:
+  - e_process_anytime_valid
+  - test_martingale_under_drift_null
+  - page_hinkley_diagnostic_only
+- `kind`: drift_alarm.v1
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `page_hinkley`:
+  - `alarm_index`: null
+  - `alarmed`: false
+  - `delta`: 0.1
+  - `final_statistic`: 0.13126228297147766
+  - `h`: 5.0
+- `receipt_sha256`: c0e3bd0f904afeed9f43a15608ae3985b0a67e8bc1e266353730c181f6c49223
+- `research_only`: true
+- `stream`: gaussian_minus_conf_t_pinball
+
+### `receipts/drift_real_drill_gaussian_pit.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/drift_real_drill_gaussian_pit.json | 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64 | d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `data_label`: yahoo_eod
+- `drill`:
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `eprocess`:
+  - `alarm_index`: null
+  - `alarmed`: false
+  - `final_evalue`: 5.513038244201123e-12
+  - `lam`: 0.5
+- `evidence`:
+  - e_process_anytime_valid
+  - test_martingale_under_drift_null
+  - page_hinkley_diagnostic_only
+- `kind`: drift_alarm.v1
+- `n_inconclusive`: 0
+- `n_obs`: 300
+- `page_hinkley`:
+  - `alarm_index`: 28
+  - `alarmed`: true
+  - `delta`: 0.1
+  - `final_statistic`: 0.13020556880455408
+  - `h`: 5.0
+- `receipt_sha256`: d5d5401328353481637a40f05465ab52b3f7142de8de7fbf72df0e08219b0107
+- `research_only`: true
+- `stream`: gaussian_pit
+
 ### `receipts/fast_replay_p42_conformance_20260927.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -1229,7 +1928,7 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| receipts/fast_replay_p42_conformance_20260928.json | 7151a551c4ff7d47e8b8d36b4b866f6e487a2ca7f0275ce429edeeaaf933f6ab | absent | no_embedded_seal | absent | absent | unspecified | absent | true | false |
+| receipts/fast_replay_p42_conformance_20260928.json | e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6 | 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc | not_checked | absent | absent | unspecified | absent | true | false |
 
 - `receipt`: fast_replay_p42_conformance
 - `generated`: 2026-09-28T00:00:00Z
@@ -1256,6 +1955,11 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - empty/duplicate-key/non-Datetime/mismatched-unit panels
 - `rerun`: uv run pytest tests/unit/backtest/test_fast_replay.py tests/property/test_fast_replay_byte_identity.py tests/unit/test_perf_equivalence.py -x -q
 - `research_only`: true
+- `disclaimer`:
+<!-- verbatim-receipt-text -->
+> All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
+<!-- /verbatim-receipt-text -->
+- `receipt_sha256`: 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc
 
 ### `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`
 
@@ -3926,6 +4630,228 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - 0.9
   - 0.95
 
+### `receipts/fleet_race_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/fleet_race_real_drill.json | 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def | b935e1eea32930eb4e048450b30f12a1b2090955d1ab5073b9f677517ff8486a | not_checked | absent | inputs_sha256=b134452657e2481d518ad2673c956446e8c0798cbc9ba1ecd261ce0a770f1146 | unspecified | absent | true | false |
+
+- `data_label`: yahoo_eod
+- `evidence`:
+  - anytime_valid_promotion
+  - anytime_valid_elimination
+  - successive_chunk_stream
+  - proper_scores_only
+- `generated_at_commit`: 4bf87074bedde7b4120704fa7fbbab37e41bb2f4
+- `global_evidence`:
+  - `conf_t`:
+    - `demote_evalue_product`: 188.2571445410747
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 3.086886724836204e-07
+  - `empirical`:
+    - `demote_evalue_product`: 5211.551431088947
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.693616137557909e-09
+  - `fhs_skew`:
+    - `demote_evalue_product`: 0.06212585619821356
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 0.5792555840446916
+  - `gaussian`:
+    - `demote_evalue_product`: 1107683.6297440543
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.857465259372908e-11
+  - `gmm`:
+    - `demote_evalue_product`: 6510.166138655656
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 1.46608988650646e-09
+  - `isotonic`:
+    - `demote_evalue_product`: 5177.98484445743
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 2.7103793958827616e-09
+  - `regime`:
+    - `demote_evalue_product`: 23338.35790747722
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 3.5626679840873747e-10
+  - `skew_t`:
+    - `demote_evalue_product`: 2822.7365076559704
+    - `global_promotion`: false
+    - `n_shards`: 8
+    - `promote_evalue_product`: 4.078534133600114e-09
+- `kind`: fleet_race.v1
+- `n_models`: 8
+- `n_shards`: 8
+- `params`:
+  - `alpha`: 0.05
+  - `n_chunks`: 8
+  - `n_eval`: 128
+  - `n_train`: 256
+  - `seed`: 0
+  - `taus`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+    - 0.95
+- `receipt_sha256`: b935e1eea32930eb4e048450b30f12a1b2090955d1ab5073b9f677517ff8486a
+- `research_only`: true
+- `schema`: fleet_race.v1
+- `shard_meta`:
+  - `yahoo_bkng`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 6
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 3173c39ac05896341c2fdd420eee6f2d5be3152e3f23d9dd155d19e6c1ae9bc9
+  - `yahoo_blk`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 5
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 92047bb4e72589d944cbbfc12f2cb223d15e967173ad0aadae802376e4f7acef
+  - `yahoo_bxp`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 0
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 2061b1ae04619b9fcbeddee3eae490fd098ad2015076c5551198732e5a2aa539
+  - `yahoo_enph`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 2
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 89d4c5edb1cc451d314d3d5f26846a0eca0c89eeaf0ba2557631451e305e763e
+  - `yahoo_gen`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 7
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 78629ac3f63f9194daeaf0ce17ad15208e00c38a9e883b5395d5553083c8f0cc
+  - `yahoo_lin`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 3
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 9129d2f7b546f54dc7d9d21c98ce496012a8a660e70d9e90939e171ec07f9748
+  - `yahoo_maa`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 1
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: 50b426ed08d8d6091fa779c304fbd62516d452da7cb0ddb8147df5f495f999dc
+  - `yahoo_rjf`:
+    - `data_label`: yahoo_eod
+    - `n`: 2692
+    - `seed`: 4
+    - `x_sha256`: 67ff20cc79d1a35421566233cb1521d72d7ea68cf3d438c2923e35ece4e1a272
+    - `y_sha256`: ded9c9885a8a115e4c7d57c725fc096893f9ede7f8d1bb733820915bc3ea9a3c
+- `shard_winners`:
+  - `yahoo_bkng`: fhs_skew
+  - `yahoo_blk`: fhs_skew
+  - `yahoo_bxp`: fhs_skew
+  - `yahoo_enph`: gmm
+  - `yahoo_gen`: isotonic
+  - `yahoo_lin`: fhs_skew
+  - `yahoo_maa`: fhs_skew
+  - `yahoo_rjf`: fhs_skew
+
+### `receipts/monitor_run_drill_clean.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_drill_clean.json | 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c | 3ca0d758f95f507ae1bb3e1a9a80cc31a818953e66dc9e6a73b5a7a86c3f9970 | not_checked | absent | inputs_sha256=4588744277feb3af22aae86a6a4a7d400dd5501e177e9013fdfae43a002a09a9 | unspecified | absent | true | false |
+
+- `code_revision`: f99ec27c981dec240bca72f105db1733b3c0278f
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 2
+- `n_rows`: 4
+- `params`:
+  - `alpha`: 0.05
+  - `heads`:
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 60
+  - `n_train`: 120
+  - `seed`: 3
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.5
+- `receipt_sha256`: 3ca0d758f95f507ae1bb3e1a9a80cc31a818953e66dc9e6a73b5a7a86c3f9970
+- `research_only`: true
+- `schema`: monitor_run.v1
+
+### `receipts/monitor_run_drill_defect.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_drill_defect.json | e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df | 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55 | not_checked | absent | inputs_sha256=49bdfd5d88bcaeb229e973c883cb3400b19cb90ba0b31d94a55b13ddc4ea0297 | unspecified | absent | true | false |
+
+- `code_revision`: 75266bae332263fa2b87244525c85cca557f08d0
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 5
+- `n_rows`: 6
+- `params`:
+  - `alpha`: 0.05
+  - `heads`:
+    - biased_gaussian
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 60
+  - `n_train`: 120
+  - `seed`: 3
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.5
+- `receipt_sha256`: 5de3cbf5c7e6de830d5e2a524e87567fa93cb6a100ff919fe7e62c3f7f8e1d55
+- `research_only`: true
+- `schema`: monitor_run.v1
+
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -5055,3 +5981,116 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `t_spearman`: -4.75560366545392
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
+
+### `receipts/verdict_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/verdict_real_drill.json | 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7 | 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c | not_checked | absent | inputs_sha256=86f74196e0b8b77de389cf70b0312c77753bd74975c1600c35d114a2d5241eb2 | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `components`:
+  - `calibration`:
+    - `alarm_origin`: 17
+    - `channel_wealths`:
+      - `grapa_disp`: 0.134256778680104
+      - `grapa_loc`: 0.06354354498244345
+      - `loc_hi`: 3.2771148072993125e-05
+      - `loc_lo`: 6.271944764438012e-09
+      - `overconf`: 3.5217032438195263e-12
+      - `underconf`: 0.0
+    - `final_evalue`: 0.032972183514347816
+    - `miscalibrated`: true
+  - `drift`:
+    - `alarm_index`: null
+    - `eprocess_alarmed`: false
+    - `final_evalue`: 5.65228928707004e-13
+    - `page_hinkley_alarmed`: true
+  - `localize`:
+    - `skipped`: no_drift_alarm
+  - `magnitude`:
+    - `alpha`: 0.05
+    - `bound`: 0.0005556059235267558
+    - `challenger`: challenger
+    - `cs_high`: 2.103370268349208e-05
+    - `cs_low`: -9.775281957945879e-05
+    - `evidence`:
+      - ville_inequality
+      - betting_confidence_sequence
+      - bounded_increments
+      - time_uniform_coverage
+    - `excludes_zero`: false
+    - `incumbent`: incumbent
+    - `interpretation`: inconclusive
+    - `kind`: loss_cs.v1
+    - `lam`: 0.5
+    - `mean_diff`: -3.308069273216095e-05
+    - `n`: 300
+    - `schema`: loss_cs.v1
+  - `promotion`:
+    - `anytime_p`: 1.0
+    - `final_evalue`: 1.0
+    - `promoted`: false
+    - `promotion_origin`: null
+    - `runner_up`: conf_t
+  - `winner_curse`:
+    - `corrected_score`: 0.007786306962895035
+    - `honest_score`: 0.007774180331785465
+    - `naive_score`: 0.007783105322251523
+    - `selected_head`: gaussian
+    - `selection_aware_ci`:
+      - 0.006828763736922536
+      - 0.008883396250636
+    - `selection_bias`: 3.201640643512617e-06
+- `data_label`: yahoo_eod
+- `drill`:
+  - `computed_on`: seq-union scratch (all verdict lanes present); isolated lane branches degrade to inconclusive
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `head_errors`:
+  - `loss_stream`: per-origin mean pinball over the default tau grid
+  - `n_eval`: 300
+  - `n_stream`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - selection_bias_corrected
+  - anytime_valid_promotion
+  - level_shift_monitor
+  - magnitude_confidence_sequence
+  - pit_uniformity_when_supplied
+  - changepoint_localization_when_drifted
+  - proper_score_only
+- `kind`: honest_verdict.v1
+- `n_heads`: 12
+- `n_obs`: 300
+- `receipt_sha256`: 1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c
+- `research_only`: true
+- `run`:
+  - `params`:
+    - `data_labels`:
+      - `conf_t`: yahoo_eod
+      - `empirical`: yahoo_eod
+      - `fhs_skew`: yahoo_eod
+      - `gaussian`: yahoo_eod
+      - `gmm`: yahoo_eod
+      - `hstep_emp`: yahoo_eod
+      - `hstep_t`: yahoo_eod
+      - `isotonic`: yahoo_eod
+      - `qar`: yahoo_eod
+      - `regime`: yahoo_eod
+      - `skew_t`: yahoo_eod
+      - `stack`: yahoo_eod
+- `unavailable_lanes`:
+- `verdict`: not_supported
+- `winner`: gaussian
