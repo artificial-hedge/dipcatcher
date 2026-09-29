@@ -200,3 +200,184 @@ def test_coverage_audit_contract() -> None:
     assert "inputs_sha256_malformed" in evalue_family_contract_errors(bad2)
     good2 = dict(_BASE_COV_AUDIT, kind="coverage_cs.v1")
     assert evalue_family_contract_errors(good2) == []
+
+
+_BASE_WINNER_CURSE = {
+    "kind": "winner_curse.v1",
+    "data_label": "SYNTHETIC",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "selected_head": "gmm",
+    "naive_score": 0.010,
+    "selection_bias": 0.001,
+    "corrected_score": 0.011,
+    "honest_score": 0.012,
+    "naive_ci": [0.009, 0.011],
+    "selection_aware_ci": [0.010, 0.013],
+    "n_obs": 512,
+    "n_heads": 5,
+    "n_boot": 200,
+    "verdict": "bias_material",
+}
+
+_BASE_DRIFT = {
+    "kind": "drift_alarm.v1",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "n_obs": 400,
+    "alpha": 0.05,
+    "eprocess": {
+        "lam": 0.7,
+        "alarmed": True,
+        "alarm_index": 210,
+        "final_evalue": 33.0,
+    },
+    "page_hinkley": {"delta": 0.01, "h": 4.0, "alarmed": True, "alarm_index": 220},
+    "n_inconclusive": 0,
+}
+
+_BASE_CONFORMAL = {
+    "kind": "conformal_monitor.v1",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "n_obs": 300,
+    "alpha": 0.05,
+    "kappa": 1.5,
+    "window": 100,
+    "mode": "ar",
+    "alarmed": False,
+    "alarm_index": None,
+    "final_martingale": 1.2,
+    "n_inconclusive": 2,
+}
+
+_BASE_TAIL = {
+    "schema": "tail_audit.v1",
+    "kind": "tail_audit",
+    "level": "research",
+    "inputs_sha256": _SHA,
+    "params": {
+        "cell": [0.05, 0.1],
+        "p0_deep_share": 0.5,
+        "alpha": 0.05,
+        "alt_grid": [0.5, 0.75, 1.35, 1.9],
+        "n_train": 128,
+        "n_eval": 256,
+        "seed": 0,
+    },
+    "claims": [{"text": "x", "kind": "theoretical"}],
+}
+
+_BASE_LANE_POWER = {
+    "schema": "lane_power.v1",
+    "kind": "lane_power",
+    "level": "research",
+    "inputs_sha256": _SHA,
+    "params": {
+        "defects": [0.0, 0.1, 0.5],
+        "n_steps": 400,
+        "n_seeds": 20,
+        "alpha": 0.05,
+        "lanes": ["coverage", "tail"],
+    },
+    "n_lanes_ok": 2,
+    "null_alarm_rate": {"coverage": 0.05, "tail": 0.0},
+    "claims": [{"text": "x", "kind": "empirical_synthetic"}],
+}
+
+_BASE_HONEST_VERDICT = {
+    "kind": "honest_verdict.v1",
+    "data_label": "SYNTHETIC",
+    "research_only": True,
+    "live_pnl_claim": False,
+    "verdict": "supported_with_caveats",
+    "winner": "gmm",
+    "alpha": 0.05,
+    "n_obs": 1152,
+    "n_heads": 2,
+    "inputs_sha256": _SHA,
+    "components": {
+        "winner_curse": {"corrected_score": 0.011},
+        "promotion": {"promoted": False},
+        "drift": {"eprocess_alarmed": False},
+        "calibration": {},
+        "magnitude": {},
+        "localize": {"skipped": "no_drift_alarm"},
+    },
+    "unavailable_lanes": ["calibration", "magnitude"],
+}
+
+
+def test_new_kind_fixtures_pass() -> None:
+    for base in (
+        _BASE_WINNER_CURSE,
+        _BASE_DRIFT,
+        _BASE_CONFORMAL,
+        _BASE_TAIL,
+        _BASE_LANE_POWER,
+        _BASE_HONEST_VERDICT,
+    ):
+        assert evalue_family_contract_errors(base) == [], base.get("kind")
+
+
+def test_winner_curse_contract() -> None:
+    bad = dict(_BASE_WINNER_CURSE, verdict="bias_material", selection_bias=0.0)
+    assert "bias_material_without_bias" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_WINNER_CURSE, naive_ci=[0.02, 0.01])
+    assert "naive_ci_inverted" in evalue_family_contract_errors(bad2)
+    bad3 = dict(_BASE_WINNER_CURSE, verdict="winning")
+    assert "verdict_not_in_enum" in evalue_family_contract_errors(bad3)
+
+
+def test_drift_alarm_contract() -> None:
+    ep = dict(_BASE_DRIFT["eprocess"], alarm_index=99999)
+    bad = dict(_BASE_DRIFT, eprocess=ep)
+    assert "alarm_index_out_of_range" in evalue_family_contract_errors(bad)
+    ep2 = dict(_BASE_DRIFT["eprocess"], alarmed=False, alarm_index=5)
+    bad2 = dict(_BASE_DRIFT, eprocess=ep2)
+    assert "alarm_index_set_without_alarm" in evalue_family_contract_errors(bad2)
+    ep3 = dict(_BASE_DRIFT["eprocess"], final_evalue=0.0)
+    bad3 = dict(_BASE_DRIFT, eprocess=ep3)
+    assert "final_evalue_not_positive_finite" in evalue_family_contract_errors(bad3)
+
+
+def test_conformal_monitor_contract() -> None:
+    bad = dict(_BASE_CONFORMAL, kappa=-1.0)
+    assert "kappa_not_positive_finite" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_CONFORMAL, alarmed=True, alarm_index=9999)
+    assert "alarm_index_out_of_range" in evalue_family_contract_errors(bad2)
+
+
+def test_tail_audit_contract() -> None:
+    bad = dict(_BASE_TAIL)
+    bad["params"] = dict(_BASE_TAIL["params"], p0_deep_share=0.9)  # not 0.05/0.1
+    assert "p0_deep_share_not_tau_ratio" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_TAIL)
+    bad2["params"] = dict(_BASE_TAIL["params"], cell=[0.5, 0.1])
+    assert "params_cell_not_adjacent_unit_pair" in evalue_family_contract_errors(bad2)
+    bad3 = dict(_BASE_TAIL)
+    bad3["params"] = dict(_BASE_TAIL["params"], alt_grid=[0.5, -1.0])
+    assert "params_alt_grid_not_positive_list" in evalue_family_contract_errors(bad3)
+
+
+def test_lane_power_contract() -> None:
+    bad = dict(_BASE_LANE_POWER)
+    bad["params"] = dict(_BASE_LANE_POWER["params"], defects=[0.1, 0.5])
+    assert "params_defects_must_include_zero" in evalue_family_contract_errors(bad)
+    bad2 = dict(_BASE_LANE_POWER, null_alarm_rate={"bogus_lane": 0.1})
+    assert "null_alarm_rate_unknown_lane:bogus_lane" in evalue_family_contract_errors(bad2)
+    bad3 = dict(_BASE_LANE_POWER, n_lanes_ok=99)
+    assert "n_lanes_ok_exceeds_lanes" in evalue_family_contract_errors(bad3)
+
+
+def test_honest_verdict_contract() -> None:
+    bad = dict(_BASE_HONEST_VERDICT, unavailable_lanes=["winner_curse"])
+    assert "core_lane_missing_but_verdict_not_inconclusive" in evalue_family_contract_errors(bad)
+    ok = dict(_BASE_HONEST_VERDICT, verdict="inconclusive", unavailable_lanes=["drift"])
+    assert evalue_family_contract_errors(ok) == []
+    bad2 = dict(_BASE_HONEST_VERDICT, unavailable_lanes=["bogus"])
+    assert "unavailable_lane_unknown:bogus" in evalue_family_contract_errors(bad2)
+    bad3 = dict(_BASE_HONEST_VERDICT, verdict="confirmed")
+    assert "confirmed_without_promotion_flag" in evalue_family_contract_errors(bad3)
+    bad4 = dict(_BASE_HONEST_VERDICT, verdict="winning")
+    assert "verdict_not_in_enum" in evalue_family_contract_errors(bad4)
