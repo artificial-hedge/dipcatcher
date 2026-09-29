@@ -141,6 +141,8 @@ def fleet_race(
     rows: list[dict[str, Any]] = []
     shard_meta: dict[str, Any] = {}
     shard_winners: dict[str, str] = {}
+    # per-head per-shard stopping-time e-values for cross-shard pooling
+    head_evidence: dict[str, list[tuple[str, float, float]]] = {}
 
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
         shard_seed = int(seed) + shard_index
@@ -220,6 +222,18 @@ def fleet_race(
                 row["shard_winner"] = True
                 row["verdict"] = verdict
 
+        for lane in clean_lanes:
+            ev = head_evidence.setdefault(lane.name, [])
+            promote_states = lane.promote.states
+            demote_states = lane.demote.states
+            ev.append(
+                (
+                    shard_name,
+                    float(promote_states[-1].evalue) if promote_states else 1.0,
+                    float(demote_states[-1].evalue) if demote_states else 1.0,
+                )
+            )
+
     frame = pl.DataFrame(
         rows,
         schema={
@@ -280,6 +294,17 @@ def fleet_race(
         "n_shards": len(shard_meta),
         "n_models": len(factories),
         "shard_winners": shard_winners,
+        "global_evidence": {
+            head: {
+                "promote_evalue_product": float(np.prod([p for _, p, _ in entries])),
+                "demote_evalue_product": float(np.prod([d for _, _, d in entries])),
+                "n_shards": len(entries),
+                # product of e-values is an e-value (Shafer merging) —
+                # a global claim without cross-shard independence
+                "global_promotion": bool(np.prod([p for _, p, _ in entries]) >= 1.0 / alpha),
+            }
+            for head, entries in head_evidence.items()
+        },
         "evidence": [
             "anytime_valid_promotion",
             "anytime_valid_elimination",

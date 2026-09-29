@@ -123,3 +123,32 @@ def _make_shard(name: str):
 
 
 SHARD_G = lambda n, seed: _make_shard("iid_gaussian")  # noqa: E731
+
+
+SHARD_H = lambda n, seed: _make_shard("heavy_tail")  # noqa: E731
+
+
+def test_global_evidence_product_pooling() -> None:
+    """Cross-shard e-value pooling: promote/demote products coherent."""
+    factories = _factories({"oracle": 0.0, "lagged": 0.05, "wild": -0.08})
+    shards = {"iid_gaussian": SHARD_G, "heavy_tail": SHARD_H}
+    _frame, receipt = fleet_race(
+        factories,
+        shards=shards,
+        n_train=64,
+        n_eval=32,
+        n_chunks=8,
+        seed=0,
+    )
+    ge = receipt["global_evidence"]
+    assert isinstance(ge, dict)
+    assert set(ge) == {"oracle", "lagged", "wild"}
+    for entry in ge.values():
+        assert entry["n_shards"] == len(shards)
+        assert entry["promote_evalue_product"] > 0
+        assert entry["demote_evalue_product"] > 0
+        assert entry["global_promotion"] == (
+            entry["promote_evalue_product"] >= 20.0  # 1/0.05
+        )
+    # oracle is never worse than any head -> its demote product should be 1
+    assert ge["oracle"]["demote_evalue_product"] <= 1.0 + 1e-9
