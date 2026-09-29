@@ -435,6 +435,10 @@ class _HStepOneStepHead:
 # models/distribution.py plus the landed conditional/series heads via the
 # fleet adapters above: qar (one-step lagged scoring), hstep as its two h=1
 # construction slices, the series/feature heads regime / fhs_skew /
+# lgbm_q2 / conf_t directly, and the torch-optional neural heads nbeats /
+# nhits plus the tirex2 zero-shot checkpoint head (imported lazily inside
+# the factory so this module never requires the ``nn`` extra — no cross-PR
+# head dependencies).
 # lgbm_q2 / conf_t directly, the torch-optional neural heads nbeats / nhits,
 # and the fail-closed tabpfn_ts adapter (imported lazily inside the factory so this module never requires
 # the ``nn`` extra — no cross-PR head dependencies).
@@ -459,6 +463,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
     "sundial": lambda taus, seed: _sundial(taus, seed),
+    "tirex2": lambda taus, seed: _tirex2(taus, seed),
     "kronos_base": lambda taus, seed: _kronos_base(taus, seed),
     "tabpfn_ts": lambda taus, seed: _tabpfn_ts(taus, seed),
     "moirai2": lambda taus, seed: _moirai2(taus, seed),
@@ -487,6 +492,9 @@ def _sundial(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.sundial import SundialDistribution
 
     return SundialDistribution(list(taus), seed=int(seed))
+def _tirex2(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.tirex2 import Tirex2Distribution
+    return Tirex2Distribution(list(taus), seed=int(seed))
 def _tabpfn_ts(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tabpfn_ts import TabpfnTsDistribution
     return TabpfnTsDistribution(list(taus), seed=int(seed))
