@@ -32,10 +32,31 @@ docstrings and tests found **three claims that did not reproduce** (commit
 docstring is exactly the failure mode the honesty contract exists to prevent, and
 because two of them were inherited from the task brief rather than measured.
 
-Baseline gates before any edit: `ruff check` clean on the lane, `mypy
-src/quant_fund` = **Success: no issues found in 670 source files**.
-After: lint clean, **137 files formatted**, mypy **671 files** clean, **all lane
-tests green**.
+Gates, re-measured at HEAD `7280ea7f` after the lane work:
+
+- `ruff check` on the lane (`src/quant_fund/metrics` + the 5 new test files) —
+  **All checks passed!**
+- `ruff format --check` on the same scope — **63 files already formatted**
+- `mypy src/quant_fund` — **Success: no issues found in 671 source files**
+- Lane tests — **93 passed** (`14 + 34 + 13 + 15 + 17`)
+
+This lane adds **no new source module**: all five files under
+`src/quant_fund/metrics/` were modified in place (`M`, never `A`), so the mypy
+file count is unchanged by this work. The **671** above is simply what mypy
+reports for `src/quant_fund` at this HEAD; it is not a before/after delta. An
+earlier draft of this report claimed "670 → 671" as a consequence of the lane.
+That was wrong and is corrected here — see §6.
+
+Test counts, collected with `--collect-only` and verified to all fall inside the
+default `-m "not slow and not network"` gate:
+
+| Scope | Collected |
+|---|---|
+| `tests/unit/core` + `tests/unit/metrics` + `tests/unit/research` | 1354 |
+| `tests/property` | 447 |
+| `tests/regression` | 38 |
+| Full non-slow suite | 8099 |
+| **New in this lane** | **93** |
 
 ---
 
@@ -457,10 +478,11 @@ suite.
 | 2 | The **true** quantile `norm.ppf(tau)` minimises *empirical* pinball loss at `tau=0.5` | At `tau=0.5` the empirical minimiser is the sample **median**, which need not equal `norm.ppf(0.5)=0`; the minimum landed at offset `−0.05`. I conflated the population and finite-sample statements | Split into two tests: the **empirical** quantile minimises the empirical loss (exact, finite-sample), and the **true** quantile minimises *expected* loss at `n=20000` (population) |
 | 3 | `energy_score` is sign-symmetric, `ES(+y) == ES(−y)`, for a random ensemble | Symmetry is a **population** property of the forecast law. A random 15-member finite ensemble is asymmetric almost surely: measured `1.8297` vs `1.8592` | Asserted exact symmetry only for a **negation-closed** ensemble (`[H; −H]`), and added a test documenting that a generic finite ensemble is *not* symmetric |
 
-### 6.1 Three measured claims that did not reproduce
+### 6.1 Claims that did not reproduce
 
 A verification pass over every number I had written into docstrings and tests
-(commit `31075ad7`). All three were *my* errors, not the estimators':
+(commit `31075ad7`), plus a second pass over this report's own gate numbers. All
+were *my* errors, not the estimators':
 
 | Claim as first written | Measured | Root cause |
 |---|---|---|
@@ -468,6 +490,7 @@ A verification pass over every number I had written into docstrings and tests
 | bias is `+20.5% / +9.9% / +5.0%` at `n=5/10/20` | Paired: `+20.4% / +10.2% / +5.1%` | Inherited from the brief; the `n=10` figure was low by 0.3pp |
 | `√2`-boundary drift reaches `−0.0012` at `σ=128` | `−0.077` at 1200 reps | Insufficient reps (400 → 1200); the *direction* of the claim was right, the magnitude was not |
 | improper comparator cell `+1.177 → −17.685` | `+1.418 → −17.608` (d=1); `+2.138 → −33.065` (d=2) | Dimension was not stated in the docstring |
+| *(this report)* mypy went "670 → 671 source files" because of the lane | mypy reports **671** at HEAD `7280ea7f`; the lane added **no** new source module (all 5 metrics files are `M`, never `A`) | The "670" came from a stale prior-session artifact, not from a measurement I took. Presenting it as a before/after delta implied the lane changed the file count. Corrected in §0 |
 
 Also corrected: the multiplicity test's module docstring quoted FWER numbers from
 a probe whose RNG stream had been contaminated by a dead assignment (`loss_map`
