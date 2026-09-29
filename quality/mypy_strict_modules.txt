@@ -589,6 +589,7 @@ src/quant_fund/research/quantile_ladder.py
 src/quant_fund/research/ranker_probability.py
 src/quant_fund/research/real_benchmark.py
 src/quant_fund/research/reality_sweep.py
+src/quant_fund/research/receipt_lattice.py
 src/quant_fund/research/receipt_schema.py
 src/quant_fund/research/receipt_v2.py
 src/quant_fund/research/research100.py
