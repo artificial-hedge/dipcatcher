@@ -494,6 +494,12 @@ _LANE_CONSISTENCY: dict[str, str] = {
     "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
     "cross_sectional_rankic_eval": "quant_fund.research.cross_sectional.rankic_v2_consistency_errors",
     "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
+    "calibration_eval": "quant_fund.research.calibration_eval.calibration_v2_consistency_errors",
+    "evidence_audit": "quant_fund.research.evidence_audit.evidence_audit_consistency_errors",
+    "selection_concordance": "quant_fund.research.concordance.concordance_consistency_errors",
+    "coherence_eval": "quant_fund.research.coherence.coherence_v2_consistency_errors",
+    "identity_sweep": "quant_fund.research.identity_sweep.identity_v2_consistency_errors",
+    "multih_fleet_eval": "quant_fund.research.multih_fleet.multih_fleet_consistency_errors",
 }
 
 
@@ -513,38 +519,6 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
             if claimed != kind:
                 lane_errors = [*lane_errors, "kind_fingerprint_mismatch"]
             return lane_errors
-    if kind == "distribution_fleet_eval":
-        from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
-
-        return fleet_v2_consistency_errors(payload)
-    if payload.get("kind") == "calibration_eval":
-        from quant_fund.research.calibration_eval import calibration_v2_consistency_errors
-
-        return calibration_v2_consistency_errors(payload)
-    if kind == "capacity_overlay_eval":
-        from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
-
-        return capacity_v2_consistency_errors(payload)
-    if kind == "cross_sectional_rankic_eval":
-        from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
-
-        return rankic_v2_consistency_errors(payload)
-    if kind == "vol_bench":
-        from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
-
-        return vol_bench_v2_consistency_errors(payload)
-    if kind == "evidence_audit":
-        from quant_fund.research.evidence_audit import evidence_audit_consistency_errors
-
-        return evidence_audit_consistency_errors(payload)
-    if kind == "selection_concordance":
-        from quant_fund.research.concordance import concordance_consistency_errors
-
-        return concordance_consistency_errors(payload)
-    if kind == "coherence_eval":
-        from quant_fund.research.coherence import coherence_v2_consistency_errors
-
-        return coherence_v2_consistency_errors(payload)
     return []
 
 
@@ -665,10 +639,6 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.hedge_lab._receipt import lane_receipt_contract_errors
 
         errors.extend(lane_receipt_contract_errors(payload))
-    if payload.get("kind") in EVALUE_FAMILY_KINDS:
-        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
-
-        errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 

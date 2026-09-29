@@ -93,13 +93,15 @@ def test_label_aggregates_inputs(tmp_path: Path) -> None:
 
 
 def test_strict_cli_gate(tmp_path: Path) -> None:
-    """--strict exits nonzero on a corrupt receipt, zero on sealed/legacy."""
-    import hashlib
+    """--strict exits nonzero on a corrupt or unsealed receipt, zero on sealed.
 
+    KNOWN_UNSEALED is deliberately empty (the seven pre-seal artifacts moved
+    to receipts/legacy-unsealed/): no unsealed file in the verified root is
+    tolerated under --strict.
+    """
     from typer.testing import CliRunner
 
     from quant_fund.cli.main import app as cli
-    from quant_fund.research.legacy_unsealed import KNOWN_UNSEALED
 
     runner = CliRunner()
     out = tmp_path / "out"
@@ -121,19 +123,14 @@ def test_strict_cli_gate(tmp_path: Path) -> None:
     assert res.exit_code == 1
     assert "STRICT FAILURE" in res.output
 
-    # byte-pinned legacy unsealed receipt → tolerated under strict
+    # unsealed receipt → strict fails (empty allowlist: nothing exempts it)
     (tmp_path / "ok.json").unlink()
-    name, digest = next(iter(KNOWN_UNSEALED.items()))
-    body = b'{"kind": "legacy", "note": "pre-seal"}'
-    # fabricate the pinned bytes: the allowlist pins real files, so instead
-    # assert the helper's contract directly on a non-listed name
-    (tmp_path / name).write_bytes(body)
+    (tmp_path / "legacy.json").write_bytes(b'{"kind": "legacy", "note": "pre-seal"}')
     res = runner.invoke(
         cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
     )
-    # wrong bytes → still a strict failure (the pin covers content, not name)
     assert res.exit_code == 1
-    assert hashlib.sha256(body).hexdigest() != digest
+    assert "STRICT FAILURE" in res.output
 
 
 def test_suite_health_receipt_v2_round_trip(tmp_path: Path) -> None:

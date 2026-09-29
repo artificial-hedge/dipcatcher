@@ -11,7 +11,7 @@
 small Alpaca account. Research and simulated paper only.
 
 The dip question, in `fx1.bench.dip` and
-`receipts/dip_bench_crypto_1d_20260925.json`, is the probability that a
+`receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
 drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
 an in-sample climatology baseline on 11 historical crypto series. Disclaimer
 from the file:
@@ -59,13 +59,13 @@ PIT, QLIKE, Brier, ECE, Kupiec, and HMM likelihood.
   the gate in `quant_fund.validation.gates`. `dipcatcher doctor` exits nonzero
   until a data manifest and a valid research receipt are both present.
 - **Published negative results.**
-  `receipts/adaptive_mix_band_search_20asset_1d_20260922.json` records
+  `receipts/legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json` records
   `selected_band: null` and `eligible: false` on every candidate.
-  `receipts/basis_pair_candidate_20asset_1d_20260922.json` records
+  `receipts/legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json` records
   `development_eligible: false`. A sealed blocked tournament stays a
   reviewable failure (`valid: true`, `state: "blocked"`) with no test receipt
   and no selected candidate (`docs/RECEIPT_VERIFICATION.md`).
-- **qlib parity receipt.** `receipts/incumbent_bench_qlib.json` is one matched
+- **qlib parity receipt.** `receipts/legacy-unsealed/incumbent_bench_qlib.json` is one matched
   workload against qlib 0.9.7 on Binance daily bars (`BTCUSDT`, `ETHUSDT`,
   `SOLUSDT`), with `research_only: true` and `live_pnl_claim: false`. Copied
   from that file, `nav_max_rel_diff` is `1.0290734772388363e-07`. Disclaimer,

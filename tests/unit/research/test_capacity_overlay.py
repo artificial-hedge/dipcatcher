@@ -154,8 +154,10 @@ class TestReceipt:
     def test_tamper_writes_different_file(self, tmp_path: Path) -> None:
         _, receipt = run_capacity_bench(seed=5, n_dates=30, n_names=6)
         p1 = write_capacity_receipt(receipt, tmp_path)
+        # tamper a field the honesty contract does not pin — a results-list
+        # edit now fails the writer gate via n_rows_mismatch (9e6106d4)
         tampered = dict(receipt)
-        tampered["results"] = list(receipt["results"]) + [{"book": "x"}]
+        tampered["seed"] = receipt["seed"] + 1
         p2 = write_capacity_receipt(tampered, tmp_path)
         assert p1 != p2 and p1.exists()
 
