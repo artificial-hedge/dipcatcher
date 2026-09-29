@@ -172,3 +172,36 @@ def test_contract_accepts_genesis_and_valid_prev(tmp_path: Path) -> None:
     assert checkpoint_contract_errors(state) == []
     state["prev_sha256"] = "tooshort"
     assert "prev_sha256_malformed" in checkpoint_contract_errors(state)
+
+
+def test_superseded_checkpoint_archived_and_walkable(tmp_path: Path) -> None:
+    root, priv, pub = _repo(tmp_path)
+    write_checkpoint(root, priv, pub)
+    first_bytes = (root / "quality/checkpoint.json").read_bytes()
+    write_checkpoint(root, priv, pub)
+    archive = root / "quality/checkpoints"
+    archived = list(archive.glob("*.json"))
+    assert len(archived) == 1
+    assert archived[0].read_bytes() == first_bytes
+    # The chain walks: current -> archived predecessor.
+    second = json.loads((root / "quality/checkpoint.json").read_text())
+    prev = second["payload"]["prev_sha256"]
+    assert hashlib.sha256(archived[0].read_bytes()).hexdigest() == prev
+    assert verify_checkpoint(root)["ok"] is True
+
+
+def test_unarchived_prev_fails_when_archive_exists(tmp_path: Path) -> None:
+    root, priv, pub = _repo(tmp_path)
+    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, priv, pub)  # creates the archive dir
+    # Rotate again but delete the archive of the just-superseded checkpoint:
+    # the declared prev was never retained -> fail.
+    from quant_fund.utils.hashing import hash_bytes as _hb
+
+    cur_prev = hashlib.sha256((root / "quality/checkpoint.json").read_bytes()).hexdigest()
+    write_checkpoint(root, priv, pub)
+    for f in (root / "quality/checkpoints").glob("*.json"):
+        if _hb(f.read_bytes()) == cur_prev:
+            f.unlink()
+    res = verify_checkpoint(root)
+    assert "prev_not_archived" in res["errors"]

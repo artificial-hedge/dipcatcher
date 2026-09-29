@@ -67,7 +67,7 @@ EXEMPT_RELPATHS: frozenset[str] = frozenset({"timestamps/anchors.json", "checkpo
 # retired one each cycle, so chain membership would force an endless
 # restamp-rewrite loop. Exemption is prefix-wide because filenames embed the
 # per-entry log index.
-EXEMPT_PREFIXES: frozenset[str] = frozenset({"witness/"})
+EXEMPT_PREFIXES: frozenset[str] = frozenset({"witness/", "checkpoints/"})
 
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:

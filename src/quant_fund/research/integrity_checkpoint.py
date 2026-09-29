@@ -37,6 +37,11 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 CHECKPOINT_SCHEMA = "integrity_checkpoint.v1"
 CHECKPOINT_SIG_SCHEMA = "integrity_checkpoint_sig.v1"
 DEFAULT_CHECKPOINT_PATH = Path("quality/checkpoint.json")
+# Superseded checkpoints are archived append-only under this dir so the
+# prev_sha256 chain is locally verifiable — not just digest-referenced via
+# the Rekor proofs. The epoch corpus exempts this prefix (like witness/):
+# archiving must not force a re-stamp on every checkpoint rotation.
+CHECKPOINT_ARCHIVE_DIR = Path("quality/checkpoints")
 
 # The pin files whose bytes the checkpoint covers. gate_pins.sig is included
 # so the checkpoint also binds *which* pin signature was current.
@@ -87,6 +92,17 @@ def write_checkpoint(
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     root_path = Path(root)
+    prev_file = root_path / path
+    # Archive the superseded checkpoint before overwrite — append-only, keyed
+    # by its digest so the prev_sha256 chain can be walked offline.
+    if prev_file.exists():
+        prev_bytes = prev_file.read_bytes()
+        archive_dir = root_path / CHECKPOINT_ARCHIVE_DIR
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        digest = hash_bytes(prev_bytes)
+        archived = archive_dir / f"{digest[:16]}_{digest[16:24]}.json"
+        if not archived.exists():
+            atomic_write_text(archived, prev_bytes.decode())
     state = checkpoint_state(root_path)
     key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
     body = {
@@ -194,6 +210,13 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
                 witnessed.add(digest)
         if witnessed and prev not in witnessed:
             errors.append("prev_not_witnessed")
+        # Local walk: if the predecessor's bytes were archived, its digest
+        # must match prev exactly (defense in depth for the unwitnessed case).
+        archive = root_path / CHECKPOINT_ARCHIVE_DIR
+        if archive.is_dir():
+            found = any(hash_bytes(f.read_bytes()) == prev for f in archive.glob("*.json"))
+            if not found and prev != hash_bytes(cp_file.read_bytes()):
+                errors.append("prev_not_archived")
 
     return {
         "ok": not errors,
