@@ -31,6 +31,7 @@ does not score them.
 - `receipts/adaptive_mix_20asset_1d_20260922.json`: adaptive_mix_replay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/basis_pair_candidate_20asset_1d_20260922.json`: basis_pair_candidate.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/basis_reversion_screen_20asset_1d_20260922.json`: basis_reversion_screen.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/calib_real_drill.json`: calibration_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/dip_bench_crypto_1d_20260925.json`: fx1.dip_bench/v1; no reality_gate, backtest_overfitting block, or candidate band search
