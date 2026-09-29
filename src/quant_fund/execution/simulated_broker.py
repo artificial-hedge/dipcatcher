@@ -7,6 +7,7 @@ kill switch and ``check_order`` risk gate before cash moves.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -45,6 +46,16 @@ def _limit_fill_price(
     return False, limit
 
 
+def _validate_exec_bar(bar_open: float, bar_high: float, bar_low: float) -> None:
+    """A bar can only fill prices inside its own range — fail closed otherwise."""
+    for name, value in (("bar_open", bar_open), ("bar_high", bar_high), ("bar_low", bar_low)):
+        v = float(value)
+        if not np.isfinite(v) or v <= 0:
+            raise ValueError(f"{name} must be finite and strictly positive")
+    if not bar_low <= bar_open <= bar_high:
+        raise ValueError("bar ordering must satisfy bar_low <= bar_open <= bar_high")
+
+
 class RejectReason(str, Enum):
     KILL_SWITCH = "kill_switch"
     RISK_GATE = "risk_gate"
@@ -81,6 +92,9 @@ class SimulatedBroker:
     initial_cash: float = 1_000_000.0
     slot: str = "champion"
     allow_capital: bool = True
+    # None keeps uuid4 ids (default paper/shadow behaviour). A simulation
+    # runtime may inject a deterministic factory; it is not persisted.
+    id_factory: Callable[[str], str] | None = None
     cash: float = field(init=False)
     shares: dict[str, float] = field(default_factory=dict)
     open_orders: dict[str, Order] = field(default_factory=dict)
@@ -101,6 +115,15 @@ class SimulatedBroker:
         self.kill = KillSwitch(self.config.kill_switch)
         if not self.allow_capital:
             self.slot = self.slot or "shadow"
+
+    def _mint_id(self, kind: str) -> str:
+        """Order and fill ids. Default format is unchanged when no factory is set."""
+        factory = self.id_factory
+        if factory is not None:
+            return factory(kind)
+        if kind == "fill":
+            return f"fill-{uuid4().hex[:12]}"
+        return f"{self.slot}-{uuid4().hex[:10]}"
 
     def nav(self, prices: dict[str, float] | None = None) -> float:
         px = prices or self.last_marks
@@ -182,6 +205,8 @@ class SimulatedBroker:
         touches the limit (``bar_open/high/low`` required); otherwise they
         rest in ``open_orders`` and can be swept later via ``process_bar``.
         """
+        if order.order_id in self.open_orders:
+            raise ValueError(f"order {order.order_id!r} is already working")
         if not np.isfinite(float(order.quantity)) or float(order.quantity) <= 0.0:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
@@ -191,7 +216,7 @@ class SimulatedBroker:
             self.reject_count += 1
             self.history.append(rec)
             return rec
-        if price is None or not (price > 0):
+        if price is None or not np.isfinite(float(price)) or float(price) <= 0:
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
                 reject_reason=RejectReason.MISSING_PRICE.value,
@@ -248,6 +273,7 @@ class SimulatedBroker:
         if order.limit_price is not None:
             if bar_open is None or bar_high is None or bar_low is None:
                 return self._rest_order(order)
+            _validate_exec_bar(bar_open, bar_high, bar_low)
             touched, limit_fill = _limit_fill_price(order, bar_open, bar_high, bar_low)
             if not touched:
                 return self._rest_order(order)
@@ -333,10 +359,7 @@ class SimulatedBroker:
         ``bar_time`` stamps the fill time and drives ``expire_time`` cancels.
         A participation-capped fill keeps the residual working (PARTIAL).
         """
-        for name, value in (("bar_open", bar_open), ("bar_high", bar_high), ("bar_low", bar_low)):
-            v = float(value)
-            if not np.isfinite(v) or v <= 0:
-                raise ValueError(f"{name} must be finite and strictly positive")
+        _validate_exec_bar(bar_open, bar_high, bar_low)
         records: list[OrderRecord] = []
         if not self.allow_capital:
             # Shadow slots never move cash; sweeping them would only
@@ -475,19 +498,24 @@ class SimulatedBroker:
             self.history.append(rec)
             return rec
 
-        self.cash -= notional + float(costs["total"])
-        self.shares[order.security_id] = current_shares + exec_qty
-        drift_slippage = 0.0
+        # Validate decision_price before any state moves: a late raise would
+        # leave cash/shares mutated with no fill to account for it.
+        dec: float | None = None
         if decision_price is not None:
             dec = float(decision_price)
             if not np.isfinite(dec) or dec <= 0:
                 raise ValueError("decision_price must be finite and strictly positive")
+
+        self.cash -= notional + float(costs["total"])
+        self.shares[order.security_id] = current_shares + exec_qty
+        drift_slippage = 0.0
+        if dec is not None:
             # Adverse component only (schema is non-negative); the signed
             # drift is recoverable from decision_price downstream.
             signed_drift = (float(price) - dec) * exec_qty
             drift_slippage = max(0.0, signed_drift)
         fill = Fill(
-            fill_id=f"fill-{uuid4().hex[:12]}",
+            fill_id=self._mint_id("fill"),
             order_id=order.order_id,
             security_id=order.security_id,
             quantity=abs(exec_qty),
@@ -497,6 +525,7 @@ class SimulatedBroker:
             spread_cost=float(costs["spread"]),
             impact_cost=float(costs["impact"]),
             slippage=drift_slippage,
+            turnover_cost=float(costs["turnover_bps"]),
             is_partial=abs(exec_qty) + 1e-12 < abs(requested_signed),
             decision_price=decision_price,
         )
@@ -531,11 +560,13 @@ class SimulatedBroker:
         px = dict(self.last_marks)
         px.update(prices)
         nav_use = float(nav if nav is not None else self.nav(px))
+        if not np.isfinite(nav_use):
+            raise ValueError("nav must be finite")
         orders: list[Order] = []
         ids = sorted(set(targets) | set(self.shares))
         for sid in ids:
             price = px.get(sid)
-            if price is None or price <= 0:
+            if price is None or not np.isfinite(float(price)) or float(price) <= 0:
                 continue
             tw = float(targets.get(sid, 0.0))
             desired = tw * nav_use / price
@@ -546,7 +577,7 @@ class SimulatedBroker:
             side = OrderSide.BUY if delta > 0 else OrderSide.SELL
             orders.append(
                 Order(
-                    order_id=f"{self.slot}-{uuid4().hex[:10]}",
+                    order_id=self._mint_id("order"),
                     security_id=sid,
                     symbol=sid,
                     side=side,

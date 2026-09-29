@@ -15,14 +15,16 @@ from __future__ import annotations
 
 import csv
 import io
-import time
 import urllib.error
-import urllib.request
 from datetime import UTC, date, datetime
+from email.message import Message
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import polars as pl
+
+from quant_fund.data.concurrent_io import IoError, call_with_retry, map_ordered, pooled_request
+from quant_fund.utils.atomicio import atomic_write_parquet
 
 SOURCE = "stooq"
 REVISION = "STOOQ_VENDOR_ADJ"
@@ -80,7 +82,7 @@ def parse_stooq_csv(text: str, *, security_id: str, stooq_symbol: str) -> pl.Dat
         if not date_s:
             continue
         try:
-            day = datetime.strptime(date_s, "%Y-%m-%d").date()
+            day = date.fromisoformat(date_s)
         except ValueError:
             continue
         try:
@@ -126,13 +128,50 @@ def np_finite(value: float) -> bool:
     return value == value and value not in (float("inf"), float("-inf"))
 
 
-def fetch_stooq_csv(stooq_symbol: str, *, timeout: float = 30.0) -> str:
-    """HTTP GET one Stooq daily CSV. Caller owns rate limits."""
+def fetch_stooq_csv(stooq_symbol: str, *, timeout: float = 30.0, retries: int = 2) -> str:
+    """HTTP GET one Stooq daily CSV. Retries transient failures; caller sets the rate."""
     url = STOQ_URL.format(ticker=stooq_symbol)
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — explicit public CSV  # nosec B310
-        body = bytes(resp.read())
-    return body.decode("utf-8", errors="replace")
+
+    def once() -> str:
+        try:
+            status, body = pooled_request(
+                "GET",
+                url,
+                headers={"User-Agent": USER_AGENT},
+                timeout=timeout,
+                max_bytes=20_000_000,
+            )
+        except IoError as exc:
+            raise urllib.error.URLError(str(exc)) from exc
+        if status >= 400:
+            raise urllib.error.HTTPError(url, status, f"HTTP {status}", Message(), None)
+        return body.decode("utf-8", errors="replace")
+
+    # 4xx other than 429 is terminal: wrap it so the retry loop does not spin.
+    def attempt() -> str:
+        try:
+            return once()
+        except urllib.error.HTTPError as exc:
+            if exc.code in (429, 500, 502, 503, 504):
+                raise
+            raise _TerminalHTTP(exc) from exc
+
+    try:
+        return call_with_retry(
+            attempt,
+            retries=retries,
+            backoff_s=0.4,
+            max_backoff_s=8.0,
+            jitter=True,
+            retry_on=(urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError),
+        )
+    except _TerminalHTTP as exc:
+        raise exc.error from None
+
+
+class _TerminalHTTP(Exception):
+    def __init__(self, error: urllib.error.HTTPError) -> None:
+        self.error = error
 
 
 def _master_row(
@@ -207,24 +246,77 @@ def write_file_lake(
     bars_path = root / "bars.parquet"
     master_path = root / "security_master.parquet"
     actions_path = root / "corporate_actions.parquet"
-    bars.write_parquet(bars_path)
-    master.write_parquet(master_path)
+    atomic_write_parquet(bars, bars_path)
+    atomic_write_parquet(master, master_path)
     # Empty actions: Stooq EOD is already vendor-adjusted; identity silver splits.
-    pl.DataFrame(
-        schema={
-            "security_id": pl.String,
-            "event_time": pl.Datetime(time_zone="UTC"),
-            "available_time": pl.Datetime(time_zone="UTC"),
-            "ingested_time": pl.Datetime(time_zone="UTC"),
-            "source": pl.String,
-            "revision_id": pl.String,
-            "action_type": pl.String,
-            "factor": pl.Float64,
-            "amount": pl.Float64,
-            "new_ticker": pl.String,
-        }
-    ).write_parquet(actions_path)
+    atomic_write_parquet(
+        pl.DataFrame(
+            schema={
+                "security_id": pl.String,
+                "event_time": pl.Datetime(time_zone="UTC"),
+                "available_time": pl.Datetime(time_zone="UTC"),
+                "ingested_time": pl.Datetime(time_zone="UTC"),
+                "source": pl.String,
+                "revision_id": pl.String,
+                "action_type": pl.String,
+                "factor": pl.Float64,
+                "amount": pl.Float64,
+                "new_ticker": pl.String,
+            }
+        ),
+        actions_path,
+    )
     return {"bars": bars_path, "master": master_path, "actions": actions_path}
+
+
+def collect_bars(
+    names: tuple[tuple[str, str], ...],
+    *,
+    start: datetime | None,
+    end: datetime | None,
+    pause_s: float,
+    max_workers: int,
+) -> tuple[pl.DataFrame, dict[str, str]]:
+    """Fetch, parse, and bound-check every name; return (bars, per-name errors)."""
+
+    # Bounds are session dates: a daily bar's event_time is its session close,
+    # so an instant comparison would silently drop same-day bars.
+    start_d = start.date() if start is not None else None
+    end_d = end.date() if end is not None else None
+
+    def _one(pair: tuple[str, str]) -> tuple[str, pl.DataFrame | None, str | None]:
+        security_id, symbol = pair
+        try:
+            text = fetch_stooq_csv(symbol)
+            frame = parse_stooq_csv(text, security_id=security_id, stooq_symbol=symbol)
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+            return security_id, None, str(exc)
+        if start_d is not None and not frame.is_empty():
+            frame = frame.filter(pl.col("event_time").dt.date() >= start_d)
+        if end_d is not None and not frame.is_empty():
+            frame = frame.filter(pl.col("event_time").dt.date() <= end_d)
+        return security_id, frame, None
+
+    fetched = map_ordered(
+        _one,
+        list(names),
+        max_workers=max_workers,
+        min_interval_s=pause_s,
+    )
+    frames: list[pl.DataFrame] = []
+    errors: dict[str, str] = {}
+    for security_id, frame, err in fetched:
+        if err is not None:
+            errors[security_id] = err
+            continue
+        if frame is not None and not frame.is_empty():
+            frames.append(frame)
+    if not frames:
+        return pl.DataFrame(), errors
+    return (
+        pl.concat(frames, how="diagonal_relaxed").sort(["event_time", "security_id"]),
+        errors,
+    )
 
 
 def download_stooq_universe(
@@ -234,26 +326,13 @@ def download_stooq_universe(
     start: datetime | None = None,
     end: datetime | None = None,
     pause_s: float = 0.4,
+    max_workers: int = 4,
 ) -> dict[str, object]:
     """Download a liquid public universe into ``root`` as a PIT-shaped file tape."""
-    frames: list[pl.DataFrame] = []
-    errors: dict[str, str] = {}
-    for security_id, symbol in names:
-        try:
-            text = fetch_stooq_csv(symbol)
-            frame = parse_stooq_csv(text, security_id=security_id, stooq_symbol=symbol)
-        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
-            errors[security_id] = str(exc)
-            time.sleep(pause_s)
-            continue
-        if start is not None and not frame.is_empty():
-            frame = frame.filter(pl.col("event_time") >= start)
-        if end is not None and not frame.is_empty():
-            frame = frame.filter(pl.col("event_time") <= end)
-        if not frame.is_empty():
-            frames.append(frame)
-        time.sleep(pause_s)
-    if not frames:
+    bars, errors = collect_bars(
+        names, start=start, end=end, pause_s=pause_s, max_workers=max_workers
+    )
+    if bars.is_empty():
         return {
             "status": "empty",
             "n_names": 0,
@@ -262,7 +341,6 @@ def download_stooq_universe(
             "vendor_adjusted": True,
             "sip_vintage": False,
         }
-    bars = pl.concat(frames, how="diagonal_relaxed").sort(["event_time", "security_id"])
     paths = write_file_lake(bars, root)
     return {
         "status": "ok",

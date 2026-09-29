@@ -6,6 +6,7 @@ import hashlib
 import os
 import shutil
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 
 from quant_fund.utils.hashing import hash_bytes
@@ -61,7 +62,7 @@ def git_worktree_sha256() -> str:
             "data/metadata/paper/",
             "htmlcov/",
         )
-        additions = bytearray()
+        entries: list[tuple[bytes, bytes]] = []
         for raw_path in untracked.split(b"\0"):
             if not raw_path:
                 continue
@@ -70,11 +71,9 @@ def git_worktree_sha256() -> str:
                 continue
             file_path = Path(path)
             if file_path.is_file():
-                additions.extend(raw_path)
-                additions.extend(b"\0")
-                additions.extend(file_path.read_bytes())
+                entries.append((raw_path, file_path.read_bytes()))
         tracked = _tracked_changes(git, _parse_name_status(name_status or b""))
-        return _fingerprint(tracked, bytes(additions))
+        return _fingerprint(tracked, _additions_blob(entries))
     except (OSError, subprocess.SubprocessError):
         return "UNKNOWN"
 
@@ -119,13 +118,14 @@ def _parse_name_status(raw: bytes) -> list[tuple[bytes, bytes]]:
 def _tracked_changes(git: str, entries: list[tuple[bytes, bytes]]) -> list[tuple[bytes, bytes]]:
     """Drop smudged LFS files whose bytes match the pointer recorded at HEAD.
 
-    The fingerprint is ``git diff HEAD``. A genuine LFS checkout stores the
-    pointer in that blob and the object bytes in the worktree, so a filter-off
-    diff always lists the path. Matching the worktree sha256 and size to the
-    HEAD pointer's oid and size is the same comparison a clean filter would
-    make, without running ``git-lfs``. The index pointer is the wrong object:
-    a staged edit whose new pointer matches the worktree would look clean
-    while ``git diff HEAD`` still shows the content change.
+    The fingerprint is ``git diff HEAD`` with LFS filters blanked. Git omits a
+    path while the index stat cache matches, so a quiescent smudge never
+    reaches this filter. A racy timestamp or a touch lists the path, because
+    the worktree bytes are not the pointer blob. Matching the worktree sha256
+    and size to the HEAD pointer's oid and size is the same comparison a clean
+    filter would make, without running ``git-lfs``. The index pointer is the
+    wrong object: a staged edit whose new pointer matches the worktree would
+    look clean while ``git diff HEAD`` still shows the content change.
     """
     if not entries:
         return []
@@ -232,7 +232,8 @@ def _parse_lfs_pointer(blob: bytes) -> tuple[str, int] | None:
         text = blob.decode("ascii")
     except UnicodeDecodeError:
         return None
-    lines = text.split("\n")
+    # Checked-out pointer files may carry CRLF endings (core.autocrlf).
+    lines = text.replace("\r\n", "\n").split("\n")
     if not lines or lines[0] != "version https://git-lfs.github.com/spec/v1":
         return None
     oid: str | None = None
@@ -272,6 +273,75 @@ def _file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(_HASH_CHUNK), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+@dataclass(frozen=True)
+class ContentAddress:
+    """Real-file content identity, including a Git LFS pointer's object id.
+
+    ``content_sha256`` is the hash of the file bytes. When the worktree file
+    is an LFS pointer, that hash is the pointer's ``oid`` (the real object),
+    not the hash of the pointer text. ``stored_sha256`` is always the hash of
+    the bytes on disk, so a pointer and its smudged payload stay distinct.
+    """
+
+    content_sha256: str
+    stored_sha256: str
+    stored_size: int
+    declared_size: int
+    kind: str
+
+
+def content_address(path: Path) -> ContentAddress:
+    """Hash a file with the same chunked SHA-256 used for worktree fingerprints.
+
+    A Git LFS pointer yields ``kind="lfs_pointer"`` and ``content_sha256``
+    equal to the oid inside the pointer. Any other file yields ``kind="blob"``
+    and both hashes equal ``_file_sha256``.
+    """
+    file_path = Path(path)
+    if not file_path.is_file():
+        raise FileNotFoundError(file_path)
+    stored_size = file_path.stat().st_size
+    stored_sha256 = _file_sha256(file_path)
+    if stored_size <= _LFS_POINTER_MAX_BYTES:
+        parsed = _parse_lfs_pointer(file_path.read_bytes())
+        if parsed is not None:
+            oid, declared_size = parsed
+            return ContentAddress(
+                content_sha256=oid,
+                stored_sha256=stored_sha256,
+                stored_size=stored_size,
+                declared_size=declared_size,
+                kind="lfs_pointer",
+            )
+    return ContentAddress(
+        content_sha256=stored_sha256,
+        stored_sha256=stored_sha256,
+        stored_size=stored_size,
+        declared_size=stored_size,
+        kind="blob",
+    )
+
+
+def _additions_blob(entries: list[tuple[bytes, bytes]]) -> bytes:
+    """Length-frame untracked ``(path, bytes)`` pairs for the fingerprint.
+
+    Plain ``path\\0bytes`` concatenation is not injective: file "a" holding
+    ``x\\0b\\0y`` plus file "b" holding ``y`` produces the same blob as "a"=x,
+    "b"=``y`` — a crafted tree could collide fingerprints. Framing each entry
+    with its byte length (the same scheme tracked files use) removes it.
+    Sorted by path so the blob is independent of ``ls-files`` ordering.
+    """
+    blob = bytearray()
+    for raw_path, content in sorted(entries, key=lambda item: item[0]):
+        blob.extend(raw_path)
+        blob.extend(b"\0")
+        blob.extend(str(len(content)).encode("ascii"))
+        blob.extend(b"\0")
+        blob.extend(content)
+        blob.extend(b"\0")
+    return bytes(blob)
 
 
 def _fingerprint(tracked: list[tuple[bytes, bytes]], additions: bytes) -> str:

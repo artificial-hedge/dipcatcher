@@ -30,12 +30,13 @@ in a combinatorial fold. A union-span purge would incorrectly wipe intervening
 train dates that sit between non-adjacent test blocks. Embargo still drops
 the configured bars immediately before/after each test block. Empty purged
 trains are skipped (fail-closed). See `validation/cpcv.py` and
-`tests/unit/test_cpcv_extremes.py`.
+`tests/unit/research/test_cpcv_extremes.py`.
 
 The research notebook includes a `cpcv` integrity family that records the
 observed versus expected fold count and validates date-level train/test
 separation. It is a validation audit, not a performance or profitability
-claim.
+claim. Schema 2 notebooks also stamp PBO, DSR, PSR, MinTRL, and the trial
+counts; how to read them is `docs/BACKTEST_OVERFITTING.md`.
 
 ## Hyperparameters
 
@@ -134,9 +135,42 @@ Honest research/validation posture after Waves 1–15 (no live P&L claims):
   `live_pnl_claim=false`, `research_only=true`. Schema validators reject any
   receipt that claims otherwise.
 - **Online CRC extremes** — empty/short calibrate, bad `B`/γ/α, λ≥0 floor, and
-  miss-streak honesty covered in `tests/unit/test_online_crc.py` (risk keys only;
+  miss-streak honesty covered in `tests/unit/research/test_online_crc.py` (risk keys only;
   no Sharpe-as-live).
 
 Wave 15 SYNTHETIC smoke (research-only — **NOT** live P&L): `dipcatcher research`
 oracle_raw IC≈0.79; `quant validate` ok=true promote=false; `--claim-live`
 ok=false; `dipcatcher paper --max-steps 8` → 173 fills, would_promote_live=false.
+
+## Historical Phase-1 code drift
+
+The 2026-09-25 Phase-1 index and run receipts are sealed retrospective
+evidence. The index records Git revision
+`c564646b14849d72c5891a90034d8e26361fe0f5` and has embedded receipt
+seal `0ce794b56249952fce5b2ff1046eea9e50b2f4e6d691539b8019959131873204`.
+The prospective paper adapter pins that same original seal.
+
+Later source or dependency edits can make a current-checkout comparison fail.
+`verify_phase1_index` checks the original index, its run links, and the code
+and runtime recorded at the indexed revision. The Phase-1 example may identify
+matching historical source bytes in Git when current files have changed; it
+still requires the index and run verifiers to pass. An unavailable revision,
+missing source blob, or mismatched receipt remains a verification failure.
+
+Keep the original receipt files, index, and paper-adapter pin unchanged. A
+corrected study needs a new run with fresh receipts and an explicit relationship
+to the earlier result. Historical code lookup does not rerun the study or turn
+the retrospective result into prospective or live evidence.
+
+### Historical phase-1 code and dependency drift
+
+The September 2026 tournament receipts remain bound to their original code
+revision, dependency stamp, and receipt hashes. Current implementation changes
+in replay, allocation, or statistical inference do not authorize replacing
+those historical hashes. Updating a lockfile version without recomputing the
+result also cannot establish that the new dependency produced that result.
+
+Use the historical verification path in `examples/05_phase1_evidence.py` to
+check the archived receipt against its committed source revision. To claim
+results from current code, run a new evaluation and publish a new receipt and
+index. Preserve the original receipt bytes and the forward-shadow index seal.

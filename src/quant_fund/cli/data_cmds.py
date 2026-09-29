@@ -1,23 +1,23 @@
-"""Data commands: doctor, ingest, collect, build-features/labels."""
+"""Ingest, collect, and gold-build commands.
+
+Split out of the original module. Import the parent path; it re-exports these names.
+"""
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import typer
 
-from quant_fund.pipeline.doctor import doctor as run_doctor
-from quant_fund.utils.logging import get_logger
-
-from ._app import (
-    _cfg,
-    _collect_param_value,
-    app,
-)
+from .app import app
+from .support import _cfg, _collect_param_value
 
 
 @app.command()
 def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
+    from quant_fund.pipeline.doctor import doctor as run_doctor
+
     info = run_doctor(str(config))
     for k, v in info.items():
         typer.echo(f"{k}: {v}")
@@ -56,6 +56,17 @@ def doctor(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     )
     if not healthy:
         raise typer.Exit(code=1)
+
+
+def get_logger(**binds: Any) -> Any:
+    """Resolve the structured logger on first call.
+
+    Kept as a module attribute so tests can patch it, without importing
+    structlog (and the utils barrel) when the CLI is only showing help.
+    """
+    from quant_fund.utils.logging import get_logger as _get_logger
+
+    return _get_logger(**binds)
 
 
 @app.command()
@@ -109,6 +120,52 @@ def collect(
     typer.echo(f"receipt: {result.receipt}")
 
 
+@app.command("promote-bars")
+def promote_bars_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    source_file: Path | None = typer.Option(
+        None,
+        "--source-file",
+        help="Collected source parquet (default <data.root>/raw/sources/<source>.parquet)",
+    ),
+    source: str | None = typer.Option(
+        None, "--source", help="Resolve the collected frame under data.root/raw/sources/"
+    ),
+    dest_dir: Path | None = typer.Option(
+        None,
+        "--dest-dir",
+        help="Directory the parquet provider reads (default <data.root>/raw)",
+    ),
+    filename: str = typer.Option("bars.parquet", "--filename", help="Bars filename"),
+    force: bool = typer.Option(False, "--force", help="Replace an existing bars file"),
+) -> None:
+    """Publish a collected source frame as ``bars.parquet`` for ``source: parquet``.
+
+    Runs the same bars/PIT contract the provider enforces at read time, refuses
+    to overwrite without ``--force``, and writes a provenance receipt linking
+    the source parquet (and its collect receipt) to the published file.
+    """
+    from quant_fund.data.promote import promote_bars
+    from quant_fund.data.sources.base import SourceError
+
+    cfg = _cfg(config)
+    root = Path(cfg.data.root)
+    src = source_file
+    if src is None:
+        if not source:
+            raise typer.BadParameter("pass --source-file or --source")
+        if source in {".", ".."} or "/" in source or "\\" in source:
+            raise typer.BadParameter("--source must be a path-safe label")
+        src = root / "raw" / "sources" / f"{source}.parquet"
+    dest = dest_dir or (root / "raw")
+    try:
+        result = promote_bars(src, dest, filename=filename, force=force)
+    except SourceError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"rows={result['rows']} data={result['data']}")
+    typer.echo(f"receipt: {result['receipt']}")
+
+
 @app.command("build-features")
 def build_features_cmd(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     from quant_fund.pipeline.dataset import build_gold
@@ -125,3 +182,12 @@ def build_labels_cmd(config: Path = typer.Option(Path("configs/research.yaml")))
     cfg = _cfg(config)
     _, labs = build_gold(cfg)
     typer.echo(f"labels rows={labs.height}")
+
+
+__all__ = [
+    "build_features_cmd",
+    "build_labels_cmd",
+    "collect",
+    "doctor",
+    "ingest",
+]

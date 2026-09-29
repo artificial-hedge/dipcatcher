@@ -37,11 +37,15 @@ import polars as pl
 from quant_fund.backtest.engine import (
     BacktestResult,
     StaleValuationError,
+    _fast_replay_is_complete,
+    _fast_replay_panel_supported,
     _target_weight_map,
+    _validate_bar_panel,
     run_backtest,
 )
 from quant_fund.config.models import AppConfig, FillConvention
 from quant_fund.monitoring.kill_switch import KillSwitch
+from quant_fund.portfolio.risk_gate import LIMIT_ABS_SLACK, LIMIT_REL_SLACK, exceeds_limit, funded
 from quant_fund.schemas.errors import KillSwitchActive
 
 try:
@@ -308,6 +312,26 @@ def _order_costs_nb(
 
 
 @njit(cache=True)
+def _exceeds_nb(value: float, limit: float) -> bool:
+    """Numba twin of ``exceeds_limit``. Keep the slack constants identical."""
+    if not (value > limit):
+        return False
+    slack = LIMIT_ABS_SLACK
+    rel = LIMIT_REL_SLACK * abs(limit)
+    if rel > slack:
+        slack = rel
+    return (value - limit) > slack
+
+
+@njit(cache=True)
+def _funded_nb(cash: float, needed: float) -> bool:
+    """Numba twin of ``funded``."""
+    if cash >= needed:
+        return True
+    return not _exceeds_nb(needed, cash)
+
+
+@njit(cache=True)
 def _replay_kernel(
     exec_px: np.ndarray,  # (T,A) f64 — exec source (open next_open / close)
     close_px: np.ndarray,  # (T,A) f64 — decision close + mark fallback
@@ -342,6 +366,7 @@ def _replay_kernel(
     f_fee: np.ndarray,  # (M,) f64
     f_spr: np.ndarray,  # (M,) f64
     f_imp: np.ndarray,  # (M,) f64
+    f_bpt: np.ndarray,  # (M,) f64 turnover bps charged in ``total``
     f_asset: np.ndarray,  # (M,) i64
     f_et: np.ndarray,  # (M,) i64
     f_st: np.ndarray,  # (M,) i64
@@ -389,6 +414,11 @@ def _replay_kernel(
     last_i = n_dates - 1 if use_next_open else n_dates
     for i in range(last_i):
         exec_t = i + 1 if use_next_open else i
+
+        # Sizing NAV must not see this bar's close. Snapshot the marks
+        # knowable before the fill, then update last_mark for the close.
+        pre_mark = last_mark.copy()
+        pre_ever = ever_marked.copy()
 
         # --- mark update ------------------------------------------------
         for a in range(n_assets):
@@ -442,12 +472,15 @@ def _replay_kernel(
             )
 
         # --- nav at execution marks --------------------------------------
+        # Names without an execution print stay on the pre-bar mark.
+        # last_mark already holds this bar's close; using it here leaks
+        # that close into order sizing (AUDIT_P61 finding 7).
         for a in range(n_assets):
             e_ok = np.isfinite(exec_px[exec_t, a]) and exec_px[exec_t, a] > 0
             if e_ok:
                 npv[a] = exec_px[exec_t, a]
-            elif ever_marked[a]:
-                npv[a] = last_mark[a]
+            elif pre_ever[a]:
+                npv[a] = pre_mark[a]
             else:
                 npv[a] = 0.0
         any_share_np64 = False
@@ -578,19 +611,19 @@ def _replay_kernel(
                 or vol_eff < 0.0
                 or not np.isfinite(delta)
                 or delta == 0.0
-                or abs(delta) * price > max_order_notional
-                or abs(current_w + (delta * price) / nav_safe) > max_name
-                or gross_after > max_gross
-                or abs(net_after) > max_net
-                or participation > max_participation
-                or gate_vol > max_predicted_vol
+                or _exceeds_nb(abs(delta) * price, max_order_notional)
+                or _exceeds_nb(abs(current_w + (delta * price) / nav_safe), max_name)
+                or _exceeds_nb(gross_after, max_gross)
+                or _exceeds_nb(abs(net_after), max_net)
+                or _exceeds_nb(participation, max_participation)
+                or _exceeds_nb(gate_vol, max_predicted_vol)
             )
             if rejected:
                 reject_count += 1
                 continue
 
             notional = delta * price
-            if delta > 0 and cash < notional + total:
+            if delta > 0 and not _funded_nb(cash, notional + total):
                 cash_reject_count += 1
                 continue
             cash -= notional + total
@@ -607,11 +640,17 @@ def _replay_kernel(
             cost_comm += comm
             cost_spr += spr
             cost_imp += imp
+            if frictionless:
+                bpt = 0.0
+            else:
+                nt = abs(delta) * price
+                bpt = abs(nt) * bps_per_turnover / 1e4
             f_qty[n_fills] = delta
             f_px[n_fills] = price
             f_fee[n_fills] = comm
             f_spr[n_fills] = spr
             f_imp[n_fills] = imp
+            f_bpt[n_fills] = bpt
             f_asset[n_fills] = a
             f_et[n_fills] = exec_t
             f_st[n_fills] = i
@@ -719,6 +758,7 @@ def _replay_driver(
     f_fee = np.empty(max_fills)
     f_spr = np.empty(max_fills)
     f_imp = np.empty(max_fills)
+    f_bpt = np.empty(max_fills)
     f_asset = np.empty(max_fills, dtype=np.int64)
     f_et = np.empty(max_fills, dtype=np.int64)
     f_st = np.empty(max_fills, dtype=np.int64)
@@ -776,6 +816,7 @@ def _replay_driver(
         f_fee,
         f_spr,
         f_imp,
+        f_bpt,
         f_asset,
         f_et,
         f_st,
@@ -825,11 +866,22 @@ def _replay_driver(
             "fee": f_fee[j],
             "spread_cost": f_spr[j],
             "impact_cost": f_imp[j],
+            "turnover_cost": f_bpt[j],
             "decision_price": f_dec[j] if f_decok[j] else None,
         }
         for j in range(n_fills)
     ]
-    cost_sum = {"commission": cost_comm, "spread": cost_spr, "impact": cost_imp}
+    # Sequential left fold, matching the reference's ``+=`` per fill —
+    # np.sum's pairwise reduction can differ at the last ulp.
+    turnover_sum = 0.0
+    for _v in f_bpt[:n_fills]:
+        turnover_sum += float(_v)
+    cost_sum = {
+        "commission": cost_comm,
+        "spread": cost_spr,
+        "impact": cost_imp,
+        "turnover": turnover_sum,
+    }
     return (
         navs,
         fill_rows,
@@ -849,12 +901,36 @@ def run_backtest_fast(
     initial_nav: float = 1_000_000.0,
     risk_overlay: Any = None,
 ) -> BacktestResult:
-    """Fast replay of ``run_backtest`` on the supported config class."""
+    """Fast replay of ``run_backtest`` on the supported config class.
+
+    Fails closed — ``ValueError`` — on any workload outside the class the
+    vectorized path reproduces bit-identically; it never approximates.
+    """
     if config.execution.allow_close_auction:
         raise ValueError("fast replay does not support allow_close_auction")
     if risk_overlay is not None:
         raise ValueError("fast replay does not support risk_overlay")
     _validate_panel_fast(weights)
+    # Shared with the event loop: duplicate bar keys raise the same
+    # ValueError("duplicate bars …") rather than a fast-only refuse string.
+    _validate_bar_panel(bars)
+    # Panel-shape and completeness refusals mirror the dispatcher's, so a
+    # direct call is guarded exactly like run_backtest(fast=True). Without
+    # them the matrices would silently collapse duplicate bar keys, align
+    # mismatched datetime units to empty weight cells, or IndexError on an
+    # empty panel instead of producing the reference's answers/errors.
+    if not _fast_replay_panel_supported(bars, weights):
+        raise ValueError(
+            "fast replay requires a non-empty bars panel with unique "
+            "(event_time, security_id) keys and a Datetime event_time "
+            "matching the weights panel"
+        )
+    if not _fast_replay_is_complete(config, risk_overlay):
+        raise ValueError(
+            "fast replay does not run while a market-risk-overlay artifact "
+            "exists: garch_risk_overlay_dates counters are stamped by the "
+            "event loop"
+        )
 
     # Lineage detection: the newer engine signature carries ``risk_overlay``
     # and treats weight panels as a sparse rebalance grid — the last target
@@ -1027,7 +1103,7 @@ def run_backtest_fast(
 
         navs = []
         fill_rows = []
-        cost_sum = {"commission": 0.0, "spread": 0.0, "impact": 0.0}
+        cost_sum = {"commission": 0.0, "spread": 0.0, "impact": 0.0, "turnover": 0.0}
         reject_count = 0
         cash_reject_count = 0
         halt_count = 0
@@ -1041,9 +1117,13 @@ def run_backtest_fast(
 
             # --- mark update (close_total_return preferred, close fallback) ----
             marked_today = ctr_ok_m[exec_t] | close_ok_m[exec_t]
+            # Pre-bar marks for sizing. ``np.where`` / ``|`` allocate, so
+            # these names keep the arrays from before today's close update.
+            pre_mark = last_mark
+            pre_ever = ever_marked
             mark_age = np.where(marked_today, 0, mark_age + 1)
             last_mark = np.where(marked_today, new_mark_m[exec_t], last_mark)
-            ever_marked |= marked_today
+            ever_marked = ever_marked | marked_today
 
             # --- stale-valuation fail-closed on held positions -----------------
             # Detail order follows the reference's two dict passes over
@@ -1072,7 +1152,7 @@ def run_backtest_fast(
             # last ulp. Keep builtin sum over the same insertion-ordered terms
             # for bit-identical floats. NB the compensated path only applies to
             # exact Python floats — np.float64 terms must be coerced per-product.
-            nav_price = np.where(exec_valid, exec_src, np.where(ever_marked, last_mark, 0.0))
+            nav_price = np.where(exec_valid, exec_src, np.where(pre_ever, pre_mark, 0.0))
             # Prices coerce to Python float; shares keep their dict type so a
             # capped fill's np.float64 propagates into products exactly as the
             # reference's does (np.float64 term → sum() degrades to naive).
@@ -1185,19 +1265,19 @@ def run_backtest_fast(
                     or vol_eff < 0.0
                     or not math.isfinite(delta)
                     or delta == 0.0
-                    or abs(delta) * price > gate.max_order_notional
-                    or abs(current_w + (delta * price) / nav_safe) > gate.max_name
-                    or gross_after > gate.max_gross
-                    or abs(net_after) > gate.max_net
-                    or participation > gate.max_participation
-                    or gate_vol > gate.max_predicted_vol
+                    or exceeds_limit(abs(delta) * price, gate.max_order_notional)
+                    or exceeds_limit(abs(current_w + (delta * price) / nav_safe), gate.max_name)
+                    or exceeds_limit(gross_after, gate.max_gross)
+                    or exceeds_limit(abs(net_after), gate.max_net)
+                    or exceeds_limit(participation, gate.max_participation)
+                    or exceeds_limit(gate_vol, gate.max_predicted_vol)
                 )
                 if rejected:
                     reject_count += 1
                     continue
 
                 notional = delta * price
-                if delta > 0 and cash < notional + total_trade_cost:
+                if delta > 0 and not funded(cash, notional + total_trade_cost):
                     cash_reject_count += 1
                     continue
                 cash -= notional + total_trade_cost
@@ -1207,9 +1287,15 @@ def run_backtest_fast(
                 shares[a] = current + delta
                 terms_base[a] = shares[a] * npv[a]
                 traded_turn += abs(notional) / nav_safe
+                if costs_cfg.frictionless:
+                    bpt = 0.0
+                else:
+                    nt = abs(delta) * price
+                    bpt = abs(nt) * costs_cfg.bps_per_turnover / 1e4
                 cost_sum["commission"] += float(comm)
                 cost_sum["spread"] += float(spr)
                 cost_sum["impact"] += float(imp)
+                cost_sum["turnover"] += bpt
                 fill_rows.append(
                     {
                         "fill_time": dates[exec_t],
@@ -1220,6 +1306,7 @@ def run_backtest_fast(
                         "fee": comm,
                         "spread_cost": spr,
                         "impact_cost": imp,
+                        "turnover_cost": bpt,
                         "decision_price": dec_l[a] if dec_ok_d[a] else None,
                     }
                 )
