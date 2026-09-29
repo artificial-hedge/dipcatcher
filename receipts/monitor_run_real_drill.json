@@ -1,0 +1,69 @@
+{
+  "code_revision": "31ef76dea10b8bd58091c8086faae417be3d92c8",
+  "data_label": "yahoo_eod",
+  "evidence": [
+    "anytime_valid_monitor_lanes",
+    "per_shard_head_independence",
+    "fleet_median_drift_pairing",
+    "lazy_lane_resolution",
+    "proper_score_only"
+  ],
+  "inputs_sha256": "27fb9d606d1e5308304288c900c5d4bd95990c8266f90b705d12b1329e5335d7",
+  "kind": "monitor_run",
+  "lanes_available": {
+    "calibration": true,
+    "conformal": true,
+    "coverage": true,
+    "drift": true,
+    "emerge": true,
+    "tail": true
+  },
+  "level": "research",
+  "live_pnl_claim": false,
+  "n_alarm_rows": 60,
+  "n_rows": 64,
+  "params": {
+    "alpha": 0.05,
+    "data_labels": {
+      "yahoo_aal": "yahoo_eod",
+      "yahoo_aos": "yahoo_eod",
+      "yahoo_chrw": "yahoo_eod",
+      "yahoo_lhx": "yahoo_eod",
+      "yahoo_mas": "yahoo_eod",
+      "yahoo_mgm": "yahoo_eod",
+      "yahoo_pwr": "yahoo_eod",
+      "yahoo_spy": "yahoo_eod"
+    },
+    "heads": [
+      "conf_t",
+      "empirical",
+      "fhs_skew",
+      "gaussian",
+      "gmm",
+      "isotonic",
+      "regime",
+      "skew_t"
+    ],
+    "level": 0.9,
+    "n_eval": 256,
+    "n_train": 512,
+    "seed": 0,
+    "shards": [
+      "yahoo_aal",
+      "yahoo_aos",
+      "yahoo_chrw",
+      "yahoo_lhx",
+      "yahoo_mas",
+      "yahoo_mgm",
+      "yahoo_pwr",
+      "yahoo_spy"
+    ],
+    "tail_cell": [
+      0.05,
+      0.1
+    ]
+  },
+  "receipt_sha256": "5b3816febdaec3818671bf50c6bf18bea2bd516eb150ba94d9763de64ecb3b86",
+  "research_only": true,
+  "schema": "monitor_run.v1"
+}
