@@ -660,6 +660,118 @@ def race(
     typer.echo(f"receipt={path}")
 
 
+@app.command("lane-power")
+def lane_power(
+    defects: str = typer.Option("0.0,0.1,0.25,0.5,1.0", help="Comma-separated defect sizes."),
+    n_steps: int = typer.Option(400, help="Stream length per run."),
+    n_seeds: int = typer.Option(20, help="Seeds per (lane, defect) cell."),
+    alpha: float = typer.Option(0.05, help="Alarm threshold."),
+    lanes: str | None = typer.Option(
+        None, help="Comma-separated lane names (default: all available)."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Sequential power bench — measured alarm rate/time per monitor lane.
+
+    Injects controlled defects into synthetic streams and records how fast
+    each anytime-valid lane alarms; the defect=0 row bounds each lane's
+    false-alarm rate by alpha. Lanes whose modules are unmerged show
+    ``lane_missing`` on the receipt.
+    """
+    import json
+
+    from quant_fund.research.fleet_eval import _atomic_write_text
+    from quant_fund.research.lane_power import lane_power_bench
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    try:
+        defect_grid = tuple(float(x) for x in defects.split(","))
+    except ValueError as exc:
+        raise typer.BadParameter(f"defects must be numeric: {exc}") from exc
+    frame, receipt = lane_power_bench(
+        defects=defect_grid,
+        n_steps=n_steps,
+        n_seeds=n_seeds,
+        alpha=alpha,
+        lanes=None if lanes is None else tuple(lanes.split(",")),
+    )
+    sealed = seal_receipt(receipt)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"lane_power_{sealed['receipt_sha256'][:16]}.json"
+    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"lanes_ok={receipt['n_lanes_ok']} rows={frame.height} "
+        f"null_alarm_rate={receipt['null_alarm_rate']}"
+    )
+    typer.echo(f"receipt={path}")
+
+
+@app.command("suite-health")
+def suite_health_cmd(
+    receipts_dir: Path = typer.Option(
+        Path("receipts"), help="Directory of committed receipts to re-verify."
+    ),
+    alpha: float = typer.Option(0.05, help="Pooled-evidence alarm threshold."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit 1 unless every failing receipt is a byte-pinned legacy "
+        "unsealed artifact (CI evidence-audit gate).",
+    ),
+) -> None:
+    """Re-verify every receipt in a directory + pool evidence → sealed summary.
+
+    One command audits the whole evidence trail: each file gets a fresh
+    verify-receipt pass (seal + kind contract), harvestable p-values /
+    e-values are pooled under arbitrary dependence, and a corrupt artifact
+    withholds the pooled claim — never asserted over partial evidence.
+    """
+    import json
+
+    from quant_fund.research.fleet_eval import _atomic_write_text
+    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.research.suite_health import suite_health
+
+    try:
+        frame, receipt = suite_health(receipts_dir, alpha=alpha)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    sealed = seal_receipt(receipt)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"suite_health_{sealed['receipt_sha256'][:16]}.json"
+    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=receipt["data_label"],
+        )
+    )
+    typer.echo(
+        f"receipts={receipt['n_receipts']} ok={receipt['n_ok']} "
+        f"failed={receipt['n_failed']} pooled_evalue={receipt['pooled_evalue']}"
+    )
+    typer.echo(f"receipt={path}")
+    if strict:
+        import polars as pl
+
+        from quant_fund.research.legacy_unsealed import is_known_unsealed
+        from quant_fund.research.receipt_v2 import verify_receipt_file
+
+        bad: list[str] = []
+        for row in frame.filter(~pl.col("valid")).iter_rows(named=True):
+            p = receipts_dir / str(row["file"])
+            result = verify_receipt_file(p)
+            if not is_known_unsealed(p, result["errors"]):
+                bad.append(f"{row['file']}: {result['errors']}")
+        if bad:
+            typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
+            for line in bad:
+                typer.echo(f"  {line}", err=True)
+            raise typer.Exit(code=1)
+
+
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -990,9 +1102,12 @@ __all__ = [
     "corpus",
     "execution_sensitivity_cmd",
     "fleet",
+    "lane_power",
     "monitor",
     "verdict",
     "race",
+    "race",
+    "suite_health_cmd",
     "monitor",
     "online_fdr_cmd",
     "rankic",
