@@ -168,3 +168,44 @@ def test_bundle_contract_errors() -> None:
 
     ok_body["files_sha256"] = {rel: hashlib.sha256(b"x").hexdigest() for rel in ok_body["files"]}
     assert bundle_contract_errors(ok_body) == []
+
+
+@requires_tree
+def test_standalone_verifier_agrees_with_library(tmp_path: Path) -> None:
+    """The independent scripts/ implementation must reach the same verdict as
+    the library verifier on honest AND tampered bundles — divergence between
+    the two implementations is itself a finding."""
+    import subprocess
+    import sys
+
+    from quant_fund.research.auditor_bundle import verify_bundle
+
+    script = REPO_ROOT / "scripts/verify_auditor_bundle.py"
+    bundle = _build(tmp_path)
+
+    res = verify_bundle(bundle, rekor_url=None)
+    proc = subprocess.run(
+        [sys.executable, str(script), str(bundle), "--offline"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert res["ok"] and proc.returncode == 0, proc.stderr + proc.stdout
+
+    import hashlib
+
+    tampered = json.loads(bundle.read_text())
+    raw = bytearray(base64.b64decode(tampered["files"]["quality/epoch_heads.json"]))
+    raw[0] ^= 0x01
+    tampered["files"]["quality/epoch_heads.json"] = base64.b64encode(bytes(raw)).decode()
+    tampered["files_sha256"]["quality/epoch_heads.json"] = hashlib.sha256(bytes(raw)).hexdigest()
+    bad = tmp_path / "tampered.json"
+    bad.write_text(json.dumps(tampered))
+    res2 = verify_bundle(bad, rekor_url=None)
+    proc2 = subprocess.run(
+        [sys.executable, str(script), str(bad), "--offline"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert not res2["ok"] and proc2.returncode == 1
