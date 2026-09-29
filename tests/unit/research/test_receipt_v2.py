@@ -413,6 +413,48 @@ def test_cli_verify_receipt_fails_closed(tmp_path: Path) -> None:
     assert '"valid": false' in result.output
 
 
+def test_schema_version_2_non_envelope_dispatches_to_v1(tmp_path: Path) -> None:
+    """`schema_version` is a per-format counter, not a receipt.v2 marker."""
+    body = {
+        "schema_version": 2,
+        "kind": "source_storage_receipt",
+        "sha256": "a" * 64,
+        "live_pnl_claim": False,
+    }
+    sealed = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
+    path = tmp_path / "sidecar.json"
+    path.write_text(json.dumps(sealed))
+    result = verify_receipt_file(path)
+    assert result["valid"] is True, result["errors"]
+    assert result["digest_convention"] == "canonical_json"
+
+
+def test_data_manifest_dispatches_contract_check(tmp_path: Path) -> None:
+    """A schema_version=1 manifest-shaped payload gets manifest checks."""
+    manifest = {
+        "schema_version": 1,
+        "source": "synthetic",
+        "artifacts": {
+            "bars": {"path": "/x/b.parquet", "sha256": "a" * 64, "rows": 3, "columns": ["a", "b"]}
+        },
+        "live_pnl_claim": False,
+    }
+    sealed = {**manifest, "receipt_sha256": hash_bytes(canonical_json_bytes(manifest))}
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(sealed))
+    assert verify_receipt_file(path)["valid"] is True
+
+    broken = json.loads(json.dumps(manifest))
+    broken["artifacts"]["bars"]["sha256"] = "nothex"
+    broken["artifacts"]["bars"]["columns"] = ["b", "a"]
+    bad = {**broken, "receipt_sha256": hash_bytes(canonical_json_bytes(broken))}
+    bad_path = tmp_path / "bad_manifest.json"
+    bad_path.write_text(json.dumps(bad))
+    errors = verify_receipt_file(bad_path)["errors"]
+    assert any("sha256_invalid" in e for e in errors)
+    assert any("columns_invalid" in e for e in errors)
+
+
 _RECEIPTS = Path(__file__).resolve().parents[3] / "receipts"
 
 
