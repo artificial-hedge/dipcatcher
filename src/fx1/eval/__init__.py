@@ -32,6 +32,7 @@ __all__ = [
     "MemoryGapReport",
     "TimePartition",
     "compare_runs",
+    "eval_prompt_surface",
     "mask_task",
     "masked_twins",
     "memory_gap_report",
@@ -43,6 +44,31 @@ __all__ = [
     "run_rephrased_gap",
     "run_suite",
 ]
+
+
+def eval_prompt_surface() -> list[str]:
+    """Every user prompt the eval surface presents to a model.
+
+    The decontamination target: canonical bank prompts, red-team tasks,
+    rephrased twins, and masked twins. A corpus may copy an eval item in
+    *any* of those surface forms — the quality gate and the contamination
+    audit must screen against all of them, not only the canonical bank.
+    """
+    tasks = (
+        list(DEFAULT_BANK)
+        + list(REDTEAM_TASKS)
+        + rephrased_twins([*HONESTY_BAITS, *DOMAIN_TASKS])
+        + masked_twins(list(DEFAULT_BANK) + list(REDTEAM_TASKS))
+    )
+    prompts: list[str] = []
+    seen: set[str] = set()
+    for task in tasks:
+        for message in task.messages:
+            if message["role"] == "user" and message["content"] not in seen:
+                seen.add(message["content"])
+                prompts.append(message["content"])
+    return prompts
+
 
 _LAZY_CAPABILITY = frozenset({"CapabilityEvalReport", "run_capability_eval"})
 
