@@ -715,3 +715,20 @@ def test_matching_v2_kind_gets_no_rename_flag() -> None:
         "errors"
     ]
     assert "kind_fingerprint_mismatch" not in errors, errors
+
+
+def test_cost_calibration_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals a cost_calibration.v1 body in the envelope."""
+    if not (_RECEIPTS / "cost_calibration_eval_df9b8d7068bf709b.json").is_file():
+        pytest.skip("cost_calibration receipt not committed in this checkout")
+    from quant_fund.research.cost_calibration import write_cost_calibration_receipt
+
+    receipt = _cost_calibration()
+    path = write_cost_calibration_receipt(receipt, tmp_path, receipt_version=2)
+    assert path.name.startswith("cost_calibration_eval_")
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["kind"] == "cost_calibration_eval"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    result = verify_receipt_file(path)
+    assert result["valid"] is True, result["errors"]

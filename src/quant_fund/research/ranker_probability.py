@@ -368,6 +368,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--test-dates", type=int, default=63)
     parser.add_argument("--n-boot", type=int, default=2000)
     parser.add_argument("--feature-columns", nargs="+", default=PUBLIC_FEATURES)
+    parser.add_argument(
+        "--receipt-version",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="receipt schema version: 1 = strict-digest receipt (default), "
+        "2 = unified receipt.v2 envelope",
+    )
     args = parser.parse_args(argv)
     spec = ExperimentSpec(
         features=tuple(args.feature_columns),
@@ -417,10 +425,40 @@ def main(argv: list[str] | None = None) -> int:
     result["data_scope"] = "exploratory_previously_inspected_or_unverified"
     result["holdout_previously_inspected_or_unverified"] = True
     result["receipt_sha256"] = _digest(result)
+    if args.receipt_version == 2:
+        from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+        document: dict[str, Any] = seal_receipt(
+            wrap_receipt_v2(
+                result,
+                code_files=(
+                    Path(__file__),
+                    Path(ranking.__file__),
+                    Path(calibration.__file__),
+                    Path(inference.__file__),
+                ),
+                verdict="pass" if result["gate_pass"] else "fail",
+                kind="ranker_probability_eval",
+                data_label="REAL" if raw_inputs else "UNKNOWN",
+                dataset={
+                    "input_sha256": result["input_sha256"],
+                    "bronze_input_sha256": raw_inputs,
+                },
+                params={
+                    "features": list(spec.features),
+                    "train_dates": spec.train_dates,
+                    "cal_dates": spec.cal_dates,
+                    "test_dates": spec.test_dates,
+                    "n_boot": spec.n_boot,
+                },
+            )
+        )
+    else:
+        document = result
     args.output.parent.mkdir(parents=True, exist_ok=True)
     publish_text_once(
         args.output,
-        json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n",
     )
     print(
         json.dumps(

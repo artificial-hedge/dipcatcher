@@ -37,6 +37,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -419,3 +420,49 @@ def lattice_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         if derived is not None and payload.get("inputs_sha256") != derived:
             errors.append("inputs_sha256")
     return errors
+
+
+def write_lattice_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a receipt_lattice receipt and write ``receipt_lattice_<hash>.json``.
+
+    Filename digest = canonical ``receipt_sha256``. Atomic, fail-closed on
+    a malformed receipt. ``receipt_version=2`` wraps the same body in the
+    unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("kind") != LATTICE_SCHEMA
+        or receipt.get("schema") != LATTICE_SCHEMA
+        or receipt.get("research_only") is not True
+        or receipt.get("live_pnl_claim") is not False
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("receipt_lattice receipt violates its contract")
+    errors = lattice_contract_errors(receipt)
+    if errors:
+        raise ValueError(f"receipt_lattice receipt violates its contract: {errors}")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass" if receipt.get("verdict") == "consistent" else "fail",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"receipt_lattice_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path

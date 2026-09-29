@@ -127,3 +127,19 @@ def test_corpus_label_derived_from_inputs(tmp_path: Path) -> None:
     )
     rep2 = corpus_audit(tmp_path)
     assert rep2["data_label"] == "MIXED"
+
+
+def test_corpus_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the corpus_inference.v1 body in the envelope."""
+    from quant_fund.research.corpus_inference import write_corpus_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    _write(tmp_path, "a.json", {"kind": "k", "dm_p": 0.001})
+    _write(tmp_path, "b.json", {"kind": "k", "t_p": 0.9})
+    rep = corpus_audit(tmp_path, q=0.05)
+    path = write_corpus_receipt(rep, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "corpus_inference.v1"
+    assert payload["payload"]["inputs_sha256"] == rep["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True

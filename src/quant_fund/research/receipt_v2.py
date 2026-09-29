@@ -303,6 +303,63 @@ def build_receipt_v2(
     return receipt
 
 
+def wrap_receipt_v2(
+    receipt: Mapping[str, Any],
+    *,
+    code_files: tuple[Path, ...] | list[Path],
+    verdict: str,
+    kind: str | None = None,
+    data_label: str | None = None,
+    dataset: Mapping[str, Any] | None = None,
+    params: Mapping[str, Any] | None = None,
+    generated_at: str | None = None,
+    revision: str | None = None,
+) -> dict[str, Any]:
+    """Wrap a lane's own v1 receipt body in the ``receipt.v2`` envelope.
+
+    Shared by every v1 writer opting into ``receipt_version=2``: the envelope
+    bindings come from the payload's own identity fields — the lane's
+    ``inputs_sha256``/``dataset_sha256``/``weights_sha256`` digests seed
+    ``dataset_hash`` (a digest of the payload itself when absent), a
+    ``params`` mapping seeds ``params_hash``, and the lane's recorded
+    ``generated_at``/``git_revision``/``code_revision``/``generated_at_commit``
+    stamp the envelope. Callers may override any binding explicitly when the
+    lane's identity lives in differently named fields.
+    """
+    if dataset is not None:
+        bound_dataset: Mapping[str, Any] = dataset
+    else:
+        bound_dataset = {
+            key: receipt[key]
+            for key in ("inputs_sha256", "dataset_sha256", "weights_sha256")
+            if key in receipt
+        }
+        if not bound_dataset:
+            bound_dataset = {"payload_sha256": hash_bytes(canonical_json_bytes(dict(receipt)))}
+    lane_params = receipt.get("params")
+    bound_params = (
+        params if params is not None else lane_params if isinstance(lane_params, Mapping) else {}
+    )
+    revision = (
+        revision
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+        or receipt.get("generated_at_commit")
+    )
+    generated_at = generated_at or receipt.get("generated_at")
+    return build_receipt_v2(
+        kind=str(kind or receipt.get("kind") or receipt.get("schema") or "receipt"),
+        data_label=str(data_label or receipt.get("data_label") or "UNKNOWN"),
+        dataset=bound_dataset,
+        params=bound_params,
+        code_files=code_files,
+        verdict=verdict,
+        payload=dict(receipt),
+        generated_at=str(generated_at) if generated_at is not None else None,
+        revision=str(revision) if revision is not None else None,
+    )
+
+
 def seal_receipt(receipt: Mapping[str, Any]) -> dict[str, Any]:
     """Canonicalize a receipt body and stamp ``receipt_sha256`` over it."""
     canonical = json.loads(canonical_json_bytes(dict(receipt)))
@@ -451,7 +508,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         if claimed in _LANE_CONSISTENCY:
             path = _LANE_CONSISTENCY[claimed]
             module, _, func = path.rpartition(".")
-            errors = getattr(importlib.import_module(module), func)(payload)
+            errors: list[str] = list(getattr(importlib.import_module(module), func)(payload))
             if claimed != kind:
                 errors = [*errors, "kind_fingerprint_mismatch"]
             return errors
@@ -465,12 +522,15 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         return calibration_v2_consistency_errors(payload)
     if kind == "capacity_overlay_eval":
         from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
+
         return capacity_v2_consistency_errors(payload)
     if kind == "cross_sectional_rankic_eval":
         from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
+
         return rankic_v2_consistency_errors(payload)
     if kind == "vol_bench":
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
+
         return vol_bench_v2_consistency_errors(payload)
     if kind == "selection_concordance":
         from quant_fund.research.concordance import concordance_consistency_errors
@@ -478,6 +538,7 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         return concordance_consistency_errors(payload)
     if kind == "coherence_eval":
         from quant_fund.research.coherence import coherence_v2_consistency_errors
+
         return coherence_v2_consistency_errors(payload)
     return []
 
@@ -555,10 +616,17 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         errors.extend(calibration_contract_errors(payload))
     elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
         from quant_fund.data.ingest import data_manifest_contract_errors
+
         errors.extend(data_manifest_contract_errors(payload))
     if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
-        from quant_fund.paper.sim_live import sim_live_contract_errors
-        errors.extend(sim_live_contract_errors(payload))
+        from quant_fund.paper import sim_live
+
+        lane_errors = getattr(sim_live, "sim_live_contract_errors", None)
+        errors.extend(
+            lane_errors(payload)
+            if lane_errors is not None
+            else ["sim_live_contract_errors_missing"]
+        )
     if payload.get("schema") == "cost_calibration.v1":
         from quant_fund.research.cost_calibration import (
             cost_calibration_contract_errors,
@@ -574,6 +642,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         errors.extend(lane_receipt_contract_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+
         errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
@@ -631,8 +700,6 @@ def verify_receipt_file(path: Path | str) -> ReceiptVerification:
             return _result(file_path, {}, None, [str(exc)])
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     except (OSError, UnicodeError) as exc:
-        payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
-    except (OSError, UnicodeError, ValueError) as exc:
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     return verify_receipt_payload(payload, file_path)
 

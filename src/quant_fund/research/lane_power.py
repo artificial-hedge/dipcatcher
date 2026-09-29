@@ -37,13 +37,17 @@ Seals a ``lane_power.v1`` receipt. Fail closed throughout.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import polars as pl
 
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 LANE_POWER_SCHEMA = "lane_power.v1"
@@ -369,4 +373,45 @@ def lane_power_bench(
     return frame, receipt
 
 
-__all__ = ["LANE_POWER_SCHEMA", "lane_power_bench"]
+def write_lane_power_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a lane_power receipt and write ``lane_power_<hash>.json``.
+
+    Filename digest = canonical ``receipt_sha256``. Atomic, fail-closed on
+    a malformed receipt. ``receipt_version=2`` wraps the same body in the
+    unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("schema") != LANE_POWER_SCHEMA
+        or receipt.get("kind") != "lane_power"
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("lane_power receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"lane_power_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+__all__ = ["LANE_POWER_SCHEMA", "lane_power_bench", "write_lane_power_receipt"]

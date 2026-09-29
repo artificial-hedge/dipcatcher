@@ -15,6 +15,7 @@ the pooled claim is withheld rather than asserted over partial evidence.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -22,8 +23,13 @@ import numpy as np
 import polars as pl
 
 from quant_fund.research.emerge import emerge_mean
-from quant_fund.research.receipt_v2 import verify_receipt_file
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.research.receipt_v2 import (
+    seal_receipt,
+    verify_receipt_file,
+    wrap_receipt_v2,
+)
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 SUITE_HEALTH_SCHEMA = "suite_health.v1"
@@ -155,4 +161,43 @@ def suite_health(
     return frame, receipt
 
 
-__all__ = ["SUITE_HEALTH_SCHEMA", "suite_health"]
+def write_suite_health_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a suite_health receipt and write ``suite_health_<hash>.json``.
+
+    Filename digest = canonical ``receipt_sha256``. Atomic, fail-closed on
+    a malformed receipt. ``receipt_version=2`` wraps the same body in the
+    unified ``receipt.v2`` envelope instead.
+    """
+    if (
+        receipt.get("schema") != SUITE_HEALTH_SCHEMA
+        or receipt.get("kind") != "suite_health"
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("suite_health receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="fail" if receipt.get("n_failed") else "pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"suite_health_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+__all__ = ["SUITE_HEALTH_SCHEMA", "suite_health", "write_suite_health_receipt"]

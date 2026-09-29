@@ -96,3 +96,21 @@ def test_monitor_lane_completeness_ratchet() -> None:
         f"excluded: {sorted(unregistered)} — add a runner or a "
         f"_EXCLUDED_LANE_MODULES entry"
     )
+
+
+def test_lane_power_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the lane_power.v1 body in the envelope."""
+    import json
+    from pathlib import Path
+
+    from quant_fund.research.lane_power import write_lane_power_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    assert isinstance(tmp_path, Path)
+    _, receipt = lane_power_bench(defects=(0.0,), n_steps=32, n_seeds=2)
+    path = write_lane_power_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "lane_power"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True
