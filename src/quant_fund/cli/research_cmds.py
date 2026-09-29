@@ -6,12 +6,32 @@ Split out of the original module. Import the parent path; it re-exports these na
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable, Mapping
 from pathlib import Path
+from typing import Any
 
 import typer
 
 from .app import app
 from .support import _cfg, format_data_label, format_fdr_families
+
+
+def _harvest_p_values(findings: Iterable[Any]) -> list[float]:
+    """Pull the ``stat == "p"`` values out of one harvest_findings result.
+
+    Findings are dicts on the corpus-inference lane; attribute access is
+    tolerated so the command survives a dataclass-shaped finding.
+    """
+    out: list[float] = []
+    for finding in findings:
+        if isinstance(finding, Mapping):
+            stat, value = finding.get("stat"), finding.get("value")
+        else:
+            stat = getattr(finding, "stat", None)
+            value = getattr(finding, "value", None)
+        if stat == "p" and isinstance(value, (int, float)) and not isinstance(value, bool):
+            out.append(float(value))
+    return out
 
 
 @app.command()
@@ -177,8 +197,7 @@ def execution_sensitivity_cmd(
     from quant_fund.backtest.event_sim import execution_sensitivity, format_sensitivity_table
     from quant_fund.features.engine import build_features
     from quant_fund.pipeline.dataset import ensure_silver
-    from quant_fund.pipeline.dataset import panel as decision_panel
-    from quant_fund.pipeline.forecast import build_causal_weight_panel
+    from quant_fund.pipeline.forecast import build_causal_weight_panel, decision_dates
 
     def _ints(raw: str) -> tuple[int, ...]:
         parts = tuple(int(piece.strip()) for piece in raw.split(",") if piece.strip())
@@ -195,11 +214,9 @@ def execution_sensitivity_cmd(
     cfg = _cfg(config)
     bars = ensure_silver(cfg)
     feat = build_features(bars, cfg)
-    dates = feat["event_time"].unique().sort().to_list()
     # Gold drops warmup bars (history / label horizon). optimize_asof refuses
     # a decision date with no panel row, so the grid uses the overlap only.
-    on_panel = set(decision_panel(cfg)["event_time"].unique().to_list())
-    dates = [day for day in dates if day in on_panel]
+    dates = decision_dates(cfg, feat["event_time"].unique().sort().to_list())
     if len(dates) < 2:
         raise typer.BadParameter(
             "need at least 2 decision dates on both the feature panel and the causal gold panel"
@@ -238,6 +255,11 @@ def verify_identities(
     ),
     trials: int = typer.Option(8, "--trials", help="Seeded SYNTHETIC draws per identity."),
     seed: int = typer.Option(7, "--seed", help="Base seed for the synthetic generators."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = identity_sweep v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Prove catalog/northset microstructure identities on SYNTHETIC draws.
 
@@ -251,8 +273,10 @@ def verify_identities(
         write_identity_receipt,
     )
 
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
     receipt = run_identity_sweep(n_trials=int(trials), seed=int(seed))
-    write_identity_receipt(out, receipt)
+    write_identity_receipt(out, receipt, receipt_version=receipt_version)
     typer.echo("SYNTHETIC")
     typer.echo(format_identity_table(receipt))
     typer.echo(f"receipt={out}")
@@ -314,7 +338,12 @@ def fleet(
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_fleet_receipt(receipt, out_dir, receipt_version=receipt_version)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     typer.echo(frame)
     typer.echo(f"receipt={path}")
 
@@ -405,6 +434,13 @@ def vol_bench(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    path = write_vol_bench_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_vol_bench_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -465,6 +501,15 @@ def rankic(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
+    path = write_rankic_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_rankic_receipt(receipt, out_dir, receipt_version=receipt_version)
@@ -527,11 +572,91 @@ def capacity(
         participation_cap=participation_cap,
         impact_coeff=impact_coeff,
     )
+    path = write_capacity_receipt(receipt, out_dir)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
     if receipt_version not in (1, 2):
         raise typer.BadParameter("--receipt-version must be 1 or 2")
     path = write_capacity_receipt(receipt, out_dir, receipt_version=receipt_version)
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(format_capacity_table(frame))
+    typer.echo(f"receipt={path}")
+
+
+@app.command()
+def race(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    models: str | None = typer.Option(
+        None, help="Comma-separated head names (default: full fleet registry)."
+    ),
+    shards: str | None = typer.Option(
+        None, help="Comma-separated shard names (default: all synthetic shards)."
+    ),
+    n_train: int = typer.Option(256, help="Leading fit rows per shard."),
+    n_eval: int = typer.Option(128, help="Trailing eval rows, sliced into chunks."),
+    n_chunks: int = typer.Option(8, help="Ordered eval chunks per shard (>=4, divides n_eval)."),
+    alpha: float = typer.Option(0.05, help="Anytime-valid promotion level."),
+    seed: int | None = typer.Option(
+        None, help="Base seed (default: train.random_seed from config)."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Sequential fleet elimination race on SYNTHETIC shards.
+
+    Each head fits the leading slice and predicts the eval slice once;
+    eval rows split into time-ordered chunks and two e-processes per head
+    vs the chunk-0 incumbent give anytime-valid promotion/elimination
+    verdicts (proper scores only — correctness evidence, never P&L).
+    """
+    from quant_fund.research.fleet_eval import (
+        fleet_head_factories,
+        resolve_shard_generators,
+    )
+    from quant_fund.research.fleet_race import fleet_race
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    cfg = _cfg(config)
+    base_seed = cfg.train.random_seed if seed is None else seed
+    try:
+        factories = fleet_head_factories(
+            cfg.quantiles.levels,
+            base_seed,
+            None if models is None else models.split(","),
+        )
+        resolved = resolve_shard_generators(None if shards is None else shards.split(","))
+        frame, receipt = fleet_race(
+            factories,
+            resolved,
+            n_train=n_train,
+            n_eval=n_eval,
+            n_chunks=n_chunks,
+            alpha=alpha,
+            seed=base_seed,
+            taus=cfg.quantiles.levels,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    out_dir.mkdir(parents=True, exist_ok=True)
+    import json as _json
+
+    sealed = seal_receipt(receipt)
+    path = out_dir / f"fleet_race_{receipt['inputs_sha256'][:16]}.json"
+    path.write_text(_json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    typer.echo(
+        frame.select(
+            "shard", "model", "status", "promoted_at", "eliminated_at", "shard_winner", "verdict"
+        )
+    )
     typer.echo(f"receipt={path}")
 
 
@@ -711,12 +836,165 @@ def monitor(
     typer.echo(f"receipt={path}")
 
 
+@app.command()
+def corpus(
+    receipts_dir: Path = typer.Option(
+        Path("receipts"), "--receipts-dir", help="Directory of committed receipts to audit."
+    ),
+    q: float = typer.Option(0.05, "--q", help="BH-FDR level for the pooled corpus family."),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+) -> None:
+    """Pool every committed receipt's claims into one BH-FDR family.
+
+    Harvests the p/e-value findings across ``--receipts-dir`` and writes a
+    sealed ``corpus_inference.v1`` receipt naming which claims survive the
+    corpus-level FDR correction — the selection-bias check lifted to the
+    whole evidence store. Correctness evidence, never a market or P&L claim.
+    """
+    try:
+        from quant_fund.research.corpus_inference import corpus_audit
+    except ImportError as exc:
+        raise typer.BadParameter("requires corpus_inference (PR #382)") from exc
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    try:
+        receipt = corpus_audit(receipts_dir, q=q)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    out_dir.mkdir(parents=True, exist_ok=True)
+    import json
+
+    sealed = seal_receipt(receipt)
+    digest = str(receipt.get("inputs_sha256") or sealed["receipt_sha256"])[:16]
+    path = out_dir / f"corpus_inference_{digest}.json"
+    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"corpus receipts={receipt.get('n_receipts')} "
+        f"p_findings={receipt.get('n_p_findings')} "
+        f"survivors={receipt.get('n_survivors')} "
+        f"corpus_evalue={receipt.get('corpus_evalue')} "
+        f"parse_errors={receipt.get('n_parse_errors')}"
+    )
+    typer.echo(f"receipt={path}")
+
+
+@app.command("online-fdr")
+def online_fdr_cmd(
+    receipts_dir: Path = typer.Option(
+        Path("receipts"), "--receipts-dir", help="Directory of committed receipts to replay."
+    ),
+    level: float = typer.Option(0.05, "--level", help="Target mFDR bound for the stream."),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    per_receipt: bool = typer.Option(
+        False,
+        "--per-receipt",
+        help="Treat each receipt as ONE test (min harvested p); default tests per finding.",
+    ),
+) -> None:
+    """Replay committed receipts through Foster–Stine alpha-investing.
+
+    Receipts replay in mtime/name order; every harvested p-value is one
+    test (or one per receipt under ``--per-receipt``) fed to ``OnlineFDR``,
+    whose wealth budget bounds the stream mFDR at ``--level`` at every
+    arrival. Writes a sealed ``online_fdr.v1`` receipt. Correctness
+    evidence, never a market or P&L claim.
+    """
+    try:
+        from quant_fund.research.corpus_inference import harvest_findings
+    except ImportError as exc:
+        raise typer.BadParameter("requires corpus_inference (PR #382)") from exc
+    try:
+        from quant_fund.research.online_fdr import OnlineFDR
+    except ImportError as exc:
+        raise typer.BadParameter("requires online_fdr (PR #383)") from exc
+    import json
+
+    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+    from quant_fund.utils.reproducibility import git_revision
+
+    root = Path(receipts_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"receipts dir {root} does not exist")
+    try:
+        controller = OnlineFDR(level=level)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    files = sorted(
+        (p for p in root.glob("*.json") if p.is_file()),
+        key=lambda p: (p.stat().st_mtime, p.name),
+    )
+    digests: dict[str, str] = {}
+    skipped: list[str] = []
+    n_p_findings = 0
+    for path in files:
+        try:
+            raw = path.read_bytes()
+            payload: object = json.loads(raw)
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            skipped.append(path.name)
+            continue
+        if not isinstance(payload, Mapping):
+            skipped.append(path.name)
+            continue
+        digests[path.name] = hash_bytes(raw)
+        ps = _harvest_p_values(harvest_findings(payload, path.name))
+        n_p_findings += len(ps)
+        if per_receipt:
+            if ps:
+                controller.update(min(ps))
+        else:
+            for p in ps:
+                controller.update(p)
+
+    receipt = {
+        "kind": "online_fdr.v1",
+        "schema": "online_fdr.v1",
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "generated_at_commit": git_revision(),
+        "inputs_sha256": hash_bytes(
+            canonical_json_bytes({"digests": digests, "level": level, "per_receipt": per_receipt})
+        ),
+        "params": {
+            "level": level,
+            "per_receipt": per_receipt,
+            "receipts_dir": str(root),
+        },
+        "n_receipts": len(files),
+        "n_skipped": len(skipped),
+        "skipped_files": skipped,
+        "n_p_findings": n_p_findings,
+        **controller.stream_report(),
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sealed = seal_receipt(receipt)
+    digest = str(receipt["inputs_sha256"])[:16]
+    path = out_dir / f"online_fdr_{digest}.json"
+    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"online_fdr tests={receipt['n_tests']} rejections={receipt['n_rejections']} "
+        f"final_wealth={receipt['final_wealth']:.6g} level={receipt['level']} "
+        f"skipped={receipt['n_skipped']}"
+    )
+    typer.echo(f"receipt={path}")
+
+
 __all__ = [
     "capacity",
     "cost_calibration",
+    "corpus",
     "execution_sensitivity_cmd",
     "fleet",
     "monitor",
+    "verdict",
+    "race",
+    "monitor",
+    "online_fdr_cmd",
     "rankic",
     "research",
     "verdict",
