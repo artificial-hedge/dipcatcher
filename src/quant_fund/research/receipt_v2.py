@@ -37,6 +37,7 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.research.impossible_fit import impossible_fit_scan
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -425,6 +426,10 @@ def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
 
         return vol_bench_v2_consistency_errors(payload)
+    if kind == "coherence_eval":
+        from quant_fund.research.coherence import coherence_v2_consistency_errors
+
+        return coherence_v2_consistency_errors(payload)
     return []
 
 
@@ -508,6 +513,10 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     from quant_fund.research.lane_contracts import lane_contract_errors
 
     errors.extend(lane_contract_errors(payload))
+    if payload.get("kind") in EVALUE_FAMILY_KINDS:
+        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
+
+        errors.extend(evalue_family_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
