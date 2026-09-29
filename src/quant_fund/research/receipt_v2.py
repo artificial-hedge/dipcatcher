@@ -304,6 +304,63 @@ def build_receipt_v2(
     return receipt
 
 
+def wrap_receipt_v2(
+    receipt: Mapping[str, Any],
+    *,
+    code_files: tuple[Path, ...] | list[Path],
+    verdict: str,
+    kind: str | None = None,
+    data_label: str | None = None,
+    dataset: Mapping[str, Any] | None = None,
+    params: Mapping[str, Any] | None = None,
+    generated_at: str | None = None,
+    revision: str | None = None,
+) -> dict[str, Any]:
+    """Wrap a lane's own v1 receipt body in the ``receipt.v2`` envelope.
+
+    Shared by every v1 writer opting into ``receipt_version=2``: the envelope
+    bindings come from the payload's own identity fields — the lane's
+    ``inputs_sha256``/``dataset_sha256``/``weights_sha256`` digests seed
+    ``dataset_hash`` (a digest of the payload itself when absent), a
+    ``params`` mapping seeds ``params_hash``, and the lane's recorded
+    ``generated_at``/``git_revision``/``code_revision``/``generated_at_commit``
+    stamp the envelope. Callers may override any binding explicitly when the
+    lane's identity lives in differently named fields.
+    """
+    if dataset is not None:
+        bound_dataset: Mapping[str, Any] = dataset
+    else:
+        bound_dataset = {
+            key: receipt[key]
+            for key in ("inputs_sha256", "dataset_sha256", "weights_sha256")
+            if key in receipt
+        }
+        if not bound_dataset:
+            bound_dataset = {"payload_sha256": hash_bytes(canonical_json_bytes(dict(receipt)))}
+    lane_params = receipt.get("params")
+    bound_params = (
+        params if params is not None else lane_params if isinstance(lane_params, Mapping) else {}
+    )
+    revision = (
+        revision
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+        or receipt.get("generated_at_commit")
+    )
+    generated_at = generated_at or receipt.get("generated_at")
+    return build_receipt_v2(
+        kind=str(kind or receipt.get("kind") or receipt.get("schema") or "receipt"),
+        data_label=str(data_label or receipt.get("data_label") or "UNKNOWN"),
+        dataset=bound_dataset,
+        params=bound_params,
+        code_files=code_files,
+        verdict=verdict,
+        payload=dict(receipt),
+        generated_at=str(generated_at) if generated_at is not None else None,
+        revision=str(revision) if revision is not None else None,
+    )
+
+
 def seal_receipt(receipt: Mapping[str, Any]) -> dict[str, Any]:
     """Canonicalize a receipt body and stamp ``receipt_sha256`` over it."""
     canonical = json.loads(canonical_json_bytes(dict(receipt)))

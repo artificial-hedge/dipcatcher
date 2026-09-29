@@ -12,6 +12,7 @@ import io
 import json
 import os
 import platform
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -36,12 +37,62 @@ def _seal(value: dict[str, Any]) -> dict[str, Any]:
     return {**value, "receipt_sha256": _digest(value)}
 
 
-def _read_receipt(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text())
+def _strict_check(value: dict[str, Any], path: Path) -> dict[str, Any]:
     digest = value.pop("receipt_sha256", None)
     if digest != _digest(value):
         raise ValueError(f"receipt hash mismatch: {path.name}")
     return {**value, "receipt_sha256": digest}
+
+
+def _read_receipt(path: Path) -> dict[str, Any]:
+    """Read a sealed receipt, accepting either generation.
+
+    ``receipt.v2`` envelopes verify through the unified verifier first;
+    the inner payload keeps the strict v1 ``receipt_sha256`` other files
+    cross-reference, so the returned dict is the inner body — digest
+    stable across versions.
+    """
+    value = json.loads(path.read_text())
+    if isinstance(value, dict) and value.get("schema") == "receipt.v2":
+        from quant_fund.research.receipt_v2 import verify_receipt_payload
+
+        result = verify_receipt_payload(value, path)
+        if not result["valid"]:
+            raise ValueError(f"receipt envelope invalid: {path.name}: {result['errors']}")
+        inner = value.get("payload")
+        if not isinstance(inner, dict):
+            raise ValueError(f"receipt envelope payload missing: {path.name}")
+        return _strict_check(dict(inner), path)
+    return _strict_check(value, path)
+
+
+def _wrap_envelope(
+    value: dict[str, Any],
+    *,
+    kind: str,
+    dataset: Mapping[str, Any],
+    params: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Wrap a sealed strict-digest body in a sealed ``receipt.v2`` envelope."""
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    return seal_receipt(
+        wrap_receipt_v2(
+            value,
+            code_files=(Path(__file__),),
+            verdict="pass",
+            kind=kind,
+            data_label="REAL",
+            dataset=dataset,
+            params=params,
+            generated_at=str(value["created_at"]),
+        )
+    )
+
+
+def _check_receipt_version(receipt_version: int) -> None:
+    if receipt_version not in (1, 2):
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
 
 
 def _day(value: str) -> datetime:
@@ -282,7 +333,13 @@ def protocol_for_run(manifest: dict[str, Any], run_dir: Path) -> BenchmarkProtoc
     )
 
 
-def prepare_benchmark(protocol_path: Path, output_dir: Path) -> dict[str, Any]:
+def prepare_benchmark(
+    protocol_path: Path,
+    output_dir: Path,
+    *,
+    receipt_version: int = 1,
+) -> dict[str, Any]:
+    _check_receipt_version(receipt_version)
     raw = json.loads(protocol_path.read_text())
     raw["dataset_path"] = str((protocol_path.parent / raw["dataset_path"]).resolve())
     protocol = BenchmarkProtocol(**raw)
@@ -320,7 +377,20 @@ def prepare_benchmark(protocol_path: Path, output_dir: Path) -> dict[str, Any]:
         }
     )
     output_dir.mkdir(parents=True, exist_ok=False)
-    publish_text_once(output_dir / "manifest.json", json.dumps(manifest, indent=2, allow_nan=False))
+    document = (
+        _wrap_envelope(
+            manifest,
+            kind="real_benchmark_manifest",
+            dataset={
+                "audit": audit,
+                "dataset_path": recorded_protocol["dataset_path"],
+            },
+            params=recorded_protocol,
+        )
+        if receipt_version == 2
+        else manifest
+    )
+    publish_text_once(output_dir / "manifest.json", json.dumps(document, indent=2, allow_nan=False))
     return manifest
 
 
@@ -367,7 +437,13 @@ def _scores(
     return result
 
 
-def score_benchmark(run_dir: Path, phase: str) -> dict[str, Any]:
+def score_benchmark(
+    run_dir: Path,
+    phase: str,
+    *,
+    receipt_version: int = 1,
+) -> dict[str, Any]:
+    _check_receipt_version(receipt_version)
     if phase not in {"validation", "test"}:
         raise ValueError("phase must be validation or test")
     manifest = _read_receipt(run_dir / "manifest.json")
@@ -407,7 +483,17 @@ def score_benchmark(run_dir: Path, phase: str) -> dict[str, Any]:
             "limitations": manifest["limitations"],
         }
     )
-    publish_text_once(destination, json.dumps(report, indent=2, allow_nan=False))
+    document = (
+        _wrap_envelope(
+            report,
+            kind="real_benchmark_score",
+            dataset={"manifest_sha256": manifest["receipt_sha256"]},
+            params={"phase": phase},
+        )
+        if receipt_version == 2
+        else report
+    )
+    publish_text_once(destination, json.dumps(document, indent=2, allow_nan=False))
     return report
 
 
@@ -419,15 +505,31 @@ def main() -> None:
     )
     prepare.add_argument("--protocol", type=Path, required=True)
     prepare.add_argument("--output", type=Path, required=True)
+    prepare.add_argument(
+        "--receipt-version",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="receipt schema version: 1 = strict-digest manifest (default), "
+        "2 = unified receipt.v2 envelope",
+    )
     score = commands.add_parser("score", help="score validation first, then the declared test")
     score.add_argument("--run", type=Path, required=True)
     score.add_argument("--phase", choices=("validation", "test"), required=True)
+    score.add_argument(
+        "--receipt-version",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="receipt schema version: 1 = strict-digest report (default), "
+        "2 = unified receipt.v2 envelope",
+    )
     args = parser.parse_args()
     try:
         result = (
-            prepare_benchmark(args.protocol, args.output)
+            prepare_benchmark(args.protocol, args.output, receipt_version=args.receipt_version)
             if args.command == "prepare"
-            else score_benchmark(args.run, args.phase)
+            else score_benchmark(args.run, args.phase, receipt_version=args.receipt_version)
         )
     except (ValueError, OSError, TypeError) as exc:
         parser.error(str(exc))

@@ -33,7 +33,7 @@ from quant_fund.research.fleet_eval import (
     _atomic_write_text,
     resolve_shard_generators,
 )
-from quant_fund.research.receipt_v2 import seal_receipt
+from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 from quant_fund.utils.hashing import hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -211,17 +211,46 @@ def run_verdict(
     return verdict, status
 
 
+_ENVELOPE_VERDICTS = {
+    "supported": "pass",
+    "supported_with_caveats": "pass",
+    "not_supported": "fail",
+    "inconclusive": "blocked",
+}
+
+
 def write_verdict_receipt(
     verdict: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
 ) -> Path:
     """Seal a verdict report and write ``receipts/honest_verdict_<hash>.json``.
 
     Same convention as ``write_fleet_receipt``: filename hash = canonical
     ``receipt_sha256``, atomic publish, existing identical file is a no-op
-    and a diverging one refuses to overwrite.
+    and a diverging one refuses to overwrite. ``receipt_version=2`` wraps
+    the same body in the unified ``receipt.v2`` envelope instead.
     """
-    payload = seal_receipt(verdict)
+    if receipt_version == 1:
+        payload = seal_receipt(verdict)
+    elif receipt_version == 2:
+        run_obj = verdict.get("run")
+        run: Mapping[str, Any] = run_obj if isinstance(run_obj, Mapping) else {}
+        params_obj = run.get("params")
+        params = params_obj if isinstance(params_obj, Mapping) else {}
+        dataset = {"status_sha256": run["status_sha256"]} if "status_sha256" in run else None
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                verdict,
+                code_files=(Path(__file__),),
+                verdict=_ENVELOPE_VERDICTS.get(str(verdict.get("verdict")), "blocked"),
+                dataset=dataset,
+                params=params,
+            )
+        )
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     path = Path(receipts_dir) / f"honest_verdict_{payload['receipt_sha256'][:16]}.json"
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path

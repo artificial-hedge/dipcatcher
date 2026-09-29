@@ -685,6 +685,14 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="also write a run_compare.v1 receipt blob here",
     )
+    parser.add_argument(
+        "--receipt-version",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="receipt schema version for --receipt-out: 1 = run_compare.v1 "
+        "(default), 2 = sealed receipt.v2 envelope",
+    )
     args = parser.parse_args(argv)
     try:
         comparison = compare_runs(
@@ -710,9 +718,33 @@ def main(argv: list[str] | None = None) -> None:
     else:
         print(text)
     if args.receipt_out is not None:
-        args.receipt_out.write_text(
-            json.dumps(receipt_payload(comparison), indent=2, allow_nan=False) + "\n"
-        )
+        document = receipt_payload(comparison)
+        if args.receipt_version == 2:
+            from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+            document = seal_receipt(
+                wrap_receipt_v2(
+                    document,
+                    code_files=(Path(__file__),),
+                    verdict="pass",
+                    kind=COMPARE_RECEIPT_SCHEMA,
+                    data_label="UNKNOWN",
+                    dataset={
+                        "run_a": comparison.label_a,
+                        "run_b": comparison.label_b,
+                        "schema_a": str(comparison.schema_a),
+                        "schema_b": str(comparison.schema_b),
+                    },
+                    params={
+                        "higher_is_better": comparison.higher_is_better,
+                        "alpha": comparison.alpha,
+                        "min_paired": comparison.min_paired,
+                        "n_boot": comparison.n_boot,
+                        "seed": comparison.seed,
+                    },
+                )
+            )
+        args.receipt_out.write_text(json.dumps(document, indent=2, allow_nan=False) + "\n")
 
 
 if __name__ == "__main__":

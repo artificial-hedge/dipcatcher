@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from quant_fund.research.mcs_seq import AnytimeMCS, mcs_report
+from quant_fund.research.mcs_seq import AnytimeMCS, mcs_report, write_mcs_receipt
 
 
 def _iid_streams(heads: list[str], n: int, seed: int, means: dict[str, float] | None = None):
@@ -180,3 +180,24 @@ def test_mcs_cli_fail_closed_on_bad_input(tmp_path: Path) -> None:
     arr = tmp_path / "arr.json"
     arr.write_text(json.dumps([1.0, 2.0]))
     assert CliRunner().invoke(app, ["mcs", str(arr)]).exit_code != 0
+
+
+def test_mcs_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the same mcs_seq.v1 body in the envelope."""
+    import json
+
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    rng = np.random.default_rng(7)
+    streams = {
+        "a": (rng.standard_normal(150) * 0.01).tolist(),
+        "b": (rng.standard_normal(150) * 0.01 + 0.02).tolist(),
+    }
+    receipt = mcs_report(streams, data_label="SYNTHETIC")
+    path = write_mcs_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "mcs_seq.v1"
+    assert payload["payload"]["survivors"] == receipt["survivors"]
+    assert payload["payload"]["champion"] == receipt["champion"]
+    assert verify_receipt_file(path)["valid"] is True

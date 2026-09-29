@@ -136,6 +136,22 @@ def test_strict_cli_gate(tmp_path: Path) -> None:
     assert hashlib.sha256(body).hexdigest() != digest
 
 
+def test_suite_health_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the suite_health.v1 body in the envelope."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.research.suite_health import write_suite_health_receipt
+
+    _sealed(tmp_path, "a.json")
+    _sealed(tmp_path, "b.json")
+    _, receipt = suite_health(tmp_path)
+    path = write_suite_health_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "suite_health"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True
+
+
 def test_dataset_sha256_tracks_corpus_bytes(tmp_path: Path) -> None:
     """Identical corpora share dataset_sha256 across audits and alpha;
     adding a file changes it."""

@@ -357,6 +357,7 @@ def run_sota_protocol(
     include_torch: bool = True,
     include_path_rankic: bool = True,
     include_calibration: bool = True,
+    receipt_version: int = 1,
 ) -> dict[str, Any]:
     """Freeze, then score both boards and the calibration gate on one panel."""
     from quant_fund.models.ranking import drop_oracle_columns
@@ -427,13 +428,47 @@ def run_sota_protocol(
     }
     if not family_blob_forbidden_metrics_absent(receipt):
         raise AssertionError("sota protocol receipt leaked forbidden research keys")
+    if receipt_version not in (1, 2):
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     canonical = json.loads(canonical_json_bytes(receipt))
     digest = hash_bytes(canonical_json_bytes(canonical))
     payload = {**canonical, "receipt_sha256": digest}
+    if receipt_version == 2:
+        from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+        document: dict[str, Any] = seal_receipt(
+            wrap_receipt_v2(
+                payload,
+                code_files=(Path(__file__),),
+                verdict="pass",
+                kind="sota_protocol",
+                data_label="SYNTHETIC" if source == "SYNTHETIC" else "REAL",
+                dataset={
+                    "protocol_sha256": receipt["protocol_sha256"],
+                    "universe": receipt["universe"],
+                },
+                params={
+                    key: receipt[key]
+                    for key in (
+                        "horizons",
+                        "ranking_target",
+                        "distribution_target",
+                        "embargo_bars",
+                        "sample_count",
+                        "variant",
+                        "lookback",
+                        "pred_len",
+                        "n_asofs",
+                    )
+                },
+            )
+        )
+    else:
+        document = payload
     dest = Path(cfg.data.root) / "metadata" / "sota_receipt.json"
-    _atomic_write_text(dest, json.dumps(payload, indent=2, sort_keys=True) + "\n")
-    payload["receipt_path"] = str(dest)
-    return payload
+    _atomic_write_text(dest, json.dumps(document, indent=2, sort_keys=True) + "\n")
+    document["receipt_path"] = str(dest)
+    return document
 
 
 SOTA_RECEIPT_REQUIRED_KEYS = (
@@ -482,4 +517,16 @@ def verify_sota_receipt(path: str | Path) -> list[str]:
         return [f"unreadable:{exc}"]
     if not isinstance(loaded, dict):
         return ["not_an_object"]
+    if loaded.get("schema") == "receipt.v2":
+        from quant_fund.research.receipt_v2 import verify_receipt_payload
+
+        result = verify_receipt_payload(loaded, Path(path))
+        inner = loaded.get("payload")
+        if not isinstance(inner, dict):
+            return [*result["errors"], "payload_not_object"]
+        return [
+            *result["errors"],
+            *sota_receipt_contract_errors(inner),
+            *sota_receipt_seal_errors(inner),
+        ]
     return sota_receipt_contract_errors(loaded) + sota_receipt_seal_errors(loaded)

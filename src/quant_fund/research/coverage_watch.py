@@ -29,8 +29,11 @@ Fail closed throughout.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -39,6 +42,7 @@ from quant_fund.research.fleet_eval import (
     DEFAULT_TAUS,
     HeadFactory,
     ShardGenerator,
+    _atomic_write_text,
     _central_interval_index,
     resolve_shard_generators,
 )
@@ -132,7 +136,7 @@ def audit_interval_coverage(
     alpha: float = 0.05,
     alt_grid: Sequence[float] = DEFAULT_ALT_GRID,
     data_label: str | None = None,
-) -> tuple[pl.DataFrame, dict]:
+) -> tuple[pl.DataFrame, dict[str, Any]]:
     """Score each head's central intervals on every shard, sequentially.
 
     For each (head, level): find the central [lo, hi] quantile pair in the
@@ -165,7 +169,7 @@ def audit_interval_coverage(
     if all(idx is None for idx in level_index.values()):
         raise ValueError("no requested level is expressible in the tau grid")
 
-    rows: list[dict] = []
+    rows: list[dict[str, Any]] = []
     shard_labels: set[str] = set()
     n_shard = n_train + n_eval
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
@@ -271,8 +275,60 @@ def audit_interval_coverage(
     return frame, receipt
 
 
+def write_coverage_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a coverage_audit receipt and write ``coverage_watch_<hash>.json``.
+
+    Filename digest = sha256 of the canonical payload, embedded as
+    ``receipt_sha256`` (fleet_eval seal convention). Atomic, fail-closed
+    on a malformed receipt. ``receipt_version=2`` wraps the same body in
+    the unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.hashing import canonical_json_bytes
+
+    if (
+        receipt.get("schema") != COVERAGE_AUDIT_SCHEMA
+        or receipt.get("kind") != "coverage_audit"
+        or not _is_sha256_str(receipt.get("inputs_sha256"))
+        or not isinstance(receipt.get("params"), Mapping)
+        or not isinstance(receipt.get("evidence"), list)
+        or not isinstance(receipt.get("claims"), list)
+    ):
+        raise ValueError("coverage_audit receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"coverage_watch_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def _is_sha256_str(value: object) -> bool:
+    return (
+        isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+    )
+
+
 __all__ = [
     "COVERAGE_AUDIT_SCHEMA",
+    "write_coverage_receipt",
     "DEFAULT_ALT_GRID",
     "CoverageEProcess",
     "audit_interval_coverage",
