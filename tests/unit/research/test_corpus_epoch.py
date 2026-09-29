@@ -278,3 +278,21 @@ def test_heads_pin_validates_schema(tmp_path: Path) -> None:
     bad2.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {"k/*": {"receipt": 1}}}))
     with pytest.raises(ValueError, match="malformed"):
         load_heads_pin(bad2)
+
+
+def test_heads_pin_file_is_never_a_member(tmp_path: Path) -> None:
+    """The pin file is chain bookkeeping — stamping it would self-invalidate."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    (corpus / "epoch_heads.json").write_text('{"schema": "epoch_heads.v1", "heads": {}}\n')
+    members = member_digests(corpus)
+    assert set(members) == {"a.json"}  # pin exempt under any pattern
+    epoch = corpus_epoch(corpus)
+    assert epoch["n_members"] == 1
+    first = write_epoch_receipt(epoch, corpus)
+    from quant_fund.research.corpus_epoch import update_heads_pin
+
+    pin = corpus / "epoch_heads.json"  # pin can even live inside the corpus dir
+    update_heads_pin(pin, corpus, "*.json", first)
+    assert check_epoch_chain(corpus)["errors"] == []

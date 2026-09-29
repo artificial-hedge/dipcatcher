@@ -1,5 +1,9 @@
 {
   "heads": {
+    "quality/*.json": {
+      "receipt": "corpus_epoch_a6a2f06843a428b3.json",
+      "sha256": "c7a66291df9a8755827a079939b13608535727816df68b75cde7723e154596a9"
+    },
     "receipts/*.json": {
       "receipt": "corpus_epoch_d479e96760271bba.json",
       "sha256": "5dda9f2bb065fcb3172d1b3aa4f7bbb4b0c3158a3120d520e974ed36fd7e4d23"

@@ -45,6 +45,11 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 EPOCH_SCHEMA = "corpus_epoch.v1"
 GENESIS_PREV = "0" * 64
 
+# ``epoch_heads.json`` is the chain's own bookkeeping (see check_epoch_chain):
+# stamping updates it, so as a member it would show permanent post-stamp drift.
+# Reserved name — it is never a member under any pattern in any corpus dir.
+HEADS_PIN_BASENAME = "epoch_heads.json"
+
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
@@ -54,7 +59,8 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     On a flat dir the keys equal the plain filenames, so existing chains are
     unchanged. ``corpus_epoch_*.json`` receipts are members like any other —
     epochs stamp each other, which is what lets the chain detect a stamped
-    epoch's own deletion or mutation.
+    epoch's own deletion or mutation. ``epoch_heads.json`` is skipped: the
+    committed head-pin file is the chain's bookkeeping, not corpus content.
     """
     root = Path(corpus_dir)
     if not root.is_dir():
@@ -62,7 +68,7 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
     return {
         path.relative_to(root).as_posix(): hash_bytes(path.read_bytes())
         for path in sorted(root.rglob(pattern))
-        if path.is_file()
+        if path.is_file() and path.name != HEADS_PIN_BASENAME
     }
 
 
@@ -295,18 +301,15 @@ def update_heads_pin(
     """
     path = Path(pin_path)
     key = epoch_heads_key(corpus_dir, pattern)
-    try:
-        heads = load_heads_pin(path) if path.is_file() else {}
-    except (OSError, ValueError):
-        heads = {}
+    heads = load_heads_pin(path) if path.is_file() else {}
     heads[key] = {
         "receipt": head_receipt.name,
         "sha256": hash_bytes(head_receipt.read_bytes()),
     }
-    from quant_fund.research.fleet_eval import _atomic_write_text
+    from quant_fund.utils.atomicio import atomic_write_text
 
     payload = {"schema": "epoch_heads.v1", "heads": heads}
-    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path
 
 
