@@ -327,9 +327,12 @@ class AuditLedger:
             "sigstore_issuer": signature.sigstore_issuer,
         }
         self._append_line(self.checkpoints_path, canonical_json_bytes(record))
+        from quant_fund.utils.atomicio import atomic_write_text
+
         if signer.scheme == "ed25519" and signature.public_key_hex:
             pub = self.root / "ed25519.pub"
             pub.write_bytes((signature.public_key_hex + "\n").encode("ascii"))
+            atomic_write_text(pub, signature.public_key_hex + "\n")
         return record
 
     def _append_line(self, path: Path, body: bytes) -> None:

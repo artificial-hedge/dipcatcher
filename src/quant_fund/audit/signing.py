@@ -86,6 +86,8 @@ class Ed25519Signer:
         """Store the raw private key as hex, mode 0600, plus a sibling ``.pub``."""
         from cryptography.hazmat.primitives import serialization
 
+        from quant_fund.utils.atomicio import atomic_write_text
+
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
         raw = self._private.private_bytes(
@@ -104,6 +106,7 @@ class Ed25519Signer:
         os.chmod(target, 0o600)
         pub = target.with_name(target.name + ".pub")
         pub.write_bytes((self.public_key_hex + "\n").encode("ascii"))
+        atomic_write_text(pub, self.public_key_hex + "\n")
 
     def sign(self, payload: bytes) -> Signature:
         signature = self._private.sign(payload)
