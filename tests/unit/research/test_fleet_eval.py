@@ -410,6 +410,7 @@ def test_fleet_registry_covers_default_heads() -> None:
         "nbeats",
         "nhits",
         "sundial",
+        "moirai2",
     }
     for factory in factories.values():
         assert factory().metadata().family == "distribution"
