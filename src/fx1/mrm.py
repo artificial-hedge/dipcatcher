@@ -84,11 +84,14 @@ def compile_dossier(
         path = Path(artifact)
         if not path.exists():
             raise FileNotFoundError(f"dossier artifact for {activity!r} missing: {path}")
-        hashes.setdefault(activity, {})[str(path)] = _sha(path)
-        if activity == "validation" and "contamination" in path.name:
+        report_activity = "validation" if activity == "contamination_report" else activity
+        hashes.setdefault(report_activity, {})[str(path)] = _sha(path)
+        if activity == "contamination_report" or "contamination" in path.name:
             try:
                 report = json.loads(path.read_text(encoding="utf-8"))
-                contamination_flagged = bool(report.get("overall_flagged", True))
+                contamination_flagged = contamination_flagged or bool(
+                    report.get("overall_flagged", True)
+                )
             except json.JSONDecodeError:
                 contamination_flagged = True
     sections: list[DossierSection] = []
@@ -135,7 +138,10 @@ def compile_dossier(
         base_model=card.base_model,
         sections=sections,
         contamination_flagged=contamination_flagged,
-        ship_eligible=card.eval_delta.ship_eligible,
+        # A flagged contamination audit invalidates ship eligibility even
+        # when the card's eval delta passed — the dossier must not certify
+        # a model trained on eval-bound data.
+        ship_eligible=card.eval_delta.ship_eligible and not contamination_flagged,
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -131,8 +131,14 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     Scope: research family / scorecard blobs only. Paper ``analytics_export`` may
     contain equity ``nav_*`` / stress ``*_pnl`` diagnostics; validate those with
     ``validate_analytics_export`` (live_pnl_claim fail-closed), not this helper.
+
+    ``live_pnl_claim`` itself is exempt at any depth: it is the honesty flag,
+    not a metric — receipts that embed other receipts carry it nested (e.g. a
+    tournament manifest quoting its benchmark manifest).
     """
     for key in _iter_mapping_keys(payload):
+        if key == "live_pnl_claim":
+            continue
         parts = str(key).lower().replace("-", "_").split("_")
         if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
             return False

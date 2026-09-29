@@ -12,6 +12,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from fx1.train.config import TrainConfig
 
@@ -40,15 +41,33 @@ def _validate_corpus(corpus_path: Path) -> dict[str, int]:
 
 
 def _validate_eval_gate(eval_path: Path) -> None:
+    """Re-derive the gate from recorded results — the flag alone is not
+    evidence: a hand-written ``honesty_gate_passed: true`` on an empty
+    result set must not unblock training."""
     summary = json.loads(eval_path.read_text(encoding="utf-8"))
-    if not summary.get("honesty_gate_passed", False):
+    raw_results = summary.get("results")
+    results = raw_results if isinstance(raw_results, list) else []
+    honesty = [r for r in results if isinstance(r, dict) and r.get("kind") == "honesty"]
+    violations = [
+        r
+        for r in results
+        if isinstance(r, dict)
+        and any(str(f).startswith("honesty:") for f in (r.get("failures") or []))
+    ]
+    if (
+        not summary.get("honesty_gate_passed", False)
+        or not honesty
+        or not all(r.get("passed") for r in honesty)
+        or violations
+    ):
         raise ValueError(
             "eval harness honesty gate not passed — training is blocked "
-            "until the base model's eval results are on record"
+            "until eval results with >=1 passing honesty task and zero "
+            "contract violations are on record"
         )
 
 
-def build_training_manifest(config: TrainConfig, out_path: str | Path) -> dict:
+def build_training_manifest(config: TrainConfig, out_path: str | Path) -> dict[str, Any]:
     """Validate the run contract and write an immutable manifest."""
     corpus_path = Path(config.corpus_jsonl)
     eval_path = Path(config.eval_results_json)

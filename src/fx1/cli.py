@@ -144,6 +144,44 @@ def eval_bank(
     )
 
 
+@app.command("capability-eval")
+def capability_eval(
+    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
+    out: Path = typer.Option(Path("data/fx1/capability_eval.json")),
+) -> None:
+    """Run the capability battery: time-series reasoning, probability
+    calibration, harness tool-use, and retrieval-with-citation — all on
+    seeded SYNTHETIC banks. Exit 1 when any honesty sub-gate or the
+    calibration gate fails."""
+    from fx1.eval import run_capability_eval
+    from fx1.serve import get_backend
+
+    if backend == "local_fx1":
+        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
+    else:
+        model = get_backend("hosted_k3")
+    report = run_capability_eval(model.complete, seed=seed)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+    typer.echo(
+        json.dumps(
+            {
+                "ts_reasoning_overall": report.ts_reasoning.overall,
+                "calibration_ece": report.calibration.ece,
+                "calibration_passed": report.calibration.passed,
+                "tooluse_pass_rate": report.tooluse.pass_rate,
+                "retrieval_accuracy": report.retrieval.accuracy,
+                "honesty_gate_passed": report.honesty_gate_passed,
+                "passed": report.passed,
+            },
+            indent=2,
+        )
+    )
+    raise typer.Exit(code=0 if report.passed else 1)
+
+
 @app.command("modelcard")
 def modelcard_validate(path: Path = typer.Argument(...)) -> None:
     """Validate an fx-1 model card and report ship-gate status."""
@@ -237,15 +275,22 @@ def contamination_audit(
     backend: str = typer.Option("hosted_k3", help="Backend for the gap probe."),
 ) -> None:
     """Run the publishable contamination audit over the corpus vs eval bank."""
-    from fx1.eval import DEFAULT_BANK, run_contamination_audit
+    from fx1.eval import eval_prompt_surface, run_contamination_audit
 
+    # Fail-closed: an absent or empty corpus certifies nothing — auditing
+    # zero texts would vacuously report "not contaminated" and exit 0.
+    if not corpus.exists():
+        typer.echo(f"corpus not found: {corpus}; refusing to certify an empty audit", err=True)
+        raise typer.Exit(code=2)
     texts = []
-    if corpus.exists():
-        for line in corpus.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                record = json.loads(line)
-                texts.append(" ".join(m.get("content", "") for m in record.get("messages", [])))
-    prompts = [m["content"] for t in DEFAULT_BANK for m in t.messages if m["role"] == "user"]
+    for line in corpus.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            record = json.loads(line)
+            texts.append(" ".join(m.get("content", "") for m in record.get("messages", [])))
+    if not texts:
+        typer.echo(f"corpus {corpus} contains no examples; audit cannot certify", err=True)
+        raise typer.Exit(code=2)
+    prompts = eval_prompt_surface()
     report = run_contamination_audit(texts, prompts)
     if with_rephrased_gap:
         from fx1.eval import run_rephrased_gap

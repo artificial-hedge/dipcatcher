@@ -22,8 +22,43 @@ regexTarget = "line"
 regexes = ['''^\s*-\s*API stability:\s*FX1_API_STABILITY\.md\s*$''']
 
 [[allowlists]]
+description = "Historical eval JSON stores public tokenizer sha256 digests"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)\.dsh-24x7/.*\.json$''']
+regexTarget = "line"
+regexes = ['''(?i)^\s*"(?:kronos_small_tokenizer|kronos_base_tokenizer|tokenizer_artifact_sha256)":\s*"[0-9a-f]{64}",?\s*$''']
+
+[[allowlists]]
 description = "Synthetic credential-leak regression canary"
 targetRules = ["generic-api-key"]
 condition = "AND"
 paths = ['''(?:^|/)tests/fx1/test_sources\.py$''']
 regexes = ['''^sk-test-SECRET-123$''']
+
+# .dsh-24x7 is a committed evidence directory: its JSON files pin data
+# files, model artifacts, and script contents by sha256 digest, under keys
+# as varied as model names ("kronos_small"), symbols ("BTCUSDT"), and file
+# names ("d1_btcusdt_1d.parquet"). The generic-api-key rule fires on every
+# 64-hex value. The allowlist is scoped to that directory and to JSON
+# string-key -> 64-hex-value lines only.
+[[allowlists]]
+description = "SHA256 content digests in committed .dsh-24x7 evidence JSON"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)\.dsh-24x7/.*\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"[^"]{1,300}":\s*"[0-9a-f]{64}",?\s*$''']
+
+# The paper-replication registry keys StrategySpec entries as
+# key="str_<paper><year>" — `key="..."` assignment lines match the
+# generic-api-key shape even though the values are strategy identifiers,
+# not credentials. Scoped to that one file and lowercase-identifier
+# values only.
+[[allowlists]]
+description = "Paper-replication registry strategy keys (identifiers, not credentials)"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)src/quant_fund/research/replication/strategies\.py$''']
+regexTarget = "line"
+regexes = ['''^\+?\s*(?:key|paper_key|signal_fn)\s*=\s*"[a-z0-9_]+",?\s*$''']
