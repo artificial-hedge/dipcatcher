@@ -11,6 +11,11 @@ from quant_fund.metrics.analytics import (
     underwater_periods,
     validate_analytics_export,
 )
+from quant_fund.metrics.calibration2 import (
+    mean_wis,
+    wis_decomposition,
+    wis_skill_score,
+)
 from quant_fund.metrics.conformal import conformal_quantile, cqr_scores, set_metrics
 from quant_fund.metrics.cross_section import date_ic_series, decile_portfolios
 from quant_fund.metrics.evalues import (
@@ -20,14 +25,19 @@ from quant_fund.metrics.evalues import (
     e_process_threshold,
 )
 from quant_fund.metrics.inference import (
+    CorrectedPairwiseDM,
     benjamini_hochberg,
+    bh_adjusted_pvalues,
+    bonferroni_adjusted_pvalues,
     bootstrap_sharpe_ci,
     diebold_mariano,
+    holm_adjusted_pvalues,
     mean_tstat,
     newey_west_se,
     optimal_block_length,
     overlap_aware_hac_lags,
     pairwise_diebold_mariano,
+    pairwise_diebold_mariano_corrected,
     stationary_bootstrap_indices,
 )
 from quant_fund.metrics.overfitting import (
@@ -69,9 +79,12 @@ from quant_fund.metrics.risk import gaussian_es, gaussian_var, historical_es, hi
 from quant_fund.metrics.scoring import (
     GARCH_ONE_STEP_CRPS_TAUS,
     crps_empirical,
+    crps_fair,
     crps_from_quantiles,
     crps_gaussian,
+    crps_skill_score,
     crps_student_t,
+    crps_threshold_weighted,
     date_level_equal_weight,
     fissler_ziegel_loss,
     icir,
@@ -81,6 +94,7 @@ from quant_fund.metrics.scoring import (
     mean_fissler_ziegel,
     mean_log_score_gaussian,
     mean_pinball,
+    mean_skill_score,
     name_level_one_step_density_summary,
     name_level_qlike,
     nonoverlapping_origin_mask,
@@ -88,10 +102,13 @@ from quant_fund.metrics.scoring import (
     overlap_aware_qlike,
     pearson_ic,
     pinball_loss,
+    pinball_skill_score,
     qlike,
     quantile_crossing_rate,
     rank_ic,
     rearrange_quantiles,
+    skill_score,
+    threshold_weight_transform,
 )
 
 # A2 F4 (PROOFCORE W4): explicit-name re-export of the scoring.py IC-based
@@ -111,6 +128,11 @@ from quant_fund.metrics.snooping import (
 __all__ = [
     "annualized_vol",
     "benjamini_hochberg",
+    "bh_adjusted_pvalues",
+    "bonferroni_adjusted_pvalues",
+    "holm_adjusted_pvalues",
+    "CorrectedPairwiseDM",
+    "pairwise_diebold_mariano_corrected",
     "conformal_quantile",
     "cqr_scores",
     "set_metrics",
@@ -172,6 +194,16 @@ __all__ = [
     "crps_gaussian",
     "crps_student_t",
     "crps_empirical",
+    "crps_fair",
+    "crps_threshold_weighted",
+    "threshold_weight_transform",
+    "skill_score",
+    "mean_skill_score",
+    "crps_skill_score",
+    "pinball_skill_score",
+    "wis_decomposition",
+    "mean_wis",
+    "wis_skill_score",
     "mean_crps_gaussian",
     "mean_crps_student_t",
     "log_score_gaussian",

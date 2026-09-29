@@ -650,3 +650,249 @@ def pairwise_diebold_mariano(
                 row["e_n"] = cast(int, ep["n"])
             rows.append(row)
     return rows
+
+
+def bh_adjusted_pvalues(p_values: Array) -> NDArray[np.float64]:
+    r"""Benjamini–Hochberg step-up **adjusted** p-values (same FDR control).
+
+    For raw p-values ``p_1..p_m``, the BH adjusted value is
+
+    .. math::
+
+        \tilde p_{(k)} = \min_{j \ge k}\Bigl\{\min\bigl(1,\; \tfrac{m}{j}\,p_{(j)}\bigr)\Bigr\},
+
+    mapped back to the input order. The suffix-minimum makes ``\tilde p``
+    monotone in the raw ranking, and the reject decision at level ``alpha``
+    is *exactly* the one :func:`benjamini_hochberg` makes:
+    ``reject_k ⟺ \tilde p_k <= alpha``. That equivalence is pinned by a test,
+    so a receipt can quote either form interchangeably.
+
+    Non-finite inputs pass through as NaN and are excluded from the ranking
+    (they are neither evidence for nor against H0). Unlike a raw p-value of
+    exactly 0.0 — which ties and destroys the BH rank ordering — adjusted
+    values keep the ordering finite and orderable. Values are clipped to
+    ``[0, 1]``. Research diagnostic only.
+    """
+    p = np.asarray(p_values, dtype=float).reshape(-1)
+    m = int(p.size)
+    if m == 0:
+        return np.array([], dtype=float)
+    out = np.full(m, np.nan, dtype=float)
+    finite = np.isfinite(p)
+    m_finite = int(finite.sum())
+    if m_finite == 0:
+        return out
+    idx_finite = np.nonzero(finite)[0]
+    ranked = p[idx_finite]
+    order = np.argsort(ranked)
+    sorted_p = ranked[order]
+    # BH multiplier m/j uses the count of *testable* p-values, matching
+    # benjamini_hochberg's behaviour on the finite subset.
+    multipliers = m_finite / np.arange(1, m_finite + 1, dtype=float)
+    scaled = np.minimum(1.0, sorted_p * multipliers)
+    adjusted_sorted = np.minimum.accumulate(scaled[::-1])[::-1]
+    adjusted_sorted = np.clip(adjusted_sorted, 0.0, 1.0)
+    out[idx_finite[order]] = adjusted_sorted
+    return out
+
+
+def holm_adjusted_pvalues(p_values: Array) -> NDArray[np.float64]:
+    r"""Holm (1979) stepdown **adjusted** p-values — strong FWER control.
+
+    .. math::
+
+        \tilde p_{(k)} = \max_{j \le k}\bigl\{(m - j + 1)\,p_{(j)}\bigr\} \wedge 1
+
+    with the running maximum enforcing monotonicity. Holm is uniformly more
+    powerful than Bonferroni and controls the **family-wise** error rate, so it
+    is the right choice when the claim being made is "at least one pair
+    differs" (the pairwise-DM arena case: a single spurious 'A beats B' finding
+    is the failure mode). BH controls the weaker **false discovery rate** and is
+    more powerful when many pairs genuinely differ. Both are offered; the choice
+    must be recorded in the receipt because they answer different questions.
+
+    Non-finite inputs pass through as NaN and are excluded from the ranking.
+    Research diagnostic only.
+    """
+    p = np.asarray(p_values, dtype=float).reshape(-1)
+    m = int(p.size)
+    if m == 0:
+        return np.array([], dtype=float)
+    out = np.full(m, np.nan, dtype=float)
+    finite = np.isfinite(p)
+    m_finite = int(finite.sum())
+    if m_finite == 0:
+        return out
+    idx_finite = np.nonzero(finite)[0]
+    ranked = p[idx_finite]
+    order = np.argsort(ranked)
+    sorted_p = ranked[order]
+    multipliers = (m_finite - np.arange(m_finite, dtype=float)).astype(float)
+    scaled = np.minimum(1.0, sorted_p * multipliers)
+    adjusted_sorted = np.clip(np.maximum.accumulate(scaled), 0.0, 1.0)
+    out[idx_finite[order]] = adjusted_sorted
+    return out
+
+
+def bonferroni_adjusted_pvalues(p_values: Array) -> NDArray[np.float64]:
+    r"""Bonferroni adjusted p-values ``min(1, m*p)`` — FWER, no ranking.
+
+    The cheapest and most conservative option, and the only one of the three
+    whose adjusted values ignore the *joint* ranking. Kept as a reference point:
+    a pair that survives Bonferroni is defensible under any convention.
+    Non-finite inputs pass through as NaN; the multiplier counts only testable
+    p-values. Research diagnostic only.
+    """
+    p = np.asarray(p_values, dtype=float).reshape(-1)
+    m = int(p.size)
+    if m == 0:
+        return np.array([], dtype=float)
+    finite = np.isfinite(p)
+    m_finite = int(finite.sum())
+    out = np.full(m, np.nan, dtype=float)
+    if m_finite == 0:
+        return out
+    out[finite] = np.clip(p[finite] * float(m_finite), 0.0, 1.0)
+    return out
+
+
+_ADJUSTERS = {
+    "bh": bh_adjusted_pvalues,
+    "holm": holm_adjusted_pvalues,
+    "bonferroni": bonferroni_adjusted_pvalues,
+}
+
+
+@dataclass(frozen=True)
+class CorrectedPairwiseDM:
+    """Pairwise Diebold–Mariano matrix with multiplicity control applied.
+
+    ``rows`` mirrors :func:`pairwise_diebold_mariano` row-for-row and adds
+    ``p_value_adjusted``, ``reject_raw`` (raw ``p_value <= alpha``) and
+    ``reject_corrected`` (``p_value_adjusted <= alpha``), plus
+    ``preferred_corrected`` — the sign-based preference recomputed so it can
+    never contradict the corrected decision (``"inconclusive"`` when the
+    corrected test does not reject). ``n_pairs`` / ``method`` / ``alpha`` are
+    stamped so a receipt records *that* an adjustment happened and which one,
+    not just the resulting numbers.
+    """
+
+    rows: list[dict[str, float | str | int | bool]]
+    method: str
+    alpha: float
+    n_pairs: int
+    n_rejected_raw: int
+    n_rejected_corrected: int
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "rows": self.rows,
+            "method": self.method,
+            "alpha": self.alpha,
+            "n_pairs": self.n_pairs,
+            "n_rejected_raw": self.n_rejected_raw,
+            "n_rejected_corrected": self.n_rejected_corrected,
+        }
+
+
+def pairwise_diebold_mariano_corrected(
+    loss_map: dict[str, Array],
+    *,
+    lags: int | None = None,
+    alpha: float = 0.05,
+    method: str = "bh",
+) -> CorrectedPairwiseDM:
+    r"""Pairwise DM tests **with multiplicity control** (opt-in API).
+
+    Motivation (measured, SYNTHETIC): :func:`pairwise_diebold_mariano` emits raw
+    p-values only. With eight *identical* models — every H0 true by
+    construction, n = 120–150 squared-normal losses — the raw rejection rate is
+    0.068 across 8400 tests and the **family-wise error rate is 0.622**: a 62%
+    chance that an experiment with eight indistinguishable models yields at least
+    one "significant" pairwise claim. Applying BH(0.05) to the same p-values
+    post-hoc drops that to 0.088. With 15–20 candidates (the arena norm here)
+    the unadjusted expectation is 5–10 spurious "A beats B" findings per
+    experiment, and those would be sealed into a receipt as reproducible — but
+    false — evidence. Reproducibility is not validity.
+
+    This function is **additive**: :func:`pairwise_diebold_mariano` keeps its
+    existing signature, defaults and row keys, so no historic number changes.
+    The raw p-values are recomputed identically (same HAC lag rule) and then
+    corrected with the requested method:
+
+    * ``"bh"`` — Benjamini–Hochberg step-up, controls the **FDR**. Reuses the
+      same threshold arithmetic as :func:`benjamini_hochberg`; the equivalence
+      ``reject_corrected ⟺ benjamini_hochberg(...)[0]`` is pinned by a test.
+    * ``"holm"`` — Holm stepdown, controls the **FWER** strongly; more powerful
+      than Bonferroni, the right choice when the headline claim is "some pair
+      differs".
+    * ``"bonferroni"`` — ``min(1, m*p)``, FWER, most conservative reference.
+
+    Loss convention is unchanged (smaller loss is better; any proper score —
+    CRPS, pinball, QLIKE, energy score — may be supplied). Fail-closed:
+    ``alpha`` outside ``(0, 1]`` or an unknown ``method`` raise ValueError;
+    mismatched series lengths raise (never truncate); pairs with ``n < 5`` stay
+    ``"inconclusive"`` with NaN p-values that are *excluded* from the correction
+    denominator rather than inflating it. Research diagnostic only, never a
+    live-trading or promotion claim.
+    """
+    if method not in _ADJUSTERS:
+        raise ValueError(f"method must be one of {sorted(_ADJUSTERS)}, got {method!r}")
+    if not np.isfinite(alpha) or not 0.0 < float(alpha) <= 1.0:
+        raise ValueError(f"alpha must be finite and in (0, 1], got {alpha}")
+
+    base_rows = pairwise_diebold_mariano(loss_map, lags=lags)
+    raw_p = np.array([float(r["p_value"]) for r in base_rows], dtype=float)
+    adjusted = _ADJUSTERS[method](raw_p)
+    alpha_f = float(alpha)
+    # For BH the reject decision is taken from the repo's own tested
+    # ``benjamini_hochberg`` rather than re-derived from the adjusted p-values,
+    # so the two can never disagree. They are provably equivalent
+    # (``reject_k <=> adjusted_k <= alpha``) and a test pins that equivalence.
+    bh_mask: NDArray[np.bool_] | None = None
+    if method == "bh":
+        bh_mask, _cutoff = benjamini_hochberg(raw_p, alpha_f)
+
+    rows: list[dict[str, float | str | int | bool]] = []
+    n_raw_reject = 0
+    n_corr_reject = 0
+    for i, (base, p_adj) in enumerate(zip(base_rows, adjusted, strict=True)):
+        p_raw = float(base["p_value"])
+        mean_diff = base.get("mean_loss_diff", float("nan"))
+        if not np.isfinite(p_raw):
+            reject_raw = False
+            reject_corr = False
+            preferred_corr = "inconclusive"
+        else:
+            reject_raw = bool(p_raw <= alpha_f)
+            if bh_mask is not None:
+                reject_corr = bool(bh_mask[i])
+            else:
+                reject_corr = bool(np.isfinite(p_adj) and float(p_adj) <= alpha_f)
+            if reject_corr:
+                md = float(mean_diff) if np.isfinite(float(mean_diff)) else 0.0
+                if md < 0.0:
+                    preferred_corr = str(base["a"])
+                elif md > 0.0:
+                    preferred_corr = str(base["b"])
+                else:
+                    preferred_corr = "tie"
+            else:
+                preferred_corr = "inconclusive"
+        n_raw_reject += int(reject_raw)
+        n_corr_reject += int(reject_corr)
+        row: dict[str, float | str | int | bool] = dict(base)
+        row["p_value_adjusted"] = float(p_adj)
+        row["reject_raw"] = reject_raw
+        row["reject_corrected"] = reject_corr
+        row["preferred_corrected"] = preferred_corr
+        rows.append(row)
+
+    return CorrectedPairwiseDM(
+        rows=rows,
+        method=method,
+        alpha=alpha_f,
+        n_pairs=len(rows),
+        n_rejected_raw=n_raw_reject,
+        n_rejected_corrected=n_corr_reject,
+    )
