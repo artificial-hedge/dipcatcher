@@ -142,3 +142,14 @@ def test_receipt_shape() -> None:
         assert key in receipt
     assert receipt["params"]["levels"] == [0.8]
     assert "bernoulli_lr_bet" in receipt["evidence"]
+
+
+def test_strict_breach_flag_rejects_missing_and_nonbinary() -> None:
+    """None is a missing observation, not a non-breach — folding it in would
+    deflate the measured breach rate."""
+    proc = CoverageEProcess(alpha=0.05, p0=0.1)
+    for bad in (None, 2, "yes", float("nan"), 0.5):
+        with pytest.raises(ValueError):
+            proc.update(bad)
+    for ok in (True, False, 0, 1, np.bool_(True), np.int64(1)):
+        proc.update(ok)

@@ -49,6 +49,14 @@ COVERAGE_AUDIT_SCHEMA = "coverage_audit.v1"
 DEFAULT_ALT_GRID: tuple[float, ...] = (0.5, 0.7, 1.3, 2.0)  # ratios to p0
 
 
+def _strict_breach(flag: object) -> int:
+    if isinstance(flag, (bool, np.bool_)):
+        return int(flag)
+    if isinstance(flag, (int, np.integer)) and flag in (0, 1):
+        return int(flag)
+    raise ValueError(f"breach must be bool or a 0/1 int, got {flag!r}")
+
+
 @dataclass
 class CoverageEProcess:
     """LR-mixture e-process on a Bernoulli breach stream.
@@ -83,14 +91,20 @@ class CoverageEProcess:
         return num / den
 
     def update(self, breach: bool) -> float:
-        """Fold one breach indicator. Returns the running e-value."""
+        """Fold one breach indicator. Returns the running e-value.
+
+        Strict flag: ``None`` is a missing observation, not a non-breach —
+        silently folding it would deflate the measured breach rate, so
+        anything outside {False, True, 0, 1} raises.
+        """
+        b = _strict_breach(breach)
         n = self.n_eval + 1
         for i, g in enumerate(self.alt_grid):
             p1 = min(0.999999, g * self.p0)  # alt rate, kept < 1
-            lr = self._lr(int(breach), p1, self.p0)
+            lr = self._lr(b, p1, self.p0)
             self._wealths[i] = min(self._wealths[i] * lr, 1e300)
         self.n_eval = n
-        self.n_breach += int(breach)
+        self.n_breach += b
         return self.evalue
 
     @property
