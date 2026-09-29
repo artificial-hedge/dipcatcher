@@ -139,12 +139,18 @@ def mcs_report(
     alpha: float = 0.05,
     lam: float = 0.5,
     init_scale: float = 1e-3,
+    data_label: str = "UNKNOWN",
 ) -> dict[str, Any]:
     """Receipt-shaped sequential-MCS verdict over per-origin loss streams.
 
     ``loss_streams`` maps head → equal-length per-origin proper losses
     (lower = better). Fails closed on empty/mismatched/non-finite input.
+    ``data_label`` stamps the receipt's provenance — callers routing real
+    tape through shard configs should pass that declared label; bare
+    arrays have no provenance, hence the UNKNOWN default.
     """
+    if not isinstance(data_label, str) or not data_label.strip():
+        raise ValueError("data_label must be a nonempty string")
     heads = sorted(loss_streams)
     if len(heads) < 2:
         raise ValueError("need at least two heads")
@@ -168,6 +174,9 @@ def mcs_report(
     final = mcs.states[-1]
     return {
         "kind": "mcs_seq.v1",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": data_label,
         "alpha": alpha,
         "lam": lam,
         "n_heads": len(heads),
