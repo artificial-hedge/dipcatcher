@@ -32,6 +32,11 @@ if sys.platform == "win32":
 else:
     import fcntl
 
+# O_BINARY is Windows-only; 0 elsewhere, where no text translation occurs.
+# Any raw-os.write of canonical bytes must OR this in, or Windows turns the
+# trailing b"\n" into b"\r\n" and the ledger fails its own carriage-return check.
+_O_BINARY = getattr(os, "O_BINARY", 0)
+
 SCHEMA_VERSION = 1
 GENESIS_HASH = "0" * 64
 KINDS = (
@@ -327,12 +332,15 @@ class AuditLedger:
         self._append_line(self.checkpoints_path, canonical_json_bytes(record))
         if signer.scheme == "ed25519" and signature.public_key_hex:
             pub = self.root / "ed25519.pub"
-            pub.write_text(signature.public_key_hex + "\n", encoding="ascii")
+            pub.write_bytes((signature.public_key_hex + "\n").encode("ascii"))
         return record
 
     def _append_line(self, path: Path, body: bytes) -> None:
         line = body + b"\n"
-        fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY, 0o644)
+        # O_BINARY is required on Windows: without it the CRT text-translates
+        # b"\n" to b"\r\n" on write, and _scan_entries rejects every line with
+        # "carriage_return", so the ledger we just wrote reads back as corrupt.
+        fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY | _O_BINARY, 0o644)
         try:
             view = line
             while view:
