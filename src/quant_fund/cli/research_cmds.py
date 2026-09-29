@@ -886,6 +886,57 @@ def mcs(
     typer.echo(f"receipt={path}")
 
 
+@app.command("serial-watch")
+def serial_watch_cmd(
+    pits: Path = typer.Argument(..., help="JSON file: a list of PITs in (0,1), or {name: [pits]}."),
+    n_lags: int = typer.Option(5, help="Max lag for the sign-product families."),
+    alpha: float = typer.Option(0.05, help="Per-family claim level."),
+    lam: float = typer.Option(0.5, help="Bet cap λ ∈ (0,1)."),
+    data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on each receipt."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Anytime-valid PIT serial-independence audit; sealed receipt per stream.
+
+    Proper-scores evidence only — reports the per-lag family claim and the
+    pooled e-value claim separately (never one merged flag; the joint claim
+    boundary is per-family level α AND pooled level α, not one shared level).
+    """
+    import json
+
+    from quant_fund.research.serial_watch import serial_report, write_serial_receipt
+
+    try:
+        raw = json.loads(pits.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise typer.BadParameter(f"cannot read PIT file {pits}: {exc}") from exc
+    streams: dict[str, object] = (
+        {"stream": raw}
+        if isinstance(raw, list)
+        else {str(k): v for k, v in raw.items()}
+        if isinstance(raw, dict)
+        else {}
+    )
+    if not streams:
+        raise typer.BadParameter("PIT file must be a JSON list or {name: [pits]} mapping")
+    try:
+        for name, stream in streams.items():
+            receipt = serial_report(
+                stream, n_lags=n_lags, alpha=alpha, lam=lam, data_label=data_label
+            )
+            path = write_serial_receipt(receipt, out_dir)
+            typer.echo(
+                format_data_label(synthetic=data_label == "SYNTHETIC", data_source=data_label)
+            )
+            typer.echo(
+                f"{name}: alarmed_lags={receipt['alarmed_lags']} "
+                f"(per-family claim, level {alpha}) pooled_evalue={receipt['pooled_evalue']:.4g} "
+                f"pooled_alarmed={receipt['pooled_alarmed']} (separate pooled claim, level {alpha})"
+            )
+            typer.echo(f"receipt={path}")
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
 __all__ = [
     "capacity",
     "execution_sensitivity_cmd",
@@ -898,6 +949,7 @@ __all__ = [
     "research",
     "verdict",
     "suite_health_cmd",
+    "serial_watch_cmd",
     "verify_identities",
     "verify_receipt_cmd",
     "vol_bench",

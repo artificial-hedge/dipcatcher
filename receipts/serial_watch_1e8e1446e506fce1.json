@@ -1,0 +1,65 @@
+{
+  "alarm_origins": {},
+  "alarmed_lags": [],
+  "alpha": 0.05,
+  "any_lag_alarmed": false,
+  "data_label": "yahoo_eod",
+  "drill": {
+    "head": "conf_t",
+    "n_pit": 300,
+    "n_pit_nan_dropped": 0,
+    "n_train": 1000,
+    "pit_construction": "pit_values interp, clipped to (1e-9, 1-1e-9)",
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    }
+  },
+  "evidence": [
+    "ville_inequality",
+    "rademacher_sign_products",
+    "union_bound_2k_processes",
+    "bonferroni_per_lag",
+    "anytime_valid"
+  ],
+  "kind": "serial_watch.v1",
+  "lam": 0.5,
+  "live_pnl_claim": false,
+  "n_lags": 5,
+  "n_origins": 300,
+  "per_lag": {
+    "1": {
+      "alarmed": false,
+      "neg": 1.4073499090046617e-10,
+      "pos": 3.125472375522447e-28
+    },
+    "2": {
+      "alarmed": false,
+      "neg": 9.966024988320148e-22,
+      "pos": 5.884838095353163e-17
+    },
+    "3": {
+      "alarmed": false,
+      "neg": 2.4607469106963328e-23,
+      "pos": 3.177812571490708e-15
+    },
+    "4": {
+      "alarmed": false,
+      "neg": 5.148056365814948e-13,
+      "pos": 2.0253060993385455e-25
+    },
+    "5": {
+      "alarmed": false,
+      "neg": 2.6576066635520394e-21,
+      "pos": 5.230967195869479e-17
+    }
+  },
+  "pooled_alarmed": false,
+  "pooled_evalue": 1.4125308551135108e-11,
+  "receipt_sha256": "1e8e1446e506fce11c3a75b7a776fb8c3110b63d75412675929c9d6f5f112c4b",
+  "research_only": true
+}

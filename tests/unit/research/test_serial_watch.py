@@ -142,3 +142,37 @@ def test_ties_at_median_are_inert() -> None:
     # Both tie steps freeze every factor whose window touches a tie —
     # lag-1 pairs and the lag-2 pair (s_1, s_3 / s_2, s_0) all include one.
     assert watch.lag_evalues == e_before
+
+
+def test_serial_watch_cli(tmp_path: Path) -> None:
+    """`dipcatcher serial-watch` writes a sealed, verifiable receipt."""
+    import json
+
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    pit_file = tmp_path / "pits.json"
+    pit_file.write_text(json.dumps({"head_a": _ar_pits(80, 1).tolist()}))
+    out_dir = tmp_path / "receipts"
+    result = CliRunner().invoke(app, ["serial-watch", str(pit_file), "--out-dir", str(out_dir)])
+    assert result.exit_code == 0, result.output
+    written = list(out_dir.glob("serial_watch_*.json"))
+    assert len(written) == 1
+    assert verify_receipt_file(written[0])["valid"]
+    assert "alarmed_lags" in result.output
+
+
+def test_serial_watch_cli_fail_closed(tmp_path: Path) -> None:
+    """Non-PIT input is rejected, not silently audited."""
+    import json
+
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    pit_file = tmp_path / "bad.json"
+    pit_file.write_text(json.dumps([0.0, 1.0, 2.0]))
+    result = CliRunner().invoke(app, ["serial-watch", str(pit_file), "--out-dir", str(tmp_path)])
+    assert result.exit_code != 0

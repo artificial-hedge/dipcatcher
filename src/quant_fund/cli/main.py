@@ -56,6 +56,7 @@ from quant_fund.cli.research_cmds import (
     lane_power,
     suite_health_cmd,
     mcs,
+    serial_watch_cmd,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,
@@ -175,6 +176,7 @@ __all__ = [
     "lane_power",
     "suite_health_cmd",
     "mcs",
+    "serial_watch_cmd",
     "session_book_cmd",
     "vendor_book_map_cmd",
     "book_panel_cmd",
