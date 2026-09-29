@@ -4355,6 +4355,10 @@
       "src": "quant_fund.paper.sim_live"
     },
     {
+      "dst": "quant_fund.research.lane_contracts",
+      "src": "quant_fund.paper.sim_live"
+    },
+    {
       "dst": "quant_fund.utils.atomicio",
       "src": "quant_fund.paper.sim_live"
     },
@@ -6907,6 +6911,10 @@
       "src": "quant_fund.research.evidence_audit"
     },
     {
+      "dst": "quant_fund.research.legacy_unsealed",
+      "src": "quant_fund.research.evidence_audit"
+    },
+    {
       "dst": "quant_fund.research.receipt_v2",
       "src": "quant_fund.research.evidence_audit"
     },
@@ -7691,10 +7699,6 @@
       "src": "quant_fund.research.receipt_v2"
     },
     {
-      "dst": "quant_fund.paper.sim_live",
-      "src": "quant_fund.research.receipt_v2"
-    },
-    {
       "dst": "quant_fund.research.calibration_eval",
       "src": "quant_fund.research.receipt_v2"
     },
@@ -7707,14 +7711,6 @@
       "src": "quant_fund.research.receipt_v2"
     },
     {
-      "dst": "quant_fund.research.coherence",
-      "src": "quant_fund.research.receipt_v2"
-    },
-    {
-      "dst": "quant_fund.research.concordance",
-      "src": "quant_fund.research.receipt_v2"
-    },
-    {
       "dst": "quant_fund.research.cost_calibration",
       "src": "quant_fund.research.receipt_v2"
     },
@@ -7724,10 +7720,6 @@
     },
     {
       "dst": "quant_fund.research.evalue_contracts",
-      "src": "quant_fund.research.receipt_v2"
-    },
-    {
-      "dst": "quant_fund.research.evidence_audit",
       "src": "quant_fund.research.receipt_v2"
     },
     {
@@ -7748,6 +7740,10 @@
     },
     {
       "dst": "quant_fund.research.ranker_probability",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
+      "dst": "quant_fund.research.script_receipts",
       "src": "quant_fund.research.receipt_v2"
     },
     {
@@ -10392,7 +10388,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 3,
+      "imports": 4,
       "src": "quant_fund.paper"
     },
     {
@@ -10771,11 +10767,6 @@
       "src": "quant_fund.research"
     },
     {
-      "dst": "quant_fund.paper",
-      "imports": 1,
-      "src": "quant_fund.research"
-    },
-    {
       "dst": "quant_fund.pipeline",
       "imports": 13,
       "src": "quant_fund.research"
@@ -10807,7 +10798,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 220,
+      "imports": 219,
       "src": "quant_fund.research"
     },
     {
