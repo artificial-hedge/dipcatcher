@@ -7,6 +7,7 @@ over a real duckdb file in tmp_path.
 from __future__ import annotations
 
 import json
+from typing import Literal
 
 import pytest
 
@@ -33,7 +34,7 @@ def _bundle(bundle_id: str, *, prev: str = GENESIS_HASH, created: str) -> ProofB
         created_utc=created,
         run_kind="backtest",
         code=CodeFingerprint(git_revision="a26be34", worktree_sha256=_HEX, dirty=False),
-        data_manifest=DataManifestSummary(reads=[], merkle_root=_HEX, n_reads=0),
+        data_manifest=DataManifestSummary(reads=(), merkle_root=_HEX, n_reads=0),
         config_sha256=_HEX,
         seed=7,
         env=EnvFingerprint(
@@ -53,7 +54,12 @@ def _bundle(bundle_id: str, *, prev: str = GENESIS_HASH, created: str) -> ProofB
     )
 
 
-def _trial(trial_id: str, bundle_hash: str, *, family: str = "discovery") -> TrialLedgerRow:
+def _trial(
+    trial_id: str,
+    bundle_hash: str,
+    *,
+    family: Literal["calibration", "discovery", "bound"] = "discovery",
+) -> TrialLedgerRow:
     return TrialLedgerRow(
         trial_id=trial_id,
         bundle_hash=bundle_hash,
@@ -184,6 +190,53 @@ def test_chain_head_follows_links(tmp_path) -> None:
         db.insert_bundle(b2, None)
         db.insert_bundle(b3, None)
         assert db.chain_head() == b3.bundle_id
+
+
+def test_bundles_returns_chain_order_not_timestamp_order(tmp_path) -> None:
+    """Audit/export order is the hash chain, not wall clock: a bundle minted on
+    a skewed clock must not reorder the ledger."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        b1 = _bundle(_id(1), created="2026-09-26T00:02:00+00:00")
+        b2 = _bundle(_id(2), prev=b1.bundle_id, created="2026-09-26T00:01:00+00:00")
+        b3 = _bundle(_id(3), prev=b2.bundle_id, created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(b1, None)
+        db.insert_bundle(b2, None)
+        db.insert_bundle(b3, None)
+        # created_utc order would be b3, b2, b1 — the chain is the opposite.
+        assert [r["bundle_id"] for r in db.bundles()] == [
+            b1.bundle_id,
+            b2.bundle_id,
+            b3.bundle_id,
+        ]
+
+
+def test_bundles_fail_closed_on_unreachable_row(tmp_path) -> None:
+    """A row no genesis walk reaches (dangling prev, e.g. hand-edited table)
+    breaks export loudly rather than silently dropping or reordering it."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        b1 = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(b1, None)
+        # Bypass insert_bundle's chain-head check: a row pointing at a hash
+        # no bundle has (as if the middle of the chain were deleted).
+        db._con.execute(
+            "INSERT INTO proof_bundles VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                _id(2),
+                "2026-09-26T00:01:00+00:00",
+                "backtest",
+                "a26be34",
+                _HEX,
+                7,
+                _HEX,
+                _id(99),
+                "none",
+                "{}",
+                None,
+                None,
+            ],
+        )
+        with pytest.raises(ProvenanceError, match="unreachable"):
+            db.bundles()
 
 
 def test_trial_round_trip_and_family_filter(tmp_path) -> None:
@@ -361,3 +414,97 @@ def test_bound_parameters_store_sql_text_as_data(tmp_path) -> None:
         assert insert_sql.count("?") == len(provenance_mod._TRIAL_COLUMNS)
         assert "'" not in insert_sql
         assert "--" not in insert_sql
+
+
+def test_trial_chain_links_and_verifies(tmp_path) -> None:
+    """insert_trial binds prev_trial_hash to the head at insert time; the
+    genesis walk returns the insertion order."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(bundle, None)
+        trials = [_trial(_id(10 + i), bundle.bundle_id) for i in range(3)]
+        for t in trials:
+            db.insert_trial(t)
+        stored_links = db._con.execute(
+            "SELECT trial_id, prev_trial_hash FROM trial_ledger"
+        ).fetchall()
+        assert stored_links[0][1] == GENESIS_HASH
+        assert stored_links[1][1] == trials[0].trial_id
+        assert stored_links[2][1] == trials[1].trial_id
+        assert db.verify_trial_chain() == [t.trial_id for t in trials]
+
+
+def test_trial_chain_surfaces_deleted_row(tmp_path) -> None:
+    """Deleting a middle trial — the deflation attack the ledger exists to
+    defeat — leaves a dangling link that verify_trial_chain must surface."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(bundle, None)
+        trials = [_trial(_id(10 + i), bundle.bundle_id) for i in range(3)]
+        for t in trials:
+            db.insert_trial(t)
+        db._con.execute("DELETE FROM trial_ledger WHERE trial_id = ?", [trials[1].trial_id])
+        with pytest.raises(ProvenanceError, match="unreachable|tamper"):
+            db.verify_trial_chain()
+
+
+def test_trial_chain_surfaces_rewired_link(tmp_path) -> None:
+    """Rewiring prev_trial_hash to a dangling predecessor leaves both rows
+    unreferenced — a fork. The head query and the verifier must both refuse
+    to arbitrate (UNIQUE prev blocks the naive two-roots insert, so the
+    tamper is an UPDATE)."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(bundle, None)
+        t1 = _trial(_id(11), bundle.bundle_id)
+        t2 = _trial(_id(12), bundle.bundle_id)
+        db.insert_trial(t1)
+        db.insert_trial(t2)
+        db._con.execute(
+            "UPDATE trial_ledger SET prev_trial_hash = ? WHERE trial_id = ?",
+            [_id(9), t2.trial_id],
+        )
+        with pytest.raises(ProvenanceError, match="unreachable|tamper"):
+            db.verify_trial_chain()
+        with pytest.raises(ProvenanceError, match="tampered"):
+            db.insert_trial(_trial(_id(13), bundle.bundle_id))
+
+
+def test_trial_chain_surfaces_missing_genesis(tmp_path) -> None:
+    """A chain whose first row was rewritten has no genesis link."""
+    with ProvenanceDB(tmp_path / "prov.duckdb") as db:
+        bundle = _bundle(_id(1), created="2026-09-26T00:00:00+00:00")
+        db.insert_bundle(bundle, None)
+        db.insert_trial(_trial(_id(11), bundle.bundle_id))
+        db._con.execute(
+            "UPDATE trial_ledger SET prev_trial_hash = ? WHERE trial_id = ?",
+            [_id(9), _id(11)],
+        )
+        with pytest.raises(ProvenanceError, match="genesis"):
+            db.verify_trial_chain()
+
+
+def test_predate_schema_db_is_refused(tmp_path) -> None:
+    """A ledger file whose trial_ledger predates prev_trial_hash must not be
+    extended silently — append-only evidence cannot migrate into a schema it
+    never promised."""
+    import duckdb
+
+    db_path = tmp_path / "prov.duckdb"
+    con = duckdb.connect(str(db_path))
+    con.execute(
+        "CREATE TABLE proof_bundles (bundle_id TEXT PRIMARY KEY, created_utc TEXT, "
+        "run_kind TEXT, git_revision TEXT, config_sha256 TEXT, seed BIGINT, "
+        "merkle_root TEXT, prev_bundle_hash TEXT UNIQUE, signature_scheme TEXT, "
+        "bundle_json TEXT, verified_ok BOOLEAN, verification_json TEXT)"
+    )
+    con.execute(
+        "CREATE TABLE trial_ledger (trial_id TEXT PRIMARY KEY, bundle_hash TEXT "
+        "REFERENCES proof_bundles (bundle_id), family TEXT, strategy TEXT, "
+        "cluster_id TEXT, n_obs BIGINT, periods_per_year DOUBLE, "
+        "sharpe_periodic DOUBLE, skew DOUBLE, kurtosis_raw DOUBLE, "
+        "returns_sha256 TEXT, created_utc TEXT)"
+    )
+    con.close()
+    with pytest.raises(ProvenanceError, match="predates"):
+        ProvenanceDB(db_path)
