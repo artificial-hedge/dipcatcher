@@ -45,7 +45,6 @@ from quant_fund.models.robinhood_plus.engine import (
 from quant_fund.research.benches import bench_conformal, bench_distribution, bench_jackknife_plus
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
-from quant_fund.utils.atomicio import atomic_write_text
 
 KRONOS_PAPER_TSFM = (
     "PatchTST",
@@ -484,7 +483,3 @@ def verify_sota_receipt(path: str | Path) -> list[str]:
     if not isinstance(loaded, dict):
         return ["not_an_object"]
     return sota_receipt_contract_errors(loaded) + sota_receipt_seal_errors(loaded)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(dest, json.dumps(receipt, indent=2, default=str))
-    receipt["receipt_path"] = str(dest)
-    return receipt

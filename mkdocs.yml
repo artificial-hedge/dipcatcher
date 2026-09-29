@@ -152,6 +152,7 @@ nav:
       - Labels: DATA_SOURCE_LABELS.md
       - Hugging Face OHLCV-1m: HF_OHLCV_1M.md
       - Data lake: DATA_LAKE.md
+      - Demo data: DEMO_DATA.md
   - Research:
       - Research centre: RESEARCH_CENTRE.md
       - Research 100: RESEARCH100.md
@@ -192,6 +193,14 @@ nav:
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
       - Audit ledger: AUDIT_LEDGER.md
+      - fx1 audit: AUDIT_FX1.md
+      - fx1 eval-harness audit: AUDIT_FX1_EVALHARNESS.md
+      - market-sim audit: AUDIT_MARKET_SIM.md
+      - models audit: AUDIT_MODELS.md
+      - mutation audit: AUDIT_MUTATION.md
+      - PIT-vault audit: AUDIT_PIT_VAULT.md
+      - pretrade audit: AUDIT_PRETRADE.md
+      - Data quality: DATA_QUALITY.md
       - Scenario Monte Carlo: MC_ENGINE.md
       - Run comparison: RUN_COMPARE.md
       - Fast replay conformance: FAST_REPLAY_P42.md
@@ -200,6 +209,8 @@ nav:
       - Allocation pack: ALLOCATION_PACK.md
       - Reality pre-registration: REALITY_PREREGISTRATION.md
       - Reality trial 2026: REALITY_TRIAL_2026.md
+      - Reality pre-reg survivorship: REALITY_PREREGISTRATION_SURVIVORSHIP.md
+      - Reality trial survivorship 2026: REALITY_TRIAL_SURVIVORSHIP_2026.md
       - Recorded trial batches: research/findings.md
   - Operations:
       - Platform matrix: PLATFORM_MATRIX.md
@@ -281,6 +292,7 @@ nav:
   - Proofcore:
       - Overview: proofcore/README.md
       - Migration: proofcore/MIGRATION.md
+      - Wave 2: proofcore/WAVE2.md
   - Archive:
       - archive.md
       - Implementation plan: IMPLEMENTATION_PLAN.md

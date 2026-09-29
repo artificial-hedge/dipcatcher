@@ -23,9 +23,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Mapping
 import os
 import tempfile
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -35,7 +35,6 @@ import polars as pl
 
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.returns import annualized_vol, sharpe_ratio
-from quant_fund.paper.ledger import _atomic_write_text
 from quant_fund.paper.loop import PaperLoopResult, run_paper_loop
 from quant_fund.paper.quantile_signals import (
     DEFAULT_TAUS,
@@ -44,8 +43,30 @@ from quant_fund.paper.quantile_signals import (
     load_deep_bars,
     quantile_panels_to_weights,
 )
-from quant_fund.utils.receipt import seal_receipt
 from quant_fund.utils.atomicio import atomic_write_text
+from quant_fund.utils.receipt import seal_receipt
+
+SIM_LIVE_KINDS = ("sim_live_receipt", "sim_live_bench_receipt")
+
+
+def sim_live_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Fail-closed honesty-contract checks on a ``sim_live`` receipt body.
+
+    Everything re-derivable from the sealed body alone: the kind tag plus the
+    honesty flags — a receipt claiming live PnL or dropping the
+    simulation-only markers fails verification even when the seal was
+    recomputed honestly.
+    """
+    errors: list[str] = []
+    if receipt.get("kind") not in SIM_LIVE_KINDS:
+        errors.append("kind")
+    if receipt.get("research_only") is not True:
+        errors.append("research_only")
+    if receipt.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim")
+    if receipt.get("simulated_only") is not True:
+        errors.append("simulated_only")
+    return errors
 
 
 def _sha256(path: Path) -> str:
@@ -488,9 +509,6 @@ def run_sim_live(
     sealed = seal_receipt(receipt)
     out_dir.mkdir(parents=True, exist_ok=True)
     receipt_path = out_dir / f"sim_live_{effective_run_id}.json"
-    _atomic_write_text(receipt_path, json.dumps(receipt, indent=2, default=str))
-    receipt_path.write_text(json.dumps(sealed, indent=2, default=str))
-    atomic_write_text(receipt_path, json.dumps(receipt, indent=2, default=str))
     atomic_write_text(receipt_path, json.dumps(sealed, indent=2, default=str))
     return SimLiveResult(
         run_id=effective_run_id,
