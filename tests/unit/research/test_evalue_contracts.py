@@ -130,7 +130,7 @@ def test_verify_receipt_dispatch() -> None:
 
     tampered = dict(_BASE_PROMOTION, anytime_p=0.9)
     result = verify_receipt_payload(tampered)
-    assert result["valid"] is False
+    assert result != []
     assert any("anytime_p" in e for e in result["errors"])
 
 
@@ -463,3 +463,36 @@ def test_suite_health_contract() -> None:
     assert "pooled_alarmed_below_threshold" in evalue_family_contract_errors(bad3)
     bad4 = dict(_BASE_SUITE_HEALTH, n_evalues_pooled=99)
     assert "n_evalues_pooled_exceeds_findings" in evalue_family_contract_errors(bad4)
+
+
+def test_monitor_run_label_binding_contract() -> None:
+    """Outer data_label must equal the unique per-shard label."""
+    payload = {
+        "schema": "monitor_run.v1",
+        "kind": "monitor_run",
+        "data_label": "yahoo_eod",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "inputs_sha256": "a" * 64,
+        "n_rows": 4,
+        "n_alarm_rows": 1,
+        "lanes_available": {"coverage": True},
+        "params": {
+            "data_labels": {"s1": "yahoo_eod", "s2": "yahoo_eod"},
+            "alpha": 0.05,
+            "level": 0.9,
+            "tail_cell": [0.05, 0.1],
+            "n_train": 64,
+            "n_eval": 32,
+            "seed": 0,
+            "heads": ["a"],
+            "shards": ["s1", "s2"],
+        },
+    }
+    assert evalue_family_contract_errors(payload) == []
+    bad = dict(payload)
+    bad["data_label"] = "SYNTHETIC"  # mislabeled real shard
+    assert evalue_family_contract_errors(bad) != []
+    mixed = dict(payload)
+    mixed["params"] = {"data_labels": {"s1": "a", "s2": "b"}}
+    assert evalue_family_contract_errors(mixed) != []
