@@ -35,8 +35,12 @@ class LedgerEntry(BaseModel):
     utc: str
     kind: str = Field(description="example | exclusion | gate_decision")
     source_sha256: str = Field(min_length=64, max_length=64)
-    transform_sha256: str = Field(description="SHA-256 of the code/config that produced this entry")
-    example_sha256: str | None = None
+    transform_sha256: str = Field(
+        min_length=64,
+        max_length=64,
+        description="SHA-256 of the code/config that produced this entry",
+    )
+    example_sha256: str | None = Field(default=None, min_length=64, max_length=64)
     rule: str | None = Field(default=None, description="quality-gate rule name for exclusions")
     prev_hash: str = Field(min_length=64, max_length=64)
     entry_hash: str = Field(min_length=64, max_length=64)

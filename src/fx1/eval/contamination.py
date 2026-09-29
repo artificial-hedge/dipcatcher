@@ -137,7 +137,17 @@ def run_contamination_audit(
     canonical_pass: list[bool] | None = None,
     rephrased_pass: list[bool] | None = None,
 ) -> ContaminationReport:
-    """Run all probes and emit the hash-bound, publishable report."""
+    """Run all probes and emit the hash-bound, publishable report.
+
+    Refuses empty inputs: an audit over no corpus or no eval prompts would
+    certify vacuity as cleanliness — the report must never issue from
+    nothing inspected.
+    """
+    if not corpus_texts or not eval_prompts:
+        raise ValueError(
+            "contamination audit requires non-empty corpus and eval prompts; "
+            "an empty input would produce a clean bill of health over nothing"
+        )
     hits = ngram_containment_scan(corpus_texts, eval_prompts)
     probes = [min_k_percent_probe(item_logprobs or [])]
     if canonical_pass is not None and rephrased_pass is not None:

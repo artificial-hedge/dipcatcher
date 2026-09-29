@@ -10,32 +10,32 @@
     "eval": {
       "status": "audited",
       "n_modules": 14,
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "forecast": {
       "status": "audited",
       "n_modules": 11,
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "bench": {
       "status": "audited",
       "n_modules": 3,
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "serve": {
       "status": "audited",
       "n_modules": 5,
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "data": {
       "status": "audited",
       "n_modules": 14,
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "train": {
       "status": "audited",
       "n_modules": 9,
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     }
   },
   "modules": {
@@ -45,39 +45,39 @@
     },
     "cli.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "doctor.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "harness.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "honesty.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "hypotheses.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "modelcard.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "mrm.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "reward.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     },
     "sbom.py": {
       "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "doc": "docs/AUDIT_FX1_WAVE3.md"
     }
   }
 }
