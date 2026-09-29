@@ -107,7 +107,7 @@ class TestCapacityMetrics:
             capacity_metrics(book, aum=-1, participation_cap=0.1)
         with pytest.raises(ValueError):
             capacity_metrics(book, aum=1e6, participation_cap=0.0)
-        bad = SyntheticBook("bad", book.weights, -book.adv_dollar)
+        bad = SyntheticBook("bad", book.weights, -book.adv_dollar, "SYNTHETIC")
         with pytest.raises(ValueError):
             capacity_metrics(bad, aum=1e6, participation_cap=0.1)
 
@@ -207,3 +207,28 @@ def test_table_shape() -> None:
     table = format_capacity_table(frame)
     assert "days_to_trade" in table and "impact_bps" in table
     assert len(table.strip().splitlines()) == 2 + frame.height
+
+
+class TestDataLabelProvenance:
+    def test_label_derived_from_books_not_hardcoded(self) -> None:
+        book = uniform_book(30, 6, 1)
+        real = SyntheticBook("real", book.weights, book.adv_dollar, "yahoo_eod")
+        _, receipt = run_capacity_bench(books=[real])
+        assert receipt["data_label"] == "yahoo_eod"
+        assert (
+            receipt["params"]["books"][0]["data_label"] == "yahoo_eod"
+            if "params" in receipt
+            else True
+        )
+
+    def test_mixed_data_labels_fail_closed(self) -> None:
+        a = uniform_book(30, 6, 1)
+        b = concentrated_book(30, 6, 2)
+        real = SyntheticBook("real", b.weights, b.adv_dollar, "stooq_eod")
+        with pytest.raises(ValueError, match="mixed data_label"):
+            run_capacity_bench(books=[a, real])
+
+    def test_empty_label_rejected(self) -> None:
+        book = uniform_book(30, 6, 1)
+        with pytest.raises(ValueError, match="data_label"):
+            SyntheticBook("x", book.weights, book.adv_dollar, " ")
