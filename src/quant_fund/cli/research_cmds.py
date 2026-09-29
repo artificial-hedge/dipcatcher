@@ -1498,3 +1498,84 @@ def lattice_cmd(
     typer.echo(f"receipt={path}")
     if strict and receipt["verdict"] == "inconsistent":
         raise typer.Exit(code=1)
+
+
+@app.command()
+def corpus_epoch(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Evidence corpus to epoch-stamp / chain-check."
+    ),
+    check: bool = typer.Option(
+        False,
+        "--check",
+        help="Verify the committed epoch chain against the live corpus "
+        "(single fork-free chain, monotone membership, head == live root).",
+    ),
+    allowed_removals: Path | None = typer.Option(
+        None,
+        "--allowed-removals",
+        help="JSON map of receipt filename -> sha256 whose removal is acknowledged "
+        "(e.g. moved to legacy-unsealed/).",
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = corpus_epoch.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+) -> None:
+    """Corpus epoch: hash-chained integrity root over the evidence store.
+
+    Seals the corpus's full membership (name -> sha256 over file bytes) into a
+    ``corpus_epoch.v1`` receipt linked to the previous epoch, so receipt
+    deletion or rewrite becomes detectable without trusting git. ``--check``
+    walks the committed chain and fails on forks, removed or mutated members,
+    and drift between the head epoch and the live corpus. Provenance evidence
+    only, never a market or P&L claim.
+    """
+    from quant_fund.research.corpus_epoch import (
+        check_epoch_chain,
+        corpus_epoch,
+        write_epoch_receipt,
+    )
+
+    root = Path(corpus_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"corpus dir {root} does not exist")
+    allowed: dict[str, str] | None = None
+    if allowed_removals is not None:
+        if not allowed_removals.is_file():
+            raise typer.BadParameter(f"allowed-removals file {allowed_removals} does not exist")
+        try:
+            raw_allowed = json.loads(allowed_removals.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"allowed-removals is not JSON: {exc}") from exc
+        if not isinstance(raw_allowed, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64
+            for k, v in raw_allowed.items()
+        ):
+            raise typer.BadParameter(
+                "allowed-removals must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        allowed = dict(raw_allowed)
+    if check:
+        errors = check_epoch_chain(root, allowed_removals=allowed)
+        typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+        if errors:
+            for err in errors:
+                typer.echo(f"epoch-chain error: {err}")
+            raise typer.Exit(code=1)
+        typer.echo("epoch-chain intact")
+        return
+    receipt = corpus_epoch(root, head_sha=None)
+    try:
+        path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"epoch members={receipt['n_members']} "
+        f"added={len(receipt['members_added'])} removed={len(receipt['members_removed'])} "
+        f"verdict={receipt['verdict']} root={receipt['epoch_root_sha256'][:16]}"
+    )
+    typer.echo(f"receipt={path}")
