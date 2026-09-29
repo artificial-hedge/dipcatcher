@@ -244,3 +244,30 @@ def test_lattice_cli_emits_sealed_receipt(tmp_path: Path) -> None:
 
     verification = verify_receipt_file(emitted[0])
     assert verification["valid"], verification["errors"]
+
+
+def test_lattice_cli_strict_exits_on_inconsistent(tmp_path: Path) -> None:
+    import json
+
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    src = tmp_path / "src"
+    src.mkdir()
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    ds = "bb" * 32
+    a = _receipt("aa" * 32, 0.5)
+    a["dataset_sha256"] = ds
+    b = _receipt("cc" * 32, 0.9)
+    b["dataset_sha256"] = ds
+    _write(src, "a.json", a)
+    _write(src, "b.json", b)
+    runner = CliRunner()
+    ok = runner.invoke(
+        app, ["lattice", "--strict", "--receipts-dir", str(src), "--out-dir", str(out_dir)]
+    )
+    assert ok.exit_code == 1
+    plain = runner.invoke(app, ["lattice", "--receipts-dir", str(src), "--out-dir", str(out_dir)])
+    assert plain.exit_code == 0

@@ -363,6 +363,7 @@ def promotion_dry_run(
     risk_accounting: dict[str, int] | None = None,
     kill_tripped_mid_run: bool = False,
     allow_missing_divergence: bool = False,
+    n_divergence_samples: int | None = None,
 ) -> dict[str, Any]:
     """Shadow→champion promotion dry-run. Never touches live capital or aliases.
 
@@ -390,6 +391,12 @@ def promotion_dry_run(
         raise ValueError("promotion divergence values must be finite and non-negative")
     if int(n_steps) < 0 or int(min_steps) < 0:
         raise ValueError("promotion step counts must be non-negative")
+    if n_divergence_samples is not None and (
+        isinstance(n_divergence_samples, bool)
+        or int(n_divergence_samples) != n_divergence_samples
+        or int(n_divergence_samples) < 0
+    ):
+        raise ValueError("n_divergence_samples must be a non-negative integer")
     for name, value in (
         ("champion_nav", champion_nav),
         ("shadow_gross", shadow_gross),
@@ -448,6 +455,8 @@ def promotion_dry_run(
     if risk_accounting is not None:
         receipt["risk_accounting"] = risk_accounting
     receipt["kill_tripped_mid_run"] = bool(kill_tripped_mid_run)
+    if n_divergence_samples is not None:
+        receipt["n_divergence_samples"] = int(n_divergence_samples)
     receipt["receipt_sha256"] = _promotion_receipt_digest(receipt)
     # Fail-closed honesty invariants (Wave 9): never emit a live-promote receipt.
     if receipt.get("would_promote_live") is not False:
@@ -542,7 +551,7 @@ def validate_promotion_dry_run_receipt(promo: dict[str, Any]) -> list[str]:
                 )
             ):
                 errors.append(f"promotion_{key}_must_be_finite_nonnegative")
-    for key in ("n_steps", "min_steps", "rolling_window"):
+    for key in ("n_steps", "min_steps", "rolling_window", "n_divergence_samples"):
         if key in promo:
             value = promo[key]
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
