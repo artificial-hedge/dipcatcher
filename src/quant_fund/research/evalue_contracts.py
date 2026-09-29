@@ -1003,49 +1003,68 @@ def _panel_audit_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _asserted_honesty_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Reject asserted dishonesty in any evalue-family receipt.
+
+    Early writers omitted the honesty stamps, so absence is tolerated (the
+    committed corpus is immutable); an asserted bad value is not — a forged
+    ``live_pnl_claim``/``research_only`` must fail even under a valid reseal.
+    """
+    errors: list[str] = []
+    if receipt.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim_true")
+    if receipt.get("research_only") is False:
+        errors.append("research_only_false")
+    label = receipt.get("data_label")
+    if label is not None and not (isinstance(label, str) and label.strip()):
+        errors.append("data_label_not_nonempty_str")
+    return errors
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
+    errors = _asserted_honesty_errors(receipt)
     if kind == "evalue_promotion.v1":
-        return _evalue_promotion_errors(receipt)
+        return errors + _evalue_promotion_errors(receipt)
     if kind == "fleet_race.v1":
-        return _fleet_race_errors(receipt)
+        return errors + _fleet_race_errors(receipt)
     if kind == "corpus_inference.v1":
-        return _corpus_inference_errors(receipt)
+        return errors + _corpus_inference_errors(receipt)
     if kind == "online_fdr.v1":
-        return _online_fdr_errors(receipt)
+        return errors + _online_fdr_errors(receipt)
     if kind == "calibration_audit.v1":
-        return _calibration_audit_errors(receipt)
+        return errors + _calibration_audit_errors(receipt)
     if kind == "loss_cs.v1":
-        return _loss_cs_errors(receipt)
+        return errors + _loss_cs_errors(receipt)
     if kind == "changepoint_localize.v1":
-        return _changepoint_localize_errors(receipt)
+        return errors + _changepoint_localize_errors(receipt)
     if kind in ("coverage_audit", "coverage_audit.v1"):
-        return _coverage_audit_errors(receipt)
+        return errors + _coverage_audit_errors(receipt)
     if kind in ("coverage_cs", "coverage_cs.v1"):
-        return _coverage_cs_errors(receipt)
+        return errors + _coverage_cs_errors(receipt)
     if kind == "winner_curse.v1":
-        return _winner_curse_errors(receipt)
+        return errors + _winner_curse_errors(receipt)
     if kind == "drift_alarm.v1":
-        return _drift_alarm_errors(receipt)
+        return errors + _drift_alarm_errors(receipt)
     if kind == "conformal_monitor.v1":
-        return _conformal_monitor_errors(receipt)
+        return errors + _conformal_monitor_errors(receipt)
     if kind in ("tail_audit", "tail_audit.v1"):
-        return _tail_audit_errors(receipt)
+        return errors + _tail_audit_errors(receipt)
     if kind in ("lane_power", "lane_power.v1"):
-        return _lane_power_errors(receipt)
+        return errors + _lane_power_errors(receipt)
     if kind == "honest_verdict.v1":
-        return _honest_verdict_errors(receipt)
+        return errors + _honest_verdict_errors(receipt)
     if kind in ("monitor_run", "monitor_run.v1"):
-        return _monitor_run_errors(receipt)
+        return errors + _monitor_run_errors(receipt)
     if kind in ("suite_health", "suite_health.v1"):
-        return _suite_health_errors(receipt)
+        return errors + _suite_health_errors(receipt)
     if kind in ("mcs_seq", "mcs_seq.v1"):
-        return _mcs_seq_errors(receipt)
+        return errors + _mcs_seq_errors(receipt)
     if kind in ("serial_watch", "serial_watch.v1"):
-        return _serial_watch_errors(receipt)
+        return errors + _serial_watch_errors(receipt)
     if kind == "emerge_drill.v1":
-        return _emerge_drill_errors(receipt)
+        return errors + _emerge_drill_errors(receipt)
     if kind == "panel_audit.v1":
-        return _panel_audit_errors(receipt)
-    return []
+        return errors + _panel_audit_errors(receipt)
+    return errors
