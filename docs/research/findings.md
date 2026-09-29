@@ -18,23 +18,60 @@ does not score them.
 
 | batch | date | trials | DSR vs bar | PBO | best candidate vs baselines | verdict | artifact |
 |---|---|---|---|---|---|---|---|
-| adaptive_mix_band_search_20asset_1d_20260922 | 2026-09-22T15:44:08.787931+00:00 | 5 (length of candidates; no n_trials field) | not in artifact | not in artifact | baseline field not in artifact; selected_band null | no verdict field; selected_band null; eligible values false; live_pnl_claim false | receipts/adaptive_mix_band_search_20asset_1d_20260922.json |
 | data/metadata/net_tournament/us_wide_20260925 | 2026-09-25T06:49:37.545609+00:00 | candidate_count 2; configured trial outcomes 3 (equal_weight, momentum_20, reversal_1) | not in artifact | not in artifact | benchmark equal_weight; validation/configured status tested; selected mean_excess_net_return -7.195601417700061e-05; selected stepm_adjusted_p 0.8700649675162418; reality_check_p 0.8790604697651174; spa_consistent_p 1.0; validation/double_impact status tested; selected mean_excess_net_return -7.320784724892539e-05; selected stepm_adjusted_p 0.8700649675162418; reality_check_p 0.88055972013993; spa_consistent_p 1.0; test/configured status tested; selected mean_excess_net_return -0.00022858234130943662; selected stepm_adjusted_p 0.9505247376311844; reality_check_p 0.9455272363818091; spa_consistent_p 1.0; test/double_impact status tested; selected mean_excess_net_return -0.00022985028509299856; selected stepm_adjusted_p 0.9510244877561219; reality_check_p 0.9465267366316842; spa_consistent_p 1.0 | selected momentum_20; validation economic_evidence_gate false; validation complete true; validation promote false; validation live_pnl_claim false; test economic_evidence_gate false; test complete true; test promote false; test live_pnl_claim false; no verdict field | data/metadata/net_tournament/us_wide_20260925/manifest.json; data/metadata/net_tournament/us_wide_20260925/validation.json.gz; data/metadata/net_tournament/us_wide_20260925/test.json.gz |
 | data/metadata/cost_aware_tournament/us_wide_20260925 | 2026-09-25T06:49:52.903264+00:00 | candidate_count 4; configured trial outcomes 5 (equal_weight, momentum_20, momentum_20_cost_aware, reversal_1, reversal_1_cost_aware); test phase receipt absent | not in artifact | not in artifact | benchmark equal_weight; validation/configured status incomplete_trials; mean_excess_net_return not in artifact; stepm_adjusted_p not in artifact; reality_check_p not in artifact; spa_consistent_p not in artifact; validation/double_impact status incomplete_trials; mean_excess_net_return not in artifact; stepm_adjusted_p not in artifact; reality_check_p not in artifact; spa_consistent_p not in artifact | selected null; validation economic_evidence_gate false; validation complete false; validation promote false; validation live_pnl_claim false; no verdict field | data/metadata/cost_aware_tournament/us_wide_20260925/manifest.json; data/metadata/cost_aware_tournament/us_wide_20260925/validation.json.gz |
-| reality-us-liquid-daily-2026-09-27 | 2026-09-27T17:52:38.617624+00:00 | n_trials 29; n_effective_trials 3.0; ledger rows 29 | gate dsr 0.6835483771834405 vs bar 0.95; deflated_probability_raw_count 0.48311665018613564 (stored separately from gate dsr) | reality_gate.pbo null; cscv pbo 0.12152292152292152 | gate best trial 7cef5aafdc0eeabe0e7b5b6ce3aa3b2dfdc206df6c958fe03fb746ef65a8f249; strategy equal_weight_long; validation periodic_ratio 0.03083557201485815; preregistration calls equal_weight_long a baseline; highest recorded validation periodic_ratio among trials whose strategy is not labeled baseline: 0.011104697952774835 (sweep_reclaim 637d9b8529b97692de557d27c283baeba77d0b0cc5a1b655b55a63c2e2e03b1f) | verdict deflated; live_pnl_claim false | research/reality/studies/reality-us-liquid-daily-2026-09-27/receipt.json; research/reality/studies/reality-us-liquid-daily-2026-09-27/preregistration.json; research/reality/studies/reality-us-liquid-daily-2026-09-27/trials.jsonl |
-| draft PR #202 survivorship-corrected batch | pending, not merged | pending, not merged | pending, not merged | pending, not merged | pending, not merged | pending, not merged | pending, not merged |
+| reality-us-liquid-daily-2026-09-27 | 2026-09-27T17:52:38.617624+00:00 | n_trials 29; n_effective_trials 3.0; ledger rows 42 | gate dsr 0.6835483771834405 vs bar 0.95; deflated_probability_raw_count 0.48311665018613564 (stored separately from gate dsr) | reality_gate.pbo null; cscv pbo 0.12152292152292152 | gate best trial 7cef5aafdc0eeabe0e7b5b6ce3aa3b2dfdc206df6c958fe03fb746ef65a8f249; strategy equal_weight_long; validation periodic_ratio 0.03083557201485815; preregistration calls equal_weight_long a baseline; highest recorded validation periodic_ratio among trials whose strategy is not labeled baseline: 0.011104697952774835 (sweep_reclaim 637d9b8529b97692de557d27c283baeba77d0b0cc5a1b655b55a63c2e2e03b1f) | verdict deflated; live_pnl_claim false | research/reality/studies/reality-us-liquid-daily-2026-09-27/receipt.json; research/reality/studies/reality-us-liquid-daily-2026-09-27/preregistration.json; research/reality/studies/reality-us-liquid-daily-2026-09-27/trials.jsonl |
+| reality-sp500-pit-daily-2026-09-28 | 2026-09-28T02:17:42.497131+00:00 | n_trials 42; n_effective_trials 8.0; sibling trials.jsonl absent | gate dsr 0.6095974644672961 vs bar 0.95; deflated_probability_raw_count 0.4584882964082586 (stored separately from gate dsr) | reality_gate.pbo null; cscv pbo 0.626961926961927 | gate best trial 3a945e54c0ea626f60649898e09df6d7eb80031cdb606c4aa9fca44202e5a748; strategy dip_regime; validation periodic_ratio 0.037486064979794904; preregistration does not call dip_regime a baseline; highest recorded validation periodic_ratio among trials whose strategy is not labeled baseline: 0.037486064979794904 (dip_regime 3a945e54c0ea626f60649898e09df6d7eb80031cdb606c4aa9fca44202e5a748) | verdict deflated; live_pnl_claim false | research/reality/survivorship/receipt.json; research/reality/survivorship/preregistration.json |
 
 ## Sources scanned that are not a batch
 
 - `research/reality/trials.jsonl`: absent
 - `data/metadata/real_benchmark/us_wide_20260925/manifest.json`: no candidate_count and benchmark; not a trial batch
-- `receipts/adaptive_mix_20asset_1d_20260922.json`: adaptive_mix_replay.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/basis_pair_candidate_20asset_1d_20260922.json`: basis_pair_candidate.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/basis_reversion_screen_20asset_1d_20260922.json`: basis_reversion_screen.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/calib_real_drill.json`: calibration_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/dip_bench_crypto_1d_20260925.json`: fx1.dip_bench/v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/fast_replay_p42_conformance_20260927.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/coherence_2dd641ab766a536a.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/concordance_df424fa2f6b1c4e9.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/conformal_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/cost_calibration_eval_df9b8d7068bf709b.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/coverage_cs_real_drill.json`: coverage_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/coverage_real_drill.json`: coverage_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/cp_real_drill_gaussian_pit.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/drift_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/evidence_audit_3464d8f8197bf737.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/evidence_audit_d449e1ca0cc119a6.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/fast_replay_p42_conformance_20260928.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`: fleet_eval.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- `receipts/incumbent_bench_qlib.json`: incumbent_bench.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/fleet_race_real_drill.json`: fleet_race.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/honest_verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/lane_power_drill.json`: lane_power.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/loss_cs_real_drill_conf_t_vs_empirical.json`: loss_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/loss_cs_real_drill_gaussian_vs_conf_t.json`: loss_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/mcs_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/mcs_vol_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/monitor_run_drill_clean.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/monitor_run_drill_defect.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/monitor_run_real_drill.json`: monitor_run.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/multih_fleet_eval_5db1cab214e291d7.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/nautilus_conformance_7bf19a08c147547b.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/panel_audit_real_drill.json`: panel_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/rankic_eval_9ebdad7da83e7348.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
-- draft PR #202 survivorship-corrected batch: not on this tree; listed as pending, not merged, with no measured figures
+- `receipts/serial_watch_140b073ea589b0c7.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_1e8e1446e506fce1.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_2c14615c26efd19b.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_46445c3b227aa15e.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_47297eff3cb55178.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_4f4a495b59d022fb.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_771602cd1580476c.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_85db152db863d25d.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_8977244ef78bfd2f.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_a6fd40311ce0fa04.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_d311f5ea367a66a9.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/serial_watch_dbd21a6c99c81e00.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/suite_health_drill.json`: suite_health.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/tail_real_drill.json`: tail_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/verdict_real_drill.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
