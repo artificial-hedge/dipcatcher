@@ -6,9 +6,7 @@
   "drill": {
     "horizon": 1,
     "min_history": 500,
-    "model_errors": {
-      "har": "rv must be finite, positive, >= 60 obs"
-    },
+    "model_errors": {},
     "n_origins": 200,
     "shard": {
       "data_label": "yahoo_eod",
@@ -24,7 +22,9 @@
     "stride": 5,
     "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
   },
-  "eliminated": {},
+  "eliminated": {
+    "har": 102
+  },
   "evidence": [
     "ville_inequality",
     "pairwise_supermartingales",
@@ -35,10 +35,10 @@
   "kind": "mcs_seq.v1",
   "lam": 0.5,
   "live_pnl_claim": false,
-  "n_eliminated": 0,
-  "n_heads": 4,
+  "n_eliminated": 1,
+  "n_heads": 5,
   "n_origins": 200,
-  "receipt_sha256": "c89b7550a03099d1cd2170a3fcdb07bf8d39a3c0fa0c7409400df0de406a2462",
+  "receipt_sha256": "98710866a942dd217d3d08e338274571c095091dc591b8030fbf16732b270673",
   "research_only": true,
   "survivors": [
     "dip_garch_t",

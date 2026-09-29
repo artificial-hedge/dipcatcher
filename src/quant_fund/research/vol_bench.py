@@ -257,10 +257,16 @@ def _forecast_rv_ewma(rets: Array, rv: Array, park: Array, h: int, seed: int) ->
 
 
 def _forecast_har(rets: Array, rv: Array, park: Array, h: int, seed: int) -> float:
-    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1."""
+    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1.
+
+    Zero-return days (rv == 0 on real EOD tape) are floored at
+    ``_VARIANCE_FLOOR`` before the fit — a zero rv is unobserved variance,
+    not literal zero; the model's own strict-positivity contract stays.
+    """
     del rets, park, seed
-    fit = har_rv_fit(np.asarray(rv, dtype=float))
-    history = list(np.asarray(rv, dtype=float))
+    floored = np.maximum(np.asarray(rv, dtype=float), _VARIANCE_FLOOR)
+    fit = har_rv_fit(floored)
+    history = list(floored)
     total = 0.0
     for _ in range(h):
         step = har_forecast(fit, np.asarray(history, dtype=float))
