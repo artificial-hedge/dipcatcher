@@ -5,32 +5,48 @@
       "text": "all committed receipts re-verify and harvested evidence is pooled under arbitrary dependence"
     }
   ],
-  "code_revision": "13ed0fd7a9a60fa05ab5a04e837bec867527e6ec",
-  "corpus_lane_available": true,
-  "data_label": "SYNTHETIC",
+  "code_revision": "8581217810e5a7c18f8a2bda5c6e61aeb82e720a",
+  "corpus_lane_available": false,
+  "data_label": "MIXED",
   "evidence": [
     "per_receipt_reverification",
     "arbitrary_dependence_pooling",
     "fail_closed_on_corruption",
     "lazy_corpus_harvest"
   ],
-  "inputs_sha256": "026cfb568a183a9b90f3ce870a8bbb3fe22d822764d7677e367076da9b074b94",
+  "inputs_sha256": "d3332ed3cffff6e1193f1291a1d56b803073b9355a459f8551af86eb929423f8",
   "kind": "suite_health",
   "level": "research",
   "live_pnl_claim": false,
   "n_evalues_pooled": 0,
   "n_failed": 7,
-  "n_findings_harvested": 52,
-  "n_ok": 5,
-  "n_receipts": 12,
+  "n_findings_harvested": 0,
+  "n_ok": 7,
+  "n_receipts": 14,
   "params": {
     "alpha": 0.05,
-    "n_files": 12,
+    "input_labels": {
+      "adaptive_mix_20asset_1d_20260922.json": "UNKNOWN",
+      "adaptive_mix_band_search_20asset_1d_20260922.json": "UNKNOWN",
+      "basis_pair_candidate_20asset_1d_20260922.json": "UNKNOWN",
+      "basis_reversion_screen_20asset_1d_20260922.json": "UNKNOWN",
+      "capacity_eval_cd0854242ed8a9ec.json": "SYNTHETIC",
+      "dip_bench_crypto_1d_20260925.json": "UNKNOWN",
+      "fast_replay_p42_conformance_20260927.json": "UNKNOWN",
+      "fleet_eval_5ddf15b0dc7d3ca1.json": "SYNTHETIC",
+      "honest_verdict_real_drill.json": "yahoo_eod",
+      "incumbent_bench_qlib.json": "UNKNOWN",
+      "lane_power_drill.json": "UNKNOWN",
+      "monitor_run_real_drill.json": "yahoo_eod",
+      "rankic_eval_9ebdad7da83e7348.json": "SYNTHETIC",
+      "suite_health_drill.json": "SYNTHETIC"
+    },
+    "n_files": 14,
     "receipts_dir": "receipts"
   },
   "pooled_alarmed": false,
   "pooled_evalue": null,
-  "receipt_sha256": "c57f1aa0d668e82882478fecb1363e5fefcec3c4a6481a9976c4d6a76741b490",
+  "receipt_sha256": "0c4f5f15f7920a871bd6438124d47daade6801fd6007c6a78dfc545da88f5eb5",
   "research_only": true,
   "schema": "suite_health.v1"
 }

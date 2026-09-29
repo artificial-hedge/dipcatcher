@@ -589,7 +589,12 @@ def suite_health_cmd(
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"suite_health_{sealed['receipt_sha256'][:16]}.json"
     _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=receipt["data_label"],
+        )
+    )
     typer.echo(
         f"receipts={receipt['n_receipts']} ok={receipt['n_ok']} "
         f"failed={receipt['n_failed']} pooled_evalue={receipt['pooled_evalue']}"
