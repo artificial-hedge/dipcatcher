@@ -27,7 +27,7 @@
     "src/quant_fund/research/lane_contracts.py": "be6566f30c20099f87f2ed3ac3b06c55a62490690452bc69a65229a825854aef",
     "src/quant_fund/research/receipt_lattice.py": "edff95cfb6d82611821d4ac8fda0213256192e6611eac9e031ff852b8747f65b",
     "src/quant_fund/research/receipt_v2.py": "d23273ef8880d67c8d580e59201e79c902d04a8460732e9585f450c2d2708924",
-    "src/quant_fund/research/repo_integrity.py": "03cf9644bdd55edc88cca0d2a8cadb18de558ed390dc37f9461823f35488d7fd",
+    "src/quant_fund/research/repo_integrity.py": "0b9e620f4591f19f447cc5aba2386234dbe299e980f50dd8ef2cf6bb0366d884",
     "src/quant_fund/research/tamper_drill.py": "fb04a31449363c9b9a622d8042d3c6dd2cfe548aef2a39a44ddb19c46e783353",
     "src/quant_fund/research/timestamp_anchor.py": "83c1d3b135e9336cef057d151faedf135ca71f23a8d5b8e214f31eb1c1d8c02e",
     "src/quant_fund/utils/atomicio.py": "26b3c04a3c55cf7777989edb91dea774656ea97af86699bc214e7de7c7823ca1",
