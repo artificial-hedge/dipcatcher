@@ -37,7 +37,7 @@
     "src/quant_fund/research/receipt_v2.py": "aee91f19664eb9b2db6db109e56a4b43634ae996a976ad9f0e2b2bd4f10c0dd9",
     "src/quant_fund/research/release_attestation.py": "1dc321aa41d4c674c95b002af5c18682f030594ff0f886c44731c3425e42e32e",
     "src/quant_fund/research/repo_integrity.py": "82c4dab4f596fa92924b18dd7128a0e51dc04c807c738ef992d669301dbaeec8",
-    "src/quant_fund/research/tamper_drill.py": "2e1291694926e2c7eb54d1207e82a458a6f596bdc1692f100a646a857fa09749",
+    "src/quant_fund/research/tamper_drill.py": "20da3799b2ec59c328c5f695652fc04c0eae5159af1dffeec920fe4e3f753344",
     "src/quant_fund/research/timestamp_anchor.py": "9961bf5ee4ee1678d948dd3f7f2e3331dad0f302514bee7dba0ccd547cd7ed17",
     "src/quant_fund/research/witness_scan.py": "a664fd4b49c94539d725379a2fe58b0d08fcbcfd9284f331123ec70b6394ebea",
     "src/quant_fund/utils/atomicio.py": "26b3c04a3c55cf7777989edb91dea774656ea97af86699bc214e7de7c7823ca1",
