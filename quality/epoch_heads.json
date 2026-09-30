@@ -9,16 +9,16 @@
       "sha256": "34afc9be3cf10246660d5ff1192ac9a1e0ea50bb4835597526f1599da37ed12a"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_ed4a54b291e2591f.json",
-      "sha256": "d7e703c82ffca5a525e562594cdb25d68273f300c0312ea50794997179a5e130"
+      "receipt": "corpus_epoch_66b5025fe29bd50f.json",
+      "sha256": "0a640b73e29f82d9660fd01dbc1e4cab30861001105d9b11b6c1a4425b40fcbd"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_2ca91405e468cc6b.json",
       "sha256": "cdd1cf1d0d82cd939f723248c57a0393de947baba1ca1e720c64d605bcb2fd3b"
     },
     "verifier/*.md": {
-      "receipt": "corpus_epoch_beb1e1d6e5fbc3d8.json",
-      "sha256": "5a5dc021434094b002b8f8844bd594e5e56a408a563cafdce5c53a30a96ee165"
+      "receipt": "corpus_epoch_fbae8edbac84a5c4.json",
+      "sha256": "1bb298513105020720831a484fbdc84042d910d1c5c9f1ec09f736145f4d5dde"
     }
   },
   "schema": "epoch_heads.v1"
