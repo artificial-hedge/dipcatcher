@@ -699,6 +699,7 @@ src/quant_fund/research/sota_protocol.py
 src/quant_fund/research/verify.py
 src/quant_fund/research/vol_bench.py
 src/quant_fund/risk/__init__.py
+src/quant_fund/risk/decay_watch.py
 src/quant_fund/risk/gates.py
 src/quant_fund/risk/overlay.py
 src/quant_fund/risk/pyrisk.py
