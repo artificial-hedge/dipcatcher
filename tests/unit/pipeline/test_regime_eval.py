@@ -31,14 +31,29 @@ def _blocked_scores(sizes: list[int], means: list[float], std: float, seed: int)
 
 
 def _contradiction_report() -> dict:
-    """A strictly better in regime 'bull' only. The 'bear' segment is a
-    null stream with negative median (exponential noise recentered at its
-    mean), so the pooled win-rate stays <= 1/2 even once the bull wins
-    accrue — the pooled sign-bet lam_t stays 0 and the pooled path never
-    grows, while the all-positive bull segment crosses quickly."""
+    """A is favored in regime 'bull' only; the pooled path must NOT cross.
+
+    The loss-diff e-process is a scale-free SIGN bet (see
+    ``metrics.evalues.e_process_loss_diff``: it tests median(d) <= 0 via a
+    predictable win-rate lam_t), so the contradiction must live in the sign
+    structure, not in the scale of the noise — the pre-sign-bet design where
+    heavy N(0, 10) bear noise "inflated the pooled predictable bound" no
+    longer applies, and a zero-median bear draws ~50% wins whose random walk
+    can leave the pooled lam_t positive through the bull streak (a pooled
+    crossing — the failure this fixture must avoid).
+
+    Design: 'bear' keeps the heavy sigma=10 noise but a slightly negative
+    median, so the pooled win-rate stays below 1/2 (257/540 with the fixed
+    seed) and the pooled lam_t is ~0 while the 60 consecutive bull wins run;
+    'bull' is a constant +2 differential that drives the regime-local path
+    over 1/alpha within ~14 steps. Bull is placed LAST: pooled capital peaks
+    at ~1.25 against the threshold 20 (verified margins, deterministic
+    seeds), while pooled median(d) < 0 keeps the pooled non-crossing the
+    correct null behavior — a genuine regime-vs-pooled contradiction.
+    """
     rng = np.random.default_rng(21)
     n_bear, n_bull = 540, 60
-    d_bear = rng.exponential(10.0, n_bear) - 10.0  # null mean, median < 0
+    d_bear = rng.normal(-1.0, 10.0, n_bear)  # heavy noise, negative median
     d_bull = np.full(n_bull, 2.0)  # A better by 2 units of loss
     d = np.concatenate([d_bear, d_bull])
     regimes = _blocked_regimes([n_bear, n_bull], ["bear", "bull"])

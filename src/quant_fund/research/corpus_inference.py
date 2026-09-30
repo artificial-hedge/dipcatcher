@@ -180,7 +180,19 @@ def corpus_audit(
             inner = body if isinstance(body, Mapping) else doc
             input_labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
             findings.extend(harvest_findings(doc, path.name))
-        except Exception as exc:  # noqa: BLE001 — errors are recorded, never skipped
+        except (
+            OSError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+            ValueError,
+            KeyError,
+            TypeError,
+            RuntimeError,
+        ) as exc:
+            # Narrowed from `except Exception` (quality ratchet): receipt read/parse
+            # faults are IO/JSON plus the explicit shape ValueError and the untrusted-
+            # document walk in harvest_findings; exotic errors propagate. Recorded,
+            # never skipped.
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
 
     p_findings = [f for f in findings if f["stat"] == "p"]
