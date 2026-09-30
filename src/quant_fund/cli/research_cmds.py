@@ -2355,6 +2355,9 @@ def ots_upgrade_cmd(
     explorer: str = typer.Option(
         "", "--explorer", help="Block explorer API base (default blockstream.info)."
     ),
+    full: bool = typer.Option(
+        False, "--full", help="Also commit the block's txid list + coinbase."
+    ),
 ) -> None:
     """Upgrade pending OTS anchors to Bitcoin-confirmed proofs.
 
@@ -2362,10 +2365,13 @@ def ots_upgrade_cmd(
     ``bitcoin`` attestation the proof is rewritten and the claimed block
     header committed (``<name>.<height>.hdr``), after which ``verify-repo``
     reports ``pow_verified`` — self-checked sha256d<nBits, no API trust.
+    With ``--full`` the block's txid list + raw coinbase are committed too,
+    and verify reaches ``fully_verified``: the OP_RETURN commitment is
+    proven inside the block's own merkle root.
     """
     from quant_fund.research.ots_anchor import DEFAULT_EXPLORER, upgrade_ots
 
-    res = upgrade_ots(root=root, explorer=explorer or DEFAULT_EXPLORER)
+    res = upgrade_ots(root=root, explorer=explorer or DEFAULT_EXPLORER, full=full)
     for label, states in res.get("anchors", {}).items():
         typer.echo(f"{label}: {','.join(states)}")
     if not res["ok"]:

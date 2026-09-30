@@ -1,7 +1,7 @@
 {
   "anchors": {
     "quality__epoch_heads.json.ots": {
-      "sha256": "f227753fda9051cd66fff6e6f26de12559f6dab60a6907b85731f64dce9f30bb",
+      "sha256": "51cdbc005a6c6dbd78c639346422f4e34abd8874a026526a37265f4c4898ce8b",
       "target": "quality/epoch_heads.json"
     }
   },

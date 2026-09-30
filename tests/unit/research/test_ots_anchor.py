@@ -271,3 +271,111 @@ def test_upgrade_ots_still_pending(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert any(
         s.startswith("upgrade_malformed") for s in res["anchors"]["quality/epoch_heads.json"]
     )
+
+
+def _fake_block(commitment: bytes) -> tuple[bytes, list[str], bytes]:
+    """A synthetic 3-tx block: coinbase carries OP_RETURN <commitment>."""
+    script_pub = b"\x6a\x20" + commitment
+    coinbase = (
+        b"\x01\x00\x00\x00"  # version
+        + b"\x01"  # 1 vin
+        + b"\x00" * 32
+        + b"\xff\xff\xff\xff"  # prevhash + vout
+        + b"\x03\xab\xcd\xef"
+        + b"\xff\xff\xff\xff"  # scriptSig + seq
+        + b"\x02"  # 2 vout
+        + (1000).to_bytes(8, "little")
+        + b"\x19"
+        + b"\x76\xa9\x14"
+        + b"\x11" * 20
+        + b"\x88\xac"
+        + (0).to_bytes(8, "little")
+        + bytes([len(script_pub)])
+        + script_pub
+        + b"\x00\x00\x00\x00"  # locktime
+    )
+    txid0 = hashlib.sha256(hashlib.sha256(coinbase).digest()).digest()
+    txids_internal = [txid0, b"\x22" * 32, b"\x33" * 32]
+
+    # merkle: h01 = d(t0+t1), h22 = d(t2+t2), root = d(h01+h22)
+    def d(b: bytes) -> bytes:
+        return hashlib.sha256(hashlib.sha256(b).digest()).digest()
+
+    root = d(d(txids_internal[0] + txids_internal[1]) + d(txids_internal[2] + txids_internal[2]))
+    header = bytearray(80)
+    header[36:68] = root
+    header[72:76] = (0x2200FFFF).to_bytes(4, "little")
+    txids_display = [t[::-1].hex() for t in txids_internal]
+    return bytes(header), txids_display, coinbase
+
+
+def test_verify_block_inclusion_full(tmp_path: Path) -> None:
+    from quant_fund.research.ots_anchor import (
+        block_merkle_root,
+        coinbase_commitments,
+        verify_block_inclusion,
+    )
+
+    commitment = b"\x5a" * 32
+    header, txids, coinbase = _fake_block(commitment)
+    res = verify_block_inclusion(header, txids, coinbase, commitment)
+    assert res["ok"] and res["n_tx"] == 3
+    # each layer fails independently
+    bad = verify_block_inclusion(header, txids, coinbase, b"\x99" * 32)
+    assert bad["error"] == "commitment_absent"
+    wrong_root = verify_block_inclusion(
+        header[:36] + b"\x00" * 36 + header[72:], txids, coinbase, commitment
+    )
+    assert wrong_root["error"] == "block_merkle_mismatch"
+    other_coinbase = coinbase.replace(b"\x6a\x20" + commitment, b"\x6a\x20" + b"\x77" * 32)
+    res2 = verify_block_inclusion(header, txids, other_coinbase, commitment)
+    assert res2["error"] == "coinbase_txid_mismatch"
+    assert commitment in coinbase_commitments(coinbase)
+    assert block_merkle_root([b"\x00" * 32]) == b"\x00" * 32
+
+
+def test_verify_ots_fully_verified(tmp_path: Path) -> None:
+    """End-to-end: .blk witness file + hdr → fully_verified state."""
+    root = _repo_with_target(tmp_path)
+    target = root / "quality/epoch_heads.json"
+    digest = hashlib.sha256(target.read_bytes()).digest()
+    commitment = hashlib.sha256(b"calendar-merkle-root").digest()
+    # attestation binds the commitment (the value att["committed_digest"] carries)
+    stream = b"\x00" + ATT_BITCOIN + b"\x03" + bytes([0x90, 0xD6, 0x27])
+    header, txids, coinbase = _fake_block(commitment)
+    ots_dir = root / "quality/timestamps/ots"
+    ots_dir.mkdir(parents=True)
+    # craft: bare bitcoin attestation at node level — committed_digest == digest
+    # itself (no ops), so we need the commitment to be the attestation's bound
+    # digest: use a one-op chain prepend<pad> so committed_digest = pad+digest?
+    # Simplest: commitment = what parse yields: att binds msg=digest (no ops).
+    # So set commitment := digest by rebuilding the block with it.
+    header, txids, coinbase = _fake_block(digest)
+    (ots_dir / "quality__epoch_heads.json.ots").write_bytes(OTS_MAGIC + b"\x08" + digest + stream)
+    (ots_dir / "quality__epoch_heads.json.650000.hdr").write_bytes(header)
+    (ots_dir / "quality__epoch_heads.json.650000.blk").write_text(
+        json.dumps({"txids": txids, "coinbase": coinbase.hex()})
+    )
+    (root / "quality/timestamps/ots_anchors.json").write_text(
+        json.dumps(
+            {
+                "schema": "ots_anchors.v1",
+                "anchors": {
+                    "quality__epoch_heads.json.ots": {
+                        "target": "quality/epoch_heads.json",
+                        "sha256": digest.hex(),
+                    }
+                },
+            }
+        )
+    )
+    res = verify_ots(root)
+    assert res["ok"]
+    assert res["attestations"]["quality/epoch_heads.json"] == ["bitcoin:650000:fully_verified"]
+    # corrupt the witness → inclusion_invalid hard error
+    (ots_dir / "quality__epoch_heads.json.650000.blk").write_text(
+        json.dumps({"txids": txids, "coinbase": (b"\x00" + coinbase[1:]).hex()})
+    )
+    res = verify_ots(root)
+    assert not res["ok"]
+    assert any("inclusion_invalid" in e for e in res["errors"])

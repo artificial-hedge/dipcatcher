@@ -341,6 +341,131 @@ def stamp_ots(
 
 
 DEFAULT_EXPLORER = "https://blockstream.info/api"
+BLOCK_WITNESS_SUFFIX = ".blk"
+
+
+def _read_varint_tx(tx: bytes, off: int) -> tuple[int, int]:
+    """Bitcoin tx varint (not LEB128): 0xfd u16 / 0xfe u32 / 0xff u64."""
+    if off >= len(tx):
+        raise OtsError("tx varint eof")
+    b = tx[off]
+    off += 1
+    if b < 0xFD:
+        return b, off
+    size = {0xFD: 2, 0xFE: 4, 0xFF: 8}[b]
+    if off + size > len(tx):
+        raise OtsError("tx varint eof")
+    return int.from_bytes(tx[off : off + size], "little"), off + size
+
+
+def _tx_output_scripts(tx: bytes) -> list[bytes]:
+    """Extract every output's scriptPubKey from a raw transaction.
+
+    Minimal Bitcoin tx parser: version(4) [+ segwit marker/flag] → vin →
+    vout → [witness] → locktime(4). Only the script bytes matter to us."""
+    if len(tx) < 10:
+        raise OtsError("tx too short")
+    off = 4
+    segwit = tx[off] == 0x00 and tx[off + 1] == 0x01
+    if segwit:
+        off += 2
+    vin_n, off = _read_varint_tx(tx, off)
+    if vin_n == 0:
+        raise OtsError("tx no inputs")
+    for _ in range(vin_n):
+        off += 36
+        n, off = _read_varint_tx(tx, off)
+        off += n + 4
+    vout_n, off = _read_varint_tx(tx, off)
+    scripts: list[bytes] = []
+    for _ in range(vout_n):
+        off += 8
+        n, off = _read_varint_tx(tx, off)
+        scripts.append(tx[off : off + n])
+        off += n
+    if off > len(tx):
+        raise OtsError("tx truncated")
+    return scripts
+
+
+def _script_pushes(script: bytes) -> list[bytes]:
+    """Data pushes on a scriptPubKey — the OP_RETURN payload carriers."""
+    out: list[bytes] = []
+    off = 0
+    while off < len(script):
+        op = script[off]
+        off += 1
+        if op == 0x00:
+            continue
+        if op <= 0x4B:
+            n = op
+        elif op == 0x4C:
+            n, off = script[off], off + 1
+        elif op == 0x4D:
+            n, off = int.from_bytes(script[off : off + 2], "little"), off + 2
+        else:
+            break  # non-push opcode — nothing else we care about
+        if off + n > len(script):
+            break
+        out.append(script[off : off + n])
+        off += n
+    return out
+
+
+def coinbase_commitments(coinbase_raw: bytes) -> set[bytes]:
+    """OP_RETURN payloads embedded in a coinbase transaction.
+
+    An OTS calendar writes its aggregated merkle root as an OP_RETURN push —
+    this is the leaf→block binding: the .ots attestation's committed_digest
+    must appear here verbatim."""
+    commitments: set[bytes] = set()
+    for script in _tx_output_scripts(coinbase_raw):
+        if script and script[0] == 0x6A:  # OP_RETURN
+            commitments.update(_script_pushes(script[1:]))
+    return commitments
+
+
+def block_merkle_root(txids_internal: list[bytes]) -> bytes:
+    """Bitcoin block merkle root over internal-order txids (dup-last rule)."""
+    if not txids_internal:
+        raise OtsError("empty txid list")
+    level = txids_internal
+    while len(level) > 1:
+        if len(level) & 1:
+            level = [*level, level[-1]]
+        level = [_sha256d(level[i] + level[i + 1]) for i in range(0, len(level), 2)]
+    return level[0]
+
+
+def verify_block_inclusion(
+    header: bytes,
+    txids: list[str],
+    coinbase_raw: bytes,
+    committed_digest: bytes,
+) -> dict[str, Any]:
+    """Full leaf→block check — zero trust in the calendar's claim.
+
+    1. sha256d(coinbase_raw) is txid[0] (coinbase position by Bitcoin rule).
+    2. Merkle root over all txids equals header[36:72] — the tx set is proven
+       by the header's own commitment.
+    3. The coinbase carries an OP_RETURN push equal to ``committed_digest``
+       (the value the OTS attestation binds) — our aggregated leaf is inside
+       the coinbase, hence inside this block.
+    """
+    if len(header) != 80:
+        return {"ok": False, "error": "header_not_80_bytes"}
+    try:
+        internals = [bytes.fromhex(t)[::-1] for t in txids]
+        coinbase_txid = _sha256d(coinbase_raw)
+        if not internals or internals[0] != coinbase_txid:
+            return {"ok": False, "error": "coinbase_txid_mismatch"}
+        if block_merkle_root(internals) != header[36:68]:
+            return {"ok": False, "error": "block_merkle_mismatch"}
+        if committed_digest not in coinbase_commitments(coinbase_raw):
+            return {"ok": False, "error": "commitment_absent"}
+    except (ValueError, OtsError) as exc:
+        return {"ok": False, "error": f"block_parse:{exc}"}
+    return {"ok": True, "n_tx": len(txids), "coinbase_txid": coinbase_txid[::-1].hex()}
 
 
 def _get(url: str, timeout: float) -> bytes:
@@ -360,6 +485,24 @@ def _fetch_header(height: int, *, explorer: str, timeout: float) -> bytes | None
     return header if len(header) == 80 else None
 
 
+def _fetch_block_witness(height: int, *, explorer: str, timeout: float) -> dict[str, Any] | None:
+    """txid list + raw coinbase for the block — the full inclusion witness."""
+    try:
+        base = explorer.rstrip("/")
+        block_hash = _get(f"{base}/block-height/{height}", timeout).strip().decode()
+        txids = json.loads(_get(f"{base}/block/{block_hash}/txids", timeout))
+        if (
+            not isinstance(txids, list)
+            or not txids
+            or not all(isinstance(t, str) and len(t) == 64 for t in txids)
+        ):
+            return None
+        coinbase = _get(f"{base}/tx/{txids[0]}/raw", timeout)
+        return {"txids": txids, "coinbase": coinbase.hex()}
+    except Exception:  # noqa: BLE001 — explorer outage skips, not fails
+        return None
+
+
 def upgrade_ots(
     *,
     root: str | Path = ".",
@@ -367,6 +510,7 @@ def upgrade_ots(
     manifest: Path = OTS_MANIFEST,
     explorer: str = DEFAULT_EXPLORER,
     timeout: float = 20.0,
+    full: bool = False,
 ) -> dict[str, Any]:
     """Upgrade pending anchors: poll calendars for Bitcoin confirmations.
 
@@ -435,6 +579,17 @@ def upgrade_ots(
                     hdr = _fetch_header(int(height), explorer=explorer, timeout=timeout)
                     if hdr is None:
                         states.append(f"bitcoin:{height}:hdr_unavailable")
+                    elif full:
+                        bw = _fetch_block_witness(int(height), explorer=explorer, timeout=timeout)
+                        if bw is None:
+                            states.append(f"bitcoin:{height}:block_witness_unavailable")
+                        else:
+                            atomic_write_bytes(
+                                tdir / f"{Path(name).stem}.{height}{BLOCK_WITNESS_SUFFIX}",
+                                json.dumps(bw).encode(),
+                            )
+                            atomic_write_bytes(tdir / f"{Path(name).stem}.{height}.hdr", hdr)
+                            states.append(f"upgraded:{height}:full")
                     else:
                         atomic_write_bytes(tdir / f"{Path(name).stem}.{height}.hdr", hdr)
                         states.append(f"upgraded:{height}")
@@ -492,14 +647,33 @@ def verify_ots(
                 states.append(f"pending:{att['uri']}")
             elif att["kind"] == "bitcoin":
                 hdr = tdir / f"{Path(name).stem}.{att['height']}.hdr"
+                blk = tdir / f"{Path(name).stem}.{att['height']}{BLOCK_WITNESS_SUFFIX}"
                 if hdr.is_file():
                     pow_res = verify_header_pow(hdr.read_bytes(), int(att["height"]))
-                    states.append(
-                        f"bitcoin:{att['height']}:"
-                        + ("pow_verified" if pow_res["ok"] else f"pow_invalid:{pow_res['error']}")
-                    )
                     if not pow_res["ok"]:
+                        states.append(f"bitcoin:{att['height']}:pow_invalid")
                         errors.append(f"pow_invalid:{label}")
+                        continue
+                    if blk.is_file():
+                        try:
+                            bw = json.loads(blk.read_text())
+                            inc = verify_block_inclusion(
+                                hdr.read_bytes(),
+                                bw["txids"],
+                                bytes.fromhex(bw["coinbase"]),
+                                bytes.fromhex(att["committed_digest"]),
+                            )
+                        except (OSError, ValueError, KeyError) as exc:
+                            inc = {"ok": False, "error": f"blk_parse:{exc.__class__.__name__}"}
+                        if inc["ok"]:
+                            states.append(f"bitcoin:{att['height']}:fully_verified")
+                        else:
+                            states.append(
+                                f"bitcoin:{att['height']}:inclusion_invalid:{inc['error']}"
+                            )
+                            errors.append(f"inclusion_invalid:{label}")
+                    else:
+                        states.append(f"bitcoin:{att['height']}:pow_verified")
                 else:
                     states.append(f"bitcoin:{att['height']}:inclusion_unverified")
             else:
