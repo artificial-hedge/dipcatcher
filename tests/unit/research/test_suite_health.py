@@ -92,7 +92,7 @@ def test_label_aggregates_inputs(tmp_path: Path) -> None:
     assert rep2["data_label"] == "MIXED"
 
 
-def test_strict_cli_gate(tmp_path: Path) -> None:
+def test_strict_cli_gate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--strict exits nonzero on a corrupt receipt, zero on sealed/legacy."""
     import hashlib
 
@@ -121,16 +121,52 @@ def test_strict_cli_gate(tmp_path: Path) -> None:
     assert res.exit_code == 1
     assert "STRICT FAILURE" in res.output
 
-    # byte-pinned legacy unsealed receipt → tolerated under strict
+    # byte-pinned legacy unsealed receipt → tolerated under strict; the
+    # committed allowlist drained once every receipt sealed, so pin a
+    # synthesized entry (the pin binds bytes, not membership by name).
     (tmp_path / "ok.json").unlink()
-    name, digest = next(iter(KNOWN_UNSEALED.items()))
     body = b'{"kind": "legacy", "note": "pre-seal"}'
-    # fabricate the pinned bytes: the allowlist pins real files, so instead
-    # assert the helper's contract directly on a non-listed name
-    (tmp_path / name).write_bytes(body)
+    (tmp_path / "legacy_pinned.json").write_bytes(body)
+    monkeypatch.setitem(KNOWN_UNSEALED, "legacy_pinned.json", hashlib.sha256(body).hexdigest())
     res = runner.invoke(
         cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
     )
-    # wrong bytes → still a strict failure (the pin covers content, not name)
+    assert res.exit_code == 0, res.output
+
+    # same name, wrong bytes → the pin covers content, not the filename
+    (tmp_path / "legacy_pinned.json").write_bytes(b'{"kind": "legacy", "note": "tampered"}')
+    res = runner.invoke(
+        cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
+    )
     assert res.exit_code == 1
-    assert hashlib.sha256(body).hexdigest() != digest
+
+
+def test_suite_health_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the suite_health.v1 body in the envelope."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.research.suite_health import write_suite_health_receipt
+
+    _sealed(tmp_path, "a.json")
+    _sealed(tmp_path, "b.json")
+    _, receipt = suite_health(tmp_path)
+    path = write_suite_health_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "suite_health"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True
+
+
+def test_dataset_sha256_tracks_corpus_bytes(tmp_path: Path) -> None:
+    """Identical corpora share dataset_sha256 across audits and alpha;
+    adding a file changes it."""
+    _sealed(tmp_path, "a.json")
+    _sealed(tmp_path, "b.json")
+    _, r1 = suite_health(tmp_path)
+    _, r2 = suite_health(tmp_path, alpha=0.1)
+    d = r1["dataset_sha256"]
+    assert len(d) == 64 and all(c in "0123456789abcdef" for c in d)
+    assert r2["dataset_sha256"] == d  # alpha is a run param, not data
+    _sealed(tmp_path, "c.json")
+    _, r3 = suite_health(tmp_path)
+    assert r3["dataset_sha256"] != d

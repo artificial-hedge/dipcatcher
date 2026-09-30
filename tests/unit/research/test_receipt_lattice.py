@@ -244,3 +244,163 @@ def test_lattice_cli_emits_sealed_receipt(tmp_path: Path) -> None:
 
     verification = verify_receipt_file(emitted[0])
     assert verification["valid"], verification["errors"]
+
+
+def test_lattice_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the receipt_lattice.v1 body in the envelope."""
+    from quant_fund.research.receipt_lattice import write_lattice_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    _write(tmp_path, "r1.json", _receipt("in-a", 0.42))
+    _write(tmp_path, "r2.json", _receipt("in-a", 0.42))
+    report = receipt_lattice(tmp_path)
+    path = write_lattice_receipt(report, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "receipt_lattice.v1"
+    assert payload["payload"]["inputs_sha256"] == report["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True
+
+
+def test_lattice_cli_strict_exits_on_inconsistent(tmp_path: Path) -> None:
+
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    src = tmp_path / "src"
+    src.mkdir()
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    ds = "bb" * 32
+    a = _receipt("aa" * 32, 0.5)
+    a["dataset_sha256"] = ds
+    b = _receipt("cc" * 32, 0.9)
+    b["dataset_sha256"] = ds
+    _write(src, "a.json", a)
+    _write(src, "b.json", b)
+    runner = CliRunner()
+    ok = runner.invoke(
+        app, ["lattice", "--strict", "--receipts-dir", str(src), "--out-dir", str(out_dir)]
+    )
+    assert ok.exit_code == 1
+    plain = runner.invoke(app, ["lattice", "--receipts-dir", str(src), "--out-dir", str(out_dir)])
+    assert plain.exit_code == 0
+
+
+def test_known_inconsistent_pins_suppress_verdict(tmp_path: Path) -> None:
+    """Byte-exact pinned files keep their groups 'inconsistent' + known:true
+    but do not drive the top-level verdict."""
+    import hashlib
+
+    ds = "bb" * 32
+    a = _receipt("aa" * 32, 0.5)
+    a["dataset_sha256"] = ds
+    b = _receipt("cc" * 32, 0.9)
+    b["dataset_sha256"] = ds
+    pa = _write(tmp_path, "a.json", a)
+    pb = _write(tmp_path, "b.json", b)
+    pins = {
+        "a.json": hashlib.sha256(pa.read_bytes()).hexdigest(),
+        "b.json": hashlib.sha256(pb.read_bytes()).hexdigest(),
+    }
+    receipt = receipt_lattice(tmp_path, known_inconsistent=pins)
+    assert receipt["verdict"] == "consistent"
+    assert receipt["n_inconsistent_groups"] == 0
+    assert receipt["n_known_inconsistent_groups"] == 1
+    inc = [g for g in receipt["groups"] if g["verdict"] == "inconsistent"]
+    assert len(inc) == 1 and inc[0]["known"] is True
+    assert all("known" not in g for g in receipt["groups"] if g["verdict"] != "inconsistent")
+    assert lattice_contract_errors(receipt) == []
+
+
+def test_drifted_pin_does_not_suppress(tmp_path: Path) -> None:
+    """A pin whose digest does not match the file on disk applies to
+    nothing — a tampered pinned receipt re-enters the gate."""
+    ds = "bb" * 32
+    a = _receipt("aa" * 32, 0.5)
+    a["dataset_sha256"] = ds
+    b = _receipt("cc" * 32, 0.9)
+    b["dataset_sha256"] = ds
+    _write(tmp_path, "a.json", a)
+    _write(tmp_path, "b.json", b)
+    pins = {"a.json": "00" * 32, "b.json": "00" * 32}
+    receipt = receipt_lattice(tmp_path, known_inconsistent=pins)
+    assert receipt["verdict"] == "inconsistent"
+    assert receipt["n_inconsistent_groups"] == 1
+    assert receipt["n_known_inconsistent_groups"] == 0
+
+
+def test_mixed_group_membership_stays_inconsistent(tmp_path: Path) -> None:
+    """A group is suppressed only when EVERY member is pinned — an unpinned
+    third receipt rejoining the same claims keeps the gate armed."""
+    import hashlib
+
+    ds = "bb" * 32
+    a = _receipt("aa" * 32, 0.5)
+    a["dataset_sha256"] = ds
+    b = _receipt("cc" * 32, 0.9)
+    b["dataset_sha256"] = ds
+    c = _receipt("dd" * 32, 0.9)
+    c["dataset_sha256"] = ds
+    pa = _write(tmp_path, "a.json", a)
+    _write(tmp_path, "b.json", b)
+    _write(tmp_path, "c.json", c)
+    pins = {
+        "a.json": hashlib.sha256(pa.read_bytes()).hexdigest(),
+        "b.json": hashlib.sha256(b"not-the-file").hexdigest(),
+    }
+    receipt = receipt_lattice(tmp_path, known_inconsistent=pins)
+    assert receipt["verdict"] == "inconsistent"
+    assert receipt["n_known_inconsistent_groups"] == 0
+
+
+def test_lattice_cli_known_inconsistent_flag(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    src = tmp_path / "src"
+    src.mkdir()
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    ds = "bb" * 32
+    a = _receipt("aa" * 32, 0.5)
+    a["dataset_sha256"] = ds
+    b = _receipt("cc" * 32, 0.9)
+    b["dataset_sha256"] = ds
+    _write(src, "a.json", a)
+    _write(src, "b.json", b)
+    import hashlib
+
+    pins = {n: hashlib.sha256((src / n).read_bytes()).hexdigest() for n in ("a.json", "b.json")}
+    pin_file = tmp_path / "pins.json"
+    pin_file.write_text(json.dumps(pins))
+    runner = CliRunner()
+    res = runner.invoke(
+        app,
+        [
+            "lattice",
+            "--strict",
+            "--receipts-dir",
+            str(src),
+            "--out-dir",
+            str(out_dir),
+            "--known-inconsistent",
+            str(pin_file),
+        ],
+    )
+    assert res.exit_code == 0
+    bad = runner.invoke(
+        app,
+        [
+            "lattice",
+            "--receipts-dir",
+            str(src),
+            "--out-dir",
+            str(out_dir),
+            "--known-inconsistent",
+            str(tmp_path / "missing.json"),
+        ],
+    )
+    assert bad.exit_code != 0

@@ -158,3 +158,22 @@ def test_run_verdict_refuses_mixed_labels() -> None:
             n_eval=64,
             n_boot=100,
         )
+
+
+def test_verdict_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the verdict report in the envelope."""
+    import json
+
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.research.verdict_run import write_verdict_receipt
+
+    factories = {"cal": _GaussianFactory(1.0), "wide": _GaussianFactory(2.0)}
+    report, _ = run_verdict(
+        factories, {"g": _gauss_shard}, n_train=64, n_eval=200, seed=0, n_boot=200
+    )
+    path = write_verdict_receipt(report, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["run"]["params"]["heads"] == ["cal", "wide"]
+    assert payload["payload"]["verdict"] == report["verdict"]
+    assert verify_receipt_file(path)["valid"] is True

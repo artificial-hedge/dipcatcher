@@ -239,7 +239,9 @@ def run_concordance(
         for name, factory in factories.items():
             try:
                 grids[name] = _predict_grid(shard, factory, n_train, n_eval, tau_arr)
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded per head.
                 rows.append(
                     {
                         "shard": shard_name,

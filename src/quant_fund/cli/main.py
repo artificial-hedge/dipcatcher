@@ -33,6 +33,7 @@ from quant_fund.cli.data_cmds import (
     collect,
     build_features_cmd,
     build_labels_cmd,
+    membership_coverage_cmd,
 )
 from quant_fund.cli.forecast_cmds import (
     validate,
@@ -55,6 +56,7 @@ from quant_fund.cli.research_cmds import (
     calibration_eval_cmd,
     vol_bench,
     capacity,
+    pairs,
     serial_watch_cmd,
     mcs,
     lane_power,
@@ -154,6 +156,7 @@ __all__ = [
     "collect",
     "build_features_cmd",
     "build_labels_cmd",
+    "membership_coverage_cmd",
     "train_callback",
     "train_ranking",
     "train_distribution",
@@ -181,6 +184,7 @@ __all__ = [
     "calibration_eval_cmd",
     "vol_bench",
     "capacity",
+    "pairs",
     "serial_watch_cmd",
     "mcs",
     "lane_power",

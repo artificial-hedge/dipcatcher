@@ -451,13 +451,17 @@ def xwatch_contract_errors(payload: Mapping[str, Any]) -> list[str]:
 def write_xwatch_receipt(
     receipt: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
 ) -> Path:
     """Seal an xwatch receipt and write ``xwatch_<hash>.json``.
 
     Filename digest = sha256 of the canonical payload, embedded as
     ``receipt_sha256`` (fleet_eval seal convention). Atomic, fail-closed
-    on a malformed receipt.
+    on a malformed receipt. ``receipt_version=2`` wraps the same body in
+    the unified ``receipt.v2`` envelope instead.
     """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
     if (
@@ -472,9 +476,31 @@ def write_xwatch_receipt(
     errors = xwatch_contract_errors(receipt)
     if errors:
         raise ValueError(f"xwatch receipt violates its contract: {errors}")
-    canonical = json.loads(canonical_json_bytes(dict(receipt)))
-    digest = hash_bytes(canonical_json_bytes(canonical))
-    payload = {**canonical, "receipt_sha256": digest}
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="fail"
+                if receipt.get("any_lag_alarmed") or receipt.get("pooled_alarmed")
+                else "pass",
+                params={
+                    "leader": receipt.get("leader"),
+                    "follower": receipt.get("follower"),
+                    "alpha": receipt.get("alpha"),
+                    "lam": receipt.get("lam"),
+                    "n_lags": receipt.get("n_lags"),
+                    "n_origins": receipt.get("n_origins"),
+                },
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     path = Path(receipts_dir) / f"xwatch_{digest[:16]}.json"
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path

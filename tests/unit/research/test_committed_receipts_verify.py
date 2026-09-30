@@ -9,29 +9,24 @@ not migrated yet — a new unsealed receipt in ``receipts/`` fails this test.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
+from quant_fund.research.legacy_unsealed import (
+    KNOWN_UNSEALED,
+    is_known_contract_legacy,
+    is_known_unsealed,
+)
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RECEIPTS = REPO_ROOT / "receipts"
 
-# Pre-seal-era receipts pending the legacy-unsealed/ migration (#231).
-# Shrink-only: removing an entry is always safe; adding one is not.
-# Values pin the file bytes — an unsealed receipt can't verify, so without
-# the digest the exemption would also mask edits to its claims.
-KNOWN_UNSEALED = {
-    "adaptive_mix_20asset_1d_20260922.json": "b59422415e556f674ea03fb8e9a3b867408bf6d163cf7c11c64feeb7e33b4313",
-    "adaptive_mix_band_search_20asset_1d_20260922.json": "5e02918850944a68d1d45815b5928f1eed462d456eac4723ac9290514e7b97f4",
-    "basis_pair_candidate_20asset_1d_20260922.json": "d021801c94e33d8720f9084762138893978a61e36ef670b4c0140edeaf37c1ec",
-    "basis_reversion_screen_20asset_1d_20260922.json": "61c9c8f5b3e502f0c5218dd743ad030ecbb962d6822bb7b81a2b962445aa378f",
-    "dip_bench_crypto_1d_20260925.json": "584eb681dcd18fc65835c1573360b4b5fc9ebb72aa662bcbb9e7c101b06e2f03",
-    "fast_replay_p42_conformance_20260927.json": "8236a26489e9253dfcc1f3d879a2fd276c0023fb4d167c764c5330406ce950d8",
-    "incumbent_bench_qlib.json": "f455123351b44151d68876d1a93fa3a2dc449c51d280ee83926f22cd9861984f",
-}
+# KNOWN_UNSEALED / KNOWN_CONTRACT_LEGACY live in
+# quant_fund.research.legacy_unsealed — byte-pinned shrink-only ratchets
+# shared with `suite-health --strict`. A new unverifiable receipt in
+# receipts/ fails this test; the maps may only ever shrink.
 
 
 def test_committed_receipts_verify_or_are_known_legacy() -> None:
@@ -41,12 +36,10 @@ def test_committed_receipts_verify_or_are_known_legacy() -> None:
         result = verify_receipt_file(path)
         if result["valid"]:
             continue
-        if (
-            result["errors"] == ["receipt_sha256_missing_or_invalid"]
-            and path.name in KNOWN_UNSEALED
-            and hashlib.sha256(path.read_bytes()).hexdigest() == KNOWN_UNSEALED[path.name]
-        ):
+        if is_known_unsealed(path, result["errors"]):
             unsealed.append(path.name)
+            continue
+        if is_known_contract_legacy(path, result["errors"]):
             continue
         failures.append(f"{path.name}: {result['errors']}")
     assert failures == [], "committed receipts fail verification:\n" + "\n".join(failures)
@@ -105,14 +98,15 @@ def test_committed_sealed_receipts_reject_tampering() -> None:
                 v = dict(payload)
                 v[k] = "forged_kind"
                 variants[f"rename_{k}"] = v
-        # 4. perturb the first numeric leaf (a claim digit)
+        # 4. perturb the first numeric leaf (a claim digit) — relative, so
+        #    huge floats where +1.0 is below epsilon still change value
         loc = _first_leaf(payload, want=(int, float))
         if loc is not None:
             v = json.loads(json.dumps(payload))
             dst = _first_leaf(v, want=(int, float))
             assert dst is not None
             parent, key = dst
-            parent[key] = float(parent[key]) + 1.0
+            parent[key] = float(parent[key]) * 1.5 + 1.0
             variants["numeric_claim"] = v
         # 5. drop each top-level key that exists
         for k in payload:
