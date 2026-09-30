@@ -54,6 +54,7 @@ _HAS_TORCH = _torch_present()
 _FAMILIES = (
     "langevin_impact",
     "fukasawa_iv",
+    "ivs_diffusion",
     "rccp",
     "dcp",
 )
@@ -69,6 +70,8 @@ _SOFT_BLOBS = (
     "event_time_flow",
     "ivs_diffusion",
 )
+# Torch-gated family whose science leg runs only when the blob emitted.
+_TORCH_BLOBS = ("ivs_diffusion",)
 
 
 @pytest.fixture(scope="module")
@@ -222,6 +225,24 @@ def test_dcp_inversion_and_cqr_reduction(dcp: dict[str, float]) -> None:
     )
     assert dcp["SYNTHETIC_dcp_zscore_winkler"] < dcp["SYNTHETIC_split_conformal_winkler"]
     assert dcp["SYNTHETIC_n_cal"] == 400.0
+
+
+def test_ivs_diffusion_noarb_and_hedge(ivs_diffusion: dict[str, float]) -> None:
+    if not _HAS_TORCH or not ivs_diffusion:
+        pytest.skip("ivs_diffusion requires the nn extra (torch)")
+    # Han et al. 2026: the conditional diffusion beats the block-resample
+    # generator on energy score, the optimization hedge cuts RMSE and tail
+    # error sharply vs resampling, and the no-arb post-training penalty
+    # slashes static-arbitrage violation rates below the stream's own.
+    blob = ivs_diffusion
+    assert blob["es_gain_vs_resample"] > 0.0
+    assert blob["es_model"] < blob["es_resample"]
+    assert blob["hedge_rmse_model"] < blob["hedge_rmse_resample"]
+    assert blob["hedge_es_tail_model"] < blob["hedge_es_tail_resample"]
+    assert blob["arb_rate_finetuned"] < blob["arb_rate_generated"]
+    assert blob["arb_rate_finetuned"] < blob["arb_rate_data"]
+    assert blob["ft_probe_rate_after"] < blob["ft_probe_rate_before"]
+    assert blob["n_stream"] > 0.0
 
 
 def test_numpy_benches_are_deterministic(
