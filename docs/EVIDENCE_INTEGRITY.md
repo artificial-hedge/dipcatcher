@@ -39,7 +39,16 @@ detects, and the boundary where detection stops.
 
 ## Corpus discipline
 
-Eight corpora are epoch-chained under `quality/epoch_heads.json`:
+Twenty-eight corpora are epoch-chained under `quality/epoch_heads.json` —
+the *entire tracked tree*: after the eight evidence corpora, every code and
+doc directory is closed-world chained too (`src`, `tests`, `scripts`,
+`docs`, `research`, `replay`, `reports`, `notebooks`, `examples`, `clients`,
+`typings`, `spec`, `docker`, `deploy`, `third_party`, `rust`, `web`,
+`.box-soft-verify`, `.cursor`, `.github` beyond `workflows/`). A tamper
+anywhere in the repo — source, test fixture, vendored code, deploy surface —
+drifts a head. Two pins keep the world closed: every tracked top-level dir
+must be a corpus or an explicit tool-state opt-out, and the root-level file
+set is pinned (root files sit above every corpus dir).
 
 - `receipts/*.json` — append-only, strict: any member digest change between
   epochs is `member_mutated` (tamper evidence). `legacy-unsealed/` is
@@ -50,7 +59,8 @@ Eight corpora are epoch-chained under `quality/epoch_heads.json`:
   until `make stamp-epochs` re-stamps.
 - `.github/workflows/*.yml` — mutable *and* security-critical:
   `--require-stamped` makes every unstamped `.yml` arrival a CI error plus
-  `--allow-member-updates` for edits.
+  `--allow-member-updates` for edits. The rest of `.github` (templates,
+  plans) is its own `*` corpus.
 - `configs/*` — mutable: post-hoc config edits would silently rewrite what a
   sealed bench measured, so each change needs a stamp like the quality corpus.
 - `artifacts/*` — committed claim artifacts (champion selects, dev grids):
@@ -58,6 +68,13 @@ Eight corpora are epoch-chained under `quality/epoch_heads.json`:
 - `.dsh-24x7/*` — committed fleet evidence (the SOTA input stream): a live
   dir, so arrivals land between stamps, but a stamped member is immutable —
   an `.npz` mutating post-stamp is tamper.
+- The twenty closed-world corpora — mutable (`--allow-member-updates`) with
+  stamped arrivals (`--require-stamped`): any member byte drifting between
+  epochs is recorded tamper evidence, and a committed file no check covers is
+  a coverage hole (`uncovered_member`). Exemptions: `__pycache__/` dirs are
+  never members anywhere (machine-local bytecode), and `.github`'s corpus
+  exempts `workflows/` (its own chain). Membership exemptions are corpus-scoped
+  by basename — a `witness/` dir under `receipts` is an ordinary member.
 - `data/metadata/*` — committed dataset manifests + validation outputs: the
   inputs `data_manifest` receipts pin; write-once dated dirs, stamped
   arrivals only.

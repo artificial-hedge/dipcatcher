@@ -148,7 +148,7 @@ observations.
   survivor set that contains an optimal head with probability ≥ 1−α
   *uniformly over time* via pairwise e-processes plus a union bound,
   with permanent elimination — publishable-grade machinery.
-- `research/panel_audit.py` — cross-sectional coverage e-process:
+- `scripts/panel_audit_drill.py` — cross-sectional coverage e-process:
   pools the breach stream across the panel dimension (24-symbol real
   tape), isolating a systematic *across-instrument* calibration miss
   from per-name noise.

@@ -77,6 +77,49 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # Members are gitignored (only `.gitkeep` clones), so the epoch chain
     # exists only on machines that ran the stamps: LOCAL_ONLY_CORPORA.
     ("data/metadata", "*", True, False, ()),
+    # ---- closed world: every tracked directory of code/evidence ----
+    # The library itself — a non-jewel source file edited post-stamp is a
+    # silent verdict-tampering vector; every byte is a chain member now.
+    ("src", "*", True, True, ()),
+    # Test code + committed fixtures: a swapped fixture or weakened oracle
+    # launders a broken gate the same as a source tamper.
+    ("tests", "*", True, True, ()),
+    # Standalone auditors + generators: scripts/verify_*.py are the
+    # third-party verification path — outside the package but just as
+    # integrity-critical as the jewels among them.
+    ("scripts", "*", True, True, ()),
+    # Claim-bearing docs (audit ledgers, methodology, generated evidence
+    # pages): an unchained doc could rewrite what the evidence asserts.
+    ("docs", "*", True, True, ()),
+    # Reality-study records (preregistrations, audit trails) — evidence.
+    ("research", "*", True, True, ()),
+    # Replay manifests + the session-replay harness.
+    ("replay", "*", True, True, ()),
+    ("reports", "*", True, True, ()),
+    ("notebooks", "*", True, True, ()),
+    ("examples", "*", True, True, ()),
+    # Published client surface (TypeScript client + OpenAPI schema).
+    ("clients", "*", True, True, ()),
+    ("typings", "*", True, True, ()),
+    # Formal specs (TLA+/configs) the formal lane checks against.
+    ("spec", "*", True, True, ()),
+    # Deployment surface — Dockerfiles and observability configs are
+    # supply-chain inputs.
+    ("docker", "*", True, True, ()),
+    ("deploy", "*", True, True, ()),
+    # Vendored third-party code — the highest-value supply-chain member.
+    ("third_party", "*", True, True, ()),
+    # Native extension source (Rust order-book core).
+    ("rust", "*", True, True, ()),
+    # Web explorer + its lockfile (published receipt export surface).
+    ("web", "*", True, True, ()),
+    # Verification snippet evidence used by the soft-verify gate.
+    (".box-soft-verify", "*", True, True, ()),
+    # Cursor agent env config — install.sh is an executed supply-chain file.
+    (".cursor", "*", True, True, ()),
+    # Remaining .github files (templates, plans); workflows/ is its own
+    # corpus above and exempt here.
+    (".github", "*", True, True, ("workflows/*",)),
 )
 
 # Corpora whose epoch receipts never clone (gitignored even when the member
@@ -85,6 +128,11 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
 # explicit ``skipped`` state rather than a pass — a machine with receipts
 # still verifies fully, and stamped-member immutability holds there.
 LOCAL_ONLY_CORPORA: frozenset[str] = frozenset({"data/metadata"})
+
+# Corpora an ``--evidence-only`` bundle is expected to carry — the evidence
+# store, not the source tree. Under evidence_only an absent evidence corpus
+# is still ``corpus_missing``; an absent code corpus reports a skip.
+EVIDENCE_CORPORA: frozenset[str] = frozenset(c[0] for c in CORPORA[:8])
 
 
 def verify_repo(
@@ -169,15 +217,26 @@ def verify_repo(
         "errors": wit["errors"],
     }
 
-    from quant_fund.research.checkpoint_chain import checkpoint_spine
+    if evidence_only:
+        # The spine audits continuity of the ``checkpoints/`` + ``witness/``
+        # archives — exempt directories a bundle does not carry. The bundle's
+        # trust anchor is the signed checkpoint tip instead, which the
+        # ``checkpoint`` gate verifies.
+        gates["spine"] = {
+            "ok": True,
+            "skipped": "evidence_only",
+            "errors": [],
+        }
+    else:
+        from quant_fund.research.checkpoint_chain import checkpoint_spine
 
-    spine = checkpoint_spine(root)
-    gates["spine"] = {
-        "ok": bool(spine["ok"]),
-        "signed": bool(spine.get("signed", False)),
-        "spine_length": spine.get("spine_length", 0),
-        "errors": spine["errors"],
-    }
+        spine = checkpoint_spine(root)
+        gates["spine"] = {
+            "ok": bool(spine["ok"]),
+            "signed": bool(spine.get("signed", False)),
+            "spine_length": spine.get("spine_length", 0),
+            "errors": spine["errors"],
+        }
 
     from quant_fund.research.key_rotation import verify_rotations
 
@@ -209,6 +268,16 @@ def verify_repo(
         heads = {}
     for corpus_dir, pattern, require_stamped, allow_updates, exempt in CORPORA:
         cdir = root / corpus_dir
+        if evidence_only and corpus_dir not in EVIDENCE_CORPORA:
+            # A non-evidence corpus dir can still be *present* in a bundle as
+            # the parent of an evidence corpus (`.github` holding
+            # `.github/workflows`) — presence is containment, not coverage.
+            gates[f"epoch:{corpus_dir}"] = {
+                "ok": True,
+                "skipped": "evidence_only",
+                "errors": [],
+            }
+            continue
         if not cdir.is_dir():
             gates[f"epoch:{corpus_dir}"] = {
                 "ok": False,
@@ -275,6 +344,56 @@ def verify_repo(
                 continue
             errs.append(f"uncovered_member:{rel!a}")
         gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
+
+    if evidence_only:
+        # The manifest is the exporter's claim about itself — schema,
+        # covered corpora, and per-corpus globs must match this build's
+        # policy table, else a forged manifest rides a valid chain.
+        manifest_errs: list[str] = []
+        mpath = root / "BUNDLE.json"
+        if not mpath.is_file():
+            manifest_errs.append("bundle_manifest_missing:BUNDLE.json")
+        else:
+            try:
+                manifest = json.loads(mpath.read_text())
+            except (OSError, json.JSONDecodeError):
+                manifest = {}
+                manifest_errs.append("bundle_manifest_malformed:BUNDLE.json")
+            if manifest.get("schema") != "evidence_bundle.v1":
+                manifest_errs.append(f"manifest_schema:{manifest.get('schema')!r}")
+            declared = manifest.get("corpora")
+            if not isinstance(declared, Mapping):
+                manifest_errs.append("manifest_corpora_malformed")
+            else:
+                drift = sorted(set(declared) ^ EVIDENCE_CORPORA)
+                if drift:
+                    manifest_errs.append("manifest_corpora_mismatch:" + ",".join(drift))
+                glob_by_corpus = {c[0]: c[1] for c in CORPORA}
+                for cdir_name in set(declared) & EVIDENCE_CORPORA:
+                    spec = declared[cdir_name]
+                    m_glob = spec.get("glob") if isinstance(spec, Mapping) else None
+                    if m_glob != glob_by_corpus[cdir_name]:
+                        manifest_errs.append(f"manifest_glob_mismatch:{cdir_name}:{m_glob!r}")
+        gates["bundle_manifest"] = {"ok": not manifest_errs, "errors": manifest_errs}
+
+        # Closed world: a bundle may carry only the manifest, the signature
+        # file, and files under the declared evidence corpora (nested
+        # corpora claim by longest prefix — `.github/x` is foreign even
+        # though `.github/workflows/` is a corpus). Inside a corpus, the
+        # epoch gate's own uncovered-member sweep applies.
+        foreign: list[str] = []
+        evidence_prefixes = tuple(
+            sorted((f"{d}/" for d in EVIDENCE_CORPORA), key=len, reverse=True)
+        )
+        for f in sorted(root.rglob("*")):
+            if not f.is_file():
+                continue
+            rel = f.relative_to(root).as_posix()
+            if rel in ("BUNDLE.json", "gate_pins.sig") or rel.startswith(".git/"):
+                continue
+            if not rel.startswith(evidence_prefixes):
+                foreign.append(f"foreign_member:{rel}")
+        gates["bundle_coverage"] = {"ok": not foreign, "errors": foreign}
 
     # Semantic layer: byte-integrity says the corpus is untampered; the
     # lattice gate says its claims are coherent. A contradictory corpus
@@ -371,10 +490,19 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         ):
             errors.append(f"gate_field_malformed:{name}:revision_ancestor")
         if "skipped" in gate:
-            # Only crown_jewels may be skipped, and only under evidence_only:
-            # a full-tree attestation silently skipping a code gate would
-            # downgrade a partial verdict into an implied full pass.
-            if gate["skipped"] != "evidence_only" or name != "crown_jewels":
+            # Only evidence_only may carry skipped gates, and only for
+            # crown_jewels or epoch gates over non-evidence corpora (the
+            # code tree isn't part of an evidence bundle): a full-tree
+            # attestation silently skipping a gate would downgrade a
+            # partial verdict into an implied full pass.
+            skip_ok = gate["skipped"] == "evidence_only" and (
+                name in ("crown_jewels", "spine")
+                or (
+                    name.startswith("epoch:")
+                    and name.removeprefix("epoch:") not in EVIDENCE_CORPORA
+                )
+            )
+            if not skip_ok:
                 errors.append(f"gate_skip_invalid:{name}")
             elif mode != "evidence_only":
                 errors.append(f"gate_skipped_in_full_mode:{name}")
@@ -382,6 +510,13 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         cj = gates.get("crown_jewels")
         if not isinstance(cj, Mapping) or cj.get("skipped") != "evidence_only":
             errors.append("evidence_only_skip_missing:crown_jewels")
+        # Both bundle gates must have run — an attestation over a bundle
+        # without them can't claim the manifest agreed or foreign members
+        # were absent.
+        for req in ("bundle_coverage", "bundle_manifest"):
+            bc = gates.get(req)
+            if not isinstance(bc, Mapping) or "skipped" in bc:
+                errors.append(f"evidence_only_skip_missing:{req}")
     expected_ok = bool(gates) and all(
         bool(g.get("ok")) for g in gates.values() if isinstance(g, Mapping)
     )

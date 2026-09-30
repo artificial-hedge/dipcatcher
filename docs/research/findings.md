@@ -47,6 +47,7 @@ does not score them.
 - `receipts/corpus_epoch_54c82d2a8bcb86ed.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_568c538fcf4b21cd.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_574953afdf88a0f6.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_5c9754ab2a9408a1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_63761c8b4e63992b.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_6cf185cfb5466dd7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_6f8420fc2959f4e7.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
@@ -54,6 +55,7 @@ does not score them.
 - `receipts/corpus_epoch_721e9b4fb855e1a1.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_84384f73f7d8e9d6.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_96ba030697ddf0ff.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_9d41d1d7410eb02d.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_9fd864d30fda3c69.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_a0e901c74a5f29c4.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_epoch_a1a8323db3be4842.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search

@@ -50,7 +50,16 @@ def test_build_bundle_contains_all_members(tmp_path: Path) -> None:
     assert set(BUNDLE_MEMBERS) <= set(bundle["files"])
     # spine members + declared optionals ride along; nothing else
     assert not (set(bundle["files"]) - set(BUNDLE_MEMBERS) - set(OPTIONAL_MEMBERS)) - {
-        r for r in bundle["files"] if r.startswith(("quality/checkpoints/", "quality/witness/"))
+        r
+        for r in bundle["files"]
+        if r.startswith(
+            (
+                "quality/checkpoints/",
+                "quality/witness/",
+                "quality/rotation_",
+                "quality/quorum_rotations/",
+            )
+        )
     }
     assert bundle["witness_proof"]["schema"] == "integrity_witness.v1"
     # every member hash is declared
@@ -303,3 +312,262 @@ def test_bundle_rejects_unexpected_member(tmp_path: Path) -> None:
     res = verify_bundle(bad, rekor_url=None)
     assert not res["ok"]
     assert any("unexpected_member" in e for e in res["errors"])
+
+
+# --- Quorum-era drills against the standalone verifier's internals ---------
+#
+# The bundle's Rekor proof can't be fabricated offline, so these exercises
+# _verify_spine / _verify_quorum_rotations directly on synthetic bundle-file
+# maps: v1-era genesis -> registry era -> authorized rotation -> swapped
+# registry attacks, mirroring the library's checkpoint_chain continuity rules.
+
+
+def _sign(priv_hex: str, msg: bytes) -> str:
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    return Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_hex)).sign(msg).hex()
+
+
+def _kid(pub_hex: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(bytes.fromhex(pub_hex)).hexdigest()[:16]
+
+
+def _registry(*pubs: str, threshold: int = 1) -> dict:
+    return {
+        "schema": "gate_quorum.v1",
+        "threshold": threshold,
+        "keys": [{"key_id": _kid(p), "pubkey": p} for p in pubs],
+    }
+
+
+def _canon_bytes(value: object) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def _v1_checkpoint(priv: str, pub: str, prev_sha: str | None = None) -> bytes:
+    payload: dict = {"schema": "integrity_checkpoint.v1"}
+    if prev_sha is not None:
+        payload["prev_sha256"] = prev_sha
+    return json.dumps(
+        {
+            "schema": "integrity_checkpoint_sig.v1",
+            "algorithm": "ed25519",
+            "key_id": _kid(pub),
+            "signature": _sign(priv, _canon_bytes(payload)),
+            "payload": payload,
+        }
+    ).encode()
+
+
+def _v2_checkpoint(pairs: list[tuple[str, str]], prev_sha: str, registry: dict) -> bytes:
+    from scripts.verify_auditor_bundle import _registry_sha256
+
+    payload = {
+        "schema": "integrity_checkpoint.v2",
+        "prev_sha256": prev_sha,
+        "quorum": {
+            "registry_sha256": _registry_sha256(registry),
+            "threshold": registry["threshold"],
+            "n_keys": len(registry["keys"]),
+        },
+    }
+    return json.dumps(
+        {
+            "schema": "integrity_checkpoint_sig.v2",
+            "algorithm": "ed25519",
+            "signatures": [
+                {"key_id": _kid(pub), "signature": _sign(priv, _canon_bytes(payload))}
+                for priv, pub in pairs
+            ],
+            "payload": payload,
+        }
+    ).encode()
+
+
+def _rotation(signers: list[tuple[str, str]], prev_reg: dict, new_reg: dict) -> bytes:
+    from scripts.verify_auditor_bundle import _registry_sha256
+
+    payload = {
+        "schema": "quorum_rotation.v1",
+        "prev_registry": prev_reg,
+        "registry": new_reg,
+        "prev_registry_sha256": _registry_sha256(prev_reg),
+        "registry_sha256": _registry_sha256(new_reg),
+        "reason": "test rotation",
+    }
+    return json.dumps(
+        {
+            "schema": "quorum_rotation.v1",
+            "payload": payload,
+            "signatures": [
+                {"key_id": _kid(pub), "signature": _sign(priv, _canon_bytes(payload))}
+                for priv, pub in signers
+            ],
+        }
+    ).encode()
+
+
+def _spine_files(
+    head: bytes,
+    archives: dict[str, bytes],
+    rotations: dict[str, bytes] | None = None,
+    registry: dict | None = None,
+) -> tuple[dict[str, str], dict[str, str], bytes]:
+    """files/declared/decoded_checkpoint for _verify_spine."""
+    import hashlib
+
+    files: dict[str, str] = {"quality/checkpoint.json": base64.b64encode(head).decode()}
+    for name, raw in archives.items():
+        files[f"quality/checkpoints/{name}"] = base64.b64encode(raw).decode()
+    for name, raw in (rotations or {}).items():
+        files[f"quality/quorum_rotations/{name}"] = base64.b64encode(raw).decode()
+    if registry is not None:
+        canon = json.dumps(registry, indent=2, sort_keys=True) + "\n"
+        files["quality/gate_quorum.json"] = base64.b64encode(canon.encode()).decode()
+    declared = {rel: hashlib.sha256(base64.b64decode(b)).hexdigest() for rel, b in files.items()}
+    return files, declared, head
+
+
+def _rot_name(rotation_raw: bytes) -> str:
+
+    d = json.loads(rotation_raw)["payload"]["registry_sha256"]
+    return f"rotation_{d[:16]}.json"
+
+
+def test_spine_quorum_rotation_era_chain_verifies() -> None:
+    """Honest rotation: v1 genesis -> era R0 -> rotation R0->R1 -> era R1."""
+    from scripts.verify_auditor_bundle import _registry_sha256, _verify_spine
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    g1_priv, g1_pub = generate_keypair()
+    q_priv, q_pub = generate_keypair()
+    n_priv, n_pub = generate_keypair()
+    r0 = _registry(g1_pub, q_pub, threshold=1)
+    r1 = _registry(n_pub, threshold=1)
+    d0, d1 = _registry_sha256(r0), _registry_sha256(r1)
+
+    cp0 = _v1_checkpoint(g1_priv, g1_pub)
+    cp1 = _v2_checkpoint([(g1_priv, g1_pub)], _sha_hex(cp0), r0)
+    rot = _rotation([(g1_priv, g1_pub)], r0, r1)
+    cp2 = _v2_checkpoint([(n_priv, n_pub)], _sha_hex(cp1), r1)
+
+    files, declared, head = _spine_files(
+        cp2,
+        {"cp0.json": cp0, "cp1.json": cp1},
+        {_rot_name(rot): rot},
+        registry=r1,
+    )
+    errors: list[str] = []
+    _verify_spine(files, declared, head, g1_pub, errors)
+    assert errors == [], errors
+    assert d0 != d1
+
+
+def test_spine_flags_registry_swap_without_rotation() -> None:
+    """Swap the live registry + forge a v2 head under it — no rotation record
+    means spine_quorum_unauthorized even though the head self-verifies."""
+    from scripts.verify_auditor_bundle import _verify_spine
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    g1_priv, g1_pub = generate_keypair()
+    n_priv, n_pub = generate_keypair()
+    r0 = _registry(g1_pub, threshold=1)
+    r1 = _registry(n_pub, threshold=1)
+
+    cp0 = _v1_checkpoint(g1_priv, g1_pub)
+    cp1 = _v2_checkpoint([(g1_priv, g1_pub)], _sha_hex(cp0), r0)
+    forged = _v2_checkpoint([(n_priv, n_pub)], _sha_hex(cp1), r1)
+
+    files, declared, head = _spine_files(forged, {"cp0.json": cp0, "cp1.json": cp1}, registry=r1)
+    errors: list[str] = []
+    _verify_spine(files, declared, head, g1_pub, errors)
+    assert any(e.startswith("spine_quorum_unauthorized:") for e in errors), errors
+
+
+def test_spine_flags_rotation_signed_by_wrong_era() -> None:
+    """A rotation signed by the NEW quorum (not the outgoing one) can't
+    authorize the swap — the record verifies but isn't legitimate."""
+    from scripts.verify_auditor_bundle import _verify_spine
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    g1_priv, g1_pub = generate_keypair()
+    n_priv, n_pub = generate_keypair()
+    r0 = _registry(g1_pub, threshold=1)
+    r1 = _registry(n_pub, threshold=1)
+
+    cp0 = _v1_checkpoint(g1_priv, g1_pub)
+    cp1 = _v2_checkpoint([(g1_priv, g1_pub)], _sha_hex(cp0), r0)
+    # Signed by n_priv — the INCOMING key, not in the predecessor registry.
+    rot = _rotation([(n_priv, n_pub)], r0, r1)
+    cp2 = _v2_checkpoint([(n_priv, n_pub)], _sha_hex(cp1), r1)
+
+    files, declared, head = _spine_files(
+        cp2,
+        {"cp0.json": cp0, "cp1.json": cp1},
+        {_rot_name(rot): rot},
+        registry=r1,
+    )
+    errors: list[str] = []
+    _verify_spine(files, declared, head, g1_pub, errors)
+    assert any(e.startswith("rotation_signer_unknown:") for e in errors), errors
+    assert any(e.startswith("spine_quorum_unauthorized:") for e in errors), errors
+
+
+def test_spine_flags_registry_reverted_behind_terminus() -> None:
+    """Live registry set back to R0 while the chain's tip is R1 — the
+    terminus check catches a stale-registry rollback."""
+    from scripts.verify_auditor_bundle import _verify_spine
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    g1_priv, g1_pub = generate_keypair()
+    n_priv, n_pub = generate_keypair()
+    r0 = _registry(g1_pub, threshold=1)
+    r1 = _registry(n_pub, threshold=1)
+
+    cp0 = _v1_checkpoint(g1_priv, g1_pub)
+    cp1 = _v2_checkpoint([(g1_priv, g1_pub)], _sha_hex(cp0), r0)
+    rot = _rotation([(g1_priv, g1_pub)], r0, r1)
+    cp2 = _v2_checkpoint([(n_priv, n_pub)], _sha_hex(cp1), r1)
+
+    # Live registry presented as the OLD r0 — the chain's tip is r1.
+    files, declared, head = _spine_files(
+        cp2,
+        {"cp0.json": cp0, "cp1.json": cp1},
+        {_rot_name(rot): rot},
+        registry=r0,
+    )
+    errors: list[str] = []
+    _verify_spine(files, declared, head, g1_pub, errors)
+    assert "quorum_registry_not_terminus" in errors, errors
+
+
+def test_spine_flags_genesis_without_member_overlap() -> None:
+    """A registry that shares no signer with the preceding era's records is
+    a grafted quorum, not an introduction."""
+    from scripts.verify_auditor_bundle import _verify_spine
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    g1_priv, g1_pub = generate_keypair()
+    alien_priv, alien_pub = generate_keypair()
+    alien_reg = _registry(alien_pub, threshold=1)
+
+    cp0 = _v1_checkpoint(g1_priv, g1_pub)
+    forged = _v2_checkpoint([(alien_priv, alien_pub)], _sha_hex(cp0), alien_reg)
+
+    files, declared, head = _spine_files(forged, {"cp0.json": cp0}, registry=alien_reg)
+    errors: list[str] = []
+    _verify_spine(files, declared, head, g1_pub, errors)
+    assert any(e.startswith("spine_quorum_genesis_discontinuous:") for e in errors), errors
+
+
+def _sha_hex(raw: bytes) -> str:
+    import hashlib
+
+    return hashlib.sha256(raw).hexdigest()

@@ -34,11 +34,13 @@ import json
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
 from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
+import polars as pl
 from pydantic import ValidationError
 
 from quant_fund.proofcore.contracts import (
@@ -124,15 +126,19 @@ def _current_env_fingerprint() -> str:
 
 
 def _current_env_fingerprint_contracts() -> str:
-    """Contracts-style variant (§2.2): real ``quant_fund.__version__`` or dev.
-
-    Read from the installed ``fx-1`` distribution metadata rather than
-    importing ``quant_fund`` — keeps ``proof/`` layering-clean (the package
-    dist name is ``fx-1``; its version is the canonical semver)."""
+    """Contracts-style variant (§2.2): real ``quant_fund.__version__`` or dev."""
     version = "dev"
     try:
-        version = importlib_metadata.version("fx-1") or "dev"
-    except importlib_metadata.PackageNotFoundError:
+        # Probe the ALREADY-INITIALIZED package via sys.modules instead of
+        # ``import quant_fund`` — importing this module has necessarily loaded
+        # the facade, and a static facade import is barred for the PROOFCORE
+        # stack (DESIGN.md §1.3; tests/unit/test_proofcore_layering.py).
+        module = sys.modules.get("quant_fund")
+        version = str(getattr(module, "__version__", "dev") or "dev")
+    except (ImportError, AttributeError, TypeError, ValueError, RuntimeError):
+        # Narrowed from `except Exception` (quality ratchet): probe faults are the
+        # failed import, a raising module __getattr__ (RuntimeError in tests), or a
+        # broken __version__ repr; exotic errors propagate. Never break the gate.
         version = "dev"
     return f"{platform.platform()}|{platform.python_version()}|{version}"
 
@@ -297,7 +303,19 @@ def _default_executor(spec: RunSpec, vault: Any, tmp_bundle_dir: Path) -> Decisi
         ok, result = run_proven(spec, vault=vault, bundle_dir=tmp_bundle_dir)
     except ReplayUnavailable:
         raise
-    except Exception as exc:  # runner fails closed by raising (§4.4)
+    except (
+        ProofError,
+        OSError,
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        RuntimeError,
+        pl.exceptions.PolarsError,
+    ) as exc:
+        # Narrowed from `except Exception` (quality ratchet): runner faults are
+        # ProofError plus the IO/numeric/validation/polars failures of mint+backtest;
+        # exotic errors propagate. Runner fails closed by raising (§4.4).
         raise ReplayUnavailable(str(exc)) from exc
     if not ok:
         raise ReplayUnavailable(str(result))
@@ -447,7 +465,20 @@ def replay_bundle(
             return False, f"runner_unavailable:{exc}"
         except ProofError as exc:
             return False, f"replay_reexecute_failed:{exc}"
-        except Exception as exc:
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+            AttributeError,
+            RuntimeError,
+            ArithmeticError,
+            pl.exceptions.PolarsError,
+        ) as exc:
+            # Narrowed from `except Exception` (quality ratchet): executor faults are
+            # the IO/numeric/validation/polars failures of the re-run stack; exotic
+            # errors propagate. Any enumerated failure still yields a failed verdict.
             return False, f"replay_reexecute_error:{exc.__class__.__name__}"
         try:
             fresh_trace = DecisionTrace.model_validate(fresh)

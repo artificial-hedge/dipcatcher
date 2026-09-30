@@ -85,6 +85,48 @@ EXEMPT_RELPATHS: frozenset[str] = frozenset(
 # per-entry log index.
 EXEMPT_PREFIXES: frozenset[str] = frozenset({"witness/", "checkpoints/", "quorum_rotations/"})
 
+# Exempt prefixes are corpus-scoped by the corpus dir's basename: a
+# ``witness/`` drop under ``receipts`` is a normal member, and a
+# subdirectory that is its own corpus (``.github/workflows``) must not be
+# double-chained by the parent corpus.
+EXEMPT_PREFIXES_BY_CORPUS: dict[str, frozenset[str]] = {
+    "quality": EXEMPT_PREFIXES,
+    ".github": frozenset({"workflows/"}),
+    # Gitignored vendored clones inside the third_party corpus — the
+    # committed vendored tree is chained; locally re-fetched copies are not.
+    "third_party": frozenset({"kronos_src/", "kronos_weights/"}),
+}
+
+# Directory names never admitted as members in ANY corpus: machine-local
+# build/cache artifacts (bytecode, JS deps, notebook checkpoints, tool
+# caches, bundler output) — chaining them would break the chain across
+# hosts and flag ordinary dev state as tamper. Verified: no tracked file
+# lives under any of these names.
+EXEMPT_DIRNAMES: frozenset[str] = frozenset(
+    {
+        "__pycache__",
+        "node_modules",
+        ".ipynb_checkpoints",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        "dist",
+        "build",
+        ".next",
+        "test-results",
+        "playwright-report",
+    }
+)
+
+# Directory-name *suffixes* exempt in every corpus (packaging metadata dirs
+# like ``dipcatcher.egg-info/`` embed the project name in the dir name).
+EXEMPT_DIR_SUFFIXES: tuple[str, ...] = (".egg-info",)
+
+
+def _machine_local(relname: str) -> bool:
+    parts = Path(relname).parts
+    return any(part in EXEMPT_DIRNAMES or part.endswith(EXEMPT_DIR_SUFFIXES) for part in parts[:-1])
+
 
 def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[str, str]:
     """``{rel-path: sha256-of-bytes}`` for every file matching ``pattern``.
@@ -117,12 +159,15 @@ def _exempt_member(root: Path, relname: str) -> bool:
 
     Basenames and relpaths exempt unconditionally (chain bookkeeping); the
     prefix set is corpus-scoped — a ``witness/`` drop under ``receipts`` stays
-    a normal member."""
+    a normal member. Machine-local dir segments (bytecode caches, JS deps,
+    tool caches, bundler output) are exempt in every corpus — they are not
+    content, and ``parts[:-1]`` keeps a like-named *file* a member."""
     return (
         Path(relname).name in EXEMPT_BASENAMES
         or relname in EXEMPT_RELPATHS
-        or (
-            root.name == "quality" and any(relname.startswith(prefix) for prefix in EXEMPT_PREFIXES)
+        or _machine_local(relname)
+        or any(
+            relname.startswith(prefix) for prefix in EXEMPT_PREFIXES_BY_CORPUS.get(root.name, ())
         )
     )
 

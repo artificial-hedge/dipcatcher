@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify
 
 .DEFAULT_GOAL := help
 
@@ -209,6 +209,9 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
 	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped
+	for spec in "src" "tests" "scripts" "docs" "research" "replay" "reports" "notebooks" "examples" "clients" "typings" "spec" "docker" "deploy" "third_party" "rust" "web" ".box-soft-verify" ".cursor" ".github"; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates || exit 1; \
+	done
 	uv run dipcatcher crown-jewels --check
 	uv run dipcatcher verify-witness
 	uv run dipcatcher verify-repo
@@ -237,7 +240,7 @@ fuzz-receipts: ## Forge-and-reseal drill: mutates one claim per committed receip
 
 epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
 	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
-	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*"; do \
+	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*" "src:*" "tests:*" "scripts:*" "docs:*" "research:*" "replay:*" "reports:*" "notebooks:*" "examples:*" "clients:*" "typings:*" "spec:*" "docker:*" "deploy:*" "third_party:*" "rust:*" "web:*" ".box-soft-verify:*" ".cursor:*" ".github:*"; do \
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
 	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
@@ -255,6 +258,9 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any 
 	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --out-dir artifacts --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --out-dir .dsh-24x7 --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --out-dir data/metadata --heads-pin quality/epoch_heads.json
+	for spec in src tests scripts docs research replay reports notebooks examples clients typings spec docker deploy third_party rust web .box-soft-verify .cursor .github; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --out-dir "$$spec" --heads-pin quality/epoch_heads.json || exit 1; \
+	done
 
 sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
 	uv run dipcatcher sign-pins
@@ -280,6 +286,12 @@ witness-bundle: ## Emit the zero-trust auditor bundle (one JSON: checkpoint + pi
 
 verify-bundle: ## Verify an auditor bundle with zero trusted repo input (BUNDLE=path)
 	uv run dipcatcher verify-bundle $(BUNDLE)
+
+evidence-bundle: ## Export the evidence store as a portable third-party bundle (BUNDLE_DIR=path)
+	uv run dipcatcher evidence-export --out "$${BUNDLE_DIR:-evidence-bundle}"
+
+bundle-verify: ## Audit an exported evidence bundle — stdlib script, no repo imports (BUNDLE_DIR=path)
+	uv run python scripts/verify_evidence_bundle.py --root "$${BUNDLE_DIR:-evidence-bundle}"
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

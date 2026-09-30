@@ -268,14 +268,15 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
         out.append(("epoch_prefix_squat_drop", _EXPECT_FAIL, _prefix_squat))
 
     # --- must-pass: legitimately uncovered state ---
-    uncovered_dir = clone / "docs"
-    uncovered_dir.mkdir(exist_ok=True)
-    target = uncovered_dir / "FUZZ_NOTE.md"
+    # Repo-root files sit above every corpus dir and aren't jewels — a
+    # dropped scratch file there is the only honest benign mutation left
+    # under closed-world coverage.
+    target = clone / "FUZZ_NOTE.md"
     if not target.exists():
 
         def _write_uncovered() -> str:
-            target.write_text("# fuzz probe — docs/ is not a pinned corpus\n")
-            return "created:docs/FUZZ_NOTE.md"
+            target.write_text("# fuzz probe — root files are unchained\n")
+            return "created:FUZZ_NOTE.md"
 
         out.append(("uncovered_write", _EXPECT_OK, _write_uncovered))
     else:

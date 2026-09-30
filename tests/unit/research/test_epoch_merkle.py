@@ -511,3 +511,141 @@ def test_unicode_nfc_fail_closed(tmp_path: Path) -> None:
         "bounds": [{**absent["bounds"][0], "member": nfd}],
     }
     assert corpus_absence_errors(forged_bound) == ["bound_member_not_nfc"]
+
+
+def _stamped(corpus: Path) -> Path:
+    return write_epoch_receipt(corpus_epoch(corpus), corpus)
+
+
+def test_history_absence_round_trip_and_pin(tmp_path: Path) -> None:
+    """corpus_history_absence.v1: emits for a never-member, verifies live
+    and offline against the heads pin."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+    from quant_fund.research.epoch_merkle import (
+        HISTORY_ABSENCE_SCHEMA,
+        history_absence_errors,
+        history_absence_receipt,
+        verify_history_absence,
+        verify_history_absence_pin,
+    )
+
+    corpus = _corpus(tmp_path, 4)
+    _stamped(corpus)
+    (corpus / "late.json").write_text("{}")
+    head = _stamped(corpus)
+
+    body = history_absence_receipt(corpus, "secrets.env")
+    assert body["schema"] == HISTORY_ABSENCE_SCHEMA
+    assert body["n_epochs"] == 2
+    assert body["head_receipt"] == head.name
+    assert history_absence_errors(body) == []
+    assert verify_history_absence(body, corpus) == []
+
+    pin = tmp_path / "quality" / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", head)
+    pin_entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    assert verify_history_absence_pin(body, pin_entry) == []
+
+
+def test_history_absence_refuses_mid_chain_member(tmp_path: Path) -> None:
+    """The discriminator: present at epoch 2, absent at head — a tip-bound
+    absence receipt is valid but a history claim must refuse to build."""
+    from quant_fund.research.epoch_merkle import (
+        absence_receipt,
+        history_absence_receipt,
+        verify_epoch_absence,
+    )
+
+    corpus = _corpus(tmp_path, 3)
+    _stamped(corpus)
+    (corpus / "ghost.json").write_text("{}")
+    _stamped(corpus)  # ghost stamped at epoch 2
+    (corpus / "ghost.json").unlink()
+    _stamped(corpus)  # removed again by epoch 3 (head)
+
+    # Tip-bound absence: legitimately clean.
+    tip = absence_receipt(corpus, "ghost.json")
+    assert verify_epoch_absence(tip, corpus) == []
+    # History absence: refuses — ghost WAS evidence at epoch 2.
+    with pytest.raises(ValueError, match="is a member at"):
+        history_absence_receipt(corpus, "ghost.json")
+
+
+def test_verify_history_absence_mutations(tmp_path: Path) -> None:
+    """Dropped epochs, swapped heads, forged digests all fail closed."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+    from quant_fund.research.epoch_merkle import (
+        history_absence_receipt,
+        verify_history_absence,
+        verify_history_absence_pin,
+    )
+
+    corpus = _corpus(tmp_path, 3)
+    _stamped(corpus)
+    (corpus / "zz.json").write_text("{}")
+    head = _stamped(corpus)
+    body = history_absence_receipt(corpus, "never.json")
+
+    # Drop the genesis epoch from the claimed list — the next entry then
+    # claims to be genesis while carrying a real prev_root: fails shape.
+    forged = dict(body, epochs=body["epochs"][1:], n_epochs=1)
+    assert verify_history_absence(forged, corpus) == ["genesis_prev_root_nonzero"]
+    forged2 = dict(body, epochs=[*body["epochs"], dict(body["epochs"][-1])])
+    forged2["epochs"][-1]["receipt"] = "corpus_epoch_deadbeef.json"
+    forged2["n_epochs"] = 3
+    forged2["head_receipt"] = "corpus_epoch_deadbeef.json"
+    assert verify_history_absence(forged2, corpus) == ["history_chain_mismatch"]
+
+    # A name that IS stamped cannot verify absent.
+    present_claim = dict(body, name="r0.json")
+    assert verify_history_absence(present_claim, corpus) == [
+        f"history_member_present:{body['epochs'][0]['receipt']!a}"
+    ]
+
+    # Pin mode: head must be the pinned head — a stale-head claim fails.
+    pin = tmp_path / "quality" / "epoch_heads.json"
+    first = corpus / body["epochs"][0]["receipt"]  # epoch 1, not the head
+    update_heads_pin(pin, corpus, "*.json", first)
+    pin_entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    errs = verify_history_absence_pin(body, pin_entry)
+    assert "history_head_not_pinned" in errs
+    update_heads_pin(pin, corpus, "*.json", head)
+    pin_entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    assert verify_history_absence_pin(body, pin_entry) == []
+
+
+def test_history_absence_broken_chain_fails_closed(tmp_path: Path) -> None:
+    """A forked/truncated chain can't emit or verify a history claim."""
+
+    from quant_fund.research.epoch_merkle import (
+        history_absence_receipt,
+        verify_history_absence,
+    )
+
+    corpus = _corpus(tmp_path, 3)
+    _stamped(corpus)
+    _stamped(corpus)
+    # Forge a disconnected third epoch claiming a bogus prev.
+    third = corpus_epoch(corpus)
+    third["prev_epoch_receipt"] = "corpus_epoch_forged0000.json"
+    third["prev_epoch_sha256"] = "0" * 64
+    from quant_fund.research.corpus_epoch import write_epoch_receipt as _w
+
+    _w(third, corpus)
+    with pytest.raises(ValueError, match="chain not verifiable"):
+        history_absence_receipt(corpus, "x.json")
+    # And an emitted receipt can't verify against the broken corpus either:
+    # the independent re-walk fails before the claimed sequence is compared.
+    body_corpus = _corpus(tmp_path / "b", 2)
+    _stamped(body_corpus)
+    good = history_absence_receipt(body_corpus, "x.json")
+    errs = verify_history_absence(good, corpus)
+    assert errs and errs[0].startswith("history_chain_unverifiable")

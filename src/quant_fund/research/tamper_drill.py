@@ -30,37 +30,26 @@ from quant_fund.utils.hashing import hash_bytes
 
 DRILL_SCHEMA = "tamper_drill.v1"
 
-# Integrity state paths the drill clones.
-_CLONE_MEMBERS = (
-    "quality",
-    "gate_pins.sig",
-    "receipts",
-    "configs",
-    "verifier",
-    # Remaining epoch-stamped corpora — without them the baseline reports
-    # corpus_missing and the drill proves nothing.
-    "artifacts",
-    ".dsh-24x7",
-    "data/metadata",
-    # Crown jewels pin verifier *sources* — without them the baseline clone
-    # reports jewel_missing and the drill proves nothing.
-    "src",
-    "scripts",
-)
-_WORKFLOW_DIR = Path(".github/workflows")
+
+# Integrity state paths the drill clones: every epoch-chained corpus (the
+# whole closed world — an omitted dir reports corpus_missing and the drill
+# proves nothing) plus the root signature file.
+def _clone_members() -> tuple[str, ...]:
+    from quant_fund.research.repo_integrity import CORPORA
+
+    return tuple(dict.fromkeys([c[0] for c in CORPORA] + ["gate_pins.sig"]))
 
 
 def _clone_state(root: Path, clone: Path) -> None:
-    for rel in _CLONE_MEMBERS:
+    for rel in _clone_members():
         src = root / rel
         if src.is_dir():
-            shutil.copytree(src, clone / rel)
+            # Parent/child corpora overlap (e.g. .github re-enters
+            # .github/workflows already cloned) — merge, don't fail.
+            shutil.copytree(src, clone / rel, dirs_exist_ok=True)
         elif src.is_file():
             (clone / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, clone / rel)
-    wf = root / _WORKFLOW_DIR
-    if wf.is_dir():
-        shutil.copytree(wf, clone / _WORKFLOW_DIR)
     # Every crown-pinned file wherever it lives (root files like
     # .gitleaks.toml aren't under the cloned dirs).
     crown = root / "quality/crown_jewels.json"
