@@ -49,6 +49,13 @@ BUNDLE_MEMBERS: tuple[str, ...] = (
     "quality/rekor_pubkey.pem",
 )
 
+# Optional literal members — bundled when the tree has them, never required.
+OPTIONAL_MEMBERS: tuple[str, ...] = (
+    # Quorum registry: without it a quorum-format gate_pins.sig fails the
+    # single-key verifier as signature_file_malformed.
+    "quality/gate_quorum.json",
+)
+
 # Optional members carrying the full checkpoint history: every archived
 # predecessor plus every committed Rekor witness proof. With them the
 # auditor verifies the whole spine offline, not just the head.
@@ -97,6 +104,7 @@ def build_bundle(root: str | Path, out: str | Path) -> Path:
     if proof is None:
         raise ValueError("no witness proof committed — run witness-checkpoint first")
     members = list(BUNDLE_MEMBERS)
+    members += [rel for rel in OPTIONAL_MEMBERS if (root_path / rel).exists()]
     for sub in sorted((root_path / "quality/checkpoints").glob("*.json")):
         members.append(f"quality/checkpoints/{sub.name}")
     for sub in sorted((root_path / "quality/witness").glob(f"{DEFAULT_TARGET.name}_*.json")):
@@ -179,7 +187,7 @@ def verify_bundle(
     for rel in files:
         if rel in BUNDLE_MEMBERS:
             continue
-        if not any(rel.startswith(p) for p in SPINE_PREFIXES):
+        if rel not in OPTIONAL_MEMBERS and not any(rel.startswith(p) for p in SPINE_PREFIXES):
             errors.append(f"unexpected_member:{rel}")
             continue
         b64 = files[rel]

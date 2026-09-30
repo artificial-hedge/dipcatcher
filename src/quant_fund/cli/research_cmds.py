@@ -1724,6 +1724,12 @@ def corpus_proof_cmd(
     check: Path | None = typer.Option(
         None, "--check", help="Verify an existing corpus_proof receipt file instead of making one."
     ),
+    pin: Path | None = typer.Option(
+        None,
+        "--pin",
+        help="Offline mode: verify --check against this epoch_heads.json pin "
+        "instead of the live corpus (third-party audit path).",
+    ),
 ) -> None:
     """Merkle inclusion proof: this member sat in the corpus at epoch N.
 
@@ -1731,19 +1737,49 @@ def corpus_proof_cmd(
     member's leaf to the epoch's Merkle root — so "was this file in the
     corpus then?" verifies offline without re-sending the epoch's whole
     member map. ``--check`` re-derives the root from the path *and* from
-    the referenced epoch receipt and requires both to agree.
+    the referenced epoch receipt and requires both to agree; ``--check``
+    with ``--pin`` verifies against the signed heads pin alone — the
+    third-party path, needing only the proof file plus the quorum-signed,
+    OTS-anchored ``epoch_heads.json``.
     """
     import json as _json
 
     from quant_fund.research.epoch_merkle import (
         member_proof,
         verify_epoch_proof,
+        verify_proof_pin,
     )
 
     if check is not None:
         payload = _json.loads(check.read_text(encoding="utf-8"))
         # Unwrap the receipt.v2 envelope — the proof body lives in "payload".
         body_payload = payload.get("payload", payload)
+        if pin is not None:
+            from quant_fund.research.corpus_epoch import load_heads_pin
+
+            heads = load_heads_pin(pin)
+            corpus_key = body_payload.get("corpus_key")
+            if not isinstance(corpus_key, str):
+                # Older proofs carry no corpus key — the pin is matched on
+                # epoch_receipt name + tree_root instead.
+                corpus_key = next(
+                    (
+                        k
+                        for k, e in heads.items()
+                        if e.get("receipt") == body_payload.get("epoch_receipt")
+                    ),
+                    "",
+                )
+            errors = verify_proof_pin(body_payload, heads.get(corpus_key, {}))
+            for err in errors:
+                typer.echo(f"corpus-proof error: {err}")
+            if errors:
+                raise typer.Exit(code=1)
+            typer.echo(
+                f"corpus-proof verified offline: {body_payload.get('member')} under "
+                f"pin {pin.name} (key={corpus_key})"
+            )
+            return
         errors = verify_epoch_proof(body_payload, check.parent)
         for err in errors:
             typer.echo(f"corpus-proof error: {err}")

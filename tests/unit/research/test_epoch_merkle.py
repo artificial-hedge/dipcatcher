@@ -121,3 +121,123 @@ def test_member_proof_no_epochs_raises(tmp_path: Path) -> None:
     corpus = _corpus(tmp_path, 2)
     with pytest.raises(ValueError, match="no corpus epochs"):
         member_proof(corpus, "r0.json")
+
+
+def test_absence_proof_brackets_gap() -> None:
+    from quant_fund.research.epoch_merkle import absence_proof, merkle_root, verify_absence
+    from quant_fund.utils.hashing import hash_bytes
+
+    mem = {f"{c}.json": hash_bytes(c.encode()) for c in "abcde"}
+    root = merkle_root(mem)
+    for absent in ("bb.json", "0.json", "zz.json"):
+        proof = absence_proof(mem, absent)
+        assert verify_absence(proof, root) == [], absent
+
+
+def test_absence_proof_rejects_forged_index() -> None:
+    """A bound's claimed leaf_index cannot be fudged — path shape binds it."""
+    from quant_fund.research.epoch_merkle import (
+        absence_proof,
+        inclusion_proof,
+        merkle_root,
+        verify_absence,
+    )
+    from quant_fund.utils.hashing import hash_bytes
+
+    mem = {f"{c}.json": hash_bytes(c.encode()) for c in "abcde"}
+    root = merkle_root(mem)
+    # try to "prove" real member c.json absent using a+e with fudged indices
+    b_a = {"member": "a.json", "member_sha256": mem["a.json"], **inclusion_proof(mem, "a.json")}
+    b_e = {
+        "member": "e.json",
+        "member_sha256": mem["e.json"],
+        **inclusion_proof(mem, "e.json"),
+        "leaf_index": 1,
+    }
+    forged = {"name": "c.json", "merkle_root": root, "n_members": 5, "bounds": [b_a, b_e]}
+    assert verify_absence(forged, root) != []
+    # honest bounds for a real gap still pass after tightening
+    assert verify_absence(absence_proof(mem, "bb.json"), root) == []
+
+
+def test_inclusion_index_is_shape_bound() -> None:
+    for n in range(1, 9):
+        from quant_fund.research.epoch_merkle import inclusion_proof, merkle_root, verify_inclusion
+        from quant_fund.utils.hashing import hash_bytes
+
+        mem = {f"m{i}.json": hash_bytes(f"m{i}".encode()) for i in range(n)}
+        root = merkle_root(mem)
+        for name in mem:
+            proof = inclusion_proof(mem, name)
+            assert verify_inclusion(name, mem[name], proof, root)
+            if n > 1:
+                wrong = dict(proof, leaf_index=(proof["leaf_index"] + 1) % n)
+                assert not verify_inclusion(name, mem[name], wrong, root), (n, name)
+
+
+def test_epoch_payload_carries_member_tree_root(tmp_path: Path) -> None:
+    from quant_fund.research.corpus_epoch import epoch_contract_errors, member_tree_root
+    from quant_fund.research.epoch_merkle import merkle_root
+
+    corpus = _corpus(tmp_path)
+    receipt = corpus_epoch(corpus)
+    members = {m["name"]: m["sha256"] for m in receipt["members"]}
+    assert receipt["member_tree_root"] == merkle_root(members) == member_tree_root(members)
+    assert epoch_contract_errors(receipt) == []
+    drifted = dict(receipt, member_tree_root="0" * 64)
+    assert "member_tree_root_mismatch" in epoch_contract_errors(drifted)
+
+
+def test_heads_pin_carries_tree_root(tmp_path: Path) -> None:
+    from quant_fund.research.corpus_epoch import (
+        corpus_epoch,
+        load_heads_pin,
+        update_heads_pin,
+        write_epoch_receipt,
+    )
+
+    corpus = _corpus(tmp_path)
+    pin = tmp_path / "quality" / "epoch_heads.json"
+    receipt_path = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    update_heads_pin(pin, corpus, "*.json", receipt_path)
+    from quant_fund.research.corpus_epoch import epoch_heads_key
+
+    heads = load_heads_pin(pin)
+    entry = heads[epoch_heads_key(corpus, "*.json")]
+    assert entry["tree_root"] == member_tree_root_from_receipt(receipt_path)
+
+
+def member_tree_root_from_receipt(path: Path) -> str:
+    import json as _json
+
+    doc = _json.loads(path.read_text())
+    body = doc.get("payload", doc)
+    return body["member_tree_root"]
+
+
+def test_verify_proof_pin_offline(tmp_path: Path) -> None:
+    """Third-party path: proof + signed heads pin only — no corpus access."""
+    from quant_fund.research.corpus_epoch import (
+        corpus_epoch,
+        load_heads_pin,
+        update_heads_pin,
+        write_epoch_receipt,
+    )
+    from quant_fund.research.epoch_merkle import member_proof, verify_proof_pin
+
+    corpus = _corpus(tmp_path)
+    pin = tmp_path / "quality" / "epoch_heads.json"
+    receipt_path = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    update_heads_pin(pin, corpus, "*.json", receipt_path)
+    from quant_fund.research.corpus_epoch import epoch_heads_key
+
+    pin_entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    proof = member_proof(corpus, "r3.json")
+    assert verify_proof_pin(proof, pin_entry) == []
+    # tampered pin
+    bad = dict(pin_entry, tree_root="f" * 64)
+    assert "merkle_root_not_pinned" in verify_proof_pin(proof, bad)
+    # a proof bound to a different epoch never satisfies this pin
+    new_path = write_epoch_receipt(corpus_epoch(corpus), corpus)  # advance the head
+    proof2 = member_proof(corpus, "r3.json", epoch_receipt=new_path.name)
+    assert "epoch_receipt_not_pinned" in verify_proof_pin(proof2, pin_entry)

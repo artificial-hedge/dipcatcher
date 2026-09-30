@@ -103,6 +103,27 @@ def inclusion_proof(members: Mapping[str, str], name: str) -> dict[str, Any]:
     }
 
 
+def _expected_sides(leaf_index: int, n_members: int) -> list[str | None]:
+    """Per-level sibling side for a leaf — ``None`` on promotion levels.
+
+    The tree shape is a pure function of ``n_members`` (odd tails promote),
+    so ``leaf_index`` fully determines the path's side sequence. Enforcing
+    it binds ``leaf_index`` to the path: a forged index produces a
+    differently-shaped path that cannot recompute the same root — which is
+    what makes adjacency claims in absence proofs unfakeable.
+    """
+    sides: list[str | None] = []
+    pos, ln = leaf_index, n_members
+    while ln > 1:
+        if pos == ln - 1 and ln % 2 == 1:
+            sides.append(None)
+        else:
+            sides.append("right" if pos % 2 == 0 else "left")
+        pos //= 2
+        ln = (ln + 1) // 2
+    return sides
+
+
 def _root_from_proof(leaf: bytes, leaf_index: int, path: list[Mapping[str, str]]) -> bytes:
     node = leaf
     pos = leaf_index
@@ -121,15 +142,34 @@ def verify_inclusion(
     proof: Mapping[str, Any],
     expected_root: str,
 ) -> bool:
-    """True iff the path recomputes ``expected_root`` from the leaf."""
+    """True iff the path recomputes ``expected_root`` from the leaf.
+
+    When ``proof`` carries ``n_members``, the path shape must equal the
+    shape ``(leaf_index, n_members)`` implies — a path for index i can no
+    longer be re-presented as belonging to index j.
+    """
     try:
         leaf = _leaf_hash(name, sha256)
         idx = proof["leaf_index"]
         path = proof["path"]
         if not isinstance(idx, int) or not isinstance(path, list):
             return False
+        n_members = proof.get("n_members")
+        if n_members is not None:
+            if not isinstance(n_members, int) or not (0 <= idx < n_members):
+                return False
+            sides = _expected_sides(idx, n_members)
+            if len(path) != sum(1 for s in sides if s is not None):
+                return False
+            it = iter(path)
+            for want in sides:
+                if want is None:
+                    continue
+                step = next(it)
+                if step.get("side") != want:
+                    return False
         return _root_from_proof(leaf, idx, path).hex() == expected_root
-    except (KeyError, TypeError, ValueError):
+    except (KeyError, TypeError, ValueError, StopIteration):
         return False
 
 
@@ -178,6 +218,8 @@ def member_proof(
         if isinstance(m, Mapping) and "name" in m and "sha256" in m
     }
     proof = inclusion_proof(members, member)
+    from quant_fund.research.corpus_epoch import epoch_heads_key
+
     return {
         "kind": CORPUS_PROOF_SCHEMA,
         "schema": CORPUS_PROOF_SCHEMA,
@@ -185,6 +227,9 @@ def member_proof(
         "live_pnl_claim": False,
         "data_label": "CORPUS",
         "simulated_only": False,
+        "corpus_key": epoch_heads_key(
+            root, str((epoch_payload.get("params") or {}).get("pattern") or "*.json")
+        ),
         "member": member,
         "member_sha256": members[member],
         "epoch_receipt": epoch_path.name,
@@ -209,6 +254,9 @@ def corpus_proof_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append("live_pnl_claim_not_false")
     member = payload.get("member")
     sha = payload.get("member_sha256")
+    corpus_key = payload.get("corpus_key")
+    if corpus_key is not None and not isinstance(corpus_key, str):
+        errors.append("corpus_key_not_str")
     if not isinstance(member, str) or not member:
         errors.append("member_not_str")
     if not (isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha)):
@@ -270,3 +318,95 @@ def verify_epoch_proof(
     if merkle_root(members) != payload["merkle_root"]:
         return ["merkle_root_mismatch"]
     return []
+
+
+def verify_proof_pin(
+    payload: Mapping[str, Any],
+    pin_entry: Mapping[str, Any],
+) -> list[str]:
+    """Offline verification against a heads-pin entry — no corpus access.
+
+    ``pin_entry`` is ``epoch_heads.json["heads"][key]``: the quorum-signed,
+    OTS-anchored root of trust. The proof must name the pinned epoch
+    receipt, carry the pinned ``tree_root``, and recompute it from the
+    leaf+path. A fabricated path cannot anchor to a pin it doesn't hold.
+    """
+    errors = corpus_proof_errors(payload)
+    if errors:
+        return errors
+    if payload.get("epoch_receipt") != pin_entry.get("receipt"):
+        errors.append("epoch_receipt_not_pinned")
+    pinned_root = pin_entry.get("tree_root")
+    if not isinstance(pinned_root, str):
+        errors.append("pin_tree_root_absent")
+    elif payload.get("merkle_root") != pinned_root:
+        errors.append("merkle_root_not_pinned")
+    return errors
+
+
+def absence_proof(members: Mapping[str, str], name: str) -> dict[str, Any]:
+    """Proof that ``name`` is NOT committed in the sorted member tree.
+
+    Emits the two name-sorted neighbors bracketing the gap, each with its
+    own inclusion path. ``leaf_index`` is cryptographically bound — the
+    path recomputes the root only at its true position — so adjacent
+    ``leaf_index`` values (``hi == lo + 1``) prove no member can sit
+    between them. Edge names get a single bound; an empty corpus proves
+    absence with no bounds.
+    """
+    if name in members:
+        raise ValueError(f"{name!r} is a member — use inclusion_proof")
+    names = sorted(members)
+    lo = next((n for n in reversed(names) if n < name), None)
+    hi = next((n for n in names if n > name), None)
+    bounds: list[dict[str, Any]] = []
+    for n in (b for b in (lo, hi) if b is not None):
+        p = inclusion_proof(members, n)
+        bounds.append({"member": n, "member_sha256": members[n], **p})
+    return {
+        "name": name,
+        "merkle_root": merkle_root(members),
+        "n_members": len(names),
+        "bounds": bounds,
+    }
+
+
+def verify_absence(proof: Mapping[str, Any], expected_root: str) -> list[str]:
+    """Verify a bounding-pair absence proof against a trusted root."""
+    errors: list[str] = []
+    name = proof.get("name")
+    bounds = proof.get("bounds")
+    if not isinstance(name, str) or not name:
+        return ["name_missing"]
+    if not isinstance(bounds, list):
+        return ["bounds_missing"]
+    if proof.get("merkle_root") != expected_root:
+        errors.append("merkle_root_mismatch")
+    if proof.get("n_members") == 0 and bounds:
+        errors.append("empty_tree_with_bounds")
+    idxs: list[int] = []
+    for b in bounds:
+        if not isinstance(b, Mapping):
+            return ["bound_malformed"]
+        bname = b.get("member")
+        if not isinstance(bname, str) or bname == name:
+            return ["bound_not_neighbor"]
+        if not verify_inclusion(bname, str(b.get("member_sha256", "")), b, expected_root):
+            errors.append(f"bound_invalid:{bname}")
+            continue
+        idxs.append(int(b["leaf_index"]))
+        if not (bname < name or bname > name):
+            errors.append("bound_self")
+    if errors:
+        return errors
+    if len(idxs) == 2 and idxs[1] - idxs[0] != 1:
+        errors.append("bounds_not_adjacent")
+    if len(idxs) == 1 and isinstance(proof.get("n_members"), int) and int(proof["n_members"]) > 1:
+        b = bounds[0]
+        bname = str(b["member"])
+        edge_ok = (bname < name and int(b["leaf_index"]) == int(proof["n_members"]) - 1) or (
+            bname > name and int(b["leaf_index"]) == 0
+        )
+        if not edge_ok:
+            errors.append("single_bound_not_edge")
+    return sorted(set(errors))

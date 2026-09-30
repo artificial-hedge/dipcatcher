@@ -39,13 +39,17 @@ def _build(tmp_path: Path) -> Path:
 
 @requires_tree
 def test_build_bundle_contains_all_members(tmp_path: Path) -> None:
-    from quant_fund.research.auditor_bundle import BUNDLE_MEMBERS, BUNDLE_SCHEMA
+    from quant_fund.research.auditor_bundle import (
+        BUNDLE_MEMBERS,
+        BUNDLE_SCHEMA,
+        OPTIONAL_MEMBERS,
+    )
 
     bundle = json.loads(_build(tmp_path).read_text())
     assert bundle["schema"] == BUNDLE_SCHEMA
     assert set(BUNDLE_MEMBERS) <= set(bundle["files"])
-    # spine members ride along: archived checkpoints + witness proofs
-    assert not (set(bundle["files"]) - set(BUNDLE_MEMBERS)) - {
+    # spine members + declared optionals ride along; nothing else
+    assert not (set(bundle["files"]) - set(BUNDLE_MEMBERS) - set(OPTIONAL_MEMBERS)) - {
         r for r in bundle["files"] if r.startswith(("quality/checkpoints/", "quality/witness/"))
     }
     assert bundle["witness_proof"]["schema"] == "integrity_witness.v1"

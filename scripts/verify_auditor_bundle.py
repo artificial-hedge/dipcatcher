@@ -54,6 +54,9 @@ MEMBERS = (
     "quality/witness_signing.pub",
     "quality/rekor_pubkey.pem",
 )
+# Optional literal members — bundled when present, never required.
+OPTIONAL_MEMBERS = ("quality/gate_quorum.json",)
+
 # Optional members: the archived checkpoint records and every committed
 # Rekor proof. Carrying them lets this script verify the whole spine —
 # every historical pin state — not just the head checkpoint.
@@ -231,8 +234,10 @@ def _verify_spine(
     verdict and ``checkpoint_chain.checkpoint_spine`` is itself a finding.
     """
     for rel in files:
-        if rel not in MEMBERS and not (
-            any(rel.startswith(p) for p in SPINE_PREFIXES) and rel.endswith(".json")
+        if (
+            rel not in MEMBERS
+            and rel not in OPTIONAL_MEMBERS
+            and not (any(rel.startswith(p) for p in SPINE_PREFIXES) and rel.endswith(".json"))
         ):
             errors.append(f"unexpected_member:{rel}")
     records: dict[str, bytes] = {}
@@ -411,10 +416,11 @@ def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
     declared: dict[str, str] = bundle.get("files_sha256", {})
     proof: dict[str, Any] = bundle.get("witness_proof", {})
     decoded: dict[str, bytes] = {}
-    for rel in MEMBERS:
+    for rel in (*MEMBERS, *OPTIONAL_MEMBERS):
         b64 = files.get(rel)
         if b64 is None:
-            errors.append(f"missing:{rel}")
+            if rel not in OPTIONAL_MEMBERS:
+                errors.append(f"missing:{rel}")
             continue
         try:
             raw = base64.b64decode(b64)
@@ -528,7 +534,46 @@ def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
             errors.append(f"pinned_file_missing:{rel}")
         elif _sha(member).hex() != want:
             errors.append(f"pin_drift:{rel}")
-    if not _ed25519_verify(gate_pub_hex, str(sigfile.get("signature", "")), _canon(sig_payload)):
+    quorum_raw = decoded.get("quality/gate_quorum.json")
+    if quorum_raw is not None:
+        # gate_signatures.v2: M-of-N registered signers; each entry verifies
+        # under the pubkey the committed registry assigns to its key_id.
+        try:
+            registry = json.loads(quorum_raw)
+            keys = registry["keys"]
+            threshold = int(registry["threshold"])
+            registered = {str(e["key_id"]): str(e["pubkey"]) for e in keys}
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            errors.append("registry_malformed")
+            registered, threshold = {}, 1
+        if sigfile.get("schema") != "gate_signatures.v2":
+            errors.append("quorum_sig_missing")
+        sigs = sigfile.get("signatures")
+        if not isinstance(sigs, list) or not sigs:
+            errors.append("quorum_sig_missing")
+            sigs = []
+        seen: set[str] = set()
+        valid = 0
+        for entry in sigs:
+            if not isinstance(entry, dict):
+                errors.append("signature_malformed")
+                continue
+            kid = str(entry.get("key_id", ""))
+            pub = registered.get(kid)
+            if pub is None:
+                errors.append(f"unknown_signer:{kid}")
+                continue
+            if kid in seen:
+                errors.append(f"duplicate_signer:{kid}")
+                continue
+            seen.add(kid)
+            if _ed25519_verify(pub, str(entry.get("signature", "")), _canon(sig_payload)):
+                valid += 1
+            else:
+                errors.append(f"signature_invalid:{kid}")
+        if valid < threshold:
+            errors.append(f"quorum_not_met:{valid}/{threshold}")
+    elif not _ed25519_verify(gate_pub_hex, str(sigfile.get("signature", "")), _canon(sig_payload)):
         errors.append("gate_pins_signature_invalid")
 
     _verify_spine(files, declared, checkpoint_raw, gate_pub_hex, errors)

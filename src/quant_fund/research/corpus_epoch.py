@@ -40,7 +40,18 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from quant_fund.research.epoch_merkle import merkle_root
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+
+def member_tree_root(members: Mapping[str, str]) -> str:
+    """RFC 6962-style Merkle root (domain-separated) over ``{name: sha256}``.
+
+    Bound into the epoch payload and the heads pin so a ``corpus_proof.v1``
+    verifies against the pin alone — no epoch-receipt fetch needed.
+    """
+    return merkle_root(members) if members else hash_bytes(b"")
+
 
 EPOCH_SCHEMA = "corpus_epoch.v1"
 GENESIS_PREV = "0" * 64
@@ -239,6 +250,7 @@ def corpus_epoch(
         ),
         "params": ({"head_sha": head_sha} if head_sha else {}) | {"pattern": pattern},
         "epoch_root_sha256": epoch_root(members),
+        "member_tree_root": member_tree_root(members),
         "members": [{"name": n, "sha256": s} for n, s in members.items()],
         "n_members": len(members),
         "prev_epoch_sha256": prev_root,
@@ -286,6 +298,16 @@ def epoch_contract_errors(payload: Mapping[str, Any]) -> list[str]:
                 errors.append("epoch_root_mismatch")
         except ValueError:
             errors.append("member_digest_not_hex")
+    tree = payload.get("member_tree_root")
+    if tree is not None:
+        if not (isinstance(tree, str) and len(tree) == 64):
+            errors.append("member_tree_root")
+        elif member_map:
+            try:
+                if member_tree_root(member_map) != tree:
+                    errors.append("member_tree_root_mismatch")
+            except (ValueError, KeyError):
+                errors.append("member_digest_not_hex")
     prev = payload.get("prev_epoch_sha256")
     if not (isinstance(prev, str) and len(prev) == 64):
         errors.append("prev_epoch_sha256")
@@ -352,7 +374,13 @@ def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
             and isinstance(entry.get("sha256"), str)
             and len(entry["sha256"]) == 64
         ):
-            heads[key] = {"receipt": entry["receipt"], "sha256": entry["sha256"]}
+            record = {"receipt": entry["receipt"], "sha256": entry["sha256"]}
+            tree_root = entry.get("tree_root")
+            if tree_root is not None:
+                if not (isinstance(tree_root, str) and len(tree_root) == 64):
+                    raise ValueError(f"heads pin entry {key!r} malformed")
+                record["tree_root"] = tree_root
+            heads[key] = record
         else:
             raise ValueError(f"heads pin entry {key!r} malformed")
     return heads
@@ -373,10 +401,19 @@ def update_heads_pin(
     path = Path(pin_path)
     key = epoch_heads_key(corpus_dir, pattern)
     heads = load_heads_pin(path) if path.is_file() else {}
+    try:
+        head_doc = json.loads(head_receipt.read_bytes())
+    except (OSError, ValueError):
+        head_doc = {}
+    payload = head_doc.get("payload") if isinstance(head_doc, Mapping) else None
+    body = payload if isinstance(payload, Mapping) else head_doc
+    tree_root = body.get("member_tree_root") if isinstance(body, Mapping) else None
     heads[key] = {
         "receipt": head_receipt.name,
         "sha256": hash_bytes(head_receipt.read_bytes()),
     }
+    if isinstance(tree_root, str) and len(tree_root) == 64:
+        heads[key]["tree_root"] = tree_root
     from quant_fund.utils.atomicio import atomic_write_text
 
     payload = {"schema": "epoch_heads.v1", "heads": heads}
