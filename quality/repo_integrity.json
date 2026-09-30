@@ -12,7 +12,15 @@
       "errors": [],
       "ok": true
     },
+    "epoch:.dsh-24x7": {
+      "errors": [],
+      "ok": true
+    },
     "epoch:.github/workflows": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:artifacts": {
       "errors": [],
       "ok": true
     },
@@ -70,15 +78,17 @@
       "verifier",
       "quality",
       ".github/workflows",
-      "configs"
+      "configs",
+      "artifacts",
+      ".dsh-24x7"
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "4bb7b8a38bb04b708ff8ddeb1e2ae16c2833b0065b90cf7b09f767a8395aea9e",
-    "epoch_heads_sha256": "0f204e999b5348370b798447e50558584a54d4fd8332ef9b5f3bcc072a4fc8ee",
+    "crown_jewels_sha256": "2452a2487002e4f971ec12f8e0d58acb00e2eaf1a1d6d620e54e35fb687383ff",
+    "epoch_heads_sha256": "5439cbb80737e0224788d1b2a2b1f8c7f5b46e0fd945e093fad8ecae8bfb05c6",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "1f33a85a7ffbe256e4629b4786ca9a4a65de88eafa13296b541444e6a28c2f97",
+  "receipt_sha256": "000c03dd8a9824e84451b58d285bb939bd383573d581b604fbc9cb7daff73866",
   "schema": "repo_integrity.v1"
 }
