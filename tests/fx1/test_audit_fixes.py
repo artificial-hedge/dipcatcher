@@ -323,6 +323,30 @@ def test_ledger_falsy_claim_values_are_clean(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
+# ledger.py — a failed append must not fork memory away from disk
+# ---------------------------------------------------------------------------
+def test_corpus_ledger_failed_write_does_not_fork_the_chain(tmp_path: Path):
+    from fx1.data.ledger import GENESIS, CorpusLedger
+
+    blocker = tmp_path / "blocker"
+    blocker.write_text("x", encoding="utf-8")  # a file, not a dir
+    ledger = CorpusLedger(blocker / "ledger.jsonl")  # parent is a file → write fails
+    with pytest.raises(OSError):
+        ledger.record_example(
+            source_sha256="a" * 64, transform_sha256="b" * 64, example_sha256="c" * 64
+        )
+    # The failed entry never entered the chain — otherwise a later append
+    # would chain over a link the file on disk never recorded.
+    assert ledger.audit_export()["entries"] == 0
+
+    good = CorpusLedger(tmp_path / "ok" / "ledger.jsonl")
+    good.record_example(source_sha256="a" * 64, transform_sha256="b" * 64, example_sha256="c" * 64)
+    reloaded = CorpusLedger(tmp_path / "ok" / "ledger.jsonl")
+    assert reloaded.verify_chain()
+    assert reloaded.audit_export()["chain_head"] != GENESIS
+
+
+# ---------------------------------------------------------------------------
 # hypotheses.py — forbidden tokens hidden in compound score keys + non-finite
 # ---------------------------------------------------------------------------
 def test_trace_scores_reject_forbidden_compound_keys_and_nan():
