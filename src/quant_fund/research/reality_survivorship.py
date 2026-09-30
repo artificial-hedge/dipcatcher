@@ -899,7 +899,10 @@ def fetch_yahoo_members(
             print(f"fetch {index}/{len(symbols)} {ticker}", flush=True)
         try:
             frame, actions = _fetch_one(ticker, start=start, end=end, cache=cache, events=events)
-        except Exception as exc:
+        except (OSError, ValueError, KeyError, TypeError, pl.exceptions.PolarsError) as exc:
+            # Fetch faults are network/HTTP (OSError covers urllib errors),
+            # parse faults are ValueError/KeyError/TypeError, parquet IO faults
+            # are PolarsError; failures are recorded, prices never invented.
             failures.append({"ticker": ticker, "error": f"{type(exc).__name__}: {exc}"})
             continue
         if frame is None:

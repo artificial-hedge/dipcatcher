@@ -1,0 +1,36 @@
+{
+  "alarm_index": null,
+  "alarmed": false,
+  "alpha": 0.05,
+  "data_label": "yahoo_eod",
+  "drill": {
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "n_eval": 300,
+    "n_train": 1000,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "stream": "gaussian_minus_conf_t_pinball",
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "evidence": [
+    "conformal_pvalues_exchangeability",
+    "kappa_martingale_stopping_valid",
+    "nonparametric_distribution_shift"
+  ],
+  "final_martingale": 1.9967505694246255e-28,
+  "kappa": 0.5,
+  "kind": "conformal_monitor.v1",
+  "live_pnl_claim": false,
+  "mode": "fixed",
+  "n_inconclusive": 0,
+  "n_obs": 300,
+  "receipt_sha256": "f71a5f7c5b6f461c50d1501941a6aea9faede3e0b4775ecd94fb326491c96d8d",
+  "research_only": true,
+  "window": 50
+}

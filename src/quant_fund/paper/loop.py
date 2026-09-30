@@ -81,6 +81,17 @@ def _require_valuation_marks(broker: SimulatedBroker, prices: dict[str, float]) 
         )
 
 
+def _prior_divergence_samples(prior: dict[str, Any] | None) -> int:
+    """Divergence-sample count a prior promotion receipt's mean covers."""
+    if prior is None:
+        return 0
+    for key in ("n_divergence_samples", "n_steps"):
+        raw = prior.get(key)
+        if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0:
+            return raw
+    return 0
+
+
 def _merge_divergence_summary(
     prior: dict[str, Any] | None, current: list[float], *, total_steps: int
 ) -> tuple[float, float]:
@@ -97,11 +108,14 @@ def _merge_divergence_summary(
     prior_max = float("nan")
     if prior is not None:
         try:
-            # The prior receipt's mean covers every step before this run; the
-            # current samples are the ones taken since resume. Weight the prior
-            # mean by its own sample count (cumulative steps minus current),
-            # not by prior["n_steps"] minus current (which double-discounts).
-            prior_n = max(int(total_steps) - len(finite_current), 0)
+            # The prior receipt's mean covers every divergence sample recorded
+            # before this run. Weight it by that exact count when the receipt
+            # carries it; legacy receipts fall back to n_steps (a step where
+            # the loop broke on nonpositive NAV still emits a sample, so
+            # cumulative-steps-minus-current is only the last resort).
+            prior_n = _prior_divergence_samples(prior)
+            if prior_n <= 0:
+                prior_n = max(int(total_steps) - len(finite_current), 0)
             prior_mean = float(prior.get("mean_l1", float("nan")))
             prior_max = float(prior.get("max_l1", float("nan")))
         except (TypeError, ValueError):
@@ -437,19 +451,29 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
     dates = sorted(px["event_time"].unique().to_list())
     if prior_state and prior_state.get("resume_fingerprint"):
         prior_cutoff = _parse_iso(prior_state.get("last_exec"))
-        if prior_cutoff is not None:
-            current_fingerprint = _paper_resume_fingerprint(px, config, prior_cutoff)
-            if current_fingerprint != prior_state["resume_fingerprint"]:
-                raise ValueError(
-                    "resume input/config fingerprint mismatch; refusing to replay altered evidence"
-                )
+        if prior_cutoff is None:
+            raise ValueError(
+                "cannot resume: last_exec is missing or unparseable; "
+                "refusing to skip the input/config fingerprint check"
+            )
+        current_fingerprint = _paper_resume_fingerprint(px, config, prior_cutoff)
+        if current_fingerprint != prior_state["resume_fingerprint"]:
+            raise ValueError(
+                "resume input/config fingerprint mismatch; refusing to replay altered evidence"
+            )
     use_next_open = (
         config.execution.fill is FillConvention.NEXT_OPEN
         and not config.execution.allow_close_auction
     )
     # Decision dates: all but last when next-open
     decision_dates = dates[:-1] if use_next_open and len(dates) > 1 else dates
-    skip_after = _parse_iso(prior_state.get("last_decision")) if prior_state else None
+    raw_last_decision = prior_state.get("last_decision") if prior_state else None
+    skip_after = _parse_iso(raw_last_decision) if raw_last_decision else None
+    if raw_last_decision is not None and skip_after is None:
+        raise ValueError(
+            "cannot resume: last_decision is unparseable; "
+            "refusing to replay already-executed decision dates"
+        )
     if skip_after is not None:
         decision_dates = [d for d in decision_dates if d > skip_after]
     if max_steps is not None:
@@ -853,6 +877,10 @@ def run_paper_loop(  # noqa: C901 — main is 75; the repo ceiling stays 74
         mean_l1=mean_l1,
         max_l1=max_l1,
         n_steps=step,
+        n_divergence_samples=(
+            _prior_divergence_samples(prior_promo)
+            + len([value for value in div_series if np.isfinite(value)])
+        ),
         champion_nav=champ_nav,
         shadow_gross=shadow_gross,
         max_mean_l1=float(getattr(config.paper, "promote_max_mean_l1", 0.25)),
