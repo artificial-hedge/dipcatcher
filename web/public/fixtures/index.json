@@ -1,8 +1,7 @@
 {
- "generated_at": "2026-09-30T10:33:17.278015+00:00",
+ "generated_at": "2026-09-30T10:34:41.360517+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
-  "10e8a744f1212c3fdd0343455e9044c4e5ad2784f57491e47954bb2f10ac6766": "src/quant_fund/research/real_benchmark.py",
   "2728625ace9f0951684988f6a6013cc8de040d4a9c7d1d6d084ce6c075b0a9ed": "src/quant_fund/public.py",
   "67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98": "receipts/fleet_eval_5ddf15b0dc7d3ca1.json",
   "77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d": "receipts/evidence_audit_3464d8f8197bf737.json",
@@ -428,7 +427,7 @@
    "file": "receipts/real_benchmark_us_wide_manifest.json",
    "id": "real_benchmark_us_wide_manifest",
    "live_pnl_claim": false,
-   "n_hash_matches": 1,
+   "n_hash_matches": 0,
    "n_hashes": 3,
    "research_only": true,
    "schema": null
@@ -621,7 +620,7 @@
    "schema": null
   }
  ],
- "repo_revision": "937040036a4fe0d5a6dcd3118f7ea8e5f626880f",
+ "repo_revision": "a3664a7dbb10de95b8a4baf251d2148533c97376",
  "strategies": [
   {
    "data_source": "UNVERIFIED",
