@@ -72,6 +72,9 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # land between stamps (unstamped = informational, not error), but a
     # stamped member is immutable: .npz mutation after stamping is tamper.
     (".dsh-24x7", "*", False, False, ()),
+    # Committed dataset manifests + validation outputs — inputs the
+    # data_manifest receipts pin; write-once dated dirs, stamped arrivals.
+    ("data/metadata", "*", True, False, ()),
 )
 
 

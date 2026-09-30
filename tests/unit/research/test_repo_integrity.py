@@ -12,7 +12,7 @@ from quant_fund.research.repo_integrity import (
 
 
 def _git_repo(tmp_path: Path) -> Path:
-    """Minimal tree satisfying every gate: 12 jewels + 7 stamped corpora."""
+    """Minimal tree satisfying every gate: 12 jewels + 8 stamped corpora."""
     import subprocess
 
     from quant_fund.research.corpus_epoch import (
@@ -44,6 +44,7 @@ def _git_repo(tmp_path: Path) -> Path:
         ("configs", "*"),
         ("artifacts", "*"),
         (".dsh-24x7", "*"),
+        ("data/metadata", "*"),
     ):
         d = root / corpus_dir
         d.mkdir(parents=True, exist_ok=True)
@@ -104,6 +105,7 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
         "epoch:configs",
         "epoch:artifacts",
         "epoch:.dsh-24x7",
+        "epoch:data/metadata",
     }
 
 
@@ -209,6 +211,7 @@ def test_verify_repo_evidence_only_bundle(tmp_path: Path) -> None:
         "configs",
         "artifacts",
         ".dsh-24x7",
+        "data/metadata",
     ):
         shutil.copytree(full / d, bundle / d)
     shutil.copytree(full / ".github", bundle / ".github")
@@ -247,6 +250,7 @@ def test_repo_integrity_receipt_records_evidence_only_mode(tmp_path: Path) -> No
         "configs",
         "artifacts",
         ".dsh-24x7",
+        "data/metadata",
     ):
         shutil.copytree(full / d, bundle / d)
     shutil.copytree(full / ".github", bundle / ".github")

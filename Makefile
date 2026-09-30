@@ -208,6 +208,7 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
 	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
 	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped
 	uv run dipcatcher crown-jewels --check
 	uv run dipcatcher verify-witness
 	uv run dipcatcher verify-repo

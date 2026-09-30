@@ -16,6 +16,10 @@
       "receipt": "corpus_epoch_964d4f81da22979e.json",
       "sha256": "34afc9be3cf10246660d5ff1192ac9a1e0ea50bb4835597526f1599da37ed12a"
     },
+    "data/metadata/*": {
+      "receipt": "corpus_epoch_c202a4bc3961ab8c.json",
+      "sha256": "309c7366349f8010324803dc2afd3a9958b1b038e31678f1d90d45957245090b"
+    },
     "quality/*.json": {
       "receipt": "corpus_epoch_95a1f045740ea682.json",
       "sha256": "9e0d69ee9a99021717568f8c03a71c5b3eb381157724779ef6fefdd84c14e545"
