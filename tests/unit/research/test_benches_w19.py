@@ -53,6 +53,7 @@ _HAS_TORCH = _torch_present()
 
 _FAMILIES = (
     "langevin_impact",
+    "event_time_flow",
     "fukasawa_iv",
     "ivs_diffusion",
     "rccp",
@@ -61,15 +62,13 @@ _FAMILIES = (
 # The numpy/scipy families whose modules have landed on this branch.
 _LANDED_NUMPY_BLOBS = (
     "langevin_impact",
+    "event_time_flow",
     "fukasawa_iv",
     "rccp",
     "dcp",
 )
-# May return {} (torch extra absent, or lane module not yet merged).
-_SOFT_BLOBS = (
-    "event_time_flow",
-    "ivs_diffusion",
-)
+# May return {} (torch extra absent).
+_SOFT_BLOBS = ("ivs_diffusion",)
 # Torch-gated family whose science leg runs only when the blob emitted.
 _TORCH_BLOBS = ("ivs_diffusion",)
 
@@ -227,6 +226,31 @@ def test_dcp_inversion_and_cqr_reduction(dcp: dict[str, float]) -> None:
     assert dcp["SYNTHETIC_n_cal"] == 400.0
 
 
+def test_event_time_flow_clock_distortions(
+    event_time_flow: dict[str, float],
+) -> None:
+    # Angstmann & Gebbie 2026: the event-time propagator recovers the
+    # planted kernel exactly (rel-L2 ~1e-14), the pareto clock produces
+    # the mu*gamma calendar-time distortion (sim vs theory slope), and
+    # the apparent-kernel MC matches its closed form within a percent.
+    blob = event_time_flow
+    assert blob["synthetic_kernel_l2_rel_error"] < 1e-8
+    assert blob["synthetic_sign_slope_calendar_pareto"] == pytest.approx(
+        blob["synthetic_sign_slope_calendar_theory"], abs=0.05
+    )
+    assert blob["synthetic_impact_slope_calendar_pareto"] == pytest.approx(
+        blob["synthetic_impact_slope_calendar_theory"], abs=0.05
+    )
+    # Operational-time conditioning recovers the true event law in bulk
+    # (slope nearer the true -0.5/0.5 than the distorted calendar read).
+    assert abs(blob["synthetic_impact_slope_operational"] - 0.5) < abs(
+        blob["synthetic_impact_slope_calendar_pareto"] - 0.5
+    )
+    assert blob["synthetic_apparent_kernel_mc_max_rel_err"] < 0.05
+    assert blob["synthetic_event_anchored_max_abs_err"] < 0.1
+    assert blob["synthetic_hawkes_fano_max"] > 1.0
+
+
 def test_ivs_diffusion_noarb_and_hedge(ivs_diffusion: dict[str, float]) -> None:
     if not _HAS_TORCH or not ivs_diffusion:
         pytest.skip("ivs_diffusion requires the nn extra (torch)")
@@ -247,6 +271,7 @@ def test_ivs_diffusion_noarb_and_hedge(ivs_diffusion: dict[str, float]) -> None:
 
 def test_numpy_benches_are_deterministic(
     langevin_impact: dict[str, float],
+    event_time_flow: dict[str, float],
     fukasawa_iv: dict[str, float],
     rccp: dict[str, float],
     dcp: dict[str, float],
@@ -254,6 +279,7 @@ def test_numpy_benches_are_deterministic(
     # Seeded from module constants, so a fresh call must reproduce the
     # fixture bit-for-bit.
     assert bench_langevin_impact() == langevin_impact
+    assert bench_event_time_flow() == event_time_flow
     assert bench_fukasawa_iv() == fukasawa_iv
     assert bench_rccp() == rccp
     assert bench_dcp() == dcp

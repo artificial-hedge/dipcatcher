@@ -147,6 +147,7 @@ from quant_fund.research.benches_w18 import (
 )
 from quant_fund.research.benches_w19 import (
     bench_dcp,
+    bench_event_time_flow,
     bench_fukasawa_iv,
     bench_ivs_diffusion,
     bench_langevin_impact,
@@ -1816,6 +1817,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "fase_eval": bench_fase_eval(),
         "kit_paths": bench_kit_paths(),
         "langevin_impact": bench_langevin_impact(),
+        "event_time_flow": bench_event_time_flow(),
         "fukasawa_iv": bench_fukasawa_iv(),
         "ivs_diffusion": bench_ivs_diffusion(),
         "rccp": bench_rccp(),

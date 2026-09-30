@@ -212,10 +212,9 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # post-training penalties (arXiv:2609.13402, torch-gated), and the
         # RCCP retrieval-corrected (arXiv:2608.10553) + DCP
         # distribution-aware (arXiv:2605.26569) conformal frameworks.
-        # Same SYNTHETIC diagnostic contract. event_time_flow activates
-        # with its lane branch (the benches_w19 adapter already carries
-        # the ImportError -> {} fallback).
+        # Same SYNTHETIC diagnostic contract.
         "langevin_impact",
+        "event_time_flow",
         "fukasawa_iv",
         "ivs_diffusion",
         "rccp",
