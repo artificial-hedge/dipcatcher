@@ -265,6 +265,7 @@ src/quant_fund/microstructure/lob_exec.py
 src/quant_fund/microstructure/lobster.py
 src/quant_fund/microstructure/order_lifetime.py
 src/quant_fund/microstructure/propagator_real.py
+src/quant_fund/microstructure/quote_place.py
 src/quant_fund/microstructure/rl_market_maker.py
 src/quant_fund/microstructure/sign_autocorr_real.py
 src/quant_fund/microstructure/sim_real_ledger.py
