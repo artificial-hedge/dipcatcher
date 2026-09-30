@@ -24,7 +24,12 @@ Attestation states reported per anchor:
   claim is pending.
 - ``bitcoin:<height>`` — the stamp claims inclusion in that block. Without a
   committed header this is ``inclusion_unverified`` (the calendar's claim);
-  with one it reports ``pow_verified``/``pow_invalid``.
+  with one it reports ``pow_verified``/``pow_invalid``. ``pow_verified``
+  means the claimed block header carries real proof-of-work (the block
+  exists and was mined) — proving our digest is *inside* that block's
+  coinbase additionally needs the block's transaction merkle path, which
+  ``ots-upgrade`` does not fetch; the leaf→block binding stays the
+  calendar's claim until a full-block check.
 
 Honesty contract: no anchors = neutral; malformed tokens, imprint mismatches,
 and trailing bytes are hard errors; a stale target reports ``fresh=False``
@@ -333,6 +338,113 @@ def stamp_ots(
         json.dumps({"schema": OTS_SCHEMA, "anchors": anchors}, indent=2, sort_keys=True) + "\n",
     )
     return ts_dir / name
+
+
+DEFAULT_EXPLORER = "https://blockstream.info/api"
+
+
+def _get(url: str, timeout: float) -> bytes:
+    req = urllib.request.Request(url, headers={"Accept": "application/octet-stream"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
+        return bytes(resp.read())
+
+
+def _fetch_header(height: int, *, explorer: str, timeout: float) -> bytes | None:
+    """block-height → block hash → 80-byte header, via the explorer API."""
+    try:
+        block_hash = _get(explorer.rstrip("/") + f"/block-height/{height}", timeout).strip()
+        raw = _get(explorer.rstrip("/") + f"/block/{block_hash.decode()}/header", timeout).strip()
+        header = bytes.fromhex(raw.decode())
+    except Exception:  # noqa: BLE001 — explorer outage skips, not fails
+        return None
+    return header if len(header) == 80 else None
+
+
+def upgrade_ots(
+    *,
+    root: str | Path = ".",
+    ots_dir: Path = OTS_DIR,
+    manifest: Path = OTS_MANIFEST,
+    explorer: str = DEFAULT_EXPLORER,
+    timeout: float = 20.0,
+) -> dict[str, Any]:
+    """Upgrade pending anchors: poll calendars for Bitcoin confirmations.
+
+    For each manifest entry whose proof is still ``pending``, query every
+    calendar URI named in its own attestations for the upgraded timestamp
+    (``GET <calendar>/timestamp/<digest-hex>``). A response that parses
+    against the anchored digest and carries a ``bitcoin`` attestation
+    replaces the ``.ots`` (atomic write); the claimed block header is then
+    fetched from ``explorer`` and committed as ``<name>.<height>.hdr`` so
+    ``verify_ots`` can self-verify its PoW — no API trust at verify time.
+
+    States per anchor: ``upgraded:<height>``, ``still_pending``,
+    ``no_bitcoin_attestation``, ``upgrade_malformed:<e>``, ``hdr_unavailable``.
+    """
+    from quant_fund.utils.atomicio import atomic_write_bytes
+
+    root_path = Path(root)
+    tdir = root_path / ots_dir
+    try:
+        body = json.loads((root_path / manifest).read_text())
+    except (OSError, ValueError):
+        body = {}
+    anchors = body.get("anchors") if body.get("schema") == OTS_SCHEMA else None
+    if not isinstance(anchors, dict) or not anchors:
+        return {"ok": False, "upgraded": [], "errors": ["ots_manifest_malformed"]}
+    results: dict[str, list[str]] = {}
+    upgraded: list[str] = []
+    errors: list[str] = []
+    for name, entry in sorted(anchors.items()):
+        label = str(entry.get("target", "")) or name
+        token_path = tdir / name
+        declared = str(entry.get("sha256", ""))
+        states: list[str] = []
+        try:
+            digest_bytes = bytes.fromhex(declared)
+            atts = parse_ots(token_path.read_bytes(), digest_bytes)
+        except (OtsError, ValueError, OSError) as exc:
+            errors.append(f"ots_malformed:{name}:{exc}")
+            results[label] = [f"ots_malformed:{exc}"]
+            continue
+        calendars = sorted({a["uri"] for a in atts if a["kind"] == "pending"})
+        if any(a["kind"] == "bitcoin" for a in atts):
+            states.append("already_bitcoin")
+        elif not calendars:
+            states.append("still_pending")
+        else:
+            for cal in calendars:
+                try:
+                    body2 = _get(cal.rstrip("/") + f"/timestamp/{declared}", timeout)
+                    probe: list[dict[str, Any]] = []
+                    off = _parse_node(body2, 0, digest_bytes, probe, 0)
+                    if off != len(body2):
+                        raise OtsError("trailing bytes")
+                except OtsError as exc:
+                    states.append(f"upgrade_malformed:{exc}")
+                    continue
+                except Exception:  # noqa: BLE001 — dead calendar skips
+                    continue
+                heights = [a["height"] for a in probe if a["kind"] == "bitcoin"]
+                if not heights:
+                    states.append("no_bitcoin_attestation")
+                    continue
+                detached = OTS_MAGIC + bytes([OP_SHA256]) + digest_bytes + body2
+                atomic_write_bytes(token_path, detached)
+                for height in sorted(set(heights)):
+                    hdr = _fetch_header(int(height), explorer=explorer, timeout=timeout)
+                    if hdr is None:
+                        states.append(f"bitcoin:{height}:hdr_unavailable")
+                    else:
+                        atomic_write_bytes(tdir / f"{Path(name).stem}.{height}.hdr", hdr)
+                        states.append(f"upgraded:{height}")
+                upgraded.append(name)
+                break
+            else:
+                if not states:
+                    states.append("still_pending")
+        results[label] = states
+    return {"ok": not errors, "upgraded": upgraded, "anchors": results, "errors": sorted(errors)}
 
 
 def verify_ots(

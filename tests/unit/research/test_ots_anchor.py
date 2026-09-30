@@ -186,3 +186,88 @@ def test_verify_ots_bitcoin_with_header(tmp_path: Path) -> None:
     res = verify_ots(root)
     assert res["ok"]
     assert res["attestations"]["quality/epoch_heads.json"] == ["bitcoin:650000:pow_verified"]
+
+
+def _pending_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, bytes]:
+    """Repo with a stamped pending anchor; returns (root, digest)."""
+    import quant_fund.research.ots_anchor as mod
+
+    root = _repo_with_target(tmp_path)
+    target_bytes = (root / "quality/epoch_heads.json").read_bytes()
+    digest = hashlib.sha256(target_bytes).digest()
+
+    class _Resp:
+        def __init__(self, body: bytes) -> None:
+            self._b = body
+
+        def read(self) -> bytes:
+            return self._b
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    monkeypatch.setattr(
+        mod.urllib.request, "urlopen", lambda req, timeout=None: _Resp(CALENDAR_RESP)
+    )
+    stamp_ots("quality/epoch_heads.json", root=root, calendars=("https://x",))
+    return root, digest
+
+
+def test_upgrade_ots_confirms_and_commits_header(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import quant_fund.research.ots_anchor as mod
+
+    root, digest = _pending_repo(tmp_path, monkeypatch)
+    # Upgraded stream: append<x> → sha256 → bitcoin attestation at 650000.
+    upgraded = (
+        b"\xf0\x20"
+        + b"\xab" * 32
+        + b"\x08"
+        + b"\x00"
+        + ATT_BITCOIN
+        + b"\x03"
+        + bytes([0x90, 0xD6, 0x27])
+    )
+    header = bytearray(80)
+    header[72:76] = (0x2200FFFF).to_bytes(4, "little")
+    monkeypatch.setattr(mod, "_get", lambda url, timeout: upgraded)
+    monkeypatch.setattr(mod, "_fetch_header", lambda h, *, explorer, timeout: bytes(header))
+    res = mod.upgrade_ots(root=root)
+    assert res["ok"]
+    assert res["upgraded"] == ["quality__epoch_heads.json.ots"]
+    assert res["anchors"]["quality/epoch_heads.json"] == ["upgraded:650000"]
+    # The .ots now verifies as pow_verified against the committed header.
+    out = verify_ots(root)
+    assert out["attestations"]["quality/epoch_heads.json"] == ["bitcoin:650000:pow_verified"]
+    # Re-upgrade is a no-op on a bitcoin-bearing proof.
+    res2 = mod.upgrade_ots(root=root)
+    assert res2["anchors"]["quality/epoch_heads.json"] == ["already_bitcoin"]
+
+
+def test_upgrade_ots_still_pending(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import quant_fund.research.ots_anchor as mod
+
+    root, _ = _pending_repo(tmp_path, monkeypatch)
+    # Calendar answers but hasn't confirmed — same pending stream back.
+    monkeypatch.setattr(mod, "_get", lambda url, timeout: CALENDAR_RESP)
+    res = mod.upgrade_ots(root=root)
+    assert res["ok"] and res["upgraded"] == []
+    assert res["anchors"]["quality/epoch_heads.json"] == ["no_bitcoin_attestation"]
+
+    # Dead calendar → still_pending, no error.
+    def _dead(url: str, timeout: float) -> bytes:
+        raise OSError("offline")
+
+    monkeypatch.setattr(mod, "_get", _dead)
+    res = mod.upgrade_ots(root=root)
+    assert res["anchors"]["quality/epoch_heads.json"] == ["still_pending"]
+    # Malformed upgrade → recorded, token untouched.
+    monkeypatch.setattr(mod, "_get", lambda url, timeout: b"\xff\xff\xff")
+    res = mod.upgrade_ots(root=root)
+    assert any(
+        s.startswith("upgrade_malformed") for s in res["anchors"]["quality/epoch_heads.json"]
+    )

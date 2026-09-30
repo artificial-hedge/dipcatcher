@@ -2349,6 +2349,31 @@ def ots_stamp_cmd(
     typer.echo(f"ots={token}")
 
 
+@app.command("ots-upgrade")
+def ots_upgrade_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    explorer: str = typer.Option(
+        "", "--explorer", help="Block explorer API base (default blockstream.info)."
+    ),
+) -> None:
+    """Upgrade pending OTS anchors to Bitcoin-confirmed proofs.
+
+    Polls each anchor's own calendars for the upgraded timestamp; on a
+    ``bitcoin`` attestation the proof is rewritten and the claimed block
+    header committed (``<name>.<height>.hdr``), after which ``verify-repo``
+    reports ``pow_verified`` — self-checked sha256d<nBits, no API trust.
+    """
+    from quant_fund.research.ots_anchor import DEFAULT_EXPLORER, upgrade_ots
+
+    res = upgrade_ots(root=root, explorer=explorer or DEFAULT_EXPLORER)
+    for label, states in res.get("anchors", {}).items():
+        typer.echo(f"{label}: {','.join(states)}")
+    if not res["ok"]:
+        for e in res.get("errors", []):
+            typer.echo(f"error: {e}")
+        raise typer.Exit(code=2)
+
+
 @app.command("checkpoint")
 def checkpoint_cmd(
     root: Path = typer.Option(Path("."), "--root"),

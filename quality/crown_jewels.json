@@ -30,7 +30,7 @@
     "src/quant_fund/research/integrity_witness.py": "85586dd844821086be097e8be69effd16e6480e649de4ab0d83381e8d2646e08",
     "src/quant_fund/research/key_rotation.py": "25879a886b1c71543181ba3979c16410e2e8c7fd0495ad95d14e080315495096",
     "src/quant_fund/research/lane_contracts.py": "5b1245814170ad1914052285b2a4389eb3c38f4e11d637eca96b6fbb30a5eaf3",
-    "src/quant_fund/research/ots_anchor.py": "b72749ec5be2f40ad1e5a8c8d27136fd356254b2c03ef3f229b4e3b1eebd56fe",
+    "src/quant_fund/research/ots_anchor.py": "c1045dac2ba8c49fdef4ea8338f3bd3f3f91672c1d5bc65714f0c234d395b1cd",
     "src/quant_fund/research/receipt_lattice.py": "8457150dea7264b9ab9d165267301680c7f48eb91bbf6142f643a42521c22df0",
     "src/quant_fund/research/receipt_tombstone.py": "6d23cad97393c3f84e0bfbee7eb1e51e6eefcd874d476635ceaf3104fcb025af",
     "src/quant_fund/research/receipt_v2.py": "aee91f19664eb9b2db6db109e56a4b43634ae996a976ad9f0e2b2bd4f10c0dd9",
