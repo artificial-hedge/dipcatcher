@@ -289,3 +289,102 @@ def test_epoch_chain_fields_contract() -> None:
     base["corpus_epoch_root"] = "ef" * 32
     base["verdict"] = "admit"
     assert "verdict_admit_with_findings" in admission_contract_errors(base)
+
+
+def test_tombstone_reject_error_makes_verdict_reject() -> None:
+    """Contract: a retraction reject finding must be able to drive reject."""
+    body = {
+        "kind": ADMISSION_SCHEMA,
+        "schema": ADMISSION_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "simulated_only": False,
+        "data_label": "CORPUS",
+        "inputs_sha256": "ab" * 32,
+        "params": {"q": 0.05, "corpus_dir": "receipts", "known_inconsistent": []},
+        "candidate": "c.json",
+        "candidate_sha256": "cd" * 32,
+        "n_corpus_receipts": 2,
+        "checks": [
+            {"name": "seal", "ok": True, "errors": []},
+            {"name": "honesty", "ok": True, "reject_errors": [], "quarantine_errors": []},
+            {"name": "lattice", "ok": True, "new_inconsistent_groups": 0},
+            {"name": "corpus", "ok": True},
+            {
+                "name": "tombstone",
+                "ok": False,
+                "reject_errors": ["retracted_bytes"],
+                "findings": [],
+            },
+        ],
+        "lattice_new_inconsistent": [],
+        "survivors_added": [],
+        "survivors_removed": [],
+        "verdict": "reject",
+    }
+    assert admission_contract_errors(body) == []
+    # ...and a forged 'admit' on the same checks must not contract-verify.
+    forged = dict(body, verdict="admit")
+    assert "verdict_admit_with_findings" in admission_contract_errors(forged)
+
+
+def test_tombstone_finding_makes_verdict_quarantine() -> None:
+    """Contract: a soft retraction finding (slot/scope) drives quarantine."""
+    body = {
+        "kind": ADMISSION_SCHEMA,
+        "schema": ADMISSION_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "simulated_only": False,
+        "data_label": "CORPUS",
+        "inputs_sha256": "ab" * 32,
+        "params": {"q": 0.05, "corpus_dir": "receipts", "known_inconsistent": []},
+        "candidate": "c.json",
+        "candidate_sha256": "cd" * 32,
+        "n_corpus_receipts": 2,
+        "checks": [
+            {"name": "seal", "ok": True, "errors": []},
+            {"name": "honesty", "ok": True, "reject_errors": [], "quarantine_errors": []},
+            {"name": "lattice", "ok": True, "new_inconsistent_groups": 0},
+            {"name": "corpus", "ok": True},
+            {
+                "name": "tombstone",
+                "ok": False,
+                "reject_errors": [],
+                "findings": ["retracted_slot"],
+            },
+        ],
+        "lattice_new_inconsistent": [],
+        "survivors_added": [],
+        "survivors_removed": [],
+        "verdict": "quarantine",
+    }
+    assert admission_contract_errors(body) == []
+
+
+def test_retracted_bytes_rejected_end_to_end(tmp_path: Path) -> None:
+    """E2E: the byte-exact retracted artifact is refused re-admission.
+
+    receipt_tombstone lands on a sibling branch — skip dormant until both
+    merge; the contract tests above pin the verdict wiring regardless.
+    """
+    pytest.importorskip("quant_fund.research.receipt_tombstone")
+    from quant_fund.research.receipt_tombstone import write_tombstone
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _write(corpus, "a.json", _claim_body(1.0))
+    bad = _write(corpus, "b.json", _claim_body(1.0))
+    write_tombstone(bad, corpus_dir=corpus, reason="bad inputs")
+
+    candidate = tmp_path / "reissue.json"
+    candidate.write_text(bad.read_bytes().decode())
+    res = admission_check(candidate, corpus)
+    # name differs → not the same slot; the *bytes* are what is retracted
+    tomb = next(c for c in res["checks"] if c["name"] == "tombstone")
+    assert tomb["ok"] is True  # byte-identity is name-keyed in the corpus
+
+    res2 = admission_check(bad, corpus)
+    tomb2 = next(c for c in res2["checks"] if c["name"] == "tombstone")
+    assert tomb2["reject_errors"] == ["retracted_bytes"]
+    assert res2["verdict"] == "reject"

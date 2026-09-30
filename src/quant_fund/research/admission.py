@@ -108,6 +108,7 @@ def admission_check(
     *,
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
+    tombstone_dir: Path | str | None = None,
 ) -> dict[str, Any]:
     """Gate a candidate receipt against an existing corpus.
 
@@ -241,9 +242,56 @@ def admission_check(
             }
         )
 
-    if not seal_ok or reject_errors:
+    # -- 6. retraction -----------------------------------------------------------
+    # An append-only corpus can't delete a bad receipt — it retracts it via a
+    # sealed tombstone. Admission is the re-entry surface: the exact retracted
+    # bytes must never be re-admitted, and the retracted name slot / claim
+    # paths must not quietly re-fill. Feature-detected like epoch_chain.
+    retract_reject: list[str] = []
+    retract_findings: list[str] = []
+    try:
+        from quant_fund.research.receipt_tombstone import load_tombstones
+    except ImportError:
+        checks.append({"name": "tombstone", "ok": True, "skipped": "tombstone_unavailable"})
+    else:
+        # Resolve tombstones against the durable corpus, not the (possibly
+        # shadowed) admission view — a retracted target must stay pinned to
+        # real bytes even when admit_batch shadows it out mid-diff.
+        tombs = load_tombstones(Path(tombstone_dir) if tombstone_dir is not None else corpus_dir)
+        entry = tombs["active"].get(candidate.name)
+        if entry is not None:
+            if entry.get("target_sha256") == candidate_sha:
+                retract_reject.append("retracted_bytes")
+            elif entry.get("scope") == "all":
+                retract_findings.append("retracted_slot")
+            else:
+                # Partial scope: the retracted claim paths must not re-enter.
+                from quant_fund.research.corpus_inference import harvest_findings
+
+                scoped = set(entry["scope"]) if isinstance(entry["scope"], list) else set()
+                try:
+                    cand_doc = json.loads(candidate.read_text())
+                except Exception:  # noqa: BLE001 — parse already recorded
+                    cand_doc = {}
+                paths = (
+                    {f["path"] for f in harvest_findings(cand_doc, candidate.name)}
+                    if isinstance(cand_doc, Mapping)
+                    else set()
+                )
+                if paths & scoped:
+                    retract_findings.append("retracted_scope_overlap")
+        checks.append(
+            {
+                "name": "tombstone",
+                "ok": not retract_reject and not retract_findings,
+                "reject_errors": retract_reject,
+                "findings": retract_findings,
+            }
+        )
+
+    if not seal_ok or reject_errors or retract_reject:
         verdict = "reject"
-    elif quarantine_errors or new_inconsistent or hard_chain_errors:
+    elif quarantine_errors or new_inconsistent or hard_chain_errors or retract_findings:
         verdict = "quarantine"
     else:
         verdict = "admit"
@@ -313,7 +361,13 @@ def admit_batch(
 
     results: list[dict[str, Any]] = []
     for cand in ordered:
-        result = admission_check(cand, shadow, q=q, known_inconsistent=known_inconsistent)
+        result = admission_check(
+            cand,
+            shadow,
+            q=q,
+            known_inconsistent=known_inconsistent,
+            tombstone_dir=corpus_dir,
+        )
         results.append(result)
         # Post-merge coexistence: a merged diff lands all of its files
         # together, so each later candidate must clear a corpus that already
@@ -374,12 +428,18 @@ def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         epoch_chain: Mapping[str, Any] = next(
             (c for c in checks if c.get("name") == "epoch_chain"), {}
         )
+        tombstone: Mapping[str, Any] = next((c for c in checks if c.get("name") == "tombstone"), {})
         verdict = payload["verdict"]
-        rejectable = not seal_check.get("ok", True) or bool(honesty.get("reject_errors"))
+        rejectable = (
+            not seal_check.get("ok", True)
+            or bool(honesty.get("reject_errors"))
+            or bool(tombstone.get("reject_errors"))
+        )
         quarantinable = (
             bool(honesty.get("quarantine_errors"))
             or not lattice.get("ok", True)
             or not epoch_chain.get("ok", True)
+            or bool(tombstone.get("findings"))
         )
         if verdict == "reject" and not rejectable:
             errors.append("verdict_reject_without_cause")
