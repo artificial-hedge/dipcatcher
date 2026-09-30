@@ -405,3 +405,31 @@ def test_stamp_lockfile_is_not_a_member(tmp_path: Path) -> None:
     _receipt(corpus, "a.json", "r1")
     members = member_digests(corpus)
     assert ".epoch_stamp.lock" not in members
+
+
+def test_symlink_members_refused_and_flagged(tmp_path: Path) -> None:
+    """A symlink member is a target-swap mutation vector: ``is_file`` follows
+    the link, so the hashed bytes are the target's and retargeting swaps
+    content the name never owned. The stamp refuses links outright and the
+    chain flags a live one — file links and dir links alike."""
+    from quant_fund.research.corpus_epoch import _symlink_errors
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    _receipt(corpus, "real.json", "1")
+    outside = tmp_path / "outside.json"
+    outside.write_text('{"escape": true}')
+    (corpus / "link.json").symlink_to(outside)
+    with pytest.raises(ValueError, match="symlink"):
+        corpus_epoch(corpus)
+    assert _symlink_errors(corpus, "*.json") == ["member_is_symlink:link.json"]
+    # A dir link is invisible to the member glob but must still flag.
+    linkdir = corpus / "vault"
+    linkdir.symlink_to(tmp_path, target_is_directory=True)
+    assert "member_is_symlink:vault" in _symlink_errors(corpus, "*.json")
+    linkdir.unlink()
+    # Live-tree leg: a clean stamp, then a link appears post-stamp.
+    (corpus / "link.json").unlink()
+    _stamp(corpus)
+    (corpus / "link.json").symlink_to(outside)
+    assert "member_is_symlink:link.json" in check_epoch_chain(corpus)["errors"]

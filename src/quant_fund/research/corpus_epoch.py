@@ -148,6 +148,20 @@ def _nfc_errors(members: Mapping[str, str]) -> list[str]:
     return errors
 
 
+def _symlink_errors(root: Path, pattern: str) -> list[str]:
+    """Symlink members are refused: ``is_file()`` follows links, so a
+    link's *target* content is hashed — retargeting is a mutation vector
+    (and the target may live outside the corpus entirely). A corpus member
+    must be a real file whose bytes the name unambiguously owns."""
+    # Scan every entry, not only glob matches: a symlinked *directory* never
+    # matches the member pattern, but could hide content under the corpus.
+    return [
+        f"member_is_symlink:{p.relative_to(root).as_posix()}"
+        for p in sorted(root.rglob("*"))
+        if p.is_symlink()
+    ]
+
+
 def epoch_root(members: Mapping[str, str]) -> str:
     """Merkle-style root over the member map — order-free via canonical JSON."""
     for name, digest in members.items():
@@ -237,6 +251,12 @@ def corpus_epoch(
         raise ValueError(
             f"refusing to stamp {root}: non-NFC member names "
             f"{[e.split(':', 1)[1] for e in nfc]} — rename to the NFC form"
+        )
+    links = _symlink_errors(root, pattern)
+    if links:
+        raise ValueError(
+            f"refusing to stamp {root}: symlink members "
+            f"{[e.split(':', 1)[1] for e in links]} — replace with real files"
         )
     # Chains are per-(dir, pattern): only epochs stamped with the same member
     # glob participate. Absent params.pattern means the default "*.json".
@@ -611,6 +631,7 @@ def check_epoch_chain(
         head_root = root_val if isinstance(root_val, str) else None
         live = member_digests(root, pattern=pattern)
         errors += _nfc_errors(live)
+        errors += _symlink_errors(root, pattern)
         head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
         for name in stamped - set(live):

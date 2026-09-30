@@ -20,7 +20,7 @@
     "scripts/verify_ots_auditor.py": "b786b3e5770ef285b5ee26fca8db20a5248f9a4c8240339fa308883b53c56a24",
     "src/quant_fund/research/auditor_bundle.py": "6543de429c5379328ab41d43fa2253cd8a0616b3454e4a79aa189c9d0b0878a8",
     "src/quant_fund/research/checkpoint_chain.py": "33e21ce3047869bba3cf768629ee3d47c869cad8bca8f4d1b1863530227e8514",
-    "src/quant_fund/research/corpus_epoch.py": "ed137a355f54197a8b8763394fcc19079f2f1037be7c0b544ab3d13ee551589d",
+    "src/quant_fund/research/corpus_epoch.py": "8f93b258cc008929f0923b9cd2be5a3bb1c9ea166a8d3275d950b972cae1e930",
     "src/quant_fund/research/corpus_inference.py": "680cfe4ee204c948d00d77eb4a68ac37889bc381d25a26a686f04c43d67d0943",
     "src/quant_fund/research/crown_jewels.py": "89458ba1fc8c12397158367c36caf76bf5e95b25912af8410f594db2f5463d53",
     "src/quant_fund/research/custody.py": "9e5b1dbd3a37280654d5c9a756e2aa4383579b7f2b7c415079159c21f8f62f43",
