@@ -288,14 +288,15 @@ def test_absence_receipt_rejects_member_and_drift(tmp_path: Path) -> None:
     # proof — the append-only chain keeps epoch N's map frozen.
     (corpus / "zz.json").write_text("{}")
     assert verify_epoch_absence(body, corpus) == []
-    # But an epoch receipt whose member map drifts from the declared root fails.
+    # An epoch receipt tampered without resealing fails the seal recompute —
+    # the authenticated loader refuses it before the root is even compared.
     import json as _json
 
     epoch_file = corpus / body["epoch_receipt"]
     doc = _json.loads(epoch_file.read_text())
     doc["epoch_root_sha256"] = "0" * 64
     epoch_file.write_text(_json.dumps(doc))
-    assert "epoch_root_mismatch" in verify_epoch_absence(body, corpus)
+    assert verify_epoch_absence(body, corpus) == ["epoch_receipt_tampered"]
 
 
 def test_absence_pin_forged_and_stale(tmp_path: Path) -> None:
@@ -351,6 +352,7 @@ def test_proof_layer_semantic_mutation_fuzz(tmp_path: Path) -> None:
         verify_epoch_absence,
         verify_epoch_proof,
     )
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
     corpus = _corpus(tmp_path, 7)
     write_epoch_receipt(corpus_epoch(corpus), corpus)
@@ -432,3 +434,20 @@ def test_proof_layer_semantic_mutation_fuzz(tmp_path: Path) -> None:
     other = absence_receipt(corpus, "zz9.json")
     moved = corrupt(absent, epoch_receipt=other["epoch_receipt"])
     assert verify_epoch_absence(moved, corpus) != []
+
+    # Forged epoch receipt: a co-edited members+root tamper under the pinned
+    # filename fails the seal recompute; resealing changes the seal so the
+    # pinned filename (sha16 of the seal) can no longer hold the forgery.
+    import json as _json
+
+    epoch_file = corpus / str(proof["epoch_receipt"])
+    doc = _json.loads(epoch_file.read_text())
+    doc["members"].append({"name": "evil.json", "sha256": "0" * 64})
+    doc["epoch_root_sha256"] = doc["epoch_root_sha256"]  # fields re-agree or not —
+    epoch_file.write_text(_json.dumps(doc))  # the seal is stale either way
+    assert verify_epoch_proof(proof, corpus) == ["epoch_receipt_tampered"]
+
+    body = {k: v for k, v in doc.items() if k != "receipt_sha256"}
+    doc["receipt_sha256"] = hash_bytes(canonical_json_bytes(body))
+    epoch_file.write_text(_json.dumps(doc))
+    assert verify_epoch_proof(proof, corpus) == ["epoch_receipt_name_mismatch"]

@@ -37,7 +37,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from quant_fund.utils.hashing import canonical_json_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 CORPUS_PROOF_SCHEMA = "corpus_proof.v1"
 CORPUS_ABSENCE_SCHEMA = "corpus_absence.v1"
@@ -174,15 +174,33 @@ def verify_inclusion(
         return False
 
 
-def _load_epoch_receipt(corpus_dir: Path, name: str) -> dict[str, Any] | None:
+def _load_epoch_receipt(corpus_dir: Path, name: str) -> tuple[dict[str, Any] | None, str | None]:
+    """Load a sealed epoch receipt — authenticate before trusting it.
+
+    Returns ``(payload, None)`` only when the file parses AND its
+    ``receipt_sha256`` re-computes AND the filename is the seal's sha16
+    (``corpus_epoch_<sha16>.json`` — the name the pin and chain both
+    reference). A co-forged members+root tamper cannot hold the pinned
+    name without recomputing the seal, which renames the file.
+    """
     path = corpus_dir / name
     if not path.is_file():
-        return None
+        return None, "epoch_receipt_missing"
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return None
-    return payload if isinstance(payload, dict) else None
+        return None, "epoch_receipt_unparseable"
+    if not isinstance(payload, dict):
+        return None, "epoch_receipt_unparseable"
+    seal = payload.get("receipt_sha256")
+    if not isinstance(seal, str) or len(seal) != 64:
+        return None, "epoch_receipt_unsealed"
+    body = {k: v for k, v in payload.items() if k != "receipt_sha256"}
+    if hash_bytes(canonical_json_bytes(body)) != seal:
+        return None, "epoch_receipt_tampered"
+    if path.name != f"corpus_epoch_{seal[:16]}.json":
+        return None, "epoch_receipt_name_mismatch"
+    return payload, None
 
 
 def member_proof(
@@ -279,9 +297,10 @@ def verify_epoch_proof(
     if errors:
         return errors
     root = Path(corpus_dir)
-    receipt = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
-    if receipt is None:
-        return ["epoch_receipt_missing"]
+    receipt, load_err = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
+    if load_err is not None:
+        return [load_err]
+    assert receipt is not None
     if receipt.get("epoch_root_sha256") != payload["epoch_root_sha256"]:
         return ["epoch_root_mismatch"]
     members_list = receipt.get("members")
@@ -512,9 +531,10 @@ def verify_epoch_absence(
     if errors:
         return errors
     root = Path(corpus_dir)
-    receipt = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
-    if receipt is None:
-        return ["epoch_receipt_missing"]
+    receipt, load_err = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
+    if load_err is not None:
+        return [load_err]
+    assert receipt is not None
     if receipt.get("epoch_root_sha256") != payload["epoch_root_sha256"]:
         return ["epoch_root_mismatch"]
     members_list = receipt.get("members")
