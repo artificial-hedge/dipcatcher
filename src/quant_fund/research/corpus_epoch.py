@@ -266,6 +266,7 @@ def corpus_epoch(
     *,
     head_sha: str | None = None,
     pattern: str = "*.json",
+    allow_new_pattern: bool = False,
 ) -> dict[str, Any]:
     """Build the epoch receipt over the corpus's current membership.
 
@@ -308,6 +309,23 @@ def corpus_epoch(
         if (e.get("params") or {}).get("pattern", "*.json") == pattern
         if isinstance(e.get("params") or {}, Mapping)
     ]
+    # Fail closed on a *new* pattern in a dir that already has an established
+    # chain under another glob — a mismatched --glob mints a parallel
+    # (dir, pattern) chain whose records then read as unstamped members of
+    # the real chain, exactly the drift the heads pin exists to catch.
+    foreign_patterns = sorted(
+        {
+            str((e.get("params") or {}).get("pattern", "*.json"))
+            for _p, e in candidates
+            if isinstance(e.get("params") or {}, Mapping)
+        }
+        - {pattern}
+    )
+    if foreign_patterns and not allow_new_pattern:
+        raise ValueError(
+            f"refusing to stamp {root}: corpus already has epoch chains under "
+            f"{foreign_patterns}; a new pattern needs --allow-new-pattern"
+        )
     # The chain head is the epoch no other epoch names as prev.
     prevs = {e.get("prev_epoch_receipt") for _, e in epochs}
     heads = [(p, e) for p, e in epochs if p.name not in prevs]

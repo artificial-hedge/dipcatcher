@@ -166,8 +166,9 @@ def test_chains_partition_by_pattern(tmp_path: Path) -> None:
     _receipt(corpus, "a.json", "1")
     (corpus / "report.md").write_text("# run report\n")
     # Two independent chains over the same dir: one over *.json, one *.md.
+    # The second pattern mints a parallel chain — an explicit opt-in.
     json_epoch = corpus_epoch(corpus, pattern="*.json")
-    md_epoch = corpus_epoch(corpus, pattern="*.md")
+    md_epoch = corpus_epoch(corpus, pattern="*.md", allow_new_pattern=True)
     assert set(m["name"] for m in json_epoch["members"]) == {"a.json"}
     assert [m["name"] for m in md_epoch["members"]] == ["report.md"]
     write_epoch_receipt(json_epoch, corpus)
@@ -184,6 +185,20 @@ def test_chains_partition_by_pattern(tmp_path: Path) -> None:
     (corpus / "new_report.md").write_text("# more\n")
     assert check_epoch_chain(corpus, pattern="*.md")["unstamped"] == ["new_report.md"]
     assert check_epoch_chain(corpus, pattern="*.json")["errors"] == []
+
+
+def test_foreign_pattern_stamp_refused(tmp_path: Path) -> None:
+    """A mismatched --glob mints a parallel (dir, pattern) chain whose records
+    read as unstamped members of the real one — refuse unless opted in."""
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    write_epoch_receipt(corpus_epoch(corpus, pattern="*"), corpus)
+    with pytest.raises(ValueError, match="allow-new-pattern"):
+        corpus_epoch(corpus, pattern="*.json")
+    # Explicit opt-in mints the second chain.
+    epoch = corpus_epoch(corpus, pattern="*.json", allow_new_pattern=True)
+    assert epoch["params"]["pattern"] == "*.json"
 
 
 def test_contract_rejects_bad_params(corpus_dir: Path) -> None:

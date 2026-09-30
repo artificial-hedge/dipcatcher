@@ -71,6 +71,8 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/key_rotation.py",
     "src/quant_fund/research/lane_contracts.py",
     "src/quant_fund/research/ots_anchor.py",
+    "src/quant_fund/research/quorum_rotation.py",  # M-of-N registry lineage —
+    # the authority a v2 checkpoint's signatures resolve under
     "src/quant_fund/research/receipt_lattice.py",
     "src/quant_fund/research/receipt_tombstone.py",
     "src/quant_fund/research/receipt_v2.py",

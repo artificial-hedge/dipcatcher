@@ -1529,11 +1529,12 @@ def corpus_epoch(
         "--receipt-version",
         help="Receipt schema version: 1 = corpus_epoch.v1 (default), 2 = unified receipt.v2 envelope.",
     ),
-    glob: str = typer.Option(
-        "*.json",
+    glob: str | None = typer.Option(
+        None,
         "--glob",
-        help="Member file pattern — chains are per-(dir, glob); stamp non-JSON evidence "
-        "dirs with e.g. --glob '*.md' or '*'.",
+        help="Member file pattern — chains are per-(dir, glob). Default: the "
+        "corpus's established chain pattern (fail-closed if it has several); "
+        "'*.json' when the dir has no chain yet.",
     ),
     heads_pin: Path | None = typer.Option(
         None,
@@ -1554,6 +1555,14 @@ def corpus_epoch(
         help="With --check: digest changes to stamped members between epochs are "
         "history attestation, not tamper errors — for mutable corpora (quality "
         "manifests, workflow definitions). Leave off for append-only corpora.",
+    ),
+    allow_new_pattern: bool = typer.Option(
+        False,
+        "--allow-new-pattern",
+        help="Stamp mode: permit minting a chain under a --glob the corpus has "
+        "never used. Without it, stamping a dir that already has epochs under "
+        "a different pattern fails closed — a mismatched glob forges a parallel "
+        "chain whose records read as unstamped members of the real one.",
     ),
 ) -> None:
     """Corpus epoch: hash-chained integrity root over the evidence store.
@@ -1579,6 +1588,19 @@ def corpus_epoch(
     root = Path(corpus_dir)
     if not root.is_dir():
         raise typer.BadParameter(f"corpus dir {root} does not exist")
+    if glob is None:
+        from quant_fund.research.corpus_epoch import _epoch_receipts
+
+        existing = {
+            str((e.get("params") or {}).get("pattern", "*.json"))
+            for _p, e in _epoch_receipts(root)[0]
+        }
+        if len(existing) > 1:
+            raise typer.BadParameter(
+                f"corpus {root} has epoch chains under several patterns "
+                f"{sorted(existing)} — pass --glob to disambiguate"
+            )
+        glob = existing.pop() if existing else "*.json"
     allowed: dict[str, str] | None = None
     if allowed_removals is not None:
         if not allowed_removals.is_file():
@@ -1651,7 +1673,15 @@ def corpus_epoch(
     except EpochStampLocked as exc:
         raise typer.BadParameter(str(exc)) from exc
     try:
-        receipt = corpus_epoch(root, head_sha=head_sha, pattern=glob)
+        try:
+            receipt = corpus_epoch(
+                root,
+                head_sha=head_sha,
+                pattern=glob,
+                allow_new_pattern=allow_new_pattern,
+            )
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
         try:
             path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
         except ValueError as exc:

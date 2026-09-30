@@ -57,6 +57,10 @@
       "ok": true,
       "signed": true
     },
+    "quorum_rotations": {
+      "errors": [],
+      "ok": true
+    },
     "spine": {
       "errors": [],
       "ok": true,
@@ -93,11 +97,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "6664feac0b6b0d21223ebda2e3a8e62c29eeb8fd8ac57b48b85653150e30f56b",
-    "epoch_heads_sha256": "52ae203b8c234f1fd6cae7a0a5a91dcb6f8584dcdad121a8b0ea38b60f59d164",
+    "crown_jewels_sha256": "606f55af31ca0ee6f68a606f6e08d60847819e9bb80db0c56cf4dce6de689c04",
+    "epoch_heads_sha256": "4807ff4b7fad862ff8791e581e98ef7cb4df7376e3bb39681f72a59fc8fd6765",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "b259b59f255d64d63139216fc1382c4c5331918de23a18d690fa37f792c946b8",
+  "receipt_sha256": "9033e2340188195409a1f0a0769c5aaa0a9b7557a7c2796cf5298f82a8dc52ae",
   "schema": "repo_integrity.v1"
 }
