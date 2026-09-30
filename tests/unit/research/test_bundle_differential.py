@@ -125,6 +125,27 @@ def _key_order_permute(doc: dict, rng: random.Random) -> dict:
     return doc
 
 
+def _registry_swap(doc: dict) -> dict:
+    """Present a forged live registry (attacker key) in place of the
+    committed one — before quorum-era continuity this self-verified."""
+    import hashlib
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    _, pub = generate_keypair()
+    kid = hashlib.sha256(bytes.fromhex(pub)).hexdigest()[:16]
+    forged = {
+        "schema": "gate_quorum.v1",
+        "threshold": 1,
+        "keys": [{"key_id": kid, "pubkey": pub}],
+    }
+    raw = (json.dumps(forged, indent=2, sort_keys=True) + "\n").encode()
+    rel = "quality/gate_quorum.json"
+    doc["files"][rel] = base64.b64encode(raw).decode()
+    doc["files_sha256"][rel] = hashlib.sha256(raw).hexdigest()
+    return doc
+
+
 _MUTATIONS = (
     "member_byte_flip",
     "member_byte_flip_rehashed",
@@ -138,6 +159,7 @@ _MUTATIONS = (
     "witness_proof_drop",
     "pubkey_swap",
     "key_order_permute",
+    "registry_swap",
 )
 
 _PASS_ONLY = {"key_order_permute"}  # benign: JSON object order is not semantic
@@ -188,6 +210,8 @@ def test_bundle_differential_verdict_agreement(tmp_path: Path) -> None:
                 doc = _key_swap(doc)
             elif name == "key_order_permute":
                 doc = _key_order_permute(doc, rng)
+            elif name == "registry_swap":
+                doc = _registry_swap(doc)
 
             mutant = tmp_path / f"mut_{seed}_{name}.json"
             mutant.write_text(json.dumps(doc))
