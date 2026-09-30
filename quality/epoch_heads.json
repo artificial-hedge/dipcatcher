@@ -26,14 +26,14 @@
       "tree_root": "24e78895f967f0b570f2fd097c24a24d73b2b9a9d8ac280e9104b7f53f577e21"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_e98b03ff064e2f72.json",
-      "sha256": "55f2a87f5d0e03845614d60ec2f00df18bec2e44499906ed61cf514a41c505f9",
-      "tree_root": "2b328c87b8595d5b6014757a2cd0924e53bf9f6bd477da11055db945a20807e1"
+      "receipt": "corpus_epoch_cbc4e767338e1397.json",
+      "sha256": "248f33cbd9d7e3a4f297da0383f5254d4f42a00bd5ad909a33bbefbb8f7da9fd",
+      "tree_root": "bae7ccf6d963d19bb0a2aab32183c63df85691c1ff899a7db166fbecc4b24105"
     },
     "receipts/*.json": {
-      "receipt": "corpus_epoch_2ddb4fe7154677d3.json",
-      "sha256": "f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c",
-      "tree_root": "e8d624959aa8411c38112f27ae82ed7ea61a631c34ad609d59c71fcd9174cd98"
+      "receipt": "corpus_epoch_54c82d2a8bcb86ed.json",
+      "sha256": "8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870",
+      "tree_root": "27ecdc5b11c834dac7d32dbaecc6b0f9eec9e6462ba8a187e2103e59c8bae3d4"
     },
     "verifier/*.md": {
       "receipt": "corpus_epoch_9570c1590cf4e822.json",

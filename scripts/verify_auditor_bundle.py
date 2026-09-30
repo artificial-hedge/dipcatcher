@@ -143,7 +143,7 @@ def _verify_rotations(
             raw = base64.b64decode(b64)
             body = json.loads(raw)
         except (ValueError, json.JSONDecodeError):
-            errors.append(f"rotation_malformed:{rel}")
+            errors.append(f"rotation_malformed:{ascii(rel)}")
             continue
         if declared.get(rel) != _sha(raw).hex():
             errors.append(f"files_sha256_mismatch:{rel}")
@@ -153,7 +153,7 @@ def _verify_rotations(
             or body.get("schema") != "key_rotation.v1"
             or not isinstance(body.get("payload"), dict)
         ):
-            errors.append(f"rotation_malformed:{rel}")
+            errors.append(f"rotation_malformed:{ascii(rel)}")
             continue
         payload = body["payload"]
         ok = True
@@ -163,12 +163,12 @@ def _verify_rotations(
                 str(body.get(f"{side}_signature", "")),
                 _canon(payload),
             ):
-                errors.append(f"rotation_signature_invalid:{rel}:{side}")
+                errors.append(f"rotation_signature_invalid:{ascii(rel)}:{side}")
                 ok = False
         if str(payload.get("old_key_id", "")) != _key_id(str(payload.get("old_pubkey", ""))) or str(
             payload.get("new_key_id", "")
         ) != _key_id(str(payload.get("new_pubkey", ""))):
-            errors.append(f"rotation_key_id_mismatch:{rel}")
+            errors.append(f"rotation_key_id_mismatch:{ascii(rel)}")
             ok = False
         if ok:
             recs.append((rel, payload))
@@ -195,7 +195,7 @@ def _verify_rotations(
         new_pub = str(cur["new_pubkey"])
         terminus = new_pub
         if new_pub in seen:
-            errors.append(f"rotation_cycle:{_key_id(new_pub)}")
+            errors.append(f"rotation_cycle:{ascii(_key_id(new_pub))}")
             break
         seen.add(new_pub)
         nxt = claims.get(new_pub)
@@ -239,7 +239,7 @@ def _verify_spine(
             and rel not in OPTIONAL_MEMBERS
             and not (any(rel.startswith(p) for p in SPINE_PREFIXES) and rel.endswith(".json"))
         ):
-            errors.append(f"unexpected_member:{rel}")
+            errors.append(f"unexpected_member:{ascii(rel)}")
     records: dict[str, bytes] = {}
     witnessed: dict[str, int] = {}
     wit_times: dict[str, float] = {}
@@ -248,7 +248,7 @@ def _verify_spine(
             try:
                 raw = base64.b64decode(b64)
             except ValueError:
-                errors.append(f"b64_malformed:{rel}")
+                errors.append(f"b64_malformed:{ascii(rel)}")
                 continue
             if declared.get(rel) != _sha(raw).hex():
                 errors.append(f"files_sha256_mismatch:{rel}")
@@ -256,7 +256,7 @@ def _verify_spine(
             try:
                 proof = json.loads(raw)
             except json.JSONDecodeError:
-                errors.append(f"spine_proof_malformed:{rel}")
+                errors.append(f"spine_proof_malformed:{ascii(rel)}")
                 continue
             digest = proof.get("target", {}).get("sha256")
             index = proof.get("rekor", {}).get("log_index")
@@ -269,7 +269,7 @@ def _verify_spine(
             try:
                 raw = base64.b64decode(b64)
             except ValueError:
-                errors.append(f"b64_malformed:{rel}")
+                errors.append(f"b64_malformed:{ascii(rel)}")
                 continue
             if declared.get(rel) != _sha(raw).hex():
                 errors.append(f"files_sha256_mismatch:{rel}")
@@ -425,7 +425,7 @@ def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
         try:
             raw = base64.b64decode(b64)
         except ValueError:
-            errors.append(f"b64_malformed:{rel}")
+            errors.append(f"b64_malformed:{ascii(rel)}")
             continue
         decoded[rel] = raw
         if declared.get(rel) != _sha(raw).hex():

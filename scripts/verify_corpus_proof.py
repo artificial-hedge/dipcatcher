@@ -59,6 +59,13 @@ LEAF_PREFIX = b"\x00"
 NODE_PREFIX = b"\x01"
 
 
+_PORTABLE_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
+
+
+def _portable(name: str) -> bool:
+    return all(unicodedata.category(c) not in _PORTABLE_CATEGORIES for c in name)
+
+
 def _sha(b: bytes) -> bytes:
     return hashlib.sha256(b).digest()
 
@@ -213,6 +220,8 @@ def audit_proof(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -> 
         return ["member_fields_malformed"]
     if unicodedata.normalize("NFC", member) != member:
         return ["member_name_not_nfc"]
+    if not _portable(member):
+        return ["member_name_not_portable"]
     if not isinstance(receipt, str) or not isinstance(root, str):
         return ["epoch_binding_malformed"]
     k, entry, err = _pin_entry(pin, key, receipt)
@@ -242,6 +251,8 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
         return ["name_missing"]
     if unicodedata.normalize("NFC", name) != name:
         return ["name_not_nfc"]
+    if not _portable(name):
+        return ["name_not_portable"]
     if not isinstance(root, str) or not isinstance(bounds, list):
         return ["absence_shape_malformed"]
     receipt = proof.get("epoch_receipt")
@@ -288,9 +299,12 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
         if unicodedata.normalize("NFC", bname) != bname:
             errors.append("bound_member_not_nfc")
             continue
+        if not _portable(bname):
+            errors.append("bound_member_not_portable")
+            continue
         sub = _verify_inclusion(bname, str(b.get("member_sha256", "")), b, root)
         if sub:
-            errors += [f"bound_invalid:{bname}"]
+            errors += [f"bound_invalid:{ascii(bname)}"]
             continue
         idxs.append(int(b["leaf_index"]))
         if not (bname < name or bname > name):

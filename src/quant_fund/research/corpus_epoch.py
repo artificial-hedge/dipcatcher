@@ -136,13 +136,13 @@ def _nfc_errors(members: Mapping[str, str]) -> list[str]:
     Also rejects distinct names that collide under NFC+casefold
     (``A.json``/``a.json``) — they can't coexist on default macOS/Windows
     checkouts, so a corpus admitting both wouldn't be portable."""
-    errors = [f"member_name_not_nfc:{n}" for n in members if unicodedata.normalize("NFC", n) != n]
+    errors = [f"member_name_not_nfc:{n!a}" for n in members if unicodedata.normalize("NFC", n) != n]
     seen: dict[str, str] = {}
     for n in members:
         folded = unicodedata.normalize("NFC", n).casefold()
         other = seen.get(folded)
         if other is not None and other != n:
-            errors.append(f"member_name_alias:{other}|{n}")
+            errors.append(f"member_name_alias:{other!a}|{n!a}")
         else:
             seen[folded] = n
     return errors
@@ -156,9 +156,25 @@ def _symlink_errors(root: Path, pattern: str) -> list[str]:
     # Scan every entry, not only glob matches: a symlinked *directory* never
     # matches the member pattern, but could hide content under the corpus.
     return [
-        f"member_is_symlink:{p.relative_to(root).as_posix()}"
+        f"member_is_symlink:{p.relative_to(root).as_posix()!a}"
         for p in sorted(root.rglob("*"))
         if p.is_symlink()
+    ]
+
+
+_PORTABLE_FORBIDDEN_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
+
+
+def _portable_name_errors(members: Mapping[str, str]) -> list[str]:
+    """Member names must not carry control, format, or line-separator
+    characters — C0/DEL inject fake lines into human-facing verifier output,
+    bidi/format codepoints (U+202E…) visually rename members, and Zl/Zp break
+    line-oriented tooling. ASCII-repr'd in labels so the name can't inject
+    even while being reported."""
+    return [
+        f"member_name_not_portable:{n!a}"
+        for n in members
+        if any(unicodedata.category(c) in _PORTABLE_FORBIDDEN_CATEGORIES for c in n)
     ]
 
 
@@ -257,6 +273,12 @@ def corpus_epoch(
         raise ValueError(
             f"refusing to stamp {root}: symlink members "
             f"{[e.split(':', 1)[1] for e in links]} — replace with real files"
+        )
+    unportable = _portable_name_errors(members)
+    if unportable:
+        raise ValueError(
+            f"refusing to stamp {root}: non-portable member names "
+            f"{[e.split(':', 1)[1] for e in unportable]}"
         )
     # Chains are per-(dir, pattern): only epochs stamped with the same member
     # glob participate. Absent params.pattern means the default "*.json".
@@ -523,9 +545,9 @@ def check_epoch_chain(
         exp_sha = str(expected_head.get("sha256") or "")
         exp_path = root / exp_name if exp_name else root / ""
         if exp_name is None or not exp_path.is_file():
-            errors.append(f"epoch_head_missing:{exp_name or ''}")
+            errors.append(f"epoch_head_missing:{(exp_name or '')!a}")
         elif hash_bytes(exp_path.read_bytes()) != exp_sha:
-            errors.append(f"epoch_head_mutated:{exp_name}")
+            errors.append(f"epoch_head_mutated:{exp_name!a}")
 
     # Chains are per-(dir, pattern) — epochs stamped under a different member
     # glob form their own chain and are ignored here.
@@ -537,7 +559,7 @@ def check_epoch_chain(
     ]
     if not epochs:
         if exp_name is not None:
-            errors.append(f"epoch_head_rollback:{exp_name}")
+            errors.append(f"epoch_head_rollback:{exp_name!a}")
         errors.append("no_epoch_receipts")
         return {
             "errors": errors,
@@ -553,7 +575,7 @@ def check_epoch_chain(
     for path, payload in epochs:
         ver = verify_receipt_file(path)
         if not ver["valid"]:
-            errors.append(f"epoch_receipt_invalid:{path.name}")
+            errors.append(f"epoch_receipt_invalid:{path.name!a}")
             continue
         sealed[path.name] = payload
     if not sealed:
@@ -575,15 +597,15 @@ def check_epoch_chain(
             genesis.append(name)
             continue
         if prev not in by_name:
-            errors.append(f"epoch_orphan:{name}")
+            errors.append(f"epoch_orphan:{name!a}")
             continue
         if payload.get("prev_epoch_sha256") != by_name[prev].get("epoch_root_sha256"):
-            errors.append(f"epoch_prev_root_mismatch:{name}")
+            errors.append(f"epoch_prev_root_mismatch:{name!a}")
         if prev in child_of:
-            errors.append(f"epoch_fork:{prev}->{child_of[prev]},{name}")
+            errors.append(f"epoch_fork:{prev!a}->{child_of[prev]!a},{name!a}")
         child_of[prev] = name
     if len(genesis) > 1:
-        errors.append(f"epoch_multiple_genesis:{','.join(sorted(genesis))}")
+        errors.append(f"epoch_multiple_genesis:{','.join(sorted(ascii(g) for g in genesis))}")
 
     # Membership must be non-decreasing along the chain. Members under a
     # corpus-scoped exempt prefix churn by rule (self-authenticating files
@@ -599,7 +621,7 @@ def check_epoch_chain(
         }
         for gone in sorted(set(prev_members) - set(cur_members)):
             if allowed.get(gone) != prev_members[gone]:
-                errors.append(f"member_removed:{gone}@{cur_name}")
+                errors.append(f"member_removed:{gone!a}@{cur_name!a}")
         declared_removed = {
             n
             for n in (by_name[cur_name].get("members_removed") or [])
@@ -607,17 +629,17 @@ def check_epoch_chain(
         }
         actual_removed = set(prev_members) - set(cur_members)
         if declared_removed != actual_removed:
-            errors.append(f"members_removed_dishonest:{cur_name}")
+            errors.append(f"members_removed_dishonest:{cur_name!a}")
         declared_added = {
             n for n in (by_name[cur_name].get("members_added") or []) if not _exempt_member(root, n)
         }
         actual_added = set(cur_members) - set(prev_members)
         if declared_added != actual_added:
-            errors.append(f"members_added_dishonest:{cur_name}")
+            errors.append(f"members_added_dishonest:{cur_name!a}")
         # Mutated members: same name, different digest.
         for kept in set(prev_members) & set(cur_members):
             if prev_members[kept] != cur_members[kept] and not allow_member_updates:
-                errors.append(f"member_mutated:{kept}@{cur_name}")
+                errors.append(f"member_mutated:{kept!a}@{cur_name!a}")
 
     # Head vs live corpus: stamped membership must hold exactly; files added
     # after the head stamp are unstamped (normal), not violations.
@@ -632,19 +654,20 @@ def check_epoch_chain(
         live = member_digests(root, pattern=pattern)
         errors += _nfc_errors(live)
         errors += _symlink_errors(root, pattern)
+        errors += _portable_name_errors(live)
         head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
         for name in stamped - set(live):
             if allowed.get(name) != head_members[name]:
-                errors.append(f"head_member_missing_live:{name}")
+                errors.append(f"head_member_missing_live:{name!a}")
         for name, sha in head_members.items():
             if name in live and live[name] != sha:
-                errors.append(f"head_member_digest_drift:{name}")
+                errors.append(f"head_member_digest_drift:{name!a}")
         unstamped = sorted(set(live) - stamped - set(by_name))
         if require_stamped:
-            errors.extend(f"unstamped_member:{name}" for name in unstamped)
+            errors.extend(f"unstamped_member:{name!a}" for name in unstamped)
     elif len(heads) > 1:
-        errors.append(f"epoch_multiple_heads:{','.join(sorted(heads))}")
+        errors.append(f"epoch_multiple_heads:{','.join(sorted(ascii(h) for h in heads))}")
 
     # Committed head pin (phase 2): the observed head must be the pinned head
     # or one of its descendants — a shorter or forked chain means head epochs
@@ -662,7 +685,7 @@ def check_epoch_chain(
             prev = prev_ref.get("prev_epoch_receipt") if isinstance(prev_ref, Mapping) else None
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
-            errors.append(f"epoch_head_rollback:{exp_name}")
+            errors.append(f"epoch_head_rollback:{exp_name!a}")
     return {
         "errors": errors,
         "unstamped": unstamped,

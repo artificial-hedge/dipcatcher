@@ -197,7 +197,7 @@ def test_repo_integrity_contract_catches_forged_ok(tmp_path: Path) -> None:
     # Also incoherent: gate ok=True while listing errors.
     forged2 = dict(body)
     g2 = dict(body["gates"])
-    g2["epoch:receipts"] = {"ok": True, "errors": ["member_removed:x.json"]}
+    g2["epoch:receipts"] = {"ok": True, "errors": ["member_removed:'x.json'"]}
     forged2["gates"] = g2
     assert "gate_ok_incoherent:epoch:receipts" in repo_integrity_contract_errors(forged2)
     # Hidden surface: drop a required gate, keep ok=true.

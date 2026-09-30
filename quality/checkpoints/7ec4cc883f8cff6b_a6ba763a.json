@@ -2,10 +2,10 @@
   "algorithm": "ed25519",
   "key_id": "bc3bcff676056adf",
   "payload": {
-    "at": "2026-09-30T05:14:30+00:00",
+    "at": "2026-09-30T05:07:36+00:00",
     "code": {
-      "revision": "924e6c46cb8b1c566736952ba07a751b1712df2a",
-      "worktree_sha256": "5445f6d1c3d176d10f7faa3fb0511bf14864035374654abc8f5d00a95affd7df"
+      "revision": "078268df3758a2dba8a694f5f6e151284df228ea",
+      "worktree_sha256": "2eb88a92703d514ec029dc66b407f9507f7533e6b51b168fc9a1e228bfa1219d"
     },
     "heads": {
       ".dsh-24x7/*": {
@@ -34,14 +34,14 @@
         "tree_root": "24e78895f967f0b570f2fd097c24a24d73b2b9a9d8ac280e9104b7f53f577e21"
       },
       "quality/*.json": {
-        "receipt": "corpus_epoch_cbc4e767338e1397.json",
-        "sha256": "248f33cbd9d7e3a4f297da0383f5254d4f42a00bd5ad909a33bbefbb8f7da9fd",
-        "tree_root": "bae7ccf6d963d19bb0a2aab32183c63df85691c1ff899a7db166fbecc4b24105"
+        "receipt": "corpus_epoch_e98b03ff064e2f72.json",
+        "sha256": "55f2a87f5d0e03845614d60ec2f00df18bec2e44499906ed61cf514a41c505f9",
+        "tree_root": "2b328c87b8595d5b6014757a2cd0924e53bf9f6bd477da11055db945a20807e1"
       },
       "receipts/*.json": {
-        "receipt": "corpus_epoch_54c82d2a8bcb86ed.json",
-        "sha256": "8711f308401f12c3556d870a282b58aaffb136ad526febd661f181c0742a2870",
-        "tree_root": "27ecdc5b11c834dac7d32dbaecc6b0f9eec9e6462ba8a187e2103e59c8bae3d4"
+        "receipt": "corpus_epoch_2ddb4fe7154677d3.json",
+        "sha256": "f70e4a3c361b81ba920e32ccd3f9375204e2fb6965b9733573563e2b5b881c7c",
+        "tree_root": "e8d624959aa8411c38112f27ae82ed7ea61a631c34ad609d59c71fcd9174cd98"
       },
       "verifier/*.md": {
         "receipt": "corpus_epoch_9570c1590cf4e822.json",
@@ -51,18 +51,18 @@
     },
     "missing_pins": [],
     "pins": {
-      "gate_pins.sig": "1d28723ffe1fee43f4cae8a32efe1b305a23a3f2b4e145da544313b37f7a0173",
-      "quality/crown_jewels.json": "4438f652e17cfa05bc422995e6ca306f37176b88ee990260479beed8e7ef4fd0",
-      "quality/epoch_heads.json": "af3c33acf984190bc55e622359b35ba932b626bad97100404c3deca724b0fa95"
+      "gate_pins.sig": "179b79e87d8e6e707bb9c466334b4396e7da1245f472a8accde7321b08b38d56",
+      "quality/crown_jewels.json": "223078863c6591d3ab48de7c7f0b3bdef51a88b023ffe22bf5977dd82cc525d2",
+      "quality/epoch_heads.json": "0f3233191c9e1f3f4a7c711dbdb5c0cef32a10837e513ab9dca2a36221228be8"
     },
-    "prev_sha256": "7ec4cc883f8cff6ba6ba763a9fcf0bdc14d0000c1ac529e895d242b61da55962",
+    "prev_sha256": "f7aa34782173ae9ca6fdcc9f65f3cf71ed24203252b3bf3e9852d3559be02569",
     "schema": "integrity_checkpoint.v1",
     "spine": {
-      "n_archives": 80,
+      "n_archives": 79,
       "tip": "fdd3ee1811654c76_19a106d5.json"
     },
     "witness": {
-      "n_proofs": 90,
+      "n_proofs": 89,
       "proofs": {
         "checkpoint.json_2884936358.json": "da2cc622df0b69d87589caebb754e20e4281c0f67f85822eda423fd563641669",
         "checkpoint.json_2885061641.json": "c33ef89dcadc8400ef3cca07972bda027e277ee8aeb05c14f7019c8de7d458c0",
@@ -152,11 +152,10 @@
         "checkpoint.json_3012156749.json": "82b335c70c4c8e82de499793b87c3f378f4803a7a68df5f69fea1aa8f2b54bdf",
         "checkpoint.json_3012232524.json": "557491a27ff8c1bd19b9d850cd4617fe6c01f751c7e5558414b3eabef91e5af6",
         "checkpoint.json_3012237654.json": "80783bcab79cc94e00c185a6b0e1cbcc3a3c68c711a869f57b65b4c0fe68493d",
-        "checkpoint.json_3012429767.json": "f41eb3e0bd4348dfc77b3c6a3367559359b74ba09c117bc253c68c1036624288",
-        "checkpoint.json_3012445062.json": "41bd825ebd5a2dffbbbae24c64d10bf88c2b209b749772e909748fe7caa14a44"
+        "checkpoint.json_3012429767.json": "f41eb3e0bd4348dfc77b3c6a3367559359b74ba09c117bc253c68c1036624288"
       }
     }
   },
   "schema": "integrity_checkpoint_sig.v1",
-  "signature": "ca3dea98e48f1994ad83b002b741daffece3210b4f30e5ad90c43be5c9179a022b779cba947dc9ed44df8b33a12ccd24fb12f1c9fa5ad59e97a5a6ee152d830a"
+  "signature": "19fe894b3a894c4a8861fb21ad5884292a2c231b8b07286be77ec7f4ef6488b8b4e12e7bbf345d2c95d2a3559dd9faf81e866294db49b5f95655f4875f373409"
 }

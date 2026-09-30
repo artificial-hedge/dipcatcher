@@ -264,7 +264,7 @@ def verify_repo(
                 or any(fnmatch(rel, g) for g in exempt)
             ):
                 continue
-            errs.append(f"uncovered_member:{rel}")
+            errs.append(f"uncovered_member:{rel!a}")
         gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
 
     # Semantic layer: byte-integrity says the corpus is untampered; the

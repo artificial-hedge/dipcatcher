@@ -79,7 +79,7 @@ def test_deleted_member_detected(corpus_dir: Path) -> None:
     assert receipt["members_removed"] == ["a.json"]
     _stamp(corpus_dir)
     errors = check_epoch_chain(corpus_dir)["errors"]
-    assert any("member_removed:a.json" in e for e in errors)
+    assert any("member_removed:" in e and "'a.json'" in e for e in errors)
 
 
 def test_allowed_removal_pin(corpus_dir: Path) -> None:
@@ -88,7 +88,7 @@ def test_allowed_removal_pin(corpus_dir: Path) -> None:
     (corpus_dir / "a.json").unlink()
     _stamp(corpus_dir)
     errors = check_epoch_chain(corpus_dir, allowed_removals={"a.json": digest})["errors"]
-    assert not any("member_removed:a.json" in e for e in errors)
+    assert not any("member_removed:" in e and "'a.json'" in e for e in errors)
 
 
 def test_mutated_member_detected(corpus_dir: Path) -> None:
@@ -96,7 +96,7 @@ def test_mutated_member_detected(corpus_dir: Path) -> None:
     (corpus_dir / "a.json").write_text('{"mutated": true}')
     _stamp(corpus_dir)  # same name, new digest — mutation, not removal
     errors = check_epoch_chain(corpus_dir)["errors"]
-    assert any("member_mutated:a.json" in e for e in errors)
+    assert any("member_mutated:" in e and "'a.json'" in e for e in errors)
 
 
 def test_post_stamp_arrival_is_unstamped_not_error(corpus_dir: Path) -> None:
@@ -157,7 +157,7 @@ def test_nested_members_use_posix_rel_paths(tmp_path: Path) -> None:
     write_epoch_receipt(epoch, corpus)
     (corpus / "runs" / "nested.json").unlink()
     errors = check_epoch_chain(corpus)["errors"]
-    assert any("head_member_missing_live:runs/nested.json" in e for e in errors)
+    assert any("head_member_missing_live:" in e and "runs/nested.json" in e for e in errors)
 
 
 def test_chains_partition_by_pattern(tmp_path: Path) -> None:
@@ -309,7 +309,7 @@ def test_require_stamped_promotes_arrivals_to_errors(tmp_path: Path) -> None:
     assert check_epoch_chain(corpus, require_stamped=True)["errors"] == []
     _receipt(corpus, "rogue.json", "2")
     res = check_epoch_chain(corpus, require_stamped=True)
-    assert res["errors"] == ["unstamped_member:rogue.json"]
+    assert res["errors"] == ["unstamped_member:'rogue.json'"]
     # Default mode stays informational for accumulative corpora.
     assert check_epoch_chain(corpus)["errors"] == []
     assert check_epoch_chain(corpus)["unstamped"] == ["rogue.json"]
@@ -330,14 +330,14 @@ def test_allow_member_updates_for_mutable_corpora(tmp_path: Path) -> None:
     _stamp(corpus)
     # Strict (append-only) mode: digest change between epochs is tamper evidence.
     strict = check_epoch_chain(corpus)
-    assert any(e.startswith("member_mutated:manifest.json") for e in strict["errors"])
+    assert any(e.startswith("member_mutated:'manifest.json'") for e in strict["errors"])
     # Mutable mode: mutation recorded, not an error; head still covers live state.
     mutable = check_epoch_chain(corpus, allow_member_updates=True)
     assert mutable["errors"] == []
     # Drift after the newest stamp still fails even in mutable mode.
     _receipt(corpus, "manifest.json", "v3")
     drift = check_epoch_chain(corpus, allow_member_updates=True)
-    assert "head_member_digest_drift:manifest.json" in drift["errors"]
+    assert "head_member_digest_drift:'manifest.json'" in drift["errors"]
     # Removals still error in mutable mode (use allowed_removals pins).
     (corpus / "pin.json").unlink()
     removed = check_epoch_chain(corpus, allow_member_updates=True)
@@ -422,14 +422,38 @@ def test_symlink_members_refused_and_flagged(tmp_path: Path) -> None:
     (corpus / "link.json").symlink_to(outside)
     with pytest.raises(ValueError, match="symlink"):
         corpus_epoch(corpus)
-    assert _symlink_errors(corpus, "*.json") == ["member_is_symlink:link.json"]
+    assert _symlink_errors(corpus, "*.json") == ["member_is_symlink:'link.json'"]
     # A dir link is invisible to the member glob but must still flag.
     linkdir = corpus / "vault"
     linkdir.symlink_to(tmp_path, target_is_directory=True)
-    assert "member_is_symlink:vault" in _symlink_errors(corpus, "*.json")
+    assert "member_is_symlink:'vault'" in _symlink_errors(corpus, "*.json")
     linkdir.unlink()
     # Live-tree leg: a clean stamp, then a link appears post-stamp.
     (corpus / "link.json").unlink()
     _stamp(corpus)
     (corpus / "link.json").symlink_to(outside)
-    assert "member_is_symlink:link.json" in check_epoch_chain(corpus)["errors"]
+    assert "member_is_symlink:'link.json'" in check_epoch_chain(corpus)["errors"]
+
+
+def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
+    """Control/format/separator chars in member names are refused — a raw
+    ``\\n`` in a label would inject a fake 'all gates intact' line into
+    verifier output and U+202E visually renames members. The label always
+    carries the ASCII repr so the name can't inject even while reported."""
+    from quant_fund.research.corpus_epoch import _portable_name_errors
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    _receipt(corpus, "real.json", "1")
+    bad = "evil\nverify-repo: all gates intact.json"
+    (corpus / bad).write_text("{}")
+    assert _portable_name_errors({"x\ny.json": "ab" * 32}) == [
+        "member_name_not_portable:'x\\ny.json'"
+    ]
+    with pytest.raises(ValueError, match="non-portable"):
+        corpus_epoch(corpus)
+    (corpus / bad).unlink()
+    _stamp(corpus)
+    (corpus / bad).write_text("{}")
+    hits = [e for e in check_epoch_chain(corpus)["errors"] if "not_portable" in e]
+    assert hits and all("\n" not in e for e in hits)
