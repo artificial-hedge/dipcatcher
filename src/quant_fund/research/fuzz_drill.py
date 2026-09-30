@@ -283,6 +283,11 @@ def fuzz_drill(root: str | Path, seed: int = 1, rounds: int | None = None) -> di
             except (OSError, ValueError, json.JSONDecodeError) as exc:
                 results.append({"mutation": name, "expect": expect, "skipped": f"setup:{exc}"})
                 continue
+            if str(detail).startswith("no_"):
+                # Closure could not apply the mutation on this tree — a
+                # no-op must not be graded as an escape.
+                results.append({"mutation": name, "expect": expect, "skipped": str(detail)})
+                continue
             res = verify_repo(clone)
             got_ok = bool(res.get("ok", True))
             gate_errors = sorted(
