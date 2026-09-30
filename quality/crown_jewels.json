@@ -18,7 +18,7 @@
     "scripts/verify_auditor_bundle.py": "bd95d88845a8bb2aef0f612557027288b04afcf6b1ecb5e062c472edc56c3ecf",
     "src/quant_fund/research/auditor_bundle.py": "d0649d8acf0b138ea4e2f7611316d1de47f7ffef092bc2e4c26c3eb16cad2b50",
     "src/quant_fund/research/checkpoint_chain.py": "33e21ce3047869bba3cf768629ee3d47c869cad8bca8f4d1b1863530227e8514",
-    "src/quant_fund/research/corpus_epoch.py": "de92b717737fc93adf285a48b2b8e51fc94862b78a0fb10d3a1114e199a76bc7",
+    "src/quant_fund/research/corpus_epoch.py": "c70ab6cab184481424a021e79e7b393568fff5a35e0a25b4480256481bb551f3",
     "src/quant_fund/research/crown_jewels.py": "c5fc08994453420ad3850df8d5e9cccd12479e6d001923790f97fb1ca6bacdb8",
     "src/quant_fund/research/epoch_consistency.py": "3e6f73f7c9ff5d542ae2804dc2d2ab83c3a64d496f5743c6dfd2a601c1236121",
     "src/quant_fund/research/epoch_merkle.py": "2778a059a1d1b4ffcd172c54375d3f827560c4a175c29dac0d81401ee9058b77",
