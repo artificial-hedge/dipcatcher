@@ -259,6 +259,7 @@ src/quant_fund/microstructure/candle_book_features.py
 src/quant_fund/microstructure/rl_market_maker.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/vendor_book_map.py
+src/quant_fund/microstructure/vol_clock.py
 src/quant_fund/microstructure/zi_lob_simulator.py
 src/quant_fund/models/__init__.py
 src/quant_fund/models/agaci.py
