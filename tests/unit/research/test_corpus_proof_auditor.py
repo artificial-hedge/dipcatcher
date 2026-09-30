@@ -136,3 +136,137 @@ def test_script_absence_bracket(tmp_path: Path) -> None:
     proc2 = _run("--absence", str(ap), "--pin", str(bad_pin), "--key", key)
     assert proc2.returncode == 1
     assert "merkle_root_not_pinned" in proc2.stdout
+
+
+def _signed_checkpoint(pin_heads: dict, pins: dict, tmp_path: Path) -> tuple[Path, Path]:
+    """A checkpoint envelope signed by a throwaway key — exercises the
+    script's Ed25519 auth path end-to-end."""
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    key = Ed25519PrivateKey.generate()
+    pub_hex = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
+    payload = {
+        "schema": "integrity_checkpoint.v1",
+        "at": "2026-01-01T00:00:00+00:00",
+        "pins": pins,
+        "heads": pin_heads,
+        "missing_pins": [],
+        "prev_sha256": None,
+        "spine": {"n_archives": 0, "tip": None},
+        "witness": {"n_proofs": 0, "proofs": {}},
+        "code": {"revision": "test", "worktree_sha256": "0" * 64},
+    }
+    canon = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    sig = key.sign(canon).hex()
+    cp = tmp_path / "checkpoint.json"
+    cp.write_text(
+        json.dumps(
+            {
+                "schema": "integrity_checkpoint_sig.v1",
+                "algorithm": "ed25519",
+                "key_id": pub_hex[:16],
+                "payload": payload,
+                "signature": sig,
+            }
+        )
+    )
+    pub = tmp_path / "gate_signing.pub"
+    pub.write_text(pub_hex)
+    return cp, pub
+
+
+def test_script_checkpoint_mode(tmp_path: Path) -> None:
+    """Proof + signed checkpoint alone (no pin file) verifies; a checkpoint
+    signed by a foreign key or cross-pinning other bytes fails."""
+    from quant_fund.research.corpus_epoch import corpus_epoch, epoch_heads_key, write_epoch_receipt
+    from quant_fund.research.epoch_merkle import member_proof, merkle_root
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    for name in ("a.json", "c.json", "e.json"):
+        (corpus / name).write_text(json.dumps({"v": name}))
+    epoch = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    members = {m["name"]: m["sha256"] for m in json.loads(epoch.read_text())["members"]}
+    root = merkle_root(members)
+    key = epoch_heads_key(corpus, "*.json")
+    pin_heads = {key: {"receipt": epoch.name, "sha256": "0" * 64, "tree_root": root}}
+
+    pin_file = tmp_path / "quality" / "epoch_heads.json"
+    pin_file.parent.mkdir(parents=True, exist_ok=True)
+    pin_file.write_text(json.dumps({"heads": pin_heads}))
+    pins = {"quality/epoch_heads.json": "0" * 64}
+    import hashlib
+
+    pins["quality/epoch_heads.json"] = hashlib.sha256(pin_file.read_bytes()).hexdigest()
+
+    cp, pub = _signed_checkpoint(pin_heads, pins, tmp_path)
+    body = member_proof(corpus, "c.json")
+    proof_path = tmp_path / "proof.json"
+    proof_path.write_text(json.dumps(seal_receipt(body)))
+
+    # checkpoint-only mode
+    proc = _run(
+        "--proof",
+        str(proof_path),
+        "--checkpoint",
+        str(cp),
+        "--pubkey",
+        str(pub),
+        "--key",
+        key,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    # checkpoint + pin cross-anchor
+    proc2 = _run(
+        "--proof",
+        str(proof_path),
+        "--pin",
+        str(pin_file),
+        "--checkpoint",
+        str(cp),
+        "--pubkey",
+        str(pub),
+        "--key",
+        key,
+    )
+    assert proc2.returncode == 0, proc2.stdout + proc2.stderr
+
+    # swapped pin bytes must trip the cross-anchor
+    pin_file.write_text(json.dumps({"heads": pin_heads, "pad": 1}))
+    proc3 = _run(
+        "--proof",
+        str(proof_path),
+        "--pin",
+        str(pin_file),
+        "--checkpoint",
+        str(cp),
+        "--pubkey",
+        str(pub),
+        "--key",
+        key,
+    )
+    assert proc3.returncode == 1
+    assert "checkpoint_pin_mismatch" in proc3.stdout
+
+    # foreign-signed checkpoint must fail the signature layer
+    (tmp_path / "f").mkdir()
+    cp2, pub2 = _signed_checkpoint(pin_heads, pins, tmp_path / "f")
+    forged = json.loads(cp2.read_text())
+    forged["payload"]["heads"] = pin_heads  # same content, foreign key
+    cp3 = tmp_path / "checkpoint_forged.json"
+    cp3.write_text(json.dumps(forged))
+    proc4 = _run(
+        "--proof",
+        str(proof_path),
+        "--checkpoint",
+        str(cp3),
+        "--pubkey",
+        str(pub),
+        "--key",
+        key,
+    )
+    assert proc4.returncode == 1
+    assert "checkpoint_signature_invalid" in proc4.stdout

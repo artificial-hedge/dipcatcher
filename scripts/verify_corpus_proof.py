@@ -14,6 +14,18 @@ OTS-anchored to Bitcoin). No repo access, no library import.
         --absence absence_proof.json \
         --pin quality/epoch_heads.json [--key receipts/*.json]
 
+    python3 scripts/verify_corpus_proof.py \
+        --proof corpus_proof_XXXX.json \
+        --checkpoint quality/checkpoint.json \
+        --pubkey quality/gate_signing.pub
+
+Checkpoint mode: the heads pin comes from the checkpoint payload itself —
+``payload.heads`` carries the same per-corpus receipt/tree_root map, and the
+whole payload is Ed25519-signed under the committed gate pubkey (which is
+itself Rekor-witnessed + OTS-anchored via the checkpoint's TSA token). A
+swapped pin file can't launder anything: with ``--pin`` also given the
+script requires sha256(pin bytes) == ``payload.pins[<pin path>]``.
+
 Verifies, entirely offline:
 
 1. The proof names the pinned head epoch receipt — anything else could be a
@@ -122,6 +134,51 @@ def _verify_inclusion(name: str, sha256: str, proof: dict[str, Any], root_hex: s
     if recomputed != root_hex:
         errors.append("merkle_root_mismatch")
     return sorted(set(errors))
+
+
+def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
+    """Repo convention: Ed25519 keys/sigs are raw 32/64-byte hex, not PEM.
+
+    Returns None when the cryptography backend is unavailable — a distinct
+    state from a signature that verified False.
+    """
+    try:
+        from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    except ImportError:
+        return None
+    try:
+        pub = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub_hex.strip()))
+        pub.verify(bytes.fromhex(sig_hex), msg)
+    except (InvalidSignature, ValueError, TypeError):
+        return False
+    return True
+
+
+def _checkpoint_heads(checkpoint: dict[str, Any], pubkey: Path) -> tuple[dict[str, Any], list[str]]:
+    """Authenticate the checkpoint envelope, return its heads map."""
+    errors: list[str] = []
+    if checkpoint.get("schema") != "integrity_checkpoint_sig.v1":
+        errors.append("checkpoint_schema")
+    payload = checkpoint.get("payload")
+    if not isinstance(payload, dict):
+        return {}, errors + ["checkpoint_payload_missing"]
+    if checkpoint.get("algorithm") != "ed25519":
+        errors.append("checkpoint_algorithm")
+    sig = checkpoint.get("signature")
+    if not isinstance(sig, str):
+        errors.append("checkpoint_signature_malformed")
+    else:
+        verdict = _ed25519_verify(pubkey.read_text().strip(), sig, _canon(payload))
+        if verdict is None:
+            errors.append("crypto_backend_unavailable")
+        elif verdict is False:
+            errors.append("checkpoint_signature_invalid")
+    heads = payload.get("heads")
+    if not isinstance(heads, dict):
+        errors.append("checkpoint_heads_missing")
+        heads = {}
+    return heads, errors
 
 
 def _pin_entry(
@@ -243,25 +300,67 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--proof", type=Path, default=None, help="corpus_proof.v1 receipt")
     ap.add_argument("--absence", type=Path, default=None, help="absence proof JSON")
-    ap.add_argument("--pin", type=Path, required=True, help="epoch_heads.json")
+    ap.add_argument("--pin", type=Path, default=None, help="epoch_heads.json")
+    ap.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=None,
+        help="Signed checkpoint carrying the heads pin map (authenticates --pin)",
+    )
+    ap.add_argument(
+        "--pubkey",
+        type=Path,
+        default=None,
+        help="Gate Ed25519 pubkey (raw hex) — required with --checkpoint",
+    )
     ap.add_argument("--key", type=str, default=None, help="pin key e.g. 'receipts/*.json'")
     args = ap.parse_args()
     if (args.proof is None) == (args.absence is None):
         print("pass exactly one of --proof/--absence", file=sys.stderr)
         return 2
-    pin = json.loads(args.pin.read_text())
+    if args.pin is None and args.checkpoint is None:
+        print("pass --pin and/or --checkpoint", file=sys.stderr)
+        return 2
+    if args.checkpoint is not None and args.pubkey is None:
+        print("--checkpoint requires --pubkey", file=sys.stderr)
+        return 2
+
+    pre_errors: list[str] = []
+    if args.checkpoint is not None:
+        checkpoint = json.loads(args.checkpoint.read_text())
+        assert args.pubkey is not None
+        heads, pre_errors = _checkpoint_heads(checkpoint, args.pubkey)
+        for e in pre_errors:
+            print(f"  {e}")
+        pin_heads: dict[str, Any] = heads
+        if args.pin is not None:
+            # Cross-anchor: the checkpoint must pin this pin file's bytes.
+            pins = checkpoint.get("payload", {}).get("pins", {})
+            rel = args.pin.as_posix().removeprefix("./")
+            want = pins.get(rel)
+            if want is None:
+                want = next((v for k, v in pins.items() if rel.endswith(k)), None)
+            got = hashlib.sha256(args.pin.read_bytes()).hexdigest()
+            if want != got:
+                pre_errors.append(f"checkpoint_pin_mismatch:{args.pin.name}")
+    elif args.pin is not None:
+        pin_heads = json.loads(args.pin.read_text()).get("heads", {})
+    else:
+        pin_heads = {}
+
+    pin = {"heads": pin_heads}
     if args.proof is not None:
         payload = json.loads(args.proof.read_text())
         # sealed receipts may wrap the body under 'payload'
         body = payload.get("payload", payload)
-        errors = audit_proof(body, pin, args.key)
+        errors = pre_errors + audit_proof(body, pin, args.key)
         print(f"inclusion member={body.get('member')} -> {len(errors)} error(s)")
     else:
         payload = json.loads(args.absence.read_text())
         # sealed corpus_absence.v1 receipts wrap the body under 'payload';
         # raw library absence_proof() dicts pass through unchanged.
         body = payload.get("payload", payload)
-        errors = audit_absence(body, pin, args.key)
+        errors = pre_errors + audit_absence(body, pin, args.key)
         print(f"absence name={body.get('name')} -> {len(errors)} error(s)")
     for e in errors:
         print(f"  {e}")
