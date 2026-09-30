@@ -147,6 +147,20 @@ def test_verify_repo_missing_pin_fails_closed(tmp_path: Path) -> None:
     assert not res["gates"]["epoch:quality"]["ok"]
 
 
+def test_verify_repo_local_only_corpus_skips_on_clone(tmp_path: Path) -> None:
+    """data/metadata's epoch receipts are gitignored: a clone has the members
+    but no chain. The gate must report an explicit skip, not fail closed on a
+    checkout, and not silently pass — a machine with receipts verifies fully
+    (covered by the all-green fixture)."""
+    root = _git_repo(tmp_path)
+    for f in (root / "data" / "metadata").glob("corpus_epoch_*.json"):
+        f.unlink()
+    res = verify_repo(root)
+    gate = res["gates"]["epoch:data/metadata"]
+    assert gate == {"ok": True, "skipped": "local_only_no_receipts", "errors": []}
+    assert res["ok"], res
+
+
 def test_repo_integrity_contract_clean_fixture(tmp_path: Path) -> None:
     """The contract accepts a fresh attestation — verify-receipt calls it."""
     from quant_fund.research.repo_integrity import (

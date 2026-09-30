@@ -72,10 +72,19 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # land between stamps (unstamped = informational, not error), but a
     # stamped member is immutable: .npz mutation after stamping is tamper.
     (".dsh-24x7", "*", False, False, ()),
-    # Committed dataset manifests + validation outputs — inputs the
-    # data_manifest receipts pin; write-once dated dirs, stamped arrivals.
+    # Dataset manifests + validation outputs — inputs the data_manifest
+    # receipts pin; write-once dated dirs, stamped arrivals.
+    # Members are gitignored (only `.gitkeep` clones), so the epoch chain
+    # exists only on machines that ran the stamps: LOCAL_ONLY_CORPORA.
     ("data/metadata", "*", True, False, ()),
 )
+
+# Corpora whose epoch receipts never clone (gitignored even when the member
+# files themselves are committed). On a checkout that never ran the stamps
+# the dir holds members but zero epoch receipts: the gate reports an
+# explicit ``skipped`` state rather than a pass — a machine with receipts
+# still verifies fully, and stamped-member immutability holds there.
+LOCAL_ONLY_CORPORA: frozenset[str] = frozenset({"data/metadata"})
 
 
 def verify_repo(
@@ -195,6 +204,17 @@ def verify_repo(
             gates[f"epoch:{corpus_dir}"] = {
                 "ok": False,
                 "errors": [f"corpus_missing:{corpus_dir}"],
+            }
+            continue
+        if corpus_dir in LOCAL_ONLY_CORPORA and not any(cdir.glob("corpus_epoch_*.json")):
+            # Members clone (committed) but the epoch receipts do not
+            # (gitignored) — a checkout can't verify this chain, so the
+            # gate reports an explicit skip, not a pass. A machine that
+            # did run the stamps has receipts and verifies fully.
+            gates[f"epoch:{corpus_dir}"] = {
+                "ok": True,
+                "skipped": "local_only_no_receipts",
+                "errors": [],
             }
             continue
         if not pin_present:
