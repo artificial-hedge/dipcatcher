@@ -124,6 +124,7 @@ def verify_repo(
         "signed": bool(cp["signed"]),
         "anchored": bool(cp.get("anchored", False)),
         "current": bool(cp.get("current", False)),
+        "revision_ancestor": cp.get("revision_ancestor"),
         "errors": cp["errors"],
     }
 
@@ -244,6 +245,10 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         # can't claim ok while listing the errors it failed on.
         if bool(gate["ok"]) != (not g_errors):
             errors.append(f"gate_ok_incoherent:{name}")
+        if "revision_ancestor" in gate and not (
+            gate["revision_ancestor"] is None or isinstance(gate["revision_ancestor"], bool)
+        ):
+            errors.append(f"gate_field_malformed:{name}:revision_ancestor")
         if "skipped" in gate:
             # Only crown_jewels may be skipped, and only under evidence_only:
             # a full-tree attestation silently skipping a code gate would
@@ -319,7 +324,11 @@ def repo_integrity_receipt(
             name: {
                 "ok": g["ok"],
                 "errors": sorted(g["errors"]),
-                **{k: g[k] for k in ("signed", "anchored", "fresh", "skipped") if k in g},
+                **{
+                    k: g[k]
+                    for k in ("signed", "anchored", "fresh", "skipped", "revision_ancestor")
+                    if k in g
+                },
             }
             for name, g in verdict["gates"].items()
         },

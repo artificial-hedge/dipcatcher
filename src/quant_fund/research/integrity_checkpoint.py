@@ -274,11 +274,35 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
             if not found and prev != hash_bytes(cp_file.read_bytes()):
                 errors.append("prev_not_archived")
 
+    # Provenance metadata, not a verdict: whether the checkpoint's claimed
+    # code revision is an ancestor of this checkout's HEAD. A transplanted
+    # checkpoint records a revision unrelated to this history — surfaced as
+    # ``revision_ancestor=False`` without failing the gate, since a rebase
+    # legitimately orphans the recorded sha (post-rebase checkpoints record
+    # the new history again).
+    code = payload.get("code")
+    claimed_rev = code.get("revision") if isinstance(code, dict) else None
+    revision_ancestor: bool | None = None
+    if isinstance(claimed_rev, str) and len(claimed_rev) == 40 and (root_path / ".git").exists():
+        try:
+            import subprocess
+
+            proc = subprocess.run(
+                ["git", "merge-base", "--is-ancestor", claimed_rev, "HEAD"],
+                cwd=root_path,
+                capture_output=True,
+                timeout=10,
+            )
+            revision_ancestor = proc.returncode == 0
+        except (OSError, subprocess.SubprocessError):
+            revision_ancestor = None
+
     return {
         "ok": not errors,
         "signed": True,
         "anchored": anchored,
         "current": current,
+        "revision_ancestor": revision_ancestor,
         "errors": errors,
     }
 
