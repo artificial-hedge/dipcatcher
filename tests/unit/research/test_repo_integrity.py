@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from quant_fund.research.crown_jewels import DEFAULT_JEWELS
 from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.research.repo_integrity import (
     CORPORA,
@@ -350,4 +351,23 @@ def test_closed_world_root_files_pinned() -> None:
     root_files = {p for p in tracked if "/" not in p}
     assert root_files == ROOT_FILES, (
         f"root file drift: +{sorted(root_files - ROOT_FILES)} -{sorted(ROOT_FILES - root_files)}"
+    )
+
+
+# The one root file that must NEVER be a crown jewel: the signature authenticates
+# the pin manifest, so pinning its bytes inside that manifest is a self-reference
+# (every re-sign would instantly stale its own jewel). Its integrity gate is the
+# Ed25519 signature check itself.
+SIGNATURE_FILE = "gate_pins.sig"
+
+
+def test_closed_world_root_files_are_crown_jewels() -> None:
+    """Name-pinning alone leaves content unpinned: a swapped pyproject dep or
+    a weakened Makefile gate would change no name. Every root file is a
+    crown jewel — the only content gate that reaches above the corpus dirs."""
+    assert ROOT_FILES - {SIGNATURE_FILE} <= set(DEFAULT_JEWELS), (
+        f"unpinned root files: {sorted(ROOT_FILES - {SIGNATURE_FILE} - set(DEFAULT_JEWELS))}"
+    )
+    assert SIGNATURE_FILE not in DEFAULT_JEWELS, (
+        "gate_pins.sig must not be jewel-pinned — it is re-minted on every sign"
     )

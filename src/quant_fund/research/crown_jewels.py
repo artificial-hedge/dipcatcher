@@ -35,7 +35,35 @@ DEFAULT_PIN_PATH = Path("quality/crown_jewels.json")
 # a jewel is a code change here (review-visible), not a pin edit. The
 # verifier's own source is a jewel too: the strongest chain is useless if
 # the code that checks it can be silently rewritten to `return ok`.
+#
+# The second block is the tracked root-file set. Root files sit above every
+# corpus dir, so no epoch chain can reach them — this pin is the *only*
+# content gate they get. ``gate_pins.sig`` is deliberately excluded: it is
+# re-minted on every sign, and pinning its bytes would be self-referential
+# (the signature authenticates the pins; the pins cannot pin the signature).
 DEFAULT_JEWELS: tuple[str, ...] = (
+    # --- tracked root files: no epoch coverage by construction ---
+    ".dockerignore",  # what enters docker build contexts — supply-chain surface
+    ".env.example",  # documents the secret names the tree expects
+    ".gitattributes",  # line-ending/LFS rules — flips bytes at checkout
+    ".gitignore",  # un-ignoring a path class can leak credentials silently
+    ".python-version",  # interpreter pin
+    ".test_durations",  # shard-balance timing data — skew = uneven shards
+    "APPLY.md",  # fx-1 intake notes (tracked input)
+    "CHANGELOG.md",  # release ledger
+    "CITATION.cff",  # attribution metadata
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",  # contributor rules
+    "Dockerfile",  # the container definition — a build-env tamper surface
+    "HONESTY_RATING.md",  # the public honesty ledger
+    "INFLIGHT",  # work ledger
+    "README.md",  # the front door — install instructions are a hijack surface
+    "MATH_SPEC.md",  # fx-1 math contract (tracked input)
+    "RESEARCH_REFERENCES.md",  # fx-1 bibliography (tracked input)
+    "SECURITY.md",  # disclosure policy
+    "day_grind_progress.md",  # progress tracker
+    "docker-compose.yml",  # local service definitions
+    # --- gate-defining files ---
     ".gitleaks.toml",  # secret-scan allowlist — removing a rule opens exfil lanes
     ".github/dependabot.yml",  # dep-bump policy — tampering injects malicious upgrades
     ".github/codeql/codeql-config.yml",  # CodeQL weakening — security-scan evasion
