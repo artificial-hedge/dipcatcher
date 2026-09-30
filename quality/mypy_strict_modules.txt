@@ -385,6 +385,7 @@ src/quant_fund/models/qar.py
 src/quant_fund/models/qrf.py
 src/quant_fund/models/quantile_bandit.py
 src/quant_fund/models/quantile_forest.py
+src/quant_fund/models/quest.py
 src/quant_fund/models/random_projection.py
 src/quant_fund/models/ranking.py
 src/quant_fund/models/realized.py
