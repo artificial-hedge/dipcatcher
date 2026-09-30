@@ -73,9 +73,13 @@ def dedup_and_filter(
     # check compares a candidate against EVERY kept example that shares a
     # shingle — no distance-bounded window for a duplicate to slip past.
     shingle_to_kept: dict[str, list[int]] = {}
-    eval_shingles: set[str] = set()
-    for prompt in eval_prompts:
-        eval_shingles |= _shingles(prompt)
+    # Per-item shingle sets — contamination is measured as how much of an
+    # eval ITEM is embedded in the doc (|doc ∩ item| / |item|), not how much
+    # of the doc overlaps the pooled union. A long doc embedding one verbatim
+    # eval prompt must flag; fragments of unrelated prompts must not sum to
+    # a hit.
+    eval_sets: list[set[str]] = [_shingles(prompt) for prompt in eval_prompts]
+    eval_sets = [s for s in eval_sets if s]
     exact_dupes = near_dupes = contaminated = over_length = empty = 0
     lengths: list[int] = []
     for example in examples:
@@ -88,11 +92,13 @@ def dedup_and_filter(
             exact_dupes += 1
             continue
         shingles = _shingles(text)
-        if shingles and eval_shingles:
-            overlap = len(shingles & eval_shingles) / len(shingles)
-            if overlap >= containment_threshold:
-                contaminated += 1
-                continue
+        if (
+            shingles
+            and eval_sets
+            and any(len(shingles & item) / len(item) >= containment_threshold for item in eval_sets)
+        ):
+            contaminated += 1
+            continue
         candidates: set[int] = set()
         for shingle in shingles:
             candidates.update(shingle_to_kept.get(shingle, ()))

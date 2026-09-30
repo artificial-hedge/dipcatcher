@@ -63,7 +63,13 @@ class MRMDossier(BaseModel):
 
     @property
     def complete(self) -> bool:
-        return {s.activity for s in self.sections} == set(FIVE_ACTIVITIES)
+        """True only when every activity carries activity-specific evidence.
+
+        The model card is added to every section's backing, so an activity
+        is evidenced iff its section pins more than the card alone — except
+        ``governance``, whose evidence *is* the signed card.
+        """
+        return all(len(s.artifact_hashes) > 1 or s.activity == "governance" for s in self.sections)
 
 
 def compile_dossier(
@@ -136,15 +142,19 @@ def compile_dossier(
                 summary=summaries[activity],
             )
         )
+    is_complete = all(
+        activity in hashes or activity == "governance" for activity in FIVE_ACTIVITIES
+    )
     dossier = MRMDossier(
         model_version=card.version,
         base_model=card.base_model,
         sections=sections,
         contamination_flagged=contamination_flagged,
         # A flagged contamination audit invalidates ship eligibility even
-        # when the card's eval delta passed — the dossier must not certify
-        # a model trained on eval-bound data.
-        ship_eligible=card.eval_delta.ship_eligible and not contamination_flagged,
+        # when the card's eval delta passed — and so does an incomplete
+        # dossier: the five-activity pack cannot certify a checkpoint on
+        # evidence it never pinned.
+        ship_eligible=(card.eval_delta.ship_eligible and not contamination_flagged and is_complete),
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)

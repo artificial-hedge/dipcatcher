@@ -190,6 +190,15 @@ allowed = [
     "quant_fund.schemas.**",
     "quant_fund.utils.**",
     "quant_fund.validation.**",
+    # Options-reasoning eval oracle (atlas-pinned edges in
+    # scripts/gen_arch_diagrams.py FX1_TO_QUANT_FUND_EDGES): the eval bank
+    # grades fx1 against the harness reference options math as the single
+    # source of truth for gold answers — same intentional-seam reasoning as
+    # the ADR-0002 fx1→quant_fund pins. Exact modules only (pure-math leaf
+    # pricing/IV helpers), NOT quant_fund.models.** — no pipeline/research/
+    # cli/api/paper coupling may enter through them.
+    "quant_fund.models.iv_approx",
+    "quant_fund.models.options",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 
