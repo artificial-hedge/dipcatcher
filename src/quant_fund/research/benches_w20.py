@@ -44,6 +44,7 @@ executed-flag invariant in ``test_research_recovers_synthetic_oracle``).
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 
 _SEED = 20261026  # wave-20 stamp seed
 
@@ -70,7 +71,7 @@ def _finite_blob(mapped: dict[str, float]) -> dict[str, float]:
     return {}
 
 
-def _isinstance_floats(raw: dict[str, float] | dict[str, object]) -> dict[str, float]:
+def _isinstance_floats(raw: Mapping[str, object]) -> dict[str, float]:
     """Float-coerce a lane blob, dropping str stamps and runtime telemetry."""
     return {
         k: float(v)
@@ -123,14 +124,14 @@ def bench_hidden_markov_equilibrium() -> dict[str, float]:
 def bench_arl_mm() -> dict[str, float]:
     """Adversarial-RL market making with Hawkes flow + impact (wave 20).
 
-    Thin adapter over the lane module's own ``bench_arl_mm``: adversary
+    Thin adapter over the lane module's own ``arl_mm_bench``: adversary
     effectiveness, left-tail improvement of the ARL maker vs the
     non-adversarial baseline, no-directional-bias check, Hawkes cluster
     statistics. Returns ``{}`` while the lane module is absent, when the
     ``nn`` extra is missing, or on fail-closed rejection.
     """
     try:
-        from quant_fund.execution.arl_mm import bench_arl_mm as _arl_core_bench
+        from quant_fund.execution.arl_mm import arl_mm_bench as _arl_core_bench
     except ImportError:
         return {}
     try:

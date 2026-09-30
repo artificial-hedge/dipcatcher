@@ -225,12 +225,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # dividend factor, Gaussian normalized coordinates / risk-neutral
         # CDF deformations (Sun 2026, arXiv:2609.14212), and liquidity-tail
         # LOB equilibrium under heavy-tailed demand (Cetin-Lin-Livieri,
-        # arXiv:2607.01198). ARL market making (arXiv:2609.22785) registers
-        # once its lane branch lands. Same SYNTHETIC diagnostic contract.
+        # arXiv:2607.01198), and adversarial-RL market making with Hawkes
+        # order flow and price impact (Yang & Xu 2026, arXiv:2609.22785 —
+        # torch-gated). Same SYNTHETIC diagnostic contract.
         "varswap_stopping",
         "hidden_markov_equilibrium",
         "gaussian_normalized_coords",
         "liquidity_tail_lob",
+        "arl_mm",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

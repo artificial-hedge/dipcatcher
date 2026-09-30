@@ -3,9 +3,9 @@
 Module-scoped fixtures (values are seeded deterministic); the determinism
 test re-runs each numpy bench once and compares bit-for-bit.
 
-``arl_mm`` (torch-gated) and ``liquidity_tail_lob`` may return ``{}`` while
-their lane branches are in flight — the clean-blob contract holds on
-whatever they emit (wave-12/16 precedent). Science assertions are
+``arl_mm`` (torch-gated) may return ``{}`` without the ``nn`` extra — the
+clean-blob contract holds on whatever it emits (wave-12/16 precedent).
+Science assertions are
 DIRECTIONAL at the shrunk fixtures; the lane suites in
 tests/unit/{execution,models,metrics} pin the tight windows.
 """
@@ -46,9 +46,9 @@ _FAMILIES_LANDED = (
     "gaussian_normalized_coords",
     "liquidity_tail_lob",
 )
-_FAMILIES_IN_FLIGHT = ("arl_mm",)
+_FAMILIES_IN_FLIGHT: tuple[str, ...] = ()
 _LANDED_NUMPY_BLOBS = _FAMILIES_LANDED
-# May return {} (torch extra absent / lane branch in flight).
+# May return {} without the torch extra (arl_mm is torch-gated).
 _SOFT_BLOBS = ("arl_mm",)
 
 
@@ -159,11 +159,43 @@ def test_gaussian_normalized_coords_arb_cycle(
     assert blob["synthetic_roundtrip_eta_max_err"] < 1e-10
 
 
+def test_liquidity_tail_lob_tail_shift(
+    liquidity_tail_lob: dict[str, float],
+) -> None:
+    # Cetin-Lin-Livieri: under a t(3) demand prior the crossover to
+    # informed dominance sits deeper than Gaussian, deep-book impact is
+    # flatter, the fixed point converged, and the empirical tail index
+    # tracks the paper's rho = -2/3 law.
+    blob = liquidity_tail_lob
+    assert blob["synthetic_crossover_ratio_t_over_gauss"] > 1.0
+    assert blob["synthetic_h_deep_t"] < blob["synthetic_h_deep_gauss"]
+    assert blob["synthetic_informed_share_deep_t"] < blob["synthetic_informed_share_deep_gauss"]
+    assert blob["synthetic_fixedpoint_max_resid_t"] < 1e-6
+    assert blob["synthetic_fixedpoint_max_resid_gauss"] < 1e-6
+    assert abs(blob["synthetic_tail_rho_hat_t"] - blob["synthetic_tail_rho_theory_t1"]) < 0.25
+    assert blob["synthetic_posterior_consistency_error"] < 1e-6
+
+
+@pytest.mark.skipif(not _HAS_TORCH, reason="torch extra absent")
+def test_arl_mm_left_tail_improvement(arl_mm: dict[str, float]) -> None:
+    # Yang & Xu 2026: the ARL maker improves the left tail vs the
+    # non-adversarial baseline on the pooled adversarial grid, and the
+    # Hawkes flow fixture stays clustered (Fano > Poisson control).
+    blob = arl_mm
+    if not blob:
+        pytest.skip("arl_mm bench emitted {} (torch unavailable at runtime)")
+    assert blob["synthetic_arl_left_tail_q05_improvement"] > 0.0
+    assert blob["synthetic_arl_left_tail_env_improvement_frac"] > 0.5
+    assert blob["synthetic_hawkes_fano_factor"] > blob["synthetic_hawkes_fano_factor_poisson"]
+
+
 def test_numpy_benches_are_deterministic(
     varswap_stopping: dict[str, float],
     hidden_markov_equilibrium: dict[str, float],
     gaussian_normalized_coords: dict[str, float],
+    liquidity_tail_lob: dict[str, float],
 ) -> None:
     assert bench_varswap_stopping() == varswap_stopping
     assert bench_hidden_markov_equilibrium() == hidden_markov_equilibrium
     assert bench_gaussian_normalized_coords() == gaussian_normalized_coords
+    assert bench_liquidity_tail_lob() == liquidity_tail_lob
