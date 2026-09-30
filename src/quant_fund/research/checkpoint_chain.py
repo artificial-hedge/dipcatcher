@@ -81,15 +81,38 @@ def _verify_signature(rec: dict[str, Any], pubkey: Any, pub_hex: str) -> None:
         rec["errors"].append("signature_invalid")
 
 
-def _verify_quorum_signature(
-    rec: dict[str, Any], quorum: tuple[dict[str, str], int] | None
-) -> None:
-    """Verify a ``integrity_checkpoint_sig.v2`` record against the registry.
+def _quorum_digest(rec: dict[str, Any]) -> str | None:
+    """The registry digest a checkpoint's payload claims authorized it."""
+    payload = rec.get("payload") or {}
+    q = payload.get("quorum")
+    if isinstance(q, dict) and isinstance(q.get("registry_sha256"), str):
+        return str(q["registry_sha256"])
+    return None
 
-    Every signature resolves its ``key_id`` through the committed
-    ``gate_quorum.v1`` registry (not the rotation keyring — quorum members
-    are pinned by the registry itself). Distinct valid signers must reach
-    the registry threshold.
+
+def _signer_key_ids(rec: dict[str, Any]) -> set[str]:
+    body = rec.get("body") or {}
+    kids: set[str] = set()
+    if isinstance(body.get("key_id"), str):
+        kids.add(body["key_id"])
+    for entry in body.get("signatures") or []:
+        if isinstance(entry, dict) and isinstance(entry.get("key_id"), str):
+            kids.add(entry["key_id"])
+    return kids
+
+
+def _verify_quorum_signature(
+    rec: dict[str, Any],
+    quorum: tuple[dict[str, str], int] | None,
+    lineage: dict[str, tuple[dict[str, str], int]] | None = None,
+) -> None:
+    """Verify a ``integrity_checkpoint_sig.v2`` record against its registry.
+
+    The record's own ``payload.quorum.registry_sha256`` names the registry
+    that authorized it; post-field records resolve through the lineage map
+    (rotation records + live), pre-field archives fall back to the live
+    registry — on a tree that never rotated, they are the same set. Distinct
+    valid signers must reach that registry's threshold.
     """
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -100,10 +123,17 @@ def _verify_quorum_signature(
     if body.get("algorithm") != "ed25519":
         rec["errors"].append("algorithm_unexpected")
         return
-    if quorum is None:
+    claimed = _quorum_digest(rec)
+    if claimed is not None and lineage is not None and claimed in lineage:
+        registered, threshold = lineage[claimed]
+    elif claimed is not None:
+        rec["errors"].append(f"quorum_registry_unknown:{claimed[:16]}")
+        return
+    elif quorum is None:
         rec["errors"].append("quorum_registry_missing")
         return
-    registered, threshold = quorum
+    else:
+        registered, threshold = quorum
     sigs = body.get("signatures")
     if not isinstance(sigs, list) or not sigs:
         rec["errors"].append("quorum_signatures_missing")
@@ -227,9 +257,12 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
 
     ring = load_keyring(root_path)
     quorum = load_quorum_registry(root_path)
+    from quant_fund.research.quorum_rotation import load_registry_lineage
+
+    lineage = load_registry_lineage(root_path)
     for rec in records.values():
         if (rec.get("body") or {}).get("schema") == CHECKPOINT_SIG_SCHEMA_V2:
-            _verify_quorum_signature(rec, quorum)
+            _verify_quorum_signature(rec, quorum, lineage)
             continue
         kid = str((rec.get("body") or {}).get("key_id", ""))
         rec_pub_hex = ring.get(kid, pub_hex)
@@ -388,6 +421,99 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
 
     # Timestamp monotonicity genesis -> head (spine list is head-first).
     ordered = list(reversed(spine))
+
+    # Quorum-registry continuity: adjacent members must name the same
+    # authorizing registry, or the change needs a quorum_rotation.v1 record
+    # signed to the predecessor registry's threshold. Registry introduction
+    # (parent predates the quorum field) requires key continuity — at least
+    # one child-registered signer must have signed the parent.
+    from quant_fund.research.quorum_rotation import (
+        QUORUM_ROTATION_DIR,
+        QUORUM_ROTATION_GLOB,
+    )
+    from quant_fund.research.quorum_rotation import (
+        _record as _rotation_record,
+    )
+
+    rot_recs = (
+        [
+            rec
+            for f in sorted((root_path / QUORUM_ROTATION_DIR).glob(QUORUM_ROTATION_GLOB))
+            if not (rec := _rotation_record(f))["errors"]
+        ]
+        if (root_path / QUORUM_ROTATION_DIR).is_dir()
+        else []
+    )
+    unbound_noted = False
+    for parent, child in zip(ordered, ordered[1:], strict=False):
+        p_rec, c_rec = records[parent], records[child]
+        c_is_v2 = (c_rec.get("body") or {}).get("schema") == CHECKPOINT_SIG_SCHEMA_V2
+        if not c_is_v2:
+            continue
+        cd = _quorum_digest(c_rec)
+        pd = _quorum_digest(p_rec)
+        if cd is None:
+            if not unbound_noted:
+                notes.append("quorum_unbound:pre-field v2 record(s)")
+                unbound_noted = True
+            continue
+        if pd == cd:
+            continue
+        if cd not in lineage:
+            errors.append(f"quorum_registry_unknown:{child[:12]}")
+            continue
+        if pd is None:
+            # Registry introduction: the new quorum must share a signer with
+            # the record it succeeds — an attacker-built set can't include a
+            # live key it can't sign under.
+            child_kids = set(lineage[cd][0])
+            if not child_kids & _signer_key_ids(p_rec):
+                errors.append(f"quorum_genesis_discontinuous:{child[:12]}")
+            continue
+        # Rotation edge: find a record chaining pd -> cd, authorized under
+        # the predecessor registry the spine itself recorded.
+        link_ok = False
+        for rot in rot_recs:
+            payload = rot.get("payload") or {}
+            if (
+                str(payload.get("prev_registry_sha256")) == pd
+                and str(payload.get("registry_sha256")) == cd
+            ):
+                prev_reg = payload.get("prev_registry")
+                if isinstance(prev_reg, dict):
+                    try:
+                        registered = {str(e["key_id"]): str(e["pubkey"]) for e in prev_reg["keys"]}
+                        threshold = int(prev_reg["threshold"])
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                    from cryptography.exceptions import InvalidSignature
+                    from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                        Ed25519PublicKey,
+                    )
+
+                    valid: set[str] = set()
+                    sigs = rot.get("body", {}).get("signatures")
+                    for entry in sigs if isinstance(sigs, list) else []:
+                        if not isinstance(entry, dict):
+                            continue
+                        kid = str(entry.get("key_id", ""))
+                        pub = registered.get(kid)
+                        if pub is None or kid in valid:
+                            continue
+                        try:
+                            Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub)).verify(
+                                bytes.fromhex(str(entry.get("signature", ""))),
+                                canonical_json_bytes(payload),
+                            )
+                            valid.add(kid)
+                        except (InvalidSignature, ValueError):
+                            continue
+                    if len(valid) >= threshold:
+                        link_ok = True
+                        break
+        if not link_ok:
+            errors.append(f"quorum_registry_unauthorized:{child[:12]}")
+
     order_ok = True
     for parent, child in zip(ordered, ordered[1:], strict=False):  # adjacent pairs
         p_at = (records[parent].get("payload") or {}).get("at")

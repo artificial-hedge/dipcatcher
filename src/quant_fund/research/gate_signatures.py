@@ -256,7 +256,7 @@ def init_quorum(
     committed registry is tamper-evident; forging *signatures* still needs M
     private keys.
     """
-    from quant_fund.utils.atomicio import atomic_write_text
+    from quant_fund.utils.atomicio import atomic_write_bytes
 
     if threshold < 1 or threshold > len(pubkeys):
         raise ValueError("threshold must be in [1, n_keys]")
@@ -272,17 +272,25 @@ def init_quorum(
         if labels is not None:
             entry["label"] = labels[i]
         keys.append(entry)
+    registry = {"schema": QUORUM_REGISTRY_SCHEMA, "threshold": threshold, "keys": keys}
     path = Path(root) / DEFAULT_QUORUM_PATH
-    atomic_write_text(
-        path,
-        json.dumps(
-            {"schema": QUORUM_REGISTRY_SCHEMA, "threshold": threshold, "keys": keys},
-            indent=2,
-            sort_keys=True,
-        )
-        + "\n",
-    )
+    atomic_write_bytes(path, registry_file_bytes(registry))
     return path
+
+
+def registry_file_bytes(registry: dict) -> bytes:
+    """The canonical on-disk bytes for a ``gate_quorum.v1`` body.
+
+    Every registry digest — rotation records, checkpoint ``quorum`` claims,
+    lineage maps — is ``sha256`` over these bytes, so on-disk equality is
+    byte-exact, not formatting-dependent.
+    """
+    return (json.dumps(registry, indent=2, sort_keys=True) + "\n").encode()
+
+
+def registry_sha256(registry: dict) -> str:
+    """Canonical digest of a ``gate_quorum.v1`` body as committed to disk."""
+    return hash_bytes(registry_file_bytes(registry))
 
 
 def quorum_registry_errors(registry: object) -> list[str]:
@@ -324,7 +332,7 @@ def quorum_registry_errors(registry: object) -> list[str]:
     return sorted(errors)
 
 
-def _load_quorum_registry(root: Path) -> dict[str, str] | None:
+def _load_quorum_registry(root: Path) -> dict[str, str] | None:  # kept for callers
     """Return ``{key_id: pubkey_hex}`` for a clean committed registry, else None."""
     reg_file = root / DEFAULT_QUORUM_PATH
     if not reg_file.exists():

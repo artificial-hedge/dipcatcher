@@ -92,16 +92,18 @@ def test_state_records_heads_and_pins(tmp_path: Path) -> None:
     root, _priv, _pub = _repo(tmp_path)
     state = checkpoint_state(root)
     assert state["schema"] == "integrity_checkpoint.v1"
-    assert set(state["pins"]) == set(PINNED_FILES)
+    # pins covers every PINNED_FILE present on disk; this fixture has no
+    # quorum registry, so it lands in missing_pins instead.
+    assert set(state["pins"]) == {rel for rel in PINNED_FILES if (root / rel).exists()}
     assert state["heads"]["receipts/*.json"]["receipt"] == "corpus_epoch_abc123.json"
-    assert state["missing_pins"] == []
+    assert state["missing_pins"] == ["quality/gate_quorum.json"]
 
 
 def test_missing_pin_file_recorded(tmp_path: Path) -> None:
     root, _priv, _pub = _repo(tmp_path)
     (root / "gate_pins.sig").unlink()
     state = checkpoint_state(root)
-    assert state["missing_pins"] == ["gate_pins.sig"]
+    assert state["missing_pins"] == ["quality/gate_quorum.json", "gate_pins.sig"]
 
 
 def test_contract_clean(tmp_path: Path) -> None:
@@ -118,7 +120,9 @@ def test_contract_catches_forgery() -> None:
         "heads": {"receipts/*.json": {"receipt": "x.json", "sha256": "0" * 64}},
     }
     errs = checkpoint_contract_errors(bad)
-    assert all(e.startswith("pin_digest_malformed:") for e in errs)
+    assert sum(e.startswith("pin_digest_malformed:") for e in errs) == len(PINNED_FILES)
+    # bad lacks missing_pins — the pins∪missing accounting itself is flagged.
+    assert "missing_pins_malformed" in errs
 
 
 def test_verify_repo_carries_checkpoint_gate(tmp_path: Path) -> None:
@@ -361,12 +365,17 @@ def test_malformed_registry_fails_closed(tmp_path: Path) -> None:
 
 
 def test_v2_spine_mixed_era(tmp_path: Path) -> None:
-    """v1 archives + v2 head: the spine verifies each under its own era."""
+    """v1 archives + v2 head: the spine verifies each under its own era.
+
+    Registry introduction requires key continuity: the gate key that signed
+    the v1 parent must be a member of the first registry (an attacker-built
+    set can't contain a key it can't sign under).
+    """
     root, priv, pub = _repo(tmp_path)
     write_checkpoint(root, [(priv, pub)])  # v1 genesis — no registry yet
     from quant_fund.research.gate_signatures import init_quorum
 
-    pairs = [generate_keypair() for _ in range(2)]
+    pairs = [(priv, pub)] + [generate_keypair()]
     init_quorum(root, [p for _s, p in pairs], threshold=2)
     write_checkpoint(root, pairs)  # v2 head over the v1 archive
 

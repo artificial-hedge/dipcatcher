@@ -2396,6 +2396,48 @@ def quorum_init_cmd(
     typer.echo(f"registry={path} threshold={threshold}/{len(pubs)}")
 
 
+@app.command("quorum-rotate")
+def quorum_rotate_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    registry: Path = typer.Option(
+        ...,
+        "--registry",
+        help="JSON file holding the new gate_quorum.v1 body.",
+    ),
+    key_file: list[Path] = typer.Option(
+        [],
+        "--key-file",
+        help="OUTGOING quorum member key material. Repeatable — must reach "
+        "the *current* registry's threshold to authorize the rotation.",
+    ),
+    reason: str = typer.Option("quorum rotation", "--reason"),
+) -> None:
+    """Rotate the quorum registry under authorization of the outgoing quorum.
+
+    Writes a ``quorum_rotation.v1`` record (``quality/quorum_rotations/``)
+    binding prev→new registry digests, signed by ≥threshold distinct current
+    members, then installs the new ``gate_quorum.json`` byte-exact. The
+    checkpoint head goes stale on rotation — re-sign pins and re-checkpoint
+    in the same ceremony.
+    """
+    import json as _json
+
+    from quant_fund.research.quorum_rotation import rotate_quorum
+
+    raws = [f.read_text().strip() for f in key_file]
+    if not raws:
+        typer.echo("quorum-rotate: supply --key-file(s) of current quorum members")
+        raise typer.Exit(code=2)
+    try:
+        new_registry = _json.loads(registry.read_text())
+        signers = [pair for raw in raws for pair in _load_signer_pairs(raw)]
+        out = rotate_quorum(root, new_registry, signers, reason=reason)
+    except ValueError as exc:
+        typer.echo(f"quorum-rotate: {exc}")
+        raise typer.Exit(code=2) from exc
+    typer.echo(f"rotation={out}")
+
+
 @app.command("quorum-sign")
 def quorum_sign_cmd(
     root: Path = typer.Option(Path("."), "--root"),

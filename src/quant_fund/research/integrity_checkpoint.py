@@ -53,10 +53,12 @@ DEFAULT_CHECKPOINT_PATH = Path("quality/checkpoint.json")
 CHECKPOINT_ARCHIVE_DIR = Path("quality/checkpoints")
 
 # The pin files whose bytes the checkpoint covers. gate_pins.sig is included
-# so the checkpoint also binds *which* pin signature was current.
+# so the checkpoint also binds *which* pin signature was current, and
+# gate_quorum.json so a registry rotation deprecates the stale head.
 PINNED_FILES = (
     "quality/epoch_heads.json",
     "quality/crown_jewels.json",
+    "quality/gate_quorum.json",
     "gate_pins.sig",
 )
 
@@ -100,11 +102,35 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
         if wdir.is_dir()
         else {}
     )
+    # Quorum binding: v2 checkpoints are authorized under a registry; the
+    # signed payload names which one — canon-digest, threshold, key count —
+    # so a swapped-in registry can't launder forged signatures. ``None``
+    # records the pre-registry era explicitly.
+    from quant_fund.research.gate_signatures import quorum_registry_errors, registry_sha256
+
+    quorum_file = root_path / DEFAULT_QUORUM_PATH
+    quorum_field: dict[str, Any] | None = None
+    if quorum_file.is_file():
+        raw_q = quorum_file.read_bytes()
+        try:
+            registry = json.loads(raw_q)
+            qerrs = quorum_registry_errors(registry)
+            quorum_field = {
+                "registry_sha256": registry_sha256(registry) if not qerrs else hash_bytes(raw_q),
+                "threshold": int(registry["threshold"]) if not qerrs else None,
+                "n_keys": len(registry["keys"]) if not qerrs else None,
+            }
+            if qerrs:
+                quorum_field["malformed"] = True
+        except (OSError, json.JSONDecodeError, KeyError, TypeError):
+            quorum_field = {"registry_sha256": hash_bytes(raw_q), "malformed": True}
+
     from quant_fund.utils.reproducibility import git_revision, git_worktree_sha256
 
     return {
         "schema": CHECKPOINT_SCHEMA,
         "at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "quorum": quorum_field,
         "pins": pins,
         "heads": heads,
         "missing_pins": missing,
@@ -255,12 +281,34 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
         return {"ok": False, "signed": True, "current": False, "errors": ["checkpoint_malformed"]}
     # A committed quorum registry retires the single-key envelope at the head:
     # the checkpoint must prove the quorum, not one key. Registry absent or
-    # malformed means nothing can satisfy it — v1 heads fail closed too.
+    # malformed means nothing can satisfy it — v1 heads fail closed too. And
+    # the *signed payload* names the authorizing registry's canonical digest:
+    # the file on disk must be that registry, else the swap is silent.
     registry_present = (root_path / DEFAULT_QUORUM_PATH).exists()
     quorum = load_quorum_registry(root_path)
     if registry_present and quorum is None:
         errors.append("quorum_registry_malformed")
     if registry_present:
+        claimed_q = payload.get("quorum")
+        claimed_digest = claimed_q.get("registry_sha256") if isinstance(claimed_q, dict) else None
+        if body.get("schema") == CHECKPOINT_SIG_SCHEMA_V2:
+            if claimed_digest is None:
+                errors.append("quorum_unbound")
+            else:
+                raw_disk = (root_path / DEFAULT_QUORUM_PATH).read_bytes()
+                try:
+                    from quant_fund.research.gate_signatures import registry_sha256
+
+                    disk_registry = json.loads(raw_disk)
+                    disk_digest = (
+                        registry_sha256(disk_registry)
+                        if quorum is not None
+                        else hash_bytes(raw_disk)
+                    )
+                except (OSError, json.JSONDecodeError):
+                    disk_digest = hash_bytes(raw_disk)
+                if claimed_digest != disk_digest:
+                    errors.append("quorum_registry_drift")
         registered, threshold = quorum if quorum is not None else ({}, 10**9)
         if body.get("schema") != CHECKPOINT_SIG_SCHEMA_V2:
             errors.append("checkpoint_below_quorum")
@@ -311,13 +359,16 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
         except (InvalidSignature, ValueError):
             errors.append("signature_invalid")
 
-    # Currency: pinned digests vs live bytes.
+    # Currency: pinned digests vs live bytes. A file that is absent from
+    # both the claim and the tree (a pre-registry-era v1 payload) is neutral.
     pins = payload.get("pins", {})
     current = True
     if isinstance(pins, dict):
         for rel in PINNED_FILES:
             declared = pins.get(rel)
             member = root_path / rel
+            if declared is None and not member.exists():
+                continue
             if (
                 declared is None
                 or not member.exists()
@@ -404,11 +455,27 @@ def checkpoint_contract_errors(payload: Any) -> list[str]:
     pins = payload.get("pins")
     if not isinstance(pins, dict):
         errors.append("pins_missing")
+        pins = {}
     else:
-        for rel in PINNED_FILES:
-            digest = pins.get(rel)
-            if not isinstance(digest, str) or len(digest) != 64:
+        for rel, digest in pins.items():
+            if rel not in PINNED_FILES:
+                errors.append(f"pin_unpinned:{rel}")
+            elif not isinstance(digest, str) or len(digest) != 64:
                 errors.append(f"pin_digest_malformed:{rel}")
+    # A pinned file is either digested or declared missing — never absent
+    # from both (a silent drop) nor claimed missing for a non-pin name.
+    missing = payload.get("missing_pins")
+    if not isinstance(missing, list):
+        errors.append("missing_pins_malformed")
+        missing = []
+    missing_set = {str(m) for m in missing}
+    for rel in PINNED_FILES:
+        in_pins = rel in pins
+        in_missing = rel in missing_set
+        if in_pins == in_missing:
+            errors.append(f"pin_accounting_error:{rel}")
+    for name in sorted(missing_set - set(PINNED_FILES)):
+        errors.append(f"missing_pins_nonmember:{name}")
     heads = payload.get("heads")
     if not isinstance(heads, dict) or not heads:
         errors.append("heads_missing")

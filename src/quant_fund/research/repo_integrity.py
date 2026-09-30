@@ -188,6 +188,15 @@ def verify_repo(
         "errors": rot["errors"],
     }
 
+    from quant_fund.research.quorum_rotation import verify_quorum_rotations
+
+    qrot = verify_quorum_rotations(root)
+    gates["quorum_rotations"] = {
+        "ok": bool(qrot["ok"]),
+        "n_rotations": qrot["n_rotations"],
+        "errors": qrot["errors"],
+    }
+
     pin_present = pin_path.is_file()
     pin_parse_error: str | None = None
     if pin_present:
@@ -316,6 +325,7 @@ _REQUIRED_GATES = (
     "timestamp_anchors",
     "spine",
     "key_rotation",
+    "quorum_rotations",
     "lattice",
 )
 

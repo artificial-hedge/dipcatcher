@@ -72,6 +72,14 @@ def _canon(value: Any) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
+def _registry_sha256(registry: Any) -> str:
+    """Canonical digest of a gate_quorum.v1 body: the on-disk bytes are
+    json.dumps(indent=2, sort_keys) + newline — digest matches only when the
+    committed bytes are byte-exact."""
+    raw = json.dumps(registry, indent=2, sort_keys=True) + "\n"
+    return _sha(raw.encode()).hex()
+
+
 def _ecdsa_pem_verify(pem: bytes, sig_der: bytes, msg: bytes) -> bool:
     from cryptography.exceptions import InvalidSignature
     from cryptography.hazmat.primitives import hashes
@@ -595,9 +603,29 @@ def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
         ):
             errors.append("checkpoint_signature_invalid")
         pins = payload.get("pins", {}) if isinstance(payload, dict) else {}
-        for rel in ("quality/crown_jewels.json", "quality/epoch_heads.json", "gate_pins.sig"):
+        for rel in (
+            "quality/crown_jewels.json",
+            "quality/epoch_heads.json",
+            "gate_pins.sig",
+            "quality/gate_quorum.json",
+        ):
             if pins.get(rel) != _sha(decoded[rel]).hex():
                 errors.append(f"checkpoint_pin_drift:{rel}")
+        # Quorum binding: under a registry the v2 payload must name the
+        # registry's canonical digest — a swapped registry can't satisfy
+        # quorum AND claim the honest digest.
+        if quorum_registered is not None and isinstance(payload, dict):
+            claimed = payload.get("quorum")
+            claimed_digest = claimed.get("registry_sha256") if isinstance(claimed, dict) else None
+            if claimed_digest is None:
+                errors.append("quorum_unbound")
+            else:
+                try:
+                    disk_digest = _registry_sha256(json.loads(quorum_raw))
+                except json.JSONDecodeError:
+                    disk_digest = _sha(quorum_raw).hex()
+                if str(claimed_digest) != disk_digest:
+                    errors.append("quorum_registry_drift")
     except (KeyError, TypeError, AttributeError, json.JSONDecodeError):
         errors.append("checkpoint_malformed")
 

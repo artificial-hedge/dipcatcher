@@ -92,6 +92,9 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
     assert res["gates"]["spine"]["ok"] is True
     assert res["gates"]["key_rotation"]["ok"] is True
     assert res["gates"]["key_rotation"]["n_rotations"] == 0
+    # No quorum registry or rotations — same neutral-absent contract.
+    assert res["gates"]["quorum_rotations"]["ok"] is True
+    assert res["gates"]["quorum_rotations"]["n_rotations"] == 0
     assert set(res["gates"]) == {
         "crown_jewels",
         "pin_signatures",
@@ -100,6 +103,7 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
         "witness",
         "spine",
         "key_rotation",
+        "quorum_rotations",
         "lattice",
         "epoch:receipts",
         "epoch:verifier",
