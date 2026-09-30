@@ -281,8 +281,9 @@ def _fake_block(commitment: bytes) -> tuple[bytes, list[str], bytes]:
         + b"\x01"  # 1 vin
         + b"\x00" * 32
         + b"\xff\xff\xff\xff"  # prevhash + vout
-        + b"\x03\xab\xcd\xef"
-        + b"\xff\xff\xff\xff"  # scriptSig + seq
+        + b"\x04"  # scriptSig len
+        + b"\x03\x10\xeb\x09"  # BIP34 push: height 650000 (0x09EB10) LE
+        + b"\xff\xff\xff\xff"  # seq
         + b"\x02"  # 2 vout
         + (1000).to_bytes(8, "little")
         + b"\x19"
@@ -338,6 +339,7 @@ def test_verify_block_inclusion_segwit_coinbase() -> None:
     this test pins: every modern OTS-bearing block has a segwit coinbase)."""
     from quant_fund.research.ots_anchor import (
         coinbase_commitments,
+        coinbase_height,
         verify_block_inclusion,
     )
 
@@ -347,9 +349,10 @@ def test_verify_block_inclusion_segwit_coinbase() -> None:
         b"\x01\x00\x00\x00"  # version
         + b"\x01"  # 1 vin
         + b"\x00" * 32
-        + b"\xff\xff\xff\xff"
-        + b"\x03\xab\xcd\xef"
-        + b"\xff\xff\xff\xff"
+        + b"\xff\xff\xff\xff"  # prevhash + vout
+        + b"\x04"  # scriptSig len
+        + b"\x03\xa0\xbb\x0d"  # BIP34 push: height 900000 (0x0DBBA0) LE
+        + b"\xff\xff\xff\xff"  # seq
         + b"\x01"  # 1 vout
         + (0).to_bytes(8, "little")
         + bytes([len(script_pub)])
@@ -376,6 +379,17 @@ def test_verify_block_inclusion_segwit_coinbase() -> None:
     res = verify_block_inclusion(bytes(header), [txid0[::-1].hex()], segwit, commitment)
     assert res["ok"], res
     assert commitment in coinbase_commitments(segwit)
+    # BIP34: the scriptsig push declares height 900000 — the claimed-height
+    # binding must accept it and reject any other.
+    assert coinbase_height(segwit) == 900000
+    ok_h = verify_block_inclusion(
+        bytes(header), [txid0[::-1].hex()], segwit, commitment, claimed_height=900000
+    )
+    assert ok_h["ok"], ok_h
+    bad_h = verify_block_inclusion(
+        bytes(header), [txid0[::-1].hex()], segwit, commitment, claimed_height=900001
+    )
+    assert bad_h["error"] == "coinbase_height_mismatch"
 
 
 def test_verify_ots_fully_verified(tmp_path: Path) -> None:

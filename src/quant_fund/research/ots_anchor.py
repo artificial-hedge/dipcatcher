@@ -441,6 +441,31 @@ def _tx_base_serialization(tx: bytes) -> bytes:
     return tx[:4] + tx[6:off] + tx[-4:]
 
 
+def coinbase_height(coinbase_raw: bytes) -> int | None:
+    """BIP34 block height — the first scriptsig push of a coinbase input.
+
+    Every post-227836 coinbase declares its own height, binding the claimed
+    height to the block contents rather than the filename or manifest."""
+    try:
+        off = 4
+        if coinbase_raw[off] == 0x00 and coinbase_raw[off + 1] == 0x01:
+            off += 2
+        vin_n, off = _read_varint_tx(coinbase_raw, off)
+        if vin_n == 0:
+            return None
+        off += 36  # prevhash + vout of vin[0]
+        n, off = _read_varint_tx(coinbase_raw, off)
+        scriptsig = coinbase_raw[off : off + n]
+        if not scriptsig:
+            return None
+        push_n = scriptsig[0]
+        if push_n < 1 or push_n > 5 or len(scriptsig) < 1 + push_n:
+            return None
+        return int.from_bytes(scriptsig[1 : 1 + push_n], "little")
+    except (OtsError, IndexError):
+        return None
+
+
 def coinbase_commitments(coinbase_raw: bytes) -> set[bytes]:
     """OP_RETURN payloads embedded in a coinbase transaction.
 
@@ -471,15 +496,20 @@ def verify_block_inclusion(
     txids: list[str],
     coinbase_raw: bytes,
     committed_digest: bytes,
+    *,
+    claimed_height: int | None = None,
 ) -> dict[str, Any]:
     """Full leaf→block check — zero trust in the calendar's claim.
 
-    1. sha256d(coinbase_raw) is txid[0] (coinbase position by Bitcoin rule).
+    1. sha256d(witness-stripped coinbase) is txid[0] (coinbase position by
+       Bitcoin rule).
     2. Merkle root over all txids equals header[36:68] — the tx set is proven
        by the header's own commitment.
     3. The coinbase carries an OP_RETURN push equal to ``committed_digest``
        (the value the OTS attestation binds) — our aggregated leaf is inside
        the coinbase, hence inside this block.
+    4. When ``claimed_height`` is given, the coinbase's BIP34 push must equal
+       it — a valid witness for a *different* block can't be relabeled.
     """
     if len(header) != 80:
         return {"ok": False, "error": "header_not_80_bytes"}
@@ -492,6 +522,10 @@ def verify_block_inclusion(
             return {"ok": False, "error": "block_merkle_mismatch"}
         if committed_digest not in coinbase_commitments(coinbase_raw):
             return {"ok": False, "error": "commitment_absent"}
+        if claimed_height is not None:
+            h = coinbase_height(coinbase_raw)
+            if h is None or h != claimed_height:
+                return {"ok": False, "error": "coinbase_height_mismatch"}
     except (ValueError, OtsError) as exc:
         return {"ok": False, "error": f"block_parse:{exc}"}
     return {"ok": True, "n_tx": len(txids), "coinbase_txid": coinbase_txid[::-1].hex()}
@@ -737,6 +771,7 @@ def verify_ots(
                                 bw["txids"],
                                 bytes.fromhex(bw["coinbase"]),
                                 bytes.fromhex(att["committed_digest"]),
+                                claimed_height=int(att["height"]),
                             )
                         except (OSError, ValueError, KeyError) as exc:
                             inc = {"ok": False, "error": f"blk_parse:{exc.__class__.__name__}"}
