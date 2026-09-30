@@ -105,12 +105,70 @@ def submit_witness(
     root_path = Path(root)
     target_bytes = (root_path / target).read_bytes()
     entry_resp = _post_entry(target_bytes, witness_key_pem, rekor_url)
+    record = _witness_record(target.as_posix(), target_bytes, entry_resp, rekor_url)
+    out_dir = root_path / WITNESS_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / f"{target.name}_{record['rekor']['log_index']}.json"
+    atomic_write_text(out, json.dumps(record, indent=2, sort_keys=True) + "\n")
+    return out
+
+
+def witness_bytes(
+    target_file: str,
+    target_bytes: bytes,
+    witness_key_pem: bytes,
+    *,
+    rekor_url: str = DEFAULT_REKOR_URL,
+    rekor_pubkey_pem: bytes | None = None,
+) -> dict[str, Any]:
+    """Witness arbitrary bytes into Rekor; return the proof record.
+
+    Unlike ``submit_witness`` (which reads a repo file and writes the proof
+    under ``quality/witness/``), this returns the record for the caller to
+    embed — e.g. inside a ``release_attestation.v1`` payload. Both pubkeys
+    are embedded in the record so the proof verifies with no repo access;
+    ``rekor_pubkey_pem`` should be the committed pinned key.
+    """
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        PublicFormat,
+        load_pem_private_key,
+    )
+
+    key = load_pem_private_key(witness_key_pem, password=None)
+    witness_pub_pem = key.public_key().public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+    entry_resp = _post_entry(target_bytes, witness_key_pem, rekor_url)
+    return _witness_record(
+        target_file,
+        target_bytes,
+        entry_resp,
+        rekor_url,
+        witness_pubkey_pem=witness_pub_pem,
+        rekor_pubkey_pem=rekor_pubkey_pem,
+    )
+
+
+def _witness_record(
+    target_file: str,
+    target_bytes: bytes,
+    entry_resp: dict[str, Any],
+    rekor_url: str,
+    *,
+    witness_pubkey_pem: bytes | None = None,
+    rekor_pubkey_pem: bytes | None = None,
+) -> dict[str, Any]:
+    """Shape a Rekor entry response into a self-verifying proof record.
+
+    ``keys`` (only present when pubkeys are supplied) embeds the pubkeys the
+    record verifies under — for proofs meant to travel outside the repo
+    (embedded attestation witnesses), so an auditor needs no repo at all.
+    """
     uuid, entry = next(iter(entry_resp.items()))
     ver = entry.get("verification", {})
     proof = ver.get("inclusionProof", {})
-    record = {
+    record: dict[str, Any] = {
         "schema": WITNESS_SCHEMA,
-        "target": {"file": target.as_posix(), "sha256": hash_bytes(target_bytes)},
+        "target": {"file": target_file, "sha256": hash_bytes(target_bytes)},
         "rekor": {
             "url": rekor_url,
             "uuid": uuid,
@@ -128,11 +186,12 @@ def submit_witness(
             },
         },
     }
-    out_dir = root_path / WITNESS_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / f"{target.name}_{proof.get('logIndex', 'x')}.json"
-    atomic_write_text(out, json.dumps(record, indent=2, sort_keys=True) + "\n")
-    return out
+    if witness_pubkey_pem is not None or rekor_pubkey_pem is not None:
+        record["keys"] = {
+            "witness_pubkey_pem": witness_pubkey_pem.decode() if witness_pubkey_pem else None,
+            "rekor_pubkey_pem": rekor_pubkey_pem.decode() if rekor_pubkey_pem else None,
+        }
+    return record
 
 
 def _ecdsa_verify(pubkey_pem: bytes, sig_b64: str, message: bytes) -> bool:
@@ -190,6 +249,39 @@ def verify_witness_file(root: str | Path, proof_path: str | Path) -> dict[str, A
         record = json.loads(proof_file.read_text())
     except (OSError, ValueError):
         return {"ok": False, "errors": ["proof_malformed"]}
+    target_file = root_path / str(record.get("target", {}).get("file", ""))
+    target_bytes = target_file.read_bytes() if target_file.is_file() else None
+    pub_file = root_path / WITNESS_PUBKEY_PATH
+    rekor_pub = root_path / REKOR_PUBKEY_PATH
+    res = verify_witness_record(
+        record,
+        target_bytes=target_bytes,
+        witness_pubkey_pem=pub_file.read_bytes() if pub_file.is_file() else None,
+        rekor_pubkey_pem=rekor_pub.read_bytes() if rekor_pub.is_file() else None,
+    )
+    res["current"] = bool(target_file.is_file() and res["current"])
+    return res
+
+
+def verify_witness_record(
+    record: Any,
+    *,
+    target_bytes: bytes | None,
+    witness_pubkey_pem: bytes | None,
+    rekor_pubkey_pem: bytes | None,
+) -> dict[str, Any]:
+    """Verify a witness proof against caller-supplied bytes and pubkeys.
+
+    Same checks as ``verify_witness_file`` but takes the witnessed bytes and
+    both keys directly — this is what embedded proofs (an attestation whose
+    ``witness`` field carries its own Rekor record) verify against. When
+    ``target_bytes`` is given and digests to the logged digest, the artifact
+    signature IS re-verified (unlike the file variant, derived bytes are
+    always available). ``current`` = supplied bytes hash to the logged
+    digest (False when ``target_bytes`` is None or drifts).
+    """
+    if not isinstance(record, dict):
+        return {"ok": False, "current": False, "errors": ["proof_malformed"]}
     errors: list[str] = []
     if record.get("schema") != WITNESS_SCHEMA:
         errors.append("schema_mismatch")
@@ -197,35 +289,47 @@ def verify_witness_file(root: str | Path, proof_path: str | Path) -> dict[str, A
     target = record.get("target", {})
     body_b64 = rekor.get("body_b64")
     if not isinstance(body_b64, str):
-        return {"ok": False, "errors": errors + ["body_missing"]}
+        return {"ok": False, "current": False, "errors": errors + ["body_missing"]}
     try:
         body = json.loads(base64.b64decode(body_b64))
     except (ValueError, json.JSONDecodeError):
-        return {"ok": False, "errors": errors + ["body_malformed"]}
+        return {"ok": False, "current": False, "errors": errors + ["body_malformed"]}
 
     # The logged digest is the target's — and we signed it (attribution).
     spec = body.get("spec", {})
     logged_digest = spec.get("data", {}).get("hash", {}).get("value", "")
     if logged_digest != target.get("sha256"):
         errors.append("digest_mismatch")
-    target_file = root_path / str(target.get("file", ""))
-    current = target_file.is_file() and hash_bytes(target_file.read_bytes()) == logged_digest
-    pub_file = root_path / WITNESS_PUBKEY_PATH
-    if not pub_file.is_file():
+    current = target_bytes is not None and hash_bytes(target_bytes) == logged_digest
+    if witness_pubkey_pem is None:
         errors.append("witness_pubkey_missing")
     elif (
         current
         and isinstance(spec.get("signature"), dict)
         # The logged signature covers the ORIGINAL artifact bytes — only
-        # re-verifiable while the target still matches the witnessed digest;
-        # a stale-but-authentic proof can't be signature-checked.
+        # re-verifiable while the supplied bytes still match the digest.
         and not _ecdsa_verify(
-            pub_file.read_bytes(),
+            witness_pubkey_pem,
             spec["signature"].get("content", ""),
-            target_file.read_bytes(),
+            target_bytes or b"",
         )
     ):
         errors.append("witness_signature_invalid")
+    # Self-authentication for embedded proofs: when the record carries its
+    # own witness pubkey, it must equal the one the LOG recorded — the log
+    # entry (itself SET-signed + merkle-anchored) is the key's root of trust.
+    embedded = record.get("keys", {})
+    if isinstance(embedded, dict) and embedded.get("witness_pubkey_pem") is not None:
+        logged_key = (
+            spec.get("signature", {}).get("publicKey", {}).get("content", "")
+            if isinstance(spec.get("signature"), dict)
+            else ""
+        )
+        # logged content is base64(PEM); embedded stores raw PEM text.
+        if base64.b64encode(str(embedded["witness_pubkey_pem"]).encode()).decode() != str(
+            logged_key
+        ):
+            errors.append("witness_key_mismatch")
 
     # The UUID's tail IS the merkle leaf hash — binds entry to proof.
     uuid = str(rekor.get("uuid", ""))
@@ -241,13 +345,11 @@ def verify_witness_file(root: str | Path, proof_path: str | Path) -> dict[str, A
             list(ip.get("hashes", [])),
         )
     except (KeyError, TypeError, ValueError):
-        return {"ok": False, "errors": errors + ["inclusion_proof_malformed"]}
+        return {"ok": False, "current": current, "errors": errors + ["inclusion_proof_malformed"]}
     if root_hash != ip.get("root_hash"):
         errors.append("inclusion_root_mismatch")
 
-    rekor_pub = root_path / REKOR_PUBKEY_PATH
-    if rekor_pub.is_file():
-        pub_bytes = rekor_pub.read_bytes()
+    if rekor_pubkey_pem is not None:
         # SET: Rekor's signature over the JCS-canonical LogEntryAnon.
         canon = json.dumps(
             {
@@ -259,14 +361,14 @@ def verify_witness_file(root: str | Path, proof_path: str | Path) -> dict[str, A
             separators=(",", ":"),
             sort_keys=True,
         ).encode()
-        if not _ecdsa_verify(pub_bytes, str(rekor.get("signed_entry_timestamp", "")), canon):
+        if not _ecdsa_verify(rekor_pubkey_pem, str(rekor.get("signed_entry_timestamp", "")), canon):
             errors.append("set_signature_invalid")
         note = str(ip.get("checkpoint_note", ""))
         payload, _, sig_block = note.partition("\n\n")
         if payload and sig_block:
             raw = base64.b64decode(sig_block.strip().split(" ")[-1])
             if not _ecdsa_verify(
-                pub_bytes, base64.b64encode(raw[4:]).decode(), (payload + "\n").encode()
+                rekor_pubkey_pem, base64.b64encode(raw[4:]).decode(), (payload + "\n").encode()
             ):
                 errors.append("checkpoint_note_signature_invalid")
         else:

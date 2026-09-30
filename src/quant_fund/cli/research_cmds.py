@@ -1962,13 +1962,24 @@ def attest_release_cmd(
         help="Ed25519 key material: '<priv_hex>:<pub_hex>', a key file path, "
         "or bare priv hex (env GATE_SIGNING_KEY).",
     ),
+    witness: bool = typer.Option(
+        False,
+        "--witness",
+        help="Anchor the signed attestation in Rekor and embed the proof "
+        "(requires WITNESS_SIGNING_KEY env or --witness-key-file).",
+    ),
+    witness_key_file: Path | None = typer.Option(
+        None, "--witness-key-file", help="ECDSA P-256 witness key PEM path."
+    ),
 ) -> None:
     """Sign a ``release_attestation.v1`` binding shipped artifact bytes to
     this tree's pin state — the release-time counterpart of ``custody``.
 
     The signature uses the same key as ``make sign-pins``, so a wheel can be
     proven to have shipped from a gate-green tree without trusting the build
-    host.
+    host. ``--witness`` additionally anchors the attestation in the public
+    Rekor transparency log and embeds the self-verifying proof — the
+    attestation alone then convinces an auditor with no repo access.
     """
     import json as _json
 
@@ -1989,6 +2000,30 @@ def attest_release_cmd(
         )
     blob = {p.name: p.read_bytes() for p in artifacts}
     att = release_attestation(blob, root=root, private_seed_hex=priv, pubkey_hex=pub)
+    if witness:
+        from quant_fund.research.release_attestation import witness_release
+
+        pem: bytes | None = None
+        if witness_key_file is not None:
+            pem = witness_key_file.read_bytes()
+        else:
+            import os
+
+            env_key = os.environ.get("WITNESS_SIGNING_KEY", "").strip()
+            if env_key:
+                pem = Path(env_key).read_bytes() if Path(env_key).is_file() else env_key.encode()
+        if pem is None:
+            raise typer.BadParameter(
+                "--witness needs WITNESS_SIGNING_KEY env or --witness-key-file"
+            )
+        r_pub = root / "quality/rekor_pubkey.pem"
+        att = witness_release(
+            att,
+            witness_key_pem=pem,
+            rekor_pubkey_pem=r_pub.read_bytes() if r_pub.is_file() else None,
+        )
+        idx = att.get("witness", {}).get("rekor", {}).get("log_index")
+        typer.echo(f"rekor_witness log_index={idx}")
     text = _json.dumps(att, indent=2, sort_keys=True) + "\n"
     if out is not None:
         from quant_fund.utils.atomicio import atomic_write_text

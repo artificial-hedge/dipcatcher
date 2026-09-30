@@ -232,6 +232,164 @@ def test_release_attestation_round_trip(tmp_path: Path) -> None:
     assert any(e.startswith("attestation_stale:") for e in stale["errors"])
 
 
+def _fake_rekor_entry(target_bytes: bytes, witness_key_pem: bytes, rekor_key) -> dict:
+    """A cryptographically coherent Rekor entry signed by a fake Rekor key."""
+    import base64
+    import hashlib
+
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    wkey = serialization.load_pem_private_key(witness_key_pem, password=None)
+    wsig = wkey.sign(target_bytes, ec.ECDSA(hashes.SHA256()))
+    wpub = wkey.public_key().public_bytes(
+        serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    body = {
+        "kind": "hashedrekord",
+        "apiVersion": "0.0.1",
+        "spec": {
+            "data": {
+                "hash": {
+                    "algorithm": "sha256",
+                    "value": hashlib.sha256(target_bytes).hexdigest(),
+                }
+            },
+            "signature": {
+                "content": base64.b64encode(wsig).decode(),
+                "publicKey": {"content": base64.b64encode(wpub).decode()},
+            },
+        },
+    }
+    body_b64 = base64.b64encode(json.dumps(body).encode()).decode()
+    leaf = hashlib.sha256(b"\x00" + json.dumps(body).encode()).digest()
+    root_hash = leaf.hex()  # single-leaf tree: root == leaf
+    integrated = 1_700_000_000
+    canon = json.dumps(
+        {"body": body_b64, "integratedTime": integrated, "logID": "fake-log", "logIndex": 0},
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode()
+    set_sig = rekor_key.sign(canon, ec.ECDSA(hashes.SHA256()))
+    note_payload = f"rekor.sigstore.dev - 1\n1\n{root_hash}"
+    note_sig = rekor_key.sign((note_payload + "\n").encode(), ec.ECDSA(hashes.SHA256()))
+    note = (
+        note_payload
+        + "\n\n— rekor.sigstore.dev "
+        + base64.b64encode(b"\x00" * 4 + note_sig).decode()
+    )
+    uuid = "0" * 32 + leaf.hex()
+    return {
+        uuid: {
+            "body": body_b64,
+            "logID": "fake-log",
+            "logIndex": 0,
+            "integratedTime": integrated,
+            "verification": {
+                "signedEntryTimestamp": base64.b64encode(set_sig).decode(),
+                "inclusionProof": {
+                    "logIndex": 0,
+                    "treeSize": 1,
+                    "rootHash": root_hash,
+                    "hashes": [],
+                    "checkpoint": note,
+                },
+            },
+        }
+    }
+
+
+def _witness_fixture(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Attestation + a mocked Rekor submission signed by a fake Rekor key."""
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.serialization import (
+        Encoding,
+        NoEncryption,
+        PrivateFormat,
+        PublicFormat,
+    )
+
+    from quant_fund.research.release_attestation import release_attestation
+
+    root = _fixture(tmp_path)
+    priv = (root / ".fixture_priv").read_text()
+    pub = (root / "quality/gate_signing.pub").read_text().strip()
+    wheel = b"fake-wheel-bytes"
+    att = release_attestation({"w.whl": wheel}, root=root, private_seed_hex=priv, pubkey_hex=pub)
+    witness_pem = ec.generate_private_key(ec.SECP256R1()).private_bytes(
+        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
+    )
+    rekor_key = ec.generate_private_key(ec.SECP256R1())
+    rekor_pub_pem = rekor_key.public_key().public_bytes(
+        Encoding.PEM, PublicFormat.SubjectPublicKeyInfo
+    )
+
+    def _post(target_bytes: bytes, key_pem: bytes, _url: str) -> dict:
+        return _fake_rekor_entry(target_bytes, key_pem, rekor_key)
+
+    monkeypatch.setattr("quant_fund.research.integrity_witness._post_entry", _post)
+    return root, pub, wheel, att, witness_pem, rekor_pub_pem
+
+
+def test_release_witness_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Embedded Rekor proof verifies with zero repo access."""
+    from quant_fund.research.release_attestation import (
+        release_contract_errors,
+        verify_release_attestation,
+        witness_release,
+    )
+
+    _root, pub, wheel, att, witness_pem, rekor_pub_pem = _witness_fixture(tmp_path, monkeypatch)
+    witnessed = witness_release(att, witness_key_pem=witness_pem, rekor_pubkey_pem=rekor_pub_pem)
+    assert release_contract_errors(witnessed) == []
+    res = verify_release_attestation(witnessed, {"w.whl": wheel}, pubkey_hex=pub)
+    assert res["ok"], res["errors"]
+
+
+def test_release_witness_body_tamper_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from quant_fund.research.release_attestation import (
+        verify_release_attestation,
+        witness_release,
+    )
+
+    _root, pub, wheel, att, witness_pem, rekor_pub_pem = _witness_fixture(tmp_path, monkeypatch)
+    witnessed = witness_release(att, witness_key_pem=witness_pem, rekor_pubkey_pem=rekor_pub_pem)
+    witnessed["witness"]["rekor"]["body_b64"] = "e30="  # "{}"
+    res = verify_release_attestation(witnessed, {"w.whl": wheel}, pubkey_hex=pub)
+    assert not res["ok"]
+    assert any(e.startswith("witness:") for e in res["errors"])
+
+
+def test_release_witness_key_mismatch_with_root(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Committed pin keys disagreeing with embedded keys are flagged."""
+    from quant_fund.research.release_attestation import (
+        verify_release_attestation,
+        witness_release,
+    )
+
+    root, pub, wheel, att, witness_pem, rekor_pub_pem = _witness_fixture(tmp_path, monkeypatch)
+    witnessed = witness_release(att, witness_key_pem=witness_pem, rekor_pubkey_pem=rekor_pub_pem)
+    res = verify_release_attestation(witnessed, {"w.whl": wheel}, root=root)
+    assert not res["ok"]
+    assert "witness_key_mismatch" in res["errors"]
+
+
+def test_release_witness_malformed_field(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from quant_fund.research.release_attestation import (
+        release_contract_errors,
+        verify_release_attestation,
+    )
+
+    root, pub, wheel, att, _pem, _rkpub = _witness_fixture(tmp_path, monkeypatch)
+    bad = dict(att, witness="not-a-proof")
+    assert "witness_malformed" in release_contract_errors(bad)
+    res = verify_release_attestation(bad, {"w.whl": wheel}, root=root)
+    assert not res["ok"]
+    assert any("witness_malformed" in e for e in res["errors"])
+
+
 def test_custody_schema_dispatches_in_verify_receipt(tmp_path: Path) -> None:
     """custody_proof.v1 payloads get the contract check under verify-receipt."""
     from quant_fund.research.receipt_v2 import verify_receipt_payload

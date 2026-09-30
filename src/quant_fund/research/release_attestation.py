@@ -25,6 +25,9 @@ from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 RELEASE_ATTESTATION_SCHEMA = "release_attestation.v1"
 
+# Fields not covered by the Ed25519 body signature.
+_UNSIGNED_FIELDS = ("signature", "witness")
+
 # Pin state digested into every attestation — freshness anchors.
 _PINNED_STATE = (
     "quality/checkpoint.json",
@@ -96,6 +99,40 @@ def _git_rev(root: Path) -> str | None:
         return None
 
 
+def witness_release(
+    payload: Mapping[str, Any],
+    *,
+    witness_key_pem: bytes,
+    rekor_pubkey_pem: bytes | None,
+    rekor_url: str = "https://rekor.sigstore.dev",
+) -> dict[str, Any]:
+    """Embed a Rekor witness proof into a signed attestation.
+
+    The witnessed bytes are the canonical attestation WITHOUT the ``witness``
+    field (signature included) — so the proof, once embedded, still
+    identifies the exact signed object it anchors. The record carries both
+    pubkeys (self-authenticating: the witness key is bound by the logged
+    entry itself), so ``verify_release_attestation`` can check it with zero
+    repo access.
+    """
+    from quant_fund.research.integrity_witness import WITNESS_SCHEMA, witness_bytes
+
+    signed = {k: v for k, v in payload.items() if k != "witness"}
+    target_bytes = canonical_json_bytes(signed)
+    record = witness_bytes(
+        RELEASE_ATTESTATION_SCHEMA,
+        target_bytes,
+        witness_key_pem,
+        rekor_url=rekor_url,
+        rekor_pubkey_pem=rekor_pubkey_pem,
+    )
+    if record.get("schema") != WITNESS_SCHEMA:  # pragma: no cover — internal guard
+        raise ValueError("witness submission returned a malformed record")
+    out = dict(signed)
+    out["witness"] = record
+    return out
+
+
 def release_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """``release_attestation.v1`` structural coherence; ``[]`` when clean."""
     errors: list[str] = []
@@ -125,6 +162,9 @@ def release_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     sig = payload.get("signature")
     if not (isinstance(sig, str) and len(sig) == 128):
         errors.append("signature_malformed")
+    witness = payload.get("witness")
+    if witness is not None and not isinstance(witness, Mapping):
+        errors.append("witness_malformed")
     return errors
 
 
@@ -178,7 +218,7 @@ def verify_release_attestation(
         if key is not None:
             if payload.get("key_id") != _key_id(pub.strip()):
                 errs.append("key_id_mismatch")
-            unsigned = {k: v for k, v in payload.items() if k != "signature"}
+            unsigned = {k: v for k, v in payload.items() if k not in _UNSIGNED_FIELDS}
             try:
                 key.verify(
                     bytes.fromhex(str(payload["signature"])),
@@ -186,6 +226,49 @@ def verify_release_attestation(
                 )
             except InvalidSignature:
                 errs.append("signature_invalid")
+
+    witness = payload.get("witness")
+    if isinstance(witness, Mapping):
+        from quant_fund.research.integrity_witness import (
+            REKOR_PUBKEY_PATH,
+            WITNESS_PUBKEY_PATH,
+            verify_witness_record,
+        )
+
+        signed = {k: v for k, v in payload.items() if k != "witness"}
+        keys = witness.get("keys", {})
+        w_pem = keys.get("witness_pubkey_pem") if isinstance(keys, Mapping) else None
+        r_pem = keys.get("rekor_pubkey_pem") if isinstance(keys, Mapping) else None
+        committed_rekor: bytes | None = None
+        if root is not None:
+            # Committed keys outrank embedded ones — a swapped embedded key is
+            # caught against the pinned material when a repo is at hand.
+            w_file = Path(root) / WITNESS_PUBKEY_PATH
+            r_file = Path(root) / REKOR_PUBKEY_PATH
+            if (
+                w_file.is_file()
+                and isinstance(w_pem, str)
+                and w_pem.strip() != w_file.read_text().strip()
+            ):
+                errs.append("witness_key_mismatch")
+            if r_file.is_file():
+                committed_rekor = r_file.read_bytes()
+                if isinstance(r_pem, str) and r_pem.strip() != committed_rekor.decode().strip():
+                    errs.append("witness_key_mismatch")
+        wres = verify_witness_record(
+            dict(witness),
+            target_bytes=canonical_json_bytes(signed),
+            witness_pubkey_pem=w_pem.encode() if isinstance(w_pem, str) else None,
+            rekor_pubkey_pem=(
+                committed_rekor or (r_pem.encode() if isinstance(r_pem, str) else None)
+            ),
+        )
+        for e in wres["errors"]:
+            errs.append(f"witness:{e}")
+        if not wres["current"]:
+            errs.append("witness:attestation_mismatch")
+    elif "witness" in payload:
+        errs.append("witness_malformed")
 
     if root is not None:
         state = payload.get("pinned_state_sha256")
