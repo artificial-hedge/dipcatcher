@@ -1,12 +1,14 @@
 """Hot-path latency gate. The distribution is measured, not assumed.
 
-Coverage tracing changes the timed path, so the numeric gate is asserted
-only when the process is uninstrumented. The CI ``pretrade-risk`` job runs
-``python -m quant_fund.pretrade.bench --gate`` without coverage.
+Coverage tracing changes the timed path, and xdist workers share the CPU
+with sibling workers, so the numeric gate is asserted only when the process
+is uninstrumented and running serially. The CI ``pretrade-risk`` job runs
+``python -m quant_fund.pretrade.bench --gate`` without coverage or xdist.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 
 from quant_fund.pretrade.bench import P50_LIMIT_NS, P99_LIMIT_NS, run_benchmark
@@ -25,6 +27,10 @@ def _coverage_running() -> bool:
         return False
 
 
+def _xdist_worker() -> bool:
+    return bool(os.environ.get("PYTEST_XDIST_WORKER"))
+
+
 def test_allow_path_meets_latency_gate() -> None:
     report = run_benchmark(trials=3, samples=3000, warmup=800, gate=True)
     assert report["implementation"] == "cpython-slots"
@@ -36,7 +42,7 @@ def test_allow_path_meets_latency_gate() -> None:
     assert "good_faith_violation" in report["checks"]
     within = report["p50_ns"] < P50_LIMIT_NS and report["p99_ns"] < P99_LIMIT_NS
     assert report["gate_pass"] is within
-    if _coverage_running():
+    if _coverage_running() or _xdist_worker():
         return
     # Shared runners inject p99 pauses a fast path cannot avoid; a passing
     # round proves the path meets the gate. A genuinely slow path fails all.

@@ -21,7 +21,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded PR runs are cancelled; main/schedule/tag runs always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Least privilege. Artifact upload uses the runner's artifact token.
 permissions:

@@ -7,7 +7,8 @@ permissions: {}
 
 concurrency:
   group: dependency-review-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded PR runs are cancelled; main/schedule/tag runs always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   review:

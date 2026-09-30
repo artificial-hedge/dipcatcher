@@ -8,7 +8,8 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded PR runs are cancelled; main/schedule/tag runs always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # PRs only build. Push to main uploads a Pages artifact and deploys it.
 # The repository owner must set Settings → Pages → Source to GitHub Actions
