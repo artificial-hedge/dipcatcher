@@ -188,6 +188,37 @@ def test_mrm_parses_contamination_report_key(tmp_path: Path):
     assert str(report) in validation.artifact_hashes
 
 
+def test_mrm_incomplete_dossier_cannot_certify_ship(tmp_path: Path):
+    """All five sections are built unconditionally — a validation-only
+    dossier must not report complete, and its ship stamp must be False."""
+    artifact = tmp_path / "eval.json"
+    artifact.write_text("{}", encoding="utf-8")
+    dossier = compile_dossier(
+        modelcard_path=_card(tmp_path),
+        artifacts={"validation": artifact},
+        out_path=tmp_path / "dossier.json",
+    )
+    assert dossier.complete is False
+    assert dossier.ship_eligible is False
+
+
+def test_mrm_complete_dossier_preserves_card_ship_eligible(tmp_path: Path):
+    artifacts = {
+        a: tmp_path / f"{a}.json"
+        for a in ("development", "implementation", "validation", "monitoring")
+    }
+    for p in artifacts.values():
+        p.write_text("{}", encoding="utf-8")
+    dossier = compile_dossier(
+        modelcard_path=_card(tmp_path),
+        artifacts=artifacts,
+        out_path=tmp_path / "dossier.json",
+    )
+    assert dossier.complete is True
+    # governance is evidenced by the signed card alone
+    assert dossier.ship_eligible is True
+
+
 # ---------------------------------------------------------------------------
 # attestation.py — a garbage quote file must not earn the TEE tier
 # ---------------------------------------------------------------------------
@@ -376,6 +407,13 @@ def test_reward_bare_hex_does_not_count_as_receipt():
         "verify with dipcatcher verify-research"
     )
     assert "cites_receipt" in cited.components
+
+
+def test_reward_hex_far_from_provenance_wording_does_not_count():
+    # A hex blob + the word "receipt" anywhere else in the text is keyword
+    # soup, not a citation — the digest must sit beside provenance wording.
+    text = "ab12cd34ef567890" + " padding " * 20 + "receipt"
+    assert "cites_receipt" not in score_response(text).components
 
 
 # ---------------------------------------------------------------------------
