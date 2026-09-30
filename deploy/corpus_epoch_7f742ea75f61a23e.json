@@ -1,0 +1,58 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "247250d071406efd90d9f427221d958a17d3ddef4de138e9974d8145ae718024",
+  "inputs_sha256": "4942b888116388b372a1bcd3b40dc3734138e3347bb664fd7b2ea4a16be5a406",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "3727d149b21954428ac00eab5a3d8806830501105fdd19f13ede07286dfd5f25",
+  "members": [
+    {
+      "name": "corpus_epoch_98b7d4dbd5652bab.json",
+      "sha256": "2482a850954b22a22cbe3222edc7b297af7358c105af5be2e4fc2602828cc919"
+    },
+    {
+      "name": "observability/docker-compose.yml",
+      "sha256": "ac0cad1d8ccfab5dd474d5752f6c68d6f3841f3b323ade54fe3b61ebe99f12e0"
+    },
+    {
+      "name": "observability/grafana/dashboards/dipcatcher.json",
+      "sha256": "a82b8fbef6b9ad7fe4cc9affb51b67c7f2df381f9924d3c72157d60a398c8474"
+    },
+    {
+      "name": "observability/grafana/provisioning/dashboards/dashboards.yml",
+      "sha256": "62c815be126d1b6d188c1e778954f66dbd6d9a60a6419e871abf51aa349199b7"
+    },
+    {
+      "name": "observability/grafana/provisioning/datasources/datasource.yml",
+      "sha256": "72305a9fded6b40fe740ec82dac495f006990e6e37de754d1fcd01d93da4834a"
+    },
+    {
+      "name": "observability/otel-collector.yaml",
+      "sha256": "b0c83dc0e453e259ccedcad804f46256e45012c3c3359fc394435c06f8608e02"
+    },
+    {
+      "name": "observability/prometheus.yml",
+      "sha256": "2348696d94a69d95002f93e17e9420a774542d07b21d5ba91ce750454dfeb8aa"
+    },
+    {
+      "name": "observability/slo.yml",
+      "sha256": "89ada49fcb79c281ff0ddd0cae5801343eedc8f84e13630889836713a775c92e"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_98b7d4dbd5652bab.json"
+  ],
+  "members_removed": [],
+  "n_members": 8,
+  "params": {
+    "head_sha": "4f427a8a3b092a88014d9784b634ca7a229078a0",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_98b7d4dbd5652bab.json",
+  "prev_epoch_sha256": "2a015e16daa2b514d2c6a41f62db7812f7fdb13932d8817c28e17eaf4c0fd77b",
+  "receipt_sha256": "7f742ea75f61a23e08b5b785224ed1ef30529b37e1359ff012466db12d6c60f4",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
