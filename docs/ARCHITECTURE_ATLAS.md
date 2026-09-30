@@ -142,7 +142,7 @@ flowchart LR
   fx1_cli -->|2| fx1_bench
   fx1_cli -->|7| fx1_data
   fx1_cli -->|1| fx1_doctor
-  fx1_cli -->|3| fx1_eval
+  fx1_cli -->|5| fx1_eval
   fx1_cli -->|2| fx1_forecast
   fx1_cli -->|1| fx1_harness
   fx1_cli -->|1| fx1_modelcard
@@ -156,8 +156,8 @@ flowchart LR
   fx1_doctor -->|1| fx1_eval
   fx1_eval -->|1| fx1_data
   fx1_eval -->|1| fx1_harness
-  fx1_eval -->|8| fx1_honesty
-  fx1_eval -->|2| quant_fund_metrics
+  fx1_eval -->|10| fx1_honesty
+  fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|3| quant_fund_data
@@ -276,9 +276,9 @@ flowchart LR
   quant_fund_market_sim -->|1| quant_fund_utils
   quant_fund_mc_engine -->|1| quant_fund_metrics
   quant_fund_mc_engine -->|1| quant_fund_utils
-  quant_fund_metrics -->|1| quant_fund_models
+  quant_fund_metrics -->|2| quant_fund_models
   quant_fund_metrics -->|1| quant_fund_portfolio
-  quant_fund_metrics -->|17| quant_fund_utils
+  quant_fund_metrics -->|18| quant_fund_utils
   quant_fund_metrics -->|1| quant_fund_validation
   quant_fund_microstructure -->|1| quant_fund_labels
   quant_fund_microstructure -->|1| quant_fund_metrics
@@ -348,13 +348,11 @@ flowchart LR
   quant_fund_pretrade -->|1| quant_fund_execution
   quant_fund_pretrade -->|1| quant_fund_schemas
   quant_fund_pretrade -->|1| quant_fund_utils
-  quant_fund_proof -->|1| quant_fund
   quant_fund_proof -->|1| quant_fund_config
   quant_fund_proof -->|1| quant_fund_leakage
   quant_fund_proof -->|1| quant_fund_metrics
   quant_fund_proof -->|9| quant_fund_proofcore
   quant_fund_proof -->|1| quant_fund_utils
-  quant_fund_proofcore -->|1| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
   quant_fund_public -->|1| quant_fund_data
@@ -605,7 +603,7 @@ sequenceDiagram
 | `fx1.cli` | 1 |
 | `fx1.data` | 14 |
 | `fx1.doctor` | 1 |
-| `fx1.eval` | 17 |
+| `fx1.eval` | 19 |
 | `fx1.forecast` | 11 |
 | `fx1.harness` | 1 |
 | `fx1.honesty` | 1 |
@@ -637,9 +635,9 @@ sequenceDiagram
 | `quant_fund.lightspeed` | 8 |
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
-| `quant_fund.metrics` | 71 |
-| `quant_fund.microstructure` | 8 |
-| `quant_fund.models` | 204 |
+| `quant_fund.metrics` | 75 |
+| `quant_fund.microstructure` | 9 |
+| `quant_fund.models` | 208 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -666,9 +664,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **881**
+- Modules scanned: **892**
 - Packages: **65**
-- Cross-package import edges: **278**
+- Cross-package import edges: **276**
 
 <!-- END GENERATED: coverage -->
 

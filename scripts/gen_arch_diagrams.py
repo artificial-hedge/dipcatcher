@@ -708,6 +708,8 @@ FX1_TO_QUANT_FUND_EDGES: frozenset[tuple[str, str]] = frozenset(
         ("fx1.eval.calibration_eval", "quant_fund.metrics.calibration_tests"),
         ("fx1.eval.options_reasoning_eval", "quant_fund.models.iv_approx"),
         ("fx1.eval.options_reasoning_eval", "quant_fund.models.options"),
+        ("fx1.eval.rubric_banks", "quant_fund.metrics.conformal"),
+        ("fx1.eval.rubric_banks", "quant_fund.metrics.scoring"),
         ("fx1.eval.ts_reasoning", "quant_fund.metrics.scoring"),
         ("fx1.forecast.artifacts", "quant_fund.utils.hashing"),
         ("fx1.forecast.dummy", "quant_fund.schemas.errors"),

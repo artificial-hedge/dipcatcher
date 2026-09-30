@@ -190,6 +190,12 @@ allowed = [
     "quant_fund.schemas.**",
     "quant_fund.utils.**",
     "quant_fund.validation.**",
+    # Oracle-by-design: fx1.eval.options_reasoning_eval scores model answers
+    # against the harness's own closed forms. Exact modules only (not
+    # models.**) — mirrors the FX1_TO_QUANT_FUND_EDGES pin in
+    # scripts/gen_arch_diagrams.py (ADR-0002); change them together.
+    "quant_fund.models.iv_approx",
+    "quant_fund.models.options",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 

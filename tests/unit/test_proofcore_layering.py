@@ -37,10 +37,9 @@ TOP_LEVEL_WHITELIST: dict[str, frozenset[str]] = {
 # Additional quant_fund roots allowed ONLY inside function bodies (lazy
 # imports — §1.3: integration goes through function-level imports).
 LAZY_WHITELIST: dict[str, frozenset[str]] = {
-    # Adjudicated lazy edge (this durability sweep): proofcore/cli writes its
-    # outputs via utils.atomicio — utils is layer-0 and imports nothing in
-    # quant_fund, so the lazy edge cannot create a cycle.
-    "proofcore": frozenset({"utils"}),
+    # proofcore/cli keeps its own stdlib atomic writer: the arch-guards
+    # ``proofcore-standalone`` deny rule forbids even lazy quant_fund imports.
+    "proofcore": frozenset(),
     "pit": frozenset(),
     # Adjudicated lazy edges (LH011_LAZY_WHITELIST in leakage/rules.py):
     # proof lazily reaches pit (W1 vault seam), leakage (W3 watchdog), and
@@ -60,6 +59,17 @@ THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
     "proof": frozenset({"polars", "pydantic", "numpy", "typer"}),
     "leakage": frozenset({"pydantic", "typer"}),
     "reality": frozenset({"numpy", "scipy", "pydantic", "polars", "typer"}),
+}
+
+# Additional third-party roots allowed ONLY inside function bodies.
+LAZY_THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
+    "proofcore": frozenset(),
+    "pit": frozenset(),
+    "proof": frozenset(),
+    # leakage/guard.py interposes on pl/pd.read_parquet, so it must import
+    # them — lazily at install time, keeping ``import leakage`` cheap.
+    "leakage": frozenset({"pandas", "polars"}),
+    "reality": frozenset(),
 }
 
 
@@ -100,8 +110,11 @@ def _violations(pkg: str) -> list[str]:
             if root == "fx1":
                 problems.append(f"{rel}:{line}: PROOFCORE packages never import fx1")
                 continue
-            if root not in sys.stdlib_module_names and root not in THIRD_PARTY_WHITELIST[pkg]:
-                problems.append(f"{rel}:{line}: third-party import {root!r} not whitelisted")
+            if root in sys.stdlib_module_names or root in THIRD_PARTY_WHITELIST[pkg]:
+                continue
+            if not top_level and root in LAZY_THIRD_PARTY_WHITELIST[pkg]:
+                continue
+            problems.append(f"{rel}:{line}: third-party import {root!r} not whitelisted")
     return problems
 
 

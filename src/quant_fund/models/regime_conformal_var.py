@@ -73,7 +73,6 @@ from quant_fund.metrics.conformal import (
 from quant_fund.models.base import JoblibMixin, ModelMeta
 from quant_fund.models.localized_conformal import effective_sample_size
 from quant_fund.models.weighted_conformal import WEIGHT_CLIP, weighted_conformal_quantile
-from quant_fund.stress.regimes import GaussianRegimeSpec, simulate_gaussian_hmm
 
 Array = NDArray[np.float64]
 
@@ -507,6 +506,9 @@ def _synthetic_regime_stream(
     n_cal: int, n_test: int, seed: int
 ) -> tuple[Array, NDArray[np.int64], Array, NDArray[np.int64]]:
     """SYNTHETIC two-regime Gaussian stream with oracle state labels."""
+    # Lazy: stress (research layer) sits above models (analytics layer).
+    from quant_fund.stress.regimes import GaussianRegimeSpec, simulate_gaussian_hmm
+
     spec = GaussianRegimeSpec(
         means=np.array([[0.0], [0.0]]),
         covs=np.array([[[0.5**2]], [[2.0**2]]]),

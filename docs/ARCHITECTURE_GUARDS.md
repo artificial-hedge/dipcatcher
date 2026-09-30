@@ -72,8 +72,10 @@ These encode the repo's hard rules mechanically, on **every** import site:
 * `proofcore-standalone` — `proofcore` may not import the rest of
   `quant_fund` (documented invariant in `proofcore/contracts.py`).
 * `fx1-harness-surface` (`allow_only`) — `fx1` may import only
-  `quant_fund.{config, data, metrics, schemas, utils, validation}`. Any new
-  coupling to pipeline/research/cli/api/paper fails.
+  `quant_fund.{config, data, metrics, schemas, utils, validation}`, plus the
+  exact oracle modules `quant_fund.models.{iv_approx, options}` used by
+  `fx1.eval.options_reasoning_eval` (pinned with ADR-0002's edge list). Any
+  new coupling to pipeline/research/cli/api/paper fails.
 
 ## Reading violations
 
