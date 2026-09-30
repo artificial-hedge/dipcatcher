@@ -289,7 +289,7 @@ flowchart LR
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
-  quant_fund_models -->|46| quant_fund_metrics
+  quant_fund_models -->|48| quant_fund_metrics
   quant_fund_models -->|3| quant_fund_pipeline
   quant_fund_models -->|2| quant_fund_research
   quant_fund_models -->|2| quant_fund_schemas
@@ -353,7 +353,6 @@ flowchart LR
   quant_fund_proof -->|1| quant_fund_metrics
   quant_fund_proof -->|9| quant_fund_proofcore
   quant_fund_proof -->|1| quant_fund_utils
-  quant_fund_proofcore -->|1| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
   quant_fund_public -->|1| quant_fund_data
@@ -376,9 +375,9 @@ flowchart LR
   quant_fund_research -->|3| quant_fund_data
   quant_fund_research -->|5| quant_fund_execution
   quant_fund_research -->|1| quant_fund_hedge_lab
-  quant_fund_research -->|81| quant_fund_metrics
-  quant_fund_research -->|5| quant_fund_microstructure
-  quant_fund_research -->|94| quant_fund_models
+  quant_fund_research -->|83| quant_fund_metrics
+  quant_fund_research -->|7| quant_fund_microstructure
+  quant_fund_research -->|97| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|13| quant_fund_pipeline
   quant_fund_research -->|6| quant_fund_portfolio
@@ -638,7 +637,7 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 75 |
 | `quant_fund.microstructure` | 9 |
-| `quant_fund.models` | 208 |
+| `quant_fund.models` | 209 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -656,7 +655,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 2 |
 | `quant_fund.reporting` | 4 |
-| `quant_fund.research` | 120 |
+| `quant_fund.research` | 121 |
 | `quant_fund.risk` | 5 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -665,9 +664,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **895**
+- Modules scanned: **897**
 - Packages: **65**
-- Cross-package import edges: **277**
+- Cross-package import edges: **276**
 
 <!-- END GENERATED: coverage -->
 
