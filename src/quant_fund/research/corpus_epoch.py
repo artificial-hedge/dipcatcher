@@ -200,15 +200,27 @@ def _member_maps(payload: Mapping[str, Any]) -> dict[str, str]:
     return out
 
 
-def _epoch_receipts(corpus_dir: Path) -> list[tuple[Path, Mapping[str, Any]]]:
-    """Committed epoch receipts in the corpus, in filename order."""
+def _epoch_receipts(
+    corpus_dir: Path,
+) -> tuple[list[tuple[Path, Mapping[str, Any]]], list[str]]:
+    """Epoch candidates among top-level ``*.json``, plus prefix squatters.
+
+    Any file whose body (or v2 ``payload``) claims ``schema``/``kind`` =
+    ``corpus_epoch.v1`` is a candidate — the ``corpus_epoch_*`` filename
+    convention is writer-side, not a reader filter. Files *named*
+    ``corpus_epoch_*.json`` that fail to yield an epoch payload squat the
+    reserved prefix: they can't forge a chain, but they must not pass
+    silently as ordinary members."""
     out: list[tuple[Path, Mapping[str, Any]]] = []
+    squatters: list[str] = []
     for path in sorted(corpus_dir.glob("*.json")):
         if not path.is_file():
             continue
         try:
             doc = json.loads(path.read_text())
         except (OSError, UnicodeError, ValueError):
+            if path.name.startswith("corpus_epoch_"):
+                squatters.append(path.name)
             continue
         body: object = doc.get("payload") if isinstance(doc, Mapping) else None
         candidate = body if isinstance(body, Mapping) else doc
@@ -216,7 +228,9 @@ def _epoch_receipts(corpus_dir: Path) -> list[tuple[Path, Mapping[str, Any]]]:
             candidate.get("schema") == EPOCH_SCHEMA or candidate.get("kind") == EPOCH_SCHEMA
         ):
             out.append((path, candidate))
-    return out
+        elif path.name.startswith("corpus_epoch_"):
+            squatters.append(path.name)
+    return out, squatters
 
 
 class EpochStampLocked(RuntimeError):
@@ -280,11 +294,17 @@ def corpus_epoch(
             f"refusing to stamp {root}: non-portable member names "
             f"{[e.split(':', 1)[1] for e in unportable]}"
         )
+    candidates, squatters = _epoch_receipts(root)
+    if squatters:
+        raise ValueError(
+            f"refusing to stamp {root}: files squat the corpus_epoch_* prefix "
+            f"without carrying an epoch payload: {[ascii(s) for s in squatters]}"
+        )
     # Chains are per-(dir, pattern): only epochs stamped with the same member
     # glob participate. Absent params.pattern means the default "*.json".
     epochs = [
         (p, e)
-        for p, e in _epoch_receipts(root)
+        for p, e in candidates
         if (e.get("params") or {}).get("pattern", "*.json") == pattern
         if isinstance(e.get("params") or {}, Mapping)
     ]
@@ -550,10 +570,14 @@ def check_epoch_chain(
             errors.append(f"epoch_head_mutated:{exp_name!a}")
 
     # Chains are per-(dir, pattern) — epochs stamped under a different member
-    # glob form their own chain and are ignored here.
+    # glob form their own chain and are ignored here. Files squatting the
+    # corpus_epoch_* reserved prefix (no epoch payload) are flagged, not
+    # ignored: they can't forge a chain but must not pass silently.
+    candidates, squatters = _epoch_receipts(root)
+    errors.extend(f"epoch_prefix_squat:{name!a}" for name in squatters)
     epochs = [
         (p, e)
-        for p, e in _epoch_receipts(root)
+        for p, e in candidates
         if isinstance(e.get("params") or {}, Mapping)
         and (e.get("params") or {}).get("pattern", "*.json") == pattern
     ]

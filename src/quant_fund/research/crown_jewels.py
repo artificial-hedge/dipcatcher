@@ -87,6 +87,9 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     # same class: the differential oracle must itself be pinned
     "scripts/verify_corpus_proof.py",  # standalone inclusion/absence-proof
     # auditor — the offline verification path's independent oracle
+    "scripts/verify_epoch_chain.py",  # standalone full-chain auditor —
+    # same class: a silent patch to the independent oracle defeats the
+    # divergence-detection layer
 )
 
 

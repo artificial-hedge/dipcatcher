@@ -43,7 +43,7 @@ def chain_index(
     """Name → (path, payload, file sha256) for the (dir, pattern) chain."""
     root = Path(corpus_dir)
     out: dict[str, tuple[Path, Mapping[str, Any], str]] = {}
-    for path, payload in _epoch_receipts(root):
+    for path, payload in _epoch_receipts(root)[0]:
         if not isinstance(payload.get("params") or {}, Mapping):
             continue
         if (payload.get("params") or {}).get("pattern", "*.json") != pattern:

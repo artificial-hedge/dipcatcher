@@ -260,6 +260,13 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
 
         out.append(("member_name_nfd", _EXPECT_FAIL, _nfd_name))
 
+        def _prefix_squat() -> str:
+            name = f"corpus_epoch_fuzz_{rng.randrange(1 << 20)}.json"
+            (receipts / name).write_text('{"not": "an epoch"}')
+            return f"squatter:{name}"
+
+        out.append(("epoch_prefix_squat_drop", _EXPECT_FAIL, _prefix_squat))
+
     # --- must-pass: legitimately uncovered state ---
     uncovered_dir = clone / "docs"
     uncovered_dir.mkdir(exist_ok=True)

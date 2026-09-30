@@ -464,7 +464,7 @@ def _epoch_members(
     from quant_fund.research.corpus_epoch import _epoch_receipts
 
     root = Path(corpus_dir)
-    epochs = [(p, e) for p, e in _epoch_receipts(root)]
+    epochs = [(p, e) for p, e in _epoch_receipts(root)[0]]
     if not epochs:
         raise ValueError(f"no corpus epochs under {root} — run corpus-epoch first")
     if epoch_receipt is None:

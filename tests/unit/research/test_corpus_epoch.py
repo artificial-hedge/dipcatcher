@@ -457,3 +457,35 @@ def test_nonportable_names_refused_and_repr_quoted(tmp_path: Path) -> None:
     (corpus / bad).write_text("{}")
     hits = [e for e in check_epoch_chain(corpus)["errors"] if "not_portable" in e]
     assert hits and all("\n" not in e for e in hits)
+
+
+def test_epoch_prefix_squat_flagged_and_refused(tmp_path: Path) -> None:
+    """``corpus_epoch_*`` is a reserved prefix: a file carrying the name
+    but no epoch payload can't forge a chain, but must not pass silently
+    as an ordinary member — the stamp refuses it and the chain flags a
+    committed (or dropped-post-stamp) squatter."""
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    _receipt(corpus, "real.json", "1")
+    _stamp(corpus)
+    # Wrong-schema squatter (valid JSON, no epoch payload).
+    squat = corpus / "corpus_epoch_notes.json"
+    squat.write_text('{"notes": "not an epoch"}')
+    assert "epoch_prefix_squat:'corpus_epoch_notes.json'" in check_epoch_chain(corpus)["errors"]
+    with pytest.raises(ValueError, match="squat"):
+        corpus_epoch(corpus)
+    # Malformed-bytes squatter (unparseable) flags the same way.
+    squat.write_bytes(b"{not json")
+    assert "epoch_prefix_squat:'corpus_epoch_notes.json'" in check_epoch_chain(corpus)["errors"]
+    with pytest.raises(ValueError, match="squat"):
+        corpus_epoch(corpus)
+    squat.unlink()
+    # Clean tree: no squat errors remain.
+    assert not [e for e in check_epoch_chain(corpus)["errors"] if "prefix_squat" in e]
+    # A non-squatting name carrying an epoch payload is a real candidate:
+    # the reader filter is the schema, not the filename.
+    epoch = corpus_epoch(corpus)
+    renamed = write_epoch_receipt(epoch, corpus)
+    renamed.rename(corpus / "zebra.json")
+    errors = check_epoch_chain(corpus)["errors"]
+    assert not any("prefix_squat" in e for e in errors), errors
