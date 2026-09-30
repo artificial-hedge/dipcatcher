@@ -78,10 +78,10 @@ These encode the repo's hard rules mechanically, on **every** import site:
 ## Reading violations
 
 ```
-src/quant_fund/data/x.py:12: error[layer-order]: quant_fund.data.x (layer
-  'market_data') imports quant_fund.research.y (layer 'research') — lower
-  layers must not depend on higher layers
-src/quant_fund/research/z.py:40: error[order-path-boundary]: ... [lazy import]
+src/quant_fund/<low_layer>/<module_a>.py:12: error[layer-order]: quant_fund.<low_layer>.<module_a>
+  (layer 'market_data') imports quant_fund.<high_layer>.<module_b> (layer 'research') —
+  lower layers must not depend on higher layers
+src/quant_fund/<high_layer>/<module_b>.py:40: error[order-path-boundary]: ... [lazy import]
 configs/arch_boundaries.toml: error[stale-baseline]: entry file=... matches
   no violation — remove the entry
 ```

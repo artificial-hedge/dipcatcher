@@ -291,7 +291,9 @@ def run_multih_fleet_eval(
                             seed=seed,
                         )
                     )
-            except Exception as exc:  # fail-closed: record, never fake
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Record, never fake.
                 for h in horizons_i:
                     rows.append(
                         MultiHRow(

@@ -755,6 +755,10 @@ def avellaneda_stoikov_quotes(
     is the fill-intensity decay of ``lambda(delta) = A exp(-kappa*delta)`` in
     inverse *price* units (``kappa_price = kappa_tick / tick``).
     """
+    # Lazy: models.market_making owns the A-S closed form (analytics layer) —
+    # a deferred import is the sanctioned layer-order cycle-breaker
+    # (docs/ARCHITECTURE_GUARDS.md); microstructure must not depend on it at
+    # import time.
     from quant_fund.models.market_making import as_optimal_quotes
 
     tk = _check_tick(tick)

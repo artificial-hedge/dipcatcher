@@ -140,6 +140,8 @@ def bundled_h15_rate_map(series_id: str = _DEFAULT_H15_SERIES) -> dict[str, floa
     Duplicate dates across windows keep the first observed print (windows are
     crisis extracts; overlapping dates should agree within a vintage).
     """
+    # Lazy: the stress bundle lives in the research layer — a deferred import
+    # is the sanctioned layer-order cycle-breaker (docs/ARCHITECTURE_GUARDS.md).
     from quant_fund.stress.bundle import YIELD_FACTORS, load_bundle
 
     if series_id not in YIELD_FACTORS:

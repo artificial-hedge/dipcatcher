@@ -506,6 +506,9 @@ def _synthetic_regime_stream(
     n_cal: int, n_test: int, seed: int
 ) -> tuple[Array, NDArray[np.int64], Array, NDArray[np.int64]]:
     """SYNTHETIC two-regime Gaussian stream with oracle state labels."""
+    # Lazy: the regime simulator lives in the research layer — a deferred
+    # import is the sanctioned layer-order cycle-breaker
+    # (docs/ARCHITECTURE_GUARDS.md); only the SYNTHETIC bench DGP needs it.
     from quant_fund.stress.regimes import GaussianRegimeSpec, simulate_gaussian_hmm
 
     spec = GaussianRegimeSpec(

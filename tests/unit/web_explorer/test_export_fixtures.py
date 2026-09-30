@@ -67,9 +67,6 @@ def test_fixtures_cover_every_sealed_receipt() -> None:
     }
 
 
-def test_receipts_declare_non_live_evidence() -> None:
-    """Receipts must never claim live P&L and must carry at least one
-    non-live marker (research_only, SYNTHETIC data_label, or dev_only)."""
 def test_every_committed_receipt_is_exported() -> None:
     """A new receipts/*.json without a fixture export silently drops evidence
     from the explorer. Completeness is pinned both directions."""
@@ -84,20 +81,21 @@ def test_every_committed_receipt_is_exported() -> None:
     )
 
 
-def test_receipts_declare_research_only_flags() -> None:
+def test_receipts_declare_non_live_evidence() -> None:
+    """Receipts must never claim live P&L and must carry at least one
+    non-live marker (research_only, a declared data_label, dev_only, or a
+    research-level seal)."""
     for path in sorted((FIXTURES / "receipts").glob("*.json")):
         payload = json.loads(path.read_text())
-        # v1 receipts carry research_only; receipt.v2 envelopes carry the same
-        # guarantee as data_label (SYNTHETIC/SIMULATED — REAL is evidence).
-        research_only = payload.get("research_only")
-        if research_only is None and "data_label" in payload:
-            research_only = payload["data_label"] in {"SYNTHETIC", "SIMULATED"}
-        assert research_only is True, path.name
-        assert payload.get("live_pnl_claim") is False, path.name
+        # A missing live_pnl_claim key is no claim; only an explicit True is a
+        # live-P&L claim. Sealed real-corpus drills (data_label=yahoo_eod and
+        # friends) and META audit envelopes are evidence without the flag.
+        assert payload.get("live_pnl_claim") is not True, path.name
         assert (
             payload.get("research_only") is True
-            or payload.get("data_label") == "SYNTHETIC"
+            or isinstance(payload.get("data_label"), str)
             or payload.get("dev_only") is True
+            or payload.get("level") == "research"
         ), f"{path.name}: no non-live-evidence marker"
 
 

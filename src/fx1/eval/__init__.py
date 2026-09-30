@@ -121,6 +121,7 @@ __all__ = [
 
 __all__ = sorted(_ATTR_TO_MODULE)
 
+
 def eval_prompt_surface() -> list[str]:
     """Every user prompt the eval surface presents to a model.
     The decontamination target: canonical bank prompts, red-team tasks,
@@ -128,6 +129,15 @@ def eval_prompt_surface() -> list[str]:
     *any* of those surface forms — the quality gate and the contamination
     audit must screen against all of them, not only the canonical bank.
     """
+    # Resolve the lazy-facade names explicitly: the module's PEP 562
+    # __getattr__ fires only on external attribute access, never on bare
+    # global lookups inside this module — referencing DEFAULT_BANK &co.
+    # directly raised NameError unless another import had materialized them.
+    from fx1.eval.bank import DEFAULT_BANK, DOMAIN_TASKS, HONESTY_BAITS
+    from fx1.eval.masking import masked_twins
+    from fx1.eval.redteam import REDTEAM_TASKS
+    from fx1.eval.rephrased import rephrased_twins
+
     tasks = (
         list(DEFAULT_BANK)
         + list(REDTEAM_TASKS)
@@ -142,6 +152,8 @@ def eval_prompt_surface() -> list[str]:
                 seen.add(message["content"])
                 prompts.append(message["content"])
     return prompts
+
+
 _LAZY_CAPABILITY = frozenset({"CapabilityEvalReport", "run_capability_eval"})
 
 

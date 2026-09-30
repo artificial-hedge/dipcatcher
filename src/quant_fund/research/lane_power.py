@@ -320,7 +320,9 @@ def lane_power_bench(
             for d in defects:
                 rows.append({"lane": lane, "status": "lane_missing", "defect": float(d)})
             continue
-        except Exception:
+        except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError):
+            # Narrowed from `except Exception` (quality ratchet): lane-runner faults
+            # are numeric/validation; exotic errors propagate. Marked as error rows.
             for d in defects:
                 rows.append({"lane": lane, "status": "error", "defect": float(d)})
             continue
@@ -343,7 +345,9 @@ def lane_power_bench(
                             "stat": r.stat,
                         }
                     )
-                except Exception:
+                except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError):
+                    # Narrowed from `except Exception` (quality ratchet): lane-runner
+                    # faults are numeric; exotic errors propagate. Cell marked error.
                     rows.append(
                         {
                             "lane": lane,

@@ -50,7 +50,13 @@ def _fsync_directory(path: Path) -> None:
 
 
 def _atomic_write_text(path: Path, text: str) -> None:
-    """tmp file + fsync + rename — a crash mid-write leaves no truncated artifact."""
+    """tmp file + fsync + rename — a crash mid-write leaves no truncated artifact.
+
+    Inlined copy of ``utils.atomicio.atomic_write_text``: proofcore-standalone
+    (configs/arch_boundaries.toml) and LH011 (leakage/rules.py) bar EVERY
+    quant_fund edge from proofcore, lazy included, so the CLI glue carries its
+    own crash-safe writer instead of reaching across the boundary.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     temporary_path = Path(temporary)

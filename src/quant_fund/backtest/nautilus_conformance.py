@@ -127,7 +127,20 @@ def run_nautilus_conformance(*, seed: int = 0) -> NautilusConformanceResult:
         )
     try:
         fills_ref, fills_inc = _replay_both_engines(seed=seed)
-    except Exception as exc:  # engine present but adapter failed — still evidence
+    except (
+        ImportError,
+        OSError,
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        RuntimeError,
+        pl.exceptions.PolarsError,
+    ) as exc:
+        # Narrowed from `except Exception` (quality ratchet): adapter faults are the
+        # lazy engine imports, numeric/validation failures of both replay engines,
+        # and polars reduction errors; exotic errors propagate. Engine present but
+        # adapter failed — still evidence.
         return NautilusConformanceResult(
             status=status,
             outcome="engine_error",
@@ -270,6 +283,8 @@ def run_nautilus_conformance_eval(*, seed: int = 0) -> dict[str, Any]:
     """Run the attempt and seal the outcome — pass/fail/blocked."""
     result = run_nautilus_conformance(seed=seed)
     verdict = {"matched": "pass", "diverged": "fail"}.get(result.outcome, "blocked")
+    # Lazy: the receipt builder lives in the research layer — a deferred import
+    # is the sanctioned layer-order cycle-breaker (docs/ARCHITECTURE_GUARDS.md).
     from quant_fund.research.receipt_v2 import build_receipt_v2
 
     return build_receipt_v2(
@@ -342,6 +357,7 @@ def nautilus_conformance_consistency_errors(body: Mapping[str, Any]) -> list[str
 
 def write_nautilus_conformance_receipt(receipt: Mapping[str, Any], out_dir: Path) -> Path:
     """Persist as ``nautilus_conformance_<sha16>.json``."""
+    # Lazy: sealing lives in the research layer (see run_nautilus_conformance_eval).
     from quant_fund.research.receipt_v2 import seal_receipt
 
     sealed = seal_receipt(receipt)
