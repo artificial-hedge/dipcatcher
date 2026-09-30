@@ -92,6 +92,7 @@ def coverage_gate(
                 sys.executable,
                 "-m",
                 "coverage",
+                "report",
                 f"--include={_include_pattern(src_root, pkg)}",
                 f"--fail-under={floor}",
             ],
