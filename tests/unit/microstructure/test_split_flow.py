@@ -58,4 +58,4 @@ def test_bench_schema_and_persistence() -> None:
     arms = {a["name"]: a for a in out["arms"]}
     assert set(arms) == {"iid", "regime", "split"}
     assert arms["split"]["autocorr"]["lag1"] > arms["iid"]["autocorr"]["lag1"] + 0.1
-    assert len(out["payload_sha256"]) == 64
+    assert len(out["receipt_sha256"]) == 64
