@@ -8,9 +8,9 @@ import pytest
 from quant_fund.metrics.var_backtest import (
     basel_zone,
     christoffersen_test,
+    dq_test,
     dumitrescu_hurlin_test,
     kratz_test,
-    dq_test,
     kupiec_test,
     tuff_test,
 )
