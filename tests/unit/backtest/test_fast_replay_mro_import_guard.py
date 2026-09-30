@@ -56,9 +56,7 @@ def _restore_fast_replay() -> None:
 def test_fast_replay_forecast_import_error_sets_mro_none(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _gate_forecast_import_from_fast_replay(
-        monkeypatch, ImportError("simulated older lineage")
-    )
+    _gate_forecast_import_from_fast_replay(monkeypatch, ImportError("simulated older lineage"))
     try:
         fr = _reimport_fast_replay()
         assert fr._mro_asof is None
@@ -70,9 +68,7 @@ def test_fast_replay_forecast_import_error_sets_mro_none(
 def test_fast_replay_forecast_non_import_error_propagates(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _gate_forecast_import_from_fast_replay(
-        monkeypatch, RuntimeError("not an ImportError")
-    )
+    _gate_forecast_import_from_fast_replay(monkeypatch, RuntimeError("not an ImportError"))
     try:
         with pytest.raises(RuntimeError, match="not an ImportError"):
             _reimport_fast_replay()
