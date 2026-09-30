@@ -2,10 +2,10 @@
   "algorithm": "ed25519",
   "key_id": "bc3bcff676056adf",
   "payload": {
-    "at": "2026-09-30T00:47:33+00:00",
+    "at": "2026-09-30T00:41:56+00:00",
     "code": {
-      "revision": "f3d74180e8730023f0396f1971f210177bc6899f",
-      "worktree_sha256": "da4069a31582583a56e96a93622b33fd2825046bf4cfee0819569c4e70963c88"
+      "revision": "7a5df7267e09abffed35a41e9005812be4b98a74",
+      "worktree_sha256": "f486c7d71ba54d6bfc84b3757d6009265e703d6780e53f637f5da1e5aea58abc"
     },
     "heads": {
       ".github/workflows/*.yml": {
@@ -17,8 +17,8 @@
         "sha256": "34afc9be3cf10246660d5ff1192ac9a1e0ea50bb4835597526f1599da37ed12a"
       },
       "quality/*.json": {
-        "receipt": "corpus_epoch_08140b1b26450eee.json",
-        "sha256": "4bf1c0ebdc16f8d56ca2ebac5cb999571a9b4dc109a91aae8288fbc9b9885c1a"
+        "receipt": "corpus_epoch_fe7b19a25179cd56.json",
+        "sha256": "6e374e30f0043f9067ad3df3139c5f4bd17f1add56a7d67d4438ef35ccb140ff"
       },
       "receipts/*.json": {
         "receipt": "corpus_epoch_2ca91405e468cc6b.json",
@@ -31,18 +31,18 @@
     },
     "missing_pins": [],
     "pins": {
-      "gate_pins.sig": "7392d4604815cd7425b22ec137d0505256a96ef9d1c2808e94d49a616f4b41ee",
-      "quality/crown_jewels.json": "4bb7b8a38bb04b708ff8ddeb1e2ae16c2833b0065b90cf7b09f767a8395aea9e",
-      "quality/epoch_heads.json": "fc69921f57664de1fa0ba86fa1d21ae67127ac6ba818bd7bd45b0dcb1fd9849b"
+      "gate_pins.sig": "305457c5e5f6bed7d6a14bbc4fd3ba813ead3973b7cc534aaa405ef833910303",
+      "quality/crown_jewels.json": "b9af7e7f235c0a743dca301afec354493b117cec50348184e7b1c51eab4fa649",
+      "quality/epoch_heads.json": "a547fd19df4cef012ecdae419df078884b4ce488b94c503109927a08a1e8bddb"
     },
-    "prev_sha256": "af7a250142e8fac08db963305bf2dd775bdc17ae7789df02d9f87bf0bd84b98a",
+    "prev_sha256": "5c79ef7120b4557ba15d4d710adc87ac8e2122a5897856b9fef604d638f0e7dc",
     "schema": "integrity_checkpoint.v1",
     "spine": {
-      "n_archives": 42,
+      "n_archives": 41,
       "tip": "fdd3ee1811654c76_19a106d5.json"
     },
     "witness": {
-      "n_proofs": 51,
+      "n_proofs": 50,
       "proofs": {
         "checkpoint.json_2884936358.json": "da2cc622df0b69d87589caebb754e20e4281c0f67f85822eda423fd563641669",
         "checkpoint.json_2885061641.json": "c33ef89dcadc8400ef3cca07972bda027e277ee8aeb05c14f7019c8de7d458c0",
@@ -93,11 +93,10 @@
         "checkpoint.json_2887018774.json": "db6e2d16eebaa770621914863796ece49b3845a9f943f13092d83708cce8dba2",
         "checkpoint.json_2887033159.json": "257394228f9e74d971c0d05789eb0376f92dff9964910fdd4d1364306e2a01c7",
         "checkpoint.json_2887059668.json": "88c07ad807163c9b5535bc04e38c7bde619c363f060590aa8881c111d546549c",
-        "checkpoint.json_2887077022.json": "f93c7c968f82f6e36920a57396a74618134b0b2c3906b9aea811ddfb50f0343d",
-        "checkpoint.json_2887141886.json": "b7f343aac0094ae31df634331f62fb87254e291bc3a3d9470d41699f22b0549d"
+        "checkpoint.json_2887077022.json": "f93c7c968f82f6e36920a57396a74618134b0b2c3906b9aea811ddfb50f0343d"
       }
     }
   },
   "schema": "integrity_checkpoint_sig.v1",
-  "signature": "1334ad0c24952ddb7895c68d6c5bbd607d52313d099bca9bc5ef463c0522f3ddfddfd118519bff4916bca9d02b304db2df17038fed25dcc08a897225b0dc0907"
+  "signature": "ab0dd0a5ffaa83fe9f795fd37ba25112443389eb4f7d4042aa9f508c0d24db0c00601d848c7c87f542b361699512ceb16204ba4308d60c73693395742707d806"
 }
