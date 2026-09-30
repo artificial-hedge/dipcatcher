@@ -83,6 +83,8 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/utils/hashing.py",
     "scripts/verify_auditor_bundle.py",  # the independent second verifier —
     # a silent patch to IT defeats the divergence-detection layer
+    "scripts/verify_ots_auditor.py",  # the standalone OTS/Bitcoin auditor —
+    # same class: the differential oracle must itself be pinned
 )
 
 

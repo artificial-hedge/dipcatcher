@@ -379,3 +379,123 @@ def test_verify_ots_fully_verified(tmp_path: Path) -> None:
     res = verify_ots(root)
     assert not res["ok"]
     assert any("inclusion_invalid" in e for e in res["errors"])
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+OTS_AUDITOR = REPO_ROOT / "scripts/verify_ots_auditor.py"
+
+
+def _run_auditor(*args: str) -> tuple[int, str]:
+    import subprocess
+    import sys
+
+    proc = subprocess.run(
+        [sys.executable, str(OTS_AUDITOR), *args],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    return proc.returncode, proc.stdout + proc.stderr
+
+
+@pytest.mark.skipif(not OTS_AUDITOR.is_file(), reason="auditor script absent")
+def test_standalone_ots_auditor_agrees(tmp_path: Path) -> None:
+    """Independent stdlib implementation must reach the same verdict as the
+    library on the committed proof and on each tamper class."""
+    root = _repo_with_target(tmp_path)
+    target = root / "quality/epoch_heads.json"
+    digest = hashlib.sha256(target.read_bytes()).digest()
+    ots_dir = root / "quality/timestamps/ots"
+    ots_dir.mkdir(parents=True)
+    stream = b"\x00" + ATT_BITCOIN + b"\x03" + bytes([0x90, 0xD6, 0x27])
+    ots_path = ots_dir / "quality__epoch_heads.json.ots"
+    ots_path.write_bytes(OTS_MAGIC + b"\x08" + digest + stream)
+    header, txids, coinbase = _fake_block(digest)
+    hdr_path = ots_dir / "quality__epoch_heads.json.650000.hdr"
+    blk_path = ots_dir / "quality__epoch_heads.json.650000.blk"
+    hdr_path.write_bytes(header)
+    blk_path.write_text(json.dumps({"txids": txids, "coinbase": coinbase.hex()}))
+    (root / "quality/timestamps/ots_anchors.json").write_text(
+        json.dumps(
+            {
+                "schema": "ots_anchors.v1",
+                "anchors": {
+                    "quality__epoch_heads.json.ots": {
+                        "target": "quality/epoch_heads.json",
+                        "sha256": digest.hex(),
+                    }
+                },
+            }
+        )
+    )
+
+    lib = verify_ots(root)
+    rc, out = _run_auditor(
+        "--target",
+        str(target),
+        "--ots",
+        str(ots_path),
+        "--hdr",
+        str(hdr_path),
+        "--blk",
+        str(blk_path),
+    )
+    assert lib["ok"] and rc == 0, out
+    assert "fully_verified" in out and "fully_verified" in str(
+        lib["attestations"]["quality/epoch_heads.json"]
+    )
+
+    # Drift: target byte differs post-stamp → both report STALE (the proof
+    # remains a valid timestamp of the superseded bytes, not a failure)
+    target.write_text('{"pins":2}')
+    rc2, out2 = _run_auditor("--target", str(target), "--ots", str(ots_path))
+    assert rc2 == 0 and "stale" in out2.lower()
+    lib2 = verify_ots(root)
+    assert lib2["ok"] and lib2["fresh"]["quality/epoch_heads.json"] is False
+
+    # Tamper: corrupt coinbase → both flag inclusion
+    target.write_text('{"pins":1}')
+    blk_path.write_text(json.dumps({"txids": txids, "coinbase": (b"\x02" + coinbase[1:]).hex()}))
+    rc3, out3 = _run_auditor(
+        "--target",
+        str(target),
+        "--ots",
+        str(ots_path),
+        "--hdr",
+        str(hdr_path),
+        "--blk",
+        str(blk_path),
+    )
+    assert rc3 == 1
+    lib3 = verify_ots(root)
+    assert not lib3["ok"] and any("inclusion_invalid" in e for e in lib3["errors"])
+
+    # Tamper: header PoW fails → both flag
+    blk_path.write_text(json.dumps({"txids": txids, "coinbase": coinbase.hex()}))
+    bad_hdr = bytearray(header)
+    bad_hdr[72:76] = (0x01000001).to_bytes(4, "little")
+    hdr_path.write_bytes(bytes(bad_hdr))
+    rc4, _ = _run_auditor(
+        "--target",
+        str(target),
+        "--ots",
+        str(ots_path),
+        "--hdr",
+        str(hdr_path),
+        "--blk",
+        str(blk_path),
+    )
+    assert rc4 == 1
+    lib4 = verify_ots(root)
+    assert not lib4["ok"] and any("pow_invalid" in e for e in lib4["errors"])
+
+    # Committed real proof: standalone auditor parses it without the library
+    real = REPO_ROOT / "quality/timestamps/ots/quality__epoch_heads.json.ots"
+    if real.is_file():
+        rc5, out5 = _run_auditor(
+            "--target",
+            str(REPO_ROOT / "quality/epoch_heads.json"),
+            "--ots",
+            str(real),
+        )
+        assert rc5 == 0 and "pending attestation" in out5
