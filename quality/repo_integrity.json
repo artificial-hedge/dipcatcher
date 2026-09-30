@@ -93,11 +93,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "887a19846845bd684f05f30bbfc751571387299886fc96b04cedfc4c5b4fd0a5",
-    "epoch_heads_sha256": "b002b544417e6b2e23d605854e1040f71e022c3efe422785bd6c3d4fdf0382de",
+    "crown_jewels_sha256": "de03f6a09145ae7fee6fc6a1414d796c350f2837363a83c1bd130dd588f154c4",
+    "epoch_heads_sha256": "82c4657316df64727ef45fe4ef67d169268324310b8138c8940f3a8442463e78",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "eefbcede2b694431ed31cb3a97f6c16b25c61ef152c5d7c704273f316a8b3edd",
+  "receipt_sha256": "e35f36649acd0eefad24a7845cd52c0b2f53c152c246f8e78bb1c7e7f89523a0",
   "schema": "repo_integrity.v1"
 }

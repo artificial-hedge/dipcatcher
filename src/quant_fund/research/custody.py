@@ -182,6 +182,83 @@ def custody_proof(
     }
 
 
+def digest_custody(
+    digest_hex: str,
+    *,
+    root: Path | str = ".",
+    corpora: tuple[tuple[str, str], ...] | None = None,
+) -> dict[str, Any]:
+    """Custody for a *referenced digest*, not a file: prove that a committed
+    corpus member's bytes contain ``digest_hex``.
+
+    A ``custody`` bundle proves a file exists in the spine; this variant
+    proves the corpus *attested a digest* — e.g. a data manifest pinning a
+    dataset sha256, or a receipt embedding an artifact digest. The carrier
+    file's current bytes get the full eight-layer bundle plus a
+    ``subject_digest`` layer verified by containment. The earliest-pinning
+    carrier across corpora wins (earliest chain epoch = longest-attested
+    reference).
+
+    ``corpora`` narrows the search to ``(dir, glob)`` pairs; default scans
+    every corpus with a chain under ``root``.
+    """
+    root_p = Path(root)
+    digest_hex = digest_hex.strip().lower()
+    if len(digest_hex) != 64 or any(c not in "0123456789abcdef" for c in digest_hex):
+        raise ValueError("digest must be 64 lowercase hex chars")
+    from quant_fund.research.corpus_epoch import member_digests
+    from quant_fund.research.epoch_consistency import chain_index
+    from quant_fund.research.repo_integrity import CORPORA
+
+    pairs = corpora or tuple((str(c[0]), str(c[1])) for c in CORPORA)
+    needles = digest_hex.encode()
+    best: dict[str, Any] | None = None
+    best_rank: tuple[int, str, str] | None = None
+    for rel_dir, pattern in pairs:
+        corpus = root_p / rel_dir
+        if not corpus.is_dir():
+            continue
+        index = chain_index(corpus, pattern=pattern)
+        order = _chain_order(index)
+        if not order:
+            continue
+        # ``member_digests`` is the exact member set (recursive, with the
+        # exemption rules applied). Epoch receipts are members too, but a
+        # digest inside one's bytes is chain bookkeeping, not a content
+        # claim — exclude them as carriers.
+        for member, member_sha in member_digests(corpus, pattern=pattern).items():
+            if Path(member).name.startswith("corpus_epoch_"):
+                continue
+            raw = (corpus / member).read_bytes()
+            if needles not in raw:
+                continue
+            first_i = next(
+                (
+                    i
+                    for i, name in enumerate(order)
+                    if any(
+                        str(m.get("name")) == member and str(m.get("sha256")) == member_sha
+                        for m in index[name][1].get("members") or []
+                        if isinstance(m, Mapping)
+                    )
+                ),
+                None,
+            )
+            if first_i is None:
+                continue  # unstamped or mutated since stamping
+            rank = (first_i, rel_dir, member)
+            if best_rank is None or rank < best_rank:
+                bundle = custody_proof(member, corpus, pattern=pattern, root=root_p)
+                bundle["subject_digest"] = digest_hex
+                bundle["carrier"] = f"{rel_dir}/{member}"
+                best, best_rank = bundle, rank
+    if best is None:
+        raise ValueError(
+            f"digest {digest_hex[:16]}… is not referenced by any stamped corpus member"
+        )
+    return best
+
+
 def member_timeline(
     member: str, corpus_dir: Path | str, *, pattern: str = "*.json"
 ) -> list[dict[str, str | int]]:
@@ -214,7 +291,7 @@ def member_timeline(
 
 def _git_rev() -> str | None:
     try:
-        from quant_fund.research.receipt_v2 import git_revision
+        from quant_fund.utils.reproducibility import git_revision
 
         return git_revision()
     except Exception:  # noqa: BLE001 — provenance garnish, never gate
@@ -231,6 +308,14 @@ def custody_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     sha = payload.get("member_sha256")
     if not (isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha)):
         errors.append("member_sha256")
+    subj = payload.get("subject_digest")
+    if subj is not None and not (
+        isinstance(subj, str) and len(subj) == 64 and all(c in "0123456789abcdef" for c in subj)
+    ):
+        errors.append("subject_digest")
+    carrier = payload.get("carrier")
+    if carrier is not None and not isinstance(carrier, str):
+        errors.append("carrier")
     for key in ("member", "corpus_dir", "pattern", "first_epoch", "chain_head"):
         if not isinstance(payload.get(key), str) or not payload[key]:
             errors.append(key)
@@ -305,6 +390,15 @@ def verify_custody_bundle(
     if hash_bytes(member_bytes) != member_sha:
         errors.append("member_bytes_mismatch")
     layers["member"] = {"ok": not errors}
+
+    subj = bundle.get("subject_digest")
+    if isinstance(subj, str):
+        # Digest custody: the queried digest must sit inside the carrier's
+        # verified bytes — the claim is containment, not just presence.
+        contained = subj.encode() in member_bytes
+        layers["subject_digest"] = {"ok": contained, "carrier": bundle.get("carrier")}
+        if not contained:
+            errors.append("subject_digest_absent")
 
     corpus_dir = str(bundle["corpus_dir"])
     hops = bundle["hops"]

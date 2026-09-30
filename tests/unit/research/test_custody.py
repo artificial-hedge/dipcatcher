@@ -232,6 +232,36 @@ def test_release_attestation_round_trip(tmp_path: Path) -> None:
     assert any(e.startswith("attestation_stale:") for e in stale["errors"])
 
 
+def test_digest_custody_finds_referenced_digest(tmp_path: Path) -> None:
+    """A digest embedded in a stamped member's bytes gets a full bundle."""
+    from quant_fund.research.custody import digest_custody
+
+    root = _fixture(tmp_path)
+    # a.json's sealed body contains inputs_sha256 = "ab"*32 — ask custody
+    # for it and the carrier should be receipts/a.json.
+    digest = "ab" * 32
+    bundle = digest_custody(digest, root=root)
+    assert bundle["carrier"] == "receipts/a.json"
+    assert bundle["subject_digest"] == digest
+    res = verify_custody_bundle(bundle, (root / "receipts/a.json").read_bytes())
+    assert res["ok"], res["errors"]
+    assert res["layers"]["subject_digest"]["ok"]
+
+    # A digest not present anywhere fails closed at emission.
+    with pytest.raises(ValueError, match="not referenced"):
+        digest_custody("00" * 32, root=root)
+
+    # Carrier bytes that no longer contain the digest → subject_digest_absent
+    # (b'{}' also fails member_bytes_mismatch — both errors are expected).
+    res_bad = verify_custody_bundle(bundle, b"{}")
+    assert not res_bad["ok"]
+    assert "subject_digest_absent" in res_bad["errors"]
+
+    # Contract flags malformed subject_digest.
+    forged = dict(bundle, subject_digest="xyz")
+    assert "subject_digest" in custody_contract_errors(forged)
+
+
 def _fake_rekor_entry(target_bytes: bytes, witness_key_pem: bytes, rekor_key) -> dict:
     """A cryptographically coherent Rekor entry signed by a fake Rekor key."""
     import base64

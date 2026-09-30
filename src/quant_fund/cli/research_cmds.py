@@ -1887,6 +1887,12 @@ def custody_cmd(
         "--timeline",
         help="Print the member's byte lineage across the chain instead of a bundle.",
     ),
+    digest: str | None = typer.Option(
+        None,
+        "--digest",
+        help="Digest custody: prove a sha256 is referenced inside a stamped "
+        "corpus member (scans all chains unless --corpus-dir narrows it).",
+    ),
 ) -> None:
     """One-file provenance proof: member → epoch inclusion → chain head →
     signed pins → checkpoint → Rekor witness, composed into a single
@@ -1896,11 +1902,14 @@ def custody_cmd(
     current bytes — proof of first committed state. ``--check`` needs only
     the bundle plus the subject file. ``--timeline`` prints the member's
     byte lineage (committed digest per epoch) for mutable corpora.
+    ``--digest`` instead proves a sha256 is *referenced* inside a stamped
+    member — e.g. a data manifest pinning a dataset digest.
     """
     import json as _json
 
     from quant_fund.research.custody import (
         custody_proof,
+        digest_custody,
         member_timeline,
         verify_custody_bundle,
     )
@@ -1931,9 +1940,18 @@ def custody_cmd(
         typer.echo("custody verified: full provenance chain authentic")
         return
 
-    if member is None:
-        raise typer.BadParameter("--member is required unless --check is passed")
-    bundle = custody_proof(member, corpus_dir, pattern=pattern, root=root)
+    if digest is not None:
+        if member is not None:
+            raise typer.BadParameter("--digest and --member are mutually exclusive")
+        corpus_opt = None
+        if corpus_dir != Path("receipts") or pattern != "*.json":
+            corpus_opt = ((corpus_dir.as_posix(), pattern),)
+        bundle = digest_custody(digest, root=root, corpora=corpus_opt)
+        typer.echo(f"carrier={bundle['carrier']} first_epoch={bundle['first_epoch']}")
+    else:
+        if member is None:
+            raise typer.BadParameter("--member or --digest is required unless --check is passed")
+        bundle = custody_proof(member, corpus_dir, pattern=pattern, root=root)
     text = _json.dumps(bundle, indent=2, sort_keys=True) + "\n"
     if out is not None:
         from quant_fund.utils.atomicio import atomic_write_text
@@ -1943,7 +1961,7 @@ def custody_cmd(
         typer.echo(text.rstrip())
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
-        f"custody member={member} first_epoch={bundle['first_epoch']} "
+        f"custody member={bundle['member']} first_epoch={bundle['first_epoch']} "
         f"head={bundle['chain_head']} hops={bundle['n_hops']}"
     )
 
