@@ -40,6 +40,10 @@ _CP_FILE = "quality/checkpoint.json"
 # artifact) and Rekor's (SET + checkpoint note).
 _WITNESS_KEY_FILES = ("quality/witness_signing.pub", "quality/rekor_pubkey.pem")
 _WITNESS_DIR = Path("quality/witness")
+# RFC 3161 timestamp anchors: manifest + .tsr tokens + pinned TSA certs —
+# binding the pins to wall-clock. The dir is epoch-exempt by design (the .tsr
+# imprints authenticate it), so custody embeds it wholesale.
+_TIMESTAMPS_DIR = Path("quality/timestamps")
 
 
 def _b64(data: bytes) -> str:
@@ -151,6 +155,11 @@ def custody_proof(
     if witness_dir.is_dir():
         for p in sorted(witness_dir.glob(f"{Path(_CP_FILE).name}_*.json")):
             witnesses[f"{_WITNESS_DIR.as_posix()}/{p.name}"] = _b64(p.read_bytes())
+    ts_dir = root_p / _TIMESTAMPS_DIR
+    if ts_dir.is_dir():
+        for p in sorted(ts_dir.iterdir()):
+            if p.is_file():
+                embedded[f"{_TIMESTAMPS_DIR.as_posix()}/{p.name}"] = _b64(p.read_bytes())
 
     return {
         "kind": CUSTODY_SCHEMA,
@@ -282,6 +291,9 @@ def verify_custody_bundle(
        current against the embedded pin files).
     7. ``witness``     — ``verify_witness_file`` on each embedded Rekor
        proof; at least one must be authentic for a witnessed bundle.
+    8. ``timestamps``  — ``verify_timestamps``: RFC 3161 tokens bind the
+       pinned files to wall-clock (freshness = token commits to the
+       embedded bytes).
     """
     errors: list[str] = []
     contract = custody_contract_errors(bundle)
@@ -430,5 +442,24 @@ def verify_custody_bundle(
             errors.extend(w_errors or ["witness_invalid"])
     else:
         layers["witness"] = {"ok": True, "absent": True}
+
+    # RFC 3161 layer: the anchored targets (checkpoint/pins) are embedded, so
+    # verify_timestamps gets a live synthetic root — ``fresh`` confirms each
+    # token still commits to those bytes, and the openssl chain check pins the
+    # TSA certs.
+    ts_manifest = tmp / _TIMESTAMPS_DIR / "anchors.json"
+    if ts_manifest.is_file():
+        from quant_fund.research.timestamp_anchor import verify_timestamps
+
+        ts = verify_timestamps(tmp)
+        layers["timestamps"] = {
+            "ok": bool(ts["ok"]),
+            "anchored": ts.get("anchored"),
+            "fresh": ts.get("fresh"),
+        }
+        if not ts["ok"]:
+            errors.extend(f"timestamps:{e}" for e in ts["errors"])
+    else:
+        layers["timestamps"] = {"ok": True, "absent": True}
 
     return {"ok": not errors, "errors": errors, "layers": layers}
