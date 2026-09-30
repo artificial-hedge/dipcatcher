@@ -243,6 +243,43 @@ def verify_repo(
             errs.append(f"uncovered_member:{rel}")
         gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
 
+    # Semantic layer: byte-integrity says the corpus is untampered; the
+    # lattice gate says its claims are coherent. A contradictory corpus
+    # fails the capstone the same as a forged byte.
+    lattice_errs: list[str] = []
+    lattice_info: dict[str, Any] = {}
+    lattice_dir = root / "receipts"
+    if not lattice_dir.is_dir():
+        lattice_errs.append("lattice_missing:receipts")
+    else:
+        try:
+            from quant_fund.research.receipt_lattice import receipt_lattice
+
+            ki_path = root / "quality" / "lattice_known_inconsistent.json"
+            known: dict[str, str] = {}
+            if ki_path.is_file():
+                ki_doc = json.loads(ki_path.read_text())
+                ki_map = ki_doc.get("known", ki_doc) if isinstance(ki_doc, Mapping) else {}
+                if isinstance(ki_map, Mapping):
+                    known = {str(k): str(v) for k, v in ki_map.items()}
+            lat = receipt_lattice(lattice_dir, known_inconsistent=known)
+            lattice_info = {
+                "verdict": lat["verdict"],
+                "n_claim_groups": lat["n_claim_groups"],
+                "n_retracted": lat["n_retracted"],
+            }
+            if lat["n_parse_errors"]:
+                lattice_errs.append(f"lattice_parse_errors:{lat['n_parse_errors']}")
+            if lat["verdict"] == "inconsistent":
+                lattice_errs.append("lattice_inconsistent")
+        except Exception as exc:  # noqa: BLE001 — gate fails closed
+            lattice_errs.append(f"lattice_error:{type(exc).__name__}: {exc}")
+    gates["lattice"] = {
+        "ok": not lattice_errs,
+        "errors": lattice_errs,
+        **lattice_info,
+    }
+
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}
 
 
@@ -255,6 +292,7 @@ _REQUIRED_GATES = (
     "timestamp_anchors",
     "spine",
     "key_rotation",
+    "lattice",
 )
 
 
