@@ -57,6 +57,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "Dockerfile",  # the container definition — a build-env tamper surface
     "HONESTY_RATING.md",  # the public honesty ledger
     "INFLIGHT",  # work ledger
+    "LICENSE",  # the legal terms — a swapped license text is unreviewed relicensing
     "README.md",  # the front door — install instructions are a hijack surface
     "MATH_SPEC.md",  # fx-1 math contract (tracked input)
     "RESEARCH_REFERENCES.md",  # fx-1 bibliography (tracked input)

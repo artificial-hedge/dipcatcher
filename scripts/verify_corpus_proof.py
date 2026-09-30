@@ -1082,6 +1082,155 @@ def audit_delta_live(delta: dict[str, Any], corpus_dir: Path) -> list[str]:
     return sorted(set(errors))
 
 
+def _chain_leaf(position: int, name: str, sha256: str) -> bytes:
+    """Position-bound chain leaf — mirrors epoch_merkle._chain_leaf."""
+    return hashlib.sha256(
+        b"\x00" + _canon({"position": position, "receipt": name, "sha256": sha256})
+    ).digest()
+
+
+def _chain_root(chain: list[tuple[str, str]]) -> str:
+    """Root over ordered chain leaves — mirrors chain_tree_root."""
+    level = [_chain_leaf(i, n, s) for i, (n, s) in enumerate(chain)]
+    while len(level) > 1:
+        nxt = [_node_hash(level[i], level[i + 1]) for i in range(0, len(level) - 1, 2)]
+        if len(level) % 2:
+            nxt.append(level[-1])
+        level = nxt
+    return level[0].hex()
+
+
+def _expected_sides(leaf_index: int, n_members: int) -> list[str | None]:
+    """Per-level sibling side for a leaf index under odd-promotion —
+    mirrors epoch_merkle._expected_sides (pure function of tree shape)."""
+    sides: list[str | None] = []
+    pos, ln = leaf_index, n_members
+    while ln > 1:
+        if pos == ln - 1 and ln % 2 == 1:
+            sides.append(None)
+        else:
+            sides.append("right" if pos % 2 == 0 else "left")
+        pos //= 2
+        ln = (ln + 1) // 2
+    return sides
+
+
+def _root_from_leaf_path(leaf: bytes, leaf_index: int, path: list[Any]) -> bytes:
+    node, pos = leaf, leaf_index
+    for entry in path:
+        sib = bytes.fromhex(entry["sha256"])
+        node = _node_hash(node, sib) if entry["side"] == "right" else _node_hash(sib, node)
+        pos //= 2
+    return node
+
+
+def audit_position_shape(proof: dict[str, Any]) -> list[str]:
+    """epoch_position.v1 shape — mirrors epoch_position_errors: stamps,
+    position bounds, digest shapes, and the position-bound path replay."""
+    errors: list[str] = []
+    if proof.get("kind") != "epoch_position.v1":
+        errors.append("kind_not_epoch_position")
+    if proof.get("schema") != "epoch_position.v1":
+        errors.append("schema_not_epoch_position")
+    if proof.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if proof.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    receipt = proof.get("receipt")
+    if not isinstance(receipt, str) or not receipt.startswith("corpus_epoch_"):
+        errors.append("receipt_name_bad")
+    if not _digest_hex(proof.get("sha256")):
+        errors.append("sha256_bad")
+    pos, n = proof.get("position"), proof.get("n_epochs")
+    if not isinstance(pos, int) or not isinstance(n, int) or not (0 <= pos < n):
+        errors.append("position_bounds")
+    if not _digest_hex(proof.get("chain_root")):
+        errors.append("chain_root_bad")
+    path = proof.get("path")
+    if not isinstance(path, list) or not all(
+        isinstance(e, dict) and e.get("side") in ("left", "right") for e in path
+    ):
+        errors.append("path_malformed")
+    if errors:
+        return sorted(set(errors))
+    # Path replay: leaf binds (position, name, sha); shape pinned by (pos, n).
+    sides = _expected_sides(pos, n)
+    if len(path) != sum(1 for s in sides if s is not None):
+        return sorted({*errors, "path_invalid"})
+    it = iter(path)
+    for want in sides:
+        if want is None:
+            continue
+        step = next(it)
+        if step.get("side") != want:
+            return sorted({*errors, "path_invalid"})
+    leaf = _chain_leaf(pos, str(receipt), str(proof["sha256"]))
+    if _root_from_leaf_path(leaf, pos, path).hex() != proof["chain_root"]:
+        errors.append("path_invalid")
+    return sorted(set(errors))
+
+
+def audit_position_pin(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -> list[str]:
+    """Pin-mode epoch_position.v1 — the entry's chain_root + n_epochs
+    anchor the proof; a head-position proof must match the pinned head."""
+    errors = audit_position_shape(proof)
+    if errors:
+        return errors
+    heads = pin.get("heads", {})
+    corpus_key = key or str(proof.get("corpus_key") or "")
+    entry = heads.get(corpus_key)
+    if not isinstance(entry, dict):
+        entry = next(
+            (
+                e
+                for e in heads.values()
+                if isinstance(e, dict) and e.get("chain_root") == proof["chain_root"]
+            ),
+            None,
+        )
+    if not isinstance(entry, dict):
+        return [*errors, "pin_entry_missing"]
+    if entry.get("chain_root") != proof["chain_root"]:
+        errors.append("chain_root_not_pinned")
+    if isinstance(entry.get("n_epochs"), int) and entry["n_epochs"] != proof["n_epochs"]:
+        errors.append("pin_n_epochs_mismatch")
+    if proof["position"] == proof["n_epochs"] - 1:
+        if entry.get("receipt") != proof["receipt"]:
+            errors.append("head_receipt_not_pinned")
+        if entry.get("sha256") != proof["sha256"]:
+            errors.append("head_sha256_not_pinned")
+    return sorted(set(errors))
+
+
+def audit_position_live(proof: dict[str, Any], corpus_dir: Path) -> list[str]:
+    """Live replay — rebuild the chain and require declared position,
+    digest, and root to all recompute (mirrors verify_epoch_position)."""
+    errors = audit_position_shape(proof)
+    if errors:
+        return errors
+    key = proof.get("corpus_key")
+    pattern = key.rsplit("/", 1)[-1] if isinstance(key, str) and "/" in key else "*.json"
+    ordered, chain_errors = _ordered_chain(corpus_dir, pattern)
+    if chain_errors:
+        return [*errors, *[f"chain_unverifiable:{e}" for e in chain_errors]]
+    names_sha = [(n, sha) for n, sha, _, _, _ in ordered]
+    if len(names_sha) != proof["n_epochs"]:
+        errors.append("n_epochs_mismatch")
+    if _chain_root(names_sha) != proof["chain_root"]:
+        errors.append("chain_root_mismatch")
+    pos = int(proof["position"])
+    if pos >= len(names_sha):
+        return sorted(set(errors + ["position_out_of_range"]))
+    name, sha = names_sha[pos]
+    if name != proof["receipt"]:
+        errors.append("position_name_mismatch")
+    if sha != proof["sha256"]:
+        errors.append("position_sha256_mismatch")
+    if ordered[pos][2] != proof.get("epoch_root_sha256"):
+        errors.append("epoch_root_mismatch")
+    return sorted(set(errors))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--proof", type=Path, default=None, help="corpus_proof.v1 receipt")
@@ -1103,6 +1252,12 @@ def main() -> int:
         type=Path,
         default=None,
         help="epoch_delta.v1 receipt (completeness-verified epoch change-set)",
+    )
+    ap.add_argument(
+        "--position",
+        type=Path,
+        default=None,
+        help="epoch_position.v1 receipt (chain-position proof under the pin's chain_root)",
     )
     ap.add_argument(
         "--held",
@@ -1147,11 +1302,13 @@ def main() -> int:
             args.history_absence,
             args.consistency,
             args.delta,
+            args.position,
         )
     )
     if n_targets != 1:
         print(
-            "pass exactly one of --proof/--absence/--history-absence/--consistency/--delta",
+            "pass exactly one of --proof/--absence/--history-absence/"
+            "--consistency/--delta/--position",
             file=sys.stderr,
         )
         return 2
@@ -1233,6 +1390,20 @@ def main() -> int:
         print(
             f"history-absence name={body.get('name')} "
             f"epochs={body.get('n_epochs')} -> {len(errors)} error(s)"
+        )
+    elif args.position is not None:
+        payload = json.loads(args.position.read_text())
+        body = payload.get("payload", payload)
+        errors = pre_errors
+        if pinned:
+            errors += audit_position_pin(body, pin, args.key)
+        if live:
+            errors += audit_position_live(body, live["dir"])
+        elif not pinned:
+            errors += audit_position_shape(body)
+        print(
+            f"position receipt={body.get('receipt')} "
+            f"pos={body.get('position')}/{body.get('n_epochs')} -> {len(errors)} error(s)"
         )
     elif args.delta is not None:
         payload = json.loads(args.delta.read_text())

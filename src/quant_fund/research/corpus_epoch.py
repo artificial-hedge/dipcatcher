@@ -533,6 +533,16 @@ def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
                 if not (isinstance(tree_root, str) and len(tree_root) == 64):
                     raise ValueError(f"heads pin entry {key!r} malformed")
                 record["tree_root"] = tree_root
+            chain_root = entry.get("chain_root")
+            if chain_root is not None:
+                if not (isinstance(chain_root, str) and len(chain_root) == 64):
+                    raise ValueError(f"heads pin entry {key!r} malformed")
+                record["chain_root"] = chain_root
+            n_epochs = entry.get("n_epochs")
+            if n_epochs is not None:
+                if not (isinstance(n_epochs, int) and n_epochs > 0):
+                    raise ValueError(f"heads pin entry {key!r} malformed")
+                record["n_epochs"] = n_epochs
             heads[key] = record
         else:
             raise ValueError(f"heads pin entry {key!r} malformed")
@@ -553,7 +563,9 @@ def update_heads_pin(
     """
     path = Path(pin_path)
     key = epoch_heads_key(corpus_dir, pattern)
-    heads = load_heads_pin(path) if path.is_file() else {}
+    heads: dict[str, dict[str, Any]] = (
+        {k: dict(v) for k, v in load_heads_pin(path).items()} if path.is_file() else {}
+    )
     try:
         head_doc = json.loads(head_receipt.read_bytes())
     except (OSError, ValueError):
@@ -567,6 +579,19 @@ def update_heads_pin(
     }
     if isinstance(tree_root, str) and len(tree_root) == 64:
         heads[key]["tree_root"] = tree_root
+    # Position-tree commitment: a Merkle root over the ordered epoch chain
+    # (leaves bind (position, name, file-sha)) so `epoch_position.v1`
+    # proofs verify offline against this pin in O(log n).
+    from quant_fund.research.epoch_merkle import chain_tree_root, ordered_epoch_chain
+
+    try:
+        ordered, chain_errors = ordered_epoch_chain(corpus_dir, pattern=pattern)
+    except (OSError, ValueError):
+        ordered, chain_errors = [], ["chain_compute_failed"]
+    if not chain_errors and ordered and ordered[-1][0] == head_receipt.name:
+        names_sha = [(name, file_sha) for name, file_sha, _, _, _ in ordered]
+        heads[key]["chain_root"] = chain_tree_root(names_sha)
+        heads[key]["n_epochs"] = len(names_sha)
     from quant_fund.utils.atomicio import atomic_write_text
 
     payload = {"schema": "epoch_heads.v1", "heads": heads}

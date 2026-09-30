@@ -1,10 +1,10 @@
 {
   "algorithm": "ed25519",
   "payload": {
-    "at": "2026-09-30T12:04:33+00:00",
+    "at": "2026-09-30T12:03:10+00:00",
     "code": {
       "revision": "462f3a9dd5818ef0e19f8174b1f2ff6b0fa206c5",
-      "worktree_sha256": "f9b8fcef39207ae44a94f9a7233aaa7bf280703fb1c42af57bf32f11ab4f5675"
+      "worktree_sha256": "194c56a693366b31a735fab5ee8bf5db32ebafc802570583ae897ab840f11040"
     },
     "heads": {
       ".box-soft-verify/*": {
@@ -106,11 +106,11 @@
         "tree_root": "02e92214497bda339d01fa66e33cfa297f142e9468650f51ff4b4783b80898e9"
       },
       "quality/*.json": {
-        "chain_root": "059f2e4c227a633525ea0d71d0030ce107b9e5cd0b9707eb9ee09d3198b25ffe",
-        "n_epochs": 249,
-        "receipt": "corpus_epoch_fd4abfb8a667cacd.json",
-        "sha256": "017f4959e91763f3f709f8a0cb9bb091a1b4af44add03fcce7941d1d330fd301",
-        "tree_root": "3f03869f62f0a6a48cea10e605d1ef17426f583c6a0adeaebc4c11a4aa522fad"
+        "chain_root": "c7206b706d76db8535762eb751d34784b24717cb6a74bb2524395b944ecc6845",
+        "n_epochs": 248,
+        "receipt": "corpus_epoch_117cb9fb899fb356.json",
+        "sha256": "b8581baaf84cb4f2082403ebdb5fa28e40738befcac79c52a1c3d0071645fc4d",
+        "tree_root": "ed1687e21dc9410140cfec2f7c5ea96d5f3449dc21953f07eea89c85149f2925"
       },
       "receipts/*.json": {
         "chain_root": "07d40e6085e24eb63ee58f3bc674eb275735e4d1d01ef89b3115eaaab6456bc5",
@@ -206,12 +206,12 @@
     },
     "missing_pins": [],
     "pins": {
-      "gate_pins.sig": "db17b29ad8a50386a2d9b0c0d77c61a947fd2675edca326b2493493a012e8f72",
-      "quality/crown_jewels.json": "20913a2277d00745a2c3515a30cd0d3ab4c5b1c987dca926c99ce7b1e1f65e5d",
-      "quality/epoch_heads.json": "a0b2dba883bd4316803649ae30fad0d7f01b47b3ab80984f06e8a8d063153ef8",
+      "gate_pins.sig": "95a89c4682191861aa007cb1a802f1ed64e5c67ccd5e8bd3c4d00d1f3febc769",
+      "quality/crown_jewels.json": "4eae7c7722787b04885e1249e438f3be48805482c97a033aaa37e145e5ac98c8",
+      "quality/epoch_heads.json": "71831466cb468ce0d4f057ccba193ae2578bd04cac2bd7cd517ca57dc740fc55",
       "quality/gate_quorum.json": "ac93bbce9cc5c1e8c51094a551c6fffc3f2855efbba7c5a1c88d0244326fc33a"
     },
-    "prev_sha256": "1015a541836ce14027ad5995003dfc4c1f01a2d846a197261545f4c9f31d4f62",
+    "prev_sha256": "2485d052934253fe96b870e24d982ac29616ef23d098c766f78dff7102fa52c5",
     "quorum": {
       "n_keys": 1,
       "registry_sha256": "ac93bbce9cc5c1e8c51094a551c6fffc3f2855efbba7c5a1c88d0244326fc33a",
@@ -219,11 +219,11 @@
     },
     "schema": "integrity_checkpoint.v1",
     "spine": {
-      "n_archives": 131,
+      "n_archives": 130,
       "tip": "fee30986fbb26346_2bf77a74.json"
     },
     "witness": {
-      "n_proofs": 140,
+      "n_proofs": 139,
       "proofs": {
         "checkpoint.json_2884936358.json": "da2cc622df0b69d87589caebb754e20e4281c0f67f85822eda423fd563641669",
         "checkpoint.json_2885061641.json": "c33ef89dcadc8400ef3cca07972bda027e277ee8aeb05c14f7019c8de7d458c0",
@@ -363,8 +363,7 @@
         "checkpoint.json_3016941360.json": "21d72b529613df8f1925f97f6974df755c708ba6c831b73291f5a303f2b6a1f8",
         "checkpoint.json_3017872689.json": "3d1291a75def5ddd63e0af7b746c329e9dc0420208c392c590b54da35db0d5a7",
         "checkpoint.json_3017889327.json": "bf59d00b20586ac6cd2abe94c12809fbbfc09de4c9169894cdee18e74af3c94d",
-        "checkpoint.json_3017983454.json": "151347e87a0a659ff2f04e63fbb65fe087a4b898a4a96242639694850dc3ee83",
-        "checkpoint.json_3018157463.json": "cfd1f263736af4be31f7b386991beee63a03edd9db7210c2385589c74326149b"
+        "checkpoint.json_3017983454.json": "151347e87a0a659ff2f04e63fbb65fe087a4b898a4a96242639694850dc3ee83"
       }
     }
   },
@@ -372,7 +371,7 @@
   "signatures": [
     {
       "key_id": "bc3bcff676056adf",
-      "signature": "9e8faa23d559b3999c370b32fd1b7c8d75b8f5f9b90068685ebe72627099dee25b96c29e9f4586a043b5b3e00e362db33e671a32fa484e2d3ae7301c1d95bd09"
+      "signature": "3da8862cb524b2781cb5b21903941dd0da96ad3d46e251fdfbf68ec3e31fb8707e7117344ff938186986474fe9961a484932577f2eec8838d1e6a96e5791cc06"
     }
   ]
 }

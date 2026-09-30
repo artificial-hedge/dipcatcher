@@ -2114,6 +2114,111 @@ def epoch_delta_cmd(
     )
 
 
+@app.command("epoch-position")
+def epoch_position_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Chained corpus the epoch belongs to."
+    ),
+    receipt: str | None = typer.Option(
+        None, "--receipt", help="corpus_epoch_*.json filename to prove a position for."
+    ),
+    epoch: str | None = typer.Option(
+        None, "--epoch", help="Alias for --receipt (position of this epoch receipt)."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed epoch_position.v1 receipt here (default: inside the corpus).",
+    ),
+    check: Path | None = typer.Option(
+        None, "--check", help="Verify an existing epoch_position receipt instead of making one."
+    ),
+    pin: Path | None = typer.Option(
+        None,
+        "--pin",
+        help="Offline mode: verify --check against this epoch_heads.json pin "
+        "(its per-corpus chain_root + n_epochs anchor the proof in O(log n)).",
+    ),
+) -> None:
+    """Epoch position proof: this receipt occupied position K in the chain.
+
+    The heads pin commits a ``chain_root`` — an RFC 6962 tree over the
+    *ordered* epoch chain (leaves bind (position, name, file digest), so
+    indices can't be re-presented). The sealed ``epoch_position.v1``
+    receipt proves "this exact corpus state was committed at position K"
+    against the signed pin alone — no chain walk needed.
+    """
+    import json as _json
+
+    from quant_fund.research.epoch_merkle import (
+        epoch_position_receipt,
+        verify_epoch_position,
+        verify_epoch_position_pin,
+    )
+
+    if check is not None:
+        payload = _json.loads(check.read_text(encoding="utf-8"))
+        body_payload = payload.get("payload", payload)
+        if pin is not None:
+            from quant_fund.research.corpus_epoch import load_heads_pin
+
+            heads = load_heads_pin(pin)
+            corpus_key = body_payload.get("corpus_key")
+            if not isinstance(corpus_key, str):
+                corpus_key = next(
+                    (
+                        k
+                        for k, e in heads.items()
+                        if e.get("receipt") == body_payload.get("receipt")
+                    ),
+                    "",
+                )
+            errors = verify_epoch_position_pin(body_payload, heads.get(corpus_key, {}))
+            for err in errors:
+                typer.echo(f"epoch-position error: {err}")
+            if errors:
+                raise typer.Exit(code=1)
+            typer.echo(
+                f"epoch-position verified offline: {body_payload.get('receipt')} "
+                f"at position {body_payload.get('position')}/"
+                f"{body_payload.get('n_epochs')} (pin {pin.name})"
+            )
+            return
+        errors = verify_epoch_position(body_payload, corpus_dir)
+        for err in errors:
+            typer.echo(f"epoch-position error: {err}")
+        if errors:
+            raise typer.Exit(code=1)
+        typer.echo(
+            f"epoch-position verified: {body_payload.get('receipt')} at position "
+            f"{body_payload.get('position')} of {body_payload.get('n_epochs')}"
+        )
+        return
+
+    target = receipt or epoch
+    if target is None:
+        raise typer.BadParameter("--receipt is required unless --check is passed")
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    body = epoch_position_receipt(corpus_dir, target)
+    sealed = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(__file__).parent.parent / "research" / "epoch_merkle.py",),
+            verdict="pass",
+        )
+    )
+    dest = out or corpus_dir
+    if dest.suffix != ".json":
+        dest = dest / f"epoch_position_{sealed['receipt_sha256'][:16]}.json"
+    atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"epoch-position receipt={target} position={body['position']}/{body['n_epochs']} out={dest}"
+    )
+
+
 @app.command("corpus-consistency")
 def corpus_consistency_cmd(
     corpus_dir: Path = typer.Option(

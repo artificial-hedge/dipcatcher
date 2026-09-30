@@ -295,6 +295,7 @@ ROOT_FILES = frozenset(
         "Dockerfile",
         "HONESTY_RATING.md",
         "INFLIGHT",
+        "LICENSE",
         "MATH_SPEC.md",
         "Makefile",
         "README.md",

@@ -36,7 +36,7 @@ import json
 import unicodedata
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
@@ -187,6 +187,245 @@ def verify_inclusion(
         return _root_from_proof(leaf, idx, path).hex() == expected_root
     except (KeyError, TypeError, ValueError, StopIteration):
         return False
+
+
+def _chain_leaf(position: int, name: str, sha256: str) -> bytes:
+    """Leaf for the epoch-chain tree: binds (position, receipt name, file
+    digest) — the index lives *inside* the leaf, so a path can never be
+    re-presented at a different position."""
+    body = canonical_json_bytes({"position": position, "receipt": name, "sha256": sha256})
+    return hashlib.sha256(_LEAF_PREFIX + body).digest()
+
+
+def chain_tree_root(chain: list[tuple[str, str]]) -> str:
+    """RFC 6962 root over the ordered epoch chain ``[(name, file_sha), ...]``.
+
+    Unlike ``merkle_root`` the leaves are kept in chain position order —
+    an append-only transcript, exactly like a CT log, so the root commits
+    to *sequence*, not just membership.
+    """
+    if not chain:
+        raise ValueError("empty epoch chain has no root")
+    level = [_chain_leaf(i, n, s) for i, (n, s) in enumerate(chain)]
+    while len(level) > 1:
+        nxt = [_node_hash(level[i], level[i + 1]) for i in range(0, len(level) - 1, 2)]
+        if len(level) % 2 == 1:
+            nxt.append(level[-1])
+        level = nxt
+    return level[0].hex()
+
+
+def chain_position_proof(chain: list[tuple[str, str]], index: int) -> dict[str, Any]:
+    """Sibling path proving ``chain[index]`` sits at position ``index``."""
+    if not 0 <= index < len(chain):
+        raise ValueError(f"position out of range: {index}")
+    level = [_chain_leaf(i, n, s) for i, (n, s) in enumerate(chain)]
+    path: list[dict[str, str]] = []
+    pos = index
+    while len(level) > 1:
+        sibling = pos + 1 if pos % 2 == 0 else pos - 1
+        side = "right" if pos % 2 == 0 else "left"
+        if sibling < len(level):
+            path.append({"sha256": level[sibling].hex(), "side": side})
+        nxt = [_node_hash(level[i], level[i + 1]) for i in range(0, len(level) - 1, 2)]
+        if len(level) % 2 == 1:
+            nxt.append(level[-1])
+        level = nxt
+        pos //= 2
+    return {"leaf_index": index, "n_members": len(chain), "path": path}
+
+
+def verify_chain_position(
+    position: int,
+    name: str,
+    sha256: str,
+    proof: Mapping[str, Any],
+    expected_root: str,
+) -> bool:
+    """True iff the path recomputes ``expected_root`` from the position-bound
+    leaf — with ``n_members`` carried, the path shape is pinned by
+    ``(position, n)`` so indices can't be swapped."""
+    try:
+        if unicodedata.normalize("NFC", name) != name or not _portable(name):
+            return False
+        leaf = _chain_leaf(position, name, sha256)
+        idx = proof["leaf_index"]
+        path = proof["path"]
+        if not isinstance(idx, int) or not isinstance(path, list):
+            return False
+        if idx != position:
+            return False
+        n_members = proof.get("n_members")
+        if n_members is not None:
+            if not isinstance(n_members, int) or not (0 <= idx < n_members):
+                return False
+            sides = _expected_sides(idx, n_members)
+            if len(path) != sum(1 for s in sides if s is not None):
+                return False
+            it = iter(path)
+            for want in sides:
+                if want is None:
+                    continue
+                step = next(it)
+                if step.get("side") != want:
+                    return False
+        return _root_from_proof(leaf, idx, path).hex() == expected_root
+    except (KeyError, TypeError, ValueError, StopIteration):
+        return False
+
+
+EPOCH_POSITION_SCHEMA = "epoch_position.v1"
+
+
+def epoch_position_receipt(
+    corpus_dir: Path | str,
+    receipt_name: str,
+    *,
+    pattern: str = "*.json",
+) -> dict[str, Any]:
+    """Build an ``epoch_position.v1`` body: proof that ``receipt_name``
+    occupied a specific position in the corpus's committed epoch chain.
+
+    An auditor holding the quorum-signed heads pin (``chain_root`` +
+    ``n_epochs`` per corpus key) verifies this proof in O(log n) — the
+    "was this exact corpus state ever committed, and where" question
+    without re-walking the chain.
+    """
+    from quant_fund.research.corpus_epoch import epoch_heads_key
+
+    root = Path(corpus_dir)
+    ordered, chain_errors = ordered_epoch_chain(root, pattern=pattern)
+    if chain_errors:
+        raise ValueError(f"chain unverifiable: {chain_errors}")
+    names_sha = [(name, file_sha) for name, file_sha, _, _, _ in ordered]
+    positions = {name: i for i, (name, _) in enumerate(names_sha)}
+    if receipt_name not in positions:
+        raise ValueError(f"not a committed epoch receipt: {receipt_name}")
+    idx = positions[receipt_name]
+    proof = chain_position_proof(names_sha, idx)
+    return {
+        "kind": EPOCH_POSITION_SCHEMA,
+        "schema": EPOCH_POSITION_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "CORPUS",
+        "simulated_only": False,
+        "corpus_key": epoch_heads_key(root, pattern),
+        "receipt": receipt_name,
+        "sha256": names_sha[idx][1],
+        "position": idx,
+        "n_epochs": len(names_sha),
+        "chain_root": chain_tree_root(names_sha),
+        "epoch_root_sha256": ordered[idx][2],
+        "path": proof["path"],
+    }
+
+
+def epoch_position_errors(payload: Mapping[str, Any]) -> list[str]:
+    """``epoch_position.v1`` self-contained consistency; ``[]`` when clean."""
+    errors: list[str] = []
+    if payload.get("kind") != EPOCH_POSITION_SCHEMA:
+        errors.append("kind_not_epoch_position")
+    if payload.get("schema") != EPOCH_POSITION_SCHEMA:
+        errors.append("schema_not_epoch_position")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    receipt = payload.get("receipt")
+    if not isinstance(receipt, str) or not receipt.startswith("corpus_epoch_"):
+        errors.append("receipt_name_bad")
+    if not (
+        isinstance(payload.get("sha256"), str)
+        and len(str(payload.get("sha256"))) == 64
+        and all(c in "0123456789abcdef" for c in str(payload.get("sha256")))
+    ):
+        errors.append("sha256_bad")
+    pos = payload.get("position")
+    n = payload.get("n_epochs")
+    if not isinstance(pos, int) or not isinstance(n, int) or not (0 <= pos < n):
+        errors.append("position_bounds")
+    if not (
+        isinstance(payload.get("chain_root"), str) and len(str(payload.get("chain_root"))) == 64
+    ):
+        errors.append("chain_root_bad")
+    path = payload.get("path")
+    if not isinstance(path, list) or not all(
+        isinstance(e, Mapping) and e.get("side") in ("left", "right") for e in path
+    ):
+        errors.append("path_malformed")
+    if errors:
+        return sorted(set(errors))
+    ok = verify_chain_position(
+        cast(int, pos),
+        str(receipt),
+        str(payload["sha256"]),
+        {"leaf_index": cast(int, pos), "n_members": cast(int, n), "path": path},
+        str(payload["chain_root"]),
+    )
+    if not ok:
+        errors.append("path_invalid")
+    return sorted(set(errors))
+
+
+def verify_epoch_position(payload: Mapping[str, Any], corpus_dir: Path | str) -> list[str]:
+    """Live check: rebuild the chain and require the declared position,
+    digest, and root to all recompute."""
+    errors = epoch_position_errors(payload)
+    if errors:
+        return errors
+    root = Path(corpus_dir)
+    key = str(payload.get("corpus_key") or "")
+    pattern = key.rsplit("/", 1)[-1] if "/" in key else "*.json"
+    ordered, chain_errors = ordered_epoch_chain(root, pattern=pattern)
+    if chain_errors:
+        return [*errors, *[f"chain_unverifiable:{e}" for e in chain_errors]]
+    names_sha = [(name, file_sha) for name, file_sha, _, _, _ in ordered]
+    if len(names_sha) != payload["n_epochs"]:
+        errors.append("n_epochs_mismatch")
+    if chain_tree_root(names_sha) != payload["chain_root"]:
+        errors.append("chain_root_mismatch")
+    pos = int(payload["position"])
+    if pos >= len(names_sha):
+        return sorted(set(errors + ["position_out_of_range"]))
+    name, sha = names_sha[pos]
+    if name != payload["receipt"]:
+        errors.append("position_name_mismatch")
+    if sha != payload["sha256"]:
+        errors.append("position_sha256_mismatch")
+    epoch_root = ordered[pos][2]
+    if epoch_root != payload.get("epoch_root_sha256"):
+        errors.append("epoch_root_mismatch")
+    return sorted(set(errors))
+
+
+def verify_epoch_position_pin(
+    payload: Mapping[str, Any], pin_entry: Mapping[str, Any]
+) -> list[str]:
+    """Offline check against the heads pin: the pin entry's ``chain_root``
+    and ``n_epochs`` anchor the proof — ``{receipt, sha256, tree_root,
+    chain_root, n_epochs}``."""
+    errors = epoch_position_errors(payload)
+    if errors:
+        return errors
+    if not isinstance(pin_entry, Mapping) or not pin_entry:
+        return [*errors, "pin_entry_missing"]
+    pin_root = pin_entry.get("chain_root")
+    if not isinstance(pin_root, str) or len(pin_root) != 64:
+        return [*errors, "pin_has_no_chain_root"]
+    if pin_root != payload["chain_root"]:
+        errors.append("chain_root_not_pinned")
+    pin_n = pin_entry.get("n_epochs")
+    if isinstance(pin_n, int) and pin_n != payload["n_epochs"]:
+        errors.append("pin_n_epochs_mismatch")
+    # If the proven epoch claims to be the head, the pin's head fields must
+    # agree — a head-position proof for a stale head is worthless.
+    if payload["position"] == payload["n_epochs"] - 1:
+        if pin_entry.get("receipt") != payload["receipt"]:
+            errors.append("head_receipt_not_pinned")
+        if pin_entry.get("sha256") != payload["sha256"]:
+            errors.append("head_sha256_not_pinned")
+    return sorted(set(errors))
 
 
 def _load_epoch_receipt(corpus_dir: Path, name: str) -> tuple[dict[str, Any] | None, str | None]:
