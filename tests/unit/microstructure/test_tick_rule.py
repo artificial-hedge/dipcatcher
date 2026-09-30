@@ -39,11 +39,11 @@ def test_lobster_sign_errors_csv(tmp_path: Path) -> None:
         wm, wo = csv.writer(fm), csv.writer(fo)
         wm.writerow([34200.0, 1, 1, 100, 2500, 1])
         wo.writerow([4000, 100, 3000, 100])
-        # exec at ask: direction=1 means resting sell -> aggressor buy
-        wm.writerow([34200.5, 4, 1, 100, 4000, 1])
+        # exec at ask: resting order is a sell (direction=-1) -> aggressor buy
+        wm.writerow([34200.5, 4, 1, 100, 4000, -1])
         wo.writerow([4000, 100, 3000, 100])
-        # exec at bid: direction=-1 resting buy -> aggressor sell
-        wm.writerow([34201.0, 4, 2, 100, 3000, -1])
+        # exec at bid: resting buy (direction=1) -> aggressor sell
+        wm.writerow([34201.0, 4, 2, 100, 3000, 1])
         wo.writerow([4000, 100, 3000, 100])
     out = lobster_sign_errors(tmp_path)
     assert out["n_execs"] == 2
