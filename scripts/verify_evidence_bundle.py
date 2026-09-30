@@ -62,6 +62,7 @@ EVIDENCE_SPEC: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
 )
 
 BUNDLE_MANIFEST = "BUNDLE.json"
+_SIGNATURE = "gate_pins.sig"
 HEADS_PIN = "quality/epoch_heads.json"
 _BOOKKEEPING = (HEADS_PIN,)
 # Corpora whose epoch receipts are gitignored (never clone). A bundle
@@ -136,7 +137,33 @@ def main() -> int:
         if isinstance(raw_ar, dict):
             allowed_removals = {str(k): str(v) for k, v in raw_ar.items() if isinstance(v, str)}
 
-    for corpus_dir, glob, require_stamped, allow_updates, exempt in EVIDENCE_SPEC:
+    corpus_dirs = sorted((c[0] for c in EVIDENCE_SPEC), key=len, reverse=True)
+
+    # Closed world: every bundle file is the manifest, the signature file, or
+    # a file under a declared corpus. Corpora nest (``.github`` is the parent
+    # of the ``.github/workflows`` corpus), so a file is claimed by the
+    # LONGEST corpus-dir prefix — files under ``.github`` but outside
+    # ``workflows/`` are foreign, not unclaimed extras.
+    for f in sorted(root.rglob("*")):
+        if not f.is_file():
+            continue
+        rel = f.relative_to(root).as_posix()
+        if rel in (BUNDLE_MANIFEST, _SIGNATURE):
+            continue
+        owner = next((d for d in corpus_dirs if rel == d or rel.startswith(d + "/")), None)
+        if owner is None:
+            errors.append(f"foreign_member:{rel}")
+            continue
+        spec = next(c for c in EVIDENCE_SPEC if c[0] == owner)
+        inner = rel[len(owner) + 1 :]
+        if f.name.startswith("corpus_epoch_") or _exempt_member(root / owner, inner):
+            continue
+        if not fnmatch.fnmatch(inner, spec[1]) and not any(
+            fnmatch.fnmatch(inner, e) for e in spec[4]
+        ):
+            errors.append(f"uncovered_member:{rel}")
+
+    for corpus_dir, glob, require_stamped, allow_updates, _exempt in EVIDENCE_SPEC:
         cdir = root / corpus_dir
         if not cdir.is_dir():
             errors.append(f"corpus_missing:{corpus_dir}")
@@ -145,14 +172,6 @@ def main() -> int:
             m_glob = declared[corpus_dir].get("glob")
             if m_glob != glob:
                 errors.append(f"manifest_glob_mismatch:{corpus_dir}:{m_glob!r}")
-        for f in sorted(cdir.rglob("*")):
-            if not f.is_file():
-                continue
-            rel = f.relative_to(cdir).as_posix()
-            if f.name.startswith("corpus_epoch_") or _exempt_member(cdir, rel):
-                continue
-            if not fnmatch.fnmatch(rel, glob) and not any(fnmatch.fnmatch(rel, e) for e in exempt):
-                errors.append(f"uncovered_member:{corpus_dir}/{rel}")
         if corpus_dir in LOCAL_ONLY and not any(cdir.glob("corpus_epoch_*.json")):
             print(f"bundle-check {corpus_dir}: skipped(local_only_no_receipts)")
             continue
