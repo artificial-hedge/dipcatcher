@@ -1,0 +1,402 @@
+--- [31msrc\quant_fund\backtest\_fast_kernel.py[0m
++++ [32msrc\quant_fund\backtest\_fast_kernel.py[0m
+@@ -83,9 +83,15 @@
+ 
+ @njit(cache=True)
+ def _order_costs(
+[31m-[0m[31m    d: float, px: float, adv_d: float, vol_d: float,
+[0m[31m-[0m[31m    frictionless: bool, commission_bps: float, half_spread_bps: float,
+[0m[31m-[0m[31m    impact_y: float, bps_per_turnover: float,
+[0m[32m+[0m[32m    d: float,
+[0m[32m+[0m[32m    px: float,
+[0m[32m+[0m[32m    adv_d: float,
+[0m[32m+[0m[32m    vol_d: float,
+[0m[32m+[0m[32m    frictionless: bool,
+[0m[32m+[0m[32m    commission_bps: float,
+[0m[32m+[0m[32m    half_spread_bps: float,
+[0m[32m+[0m[32m    impact_y: float,
+[0m[32m+[0m[32m    bps_per_turnover: float,
+[0m ) -> tuple[float, float, float, float]:
+     # Caller validates ``d``/``px`` first — identical ordering to the
+     # reference ``total_cost`` (validation precedes the frictionless return).
+@@ -102,14 +108,14 @@
+ 
+ @njit(cache=True)
+ def replay_kernel(
+[31m-[0m[31m    exec_px: np.ndarray,      # (T,A) f64 — exec source (open next_open / close)
+[0m[31m-[0m[31m    close_px: np.ndarray,     # (T,A) f64 — decision close + mark fallback
+[0m[31m-[0m[31m    ctr: np.ndarray,          # (T,A) f64 — preferred mark
+[0m[31m-[0m[31m    adv: np.ndarray,          # (T,A) f64
+[0m[31m-[0m[31m    vol: np.ndarray,          # (T,A) f64
+[0m[31m-[0m[31m    w_mat: np.ndarray,        # (T,A) f64 — carried target grid already applied
+[0m[32m+[0m[32m    exec_px: np.ndarray,  # (T,A) f64 — exec source (open next_open / close)
+[0m[32m+[0m[32m    close_px: np.ndarray,  # (T,A) f64 — decision close + mark fallback
+[0m[32m+[0m[32m    ctr: np.ndarray,  # (T,A) f64 — preferred mark
+[0m[32m+[0m[32m    adv: np.ndarray,  # (T,A) f64
+[0m[32m+[0m[32m    vol: np.ndarray,  # (T,A) f64
+[0m[32m+[0m[32m    w_mat: np.ndarray,  # (T,A) f64 — carried target grid already applied
+[0m     market_vols: np.ndarray,  # (T,)  f64 — value only valid where has_mv
+[31m-[0m[31m    has_mv: np.ndarray,       # (T,)  bool
+[0m[32m+[0m[32m    has_mv: np.ndarray,  # (T,)  bool
+[0m     use_next_open: bool,
+     ref_carries: bool,
+     commission_bps: float,
+@@ -128,23 +134,23 @@
+     max_predicted_vol: float,
+     kill_blocks: bool,
+     initial_nav: float,
+[31m-[0m[31m    navs_out: np.ndarray,     # (T,4) f64
+[0m[31m-[0m[31m    navs_t: np.ndarray,       # (T,) i64
+[0m[31m-[0m[31m    f_qty: np.ndarray,        # (M,) f64
+[0m[31m-[0m[31m    f_px: np.ndarray,         # (M,) f64
+[0m[31m-[0m[31m    f_fee: np.ndarray,        # (M,) f64
+[0m[31m-[0m[31m    f_spr: np.ndarray,        # (M,) f64
+[0m[31m-[0m[31m    f_imp: np.ndarray,        # (M,) f64
+[0m[31m-[0m[31m    f_asset: np.ndarray,      # (M,) i64
+[0m[31m-[0m[31m    f_et: np.ndarray,         # (M,) i64
+[0m[31m-[0m[31m    f_st: np.ndarray,         # (M,) i64
+[0m[31m-[0m[31m    f_dec: np.ndarray,        # (M,) f64
+[0m[31m-[0m[31m    f_decok: np.ndarray,      # (M,) bool
+[0m[31m-[0m[31m    stale_assets: np.ndarray, # (A,) i64
+[0m[31m-[0m[31m    stale_ages: np.ndarray,   # (A,) i64
+[0m[31m-[0m[31m    stale_ever: np.ndarray,   # (A,) bool
+[0m[31m-[0m[31m    term_v: np.ndarray,       # (A,) f64 work buffer
+[0m[31m-[0m[31m    term_f: np.ndarray,       # (A,) bool work buffer
+[0m[32m+[0m[32m    navs_out: np.ndarray,  # (T,4) f64
+[0m[32m+[0m[32m    navs_t: np.ndarray,  # (T,) i64
+[0m[32m+[0m[32m    f_qty: np.ndarray,  # (M,) f64
+[0m[32m+[0m[32m    f_px: np.ndarray,  # (M,) f64
+[0m[32m+[0m[32m    f_fee: np.ndarray,  # (M,) f64
+[0m[32m+[0m[32m    f_spr: np.ndarray,  # (M,) f64
+[0m[32m+[0m[32m    f_imp: np.ndarray,  # (M,) f64
+[0m[32m+[0m[32m    f_asset: np.ndarray,  # (M,) i64
+[0m[32m+[0m[32m    f_et: np.ndarray,  # (M,) i64
+[0m[32m+[0m[32m    f_st: np.ndarray,  # (M,) i64
+[0m[32m+[0m[32m    f_dec: np.ndarray,  # (M,) f64
+[0m[32m+[0m[32m    f_decok: np.ndarray,  # (M,) bool
+[0m[32m+[0m[32m    stale_assets: np.ndarray,  # (A,) i64
+[0m[32m+[0m[32m    stale_ages: np.ndarray,  # (A,) i64
+[0m[32m+[0m[32m    stale_ever: np.ndarray,  # (A,) bool
+[0m[32m+[0m[32m    term_v: np.ndarray,  # (A,) f64 work buffer
+[0m[32m+[0m[32m    term_f: np.ndarray,  # (A,) bool work buffer
+[0m ) -> tuple[int, int, int, int, int, int, float, float, float, int, int]:
+     """Returns (status, n_navs, n_fills, rejects, cash_rejects, halts,
+     commission_sum, spread_sum, impact_sum, order_seq, nstale).
+@@ -214,19 +220,25 @@
+                 nstale += 1
+         for j in range(npos):
+             a = pos_seq[j]
+[31m-[0m[31m            if (
+[0m[31m-[0m[31m                abs(shares[a]) > 1e-12
+[0m[31m-[0m[31m                and ever_marked[a]
+[0m[31m-[0m[31m                and mark_age[a] > stale_price_bars
+[0m[31m-[0m[31m            ):
+[0m[32m+[0m[32m            if abs(shares[a]) > 1e-12 and ever_marked[a] and mark_age[a] > stale_price_bars:
+[0m                 stale_assets[nstale] = a
+                 stale_ages[nstale] = mark_age[a]
+                 stale_ever[nstale] = True
+                 nstale += 1
+         if nstale:
+[31m-[0m[31m            return (1, n_navs, n_fills, reject_count, cash_reject_count,
+[0m[31m-[0m[31m                    halt_count, cost_comm, cost_spr, cost_imp, order_seq,
+[0m[31m-[0m[31m                    nstale)
+[0m[32m+[0m[32m            return (
+[0m[32m+[0m[32m                1,
+[0m[32m+[0m[32m                n_navs,
+[0m[32m+[0m[32m                n_fills,
+[0m[32m+[0m[32m                reject_count,
+[0m[32m+[0m[32m                cash_reject_count,
+[0m[32m+[0m[32m                halt_count,
+[0m[32m+[0m[32m                cost_comm,
+[0m[32m+[0m[32m                cost_spr,
+[0m[32m+[0m[32m                cost_imp,
+[0m[32m+[0m[32m                order_seq,
+[0m[32m+[0m[32m                nstale,
+[0m[32m+[0m[32m            )
+[0m 
+         # --- nav at execution marks --------------------------------------
+         for a in range(n_assets):
+@@ -275,20 +287,43 @@
+             # ``total_cost`` validates before the frictionless early return —
+             # a non-finite delta fails closed rather than trading.
+             if not np.isfinite(delta) or not np.isfinite(price) or price <= 0:
+[31m-[0m[31m                return (2, n_navs, n_fills, reject_count, cash_reject_count,
+[0m[31m-[0m[31m                        halt_count, cost_comm, cost_spr, cost_imp, order_seq,
+[0m[31m-[0m[31m                        0)
+[0m[32m+[0m[32m                return (
+[0m[32m+[0m[32m                    2,
+[0m[32m+[0m[32m                    n_navs,
+[0m[32m+[0m[32m                    n_fills,
+[0m[32m+[0m[32m                    reject_count,
+[0m[32m+[0m[32m                    cash_reject_count,
+[0m[32m+[0m[32m                    halt_count,
+[0m[32m+[0m[32m                    cost_comm,
+[0m[32m+[0m[32m                    cost_spr,
+[0m[32m+[0m[32m                    cost_imp,
+[0m[32m+[0m[32m                    order_seq,
+[0m[32m+[0m[32m                    0,
+[0m[32m+[0m[32m                )
+[0m             comm, spr, imp, total = _order_costs(
+[31m-[0m[31m                delta, price, adv_eff, vol_eff, frictionless,
+[0m[31m-[0m[31m                commission_bps, half_spread_bps, impact_y, bps_per_turnover,
+[0m[32m+[0m[32m                delta,
+[0m[32m+[0m[32m                price,
+[0m[32m+[0m[32m                adv_eff,
+[0m[32m+[0m[32m                vol_eff,
+[0m[32m+[0m[32m                frictionless,
+[0m[32m+[0m[32m                commission_bps,
+[0m[32m+[0m[32m                half_spread_bps,
+[0m[32m+[0m[32m                impact_y,
+[0m[32m+[0m[32m                bps_per_turnover,
+[0m             )
+             max_qty = participation_limit * (adv_eff / price)
+             if abs(delta) > max_qty > 0:
+                 delta = np.sign(delta) * max_qty
+                 delta_np64 = True
+                 comm, spr, imp, total = _order_costs(
+[31m-[0m[31m                    delta, price, adv_eff, vol_eff, frictionless,
+[0m[31m-[0m[31m                    commission_bps, half_spread_bps, impact_y,
+[0m[32m+[0m[32m                    delta,
+[0m[32m+[0m[32m                    price,
+[0m[32m+[0m[32m                    adv_eff,
+[0m[32m+[0m[32m                    vol_eff,
+[0m[32m+[0m[32m                    frictionless,
+[0m[32m+[0m[32m                    commission_bps,
+[0m[32m+[0m[32m                    half_spread_bps,
+[0m[32m+[0m[32m                    impact_y,
+[0m                     bps_per_turnover,
+                 )
+ 
+@@ -413,8 +448,19 @@
+         navs_t[n_navs] = exec_t
+         n_navs += 1
+ 
+[31m-[0m[31m    return (0, n_navs, n_fills, reject_count, cash_reject_count,
+[0m[31m-[0m[31m            halt_count, cost_comm, cost_spr, cost_imp, order_seq, 0)
+[0m[32m+[0m[32m    return (
+[0m[32m+[0m[32m        0,
+[0m[32m+[0m[32m        n_navs,
+[0m[32m+[0m[32m        n_fills,
+[0m[32m+[0m[32m        reject_count,
+[0m[32m+[0m[32m        cash_reject_count,
+[0m[32m+[0m[32m        halt_count,
+[0m[32m+[0m[32m        cost_comm,
+[0m[32m+[0m[32m        cost_spr,
+[0m[32m+[0m[32m        cost_imp,
+[0m[32m+[0m[32m        order_seq,
+[0m[32m+[0m[32m        0,
+[0m[32m+[0m[32m    )
+[0m 
+ 
+ def kernel_or_none():
+@@ -549,9 +595,7 @@
+             "held position valuation is stale beyond the configured limit: " + details
+         )
+     if status == 2:
+[31m-[0m[31m        raise ValueError(
+[0m[31m-[0m[31m            "quantity must be finite and price must be finite and positive"
+[0m[31m-[0m[31m        )
+[0m[32m+[0m[32m        raise ValueError("quantity must be finite and price must be finite and positive")
+[0m 
+     # Column-oriented frames — same columns/dtypes/order as the interpreted
+     # path's dict transpose in ``_build_result`` (event_time -> Datetime from
+
+--- [31msrc\quant_fund\backtest\engine.py[0m
++++ [32msrc\quant_fund\backtest\engine.py[0m
+@@ -574,7 +574,11 @@
+     fills_df = (
+         fill_rows
+         if isinstance(fill_rows, pl.DataFrame)
+[31m-[0m[31m        else (pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]}) if fill_rows else pl.DataFrame())
+[0m[32m+[0m[32m        else (
+[0m[32m+[0m[32m            pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]})
+[0m[32m+[0m[32m            if fill_rows
+[0m[32m+[0m[32m            else pl.DataFrame()
+[0m[32m+[0m[32m        )
+[0m     )
+     is_summary: dict[str, object] | None = None
+     if fills_df.height:
+
+--- [31mtests\unit\test_sota_finalization_verifier.py[0m
++++ [32mtests\unit\test_sota_finalization_verifier.py[0m
+@@ -1,4 +1,5 @@
+[31m-[0m[31m﻿"""Focused integrity tests for the independent finalization verifier."""
+[0m[32m+[0m[32m"""Focused integrity tests for the independent finalization verifier."""
+[0m[32m+[0m[32m
+[0m from __future__ import annotations
+ 
+ import hashlib
+@@ -36,37 +37,65 @@
+     make_npz(shard, rows)
+     make_npz(losses, rows)
+     receipt = run / "merged.json"
+[31m-[0m[31m    receipt.write_text(json.dumps({
+[0m[31m-[0m[31m        "schema": "sota_eval.v4", "research_only": True,
+[0m[31m-[0m[31m        "live_pnl_claim": False, "source_parts_sha256": {str(shard): sha(shard)},
+[0m[31m-[0m[31m        "losses_file": losses.name, "losses_sha256": sha(losses),
+[0m[31m-[0m[31m        "n_rows": rows, "n_complete": rows, "n_dropped_incomplete": 0,
+[0m[31m-[0m[31m        "scoring_contract": "verified.v1",
+[0m[31m-[0m[31m    }))
+[0m[31m-[0m[31m    stdout, stderr, transcript = (run / n for n in (
+[0m[31m-[0m[31m        "group.stdout.txt", "group.stderr.txt", "group.transcript.txt"))
+[0m[32m+[0m[32m    receipt.write_text(
+[0m[32m+[0m[32m        json.dumps(
+[0m[32m+[0m[32m            {
+[0m[32m+[0m[32m                "schema": "sota_eval.v4",
+[0m[32m+[0m[32m                "research_only": True,
+[0m[32m+[0m[32m                "live_pnl_claim": False,
+[0m[32m+[0m[32m                "source_parts_sha256": {str(shard): sha(shard)},
+[0m[32m+[0m[32m                "losses_file": losses.name,
+[0m[32m+[0m[32m                "losses_sha256": sha(losses),
+[0m[32m+[0m[32m                "n_rows": rows,
+[0m[32m+[0m[32m                "n_complete": rows,
+[0m[32m+[0m[32m                "n_dropped_incomplete": 0,
+[0m[32m+[0m[32m                "scoring_contract": "verified.v1",
+[0m[32m+[0m[32m            }
+[0m[32m+[0m[32m        )
+[0m[32m+[0m[32m    )
+[0m[32m+[0m[32m    stdout, stderr, transcript = (
+[0m[32m+[0m[32m        run / n for n in ("group.stdout.txt", "group.stderr.txt", "group.transcript.txt")
+[0m[32m+[0m[32m    )
+[0m     command_record = run / "group.command.json"
+     stdout.write_text("ok\n")
+     stderr.write_text("")
+     transcript.write_text("COMMAND: python evaluator\nEXIT_CODE: 0\n")
+     group = {
+[31m-[0m[31m        "group": "fixture", "command": ["python", "evaluator"],
+[0m[31m-[0m[31m        "command_text": "python evaluator", "cwd": str(repo),
+[0m[31m-[0m[31m        "shards": [{"path": str(shard), "relative": "eval/part.losses.npz",
+[0m[31m-[0m[31m                     "bytes": shard.stat().st_size, "sha256": sha(shard)}],
+[0m[31m-[0m[31m        "stdout": str(stdout), "stderr": str(stderr), "transcript": str(transcript),
+[0m[31m-[0m[31m        "stdout_sha256": sha(stdout), "stderr_sha256": sha(stderr),
+[0m[32m+[0m[32m        "group": "fixture",
+[0m[32m+[0m[32m        "command": ["python", "evaluator"],
+[0m[32m+[0m[32m        "command_text": "python evaluator",
+[0m[32m+[0m[32m        "cwd": str(repo),
+[0m[32m+[0m[32m        "shards": [
+[0m[32m+[0m[32m            {
+[0m[32m+[0m[32m                "path": str(shard),
+[0m[32m+[0m[32m                "relative": "eval/part.losses.npz",
+[0m[32m+[0m[32m                "bytes": shard.stat().st_size,
+[0m[32m+[0m[32m                "sha256": sha(shard),
+[0m[32m+[0m[32m            }
+[0m[32m+[0m[32m        ],
+[0m[32m+[0m[32m        "stdout": str(stdout),
+[0m[32m+[0m[32m        "stderr": str(stderr),
+[0m[32m+[0m[32m        "transcript": str(transcript),
+[0m[32m+[0m[32m        "stdout_sha256": sha(stdout),
+[0m[32m+[0m[32m        "stderr_sha256": sha(stderr),
+[0m         "transcript_sha256": sha(transcript),
+[31m-[0m[31m        "receipt": str(receipt), "receipt_sha256": sha(receipt),
+[0m[31m-[0m[31m        "losses": str(losses), "losses_sha256": sha(losses),
+[0m[31m-[0m[31m        "exit_code": 0, "status": "succeeded",
+[0m[32m+[0m[32m        "receipt": str(receipt),
+[0m[32m+[0m[32m        "receipt_sha256": sha(receipt),
+[0m[32m+[0m[32m        "losses": str(losses),
+[0m[32m+[0m[32m        "losses_sha256": sha(losses),
+[0m[32m+[0m[32m        "exit_code": 0,
+[0m[32m+[0m[32m        "status": "succeeded",
+[0m         "command_record": str(command_record),
+     }
+     command_record.write_text(json.dumps(group))
+     manifest = {
+[31m-[0m[31m        "schema": "sota_finalization.v2", "status": "complete",
+[0m[31m-[0m[31m        "proof_status": "UNPROVEN", "run_id": "valid-run",
+[0m[31m-[0m[31m        "repo": str(repo), "input_dir": str(inp), "groups": [group],
+[0m[32m+[0m[32m        "schema": "sota_finalization.v2",
+[0m[32m+[0m[32m        "status": "complete",
+[0m[32m+[0m[32m        "proof_status": "UNPROVEN",
+[0m[32m+[0m[32m        "run_id": "valid-run",
+[0m[32m+[0m[32m        "repo": str(repo),
+[0m[32m+[0m[32m        "input_dir": str(inp),
+[0m[32m+[0m[32m        "groups": [group],
+[0m     }
+     path = run / "manifest.json"
+     path.write_text(json.dumps(manifest))
+@@ -135,12 +164,18 @@
+     assert any("proof_status" in e for e in result["errors"])
+ 
+ 
+[31m-[0m[31m@pytest.mark.parametrize(("mutation", "needle"), [
+[0m[31m-[0m[31m    (lambda m: m["groups"][0]["shards"][0].update(bytes=0), "byte-size mismatch"),
+[0m[31m-[0m[31m    (lambda m: m["groups"][0]["shards"].append(dict(m["groups"][0]["shards"][0])), "duplicate shard"),
+[0m[31m-[0m[31m    (lambda m: m["groups"][0].update(exit_code=1), "nonzero exit"),
+[0m[31m-[0m[31m    (lambda m: m["groups"][0].update(command_text="python altered"), "command_text mismatch"),
+[0m[31m-[0m[31m])
+[0m[32m+[0m[32m@pytest.mark.parametrize(
+[0m[32m+[0m[32m    ("mutation", "needle"),
+[0m[32m+[0m[32m    [
+[0m[32m+[0m[32m        (lambda m: m["groups"][0]["shards"][0].update(bytes=0), "byte-size mismatch"),
+[0m[32m+[0m[32m        (
+[0m[32m+[0m[32m            lambda m: m["groups"][0]["shards"].append(dict(m["groups"][0]["shards"][0])),
+[0m[32m+[0m[32m            "duplicate shard",
+[0m[32m+[0m[32m        ),
+[0m[32m+[0m[32m        (lambda m: m["groups"][0].update(exit_code=1), "nonzero exit"),
+[0m[32m+[0m[32m        (lambda m: m["groups"][0].update(command_text="python altered"), "command_text mismatch"),
+[0m[32m+[0m[32m    ],
+[0m[32m+[0m[32m)
+[0m def test_integrity_failures_are_rejected(tmp_path: Path, mutation, needle: str) -> None:
+     path = make_fixture(tmp_path)
+     value = load(path)
+@@ -198,7 +233,9 @@
+     path = make_fixture(tmp_path)
+     value = load(path)
+     losses = Path(value["groups"][0]["losses"])
+[31m-[0m[31m    np.savez(losses, crps_matrix=np.ones((2, 2)), pinball_cube=np.ones((2, 2)), meta_json=np.array("{}"))
+[0m[32m+[0m[32m    np.savez(
+[0m[32m+[0m[32m        losses, crps_matrix=np.ones((2, 2)), pinball_cube=np.ones((2, 2)), meta_json=np.array("{}")
+[0m[32m+[0m[32m    )
+[0m     value["groups"][0]["losses_sha256"] = sha(losses)
+     receipt = Path(value["groups"][0]["receipt"])
+     data = load(receipt)
+@@ -210,6 +247,7 @@
+     assert result["valid"] is False
+     assert any("loss archive missing arrays" in e for e in result["errors"])
+ 
+[32m+[0m[32m
+[0m def test_command_record_tampering_is_rejected(tmp_path: Path) -> None:
+     path = make_fixture(tmp_path)
+     value = load(path)
+@@ -220,6 +258,8 @@
+     result = verify_manifest(path)
+     assert result["valid"] is False
+     assert any("command record mismatch" in e for e in result["errors"])
+[32m+[0m[32m
+[0m[32m+[0m[32m
+[0m @pytest.mark.parametrize("field", ["stdout", "stderr", "transcript"])
+ def test_execution_output_tampering_is_rejected(tmp_path: Path, field: str) -> None:
+     path = make_fixture(tmp_path)
+@@ -246,6 +286,7 @@
+     assert result["valid"] is False
+     assert any("source-part paths or hashes" in e for e in result["errors"])
+ 
+[32m+[0m[32m
+[0m @pytest.mark.parametrize("field", ["receipt", "losses", "transcript"])
+ def test_run_artifact_escape_is_rejected(tmp_path: Path, field: str) -> None:
+     path = make_fixture(tmp_path)
+@@ -260,6 +301,7 @@
+     assert result["valid"] is False
+     assert any("escapes manifest run directory" in e for e in result["errors"])
+ 
+[32m+[0m[32m
+[0m def test_shard_symlink_alias_is_rejected(tmp_path: Path) -> None:
+     path = make_fixture(tmp_path)
+     value = load(path)
+@@ -275,6 +317,7 @@
+     assert result["valid"] is False
+     assert any("symlink or reparse point" in e for e in result["errors"])
+ 
+[32m+[0m[32m
+[0m def test_manifest_input_root_escape_is_rejected(tmp_path: Path) -> None:
+     path = make_fixture(tmp_path)
+     value = load(path)
+@@ -286,6 +329,7 @@
+     assert result["valid"] is False
+     assert any("input directory escapes repository" in e for e in result["errors"])
+ 
+[32m+[0m[32m
+[0m def test_duplicate_group_name_is_rejected(tmp_path: Path) -> None:
+     path = make_fixture(tmp_path)
+     value = load(path)
+
+3 files would be reformatted, 1711 files already formatted

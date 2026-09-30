@@ -1,0 +1,9 @@
+﻿uv : mypy --strict regressions in allowlisted modules:
+At C:\Users\me\AppData\Local\Temp\ps-script-eebe7e31-530f-45d5-a502-1b8318a1af9f.ps1:90 char:20
++ ... _COLOR="1"; uv run python scripts/check_mypy_strict_allowlist.py 2>&1 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (mypy --strict r...listed modules::String) [], Remote 
+   Exception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  src/quant_fund/data/sources/adapters.py

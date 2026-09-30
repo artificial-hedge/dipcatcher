@@ -17,7 +17,12 @@ import polars as pl
 from quant_fund.audit.canonical import canonical_json_bytes, json_safe
 from quant_fund.audit.errors import AuditError
 from quant_fund.audit.ledger import KINDS, AuditLedger, LedgerEntry
-from quant_fund.audit.trace import receipt_digest
+from quant_fund.audit.trace import (
+    SEAL_DIGEST_CONVENTION,
+    advertised_seal,
+    receipt_digest,
+    receipt_seal_digest,
+)
 
 _REJECTED = frozenset({"rejected", "cancelled", "canceled"})
 
@@ -37,6 +42,9 @@ def record_research_receipt(ledger: AuditLedger, path: Path | str) -> LedgerEntr
     if not isinstance(provenance, dict):
         provenance = {}
     payload: dict[str, Any] = {
+        # Legacy whole-document digest. Kept under this exact key and value so
+        # entries committed before the digest-convention split keep verifying
+        # and keep tracing (docs/SOTA/23 §2).
         "receipt_sha256": receipt_digest(notebook),
         "receipt_name": receipt.name,
         "run_id": _text(provenance.get("run_id")),
@@ -55,6 +63,20 @@ def record_research_receipt(ledger: AuditLedger, path: Path | str) -> LedgerEntr
         "data_source": _text(notebook.get("data_source")),
         "live_pnl_claim": False,
     }
+    # The digest a sealed receipt *publishes* (receipt_v2.seal_receipt
+    # convention: document minus its own seal field). Recording it alongside
+    # the legacy digest is what lets an external auditor reconcile the number
+    # on the receipt to this ledger entry — honesty contract rule 4.
+    seal_digest = receipt_seal_digest(notebook)
+    payload["receipt_seal_sha256"] = seal_digest
+    payload["digest_convention"] = SEAL_DIGEST_CONVENTION
+    advertised = advertised_seal(notebook)
+    if advertised is not None:
+        payload["advertised_receipt_sha256"] = advertised
+        # Honest bookkeeping: the receipt may be unsealed under any convention,
+        # or sealed under a third convention (e.g. real_benchmark's strict
+        # JSON). Record the agreement rather than asserting it.
+        payload["seal_matches_advertised"] = seal_digest == advertised
     code_sha = notebook.get("code_sha256", provenance.get("code_sha256"))
     if isinstance(code_sha, str):
         payload["code_sha256"] = code_sha

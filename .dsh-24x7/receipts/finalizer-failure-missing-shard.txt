@@ -1,0 +1,8 @@
+D:\dipcatcher\scripts\finalize_sota.ps1 : Unable to persist failure manifest: Parameter set 
+cannot be resolved using the specified named parameters.
+At D:\dipcatcher\scripts\finalize_sota.ps1:162 char:131
++ ... ) } catch { Write-Error ("Unable to persist failure manifest: " + $_. ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,finalize_sota.ps1
+ 

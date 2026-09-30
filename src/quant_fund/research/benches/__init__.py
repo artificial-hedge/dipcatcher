@@ -206,6 +206,7 @@ from .ranking import (
 from .ranking import (
     bench_alpha,
     bench_ranking,
+    bench_ranking_dm_corrected,
     oos_rank_scores,
 )
 
@@ -266,6 +267,7 @@ __all__ = [
     "bench_portfolio_from_panel",
     "bench_quantile_bandit",
     "bench_ranking",
+    "bench_ranking_dm_corrected",
     "bench_regime",
     "bench_rl",
     "bench_tail",

@@ -3,7 +3,7 @@
     "dipcatcher": {
       "setup_loc": 19,
       "setup_artifacts": "none \u2014 in-memory polars frames",
-      "first_result_ms": 6957.8,
+      "first_result_ms": 4561.4,
       "faults": {
         "duplicate_weight_rows": {
           "score": 3,
@@ -39,7 +39,7 @@
     "vectorbt": {
       "setup_loc": 6,
       "setup_artifacts": "none \u2014 in-memory pandas frame",
-      "first_result_ms": 11122.0,
+      "first_result_ms": 7331.5,
       "faults": {
         "duplicate_weight_rows": {
           "score": 0,
@@ -75,7 +75,7 @@
     "qlib": {
       "setup_loc": 121,
       "setup_artifacts": "on-disk binary provider bundle (calendars/instruments/features)",
-      "first_result_ms": 1523.3,
+      "first_result_ms": 1035.8,
       "first_result_note": "import qlib only; provider-bundle prep + executor config excluded (measured separately in incumbent_bench_qlib)",
       "faults": {
         "duplicate_weight_rows": {

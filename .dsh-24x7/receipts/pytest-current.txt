@@ -1,0 +1,156 @@
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 23%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 41%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 47%]
+........................................................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 52%]
+........................................................................ [ 54%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 62%]
+........................................................................ [ 64%]
+........................................................................ [ 65%]
+........................................................................ [ 67%]
+........................................................................ [ 69%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 92%]
+........................................................................ [ 93%]
+........................................................................ [ 95%]
+........................................................................ [ 97%]
+........................................................................ [ 98%]
+.....................................................                    [100%]
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  D:\dipcatcher\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv\Lib\site-packages\starlette\testclient.py:53
+  D:\dipcatcher\.venv\Lib\site-packages\starlette\testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/unit/test_arma.py: 21 warnings
+  D:\dipcatcher\src\quant_fund\models\arma.py:30: RuntimeWarning: overflow encountered in dot
+    ma = float(np.dot(theta, e[t - q : t][::-1])) if q else 0.0
+
+tests/unit/test_arma.py: 25 warnings
+  D:\dipcatcher\src\quant_fund\models\arma.py:53: RuntimeWarning: overflow encountered in matmul
+    return float(e[m:] @ e[m:])
+
+tests/unit/test_arma.py: 16 warnings
+  D:\dipcatcher\.venv\Lib\site-packages\scipy\optimize\_numdiff.py:710: RuntimeWarning: invalid value encountered in subtract
+    df = [f_eval - f0 for f_eval in f_evals]
+
+tests/unit/test_arma.py::test_aic_detects_signal
+tests/unit/test_arma.py::test_aic_detects_signal
+  D:\dipcatcher\src\quant_fund\models\arma.py:30: RuntimeWarning: invalid value encountered in dot
+    ma = float(np.dot(theta, e[t - q : t][::-1])) if q else 0.0
+
+tests/unit/test_bench_forbidden_metrics.py: 30 warnings
+tests/unit/test_models.py: 31 warnings
+tests/unit/test_regime_extremes.py: 50 warnings
+tests/unit/test_research_agent.py: 36 warnings
+tests/unit/test_session_receipt_keys_cli_echo.py: 54 warnings
+tests/unit/test_sota_protocol.py: 9 warnings
+tests/unit/test_train_walk_forward_branches.py: 70 warnings
+  D:\dipcatcher\.venv\Lib\site-packages\hmmlearn\utils.py:27: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+  As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+    a_sum.shape = shape
+
+tests/unit/test_candle_book_vendor_e2e.py::test_vendor_panel_fuse_bench_e2e
+tests/unit/test_candle_book_vendor_e2e.py::test_raw_alpaca_quotes_remap_then_bench
+tests/unit/test_candle_book_vendor_e2e.py::test_vendor_top_of_book_derives_ofi_proxy
+  D:\dipcatcher\src\quant_fund\microstructure\bench.py:264: RuntimeWarning: Mean of empty slice
+    np.nanmean(fused["bid_log_size_slope"].to_numpy().astype(float))
+
+tests/unit/test_candle_book_vendor_e2e.py::test_vendor_panel_fuse_bench_e2e
+tests/unit/test_candle_book_vendor_e2e.py::test_raw_alpaca_quotes_remap_then_bench
+tests/unit/test_candle_book_vendor_e2e.py::test_vendor_top_of_book_derives_ofi_proxy
+  D:\dipcatcher\src\quant_fund\microstructure\bench.py:269: RuntimeWarning: Mean of empty slice
+    np.nanmean(fused["ask_log_size_slope"].to_numpy().astype(float))
+
+tests/unit/test_caviar.py::test_sav_fit_tracks_vol
+tests/unit/test_caviar.py::test_forecast_matches_path
+tests/unit/test_caviar.py::test_hit_rate_better_than_const
+  D:\dipcatcher\src\quant_fund\models\caviar.py:41: RuntimeWarning: overflow encountered in scalar multiply
+    q[t] = beta[0] + beta[1] * q[t - 1] + beta[2] * abs(y[t - 1])
+
+tests/unit/test_caviar.py::test_as_and_ig_specs
+  D:\dipcatcher\src\quant_fund\models\caviar.py:45: RuntimeWarning: overflow encountered in scalar multiply
+    + beta[1] * q[t - 1]
+
+tests/unit/test_caviar.py::test_as_and_ig_specs
+  D:\dipcatcher\src\quant_fund\models\caviar.py:50: RuntimeWarning: overflow encountered in scalar multiply
+    inner = beta[0] + beta[1] * q[t - 1] ** 2 + beta[2] * y[t - 1] ** 2
+
+tests/unit/test_institutional.py::test_attribute_weights_pnl_uses_prev_weight
+tests/unit/test_institutional.py::test_attribution_costs_and_rollup
+  D:\dipcatcher\src\quant_fund\portfolio\pnl_attribution.py:73: UserWarning: Sortedness of columns cannot be checked when 'by' groups provided
+    grid.join_asof(declared, on="event_time", by="security_id", strategy="backward")
+
+tests/unit/test_institutional.py::test_decompose_book_factors_identity
+  D:\dipcatcher\src\quant_fund\portfolio\factor_model.py:242: UserWarning: Sortedness of columns cannot be checked when 'by' groups provided
+    grid.join_asof(declared_w, on="event_time", by="security_id", strategy="backward")
+
+tests/unit/test_institutional.py::test_decompose_book_factors_identity
+  D:\dipcatcher\src\quant_fund\portfolio\factor_model.py:251: UserWarning: Sortedness of columns cannot be checked when 'by' groups provided
+    grid.join_asof(declared_b, on="event_time", by="security_id", strategy="backward")
+
+tests/unit/test_panel.py::TestPesaranCD::test_failclosed
+  D:\dipcatcher\.venv\Lib\site-packages\numpy\lib\_function_base_impl.py:3036: RuntimeWarning: invalid value encountered in divide
+    c /= stddev[:, None]
+
+tests/unit/test_serial.py::test_unit_root_battery_random_walk_vs_stationary
+tests/unit/test_serial.py::test_unit_root_battery_random_walk_vs_stationary
+  D:\dipcatcher\src\quant_fund\metrics\serial.py:308: DeprecationWarning: Lag selection has changed to use a data-dependent method. To use the old method that only depends on time, set lags=-1
+    res = cls(v, **kw)
+
+tests/unit/test_vendor_book_map.py::test_polygon_participant_and_sip_are_distinct_pit_clocks
+tests/unit/test_vendor_book_map.py::test_polygon_bars_participant_and_sip_are_distinct_pit_clocks
+  D:\dipcatcher\src\quant_fund\microstructure\vendor_book_map.py:279: DeprecationWarning: the default behavior of `how='horizontal'` for `concat` is deprecated and will require equal heights in the next breaking release. Use `how='horizontal_extend'` to keep the current behavior.
+  (Deprecated in version 1.42.1)
+    pl.concat([base, clocks], how="horizontal")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+EXIT_CODE=0
+ELAPSED_SECONDS=2524

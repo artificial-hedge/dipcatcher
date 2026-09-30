@@ -1,0 +1,38 @@
+.....................F...........................F.....FF.               [100%]
+================================== FAILURES ===================================
+_______________ test_corwin_schultz_nan_when_all_pairs_filtered _______________
+tests\unit\research\test_estimators_cov.py:369: in test_corwin_schultz_nan_when_all_pairs_filtered
+    assert np.isnan(corwin_schultz_spread(_bars({"S0": days})))
+E   AssertionError: assert np.False_
+E    +  where np.False_ = <ufunc 'isnan'>(0.0)
+E    +    where <ufunc 'isnan'> = np.isnan
+E    +    and   0.0 = corwin_schultz_spread(shape: (10, 7)\\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\\n\u2502 security_id \u2506 event....0 \u2506 19.0 \u2506 19.0 \u2506 19.0  \u2506 100000.0 \u2502\\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518)
+E    +      where shape: (10, 7)\\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\\n\u2502 security_id \u2506 event....0 \u2506 19.0 \u2506 19.0 \u2506 19.0  \u2506 100000.0 \u2502\\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 = _bars({'S0': [(10.0, 10.0, 10.0, 10.0), (11.0, 11.0, 11.0, 11.0), (12.0, 12.0, 12.0, 12.0), (13.0, 13.0, 13.0, 13.0), (14.0, 14.0, 14.0, 14.0), (15.0, 15.0, 15.0, 15.0), ...]})
+_______________ test_session_vpin_missing_or_empty_returns_nan ________________
+tests\unit\research\test_estimators_cov.py:636: in test_session_vpin_missing_or_empty_returns_nan
+    assert np.isnan(session_vpin(_sessions([[(100.0, 101.0, 1.0)]]).drop("volume")))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\quant_fund\northset\estimators.py:571: in session_vpin
+    raise ValueError(f"session missing columns: {missing}")
+E   ValueError: session missing columns: ['volume']
+____________ test_vpin_proxy_count_window_matches_rolling_toxicity ____________
+tests\unit\research\test_estimators_cov.py:715: in test_vpin_proxy_count_window_matches_rolling_toxicity
+    assert vpin[2] == pytest.approx(np.mean(tox[0:2]))
+E   assert 0.75 == 0.41666666666666663 ▒ 4.2e-07
+E     
+E     comparison failed
+E     Obtained: 0.75
+E     Expected: 0.41666666666666663 ▒ 4.2e-07
+___________ test_vpin_proxy_bucket_volume_clock_carries_last_value ____________
+tests\unit\research\test_estimators_cov.py:728: in test_vpin_proxy_bucket_volume_clock_carries_last_value
+    assert vpin[2] == first
+E   assert 0.3333333333333333 == 0.14285714285714285 ▒ 1.4e-07
+E     
+E     comparison failed
+E     Obtained: 0.3333333333333333
+E     Expected: 0.14285714285714285 ▒ 1.4e-07
+=========================== short test summary info ===========================
+FAILED tests/unit/research/test_estimators_cov.py::test_corwin_schultz_nan_when_all_pairs_filtered
+FAILED tests/unit/research/test_estimators_cov.py::test_session_vpin_missing_or_empty_returns_nan
+FAILED tests/unit/research/test_estimators_cov.py::test_vpin_proxy_count_window_matches_rolling_toxicity
+FAILED tests/unit/research/test_estimators_cov.py::test_vpin_proxy_bucket_volume_clock_carries_last_value

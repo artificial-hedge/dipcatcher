@@ -1,0 +1,10 @@
+running vectorbt fresh process 1/2
+vectorbt exit_code=0 receipt=D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\vectorbt-01.json
+running qlib fresh process 1/2
+qlib exit_code=0 receipt=D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\qlib-01.json
+running vectorbt fresh process 2/2
+vectorbt exit_code=0 receipt=D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\vectorbt-02.json
+running qlib fresh process 2/2
+qlib exit_code=0 receipt=D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\qlib-02.json
+manifest: D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\manifest.json
+runs: 4 failures: 0

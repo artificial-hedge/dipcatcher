@@ -1,0 +1,157 @@
+{
+  "bars": [
+    {
+      "bytes": 35670,
+      "path": "D:\\dipcatcher\\data\\raw\\sources\\btcusdt_1d.parquet",
+      "sha256": "4467995a27dc580f8ace646bad30fe0c04f76dddd7454ba2822a057b8267e0c6"
+    },
+    {
+      "bytes": 34008,
+      "path": "D:\\dipcatcher\\data\\raw\\sources\\ethusdt_1d.parquet",
+      "sha256": "6f560f88c070d2845e8da146e50963f4bd69b1dcef31cf4b481c5b5f9ce60250"
+    },
+    {
+      "bytes": 31133,
+      "path": "D:\\dipcatcher\\data\\raw\\sources\\solusdt_1d.parquet",
+      "sha256": "bda7989c04cf8014a6aae32f92a23800a1b42e434108d4ff85b3192e24d393fb"
+    }
+  ],
+  "benchmark_scripts": {
+    "qlib": {
+      "path": "D:\\dipcatcher\\scripts\\incumbent_bench_qlib.py",
+      "sha256": "5e826ee55b18f0c90f655aa9186dbe4965870ad49ca750643abab9263f132dc0"
+    },
+    "vectorbt": {
+      "path": "D:\\dipcatcher\\scripts\\incumbent_bench_vectorbt.py",
+      "sha256": "51e857953f4f391561d4315107455c03705e9b84c6cbf9093d61214922d3fad6"
+    }
+  },
+  "created_at_utc": "2026-09-23T11:35:47.455666+00:00",
+  "cwd": "D:\\dipcatcher",
+  "disclaimer": "Fixed real Binance daily diagnostic; not production, live-P&L, universal superiority, or SOTA proof. Fresh subprocesses are not clean-environment or independent third-party validation.",
+  "fresh_processes_per_incumbent": 2,
+  "interpreter": "D:\\bench-qlib\\Scripts\\python.exe",
+  "interpreter_sha256": "3b5cc4150dc98800ee46b09034187bb2d8ba3c8ea3368d3a46e9bb42876b58db",
+  "live_pnl_claim": false,
+  "manifest_path": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\manifest.json",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "python_version": "3.12.14",
+  "reps_per_process": 10,
+  "research_only": true,
+  "run_id": "20260923-a",
+  "runs": [
+    {
+      "command": [
+        "D:\\bench-qlib\\Scripts\\python.exe",
+        "D:\\dipcatcher\\scripts\\incumbent_bench_vectorbt.py",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\btcusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\ethusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\solusdt_1d.parquet",
+        "--reps",
+        "10",
+        "--out",
+        "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-01.json"
+      ],
+      "cwd": "D:\\dipcatcher",
+      "exit_code": 0,
+      "interpreter": "D:\\bench-qlib\\Scripts\\python.exe",
+      "label": "vectorbt",
+      "receipt": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-01.json",
+      "receipt_sha256": "ac62ffbe817b91803ebce9bd2a36dd57bfae02a03ee819dd723d54752370ec45",
+      "run_number": 1,
+      "script": "D:\\dipcatcher\\scripts\\incumbent_bench_vectorbt.py",
+      "stderr": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-01.stderr.txt",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-01.stdout.txt",
+      "stdout_sha256": "b44989c3453a266381682a1855e7fd909a8b2439b06aea854c01cd35f38a9c32"
+    },
+    {
+      "command": [
+        "D:\\bench-qlib\\Scripts\\python.exe",
+        "D:\\dipcatcher\\scripts\\incumbent_bench_qlib.py",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\btcusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\ethusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\solusdt_1d.parquet",
+        "--reps",
+        "10",
+        "--out",
+        "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-01.json"
+      ],
+      "cwd": "D:\\dipcatcher",
+      "exit_code": 0,
+      "interpreter": "D:\\bench-qlib\\Scripts\\python.exe",
+      "label": "qlib",
+      "receipt": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-01.json",
+      "receipt_sha256": "aad3a26a3926e02d688a8518cd6035f1be37f6d509482a38bda3003571d2384b",
+      "run_number": 1,
+      "script": "D:\\dipcatcher\\scripts\\incumbent_bench_qlib.py",
+      "stderr": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-01.stderr.txt",
+      "stderr_sha256": "93331e0a295c5516fd61b59621dbaacee997301fea6aa41a0946ffadcd1df84f",
+      "stdout": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-01.stdout.txt",
+      "stdout_sha256": "103c45c16f711538738b67bce0b0c24cb52582ec7bbbda1042a7546b599813c5"
+    },
+    {
+      "command": [
+        "D:\\bench-qlib\\Scripts\\python.exe",
+        "D:\\dipcatcher\\scripts\\incumbent_bench_vectorbt.py",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\btcusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\ethusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\solusdt_1d.parquet",
+        "--reps",
+        "10",
+        "--out",
+        "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-02.json"
+      ],
+      "cwd": "D:\\dipcatcher",
+      "exit_code": 0,
+      "interpreter": "D:\\bench-qlib\\Scripts\\python.exe",
+      "label": "vectorbt",
+      "receipt": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-02.json",
+      "receipt_sha256": "9c268965837100f7cd3f34f6c408d1faadf3c4e3426bf551f3d4720f4ab0a8aa",
+      "run_number": 2,
+      "script": "D:\\dipcatcher\\scripts\\incumbent_bench_vectorbt.py",
+      "stderr": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-02.stderr.txt",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\vectorbt-02.stdout.txt",
+      "stdout_sha256": "99d11fca2379464a14873073c49331cd9cdd4f08476308a7ea35ddbce5fccad0"
+    },
+    {
+      "command": [
+        "D:\\bench-qlib\\Scripts\\python.exe",
+        "D:\\dipcatcher\\scripts\\incumbent_bench_qlib.py",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\btcusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\ethusdt_1d.parquet",
+        "--bars",
+        "D:\\dipcatcher\\data\\raw\\sources\\solusdt_1d.parquet",
+        "--reps",
+        "10",
+        "--out",
+        "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-02.json"
+      ],
+      "cwd": "D:\\dipcatcher",
+      "exit_code": 0,
+      "interpreter": "D:\\bench-qlib\\Scripts\\python.exe",
+      "label": "qlib",
+      "receipt": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-02.json",
+      "receipt_sha256": "ea3166dcff0327b918b57603ee34cde7c26c9078a491b4e2048d29242c474d8a",
+      "run_number": 2,
+      "script": "D:\\dipcatcher\\scripts\\incumbent_bench_qlib.py",
+      "stderr": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-02.stderr.txt",
+      "stderr_sha256": "b885846b34781ec85a5574d6995f30a40b1a8a92dc8bd9ab5164b34fcd49f7fe",
+      "stdout": "D:\\dipcatcher\\.dsh-24x7\\incumbent-runs\\20260923-a\\qlib-02.stdout.txt",
+      "stdout_sha256": "61c52e1a0b3bb083955383ef8ea38c84193c86650725c061cd8851acab4c7edc"
+    }
+  ],
+  "schema": "incumbent_runs.v1"
+}

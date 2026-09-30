@@ -1,0 +1,12 @@
+﻿[1m[91munformatted:[0m[1m File would be reformatted[0m
+  [1m[94m--> [0mtests\tests\unit\test_kronos.py:68:92
+[1m[94m  [0m [1m[94m|[0m
+[1m[94m67[0m [1m[94m|[0m     frame = _bars()
+[1m[94m  [0m [1m[31m-[0m [31m    frame.loc[len(frame) - 1, "available_time"] = frame["event_time"].iloc[-1] + [0m[1m[31mtimedelta(minutes=1)[0m[0m[31m
+[0m[1m[94m68[0m [1m[32m+[0m [32m    frame.loc[len(frame) - 1, "available_time"] = frame["event_time"].iloc[-1] + [0m[1m[32mtimedelta([0m[0m[32m
+[0m[1m[94m69[0m [1m[32m+[0m [1m[32m        minutes=1[0m[0m[32m
+[0m[1m[94m70[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m71[0m [1m[94m|[0m     with pytest.raises(ValueError, match="point-in-time"):
+[1m[94m  [0m [1m[94m|[0m
+
+1 file would be reformatted, 1770 files already formatted

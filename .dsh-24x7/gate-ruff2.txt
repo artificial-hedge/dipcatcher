@@ -1,0 +1,5 @@
+﻿[1msrc\src\quant_fund\paper\ledger.py[0m[36m:[0m577[36m:[0m5[36m:[0m [1m[31mC901[0m `validate_ledger_schema` is too complex (78 > 74)
+[1msrc\src\quant_fund\research\verify.py[0m[36m:[0m201[36m:[0m5[36m:[0m [1m[31mC901[0m `verify_research_artifact` is too complex (196 > 74)
+[1mtests\tests\unit\test_binance_receipt.py[0m[36m:[0m1[36m:[0m1[36m:[0m [1m[31mI001[0m [[36m*[0m] Import block is un-sorted or un-formatted
+Found 3 errors.
+[[36m*[0m] 1 fixable with the `--fix` option.

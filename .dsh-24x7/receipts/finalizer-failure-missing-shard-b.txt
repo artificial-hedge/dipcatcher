@@ -1,0 +1,8 @@
+D:\dipcatcher\scripts\finalize_sota.ps1 : Missing explicit shard for daily_seed7: 
+D:\dipcatcher\.dsh-24x7\eval-full\finalizer-failure-input-20260923-b\d1_adausdt_1d.losses.npz
+At D:\dipcatcher\scripts\finalize_sota.ps1:170 char:3
++   Write-Error $message
++   ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,finalize_sota.ps1
+ 

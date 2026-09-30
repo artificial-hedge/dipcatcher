@@ -229,3 +229,8 @@ executable components and tests. [Usage and evidence](docs/RESEARCH100.md) cover
 new cost-aware allocation, risk-constrained Kelly, causal volatility management,
 and serial-adjusted evaluation. Existing components and new work are distinguished;
 no claim of 100 reproduced studies or demonstrated market-performance uplift is made.
+
+## License
+
+Apache-2.0. The full text is in [LICENSE](LICENSE); `pyproject.toml` records
+`license = "Apache-2.0"` (PEP 639 SPDX).

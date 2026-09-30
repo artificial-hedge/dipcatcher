@@ -1,0 +1,109 @@
+{
+    "group":  "daily_seed7",
+    "command":  [
+                    "D:\\dipcatcher\\.venv\\Scripts\\python.exe",
+                    "D:\\dipcatcher\\scripts\\sota_eval_kronos.py",
+                    "--merge-parts",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_adausdt_1d.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_avaxusdt_1d.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_bnbusdt_1d_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_btcusdt_1d_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_dogeusdt_1d.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_ethusdt_1d_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_linkusdt_1d.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_ltcusdt_1d.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_solusdt_1d_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_trxusdt_1d.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_xrpusdt_1d_deep.losses.npz",
+                    "--merge-out",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\d1_merged.json",
+                    "--seed",
+                    "7",
+                    "--n-boot",
+                    "2000"
+                ],
+    "command_text":  "D:\\dipcatcher\\.venv\\Scripts\\python.exe D:\\dipcatcher\\scripts\\sota_eval_kronos.py --merge-parts D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_adausdt_1d.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_avaxusdt_1d.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_bnbusdt_1d_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_btcusdt_1d_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_dogeusdt_1d.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_ethusdt_1d_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_linkusdt_1d.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_ltcusdt_1d.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_solusdt_1d_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_trxusdt_1d.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_xrpusdt_1d_deep.losses.npz --merge-out D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\d1_merged.json --seed 7 --n-boot 2000",
+    "cwd":  "D:\\dipcatcher",
+    "shards":  [
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_adausdt_1d.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_adausdt_1d.losses.npz",
+                       "bytes":  11238,
+                       "sha256":  "581a49c98112fdc0f62bd74e7debaf4cb0c46c178634bc1c6652379d25755a6b"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_avaxusdt_1d.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_avaxusdt_1d.losses.npz",
+                       "bytes":  11246,
+                       "sha256":  "89d5fa210bf80d12ec603c62cc1d4ccf945dcba3fa81aeaaf09dbd96c27b6a40"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_bnbusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_bnbusdt_1d_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "4c1505c98d80296c6c8a0126a114b5738668f3eb9abe1f8b248c6e30b8c8febd"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_btcusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_btcusdt_1d_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "d88a82aaeabb9f6aadd2ad61705a1d56bb763a5ab67df5fdef5c5b5e9d5179d0"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_dogeusdt_1d.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_dogeusdt_1d.losses.npz",
+                       "bytes":  11246,
+                       "sha256":  "2a0244b347b2c75a1147ea88d8f953d0638cd6d688150ae740a85da0035973a6"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_ethusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_ethusdt_1d_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "7ce005d0fae4b04ca2d886c507b1bbd44dc427656a66c482e9350bc59f407ebd"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_linkusdt_1d.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_linkusdt_1d.losses.npz",
+                       "bytes":  11246,
+                       "sha256":  "dc9a7c630a7017f7760812c121ddada0f55005c9573250928a0c9efbe05d9d71"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_ltcusdt_1d.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_ltcusdt_1d.losses.npz",
+                       "bytes":  11238,
+                       "sha256":  "e14942575b814d5e4d89edb925c48407ff8722f1db453bd5cdd580a928451cc6"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_solusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_solusdt_1d_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "6995198e17e82717d0e676bd59b70a1e314abf5a4bc8bbba6761f63811278e33"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_trxusdt_1d.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_trxusdt_1d.losses.npz",
+                       "bytes":  11238,
+                       "sha256":  "83c5b33cf9767618bda4c8f133e4ecf17185fa70d343ba91ab656307fb9479a5"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\d1_xrpusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/d1_xrpusdt_1d_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "4c628ab170ac60a21fc6deb4e633b81dadb34419baf2a7ad439268519785315f"
+                   }
+               ],
+    "stdout":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\daily_seed7.stdout.txt",
+    "stderr":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\daily_seed7.stderr.txt",
+    "transcript":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\daily_seed7.transcript.txt",
+    "receipt":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\d1_merged.json",
+    "command_record":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\daily_seed7.command.json",
+    "started_utc":  "2026-09-28T07:08:17.0872569Z",
+    "exit_code":  0,
+    "stdout_sha256":  "e2b416f46e50e6f8460f6d52b3d185f83de8a0b77836e5f127efab8f3bdad511",
+    "stderr_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transcript_sha256":  "894ce5b9954f4bea6e8a4161363b2333e942bb1fd15e4f6d38e896e3bea86803",
+    "status":  "succeeded",
+    "receipt_sha256":  "f3c7e65583c7603901b2e8edd668a0019163bb1c017d3c4a954c522f203e3c68",
+    "losses":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-b\\d1_merged.losses.npz",
+    "losses_sha256":  "7421b50d586efd2977aa095bd075fd9576a4f7ee3c552b96a1ce1706c16ea0bc"
+}

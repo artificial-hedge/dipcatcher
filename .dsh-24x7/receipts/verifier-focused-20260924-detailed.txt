@@ -1,0 +1,22 @@
+...................                                                      [100%]
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED tests/unit/test_sota_finalization_verifier.py::test_valid_manifest_is_diagnostic_only
+PASSED tests/unit/test_sota_finalization_verifier.py::test_proof_grade_rejects_unproven_manifest
+PASSED tests/unit/test_sota_finalization_verifier.py::test_tampered_proof_status_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_integrity_failures_are_rejected[<lambda>-byte-size mismatch]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_integrity_failures_are_rejected[<lambda>-duplicate shard]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_integrity_failures_are_rejected[<lambda>-nonzero exit]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_integrity_failures_are_rejected[<lambda>-command_text mismatch]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_missing_shard_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_receipt_hash_mismatch_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_partial_receipt_is_diagnostic_warning
+PASSED tests/unit/test_sota_finalization_verifier.py::test_malformed_loss_arrays_are_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_command_record_tampering_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_receipt_source_map_tampering_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_run_artifact_escape_is_rejected[receipt]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_run_artifact_escape_is_rejected[losses]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_run_artifact_escape_is_rejected[transcript]
+PASSED tests/unit/test_sota_finalization_verifier.py::test_shard_symlink_alias_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_manifest_input_root_escape_is_rejected
+PASSED tests/unit/test_sota_finalization_verifier.py::test_duplicate_group_name_is_rejected

@@ -1,0 +1,114 @@
+{
+  "correctness": {
+    "cash_rejects_dipcatcher": 0,
+    "common_dates": 998,
+    "dipcatcher_metrics_keys": [
+      "analytics",
+      "analytics_export",
+      "cash_rejects",
+      "commission",
+      "data_source",
+      "flag_high_sharpe",
+      "garch_risk_overlay_dates",
+      "impact",
+      "implementation_shortfall",
+      "kill_switch_halts",
+      "live_pnl_claim",
+      "max_drawdown",
+      "mean_turnover",
+      "n",
+      "realized_garch_risk_overlay_dates",
+      "research_only",
+      "risk_gate_rejects",
+      "sharpe",
+      "spread",
+      "total_return"
+    ],
+    "dipcatcher_total_fees": 117098.72742417859,
+    "fills_dipcatcher": 531,
+    "nav_final_dipcatcher": 1193564.2645455105,
+    "nav_final_vectorbt": 1193564.2645455105,
+    "nav_max_abs_diff": 0.0,
+    "nav_max_rel_diff": 0.0,
+    "risk_gate_rejects_dipcatcher": 0,
+    "vectorbt_orders": 531,
+    "vectorbt_total_fees": 117098.72742417859
+  },
+  "dipcatcher_engine": "ref",
+  "disclaimer": "Single matched workload vs vectorbt on real Binance daily bars. Latency is single-process wall time for identical economics; correctness is NAV parity; reliability demos are behavioural. Not a claim of superiority across all product dimensions.",
+  "environment": {
+    "platform": "win32",
+    "python": "3.12.14"
+  },
+  "fault_injection": {
+    "duplicate_weight_rows": "rejected: duplicate target weights for event_time/security_id",
+    "kill_switch_halts": {
+      "fills": 0,
+      "flat_equity": true,
+      "halt_rejects": 483,
+      "nav_end": 1000000.0,
+      "nav_start": 1000000.0
+    },
+    "stale_held_marks": "rejected: held position valuation is stale beyond the configured limit: SOLUSDT=4",
+    "vectorbt_counterpart": {
+      "conflicting_target": "accepted, final=1156731.48",
+      "stale_marks": "accepted; equity NaN rows=0, final=1024932.5157355968"
+    }
+  },
+  "incumbent": {
+    "name": "vectorbt",
+    "repo": "https://github.com/polakowo/vectorbt",
+    "url": "https://vectorbt.dev/",
+    "version": "1.1.0"
+  },
+  "known_semantic_differences": [
+    "cash constraint: with weights summing to exactly 1.0, dipcatcher rejects whole orders that would overdraw cash (329 rejects on the 3-asset workload), while vectorbt clips/fills; workloads use a 0.9 target-sum buffer so the parity test isolates accounting."
+  ],
+  "latency": {
+    "dipcatcher_ms_all": [
+      192.07,
+      198.89,
+      175.81,
+      173.14,
+      172.46,
+      187.42,
+      182.85,
+      228.38,
+      187.81,
+      190.46
+    ],
+    "dipcatcher_ms_median": 187.61320000339765,
+    "reps": 10,
+    "vectorbt_ms_all": [
+      72.27,
+      84.32,
+      93.86,
+      72.05,
+      70.38,
+      80.69,
+      71.14,
+      70.82,
+      70.27,
+      65.36
+    ],
+    "vectorbt_ms_median": 71.5984499984188
+  },
+  "live_pnl_claim": false,
+  "research_only": true,
+  "schema": "incumbent_bench.v1",
+  "workload": {
+    "assets": [
+      "SOLUSDT"
+    ],
+    "bar_files_sha256": {
+      "solusdt_1d.parquet": "bda7989c04cf8014a6aae32f92a23800a1b42e434108d4ff85b3192e24d393fb"
+    },
+    "bars_per_asset": 999,
+    "commission_bps": 10.0,
+    "fills": "decision close t -> exec open t+1 (both engines)",
+    "init_nav": 1000000.0,
+    "script_sha256": "51e857953f4f391561d4315107455c03705e9b84c6cbf9093d61214922d3fad6",
+    "spread_impact_borrow": 0.0,
+    "strategy": "causal SMA20 gate, equal-weight 1/1 per gated name"
+  }
+}

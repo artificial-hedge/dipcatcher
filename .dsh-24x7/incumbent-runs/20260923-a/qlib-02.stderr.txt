@@ -1,0 +1,354 @@
+[49648:MainThread](2026-09-23 12:37:01,487) INFO - qlib.Initialization - [config.py:452] - default_conf: client.
+[49648:MainThread](2026-09-23 12:37:02,938) INFO - qlib.Initialization - [__init__.py:75] - qlib successfully initialized based on client settings.
+[49648:MainThread](2026-09-23 12:37:02,939) INFO - qlib.Initialization - [__init__.py:77] - data_path={'__DEFAULT_FREQ': WindowsPath('C:/Users/me/AppData/Local/Temp/qlib_bench_tk79pps0/qlib_data')}
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[49648:MainThread](2026-09-23 12:37:04,247) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:04,248) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:04,273) WARNING - qlib.data - [data.py:665] - load calendar error: freq=day, future=True; return current calendar!
+[49648:MainThread](2026-09-23 12:37:04,273) WARNING - qlib.data - [data.py:668] - You can get future calendar by referring to the following document: https://github.com/microsoft/qlib/blob/main/scripts/data_collector/contrib/README.md
+[49648:MainThread](2026-09-23 12:37:04,277) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D234AE3F0>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   4%|4         | 44/998 [00:00<00:02, 433.88it/s]
+backtest loop:   9%|8         | 88/998 [00:00<00:02, 415.88it/s]
+backtest loop:  13%|#3        | 133/998 [00:00<00:02, 430.03it/s]
+backtest loop:  18%|#7        | 177/998 [00:00<00:01, 421.60it/s]
+backtest loop:  22%|##2       | 220/998 [00:00<00:01, 406.85it/s]
+backtest loop:  27%|##6       | 268/998 [00:00<00:01, 427.12it/s]
+backtest loop:  31%|###1      | 311/998 [00:00<00:01, 425.93it/s]
+backtest loop:  35%|###5      | 354/998 [00:00<00:01, 426.64it/s]
+backtest loop:  40%|###9      | 399/998 [00:00<00:01, 433.51it/s]
+backtest loop:  45%|####4     | 448/998 [00:01<00:01, 448.11it/s]
+backtest loop:  49%|####9     | 493/998 [00:01<00:01, 443.94it/s]
+backtest loop:  54%|#####3    | 538/998 [00:01<00:01, 438.58it/s]
+backtest loop:  58%|#####8    | 582/998 [00:01<00:00, 433.76it/s]
+backtest loop:  63%|######2   | 626/998 [00:01<00:01, 367.40it/s]
+backtest loop:  67%|######6   | 665/998 [00:01<00:00, 362.71it/s]
+backtest loop:  72%|#######1  | 714/998 [00:01<00:00, 394.57it/s]
+backtest loop:  76%|#######6  | 760/998 [00:01<00:00, 410.80it/s]
+backtest loop:  81%|########  | 808/998 [00:01<00:00, 428.92it/s]
+backtest loop:  85%|########5 | 852/998 [00:02<00:00, 428.47it/s]
+backtest loop:  90%|########9 | 897/998 [00:02<00:00, 433.31it/s]
+backtest loop:  94%|#########4| 942/998 [00:02<00:00, 436.35it/s]
+backtest loop:  99%|#########8| 986/998 [00:02<00:00, 435.44it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 422.32it/s]
+[49648:MainThread](2026-09-23 12:37:08,771) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:08,771) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:08,787) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D23F99B20>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 48/998 [00:00<00:02, 472.71it/s]
+backtest loop:  10%|9         | 96/998 [00:00<00:02, 435.96it/s]
+backtest loop:  14%|#4        | 144/998 [00:00<00:01, 451.54it/s]
+backtest loop:  19%|#9        | 190/998 [00:00<00:01, 453.80it/s]
+backtest loop:  24%|##3       | 236/998 [00:00<00:01, 446.27it/s]
+backtest loop:  28%|##8       | 282/998 [00:00<00:01, 448.50it/s]
+backtest loop:  33%|###2      | 327/998 [00:00<00:01, 442.99it/s]
+backtest loop:  37%|###7      | 373/998 [00:00<00:01, 448.09it/s]
+backtest loop:  42%|####1     | 418/998 [00:00<00:01, 448.29it/s]
+backtest loop:  47%|####6     | 467/998 [00:01<00:01, 460.60it/s]
+backtest loop:  52%|#####1    | 514/998 [00:01<00:01, 446.52it/s]
+backtest loop:  56%|#####6    | 561/998 [00:01<00:00, 452.08it/s]
+backtest loop:  61%|######    | 607/998 [00:01<00:00, 443.03it/s]
+backtest loop:  65%|######5   | 652/998 [00:01<00:00, 436.88it/s]
+backtest loop:  70%|#######   | 701/998 [00:01<00:00, 449.70it/s]
+backtest loop:  75%|#######4  | 748/998 [00:01<00:00, 453.57it/s]
+backtest loop:  80%|#######9  | 797/998 [00:01<00:00, 460.70it/s]
+backtest loop:  85%|########4 | 844/998 [00:01<00:00, 446.39it/s]
+backtest loop:  89%|########9 | 889/998 [00:01<00:00, 442.66it/s]
+backtest loop:  94%|#########3| 934/998 [00:02<00:00, 439.70it/s]
+backtest loop:  98%|#########8| 979/998 [00:02<00:00, 441.97it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 446.82it/s]
+[49648:MainThread](2026-09-23 12:37:11,087) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:11,087) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:11,104) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D23D560C0>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 47/998 [00:00<00:02, 463.90it/s]
+backtest loop:   9%|9         | 94/998 [00:00<00:02, 431.98it/s]
+backtest loop:  14%|#4        | 141/998 [00:00<00:01, 442.32it/s]
+backtest loop:  19%|#8        | 187/998 [00:00<00:01, 446.41it/s]
+backtest loop:  23%|##3       | 232/998 [00:00<00:01, 440.80it/s]
+backtest loop:  28%|##7       | 278/998 [00:00<00:01, 446.06it/s]
+backtest loop:  32%|###2      | 323/998 [00:00<00:01, 439.33it/s]
+backtest loop:  37%|###6      | 369/998 [00:00<00:01, 444.48it/s]
+backtest loop:  41%|####1     | 414/998 [00:00<00:01, 445.41it/s]
+backtest loop:  46%|####6     | 463/998 [00:01<00:01, 458.18it/s]
+backtest loop:  51%|#####1    | 509/998 [00:01<00:01, 444.57it/s]
+backtest loop:  56%|#####5    | 555/998 [00:01<00:00, 449.06it/s]
+backtest loop:  60%|######    | 600/998 [00:01<00:01, 340.04it/s]
+backtest loop:  64%|######3   | 638/998 [00:01<00:01, 287.80it/s]
+backtest loop:  67%|######7   | 673/998 [00:01<00:01, 300.92it/s]
+backtest loop:  71%|#######   | 707/998 [00:01<00:01, 242.96it/s]
+backtest loop:  75%|#######5  | 753/998 [00:02<00:00, 287.91it/s]
+backtest loop:  80%|########  | 801/998 [00:02<00:00, 331.99it/s]
+backtest loop:  84%|########4 | 842/998 [00:02<00:00, 350.56it/s]
+backtest loop:  89%|########8 | 887/998 [00:02<00:00, 376.02it/s]
+backtest loop:  93%|#########3| 932/998 [00:02<00:00, 395.80it/s]
+backtest loop:  98%|#########7| 978/998 [00:02<00:00, 413.43it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 382.22it/s]
+[49648:MainThread](2026-09-23 12:37:13,792) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:13,793) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:13,812) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D2467BDD0>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 48/998 [00:00<00:02, 474.75it/s]
+backtest loop:  10%|9         | 96/998 [00:00<00:02, 438.38it/s]
+backtest loop:  14%|#4        | 143/998 [00:00<00:01, 451.02it/s]
+backtest loop:  19%|#8        | 189/998 [00:00<00:01, 453.17it/s]
+backtest loop:  24%|##3       | 235/998 [00:00<00:01, 432.17it/s]
+backtest loop:  28%|##8       | 282/998 [00:00<00:01, 440.59it/s]
+backtest loop:  33%|###2      | 327/998 [00:00<00:01, 440.27it/s]
+backtest loop:  38%|###7      | 375/998 [00:00<00:01, 448.99it/s]
+backtest loop:  42%|####2     | 421/998 [00:00<00:01, 449.74it/s]
+backtest loop:  47%|####7     | 470/998 [00:01<00:01, 461.10it/s]
+backtest loop:  52%|#####1    | 517/998 [00:01<00:01, 446.41it/s]
+backtest loop:  57%|#####6    | 564/998 [00:01<00:00, 451.28it/s]
+backtest loop:  61%|######1   | 610/998 [00:01<00:00, 442.44it/s]
+backtest loop:  66%|######5   | 655/998 [00:01<00:00, 437.42it/s]
+backtest loop:  70%|#######   | 699/998 [00:01<00:00, 419.07it/s]
+backtest loop:  75%|#######4  | 746/998 [00:01<00:00, 432.83it/s]
+backtest loop:  80%|#######9  | 794/998 [00:01<00:00, 445.75it/s]
+backtest loop:  84%|########4 | 839/998 [00:01<00:00, 442.43it/s]
+backtest loop:  89%|########8 | 884/998 [00:01<00:00, 441.85it/s]
+backtest loop:  93%|#########3| 930/998 [00:02<00:00, 443.86it/s]
+backtest loop:  98%|#########7| 976/998 [00:02<00:00, 444.81it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 443.32it/s]
+[49648:MainThread](2026-09-23 12:37:16,142) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:16,143) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:16,161) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D24816450>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 47/998 [00:00<00:02, 467.40it/s]
+backtest loop:   9%|9         | 94/998 [00:00<00:02, 427.67it/s]
+backtest loop:  14%|#4        | 142/998 [00:00<00:01, 446.53it/s]
+backtest loop:  19%|#8        | 188/998 [00:00<00:01, 449.00it/s]
+backtest loop:  23%|##3       | 234/998 [00:00<00:01, 443.76it/s]
+backtest loop:  28%|##8       | 280/998 [00:00<00:01, 446.82it/s]
+backtest loop:  33%|###2      | 325/998 [00:00<00:01, 441.36it/s]
+backtest loop:  37%|###7      | 373/998 [00:00<00:01, 450.58it/s]
+backtest loop:  42%|####1     | 419/998 [00:00<00:01, 450.19it/s]
+backtest loop:  47%|####6     | 465/998 [00:01<00:01, 296.74it/s]
+backtest loop:  51%|#####     | 508/998 [00:01<00:01, 325.71it/s]
+backtest loop:  56%|#####5    | 555/998 [00:01<00:01, 359.95it/s]
+backtest loop:  60%|#####9    | 598/998 [00:01<00:01, 375.75it/s]
+backtest loop:  64%|######4   | 640/998 [00:01<00:00, 384.59it/s]
+backtest loop:  69%|######8   | 688/998 [00:01<00:00, 408.73it/s]
+backtest loop:  74%|#######3  | 737/998 [00:01<00:00, 430.81it/s]
+backtest loop:  78%|#######8  | 783/998 [00:01<00:00, 436.68it/s]
+backtest loop:  83%|########2 | 828/998 [00:02<00:00, 439.82it/s]
+backtest loop:  87%|########7 | 873/998 [00:02<00:00, 436.29it/s]
+backtest loop:  92%|#########2| 920/998 [00:02<00:00, 443.62it/s]
+backtest loop:  97%|#########6| 965/998 [00:02<00:00, 444.76it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 414.43it/s]
+[49648:MainThread](2026-09-23 12:37:18,646) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:18,647) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:18,665) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D24BDE0C0>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 47/998 [00:00<00:02, 460.30it/s]
+backtest loop:   9%|9         | 94/998 [00:00<00:02, 431.66it/s]
+backtest loop:  14%|#4        | 141/998 [00:00<00:01, 447.82it/s]
+backtest loop:  19%|#8        | 187/998 [00:00<00:01, 450.56it/s]
+backtest loop:  23%|##3       | 233/998 [00:00<00:01, 443.67it/s]
+backtest loop:  28%|##7       | 279/998 [00:00<00:01, 447.43it/s]
+backtest loop:  32%|###2      | 324/998 [00:00<00:01, 394.47it/s]
+backtest loop:  37%|###6      | 365/998 [00:00<00:02, 315.62it/s]
+backtest loop:  40%|####      | 400/998 [00:01<00:02, 241.93it/s]
+backtest loop:  43%|####3     | 433/998 [00:01<00:02, 258.75it/s]
+backtest loop:  48%|####8     | 480/998 [00:01<00:01, 305.68it/s]
+backtest loop:  52%|#####2    | 520/998 [00:01<00:01, 328.72it/s]
+backtest loop:  57%|#####6    | 565/998 [00:01<00:01, 359.02it/s]
+backtest loop:  61%|######    | 604/998 [00:01<00:01, 338.82it/s]
+backtest loop:  65%|######4   | 646/998 [00:01<00:00, 358.41it/s]
+backtest loop:  69%|######8   | 684/998 [00:01<00:00, 350.48it/s]
+backtest loop:  73%|#######3  | 733/998 [00:02<00:00, 386.97it/s]
+backtest loop:  78%|#######7  | 778/998 [00:02<00:00, 403.91it/s]
+backtest loop:  82%|########2 | 822/998 [00:02<00:00, 412.88it/s]
+backtest loop:  87%|########6 | 867/998 [00:02<00:00, 421.64it/s]
+backtest loop:  92%|#########1| 914/998 [00:02<00:00, 432.37it/s]
+backtest loop:  96%|#########6| 959/998 [00:02<00:00, 437.43it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 376.19it/s]
+[49648:MainThread](2026-09-23 12:37:21,384) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:21,384) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:21,401) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D239ABDD0>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 47/998 [00:00<00:02, 462.81it/s]
+backtest loop:   9%|9         | 94/998 [00:00<00:02, 431.04it/s]
+backtest loop:  14%|#4        | 140/998 [00:00<00:01, 443.59it/s]
+backtest loop:  19%|#8        | 185/998 [00:00<00:01, 445.10it/s]
+backtest loop:  23%|##3       | 230/998 [00:00<00:01, 438.32it/s]
+backtest loop:  28%|##7       | 277/998 [00:00<00:01, 446.51it/s]
+backtest loop:  32%|###2      | 322/998 [00:00<00:01, 439.73it/s]
+backtest loop:  37%|###6      | 368/998 [00:00<00:01, 444.95it/s]
+backtest loop:  41%|####1     | 413/998 [00:01<00:02, 286.71it/s]
+backtest loop:  46%|####6     | 462/998 [00:01<00:01, 331.11it/s]
+backtest loop:  51%|#####     | 505/998 [00:01<00:01, 353.39it/s]
+backtest loop:  55%|#####5    | 551/998 [00:01<00:01, 378.97it/s]
+backtest loop:  60%|#####9    | 594/998 [00:01<00:01, 390.92it/s]
+backtest loop:  64%|######3   | 637/998 [00:01<00:00, 395.04it/s]
+backtest loop:  69%|######8   | 684/998 [00:01<00:00, 415.42it/s]
+backtest loop:  73%|#######3  | 733/998 [00:01<00:00, 434.49it/s]
+backtest loop:  78%|#######7  | 778/998 [00:01<00:00, 414.18it/s]
+backtest loop:  82%|########2 | 822/998 [00:02<00:00, 421.37it/s]
+backtest loop:  87%|########6 | 867/998 [00:02<00:00, 428.45it/s]
+backtest loop:  92%|#########1| 914/998 [00:02<00:00, 439.56it/s]
+backtest loop:  96%|#########6| 960/998 [00:02<00:00, 443.51it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 409.20it/s]
+[49648:MainThread](2026-09-23 12:37:23,904) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:23,904) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:23,922) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D24733DD0>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 47/998 [00:00<00:02, 462.27it/s]
+backtest loop:   9%|9         | 94/998 [00:00<00:02, 436.11it/s]
+backtest loop:  14%|#4        | 142/998 [00:00<00:01, 450.29it/s]
+backtest loop:  19%|#8        | 188/998 [00:00<00:01, 420.59it/s]
+backtest loop:  23%|##3       | 231/998 [00:00<00:01, 422.96it/s]
+backtest loop:  28%|##7       | 278/998 [00:00<00:01, 436.55it/s]
+backtest loop:  32%|###2      | 322/998 [00:00<00:01, 434.62it/s]
+backtest loop:  37%|###6      | 367/998 [00:00<00:01, 438.72it/s]
+backtest loop:  41%|####1     | 411/998 [00:00<00:01, 438.68it/s]
+backtest loop:  46%|####6     | 461/998 [00:01<00:01, 455.18it/s]
+backtest loop:  51%|#####     | 507/998 [00:01<00:01, 445.52it/s]
+backtest loop:  56%|#####5    | 554/998 [00:01<00:00, 449.38it/s]
+backtest loop:  60%|######    | 599/998 [00:01<00:00, 440.89it/s]
+backtest loop:  65%|######4   | 644/998 [00:01<00:00, 432.22it/s]
+backtest loop:  69%|######9   | 691/998 [00:01<00:00, 442.45it/s]
+backtest loop:  74%|#######4  | 740/998 [00:01<00:00, 453.04it/s]
+backtest loop:  79%|#######8  | 787/998 [00:01<00:00, 457.05it/s]
+backtest loop:  83%|########3 | 833/998 [00:01<00:00, 451.46it/s]
+backtest loop:  88%|########8 | 879/998 [00:01<00:00, 438.24it/s]
+backtest loop:  92%|#########2| 923/998 [00:02<00:00, 381.43it/s]
+backtest loop:  97%|#########6| 968/998 [00:02<00:00, 399.18it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 431.14it/s]
+[49648:MainThread](2026-09-23 12:37:26,301) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:26,301) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:26,318) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D23E5CA70>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   4%|4         | 44/998 [00:00<00:02, 429.07it/s]
+backtest loop:   9%|8         | 87/998 [00:00<00:02, 417.77it/s]
+backtest loop:  13%|#3        | 134/998 [00:00<00:01, 440.09it/s]
+backtest loop:  18%|#7        | 179/998 [00:00<00:03, 263.70it/s]
+backtest loop:  22%|##2       | 221/998 [00:00<00:02, 302.41it/s]
+backtest loop:  27%|##7       | 270/998 [00:00<00:02, 350.17it/s]
+backtest loop:  31%|###1      | 313/998 [00:00<00:01, 369.98it/s]
+backtest loop:  36%|###5      | 357/998 [00:00<00:01, 389.25it/s]
+backtest loop:  40%|####      | 400/998 [00:01<00:01, 399.08it/s]
+backtest loop:  45%|####4     | 449/998 [00:01<00:01, 423.29it/s]
+backtest loop:  49%|####9     | 493/998 [00:01<00:01, 422.58it/s]
+backtest loop:  54%|#####3    | 537/998 [00:01<00:01, 423.22it/s]
+backtest loop:  58%|#####8    | 581/998 [00:01<00:00, 422.38it/s]
+backtest loop:  63%|######2   | 624/998 [00:01<00:00, 419.06it/s]
+backtest loop:  67%|######6   | 667/998 [00:01<00:00, 421.56it/s]
+backtest loop:  72%|#######1  | 715/998 [00:01<00:00, 436.04it/s]
+backtest loop:  76%|#######6  | 759/998 [00:01<00:00, 436.90it/s]
+backtest loop:  80%|########  | 803/998 [00:02<00:00, 434.24it/s]
+backtest loop:  85%|########4 | 847/998 [00:02<00:00, 429.63it/s]
+backtest loop:  89%|########9 | 892/998 [00:02<00:00, 434.48it/s]
+backtest loop:  94%|#########3| 936/998 [00:02<00:00, 432.85it/s]
+backtest loop:  98%|#########8| 980/998 [00:02<00:00, 430.46it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 404.19it/s]
+[49648:MainThread](2026-09-23 12:37:28,866) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:28,866) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:28,885) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D24AB8320>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 46/998 [00:00<00:02, 457.44it/s]
+backtest loop:   9%|9         | 92/998 [00:00<00:02, 423.43it/s]
+backtest loop:  14%|#3        | 138/998 [00:00<00:01, 436.43it/s]
+backtest loop:  18%|#8        | 182/998 [00:00<00:01, 435.12it/s]
+backtest loop:  23%|##2       | 226/998 [00:00<00:01, 407.56it/s]
+backtest loop:  27%|##7       | 273/998 [00:00<00:01, 425.88it/s]
+backtest loop:  32%|###1      | 316/998 [00:00<00:01, 423.28it/s]
+backtest loop:  36%|###5      | 359/998 [00:00<00:01, 425.09it/s]
+backtest loop:  40%|####      | 403/998 [00:00<00:01, 427.76it/s]
+backtest loop:  45%|####5     | 454/998 [00:01<00:01, 449.95it/s]
+backtest loop:  50%|#####     | 500/998 [00:01<00:01, 445.56it/s]
+backtest loop:  55%|#####4    | 546/998 [00:01<00:01, 447.54it/s]
+backtest loop:  59%|#####9    | 591/998 [00:01<00:00, 442.31it/s]
+backtest loop:  64%|######3   | 636/998 [00:01<00:00, 424.63it/s]
+backtest loop:  69%|######8   | 684/998 [00:01<00:00, 438.41it/s]
+backtest loop:  74%|#######3  | 734/998 [00:01<00:00, 454.21it/s]
+backtest loop:  78%|#######8  | 781/998 [00:01<00:00, 457.07it/s]
+backtest loop:  83%|########2 | 827/998 [00:01<00:00, 451.91it/s]
+backtest loop:  87%|########7 | 873/998 [00:01<00:00, 447.76it/s]
+backtest loop:  92%|#########2| 921/998 [00:02<00:00, 454.91it/s]
+backtest loop:  97%|#########6| 967/998 [00:02<00:00, 453.97it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 412.62it/s]
+[49648:MainThread](2026-09-23 12:37:31,367) INFO - qlib.backtest caller - [__init__.py:93] - Create new exchange
+[49648:MainThread](2026-09-23 12:37:31,367) WARNING - qlib.online operator - [exchange.py:155] - limit_threshold may not be set to a reasonable value
+[49648:MainThread](2026-09-23 12:37:31,384) WARNING - qlib.BaseExecutor - [executor.py:121] - `common_infra` is not set for <qlib.backtest.executor.SimulatorExecutor object at 0x0000022D244A7A10>
+
+backtest loop:   0%|          | 0/998 [00:00<?, ?it/s]D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+D:\bench-qlib\Lib\site-packages\qlib\utils\index_data.py:492: RuntimeWarning: Mean of empty slice
+  return np.nanmean(self.data)
+
+backtest loop:   5%|4         | 48/998 [00:00<00:02, 474.72it/s]
+backtest loop:  10%|9         | 96/998 [00:00<00:02, 434.38it/s]
+backtest loop:  14%|#4        | 144/998 [00:00<00:01, 450.15it/s]
+backtest loop:  19%|#9        | 190/998 [00:00<00:01, 452.93it/s]
+backtest loop:  24%|##3       | 236/998 [00:00<00:01, 449.54it/s]
+backtest loop:  28%|##8       | 282/998 [00:00<00:01, 450.69it/s]
+backtest loop:  33%|###2      | 328/998 [00:00<00:01, 444.76it/s]
+backtest loop:  38%|###7      | 375/998 [00:00<00:01, 452.10it/s]
+backtest loop:  42%|####2     | 421/998 [00:00<00:01, 448.29it/s]
+backtest loop:  47%|####7     | 471/998 [00:01<00:01, 461.28it/s]
+backtest loop:  52%|#####1    | 518/998 [00:01<00:01, 446.12it/s]
+backtest loop:  57%|#####6    | 565/998 [00:01<00:00, 452.35it/s]
+backtest loop:  61%|######1   | 611/998 [00:01<00:00, 441.24it/s]
+backtest loop:  66%|######5   | 656/998 [00:01<00:00, 438.02it/s]
+backtest loop:  71%|#######   | 706/998 [00:01<00:00, 454.07it/s]
+backtest loop:  75%|#######5  | 752/998 [00:01<00:00, 454.76it/s]
+backtest loop:  80%|########  | 801/998 [00:01<00:00, 461.41it/s]
+backtest loop:  85%|########4 | 848/998 [00:01<00:00, 453.42it/s]
+backtest loop:  90%|########9 | 894/998 [00:01<00:00, 454.85it/s]
+backtest loop:  94%|#########4| 940/998 [00:02<00:00, 450.20it/s]
+backtest loop:  99%|#########8| 986/998 [00:02<00:00, 446.45it/s]
+backtest loop: 100%|##########| 998/998 [00:02<00:00, 450.07it/s]

@@ -430,7 +430,14 @@ def fetch_yahoo_panel(spec: dict[str, Any], cache: Path) -> tuple[pl.DataFrame, 
         try:
             payload = fetch_yahoo_chart(symbol, start=start, end=end, retries=3, timeout=30.0)
             frame = parse_yahoo_chart(payload, security_id=symbol, yahoo_symbol=symbol)
-        except Exception as exc:
+        except (OSError, ValueError, pl.exceptions.PolarsError) as exc:
+            # Data-side failures only: HTTP/IO errors (URLError is an OSError),
+            # payload decode/shape errors (ValueError covers JSONDecodeError),
+            # and polars compute errors. Recorded per-symbol and turned into a
+            # hard RuntimeError below — never a synthetic substitute. A bug in
+            # our own code (AttributeError/KeyError/…) is deliberately *not*
+            # caught, so it surfaces as itself instead of being misreported as
+            # a Yahoo fetch failure.
             errors[symbol] = f"{type(exc).__name__}: {exc}"
             continue
         if frame.is_empty():

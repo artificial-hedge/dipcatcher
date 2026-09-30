@@ -1,0 +1,61 @@
+<frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+                                                                               
+ Usage: python -m quant_fund.cli.main [OPTIONS] COMMAND [ARGS]...              
+                                                                               
+ Dipcatcher — Artificial Hedge's proprietary research lab. Default mode is     
+ research, never live.                                                         
+                                                                               
+┌─ Options ───────────────────────────────────────────────────────────────────┐
+│ --install-completion          Install completion for the current shell.     │
+│ --show-completion             Show completion for the current shell, to     │
+│                               copy it or customize the installation.        │
+│ --help                        Show this message and exit.                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌─ Commands ──────────────────────────────────────────────────────────────────┐
+│ doctor                                                                      │
+│ ingest                                                                      │
+│ collect          Explicit opt-in public-source collection (may use the      │
+│                  network).                                                  │
+│ build-features                                                              │
+│ build-labels                                                                │
+│ validate         Fail-closed research / promotion gates (see                │
+│                  docs/VALIDATION.md).                                       │
+│ forecast                                                                    │
+│ kronos-forecast  Research-only Kronos candle-path forecasts (requires       │
+│                  train.kronos.enabled).                                     │
+│ optimize                                                                    │
+│ backtest                                                                    │
+│ candle-book      Fused candlestick + order-book research bench (optional    │
+│                  family).                                                   │
+│ kyle-ofi         Kyle λ / OFI→Δmid research diagnostics (date-level IC +    │
+│                  HAC).                                                      │
+│ research         Run Dipcatcher's proprietary research benches and write a  │
+│                  labeled notebook.                                          │
+│ session-book     Write multi-snapshot session L2 parquet (SYNTHETIC) +      │
+│                  optional daily agg.                                        │
+│ vendor-book-map  Offline dry-run of vendor quote columns → Northset book    │
+│                  panel.                                                     │
+│ book-panel       Write a vendor-shaped L2 book panel parquet (SYNTHETIC by  │
+│                  default).                                                  │
+│ northset         Run Northset — order-book and candlestick research inside  │
+│                  Dipcatcher.                                                │
+│ verify-research  Verify a persisted research receipt and its immutable      │
+│                  artifacts.                                                 │
+│ report                                                                      │
+│ tearsheet        Institutional tearsheet: summary stats, drawdowns, period  │
+│                  table, costs, attribution.                                 │
+│ api                                                                         │
+│ paper            Phase 17 paper / shadow loop with simulated broker (no     │
+│                  live fills).                                               │
+│ monitor          Ops snapshot over the latest paper run: limits, staleness, │
+│                  kill state.                                                │
+│ train            Train a forecast family.                                   │
+│ hmm              Jurafsky & Martin SLP3 Appendix A HMM (Eisner ice cream).  │
+│ ls               Lightspeed research surfaces. All commands are             │
+│                  paper/research-only; they are not live and do not promote  │
+│                  a strategy.                                                │
+│ qm               Quant-model research calculations. These are               │
+│                  decision/pricing helpers with no broker integration or     │
+│                  live P&L claim.                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+

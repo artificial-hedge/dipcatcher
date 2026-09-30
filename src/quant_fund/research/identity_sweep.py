@@ -1077,7 +1077,14 @@ def run_identity_sweep(
                 value = float(spec.evaluate(bundle))
                 if not math.isfinite(value) or value < 0.0:
                     raise ValueError("identity residual must be finite and non-negative")
-            except Exception as exc:  # fail-closed: record, never fabricate a pass
+            except Exception as exc:  # noqa: BLE001 - documented fail-closed barrier
+                # Fail closed: record, never fabricate a pass. Deliberately
+                # broad — ``spec.evaluate`` is an arbitrary identity evaluator
+                # (numpy/polars/algebra) that may raise anything. The residual
+                # is stored as NaN *and* the error is captured, and ``passed``
+                # below requires ``not errs``, so a raising identity can never
+                # be reported as proven. Narrowing would let one evaluator
+                # abort the sweep and discard every other identity's result.
                 residuals[spec.name].append(float("nan"))
                 errors[spec.name].append(f"{type(exc).__name__}: {exc}")
                 continue

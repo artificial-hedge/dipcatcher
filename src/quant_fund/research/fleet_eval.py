@@ -585,7 +585,12 @@ def _score_row(
                 row[_coverage_key(level)] = coverage(y_eval, q[:, pair[0]], q[:, pair[1]])
         for j, tau in enumerate(taus):
             row[_pinball_key(float(tau))] = mean_pinball(y_eval, q[:, j], float(tau))
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - fail-closed barrier, see below
+        # Deliberately broad: an arbitrary head may raise anything (sklearn,
+        # lightgbm, polars, numpy). The failure is *recorded*, never swallowed:
+        # ``status="error"`` + the message, and ``fleet_v1_verdict`` turns any
+        # error row into a "fail" verdict that ``fleet_v2_consistency_errors``
+        # re-derives on read. Narrowing here would let a head crash the fleet.
         row["status"] = "error"
         row["error"] = str(exc)
     return row
@@ -697,8 +702,12 @@ def run_distribution_fleet(
                     blob["head"] = str(head)
                 if version:
                     blob["version"] = str(version)
-            except Exception:
-                pass
+            except Exception as exc:  # noqa: BLE001 - recorded, never silent
+                # Fail closed: an unresolvable head version keeps the honest
+                # "unknown" marker *and* records why, instead of the previous
+                # bare ``pass`` that discarded the cause. The key feeds
+                # ``inputs_sha256``, so the failure is bound into the receipt.
+                blob["version_error"] = f"{type(exc).__name__}: {exc}"
 
     columns = [
         "shard",

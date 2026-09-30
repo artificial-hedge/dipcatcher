@@ -111,7 +111,7 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
         cqr_rate, cqr_lr, cqr_kp = kupiec_pof(cqr_miss, alpha)
     else:
         cqr_rate, cqr_lr, cqr_kp = float("nan"), float("nan"), float("nan")
-    qr_m: dict[str, float] | None = None
+    qr_m: dict[str, Any] | None = None
     if 80 <= int(tr.stop - tr.start) <= 4000:
         try:
             qr = LinearQuantileDistribution(taus).fit(x[tr], y[tr])
@@ -121,8 +121,12 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
             lo_q, hi_q = cqr_qr.predict_sets(qqt[:, 0], qqt[:, 1])
             qm = set_metrics(y[te], lo_q, hi_q)
             qr_m = {"coverage": qm.coverage, "mean_width": qm.mean_width, "qhat": cqr_qr.qhat}
-        except Exception:
-            qr_m = None
+        except (ValueError, ArithmeticError, pl.exceptions.PolarsError) as exc:
+            # Fail closed: an attempted-but-failed linear-QR wrappee is recorded
+            # as an explicit error row, never dropped to None (which would be
+            # indistinguishable from "sample too small to attempt"). Numeric
+            # degeneracy only; an unexpected exception propagates as a bug.
+            qr_m = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
     aci = AdaptiveConformal(alpha=alpha, gamma=0.05, score_window=400)
     aci.initialize(y[cal], q_cal[:, 0], q_cal[:, 1])
     path = aci.run(y[te], q_te[:, 0], q_te[:, 1], dates[te])
@@ -167,7 +171,7 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
             hh = (1.0 - mpath.covered[sel_h]).astype(float)
             high_kupiec = kupiec_pof(hh, alpha)
             high_hits = float(m_x.get(high_key, float("nan")))
-    hmm_cond: dict[str, float] = {}
+    hmm_cond: dict[str, Any] = {}
     rcols = [
         c for c in ["mkt_ret_1", "mkt_vol_20", "cs_dispersion", "breadth"] if c in frame.columns
     ]
@@ -203,8 +207,11 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
                     dtype=object,
                 )
                 hmm_cond = conditional_coverage(y[te], path.lower, path.upper, labs)
-        except Exception:
-            hmm_cond = {}
+        except (ValueError, ArithmeticError, pl.exceptions.PolarsError) as exc:
+            # Fail closed: a failed HMM regime conditioning is an explicit
+            # error marker, never an empty {} that reads as "no conditioning
+            # attempted". Unexpected exceptions propagate as bugs.
+            hmm_cond = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
     # one-sided conformal tail: same scaled wrappee as CRC (H11 is CRC)
     tail_out: dict[str, Any] = {}
     try:
@@ -225,8 +232,11 @@ def bench_conformal(frame: pl.DataFrame, config: AppConfig) -> dict[str, Any]:
             "wrappee": wrappee_name,
             "note": "same scaled wrappee as CRC; H11 is CRC",
         }
-    except Exception:
-        tail_out = {}
+    except (ValueError, ArithmeticError) as exc:
+        # Fail closed: a failed one-sided tail calibration is an explicit error
+        # marker, never an empty {} that a verifier could read as "tail block
+        # not applicable". Unexpected exceptions propagate as bugs.
+        tail_out = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
     dd_out: dict[str, Any] = {}
     dd_lab = next((c for c in frame.columns if c.startswith("future_max_drawdown")), None)
     if dd_lab is not None:

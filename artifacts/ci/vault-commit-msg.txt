@@ -1,0 +1,15 @@
+fix(pit): fsync the write descriptor, not a read-only reopen
+
+The vault reopened the just-written parquet part read-only and fsynced
+that handle. fsync on a read descriptor delivers no durability
+guarantee: POSIX accepts it without flushing the writer's pages, and
+Windows rejects it outright (_commit requires a writable fd), raising
+OSError EBADF and failing every append.
+
+Write into the NamedTemporaryFile handle and fsync it before close,
+matching the repo idiom in paper/ledger.py and pit/manifest.py. This is
+the only site in src/ with the read-handle anti-pattern; the other six
+os.fsync(handle.fileno()) call sites already fsync the write fd.
+
+Fixes 12 test_pit_vault failures and 3 pit asof property failures on
+Windows; 38 + 4 pass now. mypy clean (672 files), ruff clean.

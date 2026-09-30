@@ -1,0 +1,17 @@
+﻿uv :    Building dipcatcher @ file:///D:/dipcatcher
+At C:\Users\me\AppData\Local\Temp\ps-script-c507c2a7-1a8c-4036-841e-fc2c8bab9449.ps1:90 char:20
++ ... _COLOR="1"; uv run ruff check src tests --exclude src/src --exclude t ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (   Building dip...//D:/dipcatcher:String) [], Remote 
+   Exception
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+      Built dipcatcher @ file:///D:/dipcatcher
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded 
+performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be 
+supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to 
+suppress this warning.
+Installed 1 package in 20ms
+[1;32mAll checks passed![0m

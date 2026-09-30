@@ -1,0 +1,17 @@
+assets: ['SOLUSDT']
+weight panel: 999 rows, 999 decision dates
+dipcatcher: 998 nav rows, 691 ms
+qlib final=1192501.32 orders~530 cost=117098.07604988298
+{
+  "common_dates": 997,
+  "nav_max_abs_diff": 0.5719345391262323,
+  "nav_max_rel_diff": 4.7215009219642765e-07,
+  "nav_final_dipcatcher": 1193564.2645455105,
+  "nav_final_qlib": 1192501.3167966881,
+  "fills_dipcatcher": 531,
+  "dipcatcher_total_fees": 117098.72742417859,
+  "qlib_order_days": 530,
+  "qlib_total_cost": 117098.07604988298
+}
+latency: dipcatcher 191 ms | qlib 2646 ms
+receipt: D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\qlib-01.json

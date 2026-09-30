@@ -1,0 +1,3 @@
+﻿src\quant_fund\backtest\_fast_kernel.py:28: error: Name "njit" already defined (possibly by an import)  [no-redef]
+src\quant_fund\backtest\_fast_kernel.py:28: note: Error code "no-redef" not covered by "type: ignore[misc]" comment
+Found 1 error in 1 file (checked 670 source files)

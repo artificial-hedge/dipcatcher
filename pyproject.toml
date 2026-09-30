@@ -7,6 +7,10 @@ authors = [
     { name = "Advaith Vaithianathan", email = "140935487+cosmic-hydra@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
+license = "Apache-2.0"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+]
 dependencies = [
     "polars>=1.17",
     "pyarrow>=17",
@@ -126,7 +130,7 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "C901"]
+select = ["E", "F", "I", "UP", "B", "SIM", "C901", "BLE001"]
 ignore = ["E501", "B008", "UP042", "SIM108", "SIM115"]
 
 [tool.ruff.lint.mccabe]
@@ -137,6 +141,57 @@ max-complexity = 74
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["B018"]
+# BLE001 (blind-except) debt ledger.
+#
+# BLE001 is enabled repo-wide: every *new* blind `except Exception` is a lint
+# failure. The paths below are the pre-existing violations outside the
+# research-verifier lane, listed per file so the rule is on without being
+# suppressed globally. They are debt, not policy — remove an entry when that
+# file's blind excepts are narrowed or documented as fail-closed barriers.
+#
+# The research-verifier lane (`src/quant_fund/research/**`) has NO entry: its
+# blind excepts were audited and either narrowed to the real failure surface or
+# kept as explicit fail-closed barriers with an inline `# noqa: BLE001` that
+# states what is recorded and why narrowing would be weaker.
+#
+# backtest lane (5): fast-replay warm/cold parity + kernel guards.
+# (_fast_kernel.py is in-flight/untracked; drop the line if it lands without
+# blind excepts so the ledger cannot outlive the debt.)
+"src/quant_fund/backtest/_fast_kernel.py" = ["BLE001"]
+"src/quant_fund/backtest/fast_replay.py" = ["BLE001"]
+# compute/data (2): worker-pool and pooled-IO teardown paths.
+"src/quant_fund/compute/parallel.py" = ["BLE001"]
+"src/quant_fund/data/concurrent_io.py" = ["BLE001"]
+# leakage scanner (1): AST visitor over arbitrary user source.
+"src/quant_fund/leakage/ast_scan.py" = ["BLE001"]
+# market sim (1): book replay.
+"src/quant_fund/market_sim/book.py" = ["BLE001"]
+# metrics (1): serial-correlation estimator.
+"src/quant_fund/metrics/serial.py" = ["BLE001"]
+# models (6): optional-dependency fits (arch/hmmlearn/sklearn/torch) whose
+# convergence failures span vendor-specific exception types.
+"src/quant_fund/models/caviar.py" = ["BLE001"]
+"src/quant_fund/models/covariance.py" = ["BLE001"]
+"src/quant_fund/models/fracdiff.py" = ["BLE001"]
+"src/quant_fund/models/volatility.py" = ["BLE001"]
+# paper lane (3): simulated live-trading loop keeps running past a bad bar.
+"src/quant_fund/paper/quantile_signals.py" = ["BLE001"]
+"src/quant_fund/paper/sim_live.py" = ["BLE001"]
+"src/quant_fund/pit/vault.py" = ["BLE001"]
+# pretrade (9): risk-gate shadow mode must never raise into the order path.
+"src/quant_fund/pretrade/engine.py" = ["BLE001"]
+"src/quant_fund/pretrade/shadow.py" = ["BLE001"]
+# proof/proofcore (5): verifier reads arbitrary on-disk evidence.
+"src/quant_fund/proof/verify.py" = ["BLE001"]
+"src/quant_fund/proofcore/ci.py" = ["BLE001"]
+# simtest (2): swarm runner isolates one bad cell from the rest.
+"src/quant_fund/simtest/swarm.py" = ["BLE001"]
+# validation (1): regime eval.
+"src/quant_fund/validation/regime_eval.py" = ["BLE001"]
+# tests (6): cache/fixture teardown and intentional broad-catch assertions.
+"tests/support/session_cache.py" = ["BLE001"]
+"tests/unit/pipeline/test_optimizer_edges.py" = ["BLE001"]
+"tests/unit/pretrade/test_latency.py" = ["BLE001"]
 
 [tool.mypy]
 python_version = "3.12"

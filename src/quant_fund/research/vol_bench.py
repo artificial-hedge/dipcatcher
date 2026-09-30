@@ -391,7 +391,15 @@ def _eval_shard_model(
                 raise ValueError(f"forecast {forecasts[i]!r} at origin {o} is not finite/positive")
             targets[i] = float(np.sum(shard.rv[o : o + horizon]))
         return targets, forecasts
-    except Exception as exc:  # recorded as an error row, never silent
+    except Exception as exc:  # noqa: BLE001 - fail-closed barrier, see below
+        # Deliberately broad: a ``VolForecaster`` is an arbitrary callable
+        # (HAR, realized-GARCH, rough-vol, or caller-supplied) and may raise
+        # anything. The failure is *recorded*, never swallowed: it becomes an
+        # ``error`` row, ``n_error_rows`` counts it, ``vol_bench_verdict``
+        # derives "fail" from the rows, and ``vol_bench_contract_errors``
+        # refuses to seal a receipt whose verdict disagrees. Narrowing here
+        # would let one model abort the bench and discard every other model's
+        # proper-score result.
         return str(exc)
 
 
@@ -578,6 +586,9 @@ def run_vol_bench(
         "inputs_sha256": inputs_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
+        # Sealed verdict: a run where a model failed at some origin is a
+        # "fail", never an empty row that could be read as "nothing to score".
+        "verdict": vol_bench_verdict({"results": rows}),
         "results": rows,
     }
     return frame, receipt
@@ -618,6 +629,65 @@ def _atomic_write_text(path: Path, content: str) -> None:
             temporary_path.unlink(missing_ok=True)
 
 
+def vol_bench_verdict(receipt: Mapping[str, Any]) -> str:
+    """``pass`` iff every vol-bench row scored without error.
+
+    ``n_error_rows`` was stamped but never enforced: a run where every model
+    failed at every origin produced a receipt indistinguishable, on its face,
+    from a clean one. The verdict is derived from the *rows themselves* rather
+    than trusted from the stamped counter, so forging either field is caught.
+    Mirrors :func:`quant_fund.research.fleet_eval.fleet_v1_verdict`.
+    """
+    results = receipt.get("results")
+    if not isinstance(results, list):
+        return "fail"
+    return "pass" if _count_error_rows(results) == 0 else "fail"
+
+
+def _count_error_rows(results: object) -> int:
+    """Count rows whose ``status`` is not ``ok``; -1 when not a list."""
+    if not isinstance(results, list):
+        return -1
+    return sum(1 for row in results if not isinstance(row, Mapping) or row.get("status") != "ok")
+
+
+def vol_bench_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Fail-closed contract for a ``vol_bench.v1`` payload (writer + verifier).
+
+    Checks the honesty flags, that the stamped ``n_error_rows`` matches the
+    rows it claims to summarize, and that any stamped ``verdict`` agrees with
+    the verdict re-derived from those rows. ``n_error_rows``/``verdict`` are
+    the two fields that would let an all-failed run masquerade as a pass.
+    """
+    errors: list[str] = []
+    if receipt.get("schema") != VOL_BENCH_SCHEMA:
+        errors.append("schema_not_vol_bench_v1")
+    if receipt.get("kind") != "vol_bench":
+        errors.append("kind_not_vol_bench")
+    if receipt.get("data_label") != "SYNTHETIC":
+        errors.append("data_label_not_synthetic")
+    if receipt.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    results = receipt.get("results")
+    if not isinstance(results, list) or not results:
+        errors.append("results_missing_or_empty")
+        return errors
+    actual_errors = _count_error_rows(results)
+    stamped = receipt.get("n_error_rows")
+    if not isinstance(stamped, int) or isinstance(stamped, bool):
+        errors.append("n_error_rows_not_int")
+    elif stamped != actual_errors:
+        errors.append("n_error_rows_mismatch")
+    verdict = receipt.get("verdict")
+    if verdict is not None and verdict != vol_bench_verdict(receipt):
+        errors.append("verdict_mismatch")
+    if not family_blob_forbidden_metrics_absent(
+        {key: value for key, value in receipt.items() if key != "live_pnl_claim"}
+    ):
+        errors.append("forbidden_metric_keys")
+    return errors
+
+
 def write_vol_bench_receipt(
     receipt: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
@@ -626,18 +696,11 @@ def write_vol_bench_receipt(
 
     The filename hash is the sha256 of the canonical receipt payload; the
     same digest is embedded as ``receipt_sha256`` (the fleet_eval seal
-    convention). The write is atomic and fail-closed on tampering.
+    convention). The write is atomic and fail-closed on tampering: a receipt
+    whose ``n_error_rows`` or ``verdict`` disagrees with its own rows is
+    never sealed.
     """
-    research_blob = {key: value for key, value in receipt.items() if key != "live_pnl_claim"}
-    if (
-        receipt.get("schema") != VOL_BENCH_SCHEMA
-        or receipt.get("kind") != "vol_bench"
-        or receipt.get("data_label") != "SYNTHETIC"
-        or receipt.get("live_pnl_claim") is not False
-        or not isinstance(receipt.get("results"), list)
-        or not receipt["results"]
-        or not family_blob_forbidden_metrics_absent(research_blob)
-    ):
+    if vol_bench_contract_errors(receipt):
         raise ValueError("vol-bench receipt violates its synthetic research contract")
     canonical = json.loads(canonical_json_bytes(dict(receipt)))
     digest = hash_bytes(canonical_json_bytes(canonical))
@@ -661,5 +724,7 @@ __all__ = [
     "resolve_vol_shard_generators",
     "rough_vol",
     "run_vol_bench",
+    "vol_bench_contract_errors",
+    "vol_bench_verdict",
     "write_vol_bench_receipt",
 ]

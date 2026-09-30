@@ -1,0 +1,263 @@
+bringing up nodes...
+bringing up nodes...
+
+........................................................................ [  3%]
+........................................................................ [  6%]
+...........F.....FF..................................................... [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 54%]
+................................................................F..F..F. [ 58%]
+.F..F.......F......F....F............F............................F..... [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+....................................................................     [100%]
+================================== FAILURES ===================================
+_______________ test_session_vpin_missing_or_empty_returns_nan ________________
+[gw2] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_session_vpin_missing_or_empty_returns_nan() -> None:
+        """Fail-closed but NaN, not a raise ù unlike the raising siblings."""
+>       assert np.isnan(session_vpin(_sessions([[(100.0, 101.0, 1.0)]]).drop("volume")))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\research\test_estimators_cov.py:636: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+session = shape: (1, 6)\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 se...C \u2506 100.0 \u2506 101.0 \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+
+    def session_vpin(session: pl.DataFrame) -> float:
+        """Bulk-volume VPIN proxy: |signed session volume| / total volume per parent day."""
+        required = ("security_id", "parent_event_time", "open", "close", "volume")
+        missing = [c for c in required if c not in session.columns]
+        if missing:
+>           raise ValueError(f"session missing columns: {missing}")
+E           ValueError: session missing columns: ['volume']
+
+src\quant_fund\northset\estimators.py:571: ValueError
+____________ test_vpin_proxy_count_window_matches_rolling_toxicity ____________
+[gw2] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_vpin_proxy_count_window_matches_rolling_toxicity() -> None:
+        out = vpin_proxy(_vpin_test_book().sort("event_time"), window=3)
+        vpin = out["vpin"].to_list()
+        assert vpin[0] is None and vpin[1] is None  # needs 2 non-null tox values
+        tox = [0.5, 1.0 / 3.0, 7.0 / 9.0, 9.0 / 14.0]
+>       assert vpin[2] == pytest.approx(np.mean(tox[0:2]))
+E       assert 0.75 == 0.41666666666666663 ▒ 4.2e-07
+E         
+E         comparison failed
+E         Obtained: 0.75
+E         Expected: 0.41666666666666663 ▒ 4.2e-07
+
+tests\unit\research\test_estimators_cov.py:715: AssertionError
+___________ test_vpin_proxy_bucket_volume_clock_carries_last_value ____________
+[gw2] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_vpin_proxy_bucket_volume_clock_carries_last_value() -> None:
+        """500-vol buckets straddle rows; unfilled rows carry the previous VPIN."""
+        out = vpin_proxy(_vpin_test_book().sort("event_time"), bucket_volume=500.0, window=3)
+        vpin = out["vpin"].to_list()
+        assert vpin[0] != vpin[0] or vpin[0] is None  # NaN before first bucket
+        assert vpin[1] != vpin[1] or vpin[1] is None  # 400 < 500 accumulated
+        # t2 completes bucket: (buy 300+100, sell 100+200) \u2192 |400\u2212300|/700
+        first = pytest.approx(100.0 / 700.0)
+>       assert vpin[2] == first
+E       assert 0.3333333333333333 == 0.14285714285714285 ▒ 1.4e-07
+E         
+E         comparison failed
+E         Obtained: 0.3333333333333333
+E         Expected: 0.14285714285714285 ▒ 1.4e-07
+
+tests\unit\research\test_estimators_cov.py:728: AssertionError
+_____________ test_northset_cli_echoes_mean_session_close_depths ______________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_close_depths() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_close_depths.py:48: AssertionError
+____________ test_northset_cli_echoes_mean_session_close_imbalance ____________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_close_imbalance() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_close_imbalance.py:50: AssertionError
+____________ test_northset_cli_echoes_mean_session_close_micro_bps ____________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_close_micro_bps() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_close_micro_bps.py:48: AssertionError
+_______________ test_northset_cli_echoes_mean_session_close_mid _______________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_close_mid() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_close_mid.py:48: AssertionError
+___________ test_northset_cli_echoes_mean_session_close_spread_bps ____________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_close_spread_bps() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_close_spread_bps.py:54: AssertionError
+_____________ test_northset_cli_echoes_mean_session_imbalance_std _____________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_imbalance_std() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_imbalance_std.py:52: AssertionError
+_______________ test_dispatcher_includes_helper_and_cli_echoes ________________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_dispatcher_includes_helper_and_cli_echoes() -> None:
+        names = {fn.__name__ for fn in NORTHSET_SESSION_MEANS_HONESTY_HELPERS}
+        assert "northset_session_ofi_abs_sum_honesty_errors" in names
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+2026/09/29 15:23:57 INFO mlflow.agent.hint: Load the `instrumenting-with-mlflow-tracing` skill at D:\dipcatcher\.venv\Lib\site-packages\mlflow\assistant\skills\instrumenting-with-mlflow-tracing\SKILL.md before writing any tracing code; it ships with this MLflow install. Set MLFLOW_DISABLE_AGENT_HINT=1 to silence this.
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_ofi_abs_sum.py:57: AssertionError
+____________ test_northset_cli_echoes_mean_session_spread_bps_mean ____________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean_session_spread_bps_mean() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_session_spread_bps_mean.py:47: AssertionError
+_______________________ test_cli_echoes_mean_spread_bps _______________________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_cli_echoes_mean_spread_bps() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        ns = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert ns.exit_code == 0, ns.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_mean_spread_bps_honesty.py:53: AssertionError
+________________________ test_northset_cli_echoes_mean ________________________
+[gw1] win32 -- Python 3.12.10 D:\dipcatcher\.venv\Scripts\python.exe
+
+    def test_northset_cli_echoes_mean() -> None:
+        config = Path("configs/research.yaml")
+        if not config.exists():
+            pytest.skip("configs/research.yaml missing")
+        result = CliRunner().invoke(app, ["northset", "--config", str(config)])
+>       assert result.exit_code == 0, result.output
+E       AssertionError: 
+E       assert 1 == 0
+E        +  where 1 = <Result PermissionError(13, 'Permission denied')>.exit_code
+
+tests\unit\microstructure\test_microprice_weight_balance_fuse.py:82: AssertionError
+============================== warnings summary ===============================
+tests/unit/microstructure/test_candle_book_vendor_e2e.py::test_vendor_panel_fuse_bench_e2e
+tests/unit/microstructure/test_candle_book_vendor_e2e.py::test_raw_alpaca_quotes_remap_then_bench
+tests/unit/microstructure/test_candle_book_vendor_e2e.py::test_vendor_top_of_book_derives_ofi_proxy
+  D:\dipcatcher\src\quant_fund\microstructure\bench.py:267: RuntimeWarning: Mean of empty slice
+    np.nanmean(fused["bid_log_size_slope"].to_numpy().astype(float))
+
+tests/unit/microstructure/test_candle_book_vendor_e2e.py::test_vendor_panel_fuse_bench_e2e
+tests/unit/microstructure/test_candle_book_vendor_e2e.py::test_raw_alpaca_quotes_remap_then_bench
+tests/unit/microstructure/test_candle_book_vendor_e2e.py::test_vendor_top_of_book_derives_ofi_proxy
+  D:\dipcatcher\src\quant_fund\microstructure\bench.py:272: RuntimeWarning: Mean of empty slice
+    np.nanmean(fused["ask_log_size_slope"].to_numpy().astype(float))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/unit/research/test_estimators_cov.py::test_session_vpin_missing_or_empty_returns_nan
+FAILED tests/unit/research/test_estimators_cov.py::test_vpin_proxy_count_window_matches_rolling_toxicity
+FAILED tests/unit/research/test_estimators_cov.py::test_vpin_proxy_bucket_volume_clock_carries_last_value
+FAILED tests/unit/microstructure/test_mean_session_close_depths.py::test_northset_cli_echoes_mean_session_close_depths
+FAILED tests/unit/microstructure/test_mean_session_close_imbalance.py::test_northset_cli_echoes_mean_session_close_imbalance
+FAILED tests/unit/microstructure/test_mean_session_close_micro_bps.py::test_northset_cli_echoes_mean_session_close_micro_bps
+FAILED tests/unit/microstructure/test_mean_session_close_mid.py::test_northset_cli_echoes_mean_session_close_mid
+FAILED tests/unit/microstructure/test_mean_session_close_spread_bps.py::test_northset_cli_echoes_mean_session_close_spread_bps
+FAILED tests/unit/microstructure/test_mean_session_imbalance_std.py::test_northset_cli_echoes_mean_session_imbalance_std
+FAILED tests/unit/microstructure/test_mean_session_ofi_abs_sum.py::test_dispatcher_includes_helper_and_cli_echoes
+FAILED tests/unit/microstructure/test_mean_session_spread_bps_mean.py::test_northset_cli_echoes_mean_session_spread_bps_mean
+FAILED tests/unit/microstructure/test_mean_spread_bps_honesty.py::test_cli_echoes_mean_spread_bps
+FAILED tests/unit/microstructure/test_microprice_weight_balance_fuse.py::test_northset_cli_echoes_mean

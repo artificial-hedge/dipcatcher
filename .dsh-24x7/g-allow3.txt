@@ -1,0 +1,1 @@
+﻿mypy strict allowlist ok (397 modules)

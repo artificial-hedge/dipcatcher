@@ -433,8 +433,10 @@ def candle_feature_cols_ic_implies_mean_honesty_errors(blob: object) -> list[str
         return []
     try:
         from quant_fund.microstructure.bench import FEATURE_COLS
-    except Exception:
-        return []
+    except ImportError as exc:
+        # Fail closed: a missing FEATURE_COLS dependency is an explicit ERROR
+        # token, never a silent [] that would read as "no honesty violations".
+        return [f"candle_feature_cols_unavailable:{type(exc).__name__}"]
     unit01 = {
         "depth_imbalance_abs",
         "spread_over_mid",
@@ -1053,8 +1055,10 @@ def candle_feature_cols_ic_completeness_honesty_errors(blob: object) -> list[str
         return []
     try:
         from quant_fund.microstructure.bench import FEATURE_COLS
-    except Exception:
-        return []
+    except ImportError as exc:
+        # Fail closed: a missing FEATURE_COLS dependency is an explicit ERROR
+        # token, never a silent [] that would read as "no honesty violations".
+        return [f"candle_feature_cols_unavailable:{type(exc).__name__}"]
     n_scored = blob.get("n_scored")
     try:
         scored = float(n_scored) if n_scored is not None else float("nan")

@@ -1,0 +1,7 @@
+D:\dipcatcher\scripts\finalize_sota.ps1 : [: invalid integer ‘$code’
+At D:\dipcatcher\scripts\finalize_sota.ps1:148 char:3
++   Write-Error $message
++   ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:) [Write-Error], WriteErrorException
+    + FullyQualifiedErrorId : Microsoft.PowerShell.Commands.WriteErrorException,finalize_sota.ps1
+ 

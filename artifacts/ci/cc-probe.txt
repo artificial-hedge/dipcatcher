@@ -1,0 +1,9 @@
+missing: gcc
+missing: cc
+missing: clang
+missing: cl
+missing: tcc
+absent: C:/msys64/mingw64/bin/gcc.exe
+absent: C:/MinGW/bin/gcc.exe
+absent: C:/TDM-GCC-64/bin/gcc.exe
+LOB_CORE_CC=unset

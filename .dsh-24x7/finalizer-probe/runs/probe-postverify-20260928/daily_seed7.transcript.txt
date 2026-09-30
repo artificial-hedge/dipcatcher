@@ -1,0 +1,43 @@
+COMMAND: D:\dipcatcher\.venv\Scripts\python.exe D:\dipcatcher\scripts\sota_eval_kronos.py --merge-parts D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_adausdt_1d.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_avaxusdt_1d.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_bnbusdt_1d_deep.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_btcusdt_1d_deep.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_dogeusdt_1d.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_ethusdt_1d_deep.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_linkusdt_1d.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_ltcusdt_1d.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_solusdt_1d_deep.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_trxusdt_1d.losses.npz D:\dipcatcher\.dsh-24x7\finalizer-probe\d1_xrpusdt_1d_deep.losses.npz --merge-out D:\dipcatcher\.dsh-24x7\finalizer-probe\runs\probe-postverify-20260928\d1_merged.json --seed 7 --n-boot 2000
+EXIT_CODE: 0
+--- STDOUT BEGIN ---
+n_rows=330 n_complete=330
+model                  mean_crps   per-asset mean CRPS
+dip_garch_t             0.754384   adausdt_1d=0.747995  avaxusdt_1d=0.842234  bnbusdt_1d_deep=0.814782  btcusdt_1d_deep=0.792477  dogeusdt_1d=0.701101  ethusdt_1d_deep=0.723624  linkusdt_1d=0.775105  ltcusdt_1d=0.811330  solusdt_1d_deep=0.741293  trxusdt_1d=0.691830  xrpusdt_1d_deep=0.656458
+dip_fhs                 0.770557   adausdt_1d=0.713169  avaxusdt_1d=0.832635  bnbusdt_1d_deep=0.819301  btcusdt_1d_deep=0.798644  dogeusdt_1d=0.786883  ethusdt_1d_deep=0.908586  linkusdt_1d=0.680826  ltcusdt_1d=0.744797  solusdt_1d_deep=0.732958  trxusdt_1d=0.747129  xrpusdt_1d_deep=0.711194
+kronos_small            0.804978   adausdt_1d=0.803490  avaxusdt_1d=0.832285  bnbusdt_1d_deep=0.847586  btcusdt_1d_deep=0.814630  dogeusdt_1d=0.768021  ethusdt_1d_deep=0.890498  linkusdt_1d=0.790911  ltcusdt_1d=0.783916  solusdt_1d_deep=0.833159  trxusdt_1d=0.690529  xrpusdt_1d_deep=0.799732
+chronos2                0.797928   adausdt_1d=0.680115  avaxusdt_1d=0.896476  bnbusdt_1d_deep=0.855893  btcusdt_1d_deep=0.750043  dogeusdt_1d=0.748202  ethusdt_1d_deep=0.779249  linkusdt_1d=0.819182  ltcusdt_1d=0.679038  solusdt_1d_deep=0.736453  trxusdt_1d=0.866098  xrpusdt_1d_deep=0.966459
+bolt_small              0.788804   adausdt_1d=0.871376  avaxusdt_1d=0.821758  bnbusdt_1d_deep=0.855809  btcusdt_1d_deep=0.523856  dogeusdt_1d=0.899464  ethusdt_1d_deep=0.700230  linkusdt_1d=0.860899  ltcusdt_1d=0.789973  solusdt_1d_deep=0.739245  trxusdt_1d=0.789077  xrpusdt_1d_deep=0.825156
+timesfm                 0.745656   adausdt_1d=0.838002  avaxusdt_1d=0.654451  bnbusdt_1d_deep=0.672385  btcusdt_1d_deep=0.796183  dogeusdt_1d=0.844612  ethusdt_1d_deep=0.765939  linkusdt_1d=0.684364  ltcusdt_1d=0.756417  solusdt_1d_deep=0.703406  trxusdt_1d=0.728565  xrpusdt_1d_deep=0.757894
+Inference: 30 aligned target timestamps
+DM kronos_small vs dip_garch_t: diff=+0.050594 t=+1.528 p=0.1373 preferred=dip_garch_t
+DM kronos_small vs dip_fhs: diff=+0.034421 t=+1.097 p=0.2817 preferred=dip_fhs
+DM kronos_small vs chronos2: diff=+0.007050 t=+0.229 p=0.8205 preferred=chronos2
+DM kronos_small vs bolt_small: diff=+0.016174 t=+0.440 p=0.6629 preferred=bolt_small
+DM kronos_small vs timesfm: diff=+0.059322 t=+2.210 p=0.0352 preferred=timesfm
+SPA (any challenger beats kronos_small): p_lower=0.1064 p_cons=0.1064 p_upper=0.1064
+DM chronos2 vs dip_garch_t: diff=+0.043544 t=+1.092 p=0.2838 preferred=dip_garch_t
+DM chronos2 vs dip_fhs: diff=+0.027372 t=+1.315 p=0.1988 preferred=dip_fhs
+DM chronos2 vs kronos_small: diff=-0.007050 t=-0.229 p=0.8205 preferred=chronos2
+DM chronos2 vs bolt_small: diff=+0.009124 t=+0.359 p=0.7223 preferred=bolt_small
+DM chronos2 vs timesfm: diff=+0.052272 t=+1.745 p=0.0916 preferred=timesfm
+SPA (any challenger beats chronos2): p_lower=0.1969 p_cons=0.2069 p_upper=0.2069
+DM bolt_small vs dip_garch_t: diff=+0.034419 t=+0.661 p=0.5135 preferred=dip_garch_t
+DM bolt_small vs dip_fhs: diff=+0.018247 t=+0.631 p=0.5331 preferred=dip_fhs
+DM bolt_small vs kronos_small: diff=-0.016174 t=-0.440 p=0.6629 preferred=bolt_small
+DM bolt_small vs chronos2: diff=-0.009124 t=-0.359 p=0.7223 preferred=bolt_small
+DM bolt_small vs timesfm: diff=+0.043148 t=+0.993 p=0.3288 preferred=timesfm
+SPA (any challenger beats bolt_small): p_lower=0.3178 p_cons=0.3678 p_upper=0.3678
+DM timesfm vs dip_garch_t: diff=-0.008728 t=-0.247 p=0.8069 preferred=timesfm
+DM timesfm vs dip_fhs: diff=-0.024900 t=-0.848 p=0.4036 preferred=timesfm
+DM timesfm vs kronos_small: diff=-0.059322 t=-2.210 p=0.0352 preferred=timesfm
+DM timesfm vs chronos2: diff=-0.052272 t=-1.745 p=0.0916 preferred=timesfm
+DM timesfm vs bolt_small: diff=-0.043148 t=-0.993 p=0.3288 preferred=timesfm
+SPA (any challenger beats timesfm): p_lower=1.0000 p_cons=1.0000 p_upper=1.0000
+MCS @0.10: ['dip_garch_t', 'dip_fhs', 'kronos_small', 'chronos2', 'bolt_small', 'timesfm']
+receipt: D:\dipcatcher\.dsh-24x7\finalizer-probe\runs\probe-postverify-20260928\d1_merged.json
+
+--- STDOUT END ---
+--- STDERR BEGIN ---
+
+--- STDERR END ---

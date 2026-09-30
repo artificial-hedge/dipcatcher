@@ -1,0 +1,73 @@
+﻿src\quant_fund\data\sources\adapters.py:111: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:111: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:111: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:111: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:111: note:          def fetch(self, *, symbol: str = ..., interval: str = ..., start_time: int | None = ..., end_time: int | None = ..., limit: int = ..., max_pages: int = ..., pause_seconds: float = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:214: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:214: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:214: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:214: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:214: note:          def fetch(self, *, symbol: str = ..., interval: str = ..., start_time: int | None = ..., end_time: int | None = ..., limit: int = ..., max_pages: int = ..., pause_seconds: float = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:268: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:268: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:268: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:268: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:268: note:          def fetch(self, *, symbol: str = ..., start_time: int | None = ..., end_time: int | None = ..., limit: int = ..., max_pages: int = ..., pause_seconds: float = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:346: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:346: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:346: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:346: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:346: note:          def fetch(self, *, quote_asset: str = ..., top_n: int | None = ..., min_quote_volume: float = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:421: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:421: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:421: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:421: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:421: note:          def fetch(self, *, query: str, mode: str = ..., format: str = ..., maxrecords: int = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:454: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:454: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:454: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:454: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:454: note:          def fetch(self, *, cik: str) -> DataFrame
+src\quant_fund\data\sources\adapters.py:495: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:495: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:495: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:495: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:495: note:          def fetch(self, *, series_id: str, api_key: str | None = ..., observation_start: str | None = ..., observation_end: str | None = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:563: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:563: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:563: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:563: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:563: note:          def fetch(self, *, endpoint: str = ..., filters: str | None = ..., page_size: int = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:607: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:607: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:607: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:607: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:607: note:          def fetch(self, *, limit: int = ..., query: str | None = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:647: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:647: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:647: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:647: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:647: note:          def fetch(self, *, url: str | None = ..., limit: int = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:676: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:676: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:676: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:676: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:676: note:          def fetch(self, *, country: str = ..., indicator: str = ..., page_size: int = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:706: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:706: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:706: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:706: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:706: note:          def fetch(self, *, dataset: str = ..., table_name: str = ..., api_key: str | None = ..., user_id: str | None = ...) -> DataFrame
+src\quant_fund\data\sources\adapters.py:749: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:749: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:749: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:749: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:749: note:          def fetch(self, *, path: str | Path) -> DataFrame
+src\quant_fund\data\sources\adapters.py:758: error: Signature of "fetch" incompatible with supertype "quant_fund.data.sources.base.SourceAdapter"  [override]
+src\quant_fund\data\sources\adapters.py:758: note:      Superclass:
+src\quant_fund\data\sources\adapters.py:758: note:          def fetch(self, **kwargs: Any) -> DataFrame
+src\quant_fund\data\sources\adapters.py:758: note:      Subclass:
+src\quant_fund\data\sources\adapters.py:758: note:          def fetch(self, *, path: str | Path) -> DataFrame
+src\quant_fund\backtest\_fast_kernel.py:28: error: Name "njit" already defined (possibly by an import)  [no-redef]
+src\quant_fund\backtest\_fast_kernel.py:28: note: Error code "no-redef" not covered by "type: ignore[misc]" comment
+Found 15 errors in 2 files (checked 670 source files)

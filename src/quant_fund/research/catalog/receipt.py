@@ -586,8 +586,10 @@ def northset_metrics_required_keys_finite_when_present_honesty_errors(blob: obje
         return []
     try:
         from quant_fund.microstructure.book_metrics import METRICS_REQUIRED_FINITE_KEYS
-    except Exception:
-        return []
+    except ImportError as exc:
+        # Fail closed: a missing METRICS_REQUIRED_FINITE_KEYS dependency is an
+        # explicit ERROR token, never a silent [] that reads as "all finite".
+        return [f"metrics_required_keys_unavailable:{type(exc).__name__}"]
     errs: list[str] = []
     for key in METRICS_REQUIRED_FINITE_KEYS:
         if key not in blob:

@@ -13,7 +13,11 @@ from numpy.typing import NDArray
 
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.cross_section import _date_keys, date_ic_series, decile_portfolios
-from quant_fund.metrics.inference import overlap_aware_hac_lags, pairwise_diebold_mariano
+from quant_fund.metrics.inference import (
+    overlap_aware_hac_lags,
+    pairwise_diebold_mariano,
+    pairwise_diebold_mariano_corrected,
+)
 from quant_fund.metrics.scoring import pearson_ic
 from quant_fund.models.alpha import HistoricalMeanAlpha, RidgeAlpha
 from quant_fund.models.ranking import (
@@ -366,6 +370,99 @@ def _paper_ranker_public_row(item: tuple[Any, ...], _seed: int) -> dict[str, Any
     }
 
 
+def _pairwise_dm_loss_map(
+    rows: list[dict[str, Any]],
+) -> tuple[dict[str, NDArray[np.float64]], set[Any]]:
+    """Build the ``-IC`` loss map for pairwise DM from ranking rows.
+
+    Aligns by the *intersection* of date keys, never by positional truncation:
+    different feature sets can have different missing-date patterns. Returns
+    the loss map plus the common date set (empty map when fewer than two rows
+    expose an IC series). Loss convention: smaller is better, so the map holds
+    ``-IC``.
+    """
+    ic_payloads = {
+        str(r["name"]): dict(zip(r["ic_dates"], r["ic_series"], strict=True))
+        for r in rows
+        if r.get("ic_series") and r.get("ic_dates")
+    }
+    common_dates = (
+        set.intersection(*(set(payload) for payload in ic_payloads.values()))
+        if ic_payloads
+        else set()
+    )
+    loss_map = {
+        name: -np.asarray([payload[date] for date in sorted(common_dates)], dtype=float)
+        for name, payload in ic_payloads.items()
+    }
+    if len(loss_map) < 2 or not common_dates:
+        return {}, common_dates
+    return loss_map, common_dates
+
+
+def bench_ranking_dm_corrected(
+    frame: pl.DataFrame,
+    config: AppConfig,
+    label: str,
+    *,
+    alpha: float = 0.05,
+    method: str = "bh",
+) -> dict[str, Any]:
+    r"""**Opt-in** multiplicity-corrected pairwise DM over the ranking arena.
+
+    :func:`bench_ranking` emits ``pairwise_dm_all`` with **raw** p-values and
+    applies no multiplicity control. With the arena's 4–8 rankers that is 6–28
+    simultaneous tests, so an unadjusted "A beats B" at ``p <= 0.05`` is exactly
+    the spurious-finding failure mode the metrics lane measured (FWER 0.622 with
+    eight identical models, SYNTHETIC). This wrapper is additive: it leaves
+    ``bench_ranking``'s defaults and row keys untouched and returns a separate
+    corrected block.
+
+    Returns a receipt-stampable dict: the corrected rows (raw *and* adjusted
+    p-values, ``reject_raw`` / ``reject_corrected`` / ``preferred_corrected``),
+    plus ``method`` / ``alpha`` / ``n_pairs`` / ``n_rejected_raw`` /
+    ``n_rejected_corrected`` so an evidence file records *that* an adjustment
+    happened and which one. Fail-closed: an unknown ``method`` or an ``alpha``
+    outside ``(0, 1]`` raises ``ValueError`` (via the metrics adjuster), and
+    fewer than two comparable rankers yields an explicit ``"insufficient"``
+    status rather than an empty block that could be read as "no significant
+    pair". Proper-score framing only; never a live-trading or promotion claim.
+    """
+    if not 0.0 < float(alpha) <= 1.0 or not np.isfinite(alpha):
+        raise ValueError(f"alpha must be finite and in (0, 1], got {alpha}")
+    if method not in {"bh", "holm", "bonferroni"}:
+        raise ValueError(f"method must be one of bh/holm/bonferroni, got {method!r}")
+    rows = bench_ranking(frame, config, label)
+    loss_map, common_dates = _pairwise_dm_loss_map(rows)
+    if not loss_map:
+        return {
+            "status": "insufficient",
+            "reason": "fewer than two rankers expose an aligned IC series",
+            "method": method,
+            "alpha": float(alpha),
+            "n_pairs": 0,
+            "n_rejected_raw": 0,
+            "n_rejected_corrected": 0,
+            "n_dates": 0,
+            "rows": [],
+        }
+    corrected = pairwise_diebold_mariano_corrected(loss_map, alpha=float(alpha), method=method)
+    return {
+        "status": "ok",
+        "method": corrected.method,
+        "alpha": corrected.alpha,
+        "n_pairs": corrected.n_pairs,
+        "n_rejected_raw": corrected.n_rejected_raw,
+        "n_rejected_corrected": corrected.n_rejected_corrected,
+        "n_dates": len(common_dates),
+        "rows": corrected.rows,
+        "note": (
+            "multiplicity-corrected pairwise DM on -IC series; opt-in companion "
+            "to bench_ranking's raw pairwise_dm_all"
+        ),
+    }
+
+
 def bench_ranking(frame: pl.DataFrame, config: AppConfig, label: str) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     specs: list[tuple[str, str, list[str] | None, str | None]] = [
@@ -456,21 +553,8 @@ def bench_ranking(frame: pl.DataFrame, config: AppConfig, label: str) -> list[di
     # Pairwise Diebold–Mariano on -IC series across rankers. Align by the
     # intersection of date keys, never by positional truncation: different
     # feature sets can have different missing-date patterns.
-    ic_payloads = {
-        str(r["name"]): dict(zip(r["ic_dates"], r["ic_series"], strict=True))
-        for r in rows
-        if r.get("ic_series") and r.get("ic_dates")
-    }
-    common_dates = (
-        set.intersection(*(set(payload) for payload in ic_payloads.values()))
-        if ic_payloads
-        else set()
-    )
-    loss_map = {
-        name: -np.asarray([payload[date] for date in sorted(common_dates)], dtype=float)
-        for name, payload in ic_payloads.items()
-    }
-    if len(loss_map) >= 2 and common_dates:
+    loss_map, _common = _pairwise_dm_loss_map(rows)
+    if loss_map:
         dm_rows = pairwise_diebold_mariano(loss_map)
         for r in rows:
             r["pairwise_dm"] = [d for d in dm_rows if d["a"] == r["name"] or d["b"] == r["name"]]

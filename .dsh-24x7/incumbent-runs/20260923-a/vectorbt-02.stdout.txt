@@ -1,0 +1,29 @@
+assets: ['SOLUSDT']
+weight panel: 999 rows, 999 decision dates
+dipcatcher: 998 nav rows, 2111 ms
+{
+  "common_dates": 998,
+  "nav_max_abs_diff": 0.0,
+  "nav_max_rel_diff": 0.0,
+  "nav_final_dipcatcher": 1193564.2645455105,
+  "nav_final_vectorbt": 1193564.2645455105,
+  "fills_dipcatcher": 531,
+  "dipcatcher_total_fees": 117098.72742417859,
+  "cash_rejects_dipcatcher": 0,
+  "risk_gate_rejects_dipcatcher": 0,
+  "vectorbt_orders": 531,
+  "vectorbt_total_fees": 117098.72742417859
+}
+latency: dipcatcher 188 ms | vectorbt 72 ms
+{
+  "duplicate_weight_rows": "rejected: duplicate target weights for event_time/security_id",
+  "stale_held_marks": "rejected: held position valuation is stale beyond the configured limit: SOLUSDT=4",
+  "kill_switch_halts": {
+    "nav_start": 1000000.0,
+    "nav_end": 1000000.0,
+    "fills": 0,
+    "halt_rejects": 483,
+    "flat_equity": true
+  }
+}
+receipt: D:\dipcatcher\.dsh-24x7\incumbent-runs\20260923-a\vectorbt-02.json

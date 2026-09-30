@@ -1,0 +1,157 @@
+UU .dsh-24x7/HANDOFF.md
+UU .dsh-24x7/PROGRESS.md
+M  .dsh-24x7/evidence-incumbent-vectorbt-fast-11a.json
+M  .dsh-24x7/evidence-ux-security.json
+A  LICENSE
+M  README.md
+ M pyproject.toml
+M  scripts/_aci_col.py
+M  scripts/_egarch_col.py
+M  scripts/_egarchl_col.py
+M  scripts/_har_col.py
+M  scripts/_kde_col.py
+M  scripts/_lgbmqv_col.py
+M  scripts/_mid_col.py
+M  scripts/_seas_col.py
+M  scripts/_stack2_col.py
+M  scripts/_volm_col.py
+M  scripts/_xbeta_col.py
+UU scripts/finalize_sota.ps1
+M  scripts/scripts/verify_bugbot_findings.py
+M  scripts/scripts/verify_external_receipt.py
+ M src/fx1/eval/__init__.py
+ M src/fx1/eval/compare.py
+ M src/fx1/train/pipeline.py
+ M src/fx1/train/receipts.py
+ M src/quant_fund/audit/record.py
+ M src/quant_fund/audit/trace.py
+ M src/quant_fund/research/benches/__init__.py
+ M src/quant_fund/research/benches/intervals.py
+ M src/quant_fund/research/benches/ranking.py
+ M src/quant_fund/research/catalog/candle.py
+ M src/quant_fund/research/catalog/receipt.py
+ M src/quant_fund/research/cross_sectional.py
+ M src/quant_fund/research/fleet_eval.py
+ M src/quant_fund/research/identity_sweep.py
+ M src/quant_fund/research/reality_sweep.py
+ M src/quant_fund/research/sota_protocol.py
+ M src/quant_fund/research/vol_bench.py
+DU tests/tests/unit/test_book_uncrossed_vs_volume_conservation_never_equate.py
+DU tests/tests/unit/test_kyle_r2_vs_kyle_ofi_r2_never_equate.py
+M  tests/unit/microstructure/test_kyle_r2_vs_kyle_ofi_r2_never_equate.py
+?? .dsh-24x7/INCUMBENT_INDEX.md
+?? .dsh-24x7/_ble_probe.py
+?? .dsh-24x7/_fc_probe.py
+?? .dsh-24x7/_head_estimators.py
+?? .dsh-24x7/_head_test_est.py
+?? .dsh-24x7/ble-recount.txt
+?? .dsh-24x7/evidence-incumbent-vectorbt-fast-3a.json
+?? .dsh-24x7/finalizer-probe/
+?? .dsh-24x7/g-allow.txt
+?? .dsh-24x7/g-allow2.txt
+?? .dsh-24x7/g-allow3.txt
+?? .dsh-24x7/g-collect.txt
+?? .dsh-24x7/g-collect2.txt
+?? .dsh-24x7/g-fmt-apply.txt
+?? .dsh-24x7/g-fmt.txt
+?? .dsh-24x7/g-fmt3.txt
+?? .dsh-24x7/g-fmt3d.txt
+?? .dsh-24x7/g-fx1.txt
+?? .dsh-24x7/g-head-baseline.txt
+?? .dsh-24x7/g-mypy.txt
+?? .dsh-24x7/g-mypy2.txt
+?? .dsh-24x7/g-pytest-lane1.txt
+?? .dsh-24x7/g-pytest-research-serial.txt
+?? .dsh-24x7/g-pytest.txt
+?? .dsh-24x7/g-ruff-ble.txt
+?? .dsh-24x7/g-ruff.txt
+?? .dsh-24x7/gate-fmt-check2.txt
+?? .dsh-24x7/gate-fmt-diff.txt
+?? .dsh-24x7/gate-fmt.txt
+?? .dsh-24x7/gate-ruff-check.txt
+?? .dsh-24x7/gate-ruff-concise.txt
+?? .dsh-24x7/gate-ruff2.txt
+?? .dsh-24x7/incumbent-runs/
+?? .dsh-24x7/lane-evt/d1_bnbusdt_1d_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/d1_btcusdt_1d_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/d1_ethusdt_1d_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/d1_solusdt_1d_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/d1_xrpusdt_1d_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/h4f_bnbusdt_4h_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/h4f_btcusdt_4h_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/h4f_ethusdt_4h_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/h4f_solusdt_4h_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/h4f_xrpusdt_4h_deep.dip_evt.npz
+?? .dsh-24x7/lane-evt/run_evt.ps1
+?? .dsh-24x7/lane-fc/
+?? .dsh-24x7/lane-lgbmqv/d1_bnbusdt_1d_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/d1_btcusdt_1d_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/d1_ethusdt_1d_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/d1_solusdt_1d_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/d1_xrpusdt_1d_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/h4f_bnbusdt_4h_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/h4f_btcusdt_4h_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/h4f_ethusdt_4h_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/h4f_solusdt_4h_deep.lgbmqv.npz
+?? .dsh-24x7/lane-lgbmqv/h4f_xrpusdt_4h_deep.lgbmqv.npz
+?? .dsh-24x7/lane-mid/_mid_run.ps1
+?? .dsh-24x7/lane-verifier-ble001.txt
+?? .dsh-24x7/lane-volm/d1_bnbusdt_1d_deep.volm.npz
+?? .dsh-24x7/lane-volm/d1_btcusdt_1d_deep.volm.npz
+?? .dsh-24x7/lane-volm/d1_ethusdt_1d_deep.volm.npz
+?? .dsh-24x7/lane-volm/d1_solusdt_1d_deep.volm.npz
+?? .dsh-24x7/lane-volm/d1_xrpusdt_1d_deep.volm.npz
+?? .dsh-24x7/lane-volm/h4f_bnbusdt_4h_deep.volm.npz
+?? .dsh-24x7/lane-volm/h4f_btcusdt_4h_deep.volm.npz
+?? .dsh-24x7/lane-volm/h4f_ethusdt_4h_deep.volm.npz
+?? .dsh-24x7/lane-volm/h4f_solusdt_4h_deep.volm.npz
+?? .dsh-24x7/lane-volm/h4f_xrpusdt_4h_deep.volm.npz
+?? .dsh-24x7/pre-restore-status.txt
+?? .dsh-24x7/receipts/
+?? .dsh-24x7/verifyonly-regression.txt
+?? .pytest_full.err
+?? _conflict_backup/
+?? _probe_fix.py
+?? _prof2.txt
+?? _xbeta_run.ps1
+?? artifacts/ci/
+?? docs/EXTERNAL_VERIFICATION.md
+?? docs/SWARM_PLAYBOOK.md
+?? northset-opt.prof
+?? northset.prof
+?? probe_dcc.py
+?? probe_kernel.py
+?? probe_quote_out.txt
+?? probe_s23.py
+?? probe_stale.py
+?? prof_fast.py
+?? pytest_full.err
+?? run_egarch.ps1
+?? run_fallback_tests.py
+?? run_kde.ps1
+?? run_volm.ps1
+?? scripts/_patch_command_record_paths.py
+?? scripts/_patch_fixture_run.py
+?? scripts/_patch_source_binding.py
+?? scripts/_patch_verifier.py
+?? scripts/_patch_verifier_command.py
+?? scripts/_patch_verifier_roots.py
+?? scripts/_patch_verifier_step2.py
+?? scripts/_patch_verifier_step3.py
+?? scripts/_patch_verifier_tests.py
+?? scripts/_run_har.ps1
+?? scripts/_run_lgbmqv.ps1
+?? scripts/_seas_hash.ps1
+?? scripts/_seas_run.ps1
+?? scripts/_write_probe.txt
+?? scripts/incumbent_ux_security.py
+?? scripts/run_incumbent_benchmarks.py
+?? scripts/verify_external_receipt.py
+?? scripts/verify_sota_finalization.py
+?? src/quant_fund/backtest/_fast_kernel.py
+?? src/quant_fund/cli/research.py
+?? src/quant_fund/data/asof.py
+?? src/quant_fund/research/external_receipt.py
+?? tests/unit/research/test_external_receipt.py
+?? tests/unit/test_sota_finalization_verifier.py
+abc7a7d0aa561755e3a33f17b0026a261cf6688b

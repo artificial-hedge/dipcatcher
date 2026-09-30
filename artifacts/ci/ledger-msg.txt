@@ -1,0 +1,27 @@
+fix(audit): write the ledger in binary mode so it survives Windows
+
+_append_line opened the entries/checkpoints files with
+O_CREAT|O_APPEND|O_WRONLY and no O_BINARY. On Windows the CRT then
+text-translates the trailing b"\n" into b"\r\n" on every os.write.
+
+That is self-defeating: read_entries rejects any line containing b"\r"
+with the canonical error "carriage_return", so the ledger we just wrote
+read back as corrupt and the very next append or sign refused with
+"refusing to append to/sign a corrupt ledger". The tamper-evidence
+guarantee was therefore unenforceable on Windows -- every append failed.
+
+Add _O_BINARY = getattr(os, "O_BINARY", 0) (Windows-only; 0 elsewhere,
+where no translation occurs) and OR it into the append flags. POSIX
+behaviour is bit-identical.
+
+Also switch the ed25519.pub sidecar write from write_text to write_bytes
+so the pinned public key is stored as canonical bytes rather than
+depending on the platform default encoding/newline translation. The
+sibling readers in signing.py use read_text().strip(), which already
+tolerates either form, so nothing downstream changes.
+
+Deliberately not touching signing.py's key writer: it has the same
+text-mode writes, but its readers strip, so it round-trips fine.
+
+30/30 tests/unit/audit/test_ledger_tamper.py pass (was 26 failing).
+ruff check + format clean; mypy clean (672 files).

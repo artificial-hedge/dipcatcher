@@ -64,32 +64,32 @@
   ],
   "latency": {
     "dipcatcher_ms_all": [
-      715.6,
-      747.76,
-      747.97,
-      899.94,
-      699.03,
-      717.69,
-      716.33,
-      765.94,
-      621.38,
-      913.49
+      76.6,
+      75.95,
+      101.67,
+      77.35,
+      97.95,
+      79.31,
+      90.29,
+      97.57,
+      104.12,
+      78.5
     ],
-    "dipcatcher_ms_median": 732.7248000074178,
+    "dipcatcher_ms_median": 84.80179998150561,
     "reps": 10,
     "vectorbt_ms_all": [
-      117.36,
-      123.35,
-      183.1,
-      122.32,
-      85.69,
-      227.66,
-      160.3,
-      202.07,
-      168.99,
-      219.9
+      73.42,
+      71.41,
+      79.2,
+      70.29,
+      80.42,
+      73.96,
+      71.92,
+      80.69,
+      79.38,
+      79.71
     ],
-    "vectorbt_ms_median": 164.64749998704065
+    "vectorbt_ms_median": 76.57855001161806
   },
   "live_pnl_claim": false,
   "research_only": true,
@@ -125,7 +125,7 @@
     "commission_bps": 10.0,
     "fills": "decision close t -> exec open t+1 (both engines)",
     "init_nav": 1000000.0,
-    "script_sha256": "cd3e3d4ac8e592c2f794cf15b1b65364f33f304db2c8a337a18edd2caf515d8b",
+    "script_sha256": "51e857953f4f391561d4315107455c03705e9b84c6cbf9093d61214922d3fad6",
     "spread_impact_borrow": 0.0,
     "strategy": "causal SMA20 gate, equal-weight 1/11 per gated name"
   }

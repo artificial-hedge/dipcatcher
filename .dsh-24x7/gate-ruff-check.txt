@@ -1,0 +1,45 @@
+﻿[1m[91mC901[0m[1m `validate_ledger_schema` is too complex (78 > 74)[0m
+   [1m[94m--> [0msrc\src\quant_fund\paper\ledger.py:577:5
+    [1m[94m|[0m
+[1m[94m577[0m [1m[94m|[0m def validate_ledger_schema(
+    [1m[94m|[0m     [1m[91m^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m578[0m [1m[94m|[0m     run_dir: Path | str,
+[1m[94m579[0m [1m[94m|[0m     *,
+    [1m[94m|[0m
+
+[1m[91mC901[0m[1m `verify_research_artifact` is too complex (196 > 74)[0m
+   [1m[94m--> [0msrc\src\quant_fund\research\verify.py:201:5
+    [1m[94m|[0m
+[1m[94m201[0m [1m[94m|[0m def verify_research_artifact(path: Path) -> dict[str, Any]:
+    [1m[94m|[0m     [1m[91m^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m202[0m [1m[94m|[0m     """Validate a persisted notebook without interpreting metrics as alpha."""
+[1m[94m203[0m [1m[94m|[0m     path = Path(path)
+    [1m[94m|[0m
+
+[1m[91mI001[0m [[1m[96m*[0m][1m Import block is un-sorted or un-formatted[0m
+  [1m[94m--> [0mtests\tests\unit\test_binance_receipt.py:1:1
+   [1m[94m|[0m
+[1m[94m 1[0m [1m[94m|[0m [1m[91m/[0m from __future__ import annotations
+[1m[94m 2[0m [1m[94m|[0m [1m[91m|[0m
+[1m[94m 3[0m [1m[94m|[0m [1m[91m|[0m import hashlib
+[1m[94m 4[0m [1m[94m|[0m [1m[91m|[0m import io
+[1m[94m 5[0m [1m[94m|[0m [1m[91m|[0m import json
+[1m[94m 6[0m [1m[94m|[0m [1m[91m|[0m import subprocess
+[1m[94m 7[0m [1m[94m|[0m [1m[91m|[0m import sys
+[1m[94m 8[0m [1m[94m|[0m [1m[91m|[0m import zipfile
+[1m[94m 9[0m [1m[94m|[0m [1m[91m|[0m from pathlib import Path
+[1m[94m10[0m [1m[94m|[0m [1m[91m|[0m
+[1m[94m11[0m [1m[94m|[0m [1m[91m|[0m import pytest
+[1m[94m12[0m [1m[94m|[0m [1m[91m|[0m
+[1m[94m13[0m [1m[94m|[0m [1m[91m|[0m from quant_fund.data.adapters.binance import BINANCE_SYMBOLS
+[1m[94m14[0m [1m[94m|[0m [1m[91m|[0m from quant_fund.research.binance_receipt import verify_binance_receipt
+   [1m[94m|[0m [1m[91m|______________________________________________________________________^[0m
+[1m[96mhelp[0m[1m: Organize imports[0m
+[1m[94m  [0m [1m[94m|[0m
+[1m[94m11[0m [1m[94m|[0m import pytest
+[1m[94m  [0m [1m[31m-[0m[31m
+[0m[1m[94m12[0m [1m[94m|[0m from quant_fund.data.adapters.binance import BINANCE_SYMBOLS
+[1m[94m  [0m [1m[94m|[0m
+
+Found 3 errors.
+[[36m*[0m] 1 fixable with the `--fix` option.

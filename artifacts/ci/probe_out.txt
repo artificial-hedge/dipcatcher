@@ -1,0 +1,11 @@
+idx | impl_buy impl_sell tox_impl | OFI  buy-sell | tox_expected(test)
+  0 |      0.0       0.0      nan |   0.0        0.0 | nan
+  1 |    300.0     100.0   0.5000 | 200.0      200.0 | 0.5000
+  2 |      0.0     500.0   1.0000 | -500.0     -500.0 | 0.3333
+  3 |    700.0       0.0   1.0000 | 700.0      700.0 | 0.7778
+  4 |    150.0     400.0   0.4545 | -250.0     -250.0 | 0.6429
+
+buy-sell == OFI exactly (rows 1..n): True
+impl tox[1:]   : [0.5, 1.0, 1.0, 0.454545]
+test tox       : [0.5, 0.333333, 0.777778, 0.642857]
+impl mean(t0:t2) window at idx2 = 0.750000   (test expects 0.416667)

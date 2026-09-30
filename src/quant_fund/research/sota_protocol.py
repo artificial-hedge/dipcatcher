@@ -173,7 +173,13 @@ def score_path_rankic(
 
                 cfg_t = bind_local_kronos_weights(config)
                 torch_map = forecast_cross_section_torch(hist, asof, cfg_t, ids)
-            except Exception as exc:  # noqa: BLE001
+            except (ImportError, RuntimeError) as exc:
+                # The optional [nn]/Kronos path: torch missing (ImportError) or
+                # the backend refusing without local weights / a valid
+                # checkpoint (RobinhoodPlusTorchError, a RuntimeError). The
+                # cause is *recorded* — ``_error`` becomes an explicit
+                # ``skipped_no_local_weights`` status with a reason in the
+                # blob — so a torch failure never reads as "scored 0.0".
                 torch_map = {"_error": str(exc)}
         for sid in ids:
             name_hist = hist.filter(pl.col("security_id") == sid).sort("event_time").tail(lookback)

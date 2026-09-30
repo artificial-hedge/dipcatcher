@@ -1,0 +1,575 @@
+﻿[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0msrc\quant_fund\backtest\_fast_kernel.py:86:14
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m85 [0m [1m[94m|[0m def _order_costs(
+[1m[94m   [0m [1m[31m-[0m [31m    d: float,[0m[1m[31m [0m[0m[31mpx: float,[0m[1m[31m [0m[0m[31madv_d: float,[0m[1m[31m [0m[0m[31mvol_d: float,
+[0m[1m[94m   [0m [1m[31m-[0m [31m    frictionless: bool,[0m[1m[31m [0m[0m[31mcommission_bps: float,[0m[1m[31m [0m[0m[31mhalf_spread_bps: float,
+[0m[1m[94m   [0m [1m[31m-[0m [31m    impact_y: float,[0m[1m[31m [0m[0m[31mbps_per_turnover: float,
+[0m[1m[94m86 [0m [1m[32m+[0m [32m    d: float,[0m[32m
+[0m[1m[94m87 [0m [1m[32m+[0m [1m[32m    [0m[0m[32mpx: float,[0m[32m
+[0m[1m[94m88 [0m [1m[32m+[0m [1m[32m    [0m[0m[32madv_d: float,[0m[32m
+[0m[1m[94m89 [0m [1m[32m+[0m [1m[32m    [0m[0m[32mvol_d: float,
+[0m[1m[94m90 [0m [1m[32m+[0m [32m    frictionless: bool,[0m[32m
+[0m[1m[94m91 [0m [1m[32m+[0m [1m[32m    [0m[0m[32mcommission_bps: float,[0m[32m
+[0m[1m[94m92 [0m [1m[32m+[0m [1m[32m    [0m[0m[32mhalf_spread_bps: float,
+[0m[1m[94m93 [0m [1m[32m+[0m [32m    impact_y: float,[0m[32m
+[0m[1m[94m94 [0m [1m[32m+[0m [1m[32m    [0m[0m[32mbps_per_turnover: float,
+[0m[1m[94m95 [0m [1m[94m|[0m ) -> tuple[float, float, float, float]:
+--------------------------------------------------------------------------------
+[1m[94m110[0m [1m[94m|[0m def replay_kernel(
+[1m[94m   [0m [1m[31m-[0m [31m    exec_px: np.ndarray,[0m[1m[31m      [0m[0m[31m# (T,A) f64 ÔÇö exec source (open next_open / close)
+[0m[1m[94m   [0m [1m[31m-[0m [31m    close_px: np.ndarray,[0m[1m[31m     [0m[0m[31m# (T,A) f64 ÔÇö decision close + mark fallback
+[0m[1m[94m   [0m [1m[31m-[0m [31m    ctr: np.ndarray,[0m[1m[31m          [0m[0m[31m# (T,A) f64 ÔÇö preferred mark
+[0m[1m[94m   [0m [1m[31m-[0m [31m    adv: np.ndarray,[0m[1m[31m          [0m[0m[31m# (T,A) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    vol: np.ndarray,[0m[1m[31m          [0m[0m[31m# (T,A) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    w_mat: np.ndarray,[0m[1m[31m        [0m[0m[31m# (T,A) f64 ÔÇö carried target grid already applied
+[0m[1m[94m111[0m [1m[32m+[0m [32m    exec_px: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,A) f64 ÔÇö exec source (open next_open / close)
+[0m[1m[94m112[0m [1m[32m+[0m [32m    close_px: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,A) f64 ÔÇö decision close + mark fallback
+[0m[1m[94m113[0m [1m[32m+[0m [32m    ctr: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,A) f64 ÔÇö preferred mark
+[0m[1m[94m114[0m [1m[32m+[0m [32m    adv: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,A) f64
+[0m[1m[94m115[0m [1m[32m+[0m [32m    vol: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,A) f64
+[0m[1m[94m116[0m [1m[32m+[0m [32m    w_mat: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,A) f64 ÔÇö carried target grid already applied
+[0m[1m[94m117[0m [1m[94m|[0m     market_vols: np.ndarray,  # (T,)  f64 ÔÇö value only valid where has_mv
+[1m[94m   [0m [1m[31m-[0m [31m    has_mv: np.ndarray,[0m[1m[31m       [0m[0m[31m# (T,)  bool
+[0m[1m[94m118[0m [1m[32m+[0m [32m    has_mv: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,)  bool
+[0m[1m[94m119[0m [1m[94m|[0m     use_next_open: bool,
+--------------------------------------------------------------------------------
+[1m[94m136[0m [1m[94m|[0m     initial_nav: float,
+[1m[94m   [0m [1m[31m-[0m [31m    navs_out: np.ndarray,[0m[1m[31m     [0m[0m[31m# (T,4) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    navs_t: np.ndarray,[0m[1m[31m       [0m[0m[31m# (T,) i64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_qty: np.ndarray,[0m[1m[31m        [0m[0m[31m# (M,) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_px: np.ndarray,[0m[1m[31m         [0m[0m[31m# (M,) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_fee: np.ndarray,[0m[1m[31m        [0m[0m[31m# (M,) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_spr: np.ndarray,[0m[1m[31m        [0m[0m[31m# (M,) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_imp: np.ndarray,[0m[1m[31m        [0m[0m[31m# (M,) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_asset: np.ndarray,[0m[1m[31m      [0m[0m[31m# (M,) i64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_et: np.ndarray,[0m[1m[31m         [0m[0m[31m# (M,) i64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_st: np.ndarray,[0m[1m[31m         [0m[0m[31m# (M,) i64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_dec: np.ndarray,[0m[1m[31m        [0m[0m[31m# (M,) f64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    f_decok: np.ndarray,[0m[1m[31m      [0m[0m[31m# (M,) bool
+[0m[1m[94m   [0m [1m[31m-[0m [31m    stale_assets: np.ndarray,[0m[1m[31m [0m[0m[31m# (A,) i64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    stale_ages: np.ndarray,[0m[1m[31m   [0m[0m[31m# (A,) i64
+[0m[1m[94m   [0m [1m[31m-[0m [31m    stale_ever: np.ndarray,[0m[1m[31m   [0m[0m[31m# (A,) bool
+[0m[1m[94m   [0m [1m[31m-[0m [31m    term_v: np.ndarray,[0m[1m[31m       [0m[0m[31m# (A,) f64 work buffer
+[0m[1m[94m   [0m [1m[31m-[0m [31m    term_f: np.ndarray,[0m[1m[31m       [0m[0m[31m# (A,) bool work buffer
+[0m[1m[94m137[0m [1m[32m+[0m [32m    navs_out: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,4) f64
+[0m[1m[94m138[0m [1m[32m+[0m [32m    navs_t: np.ndarray,[0m[1m[32m  [0m[0m[32m# (T,) i64
+[0m[1m[94m139[0m [1m[32m+[0m [32m    f_qty: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) f64
+[0m[1m[94m140[0m [1m[32m+[0m [32m    f_px: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) f64
+[0m[1m[94m141[0m [1m[32m+[0m [32m    f_fee: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) f64
+[0m[1m[94m142[0m [1m[32m+[0m [32m    f_spr: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) f64
+[0m[1m[94m143[0m [1m[32m+[0m [32m    f_imp: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) f64
+[0m[1m[94m144[0m [1m[32m+[0m [32m    f_asset: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) i64
+[0m[1m[94m145[0m [1m[32m+[0m [32m    f_et: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) i64
+[0m[1m[94m146[0m [1m[32m+[0m [32m    f_st: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) i64
+[0m[1m[94m147[0m [1m[32m+[0m [32m    f_dec: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) f64
+[0m[1m[94m148[0m [1m[32m+[0m [32m    f_decok: np.ndarray,[0m[1m[32m  [0m[0m[32m# (M,) bool
+[0m[1m[94m149[0m [1m[32m+[0m [32m    stale_assets: np.ndarray,[0m[1m[32m  [0m[0m[32m# (A,) i64
+[0m[1m[94m150[0m [1m[32m+[0m [32m    stale_ages: np.ndarray,[0m[1m[32m  [0m[0m[32m# (A,) i64
+[0m[1m[94m151[0m [1m[32m+[0m [32m    stale_ever: np.ndarray,[0m[1m[32m  [0m[0m[32m# (A,) bool
+[0m[1m[94m152[0m [1m[32m+[0m [32m    term_v: np.ndarray,[0m[1m[32m  [0m[0m[32m# (A,) f64 work buffer
+[0m[1m[94m153[0m [1m[32m+[0m [32m    term_f: np.ndarray,[0m[1m[32m  [0m[0m[32m# (A,) bool work buffer
+[0m[1m[94m154[0m [1m[94m|[0m ) -> tuple[int, int, int, int, int, int, float, float, float, int, int]:
+--------------------------------------------------------------------------------
+[1m[94m222[0m [1m[94m|[0m             a = pos_seq[j]
+[1m[94m   [0m [1m[31m-[0m [31m            if (
+[0m[1m[94m   [0m [1m[31m-[0m [31m                abs(shares[a]) > 1e-12
+[0m[1m[94m   [0m [1m[31m-[0m [31m                and ever_marked[a]
+[0m[1m[94m   [0m [1m[31m-[0m [31m                and mark_age[a] > stale_price_bars
+[0m[1m[94m   [0m [1m[31m-[0m [31m            ):
+[0m[1m[94m223[0m [1m[32m+[0m [32m            if abs(shares[a]) > 1e-12 and ever_marked[a] and mark_age[a] > stale_price_bars:
+[0m[1m[94m224[0m [1m[94m|[0m                 stale_assets[nstale] = a
+--------------------------------------------------------------------------------
+[1m[94m228[0m [1m[94m|[0m         if nstale:
+[1m[94m   [0m [1m[31m-[0m [31m            return (1, n_navs, n_fills, reject_count, cash_reject_count,
+[0m[1m[94m   [0m [1m[31m-[0m [31m                    halt_count, cost_comm, cost_spr, cost_imp, order_seq,
+[0m[1m[94m   [0m [1m[31m-[0m [31m                    nstale)
+[0m[1m[94m229[0m [1m[32m+[0m [32m            return (
+[0m[1m[94m230[0m [1m[32m+[0m [32m                1,
+[0m[1m[94m231[0m [1m[32m+[0m [32m                n_navs,
+[0m[1m[94m232[0m [1m[32m+[0m [32m                n_fills,
+[0m[1m[94m233[0m [1m[32m+[0m [32m                reject_count,
+[0m[1m[94m234[0m [1m[32m+[0m [32m                cash_reject_count,
+[0m[1m[94m235[0m [1m[32m+[0m [32m                halt_count,
+[0m[1m[94m236[0m [1m[32m+[0m [32m                cost_comm,
+[0m[1m[94m237[0m [1m[32m+[0m [32m                cost_spr,
+[0m[1m[94m238[0m [1m[32m+[0m [32m                cost_imp,
+[0m[1m[94m239[0m [1m[32m+[0m [32m                order_seq,
+[0m[1m[94m240[0m [1m[32m+[0m [32m                nstale,
+[0m[1m[94m241[0m [1m[32m+[0m [32m            )
+[0m[1m[94m242[0m [1m[94m|[0m
+--------------------------------------------------------------------------------
+[1m[94m289[0m [1m[94m|[0m             if not np.isfinite(delta) or not np.isfinite(price) or price <= 0:
+[1m[94m   [0m [1m[31m-[0m [31m                return (2, n_navs, n_fills, reject_count, cash_reject_count,
+[0m[1m[94m   [0m [1m[31m-[0m [31m                        halt_count, cost_comm, cost_spr, cost_imp, order_seq,
+[0m[1m[94m   [0m [1m[31m-[0m [31m                        0)
+[0m[1m[94m290[0m [1m[32m+[0m [32m                return (
+[0m[1m[94m291[0m [1m[32m+[0m [32m                    2,
+[0m[1m[94m292[0m [1m[32m+[0m [32m                    n_navs,
+[0m[1m[94m293[0m [1m[32m+[0m [32m                    n_fills,
+[0m[1m[94m294[0m [1m[32m+[0m [32m                    reject_count,
+[0m[1m[94m295[0m [1m[32m+[0m [32m                    cash_reject_count,
+[0m[1m[94m296[0m [1m[32m+[0m [32m                    halt_count,
+[0m[1m[94m297[0m [1m[32m+[0m [32m                    cost_comm,
+[0m[1m[94m298[0m [1m[32m+[0m [32m                    cost_spr,
+[0m[1m[94m299[0m [1m[32m+[0m [32m                    cost_imp,
+[0m[1m[94m300[0m [1m[32m+[0m [32m                    order_seq,
+[0m[1m[94m301[0m [1m[32m+[0m [32m                    0,
+[0m[1m[94m302[0m [1m[32m+[0m [32m                )
+[0m[1m[94m303[0m [1m[94m|[0m             comm, spr, imp, total = _order_costs(
+[1m[94m   [0m [1m[31m-[0m [31m                delta, price, adv_eff, vol_eff, frictionless,
+[0m[1m[94m   [0m [1m[31m-[0m [31m                commission_bps, half_spread_bps, impact_y, bps_per_turnover,
+[0m[1m[94m304[0m [1m[32m+[0m [32m                delta,
+[0m[1m[94m305[0m [1m[32m+[0m [32m                price,
+[0m[1m[94m306[0m [1m[32m+[0m [32m                adv_eff,
+[0m[1m[94m307[0m [1m[32m+[0m [32m                vol_eff,
+[0m[1m[94m308[0m [1m[32m+[0m [32m                frictionless,
+[0m[1m[94m309[0m [1m[32m+[0m [32m                commission_bps,
+[0m[1m[94m310[0m [1m[32m+[0m [32m                half_spread_bps,
+[0m[1m[94m311[0m [1m[32m+[0m [32m                impact_y,
+[0m[1m[94m312[0m [1m[32m+[0m [32m                bps_per_turnover,
+[0m[1m[94m313[0m [1m[94m|[0m             )
+--------------------------------------------------------------------------------
+[1m[94m318[0m [1m[94m|[0m                 comm, spr, imp, total = _order_costs(
+[1m[94m   [0m [1m[31m-[0m [31m                    delta, price, adv_eff, vol_eff, frictionless,
+[0m[1m[94m   [0m [1m[31m-[0m [31m                    commission_bps, half_spread_bps, impact_y,
+[0m[1m[94m319[0m [1m[32m+[0m [32m                    delta,
+[0m[1m[94m320[0m [1m[32m+[0m [32m                    price,
+[0m[1m[94m321[0m [1m[32m+[0m [32m                    adv_eff,
+[0m[1m[94m322[0m [1m[32m+[0m [32m                    vol_eff,
+[0m[1m[94m323[0m [1m[32m+[0m [32m                    frictionless,
+[0m[1m[94m324[0m [1m[32m+[0m [32m                    commission_bps,
+[0m[1m[94m325[0m [1m[32m+[0m [32m                    half_spread_bps,
+[0m[1m[94m326[0m [1m[32m+[0m [32m                    impact_y,
+[0m[1m[94m327[0m [1m[94m|[0m                     bps_per_turnover,
+--------------------------------------------------------------------------------
+[1m[94m450[0m [1m[94m|[0m
+[1m[94m   [0m [1m[31m-[0m [31m    return (0, n_navs, n_fills, reject_count, cash_reject_count,
+[0m[1m[94m   [0m [1m[31m-[0m [31m            halt_count, cost_comm, cost_spr, cost_imp, order_seq, 0)
+[0m[1m[94m451[0m [1m[32m+[0m [32m    return (
+[0m[1m[94m452[0m [1m[32m+[0m [32m        0,
+[0m[1m[94m453[0m [1m[32m+[0m [32m        n_navs,
+[0m[1m[94m454[0m [1m[32m+[0m [32m        n_fills,
+[0m[1m[94m455[0m [1m[32m+[0m [32m        reject_count,
+[0m[1m[94m456[0m [1m[32m+[0m [32m        cash_reject_count,
+[0m[1m[94m457[0m [1m[32m+[0m [32m        halt_count,
+[0m[1m[94m458[0m [1m[32m+[0m [32m        cost_comm,
+[0m[1m[94m459[0m [1m[32m+[0m [32m        cost_spr,
+[0m[1m[94m460[0m [1m[32m+[0m [32m        cost_imp,
+[0m[1m[94m461[0m [1m[32m+[0m [32m        order_seq,
+[0m[1m[94m462[0m [1m[32m+[0m [32m        0,
+[0m[1m[94m463[0m [1m[32m+[0m [32m    )
+[0m[1m[94m464[0m [1m[94m|[0m
+--------------------------------------------------------------------------------
+[1m[94m597[0m [1m[94m|[0m     if status == 2:
+[1m[94m   [0m [1m[31m-[0m [31m        raise [0m[1m[31mValueError([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m            "quantity[0m[0m[31m must be finite and price must be finite and [0m[1m[31mpositive"[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        )[0m[0m[31m
+[0m[1m[94m598[0m [1m[32m+[0m [32m        raise [0m[1m[32mValueError("quantity[0m[0m[32m must be finite and price must be finite and [0m[1m[32mpositive")[0m[0m[32m
+[0m[1m[94m599[0m [1m[94m|[0m
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0msrc\quant_fund\backtest\engine.py:577:15
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m576[0m [1m[94m|[0m         if isinstance(fill_rows, pl.DataFrame)
+[1m[94m   [0m [1m[31m-[0m [31m        else (pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]}) if fill_rows else pl.DataFrame())
+[0m[1m[94m577[0m [1m[32m+[0m [32m        else (
+[0m[1m[94m578[0m [1m[32m+[0m [32m            pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]})
+[0m[1m[94m579[0m [1m[32m+[0m [32m            if fill_rows
+[0m[1m[94m580[0m [1m[32m+[0m [32m            else pl.DataFrame()
+[0m[1m[94m581[0m [1m[32m+[0m [32m        )
+[0m[1m[94m582[0m [1m[94m|[0m     )
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+  [1m[94m--> [0mtests\tests\unit\test_binance_adapter.py:33:25
+[1m[94m  [0m [1m[94m|[0m
+[1m[94m32[0m [1m[94m|[0m     checksum = root / f"{filename}.CHECKSUM"
+[1m[94m  [0m [1m[31m-[0m [31m    [0m[1m[31mchecksum.write_text(f"{hashlib.sha256(archive.read_bytes()).hexdigest()}[0m[0m[31m  {filename}\n", [0m[1m[31mencoding="utf-8")[0m[0m[31m
+[0m[1m[94m33[0m [1m[32m+[0m [32m    [0m[1m[32mchecksum.write_text([0m[0m[32m
+[0m[1m[94m34[0m [1m[32m+[0m [1m[32m        f"{hashlib.sha256(archive.read_bytes()).hexdigest()}[0m[0m[32m  {filename}\n", [0m[1m[32mencoding="utf-8"[0m[0m[32m
+[0m[1m[94m35[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m36[0m [1m[94m|[0m     return BinanceArchiveSpec(
+[1m[94m  [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_config.py:189:10
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m188[0m [1m[94m|[0m         {"ledger_subdir": "../escape"},
+[1m[94m   [0m [1m[31m-[0m [31m        {"ledger_subdir": str(Path("C:/tmp/paper") if Path("C:/tmp/paper").is_absolute() else Path("/tmp/paper"))},
+[0m[1m[94m189[0m [1m[32m+[0m [32m        {
+[0m[1m[94m190[0m [1m[32m+[0m [32m            "ledger_subdir": str(
+[0m[1m[94m191[0m [1m[32m+[0m [32m                Path("C:/tmp/paper") if Path("C:/tmp/paper").is_absolute() else Path("/tmp/paper")
+[0m[1m[94m192[0m [1m[32m+[0m [32m            )
+[0m[1m[94m193[0m [1m[32m+[0m [32m        },
+[0m[1m[94m194[0m [1m[94m|[0m     ):
+--------------------------------------------------------------------------------
+[1m[94m249[0m [1m[94m|[0m     assert OptimizerConfig.model_validate({"covariance": "ccc"}).covariance == "ccc"
+[1m[94m   [0m [1m[31m-[0m [31m    assert [0m[1m[31m([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31mOptimizerConfig.model_validate({"covariance": "bollerslev_1990_ccc"}).covariance == "ccc"
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    )[0m[0m[31m
+[0m[1m[94m250[0m [1m[32m+[0m [32m    assert [0m[32mOptimizerConfig.model_validate({"covariance": "bollerslev_1990_ccc"}).covariance == "ccc"
+[0m[1m[94m251[0m [1m[94m|[0m     assert OptimizerConfig.model_validate({"covariance": "agdcc"}).covariance == "agdcc"
+[1m[94m252[0m [1m[94m|[0m     assert OptimizerConfig.model_validate({"covariance": "ag_dcc"}).covariance == "agdcc"
+[1m[94m   [0m [1m[31m-[0m [31m    assert [0m[1m[31m([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31mOptimizerConfig.model_validate({"covariance": "diagonal_agdcc"}).covariance == "agdcc"
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    )[0m[0m[31m
+[0m[1m[94m253[0m [1m[32m+[0m [32m    assert [0m[32mOptimizerConfig.model_validate({"covariance": "diagonal_agdcc"}).covariance == "agdcc"
+[0m[1m[94m254[0m [1m[94m|[0m     assert OptimizerConfig.model_validate({"covariance": "agdcc_full"}).covariance == "agdcc_full"
+--------------------------------------------------------------------------------
+[1m[94m280[0m [1m[94m|[0m     assert OptimizerConfig.model_validate({"covariance": "sample"}).covariance == "sample"
+[1m[94m   [0m [1m[31m-[0m [31m    assert [0m[1m[31m([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31mOptimizerConfig.model_validate({"covariance": "unbiased_sample"}).covariance == "sample"
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    )[0m[0m[31m
+[0m[1m[94m281[0m [1m[32m+[0m [32m    assert [0m[32mOptimizerConfig.model_validate({"covariance": "unbiased_sample"}).covariance == "sample"
+[0m[1m[94m282[0m [1m[94m|[0m     with pytest.raises(ValueError, match="unknown_optimizer_covariance"):
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_covariance.py:267:30
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m266[0m [1m[94m|[0m     def _boom(*_args: object, **_kwargs: object) -> object:
+[1m[94m   [0m [1m[31m-[0m [31m        raise [0m[1m[31mAssertionError([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m            "nonlinear[0m[0m[31m Ledoit-Wolf must not switch to sample or 2004 when [0m[1m[31mT<=N"[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        )[0m[0m[31m
+[0m[1m[94m267[0m [1m[32m+[0m [32m        raise [0m[1m[32mAssertionError("nonlinear[0m[0m[32m Ledoit-Wolf must not switch to sample or 2004 when [0m[1m[32mT<=N")[0m[0m[32m
+[0m[1m[94m268[0m [1m[94m|[0m
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_crypto_external_benchmark.py:22:25
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m21 [0m [1m[94m|[0m         for symbol in ("BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT"):
+[1m[94m   [0m [1m[31m-[0m [31m            [0m[1m[31mrows.append({[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [31m                [0m[31m"security_id": symbol,[0m[1m[31m [0m[0m[31m"symbol": symbol,[0m[1m[31m [0m[0m[31m"event_time": event,
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m                [0m[0m[31m"available_time": event + timedelta(days=1),
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m                [0m[0m[31m"ingested_time": event + timedelta(days=2),[0m[1m[31m [0m[0m[31m"source": source,
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m                [0m[0m[31m"revision_id": "receipt-v1",[0m[1m[31m [0m[0m[31m"open": 100.0,[0m[1m[31m [0m[0m[31m"high": 101.0,
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m                [0m[0m[31m"low": 99.0,[0m[1m[31m [0m[0m[31m"close": 100.5 + day,[0m[1m[31m [0m[0m[31m"volume": 10.0,
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m                [0m[0m[31m"currency": "USDT",[0m[1m[31m [0m[0m[31m"session": "24x7",
+[0m[1m[94m   [0m [1m[31m-[0m [31m            [0m[1m[31m})[0m[0m[31m
+[0m[1m[94m22 [0m [1m[32m+[0m [32m            [0m[1m[32mrows.append([0m[0m[32m
+[0m[1m[94m23 [0m [1m[32m+[0m [32m                [0m[1m[32m{[0m[0m[32m
+[0m[1m[94m24 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"security_id": symbol,[0m[32m
+[0m[1m[94m25 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"symbol": symbol,[0m[32m
+[0m[1m[94m26 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"event_time": event,
+[0m[1m[94m27 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"available_time": event + timedelta(days=1),
+[0m[1m[94m28 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"ingested_time": event + timedelta(days=2),[0m[32m
+[0m[1m[94m29 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"source": source,
+[0m[1m[94m30 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"revision_id": "receipt-v1",[0m[32m
+[0m[1m[94m31 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"open": 100.0,[0m[32m
+[0m[1m[94m32 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"high": 101.0,
+[0m[1m[94m33 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"low": 99.0,[0m[32m
+[0m[1m[94m34 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"close": 100.5 + day,[0m[32m
+[0m[1m[94m35 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"volume": 10.0,
+[0m[1m[94m36 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"currency": "USDT",[0m[32m
+[0m[1m[94m37 [0m [1m[32m+[0m [1m[32m                    [0m[0m[32m"session": "24x7",
+[0m[1m[94m38 [0m [1m[32m+[0m [1m[32m                }[0m[0m[32m
+[0m[1m[94m39 [0m [1m[32m+[0m [32m            [0m[1m[32m)[0m[0m[32m
+[0m[1m[94m40 [0m [1m[94m|[0m     return pl.DataFrame(rows)
+[1m[94m41 [0m [1m[94m|[0m
+[1m[94m42 [0m [1m[94m|[0m
+[1m[94m43 [0m [1m[94m|[0m def test_protocol_is_frozen_and_candidate_only() -> None:
+[1m[94m   [0m [1m[31m-[0m [31m    protocol = [0m[1m[31mbuild_external_protocol([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        input_id="fixture",[0m[0m[31m input_sha256="a" * 64, [0m[1m[31mn_dates=40[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    )[0m[0m[31m
+[0m[1m[94m44 [0m [1m[32m+[0m [32m    protocol = [0m[1m[32mbuild_external_protocol(input_id="fixture",[0m[0m[32m input_sha256="a" * 64, [0m[1m[32mn_dates=40)[0m[0m[32m
+[0m[1m[94m45 [0m [1m[94m|[0m
+--------------------------------------------------------------------------------
+[1m[94m74 [0m [1m[94m|[0m     mixed = _panel().with_columns(
+[1m[94m   [0m [1m[31m-[0m [31m        pl.when(pl.col("symbol") == "BTCUSDT").then(pl.lit("other")).otherwise(pl.col("source")).alias("source")
+[0m[1m[94m75 [0m [1m[32m+[0m [32m        pl.when(pl.col("symbol") == "BTCUSDT")
+[0m[1m[94m76 [0m [1m[32m+[0m [32m        .then(pl.lit("other"))
+[0m[1m[94m77 [0m [1m[32m+[0m [32m        .otherwise(pl.col("source"))
+[0m[1m[94m78 [0m [1m[32m+[0m [32m        .alias("source")
+[0m[1m[94m79 [0m [1m[94m|[0m     )
+--------------------------------------------------------------------------------
+[1m[94m108[0m [1m[94m|[0m     protocol = build_external_protocol(input_id="fixture", input_sha256="a" * 64, n_dates=40)
+[1m[94m   [0m [1m[31m-[0m [31m    incomplete = [0m[1m[31m_panel().filter(~((pl.col("symbol")[0m[0m[31m == "ADAUSDT") & (pl.col("event_time").dt.day() == [0m[1m[31m5)))[0m[0m[31m
+[0m[1m[94m109[0m [1m[32m+[0m [32m    incomplete = [0m[1m[32m_panel().filter([0m[0m[32m
+[0m[1m[94m110[0m [1m[32m+[0m [1m[32m        ~((pl.col("symbol")[0m[0m[32m == "ADAUSDT") & (pl.col("event_time").dt.day() == [0m[1m[32m5))[0m[0m[32m
+[0m[1m[94m111[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m112[0m [1m[94m|[0m     with pytest.raises(ValueError, match="complete"):
+[1m[94m113[0m [1m[94m|[0m         validate_external_panel(incomplete, protocol)
+[1m[94m114[0m [1m[94m|[0m     mixed = _panel().with_columns(
+[1m[94m   [0m [1m[31m-[0m [31m        pl.when(pl.col("symbol") == "XRPUSDT").then(pl.lit("receipt-v2")).otherwise(pl.col("revision_id")).alias("revision_id")
+[0m[1m[94m115[0m [1m[32m+[0m [32m        pl.when(pl.col("symbol") == "XRPUSDT")
+[0m[1m[94m116[0m [1m[32m+[0m [32m        .then(pl.lit("receipt-v2"))
+[0m[1m[94m117[0m [1m[32m+[0m [32m        .otherwise(pl.col("revision_id"))
+[0m[1m[94m118[0m [1m[32m+[0m [32m        .alias("revision_id")
+[0m[1m[94m119[0m [1m[94m|[0m     )
+--------------------------------------------------------------------------------
+[1m[94m154[0m [1m[94m|[0m
+[1m[94m   [0m [1m[31m-[0m [31m    selected = [0m[1m[31mselect_external_model({[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [31m        [0m[31m"candidate": np.array([1.0, 2.0, 1.5]),
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31m"baseline": np.array([2.0, 2.0, 2.0]),
+[0m[1m[94m   [0m [1m[31m-[0m [31m    [0m[1m[31m})[0m[0m[31m
+[0m[1m[94m155[0m [1m[32m+[0m [32m    selected = [0m[1m[32mselect_external_model([0m[0m[32m
+[0m[1m[94m156[0m [1m[32m+[0m [32m        [0m[1m[32m{[0m[0m[32m
+[0m[1m[94m157[0m [1m[32m+[0m [1m[32m            [0m[0m[32m"candidate": np.array([1.0, 2.0, 1.5]),
+[0m[1m[94m158[0m [1m[32m+[0m [1m[32m            [0m[0m[32m"baseline": np.array([2.0, 2.0, 2.0]),
+[0m[1m[94m159[0m [1m[32m+[0m [1m[32m        }[0m[0m[32m
+[0m[1m[94m160[0m [1m[32m+[0m [32m    [0m[1m[32m)[0m[0m[32m
+[0m[1m[94m161[0m [1m[94m|[0m     assert selected == "candidate"
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_garch_configurable.py:216:43
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m215[0m [1m[94m|[0m     assert (
+[1m[94m   [0m [1m[31m-[0m [31m        [0m[1m[31mfigarch._spec_inadmissible_reason(_Params({"omega":[0m[0m[31m 0.1, "phi": 0.2, "d": 0.0, "beta": [0m[1m[31m0.3}))[0m[0m[31m
+[0m[1m[94m216[0m [1m[32m+[0m [32m        [0m[1m[32mfigarch._spec_inadmissible_reason([0m[0m[32m
+[0m[1m[94m217[0m [1m[32m+[0m [1m[32m            _Params({"omega":[0m[0m[32m 0.1, "phi": 0.2, "d": 0.0, "beta": [0m[1m[32m0.3})[0m[0m[32m
+[0m[1m[94m218[0m [1m[32m+[0m [1m[32m        )[0m[0m[32m
+[0m[1m[94m219[0m [1m[94m|[0m         == "invalid_fractional_d"
+[1m[94m220[0m [1m[94m|[0m     )
+[1m[94m221[0m [1m[94m|[0m     assert (
+[1m[94m   [0m [1m[31m-[0m [31m        [0m[1m[31mfigarch._spec_inadmissible_reason(_Params({"omega":[0m[0m[31m 0.1, "phi": 0.2, "d": 0.4, "beta": [0m[1m[31m0.3}))[0m[0m[31m
+[0m[1m[94m222[0m [1m[32m+[0m [32m        [0m[1m[32mfigarch._spec_inadmissible_reason([0m[0m[32m
+[0m[1m[94m223[0m [1m[32m+[0m [1m[32m            _Params({"omega":[0m[0m[32m 0.1, "phi": 0.2, "d": 0.4, "beta": [0m[1m[32m0.3})[0m[0m[32m
+[0m[1m[94m224[0m [1m[32m+[0m [1m[32m        )[0m[0m[32m
+[0m[1m[94m225[0m [1m[94m|[0m         is None
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_garch_contract.py:147:71
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m146[0m [1m[94m|[0m
+[1m[94m   [0m [1m[31m-[0m [31mdef [0m[1m[31mtest_joblib_load_rejects_modified_artifact_before_deserialization(tmp_path,[0m[0m[31m [0m[1m[31mmonkeypatch)[0m[0m[31m -> None:
+[0m[1m[94m147[0m [1m[32m+[0m [32mdef [0m[1m[32mtest_joblib_load_rejects_modified_artifact_before_deserialization([0m[0m[32m
+[0m[1m[94m148[0m [1m[32m+[0m [1m[32m    tmp_path,[0m[0m[32m [0m[1m[32mmonkeypatch[0m[0m[32m
+[0m[1m[94m149[0m [1m[32m+[0m [1m[32m)[0m[0m[32m -> None:
+[0m[1m[94m150[0m [1m[94m|[0m     model = GARCHVol().fit_returns(_returns())
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+  [1m[94m--> [0mtests\tests\unit\test_optimize_ewma.py:67:16
+[1m[94m  [0m [1m[94m|[0m
+[1m[94m66[0m [1m[94m|[0m
+[1m[94m  [0m [1m[31m-[0m [31mdef [0m[1m[31m_fake_ewma([0m[0m[31m
+[0m[1m[94m  [0m [1m[31m-[0m [1m[31m    returns:[0m[0m[31m np.ndarray, lam: float = [0m[1m[31m0.94[0m[0m[31m
+[0m[1m[94m  [0m [1m[31m-[0m [1m[31m)[0m[0m[31m -> tuple[np.ndarray, dict[str, float | str]]:
+[0m[1m[94m67[0m [1m[32m+[0m [32mdef [0m[1m[32m_fake_ewma(returns:[0m[0m[32m np.ndarray, lam: float = [0m[1m[32m0.94)[0m[0m[32m -> tuple[np.ndarray, dict[str, float | str]]:
+[0m[1m[94m68[0m [1m[94m|[0m     x = np.asarray(returns, dtype=float)
+[1m[94m  [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+  [1m[94m--> [0mtests\tests\unit\test_optimize_w_prev_fused.py:45:39
+[1m[94m  [0m [1m[94m|[0m
+[1m[94m44[0m [1m[94m|[0m     with pytest.raises(OptimizationInfeasible, match="interval caps.*turnover"):
+[1m[94m  [0m [1m[31m-[0m [31m        [0m[1m[31m_apply_forecast_interval_caps([0m[0m[31m
+[0m[1m[94m  [0m [1m[31m-[0m [1m[31m            np.array([0.05]),[0m[0m[31m state, ["A"], cfg, [0m[1m[31mw_prev=np.array([0.05])[0m[0m[31m
+[0m[1m[94m  [0m [1m[31m-[0m [1m[31m        )[0m[0m[31m
+[0m[1m[94m45[0m [1m[32m+[0m [32m        [0m[1m[32m_apply_forecast_interval_caps(np.array([0.05]),[0m[0m[32m state, ["A"], cfg, [0m[1m[32mw_prev=np.array([0.05]))[0m[0m[32m
+[0m[1m[94m46[0m [1m[94m|[0m
+[1m[94m  [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_realized_garch.py:117:32
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m116[0m [1m[94m|[0m     with pytest.raises(ValueError, match="returns="):
+[1m[94m   [0m [1m[31m-[0m [31m        [0m[1m[31mRealizedGARCHVol().fit([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m            np.empty((80,[0m[0m[31m 0)), returns, realized_measure=np.full(80, [0m[1m[31m0.0001)[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        )[0m[0m[31m
+[0m[1m[94m117[0m [1m[32m+[0m [32m        [0m[1m[32mRealizedGARCHVol().fit(np.empty((80,[0m[0m[32m 0)), returns, realized_measure=np.full(80, [0m[1m[32m0.0001))[0m[0m[32m
+[0m[1m[94m118[0m [1m[94m|[0m     with pytest.raises(ValueError, match="parkinson_daily_ohlc"):
+--------------------------------------------------------------------------------
+[1m[94m187[0m [1m[94m|[0m     asof = frame["event_time"].unique().sort().to_list()[70]
+[1m[94m   [0m [1m[31m-[0m [31m    _asof_dates, values, measures = [0m[1m[31m_realized_garch_history(frame.filter(pl.col("event_time")[0m[0m[31m < [0m[1m[31masof))[0m[0m[31m
+[0m[1m[94m188[0m [1m[32m+[0m [32m    _asof_dates, values, measures = [0m[1m[32m_realized_garch_history([0m[0m[32m
+[0m[1m[94m189[0m [1m[32m+[0m [1m[32m        frame.filter(pl.col("event_time")[0m[0m[32m < [0m[1m[32masof)[0m[0m[32m
+[0m[1m[94m190[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m191[0m [1m[94m|[0m     _save_rgarch(tmp_path, values, measures, series_scope=GARCH_DATE_LEVEL_SCOPE)
+--------------------------------------------------------------------------------
+[1m[94m214[0m [1m[94m|[0m     early = dates[20]
+[1m[94m   [0m [1m[31m-[0m [31m    _hist_dates, values, measures = [0m[1m[31m_realized_garch_history(frame.filter(pl.col("event_time")[0m[0m[31m < [0m[1m[31masof))[0m[0m[31m
+[0m[1m[94m215[0m [1m[32m+[0m [32m    _hist_dates, values, measures = [0m[1m[32m_realized_garch_history([0m[0m[32m
+[0m[1m[94m216[0m [1m[32m+[0m [1m[32m        frame.filter(pl.col("event_time")[0m[0m[32m < [0m[1m[32masof)[0m[0m[32m
+[0m[1m[94m217[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m218[0m [1m[94m|[0m     _save_rgarch(tmp_path, values, measures, series_scope=GARCH_DATE_LEVEL_SCOPE)
+--------------------------------------------------------------------------------
+[1m[94m245[0m [1m[94m|[0m     early = dates[20]
+[1m[94m   [0m [1m[31m-[0m [31m    _hist_dates, values, measures = [0m[1m[31m_realized_garch_history(frame.filter(pl.col("event_time")[0m[0m[31m < [0m[1m[31masof))[0m[0m[31m
+[0m[1m[94m246[0m [1m[32m+[0m [32m    _hist_dates, values, measures = [0m[1m[32m_realized_garch_history([0m[0m[32m
+[0m[1m[94m247[0m [1m[32m+[0m [1m[32m        frame.filter(pl.col("event_time")[0m[0m[32m < [0m[1m[32masof)[0m[0m[32m
+[0m[1m[94m248[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m249[0m [1m[94m|[0m     _save_rgarch(tmp_path, values, measures, series_scope=GARCH_DATE_LEVEL_SCOPE)
+--------------------------------------------------------------------------------
+[1m[94m267[0m [1m[94m|[0m     asof = frame["event_time"].unique().sort().to_list()[40]
+[1m[94m   [0m [1m[31m-[0m [31m    _asof_dates, values, measures = [0m[1m[31m_realized_garch_history(frame.filter(pl.col("event_time")[0m[0m[31m < [0m[1m[31masof))[0m[0m[31m
+[0m[1m[94m268[0m [1m[32m+[0m [32m    _asof_dates, values, measures = [0m[1m[32m_realized_garch_history([0m[0m[32m
+[0m[1m[94m269[0m [1m[32m+[0m [1m[32m        frame.filter(pl.col("event_time")[0m[0m[32m < [0m[1m[32masof)[0m[0m[32m
+[0m[1m[94m270[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m271[0m [1m[94m|[0m     _save_rgarch(tmp_path, values, measures, series_scope=GARCH_DATE_LEVEL_SCOPE)
+--------------------------------------------------------------------------------
+[1m[94m286[0m [1m[94m|[0m     assert realized_garch_market_forecast_asof(cfg, frame, asof) is None
+[1m[94m   [0m [1m[31m-[0m [31m    _asof_dates, values, measures = [0m[1m[31m_realized_garch_history(frame.filter(pl.col("event_time")[0m[0m[31m < [0m[1m[31masof))[0m[0m[31m
+[0m[1m[94m287[0m [1m[32m+[0m [32m    _asof_dates, values, measures = [0m[1m[32m_realized_garch_history([0m[0m[32m
+[0m[1m[94m288[0m [1m[32m+[0m [1m[32m        frame.filter(pl.col("event_time")[0m[0m[32m < [0m[1m[32masof)[0m[0m[32m
+[0m[1m[94m289[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m290[0m [1m[94m|[0m     _save_rgarch(tmp_path, values, measures, series_scope="univariate_return_series")
+--------------------------------------------------------------------------------
+[1m[94m298[0m [1m[94m|[0m     asof = frame["event_time"].unique().sort().to_list()[60]
+[1m[94m   [0m [1m[31m-[0m [31m    _asof_dates, values, measures = [0m[1m[31m_realized_garch_history(frame.filter(pl.col("event_time")[0m[0m[31m < [0m[1m[31masof))[0m[0m[31m
+[0m[1m[94m299[0m [1m[32m+[0m [32m    _asof_dates, values, measures = [0m[1m[32m_realized_garch_history([0m[0m[32m
+[0m[1m[94m300[0m [1m[32m+[0m [1m[32m        frame.filter(pl.col("event_time")[0m[0m[32m < [0m[1m[32masof)[0m[0m[32m
+[0m[1m[94m301[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m302[0m [1m[94m|[0m     _save_rgarch(tmp_path, values, measures, series_scope=GARCH_DATE_LEVEL_SCOPE)
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\tests\unit\test_robinhood_plus.py:141:22
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m140[0m [1m[94m|[0m     used = extract_kline(
+[1m[94m   [0m [1m[31m-[0m [31m        [0m[1m[31mframe.filter([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m            (pl.col("event_time")[0m[0m[31m <= asof) & (pl.col("available_time") <= [0m[1m[31masof)[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        )[0m[0m[31m
+[0m[1m[94m141[0m [1m[32m+[0m [32m        [0m[1m[32mframe.filter((pl.col("event_time")[0m[0m[32m <= asof) & (pl.col("available_time") <= [0m[1m[32masof))[0m[0m[32m
+[0m[1m[94m142[0m [1m[94m|[0m     )
+[1m[94m   [0m [1m[94m|[0m
+
+[1m[91munformatted:[0m[1m File would be reformatted[0m
+   [1m[94m--> [0mtests\unit\test_sota_finalization_verifier.py:1:1
+[1m[94m   [0m [1m[94m|[0m
+[1m[94m   [0m [1m[31m-[0m [1m[31m´╗┐"""Focused[0m[0m[31m integrity tests for the independent finalization verifier."""
+[0m[1m[94m1  [0m [1m[32m+[0m [1m[32m"""Focused[0m[0m[32m integrity tests for the independent finalization verifier."""
+[0m[1m[94m2  [0m [1m[32m+[0m[32m
+[0m[1m[94m3  [0m [1m[94m|[0m from __future__ import annotations
+--------------------------------------------------------------------------------
+[1m[94m39 [0m [1m[94m|[0m     receipt = run / "merged.json"
+[1m[94m   [0m [1m[31m-[0m [31m    [0m[1m[31mreceipt.write_text(json.dumps({[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [31m        [0m[31m"schema": "sota_eval.v4",[0m[1m[31m [0m[0m[31m"research_only": True,
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31m"live_pnl_claim": False,[0m[1m[31m [0m[0m[31m"source_parts_sha256": {str(shard): sha(shard)},
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31m"losses_file": losses.name,[0m[1m[31m [0m[0m[31m"losses_sha256": sha(losses),
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31m"n_rows": rows,[0m[1m[31m [0m[0m[31m"n_complete": rows,[0m[1m[31m [0m[0m[31m"n_dropped_incomplete": 0,
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        [0m[0m[31m"scoring_contract": "verified.v1",
+[0m[1m[94m   [0m [1m[31m-[0m [31m    [0m[1m[31m}))[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [31m    stdout, stderr, transcript = [0m[1m[31m(run[0m[0m[31m / n for n in [0m[1m[31m([0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m        "group.stdout.txt",[0m[0m[31m "group.stderr.txt", [0m[1m[31m"group.transcript.txt"))[0m[0m[31m
+[0m[1m[94m40 [0m [1m[32m+[0m [32m    [0m[1m[32mreceipt.write_text([0m[0m[32m
+[0m[1m[94m41 [0m [1m[32m+[0m [32m        [0m[1m[32mjson.dumps([0m[0m[32m
+[0m[1m[94m42 [0m [1m[32m+[0m [1m[32m            {[0m[0m[32m
+[0m[1m[94m43 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"schema": "sota_eval.v4",[0m[32m
+[0m[1m[94m44 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"research_only": True,
+[0m[1m[94m45 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"live_pnl_claim": False,[0m[32m
+[0m[1m[94m46 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"source_parts_sha256": {str(shard): sha(shard)},
+[0m[1m[94m47 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"losses_file": losses.name,[0m[32m
+[0m[1m[94m48 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"losses_sha256": sha(losses),
+[0m[1m[94m49 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"n_rows": rows,[0m[32m
+[0m[1m[94m50 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"n_complete": rows,[0m[32m
+[0m[1m[94m51 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"n_dropped_incomplete": 0,
+[0m[1m[94m52 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"scoring_contract": "verified.v1",
+[0m[1m[94m53 [0m [1m[32m+[0m [1m[32m            }[0m[0m[32m
+[0m[1m[94m54 [0m [1m[32m+[0m [1m[32m        )[0m[0m[32m
+[0m[1m[94m55 [0m [1m[32m+[0m [32m    [0m[1m[32m)[0m[0m[32m
+[0m[1m[94m56 [0m [1m[32m+[0m [32m    stdout, stderr, transcript = [0m[1m[32m([0m[0m[32m
+[0m[1m[94m57 [0m [1m[32m+[0m [1m[32m        run[0m[0m[32m / n for n in [0m[1m[32m("group.stdout.txt",[0m[0m[32m "group.stderr.txt", [0m[1m[32m"group.transcript.txt")[0m[0m[32m
+[0m[1m[94m58 [0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m59 [0m [1m[94m|[0m     command_record = run / "group.command.json"
+--------------------------------------------------------------------------------
+[1m[94m63 [0m [1m[94m|[0m     group = {
+[1m[94m   [0m [1m[31m-[0m [31m        "group": "fixture",[0m[1m[31m [0m[0m[31m"command": ["python", "evaluator"],
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "command_text": "python evaluator",[0m[1m[31m [0m[0m[31m"cwd": str(repo),
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "shards": [0m[1m[31m[{"path":[0m[0m[31m str(shard),[0m[1m[31m [0m[0m[31m"relative": "eval/part.losses.npz",
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m                     [0m[0m[31m"bytes": shard.stat().st_size,[0m[1m[31m [0m[0m[31m"sha256": [0m[1m[31msha(shard)}],[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "stdout": str(stdout),[0m[1m[31m [0m[0m[31m"stderr": str(stderr),[0m[1m[31m [0m[0m[31m"transcript": str(transcript),
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "stdout_sha256": sha(stdout),[0m[1m[31m [0m[0m[31m"stderr_sha256": sha(stderr),
+[0m[1m[94m64 [0m [1m[32m+[0m [32m        "group": "fixture",[0m[32m
+[0m[1m[94m65 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"command": ["python", "evaluator"],
+[0m[1m[94m66 [0m [1m[32m+[0m [32m        "command_text": "python evaluator",[0m[32m
+[0m[1m[94m67 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"cwd": str(repo),
+[0m[1m[94m68 [0m [1m[32m+[0m [32m        "shards": [0m[1m[32m[[0m[0m[32m
+[0m[1m[94m69 [0m [1m[32m+[0m [1m[32m            {[0m[0m[32m
+[0m[1m[94m70 [0m [1m[32m+[0m [1m[32m                "path":[0m[0m[32m str(shard),[0m[32m
+[0m[1m[94m71 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"relative": "eval/part.losses.npz",
+[0m[1m[94m72 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"bytes": shard.stat().st_size,[0m[32m
+[0m[1m[94m73 [0m [1m[32m+[0m [1m[32m                [0m[0m[32m"sha256": [0m[1m[32msha(shard),[0m[0m[32m
+[0m[1m[94m74 [0m [1m[32m+[0m [1m[32m            }[0m[0m[32m
+[0m[1m[94m75 [0m [1m[32m+[0m [1m[32m        ],[0m[0m[32m
+[0m[1m[94m76 [0m [1m[32m+[0m [32m        "stdout": str(stdout),[0m[32m
+[0m[1m[94m77 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"stderr": str(stderr),[0m[32m
+[0m[1m[94m78 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"transcript": str(transcript),
+[0m[1m[94m79 [0m [1m[32m+[0m [32m        "stdout_sha256": sha(stdout),[0m[32m
+[0m[1m[94m80 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"stderr_sha256": sha(stderr),
+[0m[1m[94m81 [0m [1m[94m|[0m         "transcript_sha256": sha(transcript),
+[1m[94m   [0m [1m[31m-[0m [31m        "receipt": str(receipt),[0m[1m[31m [0m[0m[31m"receipt_sha256": sha(receipt),
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "losses": str(losses),[0m[1m[31m [0m[0m[31m"losses_sha256": sha(losses),
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "exit_code": 0,[0m[1m[31m [0m[0m[31m"status": "succeeded",
+[0m[1m[94m82 [0m [1m[32m+[0m [32m        "receipt": str(receipt),[0m[32m
+[0m[1m[94m83 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"receipt_sha256": sha(receipt),
+[0m[1m[94m84 [0m [1m[32m+[0m [32m        "losses": str(losses),[0m[32m
+[0m[1m[94m85 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"losses_sha256": sha(losses),
+[0m[1m[94m86 [0m [1m[32m+[0m [32m        "exit_code": 0,[0m[32m
+[0m[1m[94m87 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"status": "succeeded",
+[0m[1m[94m88 [0m [1m[94m|[0m         "command_record": str(command_record),
+[1m[94m89 [0m [1m[94m|[0m     }
+[1m[94m90 [0m [1m[94m|[0m     command_record.write_text(json.dumps(group))
+[1m[94m91 [0m [1m[94m|[0m     manifest = {
+[1m[94m   [0m [1m[31m-[0m [31m        "schema": "sota_finalization.v2",[0m[1m[31m [0m[0m[31m"status": "complete",
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "proof_status": "UNPROVEN",[0m[1m[31m [0m[0m[31m"run_id": "valid-run",
+[0m[1m[94m   [0m [1m[31m-[0m [31m        "repo": str(repo),[0m[1m[31m [0m[0m[31m"input_dir": str(inp),[0m[1m[31m [0m[0m[31m"groups": [group],
+[0m[1m[94m92 [0m [1m[32m+[0m [32m        "schema": "sota_finalization.v2",[0m[32m
+[0m[1m[94m93 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"status": "complete",
+[0m[1m[94m94 [0m [1m[32m+[0m [32m        "proof_status": "UNPROVEN",[0m[32m
+[0m[1m[94m95 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"run_id": "valid-run",
+[0m[1m[94m96 [0m [1m[32m+[0m [32m        "repo": str(repo),[0m[32m
+[0m[1m[94m97 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"input_dir": str(inp),[0m[32m
+[0m[1m[94m98 [0m [1m[32m+[0m [1m[32m        [0m[0m[32m"groups": [group],
+[0m[1m[94m99 [0m [1m[94m|[0m     }
+--------------------------------------------------------------------------------
+[1m[94m166[0m [1m[94m|[0m
+[1m[94m   [0m [1m[31m-[0m [1m[31m@pytest.mark.parametrize(("mutation",[0m[0m[31m "needle"),[0m[1m[31m [0m[0m[31m[
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    [0m[0m[31m(lambda m: m["groups"][0]["shards"][0].update(bytes=0), "byte-size mismatch"),
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    (lambda[0m[0m[31m m: m["groups"][0]["shards"].append(dict(m["groups"][0]["shards"][0])),[0m[1m[31m [0m[0m[31m"duplicate [0m[1m[31mshard"),[0m[0m[31m
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    [0m[0m[31m(lambda m: m["groups"][0].update(exit_code=1), "nonzero exit"),
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m    [0m[0m[31m(lambda m: m["groups"][0].update(command_text="python altered"), "command_text mismatch"),
+[0m[1m[94m   [0m [1m[31m-[0m [1m[31m])[0m[0m[31m
+[0m[1m[94m167[0m [1m[32m+[0m [1m[32m@pytest.mark.parametrize([0m[0m[32m
+[0m[1m[94m168[0m [1m[32m+[0m [1m[32m    ("mutation",[0m[0m[32m "needle"),[0m[32m
+[0m[1m[94m169[0m [1m[32m+[0m [1m[32m    [0m[0m[32m[
+[0m[1m[94m170[0m [1m[32m+[0m [1m[32m        [0m[0m[32m(lambda m: m["groups"][0]["shards"][0].update(bytes=0), "byte-size mismatch"),
+[0m[1m[94m171[0m [1m[32m+[0m [1m[32m        ([0m[0m[32m
+[0m[1m[94m172[0m [1m[32m+[0m [1m[32m            lambda[0m[0m[32m m: m["groups"][0]["shards"].append(dict(m["groups"][0]["shards"][0])),[0m[32m
+[0m[1m[94m173[0m [1m[32m+[0m [1m[32m            [0m[0m[32m"duplicate [0m[1m[32mshard",[0m[0m[32m
+[0m[1m[94m174[0m [1m[32m+[0m [1m[32m        ),[0m[0m[32m
+[0m[1m[94m175[0m [1m[32m+[0m [1m[32m        [0m[0m[32m(lambda m: m["groups"][0].update(exit_code=1), "nonzero exit"),
+[0m[1m[94m176[0m [1m[32m+[0m [1m[32m        [0m[0m[32m(lambda m: m["groups"][0].update(command_text="python altered"), "command_text mismatch"),
+[0m[1m[94m177[0m [1m[32m+[0m [1m[32m    ],[0m[0m[32m
+[0m[1m[94m178[0m [1m[32m+[0m [1m[32m)[0m[0m[32m
+[0m[1m[94m179[0m [1m[94m|[0m def test_integrity_failures_are_rejected(tmp_path: Path, mutation, needle: str) -> None:
+--------------------------------------------------------------------------------
+[1m[94m235[0m [1m[94m|[0m     losses = Path(value["groups"][0]["losses"])
+[1m[94m   [0m [1m[31m-[0m [31m    [0m[1m[31mnp.savez(losses,[0m[0m[31m crps_matrix=np.ones((2, 2)), pinball_cube=np.ones((2, 2)), [0m[1m[31mmeta_json=np.array("{}"))[0m[0m[31m
+[0m[1m[94m236[0m [1m[32m+[0m [32m    [0m[1m[32mnp.savez([0m[0m[32m
+[0m[1m[94m237[0m [1m[32m+[0m [1m[32m        losses,[0m[0m[32m crps_matrix=np.ones((2, 2)), pinball_cube=np.ones((2, 2)), [0m[1m[32mmeta_json=np.array("{}")[0m[0m[32m
+[0m[1m[94m238[0m [1m[32m+[0m [1m[32m    )[0m[0m[32m
+[0m[1m[94m239[0m [1m[94m|[0m     value["groups"][0]["losses_sha256"] = sha(losses)
+--------------------------------------------------------------------------------
+[1m[94m249[0m [1m[94m|[0m
+[1m[94m250[0m [1m[32m+[0m[32m
+[0m[1m[94m251[0m [1m[94m|[0m def test_command_record_tampering_is_rejected(tmp_path: Path) -> None:
+--------------------------------------------------------------------------------
+[1m[94m260[0m [1m[94m|[0m     assert any("command record mismatch" in e for e in result["errors"])
+[1m[94m261[0m [1m[32m+[0m[32m
+[0m[1m[94m262[0m [1m[32m+[0m[32m
+[0m[1m[94m263[0m [1m[94m|[0m @pytest.mark.parametrize("field", ["stdout", "stderr", "transcript"])
+--------------------------------------------------------------------------------
+[1m[94m288[0m [1m[94m|[0m
+[1m[94m289[0m [1m[32m+[0m[32m
+[0m[1m[94m290[0m [1m[94m|[0m @pytest.mark.parametrize("field", ["receipt", "losses", "transcript"])
+--------------------------------------------------------------------------------
+[1m[94m303[0m [1m[94m|[0m
+[1m[94m304[0m [1m[32m+[0m[32m
+[0m[1m[94m305[0m [1m[94m|[0m def test_shard_symlink_alias_is_rejected(tmp_path: Path) -> None:
+--------------------------------------------------------------------------------
+[1m[94m319[0m [1m[94m|[0m
+[1m[94m320[0m [1m[32m+[0m[32m
+[0m[1m[94m321[0m [1m[94m|[0m def test_manifest_input_root_escape_is_rejected(tmp_path: Path) -> None:
+--------------------------------------------------------------------------------
+[1m[94m331[0m [1m[94m|[0m
+[1m[94m332[0m [1m[32m+[0m[32m
+[0m[1m[94m333[0m [1m[94m|[0m def test_duplicate_group_name_is_rejected(tmp_path: Path) -> None:
+[1m[94m   [0m [1m[94m|[0m
+
+13 files would be reformatted, 1927 files already formatted

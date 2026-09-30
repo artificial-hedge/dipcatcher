@@ -1,0 +1,101 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+.......F...........................F.....FF............................. [ 34%]
+......F................................................................. [ 41%]
+........................................................................ [ 48%]
+........................................................................ [ 55%]
+........................................................................ [ 62%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+........................................................................ [ 83%]
+........................................................................ [ 90%]
+........................................................................ [ 97%]
+...........................                                              [100%]
+================================== FAILURES ===================================
+_______________ test_corwin_schultz_nan_when_all_pairs_filtered _______________
+
+    def test_corwin_schultz_nan_when_all_pairs_filtered() -> None:
+        """Point bars (high == low) give \u03b2 = 0 and negative \u03b1 \u2192 spreads < 0 \u2192 all dropped."""
+        days = [(10.0 + d, 10.0 + d, 10.0 + d, 10.0 + d) for d in range(10)]
+>       assert np.isnan(corwin_schultz_spread(_bars({"S0": days})))
+E       AssertionError: assert np.False_
+E        +  where np.False_ = <ufunc 'isnan'>(0.0)
+E        +    where <ufunc 'isnan'> = np.isnan
+E        +    and   0.0 = corwin_schultz_spread(shape: (10, 7)\\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\\n\u2502 security_id \u2506 event....0 \u2506 19.0 \u2506 19.0 \u2506 19.0  \u2506 100000.0 \u2502\\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518)
+E        +      where shape: (10, 7)\\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\\n\u2502 security_id \u2506 event....0 \u2506 19.0 \u2506 19.0 \u2506 19.0  \u2506 100000.0 \u2502\\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518 = _bars({'S0': [(10.0, 10.0, 10.0, 10.0), (11.0, 11.0, 11.0, 11.0), (12.0, 12.0, 12.0, 12.0), (13.0, 13.0, 13.0, 13.0), (14.0, 14.0, 14.0, 14.0), (15.0, 15.0, 15.0, 15.0), ...]})
+
+tests\unit\research\test_estimators_cov.py:369: AssertionError
+_______________ test_session_vpin_missing_or_empty_returns_nan ________________
+
+    def test_session_vpin_missing_or_empty_returns_nan() -> None:
+        """Fail-closed but NaN, not a raise ù unlike the raising siblings."""
+>       assert np.isnan(session_vpin(_sessions([[(100.0, 101.0, 1.0)]]).drop("volume")))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\research\test_estimators_cov.py:636: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+session = shape: (1, 6)\n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 se...C \u2506 100.0 \u2506 101.0 \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+
+    def session_vpin(session: pl.DataFrame) -> float:
+        """Bulk-volume VPIN proxy: |signed session volume| / total volume per parent day."""
+        required = ("security_id", "parent_event_time", "open", "close", "volume")
+        missing = [c for c in required if c not in session.columns]
+        if missing:
+>           raise ValueError(f"session missing columns: {missing}")
+E           ValueError: session missing columns: ['volume']
+
+src\quant_fund\northset\estimators.py:571: ValueError
+____________ test_vpin_proxy_count_window_matches_rolling_toxicity ____________
+
+    def test_vpin_proxy_count_window_matches_rolling_toxicity() -> None:
+        out = vpin_proxy(_vpin_test_book().sort("event_time"), window=3)
+        vpin = out["vpin"].to_list()
+        assert vpin[0] is None and vpin[1] is None  # needs 2 non-null tox values
+        tox = [0.5, 1.0 / 3.0, 7.0 / 9.0, 9.0 / 14.0]
+>       assert vpin[2] == pytest.approx(np.mean(tox[0:2]))
+E       assert 0.75 == 0.41666666666666663 ▒ 4.2e-07
+E         
+E         comparison failed
+E         Obtained: 0.75
+E         Expected: 0.41666666666666663 ▒ 4.2e-07
+
+tests\unit\research\test_estimators_cov.py:715: AssertionError
+___________ test_vpin_proxy_bucket_volume_clock_carries_last_value ____________
+
+    def test_vpin_proxy_bucket_volume_clock_carries_last_value() -> None:
+        """500-vol buckets straddle rows; unfilled rows carry the previous VPIN."""
+        out = vpin_proxy(_vpin_test_book().sort("event_time"), bucket_volume=500.0, window=3)
+        vpin = out["vpin"].to_list()
+        assert vpin[0] != vpin[0] or vpin[0] is None  # NaN before first bucket
+        assert vpin[1] != vpin[1] or vpin[1] is None  # 400 < 500 accumulated
+        # t2 completes bucket: (buy 300+100, sell 100+200) \u2192 |400\u2212300|/700
+        first = pytest.approx(100.0 / 700.0)
+>       assert vpin[2] == first
+E       assert 0.3333333333333333 == 0.14285714285714285 ▒ 1.4e-07
+E         
+E         comparison failed
+E         Obtained: 0.3333333333333333
+E         Expected: 0.14285714285714285 ▒ 1.4e-07
+
+tests\unit\research\test_estimators_cov.py:728: AssertionError
+_____________________ test_cli_script_prints_the_verdict ______________________
+
+submission = {'root': WindowsPath('C:/Users/me/AppData/Local/Temp/pytest-of-me/pytest-1388/test_cli_script_prints_the_ver0/submissi...ppData/Local/Temp/pytest-of-me/pytest-1388/test_cli_script_prints_the_ver0/submission/synthetic_vixcls_20260202.csv')}}
+
+    def test_cli_script_prints_the_verdict(submission: dict[str, Any]) -> None:
+        """The tracked CLI at ``scripts/verify_external_receipt.py`` must import and run."""
+>       assert CLI_SCRIPT.is_file()
+E       AssertionError: assert False
+E        +  where False = is_file()
+E        +    where is_file = WindowsPath('D:/dipcatcher/scripts/verify_external_receipt.py').is_file
+
+tests\unit\research\test_external_receipt.py:285: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/unit/research/test_estimators_cov.py::test_corwin_schultz_nan_when_all_pairs_filtered
+FAILED tests/unit/research/test_estimators_cov.py::test_session_vpin_missing_or_empty_returns_nan
+FAILED tests/unit/research/test_estimators_cov.py::test_vpin_proxy_count_window_matches_rolling_toxicity
+FAILED tests/unit/research/test_estimators_cov.py::test_vpin_proxy_bucket_volume_clock_carries_last_value
+FAILED tests/unit/research/test_external_receipt.py::test_cli_script_prints_the_verdict

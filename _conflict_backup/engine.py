@@ -1,0 +1,912 @@
+"""Event-driven daily backtester. Default fill = next open.
+
+Fills pass through the kill switch and ``check_order`` risk gate before cash
+moves. Rejected orders are skipped (not silently unconstrained).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import Any, cast
+
+import numpy as np
+import polars as pl
+
+from quant_fund.config.models import AppConfig, FillConvention
+from quant_fund.execution.costs import total_cost
+from quant_fund.metrics.analytics import (
+    ANALYTICS_SCHEMA_KEYS,
+    analytics_export_digest,
+    book_diagnostics,
+    export_analytics_dict,
+)
+from quant_fund.metrics.returns import max_drawdown, sharpe_ratio
+from quant_fund.monitoring.kill_switch import KillSwitch
+from quant_fund.pipeline.forecast import (
+    MARKET_RISK_OVERLAY_GARCH,
+    MARKET_RISK_OVERLAY_REALIZED_GARCH,
+    market_risk_overlay_asof,
+)
+from quant_fund.portfolio.risk_gate import check_order, funded
+from quant_fund.risk.overlay import BookRiskOverlay
+from quant_fund.schemas.errors import KillSwitchActive, RiskGateRejected
+from quant_fund.schemas.orders import Order, OrderSide, OrderStatus
+
+
+class StaleValuationError(RuntimeError):
+    """Backtest cannot value a held position within the configured freshness window."""
+
+
+@dataclass
+class BacktestResult:
+    equity: pl.DataFrame
+    fills: pl.DataFrame
+    metrics: dict[str, float | str | int | bool | dict[str, Any]]
+    frictionless: bool
+    source_note: str
+
+
+@dataclass
+class Book:
+    cash: float
+    shares: dict[str, float] = field(default_factory=dict)
+
+    def nav(self, prices: dict[str, float]) -> float:
+        pos = sum(self.shares.get(s, 0.0) * prices.get(s, 0.0) for s in self.shares)
+        return self.cash + pos
+
+
+def _valid_price(value: object) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, float):
+        return value if np.isfinite(value) and value > 0 else None
+    try:
+        price = float(str(value))
+    except (TypeError, ValueError):
+        return None
+    return price if np.isfinite(price) and price > 0 else None
+
+
+def _target_weight_map(rows: pl.DataFrame) -> dict[str, float]:
+    """Return validated target weights for one decision timestamp.
+
+    Duplicate ``(event_time, security_id)`` rows are rejected rather than
+    silently depending on input row order. Security identifiers are normalized
+    to strings at this boundary so downstream execution keys are stable.
+    """
+    required = {"event_time", "security_id", "target_weight"}
+    missing = required.difference(rows.columns)
+    if missing:
+        raise ValueError(f"target weights missing required columns: {sorted(missing)}")
+    duplicates = (
+        rows.group_by(["event_time", "security_id"])
+        .agg(pl.len().alias("_n"))
+        .filter(pl.col("_n") > 1)
+    )
+    if duplicates.height:
+        raise ValueError("duplicate target weights for event_time/security_id")
+    targets: dict[str, float] = {}
+    for row in rows.iter_rows(named=True):
+        weight = float(row["target_weight"])
+        if not np.isfinite(weight):
+            raise ValueError(
+                f"target_weight must be finite for {row['security_id']!r} at {row['event_time']!r}"
+            )
+        targets[str(row["security_id"])] = weight
+    return targets
+
+
+def _validate_target_weight_panel(weights: pl.DataFrame) -> None:
+    """Reject duplicate target keys before a backtest starts."""
+    _target_weight_map(weights)
+
+
+def _projected_exposures(
+    book: Book,
+    prices: dict[str, float],
+    sid: str,
+    delta: float,
+    nav: float,
+) -> tuple[float, float, float]:
+    """Return (current_weight, gross_after, net_after) after applying ``delta`` shares."""
+    nav_safe = max(nav, 1e-12)
+    current_shares = book.shares.get(sid, 0.0)
+    current_weight = (current_shares * prices.get(sid, 0.0)) / nav_safe
+    projected: dict[str, float] = dict(book.shares)
+    projected[sid] = current_shares + delta
+    # Only nonzero-quantity ids with a valid mark contribute; a +0.0 term
+    # never changes a float sum, so restricting to contributors is bit-exact.
+    contributors = sorted(
+        s
+        for s in set(projected) | set(prices)
+        if projected.get(s, 0.0) != 0.0 and prices.get(s, 0.0) != 0.0
+    )
+    gross = sum(abs(projected[s] * prices[s]) for s in contributors)
+    net = sum(projected[s] * prices[s] for s in contributors)
+    return current_weight, gross / nav_safe, net / nav_safe
+
+
+def _make_order(
+    *,
+    sid: str,
+    delta: float,
+    signal_time: datetime,
+    order_time: datetime,
+    order_seq: int,
+) -> Order:
+    side = OrderSide.BUY if delta > 0 else OrderSide.SELL
+    return Order(
+        order_id=f"bt-{order_seq}",
+        security_id=sid,
+        symbol=sid,
+        side=side,
+        quantity=abs(float(delta)),
+        signal_time=signal_time,
+        decision_time=signal_time,
+        order_time=order_time,
+        status=OrderStatus.NEW,
+    )
+
+
+def _fast_replay_panel_supported(bars: pl.DataFrame, weights: pl.DataFrame) -> bool:
+    """Clocks the vectorized matrices can ingest without changing results.
+
+    Empty books, non-datetime clocks, mismatched datetime units, and duplicate
+    bar keys stay on the event loop. The vectorized matrices use raw integer
+    timestamps and replace repeated bar cells, unlike the reference loop.
+    """
+    if bars.height == 0:
+        return False
+    bar_clock = bars.schema.get("event_time")
+    weight_clock = weights.schema.get("event_time")
+    if not isinstance(bar_clock, pl.Datetime) or bar_clock != weight_clock:
+        return False
+    return not bool(bars.select("event_time", "security_id").is_duplicated().any())
+
+
+def _fast_replay_is_complete(config: AppConfig, risk_overlay: BookRiskOverlay | None) -> bool:
+    """Whether the vectorized replay matches this event loop, including metrics.
+
+    ``run_backtest_fast`` refuses close-auction execution and book-level risk
+    overlays, and it does not stamp GARCH overlay date counters. When neither
+    overlay artifact exists, every date's market overlay is ``(None, None)``
+    and both counters stay 0, so the fast replay plus those zeros is the same
+    result. A present artifact keeps the event loop, which counts overlay dates
+    and feeds the per-order vol gate.
+    """
+    if risk_overlay is not None or config.execution.allow_close_auction:
+        return False
+    from quant_fund.pipeline.forecast import (
+        _garch_artifact_path,
+        _realized_garch_artifact_path,
+    )
+
+    return not (
+        _garch_artifact_path(config).exists() or _realized_garch_artifact_path(config).exists()
+    )
+
+
+def run_backtest(
+    bars: pl.DataFrame,
+    weights: pl.DataFrame,
+    config: AppConfig,
+    *,
+    initial_nav: float = 1_000_000.0,
+    risk_overlay: BookRiskOverlay | None = None,
+    fast: bool | None = None,
+) -> BacktestResult:
+    """`weights` columns: event_time, security_id, target_weight.
+
+    Target computed from close t is executed at next open (unless close auction enabled).
+    Weight rows are a rebalance grid: the last target is held until the next
+    row. The optional ``risk_overlay`` may scale or flatten those carried
+    weights using prior-close NAV only. Names that do not mark today are
+    targeted to 0 so the book can exit while a last print still exists.
+
+    ``fast`` pins the engine. ``None`` (default) auto-dispatches to the
+    vectorized ``run_backtest_fast`` replay only when it is semantically
+    complete for the workload. ``fast=True`` is the explicit contract: the
+    vectorized path runs or the call fails closed with ``ValueError`` —
+    an unsupported workload never silently degrades to the event loop.
+    ``fast=False`` pins the reference event loop for audit runs.
+    """
+    if fast is not False:
+        from quant_fund.backtest.fast_replay import run_backtest_fast
+
+        # fast=True skips the completeness probes: run_backtest_fast carries
+        # the same checks and fails closed with ValueError when the workload
+        # is outside the class it reproduces bit-identically — it never
+        # degrades silently to the event loop on an explicit request.
+        if fast is True or (
+            _fast_replay_panel_supported(bars, weights)
+            and _fast_replay_is_complete(config, risk_overlay)
+        ):
+            result = run_backtest_fast(
+                bars,
+                weights,
+                config,
+                initial_nav=initial_nav,
+                risk_overlay=risk_overlay,
+            )
+            result.metrics["garch_risk_overlay_dates"] = 0
+            result.metrics["realized_garch_risk_overlay_dates"] = 0
+            return result
+    return _run_backtest_event_loop(
+        bars,
+        weights,
+        config,
+        initial_nav=initial_nav,
+        risk_overlay=risk_overlay,
+    )
+
+
+def _run_backtest_event_loop(
+    bars: pl.DataFrame,
+    weights: pl.DataFrame,
+    config: AppConfig,
+    *,
+    initial_nav: float = 1_000_000.0,
+    risk_overlay: BookRiskOverlay | None = None,
+) -> BacktestResult:
+    """Reference event loop. ``run_backtest`` delegates here when the fast replay is incomplete."""
+    _validate_target_weight_panel(weights)
+    px = bars.select(
+        "security_id",
+        "event_time",
+        "open",
+        "close",
+        "close_total_return",
+        "volume",
+        pl.col("adv")
+        if "adv" in bars.columns
+        else (pl.col("close") * pl.col("volume")).alias("adv"),
+        pl.col("vol_20") if "vol_20" in bars.columns else pl.lit(0.02).alias("vol_20"),
+        "source",
+    )
+    # Pre-index rows by timestamp once: per-date frame scans inside the loop
+    # are O(rows x dates) and dominate wall time on wide books. Dict lookup
+    # keeps identical iteration order (input row order preserved per date).
+    day_rows_map: dict[datetime, list[dict[str, Any]]] = {}
+    for row in px.iter_rows(named=True):
+        day_rows_map.setdefault(row["event_time"], []).append(row)
+    # The panel-level validation above already rejects duplicate
+    # (event_time, security_id) keys and non-finite weights, so the per-date
+    # target map can be built once without changing semantics.
+    weights_by_date: dict[datetime, dict[str, float]] = {}
+    for wrow in weights.iter_rows(named=True):
+        weights_by_date.setdefault(wrow["event_time"], {})[str(wrow["security_id"])] = float(
+            wrow["target_weight"]
+        )
+    dates = sorted(day_rows_map)
+    book = Book(cash=initial_nav)
+    navs: list[dict[str, Any]] = []
+    fill_rows: list[dict[str, Any]] = []
+    cost_sum = {"commission": 0.0, "spread": 0.0, "impact": 0.0, "turnover": 0.0}
+    last_marks: dict[str, float] = {}
+    mark_ages: dict[str, int] = {}
+    synthetic = (
+        "synthetic" in set(px["source"].drop_nulls().to_list()) if "source" in px.columns else False
+    )
+    kill = KillSwitch(config.kill_switch)
+    reject_count = 0
+    cash_reject_count = 0
+    halt_count = 0
+    order_seq = 0
+    garch_overlay_dates = 0
+    realized_garch_overlay_dates = 0
+    last_target_w: dict[str, float] = {}
+
+    use_next_open = (
+        config.execution.fill is FillConvention.NEXT_OPEN
+        and not config.execution.allow_close_auction
+    )
+
+    for i, dt in enumerate(dates[:-1] if use_next_open else dates):
+        exec_dt = dates[i + 1] if use_next_open else dt
+        day_rows = day_rows_map.get(exec_dt, [])
+        exec_mark: dict[str, float] = {}
+        close_mark = dict(last_marks)
+        next_mark_ages = dict(mark_ages)
+        marked_today: set[str] = set()
+        advs: dict[str, float] = {}
+        vols: dict[str, float] = {}
+        for row in day_rows:
+            sid = str(row["security_id"])
+            raw_exec = _valid_price(row["open"] if use_next_open else row["close"])
+            if raw_exec is not None:
+                exec_mark[sid] = raw_exec
+            total_return_mark = _valid_price(row["close_total_return"])
+            fallback_mark = _valid_price(row["close"])
+            if total_return_mark is not None:
+                close_mark[sid] = total_return_mark
+                next_mark_ages[sid] = 0
+                marked_today.add(sid)
+            elif fallback_mark is not None:
+                close_mark[sid] = fallback_mark
+                next_mark_ages[sid] = 0
+                marked_today.add(sid)
+        for sid in close_mark:
+            if sid not in marked_today:
+                next_mark_ages[sid] = next_mark_ages.get(sid, 0) + 1
+        # Marks knowable at execution time: before this bar's close prints.
+        # Non-executing names must be valued at the pre-update mark; marking
+        # them at exec_dt's own close leaks future prices into sizing.
+        pre_exec_marks = last_marks
+        last_marks = dict(close_mark)
+        mark_ages = next_mark_ages
+        stale_held = {
+            sid: mark_ages.get(sid)
+            for sid, shares in book.shares.items()
+            if abs(shares) > 1e-12 and (sid not in close_mark or sid not in mark_ages)
+        }
+        stale_held.update(
+            {
+                sid: mark_ages[sid]
+                for sid, shares in book.shares.items()
+                if abs(shares) > 1e-12
+                and sid in mark_ages
+                and mark_ages[sid] > config.risk_gate.stale_price_bars
+            }
+        )
+        if stale_held:
+            details = ", ".join(
+                f"{sid}={age if age is not None else 'unknown'}" for sid, age in stale_held.items()
+            )
+            raise StaleValuationError(
+                "held position valuation is stale beyond the configured limit: " + details
+            )
+        # Decision price = the signal bar's close at ``dt``; it anchors the
+        # implementation-shortfall drift of fills executing at ``exec_dt``.
+        decision_marks: dict[str, float] = {}
+        for row in day_rows_map.get(dt, []):
+            mark = _valid_price(row["close"])
+            if mark is not None:
+                decision_marks[str(row["security_id"])] = mark
+            # Liquidity and volatility for a next-open order must be known
+            # at the signal close. The execution day's final volume/ADV and
+            # realized volatility are future data at the moment of the fill.
+            sid = str(row["security_id"])
+            known_adv = _valid_price(row["adv"])
+            if known_adv is not None:
+                advs[sid] = known_adv
+            vols[sid] = _valid_price(row["vol_20"]) or 0.02
+        # Value held names without an execution print at the last mark known
+        # before this bar's close rather than at 0.0: a missing open must not
+        # understate NAV / exposures and silently let the risk gate admit
+        # orders, but the same bar's close would be look-ahead.
+        nav_prices = {**pre_exec_marks, **exec_mark}
+        nav = book.nav(nav_prices)
+        if nav <= 0:
+            break
+        # Sparse rebalance panels must hold until the next decision date.
+        # Missing rows are not a flatten-to-cash instruction.
+        if dt in weights_by_date:
+            last_target_w = weights_by_date[dt]
+        target_w = dict(last_target_w)
+        if risk_overlay is not None:
+            overlay_scale = float(risk_overlay.preview_scale())
+            if overlay_scale != 1.0:
+                target_w = {key: float(value) * overlay_scale for key, value in target_w.items()}
+        # A missing mark is an exit, not a ghost hold. Flatten those names
+        # while a last execution print may still exist.
+        for sid in list(target_w):
+            if sid not in marked_today:
+                target_w[sid] = 0.0
+        for sid, held_qty in book.shares.items():
+            if abs(held_qty) > 1e-12 and sid not in marked_today:
+                target_w[sid] = 0.0
+        ids = set(exec_mark) | set(book.shares) | set(target_w)
+        traded_turn = 0.0
+        market_vol, overlay_source = market_risk_overlay_asof(config, bars, dt)
+        if overlay_source == MARKET_RISK_OVERLAY_REALIZED_GARCH:
+            realized_garch_overlay_dates += 1
+        elif overlay_source == MARKET_RISK_OVERLAY_GARCH:
+            garch_overlay_dates += 1
+        costs_cfg = config.costs
+        shares = book.shares
+        for sid in sorted(ids):
+            price = exec_mark.get(sid)
+            if price is None:
+                # A missing execution bar is not an executable zero price.
+                continue
+            tw = target_w.get(sid, 0.0)
+            desired = tw * nav / price
+            current = shares.get(sid, 0.0)
+            delta = desired - current
+            if abs(delta) * price < 1.0:
+                continue
+            adv = advs.get(sid)
+            if (
+                adv is None
+                or not np.isfinite(costs_cfg.participation_limit)
+                or not 0 < costs_cfg.participation_limit <= 1
+            ):
+                reject_count += 1
+                continue
+            costs = total_cost(delta, price, adv, vols.get(sid, 0.02), costs_cfg)
+            # Cap executable size using liquidity available at the decision.
+            max_qty = costs_cfg.participation_limit * (adv / price)
+            if abs(delta) > max_qty:
+                delta = np.sign(delta) * max_qty
+                costs = total_cost(delta, price, adv, vols.get(sid, 0.02), costs_cfg)
+            try:
+                kill.assert_new_orders_allowed()
+            except KillSwitchActive:
+                # Every attempted order blocked by the halt is counted, mirroring
+                # SimulatedBroker's per-order reject accounting. No halt flag:
+                # later turns' orders must also reach the gate and be counted,
+                # not silently vanish behind an early break.
+                halt_count += 1
+                continue
+            current_w, gross_after, net_after = _projected_exposures(
+                book, nav_prices, sid, delta, nav
+            )
+            participation = abs(delta) * price / adv
+            order_seq += 1
+            order = _make_order(
+                sid=sid,
+                delta=delta,
+                signal_time=dt,
+                order_time=exec_dt,
+                order_seq=order_seq,
+            )
+            try:
+                check_order(
+                    order,
+                    nav=nav,
+                    price=price,
+                    current_weight=current_w,
+                    gross_after=gross_after,
+                    net_after=net_after,
+                    participation=participation,
+                    predicted_vol=vols.get(sid, 0.02),
+                    config=config,
+                    market_predicted_vol=market_vol,
+                )
+            except RiskGateRejected:
+                reject_count += 1
+                continue
+            notional = delta * price
+            total_trade_cost = float(costs["total"])
+            # Match live/paper execution semantics: a buy is rejected rather
+            # than allowing the research book to enter an impossible overdraft.
+            if delta > 0 and not funded(book.cash, notional + total_trade_cost):
+                cash_reject_count += 1
+                continue
+            book.cash -= notional + total_trade_cost
+            book.shares[sid] = current + delta
+            # Turnover is based on executed notional, not the requested target
+            # change; participation caps can make those materially different.
+            traded_turn += abs(notional) / max(nav, 1e-12)
+            for k in ("commission", "spread", "impact", "turnover_bps"):
+                bucket = "turnover" if k == "turnover_bps" else k
+                cost_sum[bucket] += float(costs[k])
+            fill_rows.append(
+                {
+                    "fill_time": exec_dt,
+                    "signal_time": dt,
+                    "security_id": sid,
+                    "quantity": delta,
+                    "price": price,
+                    "fee": costs["commission"],
+                    "spread_cost": costs["spread"],
+                    "impact_cost": costs["impact"],
+                    "turnover_cost": costs["turnover_bps"],
+                    "decision_price": decision_marks.get(sid),
+                }
+            )
+        # mark to close
+        nav_close = book.nav(close_mark)
+        # borrow on shorts
+        short_notional = sum(
+            abs(min(book.shares.get(s, 0.0), 0.0)) * close_mark.get(s, 0.0) for s in book.shares
+        )
+        borrow = short_notional * (config.costs.borrow_bps_per_year / 1e4) / 252.0
+        if not config.costs.frictionless:
+            book.cash -= borrow
+            nav_close -= borrow
+        navs.append(
+            {
+                "event_time": exec_dt,
+                "nav": nav_close,
+                "gross": sum(
+                    abs(book.shares.get(s, 0.0) * close_mark.get(s, 0.0)) for s in book.shares
+                )
+                / max(nav_close, 1e-12),
+                "net": sum(book.shares.get(s, 0.0) * close_mark.get(s, 0.0) for s in book.shares)
+                / max(nav_close, 1e-12),
+                "turnover": traded_turn,
+            }
+        )
+        if risk_overlay is not None:
+            risk_overlay.observe(float(nav_close))
+    result = _build_result(
+        navs=navs,
+        fill_rows=fill_rows,
+        cost_sum=cost_sum,
+        reject_count=reject_count,
+        cash_reject_count=cash_reject_count,
+        halt_count=halt_count,
+        synthetic=synthetic,
+        config=config,
+        initial_nav=initial_nav,
+    )
+    result.metrics["garch_risk_overlay_dates"] = garch_overlay_dates
+    result.metrics["realized_garch_risk_overlay_dates"] = realized_garch_overlay_dates
+    if risk_overlay is not None:
+        result.metrics["book_risk_overlay"] = risk_overlay.snapshot()
+    return result
+
+
+def _build_result(
+    *,
+<<<<<<< Updated upstream
+    navs: list[dict[str, Any]] | pl.DataFrame,
+    fill_rows: list[dict[str, Any]] | pl.DataFrame,
+=======
+    navs: list[dict] | pl.DataFrame,
+    fill_rows: list[dict] | pl.DataFrame,
+>>>>>>> Stashed changes
+    cost_sum: dict[str, float],
+    reject_count: int,
+    cash_reject_count: int,
+    halt_count: int,
+    synthetic: bool,
+    config: AppConfig,
+    initial_nav: float,
+) -> BacktestResult:
+    """Shared metrics/output tail for ``run_backtest`` and the fast replay path."""
+    # Column-oriented construction: pl.DataFrame(list-of-dicts) goes through
+    # the slow from_dicts marshalling path; transposing to per-column lists is
+    # several times faster and produces an identical frame. Callers that
+    # already hold column data (the compiled replay kernel) may pass a
+    # ready-built DataFrame with the same columns/dtypes.
+    eq = (
+        navs
+        if isinstance(navs, pl.DataFrame)
+        else (
+            pl.DataFrame({k: [r[k] for r in navs] for k in navs[0]})
+            if navs
+            else pl.DataFrame({"event_time": [], "nav": []})
+        )
+    )
+    fills_df = (
+        fill_rows
+        if isinstance(fill_rows, pl.DataFrame)
+<<<<<<< Updated upstream
+        else (
+            pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]})
+            if fill_rows
+            else pl.DataFrame()
+        )
+=======
+        else (pl.DataFrame({k: [r[k] for r in fill_rows] for k in fill_rows[0]}) if fill_rows else pl.DataFrame())
+>>>>>>> Stashed changes
+    )
+    is_summary: dict[str, object] | None = None
+    if fills_df.height:
+        scored = fills_df.drop_nulls("decision_price")
+        if scored.height:
+            from quant_fund.execution.implementation_shortfall import (
+                aggregate_shortfall,
+                shortfall_frame,
+            )
+
+            is_summary = aggregate_shortfall(shortfall_frame(scored))
+    turnover_bps_cost = float(cost_sum.get("turnover", 0.0))
+    if eq.height >= 2:
+        rets = eq["nav"].pct_change().drop_nulls().to_numpy()
+        sr = sharpe_ratio(rets)
+        navs_list = [float(v) for v in eq["nav"].to_list()]
+        turns = [float(v) for v in eq["turnover"].to_list()] if "turnover" in eq.columns else [0.0]
+        gross_s = eq["gross"].to_numpy() if "gross" in eq.columns else None
+        net_s = eq["net"].to_numpy() if "net" in eq.columns else None
+        diag = book_diagnostics(
+            rets,
+            gross_exposure=gross_s,
+            net_exposure=net_s,
+            turnover=np.asarray(turns, dtype=float),
+            label="BACKTEST_SIM",
+            data_source="SYNTHETIC" if synthetic else "file",
+        )
+        analytics_export = export_analytics_dict(
+            diag,
+            extra={
+                "total_return": navs_list[-1] / float(initial_nav) - 1.0,
+                "sharpe": sr["sharpe"],
+                "n": sr["n"],
+                "max_drawdown": max_drawdown(rets),
+                "commission": cost_sum["commission"],
+                "spread": cost_sum["spread"],
+                "impact": cost_sum["impact"],
+                "turnover_bps_cost": turnover_bps_cost,
+                "flag_high_sharpe": sr["flag_high_sharpe"],
+                "risk_gate_rejects": reject_count,
+                "cash_rejects": cash_reject_count,
+                "kill_switch_halts": halt_count,
+            },
+        )
+        metrics: dict[str, float | str | int | bool | dict[str, Any]] = {
+            "total_return": navs_list[-1] / float(initial_nav) - 1.0,
+            "sharpe": sr["sharpe"],
+            "n": sr["n"],
+            "max_drawdown": max_drawdown(rets),
+            "mean_turnover": float(np.mean(turns)),
+            "commission": cost_sum["commission"],
+            "spread": cost_sum["spread"],
+            "impact": cost_sum["impact"],
+            "turnover_bps_cost": turnover_bps_cost,
+            "flag_high_sharpe": sr["flag_high_sharpe"],
+            "risk_gate_rejects": reject_count,
+            "cash_rejects": cash_reject_count,
+            "kill_switch_halts": halt_count,
+            "analytics": diag,
+            "analytics_export": analytics_export,
+            "implementation_shortfall": is_summary or {},
+            "research_only": True,
+            "live_pnl_claim": False,
+        }
+    else:
+        # No pct_change sample (zero or one equity row). A single mark still
+        # has a level return against starting capital; an empty path does not.
+        # Sharpe stays undefined. Research-only labeling is unchanged.
+        if eq.height == 1:
+            total_return = float(eq["nav"][0]) / float(initial_nav) - 1.0
+        else:
+            total_return = 0.0
+        metrics = {
+            "total_return": total_return,
+            "sharpe": float("nan"),
+            "n": 0,
+            "turnover_bps_cost": turnover_bps_cost,
+            "risk_gate_rejects": reject_count,
+            "cash_rejects": cash_reject_count,
+            "kill_switch_halts": halt_count,
+            "implementation_shortfall": is_summary or {},
+            "research_only": True,
+            "live_pnl_claim": False,
+        }
+    if config.costs.frictionless:
+        metrics["label"] = "FRICTIONLESS RESEARCH ONLY"
+    note = "SYNTHETIC" if synthetic else "file"
+    metrics["data_source"] = note
+    return BacktestResult(
+        equity=eq,
+        fills=fills_df,
+        metrics=metrics,
+        frictionless=config.costs.frictionless,
+        source_note=note,
+    )
+
+
+def cost_sensitivity(
+    bars: pl.DataFrame,
+    weights: pl.DataFrame,
+    config: AppConfig,
+    *,
+    impact_multipliers: tuple[float, ...] = (1.0, 2.0),
+    initial_nav: float = 1_000_000.0,
+) -> dict[str, object]:
+    """Run matched cost scenarios for execution robustness.
+
+    This is deliberately separate from scientific research families. It
+    answers whether the simulated economic diagnostic survives configured and
+    doubled square-root impact; it does not establish live profitability.
+
+    Output never includes Sharpe / flag_high_sharpe keys (execution diagnostic
+    only; ``live_pnl_claim=False``).
+    """
+    if not impact_multipliers or any(float(m) <= 0.0 for m in impact_multipliers):
+        raise ValueError("impact_multipliers must contain positive values")
+    required_w = {"event_time", "security_id", "target_weight"}
+    missing_w = required_w - set(weights.columns)
+    if missing_w:
+        raise ValueError(f"weights missing columns: {sorted(missing_w)}")
+    required_b = {
+        "event_time",
+        "security_id",
+        "open",
+        "close",
+        "close_total_return",
+        "volume",
+        "source",
+    }
+    missing_b = required_b - set(bars.columns)
+    if missing_b:
+        raise ValueError(f"bars missing columns: {sorted(missing_b)}")
+    baseline = float(config.costs.impact_y)
+    if bars.height == 0:
+        return {
+            "scenarios": {},
+            "baseline_impact_y": baseline,
+            "claim": "execution_diagnostic_only",
+            "empty": True,
+            "research_only": True,
+            "live_pnl_claim": False,
+        }
+    scenarios: dict[str, dict[str, object]] = {}
+    for multiplier in impact_multipliers:
+        scenario = config.model_copy(deep=True)
+        scenario.costs.impact_y = baseline * float(multiplier)
+        result = run_backtest(bars, weights, scenario, initial_nav=initial_nav)
+        costs = [
+            float(value)
+            for name in ("commission", "spread", "impact")
+            if isinstance((value := result.metrics.get(name, 0.0)), (int, float))
+        ]
+        # Deliberately omit sharpe / flag_high_sharpe — not a research headline.
+        scenarios[f"impact_{float(multiplier):g}x"] = {
+            "impact_multiplier": float(multiplier),
+            "total_return": result.metrics.get("total_return"),
+            "total_cost": sum(costs),
+            "impact_cost": result.metrics.get("impact", 0.0),
+            "risk_gate_rejects": result.metrics.get("risk_gate_rejects", 0),
+            "source": result.source_note,
+            "claim": "execution_diagnostic_only",
+        }
+    return {
+        "scenarios": scenarios,
+        "baseline_impact_y": baseline,
+        "claim": "execution_diagnostic_only",
+        "research_only": True,
+        "live_pnl_claim": False,
+    }
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Publish a text artifact atomically so readers never see partial JSON."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def export_backtest_metrics_json(
+    result: BacktestResult,
+    path: Path | str,
+    *,
+    extra: dict[str, Any] | None = None,
+) -> Path:
+    """Write backtest metrics JSON aligned with paper ledger analytics schema.
+
+    Prefer ``result.metrics["analytics_export"]`` when present; otherwise project
+    ``analytics`` / top-level metrics through ``export_analytics_dict``. Always
+    forces research-only labeling (never a live P&L claim).
+    """
+    dest = Path(path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    metrics = dict(result.metrics)
+    blob = metrics.get("analytics_export")
+    if not isinstance(blob, dict):
+        diag = metrics.get("analytics")
+        if not isinstance(diag, dict):
+            diag = {}
+        top_extra: dict[str, Any] = {
+            str(k): metrics[k]
+            for k in (
+                "total_return",
+                "sharpe",
+                "n",
+                "max_drawdown",
+                "commission",
+                "spread",
+                "impact",
+                "flag_high_sharpe",
+                "risk_gate_rejects",
+                "kill_switch_halts",
+                "mean_turnover",
+            )
+            if k in metrics
+        }
+        if extra:
+            top_extra.update(extra)
+        blob = export_analytics_dict(diag, extra=top_extra)
+    elif extra:
+        blob = dict(blob)
+        blob.update(extra)
+    else:
+        blob = dict(blob)
+    # Always force research-only labeling after any merge (never a live P&L claim).
+    blob["research_only"] = True
+    blob["live_pnl_claim"] = False
+    blob["frictionless"] = bool(result.frictionless)
+    blob["source_note"] = str(result.source_note)
+    blob["aligned_schema_keys"] = list(ANALYTICS_SCHEMA_KEYS)
+    blob["analytics_export_sha256"] = analytics_export_digest(blob)
+    _atomic_write_text(dest, json.dumps(blob, indent=2, default=str))
+    return dest
+
+
+def capacity_sensitivity(
+    bars: pl.DataFrame,
+    weights: pl.DataFrame,
+    config: AppConfig,
+    *,
+    nav_levels: tuple[float, ...] = (100_000.0, 1_000_000.0, 10_000_000.0),
+    adv_haircuts: tuple[float, ...] = (1.0, 0.5),
+) -> dict[str, object]:
+    """Replay the same decisions at increasing NAV and reduced known liquidity.
+
+    Every cell reruns risk checks, impact, and partial participation-limited
+    fills; return percentages alone cannot measure strategy capacity. Daily
+    ADV is the signal-close estimate and is lagged at next-open execution.
+    Haircut scenarios only *reduce* that estimate. These are research-only
+    stress tests, not forecasts of deployable fund size or live fill quality.
+    """
+    if not nav_levels or any(not np.isfinite(n) or n <= 0 for n in nav_levels):
+        raise ValueError("nav_levels must contain finite positive capital amounts")
+    if not adv_haircuts or any(not np.isfinite(h) or not 0 < h <= 1 for h in adv_haircuts):
+        raise ValueError("adv_haircuts must be finite fractions in (0, 1]")
+    if config.costs.frictionless:
+        raise ValueError("capacity sensitivity requires an enabled transaction-cost model")
+    if bars.height < 2:
+        raise ValueError("capacity sensitivity requires at least two bar rows")
+    if "adv" not in bars.columns and not {"close", "volume"} <= set(bars.columns):
+        raise ValueError("bars need ADV or close and volume for a causal liquidity proxy")
+    adv_expression = pl.col("adv") if "adv" in bars.columns else pl.col("close") * pl.col("volume")
+    cases: list[dict[str, object]] = []
+    for capital in nav_levels:
+        for haircut in adv_haircuts:
+            stressed = bars.with_columns((adv_expression * haircut).alias("adv"))
+            result = run_backtest(stressed, weights, config, initial_nav=capital)
+            executed_notional = (
+                sum(
+                    abs(float(quantity) * float(price))
+                    for quantity, price in zip(
+                        result.fills.get_column("quantity").to_list(),
+                        result.fills.get_column("price").to_list(),
+                        strict=True,
+                    )
+                )
+                if result.fills.height
+                else 0.0
+            )
+            cases.append(
+                {
+                    "initial_nav": float(capital),
+                    "adv_haircut": float(haircut),
+                    "data_source": result.source_note,
+                    "end_nav": float(result.equity.get_column("nav")[-1])
+                    if result.equity.height
+                    else float(capital),
+                    "total_return": (
+                        float(result.equity.get_column("nav")[-1]) / float(capital) - 1
+                        if result.equity.height
+                        else 0.0
+                    ),
+                    "filled_orders": result.fills.height,
+                    "executed_notional_fraction": executed_notional / float(capital),
+                    "risk_or_liquidity_rejects": cast(int, result.metrics["risk_gate_rejects"]),
+                    "cash_rejects": cast(int, result.metrics["cash_rejects"]),
+                    "total_impact_dollars": cast(float, result.metrics.get("impact", 0.0)),
+                }
+            )
+    return {
+        "claim": "execution_capacity_diagnostic_only",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "n_cases": len(cases),
+        "cases": cases,
+    }

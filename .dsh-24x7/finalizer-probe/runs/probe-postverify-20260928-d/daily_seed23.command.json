@@ -1,0 +1,53 @@
+{
+    "group":  "daily_seed23",
+    "command":  [
+                    "D:\\dipcatcher\\.venv\\Scripts\\python.exe",
+                    "D:\\dipcatcher\\scripts\\sota_eval_kronos.py",
+                    "--merge-parts",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_btcusdt_1d_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_ethusdt_1d_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_solusdt_1d_deep.losses.npz",
+                    "--merge-out",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\seed23_merged.json",
+                    "--seed",
+                    "7",
+                    "--n-boot",
+                    "2000"
+                ],
+    "command_text":  "D:\\dipcatcher\\.venv\\Scripts\\python.exe D:\\dipcatcher\\scripts\\sota_eval_kronos.py --merge-parts D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_btcusdt_1d_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_ethusdt_1d_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_solusdt_1d_deep.losses.npz --merge-out D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\seed23_merged.json --seed 7 --n-boot 2000",
+    "cwd":  "D:\\dipcatcher",
+    "shards":  [
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_btcusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/seed23_btcusdt_1d_deep.losses.npz",
+                       "bytes":  11282,
+                       "sha256":  "9d9a2ac3b6225164f4fa5cada15aebcfd7a16cd87b1db894cbab7ffd6e8a45e9"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_ethusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/seed23_ethusdt_1d_deep.losses.npz",
+                       "bytes":  11282,
+                       "sha256":  "47321b8765d57920dd3c5c12f2388e496c0c7ccdb30f1cfdb3871d26b26cf80c"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\seed23_solusdt_1d_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/seed23_solusdt_1d_deep.losses.npz",
+                       "bytes":  11282,
+                       "sha256":  "9e06f31c39b1941914784072eb565a699f901f4e424bc1e2c32584755a67776a"
+                   }
+               ],
+    "stdout":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\daily_seed23.stdout.txt",
+    "stderr":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\daily_seed23.stderr.txt",
+    "transcript":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\daily_seed23.transcript.txt",
+    "receipt":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\seed23_merged.json",
+    "command_record":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\daily_seed23.command.json",
+    "started_utc":  "2026-09-28T07:42:19.4171258Z",
+    "exit_code":  0,
+    "stdout_sha256":  "717b2fc70d31cdbee129b0cc60aca1505fc70000c551a4f6e23c67b577cc0599",
+    "stderr_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transcript_sha256":  "7c50ef09b5463d61b79aa706eda196d305604f8410c9c088b1a8e3c19e171169",
+    "status":  "succeeded",
+    "receipt_sha256":  "c8f14396736a801ad681db9bfed252caaa9f0f236f3154a7282fa7cd6e67bae2",
+    "losses":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-d\\seed23_merged.losses.npz",
+    "losses_sha256":  "58e00aabe2f352d598992eae7c0493e4db1aba8478cf93f6b2a7d01ac8f0258c"
+}

@@ -1,0 +1,67 @@
+{
+    "group":  "four_hour_seed7",
+    "command":  [
+                    "D:\\dipcatcher\\.venv\\Scripts\\python.exe",
+                    "D:\\dipcatcher\\scripts\\sota_eval_kronos.py",
+                    "--merge-parts",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_bnbusdt_4h.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_btcusdt_4h_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_ethusdt_4h_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_solusdt_4h_deep.losses.npz",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_xrpusdt_4h.losses.npz",
+                    "--merge-out",
+                    "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\h4_merged.json",
+                    "--seed",
+                    "7",
+                    "--n-boot",
+                    "2000"
+                ],
+    "command_text":  "D:\\dipcatcher\\.venv\\Scripts\\python.exe D:\\dipcatcher\\scripts\\sota_eval_kronos.py --merge-parts D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_bnbusdt_4h.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_btcusdt_4h_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_ethusdt_4h_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_solusdt_4h_deep.losses.npz D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_xrpusdt_4h.losses.npz --merge-out D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\h4_merged.json --seed 7 --n-boot 2000",
+    "cwd":  "D:\\dipcatcher",
+    "shards":  [
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_bnbusdt_4h.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/h4_bnbusdt_4h.losses.npz",
+                       "bytes":  11238,
+                       "sha256":  "9698132f486faaa326ddb4c3f903468e158bc0c0268890a754423701f7bb3d42"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_btcusdt_4h_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/h4_btcusdt_4h_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "def34ee1b513bf3e581325add714bc6868f90f463612a77f7aab61c2c366c748"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_ethusdt_4h_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/h4_ethusdt_4h_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "ca074b1fb5d297e77f059151ec329083e92d58816705cf8555306fbd16e335c4"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_solusdt_4h_deep.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/h4_solusdt_4h_deep.losses.npz",
+                       "bytes":  11278,
+                       "sha256":  "988c582863e53bb537859eac9bb8f04f6ca1c02ae16540a38c2928cf0926e89f"
+                   },
+                   {
+                       "path":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\h4_xrpusdt_4h.losses.npz",
+                       "relative":  ".dsh-24x7/finalizer-probe/h4_xrpusdt_4h.losses.npz",
+                       "bytes":  11238,
+                       "sha256":  "36e61abd8fd79bb1fa0851a8a345cabf72242cdeb9fecb33a039507f5a36456b"
+                   }
+               ],
+    "stdout":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\four_hour_seed7.stdout.txt",
+    "stderr":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\four_hour_seed7.stderr.txt",
+    "transcript":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\four_hour_seed7.transcript.txt",
+    "receipt":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\h4_merged.json",
+    "command_record":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\four_hour_seed7.command.json",
+    "started_utc":  "2026-09-28T08:08:11.0193019Z",
+    "exit_code":  0,
+    "stdout_sha256":  "0a4de90ee4274fc29d6fb54e08431a3275cf4811526e257b0a6e1817080e6978",
+    "stderr_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transcript_sha256":  "a3424de3507b9414fcfdb15a347c47ea7e5b128337926205cda30c951f255552",
+    "status":  "succeeded",
+    "receipt_sha256":  "75a6e5c3afce9508bedc26fc4e0c73259a263c4a4396895589dd56e4879ea1f9",
+    "losses":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\h4_merged.losses.npz",
+    "losses_sha256":  "da039bf941fd1c4c6bd36f50c001d81889127c3492d93dc14d4278217ca9da6c"
+}

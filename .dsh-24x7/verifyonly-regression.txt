@@ -1,0 +1,62 @@
+{
+  "classification": "diagnostic_only",
+  "errors": [],
+  "groups": [
+    {
+      "group": "daily_seed7",
+      "loss_shape": [
+        3300,
+        14
+      ],
+      "n_complete": 3300,
+      "n_rows": 3300,
+      "scoring_contract": "legacy_unverified",
+      "status": "succeeded"
+    },
+    {
+      "group": "four_hour_seed7",
+      "loss_shape": [
+        1500,
+        14
+      ],
+      "n_complete": 1087,
+      "n_rows": 1500,
+      "scoring_contract": "legacy_unverified",
+      "status": "succeeded"
+    },
+    {
+      "group": "daily_seed11",
+      "loss_shape": [
+        600,
+        11
+      ],
+      "n_complete": 600,
+      "n_rows": 600,
+      "scoring_contract": "legacy_unverified",
+      "status": "succeeded"
+    },
+    {
+      "group": "daily_seed23",
+      "loss_shape": [
+        600,
+        11
+      ],
+      "n_complete": 600,
+      "n_rows": 600,
+      "scoring_contract": "legacy_unverified",
+      "status": "succeeded"
+    }
+  ],
+  "manifest": "D:\\dipcatcher\\.dsh-24x7\\eval-full\\runs\\finalizer-20260923-a\\manifest.json",
+  "proof_eligible": false,
+  "valid": true,
+  "warnings": [
+    "daily_seed7: scoring contract is unverified",
+    "four_hour_seed7: incomplete rows 1087/1500",
+    "four_hour_seed7: scoring contract is unverified",
+    "daily_seed11: scoring contract is unverified",
+    "daily_seed23: scoring contract is unverified"
+  ]
+}
+verified_manifest: D:\dipcatcher\.dsh-24x7\eval-full\runs\finalizer-20260923-a\manifest.json
+verification_exit_code: 0

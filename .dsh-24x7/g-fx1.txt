@@ -1,0 +1,48 @@
+﻿...........................................................F............ [ 25%]
+........................................................................ [ 50%]
+.........................................................s.....F........ [ 75%]
+.....................................................................    [100%]
+================================== FAILURES ===================================
+_____________ test_documented_fx1_commands_exist[FX1_TRAINING.md] _____________
+
+doc = WindowsPath('D:/dipcatcher/docs/FX1_TRAINING.md')
+
+    @pytest.mark.parametrize("doc", _DOC_PATHS, ids=lambda p: p.name)
+    def test_documented_fx1_commands_exist(doc: Path):
+        tree = _cli_tree()
+        text = doc.read_text(encoding="utf-8")
+        unknown = []
+        for span in _code_spans(text):
+            for match in _FX1_CMD.finditer(span):
+                first, second = match.group(1), match.group(2)
+                if first not in tree:
+                    unknown.append(f"fx1 {first}")
+                elif second and tree[first] and second not in tree[first]:
+                    unknown.append(f"fx1 {first} {second}")
+>       assert not unknown, f"{doc.name}: unknown fx1 commands {unknown}"
+E       AssertionError: FX1_TRAINING.md: unknown fx1 commands ['fx1 dpo-build', 'fx1 dpo-build']
+E       assert not ['fx1 dpo-build', 'fx1 dpo-build']
+
+tests\fx1\test_docs_drift.py:62: AssertionError
+_______________ test_agent_gw_config_file_counts_as_credentials _______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000023B78FD6810>
+tmp_path = WindowsPath('C:/Users/me/AppData/Local/Temp/pytest-of-me/pytest-1319/test_agent_gw_config_file_coun0')
+
+    def test_agent_gw_config_file_counts_as_credentials(monkeypatch, tmp_path):
+        monkeypatch.delenv("KIMI_API_KEY", raising=False)
+        monkeypatch.delenv("AGENT_GW_TOKEN", raising=False)
+        kimi_dir = tmp_path / ".kimi"
+        kimi_dir.mkdir()
+        (kimi_dir / "agent-gw.json").write_text("{}", encoding="utf-8")
+        monkeypatch.setenv("HOME", str(tmp_path))
+        adapter = build_adapter(get_spec("wind"))
+>       assert adapter.credentials_present() is True
+E       assert False is True
+E        +  where False = credentials_present()
+E        +    where credentials_present = <fx1.data.sources.adapters.AgentGwAdapter object at 0x0000023B78FD6A80>.credentials_present
+
+tests\fx1\test_sources.py:194: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/fx1/test_docs_drift.py::test_documented_fx1_commands_exist[FX1_TRAINING.md]
+FAILED tests/fx1/test_sources.py::test_agent_gw_config_file_counts_as_credentials

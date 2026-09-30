@@ -1,0 +1,12 @@
+{
+    "schema":  "sota_finalization.v2",
+    "status":  "failed",
+    "proof_status":  "UNPROVEN",
+    "run_id":  "probe-postverify-20260928-f-c",
+    "created_at_utc":  "2026-09-28T10:17:37.3365143Z",
+    "repo":  "D:\\dipcatcher",
+    "input_dir":  "D:\\dipcatcher\\.dsh-24x7\\finalizer-probe",
+    "failing_group":  null,
+    "error":  "Independent postcondition verification failed with exit code 1: D:\\dipcatcher\\.dsh-24x7\\finalizer-probe\\runs\\probe-postverify-20260928-f-c\\manifest.json",
+    "interpretation":  "Finalization failed before a complete diagnostic receipt was committed."
+}

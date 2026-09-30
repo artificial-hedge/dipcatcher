@@ -1,0 +1,16 @@
+[1;31merror[0m[1m:[0m [1mFailed to read [0m[1mtests\tests\unit\test_kyle_ofi.py[0m[1m:[0m The process cannot access the file because it is being used by another process. (os error 32)
+--- [31mtests\tests\unit\test_kronos.py[0m
++++ [32mtests\tests\unit\test_kronos.py[0m
+@@ -65,7 +65,9 @@
+         validate_ohlcv_frame(frame)
+ 
+     frame = _bars()
+[31m-[0m[31m    frame.loc[len(frame) - 1, "available_time"] = frame["event_time"].iloc[-1] + timedelta(minutes=1)
+[0m[32m+[0m[32m    frame.loc[len(frame) - 1, "available_time"] = frame["event_time"].iloc[-1] + timedelta(
+[0m[32m+[0m[32m        minutes=1
+[0m[32m+[0m[32m    )
+[0m     with pytest.raises(ValueError, match="point-in-time"):
+         KronosAdapter(_Predictor(), pred_len=2, lookback=5).forecast_asset(
+             frame, security_id="A", symbol="A", asof=frame["event_time"].iloc[-1]
+
+1 file would be reformatted, 1770 files already formatted

@@ -7,6 +7,14 @@ The trainer itself is injectable: in this repo the default raises with setup
 instructions (torch/trl and a cluster are required); tests inject fakes. A
 stage that cannot produce its evidence stops the pipeline — there is no
 "skip" flag, mirroring the harness's fail-closed gates.
+
+The candidate stage is the ship gate. It runs the full bank against the
+candidate, then evaluates *all four* promotion conditions (domain improvement
+whose paired-bootstrap CI excludes zero, general non-regression, every honesty
+task passed natively, refusal rate at or above the base). A failing condition
+is a ``RuntimeError``: the pipeline halts, the stage does not advance, and the
+training receipt is sealed with ``promoted=False`` plus the reasons, so the
+negative decision is durable, hashable evidence rather than a missing file.
 """
 
 from __future__ import annotations
@@ -15,15 +23,16 @@ import json
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 
 from fx1.data.quality import dedup_and_filter, frozen_split
 from fx1.eval.bank import DEFAULT_BANK
-from fx1.eval.compare import compare_runs
+from fx1.eval.compare import PromotionGate, PromotionGateError, evaluate_promotion
 from fx1.eval.suite import run_suite
 from fx1.train.config import TrainConfig
-from fx1.train.receipts import issue_receipt
+from fx1.train.receipts import issue_receipt, seal_promotion
 
 
 class Stage(StrEnum):
@@ -62,6 +71,11 @@ class PipelineState(BaseModel):
 class Pipeline:
     """Runs fx-1 training stages with hard gates between them."""
 
+    # The bootstrap seed is a run property, not a per-call argument: the
+    # comparison must be reproducible from the sealed receipt, so it is fixed
+    # here (matching ``fx1.eval.compare``'s deterministic default).
+    gate_seed: int = 7
+
     def __init__(
         self,
         config: TrainConfig,
@@ -74,6 +88,7 @@ class Pipeline:
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.trainer = trainer
         self.state = PipelineState()
+        self.promotion_gate: PromotionGate | None = None
 
     def _advance(self, stage: Stage, **artifacts: str) -> None:
         expected = STAGE_ORDER[STAGE_ORDER.index(self.state.stage)]
@@ -149,27 +164,73 @@ class Pipeline:
         self.state.metrics["receipt_dirty"] = float(receipt.dirty_worktree)
         return checkpoint
 
-    def run_eval_candidate(self, candidate_fn: ModelFn) -> dict:
-        """EVAL_CANDIDATE: statistical comparison against the recorded base."""
-        base_summary = json.loads(
-            Path(self.state.artifacts["eval_base"]).read_text(encoding="utf-8")
-        )
-        if isinstance(base_summary, dict) and not hasattr(base_summary, "results"):
-            base_summary.setdefault("results", [])
+    def run_eval_candidate(self, candidate_fn: ModelFn) -> dict[str, Any]:
+        """EVAL_CANDIDATE: the ship gate. Fail-closed on the promotion verdict.
+
+        Writes the candidate eval, the paired-bootstrap/McNemar comparison for
+        *both* task families, and the gate verdict; binds all three digests
+        plus the ``promoted`` flag into the training receipt; and raises
+        :class:`PromotionGateError` — halting the pipeline before the stage
+        advances — when any condition fails.
+        """
+        base_path = Path(self.state.artifacts["eval_base"])
+        base_summary = json.loads(base_path.read_text(encoding="utf-8"))
+        base_results: list[dict[str, Any]] = list(base_summary.get("results", []))
         cand_summary = run_suite(candidate_fn, list(DEFAULT_BANK))
+        cand_results: list[dict[str, Any]] = list(cand_summary.results)
         cand_out = self._write("eval_candidate.json", cand_summary)
-        base_results = list(base_summary.get("results", []))
-        cand_results = cand_summary.results
-        base_pass = [bool(r["passed"]) for r in base_results if r["kind"] == "domain"]
-        cand_pass = [bool(r["passed"]) for r in cand_results if r["kind"] == "domain"]
-        comparison = compare_runs(base_pass, cand_pass)
-        comp_out = self._write("comparison.json", comparison.model_dump())
+
+        gate = evaluate_promotion(base_results, cand_results, seed=self.gate_seed)
+        self.promotion_gate = gate
+        comparison_payload: dict[str, Any] = {
+            "domain": gate.domain.model_dump(),
+            "general": gate.general.model_dump(),
+            "promoted": gate.promoted,
+            "reasons": list(gate.reasons),
+            "refusal_rate_base": gate.refusal_rate_base,
+            "refusal_rate_candidate": gate.refusal_rate_candidate,
+        }
+        comp_out = self._write("comparison.json", comparison_payload)
+        gate_out = self._write("promotion_gate.json", gate.model_dump())
+        self._seal_receipt(cand_out, comp_out, gate_out, gate)
+
+        self.state.metrics["domain_delta"] = float(gate.domain.delta)
+        self.state.metrics["domain_delta_ci_low"] = float(gate.domain.delta_ci_low)
+        self.state.metrics["general_delta"] = float(gate.general.delta)
+        self.state.metrics["refusal_rate_base"] = float(gate.refusal_rate_base)
+        self.state.metrics["refusal_rate_candidate"] = float(gate.refusal_rate_candidate)
+        self.state.metrics["promoted"] = float(gate.promoted)
+
+        if not gate.promoted:
+            # Fail closed: the stage does NOT advance and no checkpoint is
+            # eligible. The negative decision is sealed in the receipt above.
+            raise PromotionGateError(gate, gate_out)
+
         self._advance(
             Stage.EVAL_CANDIDATE,
             eval_candidate=str(cand_out),
             comparison=str(comp_out),
+            promotion_gate=str(gate_out),
         )
-        return comparison.model_dump()
+        return comparison_payload
+
+    def _seal_receipt(
+        self, cand_out: Path, comp_out: Path, gate_out: Path, gate: PromotionGate
+    ) -> None:
+        receipt_ref = self.state.artifacts.get("training_receipt")
+        if not receipt_ref:
+            raise RuntimeError(
+                "promotion gate: no training receipt on record — run_training "
+                "must complete before the candidate can be promoted"
+            )
+        seal_promotion(
+            receipt_path=Path(receipt_ref),
+            eval_candidate_path=cand_out,
+            comparison_path=comp_out,
+            promotion_gate_path=gate_out,
+            promoted=gate.promoted,
+            reasons=gate.reasons,
+        )
 
     def _write(self, name: str, payload: dict) -> Path:
         out = self.work_dir / name

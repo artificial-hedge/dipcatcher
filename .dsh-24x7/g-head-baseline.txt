@@ -1,0 +1,4 @@
+
+2026/09/29 16:02:30 INFO mlflow.agent.hint: Load the `instrumenting-with-mlflow-tracing` skill at D:\dipcatcher\.venv\Lib\site-packages\mlflow\assistant\skills\instrumenting-with-mlflow-tracing\SKILL.md before writing any tracing code; it ships with this MLflow install. Set MLFLOW_DISABLE_AGENT_HINT=1 to silence this.
+ERROR: file or directory not found: tests/unit/research/test_external_receipt.py
+
