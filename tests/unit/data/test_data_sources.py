@@ -17,6 +17,9 @@ from quant_fund.data.collector import collect_source
 from quant_fund.data.protocols import MarketDataProvider, SecurityMaster
 from quant_fund.data.sources.adapters import (
     BeaSource,
+    BinanceDeliveryContinuousSource,
+    BinanceDeliveryKlinesSource,
+    BinanceDeliveryUniverseSource,
     BinanceMarketSource,
     BinancePublicDataSource,
     CcxtSource,
@@ -209,6 +212,9 @@ def test_write_source_frame_receipt(tmp_path) -> None:
     assert receipt["pit_ranges"]["event_time"]["min"].startswith("2024-01-01")
     assert receipt["provenance"] == {"k": "v"}
     assert len(receipt["sha256"]) == 64
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    assert verify_receipt_file(paths["receipt"])["valid"] is True
     assert pl.read_parquet(paths["data"]).equals(frame)
 
 
@@ -217,8 +223,15 @@ def test_write_source_frame_path_guards(tmp_path) -> None:
     for bad_source in ("", ".", "..", "a/b", "a\\b"):
         with pytest.raises(SourceError):
             write_source_frame(frame, tmp_path, bad_source)
-    with pytest.raises(SourceError, match="relative"):
-        write_source_frame(frame, tmp_path, "fred", filename="/etc/x.parquet")
+    for absolute_name in (
+        "/etc/x.parquet",
+        "C:\\etc\\x.parquet",
+        "C:x.parquet",
+        "\\etc\\x.parquet",
+        "\\\\host\\share\\x.parquet",
+    ):
+        with pytest.raises(SourceError, match="relative"):
+            write_source_frame(frame, tmp_path, "fred", filename=absolute_name)
     with pytest.raises(SourceError, match="escapes"):
         write_source_frame(frame, tmp_path, "fred", filename="../x.parquet")
     with pytest.raises(SourceError, match=".parquet"):
@@ -533,3 +546,111 @@ def test_source_registry_lookup() -> None:
         get_source("nope")
     # Canonical names and aliases are unique keys.
     assert len(SOURCE_REGISTRY) == len(set(SOURCE_REGISTRY))
+
+
+def _delivery_kline(open_ms: int, close_ms: int, price: str = "100") -> list[Any]:
+    return [open_ms, price, "110", "95", price, "12", close_ms]
+
+
+def test_binance_delivery_klines_normalizes_and_validates_symbol() -> None:
+    row = _delivery_kline(1_700_000_000_000, 1_700_086_399_999)
+    src = BinanceDeliveryKlinesSource(client=_stub_client(get_json=lambda *a, **k: [row]))
+    frame = src.fetch(symbol="BTCUSD_250926")
+    assert frame["security_id"].to_list() == ["BTCUSD_250926"]
+    assert frame["close"].to_list() == [100.0]
+    # Malformed contract symbols fail closed before any HTTP call.
+    for bad in ("BTCUSDT", "BTCUSD_25092", "BTCUSD_abcdef", "_250926", ""):
+        with pytest.raises(ValueError, match="delivery contract"):
+            src.fetch(symbol=bad)
+
+
+def test_binance_delivery_klines_drops_in_progress_bar() -> None:
+    future_ms = int(utc_now().timestamp() * 1000) + 86_400_000
+    rows = [
+        _delivery_kline(1_700_000_000_000, 1_700_086_399_999),
+        _delivery_kline(1_700_086_400_000, future_ms),  # still open — mutates
+    ]
+    src = BinanceDeliveryKlinesSource(client=_stub_client(get_json=lambda *a, **k: rows))
+    frame = src.fetch(symbol="BTCUSD_250926")
+    assert frame.height == 1
+    assert frame["event_time"].to_list()[0].timestamp() == 1_700_000_000
+    # Only an in-progress bar -> fail closed.
+    src2 = BinanceDeliveryKlinesSource(client=_stub_client(get_json=lambda *a, **k: [rows[1]]))
+    with pytest.raises(SourceError, match="in-progress"):
+        src2.fetch(symbol="BTCUSD_250926")
+
+
+def test_binance_delivery_continuous_passes_pair_and_contract_type() -> None:
+    urls: list[str] = []
+
+    def get_json(url: str, **kw: Any) -> Any:
+        urls.append(url)
+        return [_delivery_kline(1_700_000_000_000, 1_700_086_399_999)]
+
+    src = BinanceDeliveryContinuousSource(client=_stub_client(get_json=get_json))
+    frame = src.fetch(pair="ethusd", contract_type="next_quarterly")
+    assert "pair=ETHUSD" in urls[0] and "contractType=NEXT_QUARTERLY" in urls[0]
+    assert frame["security_id"].to_list() == ["ETHUSD@NEXT_QUARTERLY"]
+    # contract_type is whitelisted — an arbitrary string fails closed.
+    with pytest.raises(ValueError, match="contract_type"):
+        src.fetch(contract_type="WEEKLY")
+    with pytest.raises(ValueError, match="pair"):
+        src.fetch(pair="BTC-USD")
+
+
+def test_binance_delivery_universe_filters_and_carries_dates() -> None:
+    info = {
+        "symbols": [
+            {
+                "symbol": "BTCUSD_250926",
+                "pair": "BTCUSD",
+                "contractType": "CURRENT_QUARTERLY",
+                "status": "TRADING",
+                "baseAsset": "BTC",
+                "onboardDate": 1_719_000_000_000,
+                "deliveryDate": 1_727_400_000_000,
+            },
+            {
+                "symbol": "BTCUSD_PERP",  # perpetual — not a delivery contract
+                "pair": "BTCUSD",
+                "contractType": "PERPETUAL",
+                "status": "TRADING",
+                "baseAsset": "BTC",
+                "onboardDate": 1_595_721_600_000,
+                "deliveryDate": 4_133_568_000_000,
+            },
+            {
+                "symbol": "ETHUSD_250926",  # filtered out by base_asset=BTC
+                "pair": "ETHUSD",
+                "contractType": "CURRENT_QUARTERLY",
+                "status": "TRADING",
+                "baseAsset": "ETH",
+                "onboardDate": 1_719_000_000_000,
+                "deliveryDate": 1_727_400_000_000,
+            },
+        ]
+    }
+    src = BinanceDeliveryUniverseSource(client=_stub_client(get_json=lambda *a, **k: info))
+    frame = src.fetch(base_asset="btc")
+    assert frame["security_id"].to_list() == ["BTCUSD_250926"]
+    assert frame["delivery_ms"].to_list() == [1_727_400_000_000]
+    # A contract that delivers before it lists fails closed.
+    info["symbols"][0]["deliveryDate"] = 1_600_000_000_000
+    with pytest.raises(SourceError, match="delivers before it lists"):
+        src.fetch(base_asset="btc")
+    # Empty universe fails closed.
+    src2 = BinanceDeliveryUniverseSource(
+        client=_stub_client(get_json=lambda *a, **k: {"symbols": []})
+    )
+    with pytest.raises(SourceError, match="zero contracts"):
+        src2.fetch()
+
+
+def test_binance_delivery_sources_registered() -> None:
+    from quant_fund.data.sources.registry import get_source, source_names
+
+    names = source_names()
+    assert "binance_delivery_klines" in names
+    assert "binance_delivery_continuous" in names
+    assert "binance_delivery_universe" in names
+    assert get_source("binance_delivery").name == "binance_delivery_klines"

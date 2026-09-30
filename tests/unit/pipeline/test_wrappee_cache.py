@@ -269,6 +269,5 @@ def test_wrappee_adjacent_asof_train_primary_hit() -> None:
         label="future_log_return_1",
     )
     assert fp_a == fp_b
-    assert fp_a == fp_b
     # On this 55d panel, train-primary reuse should produce ≥1 adjacent hit.
     assert adjacent_hit, "expected ≥1 adjacent train-primary wrappee cache hit"

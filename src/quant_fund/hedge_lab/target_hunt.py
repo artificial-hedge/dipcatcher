@@ -16,6 +16,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
+from quant_fund.hedge_lab._receipt import seal_receipt
 from quant_fund.hedge_lab.directional import (
     ETF_BASKET,
     antonacci_returns,
@@ -36,6 +37,7 @@ from quant_fund.lightspeed.specs import (
     stock_momentum_v1,
 )
 from quant_fund.risk.gates import GateSpec, apply_gate_stack, dd_halt, vol_target
+from quant_fund.utils.atomicio import atomic_write_text
 
 Array = NDArray[np.float64]
 _EPS = 1e-12
@@ -124,10 +126,11 @@ def pair_spread_returns(
         elif cur != 0.0 and abs(z) <= exit_z:
             cur = 0.0
         pos[i] = cur
-    if delay > 0:
-        shifted = np.zeros(n)
-        shifted[delay:] = pos[:-delay]
-        pos = shifted
+    if int(delay) < 1:
+        raise ValueError("delay must be >= 1: position at t may only read data through t-1")
+    shifted = np.zeros(n)
+    shifted[int(delay) :] = pos[: -int(delay)]
+    pos = shifted
     ry = np.zeros(n)
     rx = np.zeros(n)
     ry[1:] = y[1:] / np.maximum(y[:-1], _EPS) - 1.0
@@ -425,6 +428,7 @@ def run_target_hunt(
     }
     out = Path("artifacts") / "hedge_lab" / artifact_name
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(receipt, indent=2, default=str), encoding="utf-8")
-    receipt["artifact_path"] = str(out)
-    return receipt
+    sealed = seal_receipt(receipt)
+    atomic_write_text(out, json.dumps(sealed, indent=2, default=str))
+    sealed["artifact_path"] = str(out)
+    return sealed
