@@ -2341,6 +2341,29 @@ def verify_repo_cmd(
     typer.echo("repo integrity: all gates intact")
 
 
+@app.command("evidence-export")
+def evidence_export_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo root to export from."),
+    out: Path = typer.Option(Path("evidence_bundle"), "--out", help="Bundle directory to write."),
+) -> None:
+    """Export the evidence bundle an auditor verifies with zero repo access:
+    every member of the evidence corpora plus the gate signature, at
+    repo-relative paths. Pair with ``verify-repo --evidence-only``. The
+    epoch chains + signed pins travel inside the bundle, so the export
+    needs no trust in the exporter. Provenance evidence only.
+    """
+    from quant_fund.research.evidence_export import export_evidence_bundle
+
+    try:
+        manifest = export_evidence_bundle(root, out)
+    except (FileNotFoundError, ValueError) as exc:
+        typer.echo(f"evidence-export: {exc}")
+        raise typer.Exit(code=1) from exc
+    total = sum(c["members"] for c in manifest["corpora"].values())
+    typer.echo(f"bundle={out} corpora={len(manifest['corpora'])} members={total}")
+    typer.echo("verify: dipcatcher verify-repo --root <bundle> --evidence-only")
+
+
 @app.command("sign-pins")
 def sign_pins_cmd(
     root: Path = typer.Option(Path("."), "--root"),

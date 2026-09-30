@@ -257,18 +257,21 @@ def verify_repo(
         heads = {}
     for corpus_dir, pattern, require_stamped, allow_updates, exempt in CORPORA:
         cdir = root / corpus_dir
+        if evidence_only and corpus_dir not in EVIDENCE_CORPORA:
+            # A non-evidence corpus dir can still be *present* in a bundle as
+            # the parent of an evidence corpus (`.github` holding
+            # `.github/workflows`) — presence is containment, not coverage.
+            gates[f"epoch:{corpus_dir}"] = {
+                "ok": True,
+                "skipped": "evidence_only",
+                "errors": [],
+            }
+            continue
         if not cdir.is_dir():
-            if evidence_only and corpus_dir not in EVIDENCE_CORPORA:
-                gates[f"epoch:{corpus_dir}"] = {
-                    "ok": True,
-                    "skipped": "evidence_only",
-                    "errors": [],
-                }
-            else:
-                gates[f"epoch:{corpus_dir}"] = {
-                    "ok": False,
-                    "errors": [f"corpus_missing:{corpus_dir}"],
-                }
+            gates[f"epoch:{corpus_dir}"] = {
+                "ok": False,
+                "errors": [f"corpus_missing:{corpus_dir}"],
+            }
             continue
         if corpus_dir in LOCAL_ONLY_CORPORA and not any(cdir.glob("corpus_epoch_*.json")):
             # Members clone (committed) but the epoch receipts do not
