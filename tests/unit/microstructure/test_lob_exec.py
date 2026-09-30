@@ -109,4 +109,4 @@ def test_bench_schema(tmp_path: Path) -> None:
         m.exec_on_tape = orig
     assert out["schema"] == LOB_EXEC_SCHEMA
     assert out["data_label"] == "MIXED"
-    assert "payload_sha256" in out
+    assert "receipt_sha256" in out

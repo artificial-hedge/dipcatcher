@@ -60,7 +60,7 @@
     32,
     64
   ],
-  "payload_sha256": "a7ca0a91a74d2bf2ff40ce9d5e89261287499fe1b5c3e78204bfe21541df6f52",
+  "receipt_sha256": "a7ca0a91a74d2bf2ff40ce9d5e89261287499fe1b5c3e78204bfe21541df6f52",
   "reference_real_tape_sign_lag1": 0.721,
   "research_only": true,
   "schema": "split_flow.v1"

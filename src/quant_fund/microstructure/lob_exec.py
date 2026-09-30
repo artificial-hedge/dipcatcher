@@ -197,5 +197,5 @@ def lob_exec_bench(
     payload["git_revision"] = git_revision()
     payload["data_label"] = "MIXED"
     payload["research_only"] = True
-    payload["payload_sha256"] = hash_bytes(canonical_json_bytes(payload))
+    payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))
     return payload

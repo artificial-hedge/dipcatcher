@@ -68,7 +68,7 @@ def test_bench_schema() -> None:
         m.measure_sim = orig_ms
         _ = srl  # silence
     assert out["schema"] == ABC_SCHEMA
-    assert "payload_sha256" in out
+    assert "receipt_sha256" in out
 
 
 def test_draw_config_roundtrip() -> None:

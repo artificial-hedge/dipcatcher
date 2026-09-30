@@ -59,7 +59,7 @@
   "git_revision": "f5cdbae5aa27cb73b3fd522e4d03e700101d2fb7",
   "interpretation": "TWAP shortfall on the reconstructed visible LOBSTER book, tick-normalized. liquidity_cost is drift-free (vs best quote at fill time); is_total vs arrival mid mixes in tape drift and can be negative. VISIBLE-liquidity only: top-10 tape, hidden executions invisible, resync band truncates depth",
   "kind": "lob_exec",
-  "payload_sha256": "a36c444f6fe20c0ffa1610dd6eebd321b5c2a2598c3e4d1a7410fe0cbb3b5c36",
+  "receipt_sha256": "a36c444f6fe20c0ffa1610dd6eebd321b5c2a2598c3e4d1a7410fe0cbb3b5c36",
   "research_only": true,
   "schema": "lob_exec.v1",
   "ticker": "AMZN"

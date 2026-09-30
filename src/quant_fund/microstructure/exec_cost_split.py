@@ -161,5 +161,5 @@ def exec_split_bench(
     payload["git_revision"] = git_revision()
     payload["data_label"] = "SYNTHETIC"
     payload["research_only"] = True
-    payload["payload_sha256"] = hash_bytes(canonical_json_bytes(payload))
+    payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))
     return payload

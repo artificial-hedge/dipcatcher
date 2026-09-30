@@ -59,7 +59,7 @@ def test_bench_schema_and_order() -> None:
     for v in out["arms"].values():
         assert v["n_episodes"] >= 1
         assert v["shortfall_ticks_mean"] >= 0
-    assert len(out["payload_sha256"]) == 64
+    assert len(out["receipt_sha256"]) == 64
 
 
 def test_bench_deterministic() -> None:

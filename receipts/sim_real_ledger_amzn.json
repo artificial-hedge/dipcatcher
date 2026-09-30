@@ -6,7 +6,6 @@
   "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
   "interpretation": "Same event-granular measurements on ZI-LOB sim arms and the real LOBSTER tape. Ratios near 1 mean the sim reproduces the stylized fact; systematic gaps are named in `divergences` \u2014 calibration targets for the sim, not defects of the measurement",
   "kind": "sim_real_ledger",
-  "payload_sha256": "629e96e83a89ef356b3942b5a1fc60ef4089856fd044fef35e93ba2225ad0ecc",
   "real": {
     "depth_l1_5_mean": [
       357.78205128205127,
@@ -25,6 +24,7 @@
     "spread_ticks_p95": 22.0,
     "units": "ticks"
   },
+  "receipt_sha256": "629e96e83a89ef356b3942b5a1fc60ef4089856fd044fef35e93ba2225ad0ecc",
   "research_only": true,
   "schema": "sim_real_ledger.v1",
   "sim_calm": {

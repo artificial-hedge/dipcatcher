@@ -32,7 +32,7 @@
   "kind": "exec_cost_split",
   "n_children": 8,
   "parent_size": 40,
-  "payload_sha256": "6b797d7204f9f066805f69227c1bc2a6262572445487cc3d7779f9f631ef4240",
+  "receipt_sha256": "6b797d7204f9f066805f69227c1bc2a6262572445487cc3d7779f9f631ef4240",
   "research_only": true,
   "schema": "exec_cost_split.v1"
 }
