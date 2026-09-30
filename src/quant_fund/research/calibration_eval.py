@@ -260,7 +260,9 @@ def _score_cell(
             row["mz_slope"], row["mz_intercept"] = mz
         for j, tau in enumerate(taus):
             row[_hit_rate_key(float(tau))] = float(hits[j])
-    except Exception as exc:
+    except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+        # Narrowed from `except Exception` (quality ratchet): head fit/predict and
+        # metric faults are solver/numeric; exotic errors propagate. Recorded per cell.
         row["status"] = "error"
         row["error"] = str(exc)
     return row

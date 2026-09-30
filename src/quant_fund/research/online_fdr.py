@@ -28,9 +28,15 @@ records every wager so a stream can be replayed for audit.
 
 from __future__ import annotations
 
+import json
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
+
+from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
 def _gamma(j: int) -> float:
@@ -127,3 +133,48 @@ class OnlineFDR:
             "level": self.level,
             "evidence": ["foster_stine_alpha_investing", "mfdr_bounded", "summable_gamma"],
         }
+
+
+def write_online_fdr_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal an online_fdr receipt and write ``online_fdr_<hash>.json``.
+
+    Filename digest = ``inputs_sha256`` (v1) or the canonical
+    ``receipt_sha256`` (v2). Atomic, fail-closed on a malformed receipt.
+    ``receipt_version=2`` wraps the same body in the unified ``receipt.v2``
+    envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("kind") != "online_fdr.v1"
+        or receipt.get("schema") != "online_fdr.v1"
+        or receipt.get("research_only") is not True
+        or receipt.get("live_pnl_claim") is not False
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("online_fdr receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+        name_digest = str(receipt["inputs_sha256"])[:16]
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+            )
+        )
+        name_digest = str(payload["receipt_sha256"])[:16]
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"online_fdr_{name_digest}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path

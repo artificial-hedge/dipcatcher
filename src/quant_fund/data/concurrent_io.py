@@ -443,7 +443,10 @@ def pooled_request(
                 pool.discard(conn)
         except IoError:
             raise
-        except Exception:
+        except (OSError, http.client.HTTPException, ValueError, TypeError):
+            # Narrowed from `except Exception` (quality ratchet): request/response
+            # faults are socket/HTTP-protocol errors plus int()/header conversion
+            # failures; exotic errors propagate. Connection is still discarded.
             pool.discard(conn)
             raise
         if status in {301, 302, 303, 307, 308} and method.upper() in {"GET", "HEAD"} and location:

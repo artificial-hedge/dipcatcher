@@ -153,3 +153,26 @@ def test_strict_breach_flag_rejects_missing_and_nonbinary() -> None:
             proc.update(bad)
     for ok in (True, False, 0, 1, np.bool_(True), np.int64(1)):
         proc.update(ok)
+
+
+def test_coverage_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the coverage_audit.v1 body in the envelope."""
+    import json
+
+    from quant_fund.research.coverage_watch import write_coverage_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    _, receipt = audit_interval_coverage(
+        {"h": _GaussianFactory(1.0)},
+        shards={"const": _const_shard},
+        levels=(0.9,),
+        n_train=128,
+        n_eval=128,
+        seed=0,
+    )
+    path = write_coverage_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "coverage_audit"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True

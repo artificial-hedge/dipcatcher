@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 
 from quant_fund.research import lane_power
 from quant_fund.research.lane_power import LANE_POWER_SCHEMA, lane_power_bench
@@ -57,6 +58,27 @@ def test_null_control_is_bounded() -> None:
         assert rate <= 0.4, f"{lane} false-alarmed at {rate}"
 
 
+def test_dataset_sha256_tracks_streams_not_alpha() -> None:
+    """dataset_sha256 digests the exact per-cell update streams: identical
+    (lane, defect, seed) grids agree regardless of alpha; a different
+    defect grid digests different streams."""
+    _, r1 = lane_power_bench(
+        defects=(0.0, 0.5), n_steps=48, n_seeds=3, alpha=0.05, lanes=("drift_alarm",)
+    )
+    if r1["n_lanes_ok"] == 0:
+        pytest.skip("drift_alarm lane absent on this checkout")
+    _, r2 = lane_power_bench(
+        defects=(0.0, 0.5), n_steps=48, n_seeds=3, alpha=0.1, lanes=("drift_alarm",)
+    )
+    _, r3 = lane_power_bench(
+        defects=(0.0, 0.75), n_steps=48, n_seeds=3, alpha=0.05, lanes=("drift_alarm",)
+    )
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # alpha is a run param, not data
+    assert d1 != d3
+
+
 # Monitor-family modules that are deliberately NOT power-bench lanes —
 # each exclusion is annotated; merging a lane-shaped module without
 # registering it in _LANES fails this suite.
@@ -96,3 +118,21 @@ def test_monitor_lane_completeness_ratchet() -> None:
         f"excluded: {sorted(unregistered)} — add a runner or a "
         f"_EXCLUDED_LANE_MODULES entry"
     )
+
+
+def test_lane_power_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the lane_power.v1 body in the envelope."""
+    import json
+    from pathlib import Path
+
+    from quant_fund.research.lane_power import write_lane_power_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    assert isinstance(tmp_path, Path)
+    _, receipt = lane_power_bench(defects=(0.0,), n_steps=32, n_seeds=2)
+    path = write_lane_power_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "lane_power"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True

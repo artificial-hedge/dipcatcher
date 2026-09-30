@@ -155,7 +155,9 @@ class TestReceipt:
         _, receipt = run_capacity_bench(seed=5, n_dates=30, n_names=6)
         p1 = write_capacity_receipt(receipt, tmp_path)
         tampered = dict(receipt)
-        tampered["results"] = list(receipt["results"]) + [{"book": "x"}]
+        # tamper a digest-bound field the contract leaves unconstrained —
+        # a contract-invalid receipt is refused outright (separate test).
+        tampered["seed"] = 999
         p2 = write_capacity_receipt(tampered, tmp_path)
         assert p1 != p2 and p1.exists()
 
@@ -271,3 +273,16 @@ class TestDataLabelProvenance:
         book = uniform_book(30, 6, 1)
         with pytest.raises(ValueError, match="data_label"):
             SyntheticBook("x", book.weights, book.adv_dollar, " ")
+
+
+def test_dataset_sha256_tracks_books_not_run_params() -> None:
+    """Same books under a different AUM grid share dataset_sha256; a
+    different seed regenerates the books and changes it."""
+    _, r1 = run_capacity_bench(seed=7, n_dates=40, n_names=8, aum_grid=(1e6,))
+    _, r2 = run_capacity_bench(seed=7, n_dates=40, n_names=8, aum_grid=(1e6, 1e7))
+    _, r3 = run_capacity_bench(seed=8, n_dates=40, n_names=8, aum_grid=(1e6,))
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # AUM grid is a run param, not data
+    assert r1["inputs_sha256"] != r2["inputs_sha256"]
+    assert d1 != d3

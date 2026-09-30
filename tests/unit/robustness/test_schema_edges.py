@@ -17,6 +17,7 @@ from quant_fund.robustness.schema import (
     unavailable_robustness_block,
     write_stamped_notebook,
 )
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
 def _valid_scorecard() -> dict:
@@ -155,7 +156,14 @@ class TestStampAndWrite:
     def test_write_creates_parent_dirs(self, tmp_path: Path) -> None:
         target = tmp_path / "deep" / "nested" / "nb.json"
         stamped = write_stamped_notebook(target, _notebook(), [_valid_scorecard()])
-        assert json.loads(target.read_text()) == stamped
+        # Evidence-seal contract (fix 32cf0338): the durable artifact is the
+        # SEALED notebook — the stamped content plus its canonical-JSON
+        # receipt digest — while the function returns the stamped content the
+        # digest was computed over.
+        assert json.loads(target.read_text()) == {
+            **stamped,
+            "receipt_sha256": hash_bytes(canonical_json_bytes(stamped)),
+        }
 
 
 class TestExtensionErrors:

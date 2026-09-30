@@ -240,3 +240,17 @@ def test_contract_catches_inconsistent_flags() -> None:
     bad4 = json.loads(json.dumps(receipt))
     bad4["data_label"] = ""
     assert xwatch_contract_errors(bad4)
+
+
+def test_xwatch_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the same xwatch body in the envelope."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    a, b = _lead_stream(300, 11, lag=1)
+    receipt = xwatch_report(a, b, n_lags=3, data_label="SYNTHETIC")
+    path = write_xwatch_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "xwatch.v1"
+    assert payload["payload"]["alarmed_pairs"] == receipt["alarmed_pairs"]
+    assert verify_receipt_file(path)["valid"] is True

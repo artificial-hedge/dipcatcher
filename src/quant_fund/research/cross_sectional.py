@@ -402,16 +402,17 @@ def run_cross_sectional_bench(
             f"{sorted(labels)}; run mixed corpora as separate receipts"
         )
     data_label = next(iter(labels)) if labels else "UNKNOWN"
+    panel_digests = {
+        name: {
+            "signal_sha256": meta["signal_sha256"],
+            "forward_sha256": meta["forward_sha256"],
+        }
+        for name, meta in panel_meta.items()
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
-                "panels": {
-                    name: {
-                        "signal_sha256": meta["signal_sha256"],
-                        "forward_sha256": meta["forward_sha256"],
-                    }
-                    for name, meta in panel_meta.items()
-                },
+                "panels": panel_digests,
                 "challengers": challenger_names,
                 "horizons": list(horizons),
                 "n_assets": n_assets,
@@ -420,6 +421,10 @@ def run_cross_sectional_bench(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated panel content only —
+    # receipts across lanes that evaluated the same panels agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": panel_digests}))
     receipt: dict[str, Any] = {
         "schema": RANKIC_SCHEMA,
         "kind": "cross_sectional_rankic_eval",
@@ -434,6 +439,7 @@ def run_cross_sectional_bench(
         "challengers": challenger_names,
         "panels": panel_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
         "results": rows,

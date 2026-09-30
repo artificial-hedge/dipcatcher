@@ -37,13 +37,17 @@ Seals a ``lane_power.v1`` receipt. Fail closed throughout.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import json
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import polars as pl
 
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 LANE_POWER_SCHEMA = "lane_power.v1"
@@ -54,6 +58,12 @@ class _LaneResult:
     alarmed: bool
     t_alarm: float  # nan if never; first index where the process alarms
     stat: float  # lane-specific extra stat (e.g. localization error)
+    stream_sha256: str  # digest of the exact update stream the lane consumed
+
+
+def _stream_digest(values: Iterable[object]) -> str:
+    """SHA-256 over the exact update stream a lane process consumed."""
+    return hash_bytes(np.ascontiguousarray(np.asarray(list(values))).tobytes())
 
 
 def _run_coverage(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -64,11 +74,14 @@ def _run_coverage(defect: float, seed: int, n: int, alpha: float) -> _LaneResult
     rate = min(1.0, p0 * (1.0 + defect))
     proc = CoverageEProcess(alpha=alpha, p0=p0)
     t_alarm = float("nan")
+    stream: list[bool] = []
     for i in range(n):
-        proc.update(bool(rng.uniform() < rate))
+        bit = bool(rng.uniform() < rate)
+        stream.append(bit)
+        proc.update(bit)
         if proc.alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(proc.alarmed, t_alarm, float(proc.breach_rate))
+    return _LaneResult(proc.alarmed, t_alarm, float(proc.breach_rate), _stream_digest(stream))
 
 
 def _run_tail(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -79,13 +92,16 @@ def _run_tail(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
     share = min(1.0, p0 * (1.0 + defect))
     proc = TailDepthEProcess(alpha=alpha, p0=p0)
     t_alarm = float("nan")
+    stream: list[tuple[bool, bool]] = []
     for i in range(n):
         outer = rng.uniform() < 0.10
         deep = outer and rng.uniform() < share
-        proc.update(bool(outer), bool(deep))
+        pair = (bool(outer), bool(deep))
+        stream.append(pair)
+        proc.update(pair[0], pair[1])
         if proc.alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(proc.alarmed, t_alarm, float(proc.deep_share))
+    return _LaneResult(proc.alarmed, t_alarm, float(proc.deep_share), _stream_digest(stream))
 
 
 def _run_calibration(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -103,7 +119,7 @@ def _run_calibration(defect: float, seed: int, n: int, alpha: float) -> _LaneRes
         proc.update(float(u))
         if proc.alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(proc.alarmed, t_alarm, float(proc.wealth))
+    return _LaneResult(proc.alarmed, t_alarm, float(proc.wealth), _stream_digest(pits))
 
 
 def _run_drift(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -113,13 +129,15 @@ def _run_drift(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
     proc = EProcessDriftAlarm(alpha=alpha)
     t_alarm = float("nan")
     stat = float("nan")
+    stream: list[float] = []
     for i in range(n):
         x = rng.normal(defect * 2.0, 1.0)  # level shift of 2d sigma
+        stream.append(float(x))
         step = proc.update(float(x))
         stat = float(step.statistic)
         if proc.alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(proc.alarmed, t_alarm, stat)
+    return _LaneResult(proc.alarmed, t_alarm, stat, _stream_digest(stream))
 
 
 def _run_loss_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -134,15 +152,17 @@ def _run_loss_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
     rng = np.random.default_rng(seed)
     proc = MeanDiffCS(alpha=alpha, bound=bound)
     t_alarm = float("nan")
+    stream: list[float] = []
     for i in range(n):
         d = float(np.clip(rng.normal(defect, 1.0), -bound, bound))
+        stream.append(d)
         proc.update(d)
         lo, hi = proc.interval()
         if np.isfinite(lo) and lo > 0.0 and not np.isfinite(t_alarm):
             t_alarm = float(i)
     lo, hi = proc.interval()
     excludes = bool(np.isfinite(lo) and lo > 0.0)
-    return _LaneResult(excludes, t_alarm, float(lo))
+    return _LaneResult(excludes, t_alarm, float(lo), _stream_digest(stream))
 
 
 def _run_localize(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -153,7 +173,7 @@ def _run_localize(defect: float, seed: int, n: int, alpha: float) -> _LaneResult
     x = np.concatenate([rng.normal(0, 1, tau_true), rng.normal(defect * 2.0, 1, n - tau_true)])
     res = localize_changepoint(x.tolist(), alpha=alpha, window=min(40, n // 4), min_left=10)
     err = abs(res.tau_hat - tau_true)
-    return _LaneResult(bool(res.alarmed), float(res.tau_hat), float(err))
+    return _LaneResult(bool(res.alarmed), float(res.tau_hat), float(err), _stream_digest(x))
 
 
 def _run_promotion(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -163,9 +183,11 @@ def _run_promotion(defect: float, seed: int, n: int, alpha: float) -> _LaneResul
     rng = np.random.default_rng(seed)
     proc = LossEProcess(alpha=alpha)
     t_alarm = float("nan")
+    stream: list[tuple[float, float]] = []
     for _ in range(n):
         c = float(rng.normal(0.5 - defect, 0.5))
         b = float(rng.normal(0.5, 0.5))
+        stream.append((c, b))
         st = proc.update(c, b)
         if st.promoted and not np.isfinite(t_alarm):
             t_alarm = float(proc.promotion_origin or 0)
@@ -173,6 +195,7 @@ def _run_promotion(defect: float, seed: int, n: int, alpha: float) -> _LaneResul
         proc.promotion_origin is not None,
         t_alarm,
         float(proc.states[-1].evalue) if proc.states else 1.0,
+        _stream_digest(stream),
     )
 
 
@@ -183,11 +206,14 @@ def _run_conformal(defect: float, seed: int, n: int, alpha: float) -> _LaneResul
     rng = np.random.default_rng(seed)
     proc = ConformalMartingale(alpha=alpha, window=min(50, max(5, n // 3)))
     t_alarm = float("nan")
+    stream: list[float] = []
     for i in range(n):
-        proc.update(float(rng.normal(defect * 2.0, 1.0)))
+        x = float(rng.normal(defect * 2.0, 1.0))
+        stream.append(x)
+        proc.update(x)
         if proc.alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(proc.alarmed, t_alarm, float(proc.martingale))
+    return _LaneResult(proc.alarmed, t_alarm, float(proc.martingale), _stream_digest(stream))
 
 
 def _run_coverage_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -202,13 +228,16 @@ def _run_coverage_cs(defect: float, seed: int, n: int, alpha: float) -> _LaneRes
     t_alarm = float("nan")
     excluded = False
     width = float("nan")
+    stream: list[bool] = []
     for i in range(n):
-        lo, hi = proc.update(bool(rng.uniform() < rate))
+        bit = bool(rng.uniform() < rate)
+        stream.append(bit)
+        lo, hi = proc.update(bit)
         excluded = bool(np.isfinite(lo) and (lo > p0 or hi < p0))
         if excluded and not np.isfinite(t_alarm):
             t_alarm = float(i)
             width = float(hi - lo)
-    return _LaneResult(excluded, t_alarm, width)
+    return _LaneResult(excluded, t_alarm, width, _stream_digest(stream))
 
 
 def _run_serial(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
@@ -227,14 +256,17 @@ def _run_serial(defect: float, seed: int, n: int, alpha: float) -> _LaneResult:
     stat = float("nan")
     z = 0.0
     alarmed = False
+    stream: list[float] = []
     for i in range(n):
         z = rho * z + float(np.sqrt(max(0.0, 1.0 - rho * rho))) * float(rng.standard_normal())
-        state = watch.update(float(norm.cdf(z)))
+        u = float(norm.cdf(z))
+        stream.append(u)
+        state = watch.update(u)
         stat = float(state.pooled_evalue)
         alarmed = alarmed or state.pooled_alarmed
         if state.pooled_alarmed and not np.isfinite(t_alarm):
             t_alarm = float(i)
-    return _LaneResult(alarmed, t_alarm, stat)
+    return _LaneResult(alarmed, t_alarm, stat, _stream_digest(stream))
 
 
 _LANES: dict[str, Callable[[float, int, int, float], _LaneResult]] = {
@@ -274,6 +306,7 @@ def lane_power_bench(
     """
     selected = lanes if lanes is not None else tuple(_LANES)
     rows: list[dict[str, object]] = []
+    cell_digests: dict[str, dict[str, str]] = {}
     n_ok_lanes = 0
     for lane in selected:
         runner = _LANES.get(lane)
@@ -287,7 +320,9 @@ def lane_power_bench(
             for d in defects:
                 rows.append({"lane": lane, "status": "lane_missing", "defect": float(d)})
             continue
-        except Exception:
+        except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError):
+            # Narrowed from `except Exception` (quality ratchet): lane-runner faults
+            # are numeric/validation; exotic errors propagate. Marked as error rows.
             for d in defects:
                 rows.append({"lane": lane, "status": "error", "defect": float(d)})
             continue
@@ -296,6 +331,9 @@ def lane_power_bench(
             for seed in range(n_seeds):
                 try:
                     r = runner(float(d), seed, n_steps, alpha)
+                    cell_digests[f"{lane}|defect={float(d)}|seed={seed}"] = {
+                        "stream_sha256": r.stream_sha256
+                    }
                     rows.append(
                         {
                             "lane": lane,
@@ -307,7 +345,9 @@ def lane_power_bench(
                             "stat": r.stat,
                         }
                     )
-                except Exception:
+                except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError):
+                    # Narrowed from `except Exception` (quality ratchet): lane-runner
+                    # faults are numeric; exotic errors propagate. Cell marked error.
                     rows.append(
                         {
                             "lane": lane,
@@ -340,6 +380,11 @@ def lane_power_bench(
         "kind": "lane_power",
         "level": "research",
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
+        # Corpus-level fingerprint: digest over the exact update streams fed
+        # to each lane process per (lane, defect, seed) cell — runs over
+        # identical data agree on it regardless of alpha or reporting
+        # choices, which is what the cross-receipt lattice edges on.
+        "dataset_sha256": hash_bytes(canonical_json_bytes({"shards": cell_digests})),
         "code_revision": git_revision(),
         "params": {
             "defects": list(defects),
@@ -369,4 +414,45 @@ def lane_power_bench(
     return frame, receipt
 
 
-__all__ = ["LANE_POWER_SCHEMA", "lane_power_bench"]
+def write_lane_power_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a lane_power receipt and write ``lane_power_<hash>.json``.
+
+    Filename digest = canonical ``receipt_sha256``. Atomic, fail-closed on
+    a malformed receipt. ``receipt_version=2`` wraps the same body in the
+    unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("schema") != LANE_POWER_SCHEMA
+        or receipt.get("kind") != "lane_power"
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("lane_power receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"lane_power_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+__all__ = ["LANE_POWER_SCHEMA", "lane_power_bench", "write_lane_power_receipt"]

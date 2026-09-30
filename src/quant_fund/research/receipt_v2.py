@@ -21,7 +21,7 @@ import importlib
 import json
 import platform
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -38,9 +38,9 @@ from pydantic import (
 )
 
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
-from quant_fund.research.quantile_ladder import QUANTILE_LADDER_KINDS
 from quant_fund.research.evalue_contracts import EVALUE_FAMILY_KINDS
 from quant_fund.research.impossible_fit import impossible_fit_scan
+from quant_fund.research.quantile_ladder import QUANTILE_LADDER_KINDS
 from quant_fund.utils.hashing import SHA256_HEX_LENGTH, canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -357,6 +357,79 @@ def _result(
     }
 
 
+def wrap_receipt_v2(
+    receipt: Mapping[str, Any],
+    *,
+    code_files: tuple[Path, ...] | list[Path],
+    verdict: str,
+    kind: str | None = None,
+    data_label: str | None = None,
+    dataset: Mapping[str, Any] | None = None,
+    params: Mapping[str, Any] | None = None,
+    generated_at: str | None = None,
+    revision: str | None = None,
+) -> dict[str, Any]:
+    """Wrap a lane's own v1 receipt body in the ``receipt.v2`` envelope.
+
+    Shared by every v1 writer opting into ``receipt_version=2``: the envelope
+    bindings come from the payload's own identity fields — the lane's
+    ``inputs_sha256``/``dataset_sha256``/``weights_sha256`` digests seed
+    ``dataset_hash`` (a digest of the payload itself when absent), a
+    ``params`` mapping seeds ``params_hash``, and the lane's recorded
+    ``generated_at``/``git_revision``/``code_revision``/``generated_at_commit``
+    stamp the envelope. Callers may override any binding explicitly when the
+    lane's identity lives in differently named fields.
+    """
+    if dataset is not None:
+        bound_dataset: Mapping[str, Any] = dataset
+    else:
+        bound_dataset = {
+            key: receipt[key]
+            for key in ("inputs_sha256", "dataset_sha256", "weights_sha256")
+            if key in receipt
+        }
+        if not bound_dataset:
+            bound_dataset = {"payload_sha256": hash_bytes(canonical_json_bytes(dict(receipt)))}
+    lane_params = receipt.get("params")
+    bound_params = (
+        params if params is not None else lane_params if isinstance(lane_params, Mapping) else {}
+    )
+    revision = (
+        revision
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+        or receipt.get("generated_at_commit")
+    )
+    generated_at = generated_at or receipt.get("generated_at")
+    return build_receipt_v2(
+        kind=str(kind or receipt.get("kind") or receipt.get("schema") or "receipt"),
+        data_label=str(data_label or receipt.get("data_label") or "UNKNOWN"),
+        dataset=bound_dataset,
+        params=bound_params,
+        code_files=code_files,
+        verdict=verdict,
+        payload=dict(receipt),
+        generated_at=str(generated_at) if generated_at is not None else None,
+        revision=str(revision) if revision is not None else None,
+    )
+
+
+def _digest_or_none(
+    body: Mapping[str, Any], digest: Callable[[Mapping[str, Any]], str]
+) -> str | None:
+    """Hash a body that may be unhashable (NaN, unserializable, deep nest).
+
+    ``json.loads`` accepts literals canonical digests reject — NaN floats,
+    >4300-digit ints already fail at load, but a NaN *inside* a parsed body
+    reaches the digester, where ``allow_nan=False`` raises. The verifier must
+    degrade to a verdict, never crash on hostile input.
+    """
+    try:
+        return digest(body)
+    except (ValueError, RecursionError, TypeError):
+        return None
+
+
 def _seal_errors(payload: Mapping[str, Any]) -> tuple[str | None, list[str]]:
     """Check ``receipt_sha256``; report which digest convention matched.
 
@@ -387,9 +460,8 @@ def _env_fingerprint_errors(environment: object) -> list[str]:
     if not _is_sha256(stamp):
         return ["environment_fingerprint_missing"]
     body = {key: value for key, value in environment.items() if key != "fingerprint_sha256"}
-    try:
-        actual = _canonical_digest(body)
-    except (TypeError, ValueError):
+    actual = _digest_or_none(body, _canonical_digest)
+    if actual is None:
         return ["environment_fingerprint_uncomputable"]
     if actual != stamp:
         return ["environment_fingerprint_mismatch"]
@@ -400,13 +472,111 @@ def _code_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     files = payload.get("code_files")
     if not isinstance(files, dict) or not files:
         return ["code_files_invalid"]
-    try:
-        actual = _canonical_digest(files)
-    except (TypeError, ValueError):
+    actual = _digest_or_none(files, _canonical_digest)
+    if actual is None:
         return ["code_sha256_uncomputable"]
     if actual != payload.get("code_sha256"):
         return ["code_sha256_mismatch"]
     return []
+
+
+def _looks_like_fleet_eval(body: object) -> bool:
+    """Structural fingerprint of a fleet_eval receipt — schema/kind agnostic.
+
+    Dispatch on content, not the claimed ``schema``/``kind``: those fields are
+    attacker-controlled, and a reseal costs nothing (the digest is a public
+    sha256), so renaming them must not evade the deep contract checks.
+    """
+    if not (
+        isinstance(body, Mapping)
+        and isinstance(body.get("results"), list)
+        and isinstance(body.get("models"), list)
+        and isinstance(body.get("shards"), dict)
+        and "n_eval" in body
+    ):
+        return False
+    # Adjacent eval lanes (calibration_eval.v1, coherence_eval.v1,
+    # hstep_bench.v1) share the results/models/shards envelope — the
+    # discriminating signature is the scored grid itself: fleet rows carry
+    # per-tau pinball cells and crps. Multi-horizon lanes (hstep, multih)
+    # carry a per-row ``horizon`` / top-level ``horizons`` — fleet_eval is
+    # single-horizon by construction, so those are not fleet receipts.
+    if "horizons" in body:
+        return False
+    scored = [
+        row
+        for row in body["results"]
+        if isinstance(row, Mapping)
+        and row.get("status") is not None
+        and ("crps" in row or any(key.startswith("pinball_") for key in row))
+    ]
+    return bool(scored) and all("horizon" not in row for row in scored)
+
+
+def _looks_like_hstep_eval(body: object) -> bool:
+    """Structural fingerprint of an hstep_bench receipt — schema/kind agnostic.
+
+    Same rename-resilience contract as ``_looks_like_fleet_eval``: the
+    multi-horizon scored grid (``horizons`` top-level + per-row ``horizon``)
+    is the signature a bare schema strip cannot shed.
+    """
+    if not (
+        isinstance(body, Mapping)
+        and isinstance(body.get("results"), list)
+        and isinstance(body.get("models"), list)
+        and isinstance(body.get("shards"), dict)
+        and isinstance(body.get("horizons"), list)
+        and "n_eval" in body
+    ):
+        return False
+    return any(
+        isinstance(row, Mapping)
+        and "horizon" in row
+        and ("crps" in row or any(key.startswith("pinball_") for key in row))
+        for row in body["results"]
+    )
+
+
+def _looks_like_v2_envelope(payload: Mapping[str, Any]) -> bool:
+    """Structural fingerprint of the receipt.v2 envelope."""
+    return (
+        isinstance(payload.get("payload"), Mapping)
+        and isinstance(payload.get("environment"), Mapping)
+        and isinstance(payload.get("code_files"), dict)
+        and isinstance(payload.get("dataset_hash"), str)
+        and isinstance(payload.get("params_hash"), str)
+    )
+
+
+_AUDITOR_ERRORS = (ValueError, TypeError, KeyError, RecursionError, AttributeError)
+
+
+def _guarded(
+    audit: Callable[[Mapping[str, Any]], list[str]], label: str
+) -> Callable[[Mapping[str, Any]], list[str]]:
+    """A payload that crashes a kind auditor fails that audit — never the gate."""
+
+    def _run(payload: Mapping[str, Any]) -> list[str]:
+        try:
+            return audit(payload)
+        except _AUDITOR_ERRORS:
+            return [f"{label}_audit_crash"]
+
+    return _run
+
+
+def _forbidden_scan_clean(blob: Mapping[str, Any]) -> bool:
+    """Key scan must fail closed, not crash, on pathological nesting."""
+    try:
+        return family_blob_forbidden_metrics_absent(blob)
+    except _AUDITOR_ERRORS:
+        return False
+
+
+#: v1 receipt kinds exempt from the blanket forbidden-metric scan — the
+#: paper/simulation lanes embed nav/sharpe diagnostics in bodies already
+#: gated by their own honesty contract (sim_live_contract_errors).
+_PAPER_SCAN_EXEMPT_KINDS = frozenset({"sim_live_receipt", "sim_live_bench_receipt"})
 
 
 def _inner_claimed_kinds(payload: Mapping[str, Any]) -> set[str]:
@@ -440,57 +610,111 @@ _LANE_CONSISTENCY: dict[str, str] = {
 }
 
 
+def _lane_checker(
+    module_path: str, func_name: str, label: str
+) -> Callable[[Mapping[str, Any]], list[str]]:
+    """Resolve a lane consistency checker, tolerating lanes whose module is not
+    yet merged — a receipt claiming an absent lane's kind fails closed rather
+    than crashing the sweep (forward-compat for lanes that land later)."""
+    try:
+        func = getattr(importlib.import_module(module_path), func_name)
+    except ImportError:
+        return lambda _payload: [f"{label}_lane_missing"]
+    return _guarded(func, label)
+
+
 def _kind_consistency_errors(payload: Mapping[str, Any]) -> list[str]:
     """Lane-specific re-derivation of the bound digests, where defined.
 
-    Dispatches on the envelope ``kind`` *and* on the sealed inner payload's
-    claimed ``kind``/``schema``: renaming the outer kind no longer strips a
-    lane's deep checks, and the mismatch is flagged.
+    Dispatches on the envelope ``kind``, on the sealed inner payload's claimed
+    ``kind``/``schema`` (renaming the outer kind cannot strip a lane's deep
+    checks — the mismatch is flagged), and on the structural fingerprint of
+    the fleet/hstep scored grids (a bare schema strip cannot shed them).
     """
     kind = payload.get("kind")
     inner = payload.get("payload")
+    looks_fleet = _looks_like_fleet_eval(inner)
+    errors: list[str] = []
+    # Outer kind or sealed inner claims route through the shared lane map.
     for claimed in sorted({kind, *_inner_claimed_kinds(payload)}, key=str):
         if claimed in _LANE_CONSISTENCY:
             path = _LANE_CONSISTENCY[claimed]
             module, _, func = path.rpartition(".")
-            errors = getattr(importlib.import_module(module), func)(payload)
+            errors.extend(_lane_checker(module, func, f"{claimed}_consistency")(payload))
             if claimed != kind:
-                errors = [*errors, "kind_fingerprint_mismatch"]
-            return errors
-    if kind == "distribution_fleet_eval":
-        from quant_fund.research.fleet_eval import fleet_v2_consistency_errors
-
-        return fleet_v2_consistency_errors(payload)
-    if payload.get("kind") == "calibration_eval":
-        from quant_fund.research.calibration_eval import calibration_v2_consistency_errors
-
-        return calibration_v2_consistency_errors(payload)
-    if kind == "capacity_overlay_eval":
-        from quant_fund.research.capacity_overlay import capacity_v2_consistency_errors
-        return capacity_v2_consistency_errors(payload)
-    if kind == "cross_sectional_rankic_eval":
-        from quant_fund.research.cross_sectional import rankic_v2_consistency_errors
-        return rankic_v2_consistency_errors(payload)
-    if kind == "vol_bench":
-        from quant_fund.research.vol_bench import vol_bench_v2_consistency_errors
-        return vol_bench_v2_consistency_errors(payload)
-    looks_hstep = _looks_like_hstep_eval(inner)
-    if kind == "hstep_bench" or looks_hstep:
-        from quant_fund.research.hstep_bench import hstep_bench_v2_consistency_errors
-
-        errors = hstep_bench_v2_consistency_errors(payload)
-        if looks_hstep and kind != "hstep_bench":
-            errors = [*errors, "kind_fingerprint_mismatch"]
+                errors.append("kind_fingerprint_mismatch")
+            break  # one lane contract per envelope
+    if looks_fleet and kind != "distribution_fleet_eval" and not errors:
+        errors.extend(
+            _lane_checker(
+                "quant_fund.research.fleet_eval",
+                "fleet_v2_consistency_errors",
+                "fleet_v2_consistency",
+            )(payload)
+        )
+        errors.append("kind_fingerprint_mismatch")
+    if errors:
         return errors
-    if kind == "evidence_audit":
-        from quant_fund.research.evidence_audit import evidence_audit_consistency_errors
-        return evidence_audit_consistency_errors(payload)
-    if kind == "selection_concordance":
-        from quant_fund.research.concordance import concordance_consistency_errors
-        return concordance_consistency_errors(payload)
+    if kind == "identity_sweep":
+        return _lane_checker(
+            "quant_fund.research.identity_sweep",
+            "identity_v2_consistency_errors",
+            "identity_v2_consistency",
+        )(payload)
+    if kind == "hstep_bench":
+        return _lane_checker(
+            "quant_fund.research.hstep_bench",
+            "hstep_bench_v2_consistency_errors",
+            "hstep_bench_v2_consistency",
+        )(payload)
+    if kind == "fleet_significance_eval":
+        return _lane_checker(
+            "quant_fund.research.fleet_significance",
+            "fleet_significance_v2_consistency_errors",
+            "fleet_significance_v2_consistency",
+        )(payload)
     if kind == "coherence_eval":
-        from quant_fund.research.coherence import coherence_v2_consistency_errors
-        return coherence_v2_consistency_errors(payload)
+        return _lane_checker(
+            "quant_fund.research.coherence",
+            "coherence_v2_consistency_errors",
+            "coherence_v2",
+        )(payload)
+    if kind == "mixture_stability_eval":
+        return _lane_checker(
+            "quant_fund.research.mixture_stability",
+            "mixture_stability_consistency_errors",
+            "mixture_stability",
+        )(payload)
+    if kind == "selection_concordance":
+        return _lane_checker(
+            "quant_fund.research.concordance",
+            "concordance_consistency_errors",
+            "concordance",
+        )(payload)
+    if kind == "evidence_audit":
+        return _lane_checker(
+            "quant_fund.research.evidence_audit",
+            "evidence_audit_consistency_errors",
+            "evidence_audit",
+        )(payload)
+    if kind == "nautilus_conformance":
+        return _lane_checker(
+            "quant_fund.backtest.nautilus_conformance",
+            "nautilus_conformance_consistency_errors",
+            "nautilus_conformance",
+        )(payload)
+    if kind == "multih_fleet_eval":
+        return _lane_checker(
+            "quant_fund.research.multih_fleet",
+            "multih_fleet_consistency_errors",
+            "multih_fleet",
+        )(payload)
+    if kind == "calibration_eval":
+        return _lane_checker(
+            "quant_fund.research.calibration_eval",
+            "calibration_v2_consistency_errors",
+            "calibration_v2",
+        )(payload)
     return []
 
 
@@ -499,6 +723,8 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     body = {key: value for key, value in payload.items() if key != "receipt_sha256"}
     try:
         ReceiptV2.model_validate(payload)
+    except RecursionError:
+        return _result(path, payload, None, ["receipt_v2_schema:nesting_depth"])
     except ValidationError as exc:
         for issue in exc.errors():
             location = ".".join(str(part) for part in issue["loc"]) or "envelope"
@@ -513,7 +739,7 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         # Same exemption as the writers: the envelope honesty flag carries a
         # forbidden token but is required, so it is excluded from the scan.
         scanned = {key: value for key, value in payload_body.items() if key != "live_pnl_claim"}
-        if not family_blob_forbidden_metrics_absent(scanned):
+        if not _forbidden_scan_clean(scanned):
             errors.append("payload_forbidden_metrics")
         # Envelope/payload agreement: a payload that echoes either honesty
         # field must not contradict the sealed envelope under a fresh seal.
@@ -523,6 +749,12 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         inner_claim = payload_body.get("live_pnl_claim")
         if inner_claim is not None and inner_claim is not False:
             errors.append("payload_live_pnl_claim_not_false")
+        # An inner body that carries receipt_sha256 asserts it binds this
+        # payload — a stale or forged inner seal must not ride inside a
+        # valid envelope (absent is fine: wrapped bodies are unsigned).
+        if "receipt_sha256" in payload_body:
+            _inner_conv, inner_seal_errors = _seal_errors(payload_body)
+            errors.extend(f"inner_{e}" for e in inner_seal_errors)
         # The inner body claims its own schema/kind — lane contracts apply
         # regardless of what the envelope's ``kind`` was renamed to.
         from quant_fund.research.lane_contracts import lane_contract_errors
@@ -534,6 +766,7 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
 def _carries_v2_evidence(payload: Mapping[str, Any]) -> bool:
     """Whether a v1-dispatched blob still carries the v2 envelope's bound fields.
+
     A ``receipt.v2`` envelope with ``schema``/``schema_version`` stripped and
     re-sealed digests fine under the weaker v1 contract while silently losing
     its environment/code/dataset verification. Legit v1 receipts never carry
@@ -547,31 +780,6 @@ def _carries_v2_evidence(payload: Mapping[str, Any]) -> bool:
     )
 
 
-def _looks_like_hstep_eval(body: object) -> bool:
-    """Structural fingerprint of an hstep_bench receipt — schema/kind agnostic.
-    Dispatch on content, not the claimed ``schema``: that field is
-    attacker-controlled, and a reseal costs nothing (the digest is a public
-    sha256), so renaming it must not evade the deep contract checks. The
-    signature is the multi-horizon scored grid: results/models/shards/n_eval
-    plus a ``horizons`` list and a per-row ``horizon``.
-    """
-    if not (
-        isinstance(body, Mapping)
-        and isinstance(body.get("results"), list)
-        and isinstance(body.get("models"), list)
-        and isinstance(body.get("shards"), dict)
-        and isinstance(body.get("horizons"), list)
-        and "n_eval" in body
-    ):
-        return False
-    return any(
-        isinstance(row, Mapping)
-        and "horizon" in row
-        and ("crps" in row or any(key.startswith("pinball_") for key in row))
-        for row in body["results"]
-    )
-
-
 def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     errors: list[str] = []
     convention, seal_errors = _seal_errors(payload)
@@ -581,57 +789,91 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
     claim = payload.get("live_pnl_claim")
     if claim is not None and claim is not False:
         errors.append("live_pnl_claim_not_false")
+    # The honesty scan applies to research-lane receipts — a v1 payload naming
+    # a forbidden headline metric must not verify clean. Paper/simulation lanes
+    # legitimately carry nav_*/sharpe_simulated diagnostics under their own
+    # contract (sim_live_contract_errors still gates the honesty flags).
+    if payload.get("kind") not in _PAPER_SCAN_EXEMPT_KINDS:
+        scanned = {key: value for key, value in payload.items() if key != "live_pnl_claim"}
+        if not _forbidden_scan_clean(scanned):
+            errors.append("forbidden_metric_keys")
+    if payload.get("schema") == "fleet_eval.v1" or _looks_like_fleet_eval(payload):
+        # Claimed-schema OR structural fingerprint: a payload that claims the
+        # schema but is too malformed to match the fingerprint still gets the
+        # contract check (which is what flags the malformation), and a payload
+        # structurally shaped like a fleet receipt cannot evade it by renaming.
+        from quant_fund.research.fleet_eval import (
+            fleet_v1_audit_errors,
+            fleet_v1_contract_errors,
+        )
+
+        errors.extend(_guarded(fleet_v1_contract_errors, "fleet_v1_contract")(payload))
+        errors.extend(_guarded(fleet_v1_audit_errors, "fleet_v1")(payload))
     schema = payload.get("schema")
-    if schema == "fleet_eval.v1":
-        from quant_fund.research.fleet_eval import fleet_v1_contract_errors
+    if schema == "vol_bench.v1":
+        from quant_fund.research.vol_bench import vol_bench_contract_errors
 
-        errors.extend(fleet_v1_contract_errors(payload))
-    if payload.get("schema") == "hstep_bench.v1" or _looks_like_hstep_eval(payload):
-        from quant_fund.research.hstep_bench import hstep_bench_v1_contract_errors
-
-        errors.extend(hstep_bench_v1_contract_errors(payload))
+        errors.extend(vol_bench_contract_errors(payload))
     if payload.get("kind") in QUANTILE_LADDER_KINDS:
         from quant_fund.research.quantile_ladder import _quantile_ladder_errors
+
         errors.extend(_quantile_ladder_errors(payload))
     if payload.get("kind") in EVALUE_FAMILY_KINDS:
         from quant_fund.research.evalue_contracts import evalue_family_contract_errors
-    elif schema == "vol_bench.v1":
-        from quant_fund.research.vol_bench import vol_bench_contract_errors
-        errors.extend(vol_bench_contract_errors(payload))
-    elif schema == "capacity_overlay.v1":
-        from quant_fund.research.capacity_overlay import capacity_contract_errors
-        errors.extend(capacity_contract_errors(payload))
-    elif schema == "cross_sectional_rankic.v1":
-        from quant_fund.research.cross_sectional import rankic_contract_errors
-        errors.extend(rankic_contract_errors(payload))
-    elif payload.get("kind") == "ranker_probability_experiment":
-        from quant_fund.research.ranker_probability import ranker_prob_contract_errors
-        errors.extend(ranker_prob_contract_errors(payload))
-    elif payload.get("schema") == "calibration_eval.v1":
-        from quant_fund.research.calibration_eval import calibration_contract_errors
-        errors.extend(calibration_contract_errors(payload))
-    elif payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
-        from quant_fund.data.ingest import data_manifest_contract_errors
-        errors.extend(data_manifest_contract_errors(payload))
-    if payload.get("kind") in ("sim_live_receipt", "sim_live_bench_receipt"):
-        from quant_fund.paper.sim_live import sim_live_contract_errors
 
         errors.extend(evalue_family_contract_errors(payload))
-        errors.extend(sim_live_contract_errors(payload))
-    if payload.get("schema") == "cost_calibration.v1":
-        from quant_fund.research.cost_calibration import (
-            cost_calibration_contract_errors,
+    elif schema == "capacity_overlay.v1":
+        from quant_fund.research.capacity_overlay import (
+            capacity_contract_errors,
+            capacity_v1_audit_errors,
         )
-        errors.extend(cost_calibration_contract_errors(payload))
+
+        errors.extend(capacity_contract_errors(payload))
+        errors.extend(_guarded(capacity_v1_audit_errors, "capacity_v1")(payload))
+    elif schema == "cross_sectional_rankic.v1":
+        from quant_fund.research.cross_sectional import (
+            rankic_contract_errors,
+            rankic_v1_audit_errors,
+        )
+
+        errors.extend(rankic_contract_errors(payload))
+        errors.extend(_guarded(rankic_v1_audit_errors, "rankic_v1")(payload))
+    elif payload.get("kind") == "ranker_probability_experiment":
+        from quant_fund.research.ranker_probability import ranker_prob_contract_errors
+
+        errors.extend(ranker_prob_contract_errors(payload))
     from quant_fund.research.lane_contracts import lane_contract_errors
+
     errors.extend(lane_contract_errors(payload))
+    from quant_fund.research.script_receipts import script_receipt_contract_errors
+
+    errors.extend(script_receipt_contract_errors(schema, payload))
     if payload.get("catalog") == "hedge_lab_analytics":
         from quant_fund.hedge_lab._receipt import lane_receipt_contract_errors
 
         errors.extend(lane_receipt_contract_errors(payload))
-    if payload.get("kind") in EVALUE_FAMILY_KINDS:
-        from quant_fund.research.evalue_contracts import evalue_family_contract_errors
-        errors.extend(evalue_family_contract_errors(payload))
+    if payload.get("schema_version") == 1 and isinstance(payload.get("artifacts"), dict):
+        from quant_fund.data.ingest import data_manifest_contract_errors
+
+        errors.extend(data_manifest_contract_errors(payload))
+    if payload.get("schema") == "hstep_bench.v1" or _looks_like_hstep_eval(payload):
+        errors.extend(
+            _lane_checker(
+                "quant_fund.research.hstep_bench",
+                "hstep_bench_v1_contract_errors",
+                "hstep_bench_v1_contract",
+            )(payload)
+        )
+    elif payload.get("schema") == "calibration_eval.v1":
+        from quant_fund.research.calibration_eval import calibration_contract_errors
+
+        errors.extend(calibration_contract_errors(payload))
+    if payload.get("schema") == "cost_calibration.v1":
+        from quant_fund.research.cost_calibration import (
+            cost_calibration_contract_errors,
+        )
+
+        errors.extend(cost_calibration_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
@@ -644,17 +886,30 @@ def verify_receipt_payload(
     sealed digest, environment fingerprint, code-map digest, and (for known
     kinds) dataset/params digests are re-derived. Older receipts are checked
     for a consistent ``receipt_sha256`` seal under either repo convention;
-    ``fleet_eval.v1`` payloads additionally get their writer's contract.
+    ``fleet_eval.v1`` payloads additionally get their writer's contract, and
+    the committed ``scripts/`` lane schemas get internal-consistency
+    re-derivation via ``script_receipts``.
     """
     path = Path(path)
     if not isinstance(payload, dict):
         return _result(path, payload, None, ["receipt_not_object"])
-    # The v2 marker is the `schema: "receipt.v2"` tag alone — `schema_version`
-    # is a per-format counter (e.g. data-source receipts use 2 without being
-    # receipt.v2 envelopes), so it cannot dispatch on its own.
-    if payload.get("schema") == RECEIPT_V2_SCHEMA:
-        return _verify_v2(path, payload)
-    return _verify_v1(path, payload)
+    try:
+        # The v2 marker is the `schema: "receipt.v2"` tag or the structural
+        # envelope fingerprint — `schema_version` is a per-format counter
+        # (data-source receipts use 2 without being receipt.v2 envelopes), so
+        # it cannot dispatch on its own.
+        if payload.get("schema") == RECEIPT_V2_SCHEMA or _looks_like_v2_envelope(payload):
+            return _verify_v2(path, payload)
+        return _verify_v1(path, payload)
+    except (TypeError, ValueError, RecursionError) as exc:
+        # Non-finite floats and pathological nesting make the canonical digest
+        # raise; a malformed receipt must fail closed, not crash a sweep.
+        return _result(path, payload, None, [f"receipt_undigestable:{exc.__class__.__name__}"])
+
+
+def _reject_json_constant(value: str) -> Any:
+    """``NaN``/``Infinity`` are not JSON literals; a receipt containing one is malformed."""
+    raise ValueError(f"nonstandard JSON constant in receipt: {value}")
 
 
 def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -668,11 +923,6 @@ def _no_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return obj
 
 
-def _reject_json_constant(value: str) -> Any:
-    """``NaN``/``Infinity`` are not JSON literals; a receipt containing one is malformed."""
-    raise ValueError(f"nonstandard JSON constant in receipt: {value}")
-
-
 def verify_receipt_file(path: Path | str) -> ReceiptVerification:
     """Read a receipt JSON file and verify it. Fails closed on unreadable input.
 
@@ -682,14 +932,20 @@ def verify_receipt_file(path: Path | str) -> ReceiptVerification:
     """
     file_path = Path(path)
     try:
-        payload: object = json.loads(file_path.read_text(), object_pairs_hook=_no_duplicate_keys)
+        payload: object = json.loads(
+            file_path.read_text(),
+            parse_constant=_reject_json_constant,
+            object_pairs_hook=_no_duplicate_keys,
+        )
     except ValueError as exc:
+        # ValueError covers JSONDecodeError, the >4300-digit integer limit,
+        # and the duplicate_json_key marker raised by the pairs hook.
         if str(exc).startswith("duplicate_json_key:"):
             return _result(file_path, {}, None, [str(exc)])
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
-    except (OSError, UnicodeError) as exc:
-        payload: object = json.loads(file_path.read_text(), parse_constant=_reject_json_constant)
-    except (OSError, UnicodeError, ValueError) as exc:
+    except (OSError, UnicodeError, RecursionError) as exc:
+        # RecursionError covers pathological nesting depth. Corrupt input must
+        # degrade to a verdict, never crash the gate.
         return _result(file_path, {}, None, [f"receipt_unreadable:{exc.__class__.__name__}"])
     return verify_receipt_payload(payload, file_path)
 
