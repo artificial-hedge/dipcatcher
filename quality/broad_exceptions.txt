@@ -35,6 +35,7 @@ src/quant_fund/proofcore/provenance.py 3
 src/quant_fund/research/benches/intervals.py 3
 src/quant_fund/research/expert_mixture.py 1
 src/quant_fund/research/fleet_eval.py 1
+src/quant_fund/research/fleet_significance.py 1
 src/quant_fund/research/identity_sweep.py 1
 src/quant_fund/research/reality_sweep.py 1
 src/quant_fund/research/sota_protocol.py 1
