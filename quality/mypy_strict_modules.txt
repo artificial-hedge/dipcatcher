@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+=======
+>>>>>>> 58af1bfff (feat(microstructure): excursion_geometry — inventory-path excursion stats vs flow regimes)
 src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
@@ -264,6 +267,7 @@ src/quant_fund/microstructure/depth_consumption.py
 src/quant_fund/microstructure/event_burst.py
 src/quant_fund/microstructure/event_granger.py
 src/quant_fund/microstructure/event_matrix.py
+src/quant_fund/microstructure/excursion_geometry.py
 src/quant_fund/microstructure/exec_cost_real.py
 src/quant_fund/microstructure/exec_cost_split.py
 src/quant_fund/microstructure/glft_closed_form.py
@@ -764,3 +768,4 @@ src/quant_fund/validation/purging.py
 src/quant_fund/validation/regime_eval.py
 src/quant_fund/validation/vintage_eval.py
 src/quant_fund/validation/walk_forward.py
+||||||| parent of 58af1bfff (feat(microstructure): excursion_geometry — inventory-path excursion stats vs flow regimes)
