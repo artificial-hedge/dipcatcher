@@ -1983,7 +1983,17 @@ def corpus_absence_cmd(
     from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 
     if history:
-        body = history_absence_receipt(corpus_dir, member)
+        # The member glob is the corpus's declared pattern (receipts/*.json,
+        # configs/*, verifier/*.md ...) — derive it from the policy table, not
+        # the filename convention, so chained non-JSON corpora emit too.
+        from quant_fund.research.repo_integrity import CORPORA
+
+        declared = {c[0]: c[1] for c in CORPORA}
+        body = history_absence_receipt(
+            corpus_dir,
+            member,
+            pattern=declared.get(corpus_dir.as_posix(), "*.json"),
+        )
         sealed = seal_receipt(
             wrap_receipt_v2(
                 body,
@@ -1991,7 +2001,9 @@ def corpus_absence_cmd(
                 verdict="pass",
             )
         )
-        dest = out or (corpus_dir / f"corpus_history_absence_{sealed['receipt_sha256'][:16]}.json")
+        dest = out or corpus_dir
+        if dest.suffix != ".json":
+            dest = dest / f"corpus_history_absence_{sealed['receipt_sha256'][:16]}.json"
         from quant_fund.utils.atomicio import atomic_write_text
 
         atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
@@ -2010,7 +2022,9 @@ def corpus_absence_cmd(
             verdict="pass",
         )
     )
-    dest = out or (corpus_dir / f"corpus_absence_{sealed['receipt_sha256'][:16]}.json")
+    dest = out or corpus_dir
+    if dest.suffix != ".json":
+        dest = dest / f"corpus_absence_{sealed['receipt_sha256'][:16]}.json"
     from quant_fund.utils.atomicio import atomic_write_text
 
     atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
