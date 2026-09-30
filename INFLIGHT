@@ -940,3 +940,19 @@ note: stacked chain #442/#446/#452/#477/#479 all open; CI queued.
   Dropped duplicates this wave: metrics/multipower_variation
   (models/realized.py already covers BPV/TPQ/BNS/Lee-Mykland), Hawkes
   GOF (point_process.hawkes_residuals already owns compensator+KS).
+---
+owner: devin (wave-22 canon swarm)
+slice: WAVE 22 — signature-martingale validity lane + benches_w22 wiring
+status: INTEGRATED 2026-09-30 — PR #491 open (stacked on #479)
+detail: |
+  metrics/signature_martingale_test (child lane): expected-signature
+  martingale-validity test — omnibus signature-moment scores on
+  time-augmented increments, permutation/bootstrap p-calibration,
+  Ville-style e-process arm; composes models/path_signatures via lazy
+  import. Synthetic: size ~0.04-0.15 @ alpha .05 (BM + GARCH nulls),
+  drift-grid power {0.19,0.38,0.85}, AR(1) phi=.30 power 1.0, e-med
+  0.71 null vs 2.62 drift, Ville 0 on null. Lane corrected the spec's
+  speculative citations (arXiv:2206.14174 was unrelated; 'Katsirelos &
+  Wiese' doesn't exist). Adapter drops synthetic_live_pnl_claim —
+  pnl is a forbidden headline token. Scorecard 108->109.
+note: full stack #442/#446/#452/#477/#479/#491 open; CI queued.
