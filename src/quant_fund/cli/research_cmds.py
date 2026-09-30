@@ -1670,6 +1670,41 @@ def corpus_epoch(
     typer.echo(f"receipt={path}")
 
 
+@app.command("tombstone")
+def tombstone_cmd(
+    receipt: Path = typer.Argument(..., help="Receipt file to retract."),
+    reason: str = typer.Option(..., "--reason", help="Why the receipt is retracted."),
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Corpus dir the tombstone joins."
+    ),
+    scope: str = typer.Option(
+        "all",
+        "--scope",
+        help="'all' or a comma-separated list of claim paths to retract.",
+    ),
+) -> None:
+    """Retract a receipt: append a sealed receipt_tombstone.v1 to the corpus.
+
+    The corpus is append-only — a wrong or superseded receipt can't be
+    deleted without breaking the epoch chain, so it is retracted instead:
+    the lattice excludes its claims and the tombstone becomes chain
+    evidence itself. Provenance evidence only, never a market or P&L claim.
+    """
+    from quant_fund.research.receipt_tombstone import write_tombstone
+
+    target = Path(receipt)
+    if not target.is_file():
+        raise typer.BadParameter(f"receipt {target} does not exist")
+    scope_val: str | list[str] = (
+        "all" if scope == "all" else [s.strip() for s in scope.split(",") if s.strip()]
+    )
+    if scope_val != "all" and not scope_val:
+        raise typer.BadParameter("--scope must be 'all' or non-empty claim paths")
+    out = write_tombstone(target, corpus_dir=corpus_dir, reason=reason, scope=scope_val)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(f"tombstone={out} target={target.name}")
+
+
 @app.command("corpus-proof")
 def corpus_proof_cmd(
     corpus_dir: Path = typer.Option(

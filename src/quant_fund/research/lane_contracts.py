@@ -266,4 +266,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.fuzz_drill import fuzz_contract_errors
 
         return fuzz_contract_errors(payload)
+    if schema == "receipt_tombstone.v1" or payload.get("kind") == "receipt_tombstone.v1":
+        from quant_fund.research.receipt_tombstone import tombstone_contract_errors
+
+        return tombstone_contract_errors(payload)
     return []

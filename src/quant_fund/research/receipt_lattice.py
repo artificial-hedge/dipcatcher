@@ -245,6 +245,15 @@ def receipt_lattice(
     unspecified: list[str] = []
     dataset_unspecified: list[str] = []
     stale: list[dict[str, str]] = []
+    # Retractions: sealed receipt_tombstone.v1 members exclude their
+    # target's claims — append-only corpus can't delete, it retracts.
+    from quant_fund.research.receipt_tombstone import load_tombstones
+
+    tombs = load_tombstones(root)
+    retracted = tombs["active"]
+    tombstone_filenames = {t["tombstone"] for t in retracted.values()}
+    for bad in tombs["invalid"]:
+        errors.append({"file": bad.split(":", 1)[0], "error": bad.split(":", 1)[1]})
     # (tier, fingerprint, claim_path) -> list of (file, value)
     edges: dict[tuple[str, str, str], list[tuple[str, Any]]] = {}
 
@@ -274,7 +283,15 @@ def receipt_lattice(
         inner = body if isinstance(body, Mapping) else doc
         if inner.get("kind") in _META_AUDIT_KINDS:
             continue
+        # Tombstone records carry no measured claims (valid or not — an
+        # invalid tombstone is already an error entry); retracted targets
+        # contribute none either — partial scopes are honored per claim path.
+        if inner.get("kind") == "receipt_tombstone.v1" or rel in tombstone_filenames:
+            continue
+        tomb_scope = (retracted.get(rel) or {}).get("scope")
         for claim_path, value in _walk_claims(inner, ""):
+            if tomb_scope == "all" or (isinstance(tomb_scope, list) and claim_path in tomb_scope):
+                continue
             key = (
                 "inputs",
                 inputs if inputs is not None else f"unspecified:{rel}",
@@ -386,6 +403,11 @@ def receipt_lattice(
         "n_inconsistent_groups": n_inconsistent,
         "n_known_inconsistent_groups": n_known_inconsistent,
         "n_singleton_claims": n_singleton_claims,
+        "n_retracted": len(retracted),
+        "retracted": {
+            name: {"tombstone": t["tombstone"], "scope": t["scope"]}
+            for name, t in sorted(retracted.items())
+        },
         "groups": groups,
         "evidence": [
             "cross_receipt_claim_equality",
