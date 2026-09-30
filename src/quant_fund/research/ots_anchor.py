@@ -446,7 +446,7 @@ def verify_block_inclusion(
     """Full leaf→block check — zero trust in the calendar's claim.
 
     1. sha256d(coinbase_raw) is txid[0] (coinbase position by Bitcoin rule).
-    2. Merkle root over all txids equals header[36:72] — the tx set is proven
+    2. Merkle root over all txids equals header[36:68] — the tx set is proven
        by the header's own commitment.
     3. The coinbase carries an OP_RETURN push equal to ``committed_digest``
        (the value the OTS attestation binds) — our aggregated leaf is inside
@@ -468,6 +468,36 @@ def verify_block_inclusion(
     return {"ok": True, "n_tx": len(txids), "coinbase_txid": coinbase_txid[::-1].hex()}
 
 
+def verify_burial(header: bytes, successors: list[bytes]) -> dict[str, Any]:
+    """SPV burial check: K committed successors each link prev-hash and pass
+    PoW — the anchored block is buried under K blocks' cumulative work.
+
+    Without this, a fabricated valid-PoW header from any historical period
+    could pair with a self-consistent .blk witness; linkage to a live chain
+    tip is what pins real elapsed work. Returns cumulative work bits —
+    each block contributes 2^256/target expected hashes → log2 of the sum.
+    """
+    import math
+
+    chain = [header, *successors]
+    for i, hdr in enumerate(chain):
+        if len(hdr) != 80:
+            return {"ok": False, "error": f"succ_header_not_80_bytes:{i}"}
+        if not verify_header_pow(hdr, 0)["ok"]:
+            return {"ok": False, "error": f"succ_pow_invalid:{i}"}
+        if i and hdr[4:36] != _sha256d(chain[i - 1]):
+            return {"ok": False, "error": f"chain_break:{i}"}
+    work = 0.0
+    for hdr in chain:
+        target = _bits_to_target(hdr[72:76])
+        work += (2.0**256 / (target + 1)) if target else 0.0
+    return {
+        "ok": True,
+        "depth": len(successors),
+        "work_log2": round(math.log2(work), 1) if work else 0.0,
+    }
+
+
 def _get(url: str, timeout: float) -> bytes:
     req = urllib.request.Request(url, headers={"Accept": "application/octet-stream"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310  # nosec B310
@@ -485,8 +515,10 @@ def _fetch_header(height: int, *, explorer: str, timeout: float) -> bytes | None
     return header if len(header) == 80 else None
 
 
-def _fetch_block_witness(height: int, *, explorer: str, timeout: float) -> dict[str, Any] | None:
-    """txid list + raw coinbase for the block — the full inclusion witness."""
+def _fetch_block_witness(
+    height: int, *, explorer: str, timeout: float, bury: int = 0
+) -> dict[str, Any] | None:
+    """txid list + raw coinbase (+ K successor headers) — the full witness."""
     try:
         base = explorer.rstrip("/")
         block_hash = _get(f"{base}/block-height/{height}", timeout).strip().decode()
@@ -498,7 +530,18 @@ def _fetch_block_witness(height: int, *, explorer: str, timeout: float) -> dict[
         ):
             return None
         coinbase = _get(f"{base}/tx/{txids[0]}/raw", timeout)
-        return {"txids": txids, "coinbase": coinbase.hex()}
+        out: dict[str, Any] = {"txids": txids, "coinbase": coinbase.hex()}
+        if bury > 0:
+            succ: list[str] = []
+            for h in range(height + 1, height + bury + 1):
+                sh = _get(f"{base}/block-height/{h}", timeout).strip().decode()
+                raw = _get(f"{base}/block/{sh}/header", timeout).strip().decode()
+                succ_hdr = bytes.fromhex(raw)
+                if len(succ_hdr) != 80:
+                    return None
+                succ.append(succ_hdr.hex())
+            out["succ_headers"] = succ
+        return out
     except Exception:  # noqa: BLE001 — explorer outage skips, not fails
         return None
 
@@ -511,6 +554,7 @@ def upgrade_ots(
     explorer: str = DEFAULT_EXPLORER,
     timeout: float = 20.0,
     full: bool = False,
+    bury: int = 0,
 ) -> dict[str, Any]:
     """Upgrade pending anchors: poll calendars for Bitcoin confirmations.
 
@@ -580,7 +624,9 @@ def upgrade_ots(
                     if hdr is None:
                         states.append(f"bitcoin:{height}:hdr_unavailable")
                     elif full:
-                        bw = _fetch_block_witness(int(height), explorer=explorer, timeout=timeout)
+                        bw = _fetch_block_witness(
+                            int(height), explorer=explorer, timeout=timeout, bury=bury
+                        )
                         if bw is None:
                             states.append(f"bitcoin:{height}:block_witness_unavailable")
                         else:
@@ -667,6 +713,18 @@ def verify_ots(
                             inc = {"ok": False, "error": f"blk_parse:{exc.__class__.__name__}"}
                         if inc["ok"]:
                             states.append(f"bitcoin:{att['height']}:fully_verified")
+                            succ = bw.get("succ_headers")
+                            if isinstance(succ, list) and succ:
+                                burial = verify_burial(
+                                    hdr.read_bytes(),
+                                    [bytes.fromhex(s) for s in succ],
+                                )
+                                if burial["ok"]:
+                                    states.append(
+                                        f"buried:{burial['depth']}:work_log2={burial['work_log2']}"
+                                    )
+                                else:
+                                    errors.append(f"burial_invalid:{label}:{burial['error']}")
                         else:
                             states.append(
                                 f"bitcoin:{att['height']}:inclusion_invalid:{inc['error']}"

@@ -1,36 +1,36 @@
 {
   "heads": {
     ".dsh-24x7/*": {
-      "receipt": "corpus_epoch_720c5adf90ed0484.json",
-      "sha256": "f11e7da08010526469e0c7481a90e7f3ffd46b69e8e1461961e43388e8227e37"
+      "receipt": "corpus_epoch_859789968aa1bf62.json",
+      "sha256": "151b5ea7881fd3eea8583022bc68a1ef6080ab06963bb55ea0132204549d6001"
     },
     ".github/workflows/*.yml": {
-      "receipt": "corpus_epoch_d9f1e7934b541f2e.json",
-      "sha256": "75830f5980397fbcc12e66c7822eec7994ddd4dec4ecc92662dd338497b39217"
+      "receipt": "corpus_epoch_d4dacb334a46c03e.json",
+      "sha256": "237fd58a477533c6475bbf093b7e786613a761e3e94f2176984081bee132de95"
     },
     "artifacts/*": {
-      "receipt": "corpus_epoch_0a5f8e6e693bf44e.json",
-      "sha256": "6ebc4bbe10ddf0893da819dfecc07aa9caeaacc977d88cef52db4f032b4f8362"
+      "receipt": "corpus_epoch_316be10c92a83e55.json",
+      "sha256": "521b2a0ced751770003507b18966e43c8005f63b82782e8bd29cb3dfff09c035"
     },
     "configs/*": {
-      "receipt": "corpus_epoch_67509d68b8abd10c.json",
-      "sha256": "1795b05b30ff6a637b6f764af2e8d96db26a3aa37c3329e368cfb8d1583b6cad"
+      "receipt": "corpus_epoch_ac16e3e9fc93ec03.json",
+      "sha256": "1ab3f40cde174ed27e8d82efeaacbeb7e62a66da91e7f801107e9a6555f9a0d3"
     },
     "data/metadata/*": {
-      "receipt": "corpus_epoch_a590ddeebcb1f4e6.json",
-      "sha256": "eec218655b0e823deaecf9254fadd5b5e2b7aa2c44d71359192bdae06859061b"
+      "receipt": "corpus_epoch_9c3282bc1b94cc45.json",
+      "sha256": "9f05dcd0c1a4fa3440e1f000a77db82ad0e89c25cb817ec3cd11b3ab1f2734cf"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_12d6b060bf78d4a1.json",
-      "sha256": "84f38c0134f807991bf8013e7b52520db7f3e7e97eefac1e1b06ca695cefbf0e"
+      "receipt": "corpus_epoch_e76cf82488f7a425.json",
+      "sha256": "12895eeae4276a071cc049f3df9abd934d939be2e991a4be8ceeddcd7d520390"
     },
     "receipts/*.json": {
-      "receipt": "corpus_epoch_a0e901c74a5f29c4.json",
-      "sha256": "7d91fe4f8f725e4c87b5ef9334b2da7a6fce29496041bf7d48e9523acccce828"
+      "receipt": "corpus_epoch_6fb596b0230e9f17.json",
+      "sha256": "a879e4cf4813e82a1e885c053797417b9b5daadbf980a8afa9da1d48852bc380"
     },
     "verifier/*.md": {
-      "receipt": "corpus_epoch_3943e23505aa4acb.json",
-      "sha256": "0bf4732b2246b7d82ecad0a08dc4c7f39df8996e888f31ae6579b743d0490221"
+      "receipt": "corpus_epoch_6f0f85d4d670536e.json",
+      "sha256": "738f309edaf5625cacd5ed2f09fc680f447ea47c3107b18f137d03099b183821"
     }
   },
   "schema": "epoch_heads.v1"

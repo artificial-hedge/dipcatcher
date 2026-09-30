@@ -306,6 +306,17 @@ def main() -> int:
                 print(f"FAIL attestation digests absent from coinbase: {missing}")
                 return 1
             print(f"inclusion ok: {len(txids)} tx; merkle root + OP_RETURN commitment(s) verified")
+            succ = blk.get("succ_headers") or []
+            if succ:
+                chain = [header, *[bytes.fromhex(s) for s in succ]]
+                for i, h in enumerate(chain):
+                    if len(h) != 80 or not verify_pow(h):
+                        print(f"FAIL successor {i}: bad length or PoW")
+                        return 1
+                    if i and h[4:36] != _sha256d(chain[i - 1]):
+                        print(f"FAIL chain break at successor {i}")
+                        return 1
+                print(f"burial ok: {len(succ)} linked successors with valid PoW")
             print("VERDICT: fully_verified" + (" [stale]" if stale else ""))
             return 0
         print("VERDICT: pow_verified" + (" [stale]" if stale else ""))

@@ -2358,6 +2358,9 @@ def ots_upgrade_cmd(
     full: bool = typer.Option(
         False, "--full", help="Also commit the block's txid list + coinbase."
     ),
+    bury: int = typer.Option(
+        0, "--bury", min=0, max=100, help="With --full: commit K successor headers (SPV burial)."
+    ),
 ) -> None:
     """Upgrade pending OTS anchors to Bitcoin-confirmed proofs.
 
@@ -2371,7 +2374,7 @@ def ots_upgrade_cmd(
     """
     from quant_fund.research.ots_anchor import DEFAULT_EXPLORER, upgrade_ots
 
-    res = upgrade_ots(root=root, explorer=explorer or DEFAULT_EXPLORER, full=full)
+    res = upgrade_ots(root=root, explorer=explorer or DEFAULT_EXPLORER, full=full, bury=bury)
     for label, states in res.get("anchors", {}).items():
         typer.echo(f"{label}: {','.join(states)}")
     if not res["ok"]:

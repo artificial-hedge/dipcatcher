@@ -499,3 +499,90 @@ def test_standalone_ots_auditor_agrees(tmp_path: Path) -> None:
             str(real),
         )
         assert rc5 == 0 and "pending attestation" in out5
+
+
+def _successor_headers(header: bytes, k: int) -> list[bytes]:
+    """K headers each linking prev-hash, easy PoW."""
+    out: list[bytes] = []
+    prev = header
+    for i in range(k):
+        nxt = bytearray(80)
+        nxt[4:36] = hashlib.sha256(hashlib.sha256(prev).digest()).digest()
+        nxt[36:68] = bytes([0x40 + i]) * 32
+        nxt[72:76] = (0x2200FFFF).to_bytes(4, "little")
+        out.append(bytes(nxt))
+        prev = bytes(nxt)
+    return out
+
+
+def test_verify_burial(tmp_path: Path) -> None:
+    from quant_fund.research.ots_anchor import verify_burial
+
+    header, _, _ = _fake_block(b"\x5a" * 32)
+    succ = _successor_headers(header, 3)
+    res = verify_burial(header, succ)
+    # toy-easy nBits → tiny expected-work per block: log2 negative is honest
+    assert res["ok"] and res["depth"] == 3 and isinstance(res["work_log2"], float)
+    # chain break
+    bad = list(succ)
+    bad[1] = bad[1][:4] + b"\x00" * 32 + bad[1][36:]
+    assert verify_burial(header, bad)["error"] == "chain_break:2"
+    # bad successor PoW
+    bad2 = list(succ)
+    b = bytearray(bad2[0])
+    b[72:76] = (0x01000001).to_bytes(4, "little")
+    bad2[0] = bytes(b)
+    assert verify_burial(header, bad2)["error"] == "succ_pow_invalid:1"
+
+
+def test_verify_ots_buried(tmp_path: Path) -> None:
+    root = _repo_with_target(tmp_path)
+    target = root / "quality/epoch_heads.json"
+    digest = hashlib.sha256(target.read_bytes()).digest()
+    header, txids, coinbase = _fake_block(digest)
+    succ = _successor_headers(header, 2)
+    ots_dir = root / "quality/timestamps/ots"
+    ots_dir.mkdir(parents=True)
+    (ots_dir / "quality__epoch_heads.json.ots").write_bytes(
+        OTS_MAGIC + b"\x08" + digest + b"\x00" + ATT_BITCOIN + b"\x03" + bytes([0x90, 0xD6, 0x27])
+    )
+    (ots_dir / "quality__epoch_heads.json.650000.hdr").write_bytes(header)
+    (ots_dir / "quality__epoch_heads.json.650000.blk").write_text(
+        json.dumps(
+            {
+                "txids": txids,
+                "coinbase": coinbase.hex(),
+                "succ_headers": [s.hex() for s in succ],
+            }
+        )
+    )
+    (root / "quality/timestamps/ots_anchors.json").write_text(
+        json.dumps(
+            {
+                "schema": "ots_anchors.v1",
+                "anchors": {
+                    "quality__epoch_heads.json.ots": {
+                        "target": "quality/epoch_heads.json",
+                        "sha256": digest.hex(),
+                    }
+                },
+            }
+        )
+    )
+    res = verify_ots(root)
+    assert res["ok"]
+    states = res["attestations"]["quality/epoch_heads.json"]
+    assert "bitcoin:650000:fully_verified" in states
+    assert any(s.startswith("buried:2:work_log2=") for s in states)
+    # corrupt one successor → hard error
+    (ots_dir / "quality__epoch_heads.json.650000.blk").write_text(
+        json.dumps(
+            {
+                "txids": txids,
+                "coinbase": coinbase.hex(),
+                "succ_headers": [succ[0].hex(), succ[1].hex()[:70] + "ff" * 5],
+            }
+        )
+    )
+    res = verify_ots(root)
+    assert not res["ok"] and any("burial_invalid" in e for e in res["errors"])
