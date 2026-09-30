@@ -285,6 +285,7 @@ src/quant_fund/microstructure/sim_real_ledger.py
 src/quant_fund/microstructure/split_flow.py
 src/quant_fund/microstructure/split_flow_bench.py
 src/quant_fund/microstructure/spread_dynamics.py
+src/quant_fund/microstructure/spread_response.py
 src/quant_fund/microstructure/streak_stats.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/tape_digest.py
