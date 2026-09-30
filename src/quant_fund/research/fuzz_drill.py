@@ -145,6 +145,74 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
 
         out.append(("unstamped_receipt_inject", _EXPECT_FAIL, _inject))
 
+    # --- crafted-policy attacks: not byte noise, semantic forgeries ---
+    heads_pin = clone / "quality/epoch_heads.json"
+    if heads_pin.is_file():
+
+        def _rollback() -> str:
+            doc = json.loads(heads_pin.read_text())
+            for corpus, pin in doc.items():
+                pinned_name = str(pin.get("receipt") or "")
+                epochs = sorted((clone / corpus).glob("corpus_epoch_*.json"))
+                older = [e for e in epochs if e.name != pinned_name]
+                if older:
+                    victim = rng.choice(older)
+                    from quant_fund.utils.hashing import hash_bytes
+
+                    doc[corpus] = {
+                        "receipt": victim.name,
+                        "sha256": hash_bytes(victim.read_bytes()),
+                    }
+                    heads_pin.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+                    return f"rolled:{corpus}->{victim.name}"
+            return "no_rollback_target"
+
+        out.append(("heads_pin_rollback", _EXPECT_FAIL, _rollback))
+
+        def _forge_epoch() -> str:
+            target_dir = clone / "quality"
+            from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+            body: dict[str, Any] = {
+                "schema": "corpus_epoch.v1",
+                "kind": "corpus_epoch.v1",
+                "params": {"corpus": "quality", "pattern": "*.json"},
+                "members": {"forged": "0" * 64},
+                "n_members": 1,
+                "members_added": ["forged"],
+                "members_removed": [],
+                "prev_epoch_receipt": None,
+                "prev_epoch_sha256": None,
+                "epoch_root_sha256": "0" * 64,
+                "verdict": "genesis",
+            }
+            body["receipt_sha256"] = hash_bytes(canonical_json_bytes(body))
+            path = target_dir / f"corpus_epoch_{body['receipt_sha256'][:16]}.json"
+            path.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+            return f"forged:{path.name}"
+
+        out.append(("epoch_record_forge", _EXPECT_FAIL, _forge_epoch))
+
+    allowed = clone / "quality/epoch_allowed_removals.json"
+    quality_members = sorted(p for p in (clone / "quality").glob("*.json") if p.is_file())
+    if allowed.is_file() and len(quality_members) > 2:
+
+        def _launder() -> str:
+            victim = rng.choice(
+                [
+                    p
+                    for p in quality_members
+                    if p.name not in ("epoch_allowed_removals.json", "epoch_heads.json")
+                ]
+            )
+            victim.unlink()
+            doc = json.loads(allowed.read_text())
+            doc[victim.name] = "0" * 64  # forged allowance for the removal
+            allowed.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+            return f"laundered:{victim.name}"
+
+        out.append(("allowed_removals_launder", _EXPECT_FAIL, _launder))
+
     # --- must-pass: legitimately uncovered state ---
     uncovered_dir = clone / "docs"
     uncovered_dir.mkdir(exist_ok=True)
