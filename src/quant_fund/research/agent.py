@@ -137,6 +137,11 @@ from quant_fund.research.benches_w17 import (
     bench_sga_uq,
     bench_stochastic_tracking,
 )
+from quant_fund.research.benches_w18 import (
+    bench_gslice,
+    bench_neural_sde,
+    bench_stocbench,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1794,6 +1799,9 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "sga_uq": bench_sga_uq(),
         "passive_impact": bench_passive_impact(),
         "stochastic_tracking": bench_stochastic_tracking(),
+        "gslice": bench_gslice(),
+        "neural_sde": bench_neural_sde(),
+        "stocbench": bench_stocbench(),
     }
 
     hyps = _build_hypotheses(families, rankers)

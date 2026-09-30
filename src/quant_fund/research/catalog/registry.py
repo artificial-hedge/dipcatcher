@@ -184,6 +184,17 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sga_uq",
         "passive_impact",
         "stochastic_tracking",
+        # SOTA canon wave 18 batteries (see research/benches_w18.py):
+        # G-SLiCE path-space flow matching vs a GP-prior baseline and the
+        # latent neural SDE probabilistic forecaster vs its exact oracle
+        # kernel (both torch-gated), plus StocBench fixed-budget sampler
+        # evaluation (allocation, paired differentials, anytime-valid
+        # significance, aleatoric/epistemic split, rollout drift). Seeded
+        # SYNTHETIC streams; correctness diagnostics only, never promotion
+        # gates.
+        "gslice",
+        "neural_sde",
+        "stocbench",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
