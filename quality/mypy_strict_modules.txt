@@ -256,6 +256,7 @@ src/quant_fund/microstructure/bench.py
 src/quant_fund/microstructure/book_metrics.py
 src/quant_fund/microstructure/book_panel.py
 src/quant_fund/microstructure/candle_book_features.py
+src/quant_fund/microstructure/price_clustering.py
 src/quant_fund/microstructure/rl_market_maker.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/vendor_book_map.py
