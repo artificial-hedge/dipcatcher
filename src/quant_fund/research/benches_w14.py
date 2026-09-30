@@ -85,7 +85,6 @@ from quant_fund.models.mean_field_games import (
     mfg_to_ac_alpha,
     solve_mfg_trade_crowding,
 )
-from quant_fund.models.sabr import sabr_implied_vol
 from quant_fund.models.pair_vine_copula import (
     cvine_structure,
     gas_copula_fit,
@@ -93,6 +92,7 @@ from quant_fund.models.pair_vine_copula import (
     vine_sample,
     vine_tail_dependence,
 )
+from quant_fund.models.sabr import sabr_implied_vol
 from quant_fund.models.xva import bench_xva as _xva_core_bench
 from quant_fund.quant_models.heston import heston_implied_vol
 
