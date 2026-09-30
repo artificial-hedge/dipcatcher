@@ -258,3 +258,15 @@ coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
   green. Remaining backlog: mutation campaign on verify.py + catalog,
   fx1 capability.py/CLI wiring (owner calls), Tier-B deep-kernel-hedging
   follow-ups.
+- **Wave 19: INTEGRATED 2026-09-30 (PR #452, stacked on #446)** — five of six
+  lanes landed + five OPTIONAL families (`benches_w19.py`, scorecard
+  93→98): generalized-Langevin latent-liquidity impact (2609.37872),
+  Fukasawa first-order implied-variance (2609.13961), AD-Seq-Vol IVS
+  diffusion + no-arb penalties (2609.13402, torch-gated), RCCP
+  retrieval-corrected conformal (2608.10553), DCP distribution-aware
+  conformal (2605.26569). `event_time_flow` (2609.13715) lane in flight;
+  bench adapter + family slot pre-staged for a one-commit activation.
+  228 lane tests + 15 bench tests; ruff/format/mypy clean; research suite
+  green incl. executed-flag invariant. Remaining backlog: mutation
+  campaign on verify.py + catalog, fx1 capability.py/CLI wiring
+  (owner calls), Tier-B follow-ups.

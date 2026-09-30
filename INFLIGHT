@@ -873,3 +873,23 @@ detail: |
   Scoped gates: ruff+format+mypy clean; research suite 100% green.
   CI on both PRs queued (GitHub Actions saturation).
 note: PRs #442 (w17, 80->87) + #446 (w18 stacked, 87->93).
+---
+owner: devin (wave-19 canon swarm)
+slice: WAVE 19 — six SOTA module lanes + benches_w19 wiring
+status: 5/6 INTEGRATED 2026-09-30 — PR #452 open (stacked on #446)
+detail: |
+  Lanes: execution/langevin_impact (Itkin 2609.37872 latent-liquidity
+  GLE impact — Markovian exponential-kernel lift, emergent sqrt regime,
+  Table-3 pin within 1 MC SE), models/fukasawa_iv (2609.13961 cond-QV
+  implied variance, 3 asymptotic regimes), models/ivs_diffusion (Han
+  2609.13402 AD-Seq-Vol + no-arb penalties, torch — hedge RMSE -82% vs
+  resample), metrics/rccp (2608.10553 retrieval-corrected conformal),
+  metrics/dcp (2605.26569 distribution-aware conformal, exact CQR
+  reduction). microstructure/event_time_flow (2609.13715) still running
+  as a direct child after two 429 lane spawns — adapter pre-staged.
+  Integration local again (integrator hit the 6-session SWE-2 cap).
+  98 families wired; honest registration rule applied — families only
+  register once their module lands (executed-flag invariant in
+  test_research_recovers_synthetic_oracle enforces it).
+note: PRs #442 (w17, 80->87) + #446 (w18 stacked, 87->93) + #452 (w19
+  stacked, 93->98). One lane + docs commits pending.
