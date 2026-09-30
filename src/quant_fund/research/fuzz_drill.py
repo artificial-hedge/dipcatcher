@@ -232,6 +232,34 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
 
         out.append(("uncovered_extension_drop", _EXPECT_FAIL, _foreign_ext))
 
+    # --- name-semantics attacks: the member-name gate family must fire ---
+    if receipts.is_dir():
+
+        def _symlink_drop() -> str:
+            import os
+
+            link = receipts / f"fuzz_{rng.randrange(1 << 20)}.json"
+            os.symlink("corpus_epoch.json", link)
+            return f"symlinked:{link.name}"
+
+        out.append(("member_symlink_drop", _EXPECT_FAIL, _symlink_drop))
+
+        def _control_name() -> str:
+            name = f"fuzz_{rng.randrange(1 << 20)}\nall_gates_intact.json"
+            (receipts / name).write_text("{}")
+            return "control-char-name"
+
+        out.append(("member_name_control_char", _EXPECT_FAIL, _control_name))
+
+        def _nfd_name() -> str:
+            import unicodedata
+
+            name = unicodedata.normalize("NFD", "café_fuzz.json")
+            (receipts / name).write_text("{}")
+            return "nfd-name"
+
+        out.append(("member_name_nfd", _EXPECT_FAIL, _nfd_name))
+
     # --- must-pass: legitimately uncovered state ---
     uncovered_dir = clone / "docs"
     uncovered_dir.mkdir(exist_ok=True)
