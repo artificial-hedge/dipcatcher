@@ -165,6 +165,9 @@ from quant_fund.research.benches_w21 import (
     bench_rough_heston_rbergomi,
     bench_signature_features,
 )
+from quant_fund.research.benches_w22 import (
+    bench_signature_martingale_test,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1842,6 +1845,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "bocpd_changepoint": bench_bocpd_changepoint(),
         "rough_heston_rbergomi": bench_rough_heston_rbergomi(),
         "signature_features": bench_signature_features(),
+        "signature_martingale_test": bench_signature_martingale_test(),
     }
 
     hyps = _build_hypotheses(families, rankers)

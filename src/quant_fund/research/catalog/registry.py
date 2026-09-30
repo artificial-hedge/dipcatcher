@@ -246,6 +246,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bocpd_changepoint",
         "rough_heston_rbergomi",
         "signature_features",
+        # SOTA canon wave 22 batteries (see research/benches_w22.py):
+        # expected-signature martingale-validity test — omnibus
+        # signature-moment scores, permutation/bootstrap p-calibration,
+        # and an e-process arm (Chevyrev & Oberhauser 2022,
+        # arXiv:1810.10971; see the module docstring for the verified
+        # companion citation set). Same SYNTHETIC diagnostic contract.
+        "signature_martingale_test",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
