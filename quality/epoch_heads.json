@@ -26,9 +26,9 @@
       "tree_root": "c07a455ee6ac0fe7a1e169bbb6c9418a1b461fbeae0484653c86d09b857c2a86"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_7736608bf23c38c0.json",
-      "sha256": "030cbdc6655170ae56d69de44729f314410b8b680a06fd5c16342d95e284412d",
-      "tree_root": "58ed4258afd565347d906b0f884bcd59c3613e8e03e827baf3d7f2a285456bbb"
+      "receipt": "corpus_epoch_253d188a9db37eb4.json",
+      "sha256": "d44ba03f8c8b64c6a91f6ea5e77fa662dd5b561dafa27a052c74bd2c0bab48f3",
+      "tree_root": "68ef074c83c9e5afcf1d56e4bff02195785abb6b918b02c4f6d6e4cd37c8ba5b"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_e0f905c031ef39b1.json",

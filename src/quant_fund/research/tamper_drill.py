@@ -147,7 +147,13 @@ def _probes(clone: Path) -> list[tuple[str, Any]]:
                 # Prefer a non-self-referential member: flipping the chain's
                 # own epoch receipts is caught too, but a plain member is
                 # the unambiguous attack.
-                if candidate.is_file() and not name.startswith("corpus_epoch_"):
+                # Non-empty only: flipping a byte in a 0-byte member is a
+                # no-op that cannot drift its digest.
+                if (
+                    candidate.is_file()
+                    and not name.startswith("corpus_epoch_")
+                    and candidate.stat().st_size > 0
+                ):
                     victim = candidate
                     break
         if victim is not None:
