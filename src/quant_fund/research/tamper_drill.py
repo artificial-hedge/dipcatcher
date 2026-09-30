@@ -37,6 +37,11 @@ _CLONE_MEMBERS = (
     "receipts",
     "configs",
     "verifier",
+    # Remaining epoch-stamped corpora — without them the baseline reports
+    # corpus_missing and the drill proves nothing.
+    "artifacts",
+    ".dsh-24x7",
+    "data/metadata",
     # Crown jewels pin verifier *sources* — without them the baseline clone
     # reports jewel_missing and the drill proves nothing.
     "src",
