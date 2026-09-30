@@ -268,6 +268,7 @@ src/quant_fund/microstructure/intraday_shape.py
 src/quant_fund/microstructure/lob_exec.py
 src/quant_fund/microstructure/lobster.py
 src/quant_fund/microstructure/metaorder_detect.py
+src/quant_fund/microstructure/mid_jump.py
 src/quant_fund/microstructure/order_lifetime.py
 src/quant_fund/microstructure/price_improvement.py
 src/quant_fund/microstructure/propagator_real.py
