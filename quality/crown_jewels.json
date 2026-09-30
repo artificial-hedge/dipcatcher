@@ -1,5 +1,7 @@
 {
   "files": {
+    ".github/codeql/codeql-config.yml": "6161b0f5c3279766ddbfbe9e7ad0a77ebab208afb5ab0617ad27ad8e713b1a7e",
+    ".github/dependabot.yml": "a7ba5d4145a5b183c3763b5a2d540c40849d7153385f7e0404733203106261c4",
     ".gitleaks.toml": "d0a79001e556e84414015e9ffa34c62519966655c201f88b0dab9c2f8e68b091",
     ".pre-commit-config.yaml": "290aefe8e52e6cd7a17bcc26a3ef3a03d425ada39f200323a57fa6942bc3f146",
     "AGENTS.md": "3ecede6441ebba88b527e61e7c3ef5060059f02ad96250c06077bbd97f7706e5",
@@ -17,7 +19,7 @@
     "src/quant_fund/research/auditor_bundle.py": "46ad8472c40ebb77506a5e4d235377ae0739d649fd312d6878b1b011c8c03068",
     "src/quant_fund/research/checkpoint_chain.py": "33e21ce3047869bba3cf768629ee3d47c869cad8bca8f4d1b1863530227e8514",
     "src/quant_fund/research/corpus_epoch.py": "de92b717737fc93adf285a48b2b8e51fc94862b78a0fb10d3a1114e199a76bc7",
-    "src/quant_fund/research/crown_jewels.py": "51e6803ecc682fde3b4d3304a562e5bf8ebe2cc0d367dc4b25cb3bf8cbb9a4d4",
+    "src/quant_fund/research/crown_jewels.py": "c5fc08994453420ad3850df8d5e9cccd12479e6d001923790f97fb1ca6bacdb8",
     "src/quant_fund/research/epoch_consistency.py": "3e6f73f7c9ff5d542ae2804dc2d2ab83c3a64d496f5743c6dfd2a601c1236121",
     "src/quant_fund/research/epoch_merkle.py": "2778a059a1d1b4ffcd172c54375d3f827560c4a175c29dac0d81401ee9058b77",
     "src/quant_fund/research/fuzz_drill.py": "f7b737e198e7bc9a0fc91902218ebbdd33e17cb2f959d2c5748a868cdefb9917",
