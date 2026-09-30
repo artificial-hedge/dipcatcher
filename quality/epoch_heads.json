@@ -4,21 +4,13 @@
       "receipt": "corpus_epoch_a3f5dd6e6b59cf19.json",
       "sha256": "f57e8b0458c8661e853a3c0c2087fee9a887269f598e7e4919aac039a590c087"
     },
-    ".github/workflows/docker-compose.yml": {
-      "receipt": "corpus_epoch_eb000c4869db56a2.json",
-      "sha256": "89e84f1a7c9d392b5c85db752c4eb2a392a1fc46162bc6ed91d39a5537835759"
-    },
     "configs/*": {
       "receipt": "corpus_epoch_964d4f81da22979e.json",
       "sha256": "34afc9be3cf10246660d5ff1192ac9a1e0ea50bb4835597526f1599da37ed12a"
     },
-    "configs/AGENTS.md": {
-      "receipt": "corpus_epoch_2ce330c4a9f821da.json",
-      "sha256": "d74d974831415dc12fb561ac28b8c7d84d29024aa16f08b683a15d64897f8c77"
-    },
     "quality/*.json": {
-      "receipt": "corpus_epoch_0aab4aba49105d54.json",
-      "sha256": "e22487158ec1bf2572cd1b1051ee8d7f855f1d57e191d2cd218f347327aa13ab"
+      "receipt": "corpus_epoch_520e486a902603c8.json",
+      "sha256": "4050faa9ae7bef755cc8ded809e26759da90e4137bd7b56e0b033ecb92bc8bf0"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_2ca91405e468cc6b.json",
@@ -27,10 +19,6 @@
     "verifier/*.md": {
       "receipt": "corpus_epoch_beb1e1d6e5fbc3d8.json",
       "sha256": "5a5dc021434094b002b8f8844bd594e5e56a408a563cafdce5c53a30a96ee165"
-    },
-    "verifier/AGENTS.md": {
-      "receipt": "corpus_epoch_8e5039bf1cd311b3.json",
-      "sha256": "a31a9f787332ef8d323539b1f681b54570aa9549c231fbf0434f9f07392fa0ff"
     }
   },
   "schema": "epoch_heads.v1"

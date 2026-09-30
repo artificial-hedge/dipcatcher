@@ -151,7 +151,13 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
 
         def _rollback() -> str:
             doc = json.loads(heads_pin.read_text())
-            for corpus, pin in doc.items():
+            heads = doc.get("heads") if isinstance(doc, dict) else None
+            if not isinstance(heads, dict):
+                return "no_heads"
+            for key, pin in heads.items():
+                if not isinstance(pin, dict):
+                    continue
+                corpus = key.rsplit("/", 1)[0] if "/" in key else key
                 pinned_name = str(pin.get("receipt") or "")
                 epochs = sorted((clone / corpus).glob("corpus_epoch_*.json"))
                 older = [e for e in epochs if e.name != pinned_name]
@@ -159,12 +165,12 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
                     victim = rng.choice(older)
                     from quant_fund.utils.hashing import hash_bytes
 
-                    doc[corpus] = {
+                    heads[key] = {
                         "receipt": victim.name,
                         "sha256": hash_bytes(victim.read_bytes()),
                     }
                     heads_pin.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
-                    return f"rolled:{corpus}->{victim.name}"
+                    return f"rolled:{key}->{victim.name}"
             return "no_rollback_target"
 
         out.append(("heads_pin_rollback", _EXPECT_FAIL, _rollback))
