@@ -300,6 +300,10 @@ def test_trace_admission_refuses_contract_violation(tmp_path: Path):
         {"livePnlClaim": "true"},
         {"live-pnl-claim": True},
         {"results": {"live_pnl_claim": True}},
+        # Truthy-but-not-True values are claims too — fail-closed, not
+        # silently treated as clean.
+        {"livePnlClaim": 1},
+        {"live_pnl_claim": "yes"},
     ],
 )
 def test_ledger_live_claim_variants_become_negative(tmp_path: Path, payload: dict):
@@ -307,6 +311,15 @@ def test_ledger_live_claim_variants_become_negative(tmp_path: Path, payload: dic
     src.write_text(json.dumps(payload), encoding="utf-8")
     examples = ledger_examples(src, SYSTEM)
     assert len(examples) == 1 and examples[0].negative
+
+
+def test_ledger_falsy_claim_values_are_clean(tmp_path: Path):
+    # Explicit denials stay eligible as positive examples.
+    for value in (False, "false", 0, "0", "no", None):
+        src = tmp_path / "artifact.json"
+        src.write_text(json.dumps({"live_pnl_claim": value}), encoding="utf-8")
+        examples = ledger_examples(src, SYSTEM)
+        assert len(examples) == 1 and not examples[0].negative, value
 
 
 # ---------------------------------------------------------------------------
