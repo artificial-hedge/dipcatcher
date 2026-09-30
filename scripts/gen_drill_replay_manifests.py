@@ -53,11 +53,6 @@ VOLATILE_KEYS = frozenset(
 
 # Committed receipts with no producer script — composite/manual artifacts.
 UNREPRODUCIBLE: dict[str, str] = {
-    "corpus_real_drill.json": (
-        "rolling audit — its input is the live receipts corpus, which every "
-        "new evidence file mutates; byte-stability is impossible by design. "
-        "Corpus integrity is carried by the corpus epoch chains instead."
-    ),
     "emerge_real_drill.json": (
         "composite emerge lane over per-lane streams — its inputs are the "
         "other drills' outputs, not a tape; recompute via the lane drill set"
@@ -327,6 +322,69 @@ def main() -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(carrier, indent=2, sort_keys=True) + "\n")
         carriers.append(path.name)
+
+    # corpus lane: a frozen-membership audit. The membership file plus
+    # every member receipt are pinned as input tapes, so the BH-FDR/
+    # e-value pool is byte-reproducible even as the live corpus grows —
+    # new receipts simply are not members of this snapshot.
+    if not only or "corpus" in only or "corpus_real_drill.py" in only:
+        membership_rel = "data/manifests/replay_corpus_members.json"
+        members = json.loads((root / membership_rel).read_text())
+        input_tapes = [
+            {
+                "path": f"receipts/{name}",
+                "sha256": hashlib.sha256((root / "receipts" / name).read_bytes()).hexdigest(),
+            }
+            for name in members
+        ]
+        input_tapes.append(
+            {
+                "path": membership_rel,
+                "sha256": hashlib.sha256((root / membership_rel).read_bytes()).hexdigest(),
+            }
+        )
+        argv = [
+            "scripts/corpus_real_drill.py",
+            "--receipts",
+            "receipts",
+            "--membership",
+            membership_rel,
+            "--out",
+            f"{REPLAY_OUT}/corpus_real_drill.json",
+        ]
+        proc = subprocess.run(
+            [sys.executable, *argv], cwd=root, capture_output=True, text=True, timeout=900
+        )
+        if proc.returncode != 0:
+            failures.append(f"corpus: exit {proc.returncode}: {proc.stderr[-300:]}")
+        else:
+            produced = out_dir / "corpus_real_drill.json"
+            artifacts = [
+                {
+                    "path": f"{REPLAY_OUT}/corpus_real_drill.json",
+                    "sha256": hashlib.sha256(produced.read_bytes()).hexdigest(),
+                }
+            ]
+            committed = root / "receipts" / "corpus_real_drill.json"
+            reproduces = []
+            if committed.is_file():
+                reproduces.append(
+                    _reproduces_entry("receipts/corpus_real_drill.json", committed, produced)
+                )
+            body = {
+                "schema": "replay_manifest.v1",
+                "kind": "replay_manifest",
+                "research_only": True,
+                "live_pnl_claim": False,
+                "data_label": "MIXED",
+                "producer": "scripts/corpus_real_drill.py",
+                "replay": {"argv": argv, "artifacts": artifacts, "input_tapes": input_tapes},
+                "reproduces": reproduces,
+            }
+            carrier = _seal_carrier(body)
+            path = root / "data" / "manifests" / "replay" / "corpus.json"
+            path.write_text(json.dumps(carrier, indent=2, sort_keys=True) + "\n")
+            carriers.append(path.name)
 
     # synthetic lanes: no input tape, replayable anywhere
     for script, spec in SYNTHETIC_DRILLS.items():
