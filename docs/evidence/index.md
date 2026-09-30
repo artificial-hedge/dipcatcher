@@ -3296,6 +3296,732 @@ counted. Prose that contains such a token is quoted verbatim.
 - `schema_version`: 2
 - `verdict`: pass
 
+### `receipts/evidence_audit_f45ae8d6bc7cd677.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/evidence_audit_f45ae8d6bc7cd677.json | 04128fa07fd2ca3650981d0cad06d07f921a525b301945b2c539ddd8c7447989 | f45ae8d6bc7cd677b07900271ed460acece232a669cefebb69aa621e19bbbb62 | not_checked | 9fa14508146de03f33c930ad4d3c2de95395a137 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `evidence_audit.py`: ecc96ca2d055d319af60bf3a09ffe233db996376a1b4bb3da01cd459dd22d27b
+- `data_label`: META
+- `dataset_hash`: b5fb7ae4c47405236edb0bc400843d2039a3255c09e4eb4d0d1b973208eccf49
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-30T22:37:06.052479+00:00
+- `git_revision`: 9fa14508146de03f33c930ad4d3c2de95395a137
+- `kind`: evidence_audit
+- `params_hash`: 310f4d153960b0eefb359a85344a67e97474b12e4cf51a0275440e00aa555918
+- `payload`:
+  - `check_index`: true
+  - `duplicate_seals`:
+  - `files`:
+    - [0]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: calib_real_drill.json
+      - `file_sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+      - `filename_digest_ok`: null
+      - `kind`: calibration_audit.v1
+      - `schema`: calibration_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [1]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: capacity_eval_cd0854242ed8a9ec.json
+      - `file_sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+      - `filename_digest_ok`: true
+      - `kind`: capacity_overlay_eval
+      - `schema`: capacity_overlay.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [2]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coherence_2dd641ab766a536a.json
+      - `file_sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+      - `filename_digest_ok`: true
+      - `kind`: coherence_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [3]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: concordance_df424fa2f6b1c4e9.json
+      - `file_sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+      - `filename_digest_ok`: true
+      - `kind`: selection_concordance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [4]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [5]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_pit.json
+      - `file_sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [6]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: corpus_real_drill.json
+      - `file_sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+      - `filename_digest_ok`: null
+      - `kind`: corpus_inference.v1
+      - `schema`: corpus_inference.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [7]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: cost_calibration_eval_df9b8d7068bf709b.json
+      - `file_sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+      - `filename_digest_ok`: true
+      - `kind`: cost_calibration_eval
+      - `schema`: cost_calibration.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [8]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_cs_real_drill.json
+      - `file_sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+      - `filename_digest_ok`: null
+      - `kind`: coverage_cs
+      - `schema`: coverage_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [9]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_real_drill.json
+      - `file_sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+      - `filename_digest_ok`: null
+      - `kind`: coverage_audit
+      - `schema`: coverage_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [10]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [11]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_pit.json
+      - `file_sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [12]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: deps_security_hygiene_f3b4e6fd22e439b7.json
+      - `file_sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+      - `filename_digest_ok`: true
+      - `kind`: null
+      - `schema`: deps_hygiene.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+    - [13]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [14]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_pit.json
+      - `file_sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [15]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: emerge_real_drill.json
+      - `file_sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+      - `filename_digest_ok`: null
+      - `kind`: emerge_drill.v1
+      - `schema`: emerge_drill.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [16]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_3464d8f8197bf737.json
+      - `file_sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [17]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_d449e1ca0cc119a6.json
+      - `file_sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [18]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fast_replay_p42_conformance_20260928.json
+      - `file_sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
+    - [19]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_eval_5ddf15b0dc7d3ca1.json
+      - `file_sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+      - `filename_digest_ok`: true
+      - `kind`: distribution_fleet_eval
+      - `schema`: fleet_eval.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [20]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_race_real_drill.json
+      - `file_sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+      - `filename_digest_ok`: null
+      - `kind`: fleet_race.v1
+      - `schema`: fleet_race.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [21]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: honest_verdict_real_drill.json
+      - `file_sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+    - [22]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lane_power_drill.json
+      - `file_sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+      - `filename_digest_ok`: null
+      - `kind`: lane_power
+      - `schema`: lane_power.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [23]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_verdict.json
+      - `file_sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+      - `filename_digest_ok`: null
+      - `kind`: receipt_lattice.v1
+      - `schema`: receipt_lattice.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: inconsistent
+    - [24]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_a.json
+      - `file_sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [25]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_b.json
+      - `file_sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [26]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_conf_t_vs_empirical.json
+      - `file_sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [27]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_gaussian_vs_conf_t.json
+      - `file_sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [28]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: markout_amzn.json
+      - `file_sha256`: 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864
+      - `filename_digest_ok`: null
+      - `kind`: markout
+      - `schema`: markout.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [29]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_real_drill.json
+      - `file_sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [30]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_vol_drill.json
+      - `file_sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [31]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_clean.json
+      - `file_sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [32]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_defect.json
+      - `file_sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [33]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_real_drill.json
+      - `file_sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [34]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: multih_fleet_eval_5db1cab214e291d7.json
+      - `file_sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+      - `filename_digest_ok`: true
+      - `kind`: multih_fleet_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [35]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: nautilus_conformance_7bf19a08c147547b.json
+      - `file_sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+      - `filename_digest_ok`: true
+      - `kind`: nautilus_conformance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: blocked
+    - [36]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: panel_audit_real_drill.json
+      - `file_sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+      - `filename_digest_ok`: null
+      - `kind`: panel_audit.v1
+      - `schema`: panel_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [37]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: rankic_eval_9ebdad7da83e7348.json
+      - `file_sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+      - `filename_digest_ok`: true
+      - `kind`: cross_sectional_rankic_eval
+      - `schema`: cross_sectional_rankic.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [38]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_manifest.json
+      - `file_sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: 1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [39]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_test.json
+      - `file_sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [40]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_validation.json
+      - `file_sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [41]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_140b073ea589b0c7.json
+      - `file_sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [42]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_1e8e1446e506fce1.json
+      - `file_sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [43]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_2c14615c26efd19b.json
+      - `file_sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [44]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_46445c3b227aa15e.json
+      - `file_sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [45]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_47297eff3cb55178.json
+      - `file_sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [46]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_4f4a495b59d022fb.json
+      - `file_sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [47]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_771602cd1580476c.json
+      - `file_sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [48]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_85db152db863d25d.json
+      - `file_sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [49]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_8977244ef78bfd2f.json
+      - `file_sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [50]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_a6fd40311ce0fa04.json
+      - `file_sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [51]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_d311f5ea367a66a9.json
+      - `file_sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [52]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_dbd21a6c99c81e00.json
+      - `file_sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [53]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: suite_health_drill.json
+      - `file_sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+      - `filename_digest_ok`: null
+      - `kind`: suite_health
+      - `schema`: suite_health.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [54]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: tail_real_drill.json
+      - `file_sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+      - `filename_digest_ok`: null
+      - `kind`: tail_audit
+      - `schema`: tail_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [55]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: verdict_real_drill.json
+      - `file_sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+  - `findings`:
+  - `index_fresh`: true
+  - `n_files`: 56
+  - `n_invalid_sealed`: 2
+  - `n_sealed`: 56
+  - `n_unsealed`: 0
+  - `n_valid`: 54
+  - `receipts_dir`: receipts
+  - `schema`: evidence_audit.v1
+- `receipt_sha256`: f45ae8d6bc7cd677b07900271ed460acece232a669cefebb69aa621e19bbbb62
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/fast_replay_p42_conformance_20260928.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -7789,6 +8515,538 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `n`: 300
 - `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
 - `schema`: loss_cs.v1
+
+### `receipts/markout_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/markout_amzn.json | 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864 | a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9 | not_checked | 17c1e4d59806b28f67f7051bd80bf47edf3bed9d | absent | unspecified | absent | true | absent |
+
+- `kind`: markout
+- `schema`: markout.v1
+- `ticker`: AMZN
+- `real`:
+  - `horizons_s`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 1.0
+    - 2.0
+    - 5.0
+    - 10.0
+    - 30.0
+  - `n_executions`: 8974
+  - `sides`:
+    - `buy`:
+      - `mean`:
+        - 1.8120840266222962
+        - 2.0348377703826954
+        - 2.633839434276206
+        - 3.141742928452579
+        - 3.8300395256916997
+        - 4.345681581685744
+        - 4.80685618729097
+        - 5.306231640788922
+        - 5.366828855510895
+      - `median`:
+        - 1.0
+        - 1.0
+        - 1.5
+        - 2.0
+        - 2.5
+        - 3.0
+        - 3.5
+        - 4.5
+        - 3.5
+      - `n`:
+        - 4808
+        - 4808
+        - 4808
+        - 4808
+        - 4807
+        - 4805
+        - 4784
+        - 4766
+        - 4727
+    - `sell`:
+      - `mean`:
+        - 1.4675948151704272
+        - 1.578852616418627
+        - 1.9087854056649063
+        - 2.2695725264169067
+        - 2.7596731554914684
+        - 3.4125
+        - 4.09822072613609
+        - 4.857523624909135
+        - 6.315479115479116
+      - `median`:
+        - 0.5
+        - 0.5
+        - 0.5
+        - 1.0
+        - 1.5
+        - 2.0
+        - 3.0
+        - 3.5
+        - 5.0
+      - `n`:
+        - 4166
+        - 4166
+        - 4166
+        - 4164
+        - 4161
+        - 4160
+        - 4159
+        - 4127
+        - 4070
+  - `signed`:
+    - `mean`:
+      - 1.6521618007577445
+      - 1.823155783374192
+      - 2.2972476041898817
+      - 2.736959429335711
+      - 3.333407671721677
+      - 3.91266034578918
+      - 4.47730068209773
+      - 5.0979984257281
+      - 5.805729225872456
+    - `median`:
+      - 0.5
+      - 1.0
+      - 1.0
+      - 1.5
+      - 2.0
+      - 2.5
+      - 3.5
+      - 4.0
+      - 4.5
+    - `n`:
+      - 8974
+      - 8974
+      - 8974
+      - 8972
+      - 8968
+      - 8965
+      - 8943
+      - 8893
+      - 8797
+    - `noise_floor_sem`:
+      - 0.03418024606033118
+      - 0.03582530557733215
+      - 0.04229604920920552
+      - 0.04816844187842592
+      - 0.057086964058393176
+      - 0.06717101456204723
+      - 0.0782473596427618
+      - 0.09699452615786051
+      - 0.15611922579743887
+  - `toxicity_half_life_s`: 0.05
+  - `n_book_events`: 269748
+  - `tape_files`:
+    - AMZN_2012-06-21_34200000_57600000_message_10.csv
+    - AMZN_2012-06-21_34200000_57600000_orderbook_10.csv
+  - `tape_sha256`: c85a75b51f3616a683f825c2e03f984535e9329a8be5ab12325130d32223a2c5
+  - `data_label`: REAL_LOBSTER_SAMPLE
+- `sim_arms`:
+  - `iid`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 9105
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.0014508928571428572
+          - 0.0035706315554563713
+          - 0.00022326412145568208
+          - -0.0006700915791824883
+          - -0.00949508489722967
+          - -0.015876565295169946
+          - -0.03954167602785891
+          - -0.040843806104129264
+          - -0.04262957146062374
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4480
+          - 4481
+          - 4479
+          - 4477
+          - 4476
+          - 4472
+          - 4451
+          - 4456
+          - 4457
+      - `sell`:
+        - `mean`:
+          - -0.005749668288367979
+          - -0.007408226448474126
+          - -0.007520460075204601
+          - -0.004758742806551572
+          - -0.00420726306465899
+          - -0.0021050299135829823
+          - -0.0034390947415132017
+          - 0.0058823529411764705
+          - -0.013780840186708157
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4522
+          - 4522
+          - 4521
+          - 4518
+          - 4516
+          - 4513
+          - 4507
+          - 4505
+          - 4499
+    - `signed`:
+      - `mean`:
+        - -0.0021661852921572985
+        - -0.0019437965122736866
+        - -0.0036666666666666666
+        - -0.002723735408560311
+        - -0.0068394128113879
+        - -0.008959376739009461
+        - -0.021377539629381558
+        - -0.017352973998437674
+        - -0.02813756141134435
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - `n`:
+        - 9002
+        - 9003
+        - 9000
+        - 8995
+        - 8992
+        - 8985
+        - 8958
+        - 8961
+        - 8956
+      - `noise_floor_sem`:
+        - 0.005060761913509212
+        - 0.0051622043427196635
+        - 0.005400778996993859
+        - 0.005754719843043273
+        - 0.006427321026182346
+        - 0.0075119320331005785
+        - 0.00981252717966765
+        - 0.012119135727581595
+        - 0.017429448674705694
+    - `toxicity_half_life_s`: null
+    - `n_events`: 54146
+    - `sim_seconds`: 45000.0
+    - `flow`: iid_zi
+    - `seed`: 7
+    - `data_label`: SYNTHETIC
+  - `markov_regime`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 10344
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.00361794500723589
+          - 0.004654530409598676
+          - 0.005703027789299046
+          - 0.007481296758104738
+          - -0.0042860129625757895
+          - -0.0013652593992858643
+          - 0.02435408725116476
+          - 0.017887746358183375
+          - 0.0998911860718172
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4837
+          - 4834
+          - 4822
+          - 4812
+          - 4783
+          - 4761
+          - 4722
+          - 4668
+          - 4595
+      - `sell`:
+        - `mean`:
+          - -0.01810344827586207
+          - -0.01886182366889416
+          - -0.01307542684244651
+          - -0.01634906886097878
+          - -0.025893824485373782
+          - -0.03628068650879861
+          - -0.07070817803113352
+          - -0.09598411297440423
+          - -0.19876819708846585
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4640
+          - 4639
+          - 4627
+          - 4618
+          - 4615
+          - 4603
+          - 4561
+          - 4532
+          - 4465
+    - `signed`:
+      - `mean`:
+        - -0.00701698849846998
+        - -0.006861606671592948
+        - -0.0034924330616996507
+        - -0.0041887592788971365
+        - -0.014896786550329857
+        - -0.018528406663818883
+        - -0.022352687708714854
+        - -0.03820652173913044
+        - -0.04729580573951435
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - `n`:
+        - 9477
+        - 9473
+        - 9449
+        - 9430
+        - 9398
+        - 9364
+        - 9283
+        - 9200
+        - 9060
+      - `noise_floor_sem`:
+        - 0.006020692316762725
+        - 0.006142118442148533
+        - 0.006555385122683627
+        - 0.007109779186827386
+        - 0.00800840464230981
+        - 0.00920911521190748
+        - 0.011704716467079355
+        - 0.01435264889056644
+        - 0.020150868836827932
+    - `toxicity_half_life_s`: null
+    - `n_events`: 54192
+    - `sim_seconds`: 45000.0
+    - `flow`: markov_regime_calm_bursty
+    - `seed`: 8
+    - `data_label`: SYNTHETIC
+  - `split`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 13014
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.08253094910591471
+          - 0.0840683572216097
+          - 0.11624649859943978
+          - 0.14793741109530584
+          - 0.2212068465332173
+          - 0.3152798789712557
+          - 0.6062809917355372
+          - 1.0435691878703381
+          - 2.3922287390029324
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.5
+          - 0.5
+          - 2.0
+        - `n`:
+          - 3635
+          - 3628
+          - 3570
+          - 3515
+          - 3447
+          - 3305
+          - 3025
+          - 2869
+          - 2728
+      - `sell`:
+        - `mean`:
+          - 0.11901782921488896
+          - 0.11874217772215269
+          - 0.13925855513307986
+          - 0.17192070198245044
+          - 0.20587253920587253
+          - 0.35470836261419536
+          - 0.62
+          - 1.082559547840129
+          - 2.619916142557652
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.5
+          - 0.5
+          - 2.0
+        - `n`:
+          - 3197
+          - 3196
+          - 3156
+          - 3077
+          - 2997
+          - 2846
+          - 2650
+          - 2477
+          - 2385
+    - `signed`:
+      - `mean`:
+        - 0.09960480093676816
+        - 0.10030773739742087
+        - 0.12704430567945288
+        - 0.15913228155339806
+        - 0.21407510862818124
+        - 0.33352300438953014
+        - 0.6126872246696036
+        - 1.0616348671904228
+        - 2.4984353608449053
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.5
+        - 0.5
+        - 2.0
+      - `n`:
+        - 6832
+        - 6824
+        - 6726
+        - 6592
+        - 6444
+        - 6151
+        - 5675
+        - 5346
+        - 5113
+      - `noise_floor_sem`:
+        - 0.011362642800730068
+        - 0.011674244567031235
+        - 0.012093806581306625
+        - 0.013125434371388495
+        - 0.015198775698658499
+        - 0.019218147594887335
+        - 0.027223895455151945
+        - 0.040215717629467275
+        - 0.06643099397144156
+    - `toxicity_half_life_s`: 0.05
+    - `n_events`: 64237
+    - `sim_seconds`: 45000.0
+    - `flow`: split_metaorder_powerlaw
+    - `seed`: 9
+    - `n_episodes`: 205
+    - `data_label`: SYNTHETIC
+- `divergences`:
+  - [0]
+    - `arm`: iid
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: -0.021377539629381558
+    - `abs_gap_ticks`: 4.498678221727111
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+  - [1]
+    - `arm`: markov_regime
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: -0.022352687708714854
+    - `abs_gap_ticks`: 4.4996533698064445
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+  - [2]
+    - `arm`: split
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: 0.6126872246696036
+    - `abs_gap_ticks`: 3.8646134574281263
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+- `claim`: markout_curve_measured
+- `interpretation`: Post-execution adverse-selection curve: signed mid move in ticks at h in {0.05..30}s after each visible EXECUTION, sign-adjusted so positive = drift in the aggressor's direction (toxic flow). Real arm is the official LOBSTER AMZN 2012-06-21 level-10 sample; sim arms are labeled SYNTHETIC ZI-LOB variants (iid baseline, Markov calm/bursty regime flow, power-law metaorder splitting flow) under the identical measurement. 'divergences' flags arms whose 5s markout differs from the tape's by more than half the tape value. toxicity_half_life_s is the first horizon whose pooled signed mean exceeds its own standard-error floor (std/sqrt(n)); None when no horizon clears it. Research-only; no live-trading claim.
+- `git_revision`: 17c1e4d59806b28f67f7051bd80bf47edf3bed9d
+- `data_label`: MIXED
+- `research_only`: true
+- `receipt_sha256`: a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9
 
 ### `receipts/mcs_real_drill.json`
 
