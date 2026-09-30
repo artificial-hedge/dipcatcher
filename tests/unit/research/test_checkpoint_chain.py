@@ -40,12 +40,12 @@ def _repo(tmp_path: Path) -> tuple[Path, str, str]:
 def _spine(root: Path, priv: str, pub: str, n: int) -> None:
     """Write n checkpoints — each lands with the previous archived."""
     for _ in range(n):
-        write_checkpoint(root, priv, pub)
+        write_checkpoint(root, [(priv, pub)])
 
 
 def test_genesis_only(tmp_path: Path) -> None:
     root, priv, pub = _repo(tmp_path)
-    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, [(priv, pub)])
     res = checkpoint_spine(root)
     assert res["ok"] is True
     assert res["spine_length"] == 1

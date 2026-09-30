@@ -49,7 +49,7 @@ def test_no_rotations_neutral(tmp_path: Path) -> None:
 
 def test_honest_rotation_verifies(tmp_path: Path) -> None:
     root, priv, pub = _repo(tmp_path)
-    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, [(priv, pub)])
     _new_priv, new_pub = generate_keypair()
     out = rotate_key(root, priv, _new_priv, reason="test")
     assert out.name.startswith("rotation_")
@@ -71,12 +71,12 @@ def test_spine_survives_rotation_via_keyring(tmp_path: Path) -> None:
     verifies each record under its era's authorized key."""
     root, priv, _pub = _repo(tmp_path)
     for _ in range(3):
-        write_checkpoint(root, priv, _pub)
+        write_checkpoint(root, [(priv, _pub)])
     new_priv, new_pub = generate_keypair()
     rotate_key(root, priv, new_priv)
     (root / "quality/gate_signing.pub").write_text(new_pub + "\n")
     # fresh checkpoints under the new key extend the same spine
-    write_checkpoint(root, new_priv, new_pub)
+    write_checkpoint(root, [(new_priv, new_pub)])
     res = checkpoint_spine(root)
     assert res["ok"] is True, res["errors"]
     assert res["spine_length"] == 4
@@ -87,7 +87,7 @@ def test_spine_survives_rotation_via_keyring(tmp_path: Path) -> None:
 def test_forged_rotation_fails(tmp_path: Path) -> None:
     """A rotation record where the 'old' side isn't the real old key."""
     root, _priv, _pub = _repo(tmp_path)
-    write_checkpoint(root, _priv, _pub)
+    write_checkpoint(root, [(_priv, _pub)])
     attacker_priv, _attacker_pub = generate_keypair()
     _new_priv, _new_pub = generate_keypair()
     # craft the record manually — rotate_key refuses wrong old key, so forge
@@ -144,7 +144,7 @@ def test_malformed_rotation_fails(tmp_path: Path) -> None:
 
 def test_contract_coherence(tmp_path: Path) -> None:
     root, priv, pub = _repo(tmp_path)
-    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, [(priv, pub)])
     new_priv, new_pub = generate_keypair()
     rotate_key(root, priv, new_priv)
     (root / "quality/gate_signing.pub").write_text(new_pub + "\n")

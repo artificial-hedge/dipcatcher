@@ -214,15 +214,22 @@ def verify_rotations(root: str | Path = ".") -> dict[str, Any]:
                 body, payload = rec.get("body") or {}, rec.get("payload")
                 if payload is None:
                     continue
-                try:
-                    pub.verify(
-                        bytes.fromhex(str(body.get("signature", ""))),
-                        canonical_json_bytes(payload),
-                    )
-                    anchored = True
+                sigs = [body.get("signature")]
+                extra = body.get("signatures")
+                if isinstance(extra, list):
+                    sigs.extend(s.get("signature") for s in extra if isinstance(s, dict))
+                for sig in sigs:
+                    try:
+                        pub.verify(
+                            bytes.fromhex(str(sig)),
+                            canonical_json_bytes(payload),
+                        )
+                        anchored = True
+                        break
+                    except Exception:  # noqa: BLE001 — sig miss means try next record
+                        continue
+                if anchored:
                     break
-                except Exception:  # noqa: BLE001 — sig miss means try next record
-                    continue
         except ValueError:
             errors.append("genesis_pubkey_malformed")
         if not anchored:

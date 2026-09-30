@@ -33,11 +33,8 @@
       "ok": true
     },
     "epoch:quality": {
-      "errors": [
-        "head_member_digest_drift:'crown_jewels.json'",
-        "head_member_digest_drift:'repo_integrity.json'"
-      ],
-      "ok": false
+      "errors": [],
+      "ok": true
     },
     "epoch:receipts": {
       "errors": [],
@@ -56,10 +53,8 @@
       "ok": true
     },
     "pin_signatures": {
-      "errors": [
-        "pin_drift:quality/crown_jewels.json"
-      ],
-      "ok": false,
+      "errors": [],
+      "ok": true,
       "signed": true
     },
     "spine": {
@@ -84,7 +79,7 @@
   },
   "kind": "repo_integrity",
   "mode": "full",
-  "ok": false,
+  "ok": true,
   "params": {
     "corpora": [
       "receipts",
@@ -98,11 +93,11 @@
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "2ee7bdac46881b5cd99c29a33ccbd71a8ca42f1546d524147642a1ef409497fd",
-    "epoch_heads_sha256": "0981bebcf8258acb93ed8002f4e5f986b441ec51298a53fec0432d8cb776b821",
+    "crown_jewels_sha256": "10aa8191cf9658be5cfcf8eaa62dcf9df64c8fe0c7571989e696e0b701575712",
+    "epoch_heads_sha256": "5d41de424190a7f891d960201cc357adf8d0d287c954ea1c85143726f62796ad",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "63f8eb26102bd68043b5f2edeef36006f6e1a551b4cfb5cf5cf1bb9d39e5e844",
+  "receipt_sha256": "2514469dd8b31c2937b199e75b843e524df2b4dc757606dad10c26cb3ffe0e63",
   "schema": "repo_integrity.v1"
 }

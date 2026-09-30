@@ -2553,10 +2553,11 @@ def witness_scan_cmd(
 @app.command("checkpoint")
 def checkpoint_cmd(
     root: Path = typer.Option(Path("."), "--root"),
-    key_file: Path | None = typer.Option(
-        None,
+    key_file: list[Path] = typer.Option(
+        [],
         "--key-file",
-        help="Hex Ed25519 private seed + public key (two lines or PRIV:PUB). "
+        help="Signer key material ('<priv>:<pub>' or two lines). Repeatable "
+        "for multisig checkpoints under a committed quorum registry. "
         "Falls back to GATE_SIGNING_KEY env.",
     ),
     anchor: bool = typer.Option(
@@ -2569,7 +2570,9 @@ def checkpoint_cmd(
     signed-tree-head an auditor can verify with just the pubkey.
 
     Covers the sha256 of both pin files and gate_pins.sig plus every
-    corpus's pinned head receipt. Run LAST, after `make sign-pins`, so the
+    corpus's pinned head receipt. When a ``gate_quorum.v1`` registry is
+    committed the checkpoint is emitted as an M-of-N multisig envelope and
+    refuses to write below quorum. Run LAST, after `make sign-pins`, so the
     checkpoint binds the current signature. ``--anchor`` time-binds the
     checkpoint itself.
     """
@@ -2580,21 +2583,20 @@ def checkpoint_cmd(
         write_checkpoint,
     )
 
-    raw: str | None = None
-    if key_file is not None:
-        raw = key_file.read_text().strip()
-    else:
+    raws = [f.read_text().strip() for f in key_file]
+    if not raws:
         env = os.environ.get("GATE_SIGNING_KEY", "").strip()
         if env:
-            raw = Path(env).read_text().strip() if Path(env).is_file() else env
-    if raw is None:
+            raws = [env] if not Path(env).is_file() else [Path(env).read_text().strip()]
+    if not raws:
         typer.echo("checkpoint: no key material — supply --key-file or GATE_SIGNING_KEY")
         raise typer.Exit(code=2)
-    fields = [line.strip() for line in raw.replace(":", "\n").splitlines() if line.strip()]
-    if len(fields) != 2:
-        typer.echo("checkpoint: key material must be '<priv_hex>:<pub_hex>' or two lines")
-        raise typer.Exit(code=2)
-    path = write_checkpoint(root, fields[0], fields[1])
+    try:
+        signers = [pair for raw in raws for pair in _load_signer_pairs(raw)]
+        path = write_checkpoint(root, signers)
+    except ValueError as exc:
+        typer.echo(f"checkpoint: {exc}")
+        raise typer.Exit(code=2) from exc
     typer.echo(f"checkpoint={path}")
     if anchor:
         typer.echo(f"timestamp={anchor_checkpoint(root)}")

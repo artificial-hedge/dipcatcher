@@ -186,8 +186,13 @@ def _probes(clone: Path) -> list[tuple[str, Any]]:
         # prev_sha256 — the spine gate must flag the fork and the orphan.
         def _side_chain() -> None:
             forged = json.loads(cp.read_text())
-            sig = forged.get("signature", "")
-            forged["signature"] = ("0" if sig[:1] != "0" else "1") + sig[1:]
+            forged_sigs = forged.get("signatures")
+            if isinstance(forged_sigs, list) and forged_sigs and isinstance(forged_sigs[0], dict):
+                sig = str(forged_sigs[0].get("signature", ""))
+                forged_sigs[0]["signature"] = ("0" if sig[:1] != "0" else "1") + sig[1:]
+            else:
+                sig = str(forged.get("signature", ""))
+                forged["signature"] = ("0" if sig[:1] != "0" else "1") + sig[1:]
             (quality / "checkpoints" / "zz_injected_fork.json").write_text(json.dumps(forged))
 
         probes.append(("inject_side_chain_checkpoint", _side_chain))

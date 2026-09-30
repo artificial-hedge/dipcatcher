@@ -29,13 +29,22 @@ from pathlib import Path
 from typing import Any
 
 from quant_fund.research.corpus_epoch import load_heads_pin
-from quant_fund.research.gate_signatures import DEFAULT_PUBKEY_PATH, key_id
+from quant_fund.research.gate_signatures import (
+    DEFAULT_PUBKEY_PATH,
+    DEFAULT_QUORUM_PATH,
+    key_id,
+    load_quorum_registry,
+)
 from quant_fund.research.timestamp_anchor import stamp_timestamp, verify_timestamps
 from quant_fund.utils.atomicio import atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 CHECKPOINT_SCHEMA = "integrity_checkpoint.v1"
 CHECKPOINT_SIG_SCHEMA = "integrity_checkpoint_sig.v1"
+# v2 wraps the same payload in an M-of-N signature list resolved against the
+# committed gate_quorum.v1 registry — the checkpoint stops depending on a
+# single signing key once a quorum registry exists.
+CHECKPOINT_SIG_SCHEMA_V2 = "integrity_checkpoint_sig.v2"
 DEFAULT_CHECKPOINT_PATH = Path("quality/checkpoint.json")
 # Superseded checkpoints are archived append-only under this dir so the
 # prev_sha256 chain is locally verifiable — not just digest-referenced via
@@ -122,14 +131,23 @@ def checkpoint_state(root: str | Path) -> dict[str, Any]:
 
 def write_checkpoint(
     root: str | Path,
-    private_seed_hex: str,
-    pubkey_hex: str,
+    signers: list[tuple[str, str]],
     *,
     path: Path = DEFAULT_CHECKPOINT_PATH,
 ) -> Path:
-    """Sign ``checkpoint_state`` and write the checkpoint file atomically."""
+    """Sign ``checkpoint_state`` and write the checkpoint file atomically.
+
+    ``signers`` are ``(private_seed_hex, pubkey_hex)`` pairs. When a clean
+    ``gate_quorum.v1`` registry is committed the checkpoint is emitted as
+    ``integrity_checkpoint_sig.v2`` — every signer must be registered and a
+    below-quorum signature set refuses to write (a partial checkpoint is a
+    brick, not evidence). Pre-quorum trees without a registry keep the
+    single-signer ``v1`` envelope, signed by ``signers[0]``.
+    """
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+    if not signers:
+        raise ValueError("no signer key material")
     root_path = Path(root)
     prev_file = root_path / path
     # Archive the superseded checkpoint before overwrite — append-only, keyed
@@ -143,14 +161,41 @@ def write_checkpoint(
         if not archived.exists():
             atomic_write_text(archived, prev_bytes.decode())
     state = checkpoint_state(root_path)
-    key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(private_seed_hex))
-    body = {
-        "schema": CHECKPOINT_SIG_SCHEMA,
-        "algorithm": "ed25519",
-        "key_id": key_id(pubkey_hex),
-        "payload": state,
-        "signature": key.sign(canonical_json_bytes(state)).hex(),
-    }
+    msg = canonical_json_bytes(state)
+    quorum = load_quorum_registry(root_path)
+    if quorum is not None:
+        registered, threshold = quorum
+        signatures: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for priv_hex, pub_hex in signers:
+            kid = key_id(pub_hex)
+            if kid not in registered or registered[kid] != pub_hex:
+                raise ValueError(f"signer not in quorum registry: {kid}")
+            if kid in seen:
+                continue
+            seen.add(kid)
+            sig = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_hex)).sign(msg)
+            signatures.append({"key_id": kid, "signature": sig.hex()})
+        if len(signatures) < threshold:
+            raise ValueError(
+                f"checkpoint quorum unattainable: {len(signatures)} signers < threshold {threshold}"
+            )
+        body: dict[str, Any] = {
+            "schema": CHECKPOINT_SIG_SCHEMA_V2,
+            "algorithm": "ed25519",
+            "signatures": signatures,
+            "payload": state,
+        }
+    else:
+        priv_hex, pub_hex = signers[0]
+        key = Ed25519PrivateKey.from_private_bytes(bytes.fromhex(priv_hex))
+        body = {
+            "schema": CHECKPOINT_SIG_SCHEMA,
+            "algorithm": "ed25519",
+            "key_id": key_id(pub_hex),
+            "payload": state,
+            "signature": key.sign(msg).hex(),
+        }
     atomic_write_text(root_path / path, json.dumps(body, indent=2, sort_keys=True) + "\n")
     return root_path / path
 
@@ -196,8 +241,6 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
                 "errors": ["checkpoint_absent"],
             }
         return {"ok": True, "signed": False, "current": False, "errors": []}
-    if not pub_file.exists():
-        return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}
     try:
         body = json.loads(cp_file.read_text())
     except (OSError, ValueError):
@@ -205,22 +248,68 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
     payload = body.get("payload")
     if (
         body.get("algorithm") != "ed25519"
-        or body.get("schema") != CHECKPOINT_SIG_SCHEMA
+        or body.get("schema") not in (CHECKPOINT_SIG_SCHEMA, CHECKPOINT_SIG_SCHEMA_V2)
         or not isinstance(payload, dict)
         or payload.get("schema") != CHECKPOINT_SCHEMA
     ):
         return {"ok": False, "signed": True, "current": False, "errors": ["checkpoint_malformed"]}
-    pubkey_hex = pub_file.read_text().strip()
-    try:
-        pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
-    except ValueError:
-        return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_malformed"]}
-    if body.get("key_id") != key_id(pubkey_hex):
-        errors.append("key_id_mismatch")
-    try:
-        pubkey.verify(bytes.fromhex(str(body.get("signature", ""))), canonical_json_bytes(payload))
-    except (InvalidSignature, ValueError):
-        errors.append("signature_invalid")
+    # A committed quorum registry retires the single-key envelope at the head:
+    # the checkpoint must prove the quorum, not one key. Registry absent or
+    # malformed means nothing can satisfy it — v1 heads fail closed too.
+    registry_present = (root_path / DEFAULT_QUORUM_PATH).exists()
+    quorum = load_quorum_registry(root_path)
+    if registry_present and quorum is None:
+        errors.append("quorum_registry_malformed")
+    if registry_present:
+        registered, threshold = quorum if quorum is not None else ({}, 10**9)
+        if body.get("schema") != CHECKPOINT_SIG_SCHEMA_V2:
+            errors.append("checkpoint_below_quorum")
+        else:
+            sigs = body.get("signatures")
+            if not isinstance(sigs, list) or not sigs:
+                errors.append("checkpoint_below_quorum")
+            else:
+                valid: set[str] = set()
+                for entry in sigs:
+                    if not isinstance(entry, dict):
+                        errors.append("signature_malformed")
+                        continue
+                    kid = entry.get("key_id")
+                    sig_hex = entry.get("signature")
+                    if kid not in registered:
+                        errors.append("signature_key_unknown")
+                        continue
+                    if not isinstance(sig_hex, str):
+                        errors.append("signature_malformed")
+                        continue
+                    try:
+                        Ed25519PublicKey.from_public_bytes(
+                            bytes.fromhex(registered[str(kid)])
+                        ).verify(bytes.fromhex(sig_hex), canonical_json_bytes(payload))
+                        valid.add(str(kid))
+                    except (InvalidSignature, ValueError):
+                        errors.append("signature_invalid")
+                if len(valid) < threshold:
+                    errors.append(f"checkpoint_below_quorum:{len(valid)}/{threshold}")
+    elif body.get("schema") == CHECKPOINT_SIG_SCHEMA_V2:
+        # v2 without a registry file: signers cannot be resolved.
+        errors.append("quorum_registry_missing")
+    else:
+        if not pub_file.exists():
+            return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}
+        pubkey_hex = pub_file.read_text().strip()
+        try:
+            pubkey = Ed25519PublicKey.from_public_bytes(bytes.fromhex(pubkey_hex))
+        except ValueError:
+            return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_malformed"]}
+        if body.get("key_id") != key_id(pubkey_hex):
+            errors.append("key_id_mismatch")
+        try:
+            pubkey.verify(
+                bytes.fromhex(str(body.get("signature", ""))), canonical_json_bytes(payload)
+            )
+        except (InvalidSignature, ValueError):
+            errors.append("signature_invalid")
 
     # Currency: pinned digests vs live bytes.
     pins = payload.get("pins", {})

@@ -81,6 +81,59 @@ def _verify_signature(rec: dict[str, Any], pubkey: Any, pub_hex: str) -> None:
         rec["errors"].append("signature_invalid")
 
 
+def _verify_quorum_signature(
+    rec: dict[str, Any], quorum: tuple[dict[str, str], int] | None
+) -> None:
+    """Verify a ``integrity_checkpoint_sig.v2`` record against the registry.
+
+    Every signature resolves its ``key_id`` through the committed
+    ``gate_quorum.v1`` registry (not the rotation keyring — quorum members
+    are pinned by the registry itself). Distinct valid signers must reach
+    the registry threshold.
+    """
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    rec["sig_ok"] = False
+    body = rec.get("body") or {}
+    payload = rec.get("payload")
+    if body.get("algorithm") != "ed25519":
+        rec["errors"].append("algorithm_unexpected")
+        return
+    if quorum is None:
+        rec["errors"].append("quorum_registry_missing")
+        return
+    registered, threshold = quorum
+    sigs = body.get("signatures")
+    if not isinstance(sigs, list) or not sigs:
+        rec["errors"].append("quorum_signatures_missing")
+        return
+    valid: set[str] = set()
+    for entry in sigs:
+        if not isinstance(entry, dict):
+            rec["errors"].append("signature_malformed")
+            continue
+        kid = entry.get("key_id")
+        sig_hex = entry.get("signature")
+        if kid not in registered:
+            rec["errors"].append("signature_key_unknown")
+            continue
+        if not isinstance(sig_hex, str):
+            rec["errors"].append("signature_malformed")
+            continue
+        try:
+            Ed25519PublicKey.from_public_bytes(bytes.fromhex(registered[str(kid)])).verify(
+                bytes.fromhex(sig_hex), canonical_json_bytes(payload)
+            )
+            valid.add(str(kid))
+        except (InvalidSignature, ValueError):
+            rec["errors"].append("signature_invalid")
+    if len(valid) < threshold:
+        rec["errors"].append(f"quorum_below:{len(valid)}/{threshold}")
+    else:
+        rec["sig_ok"] = True
+
+
 def collect_spine_records(root: Path) -> dict[str, dict[str, Any]]:
     """All known checkpoint records keyed by content digest."""
     records: dict[str, dict[str, Any]] = {}
@@ -168,10 +221,16 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
     # authorized — records verify under the key that was current in *their*
     # era, so a legitimate rotation doesn't retroactively invalidate the
     # spine, and a record signed by a never-authorized key flags.
+    from quant_fund.research.gate_signatures import load_quorum_registry
+    from quant_fund.research.integrity_checkpoint import CHECKPOINT_SIG_SCHEMA_V2
     from quant_fund.research.key_rotation import load_keyring
 
     ring = load_keyring(root_path)
+    quorum = load_quorum_registry(root_path)
     for rec in records.values():
+        if (rec.get("body") or {}).get("schema") == CHECKPOINT_SIG_SCHEMA_V2:
+            _verify_quorum_signature(rec, quorum)
+            continue
         kid = str((rec.get("body") or {}).get("key_id", ""))
         rec_pub_hex = ring.get(kid, pub_hex)
         if kid and kid not in ring:

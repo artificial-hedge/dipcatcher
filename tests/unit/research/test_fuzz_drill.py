@@ -43,7 +43,7 @@ def test_mutations_are_two_sided(tmp_path: Path) -> None:
     root, priv, pub = _repo(tmp_path)
     (root / "receipts").mkdir()
     (root / "receipts/x.json").write_text("{}\n")
-    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, [(priv, pub)])
     import random
 
     muts = _mutations(root, random.Random(1))
@@ -56,7 +56,7 @@ def test_baseline_dirty_fails_closed(tmp_path: Path) -> None:
     reporting miscalibrated coverage."""
     root, priv, _pub = _repo(tmp_path)
     (root / "receipts").mkdir()
-    write_checkpoint(root, priv, _pub)
+    write_checkpoint(root, [(priv, _pub)])
     # dirty the baseline: corrupt a pin file without re-signing
     (root / "quality/epoch_heads.json").write_text('{"tampered": true}\n')
     res = fuzz_drill(root, seed=1)

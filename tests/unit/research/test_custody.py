@@ -76,7 +76,7 @@ def _fixture(tmp_path: Path) -> Path:
     ep = write_epoch_receipt(corpus_epoch(root / "quality"), root / "quality")
     update_heads_pin(pin, "quality", "*.json", ep)
     sign_pins(root, priv, pub)
-    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, [(priv, pub)])
     return root
 
 
@@ -174,7 +174,7 @@ def test_member_timeline_tracks_byte_evolution(tmp_path: Path) -> None:
     priv = (root / ".fixture_priv").read_text()
     pub = (root / "quality/gate_signing.pub").read_text()
     sign_pins(root, priv, pub)
-    write_checkpoint(root, priv, pub)
+    write_checkpoint(root, [(priv, pub)])
 
     after = member_timeline("b.json", root / "receipts", pattern="*.json")
     assert len(after) == 3

@@ -338,6 +338,26 @@ def _load_quorum_registry(root: Path) -> dict[str, str] | None:
     return {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}
 
 
+def load_quorum_registry(root: str | Path) -> tuple[dict[str, str], int] | None:
+    """Validated committed ``gate_quorum.v1`` → ``({key_id: pubkey}, threshold)``.
+
+    ``None`` when the file is absent OR malformed — callers that must
+    distinguish the two check the registry file's existence first.
+    """
+    reg_file = Path(root) / DEFAULT_QUORUM_PATH
+    if not reg_file.exists():
+        return None
+    try:
+        registry = json.loads(reg_file.read_text())
+    except (OSError, ValueError):
+        return None
+    if quorum_registry_errors(registry):
+        return None
+    return {str(e["key_id"]): str(e["pubkey"]) for e in registry["keys"]}, int(
+        registry["threshold"]
+    )
+
+
 def sign_pins_quorum(
     root: str | Path,
     signers: list[tuple[str, str]],
