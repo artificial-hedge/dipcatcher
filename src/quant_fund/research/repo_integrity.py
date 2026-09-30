@@ -217,15 +217,26 @@ def verify_repo(
         "errors": wit["errors"],
     }
 
-    from quant_fund.research.checkpoint_chain import checkpoint_spine
+    if evidence_only:
+        # The spine audits continuity of the ``checkpoints/`` + ``witness/``
+        # archives — exempt directories a bundle does not carry. The bundle's
+        # trust anchor is the signed checkpoint tip instead, which the
+        # ``checkpoint`` gate verifies.
+        gates["spine"] = {
+            "ok": True,
+            "skipped": "evidence_only",
+            "errors": [],
+        }
+    else:
+        from quant_fund.research.checkpoint_chain import checkpoint_spine
 
-    spine = checkpoint_spine(root)
-    gates["spine"] = {
-        "ok": bool(spine["ok"]),
-        "signed": bool(spine.get("signed", False)),
-        "spine_length": spine.get("spine_length", 0),
-        "errors": spine["errors"],
-    }
+        spine = checkpoint_spine(root)
+        gates["spine"] = {
+            "ok": bool(spine["ok"]),
+            "signed": bool(spine.get("signed", False)),
+            "spine_length": spine.get("spine_length", 0),
+            "errors": spine["errors"],
+        }
 
     from quant_fund.research.key_rotation import verify_rotations
 
@@ -435,7 +446,7 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             # attestation silently skipping a gate would downgrade a
             # partial verdict into an implied full pass.
             skip_ok = gate["skipped"] == "evidence_only" and (
-                name == "crown_jewels"
+                name in ("crown_jewels", "spine")
                 or (
                     name.startswith("epoch:")
                     and name.removeprefix("epoch:") not in EVIDENCE_CORPORA

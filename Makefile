@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify
 
 .DEFAULT_GOAL := help
 
@@ -286,6 +286,12 @@ witness-bundle: ## Emit the zero-trust auditor bundle (one JSON: checkpoint + pi
 
 verify-bundle: ## Verify an auditor bundle with zero trusted repo input (BUNDLE=path)
 	uv run dipcatcher verify-bundle $(BUNDLE)
+
+evidence-bundle: ## Export the evidence store as a portable third-party bundle (BUNDLE_DIR=path)
+	uv run dipcatcher evidence-export --out "$${BUNDLE_DIR:-evidence-bundle}"
+
+bundle-verify: ## Audit an exported evidence bundle — stdlib script, no repo imports (BUNDLE_DIR=path)
+	uv run python scripts/verify_evidence_bundle.py --root "$${BUNDLE_DIR:-evidence-bundle}"
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \

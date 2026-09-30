@@ -434,29 +434,97 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
     return True
 
 
+def _ed25519_key_id(pubkey_hex: str) -> str:
+    """kid = sha256(pubkey bytes)[:16] — mirrors gate_signatures.key_id."""
+    return _sha256(bytes.fromhex(pubkey_hex.strip()))[:16]
+
+
 def _checkpoint_heads(
-    checkpoint: dict[str, Any], pubkey: Path
+    checkpoint: dict[str, Any],
+    pubkey: Path,
+    quorum: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
-    """Authenticate the checkpoint envelope → (heads map, pins map, errs)."""
+    """Authenticate the checkpoint envelope → (heads map, pins map, errs).
+
+    v1: ``signature`` verified under ``pubkey``. v2: a ``signatures`` list of
+    ``{key_id, signature}`` — with ``--quorum <registry.json>`` every signature
+    must come from a registered key and at least ``threshold`` must verify;
+    without it, at least one signature must verify under ``pubkey`` and carry
+    that key's id (a swapped-in key can't launder a signed payload).
+    """
     errors: list[str] = []
-    if checkpoint.get("schema") != "integrity_checkpoint_sig.v1":
-        errors.append("checkpoint_schema")
+    schema = checkpoint.get("schema")
     payload = checkpoint.get("payload")
     if not isinstance(payload, dict):
-        return {}, {}, errors + ["checkpoint_payload_missing"]
+        return {}, {}, ["checkpoint_payload_missing"]
     if checkpoint.get("algorithm") != "ed25519":
         errors.append("checkpoint_algorithm")
-    sig = checkpoint.get("signature")
-    if not isinstance(sig, str):
-        errors.append("checkpoint_signature_malformed")
+    msg = _canon(payload)
+    if schema == "integrity_checkpoint_sig.v1":
+        sig = checkpoint.get("signature")
+        if not isinstance(sig, str):
+            errors.append("checkpoint_signature_malformed")
+        else:
+            # Signature message uses the plain canon (sorted compact JSON,
+            # no NaN scrub) — byte-identical to verify_corpus_proof._canon.
+            verdict = _ed25519_verify(pubkey.read_text().strip(), sig, msg)
+            if verdict is None:
+                errors.append("crypto_backend_unavailable")
+            elif verdict is False:
+                errors.append("checkpoint_signature_invalid")
+    elif schema == "integrity_checkpoint_sig.v2":
+        sigs = checkpoint.get("signatures")
+        if not isinstance(sigs, list) or not sigs:
+            errors.append("checkpoint_signature_malformed")
+            sigs = []
+        registered: dict[str, str] = {}
+        threshold = 1
+        if quorum is not None:
+            try:
+                reg = json.loads(quorum.read_bytes())
+                if (
+                    reg.get("schema") != "gate_quorum.v1"
+                    or not isinstance(reg.get("keys"), list)
+                    or not isinstance(reg.get("threshold"), int)
+                ):
+                    errors.append("quorum_registry_malformed")
+                else:
+                    registered = {
+                        str(k["key_id"]): str(k["pubkey"])
+                        for k in reg["keys"]
+                        if isinstance(k, dict)
+                    }
+                    threshold = int(reg["threshold"])
+            except (OSError, ValueError):
+                errors.append("quorum_registry_unreadable")
+        else:
+            registered = {_ed25519_key_id(pubkey.read_text()): pubkey.read_text().strip()}
+        seen: set[str] = set()
+        valid = 0
+        for entry in sigs:
+            if not isinstance(entry, dict):
+                errors.append("checkpoint_signature_malformed")
+                continue
+            kid = str(entry.get("key_id", ""))
+            pub = registered.get(kid)
+            if pub is None:
+                errors.append(f"unknown_signer:{kid}")
+                continue
+            if kid in seen:
+                errors.append(f"duplicate_signer:{kid}")
+                continue
+            seen.add(kid)
+            verdict = _ed25519_verify(pub.strip(), str(entry.get("signature", "")), msg)
+            if verdict is None:
+                errors.append("crypto_backend_unavailable")
+            elif verdict is True:
+                valid += 1
+            else:
+                errors.append(f"checkpoint_signature_invalid:{kid}")
+        if valid < threshold:
+            errors.append(f"checkpoint_quorum_not_met:{valid}/{threshold}")
     else:
-        # Signature message uses the plain canon (sorted compact JSON,
-        # no NaN scrub) — byte-identical to verify_corpus_proof._canon.
-        verdict = _ed25519_verify(pubkey.read_text().strip(), sig, _canon(payload))
-        if verdict is None:
-            errors.append("crypto_backend_unavailable")
-        elif verdict is False:
-            errors.append("checkpoint_signature_invalid")
+        errors.append("checkpoint_schema")
     heads = payload.get("heads")
     pins = payload.get("pins")
     if not isinstance(heads, dict):
@@ -632,6 +700,12 @@ def main() -> int:
         help="Signed checkpoint carrying the heads pin map",
     )
     ap.add_argument("--pubkey", type=Path, default=None)
+    ap.add_argument(
+        "--quorum",
+        type=Path,
+        default=None,
+        help="gate_quorum.v1 registry for v2 checkpoints (default: --pubkey only)",
+    )
     ap.add_argument("--key", type=str, default=None, help="pin key e.g. 'quality/*.json'")
     ap.add_argument("--allowed-removals", type=Path, default=None)
     ap.add_argument("--require-stamped", action="store_true")
@@ -650,7 +724,7 @@ def main() -> int:
     if args.checkpoint is not None:
         checkpoint = json.loads(args.checkpoint.read_bytes())
         assert args.pubkey is not None
-        heads, pins, errs = _checkpoint_heads(checkpoint, args.pubkey)
+        heads, pins, errs = _checkpoint_heads(checkpoint, args.pubkey, args.quorum)
         pre_errors += errs
         pin_heads = heads
         if args.pin is not None:

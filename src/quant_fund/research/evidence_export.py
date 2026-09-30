@@ -45,8 +45,13 @@ BUNDLE_MANIFEST = "BUNDLE.json"
 # integrity-relevant root file the bundle must carry.
 _SIGNATURE_FILE = "gate_pins.sig"
 # Chain bookkeeping exempted from corpus membership but required to verify:
-# the heads pin the epoch gates check, and the pubkey pin_signatures needs.
-_BOOKKEEPING_FILES = ("quality/epoch_heads.json", "quality/gate_signing.pub")
+# the heads pin the epoch gates check, the pubkey pin_signatures needs, and
+# the latest signed checkpoint — the self-contained ``--checkpoint`` auth path.
+_BOOKKEEPING_FILES = (
+    "quality/epoch_heads.json",
+    "quality/gate_signing.pub",
+    "quality/checkpoint.json",
+)
 
 
 def _corpus_glob(root: Path, corpus_dir: str) -> str:

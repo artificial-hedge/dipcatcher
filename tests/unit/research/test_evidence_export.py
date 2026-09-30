@@ -177,3 +177,42 @@ def test_corrupted_bundle_member_fails_verification(tmp_path: Path) -> None:
     epoch_gate = result["gates"]["epoch:receipts"]
     assert not epoch_gate["ok"]
     assert not result["ok"]
+
+
+BUNDLE_SCRIPT = REPO_ROOT / "scripts" / "verify_evidence_bundle.py"
+
+
+def test_standalone_auditor_verifies_minimal_bundle(tmp_path: Path) -> None:
+    """``scripts/verify_evidence_bundle.py`` — the zero-dependency third-party
+    path — must reach the same verdict as ``verify-repo --evidence-only``."""
+    import sys
+
+    root = _minimal_evidence_tree(tmp_path)
+    bundle = tmp_path / "bundle"
+    export_evidence_bundle(root, bundle)
+    proc = subprocess.run(
+        [sys.executable, str(BUNDLE_SCRIPT), "--root", str(bundle)],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_standalone_auditor_fails_closed_on_tamper(tmp_path: Path) -> None:
+    """A forged bundle member fails the standalone chain audit."""
+    import sys
+
+    root = _minimal_evidence_tree(tmp_path)
+    bundle = tmp_path / "bundle"
+    export_evidence_bundle(root, bundle)
+    victim = next(
+        p for p in (bundle / "receipts").glob("*.json") if not p.name.startswith("corpus_epoch_")
+    )
+    victim.write_text('{"forged": true}\n', encoding="utf-8")
+    proc = subprocess.run(
+        [sys.executable, str(BUNDLE_SCRIPT), "--root", str(bundle)],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 1
+    assert "receipts" in proc.stdout
