@@ -356,5 +356,5 @@ def lobster_replay_bench(tape_dir: Path, ticker: str = "AMZN") -> dict[str, Any]
     payload["git_revision"] = git_revision()
     payload["data_label"] = f"LOBSTER-{ticker}-2012-06-21-sample"
     payload["research_only"] = True
-    payload["payload_sha256"] = hash_bytes(canonical_json_bytes(payload))
+    payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))
     return payload

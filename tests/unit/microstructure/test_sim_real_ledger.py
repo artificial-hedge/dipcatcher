@@ -106,4 +106,4 @@ def test_ledger_schema(tmp_path: Path) -> None:
     assert out["data_label"] == "MIXED"
     assert "sim_calm" in out["table"]["sign_lag1"]
     assert "real" in out["table"]["sign_lag1"]
-    assert len(out["payload_sha256"]) == 64
+    assert len(out["receipt_sha256"]) == 64
