@@ -37,6 +37,8 @@ DEFAULT_PIN_PATH = Path("quality/crown_jewels.json")
 # the code that checks it can be silently rewritten to `return ok`.
 DEFAULT_JEWELS: tuple[str, ...] = (
     ".gitleaks.toml",  # secret-scan allowlist — removing a rule opens exfil lanes
+    ".github/dependabot.yml",  # dep-bump policy — tampering injects malicious upgrades
+    ".github/codeql/codeql-config.yml",  # CodeQL weakening — security-scan evasion
     ".pre-commit-config.yaml",  # local hook stack
     "AGENTS.md",  # the honesty contract
     "Makefile",  # the gate command definitions
