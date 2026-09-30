@@ -302,29 +302,29 @@ def corpus_epoch(
             f"without carrying an epoch payload: {[ascii(s) for s in squatters]}"
         )
     # Chains are per-(dir, pattern): only epochs stamped with the same member
-    # glob participate. Absent params.pattern means the default "*.json".
-    epochs = [
-        (p, e)
-        for p, e in candidates
-        if (e.get("params") or {}).get("pattern", "*.json") == pattern
-        if isinstance(e.get("params") or {}, Mapping)
-    ]
+    # glob participate. Absent params.pattern means the default "*.json". A
+    # receipt claiming corpus_epoch.v1 with non-mapping params can't carry a
+    # chain pattern — the checker flags it; it neither parents a stamp nor
+    # constrains patterns.
+    epochs: list[tuple[Path, Mapping[str, Any]]] = []
+    foreign_patterns: set[str] = set()
+    for p, e in candidates:
+        params = e.get("params")
+        if params is not None and not isinstance(params, Mapping):
+            continue
+        pat = str((params or {}).get("pattern", "*.json"))
+        if pat == pattern:
+            epochs.append((p, e))
+        else:
+            foreign_patterns.add(pat)
     # Fail closed on a *new* pattern in a dir that already has an established
     # chain under another glob — a mismatched --glob mints a parallel
     # (dir, pattern) chain whose records then read as unstamped members of
     # the real chain, exactly the drift the heads pin exists to catch.
-    foreign_patterns = sorted(
-        {
-            str((e.get("params") or {}).get("pattern", "*.json"))
-            for _p, e in candidates
-            if isinstance(e.get("params") or {}, Mapping)
-        }
-        - {pattern}
-    )
     if foreign_patterns and not allow_new_pattern:
         raise ValueError(
             f"refusing to stamp {root}: corpus already has epoch chains under "
-            f"{foreign_patterns}; a new pattern needs --allow-new-pattern"
+            f"{sorted(foreign_patterns)}; a new pattern needs --allow-new-pattern"
         )
     # The chain head is the epoch no other epoch names as prev.
     prevs = {e.get("prev_epoch_receipt") for _, e in epochs}
@@ -593,12 +593,14 @@ def check_epoch_chain(
     # ignored: they can't forge a chain but must not pass silently.
     candidates, squatters = _epoch_receipts(root)
     errors.extend(f"epoch_prefix_squat:{name!a}" for name in squatters)
-    epochs = [
-        (p, e)
-        for p, e in candidates
-        if isinstance(e.get("params") or {}, Mapping)
-        and (e.get("params") or {}).get("pattern", "*.json") == pattern
-    ]
+    epochs: list[tuple[Path, Mapping[str, Any]]] = []
+    for epoch_path, epoch_payload in candidates:
+        params = epoch_payload.get("params")
+        if params is not None and not isinstance(params, Mapping):
+            errors.append(f"epoch_params_malformed:{epoch_path.name}")
+            continue
+        if (params or {}).get("pattern", "*.json") == pattern:
+            epochs.append((epoch_path, epoch_payload))
     if not epochs:
         if exp_name is not None:
             errors.append(f"epoch_head_rollback:{exp_name!a}")

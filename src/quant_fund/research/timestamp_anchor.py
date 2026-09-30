@@ -169,7 +169,7 @@ def load_anchors(ts_dir: Path) -> dict[str, dict[str, str]]:
         body = json.loads(path.read_text())
     except (OSError, ValueError):
         return {}
-    if body.get("schema") != ANCHORS_SCHEMA:
+    if not isinstance(body, dict) or body.get("schema") != ANCHORS_SCHEMA:
         return {}
     anchors = body.get("anchors", {})
     return anchors if isinstance(anchors, dict) else {}
@@ -260,6 +260,9 @@ def verify_timestamps(
     openssl_ok = _openssl_available() and cacert.is_file()
     for name, entry in sorted(anchors.items()):
         token_path = tdir / name
+        if not isinstance(entry, dict):
+            errors.append(f"anchor_malformed:{name}")
+            continue
         target_rel = str(entry.get("target", ""))
         declared = str(entry.get("sha256", ""))
         label = target_rel or name
