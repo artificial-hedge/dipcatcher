@@ -304,6 +304,52 @@ def test_verify_research_artifact_rejects_malformed_hypothesis_statistics(
     assert "invalid_hypothesis_reject_raw:0" in result["errors"]
 
 
+def test_verify_research_artifact_accepts_zero_p_value_boundary(tmp_path: Path) -> None:
+    """p_value=0.0 is a legal [0, 1] boundary value (mutation-testing find:
+    the 0.0 <= p lower bound was previously untested — a LtE->Lt mutant of
+    ``_p_value_valid`` survived the whole suite)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["hypotheses"] = [
+        {
+            "id": "H1",
+            "statement": "x",
+            "test": "test",
+            "statistic": 0.0,
+            "p_value": 0.0,
+            "reject_raw": False,
+            "reject_fdr": False,
+            "decision": "x",
+            "family": "calibration",
+        }
+    ]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert "invalid_hypothesis_p_value:0" not in result["errors"]
+
+
+def test_verify_research_artifact_rejects_negative_p_value(tmp_path: Path) -> None:
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["hypotheses"] = [
+        {
+            "id": "H1",
+            "statement": "x",
+            "test": "test",
+            "statistic": 0.0,
+            "p_value": -1e-12,
+            "reject_raw": False,
+            "reject_fdr": False,
+            "decision": "x",
+            "family": "calibration",
+        }
+    ]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "invalid_hypothesis_p_value:0" in result["errors"]
+
+
 def test_verify_research_artifact_allows_nan_unavailable_hypothesis_values(
     tmp_path: Path,
 ) -> None:
