@@ -159,6 +159,10 @@ from quant_fund.research.benches_w20 import (
     bench_liquidity_tail_lob,
     bench_varswap_stopping,
 )
+from quant_fund.research.benches_w21 import (
+    bench_bocpd_changepoint,
+    bench_rough_heston_rbergomi,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1832,6 +1836,8 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hidden_markov_equilibrium": bench_hidden_markov_equilibrium(),
         "gaussian_normalized_coords": bench_gaussian_normalized_coords(),
         "liquidity_tail_lob": bench_liquidity_tail_lob(),
+        "bocpd_changepoint": bench_bocpd_changepoint(),
+        "rough_heston_rbergomi": bench_rough_heston_rbergomi(),
     }
 
     hyps = _build_hypotheses(families, rankers)

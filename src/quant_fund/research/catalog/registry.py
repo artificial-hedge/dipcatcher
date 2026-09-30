@@ -231,6 +231,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hidden_markov_equilibrium",
         "gaussian_normalized_coords",
         "liquidity_tail_lob",
+        # SOTA canon wave 21 batteries (see research/benches_w21.py):
+        # Bayesian online change-point detection (Adams & MacKay 2007,
+        # arXiv:0710.3742) and rough-volatility pricing — fractional
+        # Riccati rHeston CF + rBergomi/Volterra simulators (El Euch &
+        # Rosenbaum 2019, arXiv:1609.02108; Bayer-Friz-Gatheral 2016;
+        # Abi Jaber-Larsson-Pulido 2019, arXiv:1708.08796). Same
+        # SYNTHETIC diagnostic contract.
+        "bocpd_changepoint",
+        "rough_heston_rbergomi",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
