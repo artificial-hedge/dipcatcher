@@ -876,7 +876,7 @@ note: PRs #442 (w17, 80->87) + #446 (w18 stacked, 87->93).
 ---
 owner: devin (wave-19 canon swarm)
 slice: WAVE 19 — six SOTA module lanes + benches_w19 wiring
-status: 5/6 INTEGRATED 2026-09-30 — PR #452 open (stacked on #446)
+status: INTEGRATED 2026-09-30 — PR #452 open (stacked on #446)
 detail: |
   Lanes: execution/langevin_impact (Itkin 2609.37872 latent-liquidity
   GLE impact — Markovian exponential-kernel lift, emergent sqrt regime,
