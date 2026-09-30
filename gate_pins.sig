@@ -3,10 +3,10 @@
   "key_id": "bc3bcff676056adf",
   "payload": {
     "files": {
-      "quality/crown_jewels.json": "348ec070e7d5c1dcea28d382600e5e74f91a03c9a6550e7719eacf0070d88bb3",
-      "quality/epoch_heads.json": "fde462ed2f920a63e8fb18a31cd8811dc34ee09bf9288de0cfef9b2b6759675c"
+      "quality/crown_jewels.json": "3bf4de8f585c4971e62d6e3cac0c196b7781cac61d5f830b27d6552431c91e60",
+      "quality/epoch_heads.json": "351f0caf853179eea9dc8e8aff480a9c8ad407ad0a91f542d8f0e85ab38baa0f"
     }
   },
   "schema": "gate_signatures.v1",
-  "signature": "0415e4f99475e683c543c2e01467b1b60ce5ad8ba13b665e57d6f5df1f3a595ea4faa62f87b07fa07c55a61d9f565320ba8efc424cf5e953a28a8c832b5b900d"
+  "signature": "e8116965275a7f8bbe08adf23e3acc75d401fc07bcf0e456ebb1f700e8977b61481872c1f6660103142a30413cf9858cc5c148ef96d2139268dc0077c8a9e406"
 }
