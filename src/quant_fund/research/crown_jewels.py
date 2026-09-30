@@ -85,6 +85,8 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     # a silent patch to IT defeats the divergence-detection layer
     "scripts/verify_ots_auditor.py",  # the standalone OTS/Bitcoin auditor —
     # same class: the differential oracle must itself be pinned
+    "scripts/verify_corpus_proof.py",  # standalone inclusion/absence-proof
+    # auditor — the offline verification path's independent oracle
 )
 
 
