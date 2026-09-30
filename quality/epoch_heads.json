@@ -21,8 +21,8 @@
       "sha256": "309c7366349f8010324803dc2afd3a9958b1b038e31678f1d90d45957245090b"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_bcb157a33b0a9e31.json",
-      "sha256": "fdc8290603c7c0b602348860497d81e88b86fc1725cd56d7576e3a3a90703cb6"
+      "receipt": "corpus_epoch_d3fb007c2af4b7af.json",
+      "sha256": "a2a4380d2131b137792636266fe5109e470169b2590fee82ec104a031f993a13"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_2ca91405e468cc6b.json",
