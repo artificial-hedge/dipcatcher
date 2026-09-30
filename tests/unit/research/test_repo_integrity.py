@@ -12,7 +12,7 @@ from quant_fund.research.repo_integrity import (
 
 
 def _git_repo(tmp_path: Path) -> Path:
-    """Minimal tree satisfying every gate: 9 jewels + 4 stamped corpora."""
+    """Minimal tree satisfying every gate: 12 jewels + 7 stamped corpora."""
     import subprocess
 
     from quant_fund.research.corpus_epoch import (
@@ -42,6 +42,8 @@ def _git_repo(tmp_path: Path) -> Path:
         ("quality", "*.json"),
         (".github/workflows", "*.yml"),
         ("configs", "*"),
+        ("artifacts", "*"),
+        (".dsh-24x7", "*"),
     ):
         d = root / corpus_dir
         d.mkdir(parents=True, exist_ok=True)
@@ -100,6 +102,8 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
         "epoch:quality",
         "epoch:.github/workflows",
         "epoch:configs",
+        "epoch:artifacts",
+        "epoch:.dsh-24x7",
     }
 
 
@@ -198,7 +202,14 @@ def test_verify_repo_evidence_only_bundle(tmp_path: Path) -> None:
     full = _git_repo(tmp_path)
     bundle = tmp_path / "bundle"
     bundle.mkdir()
-    for d in ("receipts", "verifier", "quality", "configs"):
+    for d in (
+        "receipts",
+        "verifier",
+        "quality",
+        "configs",
+        "artifacts",
+        ".dsh-24x7",
+    ):
         shutil.copytree(full / d, bundle / d)
     shutil.copytree(full / ".github", bundle / ".github")
     shutil.copy2(full / "gate_pins.sig", bundle / "gate_pins.sig")
@@ -229,7 +240,14 @@ def test_repo_integrity_receipt_records_evidence_only_mode(tmp_path: Path) -> No
     full = _git_repo(tmp_path)
     bundle = tmp_path / "bundle"
     bundle.mkdir()
-    for d in ("receipts", "verifier", "quality", "configs"):
+    for d in (
+        "receipts",
+        "verifier",
+        "quality",
+        "configs",
+        "artifacts",
+        ".dsh-24x7",
+    ):
         shutil.copytree(full / d, bundle / d)
     shutil.copytree(full / ".github", bundle / ".github")
     shutil.copy2(full / "gate_pins.sig", bundle / "gate_pins.sig")
