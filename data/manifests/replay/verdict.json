@@ -1,0 +1,40 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/verdict_real_drill.py",
+  "receipt_sha256": "4803d715a29a6a3b5c833aa2f94a53000bae0258ada8822e0d53dd29548d3934",
+  "replay": {
+    "argv": [
+      "scripts/verdict_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/verdict_real_drill.json",
+        "sha256": "647061e5b49099a33261373cec4c8b1eb107e53f7e6760ce4d8d6b52f839bc99"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "components",
+        "drill"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7",
+      "drift_reason": "composite over lanes whose inputs grew (components) + drill bookkeeping (drill)",
+      "receipt": "receipts/verdict_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

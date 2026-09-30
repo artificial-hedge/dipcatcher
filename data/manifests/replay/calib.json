@@ -1,0 +1,39 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/calib_real_drill.py",
+  "receipt_sha256": "a947bba03d59fd24fa54416fa307307dc18f766a220301c0d52e468df46a0646",
+  "replay": {
+    "argv": [
+      "scripts/calib_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/calib_real_drill.json",
+        "sha256": "e2cda4a4ccba364f9455aea74a779b9c8efa007437e8cf4f9340355d054db454"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "n_models"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c",
+      "drift_reason": "fleet registry growth: head roster expanded since the receipt was sealed (n_models)",
+      "receipt": "receipts/calib_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

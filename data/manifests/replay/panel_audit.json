@@ -1,0 +1,40 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/panel_audit_drill.py",
+  "receipt_sha256": "2f96d1d29c791861eff0e7761ac9d5abe1a463b837002b1d038ef0746c4b4534",
+  "replay": {
+    "argv": [
+      "scripts/panel_audit_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/panel_audit_real_drill.json",
+        "sha256": "461ab54bdcf64ba47a9e040dd23aa8bd2ce48bfbb234a2afecd33ff9425b42a4"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "heads",
+        "n_cells_total"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de",
+      "drift_reason": "fleet registry growth: panel sweeps the enlarged head set (heads/n_cells_total)",
+      "receipt": "receipts/panel_audit_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

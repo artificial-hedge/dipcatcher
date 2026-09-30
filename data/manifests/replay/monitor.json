@@ -1,0 +1,41 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/monitor_real_drill.py",
+  "receipt_sha256": "22367c6fbc81c7aedda904a80ff6335a6b51f64cf1420ef43e5c125083c73c2c",
+  "replay": {
+    "argv": [
+      "scripts/monitor_real_drill.py",
+      "--bars",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay/monitor_run_real_drill.json"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/monitor_run_real_drill.json",
+        "sha256": "e76ab2fa4ae7c5f3355b2000f549d3eab555bf8494b1902b9cec0535aa550310"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "n_alarm_rows",
+        "params"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1",
+      "drift_reason": "fleet registry growth: monitor now sweeps the enlarged head set (params/n_alarm_rows)",
+      "receipt": "receipts/monitor_run_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

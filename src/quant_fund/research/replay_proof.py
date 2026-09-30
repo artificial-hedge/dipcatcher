@@ -209,10 +209,13 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     ``dipcatcher``/``quant`` resolve to the current interpreter's
     ``quant_fund.cli.main`` module — the entry point pyproject binds them
     to — so the replay runs this checkout's code rather than depending on
-    ``PATH``. Any other argv runs verbatim.
+    ``PATH``. A leading ``*.py`` path resolves to the same interpreter so
+    script lanes also run this checkout's code. Any other argv runs verbatim.
     """
     if argv and argv[0] in _CLI_ENTRYPOINTS:
         return [sys.executable, "-m", "quant_fund.cli.main", *argv[1:]]
+    if argv and argv[0].endswith(".py"):
+        return [sys.executable, *argv]
     return list(argv)
 
 
@@ -304,6 +307,47 @@ def _tape_file_row(entry: Mapping[str, Any], root_path: Path) -> dict[str, Any]:
     return row
 
 
+def _committed_artifact(
+    artifacts: list[Mapping[str, Any]], root_path: Path, run_cwd: Path
+) -> str | None:
+    """Return the first declared artifact path that is git-tracked, or None.
+
+    Replays may legitimately produce bytes identical to a committed file, but
+    they must land on an untracked path; writing onto a tracked path would
+    clobber the very evidence the manifest claims to reproduce.
+    """
+    rel_paths: list[str] = []
+    resolved_entries: list[tuple[str, Path]] = []
+    for entry in artifacts:
+        declared = str(entry.get("path") or "")
+        candidate = Path(declared)
+        resolved = candidate if candidate.is_absolute() else (run_cwd / candidate)
+        resolved = resolved.resolve()
+        if not resolved.is_relative_to(root_path):
+            continue  # escapes are flagged by the artifact pass itself
+        rel = str(resolved.relative_to(root_path))
+        rel_paths.append(rel)
+        resolved_entries.append((declared, resolved))
+    if not rel_paths:
+        return None
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", *rel_paths],
+            cwd=root_path,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None  # not a git checkout — nothing to clobber
+    tracked = set(proc.stdout.split())
+    for declared, resolved in resolved_entries:
+        if str(resolved.relative_to(root_path)) in tracked:
+            return declared
+    return None
+
+
 def run_replay(
     receipt_path: Path | str,
     *,
@@ -351,10 +395,14 @@ def run_replay(
         source_receipt_seal = None
 
     env = dict(os.environ)
+    # The replayed argv must run the verifier's own code, never whatever an
+    # ambient installed package resolves to — prefer the root's src/, else
+    # fall back to this process's own quant_fund source tree.
     src_dir = root_path / "src"
-    if (src_dir / "quant_fund").is_dir():
-        existing = env.get("PYTHONPATH")
-        env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+    if not (src_dir / "quant_fund").is_dir():
+        src_dir = Path(__file__).resolve().parents[2]
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
 
     # Input binding: declared tapes verify BEFORE argv runs — a drifted or
     # missing input means the replay could never reproduce the receipt, so
@@ -371,9 +419,16 @@ def run_replay(
     spawn_error: str | None = None
     stderr_tail = ""
     inputs_blocked = inputs_ok is False
+    # A declared artifact landing on a git-tracked path would clobber
+    # committed evidence — fail before argv runs. Artifact digests are the
+    # proof's only integrity surface; a tracked path means the bytes were
+    # fixed at commit time and a hostile argv could overwrite them.
+    committed_overwrite = _committed_artifact(manifest["artifacts"], root_path, run_cwd)
     started = time.monotonic()
     if inputs_blocked:
         spawn_error = "inputs_not_verified"
+    elif committed_overwrite is not None:
+        spawn_error = f"artifact_overwrites_committed:{committed_overwrite}"
     elif not run_cwd.is_dir():
         spawn_error = f"cwd_missing:{declared_cwd}"
     elif not run_cwd.is_relative_to(root_path):
@@ -458,6 +513,8 @@ def run_replay(
         "stderr_tail": stderr_tail,
         "verdict": verdict,
     }
+    if spawn_error is not None:
+        body["spawn_error"] = spawn_error
     if input_tape_rows is not None:
         body["input_tapes"] = input_tape_rows
         body["inputs_ok"] = bool(inputs_ok)

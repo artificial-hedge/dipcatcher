@@ -1,10 +1,30 @@
 {
   "collected_at": "2026-09-30T11:51:03.303507+00:00",
+  "eval_streams": [
+    {
+      "dataset_sha256": "f2d4b0ae378f75fd9886e61ddc8f489ca7e7c858a417b96434a8b0b0041fe1de",
+      "frame": "NVDA x_t = y_{t-1} lagged PIT stream over the us_wide tape",
+      "name": "calib_nvda_lag1_xprev",
+      "producer": "scripts/calib_real_drill.py"
+    },
+    {
+      "dataset_sha256": "6f2fcfb70697d7a450570f3dd8609d91eab7b0f64bb1194f6e7dcddd697e59fe",
+      "frame": "per-head loss+PIT arrays evaluated on the us_wide NVDA shard",
+      "name": "verdict_head_loss_pit_streams",
+      "producer": "scripts/verdict_real_drill.py"
+    },
+    {
+      "dataset_sha256": "ec0e266ba44e29d5a68d8322f655a086d74e05575d905a5654b294a869257f71",
+      "frame": "8 shards x 8 heads per-cell loss streams over the us_wide tape",
+      "name": "monitor_shard_loss_streams",
+      "producer": "scripts/monitor_real_drill.py"
+    }
+  ],
   "frame_csv_sha256": "3e3fe1817be9774b56127794191616fd45c2231dc3c44eba293f0ef9237107a2",
   "n_names": 424,
   "n_rows": 1132803,
   "promotion_receipt_sha256": null,
-  "receipt_sha256": "fd986d7426c90eef5f57c7caa7d237facddad7150769be871f31a70650d0bd15",
+  "receipt_sha256": "0242b736ea1b00518804b9b3b5f155a7b43530747ea95e5d026db83139088bc4",
   "schema": "tape_manifest.v1",
   "source_label": "yahoo_eod_us_wide",
   "tape_files": [

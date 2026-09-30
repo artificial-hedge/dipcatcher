@@ -36,6 +36,8 @@ def main() -> int:
         out_path.unlink()
 
     report = corpus_audit(receipts_dir, q=args.q, glob=args.glob)
+    report.pop("code_revision", None)
+    report.pop("meta", None)
     sealed = seal_receipt(report)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")

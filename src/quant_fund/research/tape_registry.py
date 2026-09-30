@@ -210,6 +210,12 @@ def load_registry(root: Path | str) -> dict[str, dict[str, Any]]:
         csv_digest = manifest.get("frame_csv_sha256")
         if _is_sha256(csv_digest):
             registry[str(csv_digest)] = manifest
+        # Evaluated-stream digests: a lane's ``dataset_sha256`` binds the
+        # exact stream it scored — manifests attest which digests a tape
+        # legitimately produces.
+        for entry in manifest.get("eval_streams") or []:
+            if isinstance(entry, Mapping) and _is_sha256(entry.get("dataset_sha256")):
+                registry[str(entry["dataset_sha256"])] = manifest
     return registry
 
 
@@ -309,6 +315,10 @@ def tape_binding_errors(body: Mapping[str, Any], *, root: Path | str | None = No
     """
     label = body.get("data_label")
     if isinstance(label, str) and label.upper() in SYNTHETIC_LABELS:
+        return []
+    # Corpus lanes evaluate the committed receipt corpus itself — pinned by
+    # the corpus epoch chains (verify-repo), not by a tape manifest.
+    if str(body.get("kind")) in {"corpus_inference.v1", "suite_health"}:
         return []
     bound = [body[key] for key in TAPE_BINDING_KEYS if isinstance(body.get(key), str)]
     if not bound:
