@@ -91,7 +91,7 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 73,
+      "n_modules": 75,
       "status": "audited"
     },
     "microstructure": {
@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 207,
+      "n_modules": 209,
       "status": "audited"
     },
     "monitoring": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 118,
+      "n_modules": 119,
       "status": "audited"
     },
     "risk": {
@@ -238,28 +238,28 @@
       "status": "audited"
     },
     "metrics/adaptive_eps.py": {
-      "reason": "wave-16 e-PS adaptive multiple-testing head \u2014 shipped with own suite (tests/unit/metrics/test_adaptive_eps*); dedicated audit pending",
-      "status": "waived"
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
     },
     "metrics/conformal_oce.py": {
-      "reason": "wave-16 conformal risk-averse OCE decision head \u2014 shipped with own suite; dedicated audit pending",
-      "status": "waived"
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
     },
     "models/diffusion_forecaster.py": {
-      "reason": "wave-17 DiffPTS full-ELBO diffusion forecaster \u2014 shipped with own suite; dedicated audit pending",
-      "status": "waived"
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
     },
     "models/greek_neutral_portfolios.py": {
-      "reason": "wave-17 Taming-the-Greeks neutral portfolio head \u2014 shipped with own suite; dedicated audit pending",
-      "status": "waived"
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
     },
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
     },
     "research/benches_w16.py": {
-      "reason": "wave-16 scorecard family wiring (6 OPTIONAL families) \u2014 self-verifying via verify-research; dedicated audit pending",
-      "status": "waived"
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",
