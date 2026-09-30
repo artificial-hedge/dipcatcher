@@ -144,6 +144,7 @@ src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py
 src/quant_fund/labels/engine.py
 src/quant_fund/labels/forward.py
+src/quant_fund/labels/meta_model.py
 src/quant_fund/leakage/__init__.py
 src/quant_fund/leakage/ast_scan.py
 src/quant_fund/leakage/cli.py
