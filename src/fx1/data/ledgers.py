@@ -23,7 +23,13 @@ def _claims_live(payload: object) -> bool:
     if isinstance(payload, dict):
         for key, value in payload.items():
             token = str(key).lower().replace("-", "_").replace("_", "")
-            if token == "livepnlclaim" and (value is True or str(value).lower() == "true"):
+            if token == "livepnlclaim" and str(value).strip().lower() not in (
+                "false",
+                "0",
+                "no",
+                "none",
+                "",
+            ):
                 return True
             if _claims_live(value):
                 return True
