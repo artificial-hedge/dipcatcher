@@ -36,7 +36,7 @@
     "quality/timestamps/freetsa_tsa.crt": "8bfb0305bb64e2571ca507552ef3245cb1c2fee8728e0ff8689225081ea13467",
     "quality/witness_signing.pub": "27a02bf920c26ff53d9986791179adcf7ad1693e7e0684181bd39cd4cdb7bc66",
     "scripts/verify_auditor_bundle.py": "d8896f2001e7de2dce1c75fec6cc934aa045bdf855f13a817411e1b4bfa58270",
-    "scripts/verify_corpus_proof.py": "28cf08c5c0aa3010f5e625da62303b7c8d39a0645a073ce1ce9b67ef2008eaff",
+    "scripts/verify_corpus_proof.py": "de5680918287112e46f28f3aad3af5a4b945f21e2e4de02a23ba64d2452fb9c2",
     "scripts/verify_epoch_chain.py": "b67797c41e8d3e92d1d88ca9b1f4e49d33f5f21eb04214b2905582b98072624d",
     "scripts/verify_ots_auditor.py": "b786b3e5770ef285b5ee26fca8db20a5248f9a4c8240339fa308883b53c56a24",
     "src/quant_fund/research/auditor_bundle.py": "c525bb4be737efefc1dd1a80cd6dac755af555864614c77f8ce9f96c639abcf9",
