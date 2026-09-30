@@ -878,6 +878,10 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.custody import custody_contract_errors
 
         errors.extend(custody_contract_errors(payload))
+    if payload.get("schema") == "release_attestation.v1":
+        from quant_fund.research.release_attestation import release_contract_errors
+
+        errors.extend(release_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 

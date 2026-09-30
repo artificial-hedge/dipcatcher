@@ -1948,6 +1948,84 @@ def custody_cmd(
     )
 
 
+@app.command("attest-release")
+def attest_release_cmd(
+    artifacts: list[Path] = typer.Option(
+        ..., "--artifact", help="Shipped artifact file (repeatable)."
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Attestation output path."),
+    root: Path = typer.Option(Path("."), "--root", help="Repo root."),
+    key: str | None = typer.Option(
+        None,
+        "--key",
+        envvar="GATE_SIGNING_KEY",
+        help="Ed25519 key material: '<priv_hex>:<pub_hex>', a key file path, "
+        "or bare priv hex (env GATE_SIGNING_KEY).",
+    ),
+) -> None:
+    """Sign a ``release_attestation.v1`` binding shipped artifact bytes to
+    this tree's pin state — the release-time counterpart of ``custody``.
+
+    The signature uses the same key as ``make sign-pins``, so a wheel can be
+    proven to have shipped from a gate-green tree without trusting the build
+    host.
+    """
+    import json as _json
+
+    from quant_fund.research.release_attestation import release_attestation
+
+    if not key or not key.strip():
+        raise typer.BadParameter("GATE_SIGNING_KEY unset — cannot sign a release attestation")
+    raw = Path(key).read_text().strip() if Path(key).is_file() else key.strip()
+    fields = [s.strip() for s in raw.replace(":", "\n").splitlines() if s.strip()]
+    priv = fields[0]
+    pub_path = root / "quality/gate_signing.pub"
+    if not pub_path.is_file():
+        raise typer.BadParameter(f"no committed pubkey at {pub_path}")
+    pub = pub_path.read_text().strip()
+    if len(fields) == 2 and fields[1] != pub:
+        raise typer.BadParameter(
+            "supplied pubkey != committed quality/gate_signing.pub — refusing to sign"
+        )
+    blob = {p.name: p.read_bytes() for p in artifacts}
+    att = release_attestation(blob, root=root, private_seed_hex=priv, pubkey_hex=pub)
+    text = _json.dumps(att, indent=2, sort_keys=True) + "\n"
+    if out is not None:
+        from quant_fund.utils.atomicio import atomic_write_text
+
+        atomic_write_text(out, text)
+    else:
+        typer.echo(text.rstrip())
+    typer.echo(f"attestation signed over {len(blob)} artifact(s)")
+
+
+@app.command("verify-release")
+def verify_release_cmd(
+    attestation: Path = typer.Argument(..., help="release_attestation.v1 JSON."),
+    artifacts: list[Path] = typer.Option(
+        ..., "--artifact", help="Shipped artifact file (repeatable)."
+    ),
+    root: Path = typer.Option(Path("."), "--root", help="Repo root (freshness check)."),
+    pubkey: str | None = typer.Option(
+        None, "--pubkey", help="Ed25519 pubkey hex; default quality/gate_signing.pub."
+    ),
+) -> None:
+    """Verify a signed release attestation against artifact bytes."""
+    import json as _json2
+
+    from quant_fund.research.release_attestation import verify_release_attestation
+
+    att = _json2.loads(attestation.read_text(encoding="utf-8"))
+
+    blob = {p.name: p.read_bytes() for p in artifacts}
+    res = verify_release_attestation(att, blob, root=root, pubkey_hex=pubkey)
+    for err in res["errors"]:
+        typer.echo(f"verify-release error: {err}")
+    if not res["ok"]:
+        raise typer.Exit(code=1)
+    typer.echo("release attestation verified")
+
+
 @app.command("crown-jewels")
 def crown_jewels_cmd(
     root: Path = typer.Option(Path("."), "--root", help="Repo root the jewels live under."),

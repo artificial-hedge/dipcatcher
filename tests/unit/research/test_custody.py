@@ -188,6 +188,50 @@ def test_member_timeline_tracks_byte_evolution(tmp_path: Path) -> None:
     assert res["ok"], res["errors"]
 
 
+def test_release_attestation_round_trip(tmp_path: Path) -> None:
+    """Signed attestation binds artifact bytes to the pinned state."""
+    from quant_fund.research.release_attestation import (
+        release_attestation,
+        release_contract_errors,
+        verify_release_attestation,
+    )
+
+    root = _fixture(tmp_path)
+    priv = (root / ".fixture_priv").read_text()
+    pub = (root / "quality/gate_signing.pub").read_text().strip()
+    wheel = b"fake-wheel-bytes"
+    att = release_attestation(
+        {"dipcatcher-0.1.0-py3-none-any.whl": wheel},
+        root=root,
+        private_seed_hex=priv,
+        pubkey_hex=pub,
+    )
+    assert release_contract_errors(att) == []
+    res = verify_release_attestation(att, {"dipcatcher-0.1.0-py3-none-any.whl": wheel}, root=root)
+    assert res["ok"], res["errors"]
+
+    # Tampered bytes fail; foreign key fails; stale state is flagged.
+    bad = verify_release_attestation(att, {"dipcatcher-0.1.0-py3-none-any.whl": b"x"}, root=root)
+    assert (
+        not bad["ok"]
+        and "artifact_digest_mismatch:dipcatcher-0.1.0-py3-none-any.whl" in bad["errors"]
+    )
+
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    _fpriv, fpub = generate_keypair()
+    forged = release_attestation({"w": wheel}, root=root, private_seed_hex=_fpriv, pubkey_hex=fpub)
+    fres = verify_release_attestation(forged, {"w": wheel}, root=root)
+    assert not fres["ok"] and "key_id_mismatch" in fres["errors"]
+
+    # Drift the pin file post-attestation → attestation_stale.
+    pin = root / "quality/epoch_heads.json"
+    pin.write_text(pin.read_text() + " ")
+    stale = verify_release_attestation(att, {"dipcatcher-0.1.0-py3-none-any.whl": wheel}, root=root)
+    assert not stale["ok"]
+    assert any(e.startswith("attestation_stale:") for e in stale["errors"])
+
+
 def test_custody_schema_dispatches_in_verify_receipt(tmp_path: Path) -> None:
     """custody_proof.v1 payloads get the contract check under verify-receipt."""
     from quant_fund.research.receipt_v2 import verify_receipt_payload
