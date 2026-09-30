@@ -130,6 +130,7 @@ def load_tombstones(corpus_dir: Path | str) -> dict[str, Any]:
             "tombstone": path.name,
             "scope": body["scope"],
             "reason": body["reason"],
+            "target_sha256": str(body["target_sha256"]),
         }
     return {"active": active, "invalid": invalid}
 

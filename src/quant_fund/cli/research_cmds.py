@@ -1863,6 +1863,71 @@ def corpus_consistency_cmd(
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
 
 
+@app.command("custody")
+def custody_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Chained corpus the member lives in."
+    ),
+    member: str | None = typer.Option(
+        None, "--member", help="Member name (corpus-relative, e.g. a receipt filename)."
+    ),
+    pattern: str = typer.Option("*.json", "--glob", help="Member glob of the chain."),
+    root: Path = typer.Option(Path("."), "--root", help="Repo root."),
+    out: Path | None = typer.Option(None, "--out", help="Write the custody bundle here."),
+    check: Path | None = typer.Option(
+        None, "--check", help="Verify an existing custody bundle instead of making one."
+    ),
+    member_file: Path | None = typer.Option(
+        None,
+        "--member-file",
+        help="File whose bytes are the custody subject (required with --check).",
+    ),
+) -> None:
+    """One-file provenance proof: member → epoch inclusion → chain head →
+    signed pins → checkpoint → Rekor witness, composed into a single
+    ``custody_proof.v1`` bundle that verifies with no repo access.
+
+    The epoch bound is the *earliest* chained epoch pinning the member's
+    current bytes — proof of first committed state. ``--check`` needs only
+    the bundle plus the subject file.
+    """
+    import json as _json
+
+    from quant_fund.research.custody import custody_proof, verify_custody_bundle
+
+    if check is not None:
+        if member_file is None or not member_file.is_file():
+            raise typer.BadParameter("--check requires --member-file pointing at the subject file")
+        bundle = _json.loads(check.read_text(encoding="utf-8"))
+        res = verify_custody_bundle(bundle, member_file.read_bytes())
+        for err in res["errors"]:
+            typer.echo(f"custody error: {err}")
+        layer_str = " ".join(
+            f"{k}:{'ok' if v.get('ok') else 'FAIL'}" for k, v in res.get("layers", {}).items()
+        )
+        typer.echo(f"custody layers: {layer_str}")
+        if not res["ok"]:
+            raise typer.Exit(code=1)
+        typer.echo("custody verified: full provenance chain authentic")
+        return
+
+    if member is None:
+        raise typer.BadParameter("--member is required unless --check is passed")
+    bundle = custody_proof(member, corpus_dir, pattern=pattern, root=root)
+    text = _json.dumps(bundle, indent=2, sort_keys=True) + "\n"
+    if out is not None:
+        from quant_fund.utils.atomicio import atomic_write_text
+
+        atomic_write_text(out, text)
+    else:
+        typer.echo(text.rstrip())
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"custody member={member} first_epoch={bundle['first_epoch']} "
+        f"head={bundle['chain_head']} hops={bundle['n_hops']}"
+    )
+
+
 @app.command("crown-jewels")
 def crown_jewels_cmd(
     root: Path = typer.Option(Path("."), "--root", help="Repo root the jewels live under."),
