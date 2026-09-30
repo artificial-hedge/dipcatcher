@@ -9,6 +9,8 @@ import pytest
 
 from quant_fund.research.corpus_epoch import (
     GENESIS_PREV,
+    EpochStampLocked,
+    _acquire_stamp_lock,
     check_epoch_chain,
     corpus_epoch,
     epoch_contract_errors,
@@ -377,3 +379,29 @@ def test_witness_replacement_is_not_member_removed(tmp_path: Path) -> None:
     _stamp(quality)
     res = check_epoch_chain(quality, allow_member_updates=True)
     assert res["errors"] == []
+
+
+def test_stamp_lock_fails_closed_on_contention(tmp_path: Path) -> None:
+    """A second stamp while one holds the lock must refuse, not fork the chain."""
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    held = _acquire_stamp_lock(corpus)
+    try:
+        with pytest.raises(EpochStampLocked):
+            _acquire_stamp_lock(corpus)
+    finally:
+        held.close()
+    # Released: the next stamp proceeds.
+    fd = _acquire_stamp_lock(corpus)
+    fd.close()
+
+
+def test_stamp_lockfile_is_not_a_member(tmp_path: Path) -> None:
+    """The lockfile must never enter membership or trip coverage closure."""
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    fd = _acquire_stamp_lock(corpus)
+    fd.close()
+    _receipt(corpus, "a.json", "r1")
+    members = member_digests(corpus)
+    assert ".epoch_stamp.lock" not in members

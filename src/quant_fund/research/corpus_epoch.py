@@ -52,7 +52,7 @@ HEADS_PIN_BASENAME = "epoch_heads.json"
 
 # Basenames never admitted as members — bookkeeping that the chain governs
 # rather than measures: the heads pin is rewritten on every stamp.
-EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME})
+EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME, ".epoch_stamp.lock"})
 
 # Member rel-paths exempt per corpus dir — exact paths, not basenames, so a
 # real member can never hide behind a shared filename: the timestamp-anchor
@@ -143,6 +143,34 @@ def _epoch_receipts(corpus_dir: Path) -> list[tuple[Path, Mapping[str, Any]]]:
         ):
             out.append((path, candidate))
     return out
+
+
+class EpochStampLocked(RuntimeError):
+    """Raised when another process holds the corpus's stamp lock."""
+
+
+def _acquire_stamp_lock(root: Path) -> Any:
+    """Exclusive non-blocking lock over the head-read -> write -> pin sequence.
+
+    Two concurrent stamps that both observe the same head would each write
+    ``prev = head`` — a chain fork (``epoch_multiple_heads``) created by
+    correct software. The lock serializes the whole stamp; a contended lock
+    fails closed instead of forking. Advisory (fcntl flock): a process that
+    never takes the lock is unaffected, which is fine — the chain checker
+    still catches any fork.
+    """
+    import fcntl
+
+    lock_path = root / ".epoch_stamp.lock"
+    fd = lock_path.open("a")
+    try:
+        fcntl.flock(fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        fd.close()
+        raise EpochStampLocked(
+            f"another corpus-epoch stamp is in flight on {root} (lock: {lock_path})"
+        ) from exc
+    return fd
 
 
 def corpus_epoch(

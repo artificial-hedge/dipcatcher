@@ -1566,6 +1566,8 @@ def corpus_epoch(
     only, never a market or P&L claim.
     """
     from quant_fund.research.corpus_epoch import (
+        EpochStampLocked,
+        _acquire_stamp_lock,
         check_epoch_chain,
         corpus_epoch,
         epoch_heads_key,
@@ -1644,14 +1646,21 @@ def corpus_epoch(
             "--heads-pin requires --out-dir == --corpus-dir (the pinned head must "
             "be a corpus member)"
         )
-    receipt = corpus_epoch(root, head_sha=head_sha, pattern=glob)
     try:
-        path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
-    except ValueError as exc:
+        lock_fd = _acquire_stamp_lock(root)
+    except EpochStampLocked as exc:
         raise typer.BadParameter(str(exc)) from exc
-    if heads_pin is not None:
-        update_heads_pin(heads_pin, root, glob, path)
-        typer.echo(f"heads-pin={heads_pin}")
+    try:
+        receipt = corpus_epoch(root, head_sha=head_sha, pattern=glob)
+        try:
+            path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
+        except ValueError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+        if heads_pin is not None:
+            update_heads_pin(heads_pin, root, glob, path)
+            typer.echo(f"heads-pin={heads_pin}")
+    finally:
+        lock_fd.close()
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"epoch members={receipt['n_members']} "
