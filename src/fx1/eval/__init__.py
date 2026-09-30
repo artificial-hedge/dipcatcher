@@ -130,9 +130,10 @@ def eval_prompt_surface() -> list[str]:
     those surface forms — the quality gate and the contamination audit
     must screen against all of them, not only the canonical bank.
     """
-    # Local imports: module-level __getattr__ is not consulted for bare
-    # global lookups inside this function, so the lazy facade names must be
-    # bound explicitly.
+    # Resolve the lazy-facade names explicitly: the module's PEP 562
+    # __getattr__ fires only on external attribute access, never on bare
+    # global lookups inside this module — referencing DEFAULT_BANK &co.
+    # directly raised NameError unless another import had materialized them.
     from fx1.eval.bank import DEFAULT_BANK, DOMAIN_TASKS, HONESTY_BAITS
     from fx1.eval.masking import masked_twins
     from fx1.eval.redteam import REDTEAM_TASKS
