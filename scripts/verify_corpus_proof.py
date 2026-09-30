@@ -240,23 +240,29 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
     if not isinstance(root, str) or not isinstance(bounds, list):
         return ["absence_shape_malformed"]
     receipt = proof.get("epoch_receipt")
+    resolved_key: str | None = None
     if isinstance(receipt, str):
-        _k, entry, err = _pin_entry(pin, key, receipt)
+        resolved_key, entry, err = _pin_entry(pin, key, receipt)
         if err:
             return [err]
     elif key is not None:
         # library absence proofs carry no epoch_receipt — bind by tree_root
         entry = (pin.get("heads") or {}).get(key)
+        resolved_key = key
         if not isinstance(entry, dict):
             return [f"pin_key_absent:{key}"]
     else:
         heads = pin.get("heads", {})
-        matches = [v for v in heads.values() if isinstance(v, dict) and v.get("tree_root") == root]
+        matches = [
+            (k, v) for k, v in heads.items() if isinstance(v, dict) and v.get("tree_root") == root
+        ]
         if len(matches) != 1:
             return [f"tree_root_not_pinned:{len(matches)}_matches"]
-        entry = matches[0]
+        resolved_key, entry = matches[0]
     if not isinstance(entry, dict):
         return [f"pin_key_absent:{key}"]
+    if proof.get("corpus_key") not in (None, resolved_key):
+        errors.append("corpus_key_mismatch")
     pinned_root = entry.get("tree_root")
     if not isinstance(pinned_root, str):
         errors.append("pin_tree_root_absent")
