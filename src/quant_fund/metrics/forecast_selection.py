@@ -108,9 +108,22 @@ from numpy.typing import NDArray
 from scipy import stats as sstats
 
 from quant_fund.metrics.inference import newey_west_variance
-from quant_fund.models.ensemble import equal_weights
 
 Array = NDArray[np.float64]
+
+
+def _equal_weights(n_models: int) -> Array:
+    """Uniform pool weights via ``models.ensemble.equal_weights`` (single source).
+
+    Lazy import: ``models`` sits above ``metrics`` in the layer order — a
+    deferred import is the sanctioned cycle-breaker (docs/ARCHITECTURE_GUARDS.md),
+    so the equal-weight benchmark stays a composition of the analytics-layer
+    helper without an import-time upward edge.
+    """
+    from quant_fund.models.ensemble import equal_weights
+
+    return equal_weights(n_models)
+
 
 __all__ = [
     "EPS_PSD",
@@ -564,9 +577,9 @@ def dilution_accounting(
     n, m = len(idx_p), len(idx_a)
 
     w_p = np.zeros(n_f)
-    w_p[list(idx_p)] = equal_weights(n)
+    w_p[list(idx_p)] = _equal_weights(n)
     w_a = np.zeros(n_f)
-    w_a[list(idx_a)] = equal_weights(m)
+    w_a[list(idx_a)] = _equal_weights(m)
     w_u = np.zeros(n_f)
     w_u[list(idx_p)] = 1.0 / (n + m)
     w_u[list(idx_a)] = 1.0 / (n + m)
@@ -746,7 +759,7 @@ def _candidate_loss_deltas(
     n_f = decomp.n_forecasters
     n = len(pool)
     w_p = np.zeros(n_f)
-    w_p[list(pool)] = equal_weights(n)
+    w_p[list(pool)] = _equal_weights(n)
     j_arr = np.asarray(cands, dtype=int)
     s_pool = composite_scores(decomp, w_p)
     s_union = (n * s_pool[:, None, :] + decomp.scores[:, j_arr, :]) / (n + 1.0)
@@ -935,7 +948,7 @@ def cautious_selection(
         pool.append(admitted)
 
     w_sel = np.zeros(n_f)
-    w_sel[pool] = equal_weights(len(pool))
+    w_sel[pool] = _equal_weights(len(pool))
     g_sel, q_sel = _pooled_moments(decomp, w_sel)
     rho2_sel = g_sel * g_sel / q_sel if q_sel > EPS_PSD else 0.0
     return SelectionResult(
@@ -1116,7 +1129,7 @@ def forecast_selection_benchmarks(*, seed: int = 20260922, fast: bool = False) -
 
     w_full = np.full(n_all, 1.0 / n_all)
     w_aligned = np.zeros(n_all)
-    w_aligned[list(aligned_pool)] = equal_weights(k)
+    w_aligned[list(aligned_pool)] = _equal_weights(k)
     risk_full = relative_score_risk(decomp, w_full)
     risk_aligned = relative_score_risk(decomp, w_aligned)
     attainable = float(attainable_risk(decomp)["attainable_risk"])
