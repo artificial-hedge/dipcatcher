@@ -77,6 +77,49 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # Members are gitignored (only `.gitkeep` clones), so the epoch chain
     # exists only on machines that ran the stamps: LOCAL_ONLY_CORPORA.
     ("data/metadata", "*", True, False, ()),
+    # ---- closed world: every tracked directory of code/evidence ----
+    # The library itself — a non-jewel source file edited post-stamp is a
+    # silent verdict-tampering vector; every byte is a chain member now.
+    ("src", "*", True, True, ()),
+    # Test code + committed fixtures: a swapped fixture or weakened oracle
+    # launders a broken gate the same as a source tamper.
+    ("tests", "*", True, True, ()),
+    # Standalone auditors + generators: scripts/verify_*.py are the
+    # third-party verification path — outside the package but just as
+    # integrity-critical as the jewels among them.
+    ("scripts", "*", True, True, ()),
+    # Claim-bearing docs (audit ledgers, methodology, generated evidence
+    # pages): an unchained doc could rewrite what the evidence asserts.
+    ("docs", "*", True, True, ()),
+    # Reality-study records (preregistrations, audit trails) — evidence.
+    ("research", "*", True, True, ()),
+    # Replay manifests + the session-replay harness.
+    ("replay", "*", True, True, ()),
+    ("reports", "*", True, True, ()),
+    ("notebooks", "*", True, True, ()),
+    ("examples", "*", True, True, ()),
+    # Published client surface (TypeScript client + OpenAPI schema).
+    ("clients", "*", True, True, ()),
+    ("typings", "*", True, True, ()),
+    # Formal specs (TLA+/configs) the formal lane checks against.
+    ("spec", "*", True, True, ()),
+    # Deployment surface — Dockerfiles and observability configs are
+    # supply-chain inputs.
+    ("docker", "*", True, True, ()),
+    ("deploy", "*", True, True, ()),
+    # Vendored third-party code — the highest-value supply-chain member.
+    ("third_party", "*", True, True, ()),
+    # Native extension source (Rust order-book core).
+    ("rust", "*", True, True, ()),
+    # Web explorer + its lockfile (published receipt export surface).
+    ("web", "*", True, True, ()),
+    # Verification snippet evidence used by the soft-verify gate.
+    (".box-soft-verify", "*", True, True, ()),
+    # Cursor agent env config — install.sh is an executed supply-chain file.
+    (".cursor", "*", True, True, ()),
+    # Remaining .github files (templates, plans); workflows/ is its own
+    # corpus above and exempt here.
+    (".github", "*", True, True, ("workflows/*",)),
 )
 
 # Corpora whose epoch receipts never clone (gitignored even when the member
@@ -85,6 +128,11 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
 # explicit ``skipped`` state rather than a pass — a machine with receipts
 # still verifies fully, and stamped-member immutability holds there.
 LOCAL_ONLY_CORPORA: frozenset[str] = frozenset({"data/metadata"})
+
+# Corpora an ``--evidence-only`` bundle is expected to carry — the evidence
+# store, not the source tree. Under evidence_only an absent evidence corpus
+# is still ``corpus_missing``; an absent code corpus reports a skip.
+EVIDENCE_CORPORA: frozenset[str] = frozenset(c[0] for c in CORPORA[:8])
 
 
 def verify_repo(
@@ -210,10 +258,17 @@ def verify_repo(
     for corpus_dir, pattern, require_stamped, allow_updates, exempt in CORPORA:
         cdir = root / corpus_dir
         if not cdir.is_dir():
-            gates[f"epoch:{corpus_dir}"] = {
-                "ok": False,
-                "errors": [f"corpus_missing:{corpus_dir}"],
-            }
+            if evidence_only and corpus_dir not in EVIDENCE_CORPORA:
+                gates[f"epoch:{corpus_dir}"] = {
+                    "ok": True,
+                    "skipped": "evidence_only",
+                    "errors": [],
+                }
+            else:
+                gates[f"epoch:{corpus_dir}"] = {
+                    "ok": False,
+                    "errors": [f"corpus_missing:{corpus_dir}"],
+                }
             continue
         if corpus_dir in LOCAL_ONLY_CORPORA and not any(cdir.glob("corpus_epoch_*.json")):
             # Members clone (committed) but the epoch receipts do not
@@ -371,10 +426,19 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         ):
             errors.append(f"gate_field_malformed:{name}:revision_ancestor")
         if "skipped" in gate:
-            # Only crown_jewels may be skipped, and only under evidence_only:
-            # a full-tree attestation silently skipping a code gate would
-            # downgrade a partial verdict into an implied full pass.
-            if gate["skipped"] != "evidence_only" or name != "crown_jewels":
+            # Only evidence_only may carry skipped gates, and only for
+            # crown_jewels or epoch gates over non-evidence corpora (the
+            # code tree isn't part of an evidence bundle): a full-tree
+            # attestation silently skipping a gate would downgrade a
+            # partial verdict into an implied full pass.
+            skip_ok = gate["skipped"] == "evidence_only" and (
+                name == "crown_jewels"
+                or (
+                    name.startswith("epoch:")
+                    and name.removeprefix("epoch:") not in EVIDENCE_CORPORA
+                )
+            )
+            if not skip_ok:
                 errors.append(f"gate_skip_invalid:{name}")
             elif mode != "evidence_only":
                 errors.append(f"gate_skipped_in_full_mode:{name}")

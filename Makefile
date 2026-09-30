@@ -209,6 +209,9 @@ evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unver
 	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates
 	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --check --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped
+	for spec in "src" "tests" "scripts" "docs" "research" "replay" "reports" "notebooks" "examples" "clients" "typings" "spec" "docker" "deploy" "third_party" "rust" "web" ".box-soft-verify" ".cursor" ".github"; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --check --heads-pin quality/epoch_heads.json --require-stamped --allow-member-updates || exit 1; \
+	done
 	uv run dipcatcher crown-jewels --check
 	uv run dipcatcher verify-witness
 	uv run dipcatcher verify-repo
@@ -237,7 +240,7 @@ fuzz-receipts: ## Forge-and-reseal drill: mutates one claim per committed receip
 
 epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
 	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
-	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*"; do \
+	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*" "src:*" "tests:*" "scripts:*" "docs:*" "research:*" "replay:*" "reports:*" "notebooks:*" "examples:*" "clients:*" "typings:*" "spec:*" "docker:*" "deploy:*" "third_party:*" "rust:*" "web:*" ".box-soft-verify:*" ".cursor:*" ".github:*"; do \
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
 	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
@@ -255,6 +258,9 @@ stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any 
 	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --out-dir artifacts --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --out-dir .dsh-24x7 --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --out-dir data/metadata --heads-pin quality/epoch_heads.json
+	for spec in src tests scripts docs research replay reports notebooks examples clients typings spec docker deploy third_party rust web .box-soft-verify .cursor .github; do \
+	  uv run dipcatcher corpus-epoch --corpus-dir "$$spec" --glob '*' --out-dir "$$spec" --heads-pin quality/epoch_heads.json || exit 1; \
+	done
 
 sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
 	uv run dipcatcher sign-pins

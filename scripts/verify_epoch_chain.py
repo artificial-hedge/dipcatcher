@@ -50,8 +50,40 @@ EXEMPT_RELPATHS = frozenset(
     {"timestamps/anchors.json", "timestamps/ots_anchors.json", "checkpoint.json"}
 )
 # Corpus-scoped (root basename == "quality"): self-authenticating artifacts
-# that churn by rule.
-EXEMPT_PREFIXES = frozenset({"witness/", "checkpoints/"})
+# that churn by rule. ``quorum_rotations/`` carries quorum-era lineage —
+# checkpoint-pinned but churning by the same rule.
+EXEMPT_PREFIXES = frozenset({"witness/", "checkpoints/", "quorum_rotations/"})
+# Exempt prefixes are corpus-scoped by corpus basename: ``.github/workflows``
+# is its own corpus and must not double-chain under the ``.github`` corpus.
+EXEMPT_PREFIXES_BY_CORPUS = {
+    "quality": EXEMPT_PREFIXES,
+    ".github": frozenset({"workflows/"}),
+    "third_party": frozenset({"kronos_src/", "kronos_weights/"}),
+}
+# Machine-local build/cache artifacts are never members in any corpus
+# (bytecode, JS deps, notebook checkpoints, tool caches, bundler output).
+EXEMPT_DIRNAMES = frozenset(
+    {
+        "__pycache__",
+        "node_modules",
+        ".ipynb_checkpoints",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+        "dist",
+        "build",
+        ".next",
+        "test-results",
+        "playwright-report",
+    }
+)
+EXEMPT_DIR_SUFFIXES = (".egg-info",)
+
+
+def _machine_local(relname: str) -> bool:
+    parts = Path(relname).parts
+    return any(part in EXEMPT_DIRNAMES or part.endswith(EXEMPT_DIR_SUFFIXES) for part in parts[:-1])
+
 
 _PORTABLE_FORBIDDEN_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
 
@@ -167,8 +199,9 @@ def _exempt_member(root: Path, relname: str) -> bool:
     return (
         Path(relname).name in EXEMPT_BASENAMES
         or relname in EXEMPT_RELPATHS
-        or (
-            root.name == "quality" and any(relname.startswith(prefix) for prefix in EXEMPT_PREFIXES)
+        or _machine_local(relname)
+        or any(
+            relname.startswith(prefix) for prefix in EXEMPT_PREFIXES_BY_CORPUS.get(root.name, ())
         )
     )
 

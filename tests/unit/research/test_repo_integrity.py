@@ -5,6 +5,7 @@ from pathlib import Path
 
 from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.research.repo_integrity import (
+    CORPORA,
     REPO_INTEGRITY_SCHEMA,
     verify_repo,
     write_repo_integrity_receipt,
@@ -36,16 +37,7 @@ def _git_repo(tmp_path: Path) -> Path:
     pin = root / "quality" / HEADS_PIN_BASENAME
     pin.parent.mkdir(parents=True, exist_ok=True)
     pin.write_text(json.dumps({"schema": "epoch_heads.v1", "heads": {}}))
-    for corpus_dir, pattern in (
-        ("receipts", "*.json"),
-        ("verifier", "*.md"),
-        ("quality", "*.json"),
-        (".github/workflows", "*.yml"),
-        ("configs", "*"),
-        ("artifacts", "*"),
-        (".dsh-24x7", "*"),
-        ("data/metadata", "*"),
-    ):
+    for corpus_dir, pattern, *_ in CORPORA:
         d = root / corpus_dir
         d.mkdir(parents=True, exist_ok=True)
         seed = f"seed.{pattern[2:]}" if len(pattern) > 1 else "seed"
@@ -105,14 +97,7 @@ def test_verify_repo_all_gates_green(tmp_path: Path) -> None:
         "key_rotation",
         "quorum_rotations",
         "lattice",
-        "epoch:receipts",
-        "epoch:verifier",
-        "epoch:quality",
-        "epoch:.github/workflows",
-        "epoch:configs",
-        "epoch:artifacts",
-        "epoch:.dsh-24x7",
-        "epoch:data/metadata",
+        *(f"epoch:{c[0]}" for c in CORPORA),
     }
 
 
@@ -290,3 +275,79 @@ def test_repo_integrity_receipt_records_evidence_only_mode(tmp_path: Path) -> No
     forged2 = json.loads(json.dumps(receipt))
     del forged2["gates"]["crown_jewels"]["skipped"]
     assert "evidence_only_skip_missing:crown_jewels" in repo_integrity_contract_errors(forged2)
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+# Tool-local state with no security surface — deliberately NOT corpora.
+# data/ is absent from this list only because data/metadata IS a corpus.
+NON_CORPUS_TOP_DIRS = frozenset({".freebuff", ".serena"})
+
+# The pinned set of tracked root-level files. Root files sit above every
+# corpus dir, so the epoch chains can't see them — a new root file lands
+# with zero integrity coverage. The pin forces the decision: jewel it,
+# or document why it is inert here.
+ROOT_FILES = frozenset(
+    {
+        ".dockerignore",
+        ".env.example",
+        ".gitattributes",
+        ".gitignore",
+        ".gitleaks.toml",
+        ".pre-commit-config.yaml",
+        ".python-version",
+        ".test_durations",
+        "AGENTS.md",
+        "APPLY.md",
+        "CHANGELOG.md",
+        "CITATION.cff",
+        "CODE_OF_CONDUCT.md",
+        "CONTRIBUTING.md",
+        "Dockerfile",
+        "HONESTY_RATING.md",
+        "INFLIGHT",
+        "MATH_SPEC.md",
+        "Makefile",
+        "README.md",
+        "RESEARCH_REFERENCES.md",
+        "SECURITY.md",
+        "conftest.py",
+        "day_grind_progress.md",
+        "docker-compose.yml",
+        "fx1_seed_corpus.jsonl",
+        "gate_pins.sig",
+        "mkdocs.yml",
+        "pyproject.toml",
+        "uv.lock",
+    }
+)
+
+
+def _tracked_files() -> list[str]:
+    import subprocess
+
+    proc = subprocess.run(
+        ["git", "ls-files"], cwd=REPO_ROOT, capture_output=True, text=True, check=True
+    )
+    return proc.stdout.splitlines()
+
+
+def test_closed_world_every_tracked_top_dir_is_a_corpus() -> None:
+    """Every tracked top-level directory is epoch-chained or explicitly
+    ruled out — a new dir that dodges both is silent uncovered territory."""
+    tracked = _tracked_files()
+    top_dirs = {p.split("/")[0] for p in tracked if "/" in p}
+    corpus_tops = {c[0].split("/")[0] for c in CORPORA}
+    assert top_dirs <= corpus_tops | NON_CORPUS_TOP_DIRS, (
+        f"uncovered top-level dirs: {sorted(top_dirs - corpus_tops - NON_CORPUS_TOP_DIRS)}"
+    )
+
+
+def test_closed_world_root_files_pinned() -> None:
+    """The root-level file set is pinned — files above the corpus dirs get
+    no epoch coverage, so each must be deliberate (jewel or inert)."""
+    tracked = _tracked_files()
+    root_files = {p for p in tracked if "/" not in p}
+    assert root_files == ROOT_FILES, (
+        f"root file drift: +{sorted(root_files - ROOT_FILES)} -{sorted(ROOT_FILES - root_files)}"
+    )

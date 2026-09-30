@@ -12,7 +12,19 @@
       "errors": [],
       "ok": true
     },
+    "epoch:.box-soft-verify": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.cursor": {
+      "errors": [],
+      "ok": true
+    },
     "epoch:.dsh-24x7": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.github": {
       "errors": [],
       "ok": true
     },
@@ -24,6 +36,10 @@
       "errors": [],
       "ok": true
     },
+    "epoch:clients": {
+      "errors": [],
+      "ok": true
+    },
     "epoch:configs": {
       "errors": [],
       "ok": true
@@ -32,15 +48,81 @@
       "errors": [],
       "ok": true
     },
-    "epoch:quality": {
+    "epoch:deploy": {
       "errors": [],
       "ok": true
+    },
+    "epoch:docker": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:docs": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:examples": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:notebooks": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:quality": {
+      "errors": [
+        "head_member_digest_drift:'crown_jewels.json'"
+      ],
+      "ok": false
     },
     "epoch:receipts": {
       "errors": [],
       "ok": true
     },
+    "epoch:replay": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:reports": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:research": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:rust": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:scripts": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:spec": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:src": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:tests": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:third_party": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:typings": {
+      "errors": [],
+      "ok": true
+    },
     "epoch:verifier": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:web": {
       "errors": [],
       "ok": true
     },
@@ -53,8 +135,11 @@
       "ok": true
     },
     "pin_signatures": {
-      "errors": [],
-      "ok": true,
+      "errors": [
+        "pin_drift:quality/crown_jewels.json",
+        "pin_drift:quality/epoch_heads.json"
+      ],
+      "ok": false,
       "signed": true
     },
     "quorum_rotations": {
@@ -83,7 +168,7 @@
   },
   "kind": "repo_integrity",
   "mode": "full",
-  "ok": true,
+  "ok": false,
   "params": {
     "corpora": [
       "receipts",
@@ -93,15 +178,35 @@
       "configs",
       "artifacts",
       ".dsh-24x7",
-      "data/metadata"
+      "data/metadata",
+      "src",
+      "tests",
+      "scripts",
+      "docs",
+      "research",
+      "replay",
+      "reports",
+      "notebooks",
+      "examples",
+      "clients",
+      "typings",
+      "spec",
+      "docker",
+      "deploy",
+      "third_party",
+      "rust",
+      "web",
+      ".box-soft-verify",
+      ".cursor",
+      ".github"
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "379671ca85aee5cd1fa66520e3727f0d242e44a7966123891c325a2e271a7a24",
-    "epoch_heads_sha256": "4f8190af20311cd0c15681f90bdd053a58d1a53d222939b1702a30ea1c9a5a7e",
+    "crown_jewels_sha256": "5c41c24dce24395d6da62ebb68abb10656f55b20f281247402305d2fe3a9efc7",
+    "epoch_heads_sha256": "5fdef91e5b42b05fd152a46061fbfbc73b605f78b8e99fd1f99f52dd63b4f43a",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "79efabc71735caeb1c17c17d5b620716bde8aeae0f2e150f351b662402ccb7e3",
+  "receipt_sha256": "77bb0c7a269245c574952a35b0ce1063c9a5982351cf4cc08440780aeb80161e",
   "schema": "repo_integrity.v1"
 }

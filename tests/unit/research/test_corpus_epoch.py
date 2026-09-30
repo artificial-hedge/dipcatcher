@@ -504,3 +504,51 @@ def test_epoch_prefix_squat_flagged_and_refused(tmp_path: Path) -> None:
     renamed.rename(corpus / "zebra.json")
     errors = check_epoch_chain(corpus)["errors"]
     assert not any("prefix_squat" in e for e in errors), errors
+
+
+def test_pycache_dirs_never_members(tmp_path: Path) -> None:
+    """``__pycache__`` dirs are machine-local bytecode caches — never members
+    in ANY corpus (a `pattern="*"` chain must not differ across hosts or
+    interpreter versions)."""
+    corpus = tmp_path / "src"
+    (corpus / "x" / "__pycache__").mkdir(parents=True)
+    (corpus / "__pycache__").mkdir()
+    _member_file = corpus / "a.py"
+    _member_file.write_text("code")
+    (corpus / "__pycache__" / "a.cpython-312.pyc").write_bytes(b"\x00")
+    (corpus / "x" / "__pycache__" / "b.cpython-312.pyc").write_bytes(b"\x00")
+    members = member_digests(corpus, pattern="*")
+    assert set(members) == {"a.py"}
+
+
+def test_github_workflows_subcorpus_exempt(tmp_path: Path) -> None:
+    """``.github/workflows`` is its own corpus — the parent ``.github`` corpus
+    must not double-chain it; the rest of ``.github`` stays members."""
+    gh = tmp_path / ".github"
+    (gh / "workflows").mkdir(parents=True)
+    (gh / "workflows" / "ci.yml").write_text("on: push")
+    (gh / "pull_request_template.md").write_text("## Summary")
+    members = member_digests(gh, pattern="*")
+    assert "pull_request_template.md" in members
+    assert "workflows/ci.yml" not in members
+
+
+def test_script_membership_parity(tmp_path: Path) -> None:
+    """The standalone auditor's membership must equal the library's byte-for-
+    byte — it carries its own exemption rules and has diverged before."""
+    from scripts import verify_epoch_chain as sv
+
+    corpus = tmp_path / "quality"
+    for sub in ("witness", "checkpoints", "quorum_rotations", "nested/__pycache__"):
+        (corpus / sub).mkdir(parents=True)
+    (corpus / "pin.json").write_text("{}")
+    (corpus / "witness" / "p.json").write_text("{}")
+    (corpus / "checkpoints" / "c.json").write_text("{}")
+    (corpus / "quorum_rotations" / "rotation_x.json").write_text("{}")
+    (corpus / "nested" / "__pycache__" / "m.pyc").write_bytes(b"\x00")
+    gh = tmp_path / ".github"
+    (gh / "workflows").mkdir(parents=True)
+    (gh / "workflows" / "ci.yml").write_text("x")
+    (gh / "tpl.md").write_text("t")
+    for d in (corpus, gh):
+        assert sv._member_digests(d, "*") == member_digests(d, pattern="*")
