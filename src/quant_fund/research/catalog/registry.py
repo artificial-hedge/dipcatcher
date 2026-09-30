@@ -66,6 +66,91 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "regime_eval",
         "leakage_redteam",
         "distributional_ml",
+        # SOTA canon wave 11 batteries (see research/benches_w11.py):
+        # rough-path signatures, optimal transport, Wasserstein DRO, and
+        # conformal PID control. Seeded SYNTHETIC streams; correctness
+        # diagnostics only, never promotion gates.
+        "rough_paths",
+        "optimal_transport",
+        "wasserstein_dro",
+        "conformal_pid",
+        # SOTA canon wave 12 batteries (see research/benches_w12.py):
+        # NexCP nonexchangeable conformal bounds, multi-horizon EnbPI,
+        # Bayesian stacking / pseudo-BMA(+), regime-weighted conformal VaR,
+        # sliced-Wasserstein two-sample testing, proper-score decompositions,
+        # anytime-valid confidence sequences, and (torch-gated) deep hedging.
+        # Seeded SYNTHETIC streams; correctness diagnostics only, never
+        # promotion gates.
+        "nexcp",
+        "mh_enbpi",
+        "stacking",
+        "rwcv",
+        "sliced_wasserstein",
+        "score_decomposition",
+        "confidence_sequences",
+        "deep_hedging",
+        # SOTA canon wave 13 batteries (see research/benches_w13.py):
+        # conformal coverage inference under temporal dependence, minimax-
+        # optimal conformal e-detectors, rolling conformal prediction for
+        # sequential training, anytime-valid rank confidence sequences /
+        # BB-EDGE leaderboards, PICPI self-consistency intervals, replicable
+        # conformal calibration, reference-null calibrated e-thresholds, and
+        # delayed-feedback ACI. Seeded SYNTHETIC streams; correctness
+        # diagnostics only, never promotion gates.
+        "coverage_inference",
+        "conformal_e_detectors",
+        "rolling_conformal",
+        "rank_cs",
+        "picpi",
+        "replicable_conformal",
+        "reference_null",
+        "delayed_aci",
+        # SOTA canon wave 14 batteries (see research/benches_w14.py): deep
+        # finance math — martingale optimal transport model-free bounds,
+        # large-deviations importance sampling, the trade-crowding mean-field
+        # game, vine + GAS copulas, Malliavin-calculus Monte Carlo Greeks,
+        # XVA (CVA/FVA/MVA + WWR), American LSM with dual bounds, Dupire local
+        # vol + SLV mixing MC, the deep BSDE solver, the DeRegiME regime-mixture
+        # head, two-stage odd residual flows, deep kernel hedging, the
+        # zero-intelligence LOB simulator, and cash-constrained multi-asset
+        # optimal execution. (models/fourier_pricing.py is deliberately NOT
+        # wired — its COS European path has a documented open bug.) Seeded
+        # SYNTHETIC streams; correctness diagnostics only, never promotion
+        # gates.
+        "martingale_ot",
+        "large_deviations",
+        "mean_field_games",
+        "vine_copula",
+        "malliavin_greeks",
+        "xva",
+        "american_lsm",
+        "local_stoch_vol",
+        "deep_bsde",
+        "deep_regime_mixture",
+        "odd_residual_flows",
+        "deep_kernel_hedging",
+        "zi_lob",
+        "cash_constrained_oe",
+        # SOTA canon wave 15 batteries (see research/benches_w15.py): agentic
+        # research integrity + repaired Fourier pricing — dynamic-subspace
+        # denoising under oblique structured noise, Transported Conformal
+        # Calibration (TCC), HPD split conformal (C-USIM) for multimodal
+        # predictive laws, EverMine capability-value Cap-swap accounting, the
+        # anytime-valid frozen referee for LLM factor mining, revision-aware
+        # vintage evaluation, the entropy-Shapley attribution hierarchy, and
+        # the Fourier pricing suite (COS / COS-Bermudan / Hilbert barrier) now
+        # that its European leg is REPAIRED and matches BS to ~1e-13 (wave 14
+        # had deliberately skipped it; that comment block stays as history).
+        # Seeded SYNTHETIC streams; correctness diagnostics only, never
+        # promotion gates.
+        "subspace_denoising",
+        "conformal_transfer",
+        "hpd_conformal",
+        "capability_value",
+        "agent_referee",
+        "vintage_eval",
+        "entropy_shapley",
+        "fourier_pricing",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
