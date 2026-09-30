@@ -307,6 +307,7 @@ src/quant_fund/microstructure/sweep_width.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/tape_digest.py
 src/quant_fund/microstructure/tick_rule.py
+src/quant_fund/microstructure/trade_decomp.py
 src/quant_fund/microstructure/vendor_book_map.py
 src/quant_fund/microstructure/vol_signature.py
 src/quant_fund/microstructure/vpin.py
