@@ -334,6 +334,161 @@ def fuzz_drill(root: str | Path, seed: int = 1, rounds: int | None = None) -> di
     }
 
 
+RECEIPT_FUZZ_SCHEMA = "receipt_fuzz.v1"
+
+
+def _claim_leaves(body: dict[str, Any]) -> list[tuple[list[str], Any]]:
+    """Claim-bearing leaf paths: verdict/ok booleans, metrics, counts."""
+    out: list[tuple[list[str], Any]] = []
+
+    def walk(node: Any, path: list[str]) -> None:
+        if isinstance(node, dict):
+            for k, v in node.items():
+                walk(v, [*path, str(k)])
+        elif isinstance(node, list):
+            for i, v in enumerate(node):
+                walk(v, [*path, str(i)])
+        else:
+            out.append((path, node))
+
+    walk(body, [])
+    return [
+        (p, v)
+        for p, v in out
+        if p
+        and (
+            p[-1] in ("ok", "verdict", "passed")
+            or isinstance(v, bool)
+            or (isinstance(v, (int, float)) and not isinstance(v, bool))
+            and p[-1] != "receipt_sha256"
+        )
+    ]
+
+
+def _set_path(body: dict[str, Any], path: list[str], value: Any) -> None:
+    node: Any = body
+    for key in path[:-1]:
+        node = node[int(key)] if isinstance(node, list) else node[key]
+    last = path[-1]
+    if isinstance(node, list):
+        node[int(last)] = value
+    else:
+        node[last] = value
+
+
+def _receipt_variants(doc: dict[str, Any], rng: random.Random) -> list[tuple[str, dict[str, Any]]]:
+    """Resealed forgeries: mutate a claim, recompute every seal honestly —
+    an attacker with repo access can do no better."""
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    out: list[tuple[str, dict[str, Any]]] = []
+    is_v2 = (
+        isinstance(doc.get("payload"), dict)
+        and "payload_sha256" in doc
+        or doc.get("kind") == "receipt.v2"
+    )
+
+    def _mutate_leaf(base: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
+        leaves = [
+            (p, v)
+            for p, v in _claim_leaves(base)
+            if p[-1] not in ("receipt_sha256", "payload_sha256", "dataset_sha256")
+        ]
+        if not leaves:
+            return None
+        path, val = rng.choice(leaves)
+        mutant = json.loads(json.dumps(base))
+        if isinstance(val, bool):
+            _set_path(mutant, path, not val)
+            tag = "bool_flip"
+        elif isinstance(val, (int, float)):
+            _set_path(mutant, path, val * 1.5 + 1.0 if val else 0.5)
+            tag = "metric_edit"
+        else:
+            _set_path(mutant, path, "forged")
+            tag = "field_edit"
+        return f"{tag}:{'.'.join(path[-2:])}", mutant
+
+    if is_v2:
+        inner = doc.get("payload")
+        if isinstance(inner, dict):
+            hit = _mutate_leaf(inner)
+            if hit:
+                tag, forged_inner = hit
+                env = json.loads(json.dumps(doc))
+                # Re-bind every digest honestly: inner seal, the envelope's
+                # payload pin, then the outer seal — sha256 is integrity,
+                # not authenticity, so a full forgery is free to mint.
+                from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+                forged_inner = seal_receipt(forged_inner)
+                env["payload"] = forged_inner
+                if "payload_sha256" in env:
+                    env["payload_sha256"] = hash_bytes(canonical_json_bytes(dict(forged_inner)))
+                out.append((f"v2_{tag}", seal_receipt(env)))
+    else:
+        hit = _mutate_leaf(doc)
+        if hit:
+            tag, forged = hit
+            out.append((f"v1_{tag}", seal_receipt(forged)))
+    return out
+
+
+def receipt_fuzz(root: str | Path, seed: int = 1) -> dict[str, Any]:
+    """Forge-and-reseal drill over the committed receipt corpus: every
+    mutation mints a *self-consistent* seal — only semantic contract
+    re-derivation can catch it. ``escaped`` = a forged claim verified."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    rng = random.Random(seed)
+    results: list[dict[str, Any]] = []
+    receipts_dir = Path(root) / "receipts"
+    for path in sorted(receipts_dir.glob("*.json")):
+        if path.name.startswith("corpus_epoch_"):
+            continue
+        try:
+            doc = json.loads(path.read_text())
+        except (OSError, ValueError):
+            continue
+        if not isinstance(doc, dict):
+            continue
+        for tag, forged in _receipt_variants(doc, rng):
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as fh:
+                json.dump(forged, fh, indent=2, sort_keys=True)
+                tmp_path = fh.name
+            try:
+                ver = verify_receipt_file(tmp_path)
+            finally:
+                Path(tmp_path).unlink(missing_ok=True)
+            entry: dict[str, Any] = {
+                "mutation": tag,
+                "receipt": path.name,
+                "expect": "fail",
+                "verifier_ok": bool(ver.get("valid")),
+            }
+            if ver.get("valid"):
+                entry["outcome"] = "escaped"
+            else:
+                entry["outcome"] = "correct"
+                entry["errors"] = (ver.get("errors") or [])[:4]
+            results.append(entry)
+    n_escaped = sum(1 for r in results if r.get("outcome") == "escaped")
+    return {
+        "schema": RECEIPT_FUZZ_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "CORPUS",
+        "simulated_only": False,
+        "ok": n_escaped == 0 and len(results) > 0,
+        "seed": seed,
+        "mutations": results,
+        "n_mutations": len(results),
+        "n_escaped": n_escaped,
+        "n_false_positive": 0,
+        "verdict": "calibrated" if n_escaped == 0 else "miscalibrated",
+    }
+
+
 def fuzz_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     errors: list[str] = []
     if payload.get("ok") and (payload.get("n_escaped") or payload.get("n_false_positive")):
@@ -358,7 +513,8 @@ def write_fuzz_receipt(payload: dict[str, Any], out_dir: Path) -> Path:
     if errs:
         raise ValueError(f"fuzz receipt contract: {errs}")
     sealed = seal_receipt(payload)
-    name = f"fuzz_drill_{hash_bytes(json.dumps(payload, sort_keys=True).encode())[:16]}.json"
+    prefix = "receipt_fuzz" if payload.get("schema") == RECEIPT_FUZZ_SCHEMA else "fuzz_drill"
+    name = f"{prefix}_{hash_bytes(json.dumps(payload, sort_keys=True).encode())[:16]}.json"
     out = out_dir / name
     atomic_write_text(out, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
     return out

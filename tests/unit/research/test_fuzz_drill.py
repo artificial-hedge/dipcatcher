@@ -94,3 +94,52 @@ def test_write_fuzz_receipt_seals(tmp_path: Path) -> None:
     body = json.loads(out.read_text())
     assert body["receipt_sha256"]
     assert body["schema"] == "fuzz_drill.v1"
+
+
+def _mini_receipt(tmp_path: Path) -> Path:
+    """A receipts/ dir with one v1 sealed receipt carrying a checked claim."""
+    import json
+
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    rdir = tmp_path / "receipts"
+    rdir.mkdir()
+    body = {
+        "schema": "fleet_eval.v1",
+        "kind": "fleet_eval",
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "simulated_only": True,
+        "n_rows": 2,
+        "n_error_rows": 0,
+        "results": [
+            {"head": "a", "score": 1.0},
+            {"head": "b", "score": 2.0},
+        ],
+    }
+    sealed = seal_receipt(body)
+    path = rdir / "fleet_eval_test.json"
+    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    return tmp_path
+
+
+def test_receipt_fuzz_catches_resealed_forgery(tmp_path: Path) -> None:
+    from quant_fund.research.fuzz_drill import receipt_fuzz
+
+    res = receipt_fuzz(_mini_receipt(tmp_path), seed=3)
+    assert res["schema"] == "receipt_fuzz.v1"
+    assert res["n_mutations"] >= 1
+    # The fleet_eval contract re-derives n_rows — a forged count is caught.
+    assert any(m["outcome"] == "correct" for m in res["mutations"])
+
+
+def test_receipt_fuzz_skips_epoch_records(tmp_path: Path) -> None:
+
+    rdir = tmp_path / "receipts"
+    rdir.mkdir()
+    (rdir / "corpus_epoch_abc.json").write_text('{"schema": "corpus_epoch.v1", "n_members": 1}')
+    from quant_fund.research.fuzz_drill import receipt_fuzz
+
+    res = receipt_fuzz(tmp_path, seed=1)
+    assert res["n_mutations"] == 0

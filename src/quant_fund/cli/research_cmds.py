@@ -2343,3 +2343,35 @@ def fuzz_drill_cmd(
         typer.echo(f"receipt={path}")
     if not result["ok"]:
         raise typer.Exit(code=1)
+
+
+@app.command("fuzz-receipts")
+def fuzz_receipts_cmd(
+    root: Path = typer.Option(Path("."), "--root", help="Repo tree whose receipts/ to forge."),
+    seed: int = typer.Option(1, "--seed", help="Mutation-selection seed."),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed receipt_fuzz.v1 receipt here.",
+    ),
+) -> None:
+    """Forge-and-reseal drill: mutate one claim inside each committed
+    receipt, then re-seal it *honestly* — sha256 seals are integrity, not
+    authenticity, so minting a self-consistent forgery is free. Only the
+    verifier's semantic contract re-derivation can catch it."""
+    from quant_fund.research.fuzz_drill import receipt_fuzz, write_fuzz_receipt
+
+    result = receipt_fuzz(root, seed=seed)
+    typer.echo(format_data_label(synthetic=True, data_source="CORPUS"))
+    typer.echo(
+        f"fuzz-receipts: seed={seed} mutations={result['n_mutations']} "
+        f"escaped={result['n_escaped']} verdict={result['verdict']}"
+    )
+    for m in result["mutations"]:
+        if m.get("outcome") == "escaped":
+            typer.echo(f"  ESCAPED: {m['receipt']} {m['mutation']}")
+    if out is not None:
+        path = write_fuzz_receipt(result, Path(out).parent if out.suffix else out)
+        typer.echo(f"receipt={path}")
+    if not result["ok"]:
+        raise typer.Exit(code=1)
