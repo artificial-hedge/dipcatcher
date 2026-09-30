@@ -247,3 +247,14 @@ coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
   collision vs wave-16 resolved in favor of this wave's
   `metrics/forecast_selection.py` (already on main; both test suites
   green on it). ~442 tests incl. bench wiring; ruff/format/mypy clean.
+- **Wave 18: INTEGRATED 2026-09-30 (PR #446, stacked on #442)** — six module
+  lanes + six OPTIONAL families (`benches_w18.py`, scorecard 87→93):
+  agentic-LOB phase-transition diagnostics (2609.31260, on the w14
+  ZI-LOB), FASE self-evolving eval protocol (2609.32689), G-SLiCE path-space
+  flow matching (2605.28507, torch-gated), KiT OHLCV pipeline (2609.34507,
+  torch lane gated), latent neural SDE forecaster (arXiv:2001.01328 —
+  lane-spec ids corrected), StocBench fixed-budget sampler eval
+  (2608.22309). 325 lane tests; ruff/format/mypy clean; research suite
+  green. Remaining backlog: mutation campaign on verify.py + catalog,
+  fx1 capability.py/CLI wiring (owner calls), Tier-B deep-kernel-hedging
+  follow-ups.

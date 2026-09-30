@@ -852,3 +852,24 @@ detail: |
   eval (2609.32689), G-SLiCE flow matching (2605.28507), KiT OHLCV
   (2609.34507), StocBench sampler-budget study (2608.22309).
 note: canon branch devin/w17-canon; cross-cutting -> PR per convention.
+---
+owner: devin (wave-18 canon swarm)
+slice: WAVE 18 — six SOTA module lanes + benches_w18 wiring
+status: GATES GREEN 2026-09-30 — PR #446 open (stacked on #442)
+detail: |
+  Lanes: microstructure/agentic_lob (Rosenzweig 2609.31260 phase
+  transitions on the ZI-LOB — phase diagrams, z-score regimes, boundary
+  detection, SR alarms), metrics/fase_eval (Wang 2609.32689 self-evolving
+  protocol: episodic memory + policy arm, Table-3 ablations),
+  models/gslice (Berndt 2605.28507 SLiCE flow matching, torch),
+  models/kit_paths (2609.34507 OHLCV pipeline, torch lane gated),
+  models/neural_sde (latent SDE — spec's arXiv ids mis-cited; corrected
+  to Li/Wong/Chen/Duvenaud 2020 arXiv:2001.01328), research/stocbench
+  (Pfister 2608.22309 sampler budgets). 325 lane tests.
+  Integration done by controller after integrator agent exhausted SWE-2
+  slot retries: 3 remaining branches merged clean; benches_w18 extended
+  to 6 families (87 -> 93); registry/agent additive-only; evidence-audit
+  flake resolved (stray dev_only receipt removed from worktree).
+  Scoped gates: ruff+format+mypy clean; research suite 100% green.
+  CI on both PRs queued (GitHub Actions saturation).
+note: PRs #442 (w17, 80->87) + #446 (w18 stacked, 87->93).
