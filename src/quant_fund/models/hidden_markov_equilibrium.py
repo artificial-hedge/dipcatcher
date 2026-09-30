@@ -1236,7 +1236,12 @@ def bench_hidden_markov_equilibrium(seed: int = 2026) -> dict[str, float]:
 
     sim = simulate_dividends(econ, n_steps=2_000, dt=0.02, seed=seed)
     path = wonham_filter(sim.levels, sim.dt, econ)
-    corr = float(np.corrcoef(path.filtered, sim.states[1:])[0, 1])
+    _sd_f, _sd_s = float(np.std(path.filtered)), float(np.std(sim.states[1:]))
+    corr = (
+        float(np.corrcoef(path.filtered, sim.states[1:])[0, 1])
+        if _sd_f > 1e-12 and _sd_s > 1e-12
+        else 0.0
+    )
 
     lead = float(sol.leading_skewness(0.30, 0.02))
     mc_sk, mc_se = mc_log_return_skewness(
