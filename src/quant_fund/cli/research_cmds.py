@@ -2035,6 +2035,85 @@ def corpus_absence_cmd(
     )
 
 
+@app.command("epoch-delta")
+def epoch_delta_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Chained corpus to diff within."
+    ),
+    prev_epoch: str | None = typer.Option(
+        None, "--prev-epoch", help="Older epoch receipt filename (corpus_epoch_*.json)."
+    ),
+    next_epoch: str | None = typer.Option(
+        None, "--next-epoch", help="Newer epoch receipt filename (corpus_epoch_*.json)."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed epoch_delta.v1 receipt here (default: inside the corpus).",
+    ),
+    check: Path | None = typer.Option(
+        None, "--check", help="Verify an existing epoch_delta receipt instead of making one."
+    ),
+) -> None:
+    """Epoch delta: the sealed, completeness-verified change-set between epochs.
+
+    Emits ``epoch_delta.v1`` — both epoch receipts bound by name+digest, both
+    member-map digests, both Merkle roots, and the full transition table
+    (added/removed/changed rows each carrying shape-bound inclusion paths
+    against the root they belong to, plus the unchanged-count accounting
+    pin). ``--check`` re-derives the member maps from the two epoch
+    receipts and requires the declared table to equal the computed
+    difference exactly — a dropped or invented row fails closed.
+    """
+    import json as _json
+
+    from quant_fund.research.epoch_delta import (
+        epoch_delta_receipt,
+        verify_epoch_delta,
+    )
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    if check is not None:
+        payload = _json.loads(check.read_text(encoding="utf-8"))
+        body_payload = payload.get("payload", payload)
+        errors = verify_epoch_delta(body_payload, corpus_dir)
+        for err in errors:
+            typer.echo(f"epoch-delta error: {err}")
+        if errors:
+            raise typer.Exit(code=1)
+        tr = body_payload["transitions"]
+        typer.echo(
+            f"epoch-delta verified: {body_payload['prev_epoch']['receipt']} -> "
+            f"{body_payload['next_epoch']['receipt']} (+{len(tr['added'])} "
+            f"-{len(tr['removed'])} ~{len(tr['changed'])} "
+            f"={tr['unchanged_count']})"
+        )
+        return
+
+    if prev_epoch is None or next_epoch is None:
+        raise typer.BadParameter("--prev-epoch and --next-epoch are required")
+    body = epoch_delta_receipt(corpus_dir, prev_epoch, next_epoch)
+    sealed = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(__file__).parent.parent / "research" / "epoch_delta.py",),
+            verdict="pass",
+        )
+    )
+    dest = out or corpus_dir
+    if dest.suffix != ".json":
+        dest = dest / f"epoch_delta_{sealed['receipt_sha256'][:16]}.json"
+    atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    tr = sealed["payload"]["transitions"] if "payload" in sealed else body["transitions"]
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"epoch-delta prev={prev_epoch} next={next_epoch} +{len(tr['added'])} "
+        f"-{len(tr['removed'])} ~{len(tr['changed'])} ={tr['unchanged_count']} "
+        f"receipt={dest}"
+    )
+
+
 @app.command("corpus-consistency")
 def corpus_consistency_cmd(
     corpus_dir: Path = typer.Option(

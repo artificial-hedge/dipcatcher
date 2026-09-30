@@ -91,6 +91,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/crown_jewels.py",
     "src/quant_fund/research/custody.py",
     "src/quant_fund/research/epoch_consistency.py",
+    "src/quant_fund/research/epoch_delta.py",
     "src/quant_fund/research/epoch_merkle.py",
     "src/quant_fund/research/fuzz_drill.py",
     "src/quant_fund/research/gate_signatures.py",
