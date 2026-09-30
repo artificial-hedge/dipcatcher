@@ -1882,6 +1882,11 @@ def custody_cmd(
         "--member-file",
         help="File whose bytes are the custody subject (required with --check).",
     ),
+    timeline: bool = typer.Option(
+        False,
+        "--timeline",
+        help="Print the member's byte lineage across the chain instead of a bundle.",
+    ),
 ) -> None:
     """One-file provenance proof: member → epoch inclusion → chain head →
     signed pins → checkpoint → Rekor witness, composed into a single
@@ -1889,11 +1894,26 @@ def custody_cmd(
 
     The epoch bound is the *earliest* chained epoch pinning the member's
     current bytes — proof of first committed state. ``--check`` needs only
-    the bundle plus the subject file.
+    the bundle plus the subject file. ``--timeline`` prints the member's
+    byte lineage (committed digest per epoch) for mutable corpora.
     """
     import json as _json
 
-    from quant_fund.research.custody import custody_proof, verify_custody_bundle
+    from quant_fund.research.custody import (
+        custody_proof,
+        member_timeline,
+        verify_custody_bundle,
+    )
+
+    if timeline:
+        if member is None:
+            raise typer.BadParameter("--timeline requires --member")
+        for entry in member_timeline(member, corpus_dir, pattern=pattern):
+            typer.echo(
+                f"epoch_index={entry['epoch_index']} sha256={entry['sha256']} "
+                f"epoch={entry['epoch']}"
+            )
+        return
 
     if check is not None:
         if member_file is None or not member_file.is_file():

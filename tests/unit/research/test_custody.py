@@ -65,6 +65,7 @@ def _fixture(tmp_path: Path) -> Path:
 
     priv, pub = generate_keypair()
     (root / "quality/gate_signing.pub").write_text(pub)
+    (root / ".fixture_priv").write_text(priv)
 
     # Three epochs, each stamping one more member than the last.
     for name, val in (("a.json", 1.0), ("b.json", 2.0), ("c.json", 3.0)):
@@ -140,6 +141,51 @@ def test_custody_contract_clean(tmp_path: Path) -> None:
     assert custody_contract_errors(bundle) == []
     forged = dict(bundle, chain_head="corpus_epoch_ffffffffffffffff.json")
     assert "chain_head_mismatch" in custody_contract_errors(forged)
+
+
+def test_member_timeline_tracks_byte_evolution(tmp_path: Path) -> None:
+    """A member's committed digests across epochs are enumerated in order."""
+    from quant_fund.research.corpus_epoch import (
+        corpus_epoch,
+        update_heads_pin,
+        write_epoch_receipt,
+    )
+    from quant_fund.research.custody import member_timeline
+
+    root = _fixture(tmp_path)
+    before = member_timeline("b.json", root / "receipts", pattern="*.json")
+    assert len(before) == 2  # stamped in epochs 2 and 3, same bytes
+    assert before[0]["sha256"] == before[1]["sha256"]
+
+    # Mutate the member and stamp a fourth epoch — lineage records the flip.
+    doc = json.loads((root / "receipts/b.json").read_text())
+    doc["results"] = [{"qlike": 9.0}]
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    (root / "receipts/b.json").write_text(json.dumps(seal_receipt(doc)))
+    pin = root / "quality/epoch_heads.json"
+    ep = write_epoch_receipt(corpus_epoch(root / "receipts"), root / "receipts")
+    update_heads_pin(pin, "receipts", "*.json", ep)
+
+    # The pin file just changed — re-sign and re-checkpoint before custody.
+    from quant_fund.research.gate_signatures import sign_pins
+    from quant_fund.research.integrity_checkpoint import write_checkpoint
+
+    priv = (root / ".fixture_priv").read_text()
+    pub = (root / "quality/gate_signing.pub").read_text()
+    sign_pins(root, priv, pub)
+    write_checkpoint(root, priv, pub)
+
+    after = member_timeline("b.json", root / "receipts", pattern="*.json")
+    assert len(after) == 3
+    assert after[-1]["sha256"] != after[0]["sha256"]
+    assert [e["epoch_index"] for e in after] == [1, 2, 3]
+
+    # Custody of the *new* bytes picks the mutating epoch as first_epoch.
+    bundle = custody_proof("b.json", root / "receipts", pattern="*.json", root=root)
+    assert bundle["first_epoch"] == after[-1]["epoch"]
+    res = verify_custody_bundle(bundle, (root / "receipts/b.json").read_bytes())
+    assert res["ok"], res["errors"]
 
 
 def test_custody_schema_dispatches_in_verify_receipt(tmp_path: Path) -> None:

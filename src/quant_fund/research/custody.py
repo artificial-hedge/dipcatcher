@@ -173,6 +173,36 @@ def custody_proof(
     }
 
 
+def member_timeline(
+    member: str, corpus_dir: Path | str, *, pattern: str = "*.json"
+) -> list[dict[str, str | int]]:
+    """Ordered byte-lineage of ``member`` across the (dir, pattern) chain.
+
+    Each entry is ``{epoch, sha256, epoch_index}`` for the epochs in which
+    the member appears — the committed provenance of a mutable corpus
+    member (e.g. ``quality/epoch_heads.json``, which legitimately changes).
+    Immutable members yield a single repeated digest; an entry whose digest
+    differs from its predecessor's is a committed byte change, an absent
+    epoch is a committed removal (re-additions appear as a new run).
+    """
+    from quant_fund.research.epoch_consistency import chain_index
+
+    index = chain_index(corpus_dir, pattern=pattern)
+    order = _chain_order(index)
+    if not order:
+        raise ValueError(f"epoch chain under {corpus_dir} is forked or headless")
+    timeline: list[dict[str, str | int]] = []
+    for i, name in enumerate(order):
+        members = {
+            str(m["name"]): str(m["sha256"])
+            for m in index[name][1].get("members") or []
+            if isinstance(m, Mapping) and "name" in m and "sha256" in m
+        }
+        if member in members:
+            timeline.append({"epoch": name, "epoch_index": i, "sha256": members[member]})
+    return timeline
+
+
 def _git_rev() -> str | None:
     try:
         from quant_fund.research.receipt_v2 import git_revision
