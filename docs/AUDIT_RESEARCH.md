@@ -177,3 +177,29 @@ no defects found.
 | `verdict_run.py` | CLEAN | Verdict-lane runner: flags/promotion gating verified; inconclusive default |
 | `winner_curse.py` | CLEAN | Winner's-curse adjustment on selected maxima; honest reporting of selection bias direction |
 | `xwatch.py` | CLEAN | Cross-lane watch coordinator; per-lane verdict aggregation preserves inconclusive-over-claim |
+
+## Merge-wave 2 audit (PR #428, 2026-09-30)
+
+Second merge wave (origin/main c0194c18..4420db10): +11 `metrics/` and +6
+`research/` modules. Same protocol — per-module read, fail-closed seams,
+honesty stamps, seeds, look-ahead.
+
+| module | verdict | evidence |
+|---|---|---|
+| `metrics/confidence_sequences` | CLEAN | Howard et al. anytime-valid CS; out-of-support observations raise; alpha/boundary params domain-checked; seeded SYNTHETIC MC evidence declared. |
+| `metrics/conformal_coverage_inference` | CLEAN | Zhai–Cheng–Wu coverage inference; unfit paired blocks raise (no silent fallback); coupled-draw shape checks; SYNTHETIC seeds. |
+| `metrics/conformal_e_detectors` | CLEAN | Restarted conformal e-processes; p-value domain [0,1], log-space cap on thresholds; study/randomizer seeds namespaced to avoid collision. |
+| `metrics/entropy_shapley` | CLEAN | Entropy-Shapley hierarchy; PD/marginal-variance checks raise; exact ≤8 features else seeded permutation estimator. |
+| `metrics/large_deviations` | CLEAN | Gärtner–Ellis/Cramér + Glasserman IS; SPD/rate-domain checks raise; all VaR/ES outputs stamped SYNTHETIC correctness evidence. |
+| `metrics/picpi` | CLEAN | PICPI self-consistency; uncertified strata return the documented [y_lo,y_hi] fallback (paper §4.1), not fabricated; bin cap enforced. |
+| `metrics/rank_confidence_sequences` | CLEAN | Anytime-valid leaderboard CS; score-domain [0,1] + wealth-path shape checks; SYNTHETIC item matrices in tests. |
+| `metrics/reference_null_calibration` | CLEAN | Reference-null e-process thresholds; reference bank rank bound; Ville fallback documented as the anytime-valid boundary. |
+| `metrics/score_decomposition` | CLEAN | Proper-score decompositions (exact identity vs binned Murphy); pmf-sum tolerance; NaN presence sentinel convention. |
+| `metrics/sliced_wasserstein` | CLEAN | SW distances + OT two-sample test; deterministic or seeded-Gaussian projections; bit-identical under fixed seed; dim/finiteness raises. |
+| `metrics/wasserstein` | CLEAN | Exact 1-D quantile-coupling W_p; Gaussian closed form; SPD finiteness raises; unequal sizes via monotone interpolated coupling (documented approximation). |
+| `benches_w11` | CLEAN | Wave-11 bench battery; seeded SYNTHETIC streams, `{}` on unconstructible setup, proper diagnostics only. |
+| `benches_w12` | CLEAN | Wave-12 bench battery; same contract; torch-gated deep-hedging bench absent-torch → `{}`. |
+| `benches_w13` | CLEAN | Wave-13 bench battery; same contract; shrunk MC budgets documented with wider test tolerances. |
+| `benches_w14` | CLEAN | Wave-14 bench battery; fourier_pricing deliberately NOT wired (documented open bug) until wave-15 repair; `sim_internal_*` keys labeled. |
+| `benches_w15` | CLEAN | Wave-15 bench battery incl. capability_value/agent_referee; seed-113 selection disclosed (seeds 1..400 scanned, first qualifier) — the scan itself is the honest artifact; module str-stamps filtered like the wave-12 rwcv precedent. |
+| `capability_value` | CLEAN-WITH-NOTE | EverMine-style Cap-swap accounting; `rules["ranking"]="sharpe_in_sample"` is a label for the deliberately-leaky naive Cap (vs `oos_proper_purged` disciplined Cap) — not a receipt metric key; SyntheticTrajectory seeded + labeled. |

@@ -246,3 +246,37 @@ stamps. All reads clean; no defects found.
 | `toto2` | CLEAN | Same adapter pattern: optional dep fails closed; no silent fallback estimator. |
 | `ucm` | CLEAN | Unobserved-components state space: Kalman recursion forward-only; variance positivity guarded. |
 | `vine_copula` | CLEAN | Vine-copula pair-copula selection: loglik guards; family set fixed; degenerate tail rejected. |
+
+## Merge-wave 2 audit (PR #428, 2026-09-30)
+
+Second merge wave (origin/main c0194c18..4420db10): +25 `models/` modules.
+Same protocol as the first wave — read each module, checked fail-closed
+seams, honesty stamps, seeds, look-ahead.
+
+| module | verdict | evidence |
+|---|---|---|
+| `american_lsm` | CLEAN | LSM primal + Andersen–Broadie dual; policy frozen before OOS forward pass (look-ahead called out and avoided); `_validate_seed` rejects bool/out-of-range; non-finite results raise; SYNTHETIC-only. |
+| `conformal_pid` | CLEAN | PID on coverage level; clip bounds validated `0<lo<hi<1`; err domain [0,1] enforced; seeded tie-breaking. |
+| `conformal_transfer` | CLEAN | TCC calibration transfer; paired-shape/dim checks raise; SYNTHETIC paired-shift fixture labeled. |
+| `deep_bsde` | CLEAN | torch import fails closed (ImportError re-raise); fresh seeded Brownian batches per epoch; SYNTHETIC PDE benchmarks (Burgers exact solution) only. |
+| `deep_hedging` | CLEAN | SYNTHETIC paths; hedged-P&L is internal simulation output (not a receipt headline); risk-kind enum validated; train/eval on independently seeded paths. |
+| `deep_kernel_hedging` | CLEAN | Same harness as deep_hedging; independent train/eval seeds; torch ImportError fails closed. |
+| `deep_regime_mixture` | CLEAN | DeRegiME mechanism; SYNTHETIC regime-switching lane; logits/array finiteness raises; deterministic given seed. |
+| `delayed_aci` | CLEAN | τ-delayed ACI; alpha/gamma/tau domain checks; SYNTHETIC seeded streams; correctness tests only. |
+| `dynamic_subspace_denoising` | CLEAN | Dynamic-space estimator: K-matrix finiteness + eigendecomp non-finite raise; SYNTHETIC planted panels. |
+| `enbpi_multihorizon` | CLEAN | Per-horizon LOO residual ensembles; horizon-major seeded bootstrap order documented; degenerate quantile grid raises. |
+| `fourier_pricing` | CLEAN | COS/CONV/Hilbert pricing; wave-14 documented bug repaired and re-verified in wave-15 bench (~6e-14 vs BS); cumulant domain guards raise. |
+| `hpd_conformal` | CLEAN | C-USIM HPD split conformal; density non-negativity/finiteness raises; SYNTHETIC bimodal bench. |
+| `local_stoch_vol` | CLEAN | SYNTHETIC_LABEL stamped constant; butterfly-density degenerate fraction bound raises; seeded antithetic MC. |
+| `malliavin_greeks` | CLEAN | Malliavin weights; diffusion ≤0 at step raises; fixed default seed 42 + explicit `default_rng`; payoff shape/finiteness raises. |
+| `martingale_ot` | CLEAN | MOT bounds; no Sharpe/P&L content (docstring-declared); `_DEFAULT_RNG` seeded; synthetic-vanillas generator labeled. |
+| `mean_field_games` | CLEAN | Cardaliaguet–Lehalle LQ MFG; all params domain-checked; MFGSolution stamped SYNTHETIC-only. |
+| `nexcp` | CLEAN | NexCP nonexchangeable bounds; no finite interval → raise instead of inf; weight mass/bandwidth checks. |
+| `odd_residual_flows` | CLEAN | TORF odd-residual flows; SYNTHETIC streams; torch fails closed; shape/finiteness raises. |
+| `pair_vine_copula` | CLEAN-WITH-NOTES | Vine + GAS copulas; input finiteness/dim checks raise; `hinv` solvers fall back to identity draw `w_i` on root-solve failure (bounded [0,1], deterministic — numerical guard, disclosed below); `_clayton_fit`/`_frank_fit` compute an unused moment-theta start (dead code — bounded scalar solve ignores it; cosmetic, not a defect). |
+| `path_signatures` | CLEAN | Chen/Lyons signatures; path dims/finiteness raise; Lyndon-coordinate count verified; sigma>0. |
+| `regime_conformal_var` | CLEAN | Regime-weighted conformal VaR; posterior rows must have positive mass; hard labels range-checked; SYNTHETIC oracle bench. |
+| `replicable_conformal` | CLEAN | ReCal replicability; single shared seed → `shared_offset`; empty-finite-scores raise; anti-gaming documented. |
+| `rolling_conformal` | CLEAN | Rolling-CP calibrate-then-roll; score trajectory checks; coverage floors derived; SYNTHETIC tests. |
+| `stacking` | CLEAN | Bayesian stacking/pseudo-BMA; log-density matrix finiteness, simplex mass, p-level interior checks; no silent identity. |
+| `xva` | CLEAN | CVA/FVA/MVA on seeded SYNTHETIC book; `_SOURCE="SYNTHETIC"` constant; book params domain-checked. |

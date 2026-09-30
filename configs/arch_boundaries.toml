@@ -190,6 +190,11 @@ allowed = [
     "quant_fund.schemas.**",
     "quant_fund.utils.**",
     "quant_fund.validation.**",
+    # Leaf math libraries only — eval/options_reasoning_eval uses the repo's
+    # closed-form pricing as the ground-truth oracle for its sealed SYNTHETIC
+    # bank. Named exact modules, not models.**, so the isolation stays tight.
+    "quant_fund.models.iv_approx",
+    "quant_fund.models.options",
 ]
 note = "fx1 is kept isolated: only leaf services of the harness are fair game"
 
