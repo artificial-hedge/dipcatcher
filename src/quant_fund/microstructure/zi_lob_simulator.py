@@ -56,7 +56,7 @@ import math
 from collections import deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
@@ -269,6 +269,20 @@ class MarkovRegimeFlow:
         return float(total / self.n_mo)
 
 
+class MOFlow(Protocol):
+    """Market-order flow interface accepted by ``ZILobSimulator``.
+
+    ``current()`` supplies the MO intensity multiplier and buy probability
+    for the next MO event; ``advance()`` is called once per MO event (the MO
+    clock). ``MarkovRegimeFlow`` satisfies it, as do episodic flows like
+    ``markout.SplitFlow``.
+    """
+
+    def current(self) -> RegimeState: ...
+
+    def advance(self) -> None: ...
+
+
 # ---------------------------------------------------------------------------
 # Events / records
 # ---------------------------------------------------------------------------
@@ -330,7 +344,7 @@ class ZILobSimulator:
     (on cancel-by-id paths used by sessions), and non-finite horizons raise.
     """
 
-    def __init__(self, config: ZILobConfig, flow: MarkovRegimeFlow | None = None) -> None:
+    def __init__(self, config: ZILobConfig, flow: MOFlow | None = None) -> None:
         if not isinstance(config, ZILobConfig):
             raise TypeError("config must be a ZILobConfig")
         self._cfg = config
