@@ -319,7 +319,9 @@ def audit_head_calibration(
                 )
                 for name in channel_names:
                     row[f"wealth_{name}"] = proc.channel_wealths[name]
-            except Exception as exc:  # noqa: BLE001 — recorded, not crashed
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded, not crashed.
                 row["status"] = "error"
                 row["error"] = str(exc)
                 for name in channel_names:

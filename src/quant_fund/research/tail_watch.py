@@ -218,7 +218,9 @@ def audit_tail_depth(
                     q = np.asarray(model.predict(lag_x), dtype=float)
                 else:
                     q = np.asarray(model.predict(shard.x[n_train : n_train + n_eval]), dtype=float)
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded as error rows.
                 q = None
                 err = str(exc)
             if q is None or q.ndim != 2 or q.shape[1] != tau_arr.shape[0]:

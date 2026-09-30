@@ -61,7 +61,10 @@ try:
     from numba import njit
 
     HAVE_NUMBA = True
-except Exception:  # pragma: no cover - exercised only on numba-less envs
+except (ImportError, OSError):  # pragma: no cover - exercised only on numba-less envs
+    # Narrowed from `except Exception` (quality ratchet): a missing numba raises
+    # ImportError; a broken llvmlite native load raises OSError; exotic errors
+    # propagate instead of silently degrading every kernel.
     HAVE_NUMBA = False
 
     def njit(*_a: Any, **_k: Any) -> Any:  # type: ignore[no-redef]
@@ -115,7 +118,10 @@ def _validate_panel_fast(weights: pl.DataFrame) -> None:
     try:
         vals = w.cast(pl.Float64, strict=False).to_numpy()
         ok = bool(np.isfinite(vals).all())
-    except Exception:
+    except (pl.exceptions.PolarsError, TypeError, ValueError):
+        # Narrowed from `except Exception` (quality ratchet): cast/to_numpy faults
+        # are polars/type errors; exotic errors propagate. Any enumerated anomaly
+        # still falls back to the reference validator, preserving the exact error.
         ok = False
     if not ok:
         # Reproduce the reference's first-offender error verbatim.
@@ -1045,6 +1051,8 @@ def run_backtest_fast(
 
     kernel_out = None
     if HAVE_NUMBA:
+        from numba.core.errors import NumbaError  # HAVE_NUMBA guarantees the import
+
         try:
             kernel_out = _replay_driver(
                 exec_px=src_mat,
@@ -1067,10 +1075,11 @@ def run_backtest_fast(
             # Fail-closed paths reproduced by the kernel — same exceptions
             # the reference raises; propagate, do not fall back.
             raise
-        except Exception:
-            # Only numba machinery failures (compile/type errors on an
-            # exotic environment) land here — degrade to the interpreted
-            # loop, which is bit-identical, rather than failing the run.
+        except (NumbaError, TypeError, RuntimeError):
+            # Narrowed from `except Exception` (quality ratchet). Only numba
+            # machinery failures (compile/type errors on an exotic environment)
+            # land here — degrade to the interpreted loop, which is bit-identical,
+            # rather than failing the run. Exotic errors propagate.
             kernel_out = None
     if kernel_out is not None:
         (
