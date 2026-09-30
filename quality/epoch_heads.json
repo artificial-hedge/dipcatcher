@@ -21,9 +21,9 @@
       "tree_root": "cfee8c751903a6b9901eb16bdf6bf2a274ebcc21703e3e3077ac8db6d6fa0f07"
     },
     ".github/workflows/*.yml": {
-      "receipt": "corpus_epoch_2cd7e44901c21191.json",
-      "sha256": "53911ca54adae5a22fff3d4f8cd2c64eaf842cfbc4b6d495130afeb4e8610c26",
-      "tree_root": "51cbdbe7a47bfdf9d45e9b151fb46d83fc7da0de9628efdfeff324f44c5b2653"
+      "receipt": "corpus_epoch_8b1625b4e0e6de75.json",
+      "sha256": "0784538f8ea2a5b5f1d0783c43f657fa59c58b03abbdc1460b1fe63cd7284fb7",
+      "tree_root": "0eca5c2eb990fefdddfcc04d9d70f8d4135fc13fc00f85b6e7609b7c6aa87d9b"
     },
     "artifacts/*": {
       "receipt": "corpus_epoch_6ac68dcf64e991c2.json",
@@ -71,9 +71,9 @@
       "tree_root": "4a33aa0aaed8400ae50fb9c7e54b1d32785a7afca9eb03f73c665e96420be0bd"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_95af1149e6e0ceac.json",
-      "sha256": "2dd1fcd6d38f9435a2c0234f52b7bc1ec1997e7212a1207a79c56798ecd87608",
-      "tree_root": "b255b30b0f1938e4022319c46d7f4e6fa7252e208b99a894af4873d85c73a83f"
+      "receipt": "corpus_epoch_acc7fd16c58f9c78.json",
+      "sha256": "56816d1654c27276612e77527f1fd42937573065e3f230f7f7a0f0b60ab8df42",
+      "tree_root": "6eba58c29551e58ba13fc2e8f01b0e734301d08d15ad811f8f2195adf593b3a4"
     },
     "receipts/*.json": {
       "receipt": "corpus_epoch_5c9754ab2a9408a1.json",
