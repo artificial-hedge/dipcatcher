@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 881,
+  "module_count": 884,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -60,6 +60,14 @@
     },
     {
       "dst": "fx1.eval",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.eval.ext_bench",
+      "src": "fx1.cli"
+    },
+    {
+      "dst": "fx1.eval.options_reasoning_eval",
       "src": "fx1.cli"
     },
     {
@@ -304,6 +312,14 @@
     },
     {
       "dst": "fx1.eval.calibration_eval",
+      "src": "fx1.eval.capability"
+    },
+    {
+      "dst": "fx1.eval.ext_bench",
+      "src": "fx1.eval.capability"
+    },
+    {
+      "dst": "fx1.eval.options_reasoning_eval",
       "src": "fx1.eval.capability"
     },
     {
@@ -3417,6 +3433,22 @@
     {
       "dst": "quant_fund.utils.numeric",
       "src": "quant_fund.metrics.twosample"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "quant_fund.metrics.vol_loss_decomposition"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "quant_fund.metrics.vol_loss_decomposition"
+    },
+    {
+      "dst": "quant_fund.metrics.vol_eval",
+      "src": "quant_fund.metrics.vol_loss_decomposition"
+    },
+    {
+      "dst": "quant_fund.utils.series",
+      "src": "quant_fund.metrics.vol_loss_decomposition"
     },
     {
       "dst": "quant_fund.microstructure.book_metrics",
@@ -9202,6 +9234,7 @@
     "quant_fund.metrics.utility",
     "quant_fund.metrics.var_backtest",
     "quant_fund.metrics.vol_eval",
+    "quant_fund.metrics.vol_loss_decomposition",
     "quant_fund.metrics.wasserstein",
     "quant_fund.metrics.watch",
     "quant_fund.microstructure",
@@ -9294,6 +9327,7 @@
     "quant_fund.models.gmm_est",
     "quant_fund.models.har",
     "quant_fund.models.hedging",
+    "quant_fund.models.hierarchical_conformal",
     "quant_fund.models.hpd_conformal",
     "quant_fund.models.hsmm",
     "quant_fund.models.hstep",
@@ -9328,6 +9362,7 @@
     "quant_fund.models.momentum",
     "quant_fund.models.ms_var",
     "quant_fund.models.msgarch",
+    "quant_fund.models.multisource_conformal",
     "quant_fund.models.nbeats",
     "quant_fund.models.nexcp",
     "quant_fund.models.ngboost_lite",
@@ -9783,7 +9818,7 @@
     },
     {
       "dst": "fx1.eval",
-      "imports": 3,
+      "imports": 5,
       "src": "fx1.cli"
     },
     {
@@ -9853,7 +9888,7 @@
     },
     {
       "dst": "fx1.eval",
-      "imports": 28,
+      "imports": 30,
       "src": "fx1.eval"
     },
     {
@@ -10578,7 +10613,7 @@
     },
     {
       "dst": "quant_fund.metrics",
-      "imports": 27,
+      "imports": 30,
       "src": "quant_fund.metrics"
     },
     {
@@ -10593,7 +10628,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 17,
+      "imports": 18,
       "src": "quant_fund.metrics"
     },
     {
