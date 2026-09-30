@@ -46,7 +46,10 @@ import numpy as np
 import pytest
 
 from quant_fund.research.benches_w18 import (
+    bench_agentic_lob,
+    bench_fase_eval,
     bench_gslice,
+    bench_kit_paths,
     bench_neural_sde,
     bench_stocbench,
 )
@@ -73,10 +76,18 @@ _FAMILIES = (
     "gslice",
     "neural_sde",
     "stocbench",
+    "agentic_lob",
+    "fase_eval",
+    "kit_paths",
 )
-# The one numpy/scipy family (gslice / neural_sde are torch-gated and handled
+# The numpy/scipy families (gslice / neural_sde are torch-gated and handled
 # apart).
-_NUMPY_BLOBS = ("stocbench",)
+_NUMPY_BLOBS = (
+    "stocbench",
+    "agentic_lob",
+    "fase_eval",
+    "kit_paths",
+)
 _TORCH_BLOBS = (
     "gslice",
     "neural_sde",
@@ -96,6 +107,21 @@ def neural_sde() -> dict[str, float]:
 @pytest.fixture(scope="module")
 def stocbench() -> dict[str, float]:
     return bench_stocbench()
+
+
+@pytest.fixture(scope="module")
+def agentic_lob() -> dict[str, float]:
+    return bench_agentic_lob()
+
+
+@pytest.fixture(scope="module")
+def fase_eval() -> dict[str, float]:
+    return bench_fase_eval()
+
+
+@pytest.fixture(scope="module")
+def kit_paths() -> dict[str, float]:
+    return bench_kit_paths()
 
 
 def test_families_registered_as_optional() -> None:
@@ -233,10 +259,59 @@ def test_neural_sde_approaches_oracle(neural_sde: dict[str, float]) -> None:
     assert neural_sde["nsde_horizon"] == 4.0
 
 
-def test_numpy_benches_are_deterministic(stocbench: dict[str, float]) -> None:
+def test_agentic_lob_phase_structure(agentic_lob: dict[str, float]) -> None:
+    # Rosenzweig 2026 diagnostics on the ZI-LOB: the 3x3 phase diagram
+    # spans collapsed->continuous cells, the planted calm/storm boundary
+    # is detected, and the sequential phase alarm fires on the exploding
+    # series.
+    assert agentic_lob["diagram_n_cells"] == 9.0
+    assert agentic_lob["diagram_collapse_rate_max"] > agentic_lob["diagram_collapse_rate_min"]
+    assert agentic_lob["diagram_sigma_max_ticks"] > 0.0
+    assert agentic_lob["boundaries_n"] >= 1.0
+    assert agentic_lob["alarm_fired"] == 1.0
+    assert agentic_lob["alarm_wealth_final"] > 1.0
+    assert agentic_lob["impact_n_defined"] > 0.0
+    assert agentic_lob["feature_n_buckets"] > 0.0
+
+
+def test_fase_eval_protocol(fase_eval: dict[str, float]) -> None:
+    # Wang et al. 2026 online protocol over the planted stream: all 25
+    # instances replayed, memory pools populated, policy updated, and the
+    # self-evolution gain curve is finite. The best planted tool must not
+    # lose to the baseline arm on normalized error.
+    assert fase_eval["n_instances"] == 25.0
+    assert fase_eval["memory_recent_size"] > 0.0
+    assert fase_eval["policy_ready"] == 1.0
+    assert fase_eval["n_policy_updates"] > 0.0
+    assert 0.0 < fase_eval["agent_norm_mae"] <= 1.5
+    assert np.isfinite(fase_eval["self_evolution_gain_final"])
+    assert np.isfinite(fase_eval["mean_context_distance"])
+
+
+def test_kit_paths_pipeline(kit_paths: dict[str, float]) -> None:
+    # KiT candle pipeline: exact invertibility and zero OHLCV-consistency
+    # violations under the structural decoder, with finite proper scores.
+    assert kit_paths["SYNTHETIC_roundtrip_max_abs_err"] < 1e-9
+    assert kit_paths["SYNTHETIC_scaler_roundtrip_max_abs_err"] < 1e-6
+    assert kit_paths["SYNTHETIC_violation_rate"] == 0.0
+    assert kit_paths["SYNTHETIC_energy_score"] > 0.0
+    assert kit_paths["SYNTHETIC_crps_marginal_mean"] > 0.0
+    assert 0.0 <= kit_paths["SYNTHETIC_coverage_ret"] <= 1.0
+    assert kit_paths["SYNTHETIC_n_samples"] == 64.0
+
+
+def test_numpy_benches_are_deterministic(
+    stocbench: dict[str, float],
+    agentic_lob: dict[str, float],
+    fase_eval: dict[str, float],
+    kit_paths: dict[str, float],
+) -> None:
     # Seeded from module constants, so a fresh call must reproduce the
     # fixture bit-for-bit.
     assert bench_stocbench() == stocbench
+    assert bench_agentic_lob() == agentic_lob
+    assert bench_fase_eval() == fase_eval
+    assert bench_kit_paths() == kit_paths
 
 
 @requires_torch

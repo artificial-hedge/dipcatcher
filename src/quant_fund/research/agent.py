@@ -138,7 +138,10 @@ from quant_fund.research.benches_w17 import (
     bench_stochastic_tracking,
 )
 from quant_fund.research.benches_w18 import (
+    bench_agentic_lob,
+    bench_fase_eval,
     bench_gslice,
+    bench_kit_paths,
     bench_neural_sde,
     bench_stocbench,
 )
@@ -1802,6 +1805,9 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gslice": bench_gslice(),
         "neural_sde": bench_neural_sde(),
         "stocbench": bench_stocbench(),
+        "agentic_lob": bench_agentic_lob(),
+        "fase_eval": bench_fase_eval(),
+        "kit_paths": bench_kit_paths(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -195,6 +195,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gslice",
         "neural_sde",
         "stocbench",
+        # agentic-LOB phase-transition diagnostics on the ZI-LOB, the
+        # FASE self-evolving forecast-evaluation protocol, and the KiT
+        # OHLCV candle-path pipeline (all pure-numpy cores; the KiT torch
+        # lane is exercised by its own gated tests). Same SYNTHETIC
+        # diagnostic contract.
+        "agentic_lob",
+        "fase_eval",
+        "kit_paths",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
