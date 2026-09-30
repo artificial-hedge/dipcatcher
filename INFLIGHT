@@ -927,9 +927,16 @@ detail: |
   (El Euch & Rosenbaum 1609.02108; Abi Jaber-Larsson-Pulido 1708.08796 —
   DFF fractional Adams-PC Riccati matches classical to 2e-5 at a->1,
   Lewis call inversion vs Volterra MC within 4 SE, RL-fBm weights +
-  Hurst recovery). Signature-features lane (Chevyrev-Oberhauser
-  1810.10971, Salvi et al 2006.14742) running as child — third family
-  lands 108 on completion. Citation corrections: AJLP id corrected
-  (spec's 1708.07719 was wrong); BFG has no arXiv id (SSRN 2554754).
-  Scorecard 105->107.
+  Hurst recovery). metrics/signature_features (Chevyrev-Oberhauser
+  1810.10971; Salvi-Cass-Foster-Lyons-Yang — lane corrected spec id
+  2006.14742->2006.14794, a Goldbach paper): Goursat-PDE signature
+  kernel matches order-6 truncated inner product to ~2e-4, MMD power
+  GBM-vs-OU 1.0, drift R2~0.8; reuses models/path_signatures. Citation
+  corrections: AJLP id corrected (spec's 1708.07719 was wrong); BFG
+  has no arXiv id (SSRN 2554754). Scorecard 105->108. Wave-22 lane
+  signature_martingale_test running as child (branch
+  devin/w22-signature-martingale-test) — integrates on next canon.
 note: stacked chain #442/#446/#452/#477/#479 all open; CI queued.
+  Dropped duplicates this wave: metrics/multipower_variation
+  (models/realized.py already covers BPV/TPQ/BNS/Lee-Mykland), Hawkes
+  GOF (point_process.hawkes_residuals already owns compensator+KS).

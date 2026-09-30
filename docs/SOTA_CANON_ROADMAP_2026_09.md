@@ -282,11 +282,16 @@ coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
   as a strict superset — the dup is recorded so later waves skip it.
   Canon: `devin/w20-canon`. PR #477 stacked on #452.
 
-- **Wave 21: INTEGRATED 2026-09-30** — two lanes built locally under the
-  session cap and wired (scorecard 105→107): BOCPD change points
-  (Adams & MacKay 0710.3742) and rough-vol pricing — fractional Riccati
-  rHeston CF + rBergomi/Volterra simulators (El Euch & Rosenbaum
-  1609.02108; Abi Jaber-Larsson-Pulido 1708.08796, corrected from the
-  spec's 1708.07719). Signature-features lane (Chevyrev-Oberhauser
-  1810.10971, Salvi 2006.14742) running as a child — third family lands
-  108 on completion. Canon: `devin/w21-canon`. PR #479 stacked on #477.
+- **Wave 21: INTEGRATED 2026-09-30** — three lanes landed and wired
+  (scorecard 105→108): BOCPD change points (Adams & MacKay 0710.3742),
+  rough-vol pricing — fractional Riccati rHeston CF + rBergomi/Volterra
+  simulators (El Euch & Rosenbaum 1609.02108; Abi Jaber-Larsson-Pulido
+  1708.08796, corrected from the spec's 1708.07719), and signature
+  features — Goursat-PDE signature kernel + lead-lag MMD
+  (Chevyrev-Oberhauser 1810.10971; Salvi et al 2006.14794, corrected
+  from the spec's 2006.14742). Canon: `devin/w21-canon`. PR #479
+  stacked on #477. Duplicates recorded for later waves:
+  `metrics/multipower_variation` (models/realized already canonizes
+  BPV/TPQ/BNS/Lee-Mykland) and Hawkes GOF (hawkes_residuals owns the
+  compensator+KS battery). Wave-22 lane signature_martingale_test
+  running as a child — integrates on `devin/w22-canon`.
