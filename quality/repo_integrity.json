@@ -28,6 +28,10 @@
       "errors": [],
       "ok": true
     },
+    "epoch:data/metadata": {
+      "errors": [],
+      "ok": true
+    },
     "epoch:quality": {
       "errors": [],
       "ok": true
@@ -80,15 +84,16 @@
       ".github/workflows",
       "configs",
       "artifacts",
-      ".dsh-24x7"
+      ".dsh-24x7",
+      "data/metadata"
     ]
   },
   "pins": {
-    "crown_jewels_sha256": "2452a2487002e4f971ec12f8e0d58acb00e2eaf1a1d6d620e54e35fb687383ff",
-    "epoch_heads_sha256": "5439cbb80737e0224788d1b2a2b1f8c7f5b46e0fd945e093fad8ecae8bfb05c6",
+    "crown_jewels_sha256": "8cd5302968c09f738bd817fce2ba486cb5c78a1e3a9b785bd3eebb2e16d5a1b6",
+    "epoch_heads_sha256": "901f277841e17ab0d2223839b48f289cc7288b382b6acb1c709a352727bfa9b7",
     "gate_pins_signed": true,
     "timestamps_anchored": true
   },
-  "receipt_sha256": "000c03dd8a9824e84451b58d285bb939bd383573d581b604fbc9cb7daff73866",
+  "receipt_sha256": "7ce1df05a2cc56ef0554178485f1e8306ebcabc40df2ffc2c7a6bd2a7fdcbc08",
   "schema": "repo_integrity.v1"
 }
