@@ -14,6 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = REPO_ROOT / "scripts" / "verify_epoch_chain.py"
 
@@ -230,3 +232,112 @@ def test_usage_errors(tmp_path: Path) -> None:
     corpus = tmp_path / "receipts"
     corpus.mkdir()
     assert _run("--corpus-dir", str(corpus), "--checkpoint", "x").returncode == 2
+
+
+# --- v2 quorum checkpoints --------------------------------------------------
+
+
+def _v2_tree(tmp_path: Path, *, threshold: int = 1, n_keys: int = 1):
+    """A corpus stamped + pinned, a quorum registry, and a v2 checkpoint."""
+    from quant_fund.research.corpus_epoch import (
+        corpus_epoch,
+        update_heads_pin,
+        write_epoch_receipt,
+    )
+    from quant_fund.research.gate_signatures import generate_keypair, init_quorum
+    from quant_fund.research.integrity_checkpoint import write_checkpoint
+
+    root = tmp_path / "tree"
+    (root / "quality").mkdir(parents=True)
+    corpus = root / "receipts"
+    corpus.mkdir()
+    _member(corpus, "a.json", '{"a": 1}')
+    pin = root / "quality" / "epoch_heads.json"
+    ep = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    update_heads_pin(pin, "receipts", "*.json", ep)
+    pairs = [generate_keypair() for _ in range(n_keys)]
+    init_quorum(root, [pub for _, pub in pairs], threshold=threshold)
+    (root / "quality" / "gate_signing.pub").write_text(pairs[0][1] + "\n")
+    write_checkpoint(root, pairs[:threshold])
+    return root, pairs
+
+
+def _script_checkpoint_run(root: Path, *extra: str) -> subprocess.CompletedProcess[str]:
+    return _run(
+        "--corpus-dir",
+        str(root / "receipts"),
+        "--checkpoint",
+        str(root / "quality" / "checkpoint.json"),
+        "--pubkey",
+        str(root / "quality" / "gate_signing.pub"),
+        *extra,
+    )
+
+
+def test_checkpoint_v2_quorum_baseline(tmp_path: Path) -> None:
+    pytest.importorskip("cryptography")
+    root, _ = _v2_tree(tmp_path)
+    proc = _script_checkpoint_run(root, "--quorum", str(root / "quality" / "gate_quorum.json"))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_checkpoint_v2_without_registry_single_key(tmp_path: Path) -> None:
+    """No --quorum: v2 falls back to a 1-of-1 registry built from --pubkey."""
+    pytest.importorskip("cryptography")
+    root, _ = _v2_tree(tmp_path)
+    proc = _script_checkpoint_run(root)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_checkpoint_v2_below_threshold_fails(tmp_path: Path) -> None:
+    """Raising the quorum threshold after signing invalidates the
+    checkpoint — the payload-bound registry digest no longer matches and
+    the signature count is below the new threshold."""
+    pytest.importorskip("cryptography")
+    from quant_fund.research.gate_signatures import init_quorum
+
+    root, pairs = _v2_tree(tmp_path, threshold=1, n_keys=2)
+    init_quorum(root, [pub for _, pub in pairs], threshold=2)
+    proc = _script_checkpoint_run(root, "--quorum", str(root / "quality" / "gate_quorum.json"))
+    assert proc.returncode == 1
+    assert "quorum_registry_drift" in proc.stdout or "checkpoint_quorum_not_met" in proc.stdout
+
+
+def test_checkpoint_v2_foreign_pubkey_fails(tmp_path: Path) -> None:
+    pytest.importorskip("cryptography")
+    from quant_fund.research.gate_signatures import generate_keypair
+
+    root, _ = _v2_tree(tmp_path)
+    _, foreign_pub = generate_keypair()
+    (root / "quality" / "gate_signing.pub").write_text(foreign_pub + "\n")
+    proc = _script_checkpoint_run(root, "--quorum", str(root / "quality" / "gate_quorum.json"))
+    assert proc.returncode == 1
+    assert "pubkey_not_in_quorum" in proc.stdout
+
+
+def test_checkpoint_v2_tampered_payload_fails(tmp_path: Path) -> None:
+    pytest.importorskip("cryptography")
+    root, _ = _v2_tree(tmp_path)
+    cp = root / "quality" / "checkpoint.json"
+    body = json.loads(cp.read_text())
+    body["payload"]["heads"]["receipts/*.json"] = "0" * 64
+    cp.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n")
+    proc = _script_checkpoint_run(root, "--quorum", str(root / "quality" / "gate_quorum.json"))
+    assert proc.returncode == 1
+
+
+def test_checkpoint_v2_registry_swap_fails(tmp_path: Path) -> None:
+    """A different quorum file listing the same keys must not satisfy the
+    checkpoint — the payload binds the registry's canonical digest."""
+    pytest.importorskip("cryptography")
+    from quant_fund.research.gate_signatures import registry_file_bytes
+
+    root, pairs = _v2_tree(tmp_path)
+    # Same keys, same threshold — but a byte-different registry (labels added).
+    swapped = tmp_path / "alt_quorum.json"
+    reg = json.loads((root / "quality" / "gate_quorum.json").read_text())
+    reg["keys"][0]["label"] = "attacker-controlled"
+    swapped.write_bytes(registry_file_bytes(reg))
+    proc = _script_checkpoint_run(root, "--quorum", str(swapped))
+    assert proc.returncode == 1
+    assert "quorum_registry_drift" in proc.stdout

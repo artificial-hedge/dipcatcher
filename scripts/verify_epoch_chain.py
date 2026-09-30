@@ -495,6 +495,25 @@ def _checkpoint_heads(
                         if isinstance(k, dict)
                     }
                     threshold = int(reg["threshold"])
+                    # The presented --pubkey must itself be a registry
+                    # member — else an auditor's trust anchor silently
+                    # passes under keys it never chose.
+                    presented = _ed25519_key_id(pubkey.read_text())
+                    if presented not in registered:
+                        errors.append(f"pubkey_not_in_quorum:{presented}")
+                    # The signed payload names the authorizing registry's
+                    # canonical digest — mirrors registry_sha256. A swapped
+                    # --quorum file must fail even when it lists the keys.
+                    claimed_q = payload.get("quorum")
+                    claimed_digest = (
+                        claimed_q.get("registry_sha256") if isinstance(claimed_q, dict) else None
+                    )
+                    if claimed_digest is None:
+                        errors.append("quorum_unbound")
+                    else:
+                        canon = (json.dumps(reg, indent=2, sort_keys=True) + "\n").encode()
+                        if claimed_digest != _sha256(canon):
+                            errors.append("quorum_registry_drift")
             except (OSError, ValueError):
                 errors.append("quorum_registry_unreadable")
         else:
