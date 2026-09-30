@@ -412,6 +412,35 @@ def _script_pushes(script: bytes) -> list[bytes]:
     return out
 
 
+def _tx_base_serialization(tx: bytes) -> bytes:
+    """Strip a segwit serialization down to the txid-hashed form.
+
+    A txid is sha256d over ``version || vin || vout || locktime`` — the
+    marker/flag and per-input witness stacks are excluded. Explorers serve
+    the witness-inclusive form, so hashing raw bytes yields the *wtxid*,
+    not the txid the block commits to."""
+    if len(tx) < 10:
+        raise OtsError("tx too short")
+    if not (tx[4] == 0x00 and tx[5] == 0x01):
+        return tx
+    off = 6
+    vin_n, off = _read_varint_tx(tx, off)
+    if vin_n == 0:
+        raise OtsError("tx no inputs")
+    for _ in range(vin_n):
+        off += 36
+        n, off = _read_varint_tx(tx, off)
+        off += n + 4
+    vout_n, off = _read_varint_tx(tx, off)
+    for _ in range(vout_n):
+        off += 8
+        n, off = _read_varint_tx(tx, off)
+        off += n
+    if off > len(tx) - 4:
+        raise OtsError("tx truncated")
+    return tx[:4] + tx[6:off] + tx[-4:]
+
+
 def coinbase_commitments(coinbase_raw: bytes) -> set[bytes]:
     """OP_RETURN payloads embedded in a coinbase transaction.
 
@@ -456,7 +485,7 @@ def verify_block_inclusion(
         return {"ok": False, "error": "header_not_80_bytes"}
     try:
         internals = [bytes.fromhex(t)[::-1] for t in txids]
-        coinbase_txid = _sha256d(coinbase_raw)
+        coinbase_txid = _sha256d(_tx_base_serialization(coinbase_raw))
         if not internals or internals[0] != coinbase_txid:
             return {"ok": False, "error": "coinbase_txid_mismatch"}
         if block_merkle_root(internals) != header[36:68]:

@@ -311,7 +311,6 @@ def _fake_block(commitment: bytes) -> tuple[bytes, list[str], bytes]:
 
 def test_verify_block_inclusion_full(tmp_path: Path) -> None:
     from quant_fund.research.ots_anchor import (
-        block_merkle_root,
         coinbase_commitments,
         verify_block_inclusion,
     )
@@ -331,7 +330,52 @@ def test_verify_block_inclusion_full(tmp_path: Path) -> None:
     res2 = verify_block_inclusion(header, txids, other_coinbase, commitment)
     assert res2["error"] == "coinbase_txid_mismatch"
     assert commitment in coinbase_commitments(coinbase)
-    assert block_merkle_root([b"\x00" * 32]) == b"\x00" * 32
+
+
+def test_verify_block_inclusion_segwit_coinbase() -> None:
+    """Segwit coinbase: txid must hash the witness-stripped form — hashing
+    raw bytes yields the wtxid, which never equals txids[0] (the regression
+    this test pins: every modern OTS-bearing block has a segwit coinbase)."""
+    from quant_fund.research.ots_anchor import (
+        coinbase_commitments,
+        verify_block_inclusion,
+    )
+
+    commitment = b"\x5a" * 32
+    script_pub = b"\x6a\x20" + commitment
+    base = (
+        b"\x01\x00\x00\x00"  # version
+        + b"\x01"  # 1 vin
+        + b"\x00" * 32
+        + b"\xff\xff\xff\xff"
+        + b"\x03\xab\xcd\xef"
+        + b"\xff\xff\xff\xff"
+        + b"\x01"  # 1 vout
+        + (0).to_bytes(8, "little")
+        + bytes([len(script_pub)])
+        + script_pub
+        + b"\x00\x00\x00\x00"  # locktime
+    )
+    segwit = (
+        base[:4]
+        + b"\x00\x01"  # marker + flag
+        + base[4:-4]
+        + b"\x01"  # witness: 1 item on vin[0]
+        + b"\x20"
+        + b"\x99" * 32
+        + base[-4:]
+    )
+
+    def d(b: bytes) -> bytes:
+        return hashlib.sha256(hashlib.sha256(b).digest()).digest()
+
+    txid0 = d(base)  # txid = hash of the stripped form
+    assert d(segwit) != txid0  # raw hash is the wtxid — the trap
+    header = bytearray(80)
+    header[36:68] = txid0  # single-tx block: root is the coinbase txid
+    res = verify_block_inclusion(bytes(header), [txid0[::-1].hex()], segwit, commitment)
+    assert res["ok"], res
+    assert commitment in coinbase_commitments(segwit)
 
 
 def test_verify_ots_fully_verified(tmp_path: Path) -> None:
