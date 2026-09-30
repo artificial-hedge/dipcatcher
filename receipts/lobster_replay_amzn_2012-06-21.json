@@ -27,7 +27,7 @@
     "spread_ticks_median": 1300.0,
     "spread_ticks_p95": 2200.0
   },
-  "payload_sha256": "755836c9221f7ed53da3a0cdf49a8ce0ddbeb96f4d9e899713f2c912bdb12b34",
+  "receipt_sha256": "755836c9221f7ed53da3a0cdf49a8ce0ddbeb96f4d9e899713f2c912bdb12b34",
   "reconstruction": {
     "first_mismatch": {
       "actual_ask": [
