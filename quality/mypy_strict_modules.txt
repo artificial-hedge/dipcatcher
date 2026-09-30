@@ -286,6 +286,7 @@ src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/tape_digest.py
 src/quant_fund/microstructure/tick_rule.py
 src/quant_fund/microstructure/vendor_book_map.py
+src/quant_fund/microstructure/vol_signature.py
 src/quant_fund/microstructure/vpin.py
 src/quant_fund/microstructure/zi_lob_simulator.py
 src/quant_fund/models/__init__.py
