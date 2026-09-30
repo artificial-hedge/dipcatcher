@@ -117,7 +117,7 @@ def _probes(clone: Path) -> list[tuple[str, Any]]:
     # under .github/workflows is legitimately not an epoch member).
     from quant_fund.research.repo_integrity import CORPORA
 
-    for corpus, pattern, _req, _upd in CORPORA:
+    for corpus, pattern, _req, _upd, _ex in CORPORA:
         members = sorted(
             p
             for p in (clone / corpus).rglob(pattern)

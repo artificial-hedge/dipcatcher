@@ -41,19 +41,30 @@ from quant_fund.utils.hashing import hash_bytes
 
 REPO_INTEGRITY_SCHEMA = "repo_integrity.v1"
 
-# (corpus_dir, member glob, require_stamped, allow_member_updates) — the same
-# policy the evidence-audit Makefile target enforces; keep in sync.
-CORPORA: tuple[tuple[str, str, bool, bool], ...] = (
+# (corpus_dir, member glob, require_stamped, allow_member_updates,
+#  coverage_exempt globs) — the same policy the evidence-audit Makefile
+# target enforces; keep in sync.
+CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # require_stamped=True everywhere: an unstamped member is a silent
     # injection vector — the fuzz drill demonstrated arrivals passed as
     # notes. Arrivals are errors until the epoch restamp commits them.
-    ("receipts", "*.json", True, False),
-    ("verifier", "*.md", True, False),
-    ("quality", "*.json", True, True),
-    (".github/workflows", "*.yml", True, True),
+    ("receipts", "*.json", True, False, ("legacy-unsealed/README.md",)),
+    ("verifier", "*.md", True, False, ()),
+    # quality's non-.json residents are jewel-pinned keys/certs or
+    # self-authenticating TSA anchors — pinned elsewhere, exempt here.
+    (
+        "quality",
+        "*.json",
+        True,
+        True,
+        ("*.pub", "*.pem", "*.crt", "*.tsr", "*.txt", "timestamps/*"),
+    ),
+    # Closed world: a `.yaml` workflow beside `*.yml` members would run on
+    # GitHub while dodging the epoch chain — uncovered is an error.
+    (".github/workflows", "*.yml", True, True, ("README.md",)),
     # Declared experiment inputs — a post-hoc config edit silently rewrites
     # what a sealed bench measured; mutable corpus, stamped arrivals only.
-    ("configs", "*", True, True),
+    ("configs", "*", True, True, ()),
 )
 
 
@@ -164,7 +175,7 @@ def verify_repo(
             pin_parse_error = f"heads_pin_malformed:{heads_pin}"
     else:
         heads = {}
-    for corpus_dir, pattern, require_stamped, allow_updates in CORPORA:
+    for corpus_dir, pattern, require_stamped, allow_updates, exempt in CORPORA:
         cdir = root / corpus_dir
         if not cdir.is_dir():
             gates[f"epoch:{corpus_dir}"] = {
@@ -192,6 +203,34 @@ def verify_repo(
             allowed_removals=allowed_removals,
         )
         errs = pin_errors + list(res["errors"])
+        # Coverage closure at the corpus policy level: every file in the
+        # dir must be a pattern member, an epoch record, a declared
+        # exemption, or on the corpus's allowlist — a non-matching file
+        # (e.g. a `.yaml` workflow beside `*.yml` members, which GitHub
+        # would still run) carries zero chain evidence and is invisible to
+        # every check above. Multi-chain dirs are fine here: coverage is
+        # per-corpus entry, and each dir has exactly one.
+        from fnmatch import fnmatch
+
+        from quant_fund.research.corpus_epoch import (
+            EXEMPT_BASENAMES,
+            EXEMPT_RELPATHS,
+            _exempt_member,
+        )
+
+        for f in sorted(cdir.rglob("*")):
+            if not f.is_file() or f.name.startswith("corpus_epoch_"):
+                continue
+            rel = f.relative_to(cdir).as_posix()
+            if (
+                f.name in EXEMPT_BASENAMES
+                or rel in EXEMPT_RELPATHS
+                or _exempt_member(cdir, rel)
+                or fnmatch(rel, pattern)
+                or any(fnmatch(rel, g) for g in exempt)
+            ):
+                continue
+            errs.append(f"uncovered_member:{rel}")
         gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
 
     return {"gates": gates, "ok": all(g["ok"] for g in gates.values())}

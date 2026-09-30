@@ -76,7 +76,7 @@ def _corpus_members(clone: Path) -> list[Path]:
     from quant_fund.research.repo_integrity import CORPORA
 
     out: list[Path] = []
-    for corpus, pattern, _req, _upd in CORPORA:
+    for corpus, pattern, _req, _upd, _ex in CORPORA:
         base = clone / corpus
         if not base.is_dir():
             continue
