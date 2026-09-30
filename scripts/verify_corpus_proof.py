@@ -905,6 +905,183 @@ def audit_consistency_live(
     return sorted(set(errors))
 
 
+def _member_map_sha(members: dict[str, str]) -> str:
+    """sha256 over the canonical sorted {name: sha256} map — mirrors
+    epoch_delta.member_map_sha256."""
+    return hashlib.sha256(_canon({k: members[k] for k in sorted(members)})).hexdigest()
+
+
+def audit_delta_shape(delta: dict[str, Any]) -> list[str]:
+    """epoch_delta.v1 shape — mirrors epoch_delta_errors: kind/schema,
+    honesty stamps, both epoch blocks (receipt name, merkle root, map
+    digest, member counts), every transition row's inclusion path replayed
+    against its declared root, set disjointness, and the unchanged-count
+    accounting pins."""
+    errors: list[str] = []
+    if delta.get("kind") != "epoch_delta.v1":
+        errors.append("kind_not_epoch_delta")
+    if delta.get("schema") != "epoch_delta.v1":
+        errors.append("schema_not_epoch_delta")
+    if delta.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if delta.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    prev = delta.get("prev_epoch")
+    nxt = delta.get("next_epoch")
+    if not isinstance(prev, dict) or not isinstance(nxt, dict):
+        errors.append("epoch_blocks_missing")
+        return sorted(set(errors))
+    for label, block in (("prev", prev), ("next", nxt)):
+        if not isinstance(block.get("receipt"), str):
+            errors.append(f"{label}_receipt_missing")
+        if not _digest_hex(block.get("merkle_root")):
+            errors.append(f"{label}_merkle_root_bad")
+        if not _digest_hex(block.get("member_map_sha256")):
+            errors.append(f"{label}_member_map_sha256_bad")
+        if not isinstance(block.get("n_members"), int):
+            errors.append(f"{label}_n_members_bad")
+    if errors:
+        return sorted(set(errors))
+    tr = delta.get("transitions")
+    if not isinstance(tr, dict):
+        return sorted({*errors, "transitions_missing"})
+    added = tr.get("added")
+    removed = tr.get("removed")
+    changed = tr.get("changed")
+    unchanged = tr.get("unchanged_count")
+    if (
+        not isinstance(added, list)
+        or not isinstance(removed, list)
+        or not isinstance(changed, list)
+    ):
+        return sorted({*errors, "transitions_malformed"})
+    prev_root, next_root = str(prev["merkle_root"]), str(nxt["merkle_root"])
+
+    def _row(row: Any, root: str, which: str) -> list[str]:
+        if not isinstance(row, dict):
+            return [f"{which}_row_malformed"]
+        name, sha = row.get("name"), row.get("sha256")
+        if not isinstance(name, str) or not name:
+            return [f"{which}_name_bad"]
+        if unicodedata.normalize("NFC", name) != name or not _portable(name):
+            return [f"{which}_name_bad"]
+        if not _digest_hex(sha):
+            return [f"{which}_sha256_bad"]
+        proof = {k: row.get(k) for k in ("leaf_index", "n_members", "path")}
+        return _verify_inclusion(name, str(sha), proof, root)
+
+    for row in added:
+        errors += _row(row, next_root, "added")
+    for row in removed:
+        errors += _row(row, prev_root, "removed")
+    for row in changed:
+        if not isinstance(row, dict) or not isinstance(row.get("name"), str):
+            errors.append("changed_row_malformed")
+            continue
+        f_sha, t_sha = row.get("from_sha256"), row.get("to_sha256")
+        if not _digest_hex(f_sha) or not _digest_hex(t_sha):
+            errors.append("changed_sha256_bad")
+            continue
+        if f_sha == t_sha:
+            errors.append("changed_identical_digests")
+        if _verify_inclusion(
+            row["name"],
+            str(f_sha),
+            {
+                "leaf_index": row.get("prev_leaf_index"),
+                "n_members": row.get("n_prev_members"),
+                "path": row.get("prev_path"),
+            },
+            prev_root,
+        ):
+            errors.append(f"changed_prev_path_invalid:{row['name']}")
+        if _verify_inclusion(
+            row["name"],
+            str(t_sha),
+            {
+                "leaf_index": row.get("next_leaf_index"),
+                "n_members": row.get("n_next_members"),
+                "path": row.get("next_path"),
+            },
+            next_root,
+        ):
+            errors.append(f"changed_next_path_invalid:{row['name']}")
+
+    def _rnames(rows: list[Any]) -> set[str]:
+        return {str(r.get("name")) for r in rows if isinstance(r, dict)}
+
+    a_names, r_names, c_names = _rnames(added), _rnames(removed), _rnames(changed)
+    if a_names & r_names or a_names & c_names or r_names & c_names:
+        errors.append("transition_sets_overlap")
+    if not isinstance(unchanged, int) or unchanged < 0:
+        errors.append("unchanged_count_bad")
+    else:
+        if len(r_names) + len(c_names) + unchanged != prev["n_members"]:
+            errors.append("prev_accounting")
+        if len(a_names) + len(c_names) + unchanged != nxt["n_members"]:
+            errors.append("next_accounting")
+    return sorted(set(errors))
+
+
+def audit_delta_live(delta: dict[str, Any], corpus_dir: Path) -> list[str]:
+    """Live replay of epoch_delta.v1 — mirrors verify_epoch_delta: both
+    epoch receipts are seal-authenticated and their member maps re-derived;
+    the declared transition table must equal the computed set difference
+    exactly (completeness — a dropped or invented row fails closed)."""
+    errors = audit_delta_shape(delta)
+    structural = {"epoch_blocks_missing", "transitions_missing", "transitions_malformed"}
+    if any(e in structural for e in errors):
+        return sorted(set(errors))
+    members: dict[str, dict[str, str]] = {}
+    for label in ("prev_epoch", "next_epoch"):
+        block = delta[label]
+        doc, err = _load_epoch_doc(corpus_dir, str(block["receipt"]))
+        if err is not None:
+            errors.append(f"{label}_{err}")
+            continue
+        assert doc is not None
+        if doc.get("epoch_root_sha256") != block.get("epoch_root_sha256"):
+            errors.append(f"{label}_root_mismatch")
+            continue
+        m = _epoch_members(doc)
+        if _member_map_sha(m) != block.get("member_map_sha256"):
+            errors.append(f"{label}_map_digest_mismatch")
+        if _merkle_root(m) != block.get("merkle_root"):
+            errors.append(f"{label}_merkle_mismatch")
+        members[label] = m
+    if "prev_epoch" not in members or "next_epoch" not in members:
+        return sorted(set(errors))
+    prev_m, next_m = members["prev_epoch"], members["next_epoch"]
+    names = set(prev_m) | set(next_m)
+    a_set = {n for n in names if n in next_m and n not in prev_m}
+    r_set = {n for n in names if n in prev_m and n not in next_m}
+    c_set = {
+        n: (prev_m[n], next_m[n])
+        for n in names
+        if n in prev_m and n in next_m and prev_m[n] != next_m[n]
+    }
+    unchanged = sum(1 for n in names if n in prev_m and n in next_m and prev_m[n] == next_m[n])
+    tr = delta["transitions"]
+
+    def _rnames(rows: list[Any]) -> set[str]:
+        return {str(r.get("name")) for r in rows if isinstance(r, dict)}
+
+    if _rnames(tr["added"]) != a_set:
+        errors.append("added_set_incomplete")
+    if _rnames(tr["removed"]) != r_set:
+        errors.append("removed_set_incomplete")
+    decl_c = {
+        str(r.get("name")): (str(r.get("from_sha256")), str(r.get("to_sha256")))
+        for r in tr["changed"]
+        if isinstance(r, dict)
+    }
+    if decl_c != c_set:
+        errors.append("changed_set_incomplete")
+    if tr.get("unchanged_count") != unchanged:
+        errors.append("unchanged_count_mismatch")
+    return sorted(set(errors))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--proof", type=Path, default=None, help="corpus_proof.v1 receipt")
@@ -920,6 +1097,12 @@ def main() -> int:
         type=Path,
         default=None,
         help="epoch_consistency.v1 proof (extension of a held head to the current head)",
+    )
+    ap.add_argument(
+        "--delta",
+        type=Path,
+        default=None,
+        help="epoch_delta.v1 receipt (completeness-verified epoch change-set)",
     )
     ap.add_argument(
         "--held",
@@ -957,11 +1140,18 @@ def main() -> int:
     )
     args = ap.parse_args()
     n_targets = sum(
-        x is not None for x in (args.proof, args.absence, args.history_absence, args.consistency)
+        x is not None
+        for x in (
+            args.proof,
+            args.absence,
+            args.history_absence,
+            args.consistency,
+            args.delta,
+        )
     )
     if n_targets != 1:
         print(
-            "pass exactly one of --proof/--absence/--history-absence/--consistency",
+            "pass exactly one of --proof/--absence/--history-absence/--consistency/--delta",
             file=sys.stderr,
         )
         return 2
@@ -1043,6 +1233,22 @@ def main() -> int:
         print(
             f"history-absence name={body.get('name')} "
             f"epochs={body.get('n_epochs')} -> {len(errors)} error(s)"
+        )
+    elif args.delta is not None:
+        payload = json.loads(args.delta.read_text())
+        body = payload.get("payload", payload)
+        errors = pre_errors
+        if live:
+            errors += audit_delta_live(body, live["dir"])
+        elif not pinned:
+            errors += audit_delta_shape(body)
+        else:
+            # Pin mode binds only the head — a delta's prev epoch may not
+            # be the current head; still run the self-contained shape pass.
+            errors += audit_delta_shape(body)
+        print(
+            f"delta prev={body.get('prev_epoch', {}).get('receipt')} "
+            f"next={body.get('next_epoch', {}).get('receipt')} -> {len(errors)} error(s)"
         )
     else:
         payload = json.loads(args.absence.read_text())

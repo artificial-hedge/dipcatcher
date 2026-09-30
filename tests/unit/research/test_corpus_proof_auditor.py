@@ -658,3 +658,63 @@ def test_script_consistency_live_and_pin(tmp_path: Path) -> None:
     proc = _run("--consistency", str(tp), "--pin", str(pin), "--key", key)
     assert proc.returncode == 1
     assert "consistency_to_not_pinned" in proc.stdout
+
+
+def _two_epoch_corpus(tmp_path: Path) -> tuple[Path, str, str]:
+    """Stamp genesis + one successor epoch; return (dir, prev, next)."""
+    from quant_fund.research.corpus_epoch import corpus_epoch, write_epoch_receipt
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    for name in ("a.json", "c.json", "e.json"):
+        (corpus / name).write_text(json.dumps({"v": name}))
+    prev = write_epoch_receipt(corpus_epoch(corpus), corpus).name
+    (corpus / "g.json").write_text(json.dumps({"v": "g"}))  # added
+    (corpus / "a.json").write_text(json.dumps({"v": "a2"}))  # changed
+    (corpus / "e.json").unlink()  # removed
+    nxt = write_epoch_receipt(corpus_epoch(corpus), corpus).name
+    return corpus, prev, nxt
+
+
+def test_script_delta_live_round_trip(tmp_path: Path) -> None:
+    """A library-emitted epoch_delta verifies clean under the script."""
+    from quant_fund.research.epoch_delta import epoch_delta_receipt
+
+    corpus, prev, nxt = _two_epoch_corpus(tmp_path)
+    body = epoch_delta_receipt(corpus, prev, nxt)
+    dp = tmp_path / "delta.json"
+    dp.write_text(json.dumps(body))
+    proc = _run("--delta", str(dp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "ok" in proc.stdout
+
+
+def test_script_delta_tamper_parity(tmp_path: Path) -> None:
+    """Script and library flag the same defect classes on a mutated delta."""
+    from quant_fund.research.epoch_delta import epoch_delta_receipt, verify_epoch_delta
+
+    corpus, prev, nxt = _two_epoch_corpus(tmp_path)
+    body = epoch_delta_receipt(corpus, prev, nxt)
+
+    # Dropped transition: remove the 'removed' row.
+    tampered = json.loads(json.dumps(body))
+    tampered["transitions"]["removed"] = []
+    lib = verify_epoch_delta(tampered, corpus)
+    assert "removed_set_incomplete" in lib and "prev_accounting" in lib
+    dp = tmp_path / "delta_tampered.json"
+    dp.write_text(json.dumps(tampered))
+    proc = _run("--delta", str(dp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "removed_set_incomplete" in proc.stdout
+    assert "prev_accounting" in proc.stdout
+
+    # Forged path: an added row with an empty path can't anchor.
+    forged = json.loads(json.dumps(body))
+    forged["transitions"]["added"][0]["path"] = []
+    lib = verify_epoch_delta(forged, corpus)
+    assert any(e.startswith("added_path_invalid") for e in lib)
+    fp = tmp_path / "delta_forged.json"
+    fp.write_text(json.dumps(forged))
+    proc = _run("--delta", str(fp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "path" in proc.stdout  # path_depth_mismatch or merkle_root_mismatch
