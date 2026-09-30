@@ -157,7 +157,13 @@ class TestReceipt:
         # tamper a field the honesty contract does not pin — a results-list
         # edit now fails the writer gate via n_rows_mismatch (9e6106d4)
         tampered = dict(receipt)
+<<<<<<< HEAD
         tampered["seed"] = receipt["seed"] + 1
+=======
+        # tamper a digest-bound field the contract leaves unconstrained —
+        # a contract-invalid receipt is refused outright (separate test).
+        tampered["seed"] = 999
+>>>>>>> origin/main
         p2 = write_capacity_receipt(tampered, tmp_path)
         assert p1 != p2 and p1.exists()
 

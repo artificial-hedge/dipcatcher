@@ -54,7 +54,7 @@ try:
     from quant_fund.pipeline.forecast import (
         market_risk_overlay_asof as _mro_asof,
     )
-except Exception:  # pragma: no cover - older lineage lacks the module
+except ImportError:  # pragma: no cover - older lineage lacks the module
     _mro_asof = None  # type: ignore[assignment]
 
 try:

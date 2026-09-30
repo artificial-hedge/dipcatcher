@@ -92,8 +92,14 @@ def test_label_aggregates_inputs(tmp_path: Path) -> None:
     assert rep2["data_label"] == "MIXED"
 
 
+<<<<<<< HEAD
 def test_strict_cli_gate(tmp_path: Path) -> None:
     """--strict exits nonzero on a corrupt or unsealed receipt, zero on sealed.
+=======
+def test_strict_cli_gate(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """--strict exits nonzero on a corrupt receipt, zero on sealed/legacy."""
+    import hashlib
+>>>>>>> origin/main
 
     KNOWN_UNSEALED is deliberately empty (the seven pre-seal artifacts moved
     to receipts/legacy-unsealed/): no unsealed file in the verified root is
@@ -123,14 +129,34 @@ def test_strict_cli_gate(tmp_path: Path) -> None:
     assert res.exit_code == 1
     assert "STRICT FAILURE" in res.output
 
+<<<<<<< HEAD
     # unsealed receipt → strict fails (empty allowlist: nothing exempts it)
     (tmp_path / "ok.json").unlink()
     (tmp_path / "legacy.json").write_bytes(b'{"kind": "legacy", "note": "pre-seal"}')
+=======
+    # byte-pinned legacy unsealed receipt → tolerated under strict; the
+    # committed allowlist drained once every receipt sealed, so pin a
+    # synthesized entry (the pin binds bytes, not membership by name).
+    (tmp_path / "ok.json").unlink()
+    body = b'{"kind": "legacy", "note": "pre-seal"}'
+    (tmp_path / "legacy_pinned.json").write_bytes(body)
+    monkeypatch.setitem(KNOWN_UNSEALED, "legacy_pinned.json", hashlib.sha256(body).hexdigest())
+    res = runner.invoke(
+        cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
+    )
+    assert res.exit_code == 0, res.output
+
+    # same name, wrong bytes → the pin covers content, not the filename
+    (tmp_path / "legacy_pinned.json").write_bytes(b'{"kind": "legacy", "note": "tampered"}')
+>>>>>>> origin/main
     res = runner.invoke(
         cli, ["suite-health", "--receipts-dir", str(tmp_path), "--out-dir", str(out), "--strict"]
     )
     assert res.exit_code == 1
+<<<<<<< HEAD
     assert "STRICT FAILURE" in res.output
+=======
+>>>>>>> origin/main
 
 
 def test_suite_health_receipt_v2_round_trip(tmp_path: Path) -> None:
