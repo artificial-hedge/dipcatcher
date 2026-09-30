@@ -60,7 +60,13 @@ OPTIONAL_MEMBERS = ("quality/gate_quorum.json",)
 # Optional members: the archived checkpoint records and every committed
 # Rekor proof. Carrying them lets this script verify the whole spine —
 # every historical pin state — not just the head checkpoint.
-SPINE_PREFIXES = ("quality/checkpoints/", "quality/witness/checkpoint.json_", "quality/rotation_")
+SPINE_PREFIXES = (
+    "quality/checkpoints/",
+    "quality/witness/checkpoint.json_",
+    "quality/rotation_",
+    "quality/quorum_rotations/",
+)
+QUORUM_ROTATION_PREFIX = "quality/quorum_rotations/"
 
 
 def _sha(b: bytes) -> bytes:
@@ -229,6 +235,175 @@ def _verify_rotations(
     return ring
 
 
+def _registered_map(registry: Any) -> tuple[dict[str, str], int]:
+    """(key_id -> pub, threshold) from a gate_quorum.v1 body.
+
+    Malformed bodies map to an impossible quorum so downstream signature
+    checks fail closed rather than crash.
+    """
+    try:
+        keys = registry["keys"]
+        threshold = int(registry["threshold"])
+        registered = {str(e["key_id"]): str(e["pubkey"]) for e in keys}
+        if threshold < 1 or threshold > len(registered):
+            raise ValueError
+        for kid, pub in registered.items():
+            if kid != _key_id(pub):
+                raise ValueError
+        return registered, threshold
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return {}, 10**9
+
+
+def _count_quorum_sigs(
+    signatures: Any,
+    registered: dict[str, str],
+    threshold: int,
+    payload: Any,
+    errors: list[str],
+    tag: str,
+) -> int:
+    """Count distinct valid Ed25519 signers over canonical payload bytes."""
+    if not isinstance(signatures, list) or not signatures:
+        errors.append(f"{tag}_signatures_missing")
+        return 0
+    valid: set[str] = set()
+    for entry in signatures:
+        if not isinstance(entry, dict):
+            errors.append(f"{tag}_signature_malformed")
+            continue
+        kid = str(entry.get("key_id", ""))
+        pub = registered.get(kid)
+        if pub is None:
+            errors.append(f"{tag}_signer_unknown:{kid}")
+            continue
+        if kid in valid:
+            continue  # a replayed signer cannot satisfy a quorum twice
+        if _ed25519_verify(pub, str(entry.get("signature", "")), _canon(payload)):
+            valid.add(kid)
+        else:
+            errors.append(f"{tag}_signature_invalid:{kid}")
+    if len(valid) < threshold:
+        errors.append(f"{tag}_below_quorum:{len(valid)}/{threshold}")
+    return len(valid)
+
+
+def _verify_quorum_rotations(
+    files: dict[str, str],
+    declared: dict[str, str],
+    ring: dict[str, str],
+    live_registry_digest: str | None,
+    records: dict[str, bytes],
+    spine: list[str],
+    errors: list[str],
+) -> tuple[dict[str, tuple[dict[str, str], int]], set[tuple[str, str]]]:
+    """quorum_rotation.v1 records: authorization + chain shape + era lineage.
+
+    A registry swap is only valid if a rotation record signed by the
+    OUTGOING quorum's threshold links the old digest to the new. Returns
+    ``(lineage, authorized_pairs)``: ``digest -> (registered, threshold)``
+    covering every registry the bundle can prove governed an era (live
+    plus embedded predecessors), and the ``(prev_digest, digest)`` edges
+    whose signatures actually reached the predecessor's threshold.
+    """
+    lineage: dict[str, tuple[dict[str, str], int]] = {}
+    # rel, payload, prev_d, new_d, n_valid, prev_threshold
+    recs: list[tuple[str, dict[str, Any], str, str, int, int]] = []
+    for rel, b64 in files.items():
+        if not rel.startswith(QUORUM_ROTATION_PREFIX) or not rel.endswith(".json"):
+            continue
+        try:
+            raw = base64.b64decode(b64)
+        except ValueError:
+            errors.append(f"quorum_rotation_malformed:{ascii(rel)}")
+            continue
+        if declared.get(rel) != _sha(raw).hex():
+            errors.append(f"files_sha256_mismatch:{rel}")
+            continue
+        try:
+            body = json.loads(raw)
+        except json.JSONDecodeError:
+            errors.append(f"quorum_rotation_malformed:{ascii(rel)}")
+            continue
+        payload = body.get("payload") if isinstance(body, dict) else None
+        if (
+            not isinstance(body, dict)
+            or body.get("schema") != "quorum_rotation.v1"
+            or not isinstance(payload, dict)
+        ):
+            errors.append(f"quorum_rotation_malformed:{ascii(rel)}")
+            continue
+        prev_reg = payload.get("prev_registry")
+        new_reg = payload.get("registry")
+        if not isinstance(prev_reg, dict) or not isinstance(new_reg, dict):
+            errors.append(f"quorum_rotation_malformed:{ascii(rel)}")
+            continue
+        prev_d = payload.get("prev_registry_sha256")
+        new_d = payload.get("registry_sha256")
+        if prev_d != _registry_sha256(prev_reg):
+            errors.append(f"quorum_rotation_prev_digest_mismatch:{ascii(rel)}")
+            continue
+        if new_d != _registry_sha256(new_reg):
+            errors.append(f"quorum_rotation_digest_mismatch:{ascii(rel)}")
+            continue
+        # Authorization: distinct valid signers under the PREDECESSOR registry.
+        registered, threshold = _registered_map(prev_reg)
+        n_valid = _count_quorum_sigs(
+            body.get("signatures"), registered, threshold, payload, errors, "rotation"
+        )
+        recs.append((rel, payload, str(prev_d), str(new_d), n_valid, threshold))
+        lineage.setdefault(str(prev_d), _registered_map(prev_reg))
+        lineage.setdefault(str(new_d), _registered_map(new_reg))
+
+    # Chain shape: no two records may extend the same predecessor (fork), no
+    # record may loop (cycle), and there must be a single root (a record
+    # whose predecessor no other record produced) — else grafted chains
+    # sit beside the real one undetected.
+    by_prev: dict[str, list[str]] = {}
+    for rel, _p, prev_d, new_d, _n, _t in recs:
+        if prev_d == new_d:
+            errors.append(f"quorum_rotation_cycle:{ascii(rel)}")
+        by_prev.setdefault(prev_d, []).append(rel)
+    for prev_d, group in by_prev.items():
+        if len(group) > 1:
+            errors.append(f"quorum_rotation_fork:{prev_d[:16]}")
+    new_digests = {new_d for _r, _p, _pd, new_d, _n, _t in recs}
+    roots = [r for r, _p, prev_d, _nd, _n, _t in recs if prev_d not in new_digests]
+    if len(roots) > 1:
+        errors.append(f"quorum_rotation_chain_ambiguous:{len(roots)}")
+    # Terminus: the chain tip (a new_digest nobody extends) must be the live
+    # registry's canonical digest — else the live file was swapped after the
+    # last authorized rotation.
+    tips = sorted(new_digests - set(by_prev))
+    if live_registry_digest is not None and tips and live_registry_digest not in tips:
+        errors.append("quorum_registry_not_terminus")
+    # Genesis anchor: the root record's predecessor registry must have
+    # actually governed — it appears as a spine record's claimed era, or
+    # shares a key_id with the v1 signer ring.
+    spine_eras: set[str] = set()
+    for digest in spine:
+        raw = records.get(digest)
+        if raw is None:
+            continue
+        try:
+            payload = json.loads(raw).get("payload") or {}
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        quorum = payload.get("quorum")
+        if isinstance(quorum, dict) and isinstance(quorum.get("registry_sha256"), str):
+            spine_eras.add(str(quorum["registry_sha256"]))
+    for rel, _p, prev_d, _nd, _n, _t in recs:
+        if prev_d in new_digests:
+            continue  # non-root
+        if prev_d in spine_eras:
+            continue  # a spine record claimed this era
+        anchored = bool(set(lineage.get(prev_d, ({}, 0))[0]) & set(ring))
+        if not anchored:
+            errors.append(f"quorum_rotation_unanchored:{ascii(rel)}")
+    authorized = {(prev_d, new_d) for _r, _p, prev_d, new_d, n, threshold in recs if n >= threshold}
+    return lineage, authorized
+
+
 def _verify_spine(
     files: dict[str, str],
     declared: dict[str, str],
@@ -317,9 +492,11 @@ def _verify_spine(
         cur = prev
 
     # A committed quorum registry retires the v1 single-signer envelope:
-    # v2 records resolve every signature's key_id through it and must reach
-    # its threshold with distinct registered signers.
+    # v2 records resolve every signature's key_id through the registry era
+    # their payload claims — the live registry plus every predecessor a
+    # quorum_rotation.v1 record can authenticate.
     quorum: tuple[dict[str, str], int] | None = None
+    live_registry_digest: str | None = None
     qraw = files.get("quality/gate_quorum.json")
     if qraw is not None:
         try:
@@ -329,12 +506,26 @@ def _verify_spine(
                 {str(e["key_id"]): str(e["pubkey"]) for e in qkeys},
                 int(registry["threshold"]),
             )
+            live_registry_digest = _registry_sha256(registry)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             errors.append("quorum_registry_malformed")
             quorum = ({}, 10**9)
 
     # Every record's signature under the key authorized in its era.
     ring = _verify_rotations(files, declared, gate_pub_hex, records, errors)
+    lineage, authorized_rots = _verify_quorum_rotations(
+        files, declared, ring, live_registry_digest, records, spine, errors
+    )
+    if quorum is not None and live_registry_digest is not None:
+        lineage.setdefault(live_registry_digest, quorum)
+
+    # Per-record era claims for the continuity pass below: v2 records claim
+    # a registry digest in payload.quorum; v1 records claim nothing (their
+    # era is the key-rotation ring). signers_of keeps the record's signer
+    # key_ids — the v1 key_id or a v2 signatures list — for the
+    # genesis-continuity member-overlap check.
+    era_of: dict[str, str | None] = {}
+    signers_of: dict[str, set[str]] = {}
     for digest, raw in records.items():
         try:
             body = json.loads(raw)
@@ -342,10 +533,36 @@ def _verify_spine(
             errors.append(f"spine_malformed:{digest[:12]}")
             continue
         if body.get("schema") == "integrity_checkpoint_sig.v2":
+            claimed = None
+            qp = body.get("payload")
+            if isinstance(qp, dict):
+                q = qp.get("quorum")
+                if isinstance(q, dict):
+                    claimed = q.get("registry_sha256")
+            era_of[digest] = claimed if isinstance(claimed, str) else None
+            sig_list = body.get("signatures")
+            signers_of[digest] = {
+                str(e.get("key_id", ""))
+                for e in (sig_list if isinstance(sig_list, list) else [])
+                if isinstance(e, dict) and e.get("key_id")
+            }
             if quorum is None:
                 errors.append(f"spine_quorum_registry_missing:{digest[:12]}")
                 continue
-            registered, threshold = quorum
+            # v2 records minted before the quorum field exist: they claim no
+            # era and resolve under the LIVE registry (the era that signed
+            # them); the continuity pass treats them as era=None.
+            if claimed is None:
+                registered, threshold = quorum
+            else:
+                if not isinstance(claimed, str) or len(claimed) != 64:
+                    errors.append(f"spine_quorum_unbound:{digest[:12]}")
+                    continue
+                era = lineage.get(claimed)
+                if era is None:
+                    errors.append(f"spine_quorum_registry_unknown:{claimed[:16]}")
+                    continue
+                registered, threshold = era
             sigs = body.get("signatures")
             if not isinstance(sigs, list) or not sigs:
                 errors.append(f"spine_quorum_signatures_missing:{digest[:12]}")
@@ -370,6 +587,8 @@ def _verify_spine(
                 errors.append(f"spine_quorum_below:{digest[:12]}:{len(valid)}/{threshold}")
             continue
         kid = str(body.get("key_id", ""))
+        era_of[digest] = None
+        signers_of[digest] = {kid} if kid else set()
         pub = ring.get(kid)
         if pub is None:
             errors.append(f"spine_signature_key_unknown:{digest[:12]}")
@@ -399,6 +618,24 @@ def _verify_spine(
     for parent, child in zip(ordered, ordered[1:], strict=False):  # adjacent pairs
         if parent in witnessed and child in witnessed and witnessed[child] <= witnessed[parent]:
             errors.append(f"spine_rekor_order:{child[:12]}")
+
+    # Quorum era continuity: every registry-digest change along the spine
+    # must be backed by a quorum_rotation.v1 record the OUTGOING registry's
+    # threshold authorized. A registry swapped in without a rotation fails
+    # here even when every record self-verifies under its own era.
+    for parent, child in zip(ordered, ordered[1:], strict=False):
+        pd, cd = era_of.get(parent), era_of.get(child)
+        if pd == cd or cd is None:
+            continue
+        if pd is None:
+            # v1 -> v2 transition (or a pre-field v2 parent): the child's
+            # registry must contain one of the parent's signers — registry
+            # introduction requires member overlap with the prior era.
+            if not (signers_of.get(parent, set()) & set(lineage.get(cd, ({}, 0))[0])):
+                errors.append(f"spine_quorum_genesis_discontinuous:{child[:12]}")
+            continue
+        if (pd, cd) not in authorized_rots:
+            errors.append(f"spine_quorum_unauthorized:{child[:12]}")
 
     # Witnessed-but-absent digests: grandfather pre-retention history
     # (integrated before the earliest recorded proof), flag the rest.

@@ -65,6 +65,10 @@ SPINE_PREFIXES: tuple[str, ...] = (
     # Gate-key rotation records ride the bundle so an auditor can verify
     # the key lineage (retired keys still verify their era's checkpoints).
     "quality/rotation_",
+    # Quorum-rotation records let the auditor verify registry eras: without
+    # them a post-rotation bundle fails era signature resolution, and a
+    # swapped registry can't be told apart from an authorized rotation.
+    "quality/quorum_rotations/",
 )
 
 
@@ -111,6 +115,8 @@ def build_bundle(root: str | Path, out: str | Path) -> Path:
         members.append(f"quality/witness/{sub.name}")
     for sub in sorted(root_path.glob("quality/rotation_*.json")):
         members.append(f"quality/{sub.name}")
+    for sub in sorted((root_path / "quality/quorum_rotations").glob("rotation_*.json")):
+        members.append(f"quality/quorum_rotations/{sub.name}")
     files = {rel: base64.b64encode((root_path / rel).read_bytes()).decode() for rel in members}
     bundle = {
         "schema": BUNDLE_SCHEMA,
@@ -281,6 +287,14 @@ def verify_bundle(
             rot = verify_rotations(tmp_root)
             for e in rot.get("errors", []):
                 errors.append(f"rotation:{e}")
+
+            quorum_rot_rels = [r for r in decoded if r.startswith("quality/quorum_rotations/")]
+            if quorum_rot_rels:
+                from quant_fund.research.quorum_rotation import verify_quorum_rotations
+
+                qres = verify_quorum_rotations(tmp_root)
+                for e in qres.get("errors", []):
+                    errors.append(f"quorum_rotation:{e}")
 
         # The decisive link: the key REKOR recorded as signer must equal
         # the bundled witness pubkey — the log authenticates our key.
