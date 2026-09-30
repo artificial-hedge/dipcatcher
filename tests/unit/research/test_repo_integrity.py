@@ -206,23 +206,11 @@ def test_repo_integrity_contract_catches_forged_ok(tmp_path: Path) -> None:
 def test_verify_repo_evidence_only_bundle(tmp_path: Path) -> None:
     """An evidence bundle (5 evidence dirs + gate_pins.sig, no src/, no
     .git) verifies under evidence_only and honestly skips crown_jewels."""
-    import shutil
-
     full = _git_repo(tmp_path)
     bundle = tmp_path / "bundle"
-    bundle.mkdir()
-    for d in (
-        "receipts",
-        "verifier",
-        "quality",
-        "configs",
-        "artifacts",
-        ".dsh-24x7",
-        "data/metadata",
-    ):
-        shutil.copytree(full / d, bundle / d)
-    shutil.copytree(full / ".github", bundle / ".github")
-    shutil.copy2(full / "gate_pins.sig", bundle / "gate_pins.sig")
+    from quant_fund.research.evidence_export import export_evidence_bundle
+
+    export_evidence_bundle(full, bundle)
 
     res = verify_repo(bundle, evidence_only=True)
     assert res["ok"], res

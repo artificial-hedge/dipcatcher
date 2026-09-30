@@ -451,3 +451,108 @@ def test_script_history_absence_checkpoint_quorum(tmp_path: Path) -> None:
     )
     assert proc2.returncode == 1
     assert "pubkey_not_in_quorum" in proc2.stdout
+
+
+def test_script_history_absence_live(tmp_path: Path) -> None:
+    """--corpus-dir replays the full chain without any pin; a member that
+    was present mid-chain (then removed) must surface via lib emission
+    refusal, and a forged interior link must break the walk's compare."""
+    corpus, epoch, fx, key = _history_fixture(tmp_path)
+    hp = tmp_path / "ha.json"
+    hp.write_text(json.dumps(fx["body"]))
+
+    proc = _run("--history-absence", str(hp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    # Layered: live corpus + pin agree.
+    pin = tmp_path / "pin.json"
+    pin.write_text(json.dumps({"heads": {key: fx["entry"]}}))
+    proc = _run(
+        "--history-absence",
+        str(hp),
+        "--corpus-dir",
+        str(corpus),
+        "--pin",
+        str(pin),
+        "--key",
+        key,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    # Interior tamper: break the prev_root link — the shape layer's link
+    # check catches it before the corpus walk even runs.
+    bad = dict(fx["body"])
+    bad["epochs"] = [dict(e) for e in fx["body"]["epochs"]]
+    bad["epochs"][1]["prev_root"] = "0" * 64
+    bp = tmp_path / "ha_link.json"
+    bp.write_text(json.dumps(bad))
+    proc = _run("--history-absence", str(bp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "history_link_broken:1" in proc.stdout
+
+    # Name that IS a member at epoch 1 claims absence — live member scan fires.
+    memb = dict(fx["body"], name="a.json")
+    mp = tmp_path / "ha_member.json"
+    mp.write_text(json.dumps(memb))
+    proc = _run("--history-absence", str(mp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "history_member_present" in proc.stdout
+
+    # Squatter epoch file kills the chain — unverifiable, never partial-ok.
+    (corpus / "corpus_epoch_deadbeef00.json").write_text("{not json")
+    proc = _run("--history-absence", str(hp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "history_chain_unverifiable" in proc.stdout
+
+
+def test_script_live_modes_for_proof_and_absence(tmp_path: Path) -> None:
+    """--corpus-dir also replays corpus_proof.v1 and corpus_absence.v1:
+    member map + merkle root recomputed from the named epoch receipt."""
+    from quant_fund.research.corpus_epoch import corpus_epoch, write_epoch_receipt
+    from quant_fund.research.epoch_merkle import absence_receipt, member_proof
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    for name in ("a.json", "c.json", "e.json"):
+        (corpus / name).write_text(json.dumps({"v": name}))
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+
+    # inclusion: real proof verifies live; forged digest fails member map.
+    body = member_proof(corpus, "c.json")
+    pp = tmp_path / "p.json"
+    pp.write_text(json.dumps(seal_receipt(body)))
+    proc = _run("--proof", str(pp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    # Forged digest fails at the shape layer — the leaf can't recompute the
+    # root (same order as the lib: inclusion replay inside the shape check).
+    forged = dict(body, member_sha256="0" * 64)
+    fp = tmp_path / "pf.json"
+    fp.write_text(json.dumps(forged))
+    proc = _run("--proof", str(fp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "merkle_root_mismatch" in proc.stdout
+
+    # A member-map-level forgery the path replay can't see: same leaf sha,
+    # wrong claimed n_members — the epoch's real map is authoritative.
+    forged_n = dict(body, n_members=body["n_members"] + 1)
+    np_ = tmp_path / "pn.json"
+    np_.write_text(json.dumps(forged_n))
+    proc = _run("--proof", str(np_), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "n_members_mismatch" in proc.stdout
+
+    # absence: a true absent name verifies; claiming a member fails.
+    ab = absence_receipt(corpus, "zz.json")
+    ap = tmp_path / "a.json"
+    ap.write_text(json.dumps(ab))
+    proc = _run("--absence", str(ap), "--corpus-dir", str(corpus))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    lying = dict(ab, name="a.json")
+    lp = tmp_path / "af.json"
+    lp.write_text(json.dumps(lying))
+    proc = _run("--absence", str(lp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "name_is_member" in proc.stdout

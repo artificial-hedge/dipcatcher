@@ -4,7 +4,10 @@
 Independent reimplementation of ``quant_fund.research.epoch_merkle`` for
 third-party auditors who hold ONLY the committed heads pin
 (``quality/epoch_heads.json`` — quorum-signed via ``gate_pins.sig`` and
-OTS-anchored to Bitcoin). No repo access, no library import.
+OTS-anchored to Bitcoin). No repo access, no library import required —
+``--corpus-dir`` additionally replays proofs against a live corpus
+(checkpoint-authenticated or not), making this script a full differential
+oracle for the library's own verifier.
 
     python3 scripts/verify_corpus_proof.py \
         --proof corpus_proof_XXXX.json \
@@ -71,8 +74,13 @@ def _sha(b: bytes) -> bytes:
 
 
 def _canon(value: Any) -> bytes:
-    """canonical_json_bytes equivalent for plain JSON types."""
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    """utils.hashing.canonical_json_bytes equivalent for plain JSON inputs:
+    sorted keys, tight separators, UTF-8 (ensure_ascii=False), no NaN.
+    ``_canonicalize`` is the identity on already-parsed JSON values, which
+    is all this script ever serializes."""
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
 
 
 def _leaf_hash(name: str, sha256: str) -> bytes:
@@ -421,16 +429,10 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
     return sorted(set(errors))
 
 
-def audit_history_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -> list[str]:
-    """corpus_history_absence.v1 — pin-mode structural + head binding.
-
-    Offline scope (pin only, no corpus): the claimed chain head must equal
-    the pinned head (a proof stopping early would hide later membership),
-    the epoch list must be internally coherent (n_epochs == len, head ==
-    last entry, every entry well-formed), and the claimed name NFC-portable.
-    Mid-chain member-map absence itself requires corpus access — this mode
-    authenticates the *envelope*; the lib verifier does the full replay.
-    """
+def _history_shape_errors(proof: dict[str, Any]) -> list[str]:
+    """Envelope-only checks for corpus_history_absence.v1 — no pin, no
+    corpus. Name portability, epoch-entry shapes, prev_root genesis rule,
+    interior link coherence, n_epochs/head self-consistency."""
     errors: list[str] = []
     name = proof.get("name")
     if not isinstance(name, str) or not name:
@@ -480,6 +482,21 @@ def audit_history_absence(proof: dict[str, Any], pin: dict[str, Any], key: str |
             errors.append("head_receipt_mismatch")
         if proof.get("head_sha256") != epochs[-1].get("sha256"):
             errors.append("head_sha256_mismatch")
+    return sorted(set(errors))
+
+
+def audit_history_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -> list[str]:
+    """corpus_history_absence.v1 — pin-mode structural + head binding.
+
+    Offline scope (pin only, no corpus): the claimed chain head must equal
+    the pinned head (a proof stopping early would hide later membership),
+    the epoch list must be internally coherent (n_epochs == len, head ==
+    last entry, every entry well-formed, interior prev_root links intact),
+    and the claimed name NFC-portable. Mid-chain member-map absence itself
+    requires corpus access — this mode authenticates the *envelope*; the
+    lib verifier (or ``--corpus-dir``) does the full replay.
+    """
+    errors = _history_shape_errors(proof)
     head = proof.get("head_receipt")
     if isinstance(head, str):
         k, entry, err = _pin_entry(pin, key, head)
@@ -495,6 +512,252 @@ def audit_history_absence(proof: dict[str, Any], pin: dict[str, Any], key: str |
             elif entry.get("sha256") != proof.get("head_sha256"):
                 errors.append("history_head_digest_drift")
     return sorted(set(errors))
+
+
+def _epoch_members(doc: dict[str, Any]) -> dict[str, str]:
+    """`members` list → {name: sha256}; malformed entries drop out —
+    mirrors corpus_epoch._member_maps."""
+    out: dict[str, str] = {}
+    for entry in doc.get("members") or []:
+        if isinstance(entry, dict):
+            name, sha = entry.get("name"), entry.get("sha256")
+            if isinstance(name, str) and isinstance(sha, str):
+                out[name] = sha
+    return out
+
+
+def _load_epoch_doc(corpus_dir: Path, name: str) -> tuple[dict[str, Any] | None, str | None]:
+    """Seal-authenticate one corpus_epoch_<sha16>.json — mirrors
+    epoch_merkle._load_epoch_receipt."""
+    path = corpus_dir / name
+    if not path.is_file():
+        return None, "epoch_receipt_missing"
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, "epoch_receipt_unparseable"
+    if not isinstance(doc, dict):
+        return None, "epoch_receipt_unparseable"
+    seal = doc.get("receipt_sha256")
+    if not isinstance(seal, str) or len(seal) != 64:
+        return None, "epoch_receipt_unsealed"
+    body = {k: v for k, v in doc.items() if k != "receipt_sha256"}
+    if hashlib.sha256(_canon(body)).hexdigest() != seal:
+        return None, "epoch_receipt_tampered"
+    if path.name != f"corpus_epoch_{seal[:16]}.json":
+        return None, "epoch_receipt_name_mismatch"
+    return doc, None
+
+
+def _ordered_chain(
+    corpus_dir: Path, pattern: str
+) -> tuple[list[tuple[str, str, str, str | None, dict[str, str]]], list[str]]:
+    """Genesis→head chain for one corpus dir — independent reimplementation
+    of epoch_merkle.ordered_epoch_chain (squatters, unauth receipts,
+    orphans, forks, multi-genesis/head all fail closed)."""
+    errors: list[str] = []
+    by_name: dict[str, tuple[str, dict[str, Any]]] = {}
+    for path in sorted(corpus_dir.glob("*.json")):
+        if not path.is_file():
+            continue
+        try:
+            doc = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError):
+            if path.name.startswith("corpus_epoch_"):
+                errors.append(f"epoch_prefix_squat:{path.name}")
+            continue
+        inner = doc.get("payload") if isinstance(doc, dict) else None
+        cand = inner if isinstance(inner, dict) else doc
+        if not (
+            isinstance(cand, dict)
+            and (cand.get("schema") == "corpus_epoch.v1" or cand.get("kind") == "corpus_epoch.v1")
+        ):
+            if path.name.startswith("corpus_epoch_"):
+                errors.append(f"epoch_prefix_squat:{path.name}")
+            continue
+        params = cand.get("params")
+        pat = params.get("pattern", "*.json") if isinstance(params, dict) else "*.json"
+        if pat != pattern:
+            continue
+        loaded, err = _load_epoch_doc(corpus_dir, path.name)
+        if err is not None:
+            errors.append(f"{err}:{path.name}")
+            continue
+        assert loaded is not None
+        by_name[path.name] = (hashlib.sha256(path.read_bytes()).hexdigest(), loaded)
+
+    child_of: dict[str, str] = {}
+    genesis: list[str] = []
+    for name, (_, rec) in by_name.items():
+        prev = rec.get("prev_epoch_receipt")
+        if prev is None:
+            genesis.append(name)
+            continue
+        if prev not in by_name:
+            errors.append(f"epoch_orphan:{name}")
+            continue
+        if rec.get("prev_epoch_sha256") != by_name[prev][1].get("epoch_root_sha256"):
+            errors.append(f"epoch_prev_root_mismatch:{name}")
+        if prev in child_of:
+            errors.append(f"epoch_fork:{prev}")
+        else:
+            child_of[prev] = name
+    if len(genesis) != 1:
+        errors.append(f"epoch_genesis_count:{len(genesis)}")
+
+    ordered: list[tuple[str, str, str, str | None, dict[str, str]]] = []
+    seen: set[str] = set()
+    cur = genesis[0] if len(genesis) == 1 else None
+    while cur is not None and cur in by_name and cur not in seen:
+        seen.add(cur)
+        file_sha, rec = by_name[cur]
+        root_hex = rec.get("epoch_root_sha256")
+        prev_hex = rec.get("prev_epoch_sha256")
+        ordered.append(
+            (
+                cur,
+                file_sha,
+                root_hex if isinstance(root_hex, str) else "",
+                prev_hex if isinstance(prev_hex, str) else None,
+                _epoch_members(rec),
+            )
+        )
+        cur = child_of.get(cur)
+    if len(ordered) != len(by_name):
+        errors.append(f"epoch_chain_disconnected:{len(ordered)}/{len(by_name)}")
+    return ordered, sorted(set(errors))
+
+
+def _merkle_root(members: dict[str, str]) -> str:
+    """Recompute the epoch member root — sorted-name leaf tree with
+    odd-node promotion, mirrors epoch_merkle.merkle_root."""
+    leaves = [_leaf_hash(n, s) for n, s in sorted(members.items())]
+    if not leaves:
+        return hashlib.sha256(b"").hexdigest()
+    level = leaves
+    while len(level) > 1:
+        nxt = []
+        for i in range(0, len(level) - 1, 2):
+            nxt.append(_node_hash(level[i], level[i + 1]))
+        if len(level) % 2:
+            nxt.append(level[-1])
+        level = nxt
+    return level[0].hex()
+
+
+def audit_proof_shape(proof: dict[str, Any]) -> list[str]:
+    """corpus_proof.v1 shape — mirrors corpus_proof_errors (kind/schema,
+    honesty stamps, member/sha/root/merkle fields, index bounds, path
+    replay). Independent of any pin."""
+    errors: list[str] = []
+    if proof.get("kind") != "corpus_proof.v1":
+        errors.append("kind_not_corpus_proof")
+    if proof.get("schema") != "corpus_proof.v1":
+        errors.append("schema_not_corpus_proof")
+    if proof.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if proof.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    member = proof.get("member")
+    sha = proof.get("member_sha256")
+    if not isinstance(member, str) or not member:
+        errors.append("member_not_str")
+    elif unicodedata.normalize("NFC", member) != member:
+        errors.append("member_name_not_nfc")
+    elif not _portable(member):
+        errors.append("member_name_not_portable")
+    if not (isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha)):
+        errors.append("member_sha256_not_hex")
+    if not (
+        isinstance(proof.get("epoch_root_sha256"), str) and len(proof["epoch_root_sha256"]) == 64
+    ):
+        errors.append("epoch_root_sha256")
+    if not (isinstance(proof.get("merkle_root"), str) and len(proof["merkle_root"]) == 64):
+        errors.append("merkle_root")
+    idx, n, path = proof.get("leaf_index"), proof.get("n_members"), proof.get("path")
+    if not isinstance(idx, int) or not isinstance(n, int) or idx < 0 or idx >= n:
+        errors.append("leaf_index_bounds")
+    if not isinstance(path, list) or not all(
+        isinstance(e, dict) and e.get("side") in ("left", "right") for e in path
+    ):
+        errors.append("path_malformed")
+    elif (
+        not errors
+        and isinstance(member, str)
+        and isinstance(sha, str)
+        and isinstance(proof.get("merkle_root"), str)
+    ):
+        errors += _verify_inclusion(member, sha, proof, proof["merkle_root"])
+    return sorted(set(errors))
+
+
+def audit_proof_live(proof: dict[str, Any], corpus_dir: Path) -> list[str]:
+    """Live replay of corpus_proof.v1 — mirrors verify_epoch_proof."""
+    errors = audit_proof_shape(proof)
+    if errors:
+        return errors
+    receipt, err = _load_epoch_doc(corpus_dir, str(proof["epoch_receipt"]))
+    if err is not None:
+        return [err]
+    assert receipt is not None
+    if receipt.get("epoch_root_sha256") != proof["epoch_root_sha256"]:
+        return ["epoch_root_mismatch"]
+    members = _epoch_members(receipt)
+    if members.get(str(proof["member"])) != proof["member_sha256"]:
+        return ["member_digest_mismatch"]
+    if proof["n_members"] != len(members):
+        return ["n_members_mismatch"]
+    if _merkle_root(members) != proof["merkle_root"]:
+        return ["merkle_root_mismatch"]
+    return []
+
+
+def audit_absence_live(proof: dict[str, Any], corpus_dir: Path) -> list[str]:
+    """Live replay of corpus_absence.v1 — mirrors verify_epoch_absence."""
+    name = proof.get("name")
+    if not isinstance(name, str) or not name:
+        return ["name_missing"]
+    if not isinstance(proof.get("epoch_receipt"), str):
+        return ["epoch_binding_malformed"]
+    receipt, err = _load_epoch_doc(corpus_dir, str(proof["epoch_receipt"]))
+    if err is not None:
+        return [err]
+    assert receipt is not None
+    if receipt.get("epoch_root_sha256") != proof.get("epoch_root_sha256"):
+        return ["epoch_root_mismatch"]
+    members = _epoch_members(receipt)
+    if name in members:
+        return ["name_is_member"]
+    if proof.get("n_members") != len(members):
+        return ["n_members_mismatch"]
+    if _merkle_root(members) != proof.get("merkle_root"):
+        return ["merkle_root_mismatch"]
+    return []
+
+
+def audit_history_absence_live(proof: dict[str, Any], corpus_dir: Path) -> list[str]:
+    """Live replay of corpus_history_absence.v1 — mirrors
+    verify_history_absence: full re-walk + exact sequence + member scan."""
+    errors = _history_shape_errors(proof)
+    if errors:
+        return errors
+    key = proof.get("corpus_key")
+    pattern = key.rsplit("/", 1)[-1] if isinstance(key, str) and "/" in key else "*.json"
+    ordered, chain_errors = _ordered_chain(corpus_dir, pattern)
+    if chain_errors:
+        return [f"history_chain_unverifiable:{chain_errors[0]}"]
+    claimed = [
+        (e.get("receipt"), e.get("sha256"), e.get("epoch_root_sha256"), e.get("prev_root"))
+        for e in proof["epochs"]
+        if isinstance(e, dict)
+    ]
+    actual = [(n, sha, r, p) for n, sha, r, p, _ in ordered]
+    if claimed != actual:
+        return ["history_chain_mismatch"]
+    for n, _, _, _, members in ordered:
+        if proof["name"] in members:
+            return [f"history_member_present:{n}"]
+    return []
 
 
 def main() -> int:
@@ -527,13 +790,20 @@ def main() -> int:
         default=None,
         help="gate_quorum.v1 registry — v2 checkpoints resolve signers against it",
     )
+    ap.add_argument(
+        "--corpus-dir",
+        type=Path,
+        default=None,
+        help="live corpus dir — replays the proof against real epoch receipts "
+        "(combinable with --pin/--checkpoint for layered assurance)",
+    )
     args = ap.parse_args()
     n_targets = sum(x is not None for x in (args.proof, args.absence, args.history_absence))
     if n_targets != 1:
         print("pass exactly one of --proof/--absence/--history-absence", file=sys.stderr)
         return 2
-    if args.pin is None and args.checkpoint is None:
-        print("pass --pin and/or --checkpoint", file=sys.stderr)
+    if args.pin is None and args.checkpoint is None and args.corpus_dir is None:
+        print("pass --pin, --checkpoint, and/or --corpus-dir", file=sys.stderr)
         return 2
     if args.checkpoint is not None and args.pubkey is None:
         print("--checkpoint requires --pubkey", file=sys.stderr)
@@ -563,16 +833,28 @@ def main() -> int:
         pin_heads = {}
 
     pin = {"heads": pin_heads}
+    live: dict[str, Any] = {}
+    if args.corpus_dir is not None:
+        live["dir"] = args.corpus_dir
+    pinned = args.pin is not None or args.checkpoint is not None
     if args.proof is not None:
         payload = json.loads(args.proof.read_text())
         # sealed receipts may wrap the body under 'payload'
         body = payload.get("payload", payload)
-        errors = pre_errors + audit_proof(body, pin, args.key)
+        errors = pre_errors
+        if pinned:
+            errors += audit_proof(body, pin, args.key)
+        if live:
+            errors += audit_proof_live(body, live["dir"])
         print(f"inclusion member={body.get('member')} -> {len(errors)} error(s)")
     elif args.history_absence is not None:
         payload = json.loads(args.history_absence.read_text())
         body = payload.get("payload", payload)
-        errors = pre_errors + audit_history_absence(body, pin, args.key)
+        errors = pre_errors
+        if pinned:
+            errors += audit_history_absence(body, pin, args.key)
+        if live:
+            errors += audit_history_absence_live(body, live["dir"])
         print(
             f"history-absence name={body.get('name')} "
             f"epochs={body.get('n_epochs')} -> {len(errors)} error(s)"
@@ -582,7 +864,11 @@ def main() -> int:
         # sealed corpus_absence.v1 receipts wrap the body under 'payload';
         # raw library absence_proof() dicts pass through unchanged.
         body = payload.get("payload", payload)
-        errors = pre_errors + audit_absence(body, pin, args.key)
+        errors = pre_errors
+        if pinned:
+            errors += audit_absence(body, pin, args.key)
+        if live:
+            errors += audit_absence_live(body, live["dir"])
         print(f"absence name={body.get('name')} -> {len(errors)} error(s)")
     for e in errors:
         print(f"  {e}")
