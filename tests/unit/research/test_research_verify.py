@@ -350,6 +350,95 @@ def test_verify_research_artifact_rejects_negative_p_value(tmp_path: Path) -> No
     assert "invalid_hypothesis_p_value:0" in result["errors"]
 
 
+def test_verify_research_artifact_accepts_unit_p_value_boundary(tmp_path: Path) -> None:
+    """p_value=1.0 is the legal upper boundary (mutation-testing find: the
+    ``numeric <= 1.0`` upper bound was untested for acceptance — a LtE->Lt
+    mutant of the SECOND comparison on the line survived the suite)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["hypotheses"] = [
+        {
+            "id": "H1",
+            "statement": "x",
+            "test": "test",
+            "statistic": 0.0,
+            "p_value": 1.0,
+            "reject_raw": False,
+            "reject_fdr": False,
+            "decision": "x",
+            "family": "calibration",
+        }
+    ]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert "invalid_hypothesis_p_value:0" not in result["errors"]
+
+
+def test_verify_research_artifact_rejects_empty_families_dict(tmp_path: Path) -> None:
+    """An empty families dict must flag families_missing (mutation find: the
+    ``or not families`` arm of the isinstance-or-empty guard was untested —
+    an Or->And mutant survived)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["families"] = {}
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "families_missing" in result["errors"]
+
+
+def test_verify_research_artifact_accepts_integral_ranker_fields(tmp_path: Path) -> None:
+    """Integer-valued ranker fields are valid (mutation find: the
+    ``int(value) != float(value)`` integrality check had no ACCEPTING test —
+    a NotEq->Eq mutant survived because the base receipt's rankers list is
+    empty and the only int-field test used -1)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["rankers"] = [{"name": "ridge", "n_dates": 10, "n_folds": 5}]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert not any(e.startswith("invalid_ranker") for e in result["errors"])
+
+
+def test_verify_research_artifact_accepts_zero_ranker_count(tmp_path: Path) -> None:
+    """n_dates=0 is non-negative and must pass the ``int(value) < 0`` guard
+    (mutation find: an int 0->1 perturbation of the bound survived — no test
+    exercised a zero-valued ranker count)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["rankers"] = [{"name": "ridge", "n_dates": 0}]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert not any(e.startswith("invalid_ranker") for e in result["errors"])
+
+
+def test_verify_research_artifact_rejects_non_string_package_version(tmp_path: Path) -> None:
+    """A non-string package VERSION must flag runtime_packages_invalid
+    (mutation find: the value-side ``or not value`` arm was untested — an
+    Or->And mutant survived since no test used a truthy non-string value)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["runtime"]["packages"]["numpy"] = 42
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "runtime_packages_invalid" in result["errors"]
+
+
+def test_verify_research_artifact_rejects_empty_package_name(tmp_path: Path) -> None:
+    """An EMPTY package name must flag runtime_packages_invalid (mutation
+    find: the name-side ``or not name`` arm — a non-string name is impossible
+    from JSON, so the empty-string case is the only distinguisher for an
+    Or->And mutant of that guard)."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["runtime"]["packages"][""] = "1.0.0"
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "runtime_packages_invalid" in result["errors"]
+
+
 def test_verify_research_artifact_allows_nan_unavailable_hypothesis_values(
     tmp_path: Path,
 ) -> None:
