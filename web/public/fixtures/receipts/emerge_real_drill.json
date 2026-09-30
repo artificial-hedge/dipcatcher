@@ -1,0 +1,170 @@
+{
+  "claim": "under arbitrary dependence across lanes (shared tape), the pooled evidence against head h's interval honesty is e_mean/e_harmonic; family-level e-value via e-Bonferroni",
+  "data_label": "yahoo_eod",
+  "drill": {
+    "excluded_heads": [
+      "nbeats",
+      "nhits",
+      "lgbm_q2"
+    ],
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "n_eval": 300,
+    "n_train": 1000,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "evidence": [
+    "e_value_merge_under_arbitrary_dependence",
+    "harmonic_mean_valid",
+    "product_rule_flagged_dependence_violation",
+    "proper_scores_only"
+  ],
+  "family_evalue": 7.0437171618133885,
+  "kind": "emerge_drill.v1",
+  "live_pnl_claim": false,
+  "n_heads": 12,
+  "pooled_per_head": {
+    "conf_t": {
+      "e_harmonic": 0.45342996891813275,
+      "e_mean": 0.5869764301511157,
+      "e_product_diagnostics_only": 0.14351319951543673,
+      "lanes": {
+        "coverage@0.8": 0.7624141944668746,
+        "coverage@0.9": 0.7462856529135229,
+        "tail_depth": 0.2522294430729494
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "empirical": {
+      "e_harmonic": 0.7094831667829843,
+      "e_mean": 215848.2521666982,
+      "e_product_diagnostics_only": 42751506.58129629,
+      "lanes": {
+        "coverage@0.8": 647265.4712600198,
+        "coverage@0.9": 279.04854499950363,
+        "tail_depth": 0.23669507511985965
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "fhs_skew": {
+      "e_harmonic": 661.1127565226737,
+      "e_mean": 6.007796049367849e+22,
+      "e_product_diagnostics_only": 3.2902077677484263e+44,
+      "lanes": {
+        "coverage@0.8": 1.8022559724303303e+23,
+        "coverage@0.9": 8.284238002422384e+18,
+        "tail_depth": 220.37091884089125
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "gaussian": {
+      "e_harmonic": 0.19848672275368354,
+      "e_mean": 1.679835890956598,
+      "e_product_diagnostics_only": 0.09472073773847399,
+      "lanes": {
+        "coverage@0.8": 0.19556212997050715,
+        "coverage@0.9": 4.741800562522743,
+        "tail_depth": 0.10214498037654483
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "gmm": {
+      "e_harmonic": 0.16353067387911266,
+      "e_mean": 84593.60127389137,
+      "e_product_diagnostics_only": 17343428.64756803,
+      "lanes": {
+        "coverage@0.8": 252520.8353577879,
+        "coverage@0.9": 1259.9139512913198,
+        "tail_depth": 0.05451259488316597
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "hstep_emp": {
+      "e_harmonic": 0.7094831667829843,
+      "e_mean": 215848.2521666982,
+      "e_product_diagnostics_only": 42751506.58129629,
+      "lanes": {
+        "coverage@0.8": 647265.4712600198,
+        "coverage@0.9": 279.04854499950363,
+        "tail_depth": 0.23669507511985965
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "hstep_t": {
+      "e_harmonic": 6.437648466687489,
+      "e_mean": 2787369.619538239,
+      "e_product_diagnostics_only": 37353641274566.17,
+      "lanes": {
+        "coverage@0.8": 4453274.630744975,
+        "coverage@0.9": 3908832.081984708,
+        "tail_depth": 2.1458850343134297
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "isotonic": {
+      "e_harmonic": 0.7094831667829843,
+      "e_mean": 215848.2521666982,
+      "e_product_diagnostics_only": 42751506.58129629,
+      "lanes": {
+        "coverage@0.8": 647265.4712600198,
+        "coverage@0.9": 279.04854499950363,
+        "tail_depth": 0.23669507511985965
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "qar": {
+      "e_harmonic": 0.18076062643784807,
+      "e_mean": 3717.7176127389816,
+      "e_product_diagnostics_only": 751074.0098036925,
+      "lanes": {
+        "coverage@0.8": 9893.178630134798,
+        "coverage@0.9": 1259.9139512913198,
+        "tail_depth": 0.06025679082757998
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "regime": {
+      "e_harmonic": 1.2783375417928997,
+      "e_mean": 1845.5862935903988,
+      "e_product_diagnostics_only": 93953.13491605424,
+      "lanes": {
+        "coverage@0.8": 5496.648633232818,
+        "coverage@0.9": 39.679475628859294,
+        "tail_depth": 0.4307719095197023
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "skew_t": {
+      "e_harmonic": 1.1165635152671884,
+      "e_mean": 614094.1194055334,
+      "e_product_diagnostics_only": 96170091551.54,
+      "lanes": {
+        "coverage@0.8": 1689327.2567629656,
+        "coverage@0.9": 152954.7292648086,
+        "tail_depth": 0.3721888260765968
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    },
+    "stack": {
+      "e_harmonic": 4.77009718109709,
+      "e_mean": 264128.7170992591,
+      "e_product_diagnostics_only": 24188154478.070633,
+      "lanes": {
+        "coverage@0.8": 19685.68386843399,
+        "coverage@0.9": 772698.8772652383,
+        "tail_depth": 1.59016410502913
+      },
+      "note": "product assumes independence \u2014 INVALID here (shared tape); mean/harmonic are the valid pooled claims"
+    }
+  },
+  "receipt_sha256": "7f2a89cda252f413dcc3e8fefb8b863dc95c29881a8027c21d90d58b716fba96",
+  "research_only": true,
+  "schema": "emerge_drill.v1"
+}

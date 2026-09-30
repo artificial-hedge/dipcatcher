@@ -843,7 +843,11 @@ def fetch_yahoo_members(
             print(f"fetch {index}/{len(symbols)} {ticker}", flush=True)
         try:
             frame = _fetch_one(ticker, start=start, end=end, cache=cache)
-        except Exception as exc:
+        except (OSError, ValueError, KeyError, TypeError, pl.exceptions.PolarsError) as exc:
+            # Narrowed from `except Exception` (quality ratchet): fetch faults are
+            # network/HTTP (OSError covers urllib errors), parse faults are
+            # ValueError/KeyError/TypeError, and parquet IO faults are PolarsError;
+            # exotic errors propagate. Failures are recorded, prices never invented.
             failures.append({"ticker": ticker, "error": f"{type(exc).__name__}: {exc}"})
             continue
         if frame is None:

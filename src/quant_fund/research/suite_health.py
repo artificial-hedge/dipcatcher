@@ -92,7 +92,9 @@ def suite_health(
             raw = path.read_bytes()
             digests[rel] = hash_bytes(raw)
             payload: Any = json.loads(raw)
-        except Exception:
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            # Narrowed from `except Exception` (quality ratchet): receipt read/parse
+            # faults are IO/JSON; exotic errors propagate. Payload treated as absent.
             payload = None
         kind = (payload.get("kind") or payload.get("schema")) if isinstance(payload, dict) else None
         if isinstance(payload, dict):
