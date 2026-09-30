@@ -167,6 +167,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "extra_tilt",
         "forecast_selection",
         "rl_market_maker",
+        # SOTA canon wave 17 batteries (see research/benches_w17.py):
+        # DiffPTS LSNM diffusion forecasting on an AR(1)-bimodal stream
+        # (CRPS/coverage/PIT vs NGboost/QRF, DDPM-vs-DDIM NFE budgets),
+        # extrapolated weighted conformal (+ harmonic-mean extension),
+        # Cheridito-Weiss multi-level deep market making, Moret-Lillo
+        # Algorithm-C C51 scenario-bandit robustness (both torch-gated),
+        # sliced-graph-alignment multistep UQ certificates, Barzykin
+        # passive-execution-vs-impact planning, and Nutz-Voss singular
+        # stochastic tracking sharp-rate convergence. Seeded SYNTHETIC
+        # streams; correctness diagnostics only, never promotion gates.
+        "diffpts",
+        "extra_conformal",
+        "multilevel_mm",
+        "rlmm_c51",
+        "sga_uq",
+        "passive_impact",
+        "stochastic_tracking",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

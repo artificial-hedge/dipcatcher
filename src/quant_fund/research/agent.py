@@ -128,6 +128,15 @@ from quant_fund.research.benches_w16 import (
     bench_rl_market_maker,
     bench_vol_loss_decomposition,
 )
+from quant_fund.research.benches_w17 import (
+    bench_diffpts,
+    bench_extra_conformal,
+    bench_multilevel_mm,
+    bench_passive_impact,
+    bench_rlmm_c51,
+    bench_sga_uq,
+    bench_stochastic_tracking,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1778,6 +1787,13 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "extra_tilt": bench_extra_tilt(),
         "forecast_selection": bench_forecast_selection(),
         "rl_market_maker": bench_rl_market_maker(),
+        "diffpts": bench_diffpts(),
+        "extra_conformal": bench_extra_conformal(),
+        "multilevel_mm": bench_multilevel_mm(),
+        "rlmm_c51": bench_rlmm_c51(),
+        "sga_uq": bench_sga_uq(),
+        "passive_impact": bench_passive_impact(),
+        "stochastic_tracking": bench_stochastic_tracking(),
     }
 
     hyps = _build_hypotheses(families, rankers)
