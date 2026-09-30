@@ -117,28 +117,40 @@ def _probes(clone: Path) -> list[tuple[str, Any]]:
         proofs = sorted(witness_dir.glob("*.json"))
         if proofs:
             probes.append(("flip_witness_proof", lambda p=proofs[0]: _flip_first_byte(p)))
-    # Membership attacks on every corpus — victims must match the chain's
-    # own member pattern or the mutation measures nothing (a stray README
-    # under .github/workflows is legitimately not an epoch member).
+    # Membership attacks on every corpus. The victim must be a *recorded*
+    # member of the pinned head epoch — glob-matching alone picks up exempt
+    # files the chain legitimately ignores (.epoch_stamp.lock, the heads
+    # pin, mid-write checkpoint), and mutating those is correctly a no-op.
     from quant_fund.research.repo_integrity import CORPORA
 
+    heads_pin = clone / "quality" / "epoch_heads.json"
+    pin_heads: dict[str, Any] = {}
+    if heads_pin.is_file():
+        try:
+            pin_heads = json.loads(heads_pin.read_text()).get("heads", {})
+        except (OSError, ValueError):
+            pin_heads = {}
     for corpus, pattern, _req, _upd, _ex in CORPORA:
-        members = sorted(
-            p
-            for p in (clone / corpus).rglob(pattern)
-            if p.is_file()
-            and p.name != "epoch_heads.json"
-            and p.name != "checkpoint.json"
-            and not p.as_posix().endswith((".tsr", ".tst"))
-            and not (
-                corpus == "quality"
-                and p.relative_to(clone / corpus)
-                .as_posix()
-                .startswith(("witness/", "checkpoints/", "timestamps/"))
-            )
-        )
-        if members:
-            victim = members[0]
+        entry = pin_heads.get(f"{corpus}/{pattern}")
+        head_receipt = clone / corpus / str(entry.get("receipt", "")) if entry else None
+        victim = None
+        if head_receipt is not None and head_receipt.is_file():
+            try:
+                head_members = json.loads(head_receipt.read_text()).get("members", [])
+            except (OSError, ValueError):
+                head_members = []
+            for m in head_members:
+                name = m.get("name") if isinstance(m, dict) else None
+                if not isinstance(name, str):
+                    continue
+                candidate = clone / corpus / name
+                # Prefer a non-self-referential member: flipping the chain's
+                # own epoch receipts is caught too, but a plain member is
+                # the unambiguous attack.
+                if candidate.is_file() and not name.startswith("corpus_epoch_"):
+                    victim = candidate
+                    break
+        if victim is not None:
             probes.append((f"flip_member:{corpus}", lambda v=victim: _flip_first_byte(v)))
             probes.append((f"delete_member:{corpus}", lambda v=victim: v.unlink()))
     archive = quality / "checkpoints"
