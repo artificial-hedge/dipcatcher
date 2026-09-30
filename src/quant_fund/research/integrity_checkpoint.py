@@ -200,7 +200,7 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
         return {"ok": False, "signed": True, "current": False, "errors": ["pubkey_missing"]}
     try:
         body = json.loads(cp_file.read_text())
-    except json.JSONDecodeError:
+    except (OSError, ValueError):
         return {"ok": False, "signed": True, "current": False, "errors": ["checkpoint_malformed"]}
     payload = body.get("payload")
     if (
@@ -260,7 +260,7 @@ def verify_checkpoint(root: str | Path) -> dict[str, Any]:
         for p in (root_path / WITNESS_DIR).glob(f"{DEFAULT_CHECKPOINT_PATH.name}_*.json"):
             try:
                 digest = json.loads(p.read_text()).get("target", {}).get("sha256")
-            except (OSError, json.JSONDecodeError, AttributeError):
+            except (OSError, ValueError, AttributeError):
                 continue
             if isinstance(digest, str):
                 witnessed.add(digest)

@@ -122,7 +122,7 @@ def verify_pin_signatures(
         return {"ok": False, "signed": True, "errors": ["pubkey_malformed"]}
     try:
         body = json.loads(sig_file.read_text())
-    except json.JSONDecodeError:
+    except (OSError, ValueError):
         return {"ok": False, "signed": True, "errors": ["signature_file_malformed"]}
     if body.get("schema") != GATE_SIGNATURES_SCHEMA or body.get("algorithm") != "ed25519":
         return {"ok": False, "signed": True, "errors": ["signature_file_malformed"]}

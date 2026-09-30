@@ -199,7 +199,7 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
                 digest = rec.get("target", {}).get("sha256")
                 index = rec.get("rekor", {}).get("log_index")
                 itime = rec.get("rekor", {}).get("integrated_time")
-            except (OSError, json.JSONDecodeError, AttributeError):
+            except (OSError, ValueError, AttributeError):
                 continue
             if isinstance(digest, str) and isinstance(index, int):
                 witnessed_idx[digest] = index
@@ -258,7 +258,7 @@ def checkpoint_spine(root: str | Path = ".") -> dict[str, Any]:
             try:
                 extra_body = json.loads((wdir / extra[0]).read_text())
                 extra_target = (extra_body.get("target") or {}).get("sha256")
-            except (OSError, json.JSONDecodeError):
+            except (OSError, ValueError):
                 extra_target = None
             if extra_target != head_digest_claim:
                 errors.append(f"witness_proof_unpinned:{extra[0]}")

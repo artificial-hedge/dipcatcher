@@ -188,7 +188,7 @@ def verify_witness_file(root: str | Path, proof_path: str | Path) -> dict[str, A
     proof_file = root_path / proof_path
     try:
         record = json.loads(proof_file.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, ValueError):
         return {"ok": False, "errors": ["proof_malformed"]}
     errors: list[str] = []
     if record.get("schema") != WITNESS_SCHEMA:
@@ -377,8 +377,13 @@ def verify_witness_online(
     for name, pres in proofs.items():
         ip = pres.get("inclusion_proof") or {}
         # proofs from verify_witness_file don't carry ip; reload the record
-        record = json.loads((Path(root) / WITNESS_DIR / name).read_text())
-        ip = record["rekor"]["inclusion_proof"]
+        try:
+            record = json.loads((Path(root) / WITNESS_DIR / name).read_text())
+            ip = record["rekor"]["inclusion_proof"]
+        except (OSError, ValueError, KeyError, TypeError):
+            errors.append(f"{name}:proof_malformed")
+            consistent[name] = False
+            continue
         old_size, old_root = int(ip["tree_size"]), bytes.fromhex(str(ip["root_hash"]))
         if old_size > cur_size:
             errors.append(f"{name}:log_shrunk")

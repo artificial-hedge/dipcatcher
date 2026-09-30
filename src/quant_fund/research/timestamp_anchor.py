@@ -167,7 +167,7 @@ def load_anchors(ts_dir: Path) -> dict[str, dict[str, str]]:
         return {}
     try:
         body = json.loads(path.read_text())
-    except json.JSONDecodeError:
+    except (OSError, ValueError):
         return {}
     if body.get("schema") != ANCHORS_SCHEMA:
         return {}
