@@ -153,6 +153,11 @@ from quant_fund.research.benches_w19 import (
     bench_langevin_impact,
     bench_rccp,
 )
+from quant_fund.research.benches_w20 import (
+    bench_gaussian_normalized_coords,
+    bench_hidden_markov_equilibrium,
+    bench_varswap_stopping,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1822,6 +1827,9 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ivs_diffusion": bench_ivs_diffusion(),
         "rccp": bench_rccp(),
         "dcp": bench_dcp(),
+        "varswap_stopping": bench_varswap_stopping(),
+        "hidden_markov_equilibrium": bench_hidden_markov_equilibrium(),
+        "gaussian_normalized_coords": bench_gaussian_normalized_coords(),
     }
 
     hyps = _build_hypotheses(families, rankers)

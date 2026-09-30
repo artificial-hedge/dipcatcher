@@ -219,6 +219,17 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ivs_diffusion",
         "rccp",
         "dcp",
+        # SOTA canon wave 20 batteries (see research/benches_w20.py):
+        # perpetual variance-swap optimal stopping (Lorig-Lozano-Gomez),
+        # belief-Markovian equilibrium pricing under a hidden Markov
+        # dividend factor, and Gaussian normalized coordinates /
+        # risk-neutral CDF deformations (Sun 2026, arXiv:2609.14212).
+        # ARL market making (arXiv:2609.22785) and liquidity-tail LOB
+        # equilibrium (arXiv:2607.01198) register once their lane
+        # branches land. Same SYNTHETIC diagnostic contract.
+        "varswap_stopping",
+        "hidden_markov_equilibrium",
+        "gaussian_normalized_coords",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

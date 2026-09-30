@@ -14,11 +14,6 @@ all six specs fetched and verified against arXiv before implementation):
   -- two-state Wonham belief filter, belief-Markovian pricing equation,
   belief-dependent stock volatility, European option PDE, and the
   leading short-maturity risk-neutral skewness expansion. Pure numpy/scipy.
-- ``sga_uq``: SGA graph-complexity uncertainty quantification for
-  multi-step forecasts (Hu, Liang, Feng & Zhang 2026, arXiv:2609.28582) --
-  slicing of sampled rollouts, a forecast-branch DAG, and a complexity
-  score combining topological width with branch stochasticity; UQ-vs-error
-  ranking vs residual-std and ensemble-std baselines. Pure numpy/scipy.
 - ``arl_mm``: adversarial-RL market making with Hawkes arrivals and trade
   price impact (arXiv:2609.22785) -- zero-sum maker-vs-environment game,
   LSTM policies, left-tail robustness protocol. TORCH-GATED.
@@ -57,9 +52,6 @@ _VS_SEED = _SEED + 80
 
 # --- hidden_markov_equilibrium: belief-Markovian pricing bench ---------------
 _HME_SEED = _SEED + 81
-
-# --- sga_uq: graph-complexity UQ bench ---------------------------------------
-_SGA_SEED = _SEED + 82
 
 # --- arl_mm: adversarial-RL market making bench (torch-gated) ----------------
 _ARL_SEED = _SEED + 83
@@ -124,24 +116,6 @@ def bench_hidden_markov_equilibrium() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_hme_core_bench(seed=_HME_SEED)))
-    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
-        return {}
-
-
-def bench_sga_uq() -> dict[str, float]:
-    """SGA graph-complexity UQ for multi-step forecasts (wave 20).
-
-    Thin adapter over the lane module's own ``bench_sga_uq``: sliced
-    rollout DAG complexity (topology + stochasticity), UQ-vs-error ranking
-    vs residual/ensemble baselines, induced-interval coverage. Returns
-    ``{}`` while the lane module is absent or on fail-closed rejection.
-    """
-    try:
-        from quant_fund.metrics.sga_uq import bench_sga_uq as _sga_core_bench
-    except ImportError:
-        return {}
-    try:
-        return _finite_blob(_isinstance_floats(_sga_core_bench(seed=_SGA_SEED)))
     except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
         return {}
 
