@@ -12,7 +12,7 @@ from quant_fund.research.repo_integrity import (
 
 
 def _git_repo(tmp_path: Path) -> Path:
-    """Minimal tree satisfying every gate: 12 jewels + 8 stamped corpora."""
+    """Minimal tree satisfying every gate: the derived jewel set + 8 stamped corpora."""
     import subprocess
 
     from quant_fund.research.corpus_epoch import (

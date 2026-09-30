@@ -59,7 +59,9 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/auditor_bundle.py",
     "src/quant_fund/research/checkpoint_chain.py",
     "src/quant_fund/research/corpus_epoch.py",
+    "src/quant_fund/research/corpus_inference.py",
     "src/quant_fund/research/crown_jewels.py",
+    "src/quant_fund/research/custody.py",
     "src/quant_fund/research/epoch_consistency.py",
     "src/quant_fund/research/epoch_merkle.py",
     "src/quant_fund/research/fuzz_drill.py",
@@ -69,7 +71,9 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/key_rotation.py",
     "src/quant_fund/research/lane_contracts.py",
     "src/quant_fund/research/receipt_lattice.py",
+    "src/quant_fund/research/receipt_tombstone.py",
     "src/quant_fund/research/receipt_v2.py",
+    "src/quant_fund/research/release_attestation.py",
     "src/quant_fund/research/repo_integrity.py",
     "src/quant_fund/research/tamper_drill.py",
     "src/quant_fund/research/timestamp_anchor.py",
@@ -100,6 +104,10 @@ _VERIFIER_VOCABULARY = (
     "witness",
     "rotation",
     "fuzz",
+    "custody",
+    "attestation",
+    "tombstone",
+    "inference",  # corpus_inference — the FDR pool admission gates on
 )
 
 
