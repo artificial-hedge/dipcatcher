@@ -36,6 +36,7 @@ Verdicts: ``genesis`` (no previous epoch), ``advancing`` (monotone growth),
 from __future__ import annotations
 
 import json
+import unicodedata
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -126,6 +127,14 @@ def _exempt_member(root: Path, relname: str) -> bool:
     )
 
 
+def _nfc_errors(members: Mapping[str, str]) -> list[str]:
+    """Member names must be NFC-canonical — Unicode-equivalent spellings
+    (NFC ``café`` vs NFD ``café``) alias to one file on APFS/HFS+ and
+    Windows-lookup filesystems while remaining distinct strings on Linux,
+    which would make inclusion/absence semantics platform-dependent."""
+    return [f"member_name_not_nfc:{n}" for n in members if unicodedata.normalize("NFC", n) != n]
+
+
 def epoch_root(members: Mapping[str, str]) -> str:
     """Merkle-style root over the member map — order-free via canonical JSON."""
     for name, digest in members.items():
@@ -210,6 +219,12 @@ def corpus_epoch(
     """
     root = Path(corpus_dir)
     members = member_digests(root, pattern=pattern)
+    nfc = _nfc_errors(members)
+    if nfc:
+        raise ValueError(
+            f"refusing to stamp {root}: non-NFC member names "
+            f"{[e.split(':', 1)[1] for e in nfc]} — rename to the NFC form"
+        )
     # Chains are per-(dir, pattern): only epochs stamped with the same member
     # glob participate. Absent params.pattern means the default "*.json".
     epochs = [
@@ -582,6 +597,7 @@ def check_epoch_chain(
         root_val = head.get("epoch_root_sha256")
         head_root = root_val if isinstance(root_val, str) else None
         live = member_digests(root, pattern=pattern)
+        errors += _nfc_errors(live)
         head_members = {k: v for k, v in _member_maps(head).items() if not _exempt_member(root, k)}
         stamped = set(head_members)
         for name in stamped - set(live):

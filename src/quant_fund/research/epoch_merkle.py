@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unicodedata
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -76,6 +77,8 @@ def merkle_root(members: Mapping[str, str]) -> str:
 
 def inclusion_proof(members: Mapping[str, str], name: str) -> dict[str, Any]:
     """Sibling path proving ``name -> sha256`` sits in the tree."""
+    if unicodedata.normalize("NFC", name) != name:
+        raise ValueError(f"member name must be NFC-canonical: {name!r}")
     if name not in members:
         raise ValueError(f"not a corpus member: {name}")
     items = _leaves(members)
@@ -150,6 +153,8 @@ def verify_inclusion(
     longer be re-presented as belonging to index j.
     """
     try:
+        if unicodedata.normalize("NFC", name) != name:
+            return False
         leaf = _leaf_hash(name, sha256)
         idx = proof["leaf_index"]
         path = proof["path"]
@@ -255,6 +260,8 @@ def corpus_proof_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append("corpus_key_not_str")
     if not isinstance(member, str) or not member:
         errors.append("member_not_str")
+    elif unicodedata.normalize("NFC", member) != member:
+        errors.append("member_name_not_nfc")
     if not (isinstance(sha, str) and len(sha) == 64 and all(c in "0123456789abcdef" for c in sha)):
         errors.append("member_sha256_not_hex")
     root = payload.get("epoch_root_sha256")
@@ -274,6 +281,7 @@ def corpus_proof_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append("path_malformed")
     elif (
         isinstance(member, str)
+        and unicodedata.normalize("NFC", member) == member
         and isinstance(sha, str)
         and isinstance(merkle, str)
         and not verify_inclusion(member, sha, payload, merkle)
@@ -356,6 +364,8 @@ def absence_proof(members: Mapping[str, str], name: str) -> dict[str, Any]:
     between them. Edge names get a single bound; an empty corpus proves
     absence with no bounds.
     """
+    if unicodedata.normalize("NFC", name) != name:
+        raise ValueError(f"absence name must be NFC-canonical: {name!r}")
     if name in members:
         raise ValueError(f"{name!r} is a member — use inclusion_proof")
     names = sorted(members)
@@ -382,6 +392,8 @@ def verify_absence(proof: Mapping[str, Any], expected_root: str) -> list[str]:
         return ["name_missing"]
     if not isinstance(bounds, list):
         return ["bounds_missing"]
+    if unicodedata.normalize("NFC", name) != name:
+        return ["name_not_nfc"]
     if len(bounds) > 2:
         # Absence is proven by the tightest bracketing pair — a wider bound
         # set is malformed, not stronger.
@@ -397,6 +409,8 @@ def verify_absence(proof: Mapping[str, Any], expected_root: str) -> list[str]:
         bname = b.get("member")
         if not isinstance(bname, str) or bname == name:
             return ["bound_not_neighbor"]
+        if unicodedata.normalize("NFC", bname) != bname:
+            return ["bound_member_not_nfc"]
         if not verify_inclusion(bname, str(b.get("member_sha256", "")), b, expected_root):
             errors.append(f"bound_invalid:{bname}")
             continue

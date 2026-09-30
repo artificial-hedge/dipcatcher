@@ -51,6 +51,7 @@ import argparse
 import hashlib
 import json
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -210,6 +211,8 @@ def audit_proof(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -> 
     root = proof.get("merkle_root")
     if not isinstance(member, str) or not isinstance(sha, str):
         return ["member_fields_malformed"]
+    if unicodedata.normalize("NFC", member) != member:
+        return ["member_name_not_nfc"]
     if not isinstance(receipt, str) or not isinstance(root, str):
         return ["epoch_binding_malformed"]
     k, entry, err = _pin_entry(pin, key, receipt)
@@ -237,6 +240,8 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
     bounds = proof.get("bounds")
     if not isinstance(name, str) or not name:
         return ["name_missing"]
+    if unicodedata.normalize("NFC", name) != name:
+        return ["name_not_nfc"]
     if not isinstance(root, str) or not isinstance(bounds, list):
         return ["absence_shape_malformed"]
     receipt = proof.get("epoch_receipt")
@@ -279,6 +284,9 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
         bname = b.get("member")
         if not isinstance(bname, str) or bname == name:
             errors.append("bound_not_neighbor")
+            continue
+        if unicodedata.normalize("NFC", bname) != bname:
+            errors.append("bound_member_not_nfc")
             continue
         sub = _verify_inclusion(bname, str(b.get("member_sha256", "")), b, root)
         if sub:

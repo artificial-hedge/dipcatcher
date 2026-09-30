@@ -451,3 +451,57 @@ def test_proof_layer_semantic_mutation_fuzz(tmp_path: Path) -> None:
     doc["receipt_sha256"] = hash_bytes(canonical_json_bytes(body))
     epoch_file.write_text(_json.dumps(doc))
     assert verify_epoch_proof(proof, corpus) == ["epoch_receipt_name_mismatch"]
+
+
+def test_unicode_nfc_fail_closed(tmp_path: Path) -> None:
+    """NFD/non-canonical name spellings alias real files on APFS/Windows —
+    proofs must name NFC-canonical members, and stamps refuse them."""
+    import unicodedata
+
+    import pytest
+
+    from quant_fund.research.corpus_epoch import _nfc_errors, corpus_epoch
+    from quant_fund.research.epoch_merkle import (
+        absence_proof,
+        absence_receipt,
+        corpus_absence_errors,
+        inclusion_proof,
+        member_proof,
+        verify_epoch_absence,
+        verify_epoch_proof,
+    )
+
+    nfd = unicodedata.normalize("NFD", "café.json")
+    assert nfd != unicodedata.normalize("NFC", "café.json")  # distinct strings
+
+    # Stamp side: a members map carrying an NFD key is refused outright.
+    assert _nfc_errors({"ok.json": "0" * 64}) == []
+    assert _nfc_errors({nfd: "0" * 64}) == [f"member_name_not_nfc:{nfd}"]
+
+    corpus = _corpus(tmp_path, 5)
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    proof = member_proof(corpus, "r2.json")
+    absent = absence_receipt(corpus, "zz9.json")
+
+    # Builders refuse non-canonical names.
+    with pytest.raises(ValueError, match="NFC"):
+        inclusion_proof({"a.json": "0" * 64}, nfd)
+    with pytest.raises(ValueError, match="NFC"):
+        absence_proof({"a.json": "0" * 64}, nfd)
+    with pytest.raises(ValueError, match="NFC"):
+        member_proof(corpus, nfd)
+    with pytest.raises(ValueError, match="NFC"):
+        absence_receipt(corpus, nfd)
+
+    # Verify side: an NFD-spelled member/name/bound is rejected even when the
+    # NFC twin is a real member — the proof must carry canonical spelling.
+    forged_member = {**proof, "member": nfd}
+    assert verify_epoch_proof(forged_member, corpus) == ["member_name_not_nfc"]
+    forged_absent = {**absent, "name": nfd}
+    assert corpus_absence_errors(forged_absent) == ["name_not_nfc"]
+    assert verify_epoch_absence(forged_absent, corpus) == ["name_not_nfc"]
+    forged_bound = {
+        **absent,
+        "bounds": [{**absent["bounds"][0], "member": nfd}],
+    }
+    assert corpus_absence_errors(forged_bound) == ["bound_member_not_nfc"]
