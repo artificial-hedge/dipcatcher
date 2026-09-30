@@ -2221,6 +2221,78 @@ def sign_pins_cmd(
     typer.echo(f"signature={sig_path} key_id={key_id(pub)}")
 
 
+def _load_signer_pairs(raw: str) -> list[tuple[str, str]]:
+    """Parse 'PRIV:PUB' or two-line material; comma/newline separates signers."""
+    fields = [
+        f.strip()
+        for line in raw.replace(",", "\n").splitlines()
+        for f in line.replace(":", "\n").splitlines()
+        if f.strip()
+    ]
+    if not fields or len(fields) % 2 != 0:
+        raise ValueError("signer material must be '<priv_hex>:<pub_hex>' pairs")
+    return [(fields[i], fields[i + 1]) for i in range(0, len(fields), 2)]
+
+
+@app.command("quorum-init")
+def quorum_init_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    pubkeys: str = typer.Option(
+        ...,
+        "--pubkeys",
+        help="Comma-separated registered Ed25519 public keys (64-hex each).",
+    ),
+    threshold: int = typer.Option(..., "--threshold", min=1),
+) -> None:
+    """Write the M-of-N signer registry (``quality/gate_quorum.json``).
+
+    Once committed, lone-key ``gate_signatures.v1`` files fail closed — the pin
+    manifest needs ``threshold`` valid signatures from registered keys. The
+    registry's own bytes are covered by the quality epoch chain + checkpoint.
+    """
+    from quant_fund.research.gate_signatures import init_quorum
+
+    pubs = [p.strip() for p in pubkeys.split(",") if p.strip()]
+    path = init_quorum(root, pubs, threshold=threshold)
+    typer.echo(f"registry={path} threshold={threshold}/{len(pubs)}")
+
+
+@app.command("quorum-sign")
+def quorum_sign_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    key_file: list[Path] = typer.Option(
+        [],
+        "--key-file",
+        help="Signer key material ('<priv>:<pub>' or two lines). Repeatable.",
+    ),
+) -> None:
+    """Sign the pin manifest under the quorum registry (M-of-N).
+
+    Each ``--key-file`` contributes one registered signature; unattainable
+    quorums refuse to write (a partial signature file would be a brick).
+    ``GATE_QUORUM_KEYS`` supplies pairs comma-separated when no files given.
+    """
+    import os
+
+    from quant_fund.research.gate_signatures import sign_pins_quorum
+
+    raws = [f.read_text().strip() for f in key_file]
+    if not raws:
+        env = os.environ.get("GATE_QUORUM_KEYS", "").strip()
+        if env:
+            raws = [env] if not Path(env).is_file() else [Path(env).read_text().strip()]
+    if not raws:
+        typer.echo("quorum-sign: supply --key-file(s) or GATE_QUORUM_KEYS")
+        raise typer.Exit(code=2)
+    try:
+        signers = [pair for raw in raws for pair in _load_signer_pairs(raw)]
+        out = sign_pins_quorum(root, signers)
+    except ValueError as exc:
+        typer.echo(f"quorum-sign: {exc}")
+        raise typer.Exit(code=2) from exc
+    typer.echo(f"signature={out} signers={len(signers)}")
+
+
 @app.command("anchor-timestamp")
 def anchor_timestamp_cmd(
     file: Path = typer.Option(

@@ -34,7 +34,7 @@ CUSTODY_SCHEMA = "custody_proof.v1"
 # Files embedded verbatim — the exact inventory the pin/checkpoint/witness
 # verifiers read under a repo root.
 _PIN_FILES = ("quality/epoch_heads.json", "quality/crown_jewels.json")
-_SIG_FILES = ("gate_pins.sig", "quality/gate_signing.pub")
+_SIG_FILES = ("gate_pins.sig", "quality/gate_signing.pub", "quality/gate_quorum.json")
 _CP_FILE = "quality/checkpoint.json"
 # Both pubkeys verify_witness_file reads: ours (signature over the logged
 # artifact) and Rekor's (SET + checkpoint note).
