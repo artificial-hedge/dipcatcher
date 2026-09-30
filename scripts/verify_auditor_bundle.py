@@ -231,17 +231,26 @@ def _verify_spine(
     verdict and ``checkpoint_chain.checkpoint_spine`` is itself a finding.
     """
     for rel in files:
-        if rel not in MEMBERS and not rel.startswith(SPINE_PREFIXES):
+        if rel not in MEMBERS and not (
+            any(rel.startswith(p) for p in SPINE_PREFIXES) and rel.endswith(".json")
+        ):
             errors.append(f"unexpected_member:{rel}")
     records: dict[str, bytes] = {}
     witnessed: dict[str, int] = {}
     wit_times: dict[str, float] = {}
     for rel, b64 in files.items():
-        if rel.startswith(SPINE_PREFIXES[1]):
+        if rel.startswith(SPINE_PREFIXES[1]) and rel.endswith(".json"):
             try:
                 raw = base64.b64decode(b64)
+            except ValueError:
+                errors.append(f"b64_malformed:{rel}")
+                continue
+            if declared.get(rel) != _sha(raw).hex():
+                errors.append(f"files_sha256_mismatch:{rel}")
+                continue
+            try:
                 proof = json.loads(raw)
-            except (ValueError, json.JSONDecodeError):
+            except json.JSONDecodeError:
                 errors.append(f"spine_proof_malformed:{rel}")
                 continue
             digest = proof.get("target", {}).get("sha256")
@@ -342,6 +351,51 @@ def _verify_spine(
         if era_start is not None and itime is not None and itime < era_start:
             continue
         errors.append(f"spine_witnessed_absent:{digest[:12]}")
+
+    # Witness extent: the live checkpoint's signed ``witness.proofs`` map
+    # names every committed proof (name -> sha256). A dropped or byte-drifted
+    # proof must surface even though its own file verified standalone.
+    try:
+        live_payload = json.loads(decoded_checkpoint).get("payload") or {}
+    except json.JSONDecodeError:
+        live_payload = {}
+    witness_claim = live_payload.get("witness")
+    if isinstance(witness_claim, dict):
+        claimed_raw = witness_claim.get("proofs")
+        claimed = (
+            dict(claimed_raw)
+            if isinstance(claimed_raw, dict)
+            else {n: None for n in (claimed_raw or [])}
+        )
+        present = {
+            rel.rsplit("/", 1)[-1]: rel
+            for rel in files
+            if rel.startswith(SPINE_PREFIXES[1]) and rel.endswith(".json")
+        }
+        missing = sorted(set(claimed) - set(present))
+        if missing:
+            errors.append(f"witness_proof_deleted:{','.join(missing)}")
+        for name, claimed_digest in sorted(claimed.items()):
+            rel = present.get(name)
+            if rel is None or not isinstance(claimed_digest, str):
+                continue
+            try:
+                raw_b = base64.b64decode(files[rel])
+            except ValueError:
+                continue  # already flagged b64_malformed
+            if _sha(raw_b).hex() != claimed_digest:
+                errors.append(f"witness_proof_drift:{name}")
+        extra = sorted(set(present) - set(claimed))
+        if len(extra) > 1:
+            errors.append(f"witness_proof_unpinned:{','.join(extra)}")
+        elif len(extra) == 1:
+            # The one legal extra is the proof for the live head.
+            try:
+                extra_body = json.loads(base64.b64decode(files[present[extra[0]]]))
+                if (extra_body.get("target") or {}).get("sha256") != head_digest:
+                    errors.append(f"witness_proof_unpinned:{extra[0]}")
+            except (ValueError, json.JSONDecodeError):
+                errors.append(f"witness_proof_unpinned:{extra[0]}")
 
 
 def verify(bundle_path: Path, rekor_pem: bytes | None) -> list[str]:
