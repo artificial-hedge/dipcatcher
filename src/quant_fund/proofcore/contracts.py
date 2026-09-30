@@ -553,9 +553,7 @@ class RunSpec(_Strict):
 
 class Divergence(_Strict):
     seq: int = Field(ge=0)
-    field: str = Field(
-        description="one of the DecisionTraceRow hash fields, or 'metric:<name>'"
-    )
+    field: str = Field(description="one of the DecisionTraceRow hash fields, or 'metric:<name>'")
     expected_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
     actual_sha256: str = Field(min_length=HASH_HEX_LEN, max_length=HASH_HEX_LEN)
 

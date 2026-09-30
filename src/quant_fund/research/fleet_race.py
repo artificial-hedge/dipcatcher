@@ -94,7 +94,9 @@ def _predict_head(
         head = factory()
         head.fit(x_tr, y_tr)
         q = np.asarray(head.predict(x_ev), dtype=np.float64)
-    except Exception as exc:  # noqa: BLE001 — error rows are visible, never silent
+    except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+        # Narrowed from `except Exception` (quality ratchet): head fit/predict faults
+        # are solver/numeric; exotic errors propagate. Error rows are visible, never silent.
         return f"{type(exc).__name__}: {exc}"
     if (
         q.ndim != 2

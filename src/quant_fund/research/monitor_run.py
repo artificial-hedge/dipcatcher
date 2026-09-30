@@ -167,7 +167,9 @@ def monitor_fleet(
                     "status": "ok",
                     "error": None,
                 }
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded per cell.
                 cell[name] = {
                     "status": "error",
                     "error": str(exc),

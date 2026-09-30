@@ -1,0 +1,127 @@
+{
+  "alpha": 0.05,
+  "components": {
+    "calibration": {
+      "alarm_origin": 17,
+      "channel_wealths": {
+        "grapa_disp": 0.134256778680104,
+        "grapa_loc": 0.06354354498244345,
+        "loc_hi": 3.2771148072993125e-05,
+        "loc_lo": 6.271944764438012e-09,
+        "overconf": 3.5217032438195263e-12,
+        "underconf": 0.0
+      },
+      "final_evalue": 0.032972183514347816,
+      "miscalibrated": true
+    },
+    "drift": {
+      "alarm_index": null,
+      "eprocess_alarmed": false,
+      "final_evalue": 5.65228928707004e-13,
+      "page_hinkley_alarmed": true
+    },
+    "localize": {
+      "skipped": "no_drift_alarm"
+    },
+    "magnitude": {
+      "alpha": 0.05,
+      "bound": 0.0005556059235267558,
+      "challenger": "challenger",
+      "cs_high": 2.103370268349208e-05,
+      "cs_low": -9.775281957945879e-05,
+      "evidence": [
+        "ville_inequality",
+        "betting_confidence_sequence",
+        "bounded_increments",
+        "time_uniform_coverage"
+      ],
+      "excludes_zero": false,
+      "incumbent": "incumbent",
+      "interpretation": "inconclusive",
+      "kind": "loss_cs.v1",
+      "lam": 0.5,
+      "mean_diff": -3.308069273216095e-05,
+      "n": 300,
+      "schema": "loss_cs.v1"
+    },
+    "promotion": {
+      "anytime_p": 1.0,
+      "final_evalue": 1.0,
+      "promoted": false,
+      "promotion_origin": null,
+      "runner_up": "conf_t"
+    },
+    "winner_curse": {
+      "corrected_score": 0.007786306962895035,
+      "honest_score": 0.007774180331785465,
+      "naive_score": 0.007783105322251523,
+      "selected_head": "gaussian",
+      "selection_aware_ci": [
+        0.006828763736922536,
+        0.008883396250636
+      ],
+      "selection_bias": 3.201640643512617e-06
+    }
+  },
+  "data_label": "yahoo_eod",
+  "drill": {
+    "computed_on": "seq-union scratch (all verdict lanes present); isolated lane branches degrade to inconclusive",
+    "excluded_heads": [
+      "nbeats",
+      "nhits",
+      "lgbm_q2"
+    ],
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "head_errors": {},
+    "loss_stream": "per-origin mean pinball over the default tau grid",
+    "n_eval": 300,
+    "n_stream": 300,
+    "n_train": 1000,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "evidence": [
+    "selection_bias_corrected",
+    "anytime_valid_promotion",
+    "level_shift_monitor",
+    "magnitude_confidence_sequence",
+    "pit_uniformity_when_supplied",
+    "changepoint_localization_when_drifted",
+    "proper_score_only"
+  ],
+  "inputs_sha256": "86f74196e0b8b77de389cf70b0312c77753bd74975c1600c35d114a2d5241eb2",
+  "kind": "honest_verdict.v1",
+  "live_pnl_claim": false,
+  "n_heads": 12,
+  "n_obs": 300,
+  "receipt_sha256": "1e775c9c68c2c4afb30f68e40829c746174bb3297301e619579ddee426d5e66c",
+  "research_only": true,
+  "run": {
+    "params": {
+      "data_labels": {
+        "conf_t": "yahoo_eod",
+        "empirical": "yahoo_eod",
+        "fhs_skew": "yahoo_eod",
+        "gaussian": "yahoo_eod",
+        "gmm": "yahoo_eod",
+        "hstep_emp": "yahoo_eod",
+        "hstep_t": "yahoo_eod",
+        "isotonic": "yahoo_eod",
+        "qar": "yahoo_eod",
+        "regime": "yahoo_eod",
+        "skew_t": "yahoo_eod",
+        "stack": "yahoo_eod"
+      }
+    }
+  },
+  "unavailable_lanes": [],
+  "verdict": "not_supported",
+  "winner": "gaussian"
+}
