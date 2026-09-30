@@ -556,3 +556,105 @@ def test_script_live_modes_for_proof_and_absence(tmp_path: Path) -> None:
     proc = _run("--absence", str(lp), "--corpus-dir", str(corpus))
     assert proc.returncode == 1
     assert "name_is_member" in proc.stdout
+
+
+def test_script_consistency_live_and_pin(tmp_path: Path) -> None:
+    """epoch_consistency proofs: live hop replay + pin-mode to-head binding."""
+    from quant_fund.research.corpus_epoch import corpus_epoch, epoch_heads_key, write_epoch_receipt
+    from quant_fund.research.epoch_consistency import consistency_proof
+    from quant_fund.research.epoch_merkle import merkle_root
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    (corpus / "a.json").write_text(json.dumps({"v": "a"}))
+    e1 = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    (corpus / "b.json").write_text(json.dumps({"v": "b"}))
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    (corpus / "c.json").write_text(json.dumps({"v": "c"}))
+    e3 = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    import hashlib
+
+    members = {m["name"]: m["sha256"] for m in json.loads(e3.read_text())["members"]}
+    key = epoch_heads_key(corpus, "*.json")
+    pin = tmp_path / "pin.json"
+    pin.write_text(
+        json.dumps(
+            {
+                "heads": {
+                    key: {
+                        "receipt": e3.name,
+                        "sha256": hashlib.sha256(e3.read_bytes()).hexdigest(),
+                        "tree_root": merkle_root(members),
+                    }
+                }
+            }
+        )
+    )
+    proof = consistency_proof(corpus, e1.name)
+    cp = tmp_path / "cons.json"
+    cp.write_text(json.dumps(proof))
+
+    # Live: 3-hop extension verifies.
+    proc = _run("--consistency", str(cp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "hops=3" in proc.stdout
+
+    # Pin mode: the to-head must equal the pinned head.
+    proc = _run(
+        "--consistency", str(cp), "--pin", str(pin), "--key", key, "--corpus-dir", str(corpus)
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    # Held binding: the exact from-head bytes are trusted.
+    held = hashlib.sha256(e1.read_bytes()).hexdigest()
+    proc = _run("--consistency", str(cp), "--corpus-dir", str(corpus), "--held", held)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    proc = _run("--consistency", str(cp), "--corpus-dir", str(corpus), "--held", "b" * 64)
+    assert proc.returncode == 1
+    assert "held_head_digest_mismatch" in proc.stdout
+
+    # Forged interior hop — proof_sha256 honestly recomputed — still fails:
+    # the hop's file digest and the successor's member pin both bind.
+    forged = dict(proof)
+    forged["hops"] = [dict(h) for h in proof["hops"]]
+    forged["hops"][1]["sha256"] = "a" * 64
+    forged["proof_sha256"] = hashlib.sha256(
+        json.dumps(
+            {"hops": forged["hops"], "pattern": forged["pattern"]},
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode()
+    ).hexdigest()
+    fp = tmp_path / "cons_forge.json"
+    fp.write_text(json.dumps(forged))
+    proc = _run("--consistency", str(fp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "hop_digest_mismatch" in proc.stdout
+    assert "hop_member_digest_mismatch" in proc.stdout
+
+    # Extension to a mid-chain node is vacuous — a fork could rewrite the
+    # suffix: truncate the hop list so `to` is epoch 2.
+    trunc = dict(proof)
+    trunc["hops"] = proof["hops"][:2]
+    trunc["n_hops"] = 2
+    trunc["to_receipt"] = dict(proof["hops"][1])
+    trunc["proof_sha256"] = hashlib.sha256(
+        json.dumps(
+            {"hops": trunc["hops"], "pattern": trunc["pattern"]},
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        ).encode()
+    ).hexdigest()
+    tp = tmp_path / "cons_trunc.json"
+    tp.write_text(json.dumps(trunc))
+    proc = _run("--consistency", str(tp), "--corpus-dir", str(corpus))
+    assert proc.returncode == 1
+    assert "to_not_chain_head" in proc.stdout
+    # Pin mode says the same thing differently — `to` isn't the pinned head.
+    proc = _run("--consistency", str(tp), "--pin", str(pin), "--key", key)
+    assert proc.returncode == 1
+    assert "consistency_to_not_pinned" in proc.stdout
