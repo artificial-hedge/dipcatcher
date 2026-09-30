@@ -32,8 +32,8 @@ from quant_fund.portfolio.interval_risk import apply_interval_caps, interval_ref
 from quant_fund.portfolio.optimizer import optimize_mean_variance
 from quant_fund.schemas.errors import OptimizationInfeasible
 from quant_fund.schemas.forecast import AssetForecast, IntervalMethod, MarketState
-from quant_fund.utils.numeric import midrank
 from quant_fund.utils.atomicio import atomic_write_parquet
+from quant_fund.utils.numeric import midrank
 
 from .artifacts import (
     _load_probability_calibrator,

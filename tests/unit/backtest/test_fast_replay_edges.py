@@ -7,8 +7,9 @@ import polars as pl
 import pytest
 
 from quant_fund.backtest import fast_replay
+from quant_fund.backtest.engine import _run_backtest_event_loop
 from quant_fund.backtest.fast_replay import run_backtest_fast
-from tests.unit.backtest.test_fast_replay import _bars, _cfg, _weights
+from tests.unit.backtest.test_fast_replay import _assert_identical, _bars, _cfg, _weights
 
 RNG = np.random.default_rng(0)
 
@@ -114,20 +115,44 @@ class TestKernelBranches:
         yield
 
     def test_full_cost_path(self) -> None:
-        bars, w = _panel()
-        out = run_backtest_fast(
-            bars,
-            w,
-            _cfg(
-                commission_bps=5.0,
-                half_spread_bps=3.0,
-                impact_y=0.2,
-                bps_per_turnover=2.0,
-                borrow_bps_per_year=60.0,
-                participation_limit=0.3,
-            ),
+        # Fresh seeded RNG per run. Drawing from the module-level shared RNG
+        # made this panel — and the directional NAV assertion below — depend
+        # on how many unrelated earlier tests consumed draws first: isolated
+        # selection failed (random market leg up ~+4.4% swamped the ~0.3%
+        # cost drag) while the full-file order passed by luck of the draw.
+        # The failure predates the engine's current form: it reproduces
+        # bit-identically at the test's birth commit f5dc0d28.
+        rng = np.random.default_rng(104)
+        bars = _bars(["A", "B"], 12, rng)
+        w = _weights(["A", "B"], 12, rng, lo=0.1, hi=0.4)
+        cfg = _cfg(
+            commission_bps=5.0,
+            half_spread_bps=3.0,
+            impact_y=0.2,
+            bps_per_turnover=2.0,
+            borrow_bps_per_year=60.0,
+            participation_limit=0.3,
         )
+        out = run_backtest_fast(bars, w, cfg)
         assert 0 < out.equity.height <= 12
+        # Every fill-side cost branch charged strictly positive amounts.
+        # (The borrow leg accrues on short notional only, which is zero on
+        # this long-only panel — unchanged from the original test's book.)
+        for col in ("fee", "spread_cost", "impact_cost", "turnover_cost"):
+            assert float(out.fills[col].sum()) > 0.0, f"{col} never charged"
+        # Documented contract (fast_replay module docstring; the conformance
+        # and differential-fuzzer conventions in test_fast_replay.py): the
+        # kernel reproduces the reference event loop bit-for-bit over the
+        # full cost surface — NAV, fills, counters and metrics.
+        _assert_identical(_run_backtest_event_loop(bars, w, cfg), out)
+        # Costs must visibly erode NAV. The frictionless twin on the same
+        # panel isolates the cost drag from market P&L: the full-cost run
+        # ends strictly below it (drag 2,836). The original directional
+        # form is kept — this seed's market leg is ~flat (NAV erosion
+        # 2,744 vs 2,847 charged), so end-below-start is cost accounting,
+        # not a random-walk bet.
+        fric = run_backtest_fast(bars, w, _cfg(frictionless=True, participation_limit=0.3))
+        assert _nav_array(out)[-1] < _nav_array(fric)[-1]
         assert _nav_array(out)[-1] < _nav_array(out)[0] + 0.01
 
     def test_frictionless_path(self) -> None:

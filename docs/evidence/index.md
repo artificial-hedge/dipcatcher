@@ -2970,6 +2970,151 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `stream`: gaussian_pit
 
+### `receipts/emerge_real_drill.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/emerge_real_drill.json | a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d | 7f2a89cda252f413dcc3e8fefb8b863dc95c29881a8027c21d90d58b716fba96 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `claim`: under arbitrary dependence across lanes (shared tape), the pooled evidence against head h's interval honesty is e_mean/e_harmonic; family-level e-value via e-Bonferroni
+- `data_label`: yahoo_eod
+- `drill`:
+  - `excluded_heads`:
+    - nbeats
+    - nhits
+    - lgbm_q2
+  - `feature_frame`: x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)
+  - `n_eval`: 300
+  - `n_train`: 1000
+  - `shard`:
+    - `data_label`: yahoo_eod
+    - `first`: 2016-01-04 21:00:00+00:00
+    - `last`: 2026-09-18 20:00:00+00:00
+    - `n_bars`: 2693
+    - `source`: yahoo
+    - `symbol`: NVDA
+  - `tape`: /Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+- `evidence`:
+  - e_value_merge_under_arbitrary_dependence
+  - harmonic_mean_valid
+  - product_rule_flagged_dependence_violation
+  - proper_scores_only
+- `family_evalue`: 7.0437171618133885
+- `kind`: emerge_drill.v1
+- `n_heads`: 12
+- `pooled_per_head`:
+  - `conf_t`:
+    - `e_harmonic`: 0.45342996891813275
+    - `e_mean`: 0.5869764301511157
+    - `e_product_diagnostics_only`: 0.14351319951543673
+    - `lanes`:
+      - `coverage@0.8`: 0.7624141944668746
+      - `coverage@0.9`: 0.7462856529135229
+      - `tail_depth`: 0.2522294430729494
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `empirical`:
+    - `e_harmonic`: 0.7094831667829843
+    - `e_mean`: 215848.2521666982
+    - `e_product_diagnostics_only`: 42751506.58129629
+    - `lanes`:
+      - `coverage@0.8`: 647265.4712600198
+      - `coverage@0.9`: 279.04854499950363
+      - `tail_depth`: 0.23669507511985965
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `fhs_skew`:
+    - `e_harmonic`: 661.1127565226737
+    - `e_mean`: 6.007796049367849e+22
+    - `e_product_diagnostics_only`: 3.2902077677484263e+44
+    - `lanes`:
+      - `coverage@0.8`: 1.8022559724303303e+23
+      - `coverage@0.9`: 8.284238002422384e+18
+      - `tail_depth`: 220.37091884089125
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `gaussian`:
+    - `e_harmonic`: 0.19848672275368354
+    - `e_mean`: 1.679835890956598
+    - `e_product_diagnostics_only`: 0.09472073773847399
+    - `lanes`:
+      - `coverage@0.8`: 0.19556212997050715
+      - `coverage@0.9`: 4.741800562522743
+      - `tail_depth`: 0.10214498037654483
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `gmm`:
+    - `e_harmonic`: 0.16353067387911266
+    - `e_mean`: 84593.60127389137
+    - `e_product_diagnostics_only`: 17343428.64756803
+    - `lanes`:
+      - `coverage@0.8`: 252520.8353577879
+      - `coverage@0.9`: 1259.9139512913198
+      - `tail_depth`: 0.05451259488316597
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `hstep_emp`:
+    - `e_harmonic`: 0.7094831667829843
+    - `e_mean`: 215848.2521666982
+    - `e_product_diagnostics_only`: 42751506.58129629
+    - `lanes`:
+      - `coverage@0.8`: 647265.4712600198
+      - `coverage@0.9`: 279.04854499950363
+      - `tail_depth`: 0.23669507511985965
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `hstep_t`:
+    - `e_harmonic`: 6.437648466687489
+    - `e_mean`: 2787369.619538239
+    - `e_product_diagnostics_only`: 37353641274566.17
+    - `lanes`:
+      - `coverage@0.8`: 4453274.630744975
+      - `coverage@0.9`: 3908832.081984708
+      - `tail_depth`: 2.1458850343134297
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `isotonic`:
+    - `e_harmonic`: 0.7094831667829843
+    - `e_mean`: 215848.2521666982
+    - `e_product_diagnostics_only`: 42751506.58129629
+    - `lanes`:
+      - `coverage@0.8`: 647265.4712600198
+      - `coverage@0.9`: 279.04854499950363
+      - `tail_depth`: 0.23669507511985965
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `qar`:
+    - `e_harmonic`: 0.18076062643784807
+    - `e_mean`: 3717.7176127389816
+    - `e_product_diagnostics_only`: 751074.0098036925
+    - `lanes`:
+      - `coverage@0.8`: 9893.178630134798
+      - `coverage@0.9`: 1259.9139512913198
+      - `tail_depth`: 0.06025679082757998
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `regime`:
+    - `e_harmonic`: 1.2783375417928997
+    - `e_mean`: 1845.5862935903988
+    - `e_product_diagnostics_only`: 93953.13491605424
+    - `lanes`:
+      - `coverage@0.8`: 5496.648633232818
+      - `coverage@0.9`: 39.679475628859294
+      - `tail_depth`: 0.4307719095197023
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `skew_t`:
+    - `e_harmonic`: 1.1165635152671884
+    - `e_mean`: 614094.1194055334
+    - `e_product_diagnostics_only`: 96170091551.54
+    - `lanes`:
+      - `coverage@0.8`: 1689327.2567629656
+      - `coverage@0.9`: 152954.7292648086
+      - `tail_depth`: 0.3721888260765968
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+  - `stack`:
+    - `e_harmonic`: 4.77009718109709
+    - `e_mean`: 264128.7170992591
+    - `e_product_diagnostics_only`: 24188154478.070633
+    - `lanes`:
+      - `coverage@0.8`: 19685.68386843399
+      - `coverage@0.9`: 772698.8772652383
+      - `tail_depth`: 1.59016410502913
+    - `note`: product assumes independence — INVALID here (shared tape); mean/harmonic are the valid pooled claims
+- `receipt_sha256`: 7f2a89cda252f413dcc3e8fefb8b863dc95c29881a8027c21d90d58b716fba96
+- `research_only`: true
+- `schema`: emerge_drill.v1
+
 ### `receipts/evidence_audit_3464d8f8197bf737.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -24798,6 +24943,152 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `t_spearman`: -4.75560366545392
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
+
+### `receipts/real_benchmark_us_wide_manifest.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/real_benchmark_us_wide_manifest.json | b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69 | 819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d | not_checked | absent | e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117 | real | absent | true | false |
+
+- `schema_version`: 1
+- `created_at`: 2026-09-29T13:58:58.925202+00:00
+- `protocol`:
+  - `dataset_path`: ../../../../Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+  - `dataset_sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
+  - `source_url`: https://github.com/artificial-hedge/dipcatcher/blob/d5200713c280438cf51649593517de5cd8b95646/data/file_us_wide/bronze/bars.parquet
+  - `usage_basis`: Existing owner-supplied research snapshot. Upstream vendor entitlements and redistribution rights have not been independently verified.
+  - `price_column`: close
+  - `price_adjustment`: Vendor snapshot close; adjustment and corporate-action completeness are unverified. Not a total-return or executable-price claim.
+  - `universe_description`: Existing 424-name file_us_wide vendor pool. Contains surviving securities; this benchmark does not reconstruct the historical listed universe.
+  - `survivorship_bias`: true
+  - `availability_basis`: reconstructed
+  - `holdout_previously_inspected`: true
+  - `train_start`: 2016-01-01
+  - `train_end`: 2021-12-31
+  - `validation_start`: 2022-01-10
+  - `validation_end`: 2023-12-31
+  - `test_start`: 2024-01-10
+  - `test_end`: 2025-09-30
+  - `horizon_sessions`: 1
+  - `embargo_sessions`: 1
+  - `decision_delay_seconds`: 0
+  - `min_train_rows`: 1000
+  - `min_score_dates`: 60
+  - `ridge_alpha`: 1.0
+- `audit`:
+  - `split_counts`:
+    - `train`:
+      - `rows`: 626297
+      - `dates`: 1490
+    - `validation`:
+      - `rows`: 208395
+      - `dates`: 495
+    - `test`:
+      - `rows`: 181451
+      - `dates`: 431
+  - `excluded_windows`: 0
+  - `late_rows`: 0
+  - `n_names`: 424
+  - `rows`: 1132803
+  - `source_labels`:
+    - yahoo
+  - `first_session`: 2016-01-04T21:00:00+00:00
+  - `last_session`: 2026-09-18T20:00:00+00:00
+- `runtime`:
+  - `python`: 3.12.14
+  - `numpy`: 2.5.3
+  - `polars`: 1.44.2
+- `research_only`: true
+- `holdout_status`: previously_inspected
+- `limitations`:
+  - Source, usage rights and historical availability are user declarations, not independently verified.
+  - File hashes detect changes; they do not prove a holdout was never inspected.
+  - Close-to-close forecast scores do not establish executable net returns.
+  - Input universe has survivorship bias.
+  - Historical availability timestamps were reconstructed.
+- `receipt_sha256`: 819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d
+
+### `receipts/real_benchmark_us_wide_test.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/real_benchmark_us_wide_test.json | df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a | 0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c | not_checked | absent | absent | unspecified | false | true | false |
+
+- `phase`: test
+- `created_at`: 2026-09-29T13:59:37.949139+00:00
+- `scores`:
+  - `zero`:
+    - `date_equal_weight_mse`: 0.0003899407444036479
+    - `date_equal_weight_mae`: 0.012870926140241257
+    - `n_rows`: 181451
+    - `n_dates`: 431
+  - `historical_mean`:
+    - `date_equal_weight_mse`: 0.0003897374788546645
+    - `date_equal_weight_mae`: 0.012854571264094788
+    - `n_rows`: 181451
+    - `n_dates`: 431
+  - `rolling_mean_20`:
+    - `date_equal_weight_mse`: 0.0004090936928422287
+    - `date_equal_weight_mae`: 0.013320458128902708
+    - `n_rows`: 181451
+    - `n_dates`: 431
+  - `ridge`:
+    - `date_equal_weight_mse`: 0.0003890317418507178
+    - `date_equal_weight_mae`: 0.012853767095097219
+    - `n_rows`: 181451
+    - `n_dates`: 431
+- `research_only`: true
+- `promote`: false
+- `claim`: fixed_split_forecast_diagnostic
+- `holdout_status`: previously_inspected
+- `limitations`:
+  - Source, usage rights and historical availability are user declarations, not independently verified.
+  - File hashes detect changes; they do not prove a holdout was never inspected.
+  - Close-to-close forecast scores do not establish executable net returns.
+  - Input universe has survivorship bias.
+  - Historical availability timestamps were reconstructed.
+- `receipt_sha256`: 0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c
+
+### `receipts/real_benchmark_us_wide_validation.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/real_benchmark_us_wide_validation.json | 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3 | 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7 | not_checked | absent | absent | unspecified | false | true | false |
+
+- `phase`: validation
+- `created_at`: 2026-09-29T13:59:17.438767+00:00
+- `scores`:
+  - `zero`:
+    - `date_equal_weight_mse`: 0.0004273770737642132
+    - `date_equal_weight_mae`: 0.014535197485731071
+    - `n_rows`: 208395
+    - `n_dates`: 495
+  - `historical_mean`:
+    - `date_equal_weight_mse`: 0.00042775123473955026
+    - `date_equal_weight_mae`: 0.014541446794625266
+    - `n_rows`: 208395
+    - `n_dates`: 495
+  - `rolling_mean_20`:
+    - `date_equal_weight_mse`: 0.00044714530569201074
+    - `date_equal_weight_mae`: 0.01494506365822247
+    - `n_rows`: 208395
+    - `n_dates`: 495
+  - `ridge`:
+    - `date_equal_weight_mse`: 0.0004301262572191714
+    - `date_equal_weight_mae`: 0.014594179764524259
+    - `n_rows`: 208395
+    - `n_dates`: 495
+- `research_only`: true
+- `promote`: false
+- `claim`: fixed_split_forecast_diagnostic
+- `holdout_status`: previously_inspected
+- `limitations`:
+  - Source, usage rights and historical availability are user declarations, not independently verified.
+  - File hashes detect changes; they do not prove a holdout was never inspected.
+  - Close-to-close forecast scores do not establish executable net returns.
+  - Input universe has survivorship bias.
+  - Historical availability timestamps were reconstructed.
+- `receipt_sha256`: 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7
 
 ### `receipts/serial_watch_140b073ea589b0c7.json`
 

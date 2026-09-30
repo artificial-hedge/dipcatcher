@@ -41,6 +41,7 @@ from typing import Any
 
 import numpy as np
 
+from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
@@ -179,7 +180,19 @@ def corpus_audit(
             inner = body if isinstance(body, Mapping) else doc
             input_labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
             findings.extend(harvest_findings(doc, path.name))
-        except Exception as exc:  # noqa: BLE001 — errors are recorded, never skipped
+        except (
+            OSError,
+            UnicodeDecodeError,
+            json.JSONDecodeError,
+            ValueError,
+            KeyError,
+            TypeError,
+            RuntimeError,
+        ) as exc:
+            # Narrowed from `except Exception` (quality ratchet): receipt read/parse
+            # faults are IO/JSON plus the explicit shape ValueError and the untrusted-
+            # document walk in harvest_findings; exotic errors propagate. Recorded,
+            # never skipped.
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
 
     p_findings = [f for f in findings if f["stat"] == "p"]
@@ -251,3 +264,46 @@ def corpus_audit(
             "tagged_claim_provenance",
         ],
     }
+
+
+def write_corpus_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a corpus_inference receipt and write ``corpus_inference_<hash>.json``.
+
+    Filename digest = ``inputs_sha256`` (v1) or the canonical
+    ``receipt_sha256`` (v2). Atomic, fail-closed on a malformed receipt.
+    ``receipt_version=2`` wraps the same body in the unified ``receipt.v2``
+    envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("kind") != CORPUS_SCHEMA
+        or receipt.get("schema") != CORPUS_SCHEMA
+        or receipt.get("research_only") is not True
+        or receipt.get("live_pnl_claim") is not False
+    ):
+        raise ValueError("corpus_inference receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+        name_digest = str(receipt.get("inputs_sha256") or digest)[:16]
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+            )
+        )
+        name_digest = str(payload["receipt_sha256"])[:16]
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"corpus_inference_{name_digest}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
