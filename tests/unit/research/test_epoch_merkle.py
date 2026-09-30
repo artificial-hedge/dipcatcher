@@ -336,3 +336,99 @@ def test_absence_edge_bound_via_receipt(tmp_path: Path) -> None:
     body = absence_receipt(corpus, "zzz.json")
     assert len(body["bounds"]) == 1
     assert corpus_absence_errors(body) == []
+
+
+def test_proof_layer_semantic_mutation_fuzz(tmp_path: Path) -> None:
+    """Crafted forgeries on corpus_proof.v1 / corpus_absence.v1 must be
+    rejected — byte mutations are covered by the committed-corpus fuzz; these
+    target the proof semantics (shape-bound replay, adjacency, member map)."""
+    import copy
+
+    from quant_fund.research.epoch_merkle import (
+        absence_receipt,
+        corpus_absence_errors,
+        corpus_proof_errors,
+        verify_epoch_absence,
+        verify_epoch_proof,
+    )
+
+    corpus = _corpus(tmp_path, 7)
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    proof = member_proof(corpus, "r3.json")
+    absent = absence_receipt(corpus, "r2x.json")  # interior gap: two bounds
+    assert len(absent["bounds"]) == 2
+
+    def corrupt(body: dict[str, object], **patch: object) -> dict[str, object]:
+        out = copy.deepcopy(body)
+        for key, value in patch.items():
+            if key == "path0_side":
+                path = out["path"]
+                assert isinstance(path, list)
+                hop = path[0]
+                assert isinstance(hop, dict)
+                hop["side"] = "right" if hop["side"] == "left" else "left"
+            elif key == "path0_hash":
+                path = out["path"]
+                assert isinstance(path, list)
+                hop = path[0]
+                assert isinstance(hop, dict)
+                hop["sha256"] = "0" * 64
+            elif key == "reverse_path":
+                out["path"] = list(reversed(out["path"]))  # type: ignore[arg-type]
+            elif key == "bound0_index":
+                bounds = out["bounds"]
+                assert isinstance(bounds, list)
+                bound = bounds[0]
+                assert isinstance(bound, dict)
+                bound["leaf_index"] = int(bound["leaf_index"]) + 1  # type: ignore[call-overload]
+            elif key == "swap_bounds":
+                out["bounds"] = list(reversed(out["bounds"]))  # type: ignore[arg-type]
+            else:
+                out[key] = value
+        return out
+
+    forgeries = [
+        # proof-level: shape-bound index replay catches index/hash/side edits
+        (corrupt(proof, leaf_index=proof["leaf_index"] + 1), corpus_proof_errors),
+        (corrupt(proof, member="r4.json"), corpus_proof_errors),
+        (corrupt(proof, path0_side=True), corpus_proof_errors),
+        (corrupt(proof, path0_hash=True), corpus_proof_errors),
+        (corrupt(proof, reverse_path=True), corpus_proof_errors),
+        (corrupt(proof, merkle_root="f" * 64), corpus_proof_errors),
+        # absence-level: adjacency + bound replay
+        (corrupt(absent, bound0_index=True), corpus_absence_errors),
+        (corrupt(absent, swap_bounds=True), corpus_absence_errors),
+        (corrupt(absent, merkle_root="f" * 64), corpus_absence_errors),
+    ]
+    for i, (forged, contract) in enumerate(forgeries):
+        assert contract(forged), f"forgery #{i} passed the internal contract"
+
+    # Epoch-boundary attacks the internal contract can't see — the member map
+    # is the ground truth, not the claimed name.
+    renamed = corrupt(absent, name="r3.json")
+    # Renaming onto a member name makes a bound equal the claim, and the
+    # bracket check independently rejects it — coherent renames are dead.
+    assert corpus_absence_errors(renamed)
+    assert verify_epoch_absence(renamed, corpus) != []
+    # …but a member can't be absent. Same for a proof pointing at a name that
+    # isn't in the epoch's member map.
+    ghost = corrupt(proof, member="ghost.json")
+    assert verify_epoch_proof(ghost, corpus) != []
+    # Pin-mode forgery: adjacent bounds elsewhere in the tree claimed as an
+    # absence proof for a member — there is no member map offline, so only
+    # the bracket check can reject it.
+    unbracketed = corrupt(absent, name="r5.json")
+    assert "bounds_not_bracketing" in corpus_absence_errors(unbracketed)
+    # n_members lies that are shape-equivalent at this leaf_index are
+    # invisible to the path replay — the epoch's member count pins them.
+    inflated = corrupt(proof, n_members=proof["n_members"] + 1)
+    assert corpus_proof_errors(inflated) == []
+    assert verify_epoch_proof(inflated, corpus) == ["n_members_mismatch"]
+    inflated_abs = corrupt(absent, n_members=absent["n_members"] + 1)
+    assert corpus_absence_errors(inflated_abs) == []
+    assert verify_epoch_absence(inflated_abs, corpus) == ["n_members_mismatch"]
+    # Cross-epoch confusion: a proof minted under a different epoch receipt.
+    write_epoch_receipt(corpus_epoch(corpus), corpus)  # advance head
+    other = absence_receipt(corpus, "zz9.json")
+    moved = corrupt(absent, epoch_receipt=other["epoch_receipt"])
+    assert verify_epoch_absence(moved, corpus) != []

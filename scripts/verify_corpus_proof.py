@@ -37,8 +37,9 @@ Verifies, entirely offline:
    replayed against the pure shape function of (index, n_members) — a forged
    index produces a differently-shaped path that cannot recompute the pin.
 5. Absence proofs: the two sorted-name neighbors bracketing the gap each
-   carry an inclusion path, and their leaf_indexes must be adjacent
-   (hi == lo + 1). A single bound must sit on an edge (index 0 or n-1).
+   carry an inclusion path; their leaf_indexes must be adjacent
+   (hi == lo + 1) AND the bound names must bracket the claimed name
+   (lo < name < hi). A single bound must sit on an edge (index 0 or n-1).
 
 Exit 0 only when every check passes. Prints one verdict line per layer.
 This file must never import the library — it is the differential oracle.
@@ -282,8 +283,15 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
             errors.append("bound_self")
     if errors:
         return sorted(set(errors))
+    if len(bounds) > 2:
+        errors.append("bounds_len")
     if len(idxs) == 2 and idxs[1] - idxs[0] != 1:
         errors.append("bounds_not_adjacent")
+    # Adjacency alone doesn't bracket the name — pin mode has no member map,
+    # so bounds elsewhere in the tree would otherwise pass as an "absence"
+    # proof for a member that sits outside them.
+    if len(idxs) == 2 and not (str(bounds[0]["member"]) < name < str(bounds[1]["member"])):
+        errors.append("bounds_not_bracketing")
     n = proof.get("n_members")
     if len(idxs) == 1 and isinstance(n, int) and n > 1:
         b = bounds[0]

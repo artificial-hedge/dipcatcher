@@ -293,6 +293,11 @@ def verify_epoch_proof(
     member = str(payload["member"])
     if members.get(member) != payload["member_sha256"]:
         return ["member_digest_mismatch"]
+    # n_members only shapes the path check — shape-equivalent forgeries
+    # (e.g. n+1 on a leaf whose side sequence is unchanged) are invisible
+    # to it, so pin the count to the epoch's authoritative member map.
+    if payload["n_members"] != len(members):
+        return ["n_members_mismatch"]
     if merkle_root(members) != payload["merkle_root"]:
         return ["merkle_root_mismatch"]
     return []
@@ -358,6 +363,10 @@ def verify_absence(proof: Mapping[str, Any], expected_root: str) -> list[str]:
         return ["name_missing"]
     if not isinstance(bounds, list):
         return ["bounds_missing"]
+    if len(bounds) > 2:
+        # Absence is proven by the tightest bracketing pair — a wider bound
+        # set is malformed, not stronger.
+        return ["bounds_len"]
     if proof.get("merkle_root") != expected_root:
         errors.append("merkle_root_mismatch")
     if proof.get("n_members") == 0 and bounds:
@@ -379,6 +388,11 @@ def verify_absence(proof: Mapping[str, Any], expected_root: str) -> list[str]:
         return errors
     if len(idxs) == 2 and idxs[1] - idxs[0] != 1:
         errors.append("bounds_not_adjacent")
+    # Adjacent indexes alone don't bracket the name — without this check, a
+    # pin-mode verifier (no member map) would accept bounds anywhere in the
+    # tree as "absence" for a member that sits outside them.
+    if len(idxs) == 2 and not (str(bounds[0]["member"]) < name < str(bounds[1]["member"])):
+        errors.append("bounds_not_bracketing")
     if len(idxs) == 1 and isinstance(proof.get("n_members"), int) and int(proof["n_members"]) > 1:
         b = bounds[0]
         bname = str(b["member"])
@@ -511,6 +525,8 @@ def verify_epoch_absence(
     }
     if payload["name"] in members:
         return ["name_is_member"]
+    if payload["n_members"] != len(members):
+        return ["n_members_mismatch"]
     if merkle_root(members) != payload["merkle_root"]:
         return ["merkle_root_mismatch"]
     return []
