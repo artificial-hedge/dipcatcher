@@ -474,9 +474,15 @@ def test_unicode_nfc_fail_closed(tmp_path: Path) -> None:
     nfd = unicodedata.normalize("NFD", "café.json")
     assert nfd != unicodedata.normalize("NFC", "café.json")  # distinct strings
 
-    # Stamp side: a members map carrying an NFD key is refused outright.
+    # Stamp side: a members map carrying an NFD key is refused outright, and
+    # distinct names colliding under NFC+casefold (impossible on APFS/NTFS
+    # checkouts) are rejected as name aliases.
     assert _nfc_errors({"ok.json": "0" * 64}) == []
     assert _nfc_errors({nfd: "0" * 64}) == [f"member_name_not_nfc:{nfd}"]
+    assert _nfc_errors({"A.json": "0" * 64, "a.json": "1" * 64}) == [
+        "member_name_alias:A.json|a.json"
+    ]
+    assert _nfc_errors({nfd: "0" * 64, unicodedata.normalize("NFC", "café.json"): "1" * 64}) != []
 
     corpus = _corpus(tmp_path, 5)
     write_epoch_receipt(corpus_epoch(corpus), corpus)

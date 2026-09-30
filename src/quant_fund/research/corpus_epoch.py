@@ -131,8 +131,21 @@ def _nfc_errors(members: Mapping[str, str]) -> list[str]:
     """Member names must be NFC-canonical — Unicode-equivalent spellings
     (NFC ``café`` vs NFD ``café``) alias to one file on APFS/HFS+ and
     Windows-lookup filesystems while remaining distinct strings on Linux,
-    which would make inclusion/absence semantics platform-dependent."""
-    return [f"member_name_not_nfc:{n}" for n in members if unicodedata.normalize("NFC", n) != n]
+    which would make inclusion/absence semantics platform-dependent.
+
+    Also rejects distinct names that collide under NFC+casefold
+    (``A.json``/``a.json``) — they can't coexist on default macOS/Windows
+    checkouts, so a corpus admitting both wouldn't be portable."""
+    errors = [f"member_name_not_nfc:{n}" for n in members if unicodedata.normalize("NFC", n) != n]
+    seen: dict[str, str] = {}
+    for n in members:
+        folded = unicodedata.normalize("NFC", n).casefold()
+        other = seen.get(folded)
+        if other is not None and other != n:
+            errors.append(f"member_name_alias:{other}|{n}")
+        else:
+            seen[folded] = n
+    return errors
 
 
 def epoch_root(members: Mapping[str, str]) -> str:
