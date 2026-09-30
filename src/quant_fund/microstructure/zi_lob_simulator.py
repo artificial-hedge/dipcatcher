@@ -269,6 +269,74 @@ class MarkovRegimeFlow:
         return float(total / self.n_mo)
 
 
+class ScenarioRegimeFlow:
+    """Deterministic exogenous regime plan replayed on the MO clock.
+
+    The scenario ``ξ`` of Moret & Lillo (2026, Sec. 9, Algorithm C): a stored
+    schedule of ``(leg, length_in_MO_events)`` pairs rather than a stochastic
+    Markov chain. ``p_buy(m) = legs[k].p_buy`` whenever
+    ``C[k-1] <= m < C[k]`` where ``C`` is the cumulative MO-count boundary;
+    once the plan is exhausted the final leg's parameters persist (plans are
+    sized at generation time to cover the episode's MO horizon, so exhaustion
+    is a bounded edge case, not a silent wrap). Same consumption contract as
+    :class:`MarkovRegimeFlow` — ``current()`` / ``advance()`` on the MO clock.
+    Fully deterministic: no RNG is drawn after construction.
+    """
+
+    def __init__(self, legs: Sequence[tuple[RegimeState, int]]) -> None:
+        if not legs:
+            raise ValueError("ScenarioRegimeFlow requires at least one leg")
+        self._legs: tuple[tuple[RegimeState, int], ...] = ()
+        for i, item in enumerate(legs):
+            st, n = item
+            if not isinstance(st, RegimeState):
+                raise TypeError(f"legs[{i}][0] must be a RegimeState")
+            if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+                raise ValueError(f"legs[{i}][1] must be an int >= 1, got {n!r}")
+            self._legs += ((st, int(n)),)
+        self._bounds: tuple[int, ...] = tuple(
+            sum(n for _, n in self._legs[: k + 1]) for k in range(len(self._legs))
+        )
+        self._leg_idx = 0
+        self.n_mo = 0
+        self.state_mo_counts: list[int] = [0] * len(self._legs)
+        self.transitions: list[tuple[int, int]] = []
+
+    @property
+    def n_legs(self) -> int:
+        return len(self._legs)
+
+    @property
+    def total_mo(self) -> int:
+        """MO horizon the plan was sized for (sum of leg lengths)."""
+        return self._bounds[-1]
+
+    @property
+    def state_index(self) -> int:
+        """Index of the active leg (saturates at the last leg when exhausted)."""
+        return self._leg_idx
+
+    def current(self) -> RegimeState:
+        return self._legs[self._leg_idx][0]
+
+    def advance(self) -> None:
+        """One MO-clock tick: count the visit, then move past any boundary."""
+        self.state_mo_counts[self._leg_idx] += 1
+        self.n_mo += 1
+        while self._leg_idx < len(self._legs) - 1 and self.n_mo >= self._bounds[self._leg_idx]:
+            self._leg_idx += 1
+            self.transitions.append((self.n_mo, self._leg_idx))
+
+    def expected_p_buy(self) -> float:
+        """Visit-weighted mean buy probability realized so far (fail-closed)."""
+        if self.n_mo == 0:
+            raise ValueError("expected_p_buy undefined before any MO event")
+        total = sum(
+            self.state_mo_counts[k] * self._legs[k][0].p_buy for k in range(len(self._legs))
+        )
+        return float(total / self.n_mo)
+
+
 # ---------------------------------------------------------------------------
 # Events / records
 # ---------------------------------------------------------------------------
@@ -330,7 +398,11 @@ class ZILobSimulator:
     (on cancel-by-id paths used by sessions), and non-finite horizons raise.
     """
 
-    def __init__(self, config: ZILobConfig, flow: MarkovRegimeFlow | None = None) -> None:
+    def __init__(
+        self,
+        config: ZILobConfig,
+        flow: MarkovRegimeFlow | ScenarioRegimeFlow | None = None,
+    ) -> None:
         if not isinstance(config, ZILobConfig):
             raise TypeError("config must be a ZILobConfig")
         self._cfg = config
@@ -932,7 +1004,7 @@ def run_mm_session(
     policy: QuotePolicy,
     horizon: float,
     decision_interval: float = 1.0,
-    flow: MarkovRegimeFlow | None = None,
+    flow: MarkovRegimeFlow | ScenarioRegimeFlow | None = None,
     inventory_cap: int | None = None,
     sample_interval: float = 25.0,
 ) -> dict[str, Any]:
