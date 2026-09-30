@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/calib_real_drill.py",
-  "receipt_sha256": "d5e2c02ce0692edb59e609a3665a410d504bded0e8a44ee2053cdd7453677bb6",
+  "receipt_sha256": "17664d1891cde1b68154e094e6ba8edf34e97e558b2f197a0d1b5867040a50f3",
   "replay": {
     "argv": [
       "scripts/calib_real_drill.py",
@@ -14,7 +14,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/calib_real_drill.json",
-        "sha256": "ffdb00e7591db4362e61da9b9978f845e54abd3c4ce1f29c0e216a6d0dc43390"
+        "sha256": "26e24607eb2832a2b296393cd3f5da331434cafa4ac0d68edaf41a15f8eaec27"
       }
     ],
     "input_tapes": [

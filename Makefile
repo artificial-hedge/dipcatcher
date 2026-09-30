@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check replay-sweep perf-record perf-check evidence-audit
 
 .DEFAULT_GOAL := help
 
@@ -206,6 +206,10 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 	uv run dipcatcher lattice --strict \
 		--known-inconsistent quality/lattice_known_inconsistent.json \
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
+
+replay-sweep: ## CI gate: replay every replayable carrier; fail on divergence or all-skip
+	uv run dipcatcher replay-all --strict \
+		--out "$${RUNNER_TEMP:-/tmp}/replay_coverage.json"
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

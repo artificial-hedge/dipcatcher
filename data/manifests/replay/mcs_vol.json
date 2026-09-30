@@ -1,0 +1,30 @@
+{
+  "data_label": "SYNTHETIC",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/mcs_vol_drill.py",
+  "receipt_sha256": "7ce8dd6c4b0ba953bf459899cfd93b7f02c9bf23d9aa4742ccb84e0966e8fe3b",
+  "replay": {
+    "argv": [
+      "scripts/mcs_vol_drill.py",
+      "--out-dir",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/mcs_vol_drill.json",
+        "sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [],
+      "claims_equal": true,
+      "committed_sha256": "9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0",
+      "receipt": "receipts/mcs_vol_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

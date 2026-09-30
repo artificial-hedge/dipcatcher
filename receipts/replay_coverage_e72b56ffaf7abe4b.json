@@ -29,23 +29,23 @@
     "python": "3.12.14",
     "threadpools": []
   },
-  "generated_at": "2026-09-30T13:29:56.600614+00:00",
-  "git_revision": "09f97dd4af6c1a07ed6964aba6f727d01a1a5fdb",
+  "generated_at": "2026-09-30T13:49:03.013852+00:00",
+  "git_revision": "c1fcf1f558969b99e4151955556f1afba70c9c3e",
   "kind": "replay_coverage",
   "live_pnl_claim": false,
   "params_hash": "2e8354e803f2fa36b3b51299fc99b6ae52c469a58c0d166ab5961a417126b34e",
   "payload": {
     "carriers_dir": "data/manifests/replay",
-    "claims_byte_equal_frac": 0.4117647058823529,
+    "claims_byte_equal_frac": 0.4444444444444444,
     "coverage": 1.0,
     "data_label": "CORPUS",
     "kind": "replay_coverage",
     "live_pnl_claim": false,
-    "n_carriers": 14,
-    "n_claims_byte_equal": 7,
-    "n_claims_total": 17,
+    "n_carriers": 15,
+    "n_claims_byte_equal": 8,
+    "n_claims_total": 18,
     "n_fail": 0,
-    "n_pass": 14,
+    "n_pass": 15,
     "n_skipped": 0,
     "research_only": true,
     "rows": [
@@ -99,6 +99,12 @@
       },
       {
         "all_match": true,
+        "carrier": "data/manifests/replay/mcs_vol.json",
+        "exit_code": 0,
+        "verdict": "pass"
+      },
+      {
+        "all_match": true,
         "carrier": "data/manifests/replay/monitor.json",
         "exit_code": 0,
         "verdict": "pass"
@@ -138,7 +144,7 @@
     "timeout_s": 600.0,
     "verdict": "pass"
   },
-  "receipt_sha256": "5cfeb6898cd379ff69016e5fd9514527a4aa0dd92a8ed2bc5c84ba2e7d402697",
+  "receipt_sha256": "e72b56ffaf7abe4ba713019126d070aaad8c298888d3098992b44a5aed5d5415",
   "schema": "receipt.v2",
   "schema_version": 2,
   "verdict": "pass"

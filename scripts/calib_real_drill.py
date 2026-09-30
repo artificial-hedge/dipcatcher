@@ -102,8 +102,8 @@ def main() -> None:
         "excluded_heads": list(EXCLUDED_HEADS),
         "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
     }
-    receipt.pop("code_revision", None)
-    receipt.pop("meta", None)
+    for stamp in ("code_revision", "meta", "generated_at", "generated_at_commit", "git_revision"):
+        receipt.pop(stamp, None)
     canonical = json.loads(canonical_json_bytes(dict(receipt)))
     digest = hash_bytes(canonical_json_bytes(canonical))
     payload = {**canonical, "receipt_sha256": digest}

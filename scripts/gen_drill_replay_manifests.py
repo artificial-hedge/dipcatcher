@@ -113,6 +113,17 @@ DRILLS: dict[str, dict[str, Any]] = {
     "verdict_real_drill.py": {"receipts": ["verdict_real_drill.json"], "argv_extra": []},
 }
 
+# Fully synthetic drills — no input tape, replayable anywhere (CI included).
+# argv is the full argv; out stays under REPLAY_OUT so artifacts never land
+# on a committed path (the replay committed-overwrite guard would fire).
+SYNTHETIC_DRILLS: dict[str, dict[str, Any]] = {
+    "mcs_vol_drill.py": {
+        "lane": "mcs_vol",
+        "argv_extra": ["--out-dir", REPLAY_OUT],
+        "receipts": ["mcs_vol_drill.json"],
+    },
+}
+
 
 def _norm(node: Any) -> Any:
     if isinstance(node, dict):
@@ -309,6 +320,50 @@ def main() -> int:
                 "artifacts": artifacts,
                 "input_tapes": [{"manifest": TAPE_MANIFEST}],
             },
+            "reproduces": reproduces,
+        }
+        carrier = _seal_carrier(body)
+        path = root / "data" / "manifests" / "replay" / f"{lane}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(carrier, indent=2, sort_keys=True) + "\n")
+        carriers.append(path.name)
+
+    # synthetic lanes: no input tape, replayable anywhere
+    for script, spec in SYNTHETIC_DRILLS.items():
+        lane = spec["lane"]
+        if only and lane not in only and script not in only:
+            continue
+        argv = ["scripts/" + script, *spec["argv_extra"]]
+        proc = subprocess.run(
+            [sys.executable, *argv], cwd=root, capture_output=True, text=True, timeout=1800
+        )
+        if proc.returncode != 0:
+            failures.append(f"{script}: exit {proc.returncode}: {proc.stderr[-300:]}")
+            continue
+        artifacts = []
+        reproduces = []
+        for name in spec["receipts"]:
+            produced = out_dir / name
+            if not produced.is_file():
+                failures.append(f"{script}: expected artifact {produced} not written")
+                continue
+            artifacts.append(
+                {
+                    "path": f"{REPLAY_OUT}/{name}",
+                    "sha256": hashlib.sha256(produced.read_bytes()).hexdigest(),
+                }
+            )
+            committed = root / "receipts" / name
+            if committed.is_file():
+                reproduces.append(_reproduces_entry(f"receipts/{name}", committed, produced))
+        body = {
+            "schema": "replay_manifest.v1",
+            "kind": "replay_manifest",
+            "research_only": True,
+            "live_pnl_claim": False,
+            "data_label": "SYNTHETIC",
+            "producer": f"scripts/{script}",
+            "replay": {"argv": argv, "artifacts": artifacts},
             "reproduces": reproduces,
         }
         carrier = _seal_carrier(body)

@@ -668,6 +668,8 @@ jobs:
         run: make evidence-audit
       - name: Cross-receipt consistency lattice
         run: make lattice-check
+      - name: Replay carriers (byte-exact artifact reproduction)
+        run: make replay-sweep
 
   pretrade-risk:
     runs-on: ubuntu-latest

@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/race_real_drill.py",
-  "receipt_sha256": "9e7bd546d3333a8aa285f229abd62944f90549a8ba206cd078beb9588ec66281",
+  "receipt_sha256": "974b94380c298047cc3272a79be90962a9dc9b8db06f5abef62644332e1afd1a",
   "replay": {
     "argv": [
       "scripts/race_real_drill.py",
@@ -15,7 +15,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/fleet_race_real_drill.json",
-        "sha256": "6400ed5c5b92a4eadb1ddfa656b0cff18b7dd4dda6af9071e09b3c08ff83ea02"
+        "sha256": "41a0c7f1bf9ddc7f46e1a22972beb2ba828e040b8b5a4e79e107fd065c81b3fb"
       }
     ],
     "input_tapes": [

@@ -565,7 +565,11 @@ def replay_all_cmd(
         120.0, "--timeout", help="Subprocess timeout in seconds per replayed lane."
     ),
     strict: bool = typer.Option(
-        False, "--strict", help="Exit 1 unless every carrier replays clean."
+        False,
+        "--strict",
+        help="Exit 1 on any failed replay, or if nothing ran (all skipped). "
+        "Carriers skipped for unverified inputs (e.g. tape absent in CI) "
+        "are tolerated but reported.",
     ),
 ) -> None:
     """Sweep every committed replay carrier and seal a ``replay_coverage.v1``.
@@ -575,7 +579,8 @@ def replay_all_cmd(
     into one sealed coverage receipt — the corpus's single reproducibility
     number. ``skipped`` (inputs unverified / committed-overwrite guard)
     is honest, never counted as a failure; ``fail`` means the lane ran
-    and diverged. ``--strict`` exits non-zero unless every carrier passes.
+    and diverged. ``--strict`` exits non-zero when any carrier fails or
+    when every carrier skipped — an all-skip run proves nothing.
     """
     import quant_fund.research.replay_sweep as _replay_sweep_mod
     from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
@@ -609,7 +614,7 @@ def replay_all_cmd(
         f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']}"
     )
     typer.echo(f"verdict={body['verdict']} receipt={out_path}")
-    if strict and body["n_pass"] != body["n_carriers"]:
+    if strict and (body["n_fail"] > 0 or body["n_pass"] == 0):
         raise typer.Exit(code=1)
     raise typer.Exit(code=0 if body["verdict"] == "pass" else 1)
 
