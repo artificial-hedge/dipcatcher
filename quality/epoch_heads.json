@@ -1,43 +1,43 @@
 {
   "heads": {
     ".dsh-24x7/*": {
-      "receipt": "corpus_epoch_8f9f6e1e437f3ab3.json",
-      "sha256": "19559f8f9b95e1649f508b670636e960b0494286bde551de62c5231132220443",
-      "tree_root": "e430709e0016b3d4b9441bbb1bea0635fd1247d6e70939c070e401cc4ac49405"
+      "receipt": "corpus_epoch_dff9ac5f77dff3a1.json",
+      "sha256": "f2b5f6773907f94914590d141347e773c11bc8f061d2220df05b77ddc1e85357",
+      "tree_root": "748913958a75554da662b47f67ed2826be415386eb7dc9114603270165ab22ee"
     },
     ".github/workflows/*.yml": {
-      "receipt": "corpus_epoch_f728ba67961dc9bf.json",
-      "sha256": "f898b5cbe701d515331fbeebb34d9dfef038d5426f602b0490a8ccf119ba8965",
+      "receipt": "corpus_epoch_8ec10e6834c22231.json",
+      "sha256": "b5403fc8a9eb48df6442ab84be197b898db39fcc1f6af0a60e00a93fd2ba2ade",
       "tree_root": "51cbdbe7a47bfdf9d45e9b151fb46d83fc7da0de9628efdfeff324f44c5b2653"
     },
     "artifacts/*": {
-      "receipt": "corpus_epoch_5ae2e13999a2be5b.json",
-      "sha256": "7c071d92fd6dcbd4eea78816486b050527e122805ffa62fe625c5c6f4a8279d6",
-      "tree_root": "324eee37199eddac12534240f74660cf65909879c2f7ab5bd903e4849276aaa9"
+      "receipt": "corpus_epoch_76a9ea45145e96bb.json",
+      "sha256": "2d4a688c1a8e1df5b6f2b0eda8572ff52a737939ddde32c01ba5c9b82fb48508",
+      "tree_root": "39f17f07633da59ffe54e4835e9e141ac20c4dfd8376f9b0bd5774dd3ade0c97"
     },
     "configs/*": {
-      "receipt": "corpus_epoch_31d0be79cb9cb53e.json",
-      "sha256": "f4b8f2d4fd1089f6f91b1429100e4826fcb6a23298b2da5fdc3111a599368f0a",
-      "tree_root": "1e3755fef448f08429a95ef1ab8bd6b53906fc8331ed1926ba9d9a7b79f8358b"
+      "receipt": "corpus_epoch_6120e4244f87ca42.json",
+      "sha256": "068a48b08a8f70da482dea284a67072ec67c257bdc74e8ff6c62208e17c3e604",
+      "tree_root": "0f78426ff07890628e76c2e03b244301be0a198e95d27357002db4ace52503e9"
     },
     "data/metadata/*": {
-      "receipt": "corpus_epoch_37b8b8445efafdfc.json",
-      "sha256": "0948a3398b90ed895996c2e5300e3e774711271669d99a210a6ef5fad2ab0ad4",
-      "tree_root": "574fe9325917e2fe1935bb7af0a82234b36710b3a57be3c8b163e5bd9ddf9b39"
+      "receipt": "corpus_epoch_04d8ad4f6ac237ab.json",
+      "sha256": "a0185590023830fe2a5778df0ea318a4b27d87393e701239b5c94ce00f9d0d3a",
+      "tree_root": "e2dd2bf7239119603d947aeb75e677865e45ae8a2865c4cef30bf394a8637813"
     },
     "quality/*.json": {
-      "receipt": "corpus_epoch_bbba84562ec75fb9.json",
-      "sha256": "a81c563f5675f621490ae6e83f483a17987aea30fa95f2460fb31cce2189b38f",
-      "tree_root": "8d825d513dd3c3dbfffda91277593ece619ded2fde0b5c0e1c13723d24b9b481"
+      "receipt": "corpus_epoch_9277314744dd9c9c.json",
+      "sha256": "54aa6186bf7d62fce750293a3c61ca4271be52ac8ff34d03d95c05db5443c047",
+      "tree_root": "3b2c02652f064531a544b7f362898ec7bfc0de2a01c5601cc18f3dfb5c991f11"
     },
     "receipts/*.json": {
-      "receipt": "corpus_epoch_1384f0d99dac82aa.json",
-      "sha256": "d8d10fb9b46df573923a41cb0a04e4637dc9b6dde39e57dbfc74494e7ff33258",
-      "tree_root": "98feb017125094eb0d8d5e4713c567a17c9f8912bcd5715cc223d0a0ac94b85c"
+      "receipt": "corpus_epoch_ab1470227e387e4d.json",
+      "sha256": "cba4e5507591d625b134e82278581e57b9c800ad717cd65f563e0a3bece3377e",
+      "tree_root": "034e4761481f261cacf66834b2279e526d90d4b2c75dcaa8316637543cc86293"
     },
     "verifier/*.md": {
-      "receipt": "corpus_epoch_6d904ffce1584ac3.json",
-      "sha256": "fe7b94c467a67393f48d970ccceeea8cac74d836e708dc2d9ce88db817a29a25",
+      "receipt": "corpus_epoch_aba32fab65d8cbaa.json",
+      "sha256": "4d18475dc86bec76b5b1a39b9ceb9ff7f6430956de3a002a523e3ef2e7823e81",
       "tree_root": "3ecbdb04fad8c2660a3bc3b21cd6748b235db33c04905c08c28e62b26932c59d"
     }
   },

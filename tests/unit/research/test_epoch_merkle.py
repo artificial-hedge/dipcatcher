@@ -241,3 +241,98 @@ def test_verify_proof_pin_offline(tmp_path: Path) -> None:
     new_path = write_epoch_receipt(corpus_epoch(corpus), corpus)  # advance the head
     proof2 = member_proof(corpus, "r3.json", epoch_receipt=new_path.name)
     assert "epoch_receipt_not_pinned" in verify_proof_pin(proof2, pin_entry)
+
+
+def test_absence_receipt_round_trip_and_pin(tmp_path: Path) -> None:
+    """corpus_absence.v1: emits, passes contract + epoch + pin verification."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+    from quant_fund.research.epoch_merkle import (
+        CORPUS_ABSENCE_SCHEMA,
+        absence_receipt,
+        corpus_absence_errors,
+        verify_absence_pin,
+        verify_epoch_absence,
+    )
+
+    corpus = _corpus(tmp_path, 5)
+    receipt_path = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    body = absence_receipt(corpus, "rx.json")
+    assert body["schema"] == CORPUS_ABSENCE_SCHEMA
+    assert body["epoch_receipt"] == receipt_path.name
+    assert corpus_absence_errors(body) == []
+    assert verify_epoch_absence(body, corpus) == []
+
+    pin = tmp_path / "quality" / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", receipt_path)
+    pin_entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    assert verify_absence_pin(body, pin_entry) == []
+
+
+def test_absence_receipt_rejects_member_and_drift(tmp_path: Path) -> None:
+    """A name that IS a member can't be receipted absent; epoch drift fails."""
+    from quant_fund.research.epoch_merkle import (
+        absence_receipt,
+        verify_epoch_absence,
+    )
+
+    corpus = _corpus(tmp_path, 4)
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    with pytest.raises(ValueError, match="is a member"):
+        absence_receipt(corpus, "r0.json")
+    body = absence_receipt(corpus, "rx.json")
+    # Absence is epoch-bound: a member added AFTER the stamp can't unwind the
+    # proof — the append-only chain keeps epoch N's map frozen.
+    (corpus / "zz.json").write_text("{}")
+    assert verify_epoch_absence(body, corpus) == []
+    # But an epoch receipt whose member map drifts from the declared root fails.
+    import json as _json
+
+    epoch_file = corpus / body["epoch_receipt"]
+    doc = _json.loads(epoch_file.read_text())
+    doc["epoch_root_sha256"] = "0" * 64
+    epoch_file.write_text(_json.dumps(doc))
+    assert "epoch_root_mismatch" in verify_epoch_absence(body, corpus)
+
+
+def test_absence_pin_forged_and_stale(tmp_path: Path) -> None:
+    """Pin mode: forged bounds + a stale epoch both fail."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+    from quant_fund.research.epoch_merkle import (
+        absence_receipt,
+        verify_absence_pin,
+    )
+
+    corpus = _corpus(tmp_path, 5)
+    receipt_path = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    pin = tmp_path / "quality" / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", receipt_path)
+    pin_entry = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+
+    body = absence_receipt(corpus, "rx.json")
+    # Forge: claim a wrong root — pinned tree_root mismatch.
+    forged = dict(body, merkle_root="f" * 64)
+    errs = verify_absence_pin(forged, pin_entry)
+    assert errs
+    # Stale epoch binding.
+    new_epoch = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    stale = absence_receipt(corpus, "rx.json", epoch_receipt=new_epoch.name)
+    assert "epoch_receipt_not_pinned" in verify_absence_pin(stale, pin_entry)
+
+
+def test_absence_edge_bound_via_receipt(tmp_path: Path) -> None:
+    """A name beyond the last member proves absence with a single edge bound."""
+    from quant_fund.research.epoch_merkle import absence_receipt, corpus_absence_errors
+
+    corpus = _corpus(tmp_path, 3)
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    body = absence_receipt(corpus, "zzz.json")
+    assert len(body["bounds"]) == 1
+    assert corpus_absence_errors(body) == []

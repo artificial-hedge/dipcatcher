@@ -1780,7 +1780,7 @@ def corpus_proof_cmd(
                 f"pin {pin.name} (key={corpus_key})"
             )
             return
-        errors = verify_epoch_proof(body_payload, check.parent)
+        errors = verify_epoch_proof(body_payload, corpus_dir)
         for err in errors:
             typer.echo(f"corpus-proof error: {err}")
         if errors:
@@ -1811,6 +1811,109 @@ def corpus_proof_cmd(
     typer.echo(
         f"corpus-proof member={member} epoch={body['epoch_receipt']} "
         f"depth={len(body['path'])} receipt={dest}"
+    )
+
+
+@app.command("corpus-absence")
+def corpus_absence_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Chained corpus to prove non-membership in."
+    ),
+    member: str | None = typer.Option(
+        None, "--member", help="Name proven absent (corpus-relative)."
+    ),
+    epoch: str | None = typer.Option(
+        None, "--epoch", help="Epoch receipt name to bind to (default: chain head)."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Write the sealed corpus_absence.v1 receipt here (default: inside the corpus).",
+    ),
+    check: Path | None = typer.Option(
+        None, "--check", help="Verify an existing corpus_absence receipt instead of making one."
+    ),
+    pin: Path | None = typer.Option(
+        None,
+        "--pin",
+        help="Offline mode: verify --check against this epoch_heads.json pin "
+        "instead of the live corpus.",
+    ),
+) -> None:
+    """Non-membership proof: this name was NOT in the corpus at epoch N.
+
+    Emits a sealed ``corpus_absence.v1`` receipt — the two sorted-name
+    neighbors bracketing the gap, each with a shape-bound inclusion path;
+    ``hi == lo + 1`` proves nothing can sit between them. ``--check`` with
+    ``--pin`` verifies against the quorum-signed, OTS-anchored heads pin —
+    the third-party "was this receipt ever committed?" path.
+    """
+    import json as _json
+
+    from quant_fund.research.epoch_merkle import (
+        absence_receipt,
+        verify_absence_pin,
+        verify_epoch_absence,
+    )
+
+    if check is not None:
+        payload = _json.loads(check.read_text(encoding="utf-8"))
+        body_payload = payload.get("payload", payload)
+        if pin is not None:
+            from quant_fund.research.corpus_epoch import load_heads_pin
+
+            heads = load_heads_pin(pin)
+            corpus_key = body_payload.get("corpus_key")
+            if not isinstance(corpus_key, str):
+                corpus_key = next(
+                    (
+                        k
+                        for k, e in heads.items()
+                        if e.get("receipt") == body_payload.get("epoch_receipt")
+                    ),
+                    "",
+                )
+            errors = verify_absence_pin(body_payload, heads.get(corpus_key, {}))
+            for err in errors:
+                typer.echo(f"corpus-absence error: {err}")
+            if errors:
+                raise typer.Exit(code=1)
+            typer.echo(
+                f"corpus-absence verified offline: {body_payload.get('name')} absent under "
+                f"pin {pin.name} (key={corpus_key})"
+            )
+            return
+        errors = verify_epoch_absence(body_payload, corpus_dir)
+        for err in errors:
+            typer.echo(f"corpus-absence error: {err}")
+        if errors:
+            raise typer.Exit(code=1)
+        typer.echo(
+            f"corpus-absence verified: {body_payload.get('name')} absent in "
+            f"{body_payload.get('epoch_receipt')} (n={body_payload.get('n_members')})"
+        )
+        return
+
+    if member is None:
+        raise typer.BadParameter("--member is required unless --check is passed")
+    body = absence_receipt(corpus_dir, member, epoch_receipt=epoch)
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    sealed = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(__file__).parent.parent / "research" / "epoch_merkle.py",),
+            verdict="pass",
+        )
+    )
+    dest = out or (corpus_dir / f"corpus_absence_{sealed['receipt_sha256'][:16]}.json")
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"corpus-absence name={member} epoch={body['epoch_receipt']} "
+        f"bounds={len(body['bounds'])} receipt={dest}"
     )
 
 

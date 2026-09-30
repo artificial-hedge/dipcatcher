@@ -119,6 +119,14 @@ def test_script_absence_bracket(tmp_path: Path) -> None:
     proc = _run("--absence", str(ap), "--pin", str(pin), "--key", key)
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
+    # Edge bound on a promoted leaf (idx == n-1, odd n): the promotion level
+    # contributes no path entry — a divergence once shipped here.
+    edge = absence_proof(members, "z.json")
+    ep = tmp_path / "abs_edge.json"
+    ep.write_text(json.dumps(edge))
+    proc_edge = _run("--absence", str(ep), "--pin", str(pin), "--key", key)
+    assert proc_edge.returncode == 0, proc_edge.stdout + proc_edge.stderr
+
     bad_pin = tmp_path / "bad.json"
     bad_pin.write_text(
         json.dumps(

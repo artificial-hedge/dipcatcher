@@ -97,10 +97,17 @@ def _verify_inclusion(name: str, sha256: str, proof: dict[str, Any], root_hex: s
     if not (0 <= idx < n):
         errors.append("leaf_index_out_of_range")
     expected = _expected_sides(idx, n)
-    if len(path) != len(expected):
+    # Promotion levels (odd tails) contribute no sibling: the path covers
+    # only the non-None sides, in order.
+    n_siblings = sum(1 for s in expected if s is not None)
+    if len(path) != n_siblings:
         errors.append("path_depth_mismatch")
     else:
-        for entry, want_side in zip(path, expected, strict=True):
+        it = iter(path)
+        for want_side in expected:
+            if want_side is None:
+                continue
+            entry = next(it)
             if not isinstance(entry, dict) or not isinstance(entry.get("sha256"), str):
                 errors.append("path_entry_malformed")
                 return sorted(set(errors))
@@ -250,7 +257,10 @@ def main() -> int:
         errors = audit_proof(body, pin, args.key)
         print(f"inclusion member={body.get('member')} -> {len(errors)} error(s)")
     else:
-        body = json.loads(args.absence.read_text())
+        payload = json.loads(args.absence.read_text())
+        # sealed corpus_absence.v1 receipts wrap the body under 'payload';
+        # raw library absence_proof() dicts pass through unchanged.
+        body = payload.get("payload", payload)
         errors = audit_absence(body, pin, args.key)
         print(f"absence name={body.get('name')} -> {len(errors)} error(s)")
     for e in errors:

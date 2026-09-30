@@ -40,6 +40,7 @@ from typing import Any
 from quant_fund.utils.hashing import canonical_json_bytes
 
 CORPUS_PROOF_SCHEMA = "corpus_proof.v1"
+CORPUS_ABSENCE_SCHEMA = "corpus_absence.v1"
 
 _LEAF_PREFIX = b"\x00"
 _NODE_PREFIX = b"\x01"
@@ -192,34 +193,10 @@ def member_proof(
 ) -> dict[str, Any]:
     """Build a ``corpus_proof.v1`` body binding ``member`` to the chain head
     (or ``epoch_receipt`` explicitly)."""
-    from quant_fund.research.corpus_epoch import _epoch_receipts
-
-    root = Path(corpus_dir)
-    epochs = [(p, e) for p, e in _epoch_receipts(root)]
-    if not epochs:
-        raise ValueError(f"no corpus epochs under {root} — run corpus-epoch first")
-    if epoch_receipt is None:
-        # Chain head = the epoch no other epoch names as prev. Filenames are
-        # digest-derived — lexical order is not chain order.
-        prevs = {e.get("prev_epoch_receipt") for _, e in epochs}
-        heads = [(p, e) for p, e in epochs if p.name not in prevs]
-        epoch_path, epoch_payload = sorted(heads, key=lambda t: t[0].name)[-1]
-    else:
-        hit = [(p, e) for p, e in epochs if p.name == epoch_receipt]
-        if not hit:
-            raise ValueError(f"epoch receipt {epoch_receipt} not found under {root}")
-        epoch_path, epoch_payload = hit[0]
-    members_list = epoch_payload.get("members")
-    if not isinstance(members_list, list):
-        raise ValueError(f"{epoch_path.name} has no member map")
-    members = {
-        m["name"]: m["sha256"]
-        for m in members_list
-        if isinstance(m, Mapping) and "name" in m and "sha256" in m
-    }
-    proof = inclusion_proof(members, member)
     from quant_fund.research.corpus_epoch import epoch_heads_key
 
+    epoch_path, epoch_payload, members = _epoch_members(corpus_dir, epoch_receipt)
+    proof = inclusion_proof(members, member)
     return {
         "kind": CORPUS_PROOF_SCHEMA,
         "schema": CORPUS_PROOF_SCHEMA,
@@ -228,7 +205,8 @@ def member_proof(
         "data_label": "CORPUS",
         "simulated_only": False,
         "corpus_key": epoch_heads_key(
-            root, str((epoch_payload.get("params") or {}).get("pattern") or "*.json")
+            Path(corpus_dir),
+            str((epoch_payload.get("params") or {}).get("pattern") or "*.json"),
         ),
         "member": member,
         "member_sha256": members[member],
@@ -409,4 +387,149 @@ def verify_absence(proof: Mapping[str, Any], expected_root: str) -> list[str]:
         )
         if not edge_ok:
             errors.append("single_bound_not_edge")
+    return sorted(set(errors))
+
+
+def _epoch_members(
+    corpus_dir: Path | str, epoch_receipt: str | None
+) -> tuple[Path, Mapping[str, Any], dict[str, str]]:
+    """Resolve an epoch receipt (chain head by default) → (path, payload,
+    name→sha256 member map)."""
+    from quant_fund.research.corpus_epoch import _epoch_receipts
+
+    root = Path(corpus_dir)
+    epochs = [(p, e) for p, e in _epoch_receipts(root)]
+    if not epochs:
+        raise ValueError(f"no corpus epochs under {root} — run corpus-epoch first")
+    if epoch_receipt is None:
+        prevs = {e.get("prev_epoch_receipt") for _, e in epochs}
+        heads = [(p, e) for p, e in epochs if p.name not in prevs]
+        epoch_path, epoch_payload = sorted(heads, key=lambda t: t[0].name)[-1]
+    else:
+        hit = [(p, e) for p, e in epochs if p.name == epoch_receipt]
+        if not hit:
+            raise ValueError(f"epoch receipt {epoch_receipt} not found under {root}")
+        epoch_path, epoch_payload = hit[0]
+    members_list = epoch_payload.get("members")
+    if not isinstance(members_list, list):
+        raise ValueError(f"{epoch_path.name} has no member map")
+    members: dict[str, str] = {
+        str(m["name"]): str(m["sha256"])
+        for m in members_list
+        if isinstance(m, Mapping) and "name" in m and "sha256" in m
+    }
+    return epoch_path, epoch_payload, members
+
+
+def absence_receipt(
+    corpus_dir: Path | str,
+    name: str,
+    *,
+    epoch_receipt: str | None = None,
+) -> dict[str, Any]:
+    """Build a ``corpus_absence.v1`` body: cryptographic proof that ``name``
+    was NOT a member at the bound epoch — the two sorted-name neighbors
+    bracketing the gap, each with a shape-bound inclusion path."""
+    from quant_fund.research.corpus_epoch import epoch_heads_key
+
+    epoch_path, epoch_payload, members = _epoch_members(corpus_dir, epoch_receipt)
+    proof = absence_proof(members, name)
+    return {
+        "kind": CORPUS_ABSENCE_SCHEMA,
+        "schema": CORPUS_ABSENCE_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "CORPUS",
+        "simulated_only": False,
+        "corpus_key": epoch_heads_key(
+            Path(corpus_dir),
+            str((epoch_payload.get("params") or {}).get("pattern") or "*.json"),
+        ),
+        "name": name,
+        "epoch_receipt": epoch_path.name,
+        "epoch_root_sha256": epoch_payload.get("epoch_root_sha256"),
+        "merkle_root": proof["merkle_root"],
+        "n_members": proof["n_members"],
+        "bounds": proof["bounds"],
+    }
+
+
+def corpus_absence_errors(payload: Mapping[str, Any]) -> list[str]:
+    """``corpus_absence.v1`` internal consistency; ``[]`` when clean.
+
+    Bounds must recompute the declared ``merkle_root`` and bracket ``name``
+    adjacently — the soundness anchor (that root is the real corpus's) is
+    applied by ``verify_epoch_absence``/``verify_absence_pin``.
+    """
+    errors: list[str] = []
+    if payload.get("kind") != CORPUS_ABSENCE_SCHEMA:
+        errors.append("kind_not_corpus_absence")
+    if payload.get("schema") != CORPUS_ABSENCE_SCHEMA:
+        errors.append("schema_not_corpus_absence")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    corpus_key = payload.get("corpus_key")
+    if corpus_key is not None and not isinstance(corpus_key, str):
+        errors.append("corpus_key_not_str")
+    name = payload.get("name")
+    if not isinstance(name, str) or not name:
+        errors.append("name_not_str")
+    root = payload.get("epoch_root_sha256")
+    if not (isinstance(root, str) and len(root) == 64):
+        errors.append("epoch_root_sha256")
+    merkle = payload.get("merkle_root")
+    if not (isinstance(merkle, str) and len(merkle) == 64):
+        errors.append("merkle_root")
+    elif isinstance(merkle, str):
+        errors += verify_absence(payload, merkle)
+    return sorted(set(errors))
+
+
+def verify_epoch_absence(
+    payload: Mapping[str, Any],
+    corpus_dir: Path | str,
+) -> list[str]:
+    """Deep check: an absence receipt must anchor to a real chained epoch —
+    the epoch's member map must recompute ``merkle_root`` and NOT contain
+    ``name``."""
+    errors = corpus_absence_errors(payload)
+    if errors:
+        return errors
+    root = Path(corpus_dir)
+    receipt = _load_epoch_receipt(root, str(payload["epoch_receipt"]))
+    if receipt is None:
+        return ["epoch_receipt_missing"]
+    if receipt.get("epoch_root_sha256") != payload["epoch_root_sha256"]:
+        return ["epoch_root_mismatch"]
+    members_list = receipt.get("members")
+    members = {
+        m["name"]: m["sha256"]
+        for m in members_list or []
+        if isinstance(m, Mapping) and "name" in m and "sha256" in m
+    }
+    if payload["name"] in members:
+        return ["name_is_member"]
+    if merkle_root(members) != payload["merkle_root"]:
+        return ["merkle_root_mismatch"]
+    return []
+
+
+def verify_absence_pin(
+    payload: Mapping[str, Any],
+    pin_entry: Mapping[str, Any],
+) -> list[str]:
+    """Offline absence verification against a heads-pin entry — the pin's
+    ``tree_root`` is the trusted root the bounds must recompute."""
+    errors = corpus_absence_errors(payload)
+    if errors:
+        return errors
+    if payload.get("epoch_receipt") != pin_entry.get("receipt"):
+        errors.append("epoch_receipt_not_pinned")
+    pinned_root = pin_entry.get("tree_root")
+    if not isinstance(pinned_root, str):
+        errors.append("pin_tree_root_absent")
+    elif payload.get("merkle_root") != pinned_root:
+        errors.append("merkle_root_not_pinned")
     return sorted(set(errors))
