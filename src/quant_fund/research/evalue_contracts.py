@@ -39,6 +39,13 @@ EVALUE_FAMILY_KINDS = frozenset(
         "honest_verdict.v1",
         "monitor_run",
         "suite_health",
+        "mcs_seq",
+        "serial_watch",
+        # drill receipts emit bare kinds (schema carries the .v1 tag)
+        "coverage_cs",
+        "coverage_audit",
+        "emerge_drill.v1",
+        "panel_audit.v1",
     }
 )
 
@@ -866,45 +873,198 @@ def _serial_watch_errors(p: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+def _emerge_drill_errors(p: Mapping[str, Any]) -> list[str]:
+    """emerge_drill.v1: pooled-per-head e-values must re-derive the family claim."""
+    errors: list[str] = []
+    if p.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if p.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if not isinstance(p.get("data_label"), str) or not p["data_label"].strip():
+        errors.append("data_label_not_nonempty_str")
+    pooled = p.get("pooled_per_head")
+    if not isinstance(pooled, Mapping) or not pooled:
+        errors.append("pooled_per_head_missing")
+        return errors
+    n_heads = p.get("n_heads")
+    if not isinstance(n_heads, int) or isinstance(n_heads, bool) or n_heads != len(pooled):
+        errors.append("n_heads_not_len_pooled")
+    fam = _num(p.get("family_evalue"))
+    if fam is None or fam <= 0:
+        errors.append("family_evalue_not_positive")
+    for head, row in pooled.items():
+        if not isinstance(row, Mapping):
+            errors.append(f"pooled_per_head:{head}:not_object")
+            continue
+        mean = _num(row.get("e_mean"))
+        harm = _num(row.get("e_harmonic"))
+        lanes = row.get("lanes")
+        if mean is None or mean < 0:
+            errors.append(f"pooled_per_head:{head}:e_mean_not_nonneg")
+        if harm is None or harm < 0:
+            errors.append(f"pooled_per_head:{head}:e_harmonic_not_nonneg")
+        if not isinstance(lanes, Mapping) or not lanes:
+            errors.append(f"pooled_per_head:{head}:lanes_missing")
+        else:
+            lane_vals = [_num(v) for v in lanes.values()]
+            if any(v is None for v in lane_vals):
+                errors.append(f"pooled_per_head:{head}:lane_evalue_not_numeric")
+        # harmonic <= arithmetic mean (power-mean inequality)
+        if mean is not None and harm is not None and harm - mean > 1e-9 * max(mean, 1.0):
+            errors.append(f"pooled_per_head:{head}:harmonic_exceeds_mean")
+    if (
+        fam is not None
+        and isinstance(n_heads, int)
+        and not isinstance(n_heads, bool)
+        and n_heads > 0
+    ):
+        # family e-value is the e-Bonferroni merger: n * min(e_mean)
+        min_mean = min(
+            (_num(r.get("e_mean")) or 0.0) for r in pooled.values() if isinstance(r, Mapping)
+        )
+        expected = min_mean * n_heads
+        if abs(fam - expected) > 1e-6 * max(expected, 1.0):
+            errors.append("family_evalue_not_bonferroni_min_mean")
+    return errors
+
+
+def _panel_audit_errors(p: Mapping[str, Any]) -> list[str]:
+    """panel_audit.v1: per-head pooled e-values must re-derive the family verdict."""
+    errors: list[str] = []
+    if p.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if p.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if not isinstance(p.get("data_label"), str) or not p["data_label"].strip():
+        errors.append("data_label_not_nonempty_str")
+    heads = p.get("heads")
+    symbols = p.get("symbols")
+    if not isinstance(heads, list) or not heads:
+        errors.append("heads_missing")
+    if not isinstance(symbols, list) or not symbols:
+        errors.append("symbols_missing")
+    n_heads, n_symbols = p.get("n_heads"), p.get("n_symbols")
+    if isinstance(heads, list) and (
+        not isinstance(n_heads, int) or isinstance(n_heads, bool) or n_heads != len(heads)
+    ):
+        errors.append("n_heads_not_len_heads")
+    if isinstance(symbols, list) and (
+        not isinstance(n_symbols, int) or isinstance(n_symbols, bool) or n_symbols != len(symbols)
+    ):
+        errors.append("n_symbols_not_len_symbols")
+    cells_ok, cells_total = p.get("n_cells_ok"), p.get("n_cells_total")
+    if not isinstance(cells_ok, int) or isinstance(cells_ok, bool) or cells_ok < 0:
+        errors.append("n_cells_ok_not_nonneg_int")
+    if not isinstance(cells_total, int) or isinstance(cells_total, bool) or cells_total < 0:
+        errors.append("n_cells_total_not_nonneg_int")
+    if (
+        isinstance(cells_ok, int)
+        and not isinstance(cells_ok, bool)
+        and isinstance(cells_total, int)
+        and not isinstance(cells_total, bool)
+        and cells_ok > cells_total
+    ):
+        errors.append("n_cells_ok_exceeds_total")
+    alpha = _num(p.get("alpha"))
+    family = p.get("family")
+    if alpha is None or not 0 < alpha < 1:
+        errors.append("alpha_not_in_unit_interval")
+    if not isinstance(family, Mapping):
+        errors.append("family_missing")
+    else:
+        thr = _num(family.get("bonferroni_threshold"))
+        mx = _num(family.get("max_head_pooled_evalue"))
+        if thr is None:
+            errors.append("bonferroni_threshold_missing")
+        elif (
+            alpha is not None
+            and isinstance(n_heads, int)
+            and not isinstance(n_heads, bool)
+            and abs(thr - n_heads / alpha) > 1e-9 * max(thr, 1.0)
+        ):
+            errors.append("bonferroni_threshold_not_n_over_alpha")
+        if isinstance(heads, list) and heads:
+            pooled_vals = [
+                _num(row.get("pooled_evalue")) for row in heads if isinstance(row, Mapping)
+            ]
+            if mx is None or any(v is None for v in pooled_vals):
+                errors.append("max_head_pooled_evalue_missing")
+            else:
+                observed = max(v for v in pooled_vals if v is not None)
+                if abs(mx - observed) > 1e-9 * max(mx, 1.0):
+                    errors.append("max_head_pooled_not_max")
+            alarmed = family.get("family_alarmed")
+            if not isinstance(alarmed, bool):
+                errors.append("family_alarmed_not_bool")
+            elif isinstance(mx, float) and isinstance(thr, float) and alarmed != (mx >= thr):
+                errors.append("family_alarmed_inconsistent")
+    if not _is_sha256(p.get("inputs_sha256")):
+        errors.append("inputs_sha256_invalid")
+    return errors
+
+
+def _asserted_honesty_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Reject asserted dishonesty in any evalue-family receipt.
+
+    Early writers omitted the honesty stamps, so absence is tolerated (the
+    committed corpus is immutable); an asserted bad value is not — a forged
+    ``live_pnl_claim``/``research_only`` must fail even under a valid reseal.
+    """
+    errors: list[str] = []
+    if receipt.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim_true")
+    if receipt.get("research_only") is False:
+        errors.append("research_only_false")
+    label = receipt.get("data_label")
+    if label is not None and not (isinstance(label, str) and label.strip()):
+        errors.append("data_label_not_nonempty_str")
+    return errors
+
+
 def evalue_family_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     """Dispatch contract checks by ``kind``; empty list = structurally clean."""
     kind = receipt.get("kind") or receipt.get("schema")
+    errors = _asserted_honesty_errors(receipt)
     if kind == "evalue_promotion.v1":
-        return _evalue_promotion_errors(receipt)
+        return errors + _evalue_promotion_errors(receipt)
     if kind == "fleet_race.v1":
-        return _fleet_race_errors(receipt)
+        return errors + _fleet_race_errors(receipt)
     if kind == "corpus_inference.v1":
-        return _corpus_inference_errors(receipt)
+        return errors + _corpus_inference_errors(receipt)
     if kind == "online_fdr.v1":
-        return _online_fdr_errors(receipt)
+        return errors + _online_fdr_errors(receipt)
     if kind == "calibration_audit.v1":
-        return _calibration_audit_errors(receipt)
+        return errors + _calibration_audit_errors(receipt)
     if kind == "loss_cs.v1":
-        return _loss_cs_errors(receipt)
+        return errors + _loss_cs_errors(receipt)
     if kind == "changepoint_localize.v1":
-        return _changepoint_localize_errors(receipt)
-    if kind == "coverage_audit.v1":
-        return _coverage_audit_errors(receipt)
-    if kind == "coverage_cs.v1":
-        return _coverage_cs_errors(receipt)
+        return errors + _changepoint_localize_errors(receipt)
+    if kind in ("coverage_audit", "coverage_audit.v1"):
+        return errors + _coverage_audit_errors(receipt)
+    if kind in ("coverage_cs", "coverage_cs.v1"):
+        return errors + _coverage_cs_errors(receipt)
     if kind == "winner_curse.v1":
-        return _winner_curse_errors(receipt)
+        return errors + _winner_curse_errors(receipt)
     if kind == "drift_alarm.v1":
-        return _drift_alarm_errors(receipt)
+        return errors + _drift_alarm_errors(receipt)
     if kind == "conformal_monitor.v1":
-        return _conformal_monitor_errors(receipt)
+        return errors + _conformal_monitor_errors(receipt)
     if kind in ("tail_audit", "tail_audit.v1"):
-        return _tail_audit_errors(receipt)
+        return errors + _tail_audit_errors(receipt)
     if kind in ("lane_power", "lane_power.v1"):
-        return _lane_power_errors(receipt)
+        return errors + _lane_power_errors(receipt)
     if kind == "honest_verdict.v1":
-        return _honest_verdict_errors(receipt)
+        return errors + _honest_verdict_errors(receipt)
     if kind in ("monitor_run", "monitor_run.v1"):
-        return _monitor_run_errors(receipt)
+        return errors + _monitor_run_errors(receipt)
     if kind in ("suite_health", "suite_health.v1"):
-        return _suite_health_errors(receipt)
+        return errors + _suite_health_errors(receipt)
     if kind in ("mcs_seq", "mcs_seq.v1"):
-        return _mcs_seq_errors(receipt)
+        return errors + _mcs_seq_errors(receipt)
     if kind in ("serial_watch", "serial_watch.v1"):
-        return _serial_watch_errors(receipt)
-    return []
+        return errors + _serial_watch_errors(receipt)
+    if kind == "emerge_drill.v1":
+        return errors + _emerge_drill_errors(receipt)
+    if kind == "panel_audit.v1":
+        return errors + _panel_audit_errors(receipt)
+    return errors

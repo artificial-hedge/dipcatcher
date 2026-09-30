@@ -23,7 +23,9 @@ market-wide.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -34,6 +36,7 @@ from quant_fund.research.fleet_eval import (
     DEFAULT_TAUS,
     HeadFactory,
     ShardGenerator,
+    _atomic_write_text,
 )
 from quant_fund.research.verdict_run import predict_eval_matrix
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -164,7 +167,9 @@ def monitor_fleet(
                     "status": "ok",
                     "error": None,
                 }
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded per cell.
                 cell[name] = {
                     "status": "error",
                     "error": str(exc),
@@ -308,4 +313,48 @@ def monitor_fleet(
     return frame, receipt
 
 
-__all__ = ["MONITOR_RUN_SCHEMA", "monitor_fleet"]
+def write_monitor_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a monitor_run receipt and write ``monitor_run_<hash>.json``.
+
+    Filename digest = canonical ``receipt_sha256``. Atomic, fail-closed on
+    a malformed receipt. ``receipt_version=2`` wraps the same body in the
+    unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("schema") != MONITOR_RUN_SCHEMA
+        or receipt.get("kind") != "monitor_run"
+        or receipt.get("research_only") is not True
+        or receipt.get("live_pnl_claim") is not False
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("dataset_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("monitor_run receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="fail" if receipt.get("n_alarm_rows") else "pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"monitor_run_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+__all__ = ["MONITOR_RUN_SCHEMA", "monitor_fleet", "write_monitor_receipt"]

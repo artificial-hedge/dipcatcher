@@ -33,7 +33,9 @@ def _empty_stdout_runner(*args: object, **kwargs: object) -> subprocess.Complete
 
 def _ok_runner(revision: str) -> object:
     def run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
-        return subprocess.CompletedProcess(args=args, returncode=0, stdout=f"{revision}\n", stderr="")
+        return subprocess.CompletedProcess(
+            args=args, returncode=0, stdout=f"{revision}\n", stderr=""
+        )
 
     return run
 

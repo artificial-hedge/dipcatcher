@@ -181,3 +181,16 @@ def test_method_grid_monotone_and_train_only() -> None:
     assert q.shape == (16, len(TAUS))
     # Rearranged inside metrics; raw MC output is already monotone.
     assert np.all(np.diff(q, axis=1) >= -1e-9)
+
+
+def test_dataset_sha256_tracks_panels_not_run_params() -> None:
+    """Same panels under a different n_mc share dataset_sha256 (carried on
+    the v1 payload inside the receipt.v2 envelope); a different seed
+    regenerates the panels and changes it."""
+    _, e1 = _run()
+    _, e2 = _run(n_mc=64)
+    _, e3 = _run(seed=1)
+    p1, p2, p3 = (e["payload"]["dataset_sha256"] for e in (e1, e2, e3))
+    assert len(p1) == 64 and all(c in "0123456789abcdef" for c in p1)
+    assert p1 == p2
+    assert p1 != p3

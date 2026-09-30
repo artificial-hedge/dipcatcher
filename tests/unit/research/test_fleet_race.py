@@ -197,3 +197,29 @@ def test_race_data_label_derived_and_mixed_refused() -> None:
             n_eval=32,
             n_chunks=8,
         )
+
+
+def test_race_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the fleet_race.v1 body in the envelope."""
+    import json
+    from pathlib import Path
+
+    from quant_fund.research.fleet_race import write_race_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    assert isinstance(tmp_path, Path)
+    factories = _factories({"oracle": 0.0, "lagged": 0.05})
+    _, receipt = fleet_race(
+        factories,
+        shards={"iid_gaussian": SHARD_G},
+        n_train=64,
+        n_eval=32,
+        n_chunks=16,
+        seed=0,
+    )
+    path = write_race_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "fleet_race.v1"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True

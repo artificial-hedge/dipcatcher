@@ -92,34 +92,51 @@ def build_receipt(
     return receipt
 
 
-def write_receipt(receipt: dict[str, Any], path: Path | str) -> Path:
-    """Write a receipt JSON atomically. Rejects non-v1 payloads."""
+def write_receipt(
+    receipt: dict[str, Any],
+    path: Path | str,
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Write a receipt JSON atomically. Rejects non-v1 payloads.
+
+    ``receipt_version=2`` wraps the same receipt in the unified
+    ``receipt.v2`` envelope (``quant_fund.research.receipt_v2``) — the
+    inner payload bytes are identical, the envelope binds the data block
+    and parameters.
+    """
     if not isinstance(receipt, dict) or receipt.get("schema") != ALLOCATION_RECEIPT_SCHEMA:
         raise ValueError(f"receipt must be a {ALLOCATION_RECEIPT_SCHEMA} payload")
     if not family_blob_forbidden_metrics_absent(receipt):
         raise ValueError("receipt contains a forbidden headline key")
+    if receipt_version == 1:
+        document = receipt_tree(receipt)
+    elif receipt_version == 2:
+        from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+        data = receipt.get("data")
+        params = receipt.get("parameters")
+        document = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass" if receipt.get("constraint_violations") == 0 else "fail",
+                kind=ALLOCATION_RECEIPT_SCHEMA,
+                data_label="SYNTHETIC" if receipt.get("synthetic") else "REAL",
+                dataset=data if isinstance(data, dict) else None,
+                params=params if isinstance(params, dict) else None,
+            )
+        )
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     destination = Path(path)
-    body = json.dumps(receipt_tree(receipt), indent=2, sort_keys=True) + "\n"
+    body = json.dumps(document, indent=2, sort_keys=True) + "\n"
     _atomic_write(destination, body.encode("utf-8"))
     return destination
 
 
-def verify_allocation_receipt(path: Path | str) -> dict[str, Any]:
-    """Re-derive the payload hash of a receipt on disk.
-
-    Returns ``{"valid": bool, "errors": [...]}`` — additive check, exactly
-    like the explainability sidecar verifier: it proves the receipt file's
-    own integrity, nothing more.
-    """
+def _v1_receipt_errors(payload: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    p = Path(path)
-    try:
-        payload = json.loads(p.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
-        return {"valid": False, "errors": [f"receipt_unreadable:{exc}"]}
-    if not isinstance(payload, dict) or payload.get("schema") != ALLOCATION_RECEIPT_SCHEMA:
-        errors.append("receipt_schema_mismatch")
-        payload = {}
     if payload.get("claim") != "research_only":
         errors.append("receipt_claim_mismatch")
     if "synthetic" not in payload or not isinstance(payload.get("synthetic"), bool):
@@ -131,4 +148,39 @@ def verify_allocation_receipt(path: Path | str) -> dict[str, Any]:
     actual = hash_bytes(canonical_json_bytes(receipt_tree(unsigned)))
     if expected != actual:
         errors.append("receipt_payload_hash_mismatch")
+    return errors
+
+
+def verify_allocation_receipt(path: Path | str) -> dict[str, Any]:
+    """Re-derive the payload hash of a receipt on disk.
+
+    Returns ``{"valid": bool, "errors": [...]}`` — additive check, exactly
+    like the explainability sidecar verifier: it proves the receipt file's
+    own integrity, nothing more. ``receipt.v2`` envelopes verify through
+    the unified verifier, then re-run the v1 field checks on the inner
+    payload.
+    """
+    p = Path(path)
+    try:
+        payload = json.loads(p.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"valid": False, "errors": [f"receipt_unreadable:{exc}"]}
+    if isinstance(payload, dict) and payload.get("schema") == "receipt.v2":
+        from quant_fund.research.receipt_v2 import verify_receipt_payload
+
+        result = verify_receipt_payload(payload, p)
+        errors: list[str] = list(result["errors"])
+        inner = payload.get("payload")
+        if not isinstance(inner, dict):
+            errors.append("receipt_payload_not_object")
+        elif inner.get("schema") != ALLOCATION_RECEIPT_SCHEMA:
+            errors.append("receipt_schema_mismatch")
+        else:
+            errors.extend(_v1_receipt_errors(inner))
+        return {"valid": not errors, "errors": errors}
+    errors = []
+    if not isinstance(payload, dict) or payload.get("schema") != ALLOCATION_RECEIPT_SCHEMA:
+        errors.append("receipt_schema_mismatch")
+        payload = {}
+    errors.extend(_v1_receipt_errors(payload))
     return {"valid": not errors, "errors": errors}

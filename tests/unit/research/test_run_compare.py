@@ -165,3 +165,27 @@ def test_compare_series_direct() -> None:
     # Constant nonzero delta -> degenerate variance, honestly inconclusive.
     assert comp.verdict in {"inconclusive", "ambiguous", "a_better", "b_better"}
     assert comp.mean_delta == pytest.approx(0.1)
+
+
+def test_receipt_v2_envelope_via_main(tmp_path: Path) -> None:
+    """--receipt-version 2 wraps the run_compare.v1 blob in the envelope."""
+    from quant_fund.research.compare import main
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    out = tmp_path / "compare_receipt.json"
+    main(
+        [
+            str(RUN_A),
+            str(RUN_B),
+            "--receipt-out",
+            str(out),
+            "--receipt-version",
+            "2",
+        ]
+    )
+    document = json.loads(out.read_text())
+    assert document["schema"] == "receipt.v2"
+    assert document["kind"] == "run_compare.v1"
+    assert document["payload"]["schema"] == "run_compare.v1"
+    assert document["payload"]["report"]["series"]
+    assert verify_receipt_file(out)["valid"] is True

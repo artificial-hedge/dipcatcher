@@ -462,6 +462,7 @@ FLEET_HEAD_REGISTRY: dict[str, Callable[[Sequence[float], int], Any]] = {
     "hstep_emp": lambda taus, seed: _HStepOneStepHead(taus, "empirical"),
     "nbeats": lambda taus, seed: _nbeats(taus, seed),
     "nhits": lambda taus, seed: _nhits(taus, seed),
+    "sundial": lambda taus, seed: _sundial(taus, seed),
     "toto2": lambda taus, seed: _toto2(taus, seed),
     "tirex2": lambda taus, seed: _tirex2(taus, seed),
     "kronos_base": lambda taus, seed: _kronos_base(taus, seed),
@@ -488,16 +489,30 @@ def _nhits(taus: Sequence[float], seed: int) -> Any:
     return NHiTsDistribution(list(taus), seed=int(seed))
 
 
+def _sundial(taus: Sequence[float], seed: int) -> Any:
+    from quant_fund.models.sundial import SundialDistribution
+
+    return SundialDistribution(list(taus), seed=int(seed))
+
+
 def _toto2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.toto2 import Toto2Distribution
 
     return Toto2Distribution(list(taus), seed=int(seed))
+
+
 def _tirex2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tirex2 import Tirex2Distribution
+
     return Tirex2Distribution(list(taus), seed=int(seed))
+
+
 def _tabpfn_ts(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tabpfn_ts import TabpfnTsDistribution
+
     return TabpfnTsDistribution(list(taus), seed=int(seed))
+
+
 def _moirai2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.moirai2 import Moirai2Distribution
 
@@ -765,13 +780,14 @@ def run_distribution_fleet(
     }
     frame = pl.DataFrame(rows, schema=schema, orient="row").select(columns)
 
+    shard_digests = {
+        name: {"x_sha256": meta["x_sha256"], "y_sha256": meta["y_sha256"]}
+        for name, meta in shard_meta.items()
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
-                "shards": {
-                    name: {"x_sha256": meta["x_sha256"], "y_sha256": meta["y_sha256"]}
-                    for name, meta in shard_meta.items()
-                },
+                "shards": shard_digests,
                 "models": sorted(str(k) for k in factories),
                 "model_versions": model_versions,
                 "taus": [float(t) for t in tau_arr],
@@ -781,6 +797,10 @@ def run_distribution_fleet(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated stream content only —
+    # receipts across lanes that evaluated the same shard set agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": shard_digests}))
     receipt: dict[str, Any] = {
         "schema": FLEET_EVAL_SCHEMA,
         "kind": "distribution_fleet_eval",
@@ -796,6 +816,7 @@ def run_distribution_fleet(
         "model_versions": model_versions,
         "shards": shard_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
         "results": rows,

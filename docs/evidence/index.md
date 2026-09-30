@@ -25975,6 +25975,152 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema`: cross_sectional_rankic.v1
 - `seed`: 11
 
+### `receipts/real_benchmark_us_wide_manifest.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/real_benchmark_us_wide_manifest.json | b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69 | 819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d | not_checked | absent | e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117 | real | absent | true | false |
+
+- `schema_version`: 1
+- `created_at`: 2026-09-29T13:58:58.925202+00:00
+- `protocol`:
+  - `dataset_path`: ../../../../Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet
+  - `dataset_sha256`: e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117
+  - `source_url`: https://github.com/artificial-hedge/dipcatcher/blob/d5200713c280438cf51649593517de5cd8b95646/data/file_us_wide/bronze/bars.parquet
+  - `usage_basis`: Existing owner-supplied research snapshot. Upstream vendor entitlements and redistribution rights have not been independently verified.
+  - `price_column`: close
+  - `price_adjustment`: Vendor snapshot close; adjustment and corporate-action completeness are unverified. Not a total-return or executable-price claim.
+  - `universe_description`: Existing 424-name file_us_wide vendor pool. Contains surviving securities; this benchmark does not reconstruct the historical listed universe.
+  - `survivorship_bias`: true
+  - `availability_basis`: reconstructed
+  - `holdout_previously_inspected`: true
+  - `train_start`: 2016-01-01
+  - `train_end`: 2021-12-31
+  - `validation_start`: 2022-01-10
+  - `validation_end`: 2023-12-31
+  - `test_start`: 2024-01-10
+  - `test_end`: 2025-09-30
+  - `horizon_sessions`: 1
+  - `embargo_sessions`: 1
+  - `decision_delay_seconds`: 0
+  - `min_train_rows`: 1000
+  - `min_score_dates`: 60
+  - `ridge_alpha`: 1.0
+- `audit`:
+  - `split_counts`:
+    - `train`:
+      - `rows`: 626297
+      - `dates`: 1490
+    - `validation`:
+      - `rows`: 208395
+      - `dates`: 495
+    - `test`:
+      - `rows`: 181451
+      - `dates`: 431
+  - `excluded_windows`: 0
+  - `late_rows`: 0
+  - `n_names`: 424
+  - `rows`: 1132803
+  - `source_labels`:
+    - yahoo
+  - `first_session`: 2016-01-04T21:00:00+00:00
+  - `last_session`: 2026-09-18T20:00:00+00:00
+- `runtime`:
+  - `python`: 3.12.14
+  - `numpy`: 2.5.3
+  - `polars`: 1.44.2
+- `research_only`: true
+- `holdout_status`: previously_inspected
+- `limitations`:
+  - Source, usage rights and historical availability are user declarations, not independently verified.
+  - File hashes detect changes; they do not prove a holdout was never inspected.
+  - Close-to-close forecast scores do not establish executable net returns.
+  - Input universe has survivorship bias.
+  - Historical availability timestamps were reconstructed.
+- `receipt_sha256`: 819e12ea1e57c79a64d27662e356a85a5d988dc4304c743030071e514dfbff3d
+
+### `receipts/real_benchmark_us_wide_test.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/real_benchmark_us_wide_test.json | df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a | 0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c | not_checked | absent | absent | unspecified | false | true | false |
+
+- `phase`: test
+- `created_at`: 2026-09-29T13:59:37.949139+00:00
+- `scores`:
+  - `zero`:
+    - `date_equal_weight_mse`: 0.0003899407444036479
+    - `date_equal_weight_mae`: 0.012870926140241257
+    - `n_rows`: 181451
+    - `n_dates`: 431
+  - `historical_mean`:
+    - `date_equal_weight_mse`: 0.0003897374788546645
+    - `date_equal_weight_mae`: 0.012854571264094788
+    - `n_rows`: 181451
+    - `n_dates`: 431
+  - `rolling_mean_20`:
+    - `date_equal_weight_mse`: 0.0004090936928422287
+    - `date_equal_weight_mae`: 0.013320458128902708
+    - `n_rows`: 181451
+    - `n_dates`: 431
+  - `ridge`:
+    - `date_equal_weight_mse`: 0.0003890317418507178
+    - `date_equal_weight_mae`: 0.012853767095097219
+    - `n_rows`: 181451
+    - `n_dates`: 431
+- `research_only`: true
+- `promote`: false
+- `claim`: fixed_split_forecast_diagnostic
+- `holdout_status`: previously_inspected
+- `limitations`:
+  - Source, usage rights and historical availability are user declarations, not independently verified.
+  - File hashes detect changes; they do not prove a holdout was never inspected.
+  - Close-to-close forecast scores do not establish executable net returns.
+  - Input universe has survivorship bias.
+  - Historical availability timestamps were reconstructed.
+- `receipt_sha256`: 0b76b80d097306608776f781a99e6dc3aee534a87f8961daa69ae64e7cd46c8c
+
+### `receipts/real_benchmark_us_wide_validation.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/real_benchmark_us_wide_validation.json | 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3 | 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7 | not_checked | absent | absent | unspecified | false | true | false |
+
+- `phase`: validation
+- `created_at`: 2026-09-29T13:59:17.438767+00:00
+- `scores`:
+  - `zero`:
+    - `date_equal_weight_mse`: 0.0004273770737642132
+    - `date_equal_weight_mae`: 0.014535197485731071
+    - `n_rows`: 208395
+    - `n_dates`: 495
+  - `historical_mean`:
+    - `date_equal_weight_mse`: 0.00042775123473955026
+    - `date_equal_weight_mae`: 0.014541446794625266
+    - `n_rows`: 208395
+    - `n_dates`: 495
+  - `rolling_mean_20`:
+    - `date_equal_weight_mse`: 0.00044714530569201074
+    - `date_equal_weight_mae`: 0.01494506365822247
+    - `n_rows`: 208395
+    - `n_dates`: 495
+  - `ridge`:
+    - `date_equal_weight_mse`: 0.0004301262572191714
+    - `date_equal_weight_mae`: 0.014594179764524259
+    - `n_rows`: 208395
+    - `n_dates`: 495
+- `research_only`: true
+- `promote`: false
+- `claim`: fixed_split_forecast_diagnostic
+- `holdout_status`: previously_inspected
+- `limitations`:
+  - Source, usage rights and historical availability are user declarations, not independently verified.
+  - File hashes detect changes; they do not prove a holdout was never inspected.
+  - Close-to-close forecast scores do not establish executable net returns.
+  - Input universe has survivorship bias.
+  - Historical availability timestamps were reconstructed.
+- `receipt_sha256`: 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7
+
 ### `receipts/serial_watch_140b073ea589b0c7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
