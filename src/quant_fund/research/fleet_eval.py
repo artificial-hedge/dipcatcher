@@ -493,15 +493,26 @@ def _sundial(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.sundial import SundialDistribution
 
     return SundialDistribution(list(taus), seed=int(seed))
+
+
 def _toto2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.toto2 import Toto2Distribution
+
     return Toto2Distribution(list(taus), seed=int(seed))
+
+
 def _tirex2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tirex2 import Tirex2Distribution
+
     return Tirex2Distribution(list(taus), seed=int(seed))
+
+
 def _tabpfn_ts(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.tabpfn_ts import TabpfnTsDistribution
+
     return TabpfnTsDistribution(list(taus), seed=int(seed))
+
+
 def _moirai2(taus: Sequence[float], seed: int) -> Any:
     from quant_fund.models.moirai2 import Moirai2Distribution
 
