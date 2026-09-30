@@ -237,8 +237,28 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "metrics/adaptive_eps.py": {
+      "reason": "wave-16 e-PS adaptive multiple-testing head \u2014 shipped with own suite (tests/unit/metrics/test_adaptive_eps*); dedicated audit pending",
+      "status": "waived"
+    },
+    "metrics/conformal_oce.py": {
+      "reason": "wave-16 conformal risk-averse OCE decision head \u2014 shipped with own suite; dedicated audit pending",
+      "status": "waived"
+    },
+    "models/diffusion_forecaster.py": {
+      "reason": "wave-17 DiffPTS full-ELBO diffusion forecaster \u2014 shipped with own suite; dedicated audit pending",
+      "status": "waived"
+    },
+    "models/greek_neutral_portfolios.py": {
+      "reason": "wave-17 Taming-the-Greeks neutral portfolio head \u2014 shipped with own suite; dedicated audit pending",
+      "status": "waived"
+    },
     "public.py": {
       "reason": "package surface only",
+      "status": "waived"
+    },
+    "research/benches_w16.py": {
+      "reason": "wave-16 scorecard family wiring (6 OPTIONAL families) \u2014 self-verifying via verify-research; dedicated audit pending",
       "status": "waived"
     }
   },
