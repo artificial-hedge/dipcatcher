@@ -434,29 +434,45 @@ def run_replay(
     elif not run_cwd.is_relative_to(root_path):
         spawn_error = f"cwd_escapes_root:{declared_cwd}"
     else:
-        try:
-            proc = subprocess.run(
-                resolved_argv,
-                cwd=run_cwd,
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=float(timeout_s),
-                check=False,
-            )
-            exit_code = int(proc.returncode)
-            stderr_tail = (proc.stderr or "")[-_MAX_STDERR_TAIL:]
-        except subprocess.TimeoutExpired as exc:
-            timed_out = True
-            if exc.stderr:
-                tail = (
-                    exc.stderr
-                    if isinstance(exc.stderr, str)
-                    else exc.stderr.decode("utf-8", errors="replace")
+        # Delete declared artifacts first: a stale file must not satisfy a
+        # digest pin when argv never produced it. Untracked deletions only —
+        # committed paths were already refused by the overwrite guard.
+        stale_error: str | None = None
+        for entry in manifest["artifacts"]:
+            declared = Path(str(entry["path"]))
+            resolved = (declared if declared.is_absolute() else (run_cwd / declared)).resolve()
+            if resolved.is_relative_to(root_path) and resolved.is_file():
+                try:
+                    resolved.unlink()
+                except OSError as exc:
+                    stale_error = f"artifact_stale_delete_failed:{entry['path']}:{exc}"
+                    break
+        if stale_error is not None:
+            spawn_error = stale_error
+        else:
+            try:
+                proc = subprocess.run(
+                    resolved_argv,
+                    cwd=run_cwd,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=float(timeout_s),
+                    check=False,
                 )
-                stderr_tail = tail[-_MAX_STDERR_TAIL:]
-        except OSError as exc:
-            spawn_error = f"{type(exc).__name__}: {exc}"
+                exit_code = int(proc.returncode)
+                stderr_tail = (proc.stderr or "")[-_MAX_STDERR_TAIL:]
+            except subprocess.TimeoutExpired as exc:
+                timed_out = True
+                if exc.stderr:
+                    tail = (
+                        exc.stderr
+                        if isinstance(exc.stderr, str)
+                        else exc.stderr.decode("utf-8", errors="replace")
+                    )
+                    stderr_tail = tail[-_MAX_STDERR_TAIL:]
+            except OSError as exc:
+                spawn_error = f"{type(exc).__name__}: {exc}"
     elapsed_s = time.monotonic() - started
 
     artifact_rows: list[dict[str, Any]] = []

@@ -14,9 +14,11 @@ sealed bytes; see the meta-strip convention). A committed receipt whose
 claims legitimately drift — the fleet registry grew since it was sealed —
 is recorded honestly with ``claims_equal: false`` and the differing keys.
 
-Usage: ``PYTHONPATH=src python scripts/gen_drill_replay_manifests.py``
+Usage: ``PYTHONPATH=src python scripts/gen_drill_replay_manifests.py [lane ...]``
 runs every drill under ``--out data/metadata/replay`` and seals carriers
-into ``receipts/replay_manifest_<lane>.json``.
+into ``data/manifests/replay/<lane>.json`` — kept out of ``receipts/`` so
+CI (no tape materialized) never picks them up as replayable receipts and
+the corpus audit never treats them as inputs.
 """
 
 from __future__ import annotations
@@ -131,6 +133,37 @@ def _claims_equal(committed: dict[str, Any], produced: dict[str, Any]) -> tuple[
     return not diff, diff
 
 
+def _drift_reason(committed: dict[str, Any], produced: dict[str, Any], diff: list[str]) -> str:
+    """Classify why a produced artifact's claims differ from the committed one."""
+    left, right = _norm(committed), _norm(produced)
+    added = [k for k in diff if k not in left and k in right]
+    dropped = [k for k in diff if k in left and k not in right]
+    if added and not dropped:
+        return "contract_field_addition"
+    if set(diff) == {"n_models"} or any(k in diff for k in ("heads", "fleet_heads", "registry")):
+        return "registry_growth"
+    for key in diff:
+        lv, rv = left.get(key), right.get(key)
+        if isinstance(lv, (int, float)) and isinstance(rv, (int, float)) and rv > lv:
+            return "registry_growth"
+    return "lane_evolution"
+
+
+def _reproduces_entry(receipt: str, committed_path: Path, produced_path: Path) -> dict[str, Any]:
+    committed = json.loads(committed_path.read_text())
+    produced = json.loads(produced_path.read_text())
+    equal, diff = _claims_equal(committed, produced)
+    entry: dict[str, Any] = {
+        "receipt": receipt,
+        "committed_sha256": hashlib.sha256(committed_path.read_bytes()).hexdigest(),
+        "claims_equal": equal,
+        "claim_diff_keys": diff,
+    }
+    if not equal:
+        entry["drift_reason"] = _drift_reason(committed, produced, diff)
+    return entry
+
+
 def _seal_carrier(body: dict[str, Any]) -> dict[str, Any]:
     sealed = dict(body)
     sealed["receipt_sha256"] = hash_bytes(canonical_json_bytes(body))
@@ -138,6 +171,7 @@ def _seal_carrier(body: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
+    only = {a for a in sys.argv[1:] if not a.startswith("--")}
     root = Path.cwd()
     out_dir = root / REPLAY_OUT
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -149,6 +183,9 @@ def main() -> int:
     failures: list[str] = []
 
     for script, spec in DRILLS.items():
+        lane_name = script.removesuffix(".py").removesuffix("_real_drill").removesuffix("_drill")
+        if only and lane_name not in only and script not in only:
+            continue
         argv = ["scripts/" + script, TAPE_ARG, "--out", REPLAY_OUT, *spec["argv_extra"]]
         proc = subprocess.run(
             [sys.executable, *argv], cwd=root, capture_output=True, text=True, timeout=900
@@ -171,18 +208,8 @@ def main() -> int:
             )
             committed = root / "receipts" / name
             if committed.is_file():
-                equal, diff = _claims_equal(
-                    json.loads(committed.read_text()), json.loads(produced.read_text())
-                )
-                reproduces.append(
-                    {
-                        "receipt": f"receipts/{name}",
-                        "committed_sha256": hashlib.sha256(committed.read_bytes()).hexdigest(),
-                        "claims_equal": equal,
-                        "claim_diff_keys": diff,
-                    }
-                )
-        lane = script.removesuffix(".py").removesuffix("_real_drill")
+                reproduces.append(_reproduces_entry(f"receipts/{name}", committed, produced))
+        lane = script.removesuffix(".py").removesuffix("_real_drill").removesuffix("_drill")
         body: dict[str, Any] = {
             "schema": "replay_manifest.v1",
             "kind": "replay_manifest",
@@ -204,43 +231,47 @@ def main() -> int:
         carriers.append(path.name)
 
     # serial lane: digest-named multi-file output
-    argv = ["scripts/serial_real_drill.py", TAPE_ARG, "--out", REPLAY_OUT]
-    proc = subprocess.run(
-        [sys.executable, *argv], cwd=root, capture_output=True, text=True, timeout=900
-    )
-    if proc.returncode == 0:
-        artifacts = [
-            {
-                "path": f"{REPLAY_OUT}/{p.name}",
-                "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+    if not only or "serial" in only or "serial_real_drill.py" in only:
+        argv = ["scripts/serial_real_drill.py", TAPE_ARG, "--out", REPLAY_OUT]
+        proc = subprocess.run(
+            [sys.executable, *argv], cwd=root, capture_output=True, text=True, timeout=900
+        )
+        if proc.returncode == 0:
+            artifacts = [
+                {
+                    "path": f"{REPLAY_OUT}/{p.name}",
+                    "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+                }
+                for p in sorted(out_dir.glob("serial_watch_*.json"))
+            ]
+            body = {
+                "schema": "replay_manifest.v1",
+                "kind": "replay_manifest",
+                "research_only": True,
+                "live_pnl_claim": False,
+                "data_label": "yahoo_eod",
+                "producer": "scripts/serial_real_drill.py",
+                "replay": {
+                    "argv": argv,
+                    "artifacts": artifacts,
+                    "input_tapes": [{"manifest": TAPE_MANIFEST}],
+                },
             }
-            for p in sorted(out_dir.glob("serial_watch_*.json"))
-        ]
-        body = {
-            "schema": "replay_manifest.v1",
-            "kind": "replay_manifest",
-            "research_only": True,
-            "live_pnl_claim": False,
-            "data_label": "yahoo_eod",
-            "producer": "scripts/serial_real_drill.py",
-            "replay": {
-                "argv": argv,
-                "artifacts": artifacts,
-                "input_tapes": [{"manifest": TAPE_MANIFEST}],
-            },
-        }
-        carrier = _seal_carrier(body)
-        path = root / "data" / "manifests" / "replay" / "serial.json"
-        path.write_text(json.dumps(carrier, indent=2, sort_keys=True) + "\n")
-        carriers.append(path.name)
-    else:
-        failures.append(f"serial: exit {proc.returncode}")
+            carrier = _seal_carrier(body)
+            path = root / "data" / "manifests" / "replay" / "serial.json"
+            path.write_text(json.dumps(carrier, indent=2, sort_keys=True) + "\n")
+            carriers.append(path.name)
+        else:
+            failures.append(f"serial: exit {proc.returncode}")
 
     # monitor / race take argparse --bars/--out
     for script, receipt_name in (
         ("monitor_real_drill.py", "monitor_run_real_drill.json"),
         ("race_real_drill.py", "fleet_race_real_drill.json"),
     ):
+        lane_name = script.removesuffix(".py").removesuffix("_real_drill").removesuffix("_drill")
+        if only and lane_name not in only and script not in only:
+            continue
         argv = [
             "scripts/" + script,
             "--bars",
@@ -264,18 +295,8 @@ def main() -> int:
         committed = root / "receipts" / receipt_name
         reproduces = []
         if committed.is_file():
-            equal, diff = _claims_equal(
-                json.loads(committed.read_text()), json.loads(produced.read_text())
-            )
-            reproduces.append(
-                {
-                    "receipt": f"receipts/{receipt_name}",
-                    "committed_sha256": hashlib.sha256(committed.read_bytes()).hexdigest(),
-                    "claims_equal": equal,
-                    "claim_diff_keys": diff,
-                }
-            )
-        lane = script.removesuffix(".py").removesuffix("_real_drill")
+            reproduces.append(_reproduces_entry(f"receipts/{receipt_name}", committed, produced))
+        lane = script.removesuffix(".py").removesuffix("_real_drill").removesuffix("_drill")
         body = {
             "schema": "replay_manifest.v1",
             "kind": "replay_manifest",

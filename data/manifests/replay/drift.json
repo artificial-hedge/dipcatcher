@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/drift_real_drill.py",
-  "receipt_sha256": "48bf19ee96e0113bed2bad003d248c9be9073b9688fa5361abe0762be5aed4ca",
+  "receipt_sha256": "3397beb2b5f86d091b04cf1877cb586e08e102de63ed8d5d3a0dab8faf6ce5d3",
   "replay": {
     "argv": [
       "scripts/drift_real_drill.py",
@@ -34,7 +34,7 @@
       ],
       "claims_equal": false,
       "committed_sha256": "295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64",
-      "drift_reason": "lane evolution: eprocess field carries the GRAPA adaptive-channel extension landed after the receipt",
+      "drift_reason": "lane_evolution",
       "receipt": "receipts/drift_real_drill_gaussian_pit.json"
     },
     {
@@ -43,7 +43,7 @@
       ],
       "claims_equal": false,
       "committed_sha256": "732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b",
-      "drift_reason": "lane evolution: eprocess field carries the GRAPA adaptive-channel extension landed after the receipt",
+      "drift_reason": "lane_evolution",
       "receipt": "receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json"
     }
   ],

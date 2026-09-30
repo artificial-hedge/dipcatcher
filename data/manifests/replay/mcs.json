@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/mcs_real_drill.py",
-  "receipt_sha256": "9b37afbb5e71169fb576da7883b6350d51b4d33c5f58177ae6bec9356f1d2e3f",
+  "receipt_sha256": "52440d1540207e82b65d61431432428d65cfd9f4aebca77b50911b2eeddda8ae",
   "replay": {
     "argv": [
       "scripts/mcs_real_drill.py",
@@ -30,7 +30,7 @@
       ],
       "claims_equal": false,
       "committed_sha256": "047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53",
-      "drift_reason": "fleet registry growth + per-head error recording (head_errors added under drill)",
+      "drift_reason": "lane_evolution",
       "receipt": "receipts/mcs_real_drill.json"
     }
   ],

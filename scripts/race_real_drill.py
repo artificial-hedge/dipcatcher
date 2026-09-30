@@ -80,7 +80,7 @@ def main() -> int:
         bars.group_by("symbol")
         .agg(pl.len())
         .filter(pl.col("len") >= args.n_train + args.n_eval + 1)
-        .sort("len", descending=True)
+        .sort(["len", "symbol"], descending=[True, False])
         .head(args.n_symbols)["symbol"]
         .to_list()
     )

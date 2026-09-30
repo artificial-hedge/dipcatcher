@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/race_real_drill.py",
-  "receipt_sha256": "310a692ce49c5f6e7c398c11ed2b3d9f7e732945dcc66cf2c672aed5df35936e",
+  "receipt_sha256": "9e7bd546d3333a8aa285f229abd62944f90549a8ba206cd078beb9588ec66281",
   "replay": {
     "argv": [
       "scripts/race_real_drill.py",
@@ -15,7 +15,7 @@
     "artifacts": [
       {
         "path": "data/metadata/replay/fleet_race_real_drill.json",
-        "sha256": "e317c39d7d999a01f8de50b111ca7b5a23be107f6756d04b201908b229c4a05b"
+        "sha256": "6400ed5c5b92a4eadb1ddfa656b0cff18b7dd4dda6af9071e09b3c08ff83ea02"
       }
     ],
     "input_tapes": [
@@ -33,7 +33,7 @@
       ],
       "claims_equal": false,
       "committed_sha256": "0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def",
-      "drift_reason": "fleet registry growth: race bracket expanded to the enlarged head set (shard_winners/meta/global_evidence)",
+      "drift_reason": "lane_evolution",
       "receipt": "receipts/fleet_race_real_drill.json"
     }
   ],

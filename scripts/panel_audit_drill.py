@@ -128,7 +128,7 @@ def main() -> None:
             pl.col("breach_rate").mean().alias("mean_breach_rate"),
             pl.len().alias("n_symbols"),
         )
-        .sort("pooled_evalue", descending=True)
+        .sort(["pooled_evalue", "head"], descending=[True, False])
     )
     symbol_rows = (
         ok.group_by("shard")
@@ -136,7 +136,7 @@ def main() -> None:
             pl.col("final_evalue").mean().alias("pooled_evalue"),
             pl.col("coverage_alarm").sum().alias("n_heads_alarmed"),
         )
-        .sort("pooled_evalue", descending=True)
+        .sort(["pooled_evalue", "shard"], descending=[True, False])
     )
     heads = sorted(ok["head"].unique().to_list())
     alpha = 0.05

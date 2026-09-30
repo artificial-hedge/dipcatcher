@@ -164,10 +164,14 @@ def test_missing_artifact_fails(tmp_path: Path) -> None:
 
 def test_nonzero_exit_fails(tmp_path: Path) -> None:
     """The lane exits non-zero → fail even though artifact bytes match."""
-    artifact = tmp_path / _ARTIFACT_REL
-    artifact.parent.mkdir(parents=True, exist_ok=True)
-    artifact.write_text(_ARTIFACT_CONTENT, encoding="utf-8")
-    argv = [sys.executable, "-c", "import sys; sys.exit(3)"]
+    (tmp_path / _ARTIFACT_REL).parent.mkdir(parents=True, exist_ok=True)
+    argv = [
+        sys.executable,
+        "-c",
+        "import pathlib, sys\n"
+        f"pathlib.Path({_ARTIFACT_REL!r}).write_text({_ARTIFACT_CONTENT!r})\n"
+        "sys.exit(3)\n",
+    ]
     receipt = _receipt_with_manifest(
         tmp_path, argv, [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
     )
@@ -177,6 +181,22 @@ def test_nonzero_exit_fails(tmp_path: Path) -> None:
     assert body["all_match"] is False
     assert body["verdict"] == "fail"
     assert replay_proof_contract_errors(body) == []
+
+
+def test_stale_artifact_does_not_satisfy_pin(tmp_path: Path) -> None:
+    """A pre-placed file must not count — replay deletes declared artifacts first."""
+    artifact = tmp_path / _ARTIFACT_REL
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(_ARTIFACT_CONTENT, encoding="utf-8")
+    argv = [sys.executable, "-c", "import sys; sys.exit(0)"]  # writes nothing
+    receipt = _receipt_with_manifest(
+        tmp_path, argv, [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
+    )
+    body = run_replay(receipt, root=tmp_path)
+    assert body["exit_code"] == 0
+    assert body["artifacts"][0]["match"] is False
+    assert body["artifacts"][0]["note"] == "artifact_missing"
+    assert body["verdict"] == "fail"
 
 
 def test_timeout_fails(tmp_path: Path) -> None:

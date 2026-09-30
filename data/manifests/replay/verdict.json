@@ -3,7 +3,7 @@
   "kind": "replay_manifest",
   "live_pnl_claim": false,
   "producer": "scripts/verdict_real_drill.py",
-  "receipt_sha256": "4803d715a29a6a3b5c833aa2f94a53000bae0258ada8822e0d53dd29548d3934",
+  "receipt_sha256": "98ef9e6cc621d772b4db923144536f5a05eb01e24e82e0e19cc6c9b79d6b499c",
   "replay": {
     "argv": [
       "scripts/verdict_real_drill.py",
@@ -31,7 +31,7 @@
       ],
       "claims_equal": false,
       "committed_sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7",
-      "drift_reason": "composite over lanes whose inputs grew (components) + drill bookkeeping (drill)",
+      "drift_reason": "lane_evolution",
       "receipt": "receipts/verdict_real_drill.json"
     }
   ],
