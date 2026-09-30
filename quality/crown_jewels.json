@@ -20,7 +20,7 @@
     "src/quant_fund/research/crown_jewels.py": "51e6803ecc682fde3b4d3304a562e5bf8ebe2cc0d367dc4b25cb3bf8cbb9a4d4",
     "src/quant_fund/research/epoch_consistency.py": "3e6f73f7c9ff5d542ae2804dc2d2ab83c3a64d496f5743c6dfd2a601c1236121",
     "src/quant_fund/research/epoch_merkle.py": "2778a059a1d1b4ffcd172c54375d3f827560c4a175c29dac0d81401ee9058b77",
-    "src/quant_fund/research/fuzz_drill.py": "ea8f6a75e8d0f7c15a45417beb373c596301d5f5e0c312ba40115646a1077951",
+    "src/quant_fund/research/fuzz_drill.py": "f7b737e198e7bc9a0fc91902218ebbdd33e17cb2f959d2c5748a868cdefb9917",
     "src/quant_fund/research/gate_signatures.py": "038f67e0127a4ebb445d200922646288047c7c842ee5bd5c37e11b39d6cedecf",
     "src/quant_fund/research/integrity_checkpoint.py": "9286db20a9eb65517143804f7b20bf3aadd81f95710f09c880fc7b8b415819d0",
     "src/quant_fund/research/integrity_witness.py": "d4c057f804a3ba47ed3fecbc7866a62b0d2eda8814d6b80cc26234eb94539797",
