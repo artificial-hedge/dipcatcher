@@ -169,6 +169,14 @@ def corpus_audit(
     errors: list[dict[str, str]] = []
     digests: dict[str, str] = {}
     input_labels: dict[str, str] = {}
+    # Retractions exclude their target's findings from the inference pool —
+    # a retracted claim must not keep scoring under FDR.
+    from quant_fund.research.receipt_tombstone import load_tombstones
+
+    tombs = load_tombstones(root)
+    retracted = tombs["active"]
+    for bad in tombs["invalid"]:
+        errors.append({"file": bad.split(":", 1)[0], "error": bad.split(":", 1)[1]})
     for path in receipt_files:
         try:
             raw = path.read_bytes()
@@ -179,7 +187,16 @@ def corpus_audit(
             body = doc.get("payload")
             inner = body if isinstance(body, Mapping) else doc
             input_labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
-            findings.extend(harvest_findings(doc, path.name))
+            if inner.get("kind") == "receipt_tombstone.v1":
+                continue
+            scope = (retracted.get(path.name) or {}).get("scope")
+            if scope == "all":
+                continue
+            scoped = set(scope) if isinstance(scope, list) else None
+            for f in harvest_findings(doc, path.name):
+                if scoped is not None and f["path"] in scoped:
+                    continue
+                findings.append(f)
         except Exception as exc:  # noqa: BLE001 — errors are recorded, never skipped
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
 
@@ -231,6 +248,8 @@ def corpus_audit(
         "parse_errors": errors,
         "n_p_findings": len(p_findings),
         "n_e_findings": len(e_findings),
+        "n_retracted": len(retracted),
+        "retracted": {name: t["tombstone"] for name, t in sorted(retracted.items())},
         "n_survivors": len(surviving),
         "surviving_claims": [
             {

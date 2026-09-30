@@ -108,3 +108,26 @@ def test_partial_scope_retracts_only_named_claims(tmp_path: Path) -> None:
     assert pinball_groups == []  # r2's pinball no longer joins the group
     assert out["verdict"] == "consistent"
     assert out["retracted"]["r2.json"]["scope"] == ["results[0].pinball"]
+
+
+def test_retracted_findings_exit_the_fdr_pool(tmp_path: Path) -> None:
+    from quant_fund.research.corpus_inference import corpus_audit
+
+    _write(
+        tmp_path,
+        "r1.json",
+        {**_receipt("in-a", 0.42), "kupiec_p": 0.001, "evidence_e": 50.0},
+    )
+    bad = _write(
+        tmp_path,
+        "r2.json",
+        {**_receipt("in-a", 0.43), "kupiec_p": 0.0001, "evidence_e": 500.0},
+    )
+    before = corpus_audit(tmp_path)
+    assert before["n_p_findings"] == 2
+
+    write_tombstone(bad, corpus_dir=tmp_path, reason="superseded")
+    after = corpus_audit(tmp_path)
+    assert after["n_retracted"] == 1
+    assert after["n_p_findings"] == 1  # r2's p-value no longer enters the pool
+    assert all(f["source"] == "r1.json" for f in after["surviving_claims"])
