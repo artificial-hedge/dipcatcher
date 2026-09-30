@@ -321,13 +321,15 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       cumulative h-step realized variance, NW loss diffs vs `har`, sealed
       receipts). Real-data vol cells still open.
 - [x] P3.9 Selection-concordance lane: does "head X wins" survive the choice
-      of multiple-comparison correction? `research/concordance.py` +
-      `dipcatcher concordance` runs MCS / Romano–Wolf StepM / pairwise DM on
+      of multiple-comparison correction? `research/concordance.py`
+      (`quant_fund.research.concordance.run_concordance_eval`) runs MCS /
+      Romano–Wolf StepM / pairwise DM on
       the same pinball loss tensor per shard — eliminated-set Jaccard,
       Kendall-τ on elimination confidence, SPA/Reality-Check decisiveness on
       differentials-vs-best. A head MCS keeps but StepM rejects is flagged:
       dependence-fragile selection, not evidence.
-- [x] P3.7 Distributional coherence bench: `dipcatcher coherence-bench` —
+- [x] P3.7 Distributional coherence bench
+      (`quant_fund.research.coherence.run_coherence`) —
       `research/coherence.py` reconciles per-name marginal quantile grids
       to the aggregate distribution on SYNTHETIC correlated panels
       (gauss/independent/heavy-tail/regime-break copulas). Methods:
@@ -379,6 +381,7 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       In flight: `docs/P4_3_FAST_PATH_ARGUMENT.md` — the residual gap is the
       contract (per-order risk gates), with the latency decomposition table.
 - [~] P4.3 If fast path can't reach ≤1× honestly, write the argument:
+      `receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json`.
 - [x] P4.3 If fast path can't reach ≤1× honestly, write the argument:
       per-order risk gates + fail-closed semantics are the product; vectorbt
       is a vectorized reducer without them; show latency decomposition
@@ -475,7 +478,8 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
 - [x] P6.5 Exec/microstructure (audited — 8 fixes + KAT regressions): `almgren_chriss.py`, `microstructure/*`,
 - [x] P6.4 Model layer: every file in `models/` audited line-by-line
       vs cited behavior; `pipeline/` causal gates verified.
-      Completion evidence: `quality/audit_coverage*.json` marks
+      Completion evidence: `quality/audit_coverage.json` +
+      `quality/audit_coverage_fx1.json` mark
       `models/` and the named dirs `audited` under CI enforcement
       + `docs/AUDIT_LEDGER.md` per-directory findings (#334+).
 - [x] P6.5 Exec/microstructure: `almgren_chriss.py`, `microstructure/*`,

@@ -176,3 +176,18 @@ def test_serial_watch_cli_fail_closed(tmp_path: Path) -> None:
     pit_file.write_text(json.dumps([0.0, 1.0, 2.0]))
     result = CliRunner().invoke(app, ["serial-watch", str(pit_file), "--out-dir", str(tmp_path)])
     assert result.exit_code != 0
+
+
+def test_serial_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the same serial_watch.v1 body in the envelope."""
+    import json
+
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    receipt = serial_report(_ar_pits(400, 2, rho=0.5), data_label="SYNTHETIC")
+    path = write_serial_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "serial_watch.v1"
+    assert payload["payload"]["alarmed_lags"] == receipt["alarmed_lags"]
+    assert verify_receipt_file(path)["valid"] is True

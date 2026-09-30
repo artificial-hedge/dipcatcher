@@ -42,6 +42,7 @@ does not score them.
 - `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/emerge_real_drill.json`: emerge_drill.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/evidence_audit_3464d8f8197bf737.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/evidence_audit_d449e1ca0cc119a6.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/fast_replay_p42_conformance_20260928.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
@@ -63,6 +64,9 @@ does not score them.
 - `receipts/nautilus_conformance_7bf19a08c147547b.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/panel_audit_real_drill.json`: panel_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/rankic_eval_9ebdad7da83e7348.json`: cross_sectional_rankic.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/real_benchmark_us_wide_manifest.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/real_benchmark_us_wide_test.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/real_benchmark_us_wide_validation.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/serial_watch_140b073ea589b0c7.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/serial_watch_1e8e1446e506fce1.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/serial_watch_2c14615c26efd19b.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search

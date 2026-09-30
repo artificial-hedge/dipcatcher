@@ -30,6 +30,7 @@ from quant_fund.execution.spread_calibration import (
 )
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
 from quant_fund.research.fleet_eval import _atomic_write_text
+from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 from quant_fund.utils.hashing import (
     canonical_frame_fingerprint,
     canonical_json_bytes,
@@ -394,6 +395,8 @@ def _is_sha256_str(value: object) -> bool:
 def write_cost_calibration_receipt(
     receipt: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
 ) -> Path:
     research_blob = {k: v for k, v in receipt.items() if k != "live_pnl_claim"}
     if (
@@ -405,9 +408,30 @@ def write_cost_calibration_receipt(
         or not family_blob_forbidden_metrics_absent(research_blob)
     ):
         raise ValueError("cost calibration receipt violates the honesty contract")
-    payload = dict(receipt)
-    digest = hash_bytes(canonical_json_bytes(payload))
-    payload["receipt_sha256"] = digest
+    if receipt_version == 1:
+        payload = dict(receipt)
+        digest = hash_bytes(canonical_json_bytes(payload))
+        payload["receipt_sha256"] = digest
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+                params={
+                    "seed": receipt.get("seed"),
+                    "n_dates": receipt.get("n_dates"),
+                    "n_names": receipt.get("n_names"),
+                    "half_spread_bps_floor": receipt.get("half_spread_bps_floor"),
+                    "lookback": receipt.get("lookback"),
+                    "planted_rel_spread": receipt.get("planted_rel_spread"),
+                    "estimators": receipt.get("estimators"),
+                },
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     path = Path(receipts_dir) / f"cost_calibration_eval_{digest[:16]}.json"
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path

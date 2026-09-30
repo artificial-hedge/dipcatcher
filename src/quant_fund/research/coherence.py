@@ -320,7 +320,9 @@ def run_coherence(
                 )
                 q = _method_grid(method, y_train, n_eval, tau_arr, int(n_mc), rng)
                 row.update(_grid_metrics(q, agg_eval, tau_arr))
-            except Exception as exc:  # recorded, never silent
+            except (ValueError, TypeError, RuntimeError, ArithmeticError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): grid build/metric
+                # faults are numeric; exotic errors propagate. Recorded, never silent.
                 row["status"] = "error"
                 row["error"] = str(exc)
                 n_error_rows += 1

@@ -75,9 +75,20 @@ class TestLoadPredictor:
                 "mini", tokenizer_path=str(tmp_path), model_path=str(tmp_path)
             )
 
-    def test_kronos_not_importable_raises(self, tmp_path: Path) -> None:
-        # third_party/kronos exists but its deps (huggingface_hub) are absent
-        # in the test env — the ImportError must wrap, not propagate.
+    def test_kronos_not_importable_raises(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Intent: an ImportError from the Kronos classes must be wrapped in
+        # RobinhoodPlusTorchError, not propagate. The original premise —
+        # third_party/kronos's deps (huggingface_hub/torch) absent from the
+        # test env — no longer holds after `uv sync --all-extras` installs the
+        # [nn] extra, so the un-importability is simulated deterministically:
+        # a None sys.modules entry makes `from model.kronos import ...` raise
+        # ImportError on every machine, and torch_available is forced True so
+        # the run reaches the import branch (the torch-absent branch has its
+        # own test above).
+        monkeypatch.setattr(torch_backend, "torch_available", lambda: True)
+        monkeypatch.setitem(sys.modules, "model.kronos", None)
         with pytest.raises(torch_backend.RobinhoodPlusTorchError, match="Kronos"):
             torch_backend.load_pretrained_predictor(
                 "mini", tokenizer_path=str(tmp_path), model_path=str(tmp_path)

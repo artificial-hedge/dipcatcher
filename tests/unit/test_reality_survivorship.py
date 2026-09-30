@@ -33,7 +33,18 @@ from quant_fund.research.reality_sweep import assert_cost_lock
 _ROOT = Path(__file__).resolve().parents[2]
 _SPEC = _ROOT / "research" / "reality" / "survivorship" / "preregistration.json"
 _MEMBERSHIP = _ROOT / "research" / "reality" / "survivorship" / "membership.json"
-_LEDGER = _ROOT / "research" / "reality" / "trials.jsonl"
+# The 2026-09-27 study is decided (verdict: deflated — see
+# docs/REALITY_TRIAL_2026.md), so the ledger carrying the frozen 29-line
+# prior-study prefix lives under the archive path, not the pending default
+# (decision 038 — the lifecycle test_reality_sweep.py already follows).
+_LEDGER = (
+    _ROOT
+    / "research"
+    / "reality"
+    / "studies"
+    / "reality-us-liquid-daily-2026-09-27"
+    / "trials.jsonl"
+)
 
 
 def _spec() -> dict:

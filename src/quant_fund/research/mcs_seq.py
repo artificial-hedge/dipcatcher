@@ -225,13 +225,18 @@ def _atomic_write_text(path: Path, content: str) -> None:
 def write_mcs_receipt(
     receipt: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
 ) -> Path:
     """Seal an mcs_seq receipt and write ``receipts/mcs_seq_<hash>.json``.
 
     Filename digest = sha256 of the canonical payload, embedded as
     ``receipt_sha256`` (fleet_eval seal convention). Atomic, fail-closed
-    on a malformed receipt.
+    on a malformed receipt. ``receipt_version=2`` wraps the same body in
+    the unified ``receipt.v2`` envelope instead.
     """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
     if (
         receipt.get("kind") != "mcs_seq.v1"
         or receipt.get("research_only") is not True
@@ -240,9 +245,27 @@ def write_mcs_receipt(
         or not isinstance(receipt.get("eliminated"), dict)
     ):
         raise ValueError("mcs_seq receipt violates its contract")
-    canonical = json.loads(canonical_json_bytes(dict(receipt)))
-    digest = hash_bytes(canonical_json_bytes(canonical))
-    payload = {**canonical, "receipt_sha256": digest}
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+                params={
+                    "alpha": receipt.get("alpha"),
+                    "lam": receipt.get("lam"),
+                    "n_heads": receipt.get("n_heads"),
+                    "n_origins": receipt.get("n_origins"),
+                },
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
     path = Path(receipts_dir) / f"mcs_seq_{digest[:16]}.json"
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path

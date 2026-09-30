@@ -207,3 +207,21 @@ def test_verify_missing_file() -> None:
     assert result["valid"] is False
     assert result["errors"]
     assert not math.isnan(0.0)  # nothing else to assert — missing is missing
+
+
+def test_receipt_v2_envelope_roundtrip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the allocation_evaluation.v1 body in the envelope."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    ev = _eval()
+    receipt = build_receipt(ev, synthetic=True, label="unit-test")
+    path = write_receipt(receipt, tmp_path / "alloc_v2.json", receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["kind"] == ALLOCATION_RECEIPT_SCHEMA
+    assert payload["data_label"] == "SYNTHETIC"
+    assert payload["payload"]["payload_sha256"] == receipt["payload_sha256"]
+    assert verify_receipt_file(path)["valid"] is True
+    # The lane verifier unwraps the envelope and re-checks the inner body.
+    result = verify_allocation_receipt(path)
+    assert result == {"valid": True, "errors": []}

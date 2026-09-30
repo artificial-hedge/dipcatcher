@@ -41,8 +41,11 @@ never compound wealth.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -51,6 +54,7 @@ from quant_fund.research.fleet_eval import (
     DEFAULT_TAUS,
     HeadFactory,
     ShardGenerator,
+    _atomic_write_text,
     resolve_shard_generators,
 )
 from quant_fund.utils.hashing import hash_bytes
@@ -214,7 +218,9 @@ def audit_tail_depth(
                     q = np.asarray(model.predict(lag_x), dtype=float)
                 else:
                     q = np.asarray(model.predict(shard.x[n_train : n_train + n_eval]), dtype=float)
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded as error rows.
                 q = None
                 err = str(exc)
             if q is None or q.ndim != 2 or q.shape[1] != tau_arr.shape[0]:
@@ -307,9 +313,61 @@ def audit_tail_depth(
     return frame, receipt
 
 
+def write_tail_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a tail_audit receipt and write ``tail_watch_<hash>.json``.
+
+    Filename digest = sha256 of the canonical payload, embedded as
+    ``receipt_sha256`` (fleet_eval seal convention). Atomic, fail-closed
+    on a malformed receipt. ``receipt_version=2`` wraps the same body in
+    the unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.hashing import canonical_json_bytes
+
+    if (
+        receipt.get("schema") != TAIL_AUDIT_SCHEMA
+        or receipt.get("kind") != "tail_audit"
+        or not _is_sha256_str(receipt.get("inputs_sha256"))
+        or not isinstance(receipt.get("params"), Mapping)
+        or not isinstance(receipt.get("evidence"), list)
+        or not isinstance(receipt.get("claims"), list)
+    ):
+        raise ValueError("tail_audit receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"tail_watch_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+def _is_sha256_str(value: object) -> bool:
+    return (
+        isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+    )
+
+
 __all__ = [
     "DEFAULT_ALT_GRID",
     "TAIL_AUDIT_SCHEMA",
     "TailDepthEProcess",
     "audit_tail_depth",
+    "write_tail_receipt",
 ]
