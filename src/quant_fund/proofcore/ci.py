@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import shutil
 import subprocess
 import sys
@@ -77,6 +78,7 @@ def coverage_gate(
                 sys.executable,
                 "-m",
                 "coverage",
+                "report",
                 f"--include={src_root}/{pkg}/*",
                 f"--fail-under={floor}",
             ],
@@ -94,6 +96,28 @@ def coverage_gate(
 def receipt_paths(receipts_dir: Path) -> list[Path]:
     """Committed receipt files, sorted for deterministic CI logs."""
     return sorted(Path(receipts_dir).glob("*.json"))
+
+
+def _receipt_verifier_command(path: Path) -> str:
+    """Pick the schema-appropriate verifier CLI without importing research.
+
+    ``verify-receipt`` handles ``receipt.v2`` envelopes and any receipt
+    carrying a top-level ``receipt_sha256`` seal (canonical or strict JSON
+    convention, plus the ``fleet_eval.v1`` writer contract). Everything else
+    goes to ``verify-research``, the schema-specific honesty-error verifier
+    for the older research-catalog receipts.
+    """
+    try:
+        body = json.loads(path.read_text())
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return "verify-research"
+    if not isinstance(body, dict):
+        return "verify-research"
+    if body.get("schema") == "receipt.v2" or body.get("schema_version") == 2:
+        return "verify-receipt"
+    if isinstance(body.get("receipt_sha256"), str):
+        return "verify-receipt"
+    return "verify-research"
 
 
 # ---------------------------------------------------------------------------

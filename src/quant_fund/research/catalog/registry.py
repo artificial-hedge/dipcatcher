@@ -151,6 +151,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "vintage_eval",
         "entropy_shapley",
         "fourier_pricing",
+        # SOTA canon wave 16 batteries (see research/benches_w16.py):
+        # loss-choice-vs-model-choice decomposition for volatility forecasts
+        # (validation level alignment and the loss-dominated -> model-dominated
+        # QLIKE-ratio flip), generalized hierarchical conformal prediction
+        # (GHCP), multi-source randomly localized conformal prediction
+        # (MS-RLCP), conformal prediction under an exponential-tilt joint shift
+        # (ExTRA-WCP / -WCP-T), target-alignment dilution accounting with
+        # cautious forecast selection, and (torch-gated) the C51 distributional
+        # RL market maker on the zero-intelligence LOB. Seeded SYNTHETIC
+        # streams; correctness diagnostics only, never promotion gates.
+        "vol_loss_decomposition",
+        "hierarchical_conformal",
+        "multisource_conformal",
+        "extra_tilt",
+        "forecast_selection",
+        "rl_market_maker",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
