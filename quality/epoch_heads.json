@@ -1,8 +1,16 @@
 {
   "heads": {
+    ".dsh-24x7/*": {
+      "receipt": "corpus_epoch_b813ce499e924d69.json",
+      "sha256": "2f9932c24e7504de433aca3ff3e2373b8ce49b0349f6fd2040237cd3ebafcfec"
+    },
     ".github/workflows/*.yml": {
       "receipt": "corpus_epoch_a3f5dd6e6b59cf19.json",
       "sha256": "f57e8b0458c8661e853a3c0c2087fee9a887269f598e7e4919aac039a590c087"
+    },
+    "artifacts/*": {
+      "receipt": "corpus_epoch_a67d08f9fed2ed9d.json",
+      "sha256": "518858cca86fc0b4884391926f68dbb943b9bb8e0035b00fd0b731ecbf2d3d8e"
     },
     "configs/*": {
       "receipt": "corpus_epoch_964d4f81da22979e.json",

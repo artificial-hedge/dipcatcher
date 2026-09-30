@@ -65,6 +65,13 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
     # Declared experiment inputs — a post-hoc config edit silently rewrites
     # what a sealed bench measured; mutable corpus, stamped arrivals only.
     ("configs", "*", True, True, ()),
+    # Committed claim artifacts (champion selects, dev grids) — regenerated
+    # between runs, so mutable; every committed member must be stamped.
+    ("artifacts", "*", True, True, ("*.gitkeep",)),
+    # Committed fleet evidence (the SOTA input stream). Live dir — arrivals
+    # land between stamps (unstamped = informational, not error), but a
+    # stamped member is immutable: .npz mutation after stamping is tamper.
+    (".dsh-24x7", "*", False, False, ()),
 )
 
 
