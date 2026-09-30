@@ -45,7 +45,7 @@ it can only drop evidence, never leak it).
 - `_walk_forward_evidence` accepts `n_ic_dates>0` as temporal evidence — weak
   but documented; the strict gate is the causal-panel check.
 
-Regression coverage: `tests/unit/validation/test_p62_validation_audit.py`
+Regression coverage: `tests/unit/research/test_p62_validation_audit.py`
 pins known-answer values for Holm/Hochberg/BH/BY/Storey, purge/embargo
 boundary semantics, CPCV split/path counts + stitch consistency, the
 label-overlap assertion, and each regime-gate fire condition.
