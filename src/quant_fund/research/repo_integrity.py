@@ -345,6 +345,56 @@ def verify_repo(
             errs.append(f"uncovered_member:{rel!a}")
         gates[f"epoch:{corpus_dir}"] = {"ok": not errs, "errors": errs}
 
+    if evidence_only:
+        # The manifest is the exporter's claim about itself — schema,
+        # covered corpora, and per-corpus globs must match this build's
+        # policy table, else a forged manifest rides a valid chain.
+        manifest_errs: list[str] = []
+        mpath = root / "BUNDLE.json"
+        if not mpath.is_file():
+            manifest_errs.append("bundle_manifest_missing:BUNDLE.json")
+        else:
+            try:
+                manifest = json.loads(mpath.read_text())
+            except (OSError, json.JSONDecodeError):
+                manifest = {}
+                manifest_errs.append("bundle_manifest_malformed:BUNDLE.json")
+            if manifest.get("schema") != "evidence_bundle.v1":
+                manifest_errs.append(f"manifest_schema:{manifest.get('schema')!r}")
+            declared = manifest.get("corpora")
+            if not isinstance(declared, Mapping):
+                manifest_errs.append("manifest_corpora_malformed")
+            else:
+                drift = sorted(set(declared) ^ EVIDENCE_CORPORA)
+                if drift:
+                    manifest_errs.append("manifest_corpora_mismatch:" + ",".join(drift))
+                glob_by_corpus = {c[0]: c[1] for c in CORPORA}
+                for cdir_name in set(declared) & EVIDENCE_CORPORA:
+                    spec = declared[cdir_name]
+                    m_glob = spec.get("glob") if isinstance(spec, Mapping) else None
+                    if m_glob != glob_by_corpus[cdir_name]:
+                        manifest_errs.append(f"manifest_glob_mismatch:{cdir_name}:{m_glob!r}")
+        gates["bundle_manifest"] = {"ok": not manifest_errs, "errors": manifest_errs}
+
+        # Closed world: a bundle may carry only the manifest, the signature
+        # file, and files under the declared evidence corpora (nested
+        # corpora claim by longest prefix — `.github/x` is foreign even
+        # though `.github/workflows/` is a corpus). Inside a corpus, the
+        # epoch gate's own uncovered-member sweep applies.
+        foreign: list[str] = []
+        evidence_prefixes = tuple(
+            sorted((f"{d}/" for d in EVIDENCE_CORPORA), key=len, reverse=True)
+        )
+        for f in sorted(root.rglob("*")):
+            if not f.is_file():
+                continue
+            rel = f.relative_to(root).as_posix()
+            if rel in ("BUNDLE.json", "gate_pins.sig") or rel.startswith(".git/"):
+                continue
+            if not rel.startswith(evidence_prefixes):
+                foreign.append(f"foreign_member:{rel}")
+        gates["bundle_coverage"] = {"ok": not foreign, "errors": foreign}
+
     # Semantic layer: byte-integrity says the corpus is untampered; the
     # lattice gate says its claims are coherent. A contradictory corpus
     # fails the capstone the same as a forged byte.
@@ -460,6 +510,13 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         cj = gates.get("crown_jewels")
         if not isinstance(cj, Mapping) or cj.get("skipped") != "evidence_only":
             errors.append("evidence_only_skip_missing:crown_jewels")
+        # Both bundle gates must have run — an attestation over a bundle
+        # without them can't claim the manifest agreed or foreign members
+        # were absent.
+        for req in ("bundle_coverage", "bundle_manifest"):
+            bc = gates.get(req)
+            if not isinstance(bc, Mapping) or "skipped" in bc:
+                errors.append(f"evidence_only_skip_missing:{req}")
     expected_ok = bool(gates) and all(
         bool(g.get("ok")) for g in gates.values() if isinstance(g, Mapping)
     )

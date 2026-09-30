@@ -59,7 +59,7 @@
     "src/quant_fund/research/receipt_tombstone.py": "6d23cad97393c3f84e0bfbee7eb1e51e6eefcd874d476635ceaf3104fcb025af",
     "src/quant_fund/research/receipt_v2.py": "aee91f19664eb9b2db6db109e56a4b43634ae996a976ad9f0e2b2bd4f10c0dd9",
     "src/quant_fund/research/release_attestation.py": "1dc321aa41d4c674c95b002af5c18682f030594ff0f886c44731c3425e42e32e",
-    "src/quant_fund/research/repo_integrity.py": "a9845211d0703f14286e17fe7acdf0e8767d7d80781e80e75b31fde7c55d53cd",
+    "src/quant_fund/research/repo_integrity.py": "4e8354f0e920a94f74e8c25b6f55abd42a924268437025dcb7a99857fa3d2230",
     "src/quant_fund/research/tamper_drill.py": "39ea5edec298b8d26f3c7614379046082b48de2a6b8735592efc0ae90cf31047",
     "src/quant_fund/research/timestamp_anchor.py": "9961bf5ee4ee1678d948dd3f7f2e3331dad0f302514bee7dba0ccd547cd7ed17",
     "src/quant_fund/research/witness_scan.py": "a664fd4b49c94539d725379a2fe58b0d08fcbcfd9284f331123ec70b6394ebea",

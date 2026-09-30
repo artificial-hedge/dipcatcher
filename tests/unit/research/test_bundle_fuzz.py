@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from quant_fund.research.evidence_export import BUNDLE_MANIFEST, export_evidence_bundle
+from quant_fund.research.repo_integrity import verify_repo
 
 from .test_evidence_export import _minimal_evidence_tree
 
@@ -38,6 +39,10 @@ def _bundle(tmp_path: Path) -> Path:
     root = _minimal_evidence_tree(tmp_path)
     out = tmp_path / "bundle"
     export_evidence_bundle(root, out)
+    # The minimal tree is unsigned: a signature file without a committed
+    # pubkey is a *signed-state* error, not the neutral ``unsigned`` this
+    # fixture exercises. Drop it so the baseline is the unsigned bundle.
+    (out / "gate_pins.sig").unlink()
     return out
 
 
@@ -58,8 +63,11 @@ def _member(bundle: Path, corpus_dir: str) -> Path:
 
 
 def test_baseline_passes(tmp_path: Path) -> None:
-    proc = _audit(_bundle(tmp_path))
+    bundle = _bundle(tmp_path)
+    proc = _audit(bundle)
     assert proc.returncode == 0, proc.stdout + proc.stderr
+    result = verify_repo(bundle, evidence_only=True)
+    assert result["ok"], {k: g["errors"] for k, g in result["gates"].items() if not g["ok"]}
 
 
 def _mut_schema(b: Path) -> None:
@@ -169,4 +177,11 @@ def test_bundle_mutation_fails_closed(tmp_path: Path, mutation: str) -> None:
     proc = _audit(bundle)
     assert proc.returncode != 0, (
         f"{mutation} escaped: exit {proc.returncode}\n{proc.stdout}{proc.stderr}"
+    )
+    # The library's own evidence-only audit must agree — the standalone
+    # script exists to *cross-check* verify_repo; a mutation caught by one
+    # oracle but not the other is a divergence finding of its own.
+    result = verify_repo(bundle, evidence_only=True)
+    assert not result["ok"], (
+        f"{mutation} escaped the library auditor: {[k for k, g in result['gates'].items() if not g['ok']]}"
     )
