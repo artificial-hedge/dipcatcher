@@ -270,3 +270,184 @@ def test_script_checkpoint_mode(tmp_path: Path) -> None:
     )
     assert proc4.returncode == 1
     assert "checkpoint_signature_invalid" in proc4.stdout
+
+
+def _history_fixture(tmp_path: Path) -> tuple[Path, Path, dict, str]:
+    """Two-epoch corpus + lib-emitted history-absence body + pin entry."""
+    from quant_fund.research.corpus_epoch import (
+        corpus_epoch,
+        epoch_heads_key,
+        write_epoch_receipt,
+    )
+    from quant_fund.research.epoch_merkle import (
+        history_absence_receipt,
+        merkle_root,
+    )
+
+    corpus = tmp_path / "receipts"
+    corpus.mkdir()
+    for name in ("a.json", "c.json"):
+        (corpus / name).write_text(json.dumps({"v": name}))
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    (corpus / "e.json").write_text(json.dumps({"v": "e"}))
+    epoch = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    members = {m["name"]: m["sha256"] for m in json.loads(epoch.read_text())["members"]}
+    import hashlib
+
+    epoch_sha = hashlib.sha256(epoch.read_bytes()).hexdigest()
+    key = epoch_heads_key(corpus, "*.json")
+    entry = {"receipt": epoch.name, "sha256": epoch_sha, "tree_root": merkle_root(members)}
+    body = history_absence_receipt(corpus, "never.env")
+    return corpus, epoch, {"body": body, "entry": entry}, key
+
+
+def test_script_history_absence_pin(tmp_path: Path) -> None:
+    """Library-emitted history receipt verifies under --history-absence."""
+    _, epoch, fx, key = _history_fixture(tmp_path)
+    pin = tmp_path / "pin.json"
+    pin.write_text(json.dumps({"heads": {key: fx["entry"]}}))
+    hp = tmp_path / "ha.json"
+    hp.write_text(json.dumps(fx["body"]))
+    proc = _run("--history-absence", str(hp), "--pin", str(pin), "--key", key)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "epochs=2" in proc.stdout
+
+    # A stale head bound to epoch 1 fails the pin binding.
+    pin_stale = tmp_path / "pin_stale.json"
+    first = fx["body"]["epochs"][0]
+    pin_stale.write_text(
+        json.dumps(
+            {
+                "heads": {
+                    key: {
+                        "receipt": first["receipt"],
+                        "sha256": first["sha256"],
+                        "tree_root": "0" * 64,
+                    }
+                }
+            }
+        )
+    )
+    proc2 = _run("--history-absence", str(hp), "--pin", str(pin_stale), "--key", key)
+    assert proc2.returncode == 1
+    assert "history_head_not_pinned" in proc2.stdout
+
+    # Forged head digest fails.
+    forged = dict(fx["body"], head_sha256="f" * 64)
+    fp = tmp_path / "ha_forged.json"
+    fp.write_text(json.dumps(forged))
+    proc3 = _run("--history-absence", str(fp), "--pin", str(pin), "--key", key)
+    assert proc3.returncode == 1
+    assert "history_head_digest_drift" in proc3.stdout
+
+    # Corrupted interior root breaks the prev_root link — the pinned head
+    # transitively authenticates the whole claimed chain.
+    bad = dict(fx["body"])
+    bad["epochs"] = [dict(e) for e in fx["body"]["epochs"]]
+    bad["epochs"][0]["epoch_root_sha256"] = "0" * 64
+    bp = tmp_path / "ha_bad_epoch.json"
+    bp.write_text(json.dumps(bad))
+    proc4 = _run("--history-absence", str(bp), "--pin", str(pin), "--key", key)
+    assert proc4.returncode == 1
+    assert "history_link_broken:1" in proc4.stdout
+
+    # A claimed genesis carrying a non-zero prev_root fails the shape check
+    # (genesis's prev_epoch_sha256 is the "0"*64 sentinel by convention).
+    gen = dict(fx["body"])
+    gen["epochs"] = [dict(e) for e in fx["body"]["epochs"]]
+    gen["epochs"][0]["prev_root"] = "f" * 64
+    gp = tmp_path / "ha_gen.json"
+    gp.write_text(json.dumps(gen))
+    proc5 = _run("--history-absence", str(gp), "--pin", str(pin), "--key", key)
+    assert proc5.returncode == 1
+    assert "genesis_prev_root_nonzero" in proc5.stdout
+
+
+def _signed_checkpoint_v2(heads: dict, pins: dict, tmp_path: Path) -> tuple[Path, Path, Path]:
+    """v2 quorum envelope: one real Ed25519 signer registered in a
+    gate_quorum.v1 registry; payload binds the registry's canonical digest."""
+    import hashlib
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    key = Ed25519PrivateKey.generate()
+    pub_hex = key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw).hex()
+    kid = hashlib.sha256(bytes.fromhex(pub_hex)).hexdigest()[:16]
+    reg = {"schema": "gate_quorum.v1", "threshold": 1, "keys": [{"key_id": kid, "pubkey": pub_hex}]}
+    reg_path = tmp_path / "gate_quorum.json"
+    reg_path.write_text(json.dumps(reg, indent=2, sort_keys=True) + "\n")
+    payload = {
+        "schema": "integrity_checkpoint.v1",
+        "at": "2026-01-01T00:00:00+00:00",
+        "pins": pins,
+        "heads": heads,
+        "missing_pins": [],
+        "prev_sha256": None,
+        "spine": {"n_archives": 0, "tip": None},
+        "witness": {"n_proofs": 0, "proofs": {}},
+        "code": {"revision": "test", "worktree_sha256": "0" * 64},
+        "quorum": {"registry_sha256": hashlib.sha256(reg_path.read_bytes()).hexdigest()},
+    }
+    canon = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    cp = tmp_path / "checkpoint.json"
+    cp.write_text(
+        json.dumps(
+            {
+                "schema": "integrity_checkpoint_sig.v2",
+                "algorithm": "ed25519",
+                "payload": payload,
+                "signatures": [{"key_id": kid, "signature": key.sign(canon).hex()}],
+            }
+        )
+    )
+    pub = tmp_path / "gate_signing.pub"
+    pub.write_text(pub_hex)
+    return cp, pub, reg_path
+
+
+def test_script_history_absence_checkpoint_quorum(tmp_path: Path) -> None:
+    """v2 checkpoint + quorum registry authenticate the head pin; foreign
+    pubkeys and swapped registries fail."""
+    _, epoch, fx, key = _history_fixture(tmp_path)
+    heads = {key: fx["entry"]}
+    pin_file = tmp_path / "pin.json"
+    pin_file.write_text(json.dumps({"heads": heads}))
+    import hashlib
+
+    pins = {"quality/epoch_heads.json": hashlib.sha256(pin_file.read_bytes()).hexdigest()}
+    cp, pub, reg = _signed_checkpoint_v2(heads, pins, tmp_path)
+    hp = tmp_path / "ha.json"
+    hp.write_text(json.dumps(fx["body"]))
+
+    proc = _run(
+        "--history-absence",
+        str(hp),
+        "--checkpoint",
+        str(cp),
+        "--pubkey",
+        str(pub),
+        "--quorum",
+        str(reg),
+        "--key",
+        key,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+    # Foreign pubkey: not a registry member.
+    (tmp_path / "f").mkdir()
+    _, pub2, _ = _signed_checkpoint_v2(heads, pins, tmp_path / "f")
+    proc2 = _run(
+        "--history-absence",
+        str(hp),
+        "--checkpoint",
+        str(cp),
+        "--pubkey",
+        str(pub2),
+        "--quorum",
+        str(reg),
+        "--key",
+        key,
+    )
+    assert proc2.returncode == 1
+    assert "pubkey_not_in_quorum" in proc2.stdout

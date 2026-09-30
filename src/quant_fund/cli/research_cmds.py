@@ -1869,6 +1869,12 @@ def corpus_absence_cmd(
         help="Offline mode: verify --check against this epoch_heads.json pin "
         "instead of the live corpus.",
     ),
+    history: bool = typer.Option(
+        False,
+        "--history",
+        help="Prove absence at EVERY committed epoch (corpus_history_absence.v1) "
+        "rather than at one bound epoch.",
+    ),
 ) -> None:
     """Non-membership proof: this name was NOT in the corpus at epoch N.
 
@@ -1877,18 +1883,65 @@ def corpus_absence_cmd(
     ``hi == lo + 1`` proves nothing can sit between them. ``--check`` with
     ``--pin`` verifies against the quorum-signed, OTS-anchored heads pin —
     the third-party "was this receipt ever committed?" path.
+
+    ``--history`` strengthens the claim to *every* epoch: the receipt binds
+    the ordered genesis→head chain (names + file digests) and a verifier
+    replays it, confirming the name never enters any member map. "Was
+    secrets.env ever evidence?" answers in one sealed artifact.
     """
     import json as _json
 
     from quant_fund.research.epoch_merkle import (
+        HISTORY_ABSENCE_SCHEMA,
         absence_receipt,
         verify_absence_pin,
         verify_epoch_absence,
+        verify_history_absence,
+        verify_history_absence_pin,
     )
 
     if check is not None:
         payload = _json.loads(check.read_text(encoding="utf-8"))
         body_payload = payload.get("payload", payload)
+        if (
+            body_payload.get("schema") == HISTORY_ABSENCE_SCHEMA
+            or body_payload.get("kind") == HISTORY_ABSENCE_SCHEMA
+        ):
+            if pin is not None:
+                from quant_fund.research.corpus_epoch import load_heads_pin
+
+                heads = load_heads_pin(pin)
+                corpus_key = body_payload.get("corpus_key")
+                if not isinstance(corpus_key, str):
+                    corpus_key = next(
+                        (
+                            k
+                            for k, e in heads.items()
+                            if e.get("receipt") == body_payload.get("head_receipt")
+                        ),
+                        "",
+                    )
+                errors = verify_history_absence_pin(body_payload, heads.get(corpus_key, {}))
+                for err in errors:
+                    typer.echo(f"history-absence error: {err}")
+                if errors:
+                    raise typer.Exit(code=1)
+                typer.echo(
+                    f"history-absence verified offline: {body_payload.get('name')} "
+                    f"absent at all {body_payload.get('n_epochs')} epochs "
+                    f"(pin {pin.name}, key={corpus_key})"
+                )
+                return
+            errors = verify_history_absence(body_payload, corpus_dir)
+            for err in errors:
+                typer.echo(f"history-absence error: {err}")
+            if errors:
+                raise typer.Exit(code=1)
+            typer.echo(
+                f"history-absence verified: {body_payload.get('name')} absent at "
+                f"all {body_payload.get('n_epochs')} committed epochs"
+            )
+            return
         if pin is not None:
             from quant_fund.research.corpus_epoch import load_heads_pin
 
@@ -1926,9 +1979,30 @@ def corpus_absence_cmd(
 
     if member is None:
         raise typer.BadParameter("--member is required unless --check is passed")
-    body = absence_receipt(corpus_dir, member, epoch_receipt=epoch)
+    from quant_fund.research.epoch_merkle import history_absence_receipt
     from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
 
+    if history:
+        body = history_absence_receipt(corpus_dir, member)
+        sealed = seal_receipt(
+            wrap_receipt_v2(
+                body,
+                code_files=(Path(__file__).parent.parent / "research" / "epoch_merkle.py",),
+                verdict="pass",
+            )
+        )
+        dest = out or (corpus_dir / f"corpus_history_absence_{sealed['receipt_sha256'][:16]}.json")
+        from quant_fund.utils.atomicio import atomic_write_text
+
+        atomic_write_text(dest, _json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+        typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+        typer.echo(
+            f"history-absence name={member} epochs={body['n_epochs']} "
+            f"head={body['head_receipt']} receipt={dest}"
+        )
+        return
+
+    body = absence_receipt(corpus_dir, member, epoch_receipt=epoch)
     sealed = seal_receipt(
         wrap_receipt_v2(
             body,

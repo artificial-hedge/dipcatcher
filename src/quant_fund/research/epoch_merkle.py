@@ -602,3 +602,225 @@ def verify_absence_pin(
     elif payload.get("merkle_root") != pinned_root:
         errors.append("merkle_root_not_pinned")
     return sorted(set(errors))
+
+
+HISTORY_ABSENCE_SCHEMA = "corpus_history_absence.v1"
+
+
+def ordered_epoch_chain(
+    corpus_dir: Path | str, *, pattern: str = "*.json"
+) -> tuple[list[tuple[str, str, str, str | None, frozenset[str]]], list[str]]:
+    """Genesis→head ordered chain for one (dir, pattern) lane.
+
+    Each entry is ``(receipt_name, file_sha256, epoch_root_sha256,
+    prev_root, member_names)`` — ``prev_root`` is the receipt's claimed
+    ``prev_epoch_sha256`` (the previous epoch's root; None at genesis).
+    Fails closed — squatter files, unauthentic receipts,
+    orphans, forks, multiple genesis/heads all report errors instead of
+    yielding a partial chain: a *history* claim over a broken chain is
+    meaningless, so no chain is returned unless the whole sequence links.
+    """
+    from quant_fund.research.corpus_epoch import _epoch_receipts, _member_maps
+
+    root = Path(corpus_dir)
+    pairs, squatters = _epoch_receipts(root)
+    errors = [f"epoch_prefix_squat:{n!a}" for n in squatters]
+    by_name: dict[str, tuple[str, Mapping[str, Any]]] = {}
+    for path, body in pairs:
+        params = body.get("params")
+        pat = params.get("pattern", "*.json") if isinstance(params, Mapping) else "*.json"
+        if pat != pattern:
+            continue
+        payload, err = _load_epoch_receipt(root, path.name)
+        if err is not None:
+            errors.append(f"{err}:{path.name!a}")
+            continue
+        assert payload is not None
+        by_name[path.name] = (hash_bytes(path.read_bytes()), payload)
+
+    child_of: dict[str, str] = {}
+    genesis: list[str] = []
+    for name, (_, rec) in by_name.items():
+        prev = rec.get("prev_epoch_receipt")
+        if prev is None:
+            genesis.append(name)
+            continue
+        if prev not in by_name:
+            errors.append(f"epoch_orphan:{name!a}")
+            continue
+        if rec.get("prev_epoch_sha256") != by_name[prev][1].get("epoch_root_sha256"):
+            errors.append(f"epoch_prev_root_mismatch:{name!a}")
+        if prev in child_of:
+            errors.append(f"epoch_fork:{prev!a}")
+        else:
+            child_of[prev] = name
+    if len(genesis) != 1:
+        errors.append(f"epoch_genesis_count:{len(genesis)}")
+
+    ordered: list[tuple[str, str, str, str | None, frozenset[str]]] = []
+    seen: set[str] = set()
+    cur = genesis[0] if len(genesis) == 1 else None
+    while cur is not None and cur in by_name and cur not in seen:
+        seen.add(cur)
+        file_sha, rec = by_name[cur]
+        root_hex = rec.get("epoch_root_sha256")
+        prev_hex = rec.get("prev_epoch_sha256")
+        ordered.append(
+            (
+                cur,
+                file_sha,
+                root_hex if isinstance(root_hex, str) else "",
+                prev_hex if isinstance(prev_hex, str) else None,
+                frozenset(_member_maps(rec)),
+            )
+        )
+        cur = child_of.get(cur)
+    if len(ordered) != len(by_name):
+        errors.append(f"epoch_chain_disconnected:{len(ordered)}/{len(by_name)}")
+    return ordered, sorted(set(errors))
+
+
+def history_absence_receipt(
+    corpus_dir: Path | str,
+    name: str,
+    *,
+    pattern: str = "*.json",
+) -> dict[str, Any]:
+    """``corpus_history_absence.v1`` — ``name`` was absent at EVERY epoch.
+
+    Complements ``corpus_absence.v1`` (absence at one bound epoch): the
+    proof is the full ordered chain — receipt names + file digests — so a
+    verifier replays genesis→head and confirms the name never enters any
+    member map. Refuses to emit on a broken chain or when the name is a
+    member at any epoch (fail closed — absence is a claim, not a filter).
+    """
+    from quant_fund.research.corpus_epoch import epoch_heads_key
+
+    ordered, errors = ordered_epoch_chain(corpus_dir, pattern=pattern)
+    if errors:
+        raise ValueError(f"chain not verifiable: {errors[0]}")
+    if not ordered:
+        raise ValueError(f"no epoch chain under {corpus_dir}")
+    for receipt_name, _, _, _, members in ordered:
+        if name in members:
+            raise ValueError(f"{name!a} is a member at {receipt_name}")
+    return {
+        "kind": HISTORY_ABSENCE_SCHEMA,
+        "schema": HISTORY_ABSENCE_SCHEMA,
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "CORPUS",
+        "simulated_only": False,
+        "corpus_key": epoch_heads_key(Path(corpus_dir), pattern),
+        "name": name,
+        "epochs": [
+            {"receipt": n, "sha256": sha, "epoch_root_sha256": r, "prev_root": p}
+            for n, sha, r, p, _ in ordered
+        ],
+        "n_epochs": len(ordered),
+        "head_receipt": ordered[-1][0],
+        "head_sha256": ordered[-1][1],
+    }
+
+
+def history_absence_errors(payload: Mapping[str, Any]) -> list[str]:
+    """``corpus_history_absence.v1`` shape checks; ``[]`` when clean."""
+    errors: list[str] = []
+    if payload.get("kind") != HISTORY_ABSENCE_SCHEMA:
+        errors.append("kind_not_history_absence")
+    if payload.get("schema") != HISTORY_ABSENCE_SCHEMA:
+        errors.append("schema_not_history_absence")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    name = payload.get("name")
+    if not isinstance(name, str) or not name:
+        errors.append("name_not_str")
+    epochs = payload.get("epochs")
+    if not isinstance(epochs, list) or not epochs:
+        errors.append("epochs_missing")
+        epochs = []
+    else:
+        for i, e in enumerate(epochs):
+            if not isinstance(e, Mapping):
+                errors.append(f"epoch_entry_malformed:{i}")
+                continue
+            if not isinstance(e.get("receipt"), str):
+                errors.append(f"epoch_entry_malformed:{i}")
+            for field in ("sha256", "epoch_root_sha256"):
+                v = e.get(field)
+                if not (isinstance(v, str) and len(v) == 64):
+                    errors.append(f"epoch_entry_malformed:{i}:{field}")
+            prev_root = e.get("prev_root")
+            if not (isinstance(prev_root, str) and len(prev_root) == 64):
+                errors.append(f"epoch_entry_malformed:{i}:prev_root")
+            elif i == 0 and prev_root != "0" * 64:
+                errors.append("genesis_prev_root_nonzero")
+    if payload.get("n_epochs") != len(epochs):
+        errors.append("n_epochs_mismatch")
+    if epochs and isinstance(epochs[-1], Mapping):
+        if payload.get("head_receipt") != epochs[-1].get("receipt"):
+            errors.append("head_receipt_mismatch")
+        if payload.get("head_sha256") != epochs[-1].get("sha256"):
+            errors.append("head_sha256_mismatch")
+    return sorted(set(errors))
+
+
+def _chain_pattern_from_key(corpus_key: object) -> str:
+    """``receipts/*.json`` → ``*.json``; falls back to the default glob."""
+    if isinstance(corpus_key, str) and "/" in corpus_key:
+        return corpus_key.rsplit("/", 1)[-1]
+    return "*.json"
+
+
+def verify_history_absence(
+    payload: Mapping[str, Any],
+    corpus_dir: Path | str,
+) -> list[str]:
+    """Deep check: re-derive the chain independently, require the claimed
+    epoch sequence byte-identical, then confirm ``name`` never a member."""
+    errors = history_absence_errors(payload)
+    if errors:
+        return errors
+    ordered, chain_errors = ordered_epoch_chain(
+        Path(corpus_dir), pattern=_chain_pattern_from_key(payload.get("corpus_key"))
+    )
+    if chain_errors:
+        return [f"history_chain_unverifiable:{chain_errors[0]}"]
+    claimed = [
+        (e.get("receipt"), e.get("sha256"), e.get("epoch_root_sha256"), e.get("prev_root"))
+        for e in payload["epochs"]  # type: ignore[index]
+        if isinstance(e, Mapping)
+    ]
+    actual = [(n, sha, r, p) for n, sha, r, p, _ in ordered]
+    if claimed != actual:
+        return ["history_chain_mismatch"]
+    for n, _, _, _, members in ordered:
+        if payload["name"] in members:
+            return [f"history_member_present:{n!a}"]
+    return []
+
+
+def verify_history_absence_pin(
+    payload: Mapping[str, Any],
+    pin_entry: Mapping[str, Any],
+) -> list[str]:
+    """Offline check: the claimed chain head must be the pinned head —
+    a proof that stops early would hide later membership."""
+    errors = history_absence_errors(payload)
+    if errors:
+        return errors
+    # Interior links authenticate the claimed chain offline: each entry's
+    # prev_root must equal the previous entry's epoch_root_sha256, so a
+    # forged interior entry breaks the chain terminating at the pinned head.
+    epochs = payload["epochs"]  # type: ignore[index]
+    for i in range(1, len(epochs)):
+        prev_e, e = epochs[i - 1], epochs[i]
+        if e["prev_root"] != prev_e["epoch_root_sha256"]:
+            errors.append(f"history_link_broken:{i}")
+    if payload.get("head_receipt") != pin_entry.get("receipt"):
+        errors.append("history_head_not_pinned")
+    elif payload.get("head_sha256") != pin_entry.get("sha256"):
+        errors.append("history_head_digest_drift")
+    return sorted(set(errors))

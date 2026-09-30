@@ -164,25 +164,114 @@ def _ed25519_verify(pub_hex: str, sig_hex: str, msg: bytes) -> bool | None:
     return True
 
 
-def _checkpoint_heads(checkpoint: dict[str, Any], pubkey: Path) -> tuple[dict[str, Any], list[str]]:
-    """Authenticate the checkpoint envelope, return its heads map."""
+def _ed25519_key_id(pubkey_hex: str) -> str:
+    """kid = sha256(pubkey bytes)[:16] — mirrors gate_signatures.key_id."""
+    return hashlib.sha256(bytes.fromhex(pubkey_hex.strip())).hexdigest()[:16]
+
+
+def _checkpoint_heads(
+    checkpoint: dict[str, Any], pubkey: Path, quorum: Path | None = None
+) -> tuple[dict[str, Any], list[str]]:
+    """Authenticate the checkpoint envelope, return its heads map.
+
+    v1: ``signature`` verified under ``pubkey``. v2: a ``signatures`` list
+    of ``{key_id, signature}`` — with ``--quorum <registry.json>`` every
+    signer must be registered, at least ``threshold`` signatures verify,
+    the presented ``--pubkey`` must itself be a registry member, and the
+    payload's ``quorum.registry_sha256`` must equal the canonical digest of
+    the presented registry (a swapped same-keys file fails). Without
+    ``--quorum`` the presented pubkey authenticates signatures directly.
+    """
     errors: list[str] = []
-    if checkpoint.get("schema") != "integrity_checkpoint_sig.v1":
-        errors.append("checkpoint_schema")
+    schema = checkpoint.get("schema")
     payload = checkpoint.get("payload")
     if not isinstance(payload, dict):
-        return {}, errors + ["checkpoint_payload_missing"]
+        return {}, ["checkpoint_payload_missing"]
     if checkpoint.get("algorithm") != "ed25519":
         errors.append("checkpoint_algorithm")
-    sig = checkpoint.get("signature")
-    if not isinstance(sig, str):
-        errors.append("checkpoint_signature_malformed")
+    msg = _canon(payload)
+    if schema == "integrity_checkpoint_sig.v1":
+        sig = checkpoint.get("signature")
+        if not isinstance(sig, str):
+            errors.append("checkpoint_signature_malformed")
+        else:
+            verdict = _ed25519_verify(pubkey.read_text().strip(), sig, msg)
+            if verdict is None:
+                errors.append("crypto_backend_unavailable")
+            elif verdict is False:
+                errors.append("checkpoint_signature_invalid")
+    elif schema == "integrity_checkpoint_sig.v2":
+        sigs = checkpoint.get("signatures")
+        if not isinstance(sigs, list) or not sigs:
+            errors.append("checkpoint_signature_malformed")
+            sigs = []
+        registered: dict[str, str] = {}
+        threshold = 1
+        if quorum is not None:
+            try:
+                reg = json.loads(quorum.read_bytes())
+                if (
+                    reg.get("schema") != "gate_quorum.v1"
+                    or not isinstance(reg.get("keys"), list)
+                    or not isinstance(reg.get("threshold"), int)
+                ):
+                    errors.append("quorum_registry_malformed")
+                else:
+                    registered = {
+                        str(k["key_id"]): str(k["pubkey"])
+                        for k in reg["keys"]
+                        if isinstance(k, dict)
+                    }
+                    threshold = int(reg["threshold"])
+                    # The presented --pubkey must itself be a registry
+                    # member — else an auditor's trust anchor silently
+                    # passes under keys it never chose.
+                    presented = _ed25519_key_id(pubkey.read_text())
+                    if presented not in registered:
+                        errors.append(f"pubkey_not_in_quorum:{presented}")
+                    # The signed payload names the authorizing registry's
+                    # canonical digest — mirrors registry_sha256. A swapped
+                    # --quorum file must fail even when it lists the keys.
+                    claimed_q = payload.get("quorum")
+                    claimed_digest = (
+                        claimed_q.get("registry_sha256") if isinstance(claimed_q, dict) else None
+                    )
+                    if claimed_digest is None:
+                        errors.append("quorum_unbound")
+                    else:
+                        canon = (json.dumps(reg, indent=2, sort_keys=True) + "\n").encode()
+                        if claimed_digest != hashlib.sha256(canon).hexdigest():
+                            errors.append("quorum_registry_drift")
+            except (OSError, ValueError):
+                errors.append("quorum_registry_unreadable")
+        else:
+            registered = {_ed25519_key_id(pubkey.read_text()): pubkey.read_text().strip()}
+        seen: set[str] = set()
+        valid = 0
+        for entry in sigs:
+            if not isinstance(entry, dict):
+                errors.append("checkpoint_signature_malformed")
+                continue
+            kid = str(entry.get("key_id", ""))
+            pub = registered.get(kid)
+            if pub is None:
+                errors.append(f"unknown_signer:{kid}")
+                continue
+            if kid in seen:
+                errors.append(f"duplicate_signer:{kid}")
+                continue
+            seen.add(kid)
+            verdict = _ed25519_verify(pub.strip(), str(entry.get("signature", "")), msg)
+            if verdict is None:
+                errors.append("crypto_backend_unavailable")
+            elif verdict is True:
+                valid += 1
+            else:
+                errors.append(f"checkpoint_signature_invalid:{kid}")
+        if valid < threshold:
+            errors.append(f"checkpoint_quorum_not_met:{valid}/{threshold}")
     else:
-        verdict = _ed25519_verify(pubkey.read_text().strip(), sig, _canon(payload))
-        if verdict is None:
-            errors.append("crypto_backend_unavailable")
-        elif verdict is False:
-            errors.append("checkpoint_signature_invalid")
+        errors.append("checkpoint_schema")
     heads = payload.get("heads")
     if not isinstance(heads, dict):
         errors.append("checkpoint_heads_missing")
@@ -332,10 +421,92 @@ def audit_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -
     return sorted(set(errors))
 
 
+def audit_history_absence(proof: dict[str, Any], pin: dict[str, Any], key: str | None) -> list[str]:
+    """corpus_history_absence.v1 — pin-mode structural + head binding.
+
+    Offline scope (pin only, no corpus): the claimed chain head must equal
+    the pinned head (a proof stopping early would hide later membership),
+    the epoch list must be internally coherent (n_epochs == len, head ==
+    last entry, every entry well-formed), and the claimed name NFC-portable.
+    Mid-chain member-map absence itself requires corpus access — this mode
+    authenticates the *envelope*; the lib verifier does the full replay.
+    """
+    errors: list[str] = []
+    name = proof.get("name")
+    if not isinstance(name, str) or not name:
+        errors.append("name_missing")
+    elif unicodedata.normalize("NFC", name) != name:
+        errors.append("name_not_nfc")
+    elif not _portable(name):
+        errors.append("name_not_portable")
+    epochs = proof.get("epochs")
+    if not isinstance(epochs, list) or not epochs:
+        errors.append("epochs_missing")
+        epochs = []
+    else:
+        for i, e in enumerate(epochs):
+            if not isinstance(e, dict):
+                errors.append(f"epoch_entry_malformed:{i}")
+                continue
+            if not isinstance(e.get("receipt"), str):
+                errors.append(f"epoch_entry_malformed:{i}")
+            for field in ("sha256", "epoch_root_sha256"):
+                v = e.get(field)
+                if not (isinstance(v, str) and len(v) == 64):
+                    errors.append(f"epoch_entry_malformed:{i}:{field}")
+            prev_root = e.get("prev_root")
+            if not (isinstance(prev_root, str) and len(prev_root) == 64):
+                errors.append(f"epoch_entry_malformed:{i}:prev_root")
+            elif i == 0 and prev_root != "0" * 64:
+                errors.append("genesis_prev_root_nonzero")
+    # Interior links are verifiable offline: each epoch's prev_root must name
+    # the previous entry's epoch_root_sha256 — a tampered interior entry
+    # breaks the chain that terminates at the pinned head. Well-formedness of
+    # both fields was already checked above; only compare when both decode.
+    for i in range(1, len(epochs)):
+        prev_e, e = epochs[i - 1], epochs[i]
+        if (
+            isinstance(prev_e, dict)
+            and isinstance(e, dict)
+            and isinstance(e.get("prev_root"), str)
+            and isinstance(prev_e.get("epoch_root_sha256"), str)
+            and e["prev_root"] != prev_e["epoch_root_sha256"]
+        ):
+            errors.append(f"history_link_broken:{i}")
+    if proof.get("n_epochs") != len(epochs):
+        errors.append("n_epochs_mismatch")
+    if epochs and isinstance(epochs[-1], dict):
+        if proof.get("head_receipt") != epochs[-1].get("receipt"):
+            errors.append("head_receipt_mismatch")
+        if proof.get("head_sha256") != epochs[-1].get("sha256"):
+            errors.append("head_sha256_mismatch")
+    head = proof.get("head_receipt")
+    if isinstance(head, str):
+        k, entry, err = _pin_entry(pin, key, head)
+        if err:
+            errors.append(err)
+        elif not isinstance(entry, dict):
+            errors.append(f"pin_key_absent:{key}")
+        else:
+            if proof.get("corpus_key") not in (None, k):
+                errors.append("corpus_key_mismatch")
+            if entry.get("receipt") != head:
+                errors.append("history_head_not_pinned")
+            elif entry.get("sha256") != proof.get("head_sha256"):
+                errors.append("history_head_digest_drift")
+    return sorted(set(errors))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--proof", type=Path, default=None, help="corpus_proof.v1 receipt")
     ap.add_argument("--absence", type=Path, default=None, help="absence proof JSON")
+    ap.add_argument(
+        "--history-absence",
+        type=Path,
+        default=None,
+        help="corpus_history_absence.v1 receipt (pin-mode head binding)",
+    )
     ap.add_argument("--pin", type=Path, default=None, help="epoch_heads.json")
     ap.add_argument(
         "--checkpoint",
@@ -350,9 +521,16 @@ def main() -> int:
         help="Gate Ed25519 pubkey (raw hex) — required with --checkpoint",
     )
     ap.add_argument("--key", type=str, default=None, help="pin key e.g. 'receipts/*.json'")
+    ap.add_argument(
+        "--quorum",
+        type=Path,
+        default=None,
+        help="gate_quorum.v1 registry — v2 checkpoints resolve signers against it",
+    )
     args = ap.parse_args()
-    if (args.proof is None) == (args.absence is None):
-        print("pass exactly one of --proof/--absence", file=sys.stderr)
+    n_targets = sum(x is not None for x in (args.proof, args.absence, args.history_absence))
+    if n_targets != 1:
+        print("pass exactly one of --proof/--absence/--history-absence", file=sys.stderr)
         return 2
     if args.pin is None and args.checkpoint is None:
         print("pass --pin and/or --checkpoint", file=sys.stderr)
@@ -365,7 +543,7 @@ def main() -> int:
     if args.checkpoint is not None:
         checkpoint = json.loads(args.checkpoint.read_text())
         assert args.pubkey is not None
-        heads, pre_errors = _checkpoint_heads(checkpoint, args.pubkey)
+        heads, pre_errors = _checkpoint_heads(checkpoint, args.pubkey, args.quorum)
         for e in pre_errors:
             print(f"  {e}")
         pin_heads: dict[str, Any] = heads
@@ -391,6 +569,14 @@ def main() -> int:
         body = payload.get("payload", payload)
         errors = pre_errors + audit_proof(body, pin, args.key)
         print(f"inclusion member={body.get('member')} -> {len(errors)} error(s)")
+    elif args.history_absence is not None:
+        payload = json.loads(args.history_absence.read_text())
+        body = payload.get("payload", payload)
+        errors = pre_errors + audit_history_absence(body, pin, args.key)
+        print(
+            f"history-absence name={body.get('name')} "
+            f"epochs={body.get('n_epochs')} -> {len(errors)} error(s)"
+        )
     else:
         payload = json.loads(args.absence.read_text())
         # sealed corpus_absence.v1 receipts wrap the body under 'payload';
