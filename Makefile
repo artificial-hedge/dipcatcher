@@ -237,7 +237,7 @@ fuzz-receipts: ## Forge-and-reseal drill: mutates one claim per committed receip
 
 epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch head — a history rewrite can't satisfy it. Needs EPOCH_BASE=<ref>
 	@if [ -z "$${EPOCH_BASE:-}" ]; then echo "epoch-consistency: no EPOCH_BASE — skipped"; exit 0; fi; \
-	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*"; do \
+	for spec in "receipts:*.json" "verifier:*.md" "quality:*.json" ".github/workflows:*.yml" "configs:*" "artifacts:*" ".dsh-24x7:*" "data/metadata:*"; do \
 	  dir=$${spec%%:*}; glob=$${spec##*:}; \
 	  head=$$(git show "$$EPOCH_BASE:quality/epoch_heads.json" 2>/dev/null | uv run python -c "import json,sys; print(json.load(sys.stdin)['heads'].get('$$dir/$$glob',{}).get('receipt',''))"); \
 	  if [ -z "$$head" ]; then echo "epoch-consistency skip $$dir: no base head"; continue; fi; \
@@ -246,12 +246,15 @@ epoch-consistency: ## PR gate: prove every epoch chain extends the base-branch h
 	  uv run dipcatcher corpus-consistency --corpus-dir "$$dir" --glob "$$glob" --check "$$proof" || exit 1; \
 	done
 
-stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching receipts/, verifier/*.md, quality/*.json, .github/workflows/*.yml, or configs/
+stamp-epochs: ## Re-stamp all corpus-epoch chains + head pin after touching any covered dir
 	uv run dipcatcher corpus-epoch --corpus-dir receipts --out-dir receipts --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --out-dir verifier --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir quality --out-dir quality --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir .github/workflows --glob '*.yml' --out-dir .github/workflows --heads-pin quality/epoch_heads.json
 	uv run dipcatcher corpus-epoch --corpus-dir configs --glob '*' --out-dir configs --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir artifacts --glob '*' --out-dir artifacts --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir .dsh-24x7 --glob '*' --out-dir .dsh-24x7 --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir data/metadata --glob '*' --out-dir data/metadata --heads-pin quality/epoch_heads.json
 
 sign-pins: ## Ed25519-sign the integrity pins (needs GATE_SIGNING_KEY or --key-file); run LAST, after stamp-epochs
 	uv run dipcatcher sign-pins

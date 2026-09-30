@@ -33,7 +33,7 @@ detects, and the boundary where detection stops.
 
 ## Corpus discipline
 
-Five corpora are epoch-chained under `quality/epoch_heads.json`:
+Eight corpora are epoch-chained under `quality/epoch_heads.json`:
 
 - `receipts/*.json` — append-only, strict: any member digest change between
   epochs is `member_mutated` (tamper evidence). `legacy-unsealed/` is
@@ -47,6 +47,14 @@ Five corpora are epoch-chained under `quality/epoch_heads.json`:
   `--allow-member-updates` for edits.
 - `configs/*` — mutable: post-hoc config edits would silently rewrite what a
   sealed bench measured, so each change needs a stamp like the quality corpus.
+- `artifacts/*` — committed claim artifacts (champion selects, dev grids):
+  regenerated between runs → mutable, stamped arrivals only.
+- `.dsh-24x7/*` — committed fleet evidence (the SOTA input stream): a live
+  dir, so arrivals land between stamps, but a stamped member is immutable —
+  an `.npz` mutating post-stamp is tamper.
+- `data/metadata/*` — committed dataset manifests + validation outputs: the
+  inputs `data_manifest` receipts pin; write-once dated dirs, stamped
+  arrivals only.
 
 After touching a covered file: `make stamp-epochs` (advances all chains +
 pin) and `dipcatcher crown-jewels --write` if a jewel changed. Both must land
