@@ -13,6 +13,7 @@ import pytest
 from quant_fund.research.benches_w21 import (
     bench_bocpd_changepoint,
     bench_rough_heston_rbergomi,
+    bench_signature_features,
 )
 from quant_fund.research.catalog import (
     OPTIONAL_BENCHMARK_FAMILIES,
@@ -23,6 +24,7 @@ from quant_fund.research.catalog import (
 _FAMILIES_LANDED = (
     "bocpd_changepoint",
     "rough_heston_rbergomi",
+    "signature_features",
 )
 _LANDED_NUMPY_BLOBS = _FAMILIES_LANDED
 
@@ -35,6 +37,11 @@ def bocpd_changepoint() -> dict[str, float]:
 @pytest.fixture(scope="module")
 def rough_heston_rbergomi() -> dict[str, float]:
     return bench_rough_heston_rbergomi()
+
+
+@pytest.fixture(scope="module")
+def signature_features() -> dict[str, float]:
+    return bench_signature_features()
 
 
 def test_landed_families_registered_as_optional() -> None:
@@ -85,6 +92,25 @@ def test_rheston_machinery(rough_heston_rbergomi: dict[str, float]) -> None:
     assert blob["synthetic_rheston_cf_call"] > 0.0
 
 
+def test_signature_kernel_machinery(signature_features: dict[str, float]) -> None:
+    blob = signature_features
+    # Goursat-PDE kernel tracks the order-6 truncated-signature inner
+    # product; dyadic refinement converges.
+    assert blob["synthetic_pde_vs_truncated_abs_gap"] < 1e-2
+    assert blob["synthetic_pde_refine_gap_l12"] < blob["synthetic_pde_refine_gap_l01"]
+    assert blob["synthetic_gram_symmetry_err"] < 1e-9
+
+
+def test_signature_discrimination(signature_features: dict[str, float]) -> None:
+    blob = signature_features
+    # MMD separates GBM from mean-reverting OU; log-sig features carry
+    # drift information (out-of-sample R^2).
+    assert blob["synthetic_mmd_power_gbm_vs_ou"] >= 0.5
+    assert blob["synthetic_mmd_fp_gbm_vs_gbm"] < 0.5
+    assert blob["synthetic_logsig_drift_r2_test"] > 0.3
+
+
 def test_benches_deterministic() -> None:
     assert bench_bocpd_changepoint() == bench_bocpd_changepoint()
     assert bench_rough_heston_rbergomi() == bench_rough_heston_rbergomi()
+    assert bench_signature_features() == bench_signature_features()

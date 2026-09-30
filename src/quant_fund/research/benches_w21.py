@@ -16,6 +16,13 @@ ids verified against arXiv before implementation):
   Riccati characteristic function via Diethelm-Ford-Freed Adams-PC,
   Lewis-inversion call prices, Riemann-Liouville fBm weights, and
   correlated rBergomi / Volterra-Heston path simulators. Pure numpy/scipy.
+- ``signature_features``: path-signature / signature-kernel metrics
+  (Chevyrev & Oberhauser 2022, arXiv:1810.10971; Salvi, Cass, Foster,
+  Lyons & Yang 2021, arXiv:2006.14794) — Goursat-PDE signature kernel
+  validated against truncated inner products, lead-lag MMD two-sample
+  power, log-signature drift regression. Composes with
+  ``models/path_signatures`` (truncated sig/log-sig machinery); only the
+  PDE kernel + batched Gram layer is new. Pure numpy/scipy.
 
 Honesty contract: all blobs are SYNTHETIC correctness/telemetry checks, never
 market evidence. No Sharpe/Sortino/Calmar/PnL/NAV tokens appear in emitted
@@ -37,6 +44,9 @@ _BOCPD_SEED = _SEED + 90
 
 # --- rough_heston_rbergomi: fractional-Riccati CF + rBergomi ------------------
 _RHRB_SEED = _SEED + 91
+
+# --- signature_features: signature kernel MMD + log-sig drift ------------------
+_SIG_SEED = _SEED + 92
 
 
 def _finite_blob(mapped: dict[str, float]) -> dict[str, float]:
@@ -87,5 +97,26 @@ def bench_rough_heston_rbergomi() -> dict[str, float]:
         return {}
     try:
         return _finite_blob(_isinstance_floats(_rhrb_core_bench(seed=_RHRB_SEED)))
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+def bench_signature_features() -> dict[str, float]:
+    """Signature-kernel diagnostics bench (wave 21).
+
+    Thin adapter over the lane module's own ``bench_signature_features``:
+    Goursat-PDE kernel vs truncated-signature inner product, MMD power
+    separating GBM/OU/vol-shift ensembles, log-signature drift regression
+    R^2, Gram-matrix sanity. Returns ``{}`` while the lane module is
+    absent or on fail-closed rejection.
+    """
+    try:
+        from quant_fund.metrics.signature_features import (
+            bench_signature_features as _sig_core_bench,
+        )
+    except ImportError:
+        return {}
+    try:
+        return _finite_blob(_isinstance_floats(_sig_core_bench(seed=_SIG_SEED)))
     except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
         return {}

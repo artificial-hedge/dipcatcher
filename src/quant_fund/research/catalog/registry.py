@@ -238,10 +238,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # arXiv:0710.3742) and rough-volatility pricing — fractional
         # Riccati rHeston CF + rBergomi/Volterra simulators (El Euch &
         # Rosenbaum 2019, arXiv:1609.02108; Bayer-Friz-Gatheral 2016;
-        # Abi Jaber-Larsson-Pulido 2019, arXiv:1708.08796). Same
-        # SYNTHETIC diagnostic contract.
+        # Abi Jaber-Larsson-Pulido 2019, arXiv:1708.08796), and path
+        # signatures — Goursat-PDE signature kernel + lead-lag MMD
+        # two-sample scores (Chevyrev & Oberhauser 2022,
+        # arXiv:1810.10971; Salvi-Cass-Foster-Lyons-Yang 2021,
+        # arXiv:2006.14794). Same SYNTHETIC diagnostic contract.
         "bocpd_changepoint",
         "rough_heston_rbergomi",
+        "signature_features",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -163,6 +163,7 @@ from quant_fund.research.benches_w20 import (
 from quant_fund.research.benches_w21 import (
     bench_bocpd_changepoint,
     bench_rough_heston_rbergomi,
+    bench_signature_features,
 )
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
@@ -1840,6 +1841,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "arl_mm": bench_arl_mm(),
         "bocpd_changepoint": bench_bocpd_changepoint(),
         "rough_heston_rbergomi": bench_rough_heston_rbergomi(),
+        "signature_features": bench_signature_features(),
     }
 
     hyps = _build_hypotheses(families, rankers)
