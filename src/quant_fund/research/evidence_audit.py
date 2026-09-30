@@ -84,6 +84,11 @@ def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
                 "digest_convention": result["digest_convention"],
                 "filename_digest_ok": _filename_digest_status(path, seal),
                 "errors": list(result["errors"]),
+                # byte-pinned legacy contracts predating their lane's schema —
+                # exempt from sealed_receipt_invalid (KNOWN_CONTRACT_LEGACY
+                # sha256-pins both file and error set; any other failure or a
+                # tampered byte still surfaces).
+                "contract_legacy": is_known_contract_legacy(path, result["errors"]),
             }
         )
     return rows
@@ -103,12 +108,17 @@ def evidence_audit_findings(
     if not rows:
         findings.append("no_receipts_found")
     for row in rows:
+<<<<<<< HEAD
         if row["sealed"] and not row["valid"]:
             exempt = receipts_dir is not None and is_known_contract_legacy(
                 receipts_dir / row["file"], row["errors"]
             )
             if not exempt:
                 findings.append(f"{row['file']}:sealed_receipt_invalid")
+=======
+        if row["sealed"] and not row["valid"] and not row.get("contract_legacy"):
+            findings.append(f"{row['file']}:sealed_receipt_invalid")
+>>>>>>> origin/main
         if any(e.startswith("receipt_unreadable") for e in row["errors"]):
             findings.append(f"{row['file']}:unparseable")
         if row["filename_digest_ok"] is False:
@@ -269,7 +279,10 @@ def evidence_audit_consistency_errors(body: object) -> list[str]:
         expected = [
             f"{r['file']}:sealed_receipt_invalid"
             for r in files
-            if isinstance(r, dict) and r.get("sealed") and not r.get("valid")
+            if isinstance(r, dict)
+            and r.get("sealed")
+            and not r.get("valid")
+            and not r.get("contract_legacy")
         ]
         embedded = {str(f) for f in findings}
         for want_finding in expected:
