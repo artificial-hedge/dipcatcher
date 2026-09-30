@@ -518,7 +518,7 @@ def load_heads_pin(pin_path: Path | str) -> dict[str, dict[str, str]]:
     raw = json.loads(path.read_text())
     if not isinstance(raw, dict) or not isinstance(raw.get("heads"), dict):
         raise ValueError("heads pin must be an object with a 'heads' map")
-    heads: dict[str, dict[str, str]] = {}
+    heads: dict[str, dict[str, Any]] = {}
     for key, entry in raw["heads"].items():
         if (
             isinstance(key, str)
@@ -604,7 +604,7 @@ def check_epoch_chain(
     *,
     allowed_removals: Mapping[str, str] | None = None,
     pattern: str = "*.json",
-    expected_head: Mapping[str, str] | None = None,
+    expected_head: Mapping[str, Any] | None = None,
     require_stamped: bool = False,
     allow_member_updates: bool = False,
 ) -> dict[str, Any]:
@@ -798,6 +798,35 @@ def check_epoch_chain(
             cur = prev if isinstance(prev, str) else None
         if not ancestor:
             errors.append(f"epoch_head_rollback:{exp_name!a}")
+
+    # Bound chain fields: when the pin carries the position-commitment
+    # fields written by ``update_heads_pin`` (member ``tree_root``, ordered
+    # ``chain_root``, ``n_epochs``), recompute them against the observed
+    # chain truncated at the pinned head — a pin naming a live head while
+    # lying about its committed position root must fail closed, since
+    # offline position proofs anchor on these values.
+    if exp_name is not None and ancestor and expected_head is not None:
+        from quant_fund.research.epoch_merkle import (
+            chain_tree_root,
+            ordered_epoch_chain,
+        )
+
+        ordered, order_errors = ordered_epoch_chain(root, pattern=pattern)
+        if not order_errors:
+            tip_idx = next((i for i, e in enumerate(ordered) if e[0] == exp_name), None)
+            if tip_idx is not None:
+                sub = ordered[: tip_idx + 1]
+                names_sha = [(e[0], e[1]) for e in sub]
+                pinned_head = by_name[exp_name]
+                exp_tree = expected_head.get("tree_root")
+                if isinstance(exp_tree, str) and pinned_head.get("member_tree_root") != exp_tree:
+                    errors.append(f"epoch_head_tree_root_mismatch:{exp_name!a}")
+                exp_chain = expected_head.get("chain_root")
+                if isinstance(exp_chain, str) and chain_tree_root(names_sha) != exp_chain:
+                    errors.append(f"epoch_head_chain_root_mismatch:{exp_name!a}")
+                exp_n = expected_head.get("n_epochs")
+                if isinstance(exp_n, int) and len(names_sha) != exp_n:
+                    errors.append(f"epoch_pin_n_epochs_mismatch:{exp_name!a}")
     return {
         "errors": errors,
         "unstamped": unstamped,

@@ -284,6 +284,39 @@ def test_heads_pin_rollback_detected(tmp_path: Path) -> None:
     assert unpinned["head"] == first.name and unpinned["errors"] == []
 
 
+def test_heads_pin_bound_chain_fields(tmp_path: Path) -> None:
+    """The pin's tree_root/chain_root/n_epochs bind the chain at the pinned
+    head — a pin lying about them fails closed even when the head is live."""
+    from quant_fund.research.corpus_epoch import (
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+    )
+    from quant_fund.utils.hashing import hash_bytes
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    _receipt(corpus, "a.json", "1")
+    write_epoch_receipt(corpus_epoch(corpus), corpus)
+    _receipt(corpus, "b.json", "2")
+    second = write_epoch_receipt(corpus_epoch(corpus), corpus)
+    pin = tmp_path / "epoch_heads.json"
+    update_heads_pin(pin, corpus, "*.json", second)
+    exp = load_heads_pin(pin)[epoch_heads_key(corpus, "*.json")]
+    assert exp["receipt"] == second.name and "chain_root" in exp and "n_epochs" in exp
+    assert check_epoch_chain(corpus, expected_head=exp)["errors"] == []
+    # Forge each bound field — head receipt and sha stay honest.
+    sha = hash_bytes(second.read_bytes())
+    for field, bogus, code in (
+        ("tree_root", "0" * 64, "epoch_head_tree_root_mismatch"),
+        ("chain_root", "0" * 64, "epoch_head_chain_root_mismatch"),
+        ("n_epochs", exp["n_epochs"] + 1, "epoch_pin_n_epochs_mismatch"),
+    ):
+        forged = {**exp, "sha256": sha, field: bogus}
+        errors = check_epoch_chain(corpus, expected_head=forged)["errors"]
+        assert any(e.startswith(f"{code}:") for e in errors), (field, errors)
+
+
 def test_heads_pin_validates_schema(tmp_path: Path) -> None:
     from quant_fund.research.corpus_epoch import load_heads_pin
 
