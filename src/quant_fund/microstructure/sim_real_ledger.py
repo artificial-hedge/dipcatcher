@@ -27,6 +27,7 @@ from quant_fund.microstructure.lobster import (
 )
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
+    MOFlow,
     RegimeState,
     ZILobConfig,
     ZILobSimulator,
@@ -51,7 +52,7 @@ def _hump_level(depth: list[float]) -> float | None:
 
 def measure_sim(
     config: ZILobConfig,
-    flow: MarkovRegimeFlow | None,
+    flow: MOFlow | None,
     *,
     horizon: int = 20000,
 ) -> dict[str, Any]:
