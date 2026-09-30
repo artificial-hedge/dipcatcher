@@ -137,6 +137,34 @@ def test_real_tree_export_verifies_evidence_only(tmp_path: Path) -> None:
     not (REPO_ROOT / "quality" / "epoch_heads.json").is_file() or not _has_git(REPO_ROOT),
     reason="requires the real repo tree with committed integrity state",
 )
+def test_manifest_git_blob_ids_match_ls_tree(tmp_path: Path) -> None:
+    """The manifest's per-member git blob ids must equal what git itself
+    records at HEAD — the bundle is thereby bound to the commit's object
+    database, not just to a directory that happened to be present."""
+    bundle = tmp_path / "bundle"
+    manifest = export_evidence_bundle(REPO_ROOT, bundle)
+    committed = manifest["corpora"]["receipts"]["git_members"]
+    out = subprocess.run(
+        ["git", "ls-tree", "-r", "HEAD", "--", "receipts"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    ls_tree = {
+        line.split("\t", 1)[1].removeprefix("receipts/"): line.split()[2]
+        for line in out.splitlines()
+    }
+    common = committed.keys() & ls_tree.keys()
+    assert common, "no committed receipts overlapped the manifest"
+    for rel in common:
+        assert committed[rel] == ls_tree[rel], f"blob sha1 drift: {rel}"
+
+
+@pytest.mark.skipif(
+    not (REPO_ROOT / "quality" / "epoch_heads.json").is_file() or not _has_git(REPO_ROOT),
+    reason="requires the real repo tree with committed integrity state",
+)
 def test_corrupted_bundle_member_fails_verification(tmp_path: Path) -> None:
     """A bundle with a tampered member must not verify — the export is only
     as trustworthy as the gates that re-check it."""

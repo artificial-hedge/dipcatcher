@@ -27,6 +27,7 @@ Provenance evidence only; never a market or P&L claim.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -55,6 +56,18 @@ def _corpus_glob(root: Path, corpus_dir: str) -> str:
     raise KeyError(corpus_dir)
 
 
+def _git_blob_sha1(path: Path) -> str:
+    """The git blob object id for ``path``'s bytes — ``sha1("blob <n>\\0" + data)``.
+
+    Recording it lets an auditor prove bundle member == committed blob without
+    trusting the exporter: ``git ls-tree -r <source_revision>`` emits the same
+    ids for the same content, so the manifest binds the bundle to the commit's
+    object database, not just to a directory that happened to be present.
+    """
+    data = path.read_bytes()
+    return hashlib.sha1(b"blob %d\0" % len(data) + data, usedforsecurity=False).hexdigest()
+
+
 def export_evidence_bundle(
     root: Path | str = ".", out_dir: Path | str = "evidence_bundle"
 ) -> dict[str, Any]:
@@ -80,11 +93,13 @@ def export_evidence_bundle(
         pattern = _corpus_glob(root, corpus_dir)
         members = member_digests(src, pattern=pattern)
         copied = 0
+        git_members: dict[str, str] = {}
         for rel in members:
             src_file = src / rel
             dst_file = out / corpus_dir / rel
             dst_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src_file, dst_file)
+            git_members[rel] = _git_blob_sha1(src_file)
             copied += 1
         # The corpus's own epoch receipts are exempt bookkeeping under some
         # globs (e.g. ``*.md`` / ``*.yml`` don't match ``corpus_epoch_*.json``)
@@ -95,20 +110,27 @@ def export_evidence_bundle(
                 dst_file = out / corpus_dir / receipt.name
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(receipt, dst_file)
-        corpora[corpus_dir] = {"glob": pattern, "members": copied}
+        corpora[corpus_dir] = {
+            "glob": pattern,
+            "members": copied,
+            "git_members": git_members,
+        }
 
+    bookkeeping: dict[str, str] = {}
     for rel in _BOOKKEEPING_FILES:
         src_file = root / rel
         if src_file.is_file():
             dst_file = out / rel
             dst_file.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src_file, dst_file)
+            bookkeeping[rel] = _git_blob_sha1(src_file)
 
     sig_src = root / _SIGNATURE_FILE
     sig_sha = ""
     if sig_src.is_file():
         shutil.copyfile(sig_src, out / _SIGNATURE_FILE)
         sig_sha = hash_bytes(sig_src.read_bytes())
+        bookkeeping[_SIGNATURE_FILE] = _git_blob_sha1(sig_src)
 
     commit = ""
     try:
@@ -129,6 +151,7 @@ def export_evidence_bundle(
         "source_revision": commit,
         "verify_with": "dipcatcher verify-repo --evidence-only",
         "corpora": corpora,
+        "bookkeeping": bookkeeping,
         "gate_pins_sig_sha256": sig_sha,
     }
     (out / BUNDLE_MANIFEST).write_text(
