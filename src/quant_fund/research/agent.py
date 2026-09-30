@@ -154,6 +154,7 @@ from quant_fund.research.benches_w19 import (
     bench_rccp,
 )
 from quant_fund.research.benches_w20 import (
+    bench_arl_mm,
     bench_gaussian_normalized_coords,
     bench_hidden_markov_equilibrium,
     bench_liquidity_tail_lob,
@@ -1836,6 +1837,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hidden_markov_equilibrium": bench_hidden_markov_equilibrium(),
         "gaussian_normalized_coords": bench_gaussian_normalized_coords(),
         "liquidity_tail_lob": bench_liquidity_tail_lob(),
+        "arl_mm": bench_arl_mm(),
         "bocpd_changepoint": bench_bocpd_changepoint(),
         "rough_heston_rbergomi": bench_rough_heston_rbergomi(),
     }
