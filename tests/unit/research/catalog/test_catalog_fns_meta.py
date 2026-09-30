@@ -165,3 +165,22 @@ def test_include_id_generic() -> None:
     assert fn([{"id": "h1"}], "h1", require_family=None) is True
     assert fn([{"id": "h1", "family": "cal"}], "h1", require_family="cal") is True
     assert fn([{"id": "h1", "family": "x"}], "h1", require_family="cal") is False
+
+
+def test_finite_observation_numpy_item_failure_is_false() -> None:
+    """A numpy-scalar-like whose .item() raises must NOT count as a finite
+    observation (mutation find: the ``return False`` in the item() except
+    branch flipped to True survived the catalog+verify selector set).
+    An empty ndarray is the distinguisher: it carries dtype/item attributes
+    and is not bytes-like, but ``np.array([]).item()`` raises ValueError."""
+    import numpy as np
+
+    from quant_fund.research.catalog.registry import family_blob_has_finite_observation
+
+    empty = np.array([])
+    assert hasattr(empty, "dtype") and hasattr(empty, "item")
+    assert family_blob_has_finite_observation(empty) is False
+    # Same path reached through a blob container.
+    assert family_blob_has_finite_observation({"metric": empty}) is False
+    # Sanity: a size-1 array still recurses through .item() and counts.
+    assert family_blob_has_finite_observation(np.array([1.5])) is True
