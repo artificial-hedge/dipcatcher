@@ -266,6 +266,7 @@ src/quant_fund/microstructure/event_granger.py
 src/quant_fund/microstructure/event_matrix.py
 src/quant_fund/microstructure/exec_cost_real.py
 src/quant_fund/microstructure/exec_cost_split.py
+src/quant_fund/microstructure/exec_shortfall.py
 src/quant_fund/microstructure/glft_closed_form.py
 src/quant_fund/microstructure/hawkes_mv.py
 src/quant_fund/microstructure/hawkes_real.py
