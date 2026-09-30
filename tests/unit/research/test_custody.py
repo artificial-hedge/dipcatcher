@@ -140,3 +140,17 @@ def test_custody_contract_clean(tmp_path: Path) -> None:
     assert custody_contract_errors(bundle) == []
     forged = dict(bundle, chain_head="corpus_epoch_ffffffffffffffff.json")
     assert "chain_head_mismatch" in custody_contract_errors(forged)
+
+
+def test_custody_schema_dispatches_in_verify_receipt(tmp_path: Path) -> None:
+    """custody_proof.v1 payloads get the contract check under verify-receipt."""
+    from quant_fund.research.receipt_v2 import verify_receipt_payload
+
+    root = _fixture(tmp_path)
+    bundle = custody_proof("a.json", root / "receipts", pattern="*.json", root=root)
+    res = verify_receipt_payload(bundle)
+    assert not any(e.startswith("custody_") for e in res["errors"])
+    # A contract-violating bundle is flagged through the same path.
+    forged = dict(bundle, chain_head="corpus_epoch_ffffffffffffffff.json")
+    forged_res = verify_receipt_payload(forged)
+    assert "chain_head_mismatch" in forged_res["errors"]
