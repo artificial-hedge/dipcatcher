@@ -219,6 +219,19 @@ def _mutations(clone: Path, rng: random.Random) -> list[tuple[str, str, Any]]:
 
         out.append(("allowed_removals_launder", _EXPECT_FAIL, _launder))
 
+    # Foreign-extension drop: a file matching no corpus pattern or exemption
+    # (a `.yaml` workflow beside `*.yml` members — GitHub would still run it)
+    # must surface as uncovered_member under the coverage-closure gate.
+    wf_dir = clone / ".github" / "workflows"
+    if wf_dir.is_dir():
+
+        def _foreign_ext() -> str:
+            p = wf_dir / f"fuzz_{rng.randrange(1 << 20)}.yaml"
+            p.write_text("name: evil\n")
+            return f"dropped:{p.name}"
+
+        out.append(("uncovered_extension_drop", _EXPECT_FAIL, _foreign_ext))
+
     # --- must-pass: legitimately uncovered state ---
     uncovered_dir = clone / "docs"
     uncovered_dir.mkdir(exist_ok=True)
