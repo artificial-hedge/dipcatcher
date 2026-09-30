@@ -51,6 +51,8 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     # copy would launder forged SET/checkpoint-note signatures
     "quality/timestamps/freetsa_cacert.pem",  # TSA chain verify root — a swapped
     "quality/timestamps/freetsa_tsa.crt",  # cert pair would launder forged anchors
+    "fx1_seed_corpus.jsonl",  # tracked training input — a silent edit changes
+    # what the model learns with no gate noticing
     # --- the verifier itself: a silent rewrite beats every layer above ---
     "src/quant_fund/research/auditor_bundle.py",
     "src/quant_fund/research/checkpoint_chain.py",
