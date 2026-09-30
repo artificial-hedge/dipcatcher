@@ -632,3 +632,13 @@ Pairs selection - quant_fund.models.pairs:
   Fang & Oosterlee (2008), *SISC* 30; Fang & Oosterlee (2009), *Numer.
   Math.* 114; Lord, Fang, Bervoets & Oosterlee (2008), *SISC* 30; Feng &
   Linetsky (2008), *Math. Finance* 18; Merton (1973) barrier reference.
+
+### SOTA canon wave 17 — execution theory, distributional RL, diffusion forecasting, multi-step UQ (2026-09-30; sources fetched and verified)
+- Barzykin, Boyce, Neuman & Tuschmann (2026), arXiv:2607.28323 [q-fin.TR] — optimal execution under passive market impact: Cont–Kukanov–Stoikov OFI price response combined with exponential fill decay ⇒ reduced-form impact rate ηe^{−mδ}; m=k closed form via bidiagonal-generator matrix exponential (Volterra expansion documented exponentially ill-conditioned), m≠k semi-explicit. `execution/passive_impact.py`.
+- Nutz & Voss (2026), arXiv:2608.29468 [q-fin.TR] — convergence rate of stochastic tracking applied to execution: quadratic stochastic-tracking construction + generalized regularized Obizhaeva–Wang program (tracking bounds eqs. 2.6–2.7/5.14–5.15). `execution/stochastic_tracking.py`.
+- Zaheer et al. (2017), NeurIPS 30, arXiv:1703.06114 — deep-sets permutation invariance under the hood of multilevel market making per arXiv:2608.18195; unit-size simulator, learning-mechanics scope only. `microstructure/multilevel_mm.py` (torch-gated, `nn` extra).
+- Moret & Lillo (2026), arXiv:2609.11614 — scenario-bandit robust fine-tuning layer (Algorithm C) on the wave-16 C51 distributional-RL market maker in the ZI-LOB; regime-switching order flow, inventory saturation. `microstructure/rlmm_c51.py`.
+- Choi (2026), arXiv:2609.30886 — generic ExTRA exponential-tilt joint-shift reweighting machinery (complements wave-16 `extra_tilt_conformal.py`, which hosts the conformal/WCP-T layer of the same paper). `models/extra_conformal.py`.
+- Wu, Wang et al. (2026), arXiv:2609.32363 — DiffPTS full-ELBO conditional denoising diffusion under the LSNM (complements wave-16 `diffusion_forecaster.py`). `models/diffpts.py` (torch-gated).
+- arXiv:2609.28582 — SGA multi-step-ahead uncertainty quantification for surrogate-model forecasts. `metrics/sga_multistep_uq.py`.
+- Soleimani (2026), arXiv:2609.26303 — target-alignment / dilution / cautious forecast selection via common-target geometry; `fs_deviation_mirror_affine_r2` bench key. `metrics/forecast_selection.py` (landed on main via parallel wave-16 integration; wave-17 adds independent test coverage).

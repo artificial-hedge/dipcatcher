@@ -817,3 +817,38 @@ detail: |
   ext_bench + options_reasoning (recipes in lane reports), full 210-mutant
   campaign on verify.py + catalog.
 note: no commits made (owner-review convention).
+---
+owner: devin (wave-17 canon swarm)
+slice: WAVE 17 — eight SOTA module lanes + benches_w17 wiring
+status: GATES GREEN 2026-09-30 — PR open
+detail: |
+  Lanes (all fetch-verify-first, citation-style docstrings, Honesty
+  paragraphs, no new deps): execution/passive_impact (arXiv:2607.28323 —
+  literal scipy.linalg.expm on the bidiagonal generator; the paper's own
+  Volterra expansion documented exponentially ill-conditioned),
+  execution/stochastic_tracking (Nutz & Voss arXiv:2608.29468),
+  microstructure/multilevel_mm (arXiv:2608.18195, torch via lazy _torch()),
+  microstructure/rlmm_c51 (scenario-bandit layer on w16 C51, Moret & Lillo
+  arXiv:2609.11614), models/extra_conformal (generic ExTRA machinery,
+  arXiv:2609.30886), models/diffpts (full-ELBO under LSNM, arXiv:2609.32363,
+  torch-gated), metrics/sga_multistep_uq (arXiv:2609.28582),
+  metrics/forecast_selection (Soleimani arXiv:2609.26303).
+  Concurrent-session reconciliation: a parallel swarm landed wave-16
+  directly on main incl. a same-path forecast_selection.py; canon carries
+  this wave's file — both test suites (core + metrics) pass on it, and
+  main's bench_forecast_selection imports work unchanged.
+  Integration: benches_w17.py wires 7 OPTIONAL families (80 -> 87);
+  forecast_selection stays wired via the w16 family slot (already on
+  main). registry/agent additive-only; REQUIRED + BENCHMARK_FAMILY_ORDER
+  untouched. Scoped gates: ruff + format clean, mypy clean (8 modules),
+  442 tests green (442 = 8 lane suites + bench tests + both
+  forecast_selection suites).
+  Duplicates note: two ExTRA impls (extra_conformal vs extra_tilt_conformal
+  — machinery vs WCP-T layer, complementary), two C51 stacks (rlmm_c51 =
+  scenario-bandit ON rl_market_maker's base), two DiffPTS (diffpts =
+  full-ELBO/LSNM vs diffusion_forecaster wrapper). Documented in PR.
+  Backlog consumed: Tier-D ExTRA, forecast-selection, SGA, B4-ii C51.
+  Wave-18 candidates: agentic LOB phase transitions (2609.31260), FASE
+  eval (2609.32689), G-SLiCE flow matching (2605.28507), KiT OHLCV
+  (2609.34507), StocBench sampler-budget study (2608.22309).
+note: canon branch devin/w17-canon; cross-cutting -> PR per convention.

@@ -228,3 +228,22 @@ coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
   starvation, fourier COS European [still open]). Ratchet discipline:
   untracked-lane `except Exception` handlers narrowed same-day (vine ×6,
   wasserstein_dro ×1) — count back at exactly 72.
+- **Wave 16: LANDED on main 2026-09-30 (parallel session)** — six modules
+  wired directly on main as OPTIONAL families (scorecard 74→80): vol
+  loss-vs-model decomposition, generalized hierarchical CP, multi-source
+  randomly localized conformal, ExTRA-WCP/-WCP-T tilt conformal, forecast
+  selection (Soleimani 2609.26303), C51 RL market maker on the ZI-LOB, plus
+  DiffPTS forecaster, e-PS, FinAutoRubric (`rubric_eval.py`/`rubric_banks.py`),
+  conformal OCE, greek-neutral option portfolios.
+- **Wave 17: INTEGRATED 2026-09-30 (this PR)** — eight module lanes + seven
+  OPTIONAL families (`benches_w17.py`, scorecard 80→87): passive-impact
+  execution with OFI price response (2607.28323; literal `scipy.expm`
+  bidiagonal generator after Volterra conditioning documented exponential),
+  stochastic tracking / regularized Obizhaeva–Wang (Nutz & Voss
+  2608.29468), multilevel market making (2608.18195, torch-gated),
+  scenario-bandit robust fine-tuning of C51 (Moret & Lillo 2609.11614),
+  generic ExTRA tilt machinery (2609.30886), DiffPTS full-ELBO under LSNM
+  (2609.32363, torch-gated), SGA multi-step UQ (2609.28582). One path
+  collision vs wave-16 resolved in favor of this wave's
+  `metrics/forecast_selection.py` (already on main; both test suites
+  green on it). ~442 tests incl. bench wiring; ruff/format/mypy clean.
