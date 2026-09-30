@@ -1876,6 +1876,13 @@ def verify_repo_cmd(
         "--out",
         help="Write the sealed repo_integrity.v1 attestation here (e.g. quality/).",
     ),
+    evidence_only: bool = typer.Option(
+        False,
+        "--evidence-only",
+        help="Verify an evidence bundle (only evidence dirs, no src/): the "
+        "crown-jewels gate reports skipped and the attestation records "
+        "mode=evidence_only — a partial verdict can't masquerade as full.",
+    ),
 ) -> None:
     """Repo integrity capstone: compose every evidence-integrity gate —
     crown-jewels byte pins plus all corpus epoch chains under the committed
@@ -1886,15 +1893,19 @@ def verify_repo_cmd(
 
     # Verify first: --out writes into a chain-covered corpus dir, so a
     # post-write verify would flag the attestation itself as drift.
-    result = verify_repo(root, heads_pin=heads_pin)
+    result = verify_repo(root, heads_pin=heads_pin, evidence_only=evidence_only)
     if out is not None:
-        path = write_repo_integrity_receipt(out, root, heads_pin=heads_pin)
+        path = write_repo_integrity_receipt(
+            out, root, heads_pin=heads_pin, evidence_only=evidence_only
+        )
         typer.echo(f"receipt={path}")
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for name, gate in result["gates"].items():
         state = "ok" if gate["ok"] else "FAIL " + ",".join(gate["errors"])
         if name == "pin_signatures" and gate["ok"] and not gate.get("signed"):
             state = "unsigned"
+        if gate.get("skipped"):
+            state = f"skipped({gate['skipped']})"
         typer.echo(f"verify-repo {name}: {state}")
     if not result["ok"]:
         raise typer.Exit(code=1)

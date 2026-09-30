@@ -58,13 +58,23 @@ CORPORA: tuple[tuple[str, str, bool, bool], ...] = (
 
 
 def verify_repo(
-    root: Path | str = ".", *, heads_pin: Path | str = "quality/epoch_heads.json"
+    root: Path | str = ".",
+    *,
+    heads_pin: Path | str = "quality/epoch_heads.json",
+    evidence_only: bool = False,
 ) -> dict[str, Any]:
     """Run every integrity gate against the live tree.
 
     Returns ``{"gates": {name: {"ok": bool, "errors": [...]}}, "ok": bool}``.
     ``ok`` is true iff every gate reports zero errors. ``heads_pin`` is the
     committed epoch-heads pin required by every corpus chain.
+
+    ``evidence_only`` verifies an evidence bundle — a tree carrying only the
+    evidence dirs (receipts/, quality/, verifier/, configs/,
+    .github/workflows/) with no source checkout: the crown-jewels byte pins
+    cover ``src/`` and can't be checked, so that gate reports a skipped
+    marker instead of a pass. The attestation records the mode so a partial
+    verdict can never masquerade as a full-tree one.
     """
     root = Path(root)
     pin_path = root / heads_pin if not Path(heads_pin).is_absolute() else Path(heads_pin)
@@ -83,8 +93,15 @@ def verify_repo(
             allowed_removals = {}
     gates: dict[str, dict[str, Any]] = {}
 
-    jewel_errs = crown_jewels_errors(root, pin_path=root / JEWELS_PIN)
-    gates["crown_jewels"] = {"ok": not jewel_errs, "errors": jewel_errs}
+    if evidence_only:
+        gates["crown_jewels"] = {
+            "ok": True,
+            "errors": [],
+            "skipped": "evidence_only",
+        }
+    else:
+        jewel_errs = crown_jewels_errors(root, pin_path=root / JEWELS_PIN)
+        gates["crown_jewels"] = {"ok": not jewel_errs, "errors": jewel_errs}
 
     sig = verify_pin_signatures(root)
     gates["pin_signatures"] = {
@@ -209,6 +226,10 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     for name in _REQUIRED_GATES:
         if name not in gates:
             errors.append(f"gate_missing:{name}")
+    mode = payload.get("mode", "full")
+    if mode not in ("full", "evidence_only"):
+        errors.append(f"mode_unknown:{mode}")
+        mode = "full"
     for name, gate in gates.items():
         if not isinstance(gate, Mapping):
             errors.append(f"gate_malformed:{name}")
@@ -223,6 +244,18 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         # can't claim ok while listing the errors it failed on.
         if bool(gate["ok"]) != (not g_errors):
             errors.append(f"gate_ok_incoherent:{name}")
+        if "skipped" in gate:
+            # Only crown_jewels may be skipped, and only under evidence_only:
+            # a full-tree attestation silently skipping a code gate would
+            # downgrade a partial verdict into an implied full pass.
+            if gate["skipped"] != "evidence_only" or name != "crown_jewels":
+                errors.append(f"gate_skip_invalid:{name}")
+            elif mode != "evidence_only":
+                errors.append(f"gate_skipped_in_full_mode:{name}")
+    if mode == "evidence_only":
+        cj = gates.get("crown_jewels")
+        if not isinstance(cj, Mapping) or cj.get("skipped") != "evidence_only":
+            errors.append("evidence_only_skip_missing:crown_jewels")
     expected_ok = bool(gates) and all(
         bool(g.get("ok")) for g in gates.values() if isinstance(g, Mapping)
     )
@@ -263,26 +296,30 @@ def repo_integrity_contract_errors(payload: Mapping[str, Any]) -> list[str]:
 
 
 def repo_integrity_receipt(
-    root: Path | str = ".", *, heads_pin: Path | str = "quality/epoch_heads.json"
+    root: Path | str = ".",
+    *,
+    heads_pin: Path | str = "quality/epoch_heads.json",
+    evidence_only: bool = False,
 ) -> dict[str, Any]:
     """Sealed ``repo_integrity.v1`` attestation over the live gate verdicts."""
     from quant_fund.research.receipt_v2 import seal_receipt
 
     root = Path(root)
-    verdict = verify_repo(root, heads_pin=heads_pin)
+    verdict = verify_repo(root, heads_pin=heads_pin, evidence_only=evidence_only)
     pin_path = root / heads_pin
     body: dict[str, Any] = {
         "kind": "repo_integrity",
         "schema": REPO_INTEGRITY_SCHEMA,
         "data_label": "SYNTHETIC",
         "ok": verdict["ok"],
+        "mode": "evidence_only" if evidence_only else "full",
         "gates": {
             # signed/anchored are verdict state, not metadata — an unsigned-
             # tree attestation must be distinguishable from a signed one.
             name: {
                 "ok": g["ok"],
                 "errors": sorted(g["errors"]),
-                **{k: g[k] for k in ("signed", "anchored", "fresh") if k in g},
+                **{k: g[k] for k in ("signed", "anchored", "fresh", "skipped") if k in g},
             }
             for name, g in verdict["gates"].items()
         },
@@ -306,9 +343,10 @@ def write_repo_integrity_receipt(
     root: Path | str = ".",
     *,
     heads_pin: Path | str = "quality/epoch_heads.json",
+    evidence_only: bool = False,
 ) -> Path:
     """Write the sealed attestation to ``out_path`` (atomic)."""
-    receipt = repo_integrity_receipt(root, heads_pin=heads_pin)
+    receipt = repo_integrity_receipt(root, heads_pin=heads_pin, evidence_only=evidence_only)
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(out, json.dumps(receipt, indent=2, sort_keys=True) + "\n")

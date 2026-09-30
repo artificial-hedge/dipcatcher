@@ -188,3 +188,62 @@ def test_repo_integrity_contract_catches_forged_ok(tmp_path: Path) -> None:
     forged4 = dict(body)
     forged4["pins"] = dict(body["pins"], gate_pins_signed=not body["pins"]["gate_pins_signed"])
     assert "pins_sig_incoherent" in repo_integrity_contract_errors(forged4)
+
+
+def test_verify_repo_evidence_only_bundle(tmp_path: Path) -> None:
+    """An evidence bundle (5 evidence dirs + gate_pins.sig, no src/, no
+    .git) verifies under evidence_only and honestly skips crown_jewels."""
+    import shutil
+
+    full = _git_repo(tmp_path)
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    for d in ("receipts", "verifier", "quality", "configs"):
+        shutil.copytree(full / d, bundle / d)
+    shutil.copytree(full / ".github", bundle / ".github")
+    shutil.copy2(full / "gate_pins.sig", bundle / "gate_pins.sig")
+
+    res = verify_repo(bundle, evidence_only=True)
+    assert res["ok"], res
+    assert res["gates"]["crown_jewels"] == {
+        "ok": True,
+        "errors": [],
+        "skipped": "evidence_only",
+    }
+
+    # Same bundle under the default mode fails closed — the bundle is not a
+    # full tree and must not claim one.
+    res_full = verify_repo(bundle)
+    assert not res_full["ok"]
+    assert res_full["gates"]["crown_jewels"]["errors"]
+
+
+def test_repo_integrity_receipt_records_evidence_only_mode(tmp_path: Path) -> None:
+    import shutil
+
+    from quant_fund.research.repo_integrity import (
+        repo_integrity_contract_errors,
+        repo_integrity_receipt,
+    )
+
+    full = _git_repo(tmp_path)
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    for d in ("receipts", "verifier", "quality", "configs"):
+        shutil.copytree(full / d, bundle / d)
+    shutil.copytree(full / ".github", bundle / ".github")
+    shutil.copy2(full / "gate_pins.sig", bundle / "gate_pins.sig")
+
+    receipt = repo_integrity_receipt(bundle, evidence_only=True)
+    assert receipt["mode"] == "evidence_only"
+    assert repo_integrity_contract_errors(receipt) == []
+
+    # A forged attestation can't relabel itself as a full-tree verdict —
+    # the skipped crown_jewels gate betrays it.
+    forged = dict(receipt, mode="full")
+    assert "gate_skipped_in_full_mode:crown_jewels" in repo_integrity_contract_errors(forged)
+
+    # Nor can an evidence_only attestation drop the skip marker.
+    forged2 = json.loads(json.dumps(receipt))
+    del forged2["gates"]["crown_jewels"]["skipped"]
+    assert "evidence_only_skip_missing:crown_jewels" in repo_integrity_contract_errors(forged2)
