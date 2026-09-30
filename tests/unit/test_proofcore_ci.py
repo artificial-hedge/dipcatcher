@@ -18,6 +18,7 @@ import yaml
 
 from quant_fund.proofcore.ci import (
     REQUIRED_FLOOR_PACKAGES,
+    _cli_verifier,
     coverage_floors,
     coverage_gate,
     receipt_paths,
@@ -34,14 +35,15 @@ WORKFLOW_ACTIVATED = REPO_ROOT / ".github" / "workflows" / "proofcore.yml"
 MAKEFILE = REPO_ROOT / "Makefile"
 
 # §9.3/§12 (lead-adjudicated): pit/proof/reality/proofcore 90, leakage 85.
-# Wave-2 amendment: per-MODULE floors (dotted keys) for the new wave-2
-# modules, all 90 (WAVE2.md §1.6: every new module >= 90%).
+# Main raised the package floors +1 (2026-09-28 measurements); the wave-2
+# amendment adds per-MODULE floors (dotted keys) for the new wave-2 modules,
+# all 90 (WAVE2.md §1.6: every new module >= 90%).
 EXPECTED_FLOORS = {
-    "pit": 90,
-    "proof": 90,
-    "leakage": 85,
-    "reality": 90,
-    "proofcore": 90,
+    "pit": 91,
+    "proof": 91,
+    "leakage": 86,
+    "reality": 91,
+    "proofcore": 91,
     "proofcore.scheduler": 90,
     "proof.runner": 90,
     "proof.estimators": 90,
@@ -119,10 +121,7 @@ def test_module_floor_include_pattern() -> None:
     from quant_fund.proofcore import ci
 
     assert ci._include_pattern("src/quant_fund", "pit") == "src/quant_fund/pit/*"
-    assert (
-        ci._include_pattern("src/quant_fund", "proof.runner")
-        == "src/quant_fund/proof/runner.py"
-    )
+    assert ci._include_pattern("src/quant_fund", "proof.runner") == "src/quant_fund/proof/runner.py"
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +183,31 @@ def test_committed_receipts_dir_nonempty() -> None:
     assert receipt_paths(REPO_ROOT / "receipts"), "receipts/ must not be empty"
 
 
+def test_default_verifier_is_verify_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression: the default verifier shelled to verify-research (the
+    notebook verifier), which rejects every receipt — the gate reported
+    10/10 failures on sealed receipts that pass verify-receipt."""
+    seen: list[list[str]] = []
+
+    class _Proc:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(cmd: list[str], **_kw: object) -> _Proc:
+        seen.append(cmd)
+        return _Proc()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+    receipt = tmp_path / "r.json"
+    receipt.write_text("{}")
+    assert _cli_verifier(receipt) is True
+    assert len(seen) == 1 and "verify-receipt" in seen[0]
+    assert "verify-research" not in seen[0]
+
+
 def test_cli_verifier_respects_exit_status(tmp_path: Path, monkeypatch) -> None:
     import subprocess
 
@@ -193,7 +217,7 @@ def test_cli_verifier_respects_exit_status(tmp_path: Path, monkeypatch) -> None:
     receipt.write_text("{}")
 
     def fake_run(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
-        assert cmd[-2:] == ["verify-research", str(receipt)]
+        assert cmd[-2:] == ["verify-receipt", str(receipt)]
         return subprocess.CompletedProcess(cmd, 1)
 
     monkeypatch.setattr(ci.subprocess, "run", fake_run)
@@ -291,3 +315,44 @@ def test_workflow_floors_match_pyproject(workflow: dict) -> None:
             "floors live in pyproject [tool.proofcore.coverage-floors]; "
             "the workflow must go through `make proofcore-coverage`"
         )
+
+
+def test_receipt_verifier_dispatch(tmp_path: Path) -> None:
+    """v2 envelopes and sealed v1 receipts go to verify-receipt; everything
+    else (unsealed, unparseable) goes to the verify-research notebook path."""
+    from quant_fund.proofcore import ci
+
+    v2 = tmp_path / "v2.json"
+    v2.write_text(json.dumps({"schema": "receipt.v2", "schema_version": 2}))
+    sealed_v1 = tmp_path / "sealed.json"
+    sealed_v1.write_text(json.dumps({"schema": "fleet_eval.v1", "receipt_sha256": "ab" * 32}))
+    unsealed = tmp_path / "unsealed.json"
+    unsealed.write_text(json.dumps({"schema": "incumbent_bench.v1"}))
+    garbage = tmp_path / "garbage.json"
+    garbage.write_text("{ not json")
+    not_object = tmp_path / "arr.json"
+    not_object.write_text("[1, 2]")
+
+    assert ci._receipt_verifier_command(v2) == "verify-receipt"
+    assert ci._receipt_verifier_command(sealed_v1) == "verify-receipt"
+    assert ci._receipt_verifier_command(unsealed) == "verify-research"
+    assert ci._receipt_verifier_command(garbage) == "verify-research"
+    assert ci._receipt_verifier_command(not_object) == "verify-research"
+
+
+def test_cli_verifier_routes_sealed_to_verify_receipt(tmp_path, monkeypatch) -> None:
+    import subprocess
+
+    from quant_fund.proofcore import ci
+
+    receipt = tmp_path / "sealed.json"
+    receipt.write_text(json.dumps({"schema": "x.v1", "receipt_sha256": "ab" * 32}))
+    seen: list[str] = []
+
+    def fake_run(cmd: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        seen.append(cmd[-2])
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(ci.subprocess, "run", fake_run)
+    assert ci._cli_verifier(receipt)
+    assert seen == ["verify-receipt"]

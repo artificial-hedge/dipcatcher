@@ -5,19 +5,29 @@ from __future__ import annotations
 import hashlib
 import json
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 import polars as pl
 
 from quant_fund.data.sources.base import SourceError
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
 def _safe_destination(root: str | Path, source: str, filename: str | None) -> Path:
     if not source or source in {".", ".."} or "/" in source or "\\" in source:
         raise SourceError("source must be a non-empty path-safe label")
     base = (Path(root) / "raw" / "sources").resolve()
-    relative_name = Path(filename or f"{source}.parquet")
+    name = filename or f"{source}.parquet"
+    win_name = PureWindowsPath(name)
+    if (
+        PurePosixPath(name).is_absolute()
+        or win_name.is_absolute()
+        or win_name.drive
+        or name.startswith("\\")
+    ):
+        raise SourceError("source output filename must be relative")
+    relative_name = Path(name)
     if relative_name.is_absolute():
         raise SourceError("source output filename must be relative")
     destination = (base / relative_name).resolve()
@@ -79,6 +89,7 @@ def write_source_frame(
         },
         "provenance": provenance or {},
     }
+    receipt["receipt_sha256"] = hash_bytes(canonical_json_bytes(receipt))
     receipt_path = destination.with_suffix(".json")
     # Receipts are immutable evidence: publish atomically so a torn JSON is
     # never visible under the .json name.

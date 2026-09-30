@@ -4,6 +4,15 @@
 builds, evaluates, and verifies it. Read `AGENTS.md` first — it documents the
 gates, the honesty contract, and the lab's work-tracking conventions.
 
+> **Proprietary repository.** This codebase is licensed under the
+> [`LICENSE`](LICENSE) at the repository root, not an open-source license.
+> All rights are reserved by Advaith Vaithianathan (founder, Artificial
+> Hedge). The notes below describe the gates a change must pass; they are
+> not an invitation to fork, redistribute, or reuse this code. Any
+> contribution is accepted only from parties explicitly authorized in
+> writing by the copyright holder, and any accepted contribution is
+> understood to be assigned to the Owner under the same license.
+
 ## Before opening a PR
 
 ```bash

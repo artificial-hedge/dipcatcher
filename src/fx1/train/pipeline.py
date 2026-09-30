@@ -15,6 +15,7 @@ import json
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -84,7 +85,7 @@ class Pipeline:
         if nxt < len(STAGE_ORDER):
             self.state.stage = STAGE_ORDER[nxt]
 
-    def run_quality_gate(self, eval_prompts: list[str] | None = None) -> dict:
+    def run_quality_gate(self, eval_prompts: list[str] | None = None) -> dict[str, Any]:
         """DATA + QUALITY: load corpus, dedup/decontaminate, frozen split."""
         corpus_path = Path(self.config.corpus_jsonl)
         examples = [
@@ -92,9 +93,12 @@ class Pipeline:
             for line in corpus_path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
-        prompts = eval_prompts or [
-            m["content"] for t in DEFAULT_BANK for m in t.messages if m["role"] == "user"
-        ]
+        # The full eval surface — canonical bank, red-team, rephrased and
+        # masked twins — is always screened; caller-supplied prompts only
+        # widen the target, never narrow it.
+        from fx1.eval import eval_prompt_surface
+
+        prompts = eval_prompt_surface() + list(eval_prompts or [])
         kept, report = dedup_and_filter(examples, eval_prompts=prompts)
         if report.kept == 0:
             raise RuntimeError("quality gate: corpus empty after filtering")
@@ -149,7 +153,7 @@ class Pipeline:
         self.state.metrics["receipt_dirty"] = float(receipt.dirty_worktree)
         return checkpoint
 
-    def run_eval_candidate(self, candidate_fn: ModelFn) -> dict:
+    def run_eval_candidate(self, candidate_fn: ModelFn) -> dict[str, Any]:
         """EVAL_CANDIDATE: statistical comparison against the recorded base."""
         base_summary = json.loads(
             Path(self.state.artifacts["eval_base"]).read_text(encoding="utf-8")
@@ -158,6 +162,11 @@ class Pipeline:
             base_summary.setdefault("results", [])
         cand_summary = run_suite(candidate_fn, list(DEFAULT_BANK))
         cand_out = self._write("eval_candidate.json", cand_summary)
+        if not cand_summary["honesty_gate_passed"]:
+            raise RuntimeError(
+                "candidate fails the honesty gate; the comparison must not "
+                "certify a model that violates the contract"
+            )
         base_results = list(base_summary.get("results", []))
         cand_results = cand_summary.results
         base_pass = [bool(r["passed"]) for r in base_results if r["kind"] == "domain"]
@@ -171,7 +180,7 @@ class Pipeline:
         )
         return comparison.model_dump()
 
-    def _write(self, name: str, payload: dict) -> Path:
+    def _write(self, name: str, payload: dict[str, Any]) -> Path:
         out = self.work_dir / name
         out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return out

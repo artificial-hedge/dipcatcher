@@ -328,6 +328,8 @@ def _commit_staging(staging: Path, bundle_dir: Path, chain_prefix_lines: int) ->
             handle.flush()
             os.fsync(handle.fileno())
 
+            os.fsync(handle.fileno())
+
 
 _LOG = logging.getLogger(__name__)
 _GUARD_UNAVAILABLE_LOGGED = False

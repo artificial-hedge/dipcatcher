@@ -37,6 +37,7 @@ from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
+import polars as pl
 from pydantic import ValidationError
 
 from quant_fund.proofcore.contracts import (
@@ -282,12 +283,19 @@ def _default_executor(spec: RunSpec, vault: Any, tmp_bundle_dir: Path) -> Decisi
         ok, result = run_proven(spec, vault=vault, bundle_dir=tmp_bundle_dir)
     except ReplayUnavailable:
         raise
-    # The runner fails closed by raising (§4.4): contract violations are
-    # ProofcoreError subclasses; vault/FS failures surface as OSError;
-    # pydantic rebuilds as ValueError; a missing/mis-shaped injected vault as
-    # TypeError/AttributeError. Anything else is a bug and propagates to the
-    # caller's replay_reexecute_error arm instead of posing as "unavailable".
-    except (ProofcoreError, OSError, ValueError, TypeError, AttributeError) as exc:
+    except (
+        ProofcoreError,
+        OSError,
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        RuntimeError,
+        pl.exceptions.PolarsError,
+    ) as exc:
+        # Narrowed from `except Exception` (quality ratchet): runner faults are
+        # ProofError plus the IO/numeric/validation/polars failures of mint+backtest;
+        # exotic errors propagate. Runner fails closed by raising (§4.4).
         raise ReplayUnavailable(str(exc)) from exc
     if not ok:
         raise ReplayUnavailable(str(result))
@@ -437,7 +445,20 @@ def replay_bundle(
             return False, f"runner_unavailable:{exc}"
         except ProofError as exc:
             return False, f"replay_reexecute_failed:{exc}"
-        except Exception as exc:
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+            AttributeError,
+            RuntimeError,
+            ArithmeticError,
+            pl.exceptions.PolarsError,
+        ) as exc:
+            # Narrowed from `except Exception` (quality ratchet): executor faults are
+            # the IO/numeric/validation/polars failures of the re-run stack; exotic
+            # errors propagate. Any enumerated failure still yields a failed verdict.
             return False, f"replay_reexecute_error:{exc.__class__.__name__}"
         try:
             fresh_trace = DecisionTrace.model_validate(fresh)

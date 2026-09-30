@@ -3,10 +3,20 @@ name = "fx-1"
 dynamic = ["version"]
 description = "fx-1: a quant LLM fine-tuned from Kimi K3 open weights. dipcatcher is the harness - data engine, evaluation, and verification for fx-1. Not a promise of live profit."
 readme = "README.md"
+# Proprietary — all rights reserved. See the LICENSE file at the repository
+# root. This is not an open-source license: forking, copying, and
+# redistribution are prohibited without the Owner's written permission.
+license = { file = "LICENSE" }
 authors = [
     { name = "Advaith Vaithianathan", email = "140935487+cosmic-hydra@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
+classifiers = [
+    "License :: Other/Proprietary License",
+    # PyPI refuses any upload carrying a "Private ::" classifier — a second,
+    # independent guard against an accidental public package upload.
+    "Private :: Do Not Upload",
+]
 dependencies = [
     "polars>=1.17",
     "pyarrow>=17",
@@ -15,7 +25,6 @@ dependencies = [
     "scipy>=1.14",
     "pandas>=2.2",
     "pydantic>=2.9",
-    "pydantic-settings>=2.6",
     "pyyaml>=6.0",
     "typer>=0.12",
     "structlog>=24.4",
@@ -32,14 +41,18 @@ dependencies = [
     "matplotlib>=3.9",
     "fastapi>=0.115",
     "uvicorn>=0.32",
-    "python-dotenv>=1.0",
     "joblib>=1.4",
     "numba>=0.60",
+    # Imported by quant_fund.audit.signing (Ed25519) and
+    # quant_fund.research.receipt_v2 (BLAS threadpool fingerprint) — both
+    # previously relied on transitive pulls; declared per P6.10 hygiene.
+    "cryptography>=44",
+    "threadpoolctl>=3.5",
     "exchange-calendars==4.13.2",
 ]
 
 [project.optional-dependencies]
-nn = ["torch>=2.4"]
+nn = ["torch>=2.4", "tirex-2>=0.3.0"]
 # shap 0.52 pins numba<0.63 on darwin x86_64, and that numba pins numpy<2.4.
 # Keeping shap there forks uv.lock into numpy 2.3.5 and 2.5.3. Phase-1
 # rejects a duplicated locked runtime package, so the extra is omitted on
@@ -110,6 +123,7 @@ only-include = [
     "scripts",
     "pyproject.toml",
     "README.md",
+    "LICENSE",
     "SECURITY.md",
     ".env.example",
     "Makefile",
@@ -126,7 +140,7 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "C901"]
+select = ["E", "F", "I", "UP", "B", "SIM", "C901", "DTZ"]
 ignore = ["E501", "B008", "UP042", "SIM108", "SIM115"]
 
 [tool.ruff.lint.mccabe]
@@ -136,7 +150,7 @@ ignore = ["E501", "B008", "UP042", "SIM108", "SIM115"]
 max-complexity = 74
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["B018"]
+"tests/**" = ["B018", "DTZ"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -235,6 +249,7 @@ module = [
     "quant_fund.research.benches.intervals",
     "quant_fund.research.benches.ranking",
     "quant_fund.research.benches_extra",
+    "quant_fund.research.calibration_eval",
     "quant_fund.research.catalog",
     "quant_fund.research.catalog.batteries",
     "quant_fund.research.catalog._helpers",
@@ -338,7 +353,9 @@ omit = ["*/__main__.py"]
 # --cov-fail-under so the threshold cannot drift between the two).
 # Ratcheted 2026-09-25: measured 84.93% local (macOS) and 81.51% on CI
 # (Linux) — floor set at 80 with cross-platform headroom. Raise, never lower.
-fail_under = 80
+# 2026-09-28: local measures 85.49%; CI tracks ~3.4pp lower (~82). Floor 81
+# keeps ~1pp CI headroom while closing the drift window.
+fail_under = 81
 show_missing = true
 skip_covered = true
 exclude_also = [
@@ -362,11 +379,14 @@ directory = "htmlcov"
 # coverage-gate`, which reads this table (single source of truth).
 # Ratchet-only thereafter: raise, never lower.
 [tool.proofcore.coverage-floors]
-pit = 90
-proof = 90
-leakage = 85
-reality = 90
-proofcore = 90
+# 2026-09-28 local measurements: pit 93.02, proof 94.57, leakage 96.55,
+# reality 95.27, proofcore 97.04. Floors raised +1 — CI measures lower than
+# local, so floors stay well below either reading.
+pit = 91
+proof = 91
+leakage = 86
+reality = 91
+proofcore = 91
 # Wave-2 per-MODULE floors (WAVE2.md §1.6, amendment I5): every new wave-2
 # module >= 90%, enforced alongside the package floors above. Dotted keys map
 # to single module files in `proofcore.ci coverage-gate`.
