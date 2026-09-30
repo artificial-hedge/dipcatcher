@@ -103,5 +103,5 @@ def split_flow_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any]:
     payload["git_revision"] = git_revision()
     payload["data_label"] = "SYNTHETIC"
     payload["research_only"] = True
-    payload["payload_sha256"] = hash_bytes(canonical_json_bytes(payload))
+    payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))
     return payload
