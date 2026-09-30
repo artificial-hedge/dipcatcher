@@ -893,3 +893,22 @@ detail: |
   test_research_recovers_synthetic_oracle enforces it).
 note: PRs #442 (w17, 80->87) + #446 (w18 stacked, 87->93) + #452 (w19
   stacked, 93->98). One lane + docs commits pending.
+---
+owner: devin (wave-20 canon swarm)
+slice: WAVE 20 — six SOTA module lanes + benches_w20 wiring
+status: IN FLIGHT 2026-09-30 — devin/w20-canon open
+detail: |
+  Lanes: execution/varswap_stopping (perpetual var-swap optimal
+  stopping — eigenfunction free-boundary solve, printed thresholds
+  reproduced to printed digits), models/hidden_markov_equilibrium
+  (belief-Markovian equilibrium pricing — §5.5 calibration reproduced:
+  sigma_S max 0.3563 @ p*=0.485, r_f 1.17-6.92%, affine CF err 9e-15),
+  models/gaussian_normalized_coords (Sun 2609.14212 CDF-deformation
+  arb checks — m>=0/Mills bounds, q''+yq'-q<=0 butterfly inequality,
+  isotonic-h repair, Black/Bachelier dictionary). metrics/sga_uq built
+  locally then DROPPED: wave-17 sga_multistep_uq already canonizes
+  arXiv:2609.28582 as a strict superset (duplicate lane). Still running
+  as children: execution/arl_mm (2609.22785, torch-gated),
+  microstructure/liquidity_tail_lob (2607.01198). Integration local.
+  Scorecard 99->102 now; 104 when the last two lanes land.
+note: PRs #442 (w17) + #446 (w18) + #452 (w19) open; CI queued.

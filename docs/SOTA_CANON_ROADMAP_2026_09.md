@@ -270,3 +270,13 @@ coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
   invariant. Remaining backlog: mutation campaign on verify.py +
   catalog, fx1 capability.py/CLI wiring (owner calls), Tier-B
   follow-ups.
+
+- **Wave 20: IN FLIGHT 2026-09-30** — three lanes landed (varswap
+  optimal stopping; hidden-Markov equilibrium pricing with the §5.5
+  calibration reproduced to printed digits; Gaussian normalized
+  coordinates + CDF-deformation arb checks, Sun 2609.14212), three
+  OPTIONAL families wired (scorecard 99→102); arl_mm (2609.22785) and
+  liquidity_tail_lob (2607.01198) still running as children. A locally
+  built `metrics/sga_uq` lane was dropped: wave-17 `sga_multistep_uq`
+  already canonizes arXiv:2609.28582 as a strict superset — the dup is
+  recorded so later waves skip it. Canon: `devin/w20-canon`.
