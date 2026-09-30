@@ -43,7 +43,7 @@ under `receipts/`) or result directories containing `*.json` files.
 
 ```bash
 # Markdown report to stdout
-python -m quant_fund.research.compare receipts/run_a.json receipts/run_b.json
+python -m quant_fund.research.compare receipts/<run_a>.json receipts/<run_b>.json
 
 # JSON report to a file, plus a run_compare.v1 receipt blob
 python -m quant_fund.research.compare a/ b/ \
