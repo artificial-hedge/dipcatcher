@@ -19,11 +19,12 @@ FORBIDDEN_HEADLINE_TOKENS: frozenset[str] = frozenset({"sharpe", "sortino", "cal
 _FORBIDDEN_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     re.compile(p, re.IGNORECASE)
     for p in (
-        r"\blive p(?:&|and)l\b",
-        r"\blive trading profit",
-        r"\breal money (returns?|gains?|profits?)\b",
-        r"\bguaranteed (returns?|alpha|profits?)\b",
-        r"\bsynthetic results? (show|prove|demonstrate)s? (live|real|market)\b",
+        r"\blive[-\s]+(?:trading[-\s]+)?(?:p(?:&|and|n)l|profits?|returns?|gains?)\b",
+        r"\b(?:p(?:&|and|n)l|profits?|returns?|gains?)\s+(?:from|of)\s+live[-\s]+(?:trading|markets?|accounts?)\b",
+        r"\breal[-\s]+money\s+(?:returns?|gains?|profits?)\b",
+        r"\bguaranteed\s+(?:returns?|alpha|profits?)\b",
+        r"\bsynthetic\s+(?:results?|data|evidence|series|benchmarks?|backtests?)\s+"
+        r"(?:shows?|proves?|demonstrates?)\s+(?:live|real|market)\b",
     )
 )
 
@@ -41,11 +42,20 @@ def _contains_forbidden_headline(text: str) -> str | None:
     """Return the offending token if *text* headlines a forbidden metric.
 
     A headline claim is a forbidden token immediately followed by a numeric
-    value or ratio phrasing (e.g. "Sharpe 2.1", "pnl: +$4,200"). Bare
-    discussion of why these metrics are forbidden is allowed.
+    value or ratio phrasing (e.g. "Sharpe 2.1", "pnl: +$4,200", "Sharpe is
+    2.1", "Sharpe ratio of 2.1"). The gap between token and number may also
+    be a run of non-word separators — "Sharpe — 2.1", "pnl - $4,200",
+    "nav (1.9)", "sharpe…2.1" all headline the same claim. Bare discussion
+    of why these metrics are forbidden is allowed.
     """
+    bridge = r"(?:ratio|score|value|reading)\b"
+    connector = r"(?:of|=|:|is|was|at|to|reads?|[\"']|[^\w\s]+)"
     for token in FORBIDDEN_HEADLINE_TOKENS:
-        pattern = re.compile(rf"\b{token}\b\s*(?:of|=|:)?\s*[-+$]?\d[\d,.%$]*", re.IGNORECASE)
+        pattern = re.compile(
+            rf"\b{re.escape(token)}\b\s*(?:{bridge}\s*)?(?:{connector}\s*){{0,3}}"
+            rf"[-+$]?\d[\d,.%$]*",
+            re.IGNORECASE,
+        )
         if pattern.search(text):
             return token
     return None

@@ -26,7 +26,7 @@ strict_entries = CHECKER["_entries"]
 strict_allowlisted = CHECKER["allowlisted"]
 mccabe_entries = MCCABE["_entries"]
 # Initial set of strict-clean modules. Add to the allowlist; never remove these.
-STRICT_MODULE_FLOOR = 397
+STRICT_MODULE_FLOOR = 668
 STRICT_BASELINE_SHA256 = "452034ec90dbc11dc2a8ca78f22d950c591ae0fd67b3ecbfabe08d5906f7cdcd"
 # validate_ledger_schema. verify_research_artifact was 196 before the split.
 MCCABE_CEILING = 74
@@ -35,10 +35,11 @@ MCCABE_CEILING = 74
 # this commit's recorded size without an intentional baseline rewrite.
 MCCABE_SOFT_THRESHOLD = 10
 MCCABE_BASELINE_FLOOR = 1
-# `except Exception` handlers under src/quant_fund. This is origin/main's
-# count at 7d2e01e (75). This branch narrows three of them, so the tree is
-# at 72. New handlers that push the total above main fail this test.
-EXCEPT_EXCEPTION_CEILING = 75
+# `except Exception` handlers under src/quant_fund. Origin/main sat at 75;
+# four closed lazy-import guards narrowed to ImportError (catalog ×3 +
+# fast_replay forecast overlay), so the ceiling tightens to 71. New handlers
+# that push the total above this fail the test.
+EXCEPT_EXCEPTION_CEILING = 71
 
 
 def test_mypy_strict_allowlist_only_grows() -> None:
@@ -154,3 +155,63 @@ def test_no_bare_except_and_exception_ceiling() -> None:
                 broad += 1
     assert bare == 0
     assert broad <= EXCEPT_EXCEPTION_CEILING
+
+
+def test_type_ignore_manifest_matches_tree() -> None:
+    import runpy
+
+    module = runpy.run_path(str(ROOT / "scripts" / "check_type_ignores.py"))
+    manifest = module["manifest_counts"]()
+    actual = module["actual_counts"]()
+    assert manifest == actual, (
+        "quality/type_ignores.txt drifted; run `python scripts/update_type_ignores.py` "
+        "and justify the new suppressions in review"
+    )
+
+
+def test_type_ignore_manifest_rejects_drift_and_dupes(tmp_path) -> None:
+    import runpy
+
+    module = runpy.run_path(str(ROOT / "scripts" / "check_type_ignores.py"))
+    parser = module["manifest_counts"]
+    bad = tmp_path / "type_ignores.txt"
+    bad.write_text("src/x.py 1\nsrc/x.py 2\n")
+    with pytest.raises(SystemExit):
+        parser(bad)
+    bad.write_text("src/x.py 0\n")
+    with pytest.raises(SystemExit):
+        parser(bad)
+    bad.write_text("src/x.py notanint\n")
+    with pytest.raises(SystemExit):
+        parser(bad)
+    good = tmp_path / "ok.txt"
+    good.write_text("# comment\n\nsrc/x.py 3\nsrc/y.py 1\n")
+    assert parser(good) == {"src/x.py": 3, "src/y.py": 1}
+
+
+def test_broad_exception_manifest_matches_tree() -> None:
+    """The global ceiling alone lets a new handler trade against an unrelated
+    narrowing. The manifest pins the count per file so every broad catch is
+    accounted to a place a reviewer can look at."""
+    checker = runpy.run_path(str(ROOT / "scripts" / "check_broad_exceptions.py"))
+    actual = checker["actual_counts"]()
+    manifest = checker["manifest_counts"]()
+    assert manifest == actual, (
+        "broad-exception manifest drifted — regenerate with "
+        "python scripts/update_broad_exceptions.py"
+    )
+
+
+def test_broad_exception_manifest_rejects_drift_and_dupes(tmp_path: Path) -> None:
+    checker = runpy.run_path(str(ROOT / "scripts" / "check_broad_exceptions.py"))
+    manifest_counts = checker["manifest_counts"]
+    bad = tmp_path / "broad_exceptions.txt"
+    bad.write_text("src/quant_fund/a.py 1\nsrc/quant_fund/a.py 2\n")
+    with pytest.raises(SystemExit):
+        manifest_counts(bad)
+    bad.write_text("src/quant_fund/a.py 0\n")
+    with pytest.raises(SystemExit):
+        manifest_counts(bad)
+    ok = tmp_path / "ok.txt"
+    ok.write_text("# comment\nsrc/quant_fund/a.py 1\n")
+    assert manifest_counts(ok) == {"src/quant_fund/a.py": 1}

@@ -18,11 +18,14 @@ from quant_fund.research import cost_allocation, net_replay, real_benchmark
 from quant_fund.research.cost_allocation import AllocationConfig, AllocationFailure
 from quant_fund.research.net_replay import ReplayConfig, Strategy, market_panel, replay
 from quant_fund.research.real_benchmark import (
+    _check_receipt_version,
     _load_bars,
     _read_receipt,
     _runtime,
     _seal,
+    _wrap_envelope,
 )
+from quant_fund.utils.atomicio import publish_text_once
 
 
 def _code_hashes() -> dict[str, str]:
@@ -96,8 +99,9 @@ def allocation_ablations(outcomes: dict[str, Any], trials: list[Strategy]) -> li
 
 
 def _write(path: Path, value: dict[str, Any]) -> None:
-    with path.open("x") as handle:
-        json.dump(value, handle, indent=2, allow_nan=False)
+    # publish-once via tmp+link: a mid-write crash must not leave a torn
+    # manifest that permanently blocks retry (open("x") poisons the path).
+    publish_text_once(path, json.dumps(value, indent=2, allow_nan=False))
 
 
 def _spec(raw: dict[str, Any]) -> tuple[ReplayConfig, list[Strategy], Strategy]:
@@ -154,7 +158,14 @@ def _spec(raw: dict[str, Any]) -> tuple[ReplayConfig, list[Strategy], Strategy]:
     return execution, trials, baseline
 
 
-def prepare_tournament(benchmark_run: Path, spec_path: Path, output: Path) -> dict[str, Any]:
+def prepare_tournament(
+    benchmark_run: Path,
+    spec_path: Path,
+    output: Path,
+    *,
+    receipt_version: int = 1,
+) -> dict[str, Any]:
+    _check_receipt_version(receipt_version)
     benchmark = _read_receipt(benchmark_run / "manifest.json")
     if benchmark["code_sha256"] != real_benchmark._code_sha() or benchmark["runtime"] != _runtime():
         raise ValueError("benchmark code/runtime differs from the frozen receipt")
@@ -196,7 +207,19 @@ def prepare_tournament(benchmark_run: Path, spec_path: Path, output: Path) -> di
         }
     )
     output.mkdir(parents=True, exist_ok=False)
-    _write(output / "manifest.json", manifest)
+    if receipt_version == 2:
+        document = _wrap_envelope(
+            manifest,
+            kind="net_tournament_manifest",
+            dataset={
+                "benchmark_manifest_sha256": benchmark["receipt_sha256"],
+                "benchmark_run": manifest["benchmark_run"],
+            },
+            params=manifest["spec"],
+        )
+    else:
+        document = manifest
+    _write(output / "manifest.json", document)
     return manifest
 
 
@@ -406,13 +429,24 @@ def main() -> None:
     prepare.add_argument("--benchmark-run", required=True, type=Path)
     prepare.add_argument("--spec", required=True, type=Path)
     prepare.add_argument("--output", required=True, type=Path)
+    prepare.add_argument(
+        "--receipt-version",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="receipt schema version: 1 = strict-digest manifest (default), "
+        "2 = unified receipt.v2 envelope (rejected when the spec embeds "
+        "headline-metric keys; run-phase reports stay v1)",
+    )
     run = commands.add_parser("run")
     run.add_argument("--run", required=True, type=Path)
     run.add_argument("--phase", choices=("validation", "test"), required=True)
     args = parser.parse_args()
     try:
         result = (
-            prepare_tournament(args.benchmark_run, args.spec, args.output)
+            prepare_tournament(
+                args.benchmark_run, args.spec, args.output, receipt_version=args.receipt_version
+            )
             if args.command == "prepare"
             else run_tournament(args.run, args.phase)
         )

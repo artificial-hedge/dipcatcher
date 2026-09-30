@@ -9,8 +9,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import typer
+
+if TYPE_CHECKING:
+    from fx1.eval.suite import ModelFn
 
 app = typer.Typer(
     name="fx1",
@@ -144,25 +148,57 @@ def eval_bank(
     )
 
 
+_JUDGE_BACKEND_HELP = (
+    "Optional 'hosted_k3' LLM judge for MT-Bench-style grading (needs "
+    "MOONSHOT_API_KEY); omit for the deterministic rule-based judge."
+)
+
+
+def _resolve_judge(judge_backend: str | None) -> ModelFn | None:
+    """Build the optional ext-bench judge ModelFn. Fail-closed on usage.
+
+    ``None`` selects the deterministic rule-based judge by configuration;
+    ``hosted_k3`` reuses the same backend construction as the model under
+    test (a missing MOONSHOT_API_KEY raises, never fabricates a judge).
+    """
+    if judge_backend is None:
+        return None
+    if judge_backend != "hosted_k3":
+        typer.echo(
+            f"unknown --judge-backend {judge_backend!r}; only 'hosted_k3' is "
+            "supported (omit the flag for the deterministic rule-based judge)",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    from fx1.serve import get_backend
+
+    return get_backend("hosted_k3").complete
+
+
 @app.command("capability-eval")
 def capability_eval(
     backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
+    judge_backend: str | None = typer.Option(None, "--judge-backend", help=_JUDGE_BACKEND_HELP),
     out: Path = typer.Option(Path("data/fx1/capability_eval.json")),
 ) -> None:
     """Run the capability battery: time-series reasoning, probability
-    calibration, harness tool-use, and retrieval-with-citation — all on
-    seeded SYNTHETIC banks. Exit 1 when any honesty sub-gate or the
-    calibration gate fails."""
+    calibration, harness tool-use, retrieval-with-citation, external-
+    benchmark-format adapters (MT-Bench / FinanceBench / FinToolBench-style),
+    and options reasoning — all on seeded SYNTHETIC banks. Exit 1 when any
+    honesty sub-gate, the calibration gate, or an ext-bench score gate
+    fails. Real ext-bench JSONL sources plug in via `fx1 ext-bench-eval`;
+    the options bank is sealed (no external loader)."""
     from fx1.eval import run_capability_eval
     from fx1.serve import get_backend
 
+    judge = _resolve_judge(judge_backend)
     if backend == "local_fx1":
         model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
     else:
         model = get_backend("hosted_k3")
-    report = run_capability_eval(model.complete, seed=seed)
+    report = run_capability_eval(model.complete, seed=seed, judge=judge)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(
@@ -173,7 +209,129 @@ def capability_eval(
                 "calibration_passed": report.calibration.passed,
                 "tooluse_pass_rate": report.tooluse.pass_rate,
                 "retrieval_accuracy": report.retrieval.accuracy,
+                "ext_bench_honesty_gate_passed": (
+                    report.ext_bench.honesty_gate_passed if report.ext_bench is not None else None
+                ),
+                "ext_bench_score_gate_passed": (
+                    report.ext_bench.score_gate_passed if report.ext_bench is not None else None
+                ),
+                "options_reasoning_passed": (
+                    report.options_reasoning.passed
+                    if report.options_reasoning is not None
+                    else None
+                ),
                 "honesty_gate_passed": report.honesty_gate_passed,
+                "passed": report.passed,
+            },
+            indent=2,
+        )
+    )
+    raise typer.Exit(code=0 if report.passed else 1)
+
+
+@app.command("ext-bench-eval")
+def ext_bench_eval(
+    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
+    judge_backend: str | None = typer.Option(None, "--judge-backend", help=_JUDGE_BACKEND_HELP),
+    mtbench_jsonl: Path | None = typer.Option(
+        None,
+        "--mtbench-jsonl",
+        help="Genuine MT-Bench-style JSONL replacing the sealed synthetic bank.",
+    ),
+    financebench_jsonl: Path | None = typer.Option(
+        None,
+        "--financebench-jsonl",
+        help="Genuine FinanceBench-style JSONL replacing the sealed synthetic bank.",
+    ),
+    fintoolbench_jsonl: Path | None = typer.Option(
+        None,
+        "--fintoolbench-jsonl",
+        help="Genuine FinToolBench-style JSONL replacing the sealed synthetic bank.",
+    ),
+    out: Path = typer.Option(Path("data/fx1/ext_bench_eval.json")),
+) -> None:
+    """Run the external-benchmark-format adapters (MT-Bench / FinanceBench /
+    FinToolBench-style). Default banks are sealed SYNTHETIC correctness
+    gates — NOT market evidence and NOT real benchmark scores; genuine JSONL
+    exports plug in per benchmark (schema-validated, fail-closed). Exit 1
+    when any refusal/honesty gate or score gate fails."""
+    from fx1.eval.ext_bench import run_ext_bench_eval
+    from fx1.serve import get_backend
+
+    judge = _resolve_judge(judge_backend)
+    if backend == "local_fx1":
+        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
+    else:
+        model = get_backend("hosted_k3")
+    sources: dict[str, Path] = {}
+    if mtbench_jsonl is not None:
+        sources["mtbench"] = mtbench_jsonl
+    if financebench_jsonl is not None:
+        sources["financebench"] = financebench_jsonl
+    if fintoolbench_jsonl is not None:
+        sources["fintoolbench"] = fintoolbench_jsonl
+    report = run_ext_bench_eval(model.complete, seed=seed, judge=judge, sources=sources or None)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+    typer.echo(
+        json.dumps(
+            {
+                "synthetic": report.synthetic,
+                "label": report.label,
+                "benchmarks": {
+                    name: {
+                        "n_instances": score.n_instances,
+                        "metrics": score.metrics,
+                        "refusal_gate_passed": score.refusal_gate_passed,
+                        "honesty_violations": score.honesty_violations,
+                        "gate_passed": score.gate_passed,
+                    }
+                    for name, score in report.benchmarks.items()
+                },
+                "honesty_gate_passed": report.honesty_gate_passed,
+                "passed": report.passed,
+            },
+            indent=2,
+        )
+    )
+    raise typer.Exit(code=0 if report.passed else 1)
+
+
+@app.command("options-reasoning-eval")
+def options_reasoning_eval(
+    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
+    out: Path = typer.Option(Path("data/fx1/options_reasoning_eval.json")),
+) -> None:
+    """Run the sealed SYNTHETIC options-reasoning battery (LiveOption-
+    inspired levels: action validity, decision quality, risk characteristics,
+    outcome, bait refusals). Gold answers come from the repo's own pricing
+    modules — correctness gates, NOT market evidence. The bank is sealed
+    (no external JSONL loader exists), so there is no --options-jsonl
+    pass-through. Exit 1 when the bait/honesty gate fails."""
+    from fx1.eval.options_reasoning_eval import run_options_reasoning_eval
+    from fx1.serve import get_backend
+
+    if backend == "local_fx1":
+        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
+    else:
+        model = get_backend("hosted_k3")
+    report = run_options_reasoning_eval(model.complete, seed=seed)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+    typer.echo(
+        json.dumps(
+            {
+                "label": report.label,
+                "n_items": report.n_items,
+                "overall": report.overall,
+                "by_level": report.by_level,
+                "bait_accuracy": report.bait_accuracy,
+                "bait_gate_passed": report.bait_gate_passed,
+                "honesty_violations": report.honesty_violations,
                 "passed": report.passed,
             },
             indent=2,
@@ -275,15 +433,22 @@ def contamination_audit(
     backend: str = typer.Option("hosted_k3", help="Backend for the gap probe."),
 ) -> None:
     """Run the publishable contamination audit over the corpus vs eval bank."""
-    from fx1.eval import DEFAULT_BANK, run_contamination_audit
+    from fx1.eval import eval_prompt_surface, run_contamination_audit
 
+    # Fail-closed: an absent or empty corpus certifies nothing — auditing
+    # zero texts would vacuously report "not contaminated" and exit 0.
+    if not corpus.exists():
+        typer.echo(f"corpus not found: {corpus}; refusing to certify an empty audit", err=True)
+        raise typer.Exit(code=2)
     texts = []
-    if corpus.exists():
-        for line in corpus.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                record = json.loads(line)
-                texts.append(" ".join(m.get("content", "") for m in record.get("messages", [])))
-    prompts = [m["content"] for t in DEFAULT_BANK for m in t.messages if m["role"] == "user"]
+    for line in corpus.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            record = json.loads(line)
+            texts.append(" ".join(m.get("content", "") for m in record.get("messages", [])))
+    if not texts:
+        typer.echo(f"corpus {corpus} contains no examples; audit cannot certify", err=True)
+        raise typer.Exit(code=2)
+    prompts = eval_prompt_surface()
     report = run_contamination_audit(texts, prompts)
     if with_rephrased_gap:
         from fx1.eval import run_rephrased_gap

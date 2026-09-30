@@ -6,12 +6,12 @@ synthetic fixture passes.
 
 | Control area | Current state | Evidence / gate |
 |---|---|---|
-| Point-in-time data contract | Implemented for file adapters | PIT timestamp validation, duplicate-key checks, OHLCV checks, manifest hash verification, and decision-time filtering for late cross-sectional/market aggregates |
+| Point-in-time data contract | Implemented for file adapters; revision-aware on the evaluation side | PIT timestamp validation, duplicate-key checks, OHLCV checks, manifest hash verification, and decision-time filtering for late cross-sectional/market aggregates. Wave 15 adds `validation/vintage_eval.py` (VINTAGE-TS): validity-interval reconstruction, delayed-label filtering, and hindsight-contamination audits over SYNTHETIC revision regimes — the *evaluation* layer now detects vintage cheating even though true as-of vintages on the public tape remain a procurement gap. |
 | Configuration safety | Implemented | Unsupported data sources, non-finite simulator parameters, and non-stationary synthetic persistence fail validation |
 | Data lineage | Implemented | `dipcatcher doctor` requires source identity, four canonical artifacts, SHA-256s, nonnegative row counts, and data-root containment |
 | Research reproducibility | Implemented | Immutable receipt binds Git revision, dirty-worktree hash, config, dataset content, runtime, package versions, and benchmark catalog version |
 | SOTA scientific benches | Implemented as research diagnostics on the lab panel | Canonical verifier requires the versioned 23-family catalog; fixture-only toys are `dgp=fixture` and excluded from panel Kupiec H-rows; panel-or-skip (empty blob) fails scorecard honesty rather than silently mixing DGPs |
-| Validation integrity | Implemented | Walk-forward, purge/embargo, CPCV audit, HAC/DM, multiple-testing and conformal family gates |
+| Validation integrity | Implemented | Walk-forward, purge/embargo, CPCV audit, HAC/DM, multiple-testing and conformal family gates. Waves 12–16 add the anytime-valid layer: e-BH/e-LORD/e-SAFFRON online FDR, minimax-optimal conformal e-detectors, rank confidence sequences (anytime-valid ranker ordering), replicable conformal (auditable calibration thresholds), and `validation/agent_referee.py` — a frozen post-submission-only betting referee so agent-proposed factors are judged at every stopping time by a procedure the proposer cannot touch. |
 | Numerical risk controls | Implemented | Covariance inputs are finite and square; PSD repair is deterministic eigenvalue clipping with finite-output guarantees |
 | Execution research | Implemented as simulation | Next-open fills, costs, participation, Almgren–Chriss/TWAP comparisons, and tamper-evident backtest artifacts |
 | Paper / shadow operation | Implemented as simulation | Crash-resumable simulated broker; resume appends prior orders/equity/shadow-equity/positions/cash rows and fill receipts; deterministic target/exposure ordering; kill switch, champion/shadow dry-run, no live capital |
@@ -58,3 +58,29 @@ All of the following must be present and independently reviewable:
 
 Until those conditions exist, Dipcatcher outputs are research, backtest, or
 simulated paper/shadow evidence only.
+
+## Waves 12–16 addendum (2026-09-30)
+
+What changed relative to the five conditions — and what did not:
+
+- **Condition 1 (licensed PIT data)**: unchanged. Procurement, not code.
+  The evaluation side is now vintage-aware (`vintage_eval`), so when a
+  real as-of source arrives the harness can already audit revision
+  hindsight instead of silently absorbing it.
+- **Condition 3 (forward/shadow record)**: strengthened in *kind*, not in
+  substance — the frozen referee (`agent_referee`) and rank confidence
+  sequences give any future forward record anytime-valid admission
+  semantics (no optional-stopping inflation), and `capability_value`
+  makes self-evolution claims falsifiable via Cap-swap accounting. No
+  non-synthetic forward record exists yet.
+- **Condition 5 (signed promotion receipt / verifier)**: the immutable
+  verifier itself is now mutation-tested — `research/verify.py` scores
+  99.52% on the full 210-mutant campaign (sole survivor a proven
+  equivalent mutant, pinned by documentation test) and
+  `catalog/registry.py` 100% (24/24). "Independently reviewable" now
+  includes measured fault-detection evidence for the reviewer code.
+- **Scorecard governance**: `docs/BENCHMARK_FAMILY_LIFECYCLE.md` adopts
+  OPTIONAL→REQUIRED/RETIRED lifecycle rules, runtime budgets, and review
+  cadence for the 80-family scorecard.
+- None of the above is market evidence. Every new module ships seeded
+  SYNTHETIC correctness tests; the honesty contract is unchanged.
