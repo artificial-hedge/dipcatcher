@@ -246,6 +246,22 @@ def test_lattice_cli_emits_sealed_receipt(tmp_path: Path) -> None:
     assert verification["valid"], verification["errors"]
 
 
+def test_lattice_receipt_v2_round_trip(tmp_path: Path) -> None:
+    """receipt_version=2 seals the receipt_lattice.v1 body in the envelope."""
+    from quant_fund.research.receipt_lattice import write_lattice_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    _write(tmp_path, "r1.json", _receipt("in-a", 0.42))
+    _write(tmp_path, "r2.json", _receipt("in-a", 0.42))
+    report = receipt_lattice(tmp_path)
+    path = write_lattice_receipt(report, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "receipt_lattice.v1"
+    assert payload["payload"]["inputs_sha256"] == report["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True
+
+
 def test_lattice_cli_strict_exits_on_inconsistent(tmp_path: Path) -> None:
 
     from typer.testing import CliRunner

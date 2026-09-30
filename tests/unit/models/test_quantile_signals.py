@@ -256,7 +256,6 @@ def test_mkt_disp_cut_flattens_book() -> None:
     clears persistence streaks so re-entry must re-confirm."""
     times = np.array([T0 + timedelta(hours=4 * i) for i in range(4)])
     storm = np.vstack([_q(0.02, 0.02)] * 2 + [_q(0.02, 0.20), _q(0.02, 0.02)])
-    storm = np.vstack([_q(0.02, 0.02)] * 2 + [_q(0.02, 0.20), _q(0.02, 0.02)])
     pol = QuantilePolicy(
         mode="long_flat",
         kappa=1.0,

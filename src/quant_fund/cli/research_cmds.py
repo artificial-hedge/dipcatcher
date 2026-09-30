@@ -694,6 +694,61 @@ def capacity(
 
 
 @app.command()
+def pairs(
+    n_assets: int = typer.Option(8, help="Assets in the synthetic panel."),
+    n_dates: int = typer.Option(600, help="Panel length in dates."),
+    seed: int = typer.Option(0, help="Seed for the synthetic panel."),
+    window: int = typer.Option(120, help="Trailing hedge-ratio window."),
+    z_window: int = typer.Option(60, help="Trailing z-score window."),
+    min_corr: float = typer.Option(0.5, help="Correlation pre-filter threshold."),
+    alpha: float = typer.Option(0.05, help="BH rejection level."),
+    entry: float = typer.Option(2.0, help="Z-score entry band."),
+    exit_band: float = typer.Option(0.5, help="Z-score exit band."),
+    hedge_method: str = typer.Option("ols", help="Hedge estimator: ols or kalman."),
+    eval_horizon: int = typer.Option(1, help="Forward spread-change horizon."),
+    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+) -> None:
+    """Stat-arb pairs screen + PIT signal eval on a SYNTHETIC planted panel.
+
+    Engle-Granger residual-ADF screen with a correlation pre-filter and
+    BH/Bonferroni multiple-testing control, then a point-in-time z-score
+    signal scored against forward spread changes. Proper-score framing
+    only — detection truth and IC alignment, never a P&L claim.
+    """
+    from quant_fund.research.pairs import (
+        format_pairs_table,
+        run_pairs_eval,
+        write_pairs_receipt,
+    )
+
+    try:
+        frame, receipt = run_pairs_eval(
+            seed=seed,
+            n_assets=n_assets,
+            n_dates=n_dates,
+            window=window,
+            z_window=z_window,
+            min_corr=min_corr,
+            alpha=alpha,
+            entry=entry,
+            exit=exit_band,
+            hedge_method=hedge_method,
+            eval_horizon=eval_horizon,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_pairs_receipt(receipt, out_dir)
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(format_pairs_table(frame))
+    typer.echo(
+        "planted_detected="
+        f"{receipt['planted']['detected']} rank={receipt['planted']['rank_by_p_bh']} "
+        f"spearman_ic={receipt['alignment']['spearman_ic']:+.4f}"
+    )
+    typer.echo(f"receipt={path}")
+
+
+@app.command()
 def race(
     config: Path = typer.Option(Path("configs/research.yaml")),
     models: str | None = typer.Option(
@@ -710,6 +765,11 @@ def race(
         None, help="Base seed (default: train.random_seed from config)."
     ),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = fleet_race.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Sequential fleet elimination race on SYNTHETIC shards.
 
@@ -722,8 +782,7 @@ def race(
         fleet_head_factories,
         resolve_shard_generators,
     )
-    from quant_fund.research.fleet_race import fleet_race
-    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.research.fleet_race import fleet_race, write_race_receipt
 
     cfg = _cfg(config)
     base_seed = cfg.train.random_seed if seed is None else seed
@@ -746,12 +805,10 @@ def race(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    out_dir.mkdir(parents=True, exist_ok=True)
-    import json as _json
-
-    sealed = seal_receipt(receipt)
-    path = out_dir / f"fleet_race_{receipt['inputs_sha256'][:16]}.json"
-    path.write_text(_json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_race_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(
         format_data_label(
             synthetic=receipt["data_label"] == "SYNTHETIC",
@@ -776,6 +833,11 @@ def lane_power(
         None, help="Comma-separated lane names (default: all available)."
     ),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = lane_power.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Sequential power bench — measured alarm rate/time per monitor lane.
 
@@ -784,11 +846,7 @@ def lane_power(
     false-alarm rate by alpha. Lanes whose modules are unmerged show
     ``lane_missing`` on the receipt.
     """
-    import json
-
-    from quant_fund.research.fleet_eval import _atomic_write_text
-    from quant_fund.research.lane_power import lane_power_bench
-    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.research.lane_power import lane_power_bench, write_lane_power_receipt
 
     try:
         defect_grid = tuple(float(x) for x in defects.split(","))
@@ -801,10 +859,10 @@ def lane_power(
         alpha=alpha,
         lanes=None if lanes is None else tuple(lanes.split(",")),
     )
-    sealed = seal_receipt(receipt)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"lane_power_{sealed['receipt_sha256'][:16]}.json"
-    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_lane_power_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"lanes_ok={receipt['n_lanes_ok']} rows={frame.height} "
@@ -820,6 +878,11 @@ def suite_health_cmd(
     ),
     alpha: float = typer.Option(0.05, help="Pooled-evidence alarm threshold."),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = suite_health.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
     strict: bool = typer.Option(
         False,
         "--strict",
@@ -834,20 +897,16 @@ def suite_health_cmd(
     e-values are pooled under arbitrary dependence, and a corrupt artifact
     withholds the pooled claim — never asserted over partial evidence.
     """
-    import json
-
-    from quant_fund.research.fleet_eval import _atomic_write_text
-    from quant_fund.research.receipt_v2 import seal_receipt
-    from quant_fund.research.suite_health import suite_health
+    from quant_fund.research.suite_health import suite_health, write_suite_health_receipt
 
     try:
         frame, receipt = suite_health(receipts_dir, alpha=alpha)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    sealed = seal_receipt(receipt)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"suite_health_{sealed['receipt_sha256'][:16]}.json"
-    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_suite_health_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(
         format_data_label(
             synthetic=receipt["data_label"] == "SYNTHETIC",
@@ -895,6 +954,11 @@ def mcs(
     lam: float = typer.Option(0.5, help="Betting fraction per pair-process."),
     data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on the receipt."),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = mcs_seq.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Sequential model confidence set over per-origin proper losses.
 
@@ -910,7 +974,10 @@ def mcs(
         receipt = mcs_report(loss_streams, alpha=alpha, lam=lam, data_label=data_label)
     except (ValueError, FileNotFoundError) as exc:
         raise typer.BadParameter(str(exc)) from exc
-    path = write_mcs_receipt(receipt, out_dir)
+    try:
+        path = write_mcs_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(
         format_data_label(
             synthetic=receipt["data_label"] == "SYNTHETIC",
@@ -931,6 +998,11 @@ def serial_watch_cmd(
     lam: float = typer.Option(0.5, help="Bet cap λ ∈ (0,1)."),
     data_label: str = typer.Option("UNKNOWN", help="Provenance label stamped on each receipt."),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = serial_watch.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Anytime-valid PIT serial-independence audit; sealed receipt per stream.
 
@@ -960,7 +1032,7 @@ def serial_watch_cmd(
             receipt = serial_report(
                 stream, n_lags=n_lags, alpha=alpha, lam=lam, data_label=data_label
             )
-            path = write_serial_receipt(receipt, out_dir)
+            path = write_serial_receipt(receipt, out_dir, receipt_version=receipt_version)
             typer.echo(
                 format_data_label(synthetic=data_label == "SYNTHETIC", data_source=data_label)
             )
@@ -1025,53 +1097,9 @@ def fleet_significance(
     path = write_fleet_significance_receipt(receipt, out_dir)
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(format_fleet_significance_table(frame))
-    typer.echo(f"receipt={path}")@app.command("cost-calibration")
-def cost_calibration(
-    half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
-    lookback: int = typer.Option(20, help="Trailing OHLC window for estimators."),
-    n_dates: int = typer.Option(40, help="Dates in the SYNTHETIC panel."),
-    n_names: int = typer.Option(4, help="Names in the SYNTHETIC panel."),
-    seed: int = typer.Option(7, help="Panel seed."),
-    planted_rel_spread: float = typer.Option(
-        0.002, help="Planted high-low relative full spread for the SYNTHETIC book."
-    ),
-    dev: bool = typer.Option(False, "--dev", help="Acknowledge dev-only use; required to run."),
-    out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
-    report_path: Path = typer.Option(
-        Path("reports/cost_calibration_flat_vs_ohlc.md"),
-        help="Markdown report path (flat vs calibrated trial table).",
-    ),
-) -> None:
-    """Flat vs OHLC-calibrated cost trials (dev-only SYNTHETIC diagnostic).
-
-    Matched books under flat half-spread and Corwin–Schultz / Abdi–Ranaldo /
-    Roll. Reports decomposed costs only — never Sharpe or live P&L.
-    """
-    if not dev:
-        raise typer.BadParameter(
-            "cost-calibration is dev-only evidence tooling; pass --dev to acknowledge."
-        )
-    from quant_fund.research.cost_calibration import (
-        format_cost_calibration_table,
-        run_cost_calibration_trials,
-        write_cost_calibration_receipt,
-        write_cost_calibration_report,
-    )
-
-    frame, receipt = run_cost_calibration_trials(
-        half_spread_bps=half_spread_bps,
-        lookback=lookback,
-        n_dates=n_dates,
-        n_names=n_names,
-        seed=seed,
-        planted_rel_spread=planted_rel_spread,
-    )
-    path = write_cost_calibration_receipt(receipt, out_dir)
-    report = write_cost_calibration_report(frame, receipt, report_path)
-    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
-    typer.echo(format_cost_calibration_table(frame))
     typer.echo(f"receipt={path}")
-    typer.echo(f"report={report}")
+
+
 @app.command("cost-calibration")
 def cost_calibration(
     half_spread_bps: float = typer.Option(1.0, help="Flat half-spread floor in bps."),
@@ -1088,6 +1116,11 @@ def cost_calibration(
         Path("reports/cost_calibration_flat_vs_ohlc.md"),
         help="Markdown report path (flat vs calibrated trial table).",
     ),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = cost_calibration.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Flat vs OHLC-calibrated cost trials (dev-only SYNTHETIC diagnostic).
 
@@ -1113,7 +1146,7 @@ def cost_calibration(
         seed=seed,
         planted_rel_spread=planted_rel_spread,
     )
-    path = write_cost_calibration_receipt(receipt, out_dir)
+    path = write_cost_calibration_receipt(receipt, out_dir, receipt_version=receipt_version)
     report = write_cost_calibration_report(frame, receipt, report_path)
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(format_cost_calibration_table(frame))
@@ -1138,6 +1171,11 @@ def verdict(
     alpha: float = typer.Option(0.05, help="Confidence level for the verdict lanes."),
     n_boot: int = typer.Option(2000, help="Bootstrap resamples for winner's-curse."),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = honest_verdict.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Fleet tournament → composite honest verdict → sealed receipt.
 
@@ -1172,7 +1210,7 @@ def verdict(
         n_boot=n_boot,
         taus=cfg.quantiles.levels,
     )
-    path = write_verdict_receipt(report, out_dir)
+    path = write_verdict_receipt(report, out_dir, receipt_version=receipt_version)
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(f"verdict={report['verdict']} winner={report.get('winner')}")
     excluded = report["run"]["excluded_heads"]
@@ -1200,6 +1238,11 @@ def monitor(
     alpha: float = typer.Option(0.05, help="Alarm threshold (anytime-valid)."),
     level: float = typer.Option(0.9, help="Central interval for coverage lane."),
     out_dir: Path = typer.Option(Path("receipts"), help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = monitor_run.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Fleet tournament → every anytime-valid monitor lane → sealed receipt.
 
@@ -1209,12 +1252,8 @@ def monitor(
     loss drift vs the fleet median. Lanes whose modules are not merged
     report lane_missing on the receipt rather than failing silently.
     """
-    from quant_fund.research.fleet_eval import (
-        _atomic_write_text,
-        fleet_head_factories,
-    )
-    from quant_fund.research.monitor_run import monitor_fleet
-    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.research.fleet_eval import fleet_head_factories
+    from quant_fund.research.monitor_run import monitor_fleet, write_monitor_receipt
 
     cfg = _cfg(config)
     base_seed = cfg.train.random_seed if seed is None else seed
@@ -1236,10 +1275,10 @@ def monitor(
         level=level,
         taus=cfg.quantiles.levels,
     )
-    sealed = seal_receipt(receipt)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"monitor_run_{sealed['receipt_sha256'][:16]}.json"
-    _atomic_write_text(path, json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_monitor_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"rows={receipt['n_rows']} alarms={receipt['n_alarm_rows']} "
@@ -1255,6 +1294,11 @@ def corpus(
     ),
     q: float = typer.Option(0.05, "--q", help="BH-FDR level for the pooled corpus family."),
     out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = corpus_inference.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Pool every committed receipt's claims into one BH-FDR family.
 
@@ -1264,22 +1308,18 @@ def corpus(
     whole evidence store. Correctness evidence, never a market or P&L claim.
     """
     try:
-        from quant_fund.research.corpus_inference import corpus_audit
+        from quant_fund.research.corpus_inference import corpus_audit, write_corpus_receipt
     except ImportError as exc:
         raise typer.BadParameter("requires corpus_inference (PR #382)") from exc
-    from quant_fund.research.receipt_v2 import seal_receipt
 
     try:
         receipt = corpus_audit(receipts_dir, q=q)
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
-    out_dir.mkdir(parents=True, exist_ok=True)
-    import json
-
-    sealed = seal_receipt(receipt)
-    digest = str(receipt.get("inputs_sha256") or sealed["receipt_sha256"])[:16]
-    path = out_dir / f"corpus_inference_{digest}.json"
-    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_corpus_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"corpus receipts={receipt.get('n_receipts')} "
@@ -1303,6 +1343,11 @@ def online_fdr_cmd(
         "--per-receipt",
         help="Treat each receipt as ONE test (min harvested p); default tests per finding.",
     ),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = online_fdr.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
 ) -> None:
     """Replay committed receipts through Foster–Stine alpha-investing.
 
@@ -1317,12 +1362,11 @@ def online_fdr_cmd(
     except ImportError as exc:
         raise typer.BadParameter("requires corpus_inference (PR #382)") from exc
     try:
-        from quant_fund.research.online_fdr import OnlineFDR
+        from quant_fund.research.online_fdr import OnlineFDR, write_online_fdr_receipt
     except ImportError as exc:
         raise typer.BadParameter("requires online_fdr (PR #383)") from exc
     import json
 
-    from quant_fund.research.receipt_v2 import seal_receipt
     from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
     from quant_fund.utils.reproducibility import git_revision
 
@@ -1383,10 +1427,10 @@ def online_fdr_cmd(
         **controller.stream_report(),
     }
     out_dir.mkdir(parents=True, exist_ok=True)
-    sealed = seal_receipt(receipt)
-    digest = str(receipt["inputs_sha256"])[:16]
-    path = out_dir / f"online_fdr_{digest}.json"
-    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_online_fdr_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"online_fdr tests={receipt['n_tests']} rejections={receipt['n_rejections']} "
@@ -1402,6 +1446,7 @@ __all__ = [
     "corpus",
     "execution_sensitivity_cmd",
     "fleet",
+    "pairs",
     "lane_power",
     "mcs",
     "monitor",
@@ -1452,6 +1497,11 @@ def lattice_cmd(
     head_sha: str | None = typer.Option(
         None, "--head-sha", help="Current HEAD sha for stale-code flags (default: auto)."
     ),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = receipt_lattice.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
     known_inconsistent: Path | None = typer.Option(
         None,
         "--known-inconsistent",
@@ -1470,10 +1520,7 @@ def lattice_cmd(
     compares their shared claim paths: consistent / numeric_drift /
     inconsistent. Provenance claims only — no P&L.
     """
-    import json
-
-    from quant_fund.research.receipt_lattice import receipt_lattice
-    from quant_fund.research.receipt_v2 import seal_receipt
+    from quant_fund.research.receipt_lattice import receipt_lattice, write_lattice_receipt
     from quant_fund.utils.reproducibility import git_revision
 
     root = Path(receipts_dir)
@@ -1500,11 +1547,10 @@ def lattice_cmd(
         float_rel_tol=float_rel_tol,
         known_inconsistent=pins,
     )
-    out_dir.mkdir(parents=True, exist_ok=True)
-    sealed = seal_receipt(receipt)
-    digest = str(sealed["receipt_sha256"])[:16]
-    path = out_dir / f"receipt_lattice_{digest}.json"
-    path.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")
+    try:
+        path = write_lattice_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     typer.echo(
         f"lattice receipts={receipt['n_receipts']} groups={receipt['n_claim_groups']} "

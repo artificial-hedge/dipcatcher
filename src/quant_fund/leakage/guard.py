@@ -138,9 +138,7 @@ class IOGuard:
                 reverse=True,
             )
         )
-        self._allowlist: tuple[Path, ...] = tuple(
-            _resolve(Path(entry)) for entry in allowlist
-        )
+        self._allowlist: tuple[Path, ...] = tuple(_resolve(Path(entry)) for entry in allowlist)
         self._records: list[GuardRecord] = []
         self._lock = threading.Lock()
 

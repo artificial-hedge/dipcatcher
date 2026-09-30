@@ -183,3 +183,25 @@ def test_strict_flags_reject_missing_and_nonbinary() -> None:
             proc.update(a, b)
     for ok in (True, False, 0, 1, np.bool_(True), np.int64(1)):
         proc.update(ok, False)
+
+
+def test_tail_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the tail_audit.v1 body in the envelope."""
+    import json
+
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.research.tail_watch import write_tail_receipt
+
+    _, receipt = audit_tail_depth(
+        {"cal": _GaussianFactory(1.0)},
+        shards={"g": _gauss_shard},
+        n_train=64,
+        n_eval=200,
+        seed=0,
+    )
+    path = write_tail_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "tail_audit"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True

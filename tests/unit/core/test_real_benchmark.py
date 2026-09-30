@@ -247,3 +247,31 @@ def test_invalid_protocol_fails_before_writing(tmp_path, inputs, changes):
     with pytest.raises(ValueError):
         prepare(tmp_path, replace(protocol, **changes))
     assert not (tmp_path / "run").exists()
+
+
+def test_receipt_v2_envelope_manifest_and_scores(tmp_path, inputs):
+    """--receipt-version 2 wraps the strict-digest bodies; _read_receipt
+    unwraps the envelope and re-verifies the inner strict digest."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    _, protocol = inputs
+    spec = tmp_path / "v2.json"
+    spec.write_text(json.dumps(asdict(protocol)))
+    run = tmp_path / "v2run"
+    manifest = prepare_benchmark(spec, run, receipt_version=2)
+    document = json.loads((run / "manifest.json").read_text())
+    assert document["schema"] == "receipt.v2"
+    assert document["kind"] == "real_benchmark_manifest"
+    assert document["payload"]["receipt_sha256"] == manifest["receipt_sha256"]
+    assert verify_receipt_file(run / "manifest.json")["valid"] is True
+
+    validation = score_benchmark(run, "validation", receipt_version=2)
+    scored = json.loads((run / "validation.json").read_text())
+    assert scored["schema"] == "receipt.v2"
+    assert scored["kind"] == "real_benchmark_score"
+    assert scored["payload"]["manifest_sha256"] == manifest["receipt_sha256"]
+    assert scored["payload"]["receipt_sha256"] == validation["receipt_sha256"]
+    assert verify_receipt_file(run / "validation.json")["valid"] is True
+    # A v1 score report on a v2 manifest still verifies the same chain.
+    test = score_benchmark(run, "test")
+    assert test["manifest_sha256"] == manifest["receipt_sha256"]

@@ -3,10 +3,20 @@ name = "fx-1"
 dynamic = ["version"]
 description = "fx-1: a quant LLM fine-tuned from Kimi K3 open weights. dipcatcher is the harness - data engine, evaluation, and verification for fx-1. Not a promise of live profit."
 readme = "README.md"
+# Proprietary — all rights reserved. See the LICENSE file at the repository
+# root. This is not an open-source license: forking, copying, and
+# redistribution are prohibited without the Owner's written permission.
+license = { file = "LICENSE" }
 authors = [
     { name = "Advaith Vaithianathan", email = "140935487+cosmic-hydra@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
+classifiers = [
+    "License :: Other/Proprietary License",
+    # PyPI refuses any upload carrying a "Private ::" classifier — a second,
+    # independent guard against an accidental public package upload.
+    "Private :: Do Not Upload",
+]
 dependencies = [
     "polars>=1.17",
     "pyarrow>=17",
@@ -113,6 +123,7 @@ only-include = [
     "scripts",
     "pyproject.toml",
     "README.md",
+    "LICENSE",
     "SECURITY.md",
     ".env.example",
     "Makefile",

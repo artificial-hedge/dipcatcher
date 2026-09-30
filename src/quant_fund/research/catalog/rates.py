@@ -130,8 +130,6 @@ def northset_all_floor_unit_honesty_errors(blob: object) -> list[str]:
             continue
         if raw is None:
             continue
-        if raw is None:
-            continue
         try:
             x = float(raw)
         except (TypeError, ValueError):

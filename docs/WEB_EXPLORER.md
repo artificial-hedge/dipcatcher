@@ -10,7 +10,7 @@ served from any static host or subdirectory (assets use a relative base).
 
 | Surface | Source (committed, read-only) |
 |---|---|
-| Strategy list + per-segment stats | `artifacts/carry_champion*.json`, `receipts/adaptive_mix_*.json` (`results.*`, `paper_sleeves.*`) |
+| Strategy list + per-segment stats | `artifacts/carry_champion*.json`, `receipts/legacy-unsealed/adaptive_mix_*.json` (`results.*`, `paper_sleeves.*`) |
 | Equity + drawdown charts | `artifacts/carry_equity*.parquet` → `fixtures/equity/*.json` |
 | Receipt list + verification panel | `receipts/*.json` copied verbatim → `fixtures/receipts/` |
 | Digest resolution | export-time scan mapping embedded sha256 fields → committed files |
