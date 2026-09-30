@@ -145,6 +145,12 @@ from quant_fund.research.benches_w18 import (
     bench_neural_sde,
     bench_stocbench,
 )
+from quant_fund.research.benches_w19 import (
+    bench_dcp,
+    bench_fukasawa_iv,
+    bench_langevin_impact,
+    bench_rccp,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1808,6 +1814,10 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "agentic_lob": bench_agentic_lob(),
         "fase_eval": bench_fase_eval(),
         "kit_paths": bench_kit_paths(),
+        "langevin_impact": bench_langevin_impact(),
+        "fukasawa_iv": bench_fukasawa_iv(),
+        "rccp": bench_rccp(),
+        "dcp": bench_dcp(),
     }
 
     hyps = _build_hypotheses(families, rankers)

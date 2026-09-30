@@ -203,6 +203,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "agentic_lob",
         "fase_eval",
         "kit_paths",
+        # SOTA canon wave 19 batteries (see research/benches_w19.py):
+        # generalized-Langevin latent-liquidity impact (Itkin 2026,
+        # arXiv:2609.37872), event-time order-flow memory /
+        # operational-time impact (arXiv:2609.13715), Fukasawa's
+        # first-order implied-variance representation (arXiv:2609.13961),
+        # the AD-Seq-Vol conditional IVS diffusion with static no-arb
+        # post-training penalties (arXiv:2609.13402, torch-gated), and the
+        # RCCP retrieval-corrected (arXiv:2608.10553) + DCP
+        # distribution-aware (arXiv:2605.26569) conformal frameworks.
+        # Same SYNTHETIC diagnostic contract. event_time_flow and
+        # ivs_diffusion activate with their lane branches (the benches_w19
+        # adapters already carry the ImportError -> {} fallback).
+        "langevin_impact",
+        "fukasawa_iv",
+        "rccp",
+        "dcp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
