@@ -258,6 +258,7 @@ src/quant_fund/microstructure/bench.py
 src/quant_fund/microstructure/book_metrics.py
 src/quant_fund/microstructure/book_panel.py
 src/quant_fund/microstructure/cancel_cluster.py
+src/quant_fund/microstructure/cancel_gradient.py
 src/quant_fund/microstructure/candle_book_features.py
 src/quant_fund/microstructure/deep_microprice.py
 src/quant_fund/microstructure/depth_consumption.py
