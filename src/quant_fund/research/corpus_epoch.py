@@ -56,10 +56,14 @@ EXEMPT_BASENAMES = frozenset({HEADS_PIN_BASENAME, ".epoch_stamp.lock"})
 
 # Member rel-paths exempt per corpus dir — exact paths, not basenames, so a
 # real member can never hide behind a shared filename: the timestamp-anchor
-# manifest is rewritten by each anchor request and authenticates itself via
-# the .tsr imprints + pinned TSA certs, and the integrity checkpoint is a
+# manifests are rewritten by each anchor request and authenticate themselves —
+# anchors.json via the .tsr imprints + pinned TSA certs, ots_anchors.json via
+# the committed digests inside each referenced .ots proof — and the integrity
+# checkpoint is a
 # digest-of-pins (chained membership would stale itself instantly).
-EXEMPT_RELPATHS: frozenset[str] = frozenset({"timestamps/anchors.json", "checkpoint.json"})
+EXEMPT_RELPATHS: frozenset[str] = frozenset(
+    {"timestamps/anchors.json", "timestamps/ots_anchors.json", "checkpoint.json"}
+)
 
 # Member rel-path *prefixes* exempt per corpus dir. Rekor witness proofs are
 # self-authenticating (RFC 6962 inclusion + log-signed timestamps inside the
@@ -97,11 +101,18 @@ def member_digests(corpus_dir: Path | str, *, pattern: str = "*.json") -> dict[s
 
 
 def _exempt_member(root: Path, relname: str) -> bool:
-    """True for corpus-scoped prefix exemptions (e.g. ``quality/witness/``).
+    """True for membership exemptions — must mirror ``member_digests`` exactly.
 
-    Only applies inside the corpus the prefix belongs to — a ``witness/``
-    drop under ``receipts`` stays a normal member."""
-    return root.name == "quality" and any(relname.startswith(prefix) for prefix in EXEMPT_PREFIXES)
+    Basenames and relpaths exempt unconditionally (chain bookkeeping); the
+    prefix set is corpus-scoped — a ``witness/`` drop under ``receipts`` stays
+    a normal member."""
+    return (
+        Path(relname).name in EXEMPT_BASENAMES
+        or relname in EXEMPT_RELPATHS
+        or (
+            root.name == "quality" and any(relname.startswith(prefix) for prefix in EXEMPT_PREFIXES)
+        )
+    )
 
 
 def epoch_root(members: Mapping[str, str]) -> str:

@@ -57,7 +57,7 @@ CORPORA: tuple[tuple[str, str, bool, bool, tuple[str, ...]], ...] = (
         "*.json",
         True,
         True,
-        ("*.pub", "*.pem", "*.crt", "*.tsr", "*.txt", "timestamps/*"),
+        ("*.pub", "*.pem", "*.crt", "*.tsr", "*.txt", "timestamps/*", "timestamps/ots/*"),
     ),
     # Closed world: a `.yaml` workflow beside `*.yml` members would run on
     # GitHub while dodging the epoch chain — uncovered is an error.
@@ -132,11 +132,15 @@ def verify_repo(
     }
 
     ts = verify_timestamps(root)
+    from quant_fund.research.ots_anchor import verify_ots
+
+    ots = verify_ots(root)
     gates["timestamp_anchors"] = {
-        "ok": bool(ts["ok"]),
-        "anchored": bool(ts["anchored"]),
+        "ok": bool(ts["ok"] and ots["ok"]),
+        "anchored": bool(ts["anchored"] or ots["anchored"]),
         "fresh": ts.get("fresh", {}),
-        "errors": ts["errors"],
+        "ots": ots.get("attestations", {}),
+        "errors": [*ts["errors"], *ots["errors"]],
     }
 
     cp = verify_checkpoint(root)

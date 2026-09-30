@@ -2316,6 +2316,39 @@ def anchor_timestamp_cmd(
     typer.echo(f"timestamp={token}")
 
 
+@app.command("ots-stamp")
+def ots_stamp_cmd(
+    file: Path = typer.Option(
+        Path("quality/epoch_heads.json"),
+        "--file",
+        help="Repo-relative file to anchor (default: the epoch-heads pin).",
+    ),
+    root: Path = typer.Option(Path("."), "--root"),
+    calendar: list[str] = typer.Option(
+        [], "--calendar", help="OTS calendar URL override (repeatable)."
+    ),
+) -> None:
+    """Bitcoin-anchor a file via OpenTimestamps public calendars.
+
+    POSTs the file's sha256 (never its contents) to the calendar digest
+    endpoints and commits the merged ``.ots`` proof under
+    ``quality/timestamps/ots/`` + ``ots_anchors.json``. Pending attestations
+    prove calendar submission immediately; once the calendar confirms on
+    Bitcoin the same file verifies against the committed block header
+    (``<name>.<height>.hdr``) with a pure sha256d<nBits PoW check — no API
+    trust at verify time. Distinct trust root from the RFC 3161 lane.
+    """
+    from quant_fund.research.ots_anchor import DEFAULT_CALENDARS, stamp_ots
+
+    cals = tuple(calendar) if calendar else DEFAULT_CALENDARS
+    try:
+        token = stamp_ots(file, root=root, calendars=cals)
+    except ValueError as exc:
+        typer.echo(f"ots-stamp: {exc}")
+        raise typer.Exit(code=2) from exc
+    typer.echo(f"ots={token}")
+
+
 @app.command("checkpoint")
 def checkpoint_cmd(
     root: Path = typer.Option(Path("."), "--root"),
