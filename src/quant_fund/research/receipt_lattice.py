@@ -232,7 +232,10 @@ def receipt_lattice(
             doc = json.loads(raw)
             if not isinstance(doc, Mapping):
                 raise ValueError("receipt root is not an object")
-        except Exception as exc:  # noqa: BLE001 — recorded, never skipped
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            # Narrowed from `except Exception` (quality ratchet): receipt read/parse
+            # faults are IO/JSON plus the explicit shape ValueError above; exotic
+            # errors propagate. Recorded, never skipped.
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
             continue
 
