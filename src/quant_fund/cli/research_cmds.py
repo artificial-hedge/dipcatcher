@@ -2374,6 +2374,34 @@ def ots_upgrade_cmd(
         raise typer.Exit(code=2)
 
 
+@app.command("witness-scan")
+def witness_scan_cmd(
+    root: Path = typer.Option(Path("."), "--root"),
+    rekor_url: str = typer.Option("", "--rekor-url", help="Rekor API base."),
+) -> None:
+    """Sweep Rekor for every entry our witness key ever signed (online).
+
+    The transparency log as a key-misuse oracle: a stolen WITNESS_SIGNING_KEY
+    minting a divergent checkpoint tree lands entries under our key — any
+    attested digest absent from the committed spine reports ``foreign``.
+    """
+    from quant_fund.research.witness_scan import DEFAULT_REKOR_URL, scan_witness_log
+
+    res = scan_witness_log(root, rekor_url=rekor_url or DEFAULT_REKOR_URL)
+    typer.echo(
+        f"scanned={res['scanned']} foreign={len(res['foreign'])} "
+        f"unrecognized={res['unrecognized']} online={res.get('online', True)}"
+    )
+    for f in res.get("foreign", []):
+        typer.echo(f"FOREIGN: {f}")
+    for f in res.get("explained", []):
+        typer.echo(f"orphaned (registered): {f}")
+    for e in res.get("errors", []):
+        typer.echo(f"note: {e}")
+    if not res["ok"]:
+        raise typer.Exit(code=2)
+
+
 @app.command("checkpoint")
 def checkpoint_cmd(
     root: Path = typer.Option(Path("."), "--root"),

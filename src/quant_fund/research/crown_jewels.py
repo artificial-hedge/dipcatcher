@@ -78,6 +78,7 @@ DEFAULT_JEWELS: tuple[str, ...] = (
     "src/quant_fund/research/repo_integrity.py",
     "src/quant_fund/research/tamper_drill.py",
     "src/quant_fund/research/timestamp_anchor.py",
+    "src/quant_fund/research/witness_scan.py",
     "src/quant_fund/utils/atomicio.py",
     "src/quant_fund/utils/hashing.py",
     "scripts/verify_auditor_bundle.py",  # the independent second verifier —
