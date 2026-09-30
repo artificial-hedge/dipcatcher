@@ -156,6 +156,7 @@ from quant_fund.research.benches_w19 import (
 from quant_fund.research.benches_w20 import (
     bench_gaussian_normalized_coords,
     bench_hidden_markov_equilibrium,
+    bench_liquidity_tail_lob,
     bench_varswap_stopping,
 )
 from quant_fund.research.benches_w810 import (
@@ -1830,6 +1831,7 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "varswap_stopping": bench_varswap_stopping(),
         "hidden_markov_equilibrium": bench_hidden_markov_equilibrium(),
         "gaussian_normalized_coords": bench_gaussian_normalized_coords(),
+        "liquidity_tail_lob": bench_liquidity_tail_lob(),
     }
 
     hyps = _build_hypotheses(families, rankers)

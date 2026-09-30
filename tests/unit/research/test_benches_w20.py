@@ -44,11 +44,12 @@ _FAMILIES_LANDED = (
     "varswap_stopping",
     "hidden_markov_equilibrium",
     "gaussian_normalized_coords",
+    "liquidity_tail_lob",
 )
-_FAMILIES_IN_FLIGHT = ("arl_mm", "liquidity_tail_lob")
+_FAMILIES_IN_FLIGHT = ("arl_mm",)
 _LANDED_NUMPY_BLOBS = _FAMILIES_LANDED
 # May return {} (torch extra absent / lane branch in flight).
-_SOFT_BLOBS = ("arl_mm", "liquidity_tail_lob")
+_SOFT_BLOBS = ("arl_mm",)
 
 
 @pytest.fixture(scope="module")

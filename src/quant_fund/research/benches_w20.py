@@ -142,7 +142,7 @@ def bench_arl_mm() -> dict[str, float]:
 def bench_liquidity_tail_lob() -> dict[str, float]:
     """Heavy-tailed sequential-LOB equilibrium diagnostics (wave 20).
 
-    Thin adapter over the lane module's own ``bench_liquidity_tail_lob``:
+    Thin adapter over the lane module's own ``liquidity_tail_bench``:
     marginal-cost fixed-point residual inside the tail-controlled class,
     crossover-depth shift vs Gaussian, informed-demand dominance size,
     spread persistence, posterior consistency. Returns ``{}`` while the
@@ -150,7 +150,7 @@ def bench_liquidity_tail_lob() -> dict[str, float]:
     """
     try:
         from quant_fund.microstructure.liquidity_tail_lob import (
-            bench_liquidity_tail_lob as _ltl_core_bench,
+            liquidity_tail_bench as _ltl_core_bench,
         )
     except ImportError:
         return {}
