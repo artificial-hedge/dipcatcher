@@ -108,7 +108,9 @@ def verdict_streams(
                 model = factories[name]()
                 model.fit(shard.x[:n_train], shard.y[:n_train])
                 q = predict_eval_matrix(shard, model, n_train, n_eval, tau_arr)
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded in status rows.
                 status = "error"
                 err = str(exc)
                 q = None
