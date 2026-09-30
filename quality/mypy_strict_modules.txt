@@ -279,6 +279,7 @@ src/quant_fund/microstructure/split_flow_bench.py
 src/quant_fund/microstructure/spread_dynamics.py
 src/quant_fund/microstructure/streak_stats.py
 src/quant_fund/microstructure/synthetic_lob.py
+src/quant_fund/microstructure/tape_digest.py
 src/quant_fund/microstructure/vendor_book_map.py
 src/quant_fund/microstructure/vpin.py
 src/quant_fund/microstructure/zi_lob_simulator.py
