@@ -565,6 +565,22 @@ def main() -> int:
         for e in errors:
             print(f"  {e}")
         return 1
+    # Self-binding: the bundle pins the bytes of the script that produced
+    # its verdict context. A drifted local copy still verifies correctly
+    # (the field is advisory) — but the auditor is told to diff.
+    try:
+        declared_self = json.loads(args.bundle.read_text()).get("auditor_self_sha256")
+        if (
+            isinstance(declared_self, str)
+            and declared_self != _sha(Path(__file__).read_bytes()).hex()
+        ):
+            print(
+                "warn: auditor_self_mismatch — this script differs from the "
+                "pinned copy; diff before trusting this verdict",
+                file=sys.stderr,
+            )
+    except OSError:
+        pass
     print("ok — every link verified")
     return 0
 

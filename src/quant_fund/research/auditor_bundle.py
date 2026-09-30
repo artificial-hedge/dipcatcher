@@ -109,6 +109,12 @@ def build_bundle(root: str | Path, out: str | Path) -> Path:
         "files": files,
         "witness_proof": json.loads(proof.read_text()),
         "files_sha256": {rel: hash_bytes(base64.b64decode(b)) for rel, b in files.items()},
+        # The verifier under audit: an external checker can diff its local
+        # copy of the standalone script against this pin before trusting the
+        # verdict it produces — a swapped/weakened verifier can't launder.
+        "auditor_self_sha256": hash_bytes(
+            (root_path / "scripts/verify_auditor_bundle.py").read_bytes()
+        ),
     }
     out_path = Path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
