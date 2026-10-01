@@ -1,0 +1,27 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "clean_passes": true,
+   "error_is_value_error": true,
+   "flag_glued_prefix_evades": true,
+   "flag_spelled_number_evades": true,
+   "headlines_refuse": true,
+   "identity_return": true,
+   "labeled_synthetic_passes": true,
+   "live_claims_refuse": true,
+   "lowercase_label_insufficient": true,
+   "numeric_nonpresenting_passes": true,
+   "synthetic_commentary_passes": true,
+   "unlabeled_synthetic_refuses": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "f577a4b86ec06a50ccc4f81c497a230b3d678161",
+ "interpretation": "Honesty gate holds: headline tokens, live-claim phrases, and unlabeled synthetic presentation all refuse; clean discussion passes. Flagged surfaces: spelled-out numerals and glued prefixes still evade \u2014 pinned, not fixed.",
+ "kind": "honesty_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "da65ac9fed02b969efdfadbbe5e12d6e7e2e4cdd46f71a758636da294637f034",
+ "research_only": true,
+ "schema": "honesty_audit.v1"
+}

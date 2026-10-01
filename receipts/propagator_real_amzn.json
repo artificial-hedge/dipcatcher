@@ -4,11 +4,12 @@
   "divergences": [
     "iid_lag1_response_off",
     "regime_lag1_response_off",
-    "split_lag1_response_off"
+    "split_lag1_response_off",
+    "deep_split_lag1_response_off"
   ],
   "estimator": "R(l) = E[sign_i * (mid_{i+l} - mid_i)] over book-event index; tick units",
-  "git_revision": "348b39b2b126b875d514ce5297d980ed63888ead",
-  "interpretation": "Immediate response R(1) is the effective spread-paid-per-trade; the log-log slope marks whether impact accumulates (positive) or is absorbed (negative) over the horizon. Sim arms share the estimator, so gaps isolate the flow mechanism, not the measurement.",
+  "git_revision": "527eed79cfa407b19469c119b1dd39f19866bf94",
+  "interpretation": "Immediate response R(1) is the effective spread-paid-per-trade; the log-log slope marks whether impact accumulates (positive) or is absorbed (negative) over the horizon. Sim arms share the estimator, so gaps isolate the flow mechanism, not the measurement. The deep_split arm pairs metaorder splitting with the deep-book regime (band=40, churn knobs): the deep touch absorbs the MO without a lag-1 mid move (R(1)=0.0 vs real 0.245) and the response mean-reverts \u2014 depth alone does not close the undershoot; the sign flips from undershoot to absorption.",
   "kind": "propagator_real",
   "lags_events": [
     1,
@@ -21,7 +22,7 @@
     128,
     256
   ],
-  "receipt_sha256": "17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98",
+  "receipt_sha256": "210e621dac6840232f9c0e1c88001408789c171ae522a87ad0913e3a62b69aa5",
   "research_only": true,
   "schema": "propagator_real.v1",
   "table": {
@@ -95,6 +96,23 @@
           "64": 3.517421,
           "8": 0.758138
         }
+      },
+      "deep_split": {
+        "n_trades": 17,
+        "n_events": 60000,
+        "response_ticks": {
+          "1": 0.0,
+          "2": 0.0,
+          "4": 0.0,
+          "8": 0.0,
+          "16": -0.088235,
+          "32": -0.176471,
+          "64": -0.764706,
+          "128": -0.764706,
+          "256": -1.735294
+        },
+        "loglog_exponent": null,
+        "fit_log_intercept": null
       }
     }
   },
