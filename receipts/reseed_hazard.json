@@ -1,0 +1,52 @@
+{
+  "schema": "reseed_hazard.v1",
+  "kind": "sim_vs_real",
+  "data_label": "sim+real",
+  "research_only": true,
+  "git_revision": "4df9c74e6bcbb8dc1c6acc1847e33158287be4a4",
+  "seed": 7,
+  "horizon_events": 20000,
+  "reseed_window_events": 500,
+  "tape": {
+    "n_emptied": 4239,
+    "reseed_rate_500": 0.5376,
+    "reseed_latency_p50": 110.0,
+    "reseed_latency_p90": 394.2,
+    "reseed_as_touch_share": 0.7512,
+    "regime": "tape"
+  },
+  "sim_arms": [
+    {
+      "n_emptied": 594,
+      "reseed_rate_500": 0.2542,
+      "reseed_latency_p50": 364.0,
+      "reseed_latency_p90": 456.0,
+      "reseed_as_touch_share": 0.298,
+      "regime": "deep"
+    },
+    {
+      "n_emptied": 256,
+      "reseed_rate_500": 0.0117,
+      "reseed_latency_p50": 213.0,
+      "reseed_latency_p90": 369.0,
+      "reseed_as_touch_share": 1.0,
+      "regime": "joint"
+    },
+    {
+      "n_emptied": 413,
+      "reseed_rate_500": 0.0508,
+      "reseed_latency_p50": 379.0,
+      "reseed_latency_p90": 455.0,
+      "reseed_as_touch_share": 0.2381,
+      "regime": "ice80_unit"
+    }
+  ],
+  "claims": {
+    "tape_reseeds_majority": true,
+    "tape_reseed_returns_to_touch": true,
+    "sim_underreseeds": true,
+    "mechanism_suppresses_reseed": true
+  },
+  "notes": "The tape's emptied touch is a transient vacancy: >50% of emptied levels re-seed within 500 events and ~3/4 of reseeds land back at the touch \u2014 a price-level memory the ZI-LOB grammar lacks. Every sim arm under-reseeds, and the mechanisms that produce the emptied share (vacancy memory, cancel retreat) suppress re-seeding further \u2014 producing empties and healing them are different channels.",
+  "receipt_sha256": "b4f76018b57ccf4987ab681f537da94946a4aa75d860eac8681aaad548c6737d"
+}
