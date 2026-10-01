@@ -22,6 +22,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from fx1.modelcard import ModelCard
+from quant_fund.utils.atomicio import atomic_write_text
 
 FIVE_ACTIVITIES = (
     "development",
@@ -92,21 +93,15 @@ def compile_dossier(
             raise FileNotFoundError(f"dossier artifact for {activity!r} missing: {path}")
         report_activity = "validation" if activity == "contamination_report" else activity
         hashes.setdefault(report_activity, {})[str(path)] = _sha(path)
-        # A contamination report laundered under another activity key with an
-        # innocuous filename must not escape flagging: parse every JSON
-        # artifact and honor any document that declares ``overall_flagged``.
-        declared = activity == "contamination_report" or "contamination" in path.name
-        try:
-            report = json.loads(path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            if declared:
-                contamination_flagged = True
-        else:
-            if isinstance(report, dict) and "overall_flagged" in report:
-                contamination_flagged = contamination_flagged or bool(report["overall_flagged"])
-            elif declared:
-                # Declared contamination report that is unparseable JSON or
-                # lacks the flag entirely — treat as flagged, not silent.
+        if activity == "contamination_report" or "contamination" in path.name:
+            report: object = None
+            try:
+                report = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                report = None
+            # Valid JSON that is not an object ("[]", "null") has no
+            # overall_flagged field — the dossier cannot certify it clean.
+            if not isinstance(report, dict) or bool(report.get("overall_flagged", True)):
                 contamination_flagged = True
     sections: list[DossierSection] = []
     summaries = {
@@ -163,5 +158,5 @@ def compile_dossier(
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(dossier.model_dump_json(indent=2), encoding="utf-8")
+    atomic_write_text(out, dossier.model_dump_json(indent=2))
     return dossier

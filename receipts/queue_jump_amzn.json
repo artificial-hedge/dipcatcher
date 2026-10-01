@@ -1,0 +1,53 @@
+{
+  "claim": "queue_jump_measured",
+  "data_label": "MIXED",
+  "divergences": [],
+  "git_revision": "42e2bf09d57d91a18dff4a0a0cf819987be2f9c2",
+  "interpretation": "Queue-jump hypothesis: when the displayed queue at the touch is long, time-priority is expensive, so impatient liquidity steps inside the spread. share_inside_spread rising across queue bins is the signature. The sim arm lacks any placement choice, so the comparison is a pure mechanism gap.",
+  "kind": "queue_jump",
+  "real": {
+    "by_queue_bin": {
+      "1-9": {
+        "median_dist_ticks": 7.0,
+        "n_submissions": 9997,
+        "share_improves_touch": 0.1123,
+        "share_inside_spread": 0.1123
+      },
+      "10-49": {
+        "median_dist_ticks": 6.0,
+        "n_submissions": 20848,
+        "share_improves_touch": 0.1181,
+        "share_inside_spread": 0.1181
+      },
+      "100+": {
+        "median_dist_ticks": 7.0,
+        "n_submissions": 97080,
+        "share_improves_touch": 0.1002,
+        "share_inside_spread": 0.1002
+      },
+      "50-99": {
+        "median_dist_ticks": 8.0,
+        "n_submissions": 4029,
+        "share_improves_touch": 0.073,
+        "share_inside_spread": 0.073
+      }
+    },
+    "data_label": "REAL",
+    "n_crossing": 0,
+    "n_improves_touch": 13604,
+    "n_inside_spread": 13604,
+    "n_submissions": 131954,
+    "share_improves_touch": 0.1031,
+    "share_inside_spread": 0.1031
+  },
+  "receipt_sha256": "27a57dfa74999a9fa1fde47451f79db1699c5d6d308703a5843a3a1c0f4a9001",
+  "research_only": true,
+  "schema": "queue_jump.v1",
+  "sim": {
+    "data_label": "SYNTHETIC",
+    "mechanism_present": false,
+    "n_submissions": 4021,
+    "reason": "sim LO arrivals have no placement choice (fixed band offset); queue-jump share is undefined, not zero"
+  },
+  "ticker": "AMZN"
+}
