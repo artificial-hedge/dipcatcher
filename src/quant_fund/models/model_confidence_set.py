@@ -135,7 +135,7 @@ def mcs_test(
 
 
 def synth_mcs(
-    seed: int = 20261231 + 305,
+    seed: int = 20261231 + 308,
     t: int = 800,
 ) -> FloatArray:
     """SYNTHETIC loss streams: A best, B near-best, C worse."""
@@ -149,7 +149,7 @@ def synth_mcs(
 
 
 def bench_model_confidence_set(
-    seed: int = 20261231 + 305,
+    seed: int = 20261231 + 308,
 ) -> dict[str, float]:
     """Wave-53 self-check: MCS keeps the planted best, drops the worst."""
     losses = synth_mcs(seed=seed)
