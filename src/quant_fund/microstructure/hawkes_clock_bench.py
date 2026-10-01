@@ -61,6 +61,38 @@ def _kernel(
 
 # Diagonal self-excitation: each event type clusters with itself.
 _SELF = _kernel({(0, 0): 0.40, (1, 1): 0.50, (2, 2): 0.40})
+# Multi-timescale banks approximating a power-law (Omori) decay:
+# geometric rates spanning fast -> slow. For a target tail t^-(1+theta)
+# the per-bank weight is proportional to beta_r^theta (a superposition
+# integral identity), so theta = 0.5 concentrates mass on the fast bank
+# while retaining a long tail — matching the tape's sharp 0.5 s retreat
+# plus slow clustering decay. Kernels below are parameterized in
+# branching ratios (eta); _kernel_pl converts eta -> jump size via
+# H = sum w_r/b_r.
+_PL_RATES = (16.0, 4.0, 1.0, 0.25)
+_PL_WEIGHTS = tuple(w / sum(x**0.5 for x in _PL_RATES) for w in (x**0.5 for x in _PL_RATES))
+_PL_H = sum(w / r for w, r in zip(_PL_WEIGHTS, _PL_RATES, strict=True))
+
+
+def _kernel_pl(
+    entries: dict[tuple[int, int], float],
+) -> tuple[tuple[float, float, float], ...]:
+    k = [list(r) for r in _ZERO]
+    for (i, j), eta in entries.items():
+        k[i][j] = eta / _PL_H  # alpha = eta / H keeps the branching ratio
+    return tuple((float(r[0]), float(r[1]), float(r[2])) for r in k)
+
+
+_PL = _kernel_pl(
+    {
+        (0, 0): 0.40,
+        (1, 1): 0.50,
+        (2, 2): 0.40,
+        (1, 2): 2.50,
+        (1, 0): 0.30,
+        (2, 0): 0.15,
+    }
+)
 # Adds the measured feed-forward structure: executions trigger cancel
 # retreats (MO->CXL) and re-quote submissions (MO->LO); cancels feed the
 # re-quote cycle (CXL->LO). Feed-forward edges cannot create runaway
@@ -166,6 +198,16 @@ def hawkes_clock_bench(*, horizon: float = 4000.0, seed: int = 7) -> dict[str, A
                 horizon,
             ),
         },
+        {
+            "name": "hawkes_powerlaw",
+            **_run_arm(
+                replace(
+                    base,
+                    hawkes=HawkesClockSpec(_PL, BETA, rates=_PL_RATES, bank_weights=_PL_WEIGHTS),
+                ),
+                horizon,
+            ),
+        },
     ]
     # Committed real-tape targets (event_burst / cancel_cluster receipts).
     real_B_all = 0.8617
@@ -203,6 +245,9 @@ def hawkes_clock_bench(*, horizon: float = 4000.0, seed: int = 7) -> dict[str, A
             "cross_excitation_produces_retreat": bool(
                 arms[2]["post_mo_cxl_lift"]["lift"] > arms[0]["post_mo_cxl_lift"]["lift"] + 0.5
             ),
+            "powerlaw_spread_smooths_bursts": bool(
+                float(arms[3]["all"]["burstiness_B"]) < float(arms[2]["all"]["burstiness_B"])
+            ),
         },
         "interpretation": (
             "The homogeneous Poisson clock is measurably memoryless "
@@ -210,13 +255,17 @@ def hawkes_clock_bench(*, horizon: float = 4000.0, seed: int = 7) -> dict[str, A
             "(B=0.86). A self-exciting Hawkes clock makes event "
             "clustering and post-execution cancel retreats expressible "
             "in the sim — the cross-excited arm reproduces the retreat "
-            "signature (lift ~4 vs real ~6.5). Residual magnitude gaps "
-            "vs the tape are logged as divergences, not tuned away: a "
-            "single shared exponential decay cannot simultaneously "
-            "produce the sharp 0.5 s retreat and the long clustering "
-            "tail, pointing to heavy-tail (power-law) kernels as the "
-            "next mechanism. Branching ratios (eta) are declared per "
-            "edge; the kernel is sub-critical by construction."
+            "signature (lift ~4 vs real ~6.5). The power-law arm "
+            "yields a non-obvious negative result: at fixed branching "
+            "ratio, spreading each jump across decay-bank timescales "
+            "SMOOTHS the intensity — B falls even though the memory "
+            "tail lengthens — because burst height, not tail mass, "
+            "drives the Goh-Barabasi statistic. Closing the residual "
+            "gap (B ~0.4 vs 0.86) likely requires non-Markovian "
+            "baseline modulation (session-level rate regimes on the "
+            "clock itself), not fatter kernels. Branching ratios (eta) "
+            "are declared per edge; kernels are sub-critical by "
+            "construction."
         ),
     }
     payload["git_revision"] = git_revision()
