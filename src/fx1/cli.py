@@ -516,14 +516,27 @@ def sbom_generate(
 def mrm_dossier(
     modelcard: Path = typer.Option(..., help="Model card JSON."),
     validation_artifact: Path = typer.Option(..., help="Contamination report JSON."),
+    artifact: list[str] | None = typer.Option(
+        None,
+        "--artifact",
+        help="Extra activity evidence as activity=path (repeatable; "
+        "development/implementation/monitoring/governance).",
+    ),
     out: Path = typer.Option(Path("data/fx1/mrm_dossier.json")),
 ) -> None:
     """Compile the five-activity model-risk dossier (SR 26-2 era)."""
     from fx1.mrm import compile_dossier
 
+    artifacts: dict[str, str | Path] = {"validation": validation_artifact}
+    for spec in artifact or []:
+        name, sep, path = spec.partition("=")
+        if not sep or not name or not path:
+            raise typer.BadParameter("--artifact expects activity=path")
+        artifacts[name] = path
+
     dossier = compile_dossier(
         modelcard_path=modelcard,
-        artifacts={"validation": validation_artifact},
+        artifacts=artifacts,
         out_path=out,
     )
     typer.echo(
