@@ -533,6 +533,14 @@ from quant_fund.research.benches_w67 import (
     bench_state_dependent_lp,
     bench_synthetic_likelihood,
 )
+from quant_fund.research.benches_w68 import (
+    bench_functional_pca,
+    bench_mala,
+    bench_particle_gibbs,
+    bench_ripley_k,
+    bench_synchrosqueezing,
+    bench_vix_replication,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2486,6 +2494,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "state_dependent_lp": bench_state_dependent_lp(),
         "moment_inequalities": bench_moment_inequalities(),
         "euler_risk": bench_euler_risk(),
+        "vix_replication": bench_vix_replication(),
+        "mala": bench_mala(),
+        "functional_pca": bench_functional_pca(),
+        "particle_gibbs": bench_particle_gibbs(),
+        "ripley_k": bench_ripley_k(),
+        "synchrosqueezing": bench_synchrosqueezing(),
     }
 
     hyps = _build_hypotheses(families, rankers)

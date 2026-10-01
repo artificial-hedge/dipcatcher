@@ -1682,3 +1682,45 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
     #717/#720/#723 land.
 note: canon PR to follow.
+---
+owner: devin (wave 68 canon)
+slice: >-
+  src/quant_fund/models/{vix_replication,mala,functional_pca,
+  particle_gibbs,ripley_k,synchrosqueezing}.py + tests,
+  research/benches_w68.py, registry/agent wiring,
+  tests/unit/research/test_benches_w68.py
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - Lanes on devin/w68-lanes (5c8cf61a): six new models, all
+    score=1.0 SYNTHETIC benches, 37 unit tests green:
+    vix_replication.py (Demeterfi OTM-strip variance-swap
+    replication, put-call-parity forward, Andersen-Bondarenko
+    corridor strike; BS-surface recovery sig_err 2e-4),
+    mala.py (Roberts-Tweedie MALA + ULA + RWM baseline;
+    correlated-Gaussian moments err 0.03, acceptance 0.81 vs
+    RWM 0.58 at matched step), functional_pca.py (Ramsay-
+    Silverman trapezoid-weighted KL decomposition, scores,
+    FVE; Brownian eigenvalues lam_err 0.021, phi1_err 3e-4,
+    FVE1 0.81), particle_gibbs.py (Andrieu-Doucet-Holenstein
+    conditional SMC with pinned reference ancestor + PMMH
+    marginal-likelihood parameter update via bootstrap filter
+    with common random numbers; path-mean vs Kalman-smoother
+    corr 0.86, 80%-band coverage 0.74, phi err 0.06),
+    ripley_k.py (Ripley K/L with isotropic edge correction,
+    Matern cluster generator, Monte-Carlo CSR envelopes;
+    CSR dev 0.038 < cluster dev 0.076, envelope containment
+    0.83/1.0), synchrosqueezing.py (Daubechies-Lu-Wu Morlet
+    CWT phase transform + frequency reallocation, ridge
+    extraction; linear-chirp IF err 0.0014, energy
+    concentration 0.997).
+  - benches_w68.py: +396..401 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "vix_replication","mala","functional_pca",
+    "particle_gibbs","ripley_k","synchrosqueezing" (362->368);
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w68.
+  - Canon staged on top of w67-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
+    #717/#720/#723/#725 land.
+note: canon PR to follow.

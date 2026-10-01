@@ -876,6 +876,28 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "state_dependent_lp",
         "moment_inequalities",
         "euler_risk",
+        # Wave 68 — Demeterfi variance-swap
+        # replication (OTM-strip quadrature,
+        # Andersen-Bondarenko corridor IV),
+        # Roberts-Tweedie MALA/ULA Langevin
+        # MCMC with optimal-scaling acceptance
+        # advantage, Ramsay-Silverman
+        # trapezoid-weighted FPCA (Karhunen-
+        # Loeve eigenpairs, FVE), Andrieu-
+        # Doucet-Holenstein particle Gibbs
+        # (conditional SMC + PMMH marginal
+        # parameter update), Ripley K/L
+        # second-order clustering with
+        # Monte-Carlo CSR envelopes, and
+        # Daubechies-Lu-Wu synchrosqueezed
+        # wavelet ridges. Same SYNTHETIC
+        # diagnostic contract.
+        "vix_replication",
+        "mala",
+        "functional_pca",
+        "particle_gibbs",
+        "ripley_k",
+        "synchrosqueezing",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
