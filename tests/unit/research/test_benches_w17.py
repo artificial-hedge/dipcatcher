@@ -112,6 +112,13 @@ def test_families_registered_as_optional() -> None:
         assert fam in OPTIONAL_BENCHMARK_FAMILIES
 
 
+def test_w16_families_registered_as_optional() -> None:
+    # The wave-16 registry block landed on main with the w16 benches; these
+    # assertions pin it here since the w17 test file owns the w16 wiring check.
+    for fam in ("vol_loss_decomposition", "hierarchical_conformal", "multisource_conformal"):
+        assert fam in OPTIONAL_BENCHMARK_FAMILIES
+
+
 @pytest.mark.parametrize("blob_name", list(_NUMPY_BLOBS))
 def test_numpy_blobs_are_clean_and_finite(blob_name: str, request: pytest.FixtureRequest) -> None:
     blob = request.getfixturevalue(blob_name)
