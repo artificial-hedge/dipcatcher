@@ -428,6 +428,22 @@ class ZILobConfig:
     # knob is on the ref path consumes ONE extra uniform for the mixture
     # pick; both at 0 stays bit-identical (no extra draw).
     place_join_frac: float = 0.0
+    # ``crown_stack_frac`` ∈ [0, 1]: probability an LO arrival stacks
+    # into the near-touch crown — buys land on ``[bb - crown_stack_span,
+    # bb]``, sells on ``[ba, ba + crown_stack_span]`` — instead of the
+    # default anchor draw. The tape carries ~21% of visible top-10
+    # depth within 3 ticks of each touch (crown_density.v1); the sim's
+    # arms reach only 3-11%, and the wide book's emptied-touch reveal
+    # overshoots (6.9 vs 3.8 ticks) because nothing rests in the crown.
+    # 0 is bit-identical (no extra draws). On the ``anchor="ref"`` path
+    # the crown slice joins the ``u_mix`` partition; on the touch-anchor
+    # path it is drawn (one extra uniform) only when nonzero, between
+    # the chase marker and the improve slice.
+    crown_stack_frac: float = 0.0
+    # ``crown_stack_span`` >= 0: depth (ticks behind the own touch) of
+    # the crown band. Level is uniform on the closed span, so span 0
+    # degenerates to join-the-touch.
+    crown_stack_span: int = 3
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -637,6 +653,9 @@ class ZILobConfig:
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
         _prob(self.lo_improve_frac, "lo_improve_frac")
         _prob(self.place_join_frac, "place_join_frac")
+        _prob(self.crown_stack_frac, "crown_stack_frac")
+        if isinstance(self.crown_stack_span, bool) or int(self.crown_stack_span) < 0:
+            raise ValueError(f"crown_stack_span must be an int >= 0, got {self.crown_stack_span!r}")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
@@ -1136,6 +1155,7 @@ class ZILobSimulator:
         self.n_lo_improve = 0
         self.n_lo_join = 0
         self.n_hidden_fills = 0
+        self.n_lo_crown = 0
         self.n_touch_pulls = 0
         self.n_hit_flees = 0
         self.n_cxl_touch = 0
@@ -1369,6 +1389,7 @@ class ZILobSimulator:
             ),
             "n_lo_improve": self.n_lo_improve,
             "n_lo_join": self.n_lo_join,
+            "n_lo_crown": self.n_lo_crown,
             "n_hidden_fills": self.n_hidden_fills,
             "n_touch_pulls": self.n_touch_pulls,
             "n_hit_flees": self.n_hit_flees,
@@ -1856,14 +1877,21 @@ class ZILobSimulator:
             # Mixture head (join/improve/stack): the pick consumes ONE
             # extra uniform and only when a mixture knob is on — both at
             # 0 keeps the ref path bit-identical.
-            u_mix = (
-                self._rng.random()
-                if (self._cfg.place_join_frac > 0.0 or self._cfg.lo_improve_frac > 0.0)
-                else 1.0
+            mix_on = (
+                self._cfg.place_join_frac > 0.0
+                or self._cfg.lo_improve_frac > 0.0
+                or self._cfg.crown_stack_frac > 0.0
             )
+            u_mix = self._rng.random() if mix_on else 1.0
             want_join = u_mix < self._cfg.place_join_frac
             want_imp = (
                 not want_join and u_mix < self._cfg.place_join_frac + self._cfg.lo_improve_frac
+            )
+            want_crown = (
+                not want_join
+                and not want_imp
+                and u_mix
+                < self._cfg.place_join_frac + self._cfg.lo_improve_frac + self._cfg.crown_stack_frac
             )
             if want_buy:
                 chase = self._unhit_chase("buy")
@@ -1874,6 +1902,9 @@ class ZILobSimulator:
                     level = chase
                 elif want_join and bb is not None:
                     level = bb
+                elif want_crown and bb is not None:
+                    level = bb - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                    self.n_lo_crown += 1
                 elif want_imp and ba is not None and bb is not None and ba - bb > 1:
                     level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
                 else:
@@ -1903,6 +1934,9 @@ class ZILobSimulator:
                 level = chase
             elif want_join and ba is not None:
                 level = ba
+            elif want_crown and ba is not None:
+                level = ba + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                self.n_lo_crown += 1
             elif want_imp and ba is not None and bb is not None and ba - bb > 1:
                 level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
             else:
@@ -1932,6 +1966,9 @@ class ZILobSimulator:
         if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
             off += int(round(self._cfg.lo_offset_gain * self._hawkes.excitation(1)))
         imp = self._cfg.lo_improve_frac > 0.0 and self._rng.random() < self._cfg.lo_improve_frac
+        want_crown = (
+            self._cfg.crown_stack_frac > 0.0 and self._rng.random() < self._cfg.crown_stack_frac
+        )
         if want_buy:
             chase = self._unhit_chase("buy")
             if chase is None:
@@ -1939,6 +1976,9 @@ class ZILobSimulator:
             chased = chase is not None
             if chase is not None:
                 level = chase
+            elif want_crown and bb is not None:
+                level = bb - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                self.n_lo_crown += 1
             elif imp and ba is not None and bb is not None and ba > bb:
                 level = bb + int(self._rng.random() * (ba - bb))
             else:
@@ -1966,6 +2006,9 @@ class ZILobSimulator:
             chased = chase is not None
             if chase is not None:
                 level = chase
+            elif want_crown and ba is not None:
+                level = ba + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                self.n_lo_crown += 1
             elif imp and ba is not None and bb is not None and ba > bb:
                 level = ba - int(self._rng.random() * (ba - bb))
             else:

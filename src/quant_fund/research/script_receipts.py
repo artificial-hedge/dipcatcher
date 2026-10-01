@@ -413,6 +413,7 @@ _MEASUREMENT_SCHEMAS = (
     "closure_stack.v1",
     "continuation_attr.v1",
     "crown_density.v1",
+    "crown_join.v1",
     "cxl_shield.v1",
     "deep_book_bench.v1",
     "deep_microprice.v1",
