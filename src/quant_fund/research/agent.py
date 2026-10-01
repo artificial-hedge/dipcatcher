@@ -348,6 +348,14 @@ from quant_fund.research.benches_w44 import (
     bench_pin_model,
     bench_storey_fdr,
 )
+from quant_fund.research.benches_w45 import (
+    bench_barrett_donald,
+    bench_conley_se,
+    bench_driscoll_kraay,
+    bench_lee_bounds,
+    bench_pesaran_cce,
+    bench_wald_sprt,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2162,6 +2170,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "oster_bounds": bench_oster_bounds(),
         "storey_fdr": bench_storey_fdr(),
         "kiefer_vogelsang": bench_kiefer_vogelsang(),
+        "conley_se": bench_conley_se(),
+        "driscoll_kraay": bench_driscoll_kraay(),
+        "pesaran_cce": bench_pesaran_cce(),
+        "wald_sprt": bench_wald_sprt(),
+        "lee_bounds": bench_lee_bounds(),
+        "barrett_donald": bench_barrett_donald(),
     }
 
     hyps = _build_hypotheses(families, rankers)

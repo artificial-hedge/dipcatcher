@@ -502,6 +502,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oster_bounds",
         "storey_fdr",
         "kiefer_vogelsang",
+        # wave 45 — Conley spatial HAC, Driscoll-Kraay panel SEs,
+        # Pesaran CCE common-factors, Wald SPRT sequential test,
+        # Lee bounds on selection, Barrett-Donald dominance KS.
+        # Same SYNTHETIC diagnostic contract.
+        "conley_se",
+        "driscoll_kraay",
+        "pesaran_cce",
+        "wald_sprt",
+        "lee_bounds",
+        "barrett_donald",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
