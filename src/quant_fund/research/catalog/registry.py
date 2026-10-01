@@ -1155,6 +1155,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "epps_singleton",
         "watson",
         "energy_test",
+        # wave 81 — Mosimann (1962) /
+        # Minka (2000) Dirichlet-
+        # multinomial, Banerjee (2005)
+        # vMF mixture EM, Freimer-
+        # Mudholkar-Kollia-Lin (1988)
+        # GLD + King-MacGillivray
+        # (1999) starship, Tukey (1977)
+        # g-and-h letter values,
+        # Robbins-Monro (1951) /
+        # Kiefer-Wolfowitz (1952) /
+        # Spall (1992) stochastic
+        # approximation, and von
+        # Neumann (1949) / Dykstra
+        # (1983) / Douglas-Rachford
+        # (1956) convex projections.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "dirichlet_multinomial",
+        "vonmises_fisher",
+        "fkml",
+        "gandh",
+        "robbins_monro",
+        "pocs",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

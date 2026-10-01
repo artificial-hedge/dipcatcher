@@ -2062,3 +2062,28 @@ detail: |
   - Canon staged on top of w79-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+
+---
+owner: devin (wave 81 canon)
+slice: six models lanes + benches_w81 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: dirichlet_multinomial.py
+    (Mosimann 1962 MoM + Minka 2000 fixed-point/Newton
+    MLE), vonmises_fisher.py (Banerjee 2005 movMF soft-EM,
+    Sra 2012 A_p^-1 Newton + Ulrich-Wood sampler),
+    fkml.py (FKML 1988 generalized lambda, linearized
+    quantile regression + King-MacGillivray starship),
+    gandh.py (Tukey 1977 g-and-h, Hoaglin letter values,
+    Gauss-Hermite moments), robbins_monro.py (RM 1951,
+    Polyak-Ruppert 1992, Kiefer-Wolfowitz 1952, SPSA
+    Spall 1992), pocs.py (von Neumann 1949 AP, Dykstra
+    1983 corrected AP, Douglas-Rachford 1956).
+  - benches_w81.py: +474..479 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "dirichlet_multinomial",
+    "vonmises_fisher","fkml","gandh","robbins_monro",
+    "pocs" (440->446); agent.py wiring; tests: 6 module
+    files + test_benches_w81 (42 tests total).
+  - Canon staged on top of w80-canon.
+note: canon PR to follow.

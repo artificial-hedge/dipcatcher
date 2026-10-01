@@ -637,6 +637,14 @@ from quant_fund.research.benches_w80 import (
     bench_rmst,
     bench_watson,
 )
+from quant_fund.research.benches_w81 import (
+    bench_dirichlet_multinomial,
+    bench_fkml,
+    bench_gandh,
+    bench_pocs,
+    bench_robbins_monro,
+    bench_vonmises_fisher,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2668,6 +2676,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "epps_singleton": bench_epps_singleton(),
         "watson": bench_watson(),
         "energy_test": bench_energy_test(),
+        "dirichlet_multinomial": bench_dirichlet_multinomial(),
+        "vonmises_fisher": bench_vonmises_fisher(),
+        "fkml": bench_fkml(),
+        "gandh": bench_gandh(),
+        "robbins_monro": bench_robbins_monro(),
+        "pocs": bench_pocs(),
     }
 
     hyps = _build_hypotheses(families, rankers)
