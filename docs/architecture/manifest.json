@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1159,
+  "module_count": 1160,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -6057,6 +6057,10 @@
     {
       "dst": "quant_fund.utils.numeric",
       "src": "quant_fund.models.count"
+    },
+    {
+      "dst": "quant_fund.models.quest",
+      "src": "quant_fund.models.covariance"
     },
     {
       "dst": "quant_fund.models.volatility",
@@ -13037,6 +13041,7 @@
     "quant_fund.models.qrf",
     "quant_fund.models.quantile_bandit",
     "quant_fund.models.quantile_forest",
+    "quant_fund.models.quest",
     "quant_fund.models.qvar",
     "quant_fund.models.random_projection",
     "quant_fund.models.ranking",
@@ -14635,7 +14640,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 110,
+      "imports": 111,
       "src": "quant_fund.models"
     },
     {

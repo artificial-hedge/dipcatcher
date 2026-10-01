@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 248,
+      "n_modules": 249,
       "status": "audited"
     },
     "monitoring": {
