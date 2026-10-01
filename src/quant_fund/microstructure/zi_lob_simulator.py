@@ -689,6 +689,8 @@ class ZILobSimulator:
         # Cancel-distance histogram: bucket d counts cancels d ticks
         # from that side's touch; index 20 collects the tail.
         self.cxl_dist = [0] * 21
+        # Age (seconds) of each canceled order at removal.
+        self.cxl_ages: list[float] = []
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -1076,11 +1078,12 @@ class ZILobSimulator:
             ta = len(self._asks[ba]) if ba is not None else 0
             draw = float(self._rng.random()) * (tb + ta)
             if draw < tb and bb is not None:
-                self._remove_resting_at(self._bids, bb, 0)
+                order = self._remove_resting_at(self._bids, bb, 0)
             elif ba is not None:
-                self._remove_resting_at(self._asks, ba, 0)
+                order = self._remove_resting_at(self._asks, ba, 0)
             else:  # pragma: no cover - touch depth bookkeeping invariant
                 raise RuntimeError("touch cancel on an empty book")
+            self.cxl_ages.append(self.t - order.t_submit)
             self.n_cancellations += 1
             self.n_cxl_touch += 1
             self.cxl_dist[0] += 1
@@ -1100,7 +1103,8 @@ class ZILobSimulator:
         if level is None:  # pragma: no cover - depth accounting invariant
             raise RuntimeError("cancellation sampling missed the book")
         touch = max(book) if book is self._bids else min(book)
-        self._remove_resting_at(book, level, idx)
+        order = self._remove_resting_at(book, level, idx)
+        self.cxl_ages.append(self.t - order.t_submit)
         self.n_cancellations += 1
         dist = abs(level - touch)
         self.cxl_dist[min(dist, 20)] += 1

@@ -417,6 +417,7 @@ _MEASUREMENT_SCHEMAS = (
     "lob_exec.v1",
     "lob_resilience.v1",
     "marketable_limit.v1",
+    "maker_age.v1",
     "metaorder_detect.v1",
     "mid_jump.v1",
     "order_lifetime.v1",
