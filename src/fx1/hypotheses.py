@@ -98,7 +98,10 @@ _ALLOWED_SCORE_TOKENS = frozenset(
 def validate_trace_scores(scores: dict[str, float]) -> None:
     """Fail-closed: every score key must contain an allowed proper-score token."""
     for key, value in scores.items():
-        tokens = set(key.lower().replace("-", "_").split("_"))
+        norm = key.lower().replace("-", "_")
+        # Compound allowlist tokens (e.g. rank_ic) match the normalized whole
+        # key; the split tokens alone can never produce them.
+        tokens = set(norm.split("_")) | {norm}
         if tokens & FORBIDDEN_HEADLINE_TOKENS:
             raise ValueError(
                 f"score key {key!r} is a forbidden headline metric, not a "
