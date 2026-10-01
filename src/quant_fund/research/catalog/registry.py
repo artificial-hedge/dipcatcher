@@ -332,6 +332,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "callaway_did",
         "surrogate_nonlinear",
         "sindy",
+        # SOTA canon wave 29 batteries (see research/benches_w29.py):
+        # Hamiltonian Monte Carlo + NUTS with dual-averaging adaptation
+        # and ESS/Rhat diagnostics, proxy-SVAR external-instrument IRFs
+        # with weak-IV first-stage F and Uhlig sign restrictions,
+        # simulation-based inference (ABC rejection, SMC-ABC, neural
+        # ratio estimation), recurrence quantification analysis
+        # (DET/LAM/ENTR/TT), Hansen-Jagannathan SDF distance + KRS
+        # pricing-error test + MV bound, CP/Tucker multilinear tensor
+        # decomposition with CORCONDIA + missing-entry EM. Same
+        # SYNTHETIC diagnostic contract.
+        "hmc",
+        "proxy_svar",
+        "sbi",
+        "rqa",
+        "hj_distance",
+        "tensor_decomp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
