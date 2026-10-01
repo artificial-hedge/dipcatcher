@@ -494,6 +494,18 @@ class ZILobConfig:
     hit_refill_damp: float = 0.0
     hit_refill_band: int = 0
     hit_refill_window: int = 0
+    # ``hit_flee_frac`` ∈ [0, 1]: for ``hit_flee_window`` events after a
+    # fill, EVERY event fires one extra cancel with this probability on a
+    # resting HIT-side order within ``hit_flee_band`` levels of that
+    # side's touch. The tape's post-exec retreat is a real cancel surge —
+    # 5-7x baseline for ~0.5s (cancel_cluster.v1) — and it is what lets
+    # an emptied touch reveal a multi-tick gap (touch_follow.v1): when
+    # the crown behind the touch stays put the reveal is capped at one
+    # tick (sim instant_given_empty 1.03 vs tape 1.88). 0 keeps every
+    # path bit-identical; the marker gains a ``flee_until`` field.
+    hit_flee_frac: float = 0.0
+    hit_flee_band: int = 0
+    hit_flee_window: int = 0
     # ``unhit_step_ticks`` > 0: while the marker's step window is live, an
     # LO arrival landing on the UNHIT side is shifted toward the touch by
     # up to ``unhit_step_ticks`` ticks, capped one tick inside the
@@ -638,6 +650,7 @@ class ZILobConfig:
         if isinstance(self.cxl_unhit_window, bool) or int(self.cxl_unhit_window) < 0:
             raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
         _prob(self.hit_refill_damp, "hit_refill_damp")
+        _prob(self.hit_flee_frac, "hit_flee_frac")
         _prob(self.unhit_imp_frac, "unhit_imp_frac")
         _prob(self.vac_chase_frac, "vac_chase_frac")
         _prob(self.chase_release, "chase_release")
@@ -646,6 +659,8 @@ class ZILobConfig:
         for _name in (
             "hit_refill_band",
             "hit_refill_window",
+            "hit_flee_band",
+            "hit_flee_window",
             "unhit_step_ticks",
             "unhit_step_window",
             "unhit_imp_window",
@@ -1122,6 +1137,7 @@ class ZILobSimulator:
         self.n_lo_join = 0
         self.n_hidden_fills = 0
         self.n_touch_pulls = 0
+        self.n_hit_flees = 0
         self.n_cxl_touch = 0
         self.n_requotes = 0
         # Cancel-distance histogram: bucket d counts cancels d ticks
@@ -1196,7 +1212,7 @@ class ZILobSimulator:
         # of the last fill; a deadline of n_events means that channel off.
         # (hit_side, narrow_until, relief_until, fill_event) — the fill's
         # n_events lets damp_decay compute elapsed time.
-        self._hit_retreat: tuple[str, int, int, int, int, int, int] | None = None
+        self._hit_retreat: tuple[str, int, int, int, int, int, int, int] | None = None
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1355,6 +1371,7 @@ class ZILobSimulator:
             "n_lo_join": self.n_lo_join,
             "n_hidden_fills": self.n_hidden_fills,
             "n_touch_pulls": self.n_touch_pulls,
+            "n_hit_flees": self.n_hit_flees,
             "n_cxl_touch": self.n_cxl_touch,
             "n_requotes": self.n_requotes,
             "n_dark_placed": self.n_dark_placed,
@@ -1496,7 +1513,7 @@ class ZILobSimulator:
         damp = self._cfg.hit_refill_damp
         if damp <= 0.0 or self._hit_retreat is None:
             return False
-        hit_side, _n_u, _r_u, _fe, s_until, _t_u, _i_u = self._hit_retreat
+        hit_side, _n_u, _r_u, _fe, s_until, _t_u, _i_u, _f_u = self._hit_retreat
         if side != hit_side or self.n_events >= s_until:
             return False
         book = self._asks if side == "sell" else self._bids
@@ -1515,7 +1532,7 @@ class ZILobSimulator:
         step = self._cfg.unhit_step_ticks
         if step <= 0 or self._hit_retreat is None:
             return level
-        hit_side, _n_u, _r_u, _fe, _s_u, t_until, _i_u = self._hit_retreat
+        hit_side, _n_u, _r_u, _fe, _s_u, t_until, _i_u, _f_u = self._hit_retreat
         if side == hit_side or self.n_events >= t_until:
             return level
         if side == "buy":
@@ -1523,6 +1540,48 @@ class ZILobSimulator:
             return level if ba is None else min(level + step, ba - 1)
         bb = self.best_bid_level
         return level if bb is None else max(level - step, bb + 1)
+
+    def _hit_flee(self) -> None:
+        """Post-fill cancel surge on the HIT side's near-touch depth.
+
+        While the marker's flee window is live, each event fires one
+        extra cancel with probability ``hit_flee_frac`` on a resting
+        hit-side order within ``hit_flee_band`` levels of that side's
+        touch — the tape's measured post-exec retreat (5-7x baseline
+        cancel rate for ~0.5s). Fleeing near-touch depth is what leaves
+        an emptied touch revealing a multi-tick gap instead of an
+        adjacent successor. Draws its trigger uniform only when the knob
+        is on and the window is live; the pick uniform only when the
+        band is non-empty — at 0 the RNG stream is untouched."""
+        frac = self._cfg.hit_flee_frac
+        if frac <= 0.0 or self._hit_retreat is None:
+            return
+        hit_side, _n_u, _r_u, _fe, _s_u, _t_u, _i_u, f_until = self._hit_retreat
+        if self.n_events >= f_until:
+            return
+        book = self._asks if hit_side == "sell" else self._bids
+        if not book:
+            return
+        if float(self._rng.random()) >= frac:
+            return
+        touch = min(book) if book is self._asks else max(book)
+        band = self._cfg.hit_flee_band
+        cands: list[tuple[int, int]] = []
+        for lvl, dq in book.items():
+            if abs(lvl - touch) <= band:
+                for idx in range(len(dq)):
+                    cands.append((lvl, idx))
+        if not cands:  # pragma: no cover - banded zone nonempty when book nonempty
+            return
+        lvl, idx = cands[int(self._rng.integers(len(cands)))]
+        order = self._remove_resting_at(book, lvl, idx)
+        self.cxl_ages.append(self.t - order.t_submit)
+        self.n_cancellations += 1
+        self.n_hit_flees += 1
+        d_hit = abs(lvl - touch)
+        self.cxl_dist[min(d_hit, 20)] += 1
+        if d_hit == 0:
+            self.n_cxl_touch += 1
 
     def _unhit_chase(self, side: Side) -> int | None:
         """Reroute an unhit-side arrival to the chase level (one tick
@@ -1533,7 +1592,7 @@ class ZILobSimulator:
         frac = self._cfg.unhit_imp_frac
         if frac <= 0.0 or self._hit_retreat is None:
             return None
-        hit_side, _n_u, _r_u, _fe, _s_u, _t_u, i_until = self._hit_retreat
+        hit_side, _n_u, _r_u, _fe, _s_u, _t_u, i_until, _f_u = self._hit_retreat
         if side == hit_side or self.n_events >= i_until:
             return None
         if float(self._rng.random()) >= frac:
@@ -1604,7 +1663,8 @@ class ZILobSimulator:
         sw = self._cfg.hit_refill_window if self._cfg.hit_refill_damp > 0.0 else 0
         tw = self._cfg.unhit_step_window if self._cfg.unhit_step_ticks > 0 else 0
         iw = self._cfg.unhit_imp_window if self._cfg.unhit_imp_frac > 0.0 else 0
-        if nw or rw or sw or tw or iw:
+        fw = self._cfg.hit_flee_window if self._cfg.hit_flee_frac > 0.0 else 0
+        if nw or rw or sw or tw or iw or fw:
             # Hit side = the side the aggressor consumed (resting side).
             hit = "sell" if aggressor == "buy" else "buy"
             self._hit_retreat = (
@@ -1615,6 +1675,7 @@ class ZILobSimulator:
                 self.n_events + sw,
                 self.n_events + tw,
                 self.n_events + iw,
+                self.n_events + fw,
             )
 
     def _consume_best(self, aggressor: Side) -> TradeEvent | None:
@@ -1737,8 +1798,17 @@ class ZILobSimulator:
         # Post-fill narrowing: while the marker is live, placements on the
         # unhit side clamp to near-touch distance (accommodation channel).
         if self._hit_retreat is not None:
-            hit_side, n_until, r_until, _fill_ev, s_until, t_until, i_until = self._hit_retreat
-            if self.n_events >= max(n_until, r_until, s_until, t_until, i_until):
+            (
+                hit_side,
+                n_until,
+                r_until,
+                _fill_ev,
+                s_until,
+                t_until,
+                i_until,
+                f_until,
+            ) = self._hit_retreat
+            if self.n_events >= max(n_until, r_until, s_until, t_until, i_until, f_until):
                 self._hit_retreat = None
             elif self.n_events < n_until and (
                 (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy")
@@ -1957,7 +2027,7 @@ class ZILobSimulator:
             return
         relief = self._cfg.cxl_unhit_relief
         if relief > 0.0 and self._hit_retreat is not None:
-            hit_side, _n_until, r_until, _fill_ev, _s_u, _t_u, _i_u = self._hit_retreat
+            hit_side, _n_until, r_until, _fill_ev, _s_u, _t_u, _i_u, _f_u = self._hit_retreat
             if self.n_events >= r_until:
                 pass  # marker stays for hit_narrow; relief expired
             elif float(self._rng.random()) < relief:
@@ -2045,7 +2115,7 @@ class ZILobSimulator:
             book, idx = self._asks, k - bid_d
         damp = self._cfg.cxl_unhit_damp
         if damp > 0.0 and self._hit_retreat is not None:
-            hit_side, _n_u, r_until, fill_ev, _s_u, _t_u, _i_u = self._hit_retreat
+            hit_side, _n_u, r_until, fill_ev, _s_u, _t_u, _i_u, _f_u = self._hit_retreat
             unhit_book = self._bids if hit_side == "sell" else self._asks
             if self.n_events < r_until and book is unhit_book:
                 decay = self._cfg.cxl_unhit_damp_decay
@@ -2104,6 +2174,7 @@ class ZILobSimulator:
                 # EMA of the mid level; frozen (hl == 0) keeps the seed mid.
                 alpha = min(1.0, dt / hl)
                 self._ref_ema += alpha * (mid_level - self._ref_ema)
+        self._hit_flee()
         if kind == 0:
             self._limit_order_event()
             return "limit"
