@@ -97,18 +97,20 @@ def test_release_bench_seals_and_verifies(tmp_path: Path, monkeypatch: pytest.Mo
         frac: float,
         imp_window: int,
         release: float,
+        reprice: float,
         cxl_damp: float,
         cxl_window: int,
         *,
         horizon: int,
         seed: int,
     ) -> dict[str, Any]:
-        hit = release > 0.0 and cooldown > 0 and frac > 0.0
+        hit = release > 0.0 and reprice > 0.0 and cooldown > 0 and frac > 0.0
         return {
             "refill_cooldown": cooldown,
             "unhit_imp_frac": frac,
             "unhit_imp_window": imp_window,
             "chase_release": release,
+            "chase_reprice": reprice,
             "cxl_unhit_damp": cxl_damp,
             "cxl_unhit_window": cxl_window,
             "instant_signed_ticks": m._INSTANT_TAPE if hit else 0.0,
@@ -122,6 +124,7 @@ def test_release_bench_seals_and_verifies(tmp_path: Path, monkeypatch: pytest.Mo
     payload = release_chase_bench(horizon=500, seed=3)
     assert payload["schema"] == RELEASE_CHASE_SCHEMA
     assert payload["claims"]["joint_closure_exists"] is True
+    assert payload["claims"]["reprice_beats_delete"] is True
     out = tmp_path / "release_chase_test.json"
     out.write_text(json.dumps(payload))
     assert verify_receipt_file(out)["valid"]
@@ -141,6 +144,7 @@ def test_release_bench_zero_cell() -> None:
         "grid_evaluated",
         "release_preserves_lo",
         "release_recovers_instant",
+        "reprice_beats_delete",
         "cooldown_lifts_instant",
         "joint_closure_exists",
     }

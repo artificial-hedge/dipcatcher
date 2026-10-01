@@ -40,17 +40,21 @@ _INSTANT_TAPE = 0.887
 _K200_LAG = 200
 
 # (refill_cooldown, unhit_imp_frac, unhit_imp_window, chase_release,
-#  cxl_damp, cxl_window).
-_GRID: tuple[tuple[int, float, int, float, float, int], ...] = (
-    (0, 0.0, 0, 0.0, 0.0, 0),
-    (400, 0.0, 0, 0.0, 0.0, 0),
-    (0, 0.5, 200, 0.0, 0.0, 0),
-    (400, 0.5, 200, 0.0, 0.0, 0),
-    (400, 0.5, 200, 0.3, 0.0, 0),
-    (400, 0.5, 200, 0.6, 0.0, 0),
-    (300, 0.5, 200, 0.6, 0.0, 0),
-    (400, 0.5, 200, 0.9, 0.0, 0),
-    (400, 0.3, 200, 0.6, 0.5, 10),
+#  chase_reprice, cxl_damp, cxl_window).
+_GRID: tuple[tuple[int, float, int, float, float, float, int], ...] = (
+    (0, 0.0, 0, 0.0, 0.0, 0.0, 0),
+    (400, 0.0, 0, 0.0, 0.0, 0.0, 0),
+    (0, 0.5, 200, 0.0, 0.0, 0.0, 0),
+    (400, 0.5, 200, 0.0, 0.0, 0.0, 0),
+    (400, 0.5, 200, 0.3, 0.0, 0.0, 0),
+    (400, 0.5, 200, 0.6, 0.0, 0.0, 0),
+    (300, 0.5, 200, 0.6, 0.0, 0.0, 0),
+    (400, 0.5, 200, 0.9, 0.0, 0.0, 0),
+    (400, 0.5, 200, 0.6, 0.5, 0.0, 0),
+    (400, 0.5, 200, 0.6, 1.0, 0.0, 0),
+    (400, 0.5, 200, 0.3, 1.0, 0.0, 0),
+    (300, 0.5, 200, 0.3, 1.0, 0.0, 0),
+    (400, 0.3, 200, 0.6, 0.0, 0.5, 10),
 )
 
 
@@ -59,6 +63,7 @@ def _release_cell(
     frac: float,
     imp_window: int,
     release: float,
+    reprice: float,
     cxl_damp: float,
     cxl_window: int,
     *,
@@ -73,6 +78,7 @@ def _release_cell(
             "unhit_imp_frac": frac,
             "unhit_imp_window": imp_window,
             "chase_release": release,
+            "chase_reprice": reprice,
             "cxl_unhit_damp": cxl_damp,
             "cxl_unhit_window": cxl_window,
         },
@@ -135,6 +141,7 @@ def _release_cell(
         "unhit_imp_frac": frac,
         "unhit_imp_window": imp_window,
         "chase_release": release,
+        "chase_reprice": reprice,
         "cxl_unhit_damp": cxl_damp,
         "cxl_unhit_window": cxl_window,
         "n_fills": len(fills),
@@ -151,8 +158,8 @@ def _release_cell(
 def release_chase_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any]:
     """Scan the cooldown × release grid; verdict = joint closure."""
     cells = [
-        _release_cell(cd, f, iw, rel, cd2, cw, horizon=horizon, seed=seed + i)
-        for i, (cd, f, iw, rel, cd2, cw) in enumerate(_GRID)
+        _release_cell(cd, f, iw, rel, rp, cd2, cw, horizon=horizon, seed=seed + i)
+        for i, (cd, f, iw, rel, rp, cd2, cw) in enumerate(_GRID)
     ]
     base = cells[0]
 
@@ -180,6 +187,8 @@ def release_chase_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any
         for c in cells
         if c["unhit_imp_frac"] > 0.0 and c["chase_release"] > 0.0 and c["cxl_unhit_damp"] == 0.0
     ]
+    chase_reprice = [c for c in chase_rel if c["chase_reprice"] > 0.0]
+    chase_delete = [c for c in chase_rel if c["chase_reprice"] == 0.0]
     instant_benefit = any(
         (c["instant_signed_ticks"] or 0.0) > (base["instant_signed_ticks"] or 0.0) + 0.05
         for c in cd_rows
@@ -202,6 +211,20 @@ def release_chase_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any
             > max(c["instant_signed_ticks"] or 0.0 for c in chase_no_rel) + 0.05
         ),
         "cooldown_lifts_instant": bool(instant_benefit),
+        # Reprice beats delete: some repriced cell is strictly better on
+        # BOTH the recovered instant AND the LO lift than every pure-
+        # delete cell — the re-quote cycle preserves the mechanism.
+        "reprice_beats_delete": bool(
+            chase_reprice
+            and chase_delete
+            and any(
+                (c["instant_signed_ticks"] or 0.0)
+                >= max(d["instant_signed_ticks"] or 0.0 for d in chase_delete)
+                and (c["lo_channel_ticks"] or -99.0)
+                > max(d["lo_channel_ticks"] or -99.0 for d in chase_delete)
+                for c in chase_reprice
+            )
+        ),
         # The capstone: some cell lands all five channels in tolerance.
         "joint_closure_exists": bool(closers),
     }
@@ -235,6 +258,7 @@ def release_chase_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any
             "unhit_imp_frac": best["unhit_imp_frac"],
             "unhit_imp_window": best["unhit_imp_window"],
             "chase_release": best["chase_release"],
+            "chase_reprice": best["chase_reprice"],
             "cxl_unhit_damp": best["cxl_unhit_damp"],
             "instant_signed_ticks": best["instant_signed_ticks"],
             "k200_ticks": best["k200_ticks"],

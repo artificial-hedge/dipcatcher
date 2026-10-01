@@ -535,6 +535,13 @@ class ZILobConfig:
     # per cancel event only when the knob is on and chase orders exist;
     # 0 keeps every path bit-identical.
     chase_release: float = 0.0
+    # ``chase_reprice`` ∈ [0, 1]: the share of release picks that RE-SITE
+    # the chase order at the current chase level (one tick inside the
+    # spread, or the touch when spread == 1) instead of deleting it —
+    # the re-quote cycle: chased depth follows the recovering spread
+    # instead of pinning the touch or exiting. Draws one extra uniform
+    # per release pick only when nonzero; 0 = pure delete.
+    chase_reprice: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -624,6 +631,7 @@ class ZILobConfig:
         _prob(self.unhit_imp_frac, "unhit_imp_frac")
         _prob(self.vac_chase_frac, "vac_chase_frac")
         _prob(self.chase_release, "chase_release")
+        _prob(self.chase_reprice, "chase_reprice")
         for _name in (
             "hit_refill_band",
             "hit_refill_window",
@@ -1830,6 +1838,15 @@ class ZILobSimulator:
                 return
             chase_book = self._asks if chase_order.side == "sell" else self._bids
             chase_touch = min(chase_book) if chase_book is self._asks else max(chase_book)
+            reprice = self._cfg.chase_reprice
+            reprice_tgt: int | None = None
+            if reprice > 0.0 and float(self._rng.random()) < reprice:
+                bb_r, ba_r = self.best_bid_level, self.best_ask_level
+                if chase_order.side == "buy":
+                    if ba_r is not None and ba_r - 1 > chase_order.level:
+                        reprice_tgt = ba_r - 1
+                elif bb_r is not None and bb_r + 1 < chase_order.level:
+                    reprice_tgt = bb_r + 1
             chase_dq = chase_book[chase_order.level]
             self._remove_resting_at(chase_book, chase_order.level, chase_dq.index(oid))
             self.cxl_ages.append(self.t - chase_order.t_submit)
@@ -1838,7 +1855,10 @@ class ZILobSimulator:
             self.cxl_dist[min(d_hit, 20)] += 1
             if d_hit == 0:
                 self.n_cxl_touch += 1
-            self._maybe_requote(chase_order)
+            if reprice_tgt is not None:
+                self._rest(chase_order.side, reprice_tgt, "chase")
+            else:
+                self._maybe_requote(chase_order)
             return
         relief = self._cfg.cxl_unhit_relief
         if relief > 0.0 and self._hit_retreat is not None:
