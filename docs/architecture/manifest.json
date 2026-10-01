@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1155,
+  "module_count": 1156,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -11471,6 +11471,22 @@
       "src": "quant_fund.research.serial_watch"
     },
     {
+      "dst": "quant_fund.research.coverage_cs",
+      "src": "quant_fund.research.shift_conformal"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.shift_conformal"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.shift_conformal"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.shift_conformal"
+    },
+    {
       "dst": "quant_fund.metrics.inference",
       "src": "quant_fund.research.sota_evidence"
     },
@@ -13336,6 +13352,7 @@
     "quant_fund.research.selective_inference",
     "quant_fund.research.serial_watch",
     "quant_fund.research.shadow_journal",
+    "quant_fund.research.shift_conformal",
     "quant_fund.research.sota_evidence",
     "quant_fund.research.sota_protocol",
     "quant_fund.research.spa_test",
@@ -15172,7 +15189,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 243,
+      "imports": 245,
       "src": "quant_fund.research"
     },
     {
@@ -15187,7 +15204,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 82,
+      "imports": 84,
       "src": "quant_fund.research"
     },
     {
