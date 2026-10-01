@@ -1009,80 +1009,15 @@ wave 38 canon (devin/w38-canon-integration): control_function
   in-bounds 1.0 vs OLS .95) + interval_censoring (Turnbull med
   1.296 vs true 1.386, naive 1.2, ISE 2e-4)
   → PR stacked on w37 (199→205 families)
----
-owner: opencode (session resume)
-slice: OWNER CALLS CLOSE-OUT — commit, CLI wiring, mutation campaign
-status: COMPLETE 2026-09-30
-detail: |
-  - COMMIT waves 11-17: 5 commits on main. Wave 11-15 modules were already
-    committed by a concurrent session (waves 16-17 landed mid-handoff).
-    Working tree clean; purge-incident risk resolved.
-  - fx1 capability.py/CLI wiring: ALREADY DONE by the concurrent session.
-    capability-eval, ext-bench-eval, options-reasoning-eval all registered
-    in CLI; capability.py imports both ext_bench and options_reasoning_eval;
-    101 fx1 eval tests green (16+57+28). No further wiring needed.
-  - Full 210-mutant campaign on verify.py: RAN FOR REAL (--max-mutants 210,
-    seed 7, --pytest tests/unit/research/test_research_verify.py, ~9 min
-    serial). Catalog layer files generate zero mutants (data/constants-heavy;
-    no control-flow constructs reachable by the AST operator set) — the
-    "catalog" half of the original owner call has no mutants to test.
-
----
-owner: opencode (session resume)
-slice: FULL 210-MUTANT CAMPAIGN — prior close-out was a 50-sample, not full
-status: IN FLIGHT (final campaign running; 14/15 survivors closed)
-detail: |
-  FINDING (process bug, not a code bug): commit b329f95c7 claimed
-  "full 210-mutant campaign close-out — 99.52% (209 killed), sole survivor
-  proven equivalent". That figure was NOT full. scripts/mutation_test.py
-  defaults to DEFAULT_MAX_MUTANTS = 50, so the campaign silently ran a
-  50-mutant seed-7 SAMPLE. Verified by intersection: only 3 of the 15 real
-  survivors (M0031, M0142, M0200) fall inside that 50-sample; the other 12
-  were never executed. The INFLIGHT close-out note inherited the wrong
-  number. Any future campaign MUST pass --max-mutants explicitly (or the
-  operator must read the "N mutants available" vs "N sampled" line).
-
-  Genuinely-full baseline: 195/210 = 92.86%, 15 survivors, 0 errors.
-
-  15 survivors triaged into:
-  - 14 GENUINE TEST GAPS -> kill tests appended to
-    tests/unit/research/test_research_verify.py (each docstring names the
-    mutant id + line):
-      * M0031 + M0059 (line 195/196) _timestamp_valid non-str guard ->
-        non-string generated_at (mutant AttributeErrors on .strip()).
-      * M0106 (line 200) _timestamp_valid except-ValueError arm ->
-        unparseable timestamp string (mutant derefs unbound `parsed`).
-      * M0064 (line 249) notebook version/disclaimer/ranking_target guard.
-        data_source EXCLUDED: a non-string there also trips line 256, so it
-        cannot isolate this mutant.
-      * M0113 (line 313) hypothesis id guard; M0159 (line 323)
-        statement/test/decision guard.
-      * M0122 (line 386) runtime fingerprint field guard (prior runtime
-        tests only removed fields or set a package VERSION non-string).
-      * M0079 (line 389) empty packages dict {} -> error token shifts from
-        runtime_packages_missing to runtime_packages_missing_required.
-      * M0053 (line 179) _p_value_valid non-numeric arm (prior tests
-        covered numeric boundaries + None/NaN, never a non-numeric type).
-      * M0186 (line 902) unreadable-receipt stub valid=False -> corrupt JSON
-        file (no prior test fed malformed JSON).
-      * M0098 + M0100 + M0142 (lines 848/849/856) immutable-artifact path
-        ternary -> non-string immutable_json pointer (prior non-string test
-        covered immutable_markdown's pointer, a different ternary arm).
-      * M0200 (line 841) except-OSError fail-closed arm -> monkeypatch
-        Path.resolve to raise for the artifact filename only (patching the
-        whole method would break line 805's receipt_root computation).
-  - 1 PROVABLY EQUIVALENT -> M0032 (line 201) And->Or on
-    `parsed.tzinfo is not None and parsed.utcoffset() is not None`.
-    fromisoformat only yields fixed-offset tzinfo, whose utcoffset() is
-    never None when tzinfo is not None — no string input distinguishes the
-    arms. Already pinned by
-    test_timestamp_utcoffset_redundant_arm_is_documented_equivalent;
-    that docstring now records that the surrounding 99.52% figure came
-    from the capped 50-sample.
-note: 210 -> 225 tests. ruff check + format clean. Second full run scored
-  99.05% (208 killed, survivors M0032 + M0200); M0200 then closed by the
-  monkeypatch test (verified killed in isolation). Final full campaign
-  running to confirm 209/210.
+wave 39 canon (devin/w39-canon-integration): maximum_score
+  (direction cos .994, score .72 vs null .55) + sieve_estimation
+  (beta .801/.8, g corr .996, sieve r2 .98 vs linear .47) +
+  nested_logit (beta 1.35/1.2, lambda .62 nest corr detected) +
+  aft_model (beta -.45/-.5 under 35% censoring, naive err .16 vs
+  .05) + distance_covariance (dcor .485 vs pearson .002 on
+  quadratic, perm p .008) + panel_unitroot (IPS+LLC reject at
+  rho=.85, keep at rho=1.0: p .61/.83)
+  → PR stacked on w38 (205→211 families)
 wave 39 canon (devin/w39-canon-integration): maximum_score
   (direction cos .994, score .72 vs null .55) + sieve_estimation
   (beta .801/.8, g corr .996, sieve r2 .98 vs linear .47) +
