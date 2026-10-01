@@ -56,7 +56,7 @@ def test_bench_seals_and_verifies(tmp_path: Path) -> None:
     msg, ob = _write_tape(tmp_path, n=60)
     payload = depth_tilt_bench(tmp_path, "AMZN", horizon=400, seed=3)
     assert payload["schema"] == "depth_tilt.v1"
-    assert set(payload["sim_arms"]) == {"iid", "split", "lv_cd300", "lv_cd300_tilt"}
+    assert set(payload["sim_arms"]) == {"iid", "split", "lv_cd300", "lv_cd300_narrow"}
     receipt = tmp_path / "receipt.json"
     receipt.write_text(__import__("json").dumps(payload))
     result = verify_receipt_file(receipt)
@@ -97,3 +97,19 @@ def test_lo_tilt_zero_is_bit_identical() -> None:
     assert [(t.price, t.level, t.aggressor) for t in a.trades] == [
         (t.price, t.level, t.aggressor) for t in b.trades
     ]
+
+
+def test_hit_narrow_validation_and_marker() -> None:
+    from dataclasses import replace
+
+    from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator, santa_fe_config
+
+    for name, bad in (("hit_narrow_dist", -1), ("hit_narrow_window", -2)):
+        with pytest.raises(ValueError, match=name):
+            replace(santa_fe_config(), **{name: bad})
+
+    sim = ZILobSimulator(replace(santa_fe_config(seed=7), hit_narrow_dist=2, hit_narrow_window=40))
+    for _ in range(2000):
+        sim.step()
+    if sim.trades:
+        assert sim._hit_retreat is None or sim._hit_retreat[1] > sim.n_events - 1

@@ -368,6 +368,15 @@ class ZILobConfig:
     # consumes the same RNG).
     lo_tilt_gain: float = 0.0
     lo_tilt_decay: float = 0.0
+    # ``hit_narrow_dist`` >= 0: for ``hit_narrow_window`` events after a
+    # fill, LO placements on the *unhit* side clamp their placement
+    # distance to ``<= hit_narrow_dist`` — the tape's accommodation
+    # (depth_tilt.v1: after a buy fill the bid stays heavier ~100
+    # events) is the unhit side stacking near-touch, not a side-rate
+    # shift: global side bias lands mostly deep under the band law and
+    # barely registers at the touch. 0 disables bit-identically.
+    hit_narrow_dist: int = 0
+    hit_narrow_window: int = 0
     seed: int = 0
     # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
     # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
@@ -475,6 +484,10 @@ class ZILobConfig:
         d = self.lo_tilt_decay
         if isinstance(d, bool) or not math.isfinite(d) or d < 0.0 or d > 1.0:
             raise ValueError(f"lo_tilt_decay must be in [0, 1], got {d!r}")
+        for _name in ("hit_narrow_dist", "hit_narrow_window"):
+            _v = getattr(self, _name)
+            if isinstance(_v, bool) or int(_v) < 0:
+                raise ValueError(f"{_name} must be a non-negative int, got {_v!r}")
         if self.anchor not in ("touch", "ref"):
             raise ValueError(f"anchor must be 'touch' or 'ref', got {self.anchor!r}")
         if isinstance(self.band, bool) or int(self.band) < 1:
@@ -1010,6 +1023,8 @@ class ZILobSimulator:
         self._vacancy: dict[tuple[str, int], int] = {}
         # Post-fill accommodation state; pinned at 0 when lo_tilt_gain == 0.
         self._tilt = 0.0
+        # Post-fill marker: (hit_side, event_deadline) of the last fill.
+        self._hit_retreat: tuple[str, int] | None = None
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1330,6 +1345,12 @@ class ZILobSimulator:
         if tg > 0.0:
             sign = 1.0 if aggressor == "buy" else -1.0
             self._tilt = max(-1.0, min(1.0, self._tilt + sign * tg))
+        if self._cfg.hit_narrow_window > 0 and self._cfg.hit_narrow_dist > 0:
+            # Hit side = the side the aggressor consumed (resting side).
+            self._hit_retreat = (
+                "sell" if aggressor == "buy" else "buy",
+                self.n_events + self._cfg.hit_narrow_window,
+            )
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
@@ -1386,6 +1407,14 @@ class ZILobSimulator:
             dist = band
         ba, bb = self.best_ask_level, self.best_bid_level
         want_buy = u < bid_rate * (1.0 + self._tilt) if self._tilt != 0.0 else u < bid_rate
+        # Post-fill narrowing: while the marker is live, placements on the
+        # unhit side clamp to near-touch distance (accommodation channel).
+        if self._hit_retreat is not None:
+            hit_side, until = self._hit_retreat
+            if self.n_events >= until:
+                self._hit_retreat = None
+            elif (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy"):
+                dist = min(dist, self._cfg.hit_narrow_dist)
         if self._cfg.anchor == "ref":
             # Absolute-space anchoring: LOs deposit around a slow reference level
             # so cumulative liquidity grows with distance from the reference and

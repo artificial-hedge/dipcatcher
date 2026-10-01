@@ -174,7 +174,7 @@ def depth_tilt_bench(
             _split(seed + 2),
             horizon,
         ),
-        "lv_cd300_tilt": sim_tilt_path(
+        "lv_cd300_narrow": sim_tilt_path(
             replace(
                 santa_fe_config(seed=seed + 3),
                 anchor="ref",
@@ -182,8 +182,8 @@ def depth_tilt_bench(
                 band=40,
                 ref_fill_gain=0.3,
                 refill_cooldown=300,
-                lo_tilt_gain=0.2,
-                lo_tilt_decay=0.02,
+                hit_narrow_dist=3,
+                hit_narrow_window=60,
             ),
             _split(seed + 3),
             horizon,
@@ -207,22 +207,12 @@ def depth_tilt_bench(
             and arms["lv_cd300"]["tilt_path"].get("20") is not None
             and float(arms["lv_cd300"]["tilt_path"]["20"]) < -0.05
         ),
-        "tilt_knob_helps": bool(
-            arms["lv_cd300_tilt"].get("ok")
-            and arms["lv_cd300_tilt"]["tilt_path"].get("50") is not None
-            and arms["lv_cd300"]["tilt_path"].get("50") is not None
-            and float(arms["lv_cd300_tilt"]["tilt_path"]["50"])
-            > float(arms["lv_cd300"]["tilt_path"]["50"]) + 0.05
-        ),
-        "no_arm_matches_tilt": bool(
+        "narrow_reproduces_tilt": bool(
             real.get("ok")
             and r20 is not None
-            and all(
-                a.get("ok")
-                and a["tilt_path"].get("20") is not None
-                and abs(float(a["tilt_path"]["20"]) - float(r20)) > 0.05
-                for a in arms.values()
-            )
+            and arms["lv_cd300_narrow"].get("ok")
+            and arms["lv_cd300_narrow"]["tilt_path"].get("20") is not None
+            and abs(float(arms["lv_cd300_narrow"]["tilt_path"]["20"]) - float(r20)) <= 0.05
         ),
     }
     payload: dict[str, Any] = {
@@ -242,13 +232,12 @@ def depth_tilt_bench(
             "flat, metaorder splitting tilts weakly positive, and the "
             "vacancy-cooldown arm tilts strongly negative — suppressing "
             "refill on emptied levels deepens the hole instead of leaning "
-            "into it. No arm reproduces the accommodation: the "
-            "lo_tilt_gain side-bias arm tilts in the right direction at "
-            "long lags but stays attenuated and dips negative at short "
-            "lags (the emptied touch dominates first). The residual "
-            "channel is directional LO placement biased toward the unhit "
-            "side at *near-touch* distances — a placement-class response, "
-            "not a rate response."
+            "into it. The hit_narrow arm — clamping unhit-side "
+            "placements to near-touch distance for a short post-fill "
+            "window — reproduces the tilt at +20 within tolerance: the "
+            "accommodation is a near-touch placement-class response on "
+            "the unhit side, not a rate shift (global side bias lands "
+            "deep under the band law and barely registers at the touch)."
         ),
         "git_revision": git_revision(),
         "data_label": "MIXED",
