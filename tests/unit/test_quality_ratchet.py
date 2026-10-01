@@ -41,7 +41,13 @@ MCCABE_BASELINE_FLOOR = 1
 # integrity substrate adds seven deliberate fail-closed handlers (noqa: BLE001
 # each): OTS explorer/calendar outages skip rather than fail, and verifier gates
 # convert unexpected exceptions into recorded gate errors. Ceiling 78.
-EXCEPT_EXCEPTION_CEILING = 78
+#
+# The audit-lane merge wave (param_fuzz, asof_audit, flat_audit, cache_audit,
+# map_parity, inherit_audit, boundary_audit, causality_scan, vine_dominance)
+# adds fourteen more deliberate noqa: BLE001 handlers whose whole POINT is
+# that unexpected exception classes are themselves audit findings — narrowing
+# them would blind the audit. Deliberate baseline rewrite: ceiling 78 -> 92.
+EXCEPT_EXCEPTION_CEILING = 92
 
 
 def test_mypy_strict_allowlist_only_grows() -> None:
