@@ -560,6 +560,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "blanchard_quah",
         "tvp_var",
         "meta_analysis",
+        # wave 50 — Engle-Russell ACD(1,1) duration clustering
+        # (QMLE), Heath-Jarrow-Morton Gaussian forward-curve
+        # simulation, Vasicek affine term structure + Campbell-
+        # Shiller expectations-hypothesis regression, Gil-Pelaez
+        # characteristic-function inversion (CDF/quantiles),
+        # hedonic time-dummy + Bailey-Muth-Nourse repeat-sales
+        # indices, DEA CCR/BCC efficiency frontiers. Same
+        # SYNTHETIC diagnostic contract.
+        "acd_duration",
+        "hjm",
+        "affine_term",
+        "gil_pelaez",
+        "hedonic",
+        "dea",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

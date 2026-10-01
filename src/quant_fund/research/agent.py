@@ -388,6 +388,14 @@ from quant_fund.research.benches_w49 import (
     bench_meta_analysis,
     bench_tvp_var,
 )
+from quant_fund.research.benches_w50 import (
+    bench_acd_duration,
+    bench_affine_term,
+    bench_dea,
+    bench_gil_pelaez,
+    bench_hedonic,
+    bench_hjm,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2232,6 +2240,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "blanchard_quah": bench_blanchard_quah(),
         "tvp_var": bench_tvp_var(),
         "meta_analysis": bench_meta_analysis(),
+        "acd_duration": bench_acd_duration(),
+        "hjm": bench_hjm(),
+        "affine_term": bench_affine_term(),
+        "gil_pelaez": bench_gil_pelaez(),
+        "hedonic": bench_hedonic(),
+        "dea": bench_dea(),
     }
 
     hyps = _build_hypotheses(families, rankers)
