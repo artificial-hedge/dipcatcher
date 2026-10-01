@@ -1,0 +1,21 @@
+{
+  "collected_at": "2026-09-30T11:50:47.902745+00:00",
+  "frame_csv_sha256": "0a42922a9a4d5263b2e68388ce97a3a58262e692b023c931957d801aadaed189",
+  "n_names": 5,
+  "n_rows": 1490,
+  "promotion_receipt_sha256": "b9f24b61fc7e8f4f4c23cc52a5a94eebc093eb26ae61ef6a8ae89ede1bc203d3",
+  "receipt_sha256": "88c1e534bb29319954129cafd79921f3963a341154b28b3747c1182acdf8e1d0",
+  "schema": "tape_manifest.v1",
+  "source_label": "yahoo_eod",
+  "tape_files": [
+    {
+      "n_bytes": 40739,
+      "path": "data/raw/sources/yahoo_eod/bars.parquet",
+      "sha256": "022fb7b4be140853a62d90b4339192ad9ee610d73ba834fe720a399a6f09d3cc"
+    }
+  ],
+  "window": {
+    "end": "2025-01-01 21:00:00+00:00",
+    "start": "2024-01-01 21:00:00+00:00"
+  }
+}
