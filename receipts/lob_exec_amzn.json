@@ -1,0 +1,66 @@
+{
+  "cells": {
+    "large_twap20": {
+      "fill_fraction_mean": 1.0,
+      "is_total_ticks_max": 215.35399999999908,
+      "is_total_ticks_mean": 37.02966666666636,
+      "is_total_ticks_min": -135.63799999999813,
+      "liquidity_cost_ticks_mean": 0.12133333333333333,
+      "n_episodes": 6,
+      "resyncs_total": 22289
+    },
+    "large_twap5": {
+      "fill_fraction_mean": 1.0,
+      "is_total_ticks_max": 137.90200000000186,
+      "is_total_ticks_mean": 9.895000000000001,
+      "is_total_ticks_min": -134.0,
+      "liquidity_cost_ticks_mean": 0.46166666666666667,
+      "n_episodes": 6,
+      "resyncs_total": 5520
+    },
+    "medium_twap20": {
+      "fill_fraction_mean": 1.0,
+      "is_total_ticks_max": 215.3,
+      "is_total_ticks_mean": 36.951666666666675,
+      "is_total_ticks_min": -135.695,
+      "liquidity_cost_ticks_mean": 0.043333333333333335,
+      "n_episodes": 6,
+      "resyncs_total": 22289
+    },
+    "medium_twap5": {
+      "fill_fraction_mean": 1.0,
+      "is_total_ticks_max": 137.455,
+      "is_total_ticks_mean": 9.625000000000002,
+      "is_total_ticks_min": -134.0,
+      "liquidity_cost_ticks_mean": 0.19166666666666665,
+      "n_episodes": 6,
+      "resyncs_total": 5520
+    },
+    "small_twap20": {
+      "fill_fraction_mean": 1.0,
+      "is_total_ticks_max": 209.18,
+      "is_total_ticks_mean": 35.53333333333334,
+      "is_total_ticks_min": -134.38,
+      "liquidity_cost_ticks_mean": 0.006666666666666667,
+      "n_episodes": 6,
+      "resyncs_total": 22289
+    },
+    "small_twap5": {
+      "fill_fraction_mean": 1.0,
+      "is_total_ticks_max": 137.2,
+      "is_total_ticks_mean": 9.453333333333331,
+      "is_total_ticks_min": -134.0,
+      "liquidity_cost_ticks_mean": 0.02,
+      "n_episodes": 6,
+      "resyncs_total": 5520
+    }
+  },
+  "data_label": "MIXED",
+  "git_revision": "f5cdbae5aa27cb73b3fd522e4d03e700101d2fb7",
+  "interpretation": "TWAP shortfall on the reconstructed visible LOBSTER book, tick-normalized. liquidity_cost is drift-free (vs best quote at fill time); is_total vs arrival mid mixes in tape drift and can be negative. VISIBLE-liquidity only: top-10 tape, hidden executions invisible, resync band truncates depth",
+  "kind": "lob_exec",
+  "receipt_sha256": "a36c444f6fe20c0ffa1610dd6eebd321b5c2a2598c3e4d1a7410fe0cbb3b5c36",
+  "research_only": true,
+  "schema": "lob_exec.v1",
+  "ticker": "AMZN"
+}
