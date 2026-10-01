@@ -30,6 +30,7 @@ owner: devin (research canon wave)
 slice: WORLD-CLASS RESEARCH CANON — 22 modules across metrics/models/
   labels/features/portfolio/execution
 status: COMPLETE + VERIFIED 2026-09-21
+detail: |
   Implemented and remotely verified on D:\dipcatcher (.venv, py3.12.10):
   - metrics: serial dependence battery (Lo-MacKinlay VR, Chow-Denning,
     Wright rank/sign, runs, Ljung-Box, ARCH-LM, JB, arch.unitroot
@@ -227,6 +228,7 @@ integration lane (waves 8-10 wired into research battery, 2026-09-27):
 owner: devin (macOS checkout)
 slice: ANYTIME-VALID GAP — e-GAI online FDR (e-LORD + e-SAFFRON)
 status: COMPLETE + VERIFIED 2026-09-28
+detail: |
   - metrics/anytime_fdr.py: `_EGaiBase` shared alpha-investing machinery +
     `ELord` (Zhang, Wei, Ren & Zou 2025, arXiv:2506.01452, Algorithm 1) and
     `ESaffron` (Algorithm 2). RAI omega recursion omega_{t+1} =
@@ -254,7 +256,10 @@ status: COMPLETE + VERIFIED 2026-09-28
     (77 tests); ruff + ruff-format + mypy clean on touch set. No commits.
 
 ---
+owner: devin (macOS checkout)
 slice: FX-1 CAPABILITY LANE — eval battery wired into suite/CLI (owner call taken)
+status: COMPLETE + VERIFIED 2026-09-28
+detail: |
   - src/fx1/eval/capability.py: `run_capability_eval(model, seed)` runs the
     four sealed SYNTHETIC evals behind one ModelFn (ts_reasoning,
     calibration, tooluse, retrieval) -> `CapabilityEvalReport` (pydantic).
@@ -276,9 +281,13 @@ slice: FX-1 CAPABILITY LANE — eval battery wired into suite/CLI (owner call ta
   - tests/fx1: 282 green (4 new); ruff check + format clean on touch set;
     mypy src/fx1 clean. Roadmap §2.5 updated; external benchmark ports
     (FinTrace/FinToolBench/FinAgentBench/FinanceBench/MTBench) remain open.
+    No commits.
 
 ---
+owner: devin (macOS checkout)
 slice: ENGINEERING LANE — CI perf-gate wiring for scripts/perf_baseline.py
+status: COMPLETE + VERIFIED 2026-09-28
+detail: |
   - .github/workflows/perf-baseline.yml (new): `record` job on push:main +
     weekly schedule + workflow_dispatch records all six benches on CI
     hardware and publishes a stable-named `perf-baseline` artifact (60d
@@ -359,6 +368,7 @@ owner: opencode (swarm controller, 9-lane parallel + integration lane)
 slice: SOTA CANON WAVE 12 — beyond-exchangeability conformal, CS, OT GoF,
   score canon, stacking, deep hedging, fx-1 ext-bench ports, mutation testing
 status: COMPLETE + VERIFIED 2026-09-29
+detail: |
   Nine parallel lanes (disjoint new files) + one integration lane.
   ~391 tests total (372 lane + 19 bench); all lanes ruff + ruff-format +
   mypy clean; no new deps (deep hedging uses existing torch `nn` extra).
@@ -458,6 +468,7 @@ note: no commits made. WAVE 13 (Tier A, 8 lanes) IN FLIGHT concurrently:
 owner: opencode (swarm controller; wave-13 lanes + integration agent + controller recovery)
 slice: SOTA CANON WAVE 13 — Tier A hardest conformal/UQ theory (8 modules)
 status: COMPLETE + VERIFIED 2026-09-30 (verify-research: 52 families, errors [])
+detail: |
   Eight fetch-verify-first theory lanes, all sources read from arXiv before
   implementation (~20 paper-vs-brief corrections logged in
   RESEARCH_REFERENCES.md wave-13 section):
@@ -512,6 +523,7 @@ owner: opencode (swarm controller; two batches + direct controller recovery)
 slice: SOTA CANON WAVE 14 — deep finance math (11 modules + 2 bug-fix passes)
 status: MODULES COMPLETE 2026-09-30; integration IN FLIGHT (benches_w14.py,
   14 families -> expect 66; fourier_pricing EXCLUDED pending COS bug fix)
+detail: |
   Batch 1 (6 agents, quota-saturated mid-wave; recovery by controller):
   - models/martingale_ot.py + tests (controller-written): MOT LP primal/dual
     via HiGHS; variance-swap dual ~ log-contract; BS-embedding sanity.
@@ -599,6 +611,7 @@ owner: opencode (swarm controller + direct recovery)
 slice: SOTA CANON WAVE 15 — conformal extensions + agent governance + evals
 status: MODULES COMPLETE 2026-09-30; integration QUEUED (benches_w15.py,
   7 families -> expect 73 after w14's 66)
+detail: |
   - models/dynamic_subspace_denoising.py + tests (29, controller-written;
     agent died post-source): Wouters-Diks oblique optimal projection;
     RECOVERY BUG FIX: bootstrap dimension test rejection rule was INVERTED
@@ -670,6 +683,7 @@ note: no commits. Integration order: benches_w14 (in flight) -> benches_w15
 owner: opencode (swarm controller)
 slice: WAVE 14/15 INTEGRATION + FOURIER REPAIR — status update
 status: W14 INTEGRATED + VERIFIED (66 families); W15 integration IN FLIGHT
+detail: |
   - benches_w14.py landed via integration agent: 14 families, 63 keys,
     31 bench tests; research suite 1055 passed; verify-research ->
     scorecard_families=66 (was 52), errors=[], claim=research_only;
@@ -718,6 +732,7 @@ note: no commits. After w15 integration: final full-gate pass (make lint,
 owner: opencode (w15 integration agent + controller close-out)
 slice: SOTA CANON WAVE 15 INTEGRATION — benches_w15 (8 families) -> 74 total
 status: COMPLETE + VERIFIED 2026-09-30
+detail: |
   - research/benches_w15.py: 8 OPTIONAL families (subspace_denoising,
     conformal_transfer, hpd_conformal, capability_value, agent_referee,
     vintage_eval, entropy_shapley, fourier_pricing — the repaired module,
@@ -759,8 +774,10 @@ note: no commits. Final close-out: make test (PR gate) + make fx1-test
   corrections vs fetched sources.
 
 ---
+owner: opencode (swarm controller)
 slice: WAVES 12-15 FINAL CLOSE-OUT — full-gate verification
 status: COMPLETE 2026-09-30
+detail: |
   Final gate ladder after w15 integration (74 families verified):
   - make test (PR gate): 9,723 passed / 1 failed / 6 skipped / 1 xfailed
     (15m17s). The single failure is pretrade/test_latency.py::
@@ -798,6 +815,8 @@ status: COMPLETE 2026-09-30
 ---
 owner: opencode (session resume)
 slice: OWNER CALLS CLOSE-OUT — commit, CLI wiring, mutation campaign
+status: COMPLETE 2026-09-30
+detail: |
   - COMMIT waves 11-17: 5 commits on main. Wave 11-15 modules were already
     committed by a concurrent session (waves 16-17 landed mid-handoff).
     Working tree clean; purge-incident risk resolved.
@@ -812,8 +831,10 @@ slice: OWNER CALLS CLOSE-OUT — commit, CLI wiring, mutation campaign
     "catalog" half of the original owner call has no mutants to test.
 
 ---
+owner: opencode (session resume)
 slice: FULL 210-MUTANT CAMPAIGN — prior close-out was a 50-sample, not full
 status: IN FLIGHT (final campaign running; 14/15 survivors closed)
+detail: |
   FINDING (process bug, not a code bug): commit b329f95c7 claimed
   "full 210-mutant campaign close-out — 99.52% (209 killed), sole survivor
   proven equivalent". That figure was NOT full. scripts/mutation_test.py
@@ -1086,6 +1107,76 @@ wave 48 canon (devin/w48-canon-integration): tmle
   .22 vs quiet .09) + marginal_treatment (local-
   IV MTE, ate .45 vs naive -.26)
   → PR stacked on w47 (259→265 families)
+---
+owner: opencode (session resume)
+slice: OWNER CALLS CLOSE-OUT — commit, CLI wiring, mutation campaign
+  - COMMIT waves 11-17: 5 commits on main. Wave 11-15 modules were already
+    committed by a concurrent session (waves 16-17 landed mid-handoff).
+    Working tree clean; purge-incident risk resolved.
+  - fx1 capability.py/CLI wiring: ALREADY DONE by the concurrent session.
+    capability-eval, ext-bench-eval, options-reasoning-eval all registered
+    in CLI; capability.py imports both ext_bench and options_reasoning_eval;
+    101 fx1 eval tests green (16+57+28). No further wiring needed.
+  - Full 210-mutant campaign on verify.py: RAN FOR REAL (--max-mutants 210,
+    seed 7, --pytest tests/unit/research/test_research_verify.py, ~9 min
+    serial). Catalog layer files generate zero mutants (data/constants-heavy;
+    no control-flow constructs reachable by the AST operator set) — the
+    "catalog" half of the original owner call has no mutants to test.
+
+---
+slice: FULL 210-MUTANT CAMPAIGN — prior close-out was a 50-sample, not full
+status: IN FLIGHT (final campaign running; 14/15 survivors closed)
+  FINDING (process bug, not a code bug): commit b329f95c7 claimed
+  "full 210-mutant campaign close-out — 99.52% (209 killed), sole survivor
+  proven equivalent". That figure was NOT full. scripts/mutation_test.py
+  defaults to DEFAULT_MAX_MUTANTS = 50, so the campaign silently ran a
+  50-mutant seed-7 SAMPLE. Verified by intersection: only 3 of the 15 real
+  survivors (M0031, M0142, M0200) fall inside that 50-sample; the other 12
+  were never executed. The INFLIGHT close-out note inherited the wrong
+  number. Any future campaign MUST pass --max-mutants explicitly (or the
+  operator must read the "N mutants available" vs "N sampled" line).
+
+  Genuinely-full baseline: 195/210 = 92.86%, 15 survivors, 0 errors.
+
+  15 survivors triaged into:
+  - 14 GENUINE TEST GAPS -> kill tests appended to
+    tests/unit/research/test_research_verify.py (each docstring names the
+    mutant id + line):
+      * M0031 + M0059 (line 195/196) _timestamp_valid non-str guard ->
+        non-string generated_at (mutant AttributeErrors on .strip()).
+      * M0106 (line 200) _timestamp_valid except-ValueError arm ->
+        unparseable timestamp string (mutant derefs unbound `parsed`).
+      * M0064 (line 249) notebook version/disclaimer/ranking_target guard.
+        data_source EXCLUDED: a non-string there also trips line 256, so it
+        cannot isolate this mutant.
+      * M0113 (line 313) hypothesis id guard; M0159 (line 323)
+        statement/test/decision guard.
+      * M0122 (line 386) runtime fingerprint field guard (prior runtime
+        tests only removed fields or set a package VERSION non-string).
+      * M0079 (line 389) empty packages dict {} -> error token shifts from
+        runtime_packages_missing to runtime_packages_missing_required.
+      * M0053 (line 179) _p_value_valid non-numeric arm (prior tests
+        covered numeric boundaries + None/NaN, never a non-numeric type).
+      * M0186 (line 902) unreadable-receipt stub valid=False -> corrupt JSON
+        file (no prior test fed malformed JSON).
+      * M0098 + M0100 + M0142 (lines 848/849/856) immutable-artifact path
+        ternary -> non-string immutable_json pointer (prior non-string test
+        covered immutable_markdown's pointer, a different ternary arm).
+      * M0200 (line 841) except-OSError fail-closed arm -> monkeypatch
+        Path.resolve to raise for the artifact filename only (patching the
+        whole method would break line 805's receipt_root computation).
+  - 1 PROVABLY EQUIVALENT -> M0032 (line 201) And->Or on
+    `parsed.tzinfo is not None and parsed.utcoffset() is not None`.
+    fromisoformat only yields fixed-offset tzinfo, whose utcoffset() is
+    never None when tzinfo is not None — no string input distinguishes the
+    arms. Already pinned by
+    test_timestamp_utcoffset_redundant_arm_is_documented_equivalent;
+    that docstring now records that the surrounding 99.52% figure came
+    from the capped 50-sample.
+note: 210 -> 225 tests. ruff check + format clean. Second full run scored
+  99.05% (208 killed, survivors M0032 + M0200); M0200 then closed by the
+  monkeypatch test (verified killed in isolation). Final full campaign
+  running to confirm 209/210.
 wave 49 canon (devin/w49-canon-integration): eisenberg_noe
   (EN clearing fixed point: 1 cascade default,
   quiet clears) + fire_sales (Cont-Wagalath: 3
@@ -1096,11 +1187,6 @@ wave 49 canon (devin/w49-canon-integration): eisenberg_noe
   .46 vs post 1.70 true 1.7) + meta_analysis
   (DL RE .33 vs true .4, Egger 4.6 vs 1.3)
   → PR stacked on w48 (265→271 families)
----
-
----
-
-
 wave 50 canon (devin/w50-canon-integration): acd_duration
   (ACD(1,1) QMLE: persistence .90, eps_acf
   .004) + hjm (Gaussian HJM bond curve:

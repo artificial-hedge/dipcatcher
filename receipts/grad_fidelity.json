@@ -1,0 +1,25 @@
+{
+ "claim": {
+  "invariant": "smooth-surrogate gradients should predict hard-book improvement",
+  "prices": "synthetic_prices(300, 6)",
+  "verdict": "ok"
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "7889762a9fea9f94f443d482e9b7247a5d66b96a",
+ "interpretation": {
+  "mean_cosine": 0.9904911126908768,
+  "mean_phantom_share": 0.43560606060606055,
+  "mean_sign_share": 0.6656746031746031,
+  "n_samples": 24,
+  "negative_cosine_share": 0.0,
+  "objective": "sharpe",
+  "status": "ok",
+  "step_helps_share": 1.0,
+  "strategy": "tsmom"
+ },
+ "kind": "grad_fidelity",
+ "live_pnl_claim": false,
+ "receipt_sha256": "db2f9f2bcb966057f3ba17db18c0364ecdb159a394434febfed76604847df2a9",
+ "research_only": true,
+ "schema": "grad_fidelity.v1"
+}

@@ -1,0 +1,26 @@
+{
+ "claim": {
+  "invariant": "the evidence corpus is acyclic and its inputs are named",
+  "verdict": "open"
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "695d50e12362b9ff22f6fc25f00bba617029bdba",
+ "interpretation": {
+  "artifact_edges": 165,
+  "cycles": [],
+  "n_dangling": 1,
+  "n_edges": 181,
+  "n_external_inputs": 72,
+  "n_orphans": 1,
+  "n_receipts": 117,
+  "n_roots": 41,
+  "n_sinks": 101,
+  "receipt_edges": 16,
+  "verdict": "open"
+ },
+ "kind": "lineage_dag",
+ "live_pnl_claim": false,
+ "receipt_sha256": "3b1d3a923af42bd157d11de720e4cf22372f19b9dafc50b15cda6771ef87083b",
+ "research_only": true,
+ "schema": "lineage_dag.v1"
+}
