@@ -1,0 +1,155 @@
+{
+  "abc": {
+    "accepted": [
+      {
+        "distance": 0.5819555209218097,
+        "measured": {
+          "mid_move_std": 0.7433769382791473,
+          "mo_fraction": 0.051,
+          "sign_lag1": 0.2222222222222222,
+          "spread_ticks_median": 3.0000000000001137
+        },
+        "params": {
+          "band": 6,
+          "density_exponent": 1.02434731567547,
+          "intensity_mult": 3.650256200900686,
+          "k_min": 7,
+          "lam": 0.053167213774328,
+          "mu": 0.022843448641911623,
+          "p_start": 0.04940625640465211,
+          "theta_cxl": 0.1483989554466119,
+          "use_split": true
+        }
+      },
+      {
+        "distance": 0.629586730077311,
+        "measured": {
+          "mid_move_std": 0.2907355764121128,
+          "mo_fraction": 0.014,
+          "sign_lag1": 0.2619047619047619,
+          "spread_ticks_median": 4.000000000000625
+        },
+        "params": {
+          "band": 12,
+          "density_exponent": 1.3923089006817855,
+          "intensity_mult": 3.0243959499018365,
+          "k_min": 4,
+          "lam": 0.1345320135135489,
+          "mu": 0.04655516701772721,
+          "p_start": 0.0515737549973146,
+          "theta_cxl": 0.11700931709082849,
+          "use_split": true
+        }
+      },
+      {
+        "distance": 0.6859453829153009,
+        "measured": {
+          "mid_move_std": 0.10802572001744912,
+          "mo_fraction": 0.014666666666666666,
+          "sign_lag1": 0.9772727272727273,
+          "spread_ticks_median": 1.999999999999602
+        },
+        "params": {
+          "band": 4,
+          "density_exponent": 1.8306479202235317,
+          "intensity_mult": 1.210978760707654,
+          "k_min": 23,
+          "lam": 0.5585284016243746,
+          "mu": 0.04401195678286574,
+          "p_start": 0.03324132295951377,
+          "theta_cxl": 0.1258839738307232,
+          "use_split": true
+        }
+      },
+      {
+        "distance": 0.689987489977288,
+        "measured": {
+          "mid_move_std": 0.4990282697686878,
+          "mo_fraction": 0.053,
+          "sign_lag1": -0.025157232704402517,
+          "spread_ticks_median": 4.999999999999716
+        },
+        "params": {
+          "band": 11,
+          "density_exponent": 1.6194215518255555,
+          "intensity_mult": 2.2386890280426783,
+          "k_min": 17,
+          "lam": 0.017746365081886272,
+          "mu": 0.018863901426685092,
+          "p_start": 0.07191581859761789,
+          "theta_cxl": 0.022319617789310638,
+          "use_split": false
+        }
+      },
+      {
+        "distance": 0.6910037854257586,
+        "measured": {
+          "mid_move_std": 0.030259053275603978,
+          "mo_fraction": 0.028,
+          "sign_lag1": 0.9642857142857143,
+          "spread_ticks_median": 1.0000000000005116
+        },
+        "params": {
+          "band": 8,
+          "density_exponent": 0.6318870907354004,
+          "intensity_mult": 3.4370061943337618,
+          "k_min": 29,
+          "lam": 0.5789143907634464,
+          "mu": 0.05252705055419258,
+          "p_start": 0.17841766183473257,
+          "theta_cxl": 0.006197760707403973,
+          "use_split": true
+        }
+      },
+      {
+        "distance": 0.6954322774318963,
+        "measured": {
+          "mid_move_std": 0.0,
+          "mo_fraction": 0.024333333333333332,
+          "sign_lag1": 0.7945205479452054,
+          "spread_ticks_median": 1.0000000000005116
+        },
+        "params": {
+          "band": 7,
+          "density_exponent": 0.05663934229092593,
+          "intensity_mult": 2.9415685347227503,
+          "k_min": 13,
+          "lam": 0.5325468800563893,
+          "mu": 0.06051909776692733,
+          "p_start": 0.14071239464485347,
+          "theta_cxl": 0.004893798124582285,
+          "use_split": true
+        }
+      }
+    ],
+    "horizon": 3000,
+    "keep": 6,
+    "median_draw_distance": 1.2202372767748932,
+    "min_distance": 0.5819555209218097,
+    "n_draws": 48,
+    "target": {
+      "mid_move_std": 0.7346732017169699,
+      "mo_fraction": 0.0332682105825088,
+      "sign_lag1": 0.7213059950969467,
+      "spread_ticks_median": 13.0
+    },
+    "use_split_share": 0.8333333333333334
+  },
+  "claims": {
+    "min_distance_under_median": true,
+    "split_selected_in_posterior": true
+  },
+  "data_label": "MIXED",
+  "git_revision": "1641d04c29f1d2cb1855024c266d1a1329d86cbb",
+  "interpretation": "Rejection ABC on the summary vector; the accepted set concentrates where the sim can actually match the target. If the target carries real-tape sign persistence, posterior use_split_share measures how strongly the data select the splitting mechanism \u2014 calibration, not validation",
+  "kind": "abc_calibrate",
+  "receipt_sha256": "2e2cde9318817595810462f0edb2082cc8843a96fb388a4877bc2fc817a46341",
+  "refit_full_horizon": {
+    "mid_move_std": 0.743599271433274,
+    "mo_fraction": 0.05405,
+    "sign_lag1": 0.38744075829383884,
+    "spread_ticks_median": 3.0000000000001137
+  },
+  "research_only": true,
+  "schema": "abc_calibrate.v1"
+}
