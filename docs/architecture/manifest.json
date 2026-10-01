@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1584,
+  "module_count": 1591,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10135,6 +10135,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w82",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.catalog",
       "src": "quant_fund.research.agent"
     },
@@ -12445,6 +12449,30 @@
     {
       "dst": "quant_fund.validation.regime_eval",
       "src": "quant_fund.research.benches_w810"
+    },
+    {
+      "dst": "quant_fund.models.circular_tests",
+      "src": "quant_fund.research.benches_w82"
+    },
+    {
+      "dst": "quant_fund.models.delong_auc",
+      "src": "quant_fund.research.benches_w82"
+    },
+    {
+      "dst": "quant_fund.models.graded_irt",
+      "src": "quant_fund.research.benches_w82"
+    },
+    {
+      "dst": "quant_fund.models.marginal_homogeneity",
+      "src": "quant_fund.research.benches_w82"
+    },
+    {
+      "dst": "quant_fund.models.passing_bablok",
+      "src": "quant_fund.research.benches_w82"
+    },
+    {
+      "dst": "quant_fund.models.welch_anova",
+      "src": "quant_fund.research.benches_w82"
     },
     {
       "dst": "quant_fund.metrics.scoring",
@@ -15801,6 +15829,7 @@
     "quant_fund.models.chow_lin",
     "quant_fund.models.christensen_diebold_rudebusch",
     "quant_fund.models.christoffersen_pelletier",
+    "quant_fund.models.circular_tests",
     "quant_fund.models.clark_west",
     "quant_fund.models.cluster_robust",
     "quant_fund.models.cluster_sampling",
@@ -15844,6 +15873,7 @@
     "quant_fund.models.deep_regime_mixture",
     "quant_fund.models.deep_rl",
     "quant_fund.models.delayed_aci",
+    "quant_fund.models.delong_auc",
     "quant_fund.models.delta_covar",
     "quant_fund.models.design_effects",
     "quant_fund.models.dfl_decomp",
@@ -15951,6 +15981,7 @@
     "quant_fund.models.glasso",
     "quant_fund.models.glosten_milgrom",
     "quant_fund.models.gmm_est",
+    "quant_fund.models.graded_irt",
     "quant_fund.models.greek_neutral_portfolios",
     "quant_fund.models.growth_at_risk",
     "quant_fund.models.gsadf_bubble",
@@ -16047,6 +16078,7 @@
     "quant_fund.models.mantel",
     "quant_fund.models.many_iv",
     "quant_fund.models.mardia",
+    "quant_fund.models.marginal_homogeneity",
     "quant_fund.models.marginal_treatment",
     "quant_fund.models.market_making",
     "quant_fund.models.markov_switching",
@@ -16117,6 +16149,7 @@
     "quant_fund.models.panel_unitroot",
     "quant_fund.models.partial_linear",
     "quant_fund.models.particle_gibbs",
+    "quant_fund.models.passing_bablok",
     "quant_fund.models.path_signatures",
     "quant_fund.models.pelt_wbs",
     "quant_fund.models.permutation_entropy",
@@ -16284,6 +16317,7 @@
     "quant_fund.models.wavelets",
     "quant_fund.models.weak_iv",
     "quant_fund.models.weighted_conformal",
+    "quant_fund.models.welch_anova",
     "quant_fund.models.whitening",
     "quant_fund.models.wigner_ville",
     "quant_fund.models.wooldridge_serial",
@@ -16541,6 +16575,7 @@
     "quant_fund.research.benches_w80",
     "quant_fund.research.benches_w81",
     "quant_fund.research.benches_w810",
+    "quant_fund.research.benches_w82",
     "quant_fund.research.calibration_eprocess",
     "quant_fund.research.calibration_eval",
     "quant_fund.research.capability_value",
@@ -18486,7 +18521,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 444,
+      "imports": 450,
       "src": "quant_fund.research"
     },
     {
@@ -18531,7 +18566,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 391,
+      "imports": 392,
       "src": "quant_fund.research"
     },
     {

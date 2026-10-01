@@ -645,6 +645,14 @@ from quant_fund.research.benches_w81 import (
     bench_robbins_monro,
     bench_vonmises_fisher,
 )
+from quant_fund.research.benches_w82 import (
+    bench_circular_tests,
+    bench_delong_auc,
+    bench_graded_irt,
+    bench_marginal_homogeneity,
+    bench_passing_bablok,
+    bench_welch_anova,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2682,6 +2690,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gandh": bench_gandh(),
         "robbins_monro": bench_robbins_monro(),
         "pocs": bench_pocs(),
+        "delong_auc": bench_delong_auc(),
+        "passing_bablok": bench_passing_bablok(),
+        "marginal_homogeneity": bench_marginal_homogeneity(),
+        "circular_tests": bench_circular_tests(),
+        "graded_irt": bench_graded_irt(),
+        "welch_anova": bench_welch_anova(),
     }
 
     hyps = _build_hypotheses(families, rankers)

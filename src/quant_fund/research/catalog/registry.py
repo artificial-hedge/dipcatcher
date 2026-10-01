@@ -1178,6 +1178,30 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gandh",
         "robbins_monro",
         "pocs",
+        # wave 82 — DeLong (1988)
+        # correlated-AUC variance +
+        # pairwise comparison, Passing-
+        # Bablok (1983) robust method
+        # comparison + Deming (1943)
+        # orthogonal fit, McNemar
+        # (1947) / Bowker (1948) /
+        # Stuart (1955) / Bhapkar
+        # (1979) marginal homogeneity,
+        # Mardia-Watson-Wheeler (1972)
+        # + Rao (1976) spacing +
+        # Watson-Beran runs circular
+        # tests, Samejima (1969) GRM +
+        # Masters (1982) PCM IRT, and
+        # Welch (1951) heteroscedastic
+        # ANOVA + Games-Howell (1976).
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "delong_auc",
+        "passing_bablok",
+        "marginal_homogeneity",
+        "circular_tests",
+        "graded_irt",
+        "welch_anova",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

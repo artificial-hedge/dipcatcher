@@ -2087,3 +2087,27 @@ detail: |
     files + test_benches_w81 (42 tests total).
   - Canon staged on top of w80-canon.
 note: canon PR to follow.
+
+---
+owner: devin (wave 82 canon)
+slice: six models lanes + benches_w82 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: delong_auc.py (DeLong 1988
+    placement-value variance + paired AUC comparison),
+    passing_bablok.py (Passing-Bablok 1983 shifted-median
+    slope + Deming orthogonal + jackknife se), 
+    marginal_homogeneity.py (McNemar 1947, Bowker 1948,
+    Stuart-Maxwell 1955, Bhapkar 1979), circular_tests.py
+    (Mardia-Watson-Wheeler 1972 permutation p, Rao 1976
+    spacing, Watson-Beran runs), graded_irt.py (Samejima
+    1969 GRM + Masters 1982 PCM joint ML), welch_anova.py
+    (Welch 1951 + Games-Howell 1976).
+  - benches_w82.py: +480..485 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "delong_auc","passing_bablok",
+    "marginal_homogeneity","circular_tests","graded_irt",
+    "welch_anova" (446->452); agent.py wiring; tests: 6
+    module files + test_benches_w82 (40+ tests).
+  - Canon staged on top of w81-canon.
+note: canon PR to follow.
