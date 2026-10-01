@@ -24,7 +24,7 @@
       "status": "audited"
     },
     "compute": {
-      "n_modules": 4,
+      "n_modules": 3,
       "status": "audited"
     },
     "config": {
@@ -51,7 +51,7 @@
       "status": "audited"
     },
     "formal": {
-      "n_modules": 7,
+      "n_modules": 4,
       "status": "audited"
     },
     "fusion": {
@@ -64,12 +64,12 @@
       "status": "audited"
     },
     "hmm": {
-      "n_modules": 4,
+      "n_modules": 5,
       "status": "audited"
     },
     "labels": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 5,
+      "n_modules": 4,
       "status": "audited"
     },
     "leakage": {
@@ -96,7 +96,7 @@
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 97,
+      "n_modules": 104,
       "status": "audited"
     },
     "models": {
@@ -166,7 +166,7 @@
       "status": "audited"
     },
     "registry": {
-      "n_modules": 3,
+      "n_modules": 2,
       "status": "audited"
     },
     "reporting": {
@@ -175,12 +175,12 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 172,
+      "n_modules": 170,
       "status": "audited"
     },
     "risk": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 6,
+      "n_modules": 5,
       "status": "audited"
     },
     "robustness": {
