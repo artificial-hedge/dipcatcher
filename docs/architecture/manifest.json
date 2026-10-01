@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1128,
+  "module_count": 1129,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10271,6 +10271,14 @@
       "src": "quant_fund.research.cross_sectional"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.energy_score"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.energy_score"
+    },
+    {
       "dst": "quant_fund.research.fleet_eval",
       "src": "quant_fund.research.evidence_audit"
     },
@@ -12949,6 +12957,7 @@
     "quant_fund.research.cross_sectional",
     "quant_fund.research.drift_alarm",
     "quant_fund.research.emerge",
+    "quant_fund.research.energy_score",
     "quant_fund.research.evalue_contracts",
     "quant_fund.research.evalues",
     "quant_fund.research.evidence_audit",
@@ -14852,7 +14861,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 74,
+      "imports": 76,
       "src": "quant_fund.research"
     },
     {
