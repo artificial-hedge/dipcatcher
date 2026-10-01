@@ -1892,3 +1892,28 @@ detail: |
   - Canon staged on top of w73-canon so the chain stays clean as
     the open stack lands.
 note: canon PR to follow.
+---
+owner: devin (wave 75 canon)
+slice: 6 model modules + benches_w75 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w75-lanes: cronbach.py (Cronbach 1951 alpha +
+    KR-20 + Spearman-Brown odd/even split-half + alpha-if-
+    deleted), icc.py (Shrout-Fleiss/McGraw-Wong two-way ANOVA
+    forms ICC(1,1)/(2,1)/(3,1) + SEM), dif.py (Holland-Thayer
+    MH common-odds Delta_MH on score strata + CMH chi^2 +
+    ETS A/B/C; Swaminathan-Rogers nested-deviance logistic
+    uniform/nonuniform DIF), g_theory.py (person x rater
+    variance components + G/Phi + D-study), omega.py
+    (McDonald omega via principal-axis one-factor loadings +
+    resid RMS), rasch_fit.py (1PL Newton JML + Wright-Masters
+    infit/outfit mean squares; planted noisy item flagged).
+  - benches_w75.py: +438..443 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "cronbach","icc","dif","g_theory","omega",
+    "rasch_fit" (404->410); agent.py import+dict wiring; tests:
+    6 module files + test_benches_w75.
+  - Canon staged on top of w74-canon so the chain stays clean as
+    the open stack lands.
+note: canon PR to follow.

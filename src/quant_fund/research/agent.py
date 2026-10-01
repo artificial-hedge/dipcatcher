@@ -589,6 +589,14 @@ from quant_fund.research.benches_w74 import (
     bench_quade,
     bench_van_der_waerden,
 )
+from quant_fund.research.benches_w75 import (
+    bench_cronbach,
+    bench_dif,
+    bench_g_theory,
+    bench_icc,
+    bench_omega,
+    bench_rasch_fit,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2584,6 +2592,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "quade": bench_quade(),
         "van_der_waerden": bench_van_der_waerden(),
         "dunn_test": bench_dunn_test(),
+        "cronbach": bench_cronbach(),
+        "icc": bench_icc(),
+        "dif": bench_dif(),
+        "g_theory": bench_g_theory(),
+        "omega": bench_omega(),
+        "rasch_fit": bench_rasch_fit(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -1032,6 +1032,26 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quade",
         "van_der_waerden",
         "dunn_test",
+        # Wave-75 families — Cronbach
+        # (1951) alpha / KR-20 / Spearman-
+        # Brown split-half reliability,
+        # Shrout-Fleiss (1979) / McGraw-
+        # Wong (1996) ICC forms + SEM,
+        # Holland-Thayer (1988) MH DIF
+        # (ETS A/B/C) + Swaminathan-Rogers
+        # (1990) logistic DIF, Cronbach et
+        # al. (1972) G-theory variance
+        # components + D-study, McDonald
+        # (1999) omega composite
+        # reliability, and Wright-Masters
+        # (1982) Rasch infit/outfit. Same
+        # SYNTHETIC diagnostic contract.
+        "cronbach",
+        "icc",
+        "dif",
+        "g_theory",
+        "omega",
+        "rasch_fit",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
