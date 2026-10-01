@@ -445,6 +445,14 @@ from quant_fund.research.benches_w56 import (
     bench_phillips_perron,
     bench_zivot_andrews,
 )
+from quant_fund.research.benches_w57 import (
+    bench_bai_ng_ic,
+    bench_geweke_spectral,
+    bench_ivx,
+    bench_lasso_pds,
+    bench_wavelet_modwt,
+    bench_wooldridge_serial,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2332,6 +2340,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "phillips_perron": bench_phillips_perron(),
         "zivot_andrews": bench_zivot_andrews(),
         "lee_strazicich": bench_lee_strazicich(),
+        "wavelet_modwt": bench_wavelet_modwt(),
+        "geweke_spectral": bench_geweke_spectral(),
+        "ivx": bench_ivx(),
+        "bai_ng_ic": bench_bai_ng_ic(),
+        "wooldridge_serial": bench_wooldridge_serial(),
+        "lasso_pds": bench_lasso_pds(),
     }
 
     hyps = _build_hypotheses(families, rankers)

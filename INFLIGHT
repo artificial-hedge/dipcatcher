@@ -1268,3 +1268,32 @@ detail: |
   - Canon staged on top of w54-canon (carries w52/w53 merges) so
     the chain stays clean as #691/#695/#698 land.
 note: canon PR to follow.
+
+---
+owner: devin (wave 57 canon)
+slice: frequency/multiresolution + robust-inference battery — MODWT
+  wavelets, Geweke spectral, IVX, Bai-Ng IC, Wooldridge serial,
+  lasso PDS
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - wavelet_modwt.py (MODWT circular-conv pyramid, /sqrt(2)
+    filter normalization, adjoint synthesis, boundary-trimmed
+    scale variance + correlation), geweke_spectral.py (VAR(p)
+    transfer function, conditional-variance spectral
+    decompositions, Breitung-Candelon band measure), ivx.py
+    (IVX-Wald joint regression, NW HAC with PSD-projected
+    indefinite meat, scale-free wald), bai_ng_ic.py (PC1/IC1/
+    IC2/IC3 + Ahn-Horenstein ER/GR on standardized X'X eigs),
+    wooldridge_serial.py (pooled e~e_lag score, cluster(id)
+    sandwich, -1/(Tbar-1) within-transform null center),
+    lasso_pds.py (unit-variance coordinate-descent lasso,
+    BCCH pilot residual-scale lambda, union-support post-
+    double-selection OLS + t-CI).
+  - benches_w57.py: +330..335 seed stamps, canonical adapter
+    structure (try-import, finite-blob, forbidden-token filter).
+  - registry +6 -> "wavelet_modwt","geweke_spectral","ivx",
+    "bai_ng_ic","wooldridge_serial","lasso_pds"; agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w57.
+  - Canon staged on top of w56-canon so the chain stays clean
+    as #691/#695/#698/#702 land.
+note: canon PR to follow.

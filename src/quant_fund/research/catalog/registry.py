@@ -666,6 +666,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "phillips_perron",
         "zivot_andrews",
         "lee_strazicich",
+        # wave 57 — MODWT maximal-overlap discrete wavelet
+        # multiresolution with adjoint synthesis and boundary-
+        # trimmed scale variance/correlation, Geweke spectral
+        # frequency-domain Granger-causality measure with VAR
+        # transfer-function decomposition, Kostakis-Magdalinos-
+        # Stamatogiannis IVX-Wald persistence-robust predictive
+        # inference, Bai-Ng panel information criteria + Ahn-
+        # Horenstein eigenvalue-ratio factor-rank selection,
+        # Wooldridge cluster-robust serial-correlation test on
+        # within-transformed residuals, Belloni-Chernozhukov-
+        # Hansen post-double-selection lasso inference. Same
+        # SYNTHETIC diagnostic contract.
+        "wavelet_modwt",
+        "geweke_spectral",
+        "ivx",
+        "bai_ng_ic",
+        "wooldridge_serial",
+        "lasso_pds",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
