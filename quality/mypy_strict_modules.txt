@@ -279,6 +279,7 @@ src/quant_fund/microstructure/impact_instant.py
 src/quant_fund/microstructure/impact_propagator.py
 src/quant_fund/microstructure/impulse_mm.py
 src/quant_fund/microstructure/intraday_shape.py
+src/quant_fund/microstructure/kyle_lambda.py
 src/quant_fund/microstructure/lob_exec.py
 src/quant_fund/microstructure/lob_resilience.py
 src/quant_fund/microstructure/lobster.py
