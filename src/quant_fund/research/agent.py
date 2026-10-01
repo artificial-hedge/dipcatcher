@@ -396,6 +396,14 @@ from quant_fund.research.benches_w50 import (
     bench_hedonic,
     bench_hjm,
 )
+from quant_fund.research.benches_w52 import (
+    bench_bandi_russell,
+    bench_beveridge_nelson,
+    bench_growth_at_risk,
+    bench_hong_li,
+    bench_melick_thomas,
+    bench_nardl,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2246,6 +2254,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gil_pelaez": bench_gil_pelaez(),
         "hedonic": bench_hedonic(),
         "dea": bench_dea(),
+        "nardl": bench_nardl(),
+        "growth_at_risk": bench_growth_at_risk(),
+        "melick_thomas": bench_melick_thomas(),
+        "bandi_russell": bench_bandi_russell(),
+        "hong_li": bench_hong_li(),
+        "beveridge_nelson": bench_beveridge_nelson(),
     }
 
     hyps = _build_hypotheses(families, rankers)
