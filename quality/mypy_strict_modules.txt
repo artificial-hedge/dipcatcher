@@ -727,6 +727,7 @@ src/quant_fund/risk/gates.py
 src/quant_fund/risk/overlay.py
 src/quant_fund/risk/pyrisk.py
 src/quant_fund/risk/pyriskmgmt.py
+src/quant_fund/risk/tail_quota.py
 src/quant_fund/robustness/__init__.py
 src/quant_fund/robustness/__main__.py
 src/quant_fund/robustness/analytic.py

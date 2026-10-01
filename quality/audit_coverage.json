@@ -180,7 +180,7 @@
     },
     "risk": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "robustness": {
