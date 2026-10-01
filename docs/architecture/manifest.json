@@ -4575,6 +4575,10 @@
       "src": "quant_fund.models.count"
     },
     {
+      "dst": "quant_fund.models.quest",
+      "src": "quant_fund.models.covariance"
+    },
+    {
       "dst": "quant_fund.models.volatility",
       "src": "quant_fund.models.covariance"
     },
@@ -9855,22 +9859,6 @@
       "src": "quant_fund.research.serial_watch"
     },
     {
-      "dst": "quant_fund.research.coverage_cs",
-      "src": "quant_fund.research.shift_conformal"
-    },
-    {
-      "dst": "quant_fund.research.fleet_eval",
-      "src": "quant_fund.research.shift_conformal"
-    },
-    {
-      "dst": "quant_fund.utils.hashing",
-      "src": "quant_fund.research.shift_conformal"
-    },
-    {
-      "dst": "quant_fund.utils.reproducibility",
-      "src": "quant_fund.research.shift_conformal"
-    },
-    {
       "dst": "quant_fund.metrics.inference",
       "src": "quant_fund.research.sota_evidence"
     },
@@ -11188,6 +11176,7 @@
     "quant_fund.models.qrf",
     "quant_fund.models.quantile_bandit",
     "quant_fund.models.quantile_forest",
+    "quant_fund.models.quest",
     "quant_fund.models.qvar",
     "quant_fund.models.random_projection",
     "quant_fund.models.ranking",
@@ -11534,7 +11523,6 @@
     "quant_fund.research.selective_inference",
     "quant_fund.research.serial_watch",
     "quant_fund.research.shadow_journal",
-    "quant_fund.research.shift_conformal",
     "quant_fund.research.sota_evidence",
     "quant_fund.research.sota_protocol",
     "quant_fund.research.spa_test",
@@ -12550,7 +12538,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 92,
+      "imports": 93,
       "src": "quant_fund.models"
     },
     {
@@ -13120,7 +13108,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 312,
+      "imports": 310,
       "src": "quant_fund.research"
     },
     {
@@ -13135,7 +13123,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 128,
+      "imports": 126,
       "src": "quant_fund.research"
     },
     {
