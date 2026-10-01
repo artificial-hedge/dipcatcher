@@ -1,0 +1,35 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bad_threshold_refuses": true,
+   "bounded": true,
+   "builtins_resolve": true,
+   "empty_frame_refuses": true,
+   "forecast_schema_cols": true,
+   "fx1_base_unimplemented": true,
+   "fx1_entrypoint_typechecked": true,
+   "fx1_refuses_no_entrypoint": true,
+   "leakage_refuses": true,
+   "malformed_entrypoint_refuses": true,
+   "missing_ids_refuses": true,
+   "missing_score_refuses": true,
+   "momentum_needs_feature": true,
+   "null_maps_null": true,
+   "role_stamped": true,
+   "single_rank_zero": true,
+   "unknown_builtin_refuses": true,
+   "unknown_mapping_refuses": true,
+   "unresolvable_refuses": true,
+   "zero_predicts_zero": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "0952ab79c304f38c359b3b22661b857eb7401a84",
+ "interpretation": "Forecast infra contract holds: signal mapping is bounded, role-stamped and fail-closed; the registry refuses unbound fx-1 and type-checks entrypoints; reference models refuse empty/missing-id/leaky frames.",
+ "kind": "forecast_infra_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "8c9be405366f2e8a46ae188e04cad9626265d9717a29a588c3c5dd5ac4e8c296",
+ "research_only": true,
+ "schema": "forecast_infra_audit.v1"
+}

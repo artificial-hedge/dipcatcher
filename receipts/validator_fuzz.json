@@ -1,0 +1,145 @@
+{
+  "kind": "validator_fuzz",
+  "schema": "validator_fuzz.v1",
+  "git_revision": "db8602e37c4c7e43a429cf40aa3a7c1a5563b6de",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "no numeric config field accepts NaN/inf; physical fields reject negative/zero degenerate inputs",
+    "verdict": "ok",
+    "n_numeric_fields": 176,
+    "n_violations": 0
+  },
+  "interpretation": {
+    "n_models": 25,
+    "n_numeric_fields": 176,
+    "n_violations": 0,
+    "n_notes": 142,
+    "verdict": "ok",
+    "violations": [],
+    "notes": [
+      {
+        "field": "CostConfig.commission_bps",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "CostConfig.half_spread_bps",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "CostConfig.impact_y",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "CostConfig.bps_per_turnover",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "CostConfig.borrow_bps_per_year",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "CostConfig.financing_bps_per_year",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "CostConfig.spread_calibration_lookback",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "DataConfig.synthetic_n_assets",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "DataConfig.synthetic_n_days",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "DataConfig.synthetic_seed",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "DataConfig.synthetic_oracle_beta",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "ExecutionConfig.horizon_bars",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "ExecutionConfig.n_slices",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "ExecutionConfig.risk_aversion",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "ExecutionConfig.temporary_impact",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "ExecutionConfig.permanent_impact",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FeatureConfig.amihud_lookback",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FeatureConfig.adv_lookback",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.alpha_weight",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.confidence_weight",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.regime_weight",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.risk_weight",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.tail_penalty",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.liquidity_penalty",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.min_executable_alpha",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.alpha_scale",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "FusionConfig.probability_calibration_max_age_days",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "KronosConfig.lookback",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "KronosConfig.pred_len",
+        "hostile": "1e12_accepted"
+      },
+      {
+        "field": "KronosConfig.max_context",
+        "hostile": "1e12_accepted"
+      }
+    ]
+  },
+  "receipt_sha256": "72e1b7b5d3328ceb999eabc3ca99ed61abe21c2cfa8965de3286bfffe1524043"
+}
