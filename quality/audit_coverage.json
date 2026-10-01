@@ -96,12 +96,12 @@
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 51,
+      "n_modules": 52,
       "status": "audited"
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 208,
+      "n_modules": 212,
       "status": "audited"
     },
     "monitoring": {
@@ -114,7 +114,7 @@
       "status": "audited"
     },
     "northset": {
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "observe": {
@@ -130,7 +130,7 @@
       "status": "audited"
     },
     "pipeline": {
-      "n_modules": 21,
+      "n_modules": 22,
       "status": "audited"
     },
     "pit": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 120,
+      "n_modules": 126,
       "status": "audited"
     },
     "risk": {
