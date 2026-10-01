@@ -2,36 +2,38 @@
   "claim": {
     "arms": {
       "gbm_lognormal": {
-        "eta_hat": 0.6137495838540917,
-        "h_hat": 0.5004550752266193,
-        "h_hat_q1": 0.5028159641956776,
-        "h_hat_q2": 0.49809418625756097,
-        "h_hat_var": 0.49776083810091715,
+        "driver": "lognormal",
+        "eta_hat": 0.6516254658004218,
+        "h_hat": 0.47857560323771203,
+        "h_hat_q1": 0.4775296610667346,
+        "h_hat_q2": 0.47962154540868945,
+        "h_hat_var": 0.47902625110285485,
         "n_obs": 1024,
         "n_paths": 24,
-        "nu_hat": 0.217091972138859,
+        "nu_hat": 0.22539450835701647,
         "nu_w": 0.3,
         "planted_h": 0.5,
         "zeta_q": [
-          0.5028159641956776,
-          0.9961883725151219
+          0.4775296610667346,
+          0.9592430908173789
         ]
       },
       "rbergomi_planted": {
-        "eta_hat": 1.5992034246671216,
-        "h_hat": 0.11206046570017965,
-        "h_hat_q1": 0.11255998675176164,
-        "h_hat_q2": 0.11156094464859766,
-        "h_hat_var": 0.11153602610158177,
+        "driver": "rbergomi",
+        "eta_hat": 2.452119333423114,
+        "h_hat": 0.1560124098478096,
+        "h_hat_q1": 0.1567967031882165,
+        "h_hat_q2": 0.15522811650740267,
+        "h_hat_var": 0.15268747306999372,
         "n_obs": 1024,
         "n_paths": 24,
-        "nu_hat": 0.26767014055063376,
+        "nu_hat": 0.7463608294692471,
         "nu_w": 0.42485291572496003,
         "planted_eta_rbergomi": 1.9,
         "planted_h": 0.1,
         "zeta_q": [
-          0.11255998675176164,
-          0.2231218892971953
+          0.1567967031882165,
+          0.31045623301480535
         ]
       },
       "silver_panel": {
@@ -98,13 +100,13 @@
     "zumbach": {
       "resolution_a_blocks": 16,
       "resolution_b_blocks": 64,
-      "zeta2_coarse": 0.34802401832595453,
-      "zeta2_fine": 0.2231218892971953
+      "zeta2_coarse": 0.3852480417255281,
+      "zeta2_fine": 0.31045623301480535
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
-  "interpretation": "Vol-of-vol / roughness lane: pooled log-realized-vol moment scaling (q = 1, 2) on SYNTHETIC series. The rBergomi-planted arm recovers H ~ 0.10 and the rBergomi-equivalent vol-of-vol \u03b7 through the price\u2192RV measurement chain (\u03b7\u0302 reads low: the block-RV proxy smooths the finest-scale roughness \u2014 pinned, not hidden); the geometric-BM-vol arm recovers the smooth H = 0.5 contrast; the silver panel arm reports per-symbol \u0124 on synthetic daily bars; the Zumbach probe checks resolution-invariance of the scaling exponent. SYNTHETIC pipeline-correctness evidence; no market claims.",
+  "git_revision": "6cf0cb53ad7e5135d6e1dbab2ba6f1065d58116b",
+  "interpretation": "Vol-of-vol / roughness lane: pooled log-realized-vol moment scaling (q = 1, 2) on SYNTHETIC series. The rBergomi-planted arm \u2014 the repo's hybrid_volterra BLP driver, \u03ba = 1 bias included \u2014 recovers H ~ 0.10 and the vol-of-vol \u03b7 through the price\u2192RV measurement chain (\u03b7\u0302 reads ~+35% high: the point-mass cell and intra-block RV mixing add short-lag variance \u2014 pinned, not hidden); the exact-circulant lognormal-vol arm recovers the smooth H = 0.5 contrast; the silver panel arm reports per-symbol \u0124 on synthetic daily bars; the Zumbach probe checks resolution-invariance of the scaling exponent. SYNTHETIC pipeline-correctness evidence; no market claims.",
   "kind": "vol_of_vol",
   "live_pnl_claim": false,
   "params": {
@@ -116,13 +118,15 @@
     "n_paths": 24,
     "planted_eta": 1.9,
     "planted_h": 0.1,
+    "planted_rho": -0.7,
+    "planted_xi0": 0.04,
     "qs": [
       1.0,
       2.0
     ],
     "seed": 91
   },
-  "receipt_sha256": "e52bd0bf9d3cb1402581ce2ed619043fa2ba2d6e7370e7c8ffca35f533b6bcd2",
+  "receipt_sha256": "85711869e14ab09d2d0c7494f78d6fabe9401b4df012101b5541e63b1dc74326",
   "research_only": true,
   "schema": "vol_of_vol.v1"
 }

@@ -17,14 +17,15 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import subprocess
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 MAX_OUTPUT_CHARS = 200_000
 DEFAULT_TIMEOUT_S = 120.0
@@ -72,6 +73,20 @@ class FetchRequest(BaseModel):
         "ingestion of time-stamped market data.",
     )
     timeout_s: float = Field(default=DEFAULT_TIMEOUT_S, gt=0, le=600)
+
+    @field_validator("as_of")
+    @classmethod
+    def _as_of_is_a_real_date(cls, as_of: str | None) -> str | None:
+        # The PIT leakage gate keys on this field; a non-date string would
+        # satisfy "present" while pinning the wrong observation date.
+        if as_of is not None:
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", as_of):
+                raise ValueError(f"as_of must be YYYY-MM-DD, got {as_of!r}")
+            try:
+                date.fromisoformat(as_of)
+            except ValueError:
+                raise ValueError(f"as_of is not a real date: {as_of!r}") from None
+        return as_of
 
 
 class FetchResult(BaseModel):

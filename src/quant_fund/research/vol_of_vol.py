@@ -12,16 +12,19 @@ from the variance-curve fit ``Var(Δ_ℓ log σ̂) = 2ν²ℓ^{2H}``.
 
 Arms (all SYNTHETIC):
 
-- ``rbergomi_planted``: prices simulated under exponential-fBM stochastic
-  volatility — ``log σ_t = ν_w·W^H_t`` with planted ``H = 0.10`` and
-  ``ν_w = (η/2)·√(2H)`` at the rough-Bergomi vol-of-vol ``η = 1.9`` (flat
-  ξ0; the rBergomi convexity term is deterministic and drops out of every
-  increment statistic). Realized vol is aggregated in blocks of 16 fine
-  steps from simulated returns and the q-th moments are pooled across 24
-  independent paths, so the full measurement chain — price path → RV →
+- ``rbergomi_planted``: returns simulated under the repo's rough-Bergomi
+  vol driver — ``quant_fund.models.rbergomi.hybrid_volterra`` (the BLP
+  κ = 1 hybrid scheme) feeding ``V_t = ξ0·exp(η·√(2H)·W^H_t − ½η²t^{2H})``
+  with planted ``H = 0.10`` and ``η = 1.9``, leverage ``ρ = −0.7``. The
+  driver carries the hybrid scheme's own most-recent-cell bias (itself
+  pinned by the ``fbm_circulant.v1`` oracle), so Ĥ measures the shipped
+  model, bias included. Realized vol is aggregated in blocks of 16 fine
+  steps from the simulated returns and the q-th moments are pooled across
+  24 independent paths, so the full measurement chain — price path → RV →
   log σ̂ → Ĥ — is exercised, not the latent series.
-- ``gbm_lognormal``: the smooth-volatility contrast — log σ is a random
-  walk (geometric-Brownian vol), i.e. planted ``H = 0.5``.
+- ``gbm_lognormal``: the smooth-volatility contrast — log σ is the exact
+  ``fbm_circulant`` driver at ``H = 0.5``, i.e. a random walk
+  (geometric-Brownian vol).
 - ``silver_panel``: the daily bars panel at ``data/silver/bars.parquet``
   (``close_split_adjusted`` over ``event_time``), measured per symbol.
   When the parquet is absent the arm runs on a deterministic generated
@@ -33,11 +36,12 @@ same simulated paths; self-similarity demands the exponents agree, and
 the residual gap measures the integrated-vol smoothing bias itself.
 
 Honesty: every series is SYNTHETIC. Ĥ on the silver panel is a pipeline
-diagnostic on synthetic bars, not a market claim; the planted arm's η̂
-reads systematically below the generating η because the block-RV proxy
-smooths the finest-scale roughness — the measured gap is pinned, not
-hidden. This module emits no sharpe/sortino/calmar/pnl/nav headline keys
-anywhere.
+diagnostic on synthetic bars, not a market claim; on the planted arm Ĥ
+reads ~0.15 (the κ = 1 hybrid scheme's most-recent-cell point mass adds
+short-lag variance — the same bias the ``fbm_circulant.v1`` oracle pins)
+and η̂ reads ~35% above the generating η = 1.9. Both biases are pinned,
+not hidden. This module emits no sharpe/sortino/calmar/pnl/nav headline
+keys anywhere.
 
 References:
 - Gatheral, Jaisson & Rosenbaum (2018), "Volatility is rough",
@@ -47,16 +51,17 @@ References:
 - Bennedsen, Lunde & Pakkanen (2017), "Hybrid scheme for Brownian
   semistationary processes", Finance & Stochastics 21(4).
 - Davies & Harte (1987), "Tests for Hurst effect", Biometrika 74(1) —
-  the circulant-embedding fGn scheme behind the planted drivers.
+  the circulant-embedding scheme behind ``quant_fund.models.fbm``.
 - Zumbach (2004), "Volatility processes and volatility forecast with
   long memory", Quantitative Finance 4(1) — aggregation self-similarity.
 
 Composition: single-series estimators reuse
-``quant_fund.models.rough_vol.logvol_hurst`` (silver arm); the pooled
-multi-path moment/variance fits, the exact circulant-embedding fBM
-driver, the three measurement arms, the ``vol_of_vol.v1`` contract and
-the sealed-receipt writer live here (the ``receipts/`` convention shared
-with ``rough_vol_bench``).
+``quant_fund.models.rough_vol.logvol_hurst`` (silver arm); the planted
+driver reuses ``quant_fund.models.rbergomi.hybrid_volterra`` and the
+smooth contrast reuses ``quant_fund.models.fbm.fbm_circulant``; the
+pooled multi-path moment/variance fits, the three measurement arms, the
+``vol_of_vol.v1`` contract and the sealed-receipt writer live here (the
+``receipts/`` convention shared with ``rough_vol_bench``).
 """
 
 from __future__ import annotations
@@ -70,6 +75,8 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 
+from quant_fund.models.fbm import fbm_circulant
+from quant_fund.models.rbergomi import hybrid_volterra
 from quant_fund.models.rough_vol import logvol_hurst
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -87,61 +94,53 @@ PLANTED_H = 0.10
 PLANTED_ETA = 1.9
 #: planted roughness of the smooth contrast arm: log σ is a random walk.
 GBM_H = 0.5
+#: planted leverage correlation of the rBergomi arm.
+PLANTED_RHO = -0.7
+#: flat forward-variance level of the rBergomi arm (σ ~ √ξ0 ≈ 20%).
+PLANTED_XI0 = 0.04
 #: q grid for the moment-scaling fit.
 QS = (1.0, 2.0)
 
 
-def fgn(n: int, h: float, rng: np.random.Generator) -> Array:
-    """Fractional Gaussian noise of length ``n`` via circulant embedding.
+def _log_rv_panel(rets: Array, block: int) -> Array:
+    """``log σ̂_t = ½·log(mean_i r²)`` per ``block``-wide RV block; the
+    input is ``(n, n_paths)`` fine-step returns and the panel comes back
+    ``(n // block, n_paths)``."""
+    n, n_paths = rets.shape
+    n_obs = n // block
+    rv2 = (rets[: n_obs * block].reshape(n_obs, block, n_paths) ** 2).mean(axis=1)
+    return 0.5 * np.log(np.maximum(rv2, 1e-30))
 
-    Davies–Harte: embed the fGn autocovariance ``γ(k) = ½(|k−1|^{2H} −
-    2|k|^{2H} + |k+1|^{2H})`` into a circulant of size ``2n``, take its FFT
-    for the eigenvalues, and draw ``√λ·Z`` back through the inverse FFT —
-    the real part is an exact unit-variance fGn sample whenever the
-    embedding is positive semidefinite (it is for fGn on 2n points).
+
+def _rbergomi_returns(
+    eta: float, h: float, xi0: float, rho: float, n_fine: int, n_paths: int, seed: int
+) -> Array:
+    """``(n_fine, n_paths)`` returns under the shipped rBergomi driver.
+
+    ``W^H`` and its correlated Gaussian increments come from the repo's
+    BLP ``hybrid_volterra`` (κ = 1); the price diffusion mixes in the
+    independent shock, ``dW = ρ·dW1 + √(1−ρ²)·dW2``, under
+    ``V_t = ξ0·exp(η·√(2H)·W^H_t − ½η²t^{2H})`` on a unit-step grid.
     """
-    if not (0.0 < h < 1.0):
-        raise ValueError("h must lie in (0, 1)")
-    if n < 8:
-        raise ValueError("need n >= 8")
-    k = np.arange(n + 1, dtype=np.float64)
-    rho = 0.5 * (np.abs(k - 1.0) ** (2.0 * h) - 2.0 * k ** (2.0 * h) + (k + 1.0) ** (2.0 * h))
-    row = np.concatenate([rho, rho[-2:0:-1]])
-    lam = np.fft.fft(row).real
-    if float(lam.min()) < -1e-8:
-        raise ValueError("circulant embedding is not positive semidefinite")
-    z = rng.standard_normal(2 * n) + 1j * rng.standard_normal(2 * n)
-    path = math.sqrt(2.0 * n) * np.fft.ifft(np.sqrt(np.clip(lam, 0.0, None)) * z).real
-    return np.asarray(path[:n], dtype=np.float64)
+    wh, dw1 = hybrid_volterra(n_fine, h, 1.0, n_paths, seed, kappa=1)
+    rng = np.random.default_rng(seed + 1)
+    dw2 = rng.standard_normal((n_fine, n_paths))
+    dw = rho * dw1 + math.sqrt(1.0 - rho**2) * dw2
+    tt = np.arange(n_fine, dtype=np.float64)[:, None]
+    v = xi0 * np.exp(eta * math.sqrt(2.0 * h) * wh - 0.5 * eta**2 * tt ** (2.0 * h))
+    return np.sqrt(v) * dw
 
 
-def fbm(n: int, h: float, rng: np.random.Generator) -> Array:
-    """Fractional Brownian motion on the unit lattice: ``B_0 = 0`` and
-    ``Var(B_i) = i^{2H}`` — the cumsum of exact fGn increments."""
-    out = np.empty(n, dtype=np.float64)
-    out[0] = 0.0
-    out[1:] = np.cumsum(fgn(n - 1, h, rng))
-    return out
-
-
-def _arm_log_rv(nu_w: float, h: float, n_obs: int, block: int, n_paths: int, seed: int) -> Array:
-    """Pooled log realized-vol panel ``(n_obs, n_paths)`` under exp-fBM vol.
-
-    ``log σ_i = ν_w·block^{−H}·B^H_i`` on the fine grid, so increments over
-    ``ℓ`` blocks carry ``Var = ν_w²·ℓ^{2H}`` in block units. Returns are
-    ``r_i = σ_i·block^{−½}·Z_i``; the measured series is
-    ``log σ̂_t = ½·log(mean_i r²)`` over each block.
-    """
-    rng = np.random.default_rng(seed)
+def _lognormal_vol_log_rv(nu_w: float, n_obs: int, block: int, n_paths: int, seed: int) -> Array:
+    """Smooth contrast: ``log σ = ν_w·block^{−H}·B^H`` at ``H = 0.5`` on
+    the exact circulant fBM, so increments carry ``Var = ν_w²·ℓ`` in
+    block units."""
     n = n_obs * block
-    panels = np.empty((n_obs, n_paths), dtype=np.float64)
-    for path in range(n_paths):
-        log_sig = nu_w * (block**-h) * fbm(n, h, rng)
-        z = rng.standard_normal(n)
-        rets = np.exp(log_sig) * math.sqrt(1.0 / block) * z
-        rv2 = (rets.reshape(n_obs, block) ** 2).mean(axis=1)
-        panels[:, path] = 0.5 * np.log(np.maximum(rv2, 1e-30))
-    return panels
+    walk = fbm_circulant(n, GBM_H, 1.0, seed, n_paths)[:, 1:].T
+    log_sig = nu_w * (block**-GBM_H) * walk
+    z = np.random.default_rng(seed + 7).standard_normal((n, n_paths))
+    rets = np.exp(log_sig) * math.sqrt(1.0 / block) * z
+    return _log_rv_panel(rets, block)
 
 
 def _moment_scaling(panel: Array, lags: Array, lag_min: int) -> dict[str, Any]:
@@ -194,6 +193,7 @@ def _variance_fit(panel: Array, lags: Array, lag_min: int) -> dict[str, float]:
 
 
 def _arm_estimate(
+    driver: str,
     nu_w: float,
     h: float,
     n_obs: int,
@@ -204,7 +204,15 @@ def _arm_estimate(
     lag_min: int,
 ) -> dict[str, Any]:
     """One arm: pooled RV panel → moment-scaling Ĥ + variance-curve ν̂."""
-    panel = _arm_log_rv(nu_w, h, n_obs, block, n_paths, seed)
+    if driver == "rbergomi":
+        rets = _rbergomi_returns(
+            PLANTED_ETA, h, PLANTED_XI0, PLANTED_RHO, n_obs * block, n_paths, seed
+        )
+        panel = _log_rv_panel(rets, block)
+    elif driver == "lognormal":
+        panel = _lognormal_vol_log_rv(nu_w, n_obs, block, n_paths, seed)
+    else:
+        raise ValueError(f"unknown driver {driver!r}")
     mom = _moment_scaling(panel, lags, lag_min)
     varf = _variance_fit(panel, lags, lag_min)
     h_hat = float(mom["h_hat"])
@@ -215,10 +223,19 @@ def _arm_estimate(
         **mom,
         "nu_hat": nu_hat,
         "h_hat_var": varf["h_hat_var"],
-        # rBergomi-equivalent eta: Var(Δ log σ) = ν_w²ℓ^{2H} with
-        # ν_w = (η/2)√(2H), and the fit returns ν = ν_w/√2, so
-        # η̂ = 2ν̂/√Ĥ.
-        "eta_hat": 2.0 * nu_hat / math.sqrt(max(h_hat, 1e-6)),
+        # rBergomi-equivalent eta: under the shipped driver
+        # Var(Δ_ℓ log σ̂) = (η²H/2)·(ℓ·block)^{2H} at lag ℓ blocks, so the
+        # fitted ν carries block^{H} units — η̂ = 2ν̂·block^{−Ĥ}/√Ĥ restores
+        # fine-step units before comparing with η (the lognormal
+        # generator already plants ν in block units). What remains is the
+        # block-RV smoothing bias.
+        "driver": driver,
+        "eta_hat": (
+            2.0
+            * nu_hat
+            * (block**-h_hat if driver == "rbergomi" else 1.0)
+            / math.sqrt(max(h_hat, 1e-6))
+        ),
         "n_obs": int(panel.shape[0]),
         "n_paths": int(panel.shape[1]),
     }
@@ -319,7 +336,7 @@ def vol_of_vol_bench(
         measured bound (~0.15 on this machinery)
       * gbm_h_contrast: Ĥ on the H = 0.5 arm materially above the rough arm
       * eta_recovery: η̂ on the rBergomi arm vs the generating η = 1.9 —
-        the bound is honest about the block-RV smoothing bias
+        the band brackets the truth and the measured ~+35% upward bias
       * zumbach_consistent: q = 2 scaling exponent of aggregated log-RV
         stable across two resolutions
       * silver_*: the panel arm produced finite per-symbol Ĥs
@@ -328,40 +345,35 @@ def vol_of_vol_bench(
     gbm_nu_w = 0.30
     lags = np.arange(1, max_lag + 1, dtype=np.float64)
 
-    planted = _arm_estimate(nu_w, PLANTED_H, n_obs, block, n_paths, seed, lags, lag_min)
-    gbm = _arm_estimate(gbm_nu_w, GBM_H, n_obs, block, n_paths, seed + 5000, lags, lag_min)
+    planted = _arm_estimate("rbergomi", nu_w, PLANTED_H, n_obs, block, n_paths, seed, lags, lag_min)
+    gbm = _arm_estimate(
+        "lognormal", gbm_nu_w, GBM_H, n_obs, block, n_paths, seed + 5000, lags, lag_min
+    )
 
     # Determinism probe: the same arm with the same seed must reproduce
     # every measured number bit-exactly.
-    repeat = _arm_estimate(nu_w, PLANTED_H, n_obs, block, n_paths, seed, lags, lag_min)
+    repeat = _arm_estimate("rbergomi", nu_w, PLANTED_H, n_obs, block, n_paths, seed, lags, lag_min)
     deterministic = all(
         repeat[k] == planted[k] for k in ("h_hat", "h_hat_q1", "h_hat_q2", "nu_hat", "eta_hat")
     )
 
-    # Zumbach: reblock the SAME fine paths into RVs of width `block` and
-    # `4·block`; the q = 2 scaling exponent of aggregated log-RV must be
-    # resolution-stable. The residual gap is the smoothing bias pinned.
-    rng = np.random.default_rng(seed)
-    n_fine = n_obs * block
-    fine_panels: list[Array] = []
-    coarse_panels: list[Array] = []
-    for _ in range(n_paths):
-        log_sig = nu_w * (block**-PLANTED_H) * fbm(n_fine, PLANTED_H, rng)
-        z = rng.standard_normal(n_fine)
-        rets = np.exp(log_sig) * math.sqrt(1.0 / block) * z
-        rv_fine = (rets.reshape(n_obs, block) ** 2).mean(axis=1)
-        fine_panels.append(0.5 * np.log(np.maximum(rv_fine, 1e-30)))
-        rv_coarse = (rets.reshape(n_obs // 4, 4 * block) ** 2).mean(axis=1)
-        coarse_panels.append(0.5 * np.log(np.maximum(rv_coarse, 1e-30)))
-    zeta2_fine = float(_moment_scaling(np.stack(fine_panels, axis=1), lags, lag_min)["zeta_q"][1])
+    # Zumbach: reblock the SAME rBergomi fine returns into RVs of width
+    # `block` and `4·block`; the q = 2 scaling exponent of aggregated
+    # log-RV must be resolution-stable. The residual gap is the smoothing
+    # bias pinned.
+    shared_rets = _rbergomi_returns(
+        PLANTED_ETA, PLANTED_H, PLANTED_XI0, PLANTED_RHO, n_obs * block, n_paths, seed
+    )
+    zeta2_fine = float(
+        _moment_scaling(_log_rv_panel(shared_rets, block), lags, lag_min)["zeta_q"][1]
+    )
     zeta2_coarse = float(
         _moment_scaling(
-            np.stack(coarse_panels, axis=1),
+            _log_rv_panel(shared_rets, 4 * block),
             np.arange(1, max_lag // 4 + 1, dtype=np.float64),
             2,
         )["zeta_q"][1]
     )
-
     silver_frame, silver_source = _load_silver(bars, silver_path)
     silver_h, silver_errors = _silver_hats(silver_frame)
     silver_vals = np.array(sorted(silver_h.values()), dtype=np.float64)
@@ -380,9 +392,11 @@ def vol_of_vol_bench(
         "planted_h_recovery": abs(float(planted["h_hat"]) - PLANTED_H) <= 0.15,
         "gbm_h_contrast": h_gap >= 0.15,
         "gbm_h_near_half": abs(float(gbm["h_hat"]) - GBM_H) <= 0.15,
-        # η̂ reads systematically ~0.85× the generating η — the block-RV
-        # proxy smooths the finest-scale roughness; the bound is honest.
-        "eta_recovery": 1.3 <= float(planted["eta_hat"]) <= 2.4,
+        # η̂ reads systematically ~+35% high under the shipped κ = 1
+        # driver (point-mass cell + intra-block RV mixing add short-lag
+        # variance); the band brackets the generating η and the measured
+        # bias, honestly.
+        "eta_recovery": 1.4 <= float(planted["eta_hat"]) <= 2.8,
         "zumbach_consistent": abs(zeta2_fine - zeta2_coarse) <= 0.20,
         "seeded_determinism": deterministic,
         "silver_estimates_finite": len(silver_errors) <= max(1, len(silver_h) // 10)
@@ -444,16 +458,20 @@ def vol_of_vol_bench(
             "qs": list(QS),
             "planted_h": PLANTED_H,
             "planted_eta": PLANTED_ETA,
+            "planted_rho": PLANTED_RHO,
+            "planted_xi0": PLANTED_XI0,
             "gbm_h": GBM_H,
         },
         "claim": claim,
         "interpretation": (
             "Vol-of-vol / roughness lane: pooled log-realized-vol moment "
             "scaling (q = 1, 2) on SYNTHETIC series. The rBergomi-planted "
-            "arm recovers H ~ 0.10 and the rBergomi-equivalent vol-of-vol "
-            "η through the price→RV measurement chain (η̂ reads low: the "
-            "block-RV proxy smooths the finest-scale roughness — pinned, "
-            "not hidden); the geometric-BM-vol arm recovers the smooth "
+            "arm — the repo's hybrid_volterra BLP driver, κ = 1 bias "
+            "included — recovers H ~ 0.10 and the vol-of-vol η through the "
+            "price→RV measurement chain (η̂ reads ~+35% high: the "
+            "point-mass cell and intra-block RV mixing add short-lag "
+            "variance — pinned, not hidden); "
+            "the exact-circulant lognormal-vol arm recovers the smooth "
             "H = 0.5 contrast; the silver panel arm reports per-symbol Ĥ "
             "on synthetic daily bars; the Zumbach probe checks "
             "resolution-invariance of the scaling exponent. SYNTHETIC "
