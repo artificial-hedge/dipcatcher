@@ -84,6 +84,12 @@ def cancel_gradient_bench(horizon: float = 2000.0, *, seed: int = 13) -> dict[st
             "cxl_touch_bias": 0.03,
             **_run_arm(replace(base, cxl_touch_bias=0.03), horizon),
         },
+        {
+            "name": "dist_decay",
+            "cxl_touch_bias": 0.5,
+            "cxl_dist_decay": 3.0,
+            **_run_arm(replace(base, cxl_touch_bias=0.5, cxl_dist_decay=3.0), horizon),
+        },
     ]
     real: dict[str, Any] = {
         "propensity": {
@@ -97,9 +103,14 @@ def cancel_gradient_bench(horizon: float = 2000.0, *, seed: int = 13) -> dict[st
     }
     uni: Any = arms[0]["buckets"]
     biased: Any = arms[1]["buckets"]
+    decayed: Any = arms[2]["buckets"]
     divergences: list[str] = []
     if abs(float(biased["d1_3"]["propensity"]) - 1.44) > 0.4:
         divergences.append(f"biased_d1_3_propensity_{biased['d1_3']['propensity']}_vs_1.44")
+    if float(decayed["touch"]["propensity"]) > 2.5:
+        divergences.append(f"decay_touch_propensity_{decayed['touch']['propensity']}_vs_1.37")
+    if float(decayed["d11_plus"]["propensity"]) < 0.4:
+        divergences.append(f"decay_deep_propensity_{decayed['d11_plus']['propensity']}_vs_0.68")
 
     payload: dict[str, Any] = {
         "schema": CANCEL_GRADIENT_BENCH_SCHEMA,
@@ -116,18 +127,26 @@ def cancel_gradient_bench(horizon: float = 2000.0, *, seed: int = 13) -> dict[st
             "deep_residual_logged": bool(
                 abs(float(biased["d11_plus"]["propensity"]) - 0.68) > 0.15
             ),
+            "decay_shapes_near_ring": bool(
+                float(decayed["d1_3"]["propensity"])
+                > float(decayed["d4_10"]["propensity"])
+                > float(decayed["d11_plus"]["propensity"])
+            ),
+            "thin_touch_overshoots": bool(float(decayed["touch"]["propensity"]) > 2.5),
         },
         "interpretation": (
             "Touch bias b redirects fraction ~b of cancels to the front: "
             "at b=0.03 touch propensity lands at ~1.5 vs the tape's "
             "1.37. The "
             "uniform arm stays flat ~1.0 at every distance — the missing "
-            "mechanism is structural, not parametric. Honest divergences: "
-            "the real profile concentrates at 1-3 ticks too (1.44) and "
-            "drains d>=11 to 0.68; the single-knob bias can't express "
-            "near-touch bands or the tape's 50+ tick deep-book tail, "
-            "both logged. A distance-decaying propensity kernel is the "
-            "next refinement."
+            "mechanism is structural, not parametric. The dist-decay arm "
+            "(b=0.5, L=3) recovers the tape's ORDERING — near-touch mass "
+            "> d4-10 > deep — but the sim's touch queue is thin, so the "
+            "touch propensity overshoots (~3.4 vs 1.37) instead of the "
+            "real ring peaking at d1-3. Deep drain sits ~0.5 vs the "
+            "tape's 0.68. The residual is occupancy, not propensity: the "
+            "real touch holds a long queue; ours holds 1-2 orders — "
+            "the next mechanism is touch-queue depth, logged."
         ),
     }
     payload["git_revision"] = git_revision()

@@ -209,3 +209,63 @@ truthy claim values, ledger write-fork). One existing test fixture
 write a structurally valid quote; the mrm completeness contract tests in
 `test_moves1234.py`/`test_e2e.py`/`test_cli.py` were updated to pin
 real evidence per activity; no test or threshold was weakened.
+
+## Round — forecast data-layer audit lane (`forecast_data_audit`)
+
+Scope: `src/fx1/forecast/features.py`, `schema.py`, `artifacts.py`. The audit
+module `src/fx1/forecast/data_audit.py` runs 86 probes over fail-closed
+schema paths, feature causality (no look-ahead), PIT visibility, resample
+provenance, artifact digest binding, and determinism; the sealed receipt
+lives at `receipts/forecast_data_audit.json` (`verify-receipt` → valid).
+Tests: `tests/unit/fx1_serve/test_forecast_data_audit.py` (93 tests — one
+parametrized per probe plus receipt/tamper contracts).
+
+### Findings — fixed (fail-closed, minimal edits)
+
+1. **`visible_bars` skipped lineage checks on the no-cutoff path** —
+   `features.py`. `decision_time=None` early-returned *before* validating
+   `event_time`/`available_time`, so null or reversed lineage rows passed
+   through; the full-PIT-column path also dropped null-availability rows
+   silently while the sparse path raised. Lineage is now checked on every
+   path, before the cutoff (`fixed`: `null_availability_rejected_no_cutoff`,
+   `null_availability_rejected_pit_path`,
+   `release_before_event_rejected_no_cutoff`, `null_event_time_rejected`,
+   `missing_event_time_rejected`).
+2. **`resample_ohlcv` could hide a release-before-event bar inside a
+   bucket** — `features.py`. The aggregate `max(available_time)` check let a
+   bar released before its own event slip through when a later bar's
+   availability was valid. Each bar's lineage is now refused up front
+   (`fixed`: `per_bar_release_before_event_refused`, `null_lineage_refused`).
+3. **`resample_ohlcv` collapsed mixed `revision_id`s to the first** —
+   `features.py`. A bucket mixing revisions silently kept the first while a
+   `source` mix raised `PointInTimeError`; `revision_id` is a per-source
+   provenance constant, so a mix means merged provenance. Now refused like
+   `source` (`fixed`: `mixed_revisions_refused`).
+4. **Quantile ordering check could hide a crossing behind a null** —
+   `schema.py`. Ordering was only checked on rows where *every* quantile was
+   non-null; a crossing with one missing quantile escaped. Present adjacent
+   pairs are now ordered on every row — a null comparison yields null, never
+   a violation (`fixed`: `quantile_ordering_partial_null_row`).
+
+### Findings — reviewed, pinned as flag probes (no change)
+
+- `schema.feature`: narrow numeric dtype allowlist (UInt8/16 rejected —
+  over-strict, safe); context-column dtypes unchecked (a Utf8 `close` fails
+  upstream in the pipeline, never at predict time).
+- `schema.forecast`: `predicted_return < -1` accepted (positivity bound only
+  on `predicted_price`); unknown extra columns tolerated (label-like names
+  still raise `LeakageError`); noncanonical quantile names (`q_50`) escape
+  the ordering regex; `horizon_bars` dtype allowlist already noted above.
+- `features.pit`: `decision_time=None` returns all lineage-valid rows
+  (fit-time semantics); naive timestamps assumed UTC by `as_utc`;
+  `ingested_time`/`source`/`revision_id` may carry nulls.
+- `features.causality`: a panel shorter than the longest lookback yields an
+  empty feature frame without `SchemaError` — the runner tolerates empty
+  slices.
+- `features.resample`: duplicate `(security_id, event_time)` bars merge into
+  one bucket silently; `every='bogus'` raises a raw polars error rather than
+  a typed `PointInTimeError` (loud crash, still fail-closed).
+- `artifacts`: safe formats deserialize before hashing the file — a mid-load
+  rewrite could make the stamped digest describe different bytes (the runner
+  re-probes after load; single-shot callers see the gap); the
+  `<path>.version` sidecar is stamped without digest-binding.
