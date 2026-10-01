@@ -402,32 +402,26 @@ def test_label_declaration_missing_keys_fail_closed(tmp_path) -> None:
 # -- helpers -------------------------------------------------------------------
 
 
-def test_code_fingerprint_nogit_fallback(monkeypatch) -> None:
-    monkeypatch.setattr(runner_mod.shutil, "which", lambda name: None)
-    assert runner_mod._code_fingerprint() == "nogit"
+def test_fingerprints_delegate_to_proofcore_ci(monkeypatch) -> None:
+    """Integration reconciliation: runner mints via proofcore.ci helpers so
+    replay re-derives the identical strings at the env gate."""
+    from quant_fund.proofcore import ci
 
-
-def test_code_fingerprint_git_failure_fallback(monkeypatch, tmp_path) -> None:
-    monkeypatch.setattr(runner_mod.shutil, "which", lambda name: "/usr/bin/git")
-
-    def _boom(*args, **kwargs):
-        raise OSError("no git")
-
-    monkeypatch.setattr(runner_mod.subprocess, "run", _boom)
-    assert runner_mod._code_fingerprint() == "nogit"
-
-    class _Proc:
-        returncode = 128
-        stdout = ""
-
-    monkeypatch.setattr(runner_mod.subprocess, "run", lambda *a, **k: _Proc())
-    assert runner_mod._code_fingerprint() == "nogit"
+    monkeypatch.setattr(ci, "code_fingerprint", lambda: "c" * 64)
+    monkeypatch.setattr(ci, "env_fingerprint", lambda: "plat|pytag|1.2.3")
+    assert runner_mod._code_fingerprint() == "c" * 64
+    assert runner_mod._env_fingerprint() == "plat|pytag|1.2.3"
 
 
 def test_env_fingerprint_format() -> None:
-    parts = runner_mod._env_fingerprint().split("|")
+    """Contracts §2.2 formula: platform|python tag|real quant_fund version."""
+    from quant_fund.proofcore import ci
+
+    fingerprint = runner_mod._env_fingerprint()
+    parts = fingerprint.split("|")
     assert len(parts) == 3
-    assert parts[2] == "quant_fund-dev"
+    assert parts[2] == ci.quant_fund_version() != "quant_fund-dev"
+    assert fingerprint == ci.env_fingerprint()
 
 
 def test_package_version_missing() -> None:
