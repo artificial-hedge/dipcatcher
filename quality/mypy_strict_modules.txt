@@ -573,6 +573,7 @@ src/quant_fund/pipeline/train/ranking.py
 src/quant_fund/pipeline/train/splits.py
 src/quant_fund/pipeline/train/volatility.py
 src/quant_fund/pit/__init__.py
+src/quant_fund/pit/asof_audit.py
 src/quant_fund/pit/cli.py
 src/quant_fund/pit/corrections.py
 src/quant_fund/pit/frame.py
