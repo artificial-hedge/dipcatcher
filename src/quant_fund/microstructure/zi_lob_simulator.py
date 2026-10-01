@@ -64,6 +64,12 @@ from numpy.typing import NDArray
 Array = NDArray[np.float64]
 Side = Literal["buy", "sell"]
 
+#: Resting-order placement class at submit time, relative to the own-side
+#: touch: ``"join"`` lands at the touch, ``"improve"`` lands strictly inside
+#: the open spread (a new own-side best), ``"deep"`` lands outside it.
+PlacementClass = Literal["join", "improve", "deep"]
+PLACEMENT_CLASSES: tuple[PlacementClass, ...] = ("join", "improve", "deep")
+
 MM_TAG = "mm_session"
 ZI_LOB_REVISION = "SYNTHETIC_ZI_LOB_v1"
 
@@ -499,6 +505,7 @@ class TradeEvent:
     maker_tag: str
     maker_t_submit: float
     maker_queue_ahead_at_submit: int
+    maker_placement_class: PlacementClass
 
 
 @dataclass(frozen=True)
@@ -520,6 +527,7 @@ class _Order:
     tag: str
     t_submit: float
     queue_ahead: int
+    placement_class: PlacementClass
 
 
 # ---------------------------------------------------------------------------
@@ -561,6 +569,16 @@ class ZILobSimulator:
         self.n_cancellations = 0
         self.n_submitted = 0
         self._n_orders_created = 0
+        # Per-placement-class fate tallies: every resting order is classified
+        # at submit (join/improve/deep vs the own-side touch) and its
+        # resolution (fill or cancel) is counted against that class.
+        self._fate_placed: dict[PlacementClass, int] = {c: 0 for c in PLACEMENT_CLASSES}
+        self._fate_fills: dict[PlacementClass, int] = {c: 0 for c in PLACEMENT_CLASSES}
+        self._fate_cancels: dict[PlacementClass, int] = {c: 0 for c in PLACEMENT_CLASSES}
+        # Per-order resolution log: (placement_class, queue_ahead_at_submit,
+        # outcome) for every fill and cancel — the bench derives class-level
+        # and queue-conditional fill rates from it.
+        self.fate_log: list[tuple[PlacementClass, int, str]] = []
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
         self._ref_level = 0
@@ -699,7 +717,31 @@ class ZILobSimulator:
             "n_submitted": self.n_submitted,
             "n_orders_created": self._n_orders_created,
             "resting": self.total_depth,
+            "placed_join": self._fate_placed["join"],
+            "placed_improve": self._fate_placed["improve"],
+            "placed_deep": self._fate_placed["deep"],
+            "fills_join": self._fate_fills["join"],
+            "fills_improve": self._fate_fills["improve"],
+            "fills_deep": self._fate_fills["deep"],
+            "cancels_join": self._fate_cancels["join"],
+            "cancels_improve": self._fate_cancels["improve"],
+            "cancels_deep": self._fate_cancels["deep"],
         }
+
+    def fate_by_class(self) -> dict[PlacementClass, dict[str, int]]:
+        """Per-placement-class fate accounting; placed = fills + cxl + resting."""
+        out: dict[PlacementClass, dict[str, int]] = {}
+        for c in PLACEMENT_CLASSES:
+            placed = self._fate_placed[c]
+            fills = self._fate_fills[c]
+            cancels = self._fate_cancels[c]
+            out[c] = {
+                "placed": placed,
+                "fills": fills,
+                "cancels": cancels,
+                "resting": placed - fills - cancels,
+            }
+        return out
 
     # -- order lifecycle ----------------------------------------------------
 
@@ -708,7 +750,24 @@ class ZILobSimulator:
         self._next_id += 1
         return oid
 
+    def _placement_class(self, side: Side, level: int) -> PlacementClass:
+        """Classify a resting placement against the own-side touch.
+
+        ``join`` at the own best (or when that side is empty — the order forms
+        the touch), ``improve`` strictly inside the open spread (a new own
+        best), ``deep`` behind the own best.
+        """
+        best = self.best_bid_level if side == "buy" else self.best_ask_level
+        if best is None or int(level) == best:
+            return "join"
+        if side == "buy":
+            return "improve" if level > best else "deep"
+        return "improve" if level < best else "deep"
+
     def _rest(self, side: Side, level: int, tag: str) -> int:
+        # Classify before the level key exists in the book — an improving
+        # order must be measured against the pre-placement touch.
+        cls = self._placement_class(side, int(level))
         book = self._bids if side == "buy" else self._asks
         dq = book.setdefault(int(level), deque())
         oid = self._new_id()
@@ -719,10 +778,12 @@ class ZILobSimulator:
             tag=tag,
             t_submit=self._t,
             queue_ahead=len(dq),
+            placement_class=cls,
         )
         dq.append(oid)
         self._orders[oid] = order
         self._n_orders_created += 1
+        self._fate_placed[order.placement_class] += 1
         return oid
 
     def submit_limit_order(self, side: Side, price: float, tag: str = "zi") -> int:
@@ -760,6 +821,8 @@ class ZILobSimulator:
         if not dq:
             del book[order.level]
         self.n_cancellations += 1
+        self._fate_cancels[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
         return True
 
     def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> _Order:
@@ -790,9 +853,12 @@ class ZILobSimulator:
             maker_tag=order.tag,
             maker_t_submit=order.t_submit,
             maker_queue_ahead_at_submit=order.queue_ahead,
+            maker_placement_class=order.placement_class,
         )
         self.trades.append(trade)
         self.n_fills += 1
+        self._fate_fills[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "fill"))
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:
@@ -880,8 +946,10 @@ class ZILobSimulator:
             idx -= n
         if level is None:  # pragma: no cover - depth accounting invariant
             raise RuntimeError("cancellation sampling missed the book")
-        self._remove_resting_at(book, level, idx)
+        order = self._remove_resting_at(book, level, idx)
         self.n_cancellations += 1
+        self._fate_cancels[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
 
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""
