@@ -334,6 +334,7 @@ src/quant_fund/microstructure/spread_dynamics.py
 src/quant_fund/microstructure/spread_response.py
 src/quant_fund/microstructure/stale_quote.py
 src/quant_fund/microstructure/streak_stats.py
+src/quant_fund/microstructure/sweep_width.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/tape_digest.py
 src/quant_fund/microstructure/tape_stats.py
