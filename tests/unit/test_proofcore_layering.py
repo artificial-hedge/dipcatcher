@@ -64,6 +64,19 @@ THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
     "reality": frozenset({"numpy", "scipy", "pydantic", "polars", "typer"}),
 }
 
+# Third-party roots allowed ONLY inside function bodies — same lazy-edge
+# reasoning as LAZY_WHITELIST. Adjudicated: leakage/guard.py monkey-patches
+# pandas/polars readers at runtime, so it must import them lazily to avoid
+# paying the import cost (and hard dep) for callers that never install the
+# IO guard.
+LAZY_THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
+    "proofcore": frozenset(),
+    "pit": frozenset(),
+    "proof": frozenset(),
+    "leakage": frozenset({"pandas", "polars"}),
+    "reality": frozenset(),
+}
+
 
 def _imports(path: Path) -> list[tuple[str, int, bool]]:
     """(full dotted module, line, is_top_level) for every import in a file."""
@@ -102,7 +115,11 @@ def _violations(pkg: str) -> list[str]:
             if root == "fx1":
                 problems.append(f"{rel}:{line}: PROOFCORE packages never import fx1")
                 continue
-            if root not in sys.stdlib_module_names and root not in THIRD_PARTY_WHITELIST[pkg]:
+            if (
+                root not in sys.stdlib_module_names
+                and root not in THIRD_PARTY_WHITELIST[pkg]
+                and not (not top_level and root in LAZY_THIRD_PARTY_WHITELIST.get(pkg, frozenset()))
+            ):
                 problems.append(f"{rel}:{line}: third-party import {root!r} not whitelisted")
     return problems
 

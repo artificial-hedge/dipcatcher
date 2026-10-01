@@ -47,6 +47,7 @@ src/quant_fund/research/catalog/primitives.py 4
 src/quant_fund/research/catalog/receipt.py 35
 src/quant_fund/research/catalog/session.py 27
 src/quant_fund/research/catalog/sweep.py 24
+src/quant_fund/research/epoch_merkle.py 2
 src/quant_fund/research/expert_mixture.py 2
 src/quant_fund/research/reality_sweep.py 1
 src/quant_fund/research/receipt_v2.py 1
