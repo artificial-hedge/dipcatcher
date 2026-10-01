@@ -227,4 +227,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.basis_carry import basis_carry_contract_errors
 
         return basis_carry_contract_errors(payload)
+    if schema == "crossvenue_basis.v1" or payload.get("kind") == "crossvenue_basis":
+        from quant_fund.research.crossvenue_basis import crossvenue_basis_contract_errors
+
+        return crossvenue_basis_contract_errors(payload)
     return []

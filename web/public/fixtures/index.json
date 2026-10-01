@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-30T08:52:54.877366+00:00",
+ "generated_at": "2026-09-30T10:14:23.431970+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "2728625ace9f0951684988f6a6013cc8de040d4a9c7d1d6d084ce6c075b0a9ed": "src/quant_fund/public.py",
@@ -14,6 +14,17 @@
   "research_only": true
  },
  "receipts": [
+  {
+   "created_at": "2026-09-29T19:49:36.110321+00:00",
+   "evidence_level": null,
+   "file": "receipts/basis_carry_dd7705fc0f2f1c25.json",
+   "id": "basis_carry_dd7705fc0f2f1c25",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 9,
+   "research_only": true,
+   "schema": "basis_carry.v1"
+  },
   {
    "created_at": null,
    "evidence_level": null,
@@ -145,6 +156,17 @@
    "n_hashes": 1,
    "research_only": true,
    "schema": "changepoint_localize.v1"
+  },
+  {
+   "created_at": "2026-09-29T22:57:37.934872+00:00",
+   "evidence_level": null,
+   "file": "receipts/crossvenue_basis_3f4ff76f517655a7.json",
+   "id": "crossvenue_basis_3f4ff76f517655a7",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 13,
+   "research_only": true,
+   "schema": "receipt.v2"
   },
   {
    "created_at": null,
@@ -620,7 +642,7 @@
    "schema": null
   }
  ],
- "repo_revision": "2e0ca612e96f945317ad63dc6eb15313a72175cd",
+ "repo_revision": "fc6b9a085ba5cbf830010d05991118678ac4ded1",
  "strategies": [
   {
    "data_source": "UNVERIFIED",

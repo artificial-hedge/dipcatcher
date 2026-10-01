@@ -609,6 +609,8 @@ _LANE_CONSISTENCY: dict[str, str] = {
     "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
     "basis_carry": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
     "basis_carry_eval": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
+    "crossvenue_basis": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
+    "crossvenue_basis_eval": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
 }
 
 
