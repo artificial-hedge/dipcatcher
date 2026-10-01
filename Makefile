@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory
 
 .DEFAULT_GOAL := help
 
@@ -29,6 +29,7 @@ lint: ## Ruff check + format check on src/ and tests/
 	uv run ruff check src tests
 	uv run ruff format --check src tests
 	uv run python scripts/check_mypy_strict_allowlist.py
+	uv run python scripts/check_mccabe_ratchet.py
 
 fmt: ## Auto-fix lint + format
 	uv run ruff check --fix src tests
@@ -66,6 +67,9 @@ evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
 ci: lint typecheck coverage ## Local mirror of the CI gate
+
+code-inventory: ## Report tracked semantic Python LOC and feature/test counts
+	uv run python scripts/code_quality_inventory.py --summary-only
 
 formal: ## TLC order-lifecycle check + Z3/conformance/stateful tests
 	bash scripts/run_tlc.sh
