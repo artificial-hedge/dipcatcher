@@ -1,3 +1,4 @@
+quant_fund.api.surface_pin
 quant_fund.hmm.verify
 quant_fund.monitoring.monitor_chain
 quant_fund.native.conformance
