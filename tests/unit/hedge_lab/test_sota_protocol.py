@@ -227,3 +227,124 @@ def test_stooq_write_lake_roundtrip(tmp_path: Path) -> None:
     master = provider.get_security_master()
     assert master.height == 1
     assert paths["bars"].is_file()
+
+
+def _minimal_sota_receipt() -> dict:
+    """A sealed receipt-shaped payload (no engine run needed)."""
+    from quant_fund.research.sota_protocol import SotaProtocol, protocol_sha256
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+    protocol = SotaProtocol()
+    receipt: dict = {
+        "protocol_id": protocol.protocol_id,
+        "protocol_sha256": protocol_sha256(protocol),
+        "frozen": True,
+        "family": "test",
+        "research_only": True,
+        "execution_claim": "research_only",
+        "claim": "research_metric_only",
+        "data_source": "SYNTHETIC",
+        "universe": {"source": "synthetic", "n_names": 2, "n_rows": 10},
+        "horizons": [1, 5],
+        "g1": {"status": "skipped"},
+        "path_rankic": {"status": "skipped"},
+        "calibration": {"status": "skipped"},
+        "promotion": {"promote": False, "sizes_book": 0.0},
+        "sizes_book": 0.0,
+        "blend_weight": 0.0,
+        "champion_alias": None,
+        "price_cols": ["open", "high", "low", "close"],
+    }
+    receipt["receipt_sha256"] = hash_bytes(canonical_json_bytes(receipt))
+    return receipt
+
+
+def test_sota_receipt_is_sealed_and_verifies(tmp_path: Path) -> None:
+    import json
+
+    from quant_fund.research.sota_protocol import verify_sota_receipt
+
+    receipt = _minimal_sota_receipt()
+    path = tmp_path / "sota_receipt.json"
+    path.write_text(json.dumps(receipt, indent=2, default=str), encoding="utf-8")
+    assert verify_sota_receipt(path) == []
+
+
+def test_sota_receipt_detects_tampering(tmp_path: Path) -> None:
+    import json
+
+    from quant_fund.research.sota_protocol import verify_sota_receipt
+
+    receipt = _minimal_sota_receipt()
+    receipt["blend_weight"] = 0.75  # retro-promote after sealing
+    path = tmp_path / "sota_receipt.json"
+    path.write_text(json.dumps(receipt, indent=2, default=str), encoding="utf-8")
+    assert "receipt_sha256" in verify_sota_receipt(path)
+
+
+def test_sota_receipt_fails_closed_on_bad_claim(tmp_path: Path) -> None:
+    import json
+
+    from quant_fund.research.sota_protocol import verify_sota_receipt
+
+    receipt = _minimal_sota_receipt()
+    receipt["claim"] = "live_ready"
+    path = tmp_path / "sota_receipt.json"
+    path.write_text(json.dumps(receipt, indent=2, default=str), encoding="utf-8")
+    errors = verify_sota_receipt(path)
+    assert "claim" in errors and "receipt_sha256" in errors
+
+
+def test_sota_receipt_fails_closed_on_garbage(tmp_path: Path) -> None:
+    from quant_fund.research.sota_protocol import verify_sota_receipt
+
+    path = tmp_path / "sota_receipt.json"
+    path.write_text("not json{", encoding="utf-8")
+    assert verify_sota_receipt(path)[0].startswith("unreadable:")
+    assert verify_sota_receipt(tmp_path / "missing.json")[0].startswith("unreadable:")
+
+
+@pytest.mark.synthetic
+def test_sota_protocol_receipt_version_two(tmp_path: Path) -> None:
+    """receipt_version=2 seals the canonical sota receipt in the envelope;
+    verify_sota_receipt unwraps and re-runs contract+seal checks."""
+    import json
+
+    from quant_fund.config import load_config
+    from quant_fund.pipeline.dataset import build_gold, panel
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.research.sota_protocol import (
+        load_sota_protocol,
+        run_sota_protocol,
+        verify_sota_receipt,
+    )
+
+    cfg = load_config("configs/sota_g1.yaml")
+    cfg.data.root = tmp_path
+    cfg.data.synthetic_n_assets = 8
+    cfg.data.synthetic_n_days = 90
+    cfg.universe.min_history_bars = 5
+    cfg.universe.min_adv = 0.0
+    cfg.validation.train_bars = 40
+    cfg.validation.val_bars = 10
+    cfg.validation.test_bars = 10
+    proto = load_sota_protocol("configs/sota_protocol.yaml").model_copy(
+        update={"n_asofs": 3, "lookback": 12, "sample_count": 2, "pred_len": 5}
+    )
+    build_gold(cfg)
+    document = run_sota_protocol(
+        cfg,
+        proto,
+        panel(cfg),
+        include_torch=False,
+        include_path_rankic=False,
+        include_calibration=False,
+        receipt_version=2,
+    )
+    assert document["schema"] == "receipt.v2"
+    assert document["kind"] == "sota_protocol"
+    assert document["payload"]["protocol_id"] == "dipcatcher.sota.v1"
+    path = tmp_path / "metadata" / "sota_receipt.json"
+    assert json.loads(path.read_text())["schema"] == "receipt.v2"
+    assert verify_sota_receipt(path) == []
+    assert verify_receipt_file(path)["valid"] is True

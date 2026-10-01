@@ -36,6 +36,7 @@ from quant_fund.models.har import har_forecast, har_rv_fit
 from quant_fund.models.realized_garch import RealizedGARCHVol
 from quant_fund.models.rough_vol import simulate_fou
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalues import LossEProcess
 from quant_fund.research.garch_benchmark import build_origins
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -47,6 +48,7 @@ DEFAULT_HORIZONS: tuple[int, ...] = (1, 5)
 DM_REFERENCE = "har"
 
 _VARIANCE_FLOOR = 1e-12
+_EPROMOTION_INIT_SCALE = 1e-4
 _INTRADAY_STEPS = 24
 _LN2 = float(np.log(2.0))
 _EWMA_LAMBDA = 0.94
@@ -255,10 +257,16 @@ def _forecast_rv_ewma(rets: Array, rv: Array, park: Array, h: int, seed: int) ->
 
 
 def _forecast_har(rets: Array, rv: Array, park: Array, h: int, seed: int) -> float:
-    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1."""
+    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1.
+
+    Zero-return days (rv == 0 on real EOD tape) are floored at
+    ``_VARIANCE_FLOOR`` before the fit — a zero rv is unobserved variance,
+    not literal zero; the model's own strict-positivity contract stays.
+    """
     del rets, park, seed
-    fit = har_rv_fit(np.asarray(rv, dtype=float))
-    history = list(np.asarray(rv, dtype=float))
+    floored = np.maximum(np.asarray(rv, dtype=float), _VARIANCE_FLOOR)
+    fit = har_rv_fit(floored)
+    history = list(floored)
     total = 0.0
     for _ in range(h):
         step = har_forecast(fit, np.asarray(history, dtype=float))
@@ -457,6 +465,9 @@ def run_vol_bench(
         "dm_qlike_mean",
         "dm_qlike_se",
         "dm_qlike_t",
+        "epromotion_evalue",
+        "epromotion_origin",
+        "epromotion_anytime_p",
     ]
     rows: list[dict[str, Any]] = []
     shard_meta: dict[str, Any] = {}
@@ -495,6 +506,9 @@ def run_vol_bench(
                     "dm_qlike_mean": None,
                     "dm_qlike_se": None,
                     "dm_qlike_t": None,
+                    "epromotion_evalue": None,
+                    "epromotion_origin": None,
+                    "epromotion_anytime_p": None,
                 }
                 scored = _eval_shard_model(shard, forecaster, horizon, origins, shard_seed)
                 if isinstance(scored, str):
@@ -516,6 +530,19 @@ def run_vol_bench(
                     row_refs[model_name]["dm_qlike_mean"] = float(diff["mean_diff"])
                     row_refs[model_name]["dm_qlike_se"] = float(diff["se"])
                     row_refs[model_name]["dm_qlike_t"] = float(diff["t"])
+                    # Anytime-valid promotion: per-origin e-process on the
+                    # QLIKE stream vs the HAR incumbent (challenger=model).
+                    proc = LossEProcess(alpha=0.05, init_scale=_EPROMOTION_INIT_SCALE)
+                    for c_loss, b_loss in zip(
+                        qlike_loss(targets, forecasts).tolist(),
+                        qlike_loss(ref_targets, ref_forecasts).tolist(),
+                        strict=True,
+                    ):
+                        proc.update(c_loss, b_loss)
+                    final_state = proc.states[-1]
+                    row_refs[model_name]["epromotion_evalue"] = float(final_state.evalue)
+                    row_refs[model_name]["epromotion_origin"] = proc.promotion_origin
+                    row_refs[model_name]["epromotion_anytime_p"] = float(final_state.anytime_p)
 
     frame = pl.DataFrame(
         rows,
@@ -532,21 +559,25 @@ def run_vol_bench(
             "dm_qlike_mean": pl.Float64,
             "dm_qlike_se": pl.Float64,
             "dm_qlike_t": pl.Float64,
+            "epromotion_evalue": pl.Float64,
+            "epromotion_origin": pl.Int64,
+            "epromotion_anytime_p": pl.Float64,
         },
         orient="row",
     ).select(columns)
 
+    shard_digests = {
+        name: {
+            "returns_sha256": meta["returns_sha256"],
+            "rv_sha256": meta["rv_sha256"],
+            "parkinson_sha256": meta["parkinson_sha256"],
+        }
+        for name, meta in shard_meta.items()
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
-                "shards": {
-                    name: {
-                        "returns_sha256": meta["returns_sha256"],
-                        "rv_sha256": meta["rv_sha256"],
-                        "parkinson_sha256": meta["parkinson_sha256"],
-                    }
-                    for name, meta in shard_meta.items()
-                },
+                "shards": shard_digests,
                 "models": sorted(str(k) for k in forecasters),
                 "horizons": [int(h) for h in horizon_set],
                 "min_history": min_history,
@@ -557,6 +588,10 @@ def run_vol_bench(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated stream content only —
+    # receipts across lanes that evaluated the same shard set agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": shard_digests}))
     receipt: dict[str, Any] = {
         "schema": VOL_BENCH_SCHEMA,
         "kind": "vol_bench",
@@ -576,6 +611,7 @@ def run_vol_bench(
         "models": sorted(str(k) for k in forecasters),
         "shards": shard_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
         "results": rows,
@@ -634,6 +670,15 @@ def vol_bench_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
         errors.append("results_missing_or_empty")
     if not family_blob_forbidden_metrics_absent(research_blob):
         errors.append("forbidden_metric_keys")
+    results = receipt.get("results")
+    if isinstance(results, list):
+        if receipt.get("n_rows") is not None and receipt.get("n_rows") != len(results):
+            errors.append("n_rows_mismatch")
+        error_rows = sum(
+            1 for row in results if not isinstance(row, Mapping) or row.get("status") != "ok"
+        )
+        if receipt.get("n_error_rows") is not None and receipt.get("n_error_rows") != error_rows:
+            errors.append("n_error_rows_mismatch")
     return errors
 
 

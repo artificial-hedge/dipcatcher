@@ -17,8 +17,10 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-# Mirrors the lab's forbidden research-headline tokens.
-_FORBIDDEN_TOKENS = frozenset({"sharpe", "sortino", "calmar", "pnl", "nav"})
+from fx1.honesty import FORBIDDEN_HEADLINE_TOKENS
+
+# Shared with fx1.honesty so bench honesty cannot drift from the contract.
+_FORBIDDEN_TOKENS = FORBIDDEN_HEADLINE_TOKENS
 
 
 @dataclass(frozen=True)
@@ -67,6 +69,8 @@ def detect_dip_events(
     peak_date = ""
     in_dip = False
     for i, (price, date) in enumerate(zip(closes, dates, strict=True)):
+        if not math.isfinite(price):
+            raise ValueError(f"close at index {i} is not finite: {price!r}")
         if price >= peak:
             peak, peak_date = price, date
             in_dip = False
@@ -75,11 +79,14 @@ def detect_dip_events(
         if depth >= threshold and not in_dip:
             recovered: dict[str, bool | None] = {}
             for horizon, bars in horizons_bars.items():
-                end = i + bars
+                # bars bars AFTER the trigger bar i — the trigger close is
+                # below the peak by construction, so counting it wastes one
+                # of the horizon's bars and shortens every window by one.
+                end = i + 1 + bars
                 if end > len(closes):
                     recovered[horizon] = None
                 else:
-                    recovered[horizon] = any(closes[j] >= peak for j in range(i, end))
+                    recovered[horizon] = any(closes[j] >= peak for j in range(i + 1, end))
             events.append(
                 DipEvent(
                     asset=asset,
@@ -131,11 +138,20 @@ def evaluate_forecasts(
     bench only measures, honestly.
     """
     event_index = {(e.asset, e.trough_date): e for e in events}
+    unmatched = [
+        (fc.asset, fc.trough_date)
+        for fc in forecasts
+        if (fc.asset, fc.trough_date) not in event_index
+    ]
+    if unmatched:
+        raise ValueError(
+            f"{len(unmatched)} forecast(s) reference events outside the frozen "
+            f"universe {unmatched[:5]} — silently dropping them would inflate "
+            "the score"
+        )
     per_horizon: dict[str, list[tuple[float, bool]]] = {}
     for fc in forecasts:
-        event = event_index.get((fc.asset, fc.trough_date))
-        if event is None:
-            continue
+        event = event_index[(fc.asset, fc.trough_date)]
         for horizon, p in fc.probabilities.items():
             flag = event.recovered.get(horizon)
             if flag is None:
@@ -173,8 +189,13 @@ def _ece(pairs: list[tuple[float, bool]], *, n_bins: int) -> float:
 
 
 def assert_bench_output_honest(metrics: dict[str, float]) -> None:
-    """Fail-closed: bench output keys must not contain forbidden tokens."""
+    """Fail-closed: bench output keys must not contain forbidden tokens.
+
+    The check is substring-based on the normalized key, not exact-token —
+    ``brier_realizedpnl`` or ``n_unmatchedsharpe`` must not smuggle a
+    headline metric past the gate.
+    """
     for key in metrics:
-        tokens = set(key.lower().replace("-", "_").split("_"))
-        if tokens & _FORBIDDEN_TOKENS:
+        normalized = "".join(c for c in key.lower() if c.isalnum())
+        if any(token in normalized for token in _FORBIDDEN_TOKENS):
             raise ValueError(f"bench metric key {key!r} contains a forbidden headline token")

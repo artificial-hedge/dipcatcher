@@ -394,3 +394,20 @@ def test_cost_solver_failure_is_retained_in_full_slate(tournament, monkeypatch):
         assert scenario["trials"]["mom_cost"]["solver_diagnostic"]["weights_accepted"] is False
         assert scenario["comparison"]["status"] == "incomplete_trials"
         assert scenario["allocation_ablations"][0]["status"] == "incomplete_pair"
+
+
+def test_tournament_manifest_v2_envelope(tmp_path, tournament):
+    """receipt_version=2 seals the strict-digest manifest in the envelope;
+    run-phase artifacts stay v1 and still flow through _read_receipt."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    run_dir, _ = tournament
+    spec_path = tmp_path / "slate.json"
+    destination = tmp_path / "tournament_v2"
+    manifest = prepare_tournament(tmp_path / "benchmark", spec_path, destination, receipt_version=2)
+    document = json.loads((destination / "manifest.json").read_text())
+    assert document["schema"] == "receipt.v2"
+    assert document["payload"]["receipt_sha256"] == manifest["receipt_sha256"]
+    assert verify_receipt_file(destination / "manifest.json")["valid"] is True
+    validation = run_tournament(destination, "validation")
+    assert validation["manifest_sha256"] == manifest["receipt_sha256"]

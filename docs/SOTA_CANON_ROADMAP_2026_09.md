@@ -131,3 +131,100 @@ deps); fail-closed edges (short/empty inputs raise, never silently return);
 unit tests with simulated size/power assertions (FDR ≤ α under global null;
 coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
 + mypy clean on touched files; no commits (repo convention: owner reviews).
+
+## 5. Status log
+
+- **Waves 8–10: LANDED + COMMITTED** (lane commits through b508108c), wired
+  into the research battery as six OPTIONAL scorecard families
+  (`benches_w810.py`); `verify-research` green at 32 families, errors [].
+  The lane additionally extended `anytime_fdr` with e-LORD/e-SAFFRON
+  (Zhang et al. 2025), wired `perf_baseline` into a CI perf gate
+  (`.github/workflows/perf-baseline.yml`), and wired the fx-1 capability
+  evals into the suite/CLI (`fx1/eval/capability.py`).
+- **Wave 11: LANDED 2026-09-28** — rough-path signatures
+  (`models/path_signatures.py`), Wasserstein/OT metrics
+  (`metrics/wasserstein.py`), Wasserstein-DRO portfolios
+  (`portfolio/wasserstein_dro.py`), conformal PID control
+  (`models/conformal_pid.py`); 84 module tests + wired as four OPTIONAL
+  scorecard families (`benches_w11.py`, 10 bench tests). Citations in
+  RESEARCH_REFERENCES.md.
+- **Wave 12: LANDED 2026-09-29** — nine parallel lanes; all four wave-11
+  follow-ups consumed: NexCP beyond-exchangeability conformal + Theorem 2/3
+  coverage bounds (`models/nexcp.py`; citation corrected to Barber, Candès,
+  Ramdas & Tibshirani 2023, arXiv:2202.13415 — no Liu/Wang/Xie NexCP exists),
+  multi-horizon EnbPI with Bonferroni joint bounds
+  (`models/enbpi_multihorizon.py`, H=1 reproduces EnbPI bit-for-bit),
+  regime-weighted conformal VaR (`models/regime_conformal_var.py`, exact
+  reduction to unweighted split conformal under uniform posteriors), and
+  torch-gated deep hedging (`models/deep_hedging.py`, Buehler et al. 2019).
+  Plus: anytime-valid confidence sequences (`metrics/confidence_sequences.py`
+  — Howard et al. 2021 mixture/stitching/hedge-ε + Waudby-Smith & Ramdas WSR
+  + empirical-Bernstein), sliced/max-sliced Wasserstein with permutation GoF
+  test (`metrics/sliced_wasserstein.py`), proper-score decomposition canon
+  (`metrics/score_decomposition.py` — Bröcker 2012, Kolassa 2016 [IJF, not
+  JRSS-A — corrected], exact Brier/RPS/spherical), Bayesian stacking +
+  pseudo-BMA(+) (`models/stacking.py`, Yao et al. 2018), fx-1
+  external-benchmark adapter ports with sealed SYNTHETIC banks
+  (`fx1/eval/ext_bench*.py` — MT-Bench/FinanceBench/FinToolBench formats;
+  capability.py/CLI wiring is an owner call), and a stdlib AST
+  mutation-testing harness (`scripts/mutation_test.py`; first e2e run on
+  `research/verify.py` scored 95% — 19/20 killed — and its sole survivor,
+  the untested `p_value=0.0` boundary in `_p_value_valid`, was closed with a
+  boundary test). ~372 lane tests green; ruff/format/mypy clean throughout;
+  no new deps (deep hedging uses the existing torch `nn` extra).
+- **Wave 13+ backlog: RESEARCHED 2026-09-29** — see
+  `SOTA_WAVE13_BACKLOG.md` (live arXiv sweep; tiers: hardest conformal/UQ
+  theory [coverage-inference CLT under temporal dependence arXiv:2609.33868,
+  minimax-optimal conformal change detection arXiv:2609.27179, rolling CP
+  arXiv:2609.26951, rank confidence sequences arXiv:2609.32211], heaviest
+  torch lanes [deep kernel hedging arXiv:2609.34474, diffusion/flow
+  forecasters, DeRegiME, ZI-LOB distributional RL], and agent-governance
+  strategy [anytime-valid referee arXiv:2609.27051, EverMine-style
+  capability-value accounting arXiv:2609.33524, vintage-aware evaluation
+  arXiv:2609.28576]).
+- **Wave 13: LANDED + INTEGRATED 2026-09-30** — Tier A complete: all eight
+  theory modules (conformal coverage inference under temporal dependence,
+  minimax-optimal conformal e-detectors [163× delay gap vs Vovk CTM at
+  matched PFA], rolling CP [factor-two floor attained by the Prop.-1
+  construction], rank confidence sequences + BB-EDGE, PICPIs, replicable
+  conformal [exact-theory reproductions to 1e-4], reference-null e-threshold
+  calibration [11.7% RMDD gain], delayed-feedback ACI [τ=1 bit-for-bit vs
+  repo ACI]). 382 lane tests; wired as eight OPTIONAL families
+  (`benches_w13.py`, 18 bench tests, battery 11.0s contended / 2.9s
+  unloaded); `verify-research` → **52 families, errors []**. ~20 paper-vs-
+  brief corrections recorded in RESEARCH_REFERENCES.md (fetch-verify-first
+  protocol).
+- **Wave 14: LANDED 2026-09-30** — deep finance math: martingale OT
+  (model-free bounds, LP duality), large deviations (Gärtner-Ellis + IS for
+  VaR; 2 sign bugs caught in recovery), mean field games (Cardaliaguet-
+  Lehalle Riccati solver, ε→0 AC recovery 1.7%), vine + GAS copulas (48
+  tests), Fourier COS/CONV/Hilbert (COS European leg has a documented open
+  bug — excluded from battery), Malliavin Greeks (digital FD-efficiency
+  result), XVA suite (closed forms exact to 1e-12, WWR +56%), LSM +
+  Andersen-Broadie dual (gap 0.403→0.076 monotone; Rogers 2002 venue
+  mis-citation corrected), Dupire/SLV (round-trip ≤0.80 vol pts), deep BSDE
+  (Burgers d=10 to 2.8e-3; 4 citation corrections incl. a wrong arXiv id),
+  DeRegiME, ZI-LOB simulator (emergent √-impact 0.529, r²=0.993; inventory
+  saturation 6.6× — RL layer deferred), TORF odd residual flows (bitwise
+  mean preservation), deep kernel hedging (15% low-data gain; honest GBM
+  negative), cash-constrained OE (2 paper-level findings: infeasible Table-1
+  budgets, symmetric-legs sell-first impossibility). Integration in flight
+  (`benches_w14.py`, 14 families → 66 expected).
+- **Wave 15: LANDED 2026-09-30** — conformal extensions + governance:
+  dynamic-subspace denoising (bootstrap-rule inversion caught in recovery),
+  conformal calibration transfer (TCC-KS + weighted-TCC), C-USIM HPD
+  conformal (2.4× smaller multimodal regions), EverMine capability-value
+  accounting (module Cap-invariance bug + fixture starvation caught in
+  recovery; overfitting-trap sensitivity), frozen anytime-valid referee
+  (post-submission-only e-values + e-BH; leaky-vs-frozen contrast), vintage-
+  aware evaluation, entropy-Shapley uncertainty attribution (chain-rule
+  residual 2.2e-16), fx-1 options-reasoning bank (LiveOption hierarchy).
+  Integration queued (`benches_w15.py`, 7 families → 73 expected).
+- **Process note (waves 14–15)**: two provider-quota saturation events
+  killed agents mid-flight; recovery protocol proven — source lands before
+  tests, controller writes tests directly, runs gates, and fixes
+  module-level bugs found (5 real bugs caught this way: LD signs ×2,
+  subspace bootstrap rule, capability_value Cap-invariance + hist
+  starvation, fourier COS European [still open]). Ratchet discipline:
+  untracked-lane `except Exception` handlers narrowed same-day (vine ×6,
+  wasserstein_dro ×1) — count back at exactly 72.
