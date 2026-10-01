@@ -328,6 +328,14 @@ from quant_fund.research.benches_w42 import (
     bench_two_way_cluster,
     bench_variance_ratio,
 )
+from quant_fund.research.benches_w43 import (
+    bench_bai_perron,
+    bench_favar,
+    bench_merton_model,
+    bench_panel_coint,
+    bench_vuong_test,
+    bench_white_reality,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2126,6 +2134,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "stambaugh": bench_stambaugh(),
         "roy_model": bench_roy_model(),
         "two_way_cluster": bench_two_way_cluster(),
+        "bai_perron": bench_bai_perron(),
+        "favar": bench_favar(),
+        "panel_coint": bench_panel_coint(),
+        "vuong_test": bench_vuong_test(),
+        "merton_model": bench_merton_model(),
+        "white_reality": bench_white_reality(),
     }
 
     hyps = _build_hypotheses(families, rankers)
