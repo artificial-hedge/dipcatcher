@@ -1,0 +1,153 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "38966ef535886a5ec2ba2ece56e1cd49b3504ffde5453b2b3b522afc6666c8c3",
+  "inputs_sha256": "edcb4a1b4122234e15765b0747617893fb917fc24fb3d9b40b0e38340d1ce259",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "members": [
+    {
+      "name": "carry_champion.json",
+      "sha256": "6727be15779491f262cdbdd49868792d369bb066cdd3e5cc998d3d3b969937ec"
+    },
+    {
+      "name": "carry_champion_expanded.json",
+      "sha256": "3de39598388880db09362a8b522fdc5a1057646acb58ec48f01e1e3c59981af4"
+    },
+    {
+      "name": "carry_dev_grid.json",
+      "sha256": "9685eb2036910bf763a4b2c57fad30e711a366b45be68efc43f692eb0a8de333"
+    },
+    {
+      "name": "carry_equity_expanded_full.parquet",
+      "sha256": "8ca8f2d0f58bab3539908d08749d8e248ded73db95f760c1c2f8a16249f62699"
+    },
+    {
+      "name": "carry_equity_full.parquet",
+      "sha256": "4572d30f31acce9727b9d7aac8222677f5edfcdba74e71f457fc042e2950d698"
+    },
+    {
+      "name": "carry_tiered_dev.json",
+      "sha256": "9d27d8f1219446e59cc9cf3443ce0c21e1a4d3b63cbdbd363e848353afc18aeb"
+    },
+    {
+      "name": "carry_weights_expanded_full.parquet",
+      "sha256": "d26017a88b3cce6b892cee6bd2a595623404fa7919a7f8c5b1cc5e60c4ca48cf"
+    },
+    {
+      "name": "carry_weights_full.parquet",
+      "sha256": "0e1b354a44995186a99426a89327ec09365f3fd63c6a0dc0cb47b0f4a389016b"
+    },
+    {
+      "name": "corpus_epoch_a67d08f9fed2ed9d.json",
+      "sha256": "518858cca86fc0b4884391926f68dbb943b9bb8e0035b00fd0b731ecbf2d3d8e"
+    },
+    {
+      "name": "corpus_epoch_d96feedbf865d8c1.json",
+      "sha256": "f2a5e889e19891a2ba9990142e4361ee9ea5582bd443eca59e6d49f4a3f9e155"
+    },
+    {
+      "name": "eqmn_screen.json",
+      "sha256": "d8dfa6e36e366b28ebc44e54e964a3f039ced8aaf95f372b443d467d9fa453f0"
+    },
+    {
+      "name": "eqmn_sweep_cont.json",
+      "sha256": "95463d4a2c9533cd6947c4c4b039f46d8111662f8ceb15daef0c06f437b99b0d"
+    },
+    {
+      "name": "hedge_lab/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "hedge_lab/char_books.json",
+      "sha256": "c858abca0f99858c2480766c2b385934190544302db2faa9af1a6f77730a5839"
+    },
+    {
+      "name": "hedge_lab/comparison.json",
+      "sha256": "f265ab0a1d3a6649bb21f6d0ad99f4595d951a70d9334aa8c47c197f3c450a79"
+    },
+    {
+      "name": "hedge_lab/gated_race.json",
+      "sha256": "35120a8e64ad635b7de9dc08be0a678b4314dcccfa66c0e303696033b3999650"
+    },
+    {
+      "name": "hedge_lab/holdout_confirm.json",
+      "sha256": "1941c053ffce9f476ac6593eee06ff03484daa62dc1219b7b36d04c448171829"
+    },
+    {
+      "name": "hedge_lab/latest.json",
+      "sha256": "f3d67f6d78058bbf29034dd187d68ff9d09828d5eb0c179c145673623c8c7339"
+    },
+    {
+      "name": "hedge_lab/lightspeed_book.json",
+      "sha256": "fc76326de125aad3adc5808ab6bab28127c3c0b8da0d5aac3f8e376764eaa25e"
+    },
+    {
+      "name": "hedge_lab/mirror_latest.json",
+      "sha256": "41e6ce97e3b64d2d7fde81f1c3d34ea6781bb175071dbeb6f1253581415310e1"
+    },
+    {
+      "name": "hedge_lab/ml_lane.json",
+      "sha256": "58c1aa74b2f87dfe98ce52f048f35765dd9728ea923192b261b6b8bd177f3d54"
+    },
+    {
+      "name": "hedge_lab/ml_lane_h20.json",
+      "sha256": "cb7131453b68abf1789e21291a636967fb39026e9618ff6f6084cca3a9fa67dd"
+    },
+    {
+      "name": "hedge_lab/ml_lane_h5.json",
+      "sha256": "f621d494150d61735982bd83daa5fc6d6719ecb9e9457223b5d68ae01fd88f5f"
+    },
+    {
+      "name": "hedge_lab/more_sleeves.json",
+      "sha256": "83503c1b556fc45696b7d6442018fbe33540c9a00ed88027e0d48845f95e4ee1"
+    },
+    {
+      "name": "hedge_lab/sleeve_lane.json",
+      "sha256": "4a6a631f603bb0d311b5d5ed56553ff412b995565ca700de91530a829b8f270a"
+    },
+    {
+      "name": "hedge_lab/target_hunt.json",
+      "sha256": "4d69ff38c18c68b49d58fcb9850f9ad1508b705dcdb6d2bec0319e2f820ad894"
+    },
+    {
+      "name": "hedge_lab/target_hunt_wide.json",
+      "sha256": "75388b8278f24e0e61cfa348be32b82d3efcdd79dd8dffdbd5ec9aba92b63b3c"
+    },
+    {
+      "name": "hedge_lab/unmanaged.json",
+      "sha256": "51e6c98d0390596bb7c5032e460db2e3a9a3dbe3bf32ae4edda3a0e54dda0e11"
+    },
+    {
+      "name": "hedge_lab/v2_lane2_horizons.json",
+      "sha256": "7ba2cf96c0fbb6f654c7ef3a014e75236bfa27970e60a115123f8552c6d366f9"
+    },
+    {
+      "name": "hedge_lab/v2_lane3_regime_gate.json",
+      "sha256": "7c6b7d5cfcbfa662915eb90d01f7530ff55ee4f5ea22e8905f3cd9d5eff9c614"
+    },
+    {
+      "name": "hedge_lab/v2_lane4_offline_rl.json",
+      "sha256": "36d338e5fdf6e0ea9e5d2a23f9b045a6d124b076a0bd744712ff52564a834dd2"
+    },
+    {
+      "name": "hedge_lab/v2_lane5_pit_universe.json",
+      "sha256": "82f3a46fed2e913300f3264e7b49e50f3dc2346a10b065cb16615108b12c25bf"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_d96feedbf865d8c1.json"
+  ],
+  "members_removed": [],
+  "n_members": 32,
+  "params": {
+    "head_sha": "a668dea840f69503dcc9d61bb40b2445dbd60da9",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_d96feedbf865d8c1.json",
+  "prev_epoch_sha256": "a850941bd13e94b8046b37f95bc8198ae8cda5e9b54259be110ba0eeada99061",
+  "receipt_sha256": "deb7abc125082309243c56d1749e83e350a387b72a5319396bfbbb7f51d9e709",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
