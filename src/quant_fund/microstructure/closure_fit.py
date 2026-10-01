@@ -120,12 +120,15 @@ def _measure_cell(
     intensity_mult: float,
     horizon: int,
     seed: int,
+    extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """One (cooldown, gain, intensity) cell on the ref-anchored arm.
 
     Same bookkeeping as ``joint_fit_bench._measure_cell``: mids recorded
     per event, instant = signed (mid_after - mid_before) at each fill,
     k200 = signed (mid[e+200] - mid_before), g1/spread sampled post-event.
+    ``extra`` carries additional ZiLobConfig overrides (e.g. the
+    hit_narrow accommodation knobs) for composition probes.
     """
     cfg = replace(
         santa_fe_config(seed=seed),
@@ -134,6 +137,7 @@ def _measure_cell(
         band=40,
         ref_fill_gain=ref_fill_gain,
         refill_cooldown=refill_cooldown,
+        **(extra or {}),
     )
     sim = ZILobSimulator(cfg, flow=_split_flow(intensity_mult, seed + 1))
 

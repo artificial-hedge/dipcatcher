@@ -21,6 +21,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from quant_fund.microstructure.closure_fit import _measure_cell
 from quant_fund.microstructure.lobster import EXECUTION, parse_messages, parse_orderbook_row
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
@@ -189,6 +190,34 @@ def depth_tilt_bench(
             horizon,
         ),
     }
+    # Composition probe: does hit_narrow rescue the four-target surface
+    # (closure_fit.v1 verdict was mechanism_gap under vacancy+anchor+flow)?
+    # Frontier cells from the closure scan, each rerun with narrow on/off.
+    compose_cells: list[dict[str, Any]] = []
+    frontier = [(200, 0.5, 3.0), (400, 0.3, 3.0)]
+    for j, (cd, gain, im) in enumerate(frontier):
+        for on, extra in (
+            (False, None),
+            (True, {"hit_narrow_dist": 3, "hit_narrow_window": 60}),
+        ):
+            m = _measure_cell(cd, gain, im, horizon, seed + 40 + j * 11 + (5 if on else 0), extra)
+            compose_cells.append(
+                {
+                    "refill_cooldown": cd,
+                    "ref_fill_gain": gain,
+                    "intensity_mult": im,
+                    "hit_narrow": on,
+                    **m,
+                }
+            )
+    narrow_trades_instant = False
+    for on_cell, off_cell in (
+        (compose_cells[i + 1], compose_cells[i]) for i in range(0, len(compose_cells), 2)
+    ):
+        a, b = on_cell.get("instant_signed_ticks"), off_cell.get("instant_signed_ticks")
+        if a is not None and b is not None and float(b) > 0.4 and float(a) < 0.6 * float(b):
+            narrow_trades_instant = True
+
     divergences: list[str] = []
     if real.get("ok") and real["tilt_path"].get("20") is not None:
         r20 = float(real["tilt_path"]["20"])
@@ -214,6 +243,7 @@ def depth_tilt_bench(
             and arms["lv_cd300_narrow"]["tilt_path"].get("20") is not None
             and abs(float(arms["lv_cd300_narrow"]["tilt_path"]["20"]) - float(r20)) <= 0.05
         ),
+        "narrow_trades_instant": narrow_trades_instant,
     }
     payload: dict[str, Any] = {
         "schema": DEPTH_TILT_SCHEMA,
@@ -223,6 +253,7 @@ def depth_tilt_bench(
         "seed": seed,
         "real": real,
         "sim_arms": arms,
+        "compose_cells": compose_cells,
         "divergences": divergences,
         "claims": claims,
         "interpretation": (
@@ -237,7 +268,12 @@ def depth_tilt_bench(
             "window — reproduces the tilt at +20 within tolerance: the "
             "accommodation is a near-touch placement-class response on "
             "the unhit side, not a rate shift (global side bias lands "
-            "deep under the band law and barely registers at the touch)."
+            "deep under the band law and barely registers at the touch). "
+            "The compose probe is the honest catch: on the closure "
+            "frontier cells narrow lifts k200 but collapses instant "
+            "(near-touch bids fill the vacancy holes the instant term "
+            "feeds on) — the accommodation and vacancy channels "
+            "antagonize, so the mechanism gap survives."
         ),
         "git_revision": git_revision(),
         "data_label": "MIXED",
