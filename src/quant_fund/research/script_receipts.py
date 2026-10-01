@@ -445,6 +445,7 @@ _MEASUREMENT_SCHEMAS = (
     "order_lifetime.v1",
     "order_revision.v1",
     "place_law.v1",
+    "place_mix.v1",
     "post_trade_drift.v1",
     "price_clustering.v1",
     "price_improvement.v1",

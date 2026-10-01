@@ -415,8 +415,19 @@ class ZILobConfig:
     # can never emit inside-spread flow (``off + dist < spread`` is
     # unreachable once the spread floors near ``lo_offset + 1``); the
     # tape's 10.3% inside-spread share and join flow need this second
-    # placement component. 0 is bit-identical to the legacy placement.
+    # placement component. Under ``anchor="ref"`` the same share of flow
+    # lands strictly inside the spread (uniform on (own_touch,
+    # opp_touch)) when ``place_join_frac``/``lo_improve_frac`` are on.
+    # 0 is bit-identical to the legacy placement.
     lo_improve_frac: float = 0.0
+    # ``place_join_frac`` ∈ [0, 1]: under ``anchor="ref"``, probability an
+    # LO joins the own-side touch (level = own best) instead of drawing
+    # from the distance law. With ``lo_improve_frac`` it forms the
+    # join/improve/stack mixture the tape shows (place_law.v1: ~12% of
+    # submissions at the touch, ~10% inside the spread). When either
+    # knob is on the ref path consumes ONE extra uniform for the mixture
+    # pick; both at 0 stays bit-identical (no extra draw).
+    place_join_frac: float = 0.0
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -516,6 +527,7 @@ class ZILobConfig:
         _prob(self.iceberg_reload, "iceberg_reload")
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
         _prob(self.lo_improve_frac, "lo_improve_frac")
+        _prob(self.place_join_frac, "place_join_frac")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
@@ -1446,22 +1458,52 @@ class ZILobSimulator:
             # dropped — that aggressiveness is already in the market-order flow.
             ref = int(round(self._ref_ema))
             k = self._draw_size(self._lo_size_cdf)
+            # Mixture head (join/improve/stack): the pick consumes ONE
+            # extra uniform and only when a mixture knob is on — both at
+            # 0 keeps the ref path bit-identical.
+            u_mix = (
+                self._rng.random()
+                if (self._cfg.place_join_frac > 0.0 or self._cfg.lo_improve_frac > 0.0)
+                else 1.0
+            )
+            want_join = u_mix < self._cfg.place_join_frac
+            want_imp = (
+                not want_join and u_mix < self._cfg.place_join_frac + self._cfg.lo_improve_frac
+            )
             if want_buy:
-                level = ref - dist
+                if want_join and bb is not None:
+                    level = bb
+                elif want_imp and ba is not None and bb is not None and ba - bb > 1:
+                    level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
+                else:
+                    level = ref - dist
                 if self._is_cooled("buy", level):
                     self.n_lo_suppressed += 1
                     return
                 if ba is None or level < ba:
+                    if bb is not None and level == bb:
+                        self.n_lo_join += 1
+                    elif bb is not None and level > bb:
+                        self.n_lo_improve += 1
                     for _ in range(k):
                         self._rest("buy", level, "zi")
                     self.n_lo_arrivals += 1
                     self.n_lo_units += k
                 return
-            level = ref + dist
+            if want_join and ba is not None:
+                level = ba
+            elif want_imp and ba is not None and bb is not None and ba - bb > 1:
+                level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
+            else:
+                level = ref + dist
             if self._is_cooled("sell", level):
                 self.n_lo_suppressed += 1
                 return
             if bb is None or level > bb:
+                if ba is not None and level == ba:
+                    self.n_lo_join += 1
+                elif ba is not None and level < ba:
+                    self.n_lo_improve += 1
                 for _ in range(k):
                     self._rest("sell", level, "zi")
                 self.n_lo_arrivals += 1
