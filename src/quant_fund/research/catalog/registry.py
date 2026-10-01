@@ -702,6 +702,26 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "stl_loess",
         "pelt_wbs",
         "spectral_pca",
+        # wave 59 — Huang empirical-mode decomposition +
+        # Hilbert marginal spectrum (cubic-envelope sifting,
+        # instantaneous-frequency extraction), Gallant-Nychka
+        # semi-nonparametric density (squared Hermite-polynomial
+        # expansion over a Gaussian kernel, penalized ML),
+        # Acharya-Engle-Richardson SRISK systemic capital
+        # shortfall (worst-alpha MES + long-run compounding),
+        # Torrence-Compo Morlet cross-wavelet coherence (scale-
+        # and time-smoothed squared coherency), Balke-Fomby /
+        # Enders-Granger threshold cointegration (TAR/MTAR ECM,
+        # SSR-grid threshold search, asymmetry F-test),
+        # Chernozhukov extremal quantile regression (inter-
+        # mediate-order QR + Hill tail index + Weissman
+        # extrapolation). Same SYNTHETIC diagnostic contract.
+        "emd_hht",
+        "gallant_snp",
+        "srisk",
+        "wavelet_coherence",
+        "tar_coint",
+        "extreme_qr",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

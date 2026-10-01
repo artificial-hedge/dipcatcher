@@ -461,6 +461,14 @@ from quant_fund.research.benches_w58 import (
     bench_spectral_pca,
     bench_stl_loess,
 )
+from quant_fund.research.benches_w59 import (
+    bench_emd_hht,
+    bench_extreme_qr,
+    bench_gallant_snp,
+    bench_srisk,
+    bench_tar_coint,
+    bench_wavelet_coherence,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2360,6 +2368,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "stl_loess": bench_stl_loess(),
         "pelt_wbs": bench_pelt_wbs(),
         "spectral_pca": bench_spectral_pca(),
+        "emd_hht": bench_emd_hht(),
+        "gallant_snp": bench_gallant_snp(),
+        "srisk": bench_srisk(),
+        "wavelet_coherence": bench_wavelet_coherence(),
+        "tar_coint": bench_tar_coint(),
+        "extreme_qr": bench_extreme_qr(),
     }
 
     hyps = _build_hypotheses(families, rankers)

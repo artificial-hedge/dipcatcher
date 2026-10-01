@@ -1346,3 +1346,33 @@ detail: |
   - Canon staged on top of w57-canon so the chain stays clean
     as #695/#698/#702/#704 land.
 note: canon PR to follow.
+
+---
+owner: devin (wave 59 canon)
+slice: decomposition/tail/systemic battery — emd_hht.py (Huang
+  EMD cubic-envelope sifting + Hilbert instantaneous frequency
+  and marginal spectrum), gallant_snp.py (Gallant-Nychka
+  squared-Hermite SNP density, penalized ML, Gauss-Hermite
+  normalization), srisk.py (Acharya-Engle-Richardson SRISK —
+  worst-alpha MES, long-run compounding, leverage-floored
+  capital need), wavelet_coherence.py (Torrence-Compo Morlet
+  CWT coherence, scale + time smoothing, Maraun-Kurths guard),
+  tar_coint.py (Balke-Fomby / Enders-Granger TAR+MTAR ECM,
+  SSR-grid threshold search, asymmetry t-test), extreme_qr.py
+  (Chernozhukov extremal quantile regression — intermediate-
+  order QR, Hill tail index on tail residuals, Weissman
+  extrapolation factor).
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w59-lanes (ea0470dc): six new models, all
+    bench_*() self-checks score=1.0, 33 unit tests green.
+  - benches_w59.py: +342..347 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "emd_hht","gallant_snp","srisk",
+    "wavelet_coherence","tar_coint","extreme_qr"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w59.
+  - Canon staged on top of w58-canon so the chain stays clean
+    as #695/#698/#702/#704/#706 land.
+note: canon PR to follow.
