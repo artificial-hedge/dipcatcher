@@ -663,6 +663,7 @@ src/quant_fund/registry/mlflow_store.py
 src/quant_fund/registry/promotion_gate.py
 src/quant_fund/reporting/__init__.py
 src/quant_fund/reporting/report.py
+src/quant_fund/reporting/report_audit.py
 src/quant_fund/reporting/tearsheet.py
 src/quant_fund/research/__init__.py
 src/quant_fund/research/agent.py
