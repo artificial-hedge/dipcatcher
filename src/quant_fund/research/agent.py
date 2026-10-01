@@ -272,6 +272,14 @@ from quant_fund.research.benches_w35 import (
     bench_sign_restricted_var,
     bench_specification_curve,
 )
+from quant_fund.research.benches_w36 import (
+    bench_arellano_bond,
+    bench_bvar_minnesota,
+    bench_competing_risks,
+    bench_mediation_analysis,
+    bench_regression_kink,
+    bench_stochastic_frontier,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2028,6 +2036,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "specification_curve": bench_specification_curve(),
         "sign_restricted_var": bench_sign_restricted_var(),
         "panel_quantile_fe": bench_panel_quantile_fe(),
+        "arellano_bond": bench_arellano_bond(),
+        "bvar_minnesota": bench_bvar_minnesota(),
+        "mediation_analysis": bench_mediation_analysis(),
+        "competing_risks": bench_competing_risks(),
+        "stochastic_frontier": bench_stochastic_frontier(),
+        "regression_kink": bench_regression_kink(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -446,6 +446,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "specification_curve",
         "sign_restricted_var",
         "panel_quantile_fe",
+        # SOTA canon wave 36 batteries (see research/benches_w36.py):
+        # Arellano-Bond FD-GMM dynamic panels (collapsed lags, AR(2)
+        # and Sargan diagnostics), Minnesota-prior BVAR (Theil dummy
+        # observations, per-equation shrinkage profile), quasi-Bayesian
+        # mediation analysis (ACME/ADE via coefficient draws),
+        # competing-risks Aalen-Johansen CIFs with Klein-Andersen
+        # pseudo-value regressions, stochastic-frontier composed-error
+        # MLE (normal/half-normal + Jondrow efficiency), regression-
+        # kink design (slope-discontinuity ratio, delta-method SE).
+        # Same SYNTHETIC diagnostic contract.
+        "arellano_bond",
+        "bvar_minnesota",
+        "mediation_analysis",
+        "competing_risks",
+        "stochastic_frontier",
+        "regression_kink",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
