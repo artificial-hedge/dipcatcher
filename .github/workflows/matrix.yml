@@ -56,7 +56,7 @@ jobs:
         with:
           fetch-depth: 0 # historical receipt tests resolve archived source commits
           persist-credentials: false
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           python-version: ${{ matrix.python }}
           enable-cache: true
@@ -141,5 +141,10 @@ jobs:
           # membership is unchanged. Repo paths contain no spaces, and the
           # expanded argv stays under the Windows 32k command-line limit
           # (~170 files * ~50 chars).
-          mapfile -t files < <(LC_ALL=C sort "$shard_file")
+          # while-read instead of mapfile: macOS runners use the
+          # system bash 3.2, which predates mapfile.
+          files=()
+          while IFS= read -r line; do
+            files+=("$line")
+          done < <(LC_ALL=C sort "$shard_file")
           uv run pytest -q -m "not network" "${files[@]}"

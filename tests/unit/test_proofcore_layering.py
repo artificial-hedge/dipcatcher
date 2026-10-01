@@ -37,6 +37,9 @@ TOP_LEVEL_WHITELIST: dict[str, frozenset[str]] = {
 # Additional quant_fund roots allowed ONLY inside function bodies (lazy
 # imports — §1.3: integration goes through function-level imports).
 LAZY_WHITELIST: dict[str, frozenset[str]] = {
+    # proofcore-standalone (configs/arch_boundaries.toml) and LH011 both bar
+    # every quant_fund edge from proofcore, lazy included — its cli carries an
+    # inlined atomic-writer instead of reaching utils.atomicio.
     "proofcore": frozenset(),
     "pit": frozenset(),
     # Adjudicated lazy edges (LH011_LAZY_WHITELIST in leakage/rules.py):
@@ -45,7 +48,9 @@ LAZY_WHITELIST: dict[str, frozenset[str]] = {
     # edges cannot create a cycle.
     "proof": frozenset({"backtest", "cli", "leakage", "metrics", "pit"}),
     "leakage": frozenset({"pit", "cli", "config", "utils", "research"}),
-    "reality": frozenset({"cli"}),
+    # Adjudicated lazy edge (this durability sweep): reality/cli writes its
+    # outputs via utils.atomicio — same layer-0 reasoning as proofcore.
+    "reality": frozenset({"cli", "utils"}),
 }
 
 # Third-party roots each package may use (stdlib is always allowed).
@@ -53,8 +58,23 @@ THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
     "proofcore": frozenset({"duckdb", "pydantic", "typer"}),
     "pit": frozenset({"polars", "pydantic", "numpy", "typer"}),
     "proof": frozenset({"polars", "pydantic", "numpy", "typer"}),
-    "leakage": frozenset({"pydantic", "typer"}),
+    # pandas/polars are lazy-only inside guard.py's hook install/remove —
+    # interposing their readers is the IO guard's purpose (W8).
+    "leakage": frozenset({"pandas", "polars", "pydantic", "typer"}),
     "reality": frozenset({"numpy", "scipy", "pydantic", "polars", "typer"}),
+}
+
+# Third-party roots allowed ONLY inside function bodies — same lazy-edge
+# reasoning as LAZY_WHITELIST. Adjudicated: leakage/guard.py monkey-patches
+# pandas/polars readers at runtime, so it must import them lazily to avoid
+# paying the import cost (and hard dep) for callers that never install the
+# IO guard.
+LAZY_THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
+    "proofcore": frozenset(),
+    "pit": frozenset(),
+    "proof": frozenset(),
+    "leakage": frozenset({"pandas", "polars"}),
+    "reality": frozenset(),
 }
 
 
@@ -95,7 +115,11 @@ def _violations(pkg: str) -> list[str]:
             if root == "fx1":
                 problems.append(f"{rel}:{line}: PROOFCORE packages never import fx1")
                 continue
-            if root not in sys.stdlib_module_names and root not in THIRD_PARTY_WHITELIST[pkg]:
+            if (
+                root not in sys.stdlib_module_names
+                and root not in THIRD_PARTY_WHITELIST[pkg]
+                and not (not top_level and root in LAZY_THIRD_PARTY_WHITELIST.get(pkg, frozenset()))
+            ):
                 problems.append(f"{rel}:{line}: third-party import {root!r} not whitelisted")
     return problems
 

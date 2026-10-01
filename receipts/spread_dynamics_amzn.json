@@ -1,0 +1,50 @@
+{
+  "claim": "spread_occupancy_distribution_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "mean_spread_ratio_7.25"
+  ],
+  "git_revision": "16b6069076c676f36ee7395d0a32fa6dcc5d1e0e",
+  "interpretation": "The spread distribution is the liquidity regime surface: occupancy concentrates at 1-2 ticks in tight names; a fat right tail marks a wide-book stock like 2012-era AMZN.",
+  "kind": "spread_dynamics",
+  "real": {
+    "mean_spread_ticks": 13.086,
+    "median_spread_ticks": 13.0,
+    "n_obs": 269747,
+    "p90_spread_ticks": 19.0,
+    "spread_occupancy": {
+      "1-1": 0.006,
+      "14-21": 0.395,
+      "2-2": 0.0079,
+      "22-34": 0.0439,
+      "3-3": 0.0126,
+      "35-inf": 0.0069,
+      "4-5": 0.0453,
+      "6-8": 0.1244,
+      "9-13": 0.3581
+    },
+    "tight_share_le2": 0.0138
+  },
+  "receipt_sha256": "f69e67a4a30362cf19c2b67b685a216ca848af31c1d3bd7834aa61b2e7a1e400",
+  "research_only": true,
+  "schema": "spread_dynamics.v1",
+  "sim": {
+    "mean_spread_ticks": 1.806,
+    "median_spread_ticks": 2.0,
+    "n_obs": 19927,
+    "p90_spread_ticks": 3.0,
+    "spread_occupancy": {
+      "1-1": 0.4907,
+      "14-21": 0.0,
+      "2-2": 0.3007,
+      "22-34": 0.0,
+      "3-3": 0.1428,
+      "35-inf": 0.0,
+      "4-5": 0.0624,
+      "6-8": 0.003,
+      "9-13": 0.0004
+    },
+    "tight_share_le2": 0.7915
+  },
+  "ticker": "AMZN"
+}
