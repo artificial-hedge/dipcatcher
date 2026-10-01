@@ -360,6 +360,14 @@ from quant_fund.research.benches_w46 import (
     bench_olley_pakes,
     bench_rust_ddc,
 )
+from quant_fund.research.benches_w47 import (
+    bench_aipw_ate,
+    bench_cavi_gmm,
+    bench_cusum_monitor,
+    bench_hausman_tests,
+    bench_pesaran_cd,
+    bench_rosenbaum_sensitivity,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2182,6 +2190,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "oaxaca_blinder": bench_oaxaca_blinder(),
         "binscatter": bench_binscatter(),
         "dfl_decomp": bench_dfl_decomp(),
+        "rosenbaum_sensitivity": bench_rosenbaum_sensitivity(),
+        "aipw_ate": bench_aipw_ate(),
+        "cavi_gmm": bench_cavi_gmm(),
+        "pesaran_cd": bench_pesaran_cd(),
+        "hausman_tests": bench_hausman_tests(),
+        "cusum_monitor": bench_cusum_monitor(),
     }
 
     hyps = _build_hypotheses(families, rankers)

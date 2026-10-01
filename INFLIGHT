@@ -1227,3 +1227,13 @@ wave 46 canon (devin/w46-canon-integration): blp_demand
   clean accept .43/.20) + dfl_decomp (IRLS logit
   reweighting: comp 1.12, struct .54, sum=gap 1.66)
   → PR stacked on w45 (247→253 families)
+wave 47 canon (devin/w47-canon-integration): rosenbaum_sensitivity
+  (Wilcoxon signed-rank p-bounds, gamma* 4.0 vs
+  confound 3.5) + aipw_ate (doubly-robust, misspec
+  propensity: .68 vs .7, naive 1.90) + cavi_gmm
+  (NIG mean-field, ELBO mono, mu -1.50/1.55) +
+  pesaran_cd (rho_bar .33 vs theory .33) +
+  hausman_tests (FE-RE + DWH batteries) +
+  cusum_monitor (CSW boundary, detect 222 vs
+  break 180, null silent)
+  → PR stacked on w46 (253→259 families)
