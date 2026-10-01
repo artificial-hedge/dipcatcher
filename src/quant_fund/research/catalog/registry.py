@@ -1015,6 +1015,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "friedman",
         "contingency",
         "hoeffding",
+        # Wave-74 families — Siegel &
+        # Tukey (1960) rank-spread +
+        # Ansari-Bradley (1960) dispersion,
+        # Mood (1950) chi^2 median test,
+        # Cochran (1950) Q for related
+        # binary columns, Quade (1979)
+        # range-weighted block ranks, van
+        # der Waerden (1952) normal-scores
+        # k-sample, and Dunn (1964) post-hoc
+        # with Holm (1979) step-down. Same
+        # SYNTHETIC diagnostic contract.
+        "dispersion_tests",
+        "median_tests",
+        "cochran_q",
+        "quade",
+        "van_der_waerden",
+        "dunn_test",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

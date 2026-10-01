@@ -581,6 +581,14 @@ from quant_fund.research.benches_w73 import (
     bench_mardia,
     bench_moran,
 )
+from quant_fund.research.benches_w74 import (
+    bench_cochran_q,
+    bench_dispersion_tests,
+    bench_dunn_test,
+    bench_median_tests,
+    bench_quade,
+    bench_van_der_waerden,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2570,6 +2578,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "friedman": bench_friedman(),
         "contingency": bench_contingency(),
         "hoeffding": bench_hoeffding(),
+        "dispersion_tests": bench_dispersion_tests(),
+        "median_tests": bench_median_tests(),
+        "cochran_q": bench_cochran_q(),
+        "quade": bench_quade(),
+        "van_der_waerden": bench_van_der_waerden(),
+        "dunn_test": bench_dunn_test(),
     }
 
     hyps = _build_hypotheses(families, rankers)

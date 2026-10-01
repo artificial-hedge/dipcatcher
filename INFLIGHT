@@ -1867,3 +1867,28 @@ detail: |
   - Canon staged on top of w72-canon so the chain stays clean as
     the open stack lands.
 note: canon PR to follow.
+---
+owner: devin (wave 74 canon)
+slice: 6 model modules + benches_w74 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w74-lanes: dispersion_tests.py (Siegel-Tukey
+    1960 zig-zag end ranks + Ansari-Bradley |r-(N+1)/2|,
+    normal-approx z; 3x scale rejected, null held),
+    median_tests.py (Mood chi^2 on grand-median split +
+    Brown-Mood two-sample z), cochran_q.py (k-related
+    binary columns, informative-block denominator),
+    quade.py (range-weighted block ranks, T3 F-form +
+    chi^2), van_der_waerden.py (Phi^{-1}(rank/(N+1))
+    normal scores, chi^2_{k-1}), dunn_test.py (pairwise
+    mean-rank z + Holm/Bonferroni adjust; shifted pairs
+    rejected, null pair held).
+  - benches_w74.py: +432..437 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "dispersion_tests","median_tests","cochran_q",
+    "quade","van_der_waerden","dunn_test" (398->404); agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w74.
+  - Canon staged on top of w73-canon so the chain stays clean as
+    the open stack lands.
+note: canon PR to follow.
