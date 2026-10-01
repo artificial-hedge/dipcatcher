@@ -348,6 +348,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rqa",
         "hj_distance",
         "tensor_decomp",
+        # SOTA canon wave 30 batteries (see research/benches_w30.py):
+        # local-projection IV impulse responses with weak-IV
+        # first-stage F and AR grid-inversion bands, bispectral
+        # Hinich gaussianity test + quadratic phase coupling,
+        # functional linear regression via B-spline/FPCA,
+        # score-driven (GAS/GAS-t/GAS-Poisson) filters, NB-2/
+        # ZIP/hurdle count regression + Vuong non-nested test,
+        # largest-Lyapunov/FNN/Cao nonlinear-dynamics estimators.
+        # Same SYNTHETIC diagnostic contract.
+        "lp_iv",
+        "bispectrum",
+        "functional_linear",
+        "gas_score",
+        "count_data",
+        "lyapunov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
