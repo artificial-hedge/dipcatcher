@@ -239,6 +239,11 @@ class Harness:
                 raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
             argv += ["--config", str(resolved)]
         if extra_args:
+            if any(a == "--config" or a.startswith("--config=") for a in extra_args):
+                raise ValueError(
+                    "pass config via the config= kwarg so the configs/ allowlist applies; "
+                    "--config in extra_args is refused"
+                )
             argv += list(extra_args)
         code, out, err = self._runner(argv, command.timeout_s)
         return HarnessResult(command=name, exit_code=code, stdout=out, stderr=err)
