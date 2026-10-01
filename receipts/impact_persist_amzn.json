@@ -1,0 +1,177 @@
+{
+ "arms": {
+  "deep": {
+   "instant_abs_ticks": 4.625,
+   "instant_signed_ticks": 4.625,
+   "kernel_mean_ticks": {
+    "1": 4.625,
+    "20": 4.625,
+    "200": 2.3055555555555554,
+    "5": 4.625,
+    "50": 4.625
+   },
+   "kernel_n": {
+    "1": 72,
+    "20": 72,
+    "200": 72,
+    "5": 72,
+    "50": 72
+   },
+   "n_fills": 72
+  },
+  "deep_split": {
+   "instant_abs_ticks": 3.345814977973568,
+   "instant_signed_ticks": 3.345814977973568,
+   "kernel_mean_ticks": {
+    "1": 3.1916299559471364,
+    "20": 3.1211453744493394,
+    "200": 1.5088105726872247,
+    "5": 3.2577092511013217,
+    "50": 3.10352422907489
+   },
+   "kernel_n": {
+    "1": 227,
+    "20": 227,
+    "200": 227,
+    "5": 227,
+    "50": 227
+   },
+   "n_fills": 227
+  },
+  "iid": {
+   "instant_abs_ticks": 0.3126491646778043,
+   "instant_signed_ticks": 0.3126491646778043,
+   "kernel_mean_ticks": {
+    "1": 0.3109628597032759,
+    "20": 0.28092963073554295,
+    "200": 0.33773284191652553,
+    "5": 0.30228155823453223,
+    "50": 0.27980692675159236
+   },
+   "kernel_n": {
+    "1": 10043,
+    "20": 10047,
+    "200": 10039,
+    "5": 10037,
+    "50": 10048
+   },
+   "n_fills": 10141
+  },
+  "lv": {
+   "instant_abs_ticks": 0.3095664280031822,
+   "instant_signed_ticks": 0.3095664280031822,
+   "kernel_mean_ticks": {
+    "1": 0.30239968137010853,
+    "20": 0.27699810888822535,
+    "200": 0.31442374738519774,
+    "5": 0.28081099930258047,
+    "50": 0.28269307324840764
+   },
+   "kernel_n": {
+    "1": 10043,
+    "20": 10047,
+    "200": 10039,
+    "5": 10037,
+    "50": 10048
+   },
+   "n_fills": 10141
+  },
+  "lv_split": {
+   "instant_abs_ticks": 0.429140832595217,
+   "instant_signed_ticks": 0.429140832595217,
+   "kernel_mean_ticks": {
+    "1": 0.4114965532577274,
+    "20": 1.050261244888687,
+    "200": 3.39894512400404,
+    "5": 0.5488095238095239,
+    "50": 1.6266621206955336
+   },
+   "kernel_n": {
+    "1": 8994,
+    "20": 8804,
+    "200": 8911,
+    "5": 8820,
+    "50": 8799
+   },
+   "n_fills": 12643
+  },
+  "split": {
+   "instant_abs_ticks": 0.5114713979810339,
+   "instant_signed_ticks": 0.5114713979810339,
+   "kernel_mean_ticks": {
+    "1": 0.5319444444444444,
+    "20": 1.4520438577815626,
+    "200": 4.129949452401011,
+    "5": 0.73680911085571,
+    "50": 2.2549338652110014
+   },
+   "kernel_n": {
+    "1": 9720,
+    "20": 9394,
+    "200": 9496,
+    "5": 9571,
+    "50": 9526
+   },
+   "n_fills": 13235
+  }
+ },
+ "claims": {
+  "deep_impact_decays": true,
+  "lv_needs_persistent_flow": true,
+  "split_continuation_close": true,
+  "sweeps_move_the_touch": true
+ },
+ "data_label": "SYNTHETIC",
+ "divergences": [
+  "iid:instant_+0.31_vs_0.89",
+  "iid@20:+0.28_vs_1.51",
+  "iid@50:+0.28_vs_2.57",
+  "iid@200:+0.34_vs_4.64",
+  "split:instant_+0.51_vs_0.89",
+  "split@200:+4.13_vs_4.64",
+  "deep:instant_+4.62_vs_0.89",
+  "deep@1:+4.62_vs_0.26",
+  "deep@5:+4.62_vs_0.68",
+  "deep@20:+4.62_vs_1.51",
+  "deep@50:+4.62_vs_2.57",
+  "deep@200:+2.31_vs_4.64",
+  "deep_split:instant_+3.35_vs_0.89",
+  "deep_split@1:+3.19_vs_0.26",
+  "deep_split@5:+3.26_vs_0.68",
+  "deep_split@20:+3.12_vs_1.51",
+  "deep_split@50:+3.10_vs_2.57",
+  "deep_split@200:+1.51_vs_4.64",
+  "lv:instant_+0.31_vs_0.89",
+  "lv@20:+0.28_vs_1.51",
+  "lv@50:+0.28_vs_2.57",
+  "lv@200:+0.31_vs_4.64",
+  "lv_split:instant_+0.43_vs_0.89",
+  "lv_split@50:+1.63_vs_2.57",
+  "lv_split@200:+3.40_vs_4.64"
+ ],
+ "git_revision": "b2bb82629971fc94a7c64aa709213d1b429a6f76",
+ "horizon": 60000,
+ "interpretation": "SplitFlow alone nearly reproduces the tape's continuation envelope (~4.1 vs 4.64 ticks @200ev) but undershoots the instantaneous component (~0.5 vs 0.89). The sized/deep arms overshoot instant impact ~4-5x and the drift then decays \u2014 multi-level sweeps against a sparse anchored book displace the mid too far, and the re-quote cycle pulls it back. Latent-value anchoring (ref_fill_gain) is measurable only under persistent flow \u2014 sign-random fills cancel in the reference level \u2014 and front-loads kernel mass into long lags, so it complements rather than replaces SplitFlow's smoother continuation. The residual gap is the instantaneous term: the tape's fills carry ~0.9 ticks of immediate signed impact no current arm produces without overshooting.",
+ "kind": "impact_persist_bench",
+ "lags": [
+  1,
+  5,
+  20,
+  50,
+  200
+ ],
+ "real_tape_targets": {
+  "instant_signed_ticks": 0.887,
+  "kernel": {
+   "1": 0.2645,
+   "20": 1.5127,
+   "200": 4.6447,
+   "5": 0.6792,
+   "50": 2.5696
+  }
+ },
+ "receipt_sha256": "3d4d8ed1f2f263a74844fa5843778a16e399cbcf50806aae604b0ab34d7a20f5",
+ "research_only": true,
+ "schema": "impact_persist.v1",
+ "seed": 7
+}

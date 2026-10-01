@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1411,
+  "module_count": 1416,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -4899,6 +4899,26 @@
       "src": "quant_fund.microstructure.almgren_chriss"
     },
     {
+      "dst": "quant_fund.microstructure.impact_persist_bench",
+      "src": "quant_fund.microstructure.anchor_scan_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.anchor_scan_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.anchor_scan_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.anchor_scan_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.anchor_scan_bench"
+    },
+    {
       "dst": "quant_fund.metrics.cross_section",
       "src": "quant_fund.microstructure.bench"
     },
@@ -5455,6 +5475,26 @@
       "src": "quant_fund.microstructure.impact_law"
     },
     {
+      "dst": "quant_fund.microstructure.maker_age_bench",
+      "src": "quant_fund.microstructure.impact_persist_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.impact_persist_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.impact_persist_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.impact_persist_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.impact_persist_bench"
+    },
+    {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
       "src": "quant_fund.microstructure.impact_propagator"
     },
@@ -5516,6 +5556,26 @@
     },
     {
       "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.instant_decomp_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.instant_decomp_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.instant_decomp_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.instant_decomp_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.instant_decomp_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
       "src": "quant_fund.microstructure.intraday_exec"
     },
     {
@@ -5555,6 +5615,22 @@
       "src": "quant_fund.microstructure.intraday_shape"
     },
     {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.joint_fit_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.joint_fit_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.joint_fit_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.joint_fit_bench"
+    },
+    {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
       "src": "quant_fund.microstructure.kyle_lambda"
     },
@@ -5565,6 +5641,26 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.kyle_lambda"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.level_gap_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.level_gap_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.level_gap_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.level_gap_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.level_gap_bench"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -14851,6 +14947,7 @@
     "quant_fund.microstructure.adversarial_mm",
     "quant_fund.microstructure.agentic_lob",
     "quant_fund.microstructure.almgren_chriss",
+    "quant_fund.microstructure.anchor_scan_bench",
     "quant_fund.microstructure.bench",
     "quant_fund.microstructure.book_depletion",
     "quant_fund.microstructure.book_metrics",
@@ -14888,13 +14985,17 @@
     "quant_fund.microstructure.imbalance_predict",
     "quant_fund.microstructure.impact_instant",
     "quant_fund.microstructure.impact_law",
+    "quant_fund.microstructure.impact_persist_bench",
     "quant_fund.microstructure.impact_propagator",
     "quant_fund.microstructure.improve_flow_bench",
     "quant_fund.microstructure.impulse_mm",
     "quant_fund.microstructure.initiative_fade_bench",
+    "quant_fund.microstructure.instant_decomp_bench",
     "quant_fund.microstructure.intraday_exec",
     "quant_fund.microstructure.intraday_shape",
+    "quant_fund.microstructure.joint_fit_bench",
     "quant_fund.microstructure.kyle_lambda",
+    "quant_fund.microstructure.level_gap_bench",
     "quant_fund.microstructure.liquidity_tail_lob",
     "quant_fund.microstructure.lob_exec",
     "quant_fund.microstructure.lob_resilience",
@@ -16921,7 +17022,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 214,
+      "imports": 228,
       "src": "quant_fund.microstructure"
     },
     {
@@ -16946,7 +17047,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 192,
+      "imports": 202,
       "src": "quant_fund.microstructure"
     },
     {

@@ -1,0 +1,319 @@
+{
+ "claims": {
+  "placement_law_can_match_g1": true,
+  "tape_near_touch_is_sparse": true
+ },
+ "data_label": "MIXED",
+ "divergences": [
+  "iid:g1_1.2137733620641082_vs_2.4909471061879978",
+  "split:g1_1.436976806479016_vs_2.4909471061879978",
+  "lv_split:g1_1.3396684404487087_vs_2.4909471061879978"
+ ],
+ "git_revision": "44411ae5b3307ec6701be6b5a7d14057d38424c8",
+ "horizon": 20000,
+ "interpretation": "g_k is the tick distance between the k-th and (k+1)-th occupied level. The tape's g1 (the hole an emptied touch exposes) sets the instant term via instant_decomp's exact identity; the scan asks whether the ZI placement law P(d) ~ d^exponent over [1, band] can reproduce g1 \u2014 and whether that cell also carries the continuation kernel.",
+ "kind": "level_gap_bench",
+ "placement_scan": [
+  {
+   "band": 5,
+   "density_exponent": 0.0,
+   "g1_mean": 1.4580240593805989,
+   "instant_signed_ticks": 0.4586136297162913,
+   "spread_mean": 2.294991455238596
+  },
+  {
+   "band": 10,
+   "density_exponent": 0.0,
+   "g1_mean": 1.461686795899726,
+   "instant_signed_ticks": 0.4208167330677291,
+   "spread_mean": 2.355079833214685
+  },
+  {
+   "band": 20,
+   "density_exponent": 0.0,
+   "g1_mean": 1.32845,
+   "instant_signed_ticks": 0.3271484375,
+   "spread_mean": 2.18145
+  },
+  {
+   "band": 40,
+   "density_exponent": 0.0,
+   "g1_mean": 1.3477,
+   "instant_signed_ticks": 0.3048469387755102,
+   "spread_mean": 2.21775
+  },
+  {
+   "band": 5,
+   "density_exponent": 0.5,
+   "g1_mean": 1.4532752211254967,
+   "instant_signed_ticks": 0.44823047674758704,
+   "spread_mean": 2.6285657946628107
+  },
+  {
+   "band": 10,
+   "density_exponent": 0.5,
+   "g1_mean": 1.5497435376567976,
+   "instant_signed_ticks": 0.45235723771580344,
+   "spread_mean": 3.1200549171158345
+  },
+  {
+   "band": 20,
+   "density_exponent": 0.5,
+   "g1_mean": 1.54715,
+   "instant_signed_ticks": 0.42578125,
+   "spread_mean": 3.5353
+  },
+  {
+   "band": 40,
+   "density_exponent": 0.5,
+   "g1_mean": 1.88625,
+   "instant_signed_ticks": 0.5216836734693877,
+   "spread_mean": 4.41795
+  },
+  {
+   "band": 5,
+   "density_exponent": 1.0,
+   "g1_mean": 1.3994835377663009,
+   "instant_signed_ticks": 0.4333138344545189,
+   "spread_mean": 2.9869856710924148
+  },
+  {
+   "band": 10,
+   "density_exponent": 1.0,
+   "g1_mean": 1.5214895346474293,
+   "instant_signed_ticks": 0.4458831341301461,
+   "spread_mean": 3.8964710668158244
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.0,
+   "g1_mean": 1.74155,
+   "instant_signed_ticks": 0.4674479166666667,
+   "spread_mean": 5.03745
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.0,
+   "g1_mean": 2.12735,
+   "instant_signed_ticks": 0.6479591836734694,
+   "spread_mean": 7.0837
+  },
+  {
+   "band": 5,
+   "density_exponent": 1.5,
+   "g1_mean": 1.3423838908736603,
+   "instant_signed_ticks": 0.39148873939748463,
+   "spread_mean": 3.2696200867621927
+  },
+  {
+   "band": 10,
+   "density_exponent": 1.5,
+   "g1_mean": 1.541448538754765,
+   "instant_signed_ticks": 0.42280876494023906,
+   "spread_mean": 4.572460083392658
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.5,
+   "g1_mean": 1.81895,
+   "instant_signed_ticks": 0.4811197916666667,
+   "spread_mean": 6.44785
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.5,
+   "g1_mean": 2.3059,
+   "instant_signed_ticks": 0.6996173469387755,
+   "spread_mean": 9.6246
+  },
+  {
+   "band": 5,
+   "density_exponent": 2.0,
+   "g1_mean": 1.3019808474353929,
+   "instant_signed_ticks": 0.3593155893536122,
+   "spread_mean": 3.515380570527146
+  },
+  {
+   "band": 10,
+   "density_exponent": 2.0,
+   "g1_mean": 1.4856779445433732,
+   "instant_signed_ticks": 0.39641434262948205,
+   "spread_mean": 5.157937557205329
+  },
+  {
+   "band": 20,
+   "density_exponent": 2.0,
+   "g1_mean": 1.7639,
+   "instant_signed_ticks": 0.474609375,
+   "spread_mean": 7.6841
+  },
+  {
+   "band": 40,
+   "density_exponent": 2.0,
+   "g1_mean": 2.3785,
+   "instant_signed_ticks": 0.7174744897959183,
+   "spread_mean": 11.9847
+  }
+ ],
+ "real": {
+  "g1_ask": {
+   "mean": 2.188542639797144,
+   "n": 269748,
+   "ok": true,
+   "p50": 1.0,
+   "p_ge2": 0.41559529635066805,
+   "p_ge4": 0.16377878612631047
+  },
+  "g1_bid": {
+   "mean": 2.7933515725788514,
+   "n": 269748,
+   "ok": true,
+   "p50": 2.0,
+   "p_ge2": 0.5615018461675342,
+   "p_ge4": 0.25117146373652444
+  },
+  "g2": {
+   "mean": 1.8911002120497649,
+   "n": 539496,
+   "ok": true,
+   "p50": 1.0,
+   "p_ge2": 0.3968333407476608,
+   "p_ge4": 0.10547622225187953
+  },
+  "g3": {
+   "mean": 1.7436218248142712,
+   "n": 539496,
+   "ok": true,
+   "p50": 1.0,
+   "p_ge2": 0.3838323175704732,
+   "p_ge4": 0.07196902293992911
+  },
+  "n_rows": 269748,
+  "ok": true,
+  "spread_mean": 13.086169313581564
+ },
+ "receipt_sha256": "9e8e4faa45e5e8840ec7497b8b2bf7be5db5ec206e0f4fbdd5e64b8806ad1963",
+ "research_only": true,
+ "schema": "level_gap.v1",
+ "seed": 7,
+ "sim_arms": {
+  "iid": {
+   "g1_ask": {
+    "mean": 1.2040630224428797,
+    "n": 19739,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.16621916003850246,
+    "p_ge4": 0.005420740665687218
+   },
+   "g1_bid": {
+    "mean": 1.2234837016853366,
+    "n": 19818,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.18089615501059642,
+    "p_ge4": 0.005045917852457362
+   },
+   "g2": {
+    "mean": 1.1329812642641048,
+    "n": 37682,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.11403322541266388,
+    "p_ge4": 0.0025476354758240008
+   },
+   "g3": {
+    "mean": 1.135906944312383,
+    "n": 31551,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.10665272099141074,
+    "p_ge4": 0.005578270102373935
+   },
+   "instant_signed_ticks": 0.3227176220806794,
+   "n_fills": 3319,
+   "n_rows": 20000,
+   "ok": true,
+   "spread_mean": 1.8064435188437797
+  },
+  "lv_split": {
+   "g1_ask": {
+    "mean": 1.3014198004604758,
+    "n": 15636,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.2180864671271425,
+    "p_ge4": 0.01669224865694551
+   },
+   "g1_bid": {
+    "mean": 1.3779170804369414,
+    "n": 16112,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.27066782522343596,
+    "p_ge4": 0.01663356504468719
+   },
+   "g2": {
+    "mean": 1.2569160197600564,
+    "n": 28340,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.17208892025405786,
+    "p_ge4": 0.018278052223006352
+   },
+   "g3": {
+    "mean": 1.2848914304657717,
+    "n": 24132,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.16658378915962208,
+    "p_ge4": 0.025153323388032486
+   },
+   "instant_signed_ticks": 0.41909937888198756,
+   "n_fills": 4244,
+   "n_rows": 20000,
+   "ok": true,
+   "spread_mean": 4.390693995913794
+  },
+  "split": {
+   "g1_ask": {
+    "mean": 1.4235191286223359,
+    "n": 14873,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.2794997646742419,
+    "p_ge4": 0.030525112620184227
+   },
+   "g1_bid": {
+    "mean": 1.4504344843356962,
+    "n": 17492,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.29510633432426253,
+    "p_ge4": 0.033901211982620624
+   },
+   "g2": {
+    "mean": 1.3293618186798137,
+    "n": 29208,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.19409066009312517,
+    "p_ge4": 0.02348671596822788
+   },
+   "g3": {
+    "mean": 1.3374814339047008,
+    "n": 24911,
+    "ok": true,
+    "p50": 1.0,
+    "p_ge2": 0.1885110995142708,
+    "p_ge4": 0.027538035406045522
+   },
+   "instant_signed_ticks": 0.45579360289680143,
+   "n_fills": 4245,
+   "n_rows": 20000,
+   "ok": true,
+   "spread_mean": 2.1943097316521176
+  }
+ },
+ "ticker": "AMZN"
+}

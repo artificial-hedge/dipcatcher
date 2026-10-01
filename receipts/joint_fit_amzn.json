@@ -1,0 +1,339 @@
+{
+ "cells": [
+  {
+   "band": 20,
+   "density_exponent": 1.0,
+   "g1_mean": 1.8989,
+   "instant_signed_ticks": 0.7639235245220283,
+   "kernel": {
+    "1": 0.7013715710723192,
+    "20": 0.3444906444906445,
+    "200": -0.5896898575020956,
+    "5": 0.5583956774729842,
+    "50": 0.20141489804411153
+   },
+   "n_fills": 2406,
+   "ref_fill_gain": 0.0,
+   "ref_halflife": 0.0,
+   "score": 1.1720904570048651,
+   "spread_mean": 10.893733333333333
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.0,
+   "g1_mean": 1.7586166666666667,
+   "instant_signed_ticks": 0.48795648795648794,
+   "kernel": {
+    "1": 0.4794094794094794,
+    "20": 0.8063010501750292,
+    "200": 3.3980866848887152,
+    "5": 0.5192307692307693,
+    "50": 1.4513429349941611
+   },
+   "n_fills": 2574,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 0.0,
+   "score": 0.6215008353240841,
+   "spread_mean": 10.997266666666667
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.0,
+   "g1_mean": 2.582533333333333,
+   "instant_signed_ticks": 1.172720533728688,
+   "kernel": {
+    "1": 1.0874722016308376,
+    "20": 0.6928783382789317,
+    "200": -0.17625093353248694,
+    "5": 0.9795994065281899,
+    "50": 0.5219167904903418
+   },
+   "n_fills": 1349,
+   "ref_fill_gain": 0.0,
+   "ref_halflife": 0.0,
+   "score": 1.1114961620669623,
+   "spread_mean": 16.102066666666666
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.0,
+   "g1_mean": 2.2199833333333334,
+   "instant_signed_ticks": 0.6273333333333333,
+   "kernel": {
+    "1": 0.6093333333333333,
+    "20": 0.7413333333333333,
+    "200": 2.8860887096774195,
+    "5": 0.62,
+    "50": 1.1133333333333333
+   },
+   "n_fills": 1501,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 0.0,
+   "score": 0.5220828222985269,
+   "spread_mean": 15.4225
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.5,
+   "g1_mean": 2.014785551166008,
+   "instant_signed_ticks": 0.8563323572474377,
+   "kernel": {
+    "1": 0.7875183016105417,
+    "20": 0.273992673992674,
+    "200": -0.395155325443787,
+    "5": 0.5353350421091175,
+    "50": 0.06403669724770643
+   },
+   "n_fills": 2732,
+   "ref_fill_gain": 0.0,
+   "ref_halflife": 0.0,
+   "score": 1.1049582899203272,
+   "spread_mean": 14.0974
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.5,
+   "g1_mean": 1.8797166666666667,
+   "instant_signed_ticks": 0.48832312404287903,
+   "kernel": {
+    "1": 0.49406584992343033,
+    "20": 0.8426493108728943,
+    "200": 3.178227360308285,
+    "5": 0.5315849923430321,
+    "50": 1.4756144393241168
+   },
+   "n_fills": 2612,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 0.0,
+   "score": 0.6051832249336597,
+   "spread_mean": 13.965166666666667
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.5,
+   "g1_mean": 2.7508666666666666,
+   "instant_signed_ticks": 1.221792890262751,
+   "kernel": {
+    "1": 1.1951313755795983,
+    "20": 0.6394899536321483,
+    "200": -0.28001549186676994,
+    "5": 1.0305255023183926,
+    "50": 0.4609737248840804
+   },
+   "n_fills": 1294,
+   "ref_fill_gain": 0.0,
+   "ref_halflife": 0.0,
+   "score": 1.2526647068851546,
+   "spread_mean": 20.157633333333333
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.5,
+   "g1_mean": 2.53085,
+   "instant_signed_ticks": 0.7821862348178138,
+   "kernel": {
+    "1": 0.7979757085020243,
+    "20": 0.7530364372469636,
+    "200": 2.3288617886178864,
+    "5": 0.7546558704453441,
+    "50": 1.0336304700162076
+   },
+   "n_fills": 1235,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 0.0,
+   "score": 0.7560291569605572,
+   "spread_mean": 20.363466666666667
+  },
+  {
+   "band": 20,
+   "density_exponent": 2.0,
+   "g1_mean": 2.051086739115941,
+   "instant_signed_ticks": 0.8285069575028207,
+   "kernel": {
+    "1": 0.7418202331703648,
+    "20": 0.3542921686746988,
+    "200": -0.5676190476190476,
+    "5": 0.5195562241444152,
+    "50": 0.2205050885789672
+   },
+   "n_fills": 2659,
+   "ref_fill_gain": 0.0,
+   "ref_halflife": 0.0,
+   "score": 1.1647073059992528,
+   "spread_mean": 16.3434
+  },
+  {
+   "band": 20,
+   "density_exponent": 2.0,
+   "g1_mean": 1.8639833333333333,
+   "instant_signed_ticks": 0.3988418385812523,
+   "kernel": {
+    "1": 0.412775968150561,
+    "20": 0.883695652173913,
+    "200": 5.076643661460225,
+    "5": 0.47900072411296163,
+    "50": 1.644851341551849
+   },
+   "n_fills": 2763,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 0.0,
+   "score": 0.6459507406654135,
+   "spread_mean": 15.789
+  },
+  {
+   "band": 40,
+   "density_exponent": 2.0,
+   "g1_mean": 2.8835333333333333,
+   "instant_signed_ticks": 1.311017597551645,
+   "kernel": {
+    "1": 1.257459831675593,
+    "20": 0.7004590665646518,
+    "200": -0.05234795996920708,
+    "5": 1.080336648814078,
+    "50": 0.4218989280245023
+   },
+   "n_fills": 1307,
+   "ref_fill_gain": 0.0,
+   "ref_halflife": 0.0,
+   "score": 1.4771942559489382,
+   "spread_mean": 25.549166666666668
+  },
+  {
+   "band": 40,
+   "density_exponent": 2.0,
+   "g1_mean": 2.621766666666667,
+   "instant_signed_ticks": 0.7662616154395997,
+   "kernel": {
+    "1": 0.770192994996426,
+    "20": 0.8313080771979986,
+    "200": 2.808381088825215,
+    "5": 0.7609006433166547,
+    "50": 1.1727467811158798
+   },
+   "n_fills": 1399,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 0.0,
+   "score": 1.0353268104325968,
+   "spread_mean": 25.468633333333333
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.0,
+   "g1_mean": 1.9382333333333333,
+   "instant_signed_ticks": 0.49507575757575756,
+   "kernel": {
+    "1": 0.5128787878787879,
+    "20": 0.7016679302501896,
+    "200": 3.2685539403213464,
+    "5": 0.5276515151515152,
+    "50": 1.1924829157175398
+   },
+   "n_fills": 1320,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 1.0,
+   "score": 0.59060583233203,
+   "spread_mean": 14.781266666666667
+  },
+  {
+   "band": 40,
+   "density_exponent": 1.0,
+   "g1_mean": 2.1167166666666666,
+   "instant_signed_ticks": 0.638235294117647,
+   "kernel": {
+    "1": 0.6328431372549019,
+    "20": 0.7585868498527969,
+    "200": 2.0241141732283463,
+    "5": 0.6575073601570167,
+    "50": 0.9503441494591937
+   },
+   "n_fills": 1020,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 2.0,
+   "score": 0.6586513018239756,
+   "spread_mean": 14.658566666666667
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.5,
+   "g1_mean": 1.69405,
+   "instant_signed_ticks": 0.42095015576323985,
+   "kernel": {
+    "1": 0.4351635514018692,
+    "20": 0.9322429906542056,
+    "200": 4.823563892145369,
+    "5": 0.5163551401869159,
+    "50": 1.7687962602259446
+   },
+   "n_fills": 2568,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 1.0,
+   "score": 0.6194621381262686,
+   "spread_mean": 13.917866666666667
+  },
+  {
+   "band": 20,
+   "density_exponent": 1.5,
+   "g1_mean": 1.6827166666666666,
+   "instant_signed_ticks": 0.3969147005444646,
+   "kernel": {
+    "1": 0.414519056261343,
+    "20": 0.8808572466400291,
+    "200": 5.0377875136911285,
+    "5": 0.5009074410163339,
+    "50": 1.6564316860465116
+   },
+   "n_fills": 2755,
+   "ref_fill_gain": 0.3,
+   "ref_halflife": 2.0,
+   "score": 0.6510212481223071,
+   "spread_mean": 14.126966666666666
+  }
+ ],
+ "claims": {
+  "best_cell": {
+   "band": 40,
+   "density_exponent": 1.0,
+   "ref_fill_gain": 0.3,
+   "score": 0.5220828222985269
+  },
+  "per_target_match": {
+   "g1": true,
+   "instant": false,
+   "k200": false,
+   "spread": true
+  },
+  "residual_tension": true,
+  "single_law_closes_all": false
+ },
+ "data_label": "SYNTHETIC",
+ "divergences": [
+  "e1.0/b20/g0.0:continuation_-0.59",
+  "e1.0/b40/g0.0:continuation_-0.18",
+  "e1.5/b20/g0.0:continuation_-0.40",
+  "e1.5/b40/g0.0:continuation_-0.28",
+  "e1.5/b40/g0.3:continuation_2.33",
+  "e2.0/b20/g0.0:continuation_-0.57",
+  "e2.0/b40/g0.0:continuation_-0.05",
+  "e1.0/b40/g0.3:continuation_2.02"
+ ],
+ "git_revision": "73c16fb60f8a5c853b06126d6dfec320543467e3",
+ "horizon": 30000,
+ "interpretation": "Each cell is anchored split flow under a placement law P(d) ~ d^exponent over [1, band]; halflife>0 lets a passive EMA reference chase the mid between fills. Measured finding: sparse placement alone (gain=0) creates instant impact but kills continuation; fill-anchoring restores continuation but caps instant at ~0.78; passive EMA recovers continuation within a cell while draining instant further. score is the RMS of fractional deviations from the four tape targets; residual_tension=True means no scanned cell meets all tolerances \u2014 the remaining gap is a real mechanism gap (side-conditional placement or a fast refill channel), not a parameterization one.",
+ "kind": "joint_fit_bench",
+ "receipt_sha256": "ae7487e3d2003ac9c59541ce7e301959204ad13bc9778d530c7419d011353831",
+ "research_only": true,
+ "schema": "joint_fit.v1",
+ "seed": 7,
+ "targets": {
+  "g1": 2.49,
+  "instant": 0.887,
+  "k200": 4.6447,
+  "spread": 13.09
+ },
+ "tolerances": {
+  "g1": 0.6,
+  "instant": 0.2,
+  "k200": 1.0,
+  "spread": 4.0
+ }
+}
