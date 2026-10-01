@@ -88,11 +88,14 @@ class TraceRecorder:
                     validate_fx1_output(message["content"])
         except Fx1HonestyError:
             return False
+        # verify_ok alone is a claim; a positive example needs the evidence
+        # it cites — verified with zero artifact receipts demotes to negative.
+        verified = trajectory.verify_ok and bool(trajectory.artifact_receipts)
         record = {
             "messages": messages,
             "receipt_sha256": trajectory.sha256,
             "source_path": f"trace:{trajectory.session_id}",
-            "negative": not trajectory.verify_ok,
+            "negative": not verified,
             "artifact_receipts": trajectory.artifact_receipts,
         }
         with self._out.open("a", encoding="utf-8") as fh:
