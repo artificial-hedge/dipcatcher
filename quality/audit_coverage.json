@@ -1,7 +1,7 @@
 {
   "directories": {
     "api": {
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "audit": {
@@ -64,7 +64,7 @@
       "status": "audited"
     },
     "hmm": {
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "labels": {
@@ -110,7 +110,7 @@
       "status": "audited"
     },
     "native": {
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "northset": {
@@ -170,7 +170,7 @@
       "status": "audited"
     },
     "reporting": {
-      "n_modules": 5,
+      "n_modules": 6,
       "status": "audited"
     },
     "research": {
