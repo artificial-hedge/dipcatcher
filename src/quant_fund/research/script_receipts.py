@@ -16,6 +16,11 @@ import statistics
 from collections.abc import Mapping
 from typing import Any
 
+from quant_fund.research.microstructure_receipts import (
+    MICROSTRUCTURE_RECEIPT_CONTRACTS,
+    microstructure_receipt_contract_errors,
+)
+
 
 def _as_finite_float(value: object) -> float | None:
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -350,6 +355,7 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "incumbent_bench.v1": incumbent_bench_contract_errors,
     "fx1.dip_bench/v1": dip_bench_contract_errors,
     "deps_hygiene.v1": deps_hygiene_contract_errors,
+    **MICROSTRUCTURE_RECEIPT_CONTRACTS,
 }
 
 
@@ -357,7 +363,9 @@ def script_receipt_contract_errors(schema: object, payload: Mapping[str, Any]) -
     """Re-derive a script receipt's headline claims; ``[]`` when unknown schema."""
     check = SCRIPT_RECEIPT_CONTRACTS.get(str(schema))
     if check is None:
-        return []
+        # Recognized microstructure kinds cannot evade their schema contract
+        # by renaming or removing the tag and producing a fresh seal.
+        return microstructure_receipt_contract_errors(payload)
     try:
         result: list[str] = check(payload)
         return result

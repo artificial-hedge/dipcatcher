@@ -19,6 +19,7 @@ from quant_fund.mc_engine.engine import (
     simulate_chunk,
 )
 from quant_fund.mc_engine.scenario import GbmPortfolioGenerator, IdentityShockGenerator
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 pytestmark = pytest.mark.synthetic
 
@@ -205,13 +206,30 @@ class TestResume:
         )
         return generator
 
-    def test_payload_missing_and_bad_backend(self, tmp_path) -> None:
+    def test_payload_missing_checks_seal_before_payload_shape(self, tmp_path) -> None:
         generator = self._partial_checkpoint(tmp_path)
-        manifest = json.loads((tmp_path / "manifest.json").read_text())
+        path = tmp_path / "manifest.json"
+        chunks = {p.name: p.read_bytes() for p in tmp_path.glob("chunk_*.npz")}
+        manifest = json.loads(path.read_text())
         manifest.pop("payload")
-        (tmp_path / "manifest.json").write_text(json.dumps(manifest))
+        path.write_text(json.dumps(manifest))
+        corrupted = path.read_bytes()
+        with pytest.raises(ValueError, match="checkpoint manifest seal mismatch"):
+            resume_simulation(tmp_path, generator)
+        assert path.read_bytes() == corrupted
+        assert {p.name: p.read_bytes() for p in tmp_path.glob("chunk_*.npz")} == chunks
+
+        # A consistently sealed malformed fixture must still fail the deep
+        # payload check. Only this temporary test checkpoint is resealed.
+        manifest["receipt_sha256"] = hash_bytes(
+            canonical_json_bytes({k: v for k, v in manifest.items() if k != "receipt_sha256"})
+        )
+        path.write_text(json.dumps(manifest))
+        malformed = path.read_bytes()
         with pytest.raises(ValueError, match="payload"):
             resume_simulation(tmp_path, generator)
+        assert path.read_bytes() == malformed
+        assert {p.name: p.read_bytes() for p in tmp_path.glob("chunk_*.npz")} == chunks
 
     def test_bad_backend(self, tmp_path) -> None:
         generator = self._partial_checkpoint(tmp_path)

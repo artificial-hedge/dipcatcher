@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-30T08:52:54.877366+00:00",
+ "generated_at": "2026-10-01T14:53:48.461238+00:00",
  "generator": "web/scripts/export_fixtures.py",
  "hash_matches": {
   "2728625ace9f0951684988f6a6013cc8de040d4a9c7d1d6d084ce6c075b0a9ed": "src/quant_fund/public.py",
@@ -17,6 +17,17 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/abc_calibrate_amzn.json",
+   "id": "abc_calibrate_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "abc_calibrate.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/calib_real_drill.json",
    "id": "calib_real_drill",
    "live_pnl_claim": false,
@@ -24,6 +35,17 @@
    "n_hashes": 2,
    "research_only": true,
    "schema": "calibration_audit.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/cancel_cluster_amzn.json",
+   "id": "cancel_cluster_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "cancel_cluster.v1"
   },
   {
    "created_at": "2026-09-27T21:25:11.550539+00:00",
@@ -103,6 +125,17 @@
    "schema": "cost_calibration.v1"
   },
   {
+   "created_at": "2026-09-30T13:08:05.561461+00:00",
+   "evidence_level": null,
+   "file": "receipts/cost_calibration_eval_f130c7e871e9aa64.json",
+   "id": "cost_calibration_eval_f130c7e871e9aa64",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 3,
+   "research_only": true,
+   "schema": "cost_calibration.v1"
+  },
+  {
    "created_at": null,
    "evidence_level": null,
    "file": "receipts/coverage_cs_real_drill.json",
@@ -149,6 +182,17 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/deep_microprice_amzn.json",
+   "id": "deep_microprice_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "deep_microprice.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/deps_security_hygiene_f3b4e6fd22e439b7.json",
    "id": "deps_security_hygiene_f3b4e6fd22e439b7",
    "live_pnl_claim": false,
@@ -156,6 +200,17 @@
    "n_hashes": 10,
    "research_only": true,
    "schema": "deps_hygiene.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/depth_consumption_amzn.json",
+   "id": "depth_consumption_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "depth_consumption.v1"
   },
   {
    "created_at": null,
@@ -191,6 +246,39 @@
    "schema": "emerge_drill.v1"
   },
   {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/event_burst_amzn.json",
+   "id": "event_burst_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "event_burst.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/event_granger_amzn.json",
+   "id": "event_granger_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "event_granger.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/event_matrix_amzn.json",
+   "id": "event_matrix_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "event_matrix.v1"
+  },
+  {
    "created_at": "2026-09-28T06:22:08.701025+00:00",
    "evidence_level": null,
    "file": "receipts/evidence_audit_3464d8f8197bf737.json",
@@ -215,6 +303,28 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/exec_cost_real_amzn.json",
+   "id": "exec_cost_real_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "exec_cost_real.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/exec_cost_split.json",
+   "id": "exec_cost_split",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "exec_cost_split.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/fast_replay_p42_conformance_20260928.json",
    "id": "fast_replay_p42_conformance_20260928",
    "live_pnl_claim": false,
@@ -222,6 +332,17 @@
    "n_hashes": 6,
    "research_only": true,
    "schema": null
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/fbm_circulant.json",
+   "id": "fbm_circulant",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "fbm_circulant.v1"
   },
   {
    "created_at": "2026-09-27T20:34:00.299434+00:00",
@@ -248,6 +369,50 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/glft_bench_synth.json",
+   "id": "glft_bench_synth",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "glft_bench.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/hawkes_mv.json",
+   "id": "hawkes_mv",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "hawkes_mv.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/hawkes_real_amzn.json",
+   "id": "hawkes_real_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "hawkes_real.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/hidden_depth_amzn.json",
+   "id": "hidden_depth_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "hidden_depth.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/honest_verdict_real_drill.json",
    "id": "honest_verdict_real_drill",
    "live_pnl_claim": false,
@@ -255,6 +420,28 @@
    "n_hashes": 3,
    "research_only": true,
    "schema": null
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/impact_instant_amzn.json",
+   "id": "impact_instant_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "impact_instant.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/intraday_shape_amzn.json",
+   "id": "intraday_shape_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "intraday_shape.v1"
   },
   {
    "created_at": null,
@@ -303,6 +490,28 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/lob_exec_amzn.json",
+   "id": "lob_exec_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "lob_exec.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/lob_resilience_amzn.json",
+   "id": "lob_resilience_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "lob_resilience.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/loss_cs_real_drill_conf_t_vs_empirical.json",
    "id": "loss_cs_real_drill_conf_t_vs_empirical",
    "live_pnl_claim": null,
@@ -325,6 +534,17 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/marketable_limit_amzn.json",
+   "id": "marketable_limit_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "marketable_limit.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/mcs_real_drill.json",
    "id": "mcs_real_drill",
    "live_pnl_claim": false,
@@ -343,6 +563,28 @@
    "n_hashes": 1,
    "research_only": true,
    "schema": null
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/metaorder_detect_amzn.json",
+   "id": "metaorder_detect_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "metaorder_detect.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/mid_jump_amzn.json",
+   "id": "mid_jump_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "mid_jump.v1"
   },
   {
    "created_at": null,
@@ -402,6 +644,28 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/order_lifetime_amzn.json",
+   "id": "order_lifetime_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "order_lifetime.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/order_revision_amzn.json",
+   "id": "order_revision_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "order_revision.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/panel_audit_real_drill.json",
    "id": "panel_audit_real_drill",
    "live_pnl_claim": false,
@@ -409,6 +673,50 @@
    "n_hashes": 2,
    "research_only": true,
    "schema": "panel_audit.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/post_trade_drift_amzn.json",
+   "id": "post_trade_drift_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "post_trade_drift.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/price_improvement_amzn.json",
+   "id": "price_improvement_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "price_improvement.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/propagator_real_amzn.json",
+   "id": "propagator_real_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "propagator_real.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/quote_place_amzn.json",
+   "id": "quote_place_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "quote_place.v1"
   },
   {
    "created_at": "2026-09-27T21:18:24.498923+00:00",
@@ -453,6 +761,28 @@
    "n_hashes": 2,
    "research_only": true,
    "schema": null
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/rough_vol.json",
+   "id": "rough_vol",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "rough_vol.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/round_lot_amzn.json",
+   "id": "round_lot_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "round_lot.v1"
   },
   {
    "created_at": null,
@@ -589,6 +919,94 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/sign_autocorr_real_amzn.json",
+   "id": "sign_autocorr_real_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "sign_autocorr_real.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/sign_predict_amzn.json",
+   "id": "sign_predict_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "sign_predict.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/sim_real_ledger_amzn.json",
+   "id": "sim_real_ledger_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "sim_real_ledger.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/split_flow_bench.json",
+   "id": "split_flow_bench",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "split_flow.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/spread_dynamics_amzn.json",
+   "id": "spread_dynamics_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "spread_dynamics.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/spread_response_amzn.json",
+   "id": "spread_response_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "spread_response.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/stale_quote_amzn.json",
+   "id": "stale_quote_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "stale_quote.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/streak_stats_amzn.json",
+   "id": "streak_stats_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "streak_stats.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/suite_health_drill.json",
    "id": "suite_health_drill",
    "live_pnl_claim": false,
@@ -611,6 +1029,28 @@
   {
    "created_at": null,
    "evidence_level": null,
+   "file": "receipts/tape_digest_amzn.json",
+   "id": "tape_digest_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 15,
+   "research_only": true,
+   "schema": "tape_digest.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/tick_rule_amzn.json",
+   "id": "tick_rule_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "tick_rule.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
    "file": "receipts/verdict_real_drill.json",
    "id": "verdict_real_drill",
    "live_pnl_claim": false,
@@ -618,9 +1058,31 @@
    "n_hashes": 2,
    "research_only": true,
    "schema": null
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/vol_signature_amzn.json",
+   "id": "vol_signature_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "vol_signature.v1"
+  },
+  {
+   "created_at": null,
+   "evidence_level": null,
+   "file": "receipts/vpin_amzn.json",
+   "id": "vpin_amzn",
+   "live_pnl_claim": null,
+   "n_hash_matches": 0,
+   "n_hashes": 1,
+   "research_only": true,
+   "schema": "vpin.v1"
   }
  ],
- "repo_revision": "2e0ca612e96f945317ad63dc6eb15313a72175cd",
+ "repo_revision": "f4c8ac801be4cf82064bfe185682d0653b5bc184",
  "strategies": [
   {
    "data_source": "UNVERIFIED",

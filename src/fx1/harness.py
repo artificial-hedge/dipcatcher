@@ -23,6 +23,7 @@ import subprocess  # noqa: S404 - runner is injectable; see Harness.run
 from collections.abc import Callable
 from enum import StrEnum
 from pathlib import Path
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -209,6 +210,61 @@ class Harness:
         if role is not None:
             commands = [c for c in commands if c.role == role]
         return commands
+
+    def search_capabilities(
+        self,
+        query: str = "",
+        *,
+        kind: str | None = None,
+        command: str | None = None,
+        source: str | None = None,
+        market: str | None = None,
+        asset: str | None = None,
+        offset: int = 0,
+        limit: int = 20,
+    ) -> dict[str, object]:
+        """Search the skills, datasource plugins, and feature recipes catalog.
+
+        This is a read-only discovery surface. Every returned command or data
+        source is checked against the existing fail-closed registries; catalog
+        entries do not add executable commands.
+        """
+        from fx1.capabilities import CapabilityKind, search_capabilities
+
+        return search_capabilities(
+            query,
+            kind=cast(CapabilityKind | None, kind),
+            command=command,
+            source=source,
+            market=market,
+            asset=asset,
+            offset=offset,
+            limit=limit,
+        )
+
+    def discovery_tool_specs(self) -> list[dict[str, object]]:
+        """Return AI-callable discovery tools separate from lab subprocesses."""
+        from fx1.capabilities import CAPABILITY_SEARCH_TOOL_SPEC
+
+        return [CAPABILITY_SEARCH_TOOL_SPEC]
+
+    def invoke_discovery_tool(self, name: str, arguments: dict[str, object]) -> dict[str, object]:
+        """Invoke a registered read-only discovery tool with a validated schema."""
+        if name != "search_capabilities":
+            raise KeyError(f"unknown discovery tool {name!r}; known: ['search_capabilities']")
+        from fx1.capabilities import CapabilitySearchArguments, search_capabilities
+
+        parsed = CapabilitySearchArguments.model_validate(arguments)
+        return search_capabilities(
+            parsed.query,
+            kind=parsed.kind,
+            command=parsed.command,
+            source=parsed.source,
+            market=parsed.market,
+            asset=parsed.asset,
+            offset=parsed.offset,
+            limit=parsed.limit,
+        )
 
     def get(self, name: str) -> HarnessCommand:
         if name not in self._registry:

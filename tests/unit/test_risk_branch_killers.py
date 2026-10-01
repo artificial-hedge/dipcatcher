@@ -175,9 +175,9 @@ def test_crash_leverage_boundary_and_dead_base() -> None:
     # One tick shallower → no crash.
     lev = crash_leverage(np.array([0.0, -0.19]), lookback=1, crash_return=-0.2)
     assert lev[1] == pytest.approx(1.0)
-    # wealth ≈ 0 → base ≤ _EPS → skip (leverage stays 1, not 0).
+    # A ruined lookback anchor must flatten instead of reopening leverage.
     lev = crash_leverage(np.array([-1.0, -0.5]), lookback=1)
-    assert lev[1] == pytest.approx(1.0)
+    assert lev[1] == 0.0
     # i < lookback never writes.
     lev = crash_leverage(np.full(30, -0.03), lookback=10, crash_return=-0.2)
     assert np.all(lev[:10] == 1.0)
@@ -1026,6 +1026,7 @@ def test_overlay_snapshot_full_contract() -> None:
         "kelly_fraction": 0.25,
         "crc_alpha": 0.05,
         "n_observe": 0,
+        "ruined": False,
         "n_halt": 0,
         "n_scaled": 0,
         "last_scale": 1.0,
@@ -1636,11 +1637,12 @@ def test_crash_leverage_no_prewarm_writes() -> None:
     assert lev[5] == 0.0
 
 
-def test_crash_degenerate_base_continues_not_breaks() -> None:
-    # A base below _EPS skips that bar only; later windows still evaluate.
+def test_crash_degenerate_base_flattens_and_continues() -> None:
+    # A ruined anchor flattens that decision; later windows still evaluate.
     r = np.array([-0.9999999999999, 1e12, -0.5, -0.5, -0.5])
     lev = crash_leverage(r, lookback=3, crash_return=-0.2)
-    assert lev[3] == 1.0
+    np.testing.assert_array_equal(lev[:3], [1.0, 1.0, 1.0])
+    assert lev[3] == 0.0
     assert lev[4] == 0.0
 
 

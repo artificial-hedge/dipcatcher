@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { decodeEquity, validateIndex } from "./fixtures";
@@ -13,8 +14,10 @@ describe("validateIndex", () => {
     ) as unknown;
     const idx = validateIndex(raw);
     expect(idx.strategies.length).toBeGreaterThanOrEqual(9);
-    // must cover every sealed receipt — a gap hides committed evidence
-    const sealed = readdirSync(SEALED).filter((f) => f.endsWith(".json"));
+    // Cover every committed sealed receipt, matching the exporter inventory.
+    const sealed = execFileSync("git", ["ls-tree", "--name-only", "-z", "HEAD:receipts"], {
+      cwd: join(SEALED, ".."), encoding: "utf8",
+    }).split("\0").filter((f) => f.endsWith(".json"));
     expect(idx.receipts.map((r) => r.file).sort()).toEqual(
       sealed.map((f) => `receipts/${f}`).sort(),
     );

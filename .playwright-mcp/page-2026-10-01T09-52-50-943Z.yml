@@ -1,0 +1,57 @@
+- generic [active] [ref=f1e1]:
+  - banner [ref=f1e2]:
+    - generic [ref=f1e3]: DIPCATCHER / RESEARCH EVIDENCE
+    - heading "What did graph edges add?" [level=1] [ref=f1e4]
+    - paragraph [ref=f1e5]: A frozen training graph and one preserved historical experiment. Explore the actual edges and matched forecast scores.
+  - generic [ref=f1e6]:
+    - generic [ref=f1e7]:
+      - text: Run
+      - textbox "Run" [ref=f1e8]: seed7_fixed_v1
+    - generic [ref=f1e9]:
+      - text: API key
+      - textbox "API key" [ref=f1e10]:
+        - /placeholder: Only when configured
+    - button "Load and verify" [ref=f1e11] [cursor=pointer]
+    - status [ref=f1e12]: Verifying saved evidence…
+  - main [ref=f1e13]:
+    - generic [ref=f1e14]:
+      - heading "Training relationships" [level=2] [ref=f1e15]
+      - paragraph [ref=f1e16]: Edge width shows absolute return correlation. These are statistical relationships; they do not establish a causal or supply-chain connection.
+      - generic [ref=f1e17]:
+        - generic [ref=f1e18]:
+          - text: Minimum weight
+          - slider "Minimum weight" [ref=f1e19]: "0.3"
+          - status [ref=f1e20]: "0.30"
+        - generic [ref=f1e21]:
+          - text: Asset
+          - combobox "Asset" [ref=f1e22]:
+            - option "All assets" [selected]
+        - button "Reset" [ref=f1e23] [cursor=pointer]
+      - img "Interactive asset correlation graph" [ref=f1e24]
+      - paragraph [ref=f1e25]
+      - paragraph
+    - generic [ref=f1e26]:
+      - heading "Matched held-out forecasts" [level=2] [ref=f1e27]
+      - generic [ref=f1e28]:
+        - text: Period
+        - combobox "Period" [ref=f1e29]:
+          - option "Previously inspected test" [selected]
+          - option "Validation"
+      - paragraph [ref=f1e30]: Lower CRPS and Gaussian negative log density are better. The node-only model has the same capacity and training budget.
+      - table [ref=f1e31]:
+        - rowgroup [ref=f1e32]:
+          - row [ref=f1e33]:
+            - columnheader "Model" [ref=f1e34]
+            - columnheader "CRPS" [ref=f1e35]
+            - columnheader "Gaussian NLL" [ref=f1e36]
+        - rowgroup
+      - paragraph
+      - paragraph
+      - heading "Evidence boundary" [level=3] [ref=f1e37]
+      - paragraph
+      - group [ref=f1e38]:
+        - generic "Data and experiment limitations" [ref=f1e39]
+      - heading "Verified saved artifacts" [level=3] [ref=f1e40]
+      - paragraph
+      - paragraph
+      - paragraph [ref=f1e41]: This pilot has no orders or venue connections. It verifies saved score arithmetic; it does not retrain the models or independently verify historical publication times. Time-varying graphs remain outside this pilot.

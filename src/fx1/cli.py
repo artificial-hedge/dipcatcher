@@ -44,10 +44,139 @@ corpus_app = typer.Typer(help="Training-corpus construction.")
 train_app = typer.Typer(help="Training-run manifests (LoRA/QLoRA on K3).")
 harness_app = typer.Typer(help="Inspect/run the dipcatcher harness.")
 sources_app = typer.Typer(help="Professional datasource registry, routing, fetch.")
+strategy_app = typer.Typer(
+    help="Generate and replay bounded research strategies; no trained checkpoint claim."
+)
 app.add_typer(corpus_app, name="corpus")
 app.add_typer(train_app, name="train")
 app.add_typer(harness_app, name="harness")
 app.add_typer(sources_app, name="sources")
+app.add_typer(strategy_app, name="strategy")
+
+
+def _bounded_strategy_json(path: Path) -> dict:
+    if path.stat().st_size > 2_000_000:
+        raise ValueError("strategy input JSON exceeds the 2 MB budget")
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError("strategy input must be a JSON object")
+    return value
+
+
+@strategy_app.command("generate")
+def strategy_generate(
+    spec: Path = typer.Option(..., help="StrategySpec JSON: id, title, description, parameters."),
+    out: Path = typer.Option(..., help="New immutable GeneratedCode JSON output."),
+    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+) -> None:
+    """Call the selected model and validate its generated bounded Python program."""
+    from dataclasses import asdict
+
+    from fx1.serve import get_backend
+    from fx1.strategy import StrategySpec, text_to_code
+
+    # An existing target is rejected before any paid inference request.
+    if out.exists():
+        raise FileExistsError(f"generated code output already exists: {out}")
+    request = StrategySpec(**_bounded_strategy_json(spec))
+    model = (
+        get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
+        if backend == "local_fx1"
+        else get_backend(backend)
+    )
+    result = text_to_code(request, model, backend_id=backend)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with out.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(asdict(result), indent=2, sort_keys=True, allow_nan=False) + "\n")
+    typer.echo(
+        json.dumps(
+            {"out": str(out), "code_sha256": result.code_sha256, "contract": result.contract}
+        )
+    )
+
+
+@strategy_app.command("replay")
+def strategy_replay(
+    spec: Path = typer.Option(..., help="Original StrategySpec JSON."),
+    generated: Path = typer.Option(..., help="GeneratedCode JSON from strategy generate."),
+    data: Path = typer.Option(..., help="JSON with bars, decision_times, data_source, synthetic."),
+    out: Path = typer.Option(..., help="New immutable feedback receipt."),
+    cost_bps: float = typer.Option(
+        0.0, min=0.0, help="Per-unit target-weight turnover cost in bps."
+    ),
+) -> None:
+    """Causal single-instrument replay with proper scores and explicit missing spec judge."""
+    from datetime import datetime
+
+    from fx1.strategy import (
+        GeneratedCode,
+        ReplayBar,
+        StrategySpec,
+        backtest,
+        evaluate,
+        write_receipt,
+    )
+
+    if out.exists():
+        raise FileExistsError(f"strategy receipt already exists: {out}")
+    request = StrategySpec(**_bounded_strategy_json(spec))
+    code = GeneratedCode(**_bounded_strategy_json(generated))
+    payload = _bounded_strategy_json(data)
+    tape = [
+        ReplayBar(
+            event_time=datetime.fromisoformat(row["event_time"]),
+            available_time=datetime.fromisoformat(row["available_time"]),
+            close=row["close"],
+        )
+        for row in payload["bars"]
+    ]
+    result = backtest(
+        code,
+        tape,
+        decision_times=[datetime.fromisoformat(t) for t in payload["decision_times"]],
+        data_source=payload["data_source"],
+        synthetic=payload["synthetic"],
+        cost_bps=cost_bps,
+    )
+    assessment = evaluate(request, code, result)
+    digest = write_receipt(out, request, code, result, assessment)
+    typer.echo(
+        json.dumps(
+            {
+                "out": str(out),
+                "receipt_sha256": digest,
+                "brier_score": result.brier_score,
+                "binary_log_score": result.binary_log_score,
+                "synthetic": result.synthetic,
+                "specification_judge_passed": assessment.judge_passed,
+                "failures": assessment.failures,
+                "research_only": True,
+                "live_pnl_claim": False,
+            },
+            sort_keys=True,
+        )
+    )
+
+
+@strategy_app.command("verify")
+def strategy_verify(
+    path: Path = typer.Argument(..., help="Immutable strategy feedback receipt."),
+) -> None:
+    """Reproduce replay and validate receipt; external judge competence stays unverified."""
+    from fx1.strategy import verify_strategy_receipt
+
+    typer.echo(json.dumps(verify_strategy_receipt(path), sort_keys=True))
+
+
+@strategy_app.command("serve")
+def strategy_serve(
+    port: int = typer.Option(8011, min=1, max=65535, help="Loopback HTTP replay pilot port."),
+) -> None:
+    """Serve bounded replay only; generation and semantic judgment are unavailable."""
+    import uvicorn
+
+    uvicorn.run("fx1.serve.strategy_api:app", host="127.0.0.1", port=port, reload=False)
 
 
 @corpus_app.command("build")
@@ -107,6 +236,33 @@ def harness_list(
     role_filter = HarnessRole(role) if role else None
     for cmd in Harness().list_commands(role=role_filter):
         typer.echo(f"{cmd.name:<18} [{cmd.role}] {cmd.description}")
+
+
+@harness_app.command("capabilities")
+def harness_capabilities(
+    query: str = typer.Argument("", help="Words to find in skills, plugins, or features."),
+    kind: str | None = typer.Option(None, help="Filter: skill | plugin | feature."),
+    command_name: str | None = typer.Option(None, "--command", help="Registered harness command."),
+    source: str | None = typer.Option(None, help="Registered datasource id."),
+    market: str | None = typer.Option(None, help="Market filter, such as cn, us, or crypto."),
+    asset: str | None = typer.Option(None, help="Asset filter, such as equity or macro."),
+    offset: int = typer.Option(0, min=0, help="Number of matching entries to skip."),
+    limit: int = typer.Option(20, min=1, max=100, help="Maximum results to return."),
+) -> None:
+    """Search the million-entry generated capability catalog and local packs."""
+    from fx1.harness import Harness
+
+    result = Harness().search_capabilities(
+        query,
+        kind=kind,
+        command=command_name,
+        source=source,
+        market=market,
+        asset=asset,
+        offset=offset,
+        limit=limit,
+    )
+    typer.echo(json.dumps(result, indent=2, ensure_ascii=False))
 
 
 @harness_app.command("run")

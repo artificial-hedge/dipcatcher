@@ -28,6 +28,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: Check installed dependency compatibility
+        run: uv pip check
       - name: Lint
         run: uv run ruff check src/fx1 tests/fx1
       - name: Types

@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit audit-js audit-rust audit-kronos audit-all ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory
 
 .DEFAULT_GOAL := help
 
@@ -8,6 +8,7 @@ help: ## Show targets
 
 sync: ## Install the locked environment (all groups and extras)
 	uv sync --frozen --all-groups --all-extras
+	uv pip check
 
 test: ## PR-gate lab tests (not network, not slow; xdist)
 	uv run pytest -n auto --dist loadfile -m "not network and not slow"
@@ -48,9 +49,30 @@ audit-obs: ## Audit ledger and observability tests
 	uv run pytest tests/unit/audit tests/unit/observe -q
 	uv run mypy src/quant_fund/audit src/quant_fund/observe
 
-audit: ## Locked-deps vulnerability audit (pip-audit)
-	uv export --format requirements.txt --no-hashes --no-emit-project --all-extras --all-groups \
-		| uvx --from pip-audit==2.10.1 pip-audit --strict -r /dev/stdin
+# Remove export markers before scanning so Windows/Linux extras are audited
+# on every host. --disable-pip --no-deps queries the exported pins directly.
+audit: ## All-platform locked Python dependency vulnerability audit (pip-audit)
+	@set -eu; requirements=$$(mktemp); trap 'rm -f "$$requirements" "$$requirements.all"' EXIT; \
+		uv export --frozen --quiet --format requirements.txt --no-hashes --no-emit-project \
+		--all-extras --all-groups -o "$$requirements"; \
+		sed 's/ ;.*//' "$$requirements" > "$$requirements.all"; \
+		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements.all"
+
+audit-js: ## Audit all three locked npm dependency trees
+	cd web && npm audit
+	cd replay && npm audit
+	cd clients/typescript && npm audit
+
+audit-rust: ## Audit the native extension (requires cargo-audit)
+	cargo audit --file rust/quant_core/Cargo.lock
+
+audit-kronos: ## Resolve and audit the independent vendored Kronos dependencies
+	@set -eu; requirements=$$(mktemp); trap 'rm -f "$$requirements"' EXIT; \
+		uv pip compile third_party/kronos/webui/requirements.txt --python-version 3.12 \
+		--quiet -o "$$requirements"; \
+		uvx --from pip-audit==2.10.1 pip-audit --strict --disable-pip --no-deps -r "$$requirements"
+
+audit-all: audit audit-js audit-rust audit-kronos ## Repository-wide dependency audits
 
 doctor: ## Harness environment check
 	uv run dipcatcher doctor

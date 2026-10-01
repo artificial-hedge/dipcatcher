@@ -9,7 +9,7 @@
   "directories": {
     "eval": {
       "status": "audited",
-      "n_modules": 17,
+      "n_modules": 20,
       "doc": "docs/AUDIT_LEDGER.md"
     },
     "forecast": {
@@ -24,7 +24,7 @@
     },
     "serve": {
       "status": "audited",
-      "n_modules": 5,
+      "n_modules": 6,
       "doc": "docs/AUDIT_LEDGER.md"
     },
     "data": {
@@ -44,12 +44,36 @@
       "reason": "package surface only"
     },
     "cli.py": {
-      "status": "audited",
-      "doc": "docs/AUDIT_LEDGER.md"
+      "status": "partial",
+      "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
+      "evidence": [
+        "tests/fx1/test_strategy_cli.py"
+      ]
     },
     "doctor.py": {
       "status": "audited",
       "doc": "docs/AUDIT_LEDGER.md"
+    },
+    "eval/quantcode_bench.py": {
+      "status": "partial",
+      "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
+      "evidence": [
+        "tests/fx1/test_quantcode_bench.py"
+      ]
+    },
+    "eval/rubric_banks.py": {
+      "status": "partial",
+      "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
+      "evidence": [
+        "tests/fx1/test_rubric_eval.py"
+      ]
+    },
+    "eval/rubric_eval.py": {
+      "status": "partial",
+      "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
+      "evidence": [
+        "tests/fx1/test_rubric_eval.py"
+      ]
     },
     "harness.py": {
       "status": "audited",
@@ -78,6 +102,20 @@
     "sbom.py": {
       "status": "audited",
       "doc": "docs/AUDIT_LEDGER.md"
+    },
+    "serve/strategy_api.py": {
+      "status": "partial",
+      "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
+      "evidence": [
+        "tests/fx1/test_strategy_api.py"
+      ]
+    },
+    "strategy.py": {
+      "status": "partial",
+      "reason": "New or extended module with focused contract tests and bounded implementation review. Complete independent line-level audit has not been established; existing directory audit is not inherited.",
+      "evidence": [
+        "tests/fx1/test_strategy.py"
+      ]
     }
   }
 }

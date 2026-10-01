@@ -14,6 +14,11 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+if __package__:
+    from scripts._committed_evidence import committed_evidence_paths
+else:
+    from _committed_evidence import committed_evidence_paths
+
 PENDING = "pending, not merged"
 NOT_IN_ARTIFACT = "not in artifact"
 SURVIVORSHIP_PR = "draft PR #202 survivorship-corrected batch"
@@ -574,7 +579,7 @@ def collect_batches(root: Path) -> tuple[list[BatchRow], list[str]]:
         notes.append("`research/reality/trials.jsonl`: absent")
 
     if studies.is_dir():
-        for receipt_path in sorted(studies.glob("**/receipt.json")):
+        for receipt_path in committed_evidence_paths(root, sorted(studies.glob("**/receipt.json"))):
             row = reality_row(root, receipt_path)
             if row is None:
                 notes.append(
@@ -586,7 +591,9 @@ def collect_batches(root: Path) -> tuple[list[BatchRow], list[str]]:
 
     metadata = root / "data" / "metadata"
     if metadata.is_dir():
-        for manifest_path in sorted(metadata.glob("**/manifest.json")):
+        for manifest_path in committed_evidence_paths(
+            root, sorted(metadata.glob("**/manifest.json"))
+        ):
             row = tournament_row(root, manifest_path)
             if row is None:
                 notes.append(
@@ -598,7 +605,7 @@ def collect_batches(root: Path) -> tuple[list[BatchRow], list[str]]:
 
     receipts = root / "receipts"
     if receipts.is_dir():
-        for path in sorted(receipts.glob("*.json")):
+        for path in committed_evidence_paths(root, sorted(receipts.glob("*.json"))):
             row = receipt_row(root, path)
             if row is None:
                 notes.append(_note_for_receipt(root, path))

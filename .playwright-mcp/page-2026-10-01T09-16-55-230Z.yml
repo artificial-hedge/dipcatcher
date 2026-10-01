@@ -1,0 +1,204 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]: DIPCATCHER / RESEARCH EVIDENCE
+    - heading "What did graph edges add?" [level=1] [ref=e4]
+    - paragraph [ref=e5]: A frozen training graph and one preserved historical experiment. Explore the actual edges and matched forecast scores.
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - text: Run
+      - textbox "Run" [ref=e8]: seed7_fixed_v1
+    - generic [ref=e9]:
+      - text: API key
+      - textbox "API key" [ref=e10]:
+        - /placeholder: Only when configured
+    - button "Load and verify" [ref=e11] [cursor=pointer]
+    - status [ref=e12]: Saved evidence verified
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Training relationships" [level=2] [ref=e15]
+      - paragraph [ref=e16]: Edge width shows absolute return correlation. These are statistical relationships; they do not establish a causal or supply-chain connection.
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - text: Minimum weight
+          - slider "Minimum weight" [ref=e19]: "0.3"
+          - status [ref=e20]: "0.30"
+        - generic [ref=e21]:
+          - text: Asset
+          - combobox "Asset" [ref=e22]:
+            - option "All assets" [selected]
+            - option "SPY"
+            - option "AMZN"
+            - option "AAPL"
+            - option "META"
+            - option "MSFT"
+            - option "TSLA"
+            - option "NFLX"
+            - option "GOOGL"
+            - option "BAC"
+            - option "BA"
+            - option "JPM"
+            - option "INTC"
+            - option "MU"
+            - option "C"
+            - option "WFC"
+            - option "T"
+            - option "DIS"
+            - option "XOM"
+            - option "JNJ"
+            - option "CSCO"
+            - option "PFE"
+            - option "GE"
+            - option "UNH"
+            - option "HD"
+        - button "Reset" [ref=e23] [cursor=pointer]
+      - img "Interactive asset correlation graph" [ref=e24]:
+        - 'generic "SPY ↔ AAPL: 0.744" [ref=e25]'
+        - 'generic "SPY ↔ META: 0.624" [ref=e26]'
+        - 'generic "SPY ↔ MSFT: 0.817" [ref=e27]'
+        - 'generic "SPY ↔ TSLA: 0.417" [ref=e28]'
+        - 'generic "SPY ↔ GOOGL: 0.762" [ref=e29]'
+        - 'generic "SPY ↔ BA: 0.632" [ref=e30]'
+        - 'generic "SPY ↔ JPM: 0.749" [ref=e31]'
+        - 'generic "SPY ↔ INTC: 0.672" [ref=e32]'
+        - 'generic "SPY ↔ MU: 0.607"'
+        - 'generic "SPY ↔ T: 0.572" [ref=e33]'
+        - 'generic "SPY ↔ DIS: 0.646" [ref=e34]'
+        - 'generic "SPY ↔ JNJ: 0.607" [ref=e35]'
+        - 'generic "SPY ↔ CSCO: 0.741" [ref=e36]'
+        - 'generic "SPY ↔ PFE: 0.507" [ref=e37]'
+        - 'generic "SPY ↔ UNH: 0.675" [ref=e38]'
+        - 'generic "SPY ↔ HD: 0.749" [ref=e39]'
+        - 'generic "AMZN ↔ AAPL: 0.608" [ref=e40]'
+        - 'generic "AMZN ↔ MSFT: 0.688" [ref=e41]'
+        - 'generic "AMZN ↔ NFLX: 0.569" [ref=e42]'
+        - 'generic "AMZN ↔ GOOGL: 0.656" [ref=e43]'
+        - 'generic "AAPL ↔ MSFT: 0.708" [ref=e44]'
+        - 'generic "AAPL ↔ TSLA: 0.397" [ref=e45]'
+        - 'generic "AAPL ↔ GOOGL: 0.643" [ref=e46]'
+        - 'generic "META ↔ MSFT: 0.617" [ref=e47]'
+        - 'generic "META ↔ GOOGL: 0.673" [ref=e48]'
+        - 'generic "MSFT ↔ TSLA: 0.406" [ref=e49]'
+        - 'generic "MSFT ↔ NFLX: 0.523" [ref=e50]'
+        - 'generic "MSFT ↔ GOOGL: 0.775" [ref=e51]'
+        - 'generic "MSFT ↔ INTC: 0.614" [ref=e52]'
+        - 'generic "MSFT ↔ MU: 0.524" [ref=e53]'
+        - 'generic "MSFT ↔ CSCO: 0.642" [ref=e54]'
+        - 'generic "MSFT ↔ UNH: 0.532" [ref=e55]'
+        - 'generic "MSFT ↔ HD: 0.606" [ref=e56]'
+        - 'generic "NFLX ↔ GOOGL: 0.499" [ref=e57]'
+        - 'generic "BAC ↔ JPM: 0.927" [ref=e58]'
+        - 'generic "BAC ↔ C: 0.892" [ref=e59]'
+        - 'generic "BAC ↔ WFC: 0.836" [ref=e60]'
+        - 'generic "BAC ↔ T: 0.516" [ref=e61]'
+        - 'generic "BAC ↔ XOM: 0.653" [ref=e62]'
+        - 'generic "BAC ↔ GE: 0.561" [ref=e63]'
+        - 'generic "BA ↔ JPM: 0.610" [ref=e64]'
+        - 'generic "BA ↔ C: 0.635" [ref=e65]'
+        - 'generic "JPM ↔ C: 0.891" [ref=e66]'
+        - 'generic "JPM ↔ WFC: 0.827"'
+        - 'generic "JPM ↔ T: 0.529" [ref=e67]'
+        - 'generic "JPM ↔ DIS: 0.597" [ref=e68]'
+        - 'generic "JPM ↔ XOM: 0.656" [ref=e69]'
+        - 'generic "JPM ↔ GE: 0.566" [ref=e70]'
+        - 'generic "INTC ↔ MU: 0.569" [ref=e71]'
+        - 'generic "INTC ↔ CSCO: 0.567" [ref=e72]'
+        - 'generic "C ↔ WFC: 0.813" [ref=e73]'
+        - 'generic "C ↔ DIS: 0.589" [ref=e74]'
+        - 'generic "C ↔ XOM: 0.671" [ref=e75]'
+        - 'generic "C ↔ GE: 0.587" [ref=e76]'
+        - 'generic "JNJ ↔ CSCO: 0.518" [ref=e77]'
+        - 'generic "JNJ ↔ PFE: 0.541" [ref=e78]'
+        - 'generic "CSCO ↔ PFE: 0.440" [ref=e79]'
+        - 'generic "CSCO ↔ HD: 0.539" [ref=e80]'
+        - 'generic "UNH ↔ HD: 0.531" [ref=e81]'
+        - button "Inspect SPY" [ref=e82] [cursor=pointer]
+        - generic: SPY
+        - button "Inspect AMZN" [ref=e83] [cursor=pointer]
+        - generic: AMZN
+        - button "Inspect AAPL" [ref=e84] [cursor=pointer]
+        - generic: AAPL
+        - button "Inspect META" [ref=e85] [cursor=pointer]
+        - generic: META
+        - button "Inspect MSFT" [ref=e86] [cursor=pointer]
+        - generic: MSFT
+        - button "Inspect TSLA" [ref=e87] [cursor=pointer]
+        - generic: TSLA
+        - button "Inspect NFLX" [ref=e88] [cursor=pointer]
+        - generic: NFLX
+        - button "Inspect GOOGL" [ref=e89] [cursor=pointer]
+        - generic: GOOGL
+        - button "Inspect BAC" [ref=e90] [cursor=pointer]
+        - generic: BAC
+        - button "Inspect BA" [ref=e91] [cursor=pointer]
+        - generic: BA
+        - button "Inspect JPM" [ref=e92] [cursor=pointer]
+        - generic: JPM
+        - button "Inspect INTC" [ref=e93] [cursor=pointer]
+        - generic: INTC
+        - button "Inspect MU" [ref=e94] [cursor=pointer]
+        - generic: MU
+        - button "Inspect C" [ref=e95] [cursor=pointer]
+        - generic: C
+        - button "Inspect WFC" [ref=e96] [cursor=pointer]
+        - generic: WFC
+        - button "Inspect T" [ref=e97] [cursor=pointer]
+        - generic: T
+        - button "Inspect DIS" [ref=e98] [cursor=pointer]
+        - generic: DIS
+        - button "Inspect XOM" [ref=e99] [cursor=pointer]
+        - generic: XOM
+        - button "Inspect JNJ" [ref=e100] [cursor=pointer]
+        - generic: JNJ
+        - button "Inspect CSCO" [ref=e101] [cursor=pointer]
+        - generic: CSCO
+        - button "Inspect PFE" [ref=e102] [cursor=pointer]
+        - generic: PFE
+        - button "Inspect GE" [ref=e103] [cursor=pointer]
+        - generic: GE
+        - button "Inspect UNH" [ref=e104] [cursor=pointer]
+        - generic: UNH
+        - button "Inspect HD" [ref=e105] [cursor=pointer]
+        - generic: HD
+      - paragraph [ref=e106]: 24 assets · 59 visible relationships
+      - paragraph [ref=e107]: frozen training-only absolute return correlation, symmetric top-k union
+    - generic [ref=e108]:
+      - heading "Matched held-out forecasts" [level=2] [ref=e109]
+      - generic [ref=e110]:
+        - text: Period
+        - combobox "Period" [ref=e111]:
+          - option "Previously inspected test" [selected]
+          - option "Validation"
+      - paragraph [ref=e112]: Lower CRPS and Gaussian negative log density are better. The node-only model has the same capacity and training budget.
+      - table [ref=e113]:
+        - rowgroup [ref=e114]:
+          - row [ref=e115]:
+            - columnheader "Model" [ref=e116]
+            - columnheader "CRPS" [ref=e117]
+            - columnheader "Gaussian NLL" [ref=e118]
+        - rowgroup [ref=e119]:
+          - row [ref=e120]:
+            - cell "gcn" [ref=e121]
+            - cell "0.0103713" [ref=e122]
+            - cell "-2.511765" [ref=e123]
+          - row [ref=e124]:
+            - cell "node only" [ref=e125]
+            - cell "0.0102409" [ref=e126]
+            - cell "-2.557787" [ref=e127]
+          - row [ref=e128]:
+            - cell "pooled gaussian" [ref=e129]
+            - cell "0.0105787" [ref=e130]
+            - cell "-2.426770" [ref=e131]
+          - row [ref=e132]:
+            - cell "ridge gaussian" [ref=e133]
+            - cell "0.0105970" [ref=e134]
+            - cell "-2.422988" [ref=e135]
+      - paragraph [ref=e136]: Graph CRPS was worse than node-only by 0.0001304. This run does not establish a graph advantage.
+      - paragraph [ref=e137]: "Recorded test GCN-minus-node-only CRPS interval: [0.0000806, 0.0001848]. Moving-block diagnostic; no multiplicity adjustment."
+      - heading "Evidence boundary" [level=3] [ref=e138]
+      - paragraph [ref=e139]: yahoo · exploratory retrospective forecast scores · holdout previously inspected. Promotion and SOTA claims are false.
+      - group [ref=e140]:
+        - generic "Data and experiment limitations" [ref=e141]
+      - heading "Verified saved artifacts" [level=3] [ref=e142]
+      - paragraph [ref=e143]: Receipt and artifact hashes, parameter identities and score arithmetic checked.
+      - paragraph [ref=e144]: "Receipt SHA-256: 516cd4da7d603c1225ddad05cc7437bfab3fda27353d936ff2f838b573f5d89b"
+      - paragraph [ref=e145]: This pilot has no orders or venue connections. It verifies saved score arithmetic; it does not retrain the models or independently verify historical publication times. Time-varying graphs remain outside this pilot.

@@ -2,6 +2,10 @@
 # Exact pin: a handler added or removed in a file must update its
 # entry here — `python scripts/update_broad_exceptions.py`.
 # Global ceiling lives in tests/unit/test_quality_ratchet.py.
+# hawkes_mv: existing numba import catches Exception before a pure-Python
+# decorator fallback. This records the handler without endorsing silent
+# non-import failures; that module is explicitly partial in audit coverage
+# until its fallback is independently audited and narrowed where possible.
 src/quant_fund/api/app.py 1
 src/quant_fund/audit/signing.py 2
 src/quant_fund/cli/ops_cmds.py 1
@@ -12,6 +16,7 @@ src/quant_fund/leakage/ast_scan.py 1
 src/quant_fund/market_sim/book.py 1
 src/quant_fund/metrics/serial.py 1
 src/quant_fund/metrics/watch.py 1
+src/quant_fund/microstructure/hawkes_mv.py 1
 src/quant_fund/models/caviar.py 1
 src/quant_fund/models/covariance.py 1
 src/quant_fund/models/fracdiff.py 1

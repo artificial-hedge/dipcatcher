@@ -1,0 +1,79 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]: DIPCATCHER / RESEARCH EVIDENCE
+    - heading "What did graph edges add?" [level=1] [ref=e4]
+    - paragraph [ref=e5]: A frozen training graph and one preserved historical experiment. Explore the actual edges and matched forecast scores.
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - text: Run
+      - textbox "Run" [ref=e8]: seed7_fixed_v1
+    - generic [ref=e9]:
+      - text: API key
+      - textbox "API key" [ref=e10]:
+        - /placeholder: Only when configured
+    - button "Load and verify" [ref=e11] [cursor=pointer]
+    - status [ref=e12]: Verifying saved evidence…
+  - main [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Training relationships" [level=2] [ref=e15]
+      - paragraph [ref=e16]: Edge width shows absolute return correlation. These are statistical relationships; they do not establish a causal or supply-chain connection.
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - text: Minimum weight
+          - slider "Minimum weight" [ref=e19]: "0.3"
+          - status [ref=e20]: "0.30"
+        - generic [ref=e21]:
+          - text: Asset
+          - combobox "Asset" [ref=e22]:
+            - option "All assets" [selected]
+        - button "Reset" [ref=e23] [cursor=pointer]
+      - img "Interactive asset correlation graph" [ref=e24]
+      - paragraph [ref=e25]
+      - paragraph
+    - generic [ref=e26]:
+      - heading "Matched held-out forecasts" [level=2] [ref=e27]
+      - generic [ref=e28]:
+        - text: Period
+        - combobox "Period" [ref=e29]:
+          - option "Previously inspected test" [selected]
+          - option "Validation"
+      - paragraph [ref=e30]: Lower CRPS and Gaussian negative log density are better. The node-only model has the same capacity and training budget.
+      - table [ref=e31]:
+        - rowgroup [ref=e32]:
+          - row [ref=e33]:
+            - columnheader "Model" [ref=e34]
+            - columnheader "CRPS" [ref=e35]
+            - columnheader "Gaussian NLL" [ref=e36]
+        - rowgroup
+      - paragraph
+      - paragraph
+      - heading "Evidence boundary" [level=3] [ref=e37]
+      - paragraph
+      - group [ref=e38]:
+        - generic "Data and experiment limitations" [ref=e39]
+      - heading "Verified saved artifacts" [level=3] [ref=e40]
+      - paragraph
+      - paragraph
+      - paragraph [ref=e41]: This pilot has no orders or venue connections. It verifies saved score arithmetic; it does not retrain the models or independently verify historical publication times. Time-varying graphs remain outside this pilot.
+  - region [ref=e42]:
+    - heading "What did model aggregation add?" [level=2] [ref=e43]
+    - paragraph [ref=e44]: Compare the saved global predictor with the individual client and pooled-data controls. Every participant ran in one Python process.
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - text: Federated run
+        - textbox "Federated run" [ref=e47]: seed7_fixed_v1
+      - button "Load comparison" [ref=e48] [cursor=pointer]
+      - status [ref=e49]: Verifying saved comparison…
+    - paragraph [ref=e50]: This is a synthetic correctness experiment. Parameter sharing, hashes and aggregation provide no privacy guarantee; optimization budgets differ.
+    - table [ref=e52]:
+      - rowgroup [ref=e53]:
+        - row [ref=e54]:
+          - columnheader "Predictor" [ref=e55]
+          - columnheader "Brier ↓" [ref=e56]
+          - columnheader "Negative log loss ↓" [ref=e57]
+          - columnheader "Optimizer work" [ref=e58]
+      - rowgroup
+    - paragraph
+    - paragraph
+    - group [ref=e59]:
+      - generic "Federation and comparison limits" [ref=e60]

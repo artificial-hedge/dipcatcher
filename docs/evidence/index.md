@@ -512,6 +512,143 @@ Remaining files under `receipts/`. Result fields are copied. Fields whose
 names tokenize to a forbidden research-headline metric are omitted and
 counted. Prose that contains such a token is quoted verbatim.
 
+### `receipts/abc_calibrate_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/abc_calibrate_amzn.json | 31aedff635330e6727b42bfa6b0c406c24aa305825c41cb09ae6aac33dca65f1 | 2e2cde9318817595810462f0edb2082cc8843a96fb388a4877bc2fc817a46341 | not_checked | 1641d04c29f1d2cb1855024c266d1a1329d86cbb | absent | unspecified | absent | true | absent |
+
+- `abc`:
+  - `accepted`:
+    - [0]
+      - `distance`: 0.5819555209218097
+      - `measured`:
+        - `mid_move_std`: 0.7433769382791473
+        - `mo_fraction`: 0.051
+        - `sign_lag1`: 0.2222222222222222
+        - `spread_ticks_median`: 3.0000000000001137
+      - `params`:
+        - `band`: 6
+        - `density_exponent`: 1.02434731567547
+        - `intensity_mult`: 3.650256200900686
+        - `k_min`: 7
+        - `lam`: 0.053167213774328
+        - `mu`: 0.022843448641911623
+        - `p_start`: 0.04940625640465211
+        - `theta_cxl`: 0.1483989554466119
+        - `use_split`: true
+    - [1]
+      - `distance`: 0.629586730077311
+      - `measured`:
+        - `mid_move_std`: 0.2907355764121128
+        - `mo_fraction`: 0.014
+        - `sign_lag1`: 0.2619047619047619
+        - `spread_ticks_median`: 4.000000000000625
+      - `params`:
+        - `band`: 12
+        - `density_exponent`: 1.3923089006817855
+        - `intensity_mult`: 3.0243959499018365
+        - `k_min`: 4
+        - `lam`: 0.1345320135135489
+        - `mu`: 0.04655516701772721
+        - `p_start`: 0.0515737549973146
+        - `theta_cxl`: 0.11700931709082849
+        - `use_split`: true
+    - [2]
+      - `distance`: 0.6859453829153009
+      - `measured`:
+        - `mid_move_std`: 0.10802572001744912
+        - `mo_fraction`: 0.014666666666666666
+        - `sign_lag1`: 0.9772727272727273
+        - `spread_ticks_median`: 1.999999999999602
+      - `params`:
+        - `band`: 4
+        - `density_exponent`: 1.8306479202235317
+        - `intensity_mult`: 1.210978760707654
+        - `k_min`: 23
+        - `lam`: 0.5585284016243746
+        - `mu`: 0.04401195678286574
+        - `p_start`: 0.03324132295951377
+        - `theta_cxl`: 0.1258839738307232
+        - `use_split`: true
+    - [3]
+      - `distance`: 0.689987489977288
+      - `measured`:
+        - `mid_move_std`: 0.4990282697686878
+        - `mo_fraction`: 0.053
+        - `sign_lag1`: -0.025157232704402517
+        - `spread_ticks_median`: 4.999999999999716
+      - `params`:
+        - `band`: 11
+        - `density_exponent`: 1.6194215518255555
+        - `intensity_mult`: 2.2386890280426783
+        - `k_min`: 17
+        - `lam`: 0.017746365081886272
+        - `mu`: 0.018863901426685092
+        - `p_start`: 0.07191581859761789
+        - `theta_cxl`: 0.022319617789310638
+        - `use_split`: false
+    - [4]
+      - `distance`: 0.6910037854257586
+      - `measured`:
+        - `mid_move_std`: 0.030259053275603978
+        - `mo_fraction`: 0.028
+        - `sign_lag1`: 0.9642857142857143
+        - `spread_ticks_median`: 1.0000000000005116
+      - `params`:
+        - `band`: 8
+        - `density_exponent`: 0.6318870907354004
+        - `intensity_mult`: 3.4370061943337618
+        - `k_min`: 29
+        - `lam`: 0.5789143907634464
+        - `mu`: 0.05252705055419258
+        - `p_start`: 0.17841766183473257
+        - `theta_cxl`: 0.006197760707403973
+        - `use_split`: true
+    - [5]
+      - `distance`: 0.6954322774318963
+      - `measured`:
+        - `mid_move_std`: 0.0
+        - `mo_fraction`: 0.024333333333333332
+        - `sign_lag1`: 0.7945205479452054
+        - `spread_ticks_median`: 1.0000000000005116
+      - `params`:
+        - `band`: 7
+        - `density_exponent`: 0.05663934229092593
+        - `intensity_mult`: 2.9415685347227503
+        - `k_min`: 13
+        - `lam`: 0.5325468800563893
+        - `mu`: 0.06051909776692733
+        - `p_start`: 0.14071239464485347
+        - `theta_cxl`: 0.004893798124582285
+        - `use_split`: true
+  - `horizon`: 3000
+  - `keep`: 6
+  - `median_draw_distance`: 1.2202372767748932
+  - `min_distance`: 0.5819555209218097
+  - `n_draws`: 48
+  - `target`:
+    - `mid_move_std`: 0.7346732017169699
+    - `mo_fraction`: 0.0332682105825088
+    - `sign_lag1`: 0.7213059950969467
+    - `spread_ticks_median`: 13.0
+  - `use_split_share`: 0.8333333333333334
+- `claims`:
+  - `min_distance_under_median`: true
+  - `split_selected_in_posterior`: true
+- `data_label`: MIXED
+- `git_revision`: 1641d04c29f1d2cb1855024c266d1a1329d86cbb
+- `interpretation`: Rejection ABC on the summary vector; the accepted set concentrates where the sim can actually match the target. If the target carries real-tape sign persistence, posterior use_split_share measures how strongly the data select the splitting mechanism — calibration, not validation
+- `kind`: abc_calibrate
+- `receipt_sha256`: 2e2cde9318817595810462f0edb2082cc8843a96fb388a4877bc2fc817a46341
+- `refit_full_horizon`:
+  - `mid_move_std`: 0.743599271433274
+  - `mo_fraction`: 0.05405
+  - `sign_lag1`: 0.38744075829383884
+  - `spread_ticks_median`: 3.0000000000001137
+- `research_only`: true
+- `schema`: abc_calibrate.v1
+
 ### `receipts/calib_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -567,6 +704,90 @@ counted. Prose that contains such a token is quoted verbatim.
 - `receipt_sha256`: 0124990ee36a3cc349567ea96590906a46188f5448f9848b7048c3fcd2e18370
 - `research_only`: true
 - `schema`: calibration_audit.v1
+
+### `receipts/cancel_cluster_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cancel_cluster_amzn.json | d6554e87ef5ca20ee1df623ac0b6f08fba4b91f2c00bce68bfa949767691abf1 | be7a95df9f31b2ee1fbf316e727812797c04f0c1f418cc1da3777737d1a76ee0 | not_checked | 571bd6ae838d4ab4536d5dec498c4949c1801479 | absent | unspecified | absent | true | absent |
+
+- `claim`: post_exec_cancel_retreat_measured
+- `data_label`: MIXED
+- `git_revision`: 571bd6ae838d4ab4536d5dec498c4949c1801479
+- `interpretation`: lift_k = post-exec cancel rate / baseline cancel rate, per hit side. >1 = book retreat (resiliency). The sim reports exec-on-exec lift instead (its anonymous theta_cxl cancels are not per-order timestamped) — the asymmetry is itself a documented mechanism gap.
+- `kind`: cancel_cluster
+- `real`:
+  - `buy_side`:
+    - `baseline_cxl_per_s`: 2.62505
+    - `lift_0.5s`: 5.7047
+    - `lift_10s`: 1.5469
+    - `lift_2s`: 2.7492
+    - `lift_60s`: 1.1642
+    - `post_cxl_per_s_0.5`: 14.975024015369836
+    - `post_cxl_per_s_10`: 4.060576690089653
+    - `post_cxl_per_s_2`: 7.216706730769231
+    - `post_cxl_per_s_60`: 3.056034051076615
+  - `n_cancels`: 126375
+  - `n_execs`: 8974
+  - `sell_side`:
+    - `baseline_cxl_per_s`: 2.77561
+    - `lift_0.5s`: 7.336
+    - `lift_10s`: 1.6754
+    - `lift_2s`: 3.1655
+    - `lift_60s`: 1.2423
+    - `post_cxl_per_s_0.5`: 20.36189683860233
+    - `post_cxl_per_s_10`: 4.650314729332774
+    - `post_cxl_per_s_2`: 8.786056191467221
+    - `post_cxl_per_s_60`: 3.4481832375275
+- `receipt_sha256`: be7a95df9f31b2ee1fbf316e727812797c04f0c1f418cc1da3777737d1a76ee0
+- `research_only`: true
+- `schema`: cancel_cluster.v1
+- `sim_arms`:
+  - `iid`:
+    - `both_sides`:
+      - `baseline_cxl_per_s`: 0.19881
+      - `lift_0.5s`: 0.9517
+      - `lift_10s`: 1.0031
+      - `lift_2s`: 1.0366
+      - `lift_60s`: 1.0122
+      - `post_cxl_per_s_0.5`: 0.18921361855980717
+      - `post_cxl_per_s_10`: 0.1994275384151853
+      - `post_cxl_per_s_2`: 0.20608617053329317
+      - `post_cxl_per_s_60`: 0.2012382965871338
+    - `mode`: exec_on_exec_lift
+    - `n_execs`: 3319
+  - `regime`:
+    - `both_sides`:
+      - `baseline_cxl_per_s`: 0.22472
+      - `lift_0.5s`: 1.0901
+      - `lift_10s`: 1.1243
+      - `lift_2s`: 1.1119
+      - `lift_60s`: 1.1023
+      - `post_cxl_per_s_0.5`: 0.24496373892022563
+      - `post_cxl_per_s_10`: 0.25264856144124764
+      - `post_cxl_per_s_2`: 0.24986566362170876
+      - `post_cxl_per_s_60`: 0.24771849456570555
+    - `mode`: exec_on_exec_lift
+    - `n_execs`: 3723
+  - `split`:
+    - `both_sides`:
+      - `baseline_cxl_per_s`: 0.2794
+      - `lift_0.5s`: 1.2214
+      - `lift_10s`: 1.1578
+      - `lift_2s`: 1.1755
+      - `lift_60s`: 1.0311
+      - `post_cxl_per_s_0.5`: 0.3412679707753948
+      - `post_cxl_per_s_10`: 0.32347949080622346
+      - `post_cxl_per_s_2`: 0.3284232854112656
+      - `post_cxl_per_s_60`: 0.28808171635904717
+    - `mode`: exec_on_exec_lift
+    - `n_execs`: 4244
+- `ticker`: AMZN
+- `windows_s`:
+  - 0.5
+  - 2.0
+  - 10.0
+  - 60.0
 
 ### `receipts/capacity_eval_cd0854242ed8a9ec.json`
 
@@ -2855,6 +3076,176 @@ counted. Prose that contains such a token is quoted verbatim.
 - `tau_hat`: 34
 - `window`: 40
 
+### `receipts/deep_microprice_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/deep_microprice_amzn.json | a9fddf27e4c26bc144ced56ca35856411f8a6220d91100872170b60411738acd | ea0693386f4fff5467d03e69ee7d07daf13928e1c0c94819c2315da9c1affb03 | not_checked | 2336cc798d06fbb1279444712f85d39af359fd05 | absent | unspecified | absent | true | absent |
+
+- `claim`: depth_weighted_microprice_predictive_rank_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_bestdepth_1_vs_2
+  - regime_bestdepth_1_vs_2
+- `fwd_events`: 10
+- `git_revision`: 2336cc798d06fbb1279444712f85d39af359fd05
+- `interpretation`: M_k = sum_j<=k (b_sz*a_px + a_sz*b_px)/sum_j<=k (b_sz+a_sz) — the Stoikov imbalance generalized to k levels. OLS R^2 of forward 10-event Δmid on M_k − mid per depth says which depth carries signal. best_depth/best_r2 give the argmax. Prices in ticks (LOBSTER price units / 100).
+- `kind`: deep_microprice
+- `max_depth`: 5
+- `real`:
+  - `best_depth`: 2
+  - `best_r2`: 0.010400247063253487
+  - `fwd_events`: 10
+  - `n`: 269748
+  - `ok`: true
+  - `per_depth`:
+    - [0]
+      - `corr`: 0.08182825752567807
+      - `levels`: 1
+      - `ok`: true
+      - `r2`: 0.006695863729669349
+      - `slope`: 0.03427258802009295
+    - [1]
+      - `corr`: 0.10198160159201525
+      - `levels`: 2
+      - `ok`: true
+      - `r2`: 0.010400247063253487
+      - `slope`: 0.04408538909571879
+    - [2]
+      - `corr`: 0.09798209036736234
+      - `levels`: 3
+      - `ok`: true
+      - `r2`: 0.009600490032738884
+      - `slope`: 0.041233765892573514
+    - [3]
+      - `corr`: 0.07888181093203382
+      - `levels`: 4
+      - `ok`: true
+      - `r2`: 0.006222340095897949
+      - `slope`: 0.032104042889453135
+    - [4]
+      - `corr`: 0.06811655873414915
+      - `levels`: 5
+      - `ok`: true
+      - `r2`: 0.004639865573763502
+      - `slope`: 0.026980864535386617
+- `receipt_sha256`: ea0693386f4fff5467d03e69ee7d07daf13928e1c0c94819c2315da9c1affb03
+- `research_only`: true
+- `schema`: deep_microprice.v1
+- `sim_arms`:
+  - `iid`:
+    - `best_depth`: 1
+    - `best_r2`: 0.036876783289727766
+    - `fwd_events`: 10
+    - `n`: 29894
+    - `ok`: true
+    - `per_depth`:
+      - [0]
+        - `corr`: 0.19203328693152946
+        - `levels`: 1
+        - `ok`: true
+        - `r2`: 0.036876783289727766
+        - `slope`: 0.4847626239380957
+      - [1]
+        - `corr`: 0.18574819212477048
+        - `levels`: 2
+        - `ok`: true
+        - `r2`: 0.03450239087762108
+        - `slope`: 0.3098276720281087
+      - [2]
+        - `corr`: 0.1688575406262507
+        - `levels`: 3
+        - `ok`: true
+        - `r2`: 0.02851286902634631
+        - `slope`: 0.2598974302171717
+      - [3]
+        - `corr`: 0.1500067509309473
+        - `levels`: 4
+        - `ok`: true
+        - `r2`: 0.022502025324859787
+        - `slope`: 0.22618643235337438
+      - [4]
+        - `corr`: 0.14517657129916506
+        - `levels`: 5
+        - `ok`: true
+        - `r2`: 0.02107623685418214
+        - `slope`: 0.21679767219409943
+  - `regime`:
+    - `best_depth`: 1
+    - `best_r2`: 0.02599243637142623
+    - `fwd_events`: 10
+    - `n`: 28832
+    - `ok`: true
+    - `per_depth`:
+      - [0]
+        - `corr`: 0.16122169944342396
+        - `levels`: 1
+        - `ok`: true
+        - `r2`: 0.02599243637142623
+        - `slope`: 0.4626077908192838
+      - [1]
+        - `corr`: 0.14050690918205005
+        - `levels`: 2
+        - `ok`: true
+        - `r2`: 0.01974219152789325
+        - `slope`: 0.27260335772136157
+      - [2]
+        - `corr`: 0.10622710232105774
+        - `levels`: 3
+        - `ok`: true
+        - `r2`: 0.011284197267528828
+        - `slope`: 0.18821959984799072
+      - [3]
+        - `corr`: 0.08493334690668486
+        - `levels`: 4
+        - `ok`: true
+        - `r2`: 0.007213673416771704
+        - `slope`: 0.1455345594940221
+      - [4]
+        - `corr`: 0.0814724930818129
+        - `levels`: 5
+        - `ok`: true
+        - `r2`: 0.006637767128966465
+        - `slope`: 0.13905905803969934
+  - `split`:
+    - `best_depth`: 2
+    - `best_r2`: 0.023364068926959636
+    - `fwd_events`: 10
+    - `n`: 22611
+    - `ok`: true
+    - `per_depth`:
+      - [0]
+        - `corr`: 0.1393414768460082
+        - `levels`: 1
+        - `ok`: true
+        - `r2`: 0.019416047169626416
+        - `slope`: 0.71968183131101
+      - [1]
+        - `corr`: 0.15285309590243784
+        - `levels`: 2
+        - `ok`: true
+        - `r2`: 0.023364068926959636
+        - `slope`: 0.5466383340524864
+      - [2]
+        - `corr`: 0.14916437049730769
+        - `levels`: 3
+        - `ok`: true
+        - `r2`: 0.022250009425857864
+        - `slope`: 0.48958350557833874
+      - [3]
+        - `corr`: 0.14108669091384143
+        - `levels`: 4
+        - `ok`: true
+        - `r2`: 0.019905454353017715
+        - `slope`: 0.45158416023527276
+      - [4]
+        - `corr`: 0.14012593271285537
+        - `levels`: 5
+        - `ok`: true
+        - `r2`: 0.019635277018647534
+        - `slope`: 0.4467967382484095
+- `ticker`: AMZN
+
 ### `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -2962,6 +3353,40 @@ counted. Prose that contains such a token is quoted verbatim.
 - `schema`: deps_hygiene.v1
 - `ultraplan_item`: P6.10+P4.6
 - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+
+### `receipts/depth_consumption_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/depth_consumption_amzn.json | 1bd84264cd6b886a28c16ff5246ec2c4467f81d0a656589c534dad34d8754846 | 99492b84e9d16c3f07fc3913aacef3bec03c0475fa49b38aa6c4ffca5122d6f7 | not_checked | bdd321ad27f2ff089949654d7c551a4337eedc72 | absent | unspecified | absent | true | absent |
+
+- `claim`: depth_consumption_share_measured
+- `data_label`: MIXED
+- `divergences`:
+- `git_revision`: bdd321ad27f2ff089949654d7c551a4337eedc72
+- `interpretation`: Low consumption share = fills nibble the touch (icebergs or large posted size); high share = sweeps. Over-sweep (>1) marks hidden liquidity also filling at that level.
+- `kind`: depth_consumption
+- `real`:
+  - `full_sweep_share`: 0.4724
+  - `mean_consumption`: 0.6703
+  - `median_consumption`: 0.903
+  - `n_exec_total`: 8974
+  - `n_fills`: 8974
+  - `n_with_depth`: 8974
+  - `over_sweep_share`: 0.0
+  - `p90_consumption`: 1.0
+- `receipt_sha256`: 99492b84e9d16c3f07fc3913aacef3bec03c0475fa49b38aa6c4ffca5122d6f7
+- `research_only`: true
+- `schema`: depth_consumption.v1
+- `sim`:
+  - `full_sweep_share`: 0.4773
+  - `mean_consumption`: 0.6809
+  - `median_consumption`: 0.5
+  - `mode`: qty_vs_maker_queue_at_submit
+  - `n_fills`: 3319
+  - `over_sweep_share`: 0.0
+  - `p90_consumption`: 1.0
+- `ticker`: AMZN
 
 ### `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`
 
@@ -3192,6 +3617,574 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `schema`: emerge_drill.v1
 
+### `receipts/event_burst_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/event_burst_amzn.json | 4c8872dc6f781544ef15cbace7537df2876d0320410570283e558306a9c5b019 | 69e37402f62a0796d71a0d9964e2cbe3bd1e9c373a5a520f427c94c20c2aabd2 | not_checked | 650b9b5996276a085ff7fe355404606381a49498 | absent | unspecified | absent | true | absent |
+
+- `claim`: burstiness_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_B_0.0065_vs_0.8617
+  - regime_B_0.0019_vs_0.8617
+  - split_B_0.0272_vs_0.8617
+- `git_revision`: 650b9b5996276a085ff7fe355404606381a49498
+- `interpretation`: B>0 = bursty (clustered activity); real message traffic is dominated by cancel/submit storms around execs.
+- `kind`: event_burst
+- `real`:
+  - `all`:
+    - `burstiness_B`: 0.8617
+    - `cv`: 3.6689
+    - `mean_gap_ms`: 86.7477
+    - `median_gap_ms`: 0.6202
+    - `n_gaps`: 269747
+    - `p99_gap_ms`: 1461.1273
+  - `cancel_partial`:
+    - `burstiness_B`: 0.9496
+    - `cv`: 6.2204
+    - `mean_gap_ms`: 7951.8343
+    - `median_gap_ms`: 1588.4491
+    - `n_gaps`: 2916
+    - `p99_gap_ms`: 77800.3997
+  - `delete`:
+    - `burstiness_B`: 0.7824
+    - `cv`: 2.8621
+    - `mean_gap_ms`: 189.5378
+    - `median_gap_ms`: 6.2328
+    - `n_gaps`: 123457
+    - `p99_gap_ms`: 2567.0693
+  - `execution`:
+    - `burstiness_B`: 0.7925
+    - `cv`: 2.9393
+    - `mean_gap_ms`: 2607.7517
+    - `median_gap_ms`: 3.1319
+    - `n_gaps`: 8973
+    - `p99_gap_ms`: 39177.4578
+  - `execution_hidden`:
+    - `burstiness_B`: 0.6279
+    - `cv`: 2.0918
+    - `mean_gap_ms`: 9573.8067
+    - `median_gap_ms`: 844.2706
+    - `n_gaps`: 2444
+    - `p99_gap_ms`: 98854.2931
+  - `submission`:
+    - `burstiness_B`: 0.7775
+    - `cv`: 2.8262
+    - `mean_gap_ms`: 177.3341
+    - `median_gap_ms`: 4.2466
+    - `n_gaps`: 131953
+    - `p99_gap_ms`: 2339.7579
+- `receipt_sha256`: 69e37402f62a0796d71a0d9964e2cbe3bd1e9c373a5a520f427c94c20c2aabd2
+- `research_only`: true
+- `schema`: event_burst.v1
+- `sim_arms`:
+  - `iid`:
+    - `all`:
+      - `burstiness_B`: 0.0065
+      - `cv`: 1.0066
+      - `mean_gap_ms`: 833.4545
+      - `median_gap_ms`: 576.0651
+      - `n_gaps`: 29999
+      - `p99_gap_ms`: 3880.3036
+  - `regime`:
+    - `all`:
+      - `burstiness_B`: 0.0019
+      - `cv`: 1.0019
+      - `mean_gap_ms`: 827.6185
+      - `median_gap_ms`: 568.6963
+      - `n_gaps`: 29999
+      - `p99_gap_ms`: 3816.4052
+  - `split`:
+    - `all`:
+      - `burstiness_B`: 0.0272
+      - `cv`: 1.0276
+      - `mean_gap_ms`: 751.9562
+      - `median_gap_ms`: 514.5049
+      - `n_gaps`: 29999
+      - `p99_gap_ms`: 3524.6972
+- `ticker`: AMZN
+
+### `receipts/event_granger_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/event_granger_amzn.json | 628431d7b7099ac23e9e0c40a0b99de811952a701333949202e2ea0696256362 | 1d86287d7e6373f3a8b3625c788511c58efd198a0f39df5355e16e7b3c9f9858 | not_checked | d994beac2927ce742803ec37cddb3615a99c09f0 | absent | unspecified | absent | true | absent |
+
+- `bin_s`: 0.01
+- `claim`: event_type_cross_correlation_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid:submit->cancel_partial_0.00_vs_0.21
+  - iid:submit->delete_0.00_vs_0.85
+  - iid:submit->exec_0.00_vs_0.38
+  - iid:cancel_partial->submit_0.00_vs_0.21
+  - iid:cancel_partial->delete_0.00_vs_0.20
+  - iid:delete->submit_0.00_vs_0.85
+  - iid:delete->cancel_partial_0.00_vs_0.20
+  - iid:delete->exec_0.00_vs_0.29
+  - iid:exec->submit_0.00_vs_0.38
+  - iid:exec->delete_0.00_vs_0.29
+  - regime:submit->cancel_partial_0.00_vs_0.21
+  - regime:submit->delete_0.00_vs_0.85
+  - regime:submit->exec_0.00_vs_0.38
+  - regime:cancel_partial->submit_0.00_vs_0.21
+  - regime:cancel_partial->delete_0.00_vs_0.20
+  - regime:delete->submit_0.00_vs_0.85
+  - regime:delete->cancel_partial_0.00_vs_0.20
+  - regime:delete->exec_-0.00_vs_0.29
+  - regime:exec->submit_0.00_vs_0.38
+  - regime:exec->delete_-0.00_vs_0.29
+  - split:submit->cancel_partial_0.00_vs_0.21
+  - split:submit->delete_0.00_vs_0.85
+  - split:submit->exec_0.00_vs_0.38
+  - split:cancel_partial->submit_0.00_vs_0.21
+  - split:cancel_partial->delete_0.00_vs_0.20
+  - split:delete->submit_-0.00_vs_0.85
+  - split:delete->cancel_partial_0.00_vs_0.20
+  - split:delete->exec_-0.00_vs_0.29
+  - split:exec->submit_0.00_vs_0.38
+  - split:exec->delete_0.00_vs_0.29
+- `git_revision`: d994beac2927ce742803ec37cddb3615a99c09f0
+- `interpretation`: Per-pair cross-correlation of 10ms event counts, corr(a[t], b[t+lag]): 'a->b' = a leading b. lag0_corr is same-bin co-movement (coupling, not prediction); peak_corr_lead / peak_lag_lead_s is the strongest strictly positive-lag signal — the true lead. Book thinning shows as cancel/delete→exec peaks; post-exec retreat as exec→delete.
+- `kind`: event_granger
+- `max_lag_s`: 0.5
+- `real`:
+  - `cancel_partial->delete`:
+    - `lag0_corr`: 0.19942762047925056
+    - `peak_corr`: 0.19942762047925056
+    - `peak_corr_lead`: 0.07926151294314274
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `cancel_partial->exec`:
+    - `lag0_corr`: 0.12303342962143128
+    - `peak_corr`: 0.12303342962143128
+    - `peak_corr_lead`: 0.02270554306647252
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `cancel_partial->submit`:
+    - `lag0_corr`: 0.2113964324131155
+    - `peak_corr`: 0.2113964324131155
+    - `peak_corr_lead`: 0.07887170402683319
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `delete->cancel_partial`:
+    - `lag0_corr`: 0.19942762047925056
+    - `peak_corr`: 0.19942762047925056
+    - `peak_corr_lead`: 0.09078466460165134
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `delete->exec`:
+    - `lag0_corr`: 0.29417617800095247
+    - `peak_corr`: 0.29417617800095247
+    - `peak_corr_lead`: 0.05649028835428155
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `delete->submit`:
+    - `lag0_corr`: 0.8535643641249879
+    - `peak_corr`: 0.8535643641249879
+    - `peak_corr_lead`: 0.24474535834998568
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `exec->cancel_partial`:
+    - `lag0_corr`: 0.12303342962143128
+    - `peak_corr`: 0.12303342962143128
+    - `peak_corr_lead`: 0.09820342266496779
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `exec->delete`:
+    - `lag0_corr`: 0.29417617800095247
+    - `peak_corr`: 0.29417617800095247
+    - `peak_corr_lead`: 0.1662476018489715
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `exec->submit`:
+    - `lag0_corr`: 0.37882563166812744
+    - `peak_corr`: 0.37882563166812744
+    - `peak_corr_lead`: 0.1789626096175076
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `n_events`: 269748
+  - `ok`: true
+  - `submit->cancel_partial`:
+    - `lag0_corr`: 0.2113964324131155
+    - `peak_corr`: 0.2113964324131155
+    - `peak_corr_lead`: 0.09978560886537953
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `submit->delete`:
+    - `lag0_corr`: 0.8535643641249879
+    - `peak_corr`: 0.8535643641249879
+    - `peak_corr_lead`: 0.2679291131328949
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+  - `submit->exec`:
+    - `lag0_corr`: 0.37882563166812744
+    - `peak_corr`: 0.37882563166812744
+    - `peak_corr_lead`: 0.07088721673786332
+    - `peak_lag_bins`: 0
+    - `peak_lag_lead_s`: 0.01
+    - `peak_lag_s`: 0.0
+- `receipt_sha256`: 1d86287d7e6373f3a8b3625c788511c58efd198a0f39df5355e16e7b3c9f9858
+- `research_only`: true
+- `schema`: event_granger.v1
+- `sim_arms`:
+  - `iid`:
+    - `cancel_partial->delete`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `cancel_partial->exec`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `cancel_partial->submit`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `delete->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `delete->exec`:
+      - `lag0_corr`: -0.00016020011087909176
+      - `peak_corr`: 0.0013905960691533153
+      - `peak_corr_lead`: 0.0013905960691533153
+      - `peak_lag_bins`: 45
+      - `peak_lag_lead_s`: 0.45
+      - `peak_lag_s`: 0.45
+    - `delete->submit`:
+      - `lag0_corr`: 0.0005176379576295135
+      - `peak_corr`: 0.0013366723235613753
+      - `peak_corr_lead`: 0.0013366723235613753
+      - `peak_lag_bins`: 46
+      - `peak_lag_lead_s`: 0.46
+      - `peak_lag_s`: 0.46
+    - `exec->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `exec->delete`:
+      - `lag0_corr`: -0.00016020011087909176
+      - `peak_corr`: 0.0019544368570975144
+      - `peak_corr_lead`: 0.0019544368570975144
+      - `peak_lag_bins`: 45
+      - `peak_lag_lead_s`: 0.45
+      - `peak_lag_s`: 0.45
+    - `exec->submit`:
+      - `lag0_corr`: -0.0008407511528541418
+      - `peak_corr`: 0.002148754046868949
+      - `peak_corr_lead`: 0.002148754046868949
+      - `peak_lag_bins`: 46
+      - `peak_lag_lead_s`: 0.46
+      - `peak_lag_s`: 0.46
+    - `n_events`: 30000
+    - `ok`: true
+    - `submit->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `submit->delete`:
+      - `lag0_corr`: 0.0005176379576295135
+      - `peak_corr`: 0.0018279188869715747
+      - `peak_corr_lead`: 0.0018279188869715747
+      - `peak_lag_bins`: 12
+      - `peak_lag_lead_s`: 0.12
+      - `peak_lag_s`: 0.12
+    - `submit->exec`:
+      - `lag0_corr`: -0.0008407511528541418
+      - `peak_corr`: 0.0015738396574033941
+      - `peak_corr_lead`: 0.0015738396574033941
+      - `peak_lag_bins`: 44
+      - `peak_lag_lead_s`: 0.44
+      - `peak_lag_s`: 0.44
+  - `regime`:
+    - `cancel_partial->delete`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `cancel_partial->exec`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `cancel_partial->submit`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `delete->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `delete->exec`:
+      - `lag0_corr`: -0.0012254703665410002
+      - `peak_corr`: -0.001765524596299238
+      - `peak_corr_lead`: -0.001765524596299238
+      - `peak_lag_bins`: 18
+      - `peak_lag_lead_s`: 0.18
+      - `peak_lag_s`: 0.18
+    - `delete->submit`:
+      - `lag0_corr`: -0.0004191916586600358
+      - `peak_corr`: 0.0012955378662107893
+      - `peak_corr_lead`: 0.0012955378662107893
+      - `peak_lag_bins`: 30
+      - `peak_lag_lead_s`: 0.3
+      - `peak_lag_s`: 0.3
+    - `exec->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `exec->delete`:
+      - `lag0_corr`: -0.0012254703665410002
+      - `peak_corr`: -0.0013602732456487058
+      - `peak_corr_lead`: -0.0013602732456487058
+      - `peak_lag_bins`: 32
+      - `peak_lag_lead_s`: 0.32
+      - `peak_lag_s`: 0.32
+    - `exec->submit`:
+      - `lag0_corr`: 2.9268077518652442e-05
+      - `peak_corr`: 0.0019404455938924578
+      - `peak_corr_lead`: 0.0019404455938924578
+      - `peak_lag_bins`: 47
+      - `peak_lag_lead_s`: 0.47000000000000003
+      - `peak_lag_s`: 0.47000000000000003
+    - `n_events`: 30000
+    - `ok`: true
+    - `submit->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `submit->delete`:
+      - `lag0_corr`: -0.0004191916586600358
+      - `peak_corr`: 0.0014669557549986851
+      - `peak_corr_lead`: 0.0014669557549986851
+      - `peak_lag_bins`: 35
+      - `peak_lag_lead_s`: 0.35000000000000003
+      - `peak_lag_s`: 0.35000000000000003
+    - `submit->exec`:
+      - `lag0_corr`: 2.9268077518652442e-05
+      - `peak_corr`: 0.00225905742697571
+      - `peak_corr_lead`: 0.00225905742697571
+      - `peak_lag_bins`: 1
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.01
+  - `split`:
+    - `cancel_partial->delete`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `cancel_partial->exec`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `cancel_partial->submit`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `delete->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `delete->exec`:
+      - `lag0_corr`: -4.5772650913876376e-05
+      - `peak_corr`: -0.0022564538977821523
+      - `peak_corr_lead`: -0.0022564538977821523
+      - `peak_lag_bins`: 43
+      - `peak_lag_lead_s`: 0.43
+      - `peak_lag_s`: 0.43
+    - `delete->submit`:
+      - `lag0_corr`: 0.00046991981786368255
+      - `peak_corr`: -0.0014491139302740888
+      - `peak_corr_lead`: -0.0014491139302740888
+      - `peak_lag_bins`: 37
+      - `peak_lag_lead_s`: 0.37
+      - `peak_lag_s`: 0.37
+    - `exec->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `exec->delete`:
+      - `lag0_corr`: -4.5772650913876376e-05
+      - `peak_corr`: 0.0015511612074976763
+      - `peak_corr_lead`: 0.0015511612074976763
+      - `peak_lag_bins`: 7
+      - `peak_lag_lead_s`: 0.07
+      - `peak_lag_s`: 0.07
+    - `exec->submit`:
+      - `lag0_corr`: -0.0012072287264867172
+      - `peak_corr`: 0.0017413212676568397
+      - `peak_corr_lead`: 0.0017413212676568397
+      - `peak_lag_bins`: 2
+      - `peak_lag_lead_s`: 0.02
+      - `peak_lag_s`: 0.02
+    - `n_events`: 30000
+    - `ok`: true
+    - `submit->cancel_partial`:
+      - `lag0_corr`: 0.0
+      - `peak_corr`: 0.0
+      - `peak_corr_lead`: 0.0
+      - `peak_lag_bins`: 0
+      - `peak_lag_lead_s`: 0.01
+      - `peak_lag_s`: 0.0
+    - `submit->delete`:
+      - `lag0_corr`: 0.00046991981786368255
+      - `peak_corr`: 0.002086143462947766
+      - `peak_corr_lead`: 0.002086143462947766
+      - `peak_lag_bins`: 8
+      - `peak_lag_lead_s`: 0.08
+      - `peak_lag_s`: 0.08
+    - `submit->exec`:
+      - `lag0_corr`: -0.0012072287264867172
+      - `peak_corr`: 0.0020976323578357735
+      - `peak_corr_lead`: 0.0020976323578357735
+      - `peak_lag_bins`: 37
+      - `peak_lag_lead_s`: 0.37
+      - `peak_lag_s`: 0.37
+- `ticker`: AMZN
+
+### `receipts/event_matrix_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/event_matrix_amzn.json | e1a8e84ffc8b0ac08a7e8a821bc0650cb56bd10c924318e8c0be4a74587710d1 | 6a5f2b8d9b839f2668ac9d06d99c1581a7ac0c7c0c5b7b35e58829272adde588 | not_checked | 5c8e89933d8b0938fc808ebb41022cd6f1d9bc5c | absent | unspecified | absent | true | absent |
+
+- `claim`: event_rate_matrix_measured
+- `data_label`: MIXED
+- `divergences`:
+- `git_revision`: 5c8e89933d8b0938fc808ebb41022cd6f1d9bc5c
+- `interpretation`: The full arrival-rate card is the calibration surface: submissions, cancels, deletes, execs per side per second. Matching only exec intensity leaves the other 95% of the tape's activity unmodeled.
+- `kind`: event_matrix
+- `real`:
+  - `events_per_s`:
+    - `cxl_part`: 0.1247
+    - `cxl_part|buy`: 0.0553
+    - `cxl_part|sell`: 0.0694
+    - `delete`: 5.276
+    - `delete|buy`: 2.5697
+    - `delete|sell`: 2.7062
+    - `exec`: 0.3835
+    - `exec_hidden`: 0.1045
+    - `exec_hidden|buy`: 0.0576
+    - `exec_hidden|sell`: 0.0468
+    - `exec|buy`: 0.178
+    - `exec|sell`: 0.2055
+    - `sub`: 5.6391
+    - `sub|buy`: 2.7095
+    - `sub|sell`: 2.9295
+  - `mix_share`:
+    - `cxl_part`: 0.0108
+    - `delete`: 0.4577
+    - `exec`: 0.0333
+    - `exec_hidden`: 0.0091
+    - `sub`: 0.4892
+  - `n_events`: 269748
+  - `span_s`: 23399.9
+- `receipt_sha256`: 6a5f2b8d9b839f2668ac9d06d99c1581a7ac0c7c0c5b7b35e58829272adde588
+- `research_only`: true
+- `schema`: event_matrix.v1
+- `sim_arms`:
+  - `iid`:
+    - `config_intensity`:
+      - `lambda_lo`: null
+      - `lambda_mo`: null
+      - `theta_cxl`: 0.02
+    - `events_per_s`:
+      - `exec`: 0.1988
+      - `exec_buy`: 0.0968
+      - `exec_sell`: 0.102
+    - `mix_share`:
+    - `n_events`: 20000
+    - `span_s`: 16698.6
+    - `steps_per_s`: 1.198
+  - `regime`:
+    - `config_intensity`:
+      - `lambda_lo`: null
+      - `lambda_mo`: null
+      - `theta_cxl`: 0.02
+    - `events_per_s`:
+      - `exec`: 0.2246
+      - `exec_buy`: 0.1142
+      - `exec_sell`: 0.1104
+    - `mix_share`:
+    - `n_events`: 20000
+    - `span_s`: 16573.7
+    - `steps_per_s`: 1.207
+  - `split`:
+    - `config_intensity`:
+      - `lambda_lo`: null
+      - `lambda_mo`: null
+      - `theta_cxl`: 0.02
+    - `events_per_s`:
+      - `exec`: 0.2792
+      - `exec_buy`: 0.1467
+      - `exec_sell`: 0.1325
+    - `mix_share`:
+    - `n_events`: 20000
+    - `span_s`: 15201.5
+    - `steps_per_s`: 1.316
+- `ticker`: AMZN
+
 ### `receipts/evidence_audit_3464d8f8197bf737.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -3373,6 +4366,117 @@ counted. Prose that contains such a token is quoted verbatim.
 - `schema_version`: 2
 - `verdict`: pass
 
+### `receipts/exec_cost_real_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/exec_cost_real_amzn.json | 297d59df884a80c0503cad9c511579193cf77504fd5313492b732b4297993788 | 9d3f1266772640aed1d1d4976f057e2933a0ee3fb3b3c6076ef4b140fd628497 | not_checked | 18d7701d415d85f742c2b6f3e5fe9b9be632f711 | absent | unspecified | absent | true | absent |
+
+- `claim`: per_fill_slippage_measured_real_vs_sim
+- `data_label`: MIXED
+- `git_revision`: 18d7701d415d85f742c2b6f3e5fe9b9be632f711
+- `interpretation`: ticks_beyond_mid > 0 pays the touch; < 0 means the fill was inside the mid (size dependence walks the book). The size-cost exponent is the local pre-cursor of the sqrt impact law — a deep-book sim and the real tape will not agree in buckets.
+- `kind`: exec_cost_real
+- `real`:
+  - `mean_ticks_beyond_mid`: 5.2024
+  - `median_ticks`: 4.5
+  - `n_execs`: 8974
+  - `share_negative_fills`: 0.0
+  - `size_buckets`:
+    - `qty_1001_5000`:
+      - `mean_ticks_beyond_mid`: 4.0714
+      - `n`: 7
+      - `p90_ticks`: 5.9
+    - `qty_101_300`:
+      - `mean_ticks_beyond_mid`: 4.7003
+      - `n`: 397
+      - `p90_ticks`: 9.2
+    - `qty_1_100`:
+      - `mean_ticks_beyond_mid`: 5.5641
+      - `n`: 5468
+      - `p90_ticks`: 10.0
+    - `qty_301_1000`:
+      - `mean_ticks_beyond_mid`: 4.1455
+      - `n`: 110
+      - `p90_ticks`: 8.0
+  - `size_cost_exponent`: -0.0865
+- `receipt_sha256`: 9d3f1266772640aed1d1d4976f057e2933a0ee3fb3b3c6076ef4b140fd628497
+- `research_only`: true
+- `schema`: exec_cost_real.v1
+- `sim_arms`:
+  - `iid`:
+    - `mean_ticks_beyond_mid`: 0.9253
+    - `median_ticks`: 1.0
+    - `n_execs`: 3312
+    - `share_negative_fills`: 0.0
+    - `size_buckets`:
+      - `qty_1_100`:
+        - `mean_ticks_beyond_mid`: 0.9253
+        - `n`: 3312
+        - `p90_ticks`: 1.5
+    - `size_cost_exponent`: null
+  - `regime`:
+    - `mean_ticks_beyond_mid`: 1.006
+    - `median_ticks`: 1.0
+    - `n_execs`: 3643
+    - `share_negative_fills`: 0.0
+    - `size_buckets`:
+      - `qty_1_100`:
+        - `mean_ticks_beyond_mid`: 1.006
+        - `n`: 3643
+        - `p90_ticks`: 2.0
+    - `size_cost_exponent`: null
+  - `split`:
+    - `mean_ticks_beyond_mid`: 1.231
+    - `median_ticks`: 1.0
+    - `n_execs`: 4193
+    - `share_negative_fills`: 0.0
+    - `size_buckets`:
+      - `qty_1_100`:
+        - `mean_ticks_beyond_mid`: 1.231
+        - `n`: 4193
+        - `p90_ticks`: 2.0
+    - `size_cost_exponent`: null
+- `ticker`: AMZN
+
+### `receipts/exec_cost_split.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/exec_cost_split.json | 53ef2528042134aeb7bd8c20d6c94f7e4ab3391fafd9851531f84df3fe3ae9f5 | 6b797d7204f9f066805f69227c1bc2a6262572445487cc3d7779f9f631ef4240 | not_checked | 5b84fdf95053244318f67e141b2a80617bfa6124 | absent | unspecified | absent | true | absent |
+
+- `arms`:
+  - `iid`:
+    - `fill_fraction_mean`: 0.7875000000000001
+    - `mid_drift_ticks_mean`: 4.5000000000001705
+    - `n_episodes`: 12
+    - `shortfall_ticks_mean`: 2.0851814516134937
+    - `shortfall_ticks_sd`: 1.1335685483899738
+  - `regime`:
+    - `fill_fraction_mean`: 0.6708333333333334
+    - `mid_drift_ticks_mean`: 1.1818181818182696
+    - `n_episodes`: 12
+    - `shortfall_ticks_mean`: 3.7764149428721083
+    - `shortfall_ticks_sd`: 1.6375763990019745
+  - `split`:
+    - `fill_fraction_mean`: 0.4535714285714286
+    - `mid_drift_ticks_mean`: 8.899999999999864
+    - `n_episodes`: 7
+    - `shortfall_ticks_mean`: 5.721031746030698
+    - `shortfall_ticks_sd`: 1.451675928282667
+- `claims`:
+  - `correlated_flow_raises_cost`: true
+- `data_label`: SYNTHETIC
+- `events_per_child`: 25
+- `git_revision`: 5b84fdf95053244318f67e141b2a80617bfa6124
+- `interpretation`: Same TWAP schedule, same book parameters, three flow drivers. If split shortfall exceeds iid, correlated metaorder flow is inflating measured impact — the TWAP buys while a buy parent is already walking the book
+- `kind`: exec_cost_split
+- `n_children`: 8
+- `parent_size`: 40
+- `receipt_sha256`: 6b797d7204f9f066805f69227c1bc2a6262572445487cc3d7779f9f631ef4240
+- `research_only`: true
+- `schema`: exec_cost_split.v1
+
 ### `receipts/fast_replay_p42_conformance_20260928.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -3409,6 +4513,86 @@ counted. Prose that contains such a token is quoted verbatim.
 > All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
 <!-- /verbatim-receipt-text -->
 - `receipt_sha256`: 136a459c3ee50ea5b234847c2756c7ef370dbd12aba944859442efdf1f7486bc
+
+### `receipts/fbm_circulant.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/fbm_circulant.json | 8a8fcbcd46b58942852e9c79603d854aaddf1e5ea3c35b5dc9d42978005f5802 | d5b9f2fbead32c9c520cb577ad246804ef59df6c3cd3274328633ada9f455862 | not_checked | 76a0cc4320f879da681695af07bb6faa1894e63c | absent | unspecified | absent | true | false |
+
+- `claim`:
+  - `autocorr`:
+    - `lags`:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    - `measured`:
+      - -0.42581077745483753
+      - -0.02616535811201328
+      - -0.010813960742523774
+      - -0.007064498051105565
+      - -0.004449295124694729
+      - -0.0030987390933316394
+      - -0.002957661133765445
+      - -0.002518793998236701
+    - `theoretical`:
+      - -0.42565082250148245
+      - -0.0258328851892764
+      - -0.011627806730552748
+      - -0.006777610234528053
+      - -0.004491165522140017
+      - -0.0032176695773720176
+      - -0.0024303377867253007
+      - -0.0019071987554422076
+  - `brownian_autocorr`:
+    - 0.0003420793877520312
+    - 0.00016056990311282893
+    - -0.00023331244178965358
+    - 0.0008856056953635034
+    - 0.000735179671891748
+    - 0.0005869786824037233
+    - 9.34742324169373e-05
+    - -0.0007521038337375348
+  - `hybrid_variance_ratio`:
+    - `median`: 0.894010775076065
+    - `p10`: 0.8655834661103484
+    - `p90`: 0.922307639689213
+  - `n_passed`: 5
+  - `n_probes`: 5
+  - `ok`: true
+  - `params`:
+    - `h`: 0.1
+    - `n`: 1024
+    - `n_paths`: 2000
+    - `seed`: 71
+  - `results`:
+    - `autocorr_closed_form`: true
+    - `brownian_limit`: true
+    - `exact_variance_scaling`: true
+    - `hybrid_deficit_pinned`: true
+    - `self_similar`: true
+  - `riemann_variance_ratio`:
+    - `median`: 0.761684906295924
+    - `p10`: 0.7166365741679585
+    - `p90`: 0.8136050187363507
+  - `self_similar_ratio`:
+    - `measured`: 1.186453883998065
+    - `theoretical`: 1.148698354997035
+  - `variance_ratio`:
+    - `p10`: 0.955295222620468
+    - `p90`: 1.0224962763304968
+- `data_label`: SYNTHETIC
+- `git_revision`: 76a0cc4320f879da681695af07bb6faa1894e63c
+- `interpretation`: Davies-Harte circulant embedding gives *exact* fGN/fBM draws (no Volterra discretization error). Differenced against the BLP hybrid scheme, it measures the kappa=1 point-mass deficit directly: hybrid Var / exact Var sits at ~0.85 for H=0.10, consistent with the rough_vol receipt's self-reported ratio. SYNTHETIC model-correctness evidence; no market claims.
+- `kind`: fbm_circulant
+- `receipt_sha256`: d5b9f2fbead32c9c520cb577ad246804ef59df6c3cd3274328633ada9f455862
+- `research_only`: true
+- `schema`: fbm_circulant.v1
 
 ### `receipts/fleet_eval_5ddf15b0dc7d3ca1.json`
 
@@ -6212,6 +7396,1215 @@ counted. Prose that contains such a token is quoted verbatim.
   - `yahoo_maa`: fhs_skew
   - `yahoo_rjf`: fhs_skew
 
+### `receipts/glft_bench_synth.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/glft_bench_synth.json | 4efd3a9a814d245873371a8f09c2d2502fca71393dbf738496e59cb4dc369467 | 928cee34e71d70203863dbc40681b695c5a04f0ac44128edec1af3fe99b439ba | not_checked | 6577de161f55d0bab6f25d7adf3e090a261d5ccc | absent | unspecified | absent | true | absent |
+
+- `A`: 1.5
+- `Ts`:
+  - 0.02
+  - 0.2
+  - 1.0
+- `cells`:
+  - [0]
+    - `T`: 0.02
+    - `gamma`: 0.05
+    - `quote_err_ticks_max`: 1.544964366440027e-05
+    - `quote_err_ticks_mean`: 5.206558963595971e-06
+    - `sigma`: 0.02
+    - `theta_max_abs_lin`: 0.01447372435771192
+    - `theta_max_abs_ode`: 0.01447372439526676
+    - `xi`: 0.011334623380607018
+  - [1]
+    - `T`: 0.2
+    - `gamma`: 0.05
+    - `quote_err_ticks_max`: 0.01252622639960066
+    - `quote_err_ticks_mean`: 0.004624633193337872
+    - `sigma`: 0.02
+    - `theta_max_abs_lin`: 0.1446524571866686
+    - `theta_max_abs_ode`: 0.1446526769763158
+    - `xi`: 0.1033250668081005
+  - [2]
+    - `T`: 1.0
+    - `gamma`: 0.05
+    - `quote_err_ticks_max`: 0.7109532795237072
+    - `quote_err_ticks_mean`: 0.34416678621869656
+    - `sigma`: 0.02
+    - `theta_max_abs_lin`: 0.7192037449166406
+    - `theta_max_abs_ode`: 0.7195033563824136
+    - `xi`: 0.36200816601529917
+  - [3]
+    - `T`: 0.02
+    - `gamma`: 0.2
+    - `quote_err_ticks_max`: 1.2400090010356024e-05
+    - `quote_err_ticks_mean`: 4.17629810363825e-06
+    - `sigma`: 0.02
+    - `theta_max_abs_lin`: 0.013804266255235806
+    - `theta_max_abs_ode`: 0.013804266258734306
+    - `xi`: 0.010396000592441022
+  - [4]
+    - `T`: 0.2
+    - `gamma`: 0.2
+    - `quote_err_ticks_max`: 0.010140861731799955
+    - `quote_err_ticks_mean`: 0.0037213183671243786
+    - `sigma`: 0.02
+    - `theta_max_abs_lin`: 0.1380185021393641
+    - `theta_max_abs_ode`: 0.13801862529747622
+    - `xi`: 0.09506328872169312
+  - [5]
+    - `T`: 1.0
+    - `gamma`: 0.2
+    - `quote_err_ticks_max`: 0.5908716417042159
+    - `quote_err_ticks_mean`: 0.28141981768165697
+    - `sigma`: 0.02
+    - `theta_max_abs_lin`: 0.6876832040911894
+    - `theta_max_abs_ode`: 0.6878906170102616
+    - `xi`: 0.33648472734428125
+- `claim`: glft_closed_form_validity_mapped
+- `data_label`: SYNTHETIC
+- `git_revision`: 6577de161f55d0bab6f25d7adf3e090a261d5ccc
+- `interpretation`: θ_lin is the textbook closed form; quote_err shows the tick error vs the true nonlinear solve, indexed by the real expansion parameter ξ=k·max|Δθ| (driven by the forcing timescale ν·T/γ, not σ); the grid sweeps T across it. ok=True iff every ξ<0.05 cell is within one tick.
+- `k`: 1.5
+- `kind`: glft_bench
+- `mc_check`:
+  - `abs_diff`: 0.00011294983911969148
+  - `mc_se`: 0.0006014206360484227
+  - `value_mc`: -0.9647771977419097
+  - `value_pde`: -0.96466424790279
+- `ok`: true
+- `q_max`: 3
+- `receipt_sha256`: 928cee34e71d70203863dbc40681b695c5a04f0ac44128edec1af3fe99b439ba
+- `research_only`: true
+- `schema`: glft_bench.v1
+- `sigma`: 0.02
+- `tick`: 0.01
+
+### `receipts/hawkes_mv.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/hawkes_mv.json | 5f386d77d237a6bbdc12fad5d794184508548fad474b1cb258f48bded96d7431 | ceb134a37064c26b89a454b3d3615fe987755114b96d36222bff2e02167ff6ed | not_checked | 38af498c971e0159c2d54e53da0ff5f4b2cc1c77 | absent | unspecified | absent | true | false |
+
+- `claim`:
+  - `n_passed`: 9
+  - `n_probes`: 9
+  - `ok`: true
+  - `results`:
+    - `rho_iid`: 0.09853
+    - `rho_real`: 0.74938
+    - `rho_regime`: 0.47764
+    - `rho_split`: 0.87433
+    - `top_pair`: MO_sell->MO_sell
+- `data_label`: SYNTHETIC
+- `delta_rho_vs_real`:
+  - `iid`: 0.65085
+  - `regime`: 0.27174
+  - `split`: -0.12495
+- `divergences`:
+  - iid_rho_far_from_real
+- `estimator`: joint MLE via O(n) compensator recursion + analytic gradient, L-BFGS-B on log-params, soft rho(B)<0.999 barrier
+- `git_revision`: 38af498c971e0159c2d54e53da0ff5f4b2cc1c77
+- `interpretation`: B[m,j] is the expected number of mark-m children per mark-j event; rho(B)<1 is the Hawkes stability boundary. Off-diagonal cells are genuine cross-excitation (e.g. MO -> cancel, LO -> MO) that the univariate eta in hawkes_real cannot see. The sim arms isolate mechanisms: iid flow should sit near rho~0, regime flow excites only through intensity modulation, split flow should reproduce the MO->MO diagonal block but not the cross-mark structure the real tape shows.
+- `kernel`: lambda_m(t) = mu_m + sum_j alpha_mj * exp(-beta_j (t - t_i^j)); B_mj = alpha_mj/beta_j
+- `kind`: hawkes_mv
+- `lag_profile_top_pairs`:
+  - `LO_bid_add->LO_ask_add`:
+    - `iid`:
+      - `0`: 0.00085
+      - `1`: 0.00045
+      - `16`: 0.00225
+      - `2`: 0.00025
+      - `4`: 0.00145
+      - `8`: -0.00216
+    - `lags_bins_of_50ms`:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+    - `real`:
+      - `0`: 0.09524
+      - `1`: 0.10928
+      - `16`: 0.02689
+      - `2`: 0.0924
+      - `4`: 0.06419
+      - `8`: 0.05129
+    - `regime`:
+      - `0`: 0.00071
+      - `1`: -0.00231
+      - `16`: -0.0001
+      - `2`: 0.00011
+      - `4`: -0.0005
+      - `8`: -0.00291
+    - `split`:
+      - `0`: -0.00264
+      - `1`: 0.00022
+      - `16`: 0.00066
+      - `2`: -0.00022
+      - `4`: -0.0
+      - `8`: -0.0
+  - `MO_buy->MO_buy`:
+    - `iid`:
+      - `0`: 1.0
+      - `1`: 0.00011
+      - `16`: -0.00174
+      - `2`: 0.00073
+      - `4`: -0.00174
+      - `8`: -0.00235
+    - `lags_bins_of_50ms`:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+    - `real`:
+      - `0`: 1.0
+      - `1`: 0.23352
+      - `16`: 0.01589
+      - `2`: 0.17619
+      - `4`: 0.11491
+      - `8`: 0.062
+    - `regime`:
+      - `0`: 1.0
+      - `1`: -0.00254
+      - `16`: -0.00096
+      - `2`: 0.0001
+      - `4`: -0.00201
+      - `8`: 0.0001
+    - `split`:
+      - `0`: 1.0
+      - `1`: 0.00966
+      - `16`: 0.01011
+      - `2`: 0.01056
+      - `4`: 0.011
+      - `8`: 0.00832
+  - `MO_sell->MO_sell`:
+    - `iid`:
+      - `0`: 1.0
+      - `1`: -0.00275
+      - `16`: -0.0004
+      - `2`: 0.00077
+      - `4`: -0.0004
+      - `8`: -0.00158
+    - `lags_bins_of_50ms`:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+    - `real`:
+      - `0`: 1.0
+      - `1`: 0.24002
+      - `16`: 0.03458
+      - `2`: 0.20119
+      - `4`: 0.15409
+      - `8`: 0.09542
+    - `regime`:
+      - `0`: 1.0
+      - `1`: 0.00049
+      - `16`: -0.0006
+      - `2`: 0.00159
+      - `4`: 0.00104
+      - `8`: -6e-05
+    - `split`:
+      - `0`: 1.0
+      - `1`: 0.01019
+      - `16`: 0.00724
+      - `2`: 0.00378
+      - `4`: 0.01365
+      - `8`: 0.00822
+  - `cancel_ask->MO_buy`:
+    - `iid`:
+      - `0`: -4e-05
+      - `1`: -0.0009
+      - `16`: -0.00219
+      - `2`: -0.0009
+      - `4`: -0.0009
+      - `8`: 0.00168
+    - `lags_bins_of_50ms`:
+      - 0
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+    - `real`:
+      - `0`: 0.12755
+      - `1`: 0.10323
+      - `16`: 0.0131
+      - `2`: 0.11071
+      - `4`: 0.08056
+      - `8`: 0.05612
+    - `regime`:
+      - `0`: -0.00088
+      - `1`: -0.00256
+      - `16`: 0.00038
+      - `2`: -0.00214
+      - `4`: -0.00088
+      - `8`: -0.00046
+    - `split`:
+      - `0`: -0.00432
+      - `1`: -0.00168
+      - `16`: -0.0008
+      - `2`: -0.00256
+      - `4`: -0.00344
+      - `8`: -0.00344
+- `marks`:
+  - MO_buy
+  - MO_sell
+  - LO_bid_add
+  - LO_ask_add
+  - cancel_bid
+  - cancel_ask
+- `parity_per_pair`:
+  - `LO_ask_add->LO_ask_add`:
+    - `iid`: 0.09762
+    - `real`: 0.11055
+    - `regime`: 0.06149
+    - `split`: 0.00047
+  - `LO_ask_add->LO_bid_add`:
+    - `iid`: 6e-05
+    - `real`: 0.09402
+    - `regime`: 1e-05
+    - `split`: 1e-05
+  - `LO_ask_add->MO_buy`:
+    - `iid`: 0.00047
+    - `real`: 0.10434
+    - `regime`: 0.07598
+    - `split`: 0.03658
+  - `LO_ask_add->MO_sell`:
+    - `iid`: 0.03088
+    - `real`: 0.10557
+    - `regime`: 0.01559
+    - `split`: 0.0
+  - `LO_ask_add->cancel_ask`:
+    - `iid`: 0.65179
+    - `real`: 0.10434
+    - `regime`: 0.56376
+    - `split`: 0.0825
+  - `LO_ask_add->cancel_bid`:
+    - `iid`: 3e-05
+    - `real`: 0.11217
+    - `regime`: 1e-05
+    - `split`: 0.0
+  - `LO_bid_add->LO_ask_add`:
+    - `iid`: 0.04832
+    - `real`: 0.12932
+    - `regime`: 4e-05
+    - `split`: 1e-05
+  - `LO_bid_add->LO_bid_add`:
+    - `iid`: 0.05708
+    - `real`: 0.11428
+    - `regime`: 2e-05
+    - `split`: 0.01217
+  - `LO_bid_add->MO_buy`:
+    - `iid`: 0.0185
+    - `real`: 0.09982
+    - `regime`: 2e-05
+    - `split`: 4e-05
+  - `LO_bid_add->MO_sell`:
+    - `iid`: 0.04505
+    - `real`: 0.08357
+    - `regime`: 0.06043
+    - `split`: 0.03837
+  - `LO_bid_add->cancel_ask`:
+    - `iid`: 1e-05
+    - `real`: 0.09825
+    - `regime`: 1e-05
+    - `split`: 0.0
+  - `LO_bid_add->cancel_bid`:
+    - `iid`: 0.65897
+    - `real`: 0.09941
+    - `regime`: 0.58265
+    - `split`: 0.08704
+  - `MO_buy->LO_ask_add`:
+    - `iid`: 0.0
+    - `real`: 0.09842
+    - `regime`: 0.04229
+    - `split`: 0.03172
+  - `MO_buy->LO_bid_add`:
+    - `iid`: 0.0
+    - `real`: 0.08924
+    - `regime`: 0.00013
+    - `split`: 0.00329
+  - `MO_buy->MO_buy`:
+    - `iid`: 0.0
+    - `real`: 0.37732
+    - `regime`: 0.46976
+    - `split`: 0.65907
+  - `MO_buy->MO_sell`:
+    - `iid`: 0.00043
+    - `real`: 0.10911
+    - `regime`: 0.34195
+    - `split`: 0.0
+  - `MO_buy->cancel_ask`:
+    - `iid`: 0.0
+    - `real`: 0.09404
+    - `regime`: 0.0
+    - `split`: 0.0
+  - `MO_buy->cancel_bid`:
+    - `iid`: 0.0
+    - `real`: 0.08747
+    - `regime`: 0.0
+    - `split`: 0.20542
+  - `MO_sell->LO_ask_add`:
+    - `iid`: 0.00263
+    - `real`: 0.09453
+    - `regime`: 0.0
+    - `split`: 0.0366
+  - `MO_sell->LO_bid_add`:
+    - `iid`: 0.0
+    - `real`: 0.12268
+    - `regime`: 0.01249
+    - `split`: 0.00427
+  - `MO_sell->MO_buy`:
+    - `iid`: 0.0
+    - `real`: 0.10359
+    - `regime`: 0.00021
+    - `split`: 0.0
+  - `MO_sell->MO_sell`:
+    - `iid`: 0.0
+    - `real`: 0.42335
+    - `regime`: 0.00372
+    - `split`: 0.67317
+  - `MO_sell->cancel_ask`:
+    - `iid`: 0.0
+    - `real`: 0.1131
+    - `regime`: 0.0
+    - `split`: 0.23418
+  - `MO_sell->cancel_bid`:
+    - `iid`: 0.0
+    - `real`: 0.11439
+    - `regime`: 0.0
+    - `split`: 0.0
+  - `cancel_ask->LO_ask_add`:
+    - `iid`: 0.0
+    - `real`: 0.0879
+    - `regime`: 0.0
+    - `split`: 0.04905
+  - `cancel_ask->LO_bid_add`:
+    - `iid`: 0.0
+    - `real`: 0.0935
+    - `regime`: 0.0
+    - `split`: 0.01099
+  - `cancel_ask->MO_buy`:
+    - `iid`: 0.0
+    - `real`: 0.13398
+    - `regime`: 0.0
+    - `split`: 0.00197
+  - `cancel_ask->MO_sell`:
+    - `iid`: 0.0
+    - `real`: 0.08823
+    - `regime`: 0.0
+    - `split`: 0.18315
+  - `cancel_ask->cancel_ask`:
+    - `iid`: 0.00036
+    - `real`: 0.08912
+    - `regime`: 0.0
+    - `split`: 0.6338
+  - `cancel_ask->cancel_bid`:
+    - `iid`: 0.0
+    - `real`: 0.09716
+    - `regime`: 0.0
+    - `split`: 0.0
+  - `cancel_bid->LO_ask_add`:
+    - `iid`: 2e-05
+    - `real`: 0.0962
+    - `regime`: 1e-05
+    - `split`: 0.03967
+  - `cancel_bid->LO_bid_add`:
+    - `iid`: 3e-05
+    - `real`: 0.0977
+    - `regime`: 4e-05
+    - `split`: 3e-05
+  - `cancel_bid->MO_buy`:
+    - `iid`: 1e-05
+    - `real`: 0.10664
+    - `regime`: 0.0
+    - `split`: 0.21092
+  - `cancel_bid->MO_sell`:
+    - `iid`: 0.0
+    - `real`: 0.1007
+    - `regime`: 0.00571
+    - `split`: 0.0
+  - `cancel_bid->cancel_ask`:
+    - `iid`: 1e-05
+    - `real`: 0.10375
+    - `regime`: 0.01751
+    - `split`: 0.0
+  - `cancel_bid->cancel_bid`:
+    - `iid`: 0.00841
+    - `real`: 0.08656
+    - `regime`: 0.04399
+    - `split`: 0.66739
+- `probes`:
+  - [0]
+    - `name`: real_tape_fit_ok
+    - `passed`: true
+  - [1]
+    - `name`: real_tape_stationary
+    - `passed`: true
+  - [2]
+    - `name`: real_tape_events_sufficient
+    - `passed`: true
+  - [3]
+    - `name`: iid_fit_ok
+    - `passed`: true
+  - [4]
+    - `name`: iid_stationary
+    - `passed`: true
+  - [5]
+    - `name`: regime_fit_ok
+    - `passed`: true
+  - [6]
+    - `name`: regime_stationary
+    - `passed`: true
+  - [7]
+    - `name`: split_fit_ok
+    - `passed`: true
+  - [8]
+    - `name`: split_stationary
+    - `passed`: true
+- `real`:
+  - `beta_inv_lifetime_ms`:
+    - `LO_ask_add`: 107.57
+    - `LO_bid_add`: 112.21
+    - `MO_buy`: 87.85
+    - `MO_sell`: 106.66
+    - `cancel_ask`: 92.69
+    - `cancel_bid`: 93.35
+  - `branching_matrix`:
+    - `LO_ask_add`:
+      - `LO_ask_add`: 0.11055
+      - `LO_bid_add`: 0.12932
+      - `MO_buy`: 0.09842
+      - `MO_sell`: 0.09453
+      - `cancel_ask`: 0.0879
+      - `cancel_bid`: 0.0962
+    - `LO_bid_add`:
+      - `LO_ask_add`: 0.09402
+      - `LO_bid_add`: 0.11428
+      - `MO_buy`: 0.08924
+      - `MO_sell`: 0.12268
+      - `cancel_ask`: 0.0935
+      - `cancel_bid`: 0.0977
+    - `MO_buy`:
+      - `LO_ask_add`: 0.10434
+      - `LO_bid_add`: 0.09982
+      - `MO_buy`: 0.37732
+      - `MO_sell`: 0.10359
+      - `cancel_ask`: 0.13398
+      - `cancel_bid`: 0.10664
+    - `MO_sell`:
+      - `LO_ask_add`: 0.10557
+      - `LO_bid_add`: 0.08357
+      - `MO_buy`: 0.10911
+      - `MO_sell`: 0.42335
+      - `cancel_ask`: 0.08823
+      - `cancel_bid`: 0.1007
+    - `cancel_ask`:
+      - `LO_ask_add`: 0.10434
+      - `LO_bid_add`: 0.09825
+      - `MO_buy`: 0.09404
+      - `MO_sell`: 0.1131
+      - `cancel_ask`: 0.08912
+      - `cancel_bid`: 0.10375
+    - `cancel_bid`:
+      - `LO_ask_add`: 0.11217
+      - `LO_bid_add`: 0.09941
+      - `MO_buy`: 0.08747
+      - `MO_sell`: 0.11439
+      - `cancel_ask`: 0.09716
+      - `cancel_bid`: 0.08656
+  - `converged`: true
+  - `dominant_pairs`:
+    - [0]
+      - `b_mj`: 0.42335
+      - `excited`: MO_sell
+      - `excitor`: MO_sell
+      - `pair`: MO_sell->MO_sell
+      - `self`: true
+    - [1]
+      - `b_mj`: 0.37732
+      - `excited`: MO_buy
+      - `excitor`: MO_buy
+      - `pair`: MO_buy->MO_buy
+      - `self`: true
+    - [2]
+      - `b_mj`: 0.13398
+      - `excited`: MO_buy
+      - `excitor`: cancel_ask
+      - `pair`: cancel_ask->MO_buy
+      - `self`: false
+    - [3]
+      - `b_mj`: 0.12932
+      - `excited`: LO_ask_add
+      - `excitor`: LO_bid_add
+      - `pair`: LO_bid_add->LO_ask_add
+      - `self`: false
+    - [4]
+      - `b_mj`: 0.12268
+      - `excited`: LO_bid_add
+      - `excitor`: MO_sell
+      - `pair`: MO_sell->LO_bid_add
+      - `self`: false
+    - [5]
+      - `b_mj`: 0.11439
+      - `excited`: cancel_bid
+      - `excitor`: MO_sell
+      - `pair`: MO_sell->cancel_bid
+      - `self`: false
+  - `endo_share`:
+    - `LO_ask_add`: 0.6925
+    - `LO_bid_add`: 0.6977
+    - `MO_buy`: 0.7843
+    - `MO_sell`: 0.8038
+    - `cancel_ask`: 0.7009
+    - `cancel_bid`: 0.6868
+  - `excitation_share`:
+    - `LO_ask_add`:
+      - `LO_ask_add`: 0.11055
+      - `LO_bid_add`: 0.12863
+      - `MO_buy`: 0.14114
+      - `MO_sell`: 0.13178
+      - `cancel_ask`: 0.08573
+      - `cancel_bid`: 0.09468
+    - `LO_bid_add`:
+      - `LO_ask_add`: 0.09452
+      - `LO_bid_add`: 0.11428
+      - `MO_buy`: 0.12865
+      - `MO_sell`: 0.17193
+      - `cancel_ask`: 0.09167
+      - `cancel_bid`: 0.09666
+    - `MO_buy`:
+      - `LO_ask_add`: 0.07276
+      - `LO_bid_add`: 0.06924
+      - `MO_buy`: 0.37732
+      - `MO_sell`: 0.1007
+      - `cancel_ask`: 0.09112
+      - `cancel_bid`: 0.07318
+    - `MO_sell`:
+      - `LO_ask_add`: 0.07573
+      - `LO_bid_add`: 0.05963
+      - `MO_buy`: 0.11224
+      - `MO_sell`: 0.42335
+      - `cancel_ask`: 0.06172
+      - `cancel_bid`: 0.07109
+    - `cancel_ask`:
+      - `LO_ask_add`: 0.10698
+      - `LO_bid_add`: 0.1002
+      - `MO_buy`: 0.13827
+      - `MO_sell`: 0.16166
+      - `cancel_ask`: 0.08912
+      - `cancel_bid`: 0.10469
+    - `cancel_bid`:
+      - `LO_ask_add`: 0.11398
+      - `LO_bid_add`: 0.10048
+      - `MO_buy`: 0.12745
+      - `MO_sell`: 0.16204
+      - `cancel_ask`: 0.09629
+      - `cancel_bid`: 0.08656
+  - `loglik`: -199877.761
+  - `mark_counts`:
+    - `LO_ask_add`: 5095
+    - `LO_bid_add`: 5068
+    - `MO_buy`: 7306
+    - `MO_sell`: 7102
+    - `cancel_ask`: 4969
+    - `cancel_bid`: 5014
+  - `mu_per_s`:
+    - `LO_ask_add`: 1.959807
+    - `LO_bid_add`: 1.916541
+    - `MO_buy`: 1.971193
+    - `MO_sell`: 1.743592
+    - `cancel_ask`: 1.858985
+    - `cancel_bid`: 1.964451
+  - `n_events`: 34554
+  - `ok`: true
+  - `rho_branching`: 0.74938
+  - `stationary`: true
+- `receipt_sha256`: ceb134a37064c26b89a454b3d3615fe987755114b96d36222bff2e02167ff6ed
+- `research_only`: true
+- `schema`: hawkes_mv.v1
+- `sim_arms`:
+  - `iid`:
+    - `beta_inv_lifetime_ms`:
+      - `LO_ask_add`: 36202.54
+      - `LO_bid_add`: 30640.56
+      - `MO_buy`: 0.67
+      - `MO_sell`: 1.25
+      - `cancel_ask`: 2.89
+      - `cancel_bid`: 96.46
+    - `branching_matrix`:
+      - `LO_ask_add`:
+        - `LO_ask_add`: 0.09762
+        - `LO_bid_add`: 0.04832
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.00263
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 2e-05
+      - `LO_bid_add`:
+        - `LO_ask_add`: 6e-05
+        - `LO_bid_add`: 0.05708
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 3e-05
+      - `MO_buy`:
+        - `LO_ask_add`: 0.00047
+        - `LO_bid_add`: 0.0185
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `MO_sell`:
+        - `LO_ask_add`: 0.03088
+        - `LO_bid_add`: 0.04505
+        - `MO_buy`: 0.00043
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.0
+      - `cancel_ask`:
+        - `LO_ask_add`: 0.65179
+        - `LO_bid_add`: 1e-05
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.00036
+        - `cancel_bid`: 1e-05
+      - `cancel_bid`:
+        - `LO_ask_add`: 3e-05
+        - `LO_bid_add`: 0.65897
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.00841
+    - `converged`: true
+    - `dominant_pairs`:
+      - [0]
+        - `b_mj`: 0.65897
+        - `excited`: cancel_bid
+        - `excitor`: LO_bid_add
+        - `pair`: LO_bid_add->cancel_bid
+        - `self`: false
+      - [1]
+        - `b_mj`: 0.65179
+        - `excited`: cancel_ask
+        - `excitor`: LO_ask_add
+        - `pair`: LO_ask_add->cancel_ask
+        - `self`: false
+      - [2]
+        - `b_mj`: 0.09762
+        - `excited`: LO_ask_add
+        - `excitor`: LO_ask_add
+        - `pair`: LO_ask_add->LO_ask_add
+        - `self`: true
+      - [3]
+        - `b_mj`: 0.05708
+        - `excited`: LO_bid_add
+        - `excitor`: LO_bid_add
+        - `pair`: LO_bid_add->LO_bid_add
+        - `self`: true
+      - [4]
+        - `b_mj`: 0.04832
+        - `excited`: LO_ask_add
+        - `excitor`: LO_bid_add
+        - `pair`: LO_bid_add->LO_ask_add
+        - `self`: false
+      - [5]
+        - `b_mj`: 0.04505
+        - `excited`: MO_sell
+        - `excitor`: LO_bid_add
+        - `pair`: LO_bid_add->MO_sell
+        - `self`: false
+    - `endo_share`:
+      - `LO_ask_add`: 0.1479
+      - `LO_bid_add`: 0.0572
+      - `MO_buy`: 0.0593
+      - `MO_sell`: 0.2236
+      - `cancel_ask`: 0.9669
+      - `cancel_bid`: 0.9999
+    - `excitation_share`:
+      - `LO_ask_add`:
+        - `LO_ask_add`: 0.09762
+        - `LO_bid_add`: 0.04936
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.00091
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `LO_bid_add`:
+        - `LO_ask_add`: 6e-05
+        - `LO_bid_add`: 0.05708
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 2e-05
+      - `MO_buy`:
+        - `LO_ask_add`: 0.00144
+        - `LO_bid_add`: 0.05784
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `MO_sell`:
+        - `LO_ask_add`: 0.08965
+        - `LO_bid_add`: 0.13355
+        - `MO_buy`: 0.00041
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `cancel_ask`:
+        - `LO_ask_add`: 0.96654
+        - `LO_bid_add`: 1e-05
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.00036
+        - `cancel_bid`: 1e-05
+      - `cancel_bid`:
+        - `LO_ask_add`: 4e-05
+        - `LO_bid_add`: 0.99149
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.00841
+    - `loglik`: -188291.6
+    - `mark_counts`:
+      - `LO_ask_add`: 4944
+      - `LO_bid_add`: 5051
+      - `MO_buy`: 1616
+      - `MO_sell`: 1703
+      - `cancel_ask`: 3326
+      - `cancel_bid`: 3350
+    - `mu_per_s`:
+      - `LO_ask_add`: 0.252383
+      - `LO_bid_add`: 0.285227
+      - `MO_buy`: 0.091049
+      - `MO_sell`: 0.079223
+      - `cancel_ask`: 0.006607
+      - `cancel_bid`: 1.2e-05
+    - `n_events`: 19990
+    - `ok`: true
+    - `rho_branching`: 0.09853
+    - `stationary`: true
+  - `regime`:
+    - `beta_inv_lifetime_ms`:
+      - `LO_ask_add`: 27830.43
+      - `LO_bid_add`: 30877.74
+      - `MO_buy`: 37451.27
+      - `MO_sell`: 350.77
+      - `cancel_ask`: 0.27
+      - `cancel_bid`: 1451.07
+    - `branching_matrix`:
+      - `LO_ask_add`:
+        - `LO_ask_add`: 0.06149
+        - `LO_bid_add`: 4e-05
+        - `MO_buy`: 0.04229
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `LO_bid_add`:
+        - `LO_ask_add`: 1e-05
+        - `LO_bid_add`: 2e-05
+        - `MO_buy`: 0.00013
+        - `MO_sell`: 0.01249
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 4e-05
+      - `MO_buy`:
+        - `LO_ask_add`: 0.07598
+        - `LO_bid_add`: 2e-05
+        - `MO_buy`: 0.46976
+        - `MO_sell`: 0.00021
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.0
+      - `MO_sell`:
+        - `LO_ask_add`: 0.01559
+        - `LO_bid_add`: 0.06043
+        - `MO_buy`: 0.34195
+        - `MO_sell`: 0.00372
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.00571
+      - `cancel_ask`:
+        - `LO_ask_add`: 0.56376
+        - `LO_bid_add`: 1e-05
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.01751
+      - `cancel_bid`:
+        - `LO_ask_add`: 1e-05
+        - `LO_bid_add`: 0.58265
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.04399
+    - `converged`: false
+    - `dominant_pairs`:
+      - [0]
+        - `b_mj`: 0.58265
+        - `excited`: cancel_bid
+        - `excitor`: LO_bid_add
+        - `pair`: LO_bid_add->cancel_bid
+        - `self`: false
+      - [1]
+        - `b_mj`: 0.56376
+        - `excited`: cancel_ask
+        - `excitor`: LO_ask_add
+        - `pair`: LO_ask_add->cancel_ask
+        - `self`: false
+      - [2]
+        - `b_mj`: 0.46976
+        - `excited`: MO_buy
+        - `excitor`: MO_buy
+        - `pair`: MO_buy->MO_buy
+        - `self`: true
+      - [3]
+        - `b_mj`: 0.34195
+        - `excited`: MO_sell
+        - `excitor`: MO_buy
+        - `pair`: MO_buy->MO_sell
+        - `self`: false
+      - [4]
+        - `b_mj`: 0.07598
+        - `excited`: MO_buy
+        - `excitor`: LO_ask_add
+        - `pair`: LO_ask_add->MO_buy
+        - `self`: false
+      - [5]
+        - `b_mj`: 0.06149
+        - `excited`: LO_ask_add
+        - `excitor`: LO_ask_add
+        - `pair`: LO_ask_add->LO_ask_add
+        - `self`: true
+    - `endo_share`:
+      - `LO_ask_add`: 0.078
+      - `LO_bid_add`: 0.0046
+      - `MO_buy`: 0.6651
+      - `MO_sell`: 0.5762
+      - `cancel_ask`: 0.9365
+      - `cancel_bid`: 0.9538
+    - `excitation_share`:
+      - `LO_ask_add`:
+        - `LO_ask_add`: 0.06149
+        - `LO_bid_add`: 4e-05
+        - `MO_buy`: 0.01647
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `LO_bid_add`:
+        - `LO_ask_add`: 1e-05
+        - `LO_bid_add`: 2e-05
+        - `MO_buy`: 5e-05
+        - `MO_sell`: 0.00452
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 3e-05
+      - `MO_buy`:
+        - `LO_ask_add`: 0.1951
+        - `LO_bid_add`: 6e-05
+        - `MO_buy`: 0.46976
+        - `MO_sell`: 0.00021
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 1e-05
+      - `MO_sell`:
+        - `LO_ask_add`: 0.04143
+        - `LO_bid_add`: 0.16699
+        - `MO_buy`: 0.35393
+        - `MO_sell`: 0.00372
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.01011
+      - `cancel_ask`:
+        - `LO_ask_add`: 0.91751
+        - `LO_bid_add`: 1e-05
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.01898
+      - `cancel_bid`:
+        - `LO_ask_add`: 1e-05
+        - `LO_bid_add`: 0.90979
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.04399
+    - `loglik`: -187515.798
+    - `mark_counts`:
+      - `LO_ask_add`: 4873
+      - `LO_bid_add`: 5067
+      - `MO_buy`: 1893
+      - `MO_sell`: 1830
+      - `cancel_ask`: 2992
+      - `cancel_bid`: 3238
+    - `mu_per_s`:
+      - `LO_ask_add`: 0.271133
+      - `LO_bid_add`: 0.304342
+      - `MO_buy`: 0.038352
+      - `MO_sell`: 0.046896
+      - `cancel_ask`: 0.011473
+      - `cancel_bid`: 0.009048
+    - `n_events`: 19893
+    - `ok`: true
+    - `rho_branching`: 0.47764
+    - `stationary`: true
+  - `split`:
+    - `beta_inv_lifetime_ms`:
+      - `LO_ask_add`: 4297.26
+      - `LO_bid_add`: 3301.62
+      - `MO_buy`: 8925.99
+      - `MO_sell`: 10055.7
+      - `cancel_ask`: 21796.58
+      - `cancel_bid`: 25371.01
+    - `branching_matrix`:
+      - `LO_ask_add`:
+        - `LO_ask_add`: 0.00047
+        - `LO_bid_add`: 1e-05
+        - `MO_buy`: 0.03172
+        - `MO_sell`: 0.0366
+        - `cancel_ask`: 0.04905
+        - `cancel_bid`: 0.03967
+      - `LO_bid_add`:
+        - `LO_ask_add`: 1e-05
+        - `LO_bid_add`: 0.01217
+        - `MO_buy`: 0.00329
+        - `MO_sell`: 0.00427
+        - `cancel_ask`: 0.01099
+        - `cancel_bid`: 3e-05
+      - `MO_buy`:
+        - `LO_ask_add`: 0.03658
+        - `LO_bid_add`: 4e-05
+        - `MO_buy`: 0.65907
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.00197
+        - `cancel_bid`: 0.21092
+      - `MO_sell`:
+        - `LO_ask_add`: 0.0
+        - `LO_bid_add`: 0.03837
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.67317
+        - `cancel_ask`: 0.18315
+        - `cancel_bid`: 0.0
+      - `cancel_ask`:
+        - `LO_ask_add`: 0.0825
+        - `LO_bid_add`: 0.0
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.23418
+        - `cancel_ask`: 0.6338
+        - `cancel_bid`: 0.0
+      - `cancel_bid`:
+        - `LO_ask_add`: 0.0
+        - `LO_bid_add`: 0.08704
+        - `MO_buy`: 0.20542
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.66739
+    - `converged`: false
+    - `dominant_pairs`:
+      - [0]
+        - `b_mj`: 0.67317
+        - `excited`: MO_sell
+        - `excitor`: MO_sell
+        - `pair`: MO_sell->MO_sell
+        - `self`: true
+      - [1]
+        - `b_mj`: 0.66739
+        - `excited`: cancel_bid
+        - `excitor`: cancel_bid
+        - `pair`: cancel_bid->cancel_bid
+        - `self`: true
+      - [2]
+        - `b_mj`: 0.65907
+        - `excited`: MO_buy
+        - `excitor`: MO_buy
+        - `pair`: MO_buy->MO_buy
+        - `self`: true
+      - [3]
+        - `b_mj`: 0.6338
+        - `excited`: cancel_ask
+        - `excitor`: cancel_ask
+        - `pair`: cancel_ask->cancel_ask
+        - `self`: true
+      - [4]
+        - `b_mj`: 0.23418
+        - `excited`: cancel_ask
+        - `excitor`: MO_sell
+        - `pair`: MO_sell->cancel_ask
+        - `self`: false
+      - [5]
+        - `b_mj`: 0.21092
+        - `excited`: MO_buy
+        - `excitor`: cancel_bid
+        - `pair`: cancel_bid->MO_buy
+        - `self`: false
+    - `endo_share`:
+      - `LO_ask_add`: 0.0804
+      - `LO_bid_add`: 0.0213
+      - `MO_buy`: 0.9782
+      - `MO_sell`: 0.9678
+      - `cancel_ask`: 1.0
+      - `cancel_bid`: 1.0
+    - `excitation_share`:
+      - `LO_ask_add`:
+        - `LO_ask_add`: 0.00047
+        - `LO_bid_add`: 1e-05
+        - `MO_buy`: 0.01567
+        - `MO_sell`: 0.0165
+        - `cancel_ask`: 0.02519
+        - `cancel_bid`: 0.02259
+      - `LO_bid_add`:
+        - `LO_ask_add`: 1e-05
+        - `LO_bid_add`: 0.01217
+        - `MO_buy`: 0.00161
+        - `MO_sell`: 0.00191
+        - `cancel_ask`: 0.00559
+        - `cancel_bid`: 2e-05
+      - `MO_buy`:
+        - `LO_ask_add`: 0.07401
+        - `LO_bid_add`: 9e-05
+        - `MO_buy`: 0.65907
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.00204
+        - `cancel_bid`: 0.24302
+      - `MO_sell`:
+        - `LO_ask_add`: 0.0
+        - `LO_bid_add`: 0.08594
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.67317
+        - `cancel_ask`: 0.20868
+        - `cancel_bid`: 0.0
+      - `cancel_ask`:
+        - `LO_ask_add`: 0.16066
+        - `LO_bid_add`: 0.0
+        - `MO_buy`: 0.0
+        - `MO_sell`: 0.20554
+        - `cancel_ask`: 0.6338
+        - `cancel_bid`: 0.0
+      - `cancel_bid`:
+        - `LO_ask_add`: 0.0
+        - `LO_bid_add`: 0.15431
+        - `MO_buy`: 0.17829
+        - `MO_sell`: 0.0
+        - `cancel_ask`: 0.0
+        - `cancel_bid`: 0.66739
+    - `loglik`: -170119.008
+    - `mark_counts`:
+      - `LO_ask_add`: 4524
+      - `LO_bid_add`: 4570
+      - `MO_buy`: 2230
+      - `MO_sell`: 2014
+      - `cancel_ask`: 2294
+      - `cancel_bid`: 2570
+    - `mu_per_s`:
+      - `LO_ask_add`: 0.273883
+      - `LO_bid_add`: 0.294262
+      - `MO_buy`: 0.003204
+      - `MO_sell`: 0.004325
+      - `cancel_ask`: 1e-06
+      - `cancel_bid`: 1e-06
+    - `n_events`: 18202
+    - `ok`: true
+    - `rho_branching`: 0.87433
+    - `stationary`: true
+- `ticker`: AMZN
+
+### `receipts/hawkes_real_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/hawkes_real_amzn.json | 9d398acb03bfc6bfd9f965d5d6115b5ca4d64244d312e90993ea11e7bd8a80ea | fe7a75a8f2e78ebaa84b49d520cc017b2892cf0e1f364e4bd99bd5feb865c2f7 | not_checked | 742f25cc767ee04d37c246206c917137856467bf | absent | unspecified | absent | true | absent |
+
+- `claim`: branching_ratio_measured_real_vs_sim
+- `data_label`: MIXED
+- `estimator`: exp-kernel Hawkes MLE: lambda=mu+sum(eta*beta*e^{-beta*dt}); eta=branching ratio
+- `git_revision`: 742f25cc767ee04d37c246206c917137856467bf
+- `interpretation`: eta=0 is Poisson; eta->1 critical self-excitation. The Poisson delta-loglik quantifies whether clustering is statistically real, not just nonzero. Split flow should show intermediate eta — parents burst but with constant intra-parent intensity, unlike genuine recursive excitation.
+- `kind`: hawkes_real
+- `real`:
+  - `branching_ratio_eta`: 0.536
+  - `decay_beta`: 1367.6236
+  - `hawkes_neg_loglik`: -13831.262
+  - `horizon_s`: 23400.0
+  - `loglik_gain_vs_poisson`: 31405.984
+  - `mu`: 0.177953
+  - `n`: 8974
+  - `ok`: true
+  - `poisson_neg_loglik`: 17574.722
+- `receipt_sha256`: fe7a75a8f2e78ebaa84b49d520cc017b2892cf0e1f364e4bd99bd5feb865c2f7
+- `research_only`: true
+- `schema`: hawkes_real.v1
+- `sim_arms`:
+  - `iid`:
+    - `branching_ratio_eta`: 0.1441
+    - `decay_beta`: 0.0203
+    - `hawkes_neg_loglik`: 8679.277
+    - `horizon_s`: 16698.62
+    - `loglik_gain_vs_poisson`: 2.107
+    - `mu`: 0.170199
+    - `n`: 3319
+    - `ok`: true
+    - `poisson_neg_loglik`: 8681.384
+  - `regime`:
+    - `branching_ratio_eta`: 0.5224
+    - `decay_beta`: 0.0307
+    - `hawkes_neg_loglik`: 9189.893
+    - `horizon_s`: 16573.673
+    - `loglik_gain_vs_poisson`: 92.61
+    - `mu`: 0.107528
+    - `n`: 3723
+    - `ok`: true
+    - `poisson_neg_loglik`: 9282.503
+  - `split`:
+    - `branching_ratio_eta`: 0.3782
+    - `decay_beta`: 0.1192
+    - `hawkes_neg_loglik`: 9556.756
+    - `horizon_s`: 15201.503
+    - `loglik_gain_vs_poisson`: 102.113
+    - `mu`: 0.173665
+    - `n`: 4244
+    - `ok`: true
+    - `poisson_neg_loglik`: 9658.869
+- `ticker`: AMZN
+
+### `receipts/hidden_depth_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/hidden_depth_amzn.json | 24b6c5ca511ec6211f79115fdac3eac85f52d393738a5a88adebad8c46575ea2 | ea597d6f8c8128ddff388ab0b6de37307e4e353b066a5cb5f8f1258d6f671e55 | not_checked | e8b34ae795fa79929e58571ab89ac629beba6a5b | absent | unspecified | absent | true | absent |
+
+- `claim`: hidden_liquidity_share_measured
+- `data_label`: MIXED
+- `divergences`:
+  - sim_has_no_hidden_liquidity_mechanism
+- `git_revision`: e8b34ae795fa79929e58571ab89ac629beba6a5b
+- `interpretation`: EXECUTION_HIDDEN counts iceberg/hidden fills. A sim without hidden orders cannot model the iceberg retreat-and-reload dynamic that makes displayed depth understate true depth.
+- `kind`: hidden_depth
+- `real`:
+  - `hidden`:
+    - `mean_size`: 80.78
+    - `median_size`: 90.0
+    - `n`: 2445
+    - `p95_size`: 200.0
+  - `hidden_notional_share`: 0.2436
+  - `hidden_trade_share`: 0.2141
+  - `hidden_volume_share`: 0.2436
+  - `n_execs`: 11419
+  - `n_hidden_execs`: 2445
+  - `visible`:
+    - `mean_size`: 68.34
+    - `median_size`: 60.0
+    - `n`: 8974
+    - `p95_size`: 183.0
+- `receipt_sha256`: ea597d6f8c8128ddff388ab0b6de37307e4e353b066a5cb5f8f1258d6f671e55
+- `research_only`: true
+- `schema`: hidden_depth.v1
+- `sim`:
+  - `hidden_trade_share`: 0.0
+  - `hidden_volume_share`: 0.0
+  - `mechanism_present`: false
+  - `n_execs`: 1350
+- `ticker`: AMZN
+
 ### `receipts/honest_verdict_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -6327,6 +8720,218 @@ counted. Prose that contains such a token is quoted verbatim.
 - `unavailable_lanes`:
 - `verdict`: not_supported
 - `winner`: gaussian
+
+### `receipts/impact_instant_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/impact_instant_amzn.json | e6d80527e2bb993d7450087db961d6229561fe1a87c0e8b68d3920ca50315c4b | c84a1d4d6a85c978feca58b9659d9d290e00d66a95210cb5730f9e79bef98258 | not_checked | be49ca12b4d1d24f9f76ab831266b36fdd840745 | absent | unspecified | absent | true | absent |
+
+- `claim`: instantaneous_impact_curve_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_unit_impact_0.00_vs_0.97
+  - regime_unit_impact_0.00_vs_0.97
+  - split_unit_impact_0.00_vs_0.97
+  - iid_no_size_dimension
+  - regime_no_size_dimension
+  - split_no_size_dimension
+- `git_revision`: be49ca12b4d1d24f9f76ab831266b36fdd840745
+- `interpretation`: Per exec: signed Δmid (aggressor sign × mid change, ticks) vs exec size in shares, from the orderbook snapshots. Bins are size octiles; alpha_loglog is the weighted log-log slope of mean |Δmid| vs mean size (instantaneous impact exponent). p_move = P(Δmid≠0 | exec). The sim's fills are all unit lots — alpha is undefined there and the unit-lot Δmid is compared to the real smallest-size bin.
+- `kind`: impact_instant
+- `real`:
+  - `alpha_loglog`: 0.14079701910436004
+  - `mean_abs_dmid_ticks`: 0.8869511923334076
+  - `mean_signed_dmid_ticks`: 0.8869511923334076
+  - `n`: 8974
+  - `ok`: true
+  - `p_move`: 0.4723646088700691
+  - `size_bins`:
+    - [0]
+      - `mean_abs_dmid_ticks`: 0.9738955823293173
+      - `mean_signed_dmid_ticks`: 0.9738955823293173
+      - `mean_size`: 2.895582329317269
+      - `n`: 996
+      - `p_move`: 0.5080321285140562
+      - `size_hi`: 6.0
+      - `size_lo`: 0.999999999
+    - [1]
+      - `mean_abs_dmid_ticks`: 0.5711348684210527
+      - `mean_signed_dmid_ticks`: 0.5711348684210527
+      - `mean_size`: 8.665296052631579
+      - `n`: 1216
+      - `p_move`: 0.5180921052631579
+      - `size_hi`: 14.0
+      - `size_lo`: 6.0
+    - [2]
+      - `mean_abs_dmid_ticks`: 0.523014440433213
+      - `mean_signed_dmid_ticks`: 0.523014440433213
+      - `mean_size`: 17.637184115523464
+      - `n`: 1108
+      - `p_move`: 0.41606498194945846
+      - `size_hi`: 21.0
+      - `size_lo`: 14.0
+    - [3]
+      - `mean_abs_dmid_ticks`: 0.6185701830863121
+      - `mean_signed_dmid_ticks`: 0.6185701830863121
+      - `mean_size`: 37.5745422842197
+      - `n`: 1147
+      - `p_move`: 0.3147340889276373
+      - `size_hi`: 60.0
+      - `size_lo`: 21.0
+    - [4]
+      - `mean_abs_dmid_ticks`: 0.6993006993006993
+      - `mean_signed_dmid_ticks`: 0.6993006993006993
+      - `mean_size`: 80.42357642357642
+      - `n`: 1001
+      - `p_move`: 0.2917082917082917
+      - `size_hi`: 100.0
+      - `size_lo`: 60.0
+    - [5]
+      - `mean_abs_dmid_ticks`: 1.2281802624073017
+      - `mean_signed_dmid_ticks`: 1.2281802624073017
+      - `mean_size`: 130.25755847119225
+      - `n`: 3506
+      - `p_move`: 0.567313177410154
+      - `size_hi`: 4000.000000001
+      - `size_lo`: 100.0
+  - `size_max`: 4000.0
+  - `size_median`: 60.0
+- `receipt_sha256`: c84a1d4d6a85c978feca58b9659d9d290e00d66a95210cb5730f9e79bef98258
+- `research_only`: true
+- `schema`: impact_instant.v1
+- `sim_arms`:
+  - `iid`:
+    - `alpha_loglog`: null
+    - `mean_abs_dmid_ticks`: 0.0032681564245809255
+    - `mean_signed_dmid_ticks`: 0.0032681564245809255
+    - `n`: 5012
+    - `ok`: true
+    - `p_move`: 0.4928172386272945
+    - `size_bins`:
+      - [0]
+        - `mean_abs_dmid_ticks`: 0.0032681564245809255
+        - `mean_signed_dmid_ticks`: 0.0032681564245809255
+        - `mean_size`: 1.0
+        - `n`: 5012
+        - `p_move`: 0.4928172386272945
+        - `size_hi`: 1.000000001
+        - `size_lo`: 1.0
+    - `size_max`: 1.0
+    - `size_median`: 1.0
+  - `regime`:
+    - `alpha_loglog`: null
+    - `mean_abs_dmid_ticks`: 0.0036200989722116233
+    - `mean_signed_dmid_ticks`: 0.0036200989722116233
+    - `n`: 5254
+    - `ok`: true
+    - `p_move`: 0.5078035782261134
+    - `size_bins`:
+      - [0]
+        - `mean_abs_dmid_ticks`: 0.0036200989722116233
+        - `mean_signed_dmid_ticks`: 0.0036200989722116233
+        - `mean_size`: 1.0
+        - `n`: 5254
+        - `p_move`: 0.5078035782261134
+        - `size_hi`: 1.000000001
+        - `size_lo`: 1.0
+    - `size_max`: 1.0
+    - `size_median`: 1.0
+  - `split`:
+    - `alpha_loglog`: null
+    - `mean_abs_dmid_ticks`: 0.004714315181518147
+    - `mean_signed_dmid_ticks`: 0.004714315181518147
+    - `n`: 4848
+    - `ok`: true
+    - `p_move`: 0.5806518151815182
+    - `size_bins`:
+      - [0]
+        - `mean_abs_dmid_ticks`: 0.004714315181518147
+        - `mean_signed_dmid_ticks`: 0.004714315181518147
+        - `mean_size`: 1.0
+        - `n`: 4848
+        - `p_move`: 0.5806518151815182
+        - `size_hi`: 1.000000001
+        - `size_lo`: 1.0
+    - `size_max`: 1.0
+    - `size_median`: 1.0
+- `ticker`: AMZN
+
+### `receipts/intraday_shape_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/intraday_shape_amzn.json | 7e831325e8e77d61360d07100a35234c210f79b99825d6d4040d5d903470cd1d | d343852f17997a1327850c071d00ed98c343a00c74d570c6fb6b8a027c1aa55d | not_checked | a67a117a446dd50d0d4f5797f40cae942e88b5c3 | absent | unspecified | absent | true | absent |
+
+- `claim`: intraday_u_shape_measured_real_vs_flat_sim
+- `data_label`: MIXED
+- `git_revision`: a67a117a446dd50d0d4f5797f40cae942e88b5c3
+- `interpretation`: u_shape = edge-third mean / middle-third mean of activity. Real equities show >1 (U). Sim arms are flat by construction (~1.0) — a calendar-intensity term is an open calibration gap.
+- `kind`: intraday_shape
+- `real`:
+  - `activity_u_shape`: 2.0356973434535104
+  - `bin_seconds`: 1800.0
+  - `events_per_bin`:
+    - 17218
+    - 24746
+    - 24280
+    - 25239
+    - 17266
+    - 18667
+    - 14148
+    - 12352
+    - 19962
+    - 19438
+    - 15109
+    - 25890
+    - 32988
+  - `execs_per_bin`:
+    - 650
+    - 678
+    - 1090
+    - 612
+    - 312
+    - 490
+    - 450
+    - 410
+    - 446
+    - 537
+    - 487
+    - 941
+    - 1871
+  - `mean_spread_per_bin`:
+    - 20.8306
+    - 15.0082
+    - 11.7104
+    - 13.1362
+    - 14.5839
+    - 14.2995
+    - 13.5394
+    - 11.4141
+    - 13.1075
+    - 11.8666
+    - 13.46
+    - 11.6578
+    - 9.2434
+  - `n_bins`: 13
+  - `spread_u_shape`: 0.9981512703792916
+- `receipt_sha256`: d343852f17997a1327850c071d00ed98c343a00c74d570c6fb6b8a027c1aa55d
+- `research_only`: true
+- `schema`: intraday_shape.v1
+- `sim_arms`:
+  - `iid`:
+    - `activity_u_shape`: 0.9998537631613156
+    - `mean_spread_ticks`: 1.806
+    - `spread_u_shape`: 0.9905088621129443
+  - `regime`:
+    - `activity_u_shape`: 0.9998537631613156
+    - `mean_spread_ticks`: 1.899
+    - `spread_u_shape`: 1.0362580587581967
+  - `split`:
+    - `activity_u_shape`: 0.9998537631613156
+    - `mean_spread_ticks`: 2.258
+    - `spread_u_shape`: 1.0126428370360943
+- `ticker`: AMZN
 
 ### `receipts/lane_power_drill.json`
 
@@ -7787,6 +10392,134 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 > All workloads are SYNTHETIC generated fixtures. This receipt attests engine conformance, not performance; NAV/fee/P&L numbers are not evidence of live-trading results.
 <!-- /verbatim-receipt-text -->
 
+### `receipts/lob_exec_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/lob_exec_amzn.json | e334cb33cf73a06b99bbfc834825e409e849ec860b8533a093dfefbdac2e0932 | a36c444f6fe20c0ffa1610dd6eebd321b5c2a2598c3e4d1a7410fe0cbb3b5c36 | not_checked | f5cdbae5aa27cb73b3fd522e4d03e700101d2fb7 | absent | unspecified | absent | true | absent |
+
+- `cells`:
+  - `large_twap20`:
+    - `fill_fraction_mean`: 1.0
+    - `is_total_ticks_max`: 215.35399999999908
+    - `is_total_ticks_mean`: 37.02966666666636
+    - `is_total_ticks_min`: -135.63799999999813
+    - `liquidity_cost_ticks_mean`: 0.12133333333333333
+    - `n_episodes`: 6
+    - `resyncs_total`: 22289
+  - `large_twap5`:
+    - `fill_fraction_mean`: 1.0
+    - `is_total_ticks_max`: 137.90200000000186
+    - `is_total_ticks_mean`: 9.895000000000001
+    - `is_total_ticks_min`: -134.0
+    - `liquidity_cost_ticks_mean`: 0.46166666666666667
+    - `n_episodes`: 6
+    - `resyncs_total`: 5520
+  - `medium_twap20`:
+    - `fill_fraction_mean`: 1.0
+    - `is_total_ticks_max`: 215.3
+    - `is_total_ticks_mean`: 36.951666666666675
+    - `is_total_ticks_min`: -135.695
+    - `liquidity_cost_ticks_mean`: 0.043333333333333335
+    - `n_episodes`: 6
+    - `resyncs_total`: 22289
+  - `medium_twap5`:
+    - `fill_fraction_mean`: 1.0
+    - `is_total_ticks_max`: 137.455
+    - `is_total_ticks_mean`: 9.625000000000002
+    - `is_total_ticks_min`: -134.0
+    - `liquidity_cost_ticks_mean`: 0.19166666666666665
+    - `n_episodes`: 6
+    - `resyncs_total`: 5520
+  - `small_twap20`:
+    - `fill_fraction_mean`: 1.0
+    - `is_total_ticks_max`: 209.18
+    - `is_total_ticks_mean`: 35.53333333333334
+    - `is_total_ticks_min`: -134.38
+    - `liquidity_cost_ticks_mean`: 0.006666666666666667
+    - `n_episodes`: 6
+    - `resyncs_total`: 22289
+  - `small_twap5`:
+    - `fill_fraction_mean`: 1.0
+    - `is_total_ticks_max`: 137.2
+    - `is_total_ticks_mean`: 9.453333333333331
+    - `is_total_ticks_min`: -134.0
+    - `liquidity_cost_ticks_mean`: 0.02
+    - `n_episodes`: 6
+    - `resyncs_total`: 5520
+- `data_label`: MIXED
+- `git_revision`: f5cdbae5aa27cb73b3fd522e4d03e700101d2fb7
+- `interpretation`: TWAP shortfall on the reconstructed visible LOBSTER book, tick-normalized. liquidity_cost is drift-free (vs best quote at fill time); is_total vs arrival mid mixes in tape drift and can be negative. VISIBLE-liquidity only: top-10 tape, hidden executions invisible, resync band truncates depth
+- `kind`: lob_exec
+- `receipt_sha256`: a36c444f6fe20c0ffa1610dd6eebd321b5c2a2598c3e4d1a7410fe0cbb3b5c36
+- `research_only`: true
+- `schema`: lob_exec.v1
+- `ticker`: AMZN
+
+### `receipts/lob_resilience_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/lob_resilience_amzn.json | b8728dbb705d8ae62e1339a4d7482070f7f827209c20c342b31ce6a9980a585d | 6ce00f56a2c85e7526236824185b1f70cf195bbdb3c9f3cc979187f774f6b80d | not_checked | 86348ebd72f37dd7713b2a6ca08e5056ffbcaca3 | absent | unspecified | absent | true | absent |
+
+- `claim`: resilience_measured
+- `data_label`: MIXED
+- `depletion_rule`: size_drops_to_<=0.2x_prior
+- `divergences`:
+  - iid_refill_ratio_202.54
+  - regime_refill_ratio_231.00
+  - split_refill_ratio_226.00
+- `git_revision`: 86348ebd72f37dd7713b2a6ca08e5056ffbcaca3
+- `interpretation`: Depleted touch levels that never refill indicate liquidity withdrawal; fast refill = resilient book.
+- `kind`: lob_resilience
+- `real`:
+  - `ask`:
+    - `mean_refill_s`: 11.131
+    - `median_refill_s`: 0.0239
+    - `n_depletions`: 1528
+    - `n_recovered`: 1527
+    - `n_unrecovered`: 1
+    - `p90_refill_s`: 5.9401
+    - `recovery_share`: 0.9993
+  - `bid`:
+    - `mean_refill_s`: 18.2644
+    - `median_refill_s`: 0.0133
+    - `n_depletions`: 897
+    - `n_recovered`: 896
+    - `n_unrecovered`: 1
+    - `p90_refill_s`: 5.0972
+    - `recovery_share`: 0.9989
+- `receipt_sha256`: 6ce00f56a2c85e7526236824185b1f70cf195bbdb3c9f3cc979187f774f6b80d
+- `recovery_rule`: size_recovers_to_>=0.5x_prior
+- `research_only`: true
+- `schema`: lob_resilience.v1
+- `sim_arms`:
+  - `iid`:
+    - `mean_refill_s`: 10.1853
+    - `median_refill_s`: 4.8408
+    - `n_depletions`: 66
+    - `n_recovered`: 66
+    - `n_unrecovered`: 0
+    - `p90_refill_s`: 27.3222
+    - `recovery_share`: 1.0
+  - `regime`:
+    - `mean_refill_s`: 19.3497
+    - `median_refill_s`: 5.5209
+    - `n_depletions`: 38
+    - `n_recovered`: 38
+    - `n_unrecovered`: 0
+    - `p90_refill_s`: 51.4749
+    - `recovery_share`: 1.0
+  - `split`:
+    - `mean_refill_s`: 13.4926
+    - `median_refill_s`: 5.4014
+    - `n_depletions`: 20
+    - `n_recovered`: 20
+    - `n_unrecovered`: 0
+    - `p90_refill_s`: 37.1583
+    - `recovery_share`: 1.0
+- `ticker`: AMZN
+
 ### `receipts/loss_cs_real_drill_conf_t_vs_empirical.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -7866,6 +10599,99 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `n`: 300
 - `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
 - `schema`: loss_cs.v1
+
+### `receipts/marketable_limit_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/marketable_limit_amzn.json | 0e231a062d7253b3cdce1acd4a6ca72c75890e7b19fbbc47c76cc6815448c932 | d8d1bed2b6478b072a17d31c59c33ebd4b4828c4c42193a48e970ec2932984c0 | not_checked | 498c56b09eccedf72e5592e7284f57e6de890dec | absent | unspecified | absent | true | absent |
+
+- `claim`: placement_aggression_spectrum_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_inside_0.000_vs_0.103
+  - regime_inside_0.000_vs_0.103
+  - split_inside_0.000_vs_0.103
+- `git_revision`: 498c56b09eccedf72e5592e7284f57e6de890dec
+- `interpretation`: Share of SUBMISSIONs priced relative to the pre-event opposite and own touches: rel>=0 marketable (executes immediately: at or through the touch), rel>0 strictly crossing, inside = strictly inside the spread, at_own_touch = joins the own-side queue, behind = deeper. In LOBSTER data, marketable orders are logged as executions rather than resting submissions — a near-zero marketable share is a recording convention, not absent aggression. volume_share weights by size. The sim's placements are dist>=1 — marketable LOs structurally absent, an expressivity gap not a calibration miss.
+- `kind`: marketable_limit
+- `real`:
+  - `mean_size_marketable`: null
+  - `mean_size_resting`: 98.72701850644921
+  - `n`: 131954
+  - `ok`: true
+  - `rel_median_ticks`: -20.0
+  - `share`:
+    - `at_own_touch`: 0.10792397350591873
+    - `behind`: 0.7889794928535702
+    - `crossing`: 0.0
+    - `inside`: 0.10309653364051109
+    - `marketable`: 0.0
+  - `volume_share`:
+    - `at_own_touch`: 0.08082426112604756
+    - `behind`: 0.7950230379372746
+    - `crossing`: 0.0
+    - `inside`: 0.12415270093667781
+    - `marketable`: 0.0
+- `receipt_sha256`: d8d1bed2b6478b072a17d31c59c33ebd4b4828c4c42193a48e970ec2932984c0
+- `research_only`: true
+- `schema`: marketable_limit.v1
+- `sim_arms`:
+  - `iid`:
+    - `mean_size_marketable`: null
+    - `mean_size_resting`: 1.0
+    - `n`: 14949
+    - `ok`: true
+    - `rel_median_ticks`: -3.0
+    - `share`:
+      - `at_own_touch`: 0.36470666934243096
+      - `behind`: 0.6352933306575691
+      - `crossing`: 0.0
+      - `inside`: 0.0
+      - `marketable`: 0.0
+    - `volume_share`:
+      - `at_own_touch`: 0.36470666934243096
+      - `behind`: 0.6352933306575691
+      - `crossing`: 0.0
+      - `inside`: 0.0
+      - `marketable`: 0.0
+  - `regime`:
+    - `mean_size_marketable`: null
+    - `mean_size_resting`: 1.0
+    - `n`: 14537
+    - `ok`: true
+    - `rel_median_ticks`: -3.0
+    - `share`:
+      - `at_own_touch`: 0.38680608103460135
+      - `behind`: 0.6131939189653987
+      - `crossing`: 0.0
+      - `inside`: 0.0
+      - `marketable`: 0.0
+    - `volume_share`:
+      - `at_own_touch`: 0.38680608103460135
+      - `behind`: 0.6131939189653987
+      - `crossing`: 0.0
+      - `inside`: 0.0
+      - `marketable`: 0.0
+  - `split`:
+    - `mean_size_marketable`: null
+    - `mean_size_resting`: 1.0
+    - `n`: 12026
+    - `ok`: true
+    - `rel_median_ticks`: -3.0
+    - `share`:
+      - `at_own_touch`: 0.5099783801762847
+      - `behind`: 0.4900216198237153
+      - `crossing`: 0.0
+      - `inside`: 0.0
+      - `marketable`: 0.0
+    - `volume_share`:
+      - `at_own_touch`: 0.5099783801762847
+      - `behind`: 0.4900216198237153
+      - `crossing`: 0.0
+      - `inside`: 0.0
+      - `marketable`: 0.0
+- `ticker`: AMZN
 
 ### `receipts/mcs_real_drill.json`
 
@@ -7961,6 +10787,127 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - realized_garch
   - rv_ewma
   - rv_roll
+
+### `receipts/metaorder_detect_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/metaorder_detect_amzn.json | c2bfd7554d2aba52493daa287850c08aced9893f7beb8f0aa976e9b0c791ec8d | 8f4d36abc31dc0e5448e730f37f5ca5d0969281e3e0ff1d34e84bdc8e3e197f3 | not_checked | bca3ee98f009745bacd10cb8055f24befae7f65e | absent | unspecified | absent | true | absent |
+
+- `claim`: metaorder_structure_detected
+- `data_label`: MIXED
+- `detector`:
+  - `gap_s`: 1.0
+  - `min_len`: 3
+- `divergences`:
+  - clustered_fill_share_gap_+0.60
+- `git_revision`: bca3ee98f009745bacd10cb8055f24befae7f65e
+- `interpretation`: Gap-clustered same-sign runs proxy metaorders. On sim the detector's precision/recall are ground-truth-scored against SplitFlow's burst flags; on the tape the recovered count and size distribution are discovered structure.
+- `kind`: metaorder_detect
+- `real`:
+  - `buy_share`: 0.5134
+  - `clustered_fill_share`: 0.7609
+  - `max_fills_per_meta`: 99
+  - `mean_duration_s`: 0.317
+  - `mean_fills_per_meta`: 6.77
+  - `n_execs`: 8974
+  - `n_metaorders`: 1009
+  - `p95_fills_per_meta`: 17.0
+- `receipt_sha256`: 8f4d36abc31dc0e5448e730f37f5ca5d0969281e3e0ff1d34e84bdc8e3e197f3
+- `research_only`: true
+- `schema`: metaorder_detect.v1
+- `sim`:
+  - `buy_share`: 0.5126
+  - `clustered_fill_share`: 0.165
+  - `max_fills_per_meta`: 7
+  - `mean_duration_s`: 1.208
+  - `mean_fills_per_meta`: 3.53
+  - `n_execs`: 4254
+  - `n_metaorders`: 199
+  - `n_true_children`: 2826
+  - `p95_fills_per_meta`: 6.0
+  - `precision`: 0.9473
+  - `recall`: 0.2353
+- `ticker`: AMZN
+
+### `receipts/mid_jump_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/mid_jump_amzn.json | b4afddf6927e2254d1e0362517bdd14ec3dd07d1dcebcfbb2da40384a1585d17 | 9fb46405f3c80561438e94e14e7f489897c183cfcc1b82de79126476f05847cd | not_checked | e93e1034063f9ec42e6a3690b3891fa29d1b92ac | absent | unspecified | absent | true | absent |
+
+- `claim`: mid_jump_distribution_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_jump_mean_ratio_0.48
+- `git_revision`: e93e1034063f9ec42e6a3690b3891fa29d1b92ac
+- `interpretation`: Wide-book stocks take multi-tick mid steps; tight books rarely jump >1 tick. The histogram is a liquidity-regime fingerprint.
+- `kind`: mid_jump
+- `real`:
+  - `jump_hist`:
+    - `0`: 0.8978
+    - `1`: 0.0645
+    - `10-20`: 0.0008
+    - `2`: 0.0189
+    - `3-4`: 0.0128
+    - `5-9`: 0.005
+    - `>20`: 0.0001
+  - `mean_abs_jump_ticks`: 1.4904
+  - `mean_move_gap_s`: 0.8492
+  - `move_share`: 0.1022
+  - `n_mid_moves`: 27557
+  - `n_obs`: 269747
+  - `p95_jump_ticks`: 4.5
+- `receipt_sha256`: 9fb46405f3c80561438e94e14e7f489897c183cfcc1b82de79126476f05847cd
+- `research_only`: true
+- `schema`: mid_jump.v1
+- `sim_arms`:
+  - `iid`:
+    - `jump_hist`:
+      - `0`: 0.8189
+      - `1`: 0.1665
+      - `10-20`: 0.0
+      - `2`: 0.0139
+      - `3-4`: 0.0004
+      - `5-9`: 0.0005
+      - `>20`: 0.0
+    - `mean_abs_jump_ticks`: 0.7095
+    - `mean_move_gap_s`: 4.6262
+    - `move_share`: 0.1811
+    - `n_mid_moves`: 3609
+    - `n_obs`: 19926
+    - `p95_jump_ticks`: 1.5
+  - `regime`:
+    - `jump_hist`:
+      - `0`: 0.7964
+      - `1`: 0.177
+      - `10-20`: 0.0
+      - `2`: 0.0229
+      - `3-4`: 0.0033
+      - `5-9`: 0.0004
+      - `>20`: 0.0
+    - `mean_abs_jump_ticks`: 0.7781
+    - `mean_move_gap_s`: 4.1699
+    - `move_share`: 0.2036
+    - `n_mid_moves`: 3973
+    - `n_obs`: 19510
+    - `p95_jump_ticks`: 1.5
+  - `split`:
+    - `jump_hist`:
+      - `0`: 0.6967
+      - `1`: 0.2406
+      - `10-20`: 0.0
+      - `2`: 0.0538
+      - `3-4`: 0.0078
+      - `5-9`: 0.0011
+      - `>20`: 0.0
+    - `mean_abs_jump_ticks`: 0.9126
+    - `mean_move_gap_s`: 3.3032
+    - `move_share`: 0.3033
+    - `n_mid_moves`: 4601
+    - `n_obs`: 15172
+    - `p95_jump_ticks`: 2.0
+- `ticker`: AMZN
 
 ### `receipts/monitor_run_drill_clean.json`
 
@@ -23655,6 +26602,142 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `schema_version`: 2
 - `verdict`: blocked
 
+### `receipts/order_lifetime_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/order_lifetime_amzn.json | 57d744ba5f963aed36a2fef198015643bf4be0855f610ab32dcc21bc83941e01 | 760858e20cc94d120844f481a80789aa54467865cc4a70afcd88c2926fb1077f | not_checked | 21a9d20632f3269a6de8f9391919aa0f9126ea87 | absent | unspecified | absent | true | absent |
+
+- `claim`: resting_order_survival_measured_real_vs_sim
+- `data_label`: MIXED
+- `git_revision`: 21a9d20632f3269a6de8f9391919aa0f9126ea87
+- `interpretation`: Real books: most resting volume is canceled, not executed — HFT churn. Exec-vs-cancel volume share is the honest depth discount. Sim arm measures maker fill delay only (cancels are anonymous theta_cxl events), so cross-side comparison is on fill-delay shape, not cancel share.
+- `kind`: order_lifetime
+- `real`:
+  - `exec_share_of_resolved_volume`: 0.6341
+  - `lifetime_hist_s`:
+    - `0-0.001s`: 8567
+    - `0.001-0.01s`: 13932
+    - `0.01-0.1s`: 14978
+    - `0.1-1s`: 27483
+    - `1-10s`: 41503
+    - `10-60s`: 15756
+    - `60-600s`: 1403
+    - `>=600s`: 22
+  - `lifetime_s_p50_canceled`: null
+  - `lifetime_s_p50_deleted`: 0.7995869840015075
+  - `lifetime_s_p50_executed`: 2.2129897920021904
+  - `lifetime_s_p90_all`: 13.671243681004851
+  - `n_canceled`: 0
+  - `n_deleted`: 117507
+  - `n_execs_on_pre_window_orders`: 557
+  - `n_executed`: 6137
+  - `n_open_at_end_censored`: 8310
+  - `n_orders_tracked`: 131954
+- `receipt_sha256`: 760858e20cc94d120844f481a80789aa54467865cc4a70afcd88c2926fb1077f
+- `research_only`: true
+- `schema`: order_lifetime.v1
+- `sim_arms`:
+  - `iid`:
+    - `fill_delay_hist_s`:
+      - `0-0.1s`: 8
+      - `0.1-1s`: 154
+      - `1-5s`: 542
+      - `100-500s`: 77
+      - `20-100s`: 1232
+      - `5-20s`: 1306
+      - `>=500s`: 0
+    - `fill_delay_p50_s`: 14.765332126718931
+    - `fill_delay_p90_s`: 56.62861664482774
+    - `fill_delay_p99_s`: 129.7411414264772
+    - `n_fills`: 3319
+  - `regime`:
+    - `fill_delay_hist_s`:
+      - `0-0.1s`: 27
+      - `0.1-1s`: 242
+      - `1-5s`: 722
+      - `100-500s`: 62
+      - `20-100s`: 1307
+      - `5-20s`: 1363
+      - `>=500s`: 0
+    - `fill_delay_p50_s`: 12.693208113794753
+    - `fill_delay_p90_s`: 52.450767955759
+    - `fill_delay_p99_s`: 119.8742838419741
+    - `n_fills`: 3723
+  - `split`:
+    - `fill_delay_hist_s`:
+      - `0-0.1s`: 104
+      - `0.1-1s`: 624
+      - `1-5s`: 1366
+      - `100-500s`: 78
+      - `20-100s`: 887
+      - `5-20s`: 1185
+      - `>=500s`: 0
+    - `fill_delay_p50_s`: 5.133737587262431
+    - `fill_delay_p90_s`: 43.32272652808678
+    - `fill_delay_p99_s`: 129.5209876726353
+    - `n_fills`: 4244
+- `ticker`: AMZN
+
+### `receipts/order_revision_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/order_revision_amzn.json | dbb7239f51f26e176f62493fea10a2e921b1a97945eb251eae5e3432badab3ce | 5086046d9d07c6714af5683404879f1b2148ac787cf3fd1fd21b727ce6755d36 | not_checked | e7dff8398f686d8bfb5eaa82ffb7f8995d8243cd | absent | unspecified | absent | true | absent |
+
+- `claim`: requote_cycle_measured_real_vs_sim
+- `data_label`: MIXED
+- `divergences`:
+  - iid_rate_0.143_vs_0.848
+  - regime_rate_0.139_vs_0.848
+  - split_rate_0.145_vs_0.848
+- `git_revision`: e7dff8398f686d8bfb5eaa82ffb7f8995d8243cd
+- `heuristic`: nearest same-side submit within window; nearest |Δprice| on ties
+- `interpretation`: revision_rate = share of deletes followed by a linked resubmission; sim arms carry no revision mechanism so their rate is the accidental-null. step_ticks within ±3 = re-quote; toward_mid_share measures whether revisions chase or retreat from the touch.
+- `kind`: order_revision
+- `real`:
+  - `away_mid_share`: 0.4436338532726323
+  - `median_latency_ms`: 23.461813500034623
+  - `n_cancels`: 126375
+  - `n_submits`: 131954
+  - `ok`: true
+  - `revision_rate`: 0.8482057368941642
+  - `same_price_share`: 0.2544219717889395
+  - `step_ticks_abs_median`: 1.0
+  - `step_ticks_p90`: 7.0
+  - `toward_mid_share`: 0.30194417493842823
+  - `within_3_ticks_share`: 0.7800488842450929
+- `receipt_sha256`: 5086046d9d07c6714af5683404879f1b2148ac787cf3fd1fd21b727ce6755d36
+- `research_only`: true
+- `schema`: order_revision.v1
+- `sim_arms`:
+  - `iid`:
+    - `median_latency_ms`: 245.01721340720906
+    - `n_cancels`: 9956
+    - `n_submits`: 14987
+    - `ok`: true
+    - `revision_rate`: 0.14302932904781038
+    - `step_ticks_abs_median`: 2.0
+    - `within_3_ticks_share`: 0.8469101123595506
+  - `regime`:
+    - `median_latency_ms`: 238.9464308243987
+    - `n_cancels`: 9176
+    - `n_submits`: 14852
+    - `ok`: true
+    - `revision_rate`: 0.13873147340889277
+    - `step_ticks_abs_median`: 2.0
+    - `within_3_ticks_share`: 0.8476040848389631
+  - `split`:
+    - `median_latency_ms`: 251.79906884295633
+    - `n_cancels`: 7193
+    - `n_submits`: 13595
+    - `ok`: true
+    - `revision_rate`: 0.1447240372584457
+    - `step_ticks_abs_median`: 2.0
+    - `within_3_ticks_share`: 0.6340057636887608
+- `ticker`: AMZN
+- `window_s`: 0.5
+
 ### `receipts/panel_audit_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -23890,6 +26973,577 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `n_heads_alarmed`: 12
     - `pooled_evalue`: 9059835319.321789
     - `shard`: FFIV
+
+### `receipts/post_trade_drift_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/post_trade_drift_amzn.json | 83ad54e2add374fc7fa0333072c4ef745f6a1ed4112f36d14cefb9b23262192d | 93b465201973c97a0316be2eb21f84ca638fa4a0bcf4543fbe6e65a1872984ed | not_checked | fd439e43265a61d46ec7ce59e261a1d2843554b0 | absent | unspecified | absent | true | absent |
+
+- `claim`: post_trade_drift_kernel_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid@5ev_-0.00_vs_0.68
+  - iid@20ev_-0.00_vs_1.51
+  - iid@50ev_0.00_vs_2.57
+  - iid@200ev_0.00_vs_4.64
+  - regime@5ev_-0.00_vs_0.68
+  - regime@20ev_-0.00_vs_1.51
+  - regime@50ev_-0.00_vs_2.57
+  - regime@200ev_-0.00_vs_4.64
+  - split@5ev_0.00_vs_0.68
+  - split@20ev_0.01_vs_1.51
+  - split@50ev_0.02_vs_2.57
+  - split@200ev_0.04_vs_4.64
+- `event_horizons`:
+  - 1
+  - 5
+  - 20
+  - 50
+  - 200
+- `git_revision`: fd439e43265a61d46ec7ce59e261a1d2843554b0
+- `interpretation`: kernel[h] = mean aggressor-signed Δmid (ticks) from the exec to h events later. Movers vs nonmovers split fills that did vs did not shift the mid at the event. Positive = impact continues; negative = the touch reverts.
+- `kind`: post_trade_drift
+- `real`:
+  - `all`:
+    - `instant_mean_ticks`: -0.042400267439269
+    - `kernel`:
+      - `1`:
+        - `mean_ticks`: 0.26454201025183866
+        - `median_ticks`: 0.0
+        - `share_positive`: 0.2278805437931803
+      - `20`:
+        - `mean_ticks`: 1.5127033652774682
+        - `median_ticks`: 1.0
+        - `share_positive`: 0.6699353688433252
+      - `200`:
+        - `mean_ticks`: 4.644695787831513
+        - `median_ticks`: 4.5
+        - `share_positive`: 0.7057053710719857
+      - `5`:
+        - `mean_ticks`: 0.6791843102295521
+        - `median_ticks`: 0.0
+        - `share_positive`: 0.4719188767550702
+      - `50`:
+        - `mean_ticks`: 2.5696456429685757
+        - `median_ticks`: 2.0
+        - `share_positive`: 0.758413193670604
+    - `n`: 8974
+    - `ok`: true
+  - `movers`:
+    - `instant_mean_ticks`: -0.08976173625855155
+    - `kernel`:
+      - `1`:
+        - `mean_ticks`: 0.032908704883227176
+        - `median_ticks`: 0.0
+        - `share_positive`: 0.14036329322953528
+      - `20`:
+        - `mean_ticks`: 1.0043642368483132
+        - `median_ticks`: 0.5
+        - `share_positive`: 0.5885822127860344
+      - `200`:
+        - `mean_ticks`: 3.596956829440906
+        - `median_ticks`: 3.5
+        - `share_positive`: 0.6621844774711017
+      - `5`:
+        - `mean_ticks`: 0.25642840292521824
+        - `median_ticks`: 0.0
+        - `share_positive`: 0.35149799481009675
+      - `50`:
+        - `mean_ticks`: 1.9793583392309506
+        - `median_ticks`: 1.5
+        - `share_positive`: 0.7079499882047653
+    - `n`: 4239
+    - `ok`: true
+  - `n_execs`: 8974
+  - `nonmovers`:
+    - `instant_mean_ticks`: 0.0
+    - `kernel`:
+      - `1`:
+        - `mean_ticks`: 0.4719112988384372
+        - `median_ticks`: 0.0
+        - `share_positive`: 0.30623020063357975
+      - `20`:
+        - `mean_ticks`: 1.96779303062302
+        - `median_ticks`: 1.5
+        - `share_positive`: 0.742766631467793
+      - `200`:
+        - `mean_ticks`: 5.582682154171066
+        - `median_ticks`: 5.5
+        - `share_positive`: 0.7446673706441393
+      - `5`:
+        - `mean_ticks`: 1.0576557550158394
+        - `median_ticks`: 0.5
+        - `share_positive`: 0.5797254487856388
+      - `50`:
+        - `mean_ticks`: 3.0980992608236537
+        - `median_ticks`: 2.5
+        - `share_positive`: 0.8035902851108765
+    - `n`: 4735
+    - `ok`: true
+  - `ok`: true
+- `receipt_sha256`: 93b465201973c97a0316be2eb21f84ca638fa4a0bcf4543fbe6e65a1872984ed
+- `research_only`: true
+- `schema`: post_trade_drift.v1
+- `sim_arms`:
+  - `iid`:
+    - `all`:
+      - `instant_mean_ticks`: -1.982160555003716e-05
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: -5.7482656095147764e-05
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.12725470763131813
+        - `20`:
+          - `mean_ticks`: -0.00011694747274532966
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4168483647175421
+        - `200`:
+          - `mean_ticks`: 0.0011238850346878071
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4761149653121903
+        - `5`:
+          - `mean_ticks`: -0.00020019821605546772
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.2939544103072349
+        - `50`:
+          - `mean_ticks`: 6.541129831517164e-05
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.44598612487611494
+      - `n`: 5045
+      - `ok`: true
+    - `movers`:
+      - `instant_mean_ticks`: -4.0485829959488854e-05
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: -0.00012753036437247446
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.14412955465587043
+        - `20`:
+          - `mean_ticks`: -0.00038259109311739465
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4174089068825911
+        - `200`:
+          - `mean_ticks`: 0.0015465587044534213
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4777327935222672
+        - `5`:
+          - `mean_ticks`: -0.0004817813765181256
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.31376518218623484
+        - `50`:
+          - `mean_ticks`: -0.00016801619433196908
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4473684210526316
+      - `n`: 2470
+      - `ok`: true
+    - `n_execs`: 5045
+    - `nonmovers`:
+      - `instant_mean_ticks`: 0.0
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: 9.70873786407436e-06
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.11106796116504854
+        - `20`:
+          - `mean_ticks`: 0.00013786407766981616
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.41631067961165047
+        - `200`:
+          - `mean_ticks`: 0.0007184466019417619
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4745631067961165
+        - `5`:
+          - `mean_ticks`: 6.990291262133428e-05
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.27495145631067963
+        - `50`:
+          - `mean_ticks`: 0.0002893203883495163
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4446601941747573
+      - `n`: 2575
+      - `ok`: true
+    - `ok`: true
+  - `regime`:
+    - `all`:
+      - `instant_mean_ticks`: 0.00011419536191153556
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: -5.242936560422384e-17
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.1408995080815179
+        - `20`:
+          - `mean_ticks`: -0.00047347153900219693
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.407413914265636
+        - `200`:
+          - `mean_ticks`: -0.0009258608573436395
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.46872803935347856
+        - `5`:
+          - `mean_ticks`: -0.0002793394237526284
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.30428671820098385
+        - `50`:
+          - `mean_ticks`: -0.0004998243148276835
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.44219957835558676
+      - `n`: 5692
+      - `ok`: true
+    - `movers`:
+      - `instant_mean_ticks`: 0.00024362818590721905
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: -6.746626686664385e-05
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.16604197901049475
+        - `20`:
+          - `mean_ticks`: -0.0008939280359820322
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.42128935532233885
+        - `200`:
+          - `mean_ticks`: -0.0013736881559219668
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.47188905547226384
+        - `5`:
+          - `mean_ticks`: -0.0005266116941528867
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.328335832083958
+        - `50`:
+          - `mean_ticks`: -0.0009314092953521692
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.44227886056971516
+      - `n`: 2668
+      - `ok`: true
+    - `n_execs`: 5692
+    - `nonmovers`:
+      - `instant_mean_ticks`: 0.0
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: 5.952380952377888e-05
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.11871693121693122
+        - `20`:
+          - `mean_ticks`: -0.00010251322751337394
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.3951719576719577
+        - `200`:
+          - `mean_ticks`: -0.0005307539682540307
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.46593915343915343
+        - `5`:
+          - `mean_ticks`: -6.117724867726823e-05
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.2830687830687831
+        - `50`:
+          - `mean_ticks`: -0.00011904761904748257
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.44212962962962965
+      - `n`: 3024
+      - `ok`: true
+    - `ok`: true
+  - `split`:
+    - `all`:
+      - `instant_mean_ticks`: 0.00027669524551836826
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: 0.0004918160561184482
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.1677318784099766
+        - `20`:
+          - `mean_ticks`: 0.011066250974278987
+          - `median_ticks`: 0.009999999999990905
+          - `share_positive`: 0.6187061574434918
+        - `200`:
+          - `mean_ticks`: 0.04119797349961023
+          - `median_ticks`: 0.045000000000001705
+          - `share_positive`: 0.6409976617303196
+        - `5`:
+          - `mean_ticks`: 0.0025931410756039764
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.4035853468433359
+        - `50`:
+          - `mean_ticks`: 0.020781761496492614
+          - `median_ticks`: 0.01999999999999602
+          - `share_positive`: 0.6894777864380358
+      - `n`: 6415
+      - `ok`: true
+    - `movers`:
+      - `instant_mean_ticks`: 0.0006305506216697451
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: 0.0006110124333924638
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.19964476021314387
+        - `20`:
+          - `mean_ticks`: 0.010950266429840087
+          - `median_ticks`: 0.009999999999990905
+          - `share_positive`: 0.61101243339254
+        - `200`:
+          - `mean_ticks`: 0.03544049733570156
+          - `median_ticks`: 0.03499999999999659
+          - `share_positive`: 0.6198934280639432
+        - `5`:
+          - `mean_ticks`: 0.002831261101243223
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.42912966252220247
+        - `50`:
+          - `mean_ticks`: 0.01987566607460035
+          - `median_ticks`: 0.015000000000000568
+          - `share_positive`: 0.6699822380106571
+      - `n`: 2815
+      - `ok`: true
+    - `n_execs`: 6415
+    - `nonmovers`:
+      - `instant_mean_ticks`: 0.0
+      - `kernel`:
+        - `1`:
+          - `mean_ticks`: 0.0003986111111111275
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.14277777777777778
+        - `20`:
+          - `mean_ticks`: 0.011156944444444403
+          - `median_ticks`: 0.009999999999990905
+          - `share_positive`: 0.6247222222222222
+        - `200`:
+          - `mean_ticks`: 0.045699999999999935
+          - `median_ticks`: 0.05499999999999261
+          - `share_positive`: 0.6575
+        - `5`:
+          - `mean_ticks`: 0.0024069444444443987
+          - `median_ticks`: 0.0
+          - `share_positive`: 0.3836111111111111
+        - `50`:
+          - `mean_ticks`: 0.021490277777777813
+          - `median_ticks`: 0.01999999999999602
+          - `share_positive`: 0.7047222222222222
+      - `n`: 3600
+      - `ok`: true
+    - `ok`: true
+- `ticker`: AMZN
+
+### `receipts/price_improvement_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/price_improvement_amzn.json | 870ef7c83529dc34f22ea1a7555abbbbed92f84d6d498096ae6159a4b4ef93f1 | 566e4dbccbf136950e650255c59d7b917dd11475f58425a63b241ceda533022e | not_checked | 0e8582ec5a1dcf8935c096d1902de62f91309f4d | absent | unspecified | absent | true | absent |
+
+- `claim`: hidden_fill_price_improvement_measured
+- `data_label`: REAL
+- `divergences`:
+  - sim_has_no_hidden_mechanism_to_price_improve
+- `git_revision`: 0e8582ec5a1dcf8935c096d1902de62f91309f4d
+- `interpretation`: Positive improvement = hidden fills execute inside the spread, worth the quoted spread minus realized slippage; zero = they print at the touch (dark liquidity doesn't improve price, just adds size).
+- `kind`: price_improvement
+- `real`:
+  - `at_touch_share`: 0.0
+  - `improved_share`: 1.0
+  - `mean_improvement_ticks`: 2.7674
+  - `median_improvement_ticks`: 1.0
+  - `n_hidden`: 2445
+  - `n_priced`: 2444
+  - `p90_improvement_ticks`: 6.0
+  - `worse_share`: 0.0
+- `receipt_sha256`: 566e4dbccbf136950e650255c59d7b917dd11475f58425a63b241ceda533022e
+- `research_only`: true
+- `schema`: price_improvement.v1
+- `ticker`: AMZN
+
+### `receipts/propagator_real_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/propagator_real_amzn.json | ed38bd1fbc1fdfe5c3ba19e6fff8a273e041af7d5adcfcb646b7993474cedce0 | 17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98 | not_checked | 348b39b2b126b875d514ce5297d980ed63888ead | absent | unspecified | absent | true | absent |
+
+- `claim`: propagator_measured_on_real_tape_vs_sim_arms
+- `data_label`: MIXED
+- `divergences`:
+  - iid_lag1_response_off
+  - regime_lag1_response_off
+  - split_lag1_response_off
+- `estimator`: R(l) = E[sign_i * (mid_{i+l} - mid_i)] over book-event index; tick units
+- `git_revision`: 348b39b2b126b875d514ce5297d980ed63888ead
+- `interpretation`: Immediate response R(1) is the effective spread-paid-per-trade; the log-log slope marks whether impact accumulates (positive) or is absorbed (negative) over the horizon. Sim arms share the estimator, so gaps isolate the flow mechanism, not the measurement.
+- `kind`: propagator_real
+- `lags_events`:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+- `receipt_sha256`: 17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98
+- `research_only`: true
+- `schema`: propagator_real.v1
+- `table`:
+  - `ratio_real_over_iid@1`: -40.4418
+  - `ratio_real_over_split@1`: 3.7704
+  - `real`:
+    - `fit_log_intercept`: -1.2875872062613942
+    - `loglog_exponent`: -0.5528611870175507
+    - `n_events`: 267303
+    - `n_trades`: 8974
+    - `response_ticks`:
+      - `1`: 0.24532
+      - `128`: 3.978006
+      - `16`: 1.327463
+      - `2`: 0.408235
+      - `256`: 5.183774
+      - `32`: 2.051455
+      - `4`: 0.606809
+      - `64`: 2.927233
+      - `8`: 0.910175
+  - `sim_arms`:
+    - `iid`:
+      - `fit_log_intercept`: -22.54082943207911
+      - `loglog_exponent`: -3.6568033785895304
+      - `n_events`: 19927
+      - `n_trades`: 3297
+      - `response_ticks`:
+        - `1`: -0.006066
+        - `128`: 0.016952
+        - `16`: -0.016237
+        - `2`: -0.015469
+        - `256`: 0.072551
+        - `32`: -0.007438
+        - `4`: -0.011677
+        - `64`: 0.000456
+        - `8`: -0.017137
+    - `regime`:
+      - `fit_log_intercept`: null
+      - `loglog_exponent`: null
+      - `n_events`: 19410
+      - `n_trades`: 3515
+      - `response_ticks`:
+        - `1`: 0.0
+        - `128`: -0.04884
+        - `16`: -0.069069
+        - `2`: -0.031873
+        - `256`: -0.104802
+        - `32`: -0.132592
+        - `4`: -0.046826
+        - `64`: -0.135286
+        - `8`: -0.05467
+    - `split`:
+      - `fit_log_intercept`: -2.2525025454241305
+      - `loglog_exponent`: -0.8197297583374065
+      - `n_events`: 14734
+      - `n_trades`: 3289
+      - `response_ticks`:
+        - `1`: 0.065065
+        - `128`: 4.639613
+        - `16`: 1.404784
+        - `2`: 0.171481
+        - `256`: 6.663833
+        - `32`: 2.493744
+        - `4`: 0.372415
+        - `64`: 3.517421
+        - `8`: 0.758138
+- `ticker`: AMZN
+
+### `receipts/quote_place_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/quote_place_amzn.json | 493540278637dde9c9500d180d3651a9a34efa279eda7278da2a6655f5e1d4df | dac1c8c76b0111c53e8f706620af665933db8abfacab84b212a1f704324f254f | not_checked | 0a8f128a77ebca91e0842281e61ea15d1855ae10 | absent | unspecified | absent | true | absent |
+
+- `claim`: placement_distance_distribution_measured
+- `data_label`: MIXED
+- `git_revision`: 0a8f128a77ebca91e0842281e61ea15d1855ae10
+- `interpretation`: Real submissions cluster at the touch and inside the spread (queue-priority competition) with a heavy deep tail; the sim places uniformly over its band — a structural gap flagged rather than hidden.
+- `kind`: quote_place
+- `real`:
+  - `dist_hist_ticks`:
+    - `-1..0`: 14241
+    - `-2..-1`: 6326
+    - `-5..-2`: 4713
+    - `0..1`: 6681
+    - `1..2`: 7182
+    - `13..21`: 10859
+    - `2..3`: 4858
+    - `21..34`: 1263
+    - `3..5`: 11329
+    - `34..55`: 236
+    - `5..8`: 20625
+    - `8..13`: 41035
+    - `gt55`: 41
+    - `le-5`: 2565
+  - `median_dist_ticks`: 7.0
+  - `n_submissions`: 131954
+  - `share_at_touch`: 0.1079
+  - `share_behind_touch`: 0.789
+  - `share_improves_spread`: 0.1031
+- `receipt_sha256`: dac1c8c76b0111c53e8f706620af665933db8abfacab84b212a1f704324f254f
+- `research_only`: true
+- `schema`: quote_place.v1
+- `sim_arms`:
+  - `iid`:
+    - `dist_hist_ticks`:
+      - `-1..0`: 1979
+      - `-2..-1`: 1027
+      - `-5..-2`: 616
+      - `0..1`: 1967
+      - `1..2`: 1869
+      - `13..21`: 0
+      - `2..3`: 1573
+      - `21..34`: 0
+      - `3..5`: 965
+      - `34..55`: 0
+      - `5..8`: 0
+      - `8..13`: 0
+      - `gt55`: 0
+      - `le-5`: 13
+    - `median_dist_ticks`: 1.0
+    - `n_submissions`: 10009
+    - `share_at_touch`: 0.1977
+    - `share_behind_touch`: 0.6368
+    - `share_improves_spread`: 0.1655
+  - `regime`:
+    - `dist_hist_ticks`:
+      - `-1..0`: 1964
+      - `-2..-1`: 1088
+      - `-5..-2`: 675
+      - `0..1`: 1902
+      - `1..2`: 1792
+      - `13..21`: 0
+      - `2..3`: 1466
+      - `21..34`: 0
+      - `3..5`: 914
+      - `34..55`: 0
+      - `5..8`: 0
+      - `8..13`: 0
+      - `gt55`: 0
+      - `le-5`: 38
+    - `median_dist_ticks`: 1.0
+    - `n_submissions`: 9839
+    - `share_at_touch`: 0.1996
+    - `share_behind_touch`: 0.6173
+    - `share_improves_spread`: 0.183
+  - `split`:
+    - `dist_hist_ticks`:
+      - `-1..0`: 1630
+      - `-2..-1`: 1003
+      - `-5..-2`: 896
+      - `0..1`: 1538
+      - `1..2`: 1328
+      - `13..21`: 0
+      - `2..3`: 1104
+      - `21..34`: 0
+      - `3..5`: 571
+      - `34..55`: 0
+      - `5..8`: 0
+      - `8..13`: 0
+      - `gt55`: 0
+      - `le-5`: 45
+    - `median_dist_ticks`: 1.0
+    - `n_submissions`: 8115
+    - `share_at_touch`: 0.2009
+    - `share_behind_touch`: 0.5596
+    - `share_improves_spread`: 0.2396
+- `ticker`: AMZN
 
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
@@ -25167,6 +28821,163 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - Historical availability timestamps were reconstructed.
 - `receipt_sha256`: 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7
 
+### `receipts/rough_vol.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/rough_vol.json | a7a0dc640fe0c45b08e3a686dbc341f24e2ede115bd0777ce8d7ceb946bea648 | 5d4a09a1e284db4546ab5d98f7fa5b4969b9e70399d8cc00c3886685d557837d | not_checked | 17c1e4d59806b28f67f7051bd80bf47edf3bed9d | absent | unspecified | absent | true | false |
+
+- `claim`:
+  - `atm_skew_h10`:
+    - 6.1971581078247215
+    - 4.061120307712935
+    - 3.2050002627335115
+    - 2.145389256877615
+  - `atm_skew_h45`:
+    - 2.881724424217056
+    - 1.8301252338910403
+    - 1.913310838861957
+    - 1.5043246702998938
+  - `maturities`:
+    - 0.019230769230769232
+    - 0.041666666666666664
+    - 0.08333333333333333
+    - 0.25
+  - `mean_terminal`: 0.9992897205445291
+  - `n_passed`: 7
+  - `n_probes`: 7
+  - `ok`: true
+  - `results`:
+    - `all_fits_finite`: true
+    - `flat_h_power_law`: true
+    - `gbm_limit_flat`: true
+    - `martingale`: true
+    - `skew_power_law`: true
+    - `smile_smirking`: true
+    - `volterra_variance_shape`: true
+  - `skew_exponent`:
+    - `measured`: -0.4051344082506594
+    - `theoretical`: -0.4
+  - `skew_exponent_h45`:
+    - `measured`: -0.22521051066217565
+    - `theoretical`: -0.04999999999999999
+  - `volterra_variance_ratio`:
+    - `mid_max`: 0.8673212284613591
+    - `mid_min`: 0.7864566293678917
+- `data_label`: SYNTHETIC
+- `git_revision`: 17c1e4d59806b28f67f7051bd80bf47edf3bed9d
+- `interpretation`: Rough Bergomi under the BLP hybrid scheme (kappa=1): the Volterra driver's variance shape is self-checked against Volterra theory, the H->0.5 limit flattens the smile, and the short-maturity ATM skew exponent is measured against the Fukasawa T^(H-1/2) law. SYNTHETIC model-correctness evidence; no market claims.
+- `kind`: rough_vol
+- `params`:
+  - `n_paths`: 12000
+  - `n_steps`: 100
+  - `seed`: 91
+- `receipt_sha256`: 5d4a09a1e284db4546ab5d98f7fa5b4969b9e70399d8cc00c3886685d557837d
+- `research_only`: true
+- `schema`: rough_vol.v1
+
+### `receipts/round_lot_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/round_lot_amzn.json | 84c474210f467bd43f8285361cb93bc840b0a6821185a64d7fad0d0036198d6c | 86a822594a3e07b62a370a550784abb3b8deebf49476879c6f9edbac837f756b | not_checked | a94698943dcd1477c463633f528f0f2d3fe3c79c | absent | unspecified | absent | true | absent |
+
+- `claim`: round_lot_size_distribution_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_round_lot_share_gap_+0.37
+  - regime_round_lot_share_gap_+0.37
+  - split_round_lot_share_gap_+0.37
+- `git_revision`: a94698943dcd1477c463633f528f0f2d3fe3c79c
+- `interpretation`: Real tape lumps at round lots; a smooth size generator understates round_share. Gap > 0.15 flags the divergence.
+- `kind`: round_lot
+- `real`:
+  - `mean_size`: 68.34
+  - `median_size`: 60.0
+  - `mode`: execution_sizes
+  - `multiple_of_100_share`: 0.3634
+  - `n_trades`: 8974
+  - `p95_size`: 183.0
+  - `round_lot_share`: 0.3741
+  - `size_hist`:
+    - `0-25`: 3513
+    - `100-150`: 3008
+    - `1000-2500`: 9
+    - `150-200`: 74
+    - `200-300`: 237
+    - `25-50`: 688
+    - `2500-inf`: 1
+    - `300-400`: 94
+    - `400-500`: 35
+    - `50-100`: 1267
+    - `500-750`: 36
+    - `750-1000`: 12
+- `receipt_sha256`: 86a822594a3e07b62a370a550784abb3b8deebf49476879c6f9edbac837f756b
+- `research_only`: true
+- `schema`: round_lot.v1
+- `sim_arms`:
+  - `iid`:
+    - `mean_size`: 1.0
+    - `median_size`: 1.0
+    - `multiple_of_100_share`: 0.0
+    - `n_trades`: 3319
+    - `p95_size`: 1.0
+    - `round_lot_share`: 0.0
+    - `size_hist`:
+      - `0-25`: 3319
+      - `100-150`: 0
+      - `1000-2500`: 0
+      - `150-200`: 0
+      - `200-300`: 0
+      - `25-50`: 0
+      - `2500-inf`: 0
+      - `300-400`: 0
+      - `400-500`: 0
+      - `50-100`: 0
+      - `500-750`: 0
+      - `750-1000`: 0
+  - `regime`:
+    - `mean_size`: 1.0
+    - `median_size`: 1.0
+    - `multiple_of_100_share`: 0.0
+    - `n_trades`: 3723
+    - `p95_size`: 1.0
+    - `round_lot_share`: 0.0
+    - `size_hist`:
+      - `0-25`: 3723
+      - `100-150`: 0
+      - `1000-2500`: 0
+      - `150-200`: 0
+      - `200-300`: 0
+      - `25-50`: 0
+      - `2500-inf`: 0
+      - `300-400`: 0
+      - `400-500`: 0
+      - `50-100`: 0
+      - `500-750`: 0
+      - `750-1000`: 0
+  - `split`:
+    - `mean_size`: 1.0
+    - `median_size`: 1.0
+    - `multiple_of_100_share`: 0.0
+    - `n_trades`: 4244
+    - `p95_size`: 1.0
+    - `round_lot_share`: 0.0
+    - `size_hist`:
+      - `0-25`: 4244
+      - `100-150`: 0
+      - `1000-2500`: 0
+      - `150-200`: 0
+      - `200-300`: 0
+      - `25-50`: 0
+      - `2500-inf`: 0
+      - `300-400`: 0
+      - `400-500`: 0
+      - `50-100`: 0
+      - `500-750`: 0
+      - `750-1000`: 0
+- `ticker`: AMZN
+
 ### `receipts/serial_watch_140b073ea589b0c7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -25887,6 +29698,1247 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `receipt_sha256`: dbd21a6c99c81e0060ba02a19a788dfefadded2f612faccc5414daf9721c4916
 - `research_only`: true
 
+### `receipts/sign_autocorr_real_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/sign_autocorr_real_amzn.json | d2b4dce996ab14b7e2e16112862b073e87294c06fe07b755942230c65ed65438 | 2f8af3a9183602565838580c444635cca457b23795483509b783cc87e2b11cc9 | not_checked | b36b2555378ba561adeeb2bd28c5a5dca2e11bca | absent | unspecified | absent | true | absent |
+
+- `claim`: power_law_sign_decay_measured_real_vs_sim
+- `data_label`: MIXED
+- `divergences`:
+  - iid_exponent_gap_0.90
+  - regime_exponent_gap_0.31
+  - split_exponent_gap_0.31
+- `git_revision`: b36b2555378ba561adeeb2bd28c5a5dca2e11bca
+- `interpretation`: Lillo-Farmer: real sign autocorr decays as k^-gamma, gamma ~ 0.5. Splitting produces the mechanism; iid gives exponent ~ inf/nan (curve dead past lag 2).
+- `kind`: sign_autocorr_real
+- `lags`:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+  - 1024
+- `real`:
+  - `curve`:
+    - `lag1`: 0.72131
+    - `lag1024`: -0.01627
+    - `lag128`: 0.03343
+    - `lag16`: 0.1433
+    - `lag2`: 0.57678
+    - `lag256`: -0.00334
+    - `lag32`: 0.08915
+    - `lag4`: 0.39715
+    - `lag512`: -0.00178
+    - `lag64`: 0.07689
+    - `lag8`: 0.25206
+  - `exponent`: 0.6765
+  - `fit_intercept`: 0.0057
+  - `n_execs`: 8974
+  - `n_positive_lags`: 8
+- `receipt_sha256`: 2f8af3a9183602565838580c444635cca457b23795483509b783cc87e2b11cc9
+- `research_only`: true
+- `schema`: sign_autocorr_real.v1
+- `sim_arms`:
+  - `iid`:
+    - `curve`:
+      - `lag1`: -0.00422
+      - `lag1024`: -0.01838
+      - `lag128`: 0.01416
+      - `lag16`: 0.00512
+      - `lag2`: -0.01476
+      - `lag256`: 0.01296
+      - `lag32`: 0.00331
+      - `lag4`: 0.00392
+      - `lag512`: 0.01235
+      - `lag64`: 0.0244
+      - `lag8`: 0.01296
+    - `exponent`: -0.2248
+    - `fit_intercept`: -5.5548
+    - `n_execs`: 3319
+    - `n_positive_lags`: 8
+  - `regime`:
+    - `curve`:
+      - `lag1`: -0.00967
+      - `lag1024`: 0.01477
+      - `lag128`: -0.00833
+      - `lag16`: -0.0051
+      - `lag2`: 0.01424
+      - `lag256`: 0.00457
+      - `lag32`: 0.00188
+      - `lag4`: 0.01101
+      - `lag512`: -0.0094
+      - `lag64`: 0.00027
+      - `lag8`: -0.00403
+    - `exponent`: 0.3666
+    - `fit_intercept`: -4.7651
+    - `n_execs`: 3723
+    - `n_positive_lags`: 6
+  - `split`:
+    - `curve`:
+      - `lag1`: 0.61616
+      - `lag1024`: -0.01084
+      - `lag128`: 0.05844
+      - `lag16`: 0.28558
+      - `lag2`: 0.57823
+      - `lag256`: 0.00518
+      - `lag32`: 0.19086
+      - `lag4`: 0.55278
+      - `lag512`: -0.05231
+      - `lag64`: 0.09189
+      - `lag8`: 0.43638
+    - `exponent`: 0.9874
+    - `fit_intercept`: 1.3048
+    - `n_execs`: 4244
+    - `n_positive_lags`: 9
+- `ticker`: AMZN
+
+### `receipts/sign_predict_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/sign_predict_amzn.json | fbbe98aec24936c1b3a0dff0c922a660fdb2e2419e402bf35ba30f923a7cf13f | c679c7e3a66d122e8dfb422f6dc21f682e00d96e0ee34c06fb9ff73629de1930 | not_checked | 42e2bf09d57d91a18dff4a0a0cf819987be2f9c2 | absent | unspecified | absent | true | absent |
+
+- `claim`: sign_continuation_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_p5_0.5062_vs_0.8933
+  - regime_p5_0.4786_vs_0.8933
+- `git_revision`: 42e2bf09d57d91a18dff4a0a0cf819987be2f9c2
+- `interpretation`: p_continue(k)=0.5 at all k under iid flow; the real curve's height and k-profile trace metaorder slicing depth.
+- `k_max`: 15
+- `kind`: sign_predict
+- `real`:
+  - `continuation`:
+    - `1`:
+      - `n`: 11418
+      - `p_continue`: 0.8593
+    - `10`:
+      - `n`: 3986
+      - `p_continue`: 0.9102
+    - `11`:
+      - `n`: 3628
+      - `p_continue`: 0.9123
+    - `12`:
+      - `n`: 3310
+      - `p_continue`: 0.9157
+    - `13`:
+      - `n`: 3031
+      - `p_continue`: 0.9192
+    - `14`:
+      - `n`: 2786
+      - `p_continue`: 0.9218
+    - `15`:
+      - `n`: 2568
+      - `p_continue`: 0.9241
+    - `2`:
+      - `n`: 9810
+      - `p_continue`: 0.8769
+    - `3`:
+      - `n`: 8601
+      - `p_continue`: 0.882
+    - `4`:
+      - `n`: 7586
+      - `p_continue`: 0.8883
+    - `5`:
+      - `n`: 6739
+      - `p_continue`: 0.8933
+    - `6`:
+      - `n`: 6020
+      - `p_continue`: 0.8967
+    - `7`:
+      - `n`: 5398
+      - `p_continue`: 0.9003
+    - `8`:
+      - `n`: 4860
+      - `p_continue`: 0.9039
+    - `9`:
+      - `n`: 4393
+      - `p_continue`: 0.9074
+  - `n_signs`: 11419
+- `receipt_sha256`: c679c7e3a66d122e8dfb422f6dc21f682e00d96e0ee34c06fb9ff73629de1930
+- `research_only`: true
+- `schema`: sign_predict.v1
+- `sim_arms`:
+  - `iid`:
+    - `continuation`:
+      - `1`:
+        - `n`: 5044
+        - `p_continue`: 0.5028
+      - `10`:
+        - `n`: 19
+        - `p_continue`: 0.6842
+      - `11`:
+        - `n`: 13
+        - `p_continue`: 0.6923
+      - `2`:
+        - `n`: 2536
+        - `p_continue`: 0.4957
+      - `3`:
+        - `n`: 1257
+        - `p_continue`: 0.5052
+      - `4`:
+        - `n`: 635
+        - `p_continue`: 0.5071
+      - `5`:
+        - `n`: 322
+        - `p_continue`: 0.5062
+      - `6`:
+        - `n`: 163
+        - `p_continue`: 0.5583
+      - `7`:
+        - `n`: 91
+        - `p_continue`: 0.5824
+      - `8`:
+        - `n`: 53
+        - `p_continue`: 0.566
+      - `9`:
+        - `n`: 30
+        - `p_continue`: 0.6333
+    - `n_signs`: 5045
+  - `regime`:
+    - `continuation`:
+      - `1`:
+        - `n`: 5691
+        - `p_continue`: 0.5003
+      - `2`:
+        - `n`: 2847
+        - `p_continue`: 0.5072
+      - `3`:
+        - `n`: 1444
+        - `p_continue`: 0.4938
+      - `4`:
+        - `n`: 713
+        - `p_continue`: 0.4923
+      - `5`:
+        - `n`: 351
+        - `p_continue`: 0.4786
+      - `6`:
+        - `n`: 168
+        - `p_continue`: 0.4286
+      - `7`:
+        - `n`: 72
+        - `p_continue`: 0.4167
+      - `8`:
+        - `n`: 30
+        - `p_continue`: 0.4
+      - `9`:
+        - `n`: 12
+        - `p_continue`: 0.25
+    - `n_signs`: 5692
+  - `split`:
+    - `continuation`:
+      - `1`:
+        - `n`: 6414
+        - `p_continue`: 0.8195
+      - `10`:
+        - `n`: 3033
+        - `p_continue`: 0.9453
+      - `11`:
+        - `n`: 2867
+        - `p_continue`: 0.9466
+      - `12`:
+        - `n`: 2714
+        - `p_continue`: 0.9455
+      - `13`:
+        - `n`: 2566
+        - `p_continue`: 0.9478
+      - `14`:
+        - `n`: 2432
+        - `p_continue`: 0.9527
+      - `15`:
+        - `n`: 2317
+        - `p_continue`: 0.9555
+      - `2`:
+        - `n`: 5255
+        - `p_continue`: 0.8782
+      - `3`:
+        - `n`: 4614
+        - `p_continue`: 0.92
+      - `4`:
+        - `n`: 4244
+        - `p_continue`: 0.9376
+      - `5`:
+        - `n`: 3979
+        - `p_continue`: 0.9452
+      - `6`:
+        - `n`: 3761
+        - `p_continue`: 0.9495
+      - `7`:
+        - `n`: 3571
+        - `p_continue`: 0.9479
+      - `8`:
+        - `n`: 3385
+        - `p_continue`: 0.9471
+      - `9`:
+        - `n`: 3206
+        - `p_continue`: 0.946
+    - `n_signs`: 6415
+- `ticker`: AMZN
+
+### `receipts/sim_real_ledger_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/sim_real_ledger_amzn.json | 814b4853c24bd668b2c2fdb66f6fd4eb8b9854fcc335edc0ea22dbc6d3271622 | 629e96e83a89ef356b3942b5a1fc60ef4089856fd044fef35e93ba2225ad0ecc | not_checked | 17c1e4d59806b28f67f7051bd80bf47edf3bed9d | absent | unspecified | absent | true | absent |
+
+- `data_label`: MIXED
+- `divergences`:
+  - sim_underestimates_sign_memory
+- `git_revision`: 17c1e4d59806b28f67f7051bd80bf47edf3bed9d
+- `interpretation`: Same event-granular measurements on ZI-LOB sim arms and the real LOBSTER tape. Ratios near 1 mean the sim reproduces the stylized fact; systematic gaps are named in `divergences` — calibration targets for the sim, not defects of the measurement
+- `kind`: sim_real_ledger
+- `real`:
+  - `depth_l1_5_mean`:
+    - 357.78205128205127
+    - 243.0430769230769
+    - 226.4046153846154
+    - 273.4384615384615
+    - 311.12666666666667
+  - `hump_level`: 1.0
+  - `mid_move_std`: 0.7346732017169699
+  - `mo_fraction`: 0.0332682105825088
+  - `n_events`: 269747
+  - `n_trades`: 8974
+  - `sign_lag1`: 0.7213059950969467
+  - `spread_ticks_median`: 13.0
+  - `spread_ticks_p95`: 22.0
+  - `units`: ticks
+- `receipt_sha256`: 629e96e83a89ef356b3942b5a1fc60ef4089856fd044fef35e93ba2225ad0ecc
+- `research_only`: true
+- `schema`: sim_real_ledger.v1
+- `sim_calm`:
+  - `depth_l1_5_mean`:
+    - 0.4672
+    - 0.39535
+    - 0.2556
+    - 0.08775
+    - 0.1126
+  - `hump_level`: 1.0
+  - `mid_move_std`: 0.3495203755732281
+  - `mo_fraction`: 0.16645
+  - `n_events`: 20000
+  - `n_trades`: 3319
+  - `sign_lag1`: -0.004218137993371497
+  - `spread_ticks_median`: 1.999999999999602
+  - `spread_ticks_p95`: 3.999999999999204
+  - `units`: ticks
+- `sim_regime`:
+  - `depth_l1_5_mean`:
+    - 0.2121
+    - 0.3136
+    - 0.3332
+    - 0.36365
+    - 0.3086
+  - `hump_level`: 4.0
+  - `mid_move_std`: 0.4104383455064869
+  - `mo_fraction`: 0.19915
+  - `n_events`: 20000
+  - `n_trades`: 3847
+  - `sign_lag1`: 0.0509487912659215
+  - `spread_ticks_median`: 1.999999999999602
+  - `spread_ticks_p95`: 4.000000000000625
+  - `units`: ticks
+- `table`:
+  - `mid_move_std`:
+    - `calm_over_real`: 0.4757494553447446
+    - `real`: 0.7346732017169699
+    - `regime_over_real`: 0.5586679145874259
+    - `sim_calm`: 0.3495203755732281
+    - `sim_regime`: 0.4104383455064869
+  - `mo_fraction`:
+    - `calm_over_real`: 5.00327481056385
+    - `real`: 0.0332682105825088
+    - `regime_over_real`: 5.986195124804992
+    - `sim_calm`: 0.16645
+    - `sim_regime`: 0.19915
+  - `sign_lag1`:
+    - `calm_over_real`: -0.005847917557935396
+    - `real`: 0.7213059950969467
+    - `regime_over_real`: 0.07063408818482614
+    - `sim_calm`: -0.004218137993371497
+    - `sim_regime`: 0.0509487912659215
+  - `spread_ticks_median`:
+    - `calm_over_real`: 0.15384615384612324
+    - `real`: 13.0
+    - `regime_over_real`: 0.15384615384612324
+    - `sim_calm`: 1.999999999999602
+    - `sim_regime`: 1.999999999999602
+- `ticker`: AMZN
+
+### `receipts/split_flow_bench.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/split_flow_bench.json | 37c6fe8de4fab801aa4dbb5eff23c326ecbf8d471e869d500be9451d9fb6e73f | a7ca0a91a74d2bf2ff40ce9d5e89261287499fe1b5c3e78204bfe21541df6f52 | not_checked | 1f9753f254f02cedfa9a0e556573b7da72a05676 | absent | unspecified | absent | true | absent |
+
+- `arms`:
+  - [0]
+    - `autocorr`:
+      - `lag1`: -0.004218137993371497
+      - `lag16`: 0.005122024706236818
+      - `lag2`: -0.014763482976800241
+      - `lag32`: 0.0033142512805061767
+      - `lag4`: 0.00391684242241639
+      - `lag64`: 0.024404941247363664
+      - `lag8`: 0.012955709551069599
+    - `mo_fraction`: 0.16595
+    - `n_trades`: 3319
+    - `name`: iid
+  - [1]
+    - `autocorr`:
+      - `lag1`: 0.0509487912659215
+      - `lag16`: 0.014296854691967767
+      - `lag2`: 0.0501689628281778
+      - `lag32`: -0.004938913439043411
+      - `lag4`: 0.0792825578372758
+      - `lag64`: 0.0356121653236288
+      - `lag8`: 0.0501689628281778
+    - `mo_fraction`: 0.19235
+    - `n_trades`: 3847
+    - `name`: regime
+  - [2]
+    - `autocorr`:
+      - `lag1`: 0.6625
+      - `lag16`: 0.20657894736842106
+      - `lag2`: 0.6399122807017544
+      - `lag32`: 0.09429824561403509
+      - `lag4`: 0.5548245614035088
+      - `lag64`: 0.05570175438596491
+      - `lag8`: 0.3907894736842105
+    - `mo_fraction`: 0.228
+    - `n_trades`: 4560
+    - `name`: split
+- `claims`:
+  - `split_produces_persistence`: true
+- `data_label`: SYNTHETIC
+- `git_revision`: 1f9753f254f02cedfa9a0e556573b7da72a05676
+- `horizon`: 20000
+- `interpretation`: Metaorder splitting (same-sign child runs with heavy-tailed parent size) is the mechanism that lifts sign autocorrelation toward the real-tape 0.72; Markov intensity modulation alone cannot (it only tilts p_buy slowly). The split arm's parameters were chosen to match the real-tape lag-1 — this is a calibration, not an independent prediction
+- `kind`: split_flow_bench
+- `lags`:
+  - 1
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+- `receipt_sha256`: a7ca0a91a74d2bf2ff40ce9d5e89261287499fe1b5c3e78204bfe21541df6f52
+- `reference_real_tape_sign_lag1`: 0.721
+- `research_only`: true
+- `schema`: split_flow.v1
+
+### `receipts/spread_dynamics_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/spread_dynamics_amzn.json | 13bb86c5bbf5f826279c0af371790259cfdb202c8bf85c4f09155199cdd3bdce | f69e67a4a30362cf19c2b67b685a216ca848af31c1d3bd7834aa61b2e7a1e400 | not_checked | 16b6069076c676f36ee7395d0a32fa6dcc5d1e0e | absent | unspecified | absent | true | absent |
+
+- `claim`: spread_occupancy_distribution_measured
+- `data_label`: MIXED
+- `divergences`:
+  - mean_spread_ratio_7.25
+- `git_revision`: 16b6069076c676f36ee7395d0a32fa6dcc5d1e0e
+- `interpretation`: The spread distribution is the liquidity regime surface: occupancy concentrates at 1-2 ticks in tight names; a fat right tail marks a wide-book stock like 2012-era AMZN.
+- `kind`: spread_dynamics
+- `real`:
+  - `mean_spread_ticks`: 13.086
+  - `median_spread_ticks`: 13.0
+  - `n_obs`: 269747
+  - `p90_spread_ticks`: 19.0
+  - `spread_occupancy`:
+    - `1-1`: 0.006
+    - `14-21`: 0.395
+    - `2-2`: 0.0079
+    - `22-34`: 0.0439
+    - `3-3`: 0.0126
+    - `35-inf`: 0.0069
+    - `4-5`: 0.0453
+    - `6-8`: 0.1244
+    - `9-13`: 0.3581
+  - `tight_share_le2`: 0.0138
+- `receipt_sha256`: f69e67a4a30362cf19c2b67b685a216ca848af31c1d3bd7834aa61b2e7a1e400
+- `research_only`: true
+- `schema`: spread_dynamics.v1
+- `sim`:
+  - `mean_spread_ticks`: 1.806
+  - `median_spread_ticks`: 2.0
+  - `n_obs`: 19927
+  - `p90_spread_ticks`: 3.0
+  - `spread_occupancy`:
+    - `1-1`: 0.4907
+    - `14-21`: 0.0
+    - `2-2`: 0.3007
+    - `22-34`: 0.0
+    - `3-3`: 0.1428
+    - `35-inf`: 0.0
+    - `4-5`: 0.0624
+    - `6-8`: 0.003
+    - `9-13`: 0.0004
+  - `tight_share_le2`: 0.7915
+- `ticker`: AMZN
+
+### `receipts/spread_response_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/spread_response_amzn.json | ab2a078fc13c3bebf659ea962fb21ab18e826508f0abad2fc83e1210ba3c8463 | 8f491ea43b843d681928d489ecae215da9a5a54e962c5c8fed987673a95a10ca | not_checked | 0895c831a7ddc29a714a451dd4b15357c09f18c7 | absent | unspecified | absent | true | absent |
+
+- `claim`: spread_response_kernel_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid@0.01s_0.0_vs_100.0
+  - iid@0.05s_0.0_vs_100.0
+  - iid@0.1s_0.0_vs_200.0
+  - iid@0.5s_0.0_vs_200.0
+  - iid@1.0s_0.0_vs_200.0
+  - iid@5.0s_0.0_vs_200.0
+  - regime@0.01s_0.0_vs_100.0
+  - regime@0.05s_0.0_vs_100.0
+  - regime@0.1s_0.0_vs_200.0
+  - regime@0.5s_0.0_vs_200.0
+  - regime@1.0s_0.0_vs_200.0
+  - regime@5.0s_0.0_vs_200.0
+  - split@0.01s_0.0_vs_100.0
+  - split@0.05s_0.0_vs_100.0
+  - split@0.1s_0.0_vs_200.0
+  - split@0.5s_0.0_vs_200.0
+  - split@1.0s_0.0_vs_200.0
+  - split@5.0s_0.0_vs_200.0
+- `git_revision`: 0895c831a7ddc29a714a451dd4b15357c09f18c7
+- `horizons_s`:
+  - 0.01
+  - 0.05
+  - 0.1
+  - 0.5
+  - 1.0
+  - 5.0
+- `interpretation`: kernel[h] = median (spread@t+h − spread@t) in ticks around executions, per aggressor direction. Positive-and-decaying = the book defends after impact; near-zero = fills barely move the quote state. share_wider = fraction of execs whose spread is wider at horizon h.
+- `kind`: spread_response
+- `real`:
+  - `baseline_spread`: 1300.0
+  - `by_dir`:
+    - `buy_initiated`:
+      - `kernel`:
+        - `0.01s`:
+          - `mean_delta`: 223.91846921797006
+          - `median_delta`: 100.0
+          - `share_wider`: 0.6545341098169717
+        - `0.05s`:
+          - `mean_delta`: 231.21880199667223
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6641014975041597
+        - `0.1s`:
+          - `mean_delta`: 238.040765391015
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6638935108153078
+        - `0.5s`:
+          - `mean_delta`: 177.99500831946756
+          - `median_delta`: 200.0
+          - `share_wider`: 0.639351081530782
+        - `1s`:
+          - `mean_delta`: 206.4475873544093
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6512063227953411
+        - `5s`:
+          - `mean_delta`: 173.5648918469218
+          - `median_delta`: 200.0
+          - `share_wider`: 0.5998336106489185
+      - `n`: 4808
+      - `ok`: true
+    - `pooled`:
+      - `kernel`:
+        - `0.01s`:
+          - `mean_delta`: 232.78359705816803
+          - `median_delta`: 100.0
+          - `share_wider`: 0.6151103186984622
+        - `0.05s`:
+          - `mean_delta`: 245.3198127925117
+          - `median_delta`: 100.0
+          - `share_wider`: 0.6308223757521729
+        - `0.1s`:
+          - `mean_delta`: 253.1201248049922
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6375083574771563
+        - `0.5s`:
+          - `mean_delta`: 222.7546244706931
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6297080454646757
+        - `1s`:
+          - `mean_delta`: 237.86494316915534
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6378426565634054
+        - `5s`:
+          - `mean_delta`: 216.9935368843325
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6124359260084689
+      - `n`: 8974
+      - `ok`: true
+    - `sell_initiated`:
+      - `kernel`:
+        - `0.01s`:
+          - `mean_delta`: 243.014882381181
+          - `median_delta`: 100.0
+          - `share_wider`: 0.5696111377820451
+        - `0.05s`:
+          - `mean_delta`: 261.5938550168027
+          - `median_delta`: 100.0
+          - `share_wider`: 0.5924147863658186
+        - `0.1s`:
+          - `mean_delta`: 270.5232837253961
+          - `median_delta`: 100.0
+          - `share_wider`: 0.6070571291406625
+        - `0.5s`:
+          - `mean_delta`: 274.4119059049448
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6185789726356217
+        - `1s`:
+          - `mean_delta`: 274.1238598175708
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6224195871339414
+        - `5s`:
+          - `mean_delta`: 267.1147383581373
+          - `median_delta`: 200.0
+          - `share_wider`: 0.6269803168506961
+      - `n`: 4166
+      - `ok`: true
+  - `ok`: true
+- `receipt_sha256`: 8f491ea43b843d681928d489ecae215da9a5a54e962c5c8fed987673a95a10ca
+- `research_only`: true
+- `schema`: spread_response.v1
+- `sim_arms`:
+  - `iid`:
+    - `baseline_spread`: 2.0
+    - `by_dir`:
+      - `buy_initiated`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.15161290322580645
+            - `median_delta`: 0.0
+            - `share_wider`: 0.11290322580645161
+          - `0.05s`:
+            - `mean_delta`: -0.15604838709677418
+            - `median_delta`: 0.0
+            - `share_wider`: 0.11411290322580646
+          - `0.1s`:
+            - `mean_delta`: -0.16330645161290322
+            - `median_delta`: 0.0
+            - `share_wider`: 0.11491935483870967
+          - `0.5s`:
+            - `mean_delta`: -0.19233870967741937
+            - `median_delta`: 0.0
+            - `share_wider`: 0.13669354838709677
+          - `1s`:
+            - `mean_delta`: -0.24193548387096775
+            - `median_delta`: 0.0
+            - `share_wider`: 0.15403225806451612
+          - `5s`:
+            - `mean_delta`: -0.5173387096774194
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2
+        - `n`: 2480
+        - `ok`: true
+      - `pooled`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.1637264618434093
+            - `median_delta`: 0.0
+            - `share_wider`: 0.10327056491575817
+          - `0.05s`:
+            - `mean_delta`: -0.16669970267591674
+            - `median_delta`: 0.0
+            - `share_wider`: 0.10445986124876115
+          - `0.1s`:
+            - `mean_delta`: -0.17244796828543113
+            - `median_delta`: 0.0
+            - `share_wider`: 0.10644202180376611
+          - `0.5s`:
+            - `mean_delta`: -0.21129831516352823
+            - `median_delta`: 0.0
+            - `share_wider`: 0.12705649157581764
+          - `1s`:
+            - `mean_delta`: -0.24380574826560952
+            - `median_delta`: 0.0
+            - `share_wider`: 0.15004955401387512
+          - `5s`:
+            - `mean_delta`: -0.4622398414271556
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2091179385530228
+        - `n`: 5045
+        - `ok`: true
+      - `sell_initiated`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.17543859649122806
+            - `median_delta`: 0.0
+            - `share_wider`: 0.09395711500974659
+          - `0.05s`:
+            - `mean_delta`: -0.1769980506822612
+            - `median_delta`: 0.0
+            - `share_wider`: 0.09512670565302145
+          - `0.1s`:
+            - `mean_delta`: -0.18128654970760233
+            - `median_delta`: 0.0
+            - `share_wider`: 0.09824561403508772
+          - `0.5s`:
+            - `mean_delta`: -0.22962962962962963
+            - `median_delta`: 0.0
+            - `share_wider`: 0.11773879142300195
+          - `1s`:
+            - `mean_delta`: -0.24561403508771928
+            - `median_delta`: 0.0
+            - `share_wider`: 0.14619883040935672
+          - `5s`:
+            - `mean_delta`: -0.40896686159844053
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2179337231968811
+        - `n`: 2565
+        - `ok`: true
+    - `ok`: true
+  - `regime`:
+    - `baseline_spread`: 2.0
+    - `by_dir`:
+      - `buy_initiated`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.16305469556243551
+            - `median_delta`: 0.0
+            - `share_wider`: 0.1348469212246302
+          - `0.05s`:
+            - `mean_delta`: -0.16339869281045752
+            - `median_delta`: 0.0
+            - `share_wider`: 0.13863089095287237
+          - `0.1s`:
+            - `mean_delta`: -0.17337461300309598
+            - `median_delta`: 0.0
+            - `share_wider`: 0.13794289645682833
+          - `0.5s`:
+            - `mean_delta`: -0.21671826625386997
+            - `median_delta`: 0.0
+            - `share_wider`: 0.16408668730650156
+          - `1s`:
+            - `mean_delta`: -0.2714138286893705
+            - `median_delta`: 0.0
+            - `share_wider`: 0.17956656346749225
+          - `5s`:
+            - `mean_delta`: -0.41589267285861714
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2411420708634331
+        - `n`: 2907
+        - `ok`: true
+      - `pooled`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.17164441321152496
+            - `median_delta`: 0.0
+            - `share_wider`: 0.12666900913562895
+          - `0.05s`:
+            - `mean_delta`: -0.17550948699929725
+            - `median_delta`: 0.0
+            - `share_wider`: 0.12965565706254392
+          - `0.1s`:
+            - `mean_delta`: -0.18183415319747012
+            - `median_delta`: 0.0
+            - `share_wider`: 0.1314125087842586
+          - `0.5s`:
+            - `mean_delta`: -0.2364722417427969
+            - `median_delta`: 0.0
+            - `share_wider`: 0.15372452565003514
+          - `1s`:
+            - `mean_delta`: -0.28952916373858045
+            - `median_delta`: 0.0
+            - `share_wider`: 0.17164441321152496
+          - `5s`:
+            - `mean_delta`: -0.4425509486999297
+            - `median_delta`: 0.0
+            - `share_wider`: 0.23576950105411104
+        - `n`: 5692
+        - `ok`: true
+      - `sell_initiated`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.18061041292639138
+            - `median_delta`: 0.0
+            - `share_wider`: 0.11813285457809695
+          - `0.05s`:
+            - `mean_delta`: -0.1881508078994614
+            - `median_delta`: 0.0
+            - `share_wider`: 0.12028725314183124
+          - `0.1s`:
+            - `mean_delta`: -0.19066427289048474
+            - `median_delta`: 0.0
+            - `share_wider`: 0.12459605026929982
+          - `0.5s`:
+            - `mean_delta`: -0.2570915619389587
+            - `median_delta`: 0.0
+            - `share_wider`: 0.14290843806104128
+          - `1s`:
+            - `mean_delta`: -0.3084380610412926
+            - `median_delta`: 0.0
+            - `share_wider`: 0.16337522441651706
+          - `5s`:
+            - `mean_delta`: -0.4703770197486535
+            - `median_delta`: 0.0
+            - `share_wider`: 0.23016157989228006
+        - `n`: 2785
+        - `ok`: true
+    - `ok`: true
+  - `split`:
+    - `baseline_spread`: 1.0
+    - `by_dir`:
+      - `buy_initiated`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.24074074074074073
+            - `median_delta`: 0.0
+            - `share_wider`: 0.15520282186948853
+          - `0.05s`:
+            - `mean_delta`: -0.24720752498530277
+            - `median_delta`: 0.0
+            - `share_wider`: 0.16078777189888302
+          - `0.1s`:
+            - `mean_delta`: -0.24279835390946503
+            - `median_delta`: 0.0
+            - `share_wider`: 0.16725455614344503
+          - `0.5s`:
+            - `mean_delta`: -0.3115814226925338
+            - `median_delta`: 0.0
+            - `share_wider`: 0.19135802469135801
+          - `1s`:
+            - `mean_delta`: -0.36390358612580836
+            - `median_delta`: 0.0
+            - `share_wider`: 0.21075837742504408
+          - `5s`:
+            - `mean_delta`: -0.5490887713109935
+            - `median_delta`: 0.0
+            - `share_wider`: 0.26778365667254556
+        - `n`: 3402
+        - `ok`: true
+      - `pooled`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.2402182385035074
+            - `median_delta`: 0.0
+            - `share_wider`: 0.1547934528448948
+          - `0.05s`:
+            - `mean_delta`: -0.2505066250974279
+            - `median_delta`: 0.0
+            - `share_wider`: 0.15915822291504286
+          - `0.1s`:
+            - `mean_delta`: -0.24988308651597818
+            - `median_delta`: 0.0
+            - `share_wider`: 0.16477007014809042
+          - `0.5s`:
+            - `mean_delta`: -0.30132501948558066
+            - `median_delta`: 0.0
+            - `share_wider`: 0.1897116134060795
+          - `1s`:
+            - `mean_delta`: -0.34777864380358536
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2127825409197194
+          - `5s`:
+            - `mean_delta`: -0.5045985970381918
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2751363990646921
+        - `n`: 6415
+        - `ok`: true
+      - `sell_initiated`:
+        - `kernel`:
+          - `0.01s`:
+            - `mean_delta`: -0.23962827746432128
+            - `median_delta`: 0.0
+            - `share_wider`: 0.15433123133089943
+          - `0.05s`:
+            - `mean_delta`: -0.25423166279455695
+            - `median_delta`: 0.0
+            - `share_wider`: 0.1573182874211749
+          - `0.1s`:
+            - `mean_delta`: -0.25788250912711586
+            - `median_delta`: 0.0
+            - `share_wider`: 0.161964819117159
+          - `0.5s`:
+            - `mean_delta`: -0.2897444407567209
+            - `median_delta`: 0.0
+            - `share_wider`: 0.18785263856621306
+          - `1s`:
+            - `mean_delta`: -0.3295718552937272
+            - `median_delta`: 0.0
+            - `share_wider`: 0.21506803849983405
+          - `5s`:
+            - `mean_delta`: -0.4543644208430136
+            - `median_delta`: 0.0
+            - `share_wider`: 0.2834384334550282
+        - `n`: 3013
+        - `ok`: true
+    - `ok`: true
+- `ticker`: AMZN
+
+### `receipts/stale_quote_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/stale_quote_amzn.json | 91bfc70fb7cd64be078a327fae0df159395301ce2d42d954157c6749628bf6ce | 01d0b903cdfe3ba892e2303d594abc944cbbdf4338d8865644008ff97c309c95 | not_checked | 5ef335cb721d5166471d14ae89d14920abbe4cc8 | absent | unspecified | absent | true | absent |
+
+- `claim`: maker_age_at_fill_times_forward_drift_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_oldfill_0.787_vs_0.370
+  - regime_oldfill_0.755_vs_0.370
+  - split_oldfill_0.635_vs_0.370
+- `fwd_horizon_s`: 1.0
+- `git_revision`: 5ef335cb721d5166471d14ae89d14920abbe4cc8
+- `interpretation`: Each EXECUTION's resting order is linked to its SUBMISSION time — exact maker age, no replay. signed Δmid at +1s is in the aggressor's direction: positive = adverse to the maker. A monotone increase of drift with maker age is the stale-quote pickoff signature: informed flow preferentially lifts quotes whose prices went stale. Sim uses TradeEvent.maker_t_submit directly.
+- `kind`: stale_quote
+- `real`:
+  - `age_bins`:
+    - [0]
+      - `age_hi_s`: 0.1
+      - `age_lo_s`: 0.0
+      - `mean_signed_dmid_ticks`: 3.1364546820230346
+      - `mean_size_age_s`: 0.014683207119040552
+      - `n`: 1998
+      - `share`: 0.2373767375549483
+    - [1]
+      - `age_hi_s`: 0.5
+      - `age_lo_s`: 0.1
+      - `mean_signed_dmid_ticks`: 3.4336801040312093
+      - `mean_size_age_s`: 0.26133890156177914
+      - `n`: 769
+      - `share`: 0.09136271830818582
+    - [2]
+      - `age_hi_s`: 1.0
+      - `age_lo_s`: 0.5
+      - `mean_signed_dmid_ticks`: 2.9414715719063547
+      - `mean_size_age_s`: 0.7296776843329302
+      - `n`: 598
+      - `share`: 0.0710466912201497
+    - [3]
+      - `age_hi_s`: 5.0
+      - `age_lo_s`: 1.0
+      - `mean_signed_dmid_ticks`: 3.0015495867768593
+      - `mean_size_age_s`: 2.740134767857137
+      - `n`: 1939
+      - `share`: 0.2303671141736961
+    - [4]
+      - `age_hi_s`: 30.0
+      - `age_lo_s`: 5.0
+      - `mean_signed_dmid_ticks`: 3.7130074203404626
+      - `mean_size_age_s`: 12.603617196047656
+      - `n`: 2291
+      - `share`: 0.2721872401093026
+    - [5]
+      - `age_hi_s`: null
+      - `age_lo_s`: 30.0
+      - `mean_signed_dmid_ticks`: 3.104014598540146
+      - `mean_size_age_s`: 162.5351912794817
+      - `n`: 822
+      - `share`: 0.09765949863371748
+  - `mean_signed_dmid_ticks`: 3.2725543801259955
+  - `median_age_s`: 2.3534706589998677
+  - `n`: 8417
+  - `n_with_drift`: 8413
+  - `ok`: true
+  - `share_age_gt_5s`: 0.3698467387430201
+- `receipt_sha256`: 01d0b903cdfe3ba892e2303d594abc944cbbdf4338d8865644008ff97c309c95
+- `research_only`: true
+- `schema`: stale_quote.v1
+- `sim_arms`:
+  - `iid`:
+    - `age_bins`:
+      - [0]
+        - `age_hi_s`: 0.1
+        - `age_lo_s`: 0.0
+        - `mean_signed_dmid_ticks`: 0.0005000000000002558
+        - `mean_size_age_s`: 0.04890022346083924
+        - `n`: 20
+        - `share`: 0.004004805766920304
+      - [1]
+        - `age_hi_s`: 0.5
+        - `age_lo_s`: 0.1
+        - `mean_signed_dmid_ticks`: -0.0008962264150943289
+        - `mean_size_age_s`: 0.28791871464082475
+        - `n`: 106
+        - `share`: 0.021225470564677613
+      - [2]
+        - `age_hi_s`: 1.0
+        - `age_lo_s`: 0.5
+        - `mean_signed_dmid_ticks`: -4.310344827594537e-05
+        - `mean_size_age_s`: 0.7609012966561918
+        - `n`: 116
+        - `share`: 0.023227873448137766
+      - [3]
+        - `age_hi_s`: 5.0
+        - `age_lo_s`: 1.0
+        - `mean_signed_dmid_ticks`: 0.00028658536585355384
+        - `mean_size_age_s`: 2.8558355312421275
+        - `n`: 820
+        - `share`: 0.16419703644373249
+      - [4]
+        - `age_hi_s`: 30.0
+        - `age_lo_s`: 5.0
+        - `mean_signed_dmid_ticks`: -0.00014377601210752183
+        - `mean_size_age_s`: 14.847633127766592
+        - `n`: 2643
+        - `share`: 0.5292350820985182
+      - [5]
+        - `age_hi_s`: null
+        - `age_lo_s`: 30.0
+        - `mean_signed_dmid_ticks`: -0.0003374709076802639
+        - `mean_size_age_s`: 58.35743499624516
+        - `n`: 1289
+        - `share`: 0.2581097316780136
+    - `mean_signed_dmid_ticks`: -0.00013416099319185615
+    - `median_age_s`: 14.689738327389932
+    - `n`: 4994
+    - `n_with_drift`: 4994
+    - `ok`: true
+    - `share_age_gt_5s`: 0.7873448137765319
+  - `regime`:
+    - `age_bins`:
+      - [0]
+        - `age_hi_s`: 0.1
+        - `age_lo_s`: 0.0
+        - `mean_signed_dmid_ticks`: 0.0038333333333341103
+        - `mean_size_age_s`: 0.041924746740846786
+        - `n`: 30
+        - `share`: 0.005868544600938967
+      - [1]
+        - `age_hi_s`: 0.5
+        - `age_lo_s`: 0.1
+        - `mean_signed_dmid_ticks`: 0.00014925373134314784
+        - `mean_size_age_s`: 0.29155571179002365
+        - `n`: 134
+        - `share`: 0.02621283255086072
+      - [2]
+        - `age_hi_s`: 1.0
+        - `age_lo_s`: 0.5
+        - `mean_signed_dmid_ticks`: 0.00041958041958113114
+        - `mean_size_age_s`: 0.7562715543329314
+        - `n`: 143
+        - `share`: 0.02797339593114241
+      - [3]
+        - `age_hi_s`: 5.0
+        - `age_lo_s`: 1.0
+        - `mean_signed_dmid_ticks`: -0.00019576719576758916
+        - `mean_size_age_s`: 2.9907676138395556
+        - `n`: 945
+        - `share`: 0.18485915492957747
+      - [4]
+        - `age_hi_s`: 30.0
+        - `age_lo_s`: 5.0
+        - `mean_signed_dmid_ticks`: 1.9623233909136707e-05
+        - `mean_size_age_s`: 14.695984850713806
+        - `n`: 2548
+        - `share`: 0.4984350547730829
+      - [5]
+        - `age_hi_s`: null
+        - `age_lo_s`: 30.0
+        - `mean_signed_dmid_ticks`: -0.000769817073170844
+        - `mean_size_age_s`: 57.32176685195119
+        - `n`: 1312
+        - `share`: 0.2566510172143975
+    - `mean_signed_dmid_ticks`: -0.00018583724569638728
+    - `median_age_s`: 13.57299257188697
+    - `n`: 5112
+    - `n_with_drift`: 5112
+    - `ok`: true
+    - `share_age_gt_5s`: 0.7550860719874805
+  - `split`:
+    - `age_bins`:
+      - [0]
+        - `age_hi_s`: 0.1
+        - `age_lo_s`: 0.0
+        - `mean_signed_dmid_ticks`: -0.0010638297872336798
+        - `mean_size_age_s`: 0.05078494203449437
+        - `n`: 47
+        - `share`: 0.010854503464203233
+      - [1]
+        - `age_hi_s`: 0.5
+        - `age_lo_s`: 0.1
+        - `mean_signed_dmid_ticks`: 0.002283950617283891
+        - `mean_size_age_s`: 0.300207287384427
+        - `n`: 162
+        - `share`: 0.03741339491916859
+      - [2]
+        - `age_hi_s`: 1.0
+        - `age_lo_s`: 0.5
+        - `mean_signed_dmid_ticks`: 0.0018478260869562314
+        - `mean_size_age_s`: 0.7335403727412446
+        - `n`: 184
+        - `share`: 0.04249422632794457
+      - [3]
+        - `age_hi_s`: 5.0
+        - `age_lo_s`: 1.0
+        - `mean_signed_dmid_ticks`: 0.0018549747048902945
+        - `mean_size_age_s`: 2.829150765518413
+        - `n`: 1186
+        - `share`: 0.27390300230946885
+      - [4]
+        - `age_hi_s`: 30.0
+        - `age_lo_s`: 5.0
+        - `mean_signed_dmid_ticks`: 0.0013870129870131207
+        - `mean_size_age_s`: 14.068149358021646
+        - `n`: 1925
+        - `share`: 0.4445727482678984
+      - [5]
+        - `age_hi_s`: null
+        - `age_lo_s`: 30.0
+        - `mean_signed_dmid_ticks`: 0.002826876513316874
+        - `mean_size_age_s`: 58.783368350616904
+        - `n`: 826
+        - `share`: 0.1907621247113164
+    - `mean_signed_dmid_ticks`: 0.0018163972286373762
+    - `median_age_s`: 8.879939253345583
+    - `n`: 4330
+    - `n_with_drift`: 4330
+    - `ok`: true
+    - `share_age_gt_5s`: 0.6353348729792148
+- `ticker`: AMZN
+
+### `receipts/streak_stats_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/streak_stats_amzn.json | d51d2a74e86e484183fa2af0405ad38af8273f38fb3621f2bcd39e6029556129 | 9ce5f51523c39e49457969c9ea62ee5a107640973ba914d27097a65ffdf8d5fc | not_checked | 527fa6d39dbbb0b7c9b987cb37a0c3e3c6887e46 | absent | unspecified | absent | true | absent |
+
+- `claim`: exec_sign_run_length_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_run_tail_gap_+0.351
+  - regime_run_tail_gap_+0.349
+  - split_run_tail_gap_+0.229
+- `git_revision`: 527fa6d39dbbb0b7c9b987cb37a0c3e3c6887e46
+- `interpretation`: Run-length histogram is the discrete window on metaorder slicing: geometric under iid signs, fat-tailed under splitting. Excess mass beyond k=5 is the direct count.
+- `kind`: streak_stats
+- `real`:
+  - `excess_mass_gt5_vs_geo`: 0.3476
+  - `max_run`: 102
+  - `mean_run`: 7.173
+  - `n_execs`: 8974
+  - `n_runs`: 1251
+  - `p_ge_10`: 0.2214
+  - `p_ge_5`: 0.4436
+  - `run_hist`:
+    - `1`: 0.2406
+    - `10`: 0.02
+    - `11`: 0.024
+    - `12`: 0.0128
+    - `13`: 0.0184
+    - `14`: 0.0176
+    - `15`: 0.0112
+    - `16`: 0.0088
+    - `17`: 0.0136
+    - `18`: 0.0104
+    - `19`: 0.0072
+    - `2`: 0.1335
+    - `20`: 0.0775
+    - `3`: 0.0991
+    - `4`: 0.0831
+    - `5`: 0.0647
+    - `6`: 0.0552
+    - `7`: 0.0416
+    - `8`: 0.0344
+    - `9`: 0.0264
+- `receipt_sha256`: 9ce5f51523c39e49457969c9ea62ee5a107640973ba914d27097a65ffdf8d5fc
+- `research_only`: true
+- `schema`: streak_stats.v1
+- `sim_arms`:
+  - `iid`:
+    - `excess_mass_gt5_vs_geo`: -0.0031
+    - `max_run`: 14
+    - `mean_run`: 1.991
+    - `n_execs`: 3319
+    - `n_runs`: 1667
+    - `p_ge_10`: 0.0024
+    - `p_ge_5`: 0.0612
+    - `run_hist`:
+      - `1`: 0.4949
+      - `10`: 0.0006
+      - `11`: 0.0
+      - `12`: 0.0012
+      - `13`: 0.0
+      - `14`: 0.0006
+      - `15`: 0.0
+      - `16`: 0.0
+      - `17`: 0.0
+      - `18`: 0.0
+      - `19`: 0.0
+      - `2`: 0.2693
+      - `20`: 0.0
+      - `3`: 0.1116
+      - `4`: 0.063
+      - `5`: 0.033
+      - `6`: 0.0126
+      - `7`: 0.0066
+      - `8`: 0.0042
+      - `9`: 0.0024
+  - `regime`:
+    - `excess_mass_gt5_vs_geo`: -0.0009
+    - `max_run`: 10
+    - `mean_run`: 1.98
+    - `n_execs`: 3723
+    - `n_runs`: 1880
+    - `p_ge_10`: 0.0005
+    - `p_ge_5`: 0.0628
+    - `run_hist`:
+      - `1`: 0.5117
+      - `10`: 0.0005
+      - `11`: 0.0
+      - `12`: 0.0
+      - `13`: 0.0
+      - `14`: 0.0
+      - `15`: 0.0
+      - `16`: 0.0
+      - `17`: 0.0
+      - `18`: 0.0
+      - `19`: 0.0
+      - `2`: 0.233
+      - `20`: 0.0
+      - `3`: 0.1335
+      - `4`: 0.059
+      - `5`: 0.0324
+      - `6`: 0.0176
+      - `7`: 0.0069
+      - `8`: 0.0032
+      - `9`: 0.0021
+  - `split`:
+    - `excess_mass_gt5_vs_geo`: 0.1184
+    - `max_run`: 176
+    - `mean_run`: 5.207
+    - `n_execs`: 4244
+    - `n_runs`: 815
+    - `p_ge_10`: 0.1313
+    - `p_ge_5`: 0.1755
+    - `run_hist`:
+      - `1`: 0.4503
+      - `10`: 0.011
+      - `11`: 0.0025
+      - `12`: 0.0147
+      - `13`: 0.0123
+      - `14`: 0.0086
+      - `15`: 0.0074
+      - `16`: 0.0074
+      - `17`: 0.0049
+      - `18`: 0.0049
+      - `19`: 0.0025
+      - `2`: 0.2368
+      - `20`: 0.0552
+      - `3`: 0.0982
+      - `4`: 0.0393
+      - `5`: 0.0258
+      - `6`: 0.0025
+      - `7`: 0.0049
+      - `8`: 0.0049
+      - `9`: 0.0061
+- `ticker`: AMZN
+
 ### `receipts/suite_health_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -25989,6 +31041,213 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - `seed`: 0
 - `receipt_sha256`: a936b4b39fa051d9b5e3b515b24379c62e401b42b30d4dfad290f285c08e75e7
 - `schema`: tail_audit.v1
+
+### `receipts/tape_digest_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/tape_digest_amzn.json | 69c93dfe72467910b2ee32713167bd3f1841ac5475461d5c18970f405c27c955 | 0a966a32d1138941086a64e15423e9741e24c624add39a8630296ea437b7e49e | not_checked | b4fcb3c35e65d30799c96c86a83dd4c177f3e440 | absent | unspecified | absent | true | absent |
+
+- `arm_coverage_score`:
+  - `iid`: 1
+  - `regime`: 1
+  - `split`: 1
+- `best_arm`: iid
+- `claim`: sim_realism_coverage_matrix
+- `data_label`: MIXED
+- `git_revision`: b4fcb3c35e65d30799c96c86a83dd4c177f3e440
+- `interpretation`: arm_status: covered = lane flagged no divergence for that arm; diverged = flagged; unscored = lane measured but has no per-arm divergence list. uncovered_lanes flag facts no arm reproduces — the sim's priority list.
+- `kind`: tape_digest
+- `lanes`:
+  - `cancel_cluster`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: be7a95df9f31b2ee1fbf316e727812797c04f0c1f418cc1da3777737d1a76ee0
+  - `event_matrix`:
+    - `arm_status`:
+      - `iid`: covered
+      - `regime`: covered
+      - `split`: covered
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: 6a5f2b8d9b839f2668ac9d06d99c1581a7ac0c7c0c5b7b35e58829272adde588
+  - `exec_cost`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: 9d3f1266772640aed1d1d4976f057e2933a0ee3fb3b3c6076ef4b140fd628497
+  - `hawkes`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: fe7a75a8f2e78ebaa84b49d520cc017b2892cf0e1f364e4bd99bd5feb865c2f7
+  - `hidden_depth`:
+    - `arm_status`:
+      - `iid`: diverged
+      - `regime`: diverged
+      - `split`: diverged
+    - `n_divergences`: 1
+    - `present`: true
+    - `receipt_sha256`: ea597d6f8c8128ddff388ab0b6de37307e4e353b066a5cb5f8f1258d6f671e55
+  - `intraday_shape`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: d343852f17997a1327850c071d00ed98c343a00c74d570c6fb6b8a027c1aa55d
+  - `order_lifetime`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: 760858e20cc94d120844f481a80789aa54467865cc4a70afcd88c2926fb1077f
+  - `propagator`:
+    - `arm_status`:
+      - `iid`: diverged
+      - `regime`: diverged
+      - `split`: diverged
+    - `n_divergences`: 3
+    - `present`: true
+    - `receipt_sha256`: 17a49ca16655f30787e47400a77a6d09b09cbb12857d3cd756f2b3a65497bb98
+  - `quote_place`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: dac1c8c76b0111c53e8f706620af665933db8abfacab84b212a1f704324f254f
+  - `round_lot`:
+    - `arm_status`:
+      - `iid`: diverged
+      - `regime`: diverged
+      - `split`: diverged
+    - `n_divergences`: 3
+    - `present`: true
+    - `receipt_sha256`: 86a822594a3e07b62a370a550784abb3b8deebf49476879c6f9edbac837f756b
+  - `sign_autocorr`:
+    - `arm_status`:
+      - `iid`: diverged
+      - `regime`: diverged
+      - `split`: diverged
+    - `n_divergences`: 3
+    - `present`: true
+    - `receipt_sha256`: 2f8af3a9183602565838580c444635cca457b23795483509b783cc87e2b11cc9
+  - `spread_dynamics`:
+    - `arm_status`:
+      - `iid`: diverged
+      - `regime`: diverged
+      - `split`: diverged
+    - `n_divergences`: 1
+    - `present`: true
+    - `receipt_sha256`: f69e67a4a30362cf19c2b67b685a216ca848af31c1d3bd7834aa61b2e7a1e400
+  - `streak_stats`:
+    - `arm_status`:
+      - `iid`: diverged
+      - `regime`: diverged
+      - `split`: diverged
+    - `n_divergences`: 3
+    - `present`: true
+    - `receipt_sha256`: 9ce5f51523c39e49457969c9ea62ee5a107640973ba914d27097a65ffdf8d5fc
+  - `vpin`:
+    - `arm_status`:
+      - `iid`: unscored
+      - `regime`: unscored
+      - `split`: unscored
+    - `n_divergences`: 0
+    - `present`: true
+    - `receipt_sha256`: 710f032cb569df5fa2684e5656f99669b66233db555035ac25285c88f2a98acd
+- `n_lanes_present`: 14
+- `n_lanes_scored`: 7
+- `receipt_sha256`: 0a966a32d1138941086a64e15423e9741e24c624add39a8630296ea437b7e49e
+- `research_only`: true
+- `schema`: tape_digest.v1
+- `uncovered_lanes`:
+  - propagator
+  - sign_autocorr
+  - round_lot
+  - hidden_depth
+  - spread_dynamics
+  - streak_stats
+
+### `receipts/tick_rule_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/tick_rule_amzn.json | d69bc89702def00c3abee7c06e071378f18f0996a186a296a68ba16d676e3840 | 4231bf0e2878bebadb85669c24dae8ce1836a9821bb1448721ab15953a6694a7 | not_checked | 956bc3e9b8d4561beebe5a8e82b56b0cdfbc867e | absent | unspecified | absent | true | absent |
+
+- `claim`: sign_inference_misclassification_measured
+- `data_label`: MIXED
+- `git_revision`: 956bc3e9b8d4561beebe5a8e82b56b0cdfbc867e
+- `interpretation`: Real LOBSTER tape has ground-truth aggressor labels; the misclass rates measure how much noise sign inference would inject. On sim, fills at the touch mostly classify right — hidden/mid fills are where rules fail.
+- `kind`: tick_rule
+- `real`:
+  - `n_execs`: 11419
+  - `quote_rule`:
+    - `misclass_rate`: 0.0938
+    - `n`: 11419
+    - `rule`: quote_rule
+    - `undecided`: 0
+  - `tick_rule`:
+    - `misclass_rate`: 0.1324
+    - `n`: 11419
+    - `rule`: tick_rule
+    - `undecided`: 0
+- `receipt_sha256`: 4231bf0e2878bebadb85669c24dae8ce1836a9821bb1448721ab15953a6694a7
+- `research_only`: true
+- `schema`: tick_rule.v1
+- `sim_arms`:
+  - `iid`:
+    - `n_execs`: 3319
+    - `quote_rule`:
+      - `misclass_rate`: 0.1232
+      - `n`: 3319
+      - `rule`: quote_rule
+      - `undecided`: 0
+    - `tick_rule`:
+      - `misclass_rate`: 0.1271
+      - `n`: 3319
+      - `rule`: tick_rule
+      - `undecided`: 0
+  - `regime`:
+    - `n_execs`: 3723
+    - `quote_rule`:
+      - `misclass_rate`: 0.1322
+      - `n`: 3723
+      - `rule`: quote_rule
+      - `undecided`: 0
+    - `tick_rule`:
+      - `misclass_rate`: 0.1198
+      - `n`: 3723
+      - `rule`: tick_rule
+      - `undecided`: 0
+  - `split`:
+    - `n_execs`: 4244
+    - `quote_rule`:
+      - `misclass_rate`: 0.2017
+      - `n`: 4244
+      - `rule`: quote_rule
+      - `undecided`: 0
+    - `tick_rule`:
+      - `misclass_rate`: 0.2092
+      - `n`: 4244
+      - `rule`: tick_rule
+      - `undecided`: 0
+- `ticker`: AMZN
 
 ### `receipts/verdict_real_drill.json`
 
@@ -26102,3 +31361,129 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `unavailable_lanes`:
 - `verdict`: not_supported
 - `winner`: gaussian
+
+### `receipts/vol_signature_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/vol_signature_amzn.json | 66c853a1efbe2fe0a41535ef9e191eee310e5346e7057fd157a8832b3b1e3eb8 | 51399220b3452398eaf874c6174afc7ef74bef36aa43d9a98b90b47908da69d2 | not_checked | e2f20ef336f119d80dcbc5d6479506b533d46e19 | absent | unspecified | absent | true | absent |
+
+- `claim`: vol_signature_measured
+- `data_label`: MIXED
+- `divergences`:
+  - iid_signature_ratio_2.26_vs_0.8906
+  - regime_signature_ratio_2.96_vs_0.8906
+- `git_revision`: e2f20ef336f119d80dcbc5d6479506b533d46e19
+- `interpretation`: rv_fine_to_coarse_ratio > 1 = microstructure noise inflating fine-scale variance (bid-ask bounce / Epps signature); ~1 = diffusive.
+- `kind`: vol_signature
+- `real`:
+  - `n_samples`: 269748
+  - `rv_fine_to_coarse_ratio`: 0.8906
+  - `rv_per_tau`:
+    - `0.1`: 3.71527733
+    - `0.5`: 3.86619701
+    - `1.0`: 3.95963364
+    - `10.0`: 4.3350542
+    - `30.0`: 4.5590928
+    - `300.0`: 4.17179738
+    - `5.0`: 4.14316158
+    - `60.0`: 4.51252327
+  - `span_s`: 23399.94
+- `receipt_sha256`: 51399220b3452398eaf874c6174afc7ef74bef36aa43d9a98b90b47908da69d2
+- `research_only`: true
+- `schema`: vol_signature.v1
+- `sim_arms`:
+  - `iid`:
+    - `n_samples`: 59707
+    - `rv_fine_to_coarse_ratio`: 2.2552
+    - `rv_per_tau`:
+      - `0.1`: 0.14120807
+      - `0.5`: 0.13631507
+      - `1.0`: 0.1347187
+      - `10.0`: 0.09943076
+      - `30.0`: 0.07805062
+      - `300.0`: 0.06261543
+      - `5.0`: 0.11325143
+      - `60.0`: 0.07044835
+    - `span_s`: 50071.6
+  - `regime`:
+    - `n_samples`: 57562
+    - `rv_fine_to_coarse_ratio`: 2.9558
+    - `rv_per_tau`:
+      - `0.1`: 0.21331426
+      - `0.5`: 0.20936239
+      - `1.0`: 0.19871695
+      - `10.0`: 0.14373523
+      - `30.0`: 0.10584617
+      - `300.0`: 0.07216792
+      - `5.0`: 0.16425357
+      - `60.0`: 0.09219596
+    - `span_s`: 49763.26
+  - `split`:
+    - `n_samples`: 44790
+    - `rv_fine_to_coarse_ratio`: 0.2968
+    - `rv_per_tau`:
+      - `0.1`: 0.40813241
+      - `0.5`: 0.3944228
+      - `1.0`: 0.38767111
+      - `10.0`: 0.4022671
+      - `30.0`: 0.5081894
+      - `300.0`: 1.37499167
+      - `5.0`: 0.37662807
+      - `60.0`: 0.68406321
+    - `span_s`: 44743.47
+- `taus_s`:
+  - 0.1
+  - 0.5
+  - 1.0
+  - 5.0
+  - 10.0
+  - 30.0
+  - 60.0
+  - 300.0
+- `ticker`: AMZN
+
+### `receipts/vpin_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/vpin_amzn.json | feed66eda5cf279af3d12224eeeb7cae7ff47a998dcc767249d185f78bcd27db | 710f032cb569df5fa2684e5656f99669b66233db555035ac25285c88f2a98acd | not_checked | 97ad733f7fccd16fb7fa12235e4743b6547aae16 | absent | unspecified | absent | true | absent |
+
+- `claim`: vpin_flow_toxicity_measured_real_vs_sim
+- `data_label`: MIXED
+- `git_revision`: 97ad733f7fccd16fb7fa12235e4743b6547aae16
+- `interpretation`: VPIN = rolling mean |order imbalance| over equal-volume buckets. Positive vpin_fwd_vol_corr means toxic flow precedes volatility — the ELO mechanism. Near-zero real-tape corr is the honest published result for a single quiet large-cap day.
+- `kind`: vpin
+- `real`:
+  - `bucket_volume`: 12264.96
+  - `n_buckets`: 49
+  - `ok`: true
+  - `vpin_fwd_vol_corr`: 0.1772
+  - `vpin_mean`: 0.2631
+  - `vpin_p90`: 0.3208
+- `receipt_sha256`: 710f032cb569df5fa2684e5656f99669b66233db555035ac25285c88f2a98acd
+- `research_only`: true
+- `schema`: vpin.v1
+- `sim_arms`:
+  - `iid`:
+    - `bucket_volume`: 66.38
+    - `n_buckets`: 49
+    - `ok`: true
+    - `vpin_fwd_vol_corr`: 0.0732
+    - `vpin_mean`: 0.091
+    - `vpin_p90`: 0.1118
+  - `regime`:
+    - `bucket_volume`: 74.46
+    - `n_buckets`: 49
+    - `ok`: true
+    - `vpin_fwd_vol_corr`: 0.1732
+    - `vpin_mean`: 0.0814
+    - `vpin_p90`: 0.1077
+  - `split`:
+    - `bucket_volume`: 84.88
+    - `n_buckets`: 49
+    - `ok`: true
+    - `vpin_fwd_vol_corr`: 0.346
+    - `vpin_mean`: 0.4467
+    - `vpin_p90`: 0.6246
+- `ticker`: AMZN

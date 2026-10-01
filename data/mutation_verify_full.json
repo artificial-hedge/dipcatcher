@@ -1,0 +1,1924 @@
+{
+  "created_utc": "2026-10-01T07:45:45.277747+00:00",
+  "target": "/Users/vaithianathan/dipcatcher/src/quant_fund/research/verify.py",
+  "module": "quant_fund.research.verify",
+  "selectors": [
+    "tests/unit/research/test_research_verify.py"
+  ],
+  "seed": 7,
+  "timeout_s": 30.0,
+  "total_mutants": 210,
+  "sampled": 210,
+  "counts": {
+    "killed": 209,
+    "survived": 1,
+    "timeout": 0,
+    "error": 0
+  },
+  "score": 0.9952,
+  "min_score": null,
+  "watermark": "test-suite diagnostic; not market evidence; no live-PnL claim",
+  "results": [
+    {
+      "mutant_id": "M0000",
+      "operator": "negation-insertion",
+      "lineno": 123,
+      "description": "insert `not` into test (line 123)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.227
+    },
+    {
+      "mutant_id": "M0001",
+      "operator": "negation-insertion",
+      "lineno": 163,
+      "description": "insert `not` into test (line 163)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.815
+    },
+    {
+      "mutant_id": "M0002",
+      "operator": "negation-insertion",
+      "lineno": 176,
+      "description": "insert `not` into test (line 176)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.865
+    },
+    {
+      "mutant_id": "M0003",
+      "operator": "negation-removal",
+      "lineno": 178,
+      "description": "drop `not` from test (line 178)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.17
+    },
+    {
+      "mutant_id": "M0004",
+      "operator": "negation-insertion",
+      "lineno": 195,
+      "description": "insert `not` into test (line 195)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.261
+    },
+    {
+      "mutant_id": "M0005",
+      "operator": "negation-insertion",
+      "lineno": 237,
+      "description": "insert `not` into test (line 237)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.437
+    },
+    {
+      "mutant_id": "M0006",
+      "operator": "negation-removal",
+      "lineno": 251,
+      "description": "drop `not` from test (line 251)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.216
+    },
+    {
+      "mutant_id": "M0007",
+      "operator": "negation-removal",
+      "lineno": 254,
+      "description": "drop `not` from test (line 254)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.122
+    },
+    {
+      "mutant_id": "M0008",
+      "operator": "negation-removal",
+      "lineno": 268,
+      "description": "drop `not` from test (line 268)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.148
+    },
+    {
+      "mutant_id": "M0009",
+      "operator": "negation-removal",
+      "lineno": 301,
+      "description": "drop `not` from test (line 301)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.241
+    },
+    {
+      "mutant_id": "M0010",
+      "operator": "negation-removal",
+      "lineno": 344,
+      "description": "drop `not` from test (line 344)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.183
+    },
+    {
+      "mutant_id": "M0011",
+      "operator": "negation-insertion",
+      "lineno": 348,
+      "description": "insert `not` into test (line 348)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.546
+    },
+    {
+      "mutant_id": "M0012",
+      "operator": "negation-removal",
+      "lineno": 351,
+      "description": "drop `not` from test (line 351)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.257
+    },
+    {
+      "mutant_id": "M0013",
+      "operator": "negation-insertion",
+      "lineno": 354,
+      "description": "insert `not` into test (line 354)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.181
+    },
+    {
+      "mutant_id": "M0014",
+      "operator": "negation-insertion",
+      "lineno": 369,
+      "description": "insert `not` into test (line 369)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.253
+    },
+    {
+      "mutant_id": "M0015",
+      "operator": "negation-insertion",
+      "lineno": 375,
+      "description": "insert `not` into test (line 375)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.51
+    },
+    {
+      "mutant_id": "M0016",
+      "operator": "negation-insertion",
+      "lineno": 377,
+      "description": "insert `not` into test (line 377)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.646
+    },
+    {
+      "mutant_id": "M0017",
+      "operator": "negation-insertion",
+      "lineno": 379,
+      "description": "insert `not` into test (line 379)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.431
+    },
+    {
+      "mutant_id": "M0018",
+      "operator": "negation-removal",
+      "lineno": 382,
+      "description": "drop `not` from test (line 382)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.569
+    },
+    {
+      "mutant_id": "M0019",
+      "operator": "negation-insertion",
+      "lineno": 412,
+      "description": "insert `not` into test (line 412)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.57
+    },
+    {
+      "mutant_id": "M0020",
+      "operator": "negation-insertion",
+      "lineno": 414,
+      "description": "insert `not` into test (line 414)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.465
+    },
+    {
+      "mutant_id": "M0021",
+      "operator": "negation-insertion",
+      "lineno": 416,
+      "description": "insert `not` into test (line 416)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.272
+    },
+    {
+      "mutant_id": "M0022",
+      "operator": "negation-insertion",
+      "lineno": 708,
+      "description": "insert `not` into test (line 708)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.346
+    },
+    {
+      "mutant_id": "M0023",
+      "operator": "negation-removal",
+      "lineno": 741,
+      "description": "drop `not` from test (line 741)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.119
+    },
+    {
+      "mutant_id": "M0024",
+      "operator": "negation-removal",
+      "lineno": 802,
+      "description": "drop `not` from test (line 802)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.529
+    },
+    {
+      "mutant_id": "M0025",
+      "operator": "negation-removal",
+      "lineno": 907,
+      "description": "drop `not` from test (line 907)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.232
+    },
+    {
+      "mutant_id": "M0026",
+      "operator": "boolop-swap",
+      "lineno": 163,
+      "description": "Or->And (line 163)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.314
+    },
+    {
+      "mutant_id": "M0027",
+      "operator": "boolop-swap",
+      "lineno": 166,
+      "description": "Or->And (line 166)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.209
+    },
+    {
+      "mutant_id": "M0028",
+      "operator": "comparison-swap",
+      "lineno": 176,
+      "description": "Is->IsNot (line 176)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.521
+    },
+    {
+      "mutant_id": "M0029",
+      "operator": "boolop-swap",
+      "lineno": 181,
+      "description": "Or->And (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.51
+    },
+    {
+      "mutant_id": "M0030",
+      "operator": "boolop-swap",
+      "lineno": 187,
+      "description": "And->Or (line 187)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.293
+    },
+    {
+      "mutant_id": "M0031",
+      "operator": "boolop-swap",
+      "lineno": 195,
+      "description": "Or->And (line 195)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.35
+    },
+    {
+      "mutant_id": "M0032",
+      "operator": "boolop-swap",
+      "lineno": 201,
+      "description": "And->Or (line 201)",
+      "status": "survived",
+      "returncode": 0,
+      "duration_s": 2.269
+    },
+    {
+      "mutant_id": "M0033",
+      "operator": "negation-insertion",
+      "lineno": 231,
+      "description": "insert `not` into test (line 231)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.315
+    },
+    {
+      "mutant_id": "M0034",
+      "operator": "boolop-swap",
+      "lineno": 238,
+      "description": "Or->And (line 238)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.404
+    },
+    {
+      "mutant_id": "M0035",
+      "operator": "negation-insertion",
+      "lineno": 249,
+      "description": "insert `not` into test (line 249)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.325
+    },
+    {
+      "mutant_id": "M0036",
+      "operator": "negation-insertion",
+      "lineno": 256,
+      "description": "insert `not` into test (line 256)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.243
+    },
+    {
+      "mutant_id": "M0037",
+      "operator": "boolop-swap",
+      "lineno": 354,
+      "description": "Or->And (line 354)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.502
+    },
+    {
+      "mutant_id": "M0038",
+      "operator": "negation-removal",
+      "lineno": 364,
+      "description": "drop `not` from test (line 364)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.328
+    },
+    {
+      "mutant_id": "M0039",
+      "operator": "boolop-swap",
+      "lineno": 369,
+      "description": "And->Or (line 369)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.38
+    },
+    {
+      "mutant_id": "M0040",
+      "operator": "negation-insertion",
+      "lineno": 373,
+      "description": "insert `not` into test (line 373)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.613
+    },
+    {
+      "mutant_id": "M0041",
+      "operator": "comparison-swap",
+      "lineno": 375,
+      "description": "IsNot->Is (line 375)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.224
+    },
+    {
+      "mutant_id": "M0042",
+      "operator": "comparison-swap",
+      "lineno": 377,
+      "description": "NotEq->Eq (line 377)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.346
+    },
+    {
+      "mutant_id": "M0043",
+      "operator": "comparison-swap",
+      "lineno": 379,
+      "description": "NotEq->Eq (line 379)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.148
+    },
+    {
+      "mutant_id": "M0044",
+      "operator": "negation-insertion",
+      "lineno": 389,
+      "description": "insert `not` into test (line 389)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.386
+    },
+    {
+      "mutant_id": "M0045",
+      "operator": "negation-removal",
+      "lineno": 419,
+      "description": "drop `not` from test (line 419)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.129
+    },
+    {
+      "mutant_id": "M0046",
+      "operator": "boolop-swap",
+      "lineno": 708,
+      "description": "Or->And (line 708)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.165
+    },
+    {
+      "mutant_id": "M0047",
+      "operator": "negation-insertion",
+      "lineno": 747,
+      "description": "insert `not` into test (line 747)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.292
+    },
+    {
+      "mutant_id": "M0048",
+      "operator": "negation-insertion",
+      "lineno": 749,
+      "description": "insert `not` into test (line 749)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.15
+    },
+    {
+      "mutant_id": "M0049",
+      "operator": "negation-insertion",
+      "lineno": 854,
+      "description": "insert `not` into test (line 854)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.252
+    },
+    {
+      "mutant_id": "M0050",
+      "operator": "negation-insertion",
+      "lineno": 856,
+      "description": "insert `not` into test (line 856)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.34
+    },
+    {
+      "mutant_id": "M0051",
+      "operator": "const-bool-flip",
+      "lineno": 164,
+      "description": "False->True (line 164)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.353
+    },
+    {
+      "mutant_id": "M0052",
+      "operator": "const-bool-flip",
+      "lineno": 177,
+      "description": "True->False (line 177)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.556
+    },
+    {
+      "mutant_id": "M0053",
+      "operator": "const-bool-flip",
+      "lineno": 179,
+      "description": "False->True (line 179)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.617
+    },
+    {
+      "mutant_id": "M0054",
+      "operator": "comparison-swap",
+      "lineno": 181,
+      "description": "LtE->Lt (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.404
+    },
+    {
+      "mutant_id": "M0055",
+      "operator": "comparison-swap",
+      "lineno": 181,
+      "description": "LtE->GtE (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.302
+    },
+    {
+      "mutant_id": "M0056",
+      "operator": "comparison-swap",
+      "lineno": 181,
+      "description": "LtE->Lt (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.621
+    },
+    {
+      "mutant_id": "M0057",
+      "operator": "comparison-swap",
+      "lineno": 181,
+      "description": "LtE->GtE (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.235
+    },
+    {
+      "mutant_id": "M0058",
+      "operator": "comparison-swap",
+      "lineno": 188,
+      "description": "Eq->NotEq (line 188)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.271
+    },
+    {
+      "mutant_id": "M0059",
+      "operator": "const-bool-flip",
+      "lineno": 196,
+      "description": "False->True (line 196)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.566
+    },
+    {
+      "mutant_id": "M0060",
+      "operator": "comparison-swap",
+      "lineno": 201,
+      "description": "IsNot->Is (line 201)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.46
+    },
+    {
+      "mutant_id": "M0061",
+      "operator": "comparison-swap",
+      "lineno": 201,
+      "description": "IsNot->Is (line 201)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.246
+    },
+    {
+      "mutant_id": "M0062",
+      "operator": "comparison-swap",
+      "lineno": 231,
+      "description": "NotEq->Eq (line 231)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.26
+    },
+    {
+      "mutant_id": "M0063",
+      "operator": "comparison-swap",
+      "lineno": 239,
+      "description": "NotIn->In (line 239)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.18
+    },
+    {
+      "mutant_id": "M0064",
+      "operator": "boolop-swap",
+      "lineno": 249,
+      "description": "Or->And (line 249)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.434
+    },
+    {
+      "mutant_id": "M0065",
+      "operator": "negation-insertion",
+      "lineno": 260,
+      "description": "insert `not` into test (line 260)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.576
+    },
+    {
+      "mutant_id": "M0066",
+      "operator": "negation-removal",
+      "lineno": 273,
+      "description": "drop `not` from test (line 273)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.276
+    },
+    {
+      "mutant_id": "M0067",
+      "operator": "negation-insertion",
+      "lineno": 276,
+      "description": "insert `not` into test (line 276)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.229
+    },
+    {
+      "mutant_id": "M0068",
+      "operator": "negation-removal",
+      "lineno": 306,
+      "description": "drop `not` from test (line 306)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.287
+    },
+    {
+      "mutant_id": "M0069",
+      "operator": "negation-insertion",
+      "lineno": 310,
+      "description": "insert `not` into test (line 310)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.409
+    },
+    {
+      "mutant_id": "M0070",
+      "operator": "negation-insertion",
+      "lineno": 313,
+      "description": "insert `not` into test (line 313)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.261
+    },
+    {
+      "mutant_id": "M0071",
+      "operator": "negation-insertion",
+      "lineno": 319,
+      "description": "insert `not` into test (line 319)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.208
+    },
+    {
+      "mutant_id": "M0072",
+      "operator": "negation-removal",
+      "lineno": 325,
+      "description": "drop `not` from test (line 325)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.361
+    },
+    {
+      "mutant_id": "M0073",
+      "operator": "negation-removal",
+      "lineno": 327,
+      "description": "drop `not` from test (line 327)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.244
+    },
+    {
+      "mutant_id": "M0074",
+      "operator": "negation-insertion",
+      "lineno": 336,
+      "description": "insert `not` into test (line 336)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.472
+    },
+    {
+      "mutant_id": "M0075",
+      "operator": "comparison-swap",
+      "lineno": 369,
+      "description": "IsNot->Is (line 369)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.304
+    },
+    {
+      "mutant_id": "M0076",
+      "operator": "boolop-swap",
+      "lineno": 373,
+      "description": "Or->And (line 373)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.338
+    },
+    {
+      "mutant_id": "M0077",
+      "operator": "const-bool-flip",
+      "lineno": 375,
+      "description": "True->False (line 375)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.283
+    },
+    {
+      "mutant_id": "M0078",
+      "operator": "negation-insertion",
+      "lineno": 386,
+      "description": "insert `not` into test (line 386)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.29
+    },
+    {
+      "mutant_id": "M0079",
+      "operator": "boolop-swap",
+      "lineno": 389,
+      "description": "Or->And (line 389)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.628
+    },
+    {
+      "mutant_id": "M0080",
+      "operator": "negation-insertion",
+      "lineno": 391,
+      "description": "insert `not` into test (line 391)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.119
+    },
+    {
+      "mutant_id": "M0081",
+      "operator": "negation-removal",
+      "lineno": 752,
+      "description": "drop `not` from test (line 752)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.142
+    },
+    {
+      "mutant_id": "M0082",
+      "operator": "negation-insertion",
+      "lineno": 755,
+      "description": "insert `not` into test (line 755)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.18
+    },
+    {
+      "mutant_id": "M0083",
+      "operator": "negation-insertion",
+      "lineno": 758,
+      "description": "insert `not` into test (line 758)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.565
+    },
+    {
+      "mutant_id": "M0084",
+      "operator": "negation-insertion",
+      "lineno": 761,
+      "description": "insert `not` into test (line 761)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.503
+    },
+    {
+      "mutant_id": "M0085",
+      "operator": "negation-insertion",
+      "lineno": 763,
+      "description": "insert `not` into test (line 763)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.164
+    },
+    {
+      "mutant_id": "M0086",
+      "operator": "negation-insertion",
+      "lineno": 765,
+      "description": "insert `not` into test (line 765)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.131
+    },
+    {
+      "mutant_id": "M0087",
+      "operator": "negation-insertion",
+      "lineno": 769,
+      "description": "insert `not` into test (line 769)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.218
+    },
+    {
+      "mutant_id": "M0088",
+      "operator": "negation-insertion",
+      "lineno": 773,
+      "description": "insert `not` into test (line 773)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.242
+    },
+    {
+      "mutant_id": "M0089",
+      "operator": "negation-insertion",
+      "lineno": 779,
+      "description": "insert `not` into test (line 779)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.118
+    },
+    {
+      "mutant_id": "M0090",
+      "operator": "negation-insertion",
+      "lineno": 785,
+      "description": "insert `not` into test (line 785)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.137
+    },
+    {
+      "mutant_id": "M0091",
+      "operator": "negation-insertion",
+      "lineno": 814,
+      "description": "insert `not` into test (line 814)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.354
+    },
+    {
+      "mutant_id": "M0092",
+      "operator": "negation-insertion",
+      "lineno": 816,
+      "description": "insert `not` into test (line 816)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.75
+    },
+    {
+      "mutant_id": "M0093",
+      "operator": "negation-insertion",
+      "lineno": 819,
+      "description": "insert `not` into test (line 819)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.602
+    },
+    {
+      "mutant_id": "M0094",
+      "operator": "negation-insertion",
+      "lineno": 825,
+      "description": "insert `not` into test (line 825)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.338
+    },
+    {
+      "mutant_id": "M0095",
+      "operator": "negation-removal",
+      "lineno": 827,
+      "description": "drop `not` from test (line 827)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.196
+    },
+    {
+      "mutant_id": "M0096",
+      "operator": "negation-removal",
+      "lineno": 842,
+      "description": "drop `not` from test (line 842)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.414
+    },
+    {
+      "mutant_id": "M0097",
+      "operator": "negation-insertion",
+      "lineno": 844,
+      "description": "insert `not` into test (line 844)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.546
+    },
+    {
+      "mutant_id": "M0098",
+      "operator": "negation-insertion",
+      "lineno": 848,
+      "description": "insert `not` into test (line 848)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.498
+    },
+    {
+      "mutant_id": "M0099",
+      "operator": "boolop-swap",
+      "lineno": 854,
+      "description": "And->Or (line 854)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.264
+    },
+    {
+      "mutant_id": "M0100",
+      "operator": "boolop-swap",
+      "lineno": 856,
+      "description": "And->Or (line 856)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.651
+    },
+    {
+      "mutant_id": "M0101",
+      "operator": "negation-removal",
+      "lineno": 858,
+      "description": "drop `not` from test (line 858)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.454
+    },
+    {
+      "mutant_id": "M0102",
+      "operator": "negation-removal",
+      "lineno": 869,
+      "description": "drop `not` from test (line 869)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.47
+    },
+    {
+      "mutant_id": "M0103",
+      "operator": "negation-insertion",
+      "lineno": 931,
+      "description": "insert `not` into test (line 931)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 3.034
+    },
+    {
+      "mutant_id": "M0104",
+      "operator": "numeric-perturb",
+      "lineno": 181,
+      "description": "float 0.0->1.0 (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.933
+    },
+    {
+      "mutant_id": "M0105",
+      "operator": "numeric-perturb",
+      "lineno": 181,
+      "description": "float 1.0->2.0 (line 181)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.876
+    },
+    {
+      "mutant_id": "M0106",
+      "operator": "const-bool-flip",
+      "lineno": 200,
+      "description": "False->True (line 200)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.359
+    },
+    {
+      "mutant_id": "M0107",
+      "operator": "comparison-swap",
+      "lineno": 259,
+      "description": "Eq->NotEq (line 259)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.112
+    },
+    {
+      "mutant_id": "M0108",
+      "operator": "comparison-swap",
+      "lineno": 260,
+      "description": "NotEq->Eq (line 260)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.113
+    },
+    {
+      "mutant_id": "M0109",
+      "operator": "boolop-swap",
+      "lineno": 276,
+      "description": "Or->And (line 276)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.674
+    },
+    {
+      "mutant_id": "M0110",
+      "operator": "negation-insertion",
+      "lineno": 280,
+      "description": "insert `not` into test (line 280)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.651
+    },
+    {
+      "mutant_id": "M0111",
+      "operator": "negation-insertion",
+      "lineno": 284,
+      "description": "insert `not` into test (line 284)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.594
+    },
+    {
+      "mutant_id": "M0112",
+      "operator": "negation-insertion",
+      "lineno": 287,
+      "description": "insert `not` into test (line 287)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.377
+    },
+    {
+      "mutant_id": "M0113",
+      "operator": "boolop-swap",
+      "lineno": 313,
+      "description": "Or->And (line 313)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.58
+    },
+    {
+      "mutant_id": "M0114",
+      "operator": "negation-insertion",
+      "lineno": 315,
+      "description": "insert `not` into test (line 315)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.203
+    },
+    {
+      "mutant_id": "M0115",
+      "operator": "comparison-swap",
+      "lineno": 319,
+      "description": "NotIn->In (line 319)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.34
+    },
+    {
+      "mutant_id": "M0116",
+      "operator": "negation-insertion",
+      "lineno": 323,
+      "description": "insert `not` into test (line 323)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.344
+    },
+    {
+      "mutant_id": "M0117",
+      "operator": "negation-insertion",
+      "lineno": 330,
+      "description": "insert `not` into test (line 330)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.407
+    },
+    {
+      "mutant_id": "M0118",
+      "operator": "boolop-swap",
+      "lineno": 333,
+      "description": "Or->And (line 333)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.419
+    },
+    {
+      "mutant_id": "M0119",
+      "operator": "boolop-swap",
+      "lineno": 336,
+      "description": "And->Or (line 336)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.41
+    },
+    {
+      "mutant_id": "M0120",
+      "operator": "comparison-swap",
+      "lineno": 373,
+      "description": "Lt->LtE (line 373)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.34
+    },
+    {
+      "mutant_id": "M0121",
+      "operator": "comparison-swap",
+      "lineno": 373,
+      "description": "Lt->Gt (line 373)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.292
+    },
+    {
+      "mutant_id": "M0122",
+      "operator": "boolop-swap",
+      "lineno": 386,
+      "description": "Or->And (line 386)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.741
+    },
+    {
+      "mutant_id": "M0123",
+      "operator": "boolop-swap",
+      "lineno": 391,
+      "description": "Or->And (line 391)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.399
+    },
+    {
+      "mutant_id": "M0124",
+      "operator": "negation-insertion",
+      "lineno": 400,
+      "description": "insert `not` into test (line 400)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.384
+    },
+    {
+      "mutant_id": "M0125",
+      "operator": "negation-insertion",
+      "lineno": 402,
+      "description": "insert `not` into test (line 402)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.365
+    },
+    {
+      "mutant_id": "M0126",
+      "operator": "comparison-swap",
+      "lineno": 755,
+      "description": "NotEq->Eq (line 755)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.528
+    },
+    {
+      "mutant_id": "M0127",
+      "operator": "negation-insertion",
+      "lineno": 760,
+      "description": "insert `not` into test (line 760)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.319
+    },
+    {
+      "mutant_id": "M0128",
+      "operator": "boolop-swap",
+      "lineno": 761,
+      "description": "And->Or (line 761)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.215
+    },
+    {
+      "mutant_id": "M0129",
+      "operator": "boolop-swap",
+      "lineno": 763,
+      "description": "And->Or (line 763)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.304
+    },
+    {
+      "mutant_id": "M0130",
+      "operator": "boolop-swap",
+      "lineno": 765,
+      "description": "And->Or (line 765)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.702
+    },
+    {
+      "mutant_id": "M0131",
+      "operator": "boolop-swap",
+      "lineno": 769,
+      "description": "And->Or (line 769)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.355
+    },
+    {
+      "mutant_id": "M0132",
+      "operator": "boolop-swap",
+      "lineno": 774,
+      "description": "And->Or (line 774)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.345
+    },
+    {
+      "mutant_id": "M0133",
+      "operator": "boolop-swap",
+      "lineno": 780,
+      "description": "And->Or (line 780)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.418
+    },
+    {
+      "mutant_id": "M0134",
+      "operator": "boolop-swap",
+      "lineno": 786,
+      "description": "And->Or (line 786)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.701
+    },
+    {
+      "mutant_id": "M0135",
+      "operator": "comparison-swap",
+      "lineno": 814,
+      "description": "Is->IsNot (line 814)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.647
+    },
+    {
+      "mutant_id": "M0136",
+      "operator": "boolop-swap",
+      "lineno": 816,
+      "description": "Or->And (line 816)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.854
+    },
+    {
+      "mutant_id": "M0137",
+      "operator": "comparison-swap",
+      "lineno": 819,
+      "description": "NotEq->Eq (line 819)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.554
+    },
+    {
+      "mutant_id": "M0138",
+      "operator": "comparison-swap",
+      "lineno": 825,
+      "description": "Is->IsNot (line 825)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.512
+    },
+    {
+      "mutant_id": "M0139",
+      "operator": "negation-insertion",
+      "lineno": 831,
+      "description": "insert `not` into test (line 831)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.316
+    },
+    {
+      "mutant_id": "M0140",
+      "operator": "negation-insertion",
+      "lineno": 833,
+      "description": "insert `not` into test (line 833)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.353
+    },
+    {
+      "mutant_id": "M0141",
+      "operator": "boolop-swap",
+      "lineno": 844,
+      "description": "Or->And (line 844)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.26
+    },
+    {
+      "mutant_id": "M0142",
+      "operator": "boolop-swap",
+      "lineno": 849,
+      "description": "And->Or (line 849)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.535
+    },
+    {
+      "mutant_id": "M0143",
+      "operator": "negation-insertion",
+      "lineno": 850,
+      "description": "insert `not` into test (line 850)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.382
+    },
+    {
+      "mutant_id": "M0144",
+      "operator": "comparison-swap",
+      "lineno": 854,
+      "description": "NotEq->Eq (line 854)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.227
+    },
+    {
+      "mutant_id": "M0145",
+      "operator": "comparison-swap",
+      "lineno": 856,
+      "description": "IsNot->Is (line 856)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.265
+    },
+    {
+      "mutant_id": "M0146",
+      "operator": "negation-insertion",
+      "lineno": 863,
+      "description": "insert `not` into test (line 863)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.231
+    },
+    {
+      "mutant_id": "M0147",
+      "operator": "negation-insertion",
+      "lineno": 871,
+      "description": "insert `not` into test (line 871)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.57
+    },
+    {
+      "mutant_id": "M0148",
+      "operator": "negation-insertion",
+      "lineno": 880,
+      "description": "insert `not` into test (line 880)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.529
+    },
+    {
+      "mutant_id": "M0149",
+      "operator": "negation-insertion",
+      "lineno": 886,
+      "description": "insert `not` into test (line 886)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.575
+    },
+    {
+      "mutant_id": "M0150",
+      "operator": "negation-insertion",
+      "lineno": 888,
+      "description": "insert `not` into test (line 888)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.428
+    },
+    {
+      "mutant_id": "M0151",
+      "operator": "negation-insertion",
+      "lineno": 890,
+      "description": "insert `not` into test (line 890)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.376
+    },
+    {
+      "mutant_id": "M0152",
+      "operator": "const-bool-flip",
+      "lineno": 909,
+      "description": "False->True (line 909)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.468
+    },
+    {
+      "mutant_id": "M0153",
+      "operator": "numeric-perturb",
+      "lineno": 931,
+      "description": "int 0->1 (line 931)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.4
+    },
+    {
+      "mutant_id": "M0154",
+      "operator": "comparison-swap",
+      "lineno": 189,
+      "description": "In->NotIn (line 189)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.092
+    },
+    {
+      "mutant_id": "M0155",
+      "operator": "comparison-swap",
+      "lineno": 280,
+      "description": "In->NotIn (line 280)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.411
+    },
+    {
+      "mutant_id": "M0156",
+      "operator": "comparison-swap",
+      "lineno": 284,
+      "description": "NotIn->In (line 284)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.546
+    },
+    {
+      "mutant_id": "M0157",
+      "operator": "boolop-swap",
+      "lineno": 288,
+      "description": "Or->And (line 288)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.325
+    },
+    {
+      "mutant_id": "M0158",
+      "operator": "comparison-swap",
+      "lineno": 315,
+      "description": "In->NotIn (line 315)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.288
+    },
+    {
+      "mutant_id": "M0159",
+      "operator": "boolop-swap",
+      "lineno": 323,
+      "description": "Or->And (line 323)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.376
+    },
+    {
+      "mutant_id": "M0160",
+      "operator": "comparison-swap",
+      "lineno": 330,
+      "description": "IsNot->Is (line 330)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.324
+    },
+    {
+      "mutant_id": "M0161",
+      "operator": "comparison-swap",
+      "lineno": 333,
+      "description": "Is->IsNot (line 333)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.402
+    },
+    {
+      "mutant_id": "M0162",
+      "operator": "boolop-swap",
+      "lineno": 334,
+      "description": "And->Or (line 334)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.295
+    },
+    {
+      "mutant_id": "M0163",
+      "operator": "boolop-swap",
+      "lineno": 336,
+      "description": "Or->And (line 336)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.146
+    },
+    {
+      "mutant_id": "M0164",
+      "operator": "numeric-perturb",
+      "lineno": 373,
+      "description": "int 0->1 (line 373)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.208
+    },
+    {
+      "mutant_id": "M0165",
+      "operator": "comparison-swap",
+      "lineno": 761,
+      "description": "Is->IsNot (line 761)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.475
+    },
+    {
+      "mutant_id": "M0166",
+      "operator": "comparison-swap",
+      "lineno": 763,
+      "description": "Is->IsNot (line 763)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.346
+    },
+    {
+      "mutant_id": "M0167",
+      "operator": "comparison-swap",
+      "lineno": 765,
+      "description": "Is->IsNot (line 765)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.336
+    },
+    {
+      "mutant_id": "M0168",
+      "operator": "comparison-swap",
+      "lineno": 769,
+      "description": "Is->IsNot (line 769)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.272
+    },
+    {
+      "mutant_id": "M0169",
+      "operator": "comparison-swap",
+      "lineno": 774,
+      "description": "Eq->NotEq (line 774)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.906
+    },
+    {
+      "mutant_id": "M0170",
+      "operator": "comparison-swap",
+      "lineno": 775,
+      "description": "Is->IsNot (line 775)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.469
+    },
+    {
+      "mutant_id": "M0171",
+      "operator": "comparison-swap",
+      "lineno": 780,
+      "description": "Eq->NotEq (line 780)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.236
+    },
+    {
+      "mutant_id": "M0172",
+      "operator": "comparison-swap",
+      "lineno": 781,
+      "description": "Is->IsNot (line 781)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.229
+    },
+    {
+      "mutant_id": "M0173",
+      "operator": "comparison-swap",
+      "lineno": 786,
+      "description": "Eq->NotEq (line 786)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.287
+    },
+    {
+      "mutant_id": "M0174",
+      "operator": "comparison-swap",
+      "lineno": 787,
+      "description": "Is->IsNot (line 787)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.421
+    },
+    {
+      "mutant_id": "M0175",
+      "operator": "boolop-swap",
+      "lineno": 833,
+      "description": "Or->And (line 833)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.226
+    },
+    {
+      "mutant_id": "M0176",
+      "operator": "boolop-swap",
+      "lineno": 837,
+      "description": "And->Or (line 837)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.219
+    },
+    {
+      "mutant_id": "M0177",
+      "operator": "comparison-swap",
+      "lineno": 844,
+      "description": "Is->IsNot (line 844)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.19
+    },
+    {
+      "mutant_id": "M0178",
+      "operator": "boolop-swap",
+      "lineno": 864,
+      "description": "And->Or (line 864)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.305
+    },
+    {
+      "mutant_id": "M0179",
+      "operator": "negation-insertion",
+      "lineno": 865,
+      "description": "insert `not` into test (line 865)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.184
+    },
+    {
+      "mutant_id": "M0180",
+      "operator": "boolop-swap",
+      "lineno": 871,
+      "description": "Or->And (line 871)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.192
+    },
+    {
+      "mutant_id": "M0181",
+      "operator": "negation-insertion",
+      "lineno": 873,
+      "description": "insert `not` into test (line 873)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.157
+    },
+    {
+      "mutant_id": "M0182",
+      "operator": "boolop-swap",
+      "lineno": 881,
+      "description": "And->Or (line 881)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.116
+    },
+    {
+      "mutant_id": "M0183",
+      "operator": "comparison-swap",
+      "lineno": 886,
+      "description": "NotEq->Eq (line 886)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.244
+    },
+    {
+      "mutant_id": "M0184",
+      "operator": "comparison-swap",
+      "lineno": 888,
+      "description": "NotEq->Eq (line 888)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.175
+    },
+    {
+      "mutant_id": "M0185",
+      "operator": "comparison-swap",
+      "lineno": 890,
+      "description": "NotEq->Eq (line 890)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.129
+    },
+    {
+      "mutant_id": "M0186",
+      "operator": "const-bool-flip",
+      "lineno": 902,
+      "description": "False->True (line 902)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.355
+    },
+    {
+      "mutant_id": "M0187",
+      "operator": "comparison-swap",
+      "lineno": 291,
+      "description": "NotEq->Eq (line 291)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.126
+    },
+    {
+      "mutant_id": "M0188",
+      "operator": "comparison-swap",
+      "lineno": 292,
+      "description": "Lt->LtE (line 292)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.297
+    },
+    {
+      "mutant_id": "M0189",
+      "operator": "comparison-swap",
+      "lineno": 292,
+      "description": "Lt->Gt (line 292)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.206
+    },
+    {
+      "mutant_id": "M0190",
+      "operator": "comparison-swap",
+      "lineno": 758,
+      "description": "IsNot->Is (line 758)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.117
+    },
+    {
+      "mutant_id": "M0191",
+      "operator": "const-bool-flip",
+      "lineno": 761,
+      "description": "True->False (line 761)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.32
+    },
+    {
+      "mutant_id": "M0192",
+      "operator": "const-bool-flip",
+      "lineno": 763,
+      "description": "True->False (line 763)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.327
+    },
+    {
+      "mutant_id": "M0193",
+      "operator": "const-bool-flip",
+      "lineno": 765,
+      "description": "True->False (line 765)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.462
+    },
+    {
+      "mutant_id": "M0194",
+      "operator": "const-bool-flip",
+      "lineno": 769,
+      "description": "True->False (line 769)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.215
+    },
+    {
+      "mutant_id": "M0195",
+      "operator": "const-bool-flip",
+      "lineno": 775,
+      "description": "True->False (line 775)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.298
+    },
+    {
+      "mutant_id": "M0196",
+      "operator": "const-bool-flip",
+      "lineno": 781,
+      "description": "True->False (line 781)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.237
+    },
+    {
+      "mutant_id": "M0197",
+      "operator": "const-bool-flip",
+      "lineno": 787,
+      "description": "True->False (line 787)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.205
+    },
+    {
+      "mutant_id": "M0198",
+      "operator": "comparison-swap",
+      "lineno": 833,
+      "description": "Is->IsNot (line 833)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.295
+    },
+    {
+      "mutant_id": "M0199",
+      "operator": "comparison-swap",
+      "lineno": 837,
+      "description": "IsNot->Is (line 837)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.17
+    },
+    {
+      "mutant_id": "M0200",
+      "operator": "const-bool-flip",
+      "lineno": 841,
+      "description": "False->True (line 841)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.441
+    },
+    {
+      "mutant_id": "M0201",
+      "operator": "comparison-swap",
+      "lineno": 871,
+      "description": "Is->IsNot (line 871)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.174
+    },
+    {
+      "mutant_id": "M0202",
+      "operator": "comparison-swap",
+      "lineno": 873,
+      "description": "NotEq->Eq (line 873)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.216
+    },
+    {
+      "mutant_id": "M0203",
+      "operator": "comparison-swap",
+      "lineno": 883,
+      "description": "NotEq->Eq (line 883)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.3
+    },
+    {
+      "mutant_id": "M0204",
+      "operator": "const-bool-flip",
+      "lineno": 125,
+      "description": "True->False (line 125)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.158
+    },
+    {
+      "mutant_id": "M0205",
+      "operator": "numeric-perturb",
+      "lineno": 292,
+      "description": "int 0->1 (line 292)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.16
+    },
+    {
+      "mutant_id": "M0206",
+      "operator": "boolop-swap",
+      "lineno": 391,
+      "description": "Or->And (line 391)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.143
+    },
+    {
+      "mutant_id": "M0207",
+      "operator": "boolop-swap",
+      "lineno": 392,
+      "description": "Or->And (line 392)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.228
+    },
+    {
+      "mutant_id": "M0208",
+      "operator": "const-bool-flip",
+      "lineno": 758,
+      "description": "True->False (line 758)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.196
+    },
+    {
+      "mutant_id": "M0209",
+      "operator": "comparison-swap",
+      "lineno": 398,
+      "description": "Eq->NotEq (line 398)",
+      "status": "killed",
+      "returncode": 1,
+      "duration_s": 2.123
+    }
+  ],
+  "survivors": [
+    {
+      "mutant_id": "M0032",
+      "operator": "boolop-swap",
+      "lineno": 201,
+      "description": "And->Or (line 201)",
+      "status": "survived",
+      "returncode": 0,
+      "duration_s": 2.269
+    }
+  ]
+}

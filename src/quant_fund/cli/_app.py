@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 import typer
 
+from quant_fund.cli.blueprint_cmds import blueprint_app
 from quant_fund.hmm.cli import hmm_app as hmm_app
 from quant_fund.leakage.cli import leakage_app
 from quant_fund.lightspeed.cli import ls_app as ls_app
@@ -71,6 +72,7 @@ app.add_typer(leakage_app, name="leakage")
 app.add_typer(reality_app, name="reality")
 app.add_typer(proofcore_app, name="proofcore")
 app.add_typer(stress_app, name="stress")
+app.add_typer(blueprint_app, name="blueprint")
 
 
 def _cfg(config: Path) -> AppConfig:

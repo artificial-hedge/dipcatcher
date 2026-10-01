@@ -129,7 +129,7 @@ Concrete citations for SOTA methods used or targeted by this repo. Map each to `
 
 | Citation | Why it matters | Repo map |
 |----------|----------------|----------|
-| Angelopoulos & Bates, *A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification*, arXiv:2107.07511 (updated guide) | Split CP, coverage semantics, nonconformity | `models/conformal*.py`, CRC paths, fixtures in `tests/unit/test_*conformal*` |
+| Angelopoulos & Bates, *A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification*, arXiv:2107.07511 (updated guide) | Split CP, coverage semantics, nonconformity | `models/conformal*.py`, CRC paths, fixtures in `tests/unit/models/test_*conformal*` |
 | Gibbs & Candès, Adaptive Conformal Inference (ACI) / DtACI line | Non-exchangeable sequential coverage | Online CRC / adaptive λ paths (`online_crc`, CRC extremes) |
 | Angelopoulos et al., Conformal Risk Control (CRC) | Control E[loss] not just miscoverage | `crc` modules + `test_crc.py` |
 | Kaya et al., *Conformal Prediction for Reliable Stock Selections*, PMLR 2025 | CP sets for stock selection | Ranking / conformal rank benches |

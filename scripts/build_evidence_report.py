@@ -21,6 +21,11 @@ from quant_fund.research.real_benchmark import MODELS
 from quant_fund.research.verify import verify_research_artifact
 from quant_fund.utils.hashing import hash_file
 
+if __package__:
+    from scripts._committed_evidence import committed_evidence_paths
+else:
+    from _committed_evidence import committed_evidence_paths
+
 _PHASE1_INDEX = Path("data/metadata/research/phase1_evidence_index.json")
 _PHASE1_RUNS = (
     Path("data/metadata/real_benchmark/us_wide_20260925"),
@@ -99,7 +104,10 @@ def receipt_paths(root: Path) -> list[Path]:
     # seal-verified set audited by verify-all / receipts-reverify.
     paths.extend((root / "receipts" / "legacy-unsealed").glob("*.json"))
     paths.extend((root / ".dsh-24x7").glob("evidence-incumbent-vectorbt*.json"))
-    unique = sorted({path.resolve() for path in paths}, key=lambda path: _rel(root, path))
+    # Preserve the path identity before resolving: a replaced symlink must
+    # not impersonate the committed ordinary blob at this path.
+    unique = sorted({path.absolute() for path in paths}, key=lambda path: _rel(root, path))
+    unique = committed_evidence_paths(root, unique)
     missing = [path for path in unique if not path.is_file()]
     if missing:
         rendered = ", ".join(_rel(root, path) for path in missing)

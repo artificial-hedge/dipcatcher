@@ -60,17 +60,17 @@ def test_fixtures_cover_every_sealed_receipt() -> None:
     sealed evidence from the explorer (this caught a stale-fixture drift)."""
     index = _load("index.json")
     indexed = {receipt["file"] for receipt in index["receipts"]}
-    sealed = {f"receipts/{p.name}" for p in (REPO_ROOT / "receipts").glob("*.json")}
+    sealed = _committed_receipts()
     assert sealed == indexed, f"fixture/receipt mismatch: {sorted(sealed ^ indexed)}"
     assert {p.name for p in (FIXTURES / "receipts").glob("*.json")} == {
-        p.name for p in (REPO_ROOT / "receipts").glob("*.json")
+        Path(name).name for name in sealed
     }
 
 
 def test_every_committed_receipt_is_exported() -> None:
     """A new receipts/*.json without a fixture export silently drops evidence
     from the explorer. Completeness is pinned both directions."""
-    committed = {f"receipts/{p.name}" for p in (REPO_ROOT / "receipts").glob("*.json")}
+    committed = _committed_receipts()
     exported = {receipt["file"] for receipt in _load("index.json")["receipts"]}
     assert committed - exported == set(), (
         f"receipts missing from fixtures — re-run web/scripts/export_fixtures.py: "
@@ -143,6 +143,57 @@ def _exporter():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _committed_receipts() -> set[str]:
+    """The export boundary is ordinary receipt blobs at HEAD, not local runs."""
+    return {
+        name
+        for name in _exporter()._committed_files()
+        if name.startswith("receipts/") and name.count("/") == 1 and name.endswith(".json")
+    }
+
+
+def test_receipt_exports_use_head_bytes_and_exclude_local_or_staged_runs(
+    tmp_path, monkeypatch
+) -> None:
+    import subprocess
+
+    module = _exporter()
+    monkeypatch.setattr(module, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(module, "EQUITY_SOURCES", [])
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    directory = tmp_path / "receipts"
+    directory.mkdir()
+    source = directory / "committed.json"
+    raw = b'{"schema":"probe.v1","research_only":true,"data_label":"SYNTHETIC"}\n'
+    source.write_bytes(raw)
+    subprocess.run(["git", "-C", str(tmp_path), "add", "receipts"], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(tmp_path),
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.invalid",
+            "commit",
+            "-qm",
+            "fixture",
+        ],
+        check=True,
+    )
+    source.write_bytes(b'{"local_dirty":true}\n')
+    (directory / "staged.json").write_bytes(raw)
+    subprocess.run(["git", "-C", str(tmp_path), "add", "receipts/staged.json"], check=True)
+    (directory / "local.json").write_bytes(raw)
+    destination = tmp_path / "export"
+    module._export(destination)
+    assert (destination / "receipts" / "committed.json").read_bytes() == raw
+    assert {p.name for p in (destination / "receipts").glob("*.json")} == {"committed.json"}
+    index = json.loads((destination / "index.json").read_text())
+    assert {row["file"] for row in index["receipts"]} == {"receipts/committed.json"}
 
 
 def test_export_hashes_ignore_dirty_untracked_and_symlink_bytes(tmp_path, monkeypatch) -> None:

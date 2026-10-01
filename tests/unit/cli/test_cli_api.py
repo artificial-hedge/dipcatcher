@@ -386,10 +386,10 @@ def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
 
     api = importlib.import_module("quant_fund.api.app")
 
-    calls: list[tuple[str, str]] = []
+    calls: list[tuple[bytes, bytes]] = []
     original = hmac.compare_digest
 
-    def recording_compare(left: str, right: str) -> bool:
+    def recording_compare(left: bytes, right: bytes) -> bool:
         calls.append((left, right))
         return original(left, right)
 
@@ -397,7 +397,7 @@ def test_api_key_comparison_is_constant_time(monkeypatch) -> None:
     monkeypatch.setenv("QUANT_API_KEY", "secret-test-key")
     response = TestClient(app).get("/doctor", headers={"X-API-Key": "wrong-key"})
     assert response.status_code == 401
-    assert calls == [("wrong-key", "secret-test-key")]
+    assert calls == [(b"wrong-key", b"secret-test-key")]
 
 
 def test_drift_endpoint_fails_closed_on_invalid_research_artifact(

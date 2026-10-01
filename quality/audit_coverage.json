@@ -1,7 +1,7 @@
 {
   "directories": {
     "api": {
-      "n_modules": 3,
+      "n_modules": 4,
       "status": "audited"
     },
     "audit": {
@@ -20,7 +20,7 @@
       "status": "audited"
     },
     "cli": {
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "compute": {
@@ -43,7 +43,7 @@
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 8,
+      "n_modules": 10,
       "status": "audited"
     },
     "features": {
@@ -91,17 +91,17 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 73,
+      "n_modules": 75,
       "status": "audited"
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 50,
+      "n_modules": 51,
       "status": "audited"
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 207,
+      "n_modules": 222,
       "status": "audited"
     },
     "monitoring": {
@@ -139,7 +139,7 @@
       "status": "audited"
     },
     "portfolio": {
-      "n_modules": 14,
+      "n_modules": 15,
       "status": "audited"
     },
     "pretrade": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 118,
+      "n_modules": 123,
       "status": "audited"
     },
     "risk": {
@@ -216,6 +216,20 @@
       "reason": "package surface only",
       "status": "waived"
     },
+    "api/app.py": {
+      "status": "partial",
+      "reason": "Blueprint registration/authentication changes extend the previously audited module. Focused integration tests exist; the changed scope needs independent line-level audit.",
+      "evidence": [
+        "tests/unit/api/test_blueprint_api.py"
+      ]
+    },
+    "api/blueprint.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/api/test_blueprint_api.py"
+      ]
+    },
     "backtest/event_sim/__init__.py": {
       "status": "audited"
     },
@@ -237,9 +251,235 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "cli/_app.py": {
+      "status": "partial",
+      "reason": "Blueprint registration/authentication changes extend the previously audited module. Focused integration tests exist; the changed scope needs independent line-level audit.",
+      "evidence": [
+        "tests/unit/cli/test_blueprint_cli.py"
+      ]
+    },
+    "cli/blueprint_cmds.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/cli/test_blueprint_cli.py"
+      ]
+    },
+    "execution/ml_router.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/execution/test_ml_router.py"
+      ]
+    },
+    "execution/parent_order_rl.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/execution/test_parent_order_rl.py"
+      ]
+    },
+    "metrics/adaptive_eps.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/core/test_adaptive_eps.py"
+      ]
+    },
+    "metrics/conformal_oce.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/core/test_conformal_oce.py"
+      ]
+    },
+    "microstructure/exec_cost_split.py": {
+      "status": "partial",
+      "reason": "The existing source includes a pinned type suppression reviewed for bookkeeping. Complete independent line-level audit and removal/narrowing of these escapes remain unestablished.",
+      "evidence": [
+        "tests/unit/microstructure/test_exec_cost_split.py"
+      ]
+    },
+    "microstructure/hawkes_mv.py": {
+      "status": "partial",
+      "reason": "The existing source includes a pinned type suppression and a broad import fallback reviewed for bookkeeping. Complete independent line-level audit and removal/narrowing of these escapes remain unestablished.",
+      "evidence": [
+        "tests/unit/microstructure/test_hawkes_mv.py"
+      ]
+    },
+    "microstructure/off_exchange.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/microstructure/test_off_exchange.py"
+      ]
+    },
+    "models/asset_graph.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_asset_graph.py"
+      ]
+    },
+    "models/continual_market.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_continual_market.py"
+      ]
+    },
+    "models/diffusion_forecaster.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_diffusion_forecaster.py"
+      ]
+    },
+    "models/economic_events.py": {
+      "status": "partial",
+      "reason": "Bounded lexical release extraction, publication/PIT constraints, learned numeric regression and JSON fitting replay are tested on synthetic inputs. Independent line-level audit, empirical feeds/vintages and event-causation evidence remain incomplete.",
+      "evidence": [
+        "tests/unit/models/test_economic_events.py"
+      ]
+    },
+    "models/fbm.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_fbm.py"
+      ]
+    },
+    "models/federated_market.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_federated_market.py"
+      ]
+    },
+    "models/greek_neutral_portfolios.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_greek_neutral_portfolios.py"
+      ]
+    },
+    "models/market_diffusion.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_market_diffusion.py"
+      ]
+    },
+    "models/meta_allocation.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_meta_allocation.py"
+      ]
+    },
+    "models/multimodal_market.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_multimodal_market.py"
+      ]
+    },
+    "models/narrative_market.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_narrative_market.py"
+      ]
+    },
+    "models/options_flow.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_options_flow.py"
+      ]
+    },
+    "models/policy_gradient_maker.py": {
+      "status": "partial",
+      "reason": "Clipped PPO training and ledger/masking contracts have focused synthetic tests. Independent line-level audit, authentic market replay and operational execution evidence remain incomplete. No market-making or trading benefit is established.",
+      "evidence": [
+        "tests/unit/models/test_policy_gradient_maker.py"
+      ]
+    },
+    "models/rbergomi.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_rbergomi.py"
+      ]
+    },
+    "models/trade_anomaly.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/models/test_trade_anomaly.py"
+      ]
+    },
+    "portfolio/qubo_selection.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/portfolio/test_qubo_selection.py"
+      ]
+    },
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "research/benches_w16.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/research/test_benches_w16.py"
+      ]
+    },
+    "research/benches_w17.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/research/test_benches_w17.py"
+      ]
+    },
+    "research/blueprint_federated_evidence.py": {
+      "status": "partial",
+      "reason": "Saved federated evidence checks hashes, parameter aggregation and proper-score replay. Original training is not rerun, and partner authentication/privacy/secure aggregation are not established.",
+      "evidence": [
+        "tests/unit/cli/test_blueprint_cli.py",
+        "tests/unit/api/test_blueprint_api.py"
+      ]
+    },
+    "research/blueprint_graph_evidence.py": {
+      "status": "partial",
+      "reason": "Focused contract tests and implementation review cover a bounded scope; a complete independent line-level audit has not been established. This module does not inherit the directory audit.",
+      "evidence": [
+        "tests/unit/research/test_blueprint_graph_evidence.py"
+      ]
+    },
+    "research/microstructure_receipts.py": {
+      "status": "partial",
+      "reason": "Schema-specific embedded-summary validation and resealed-tamper tests cover 39 legacy schemas. Original tape, fits, simulations and absent child artifacts are not replayed or independently authenticated.",
+      "evidence": [
+        "tests/unit/research/test_microstructure_receipts.py"
+      ]
+    },
+    "research/receipt_v2.py": {
+      "status": "partial",
+      "reason": "New v2-wrapped script dispatch extends the previously audited scope. Inner embedded-summary contracts are tested; original research computation and source provenance are not independently replayed.",
+      "evidence": [
+        "tests/unit/research/test_microstructure_receipts.py"
+      ]
+    },
+    "research/script_receipts.py": {
+      "status": "partial",
+      "reason": "New microstructure-schema dispatch extends the previously audited scope. Focused contract tests cover embedded summaries; independent line-level audit of the extended scope remains incomplete.",
+      "evidence": [
+        "tests/unit/research/test_script_receipts.py",
+        "tests/unit/research/test_microstructure_receipts.py"
+      ]
     }
   },
   "schema_version": "audit-coverage/v1",

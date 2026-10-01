@@ -91,3 +91,5 @@ mutants/
 # host-local evidence — proof-run orchestration is pending.
 proofs/
 leakage-report.json
+# TypeScript API client uses a committed npm lockfile; installed tools are local.
+clients/typescript/node_modules/

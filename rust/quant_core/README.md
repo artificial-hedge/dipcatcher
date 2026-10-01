@@ -21,6 +21,10 @@ make native
 # uv run maturin develop --release --manifest-path rust/quant_core/Cargo.toml
 ```
 
+On AArch64, SHA-256 uses runtime-detected hardware instructions when
+available and otherwise retains the software fallback. Other targets keep
+the default SHA-256 backend.
+
 Existing CI jobs do not install Rust. The `rust-accel` job builds this crate
 on Linux for CPython 3.12 and 3.13 and runs the parity tests.
 

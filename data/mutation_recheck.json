@@ -1,0 +1,20 @@
+[
+  {
+    "mutant_id": "M0032",
+    "operator": "boolop-swap",
+    "lineno": 201,
+    "description": "And->Or (line 201)",
+    "status": "survived",
+    "returncode": 0,
+    "duration_s": 2.381
+  },
+  {
+    "mutant_id": "M0200",
+    "operator": "const-bool-flip",
+    "lineno": 841,
+    "description": "False->True (line 841)",
+    "status": "killed",
+    "returncode": 1,
+    "duration_s": 2.463
+  }
+]

@@ -760,6 +760,9 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.lane_contracts import lane_contract_errors
 
         errors.extend(lane_contract_errors(payload_body))
+        from quant_fund.research.script_receipts import script_receipt_contract_errors
+
+        errors.extend(script_receipt_contract_errors(payload_body.get("schema"), payload_body))
     errors.extend(_kind_consistency_errors(body))
     return _result(path, payload, convention, errors)
 

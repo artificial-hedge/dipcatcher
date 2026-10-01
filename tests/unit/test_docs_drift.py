@@ -10,9 +10,10 @@ Inline-code spans (`` `...` ``) and fenced code blocks in ``docs/**/*.md``,
 2. ``dipcatcher <cmd> [sub]`` — must be a registered Typer command or group of
    ``quant_fund.cli.main.app``; group invocations with a bare second token must
    name a real sub-command.
-3. ``<root>/<path>`` repo paths — must exist as a tracked file or directory
-   (``git ls-files`` is the truth, so results do not depend on local generated
-   state). ``src/quant_fund/`` and ``src/fx1/`` abbreviations and ``cd`` inside
+3. ``<root>/<path>`` repo paths — must exist as a tracked file or directory.
+   Newly authored, nonignored docs may additionally refer to nonignored new
+   files before staging; existing tracked docs retain the committed-state gate.
+   ``src/quant_fund/`` and ``src/fx1/`` abbreviations and ``cd`` inside
    a fenced block are honoured. Glob-ish references (``foo_*``, ``vN``, ``NNN``)
    must match at least one tracked path.
 4. ``make <target>`` — must be a target declared in the root ``Makefile``.
@@ -34,13 +35,16 @@ import importlib
 import importlib.util
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 DOC_FILES = sorted(REPO.glob("docs/**/*.md")) + [REPO / "README.md", REPO / "AGENTS.md"]
 
 INLINE_RE = re.compile(r"`([^`\n]+)`")
-FENCE_RE = re.compile(r"```[a-zA-Z]*\n(.*?)```", re.S)
+FENCE_RE = re.compile(r"```([^\n]*)\n(.*?)```", re.S)
 
 # Path-boundary lookbehind: a leading `/` means the token is a URL route
 # (`/research/latest`) or the tail of a longer path (`metadata/research/x.json`).
@@ -48,7 +52,7 @@ SYMBOL_RE = re.compile(r"(?<![\w/.-])((?:quant_fund|fx1)(?:\.[A-Za-z_]\w*)+)")
 PATH_RE = re.compile(
     r"(?<![\w/.-])((?:scripts|configs|docs|src|tests|examples|spec|third_party|rust|web|"
     r"deploy|docker|verifier|quality|clients|notebooks|replay|research|artifacts|receipts)"
-    r"(?:/[\w.-]+)+/?)"
+    r"(?:/[\w.*-]+)+/?)"
 )
 MAKE_RE = re.compile(r"(?<![\w/.-])make\s+([a-zA-Z][a-zA-Z0-9_-]*)")
 CD_RE = re.compile(r"^cd\s+([A-Za-z0-9_./-]+)")
@@ -149,9 +153,6 @@ KNOWN_MISSES: dict[str, str] = {
     "research/reality/trials.jsonl": "generated pending ledger (decision 038).",
     # Receipt emitted when the ranker-probability experiment is run.
     "receipts/ranker_probability_wide_20260927.json": "experiment output receipt.",
-    # Carry-pipeline output dirs populated by carry runs, not committed.
-    "artifacts/carry_champion": "generated carry-pipeline output dir.",
-    "artifacts/carry_equity": "generated carry-pipeline output dir.",
     # Gitignored vendored weights dir; fetched out-of-band, never committed.
     "third_party/kronos_weights": "gitignored vendored weights dir.",
     # ADR filename template documented in docs/adr/README.md; not a real file.
@@ -163,15 +164,21 @@ KNOWN_MISSES: dict[str, str] = {
 }
 
 
-def _tracked_index() -> tuple[frozenset[str], frozenset[str]]:
-    out = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=True
-    ).stdout.split()
+def _tracked_index(*, include_untracked: bool = False) -> tuple[frozenset[str], frozenset[str]]:
+    args = ["git", "ls-files", "-z"]
+    if include_untracked:
+        args.extend(["--cached", "--others", "--exclude-standard"])
+    out = (
+        subprocess.run(args, cwd=REPO, capture_output=True, text=True, check=True)
+        .stdout.rstrip("\0")
+        .split("\0")
+    )
     dirs = {str(p) for f in out for p in Path(f).parents if str(p) != "."}
     return frozenset(out), frozenset(dirs)
 
 
 TRACKED_FILES, TRACKED_DIRS = _tracked_index()
+WORKTREE_FILES, WORKTREE_DIRS = _tracked_index(include_untracked=True)
 
 
 def _code_regions(text: str) -> list[tuple[int, str, str | None]]:
@@ -183,10 +190,14 @@ def _code_regions(text: str) -> list[tuple[int, str, str | None]]:
     regions: list[tuple[int, str, str | None]] = []
     fences = list(FENCE_RE.finditer(text))
     for m in fences:
+        if m.group(1).strip().lower() == "mermaid":
+            continue
         start = text[: m.start()].count("\n") + 1
         cwd: str | None = None
-        for j, line in enumerate(m.group(1).splitlines()):
+        for j, line in enumerate(m.group(2).splitlines()):
             stripped = line.strip()
+            if stripped.startswith(("├", "└", "│")):
+                continue
             cd = CD_RE.match(stripped)
             if cd:
                 cwd = cd.group(1).rstrip("/")
@@ -344,18 +355,25 @@ def _as_glob(ref: str) -> str:
     return pat
 
 
-def _path_resolves(ref: str, cwd: str | None) -> bool:
+def _path_resolves(ref: str, cwd: str | None, *, include_untracked: bool = False) -> bool:
+    files = WORKTREE_FILES if include_untracked else TRACKED_FILES
+    dirs = WORKTREE_DIRS if include_untracked else TRACKED_DIRS
+    version_range = re.fullmatch(r"(.*?/v)(\d+)\.\.v(\d+)", ref)
+    if version_range:
+        prefix, first, last = version_range.groups()
+        lo, hi = int(first), int(last)
+        return 0 <= hi - lo < 100 and all(f"{prefix}{i}" in dirs for i in range(lo, hi + 1))
     globby = _is_glob(ref)
     for cand in _path_candidates(ref, cwd):
         if globby:
             pat = _as_glob(cand)
-            if any(fnmatch.fnmatch(f, pat) for f in TRACKED_FILES):
+            if any(fnmatch.fnmatch(f, pat) for f in files):
                 return True
         else:
             c = cand.rstrip("/.")
-            if c in TRACKED_FILES or c in TRACKED_DIRS:
+            if c in files or c in dirs:
                 return True
-            if c.endswith(".py") and c[:-3] in TRACKED_DIRS:
+            if c.endswith(".py") and c[:-3] in dirs:
                 return True  # module ref that has since become a package
     return False
 
@@ -398,8 +416,12 @@ def _scan() -> tuple[dict[str, list[str]], frozenset[str]]:
                     misses.setdefault(f"dipcatcher {cmd}", []).append(loc)
         for m in PATH_RE.finditer(region):
             ref = m.group(1).rstrip("/")
+            if region[: m.start()].endswith("^") and ref.endswith("/.*"):
+                # An anchored grep regex describes paths; it is not a file
+                # named `.*`. The command's concrete path arguments still scan.
+                continue
             refs.add(ref)
-            if ref and not _path_resolves(ref, cwd):
+            if ref and not _path_resolves(ref, cwd, include_untracked=rel not in TRACKED_FILES):
                 misses.setdefault(ref, []).append(loc)
         for m in MAKE_RE.finditer(region):
             ref = f"make {m.group(1)}"
@@ -421,3 +443,47 @@ def test_docs_code_references_resolve() -> None:
         elif ref not in misses:
             details.append(f"{ref} <- KNOWN_MISSES entry now resolves: remove it")
     assert not details, "docs reference drift:\n" + "\n".join(details)
+
+
+def test_nonexecutable_diagram_and_tree_regions_are_excluded() -> None:
+    text = (
+        '```mermaid\nA["make nonexistent; configs/nonexistent.yaml"]\n```\n'
+        "```text\n├── replay/ # replay/visualization tooling\n```\n"
+        "Run `make lint` and `dipcatcher blueprint route`.\n"
+    )
+    assert [region for _, region, _ in _code_regions(text)] == [
+        "make lint",
+        "dipcatcher blueprint route",
+    ]
+
+
+@pytest.mark.parametrize("fence", [False, True])
+def test_unknown_executable_references_still_scan(fence: bool) -> None:
+    body = "make nonexistent-target configs/nonexistent.yaml"
+    text = f"```bash\n{body}\n```" if fence else f"`{body}`"
+    regions = [region for _, region, _ in _code_regions(text)]
+    assert len(regions) == 1
+    assert MAKE_RE.search(regions[0]).group(1) == "nonexistent-target"
+    assert PATH_RE.search(regions[0]).group(1) == "configs/nonexistent.yaml"
+    assert not _path_resolves("configs/nonexistent.yaml", None, include_untracked=True)
+
+
+def test_new_document_path_scope_keeps_tracked_gate(monkeypatch) -> None:
+    module = sys.modules[__name__]
+    monkeypatch.setattr(module, "TRACKED_FILES", frozenset())
+    monkeypatch.setattr(module, "TRACKED_DIRS", frozenset())
+    monkeypatch.setattr(module, "WORKTREE_FILES", frozenset({"src/new.py"}))
+    monkeypatch.setattr(module, "WORKTREE_DIRS", frozenset({"src"}))
+    assert not _path_resolves("src/new.py", None)
+    assert _path_resolves("src/new.py", None, include_untracked=True)
+    assert not _path_resolves("src/ignored.py", None, include_untracked=True)
+
+
+def test_path_patterns_require_actual_matches(monkeypatch) -> None:
+    module = sys.modules[__name__]
+    monkeypatch.setattr(module, "TRACKED_FILES", frozenset({"configs/protocol_v1.yaml"}))
+    monkeypatch.setattr(module, "TRACKED_DIRS", frozenset({"verifier/v1", "verifier/v2"}))
+    assert _path_resolves("configs/protocol*.yaml", None)
+    assert not _path_resolves("configs/missing*.yaml", None)
+    assert _path_resolves("verifier/v1..v2", None)
+    assert not _path_resolves("verifier/v1..v3", None)

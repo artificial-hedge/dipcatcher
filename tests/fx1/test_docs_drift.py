@@ -20,7 +20,7 @@ _DOC_PATHS = sorted(
 
 # `fx1 ...` / `make ...` inside inline code or fenced blocks.
 _INLINE = re.compile(r"`([^`\n]+)`")
-_FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
+_FENCE = re.compile(r"```([^\n]*)\n(.*?)```", re.DOTALL)
 _FX1_CMD = re.compile(r"(?<![/\w])fx1 ([a-z][a-z0-9-]*)(?: ([a-z][a-z0-9-]*))?\b")
 _MAKE_TARGET = re.compile(r"\bmake ([a-z0-9][a-z0-9_-]*)")
 _IMPORT_FROM = re.compile(r"from (fx1(?:\.[a-z_]+)+) import ([a-z_][a-zA-Z0-9_]*)")
@@ -28,9 +28,16 @@ _MODULE_REF = re.compile(r"`(fx1(?:\.[a-z_]+)+)`")
 
 
 def _code_spans(text: str) -> list[str]:
-    spans = _INLINE.findall(text)
-    for block in _FENCE.findall(text):
-        spans.extend(block.splitlines())
+    # Diagram labels and directory-tree descriptions are not commands. Remove
+    # fences before extracting inline spans so backticks inside a diagram cannot
+    # bypass this distinction; retain shell and ordinary code examples.
+    spans = _INLINE.findall(_FENCE.sub("", text))
+    for language, block in _FENCE.findall(text):
+        if language.strip().lower() == "mermaid":
+            continue
+        spans.extend(
+            line for line in block.splitlines() if not line.lstrip().startswith(("├", "└", "│"))
+        )
     return spans
 
 
@@ -83,6 +90,11 @@ def test_documented_import_paths_resolve(doc: Path):
         if not hasattr(module, symbol):
             problems.append(f"{module_name}.{symbol}")
     for module_name in _MODULE_REF.findall(text):
+        if (
+            module_name.endswith((".yml", ".yaml"))
+            and (_REPO_ROOT / ".github/workflows" / module_name).is_file()
+        ):
+            continue
         try:
             importlib.import_module(module_name)
         except ImportError:
@@ -95,3 +107,36 @@ def test_documented_import_paths_resolve(doc: Path):
             except ImportError:
                 problems.append(module_name)
     assert not problems, f"{doc.name}: unresolvable imports {problems}"
+
+
+def test_diagram_and_directory_prose_are_not_executable_commands(tmp_path: Path):
+    doc = tmp_path / "diagram.md"
+    doc.write_text(
+        '```mermaid\nRel(model, corpus, "fx1 positive example; make targets")\n```\n'
+        "```text\n├── Makefile # every workflow is a make target\n```\n"
+        "Use `fx1 strategy replay` and `make fx1-test`.\n",
+        encoding="utf-8",
+    )
+    test_documented_fx1_commands_exist(doc)
+    test_documented_make_targets_exist(doc)
+
+
+@pytest.mark.parametrize("fence", [False, True])
+def test_unknown_executable_commands_still_fail(tmp_path: Path, fence: bool):
+    doc = tmp_path / "bad-command.md"
+    command = "fx1 nonexistent-command"
+    doc.write_text(f"```bash\n{command}\n```" if fence else f"`{command}`", encoding="utf-8")
+    with pytest.raises(AssertionError, match="unknown fx1 commands"):
+        test_documented_fx1_commands_exist(doc)
+    doc.write_text("```bash\nmake nonexistent-target\n```", encoding="utf-8")
+    with pytest.raises(AssertionError, match="unknown make targets"):
+        test_documented_make_targets_exist(doc)
+
+
+def test_workflow_filename_is_distinct_from_python_module(tmp_path: Path):
+    doc = tmp_path / "imports.md"
+    doc.write_text("Workflow `fx1.yml`; module `fx1.strategy`.", encoding="utf-8")
+    test_documented_import_paths_resolve(doc)
+    doc.write_text("Module `fx1.nonexistent_module`.", encoding="utf-8")
+    with pytest.raises(AssertionError, match="unresolvable imports"):
+        test_documented_import_paths_resolve(doc)

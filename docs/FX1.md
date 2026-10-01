@@ -8,7 +8,9 @@ total / 104B active MoE, Kimi K3 License).
 
 **dipcatcher** is the harness: the data engine, evaluation bench, and
 verification layer. `src/fx1/harness.py` is the typed bridge; `fx1 harness list`
-shows the registered lab surfaces.
+shows the registered lab surfaces. `fx1 harness capabilities` searches the
+million-record skill, datasource-plugin, and feature recipe catalog; see
+[`FX1_CAPABILITIES.md`](FX1_CAPABILITIES.md) for its pack format and limits.
 
 ## What the plumbing enforces
 

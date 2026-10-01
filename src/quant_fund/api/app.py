@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from quant_fund import __firm__, __version__
+from quant_fund.api.blueprint import router as blueprint_router
 from quant_fund.config import load_config
 from quant_fund.config.models import AppConfig
 from quant_fund.metrics.analytics import validate_analytics_export
@@ -31,6 +32,7 @@ from quant_fund.pipeline.forecast import (
 from quant_fund.utils.atomicio import atomic_write_parquet, atomic_write_text
 
 app = FastAPI(title=f"{__firm__} Dipcatcher", version=__version__)
+app.include_router(blueprint_router)
 
 # Repo root: src/quant_fund/api/app.py → parents[3]
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -116,7 +118,7 @@ async def _authenticate_request(
         return await call_next(request)
     if expected:
         provided = request.headers.get("X-API-Key")
-        if not provided or not hmac.compare_digest(provided, expected):
+        if not provided or not hmac.compare_digest(provided.encode(), expected.encode()):
             return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
         return await call_next(request)
     if not _client_is_loopback(request):
@@ -179,6 +181,10 @@ async def api_auth_middleware(request: Request, call_next):  # type: ignore[no-u
                     response = await _authenticate_request(request, call_next, path, expected)
         else:
             response = await _authenticate_request(request, call_next, path, expected)
+        # FastAPI may translate the receive exception to a generic parse error.
+        # Keep the byte limit's 413 response after that translation.
+        if received_bytes > _MAX_REQUEST_BYTES:
+            raise _RequestBodyTooLarge
     except _RequestBodyTooLarge:
         response = JSONResponse(
             status_code=413,
