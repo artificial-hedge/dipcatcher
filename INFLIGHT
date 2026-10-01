@@ -1724,3 +1724,33 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
     #717/#720/#723/#725 land.
 note: canon PR to follow.
+
+--- owner: devin (wave 69 canon)
+slice: 6 modules + benches_w69 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - Lanes on devin/w69-lanes @b63cfc1b off origin/main: vmd.py
+    (Dragomiretskiy-Zosso VMD, one-sided-spectrum ADMM with
+    smoothed-peak center init; 3-carrier decomposition freq err
+    9e-4, recon 0.14), stockwell.py (Stockwell-Mansinha-Lowe
+    S-transform, Gaussian window sd ~1/f, positive-bin form;
+    linear-chirp ridge err 0.0019), cca.py (Hotelling CCA via
+    whitened-coherence SVD + Wold PLS-SVD + Anderson RRR with
+    oblique-projector Y-space basis; shared-direction align
+    0.90), isomap.py (Tenenbaum-de Silva-Langford kNN-graph
+    Floyd-Warshall geodesics + classical MDS; Swiss-roll latent
+    ordering |rho| 0.98), kriging.py (Matheron ordinary kriging
+    + binned empirical variogram + exponential sill/range grid
+    fit; held-out RMSE ratio 0.41 vs marginal sd, exact at
+    knots), innovations_ets.py (Hyndman ETS(A,Ad,N) innovations
+    filter + SSE-grid smoothing params, Theta method, Croston+
+    SBA; damped-trend MASE ratio 0.57 vs naive).
+  - benches_w69.py: +402..407 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "vmd","stockwell","cca","isomap","kriging",
+    "innovations_ets" (368->374); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w69.
+  - Canon staged on top of w68-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.

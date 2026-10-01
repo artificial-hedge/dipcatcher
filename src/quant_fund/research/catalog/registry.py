@@ -898,6 +898,28 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "particle_gibbs",
         "ripley_k",
         "synchrosqueezing",
+        # Wave 69 — Dragomiretskiy-Zosso
+        # variational mode decomposition
+        # (one-sided-spectrum ADMM, spectral-
+        # peak initialization), Stockwell-
+        # Mansinha-Lowe S-transform (1/f-
+        # width Gaussian TF), Hotelling CCA
+        # with Wold PLS-SVD and Anderson
+        # reduced-rank regression, Tenen-
+        # baum-de Silva-Langford Isomap
+        # (kNN-graph geodesics + classical
+        # MDS), Matheron ordinary kriging
+        # with fitted exponential vario-
+        # gram, and Hyndman innovations
+        # ETS damped-trend + Theta + SBA-
+        # corrected Croston. Same
+        # SYNTHETIC diagnostic contract.
+        "vmd",
+        "stockwell",
+        "cca",
+        "isomap",
+        "kriging",
+        "innovations_ets",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

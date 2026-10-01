@@ -541,6 +541,14 @@ from quant_fund.research.benches_w68 import (
     bench_synchrosqueezing,
     bench_vix_replication,
 )
+from quant_fund.research.benches_w69 import (
+    bench_cca,
+    bench_innovations_ets,
+    bench_isomap,
+    bench_kriging,
+    bench_stockwell,
+    bench_vmd,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2500,6 +2508,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "particle_gibbs": bench_particle_gibbs(),
         "ripley_k": bench_ripley_k(),
         "synchrosqueezing": bench_synchrosqueezing(),
+        "vmd": bench_vmd(),
+        "stockwell": bench_stockwell(),
+        "cca": bench_cca(),
+        "isomap": bench_isomap(),
+        "kriging": bench_kriging(),
+        "innovations_ets": bench_innovations_ets(),
     }
 
     hyps = _build_hypotheses(families, rankers)
