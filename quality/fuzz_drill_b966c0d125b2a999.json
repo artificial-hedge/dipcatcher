@@ -1,0 +1,150 @@
+{
+  "baseline_errors": [],
+  "data_label": "CORPUS",
+  "live_pnl_claim": false,
+  "mutations": [
+    {
+      "detail": null,
+      "errors": [
+        "checkpoint:checkpoint_absent",
+        "spine:checkpoint_absent",
+        "timestamp_anchors:anchor_target_missing:quality/checkpoint.json"
+      ],
+      "expect": "fail",
+      "mutation": "checkpoint_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "truncated_to:747",
+      "errors": [
+        "epoch:quality:epoch_head_rollback:corpus_epoch_b906fa2f038fb8c8.json",
+        "epoch:quality:epoch_multiple_heads:corpus_epoch_629fda4c1270b4d1.json,corpus_epoch_b906fa2f038fb8c8.json",
+        "epoch:quality:epoch_orphan:corpus_epoch_ef478be9e22c85c9.json"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_truncate",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "expect": "fail",
+      "mutation": "witness_proof_delete",
+      "outcome": "escaped",
+      "verifier_ok": true
+    },
+    {
+      "detail": null,
+      "errors": [
+        "crown_jewels:jewel_missing:src/quant_fund/research/receipt_lattice.py"
+      ],
+      "expect": "fail",
+      "mutation": "jewel_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": null,
+      "errors": [
+        "spine:spine_archive_count:15!=14"
+      ],
+      "expect": "fail",
+      "mutation": "spine_record_delete",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[1128]^=71",
+      "errors": [
+        "spine:orphan_checkpoint:64afdc087fdf",
+        "spine:signature_invalid:64afdc087fdf:signature_invalid"
+      ],
+      "expect": "fail",
+      "mutation": "spine_record_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "injected:fuzz_90c192cf.json",
+      "errors": [
+        "epoch:receipts:unstamped_member:fuzz_90c192cf.json"
+      ],
+      "expect": "fail",
+      "mutation": "unstamped_receipt_inject",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[7315]^=21",
+      "errors": [
+        "crown_jewels:jewel_mutated:src/quant_fund/research/receipt_lattice.py"
+      ],
+      "expect": "fail",
+      "mutation": "jewel_byte_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[2363]^=73",
+      "errors": [
+        "witness:checkpoint.json_2885474199.json:inclusion_proof_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_byte_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "byte[25]^=2a",
+      "errors": [
+        "pin_signatures:signature_file_malformed"
+      ],
+      "expect": "fail",
+      "mutation": "pin_sig_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "created:docs/FUZZ_NOTE.md",
+      "expect": "ok",
+      "mutation": "uncovered_write",
+      "outcome": "correct",
+      "verifier_ok": true
+    },
+    {
+      "detail": "byte[190]^=51",
+      "errors": [
+        "witness:checkpoint.json_2885061641.json:digest_mismatch",
+        "witness:checkpoint.json_2885061641.json:inclusion_root_mismatch",
+        "witness:checkpoint.json_2885061641.json:leaf_uuid_mismatch",
+        "witness:checkpoint.json_2885061641.json:set_signature_invalid"
+      ],
+      "expect": "fail",
+      "mutation": "witness_proof_flip",
+      "outcome": "correct",
+      "verifier_ok": false
+    },
+    {
+      "detail": "renamed:schema",
+      "errors": [
+        "witness:checkpoint.json_2885474199.json:schema_mismatch"
+      ],
+      "expect": "fail",
+      "mutation": "corpus_key_rename",
+      "outcome": "correct",
+      "verifier_ok": false
+    }
+  ],
+  "n_escaped": 1,
+  "n_false_positive": 0,
+  "n_mutations": 13,
+  "ok": false,
+  "receipt_sha256": "86fd4b06e67397703f7c89bda3e5bde2c2975ca3b6fd46a2c44699a78120b262",
+  "research_only": true,
+  "schema": "fuzz_drill.v1",
+  "seed": 7,
+  "simulated_only": false,
+  "tree_sha256": "4844c1aa0c6c06d4959694ee4e91b1674ae4c5d9a652a4c4373a500d625bd7cb",
+  "verdict": "miscalibrated"
+}
