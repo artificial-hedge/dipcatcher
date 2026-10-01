@@ -1,0 +1,45 @@
+{
+  "claim": "vpin_flow_toxicity_measured_real_vs_sim",
+  "data_label": "MIXED",
+  "git_revision": "97ad733f7fccd16fb7fa12235e4743b6547aae16",
+  "interpretation": "VPIN = rolling mean |order imbalance| over equal-volume buckets. Positive vpin_fwd_vol_corr means toxic flow precedes volatility \u2014 the ELO mechanism. Near-zero real-tape corr is the honest published result for a single quiet large-cap day.",
+  "kind": "vpin",
+  "real": {
+    "bucket_volume": 12264.96,
+    "n_buckets": 49,
+    "ok": true,
+    "vpin_fwd_vol_corr": 0.1772,
+    "vpin_mean": 0.2631,
+    "vpin_p90": 0.3208
+  },
+  "receipt_sha256": "710f032cb569df5fa2684e5656f99669b66233db555035ac25285c88f2a98acd",
+  "research_only": true,
+  "schema": "vpin.v1",
+  "sim_arms": {
+    "iid": {
+      "bucket_volume": 66.38,
+      "n_buckets": 49,
+      "ok": true,
+      "vpin_fwd_vol_corr": 0.0732,
+      "vpin_mean": 0.091,
+      "vpin_p90": 0.1118
+    },
+    "regime": {
+      "bucket_volume": 74.46,
+      "n_buckets": 49,
+      "ok": true,
+      "vpin_fwd_vol_corr": 0.1732,
+      "vpin_mean": 0.0814,
+      "vpin_p90": 0.1077
+    },
+    "split": {
+      "bucket_volume": 84.88,
+      "n_buckets": 49,
+      "ok": true,
+      "vpin_fwd_vol_corr": 0.346,
+      "vpin_mean": 0.4467,
+      "vpin_p90": 0.6246
+    }
+  },
+  "ticker": "AMZN"
+}

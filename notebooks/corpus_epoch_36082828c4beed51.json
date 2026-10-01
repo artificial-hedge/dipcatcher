@@ -1,0 +1,30 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "2e5eb2cf6832af7273665e2c8e39d8054726e1606d7c339639bbbb3410b1c889",
+  "inputs_sha256": "01ea9eef732fd0648ed9605e072d962e1bffe5e1332a9fc65e01e7cebcdb55ae",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "4a33aa0aaed8400ae50fb9c7e54b1d32785a7afca9eb03f73c665e96420be0bd",
+  "members": [
+    {
+      "name": ".gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "members_added": [
+    ".gitkeep"
+  ],
+  "members_removed": [],
+  "n_members": 1,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "36082828c4beed51dd09b33c605f53befc8c2c256c77290dfb3b87c4cf9bd03d",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

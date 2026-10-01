@@ -1997,16 +1997,20 @@ class TestCONVBermudanShadow:
             np.testing.assert_allclose(got, exp, rtol=1e-12, atol=1e-14)
 
     def test_matches_shadow_at_alpha_one(self) -> None:
-        """alpha == 1.0 exactly must still take the damped branch (pins
-        `alpha != 0.0`, not `alpha != 1.0`)."""
+        """alpha == 1.0 exactly must still take both damped branches (pins
+        `alpha != 0.0`, not `alpha != 1.0`, at the payoff *and* the un-damping
+        step).  The strike deliberately differs from s0 so the un-damping factor
+        exp(alpha * ln(s0/k)) is not 1 and the second branch is observable."""
         cf = bs_char_fn(S0, R, T, SIGMA)
-        ks = np.array([100.0])
+        ks = np.array([85.0, 118.0])
         sig = _ref_sigma_est(cf, T)
         got = conv_bermudan_put(cf, r=R, t=T, s0=S0, strikes=ks, M=2, N=128, alpha=1.0)
         exp = _shadow_conv(cf, R, T, S0, ks, 2, 128, 10.0, 1.0, sig)
         np.testing.assert_allclose(got, exp, rtol=1e-12, atol=1e-14)
         undamped = conv_bermudan_put(cf, r=R, t=T, s0=S0, strikes=ks, M=2, N=128)
-        assert got[0] != undamped[0]
+        np.testing.assert_array_less(0.0, np.abs(got - undamped))
+        # the un-damping factor is genuinely != 1 for these strikes
+        assert np.exp(1.0 * math.log(S0 / 85.0)) != 1.0
 
     def test_matches_shadow_for_merton_cf(self) -> None:
         """Non-Gaussian CF through the |φ| kernel and the L-dependent width."""
