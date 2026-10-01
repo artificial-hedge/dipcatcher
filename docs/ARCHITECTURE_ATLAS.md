@@ -637,7 +637,7 @@ sequenceDiagram
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 75 |
 | `quant_fund.microstructure` | 9 |
-| `quant_fund.models` | 209 |
+| `quant_fund.models` | 210 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -664,7 +664,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **894**
+- Modules scanned: **895**
 - Packages: **65**
 - Cross-package import edges: **276**
 
