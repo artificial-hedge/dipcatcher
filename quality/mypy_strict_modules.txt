@@ -3,6 +3,7 @@ quant_fund.config.impact
 quant_fund.fusion.stack_watch
 quant_fund.hmm.verify
 quant_fund.microstructure.intraday_exec
+quant_fund.microstructure.tape_surgery
 quant_fund.monitoring.monitor_chain
 quant_fund.native.conformance
 src/quant_fund/__init__.py
