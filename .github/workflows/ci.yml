@@ -668,6 +668,12 @@ jobs:
         run: make evidence-audit
       - name: Cross-receipt consistency lattice
         run: make lattice-check
+      - name: Fetch PR base for the admission diff
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Admission gate on diff-changed receipts
+        if: github.event_name == 'pull_request'
+        run: make admission-gate ADMISSION_BASE=FETCH_HEAD
 
   pretrade-risk:
     runs-on: ubuntu-latest
