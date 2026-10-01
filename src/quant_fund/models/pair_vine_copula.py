@@ -32,12 +32,16 @@ import math
 import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize as opt
 from scipy import stats as sstats
 from scipy.special import gammaln
+
+if TYPE_CHECKING:
+    from quant_fund.models.rvine import RVineSpec
 
 Array = NDArray[np.float64]
 
@@ -145,6 +149,17 @@ class VineMatrix:
     loglik: float = field(default=-np.inf)
     n_params: int = field(default=0)
     tree_edges: list[list[tuple[int, int, tuple[int, ...]]]] = field(default_factory=list)
+    # ``ordering[k]`` is the caller's column index that occupies vine position
+    # ``k``; None means identity.  ``structure`` is "cvine", "dvine", or
+    # "rvine" and tells vine_logpdf/vine_sample how positional ladder columns
+    # map onto tree_edges.
+    ordering: Array | None = field(default=None)
+    structure: str = field(default="rvine")
+    # Internal handle produced by ``vine_fit(structure="rvine")``: the fitted
+    # edge list + sampling arrays that the generic R-vine paths consume.
+    # Hand-built matrices leave it None and keep the legacy warn/degrade
+    # behaviour.
+    rvine_spec: RVineSpec | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         m = np.asarray(self.matrix, dtype=np.float64)
@@ -154,6 +169,13 @@ class VineMatrix:
         if dim < 2 or dim > _MAX_DIM:
             raise ValueError(f"Vine dimension must be in [2, {_MAX_DIM}]")
         self.matrix = m
+        if self.ordering is not None:
+            o = np.asarray(self.ordering, dtype=int).ravel()
+            if o.shape[0] != dim or sorted(o.tolist()) != list(range(dim)):
+                raise ValueError("ordering must be a permutation of 0..dim-1")
+            self.ordering = o
+        if self.structure not in ("cvine", "dvine", "rvine"):
+            raise ValueError(f"unknown vine structure {self.structure}")
 
     @property
     def dim(self) -> int:
@@ -194,6 +216,7 @@ def cvine_structure(dim: int) -> VineMatrix:
         families={},
         params={},
         tree_edges=_cvine_edges(dim),
+        structure="cvine",
     )
 
 
@@ -227,6 +250,7 @@ def dvine_structure(dim: int) -> VineMatrix:
         families={},
         params={},
         tree_edges=_dvine_edges(dim),
+        structure="dvine",
     )
 
 
@@ -479,16 +503,10 @@ def _gumbel_logpdf(u: Array, v: Array, alpha: float) -> float:
         return 0.0
     uu = _clip(u)
     vv = _clip(v)
-    uu.shape[0]
     a = (-np.log(uu)) ** alpha
     b = (-np.log(vv)) ** alpha
     s = a + b
     cap = s ** (1.0 / alpha)
-    (alpha - 1.0) * np.sum(np.log(np.log(1.0 / uu)) + np.log(np.log(1.0 / vv)))
-    np.sum(-np.log(uu) - np.log(vv))  # = sum(log(1/(u v)))
-    (2.0 - 1.0 / alpha) * np.sum(np.log(cap))
-    float(-np.sum(cap))
-    float(np.sum(np.log(cap + alpha - 1.0)))
     # The Gumbel copula density formula (Schepsmeier & Stöber 2014 eq. 4):
     # c(u,v) = C(u,v) * (u v)^(-1) * ((-log u)^alpha + (-log v)^alpha)^{(2-2alpha)/alpha}
     #          * [((-log u)^alpha + (-log v)^alpha)^{1/alpha} + alpha - 1] * ((-log u)(-log v))^{alpha-1}
@@ -623,14 +641,23 @@ def _frank_fit(u: Array, v: Array) -> dict[str, float]:
 
 
 def _joe_h(u: Array, v: Array, theta: float) -> Array:
+    """h(u|v) = ∂C/∂v for the Joe copula.
+
+    With ``ũ = 1-u``, ``ṽ = 1-v``, ``s = ũ^θ + ṽ^θ - ũ^θ·ṽ^θ`` and
+    ``C = 1 - s^{1/θ}``:
+
+        ∂C/∂v = s^{1/θ - 1} · ṽ^{θ-1} · (1 - ũ^θ)
+
+    (the mirror form ``s^{1/θ-1}·ũ^{θ-1}·(1-ṽ^θ)`` is ∂C/∂u — the swapped
+    conditional).
+    """
     uu = _clip(u)
     vv = _clip(v)
     a = (1.0 - uu) ** theta
     b = (1.0 - vv) ** theta
     s = a + b - a * b
-    1.0 - s ** (1.0 / theta)
     return np.asarray(
-        ((1.0 - uu) ** (theta - 1.0) * (1.0 - b) * s ** (1.0 / theta - 1.0)),
+        ((1.0 - vv) ** (theta - 1.0) * (1.0 - a) * s ** (1.0 / theta - 1.0)),
         dtype=np.float64,
     )
 
@@ -765,7 +792,6 @@ def _select_family(
             best_crit = crit
             best_fam = fam
             best_params = fit
-            fit["loglik"]
 
     if best_fam == "":
         # fallback: independence (Gaussian with rho ~ 0)
@@ -868,23 +894,44 @@ def vine_sample(
     # Let's implement C-vine and D-vine sampling explicitly first,
     # then generalize.
 
-    # Check if this looks like a C-vine by diagonal pattern
+    # Dispatch on the recorded structure (vine_fit sets it; the factories
+    # tag themselves).  The diagonal heuristic remains as a fallback for
+    # hand-built VineMatrix objects that predate the ``structure`` field.
+    structure = getattr(vm, "structure", None) or "rvine"
     diag = np.array([vm.matrix[j, j] for j in range(dim)])
     dvals = np.sort(diag)
 
-    if np.allclose(dvals, np.arange(1, dim + 1, dtype=float)[::-1]):
-        # C-vine sampling
-        return _cvine_sample_inner(vm, n, rng)
-    elif np.allclose(dvals, np.arange(1, dim + 1, dtype=float)):
-        # D-vine sampling
-        return _dvine_sample_inner(vm, n, rng)
+    if structure == "rvine" and vm.rvine_spec is not None:
+        from quant_fund.models.rvine import rvine_sample as _rvine_sim
+
+        return _rvine_sim(n, cast("RVineSpec", vm.rvine_spec), rng)
+
+    if structure == "cvine" or (
+        structure == "rvine" and np.allclose(dvals, np.arange(1, dim + 1, dtype=float)[::-1])
+    ):
+        out = _cvine_sample_inner(vm, n, rng)
+    elif structure == "dvine" or (
+        structure == "rvine" and np.allclose(dvals, np.arange(1, dim + 1, dtype=float))
+    ):
+        out = _dvine_sample_inner(vm, n, rng)
     else:
-        # Generic R-vine sampling via the matrix-based algorithm
-        return _rvine_sample_inner(vm, n, w, rng)
+        out = _rvine_sample_inner(vm, n, w, rng)
+
+    # Samples are produced in vine positions; map back to the caller's
+    # original column order when the fit permuted variables.
+    if vm.ordering is not None:
+        out = out[:, np.argsort(vm.ordering)]
+    return out
 
 
 def _cvine_sample_inner(vm: VineMatrix, n: int, rng: np.random.Generator) -> Array:
-    """C-vine sampling: root at tree 0 and leaves connected to root."""
+    """C-vine sampling: root at tree 0 and leaves connected to root.
+
+    Inverse Rosenblatt recursion: to sample variable ``i``, apply the
+    h-inverses for trees ``i-1 .. 0``, conditioning at tree ``t`` on
+    ``F(x_t | x_0..t-1)`` — which by construction equals the input uniform
+    ``w_t``, NOT the marginal sample ``x_t``.
+    """
     dim = vm.dim
     independent = rng.random((n, dim))
     uniforms = np.zeros((n, dim), dtype=np.float64)
@@ -892,79 +939,72 @@ def _cvine_sample_inner(vm: VineMatrix, n: int, rng: np.random.Generator) -> Arr
 
     for i in range(1, dim):
         val = independent[:, i].copy()
-        # In C-vine, variable i is conditioned on variables i-1,...,0
         for j in range(i - 1, -1, -1):
             tree = j
-            # Edge index: in tree j, the edge connecting (j, i)
-            # Find the correct edge
             edge_idx = i - j - 1
             key = (tree, edge_idx)
             if key in vm.families:
                 fam, par = vm.pair_copula(tree, edge_idx)
-                val = _hinv_eval(val, uniforms[:, j], fam, par)
+                val = _hinv_eval(val, independent[:, j], fam, par)
         uniforms[:, i] = val
 
     return uniforms
 
 
 def _dvine_sample_inner(vm: VineMatrix, n: int, rng: np.random.Generator) -> Array:
-    """D-vine sampling: path structure 1-2-3-...-d."""
+    """D-vine sampling: path structure 1-2-3-...-d.
+
+    Inverse Rosenblatt recursion mirroring the fit's double array:
+    ``v_left[t][s] = F(x_s | x_{s+1..s+t})`` and
+    ``v_right[t][s] = F(x_{s+t} | x_{s..s+t-1})`` over *sampled* values.
+    To sample var ``i`` at tree ``t`` (edge ``(t, i-t-1)``), the
+    conditioning value is ``v_left[t][i-t-1]`` — a Rosenblatt transform
+    of the window's left endpoint, NOT the marginal ``x_{i-t-1}`` or the
+    input uniform.
+    """
     dim = vm.dim
     independent = rng.random((n, dim))
     uniforms = np.zeros((n, dim), dtype=np.float64)
     uniforms[:, 0] = independent[:, 0]
 
-    # D-vine: tree 0 edges are (0,1), (1,2), ..., (d-2,d-1)
-    # Tree 1 edges are (0,2), (1,3), ..., (d-3,d-1)
-    # etc.
+    v_left: dict[tuple[int, int], Array] = {(0, 0): independent[:, 0].copy()}
+    v_right: dict[tuple[int, int], Array] = {(0, 0): independent[:, 0].copy()}
+
     for i in range(1, dim):
         val = independent[:, i].copy()
-        # Apply h-inverses bottom-up: from tree i-2 down to tree 0
-        for tree in range(i - 1, -1, -1):
-            edge_idx = i - tree - 1
-            key = (tree, edge_idx)
-            if key in vm.families:
-                cond_var_idx = tree  # in D-vine, the conditioning is on variable 'tree'
-                fam, par = vm.pair_copula(tree, edge_idx)
-                val = _hinv_eval(val, uniforms[:, cond_var_idx], fam, par)
+        for t in range(i - 1, -1, -1):
+            s = i - t - 1
+            if (t, s) in vm.families:
+                fam, par = vm.pair_copula(t, s)
+                val = _hinv_eval(val, v_left[(t, s)], fam, par)
         uniforms[:, i] = val
+        v_left[(0, i)] = uniforms[:, i].copy()
+        v_right[(0, i)] = uniforms[:, i].copy()
+
+        # Fill transforms for every window [s..i] that now has both ends.
+        for t in range(1, i + 1):
+            s = i - t
+            key = (t - 1, s)
+            if key in vm.families:
+                fam, par = vm.pair_copula(t - 1, s)
+                v_left[(t, s)] = _h_eval(v_left[(t - 1, s)], v_right[(t - 1, s + 1)], fam, par)
+                v_right[(t, s)] = _h_eval(v_right[(t - 1, s + 1)], v_left[(t - 1, s)], fam, par)
+            else:
+                v_left[(t, s)] = v_left[(t - 1, s)]
+                v_right[(t, s)] = v_right[(t - 1, s + 1)]
 
     return uniforms
 
 
 def _rvine_sample_inner(vm: VineMatrix, n: int, w: Array, rng: np.random.Generator) -> Array:
-    """Generic R-vine sampling using the matrix representation.
+    """Fallback for hand-built ``VineMatrix`` objects without ``structure``.
 
-    Uses the algorithm from Dißmann et al. (2013) §3.2 / Algorithm 3.1
-    in Brechmann & Schepsmeier (2013).
+    Re-detects the C/D-vine diagonal patterns; anything else warns and
+    returns independent uniforms — a correct general R-vine sampler needs
+    per-edge Rosenblatt transforms that ``tree_edges`` alone does not carry.
     """
     dim = vm.dim
-    M = vm.matrix.copy()
-    # Map from 1-indexed matrix values to 0-indexed column indices
-    diag_vals = np.array([int(M[i, i]) for i in range(dim)])
-
-    # V_direct[k,i]: the direct variable for tree k, column i
-    # V_indirect[k,i]: the indirect variable for tree k, column i
-    np.zeros((dim, dim), dtype=int)  # will store pair-copula info
-
-    # Build the V matrix from M following Dißmann et al. algorithm
-    # This is complex — for now, fall back to C-vine-like sampling
-    # if the matrix can be interpreted that way.
-    #
-    # Actually, let me implement a simpler but correct approach:
-    # For the general R-vine, we traverse the matrix and apply
-    # the Rosenblatt transform column by column.
-    # See Czado (2019) "Analyzing Dependent Data with Vine Copulas",
-    # Algorithm 5.2: Simulation from an R-vine.
-
-    # Build the sets of conditioning / conditioned variables per edge.
-    # For the general sampling we need the stored conditional-indirect
-    # and conditional-direct arrays.
-    #
-    # Instead of a full general implementation (very complex), we
-    # detect C-vine / D-vine patterns and error for unrecognized ones.
-
-    # Re-detect: was this a C-vine?
+    diag_vals = np.array([int(vm.matrix[i, i]) for i in range(dim)])
     dvals = np.arange(1, dim + 1)
     diag_sorted = np.sort(diag_vals)
     if np.allclose(diag_sorted, dvals[::-1]):
@@ -973,89 +1013,148 @@ def _rvine_sample_inner(vm: VineMatrix, n: int, w: Array, rng: np.random.Generat
     if np.allclose(diag_sorted, dvals):
         return _dvine_sample_inner(vm, n, rng)
 
-    # Generic R-vine: implement the full algorithm.
-    # Set up the M matrix-driven sampling per Dißmann (2013), Algo 3.1.
-    # We need the h-function inversion matrices.
-
-    # Step 1: Compute the V matrices
-    V_dir = np.zeros((dim, dim), dtype=int)
-    V_ind = np.zeros((dim, dim), dtype=int)
-
-    for j in range(dim):
-        V_dir[0, j] = int(M[dim - 1, j])
-        V_ind[0, j] = int(M[j, j])
-
-    # Fill higher trees
-    M_int = M.astype(int)
-    for k in range(1, dim):
-        for j in range(dim - k):
-            m_kj = M_int[dim - 1 - k, j]
-            V_dir[k, j] = m_kj
-            V_ind[k, j] = M_int[dim - 1 - k, np.searchsorted(np.arange(dim), m_kj - 1, side="left")]
-            # Actually, the proper indexing uses M's diagonal mapping.
-            # Let's use a simpler approach: find row where M[*, j] == m_kj
-            # for the conditioning variable.
-
-    # Simpler approach: just use the tree_edges if available
-    if vm.tree_edges:
-        uniforms = np.zeros((n, dim), dtype=np.float64)
-        uniforms[:, 0] = w[:, 0]
-
-        # For each subsequent variable, apply inverse Rosenblatt
-        for var_idx in range(1, dim):
-            val = w[:, var_idx].copy()
-
-            # Collect which trees/edges involve this variable as the
-            # "second" (indirect) variable
-            # We need to go through trees in reverse order
-            for tree in range(dim - 2, -1, -1):
-                for edge_idx, (a, b, _cond) in enumerate(vm.tree_edges[tree]):
-                    if b == var_idx and (tree, edge_idx) in vm.families:
-                        # The conditioning variable is a (the direct variable)
-                        fam, par = vm.pair_copula(tree, edge_idx)
-                        val = _hinv_eval(val, uniforms[:, a], fam, par)
-                        break
-
-            uniforms[:, var_idx] = val
-
-        return uniforms
-
-    # Last resort: return independent
-    warnings.warn("vine_sample: unrecognized vine structure, returning independent", stacklevel=2)
+    # Generic R-vine sampling needs per-edge Rosenblatt transforms of the
+    # conditioning variables — metadata that ``tree_edges`` alone does not
+    # carry.  Warn honestly instead of returning wrong-conditioning values.
+    if vm.tree_edges and vm.families:
+        warnings.warn(
+            "vine_sample: generic R-vine sampling is not implemented; "
+            "returning independent uniforms",
+            stacklevel=2,
+        )
+    else:
+        warnings.warn(
+            "vine_sample: unrecognized vine structure, returning independent", stacklevel=2
+        )
     return w
+
+
+def _edge_loglik(fam: str, par: dict[str, float], u1: Array, u2: Array) -> float:
+    fn = _LOGLIK_FN[fam]
+    if fam == "t":
+        return fn(u1, u2, float(par["rho"]), float(par["nu"]))
+    if fam == "gaussian":
+        return fn(u1, u2, float(par["rho"]))
+    if fam == "clayton":
+        return fn(u1, u2, float(par["theta"]))
+    if fam == "gumbel":
+        return fn(u1, u2, float(par["alpha"]))
+    return fn(u1, u2, float(par["theta"]))  # frank / joe
 
 
 def vine_logpdf(vm: VineMatrix, u: Array) -> float:
     """Evaluate the vine copula log-density at observations ``u``.
 
-    ``u`` is an ``(n, d)`` matrix of pseudo-observations in (0, 1).
+    ``u`` is an ``(n, d)`` matrix of pseudo-observations in the caller's
+    ORIGINAL column order.  Columns are re-ordered to vine positions via
+    ``vm.ordering``, then every pair-copula is evaluated on its
+    *Rosenblatt-transformed* arguments — the forward h-ladder matching
+    ``vine_fit``.  Evaluating tree-t edges on raw marginals is a
+    wrong-conditioning bug (the pair densities live on conditioned
+    uniforms).
     """
+    return float(_vine_logpdf_rows(vm, u).sum())
+
+
+def vine_logpdf_rows(vm: VineMatrix, u: Array) -> Array:
+    """Per-observation vine log-density, shape (n,); sums to ``vine_logpdf``.
+
+    Needed by lanes that score *individual* held-out observations (e.g.
+    confidence sequences on log-loss differentials) rather than totals.
+    """
+    return _vine_logpdf_rows(vm, u)
+
+
+def _edge_logpdf_rows(fam: str, par: dict[str, float], u1: Array, u2: Array) -> Array:
+    """Per-observation log pair-copula density (vectorized, no row sum)."""
+    from quant_fund.models.rvine import _vec_logpdf
+
+    return _vec_logpdf(fam, par, u1, u2)
+
+
+def _vine_logpdf_rows(vm: VineMatrix, u: Array) -> Array:
+    """Per-observation vine log-density — the row-wise spine of vine_logpdf."""
     m = _as_finite_matrix(u)
     if m.shape[1] != vm.dim:
         raise ValueError(f"u has {m.shape[1]} columns but vine has dim={vm.dim}")
+    if vm.ordering is not None:
+        m = m[:, vm.ordering]
+    d = vm.dim
+    structure = vm.structure
 
-    total_ll = 0.0
-    for tree, edges in enumerate(vm.tree_edges):
-        for edge_idx, (a, b, _cond) in enumerate(edges):
-            key = (tree, edge_idx)
-            if key not in vm.families:
-                continue
-            fam, par = vm.pair_copula(tree, edge_idx)
-            fn = _LOGLIK_FN[fam]
-            u1 = m[:, a]
-            u2 = m[:, b]
-            if fam == "t":
-                total_ll += fn(u1, u2, float(par["rho"]), float(par["nu"]))
-            elif fam == "gaussian":
-                total_ll += fn(u1, u2, float(par["rho"]))
-            elif fam == "clayton":
-                total_ll += fn(u1, u2, float(par["theta"]))
-            elif fam == "gumbel":
-                total_ll += fn(u1, u2, float(par["alpha"]))
-            elif fam == "frank" or fam == "joe":
-                total_ll += fn(u1, u2, float(par["theta"]))
+    row_ll = np.zeros(m.shape[0], dtype=np.float64)
 
-    return total_ll
+    if structure == "cvine":
+        # h_data[t][c] = F(x_{t+c} | x_0..t-1); col 0 is the tree root.
+        h_data: list[Array] = [m]
+        for tree in range(d - 1):
+            cur = h_data[tree]
+            next_cols: list[Array] = []
+            for leaf_var in range(tree + 1, d):
+                edge_idx = leaf_var - tree - 1
+                key = (tree, edge_idx)
+                if key not in vm.families:
+                    continue
+                fam, par = vm.pair_copula(tree, edge_idx)
+                row_ll += _edge_logpdf_rows(fam, par, cur[:, 0], cur[:, leaf_var - tree])
+            if tree < d - 2 and cur.shape[1] > 1:
+                # Push: next root col + remaining leaf transforms.
+                first: Array
+                if (tree, 0) in vm.families:
+                    fam, par = vm.pair_copula(tree, 0)
+                    first = _h_eval(cur[:, 1], cur[:, 0], fam, par)
+                else:
+                    first = cur[:, 1]
+                next_cols = [first]
+                for leaf_var in range(tree + 2, d):
+                    key = (tree, leaf_var - tree - 1)
+                    if key in vm.families:
+                        fam, par = vm.pair_copula(tree, leaf_var - tree - 1)
+                        next_cols.append(_h_eval(cur[:, leaf_var - tree], cur[:, 0], fam, par))
+                    else:
+                        next_cols.append(cur[:, leaf_var - tree])
+                h_data.append(np.column_stack([np.asarray(c, dtype=np.float64) for c in next_cols]))
+        return row_ll
+
+    if structure == "dvine":
+        # Double-array ladder (mirrors vine_fit):
+        #   v_left[t][s]  = F(x_s   | x_{s+1..s+t})
+        #   v_right[t][s] = F(x_{s+t} | x_{s..s+t-1})
+        # edge (t, s) pairs (v_left[t][s], v_right[t][s+1]).
+        v_left = [m[:, c].copy() for c in range(d)]
+        v_right = [m[:, c].copy() for c in range(d)]
+        for tree in range(d - 1):
+            next_left: list[Array] = []
+            next_right: list[Array] = []
+            for s in range(d - tree - 1):
+                key = (tree, s)
+                if key in vm.families:
+                    fam, par = vm.pair_copula(tree, s)
+                    row_ll += _edge_logpdf_rows(fam, par, v_left[s], v_right[s + 1])
+                    next_left.append(_h_eval(v_left[s], v_right[s + 1], fam, par))
+                    next_right.append(_h_eval(v_right[s + 1], v_left[s], fam, par))
+                else:
+                    next_left.append(v_left[s])
+                    next_right.append(v_right[s + 1])
+            v_left = next_left
+            v_right = next_right
+            if not v_left:
+                break
+        return row_ll
+
+    if structure == "rvine" and vm.rvine_spec is not None:
+        from quant_fund.models.rvine import rvine_logpdf_edges
+
+        return rvine_logpdf_edges(m, cast("RVineSpec", vm.rvine_spec))
+
+    # Generic R-vine without a fitted spec: edge endpoints are variable
+    # labels in vine space, and the correct arguments are conditioned
+    # transforms that ``tree_edges`` alone does not describe — refuse rather
+    # than silently evaluate wrong-conditioning densities.
+    raise ValueError(
+        "vine_logpdf requires structure='cvine' or 'dvine' "
+        "(generic R-vine evaluation is unsupported)"
+    )
 
 
 # --------------------------------------------------------------- vine_fit
@@ -1146,8 +1245,36 @@ def vine_fit(
     n_obs, d = m.shape
     if d > max_dim:
         raise ValueError(f"dimension {d} exceeds max_dim={max_dim}")
-    if structure not in ("cvine", "dvine"):
-        raise ValueError("structure must be 'cvine' or 'dvine'")
+    if structure not in ("cvine", "dvine", "rvine"):
+        raise ValueError("structure must be 'cvine', 'dvine' or 'rvine'")
+
+    if structure == "rvine":
+        from quant_fund.models.rvine import rvine_fit
+
+        spec = rvine_fit(m, families=families, criterion=criterion, tau_threshold=tau_threshold)
+        tree_edges_r = [[(e.x, e.y, tuple(e.cond)) for e in tree_list] for tree_list in spec.edges]
+        fam_r: dict[tuple[int, int], str] = {}
+        par_r: dict[tuple[int, int], dict[str, float]] = {}
+        n_par = 0
+        for t, tree_list in enumerate(spec.edges):
+            for eidx, e in enumerate(tree_list):
+                fam_r[(t, eidx)] = e.family
+                par_r[(t, eidx)] = dict(e.params)
+                n_par += 2 if e.family == "t" else 1
+        vm_r = VineMatrix(
+            matrix=np.asarray(spec.matrix, dtype=np.float64),
+            families=fam_r,
+            params=par_r,
+            loglik=float(spec.loglik),
+            tree_edges=tree_edges_r,
+            ordering=None,
+            structure="rvine",
+            rvine_spec=spec,
+        )
+        vm_r.n_params = n_par
+        vm_r.aic = _aic(spec.loglik, n_par)
+        vm_r.bic = _bic(spec.loglik, n_par, n_obs)
+        return vm_r
 
     # Determine variable ordering via MST on |tau|
     tau_full = np.zeros((d, d), dtype=np.float64)
@@ -1230,13 +1357,20 @@ def vine_fit(
                     )
 
         else:
-            # D-vine: path structure — adjacent columns in h_data
+            # D-vine: path structure — the ladder needs TWO transforms per
+            # window (Aas et al. 2009, §5): at tree t, edge (t, start) pairs
+            #   left  = F(x_start     | x_{start+1..start+t})   = v_dir[t][start]
+            #   right = F(x_{start+t+1} | x_{start+1..start+t}) = v_ind[t][start+1]
+            # and both sides propagate:
+            #   v_dir[t+1][i] = h(v_dir[t][i]   | v_ind[t][i+1], edge(t,i))
+            #   v_ind[t+1][i] = h(v_ind[t][i+1] | v_dir[t][i],   edge(t,i))
+            if tree == 0:
+                v_dir = [h_data[0][:, c].copy() for c in range(d)]
+                v_ind = [h_data[0][:, c].copy() for c in range(d)]
             for start in range(d - tree - 1):
-                a_col = start
-                b_col = start + 1
                 edge_idx = start
-                u_a = h_data[tree][:, a_col]
-                u_b = h_data[tree][:, b_col]
+                u_a = v_dir[start]
+                u_b = v_ind[start + 1]
                 tau_ab = abs(_kendall_tau_pair(u_a, u_b))
                 if tau_ab < tau_threshold:
                     fam = "gaussian"
@@ -1252,21 +1386,23 @@ def vine_fit(
                 total_n_params += 2 if fam == "t" else 1
 
             if tree < d - 2:
-                next_cols = []
-                for start in range(d - tree - 2):
-                    edge_idx = start
-                    key_edge = (tree, edge_idx)
-                    if key_edge not in vm.families:
-                        next_cols.append(h_data[tree][:, start + 1])
-                        continue
-                    fam = vm.families[key_edge]
-                    par = vm.params[key_edge]
-                    h_val = _h_eval(h_data[tree][:, start + 1], h_data[tree][:, start], fam, par)
-                    next_cols.append(h_val)
-                if next_cols:
-                    h_data.append(
-                        np.column_stack([np.asarray(c, dtype=np.float64) for c in next_cols])
-                    )
+                next_dir = []
+                next_ind = []
+                for start in range(d - tree - 1):
+                    key_edge = (tree, start)
+                    if key_edge in vm.families:
+                        fam = vm.families[key_edge]
+                        par = vm.params[key_edge]
+                        next_dir.append(_h_eval(v_dir[start], v_ind[start + 1], fam, par))
+                        next_ind.append(_h_eval(v_ind[start + 1], v_dir[start], fam, par))
+                    else:
+                        next_dir.append(v_dir[start])
+                        next_ind.append(v_ind[start + 1])
+                v_dir = next_dir
+                v_ind = next_ind
+
+    vm.ordering = np.asarray(ordering, dtype=int)
+    vm.structure = structure
 
     vm.loglik = total_loglik
     vm.n_params = total_n_params

@@ -1,0 +1,24 @@
+{
+  "kind": "map_parity",
+  "schema": "map_parity.v1",
+  "git_revision": "1d51156d9476797f3b8a16028713b1bbb28b7eda",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "claim": {
+    "invariant": "task results depend only on (item, derive_seed(base, i))",
+    "parity": true,
+    "divergent_tasks": []
+  },
+  "interpretation": {
+    "bench": "48 seeded gaussian tasks x 2000 draws",
+    "schedules": {
+      "serial": "identical",
+      "reversed": "identical",
+      "shuffled": "identical",
+      "pool": "identical"
+    },
+    "n_tasks": 48,
+    "reference_digest": "2d5fd7a366fc9147436bbc648daba55adddc61009e20ec5fb0b064f7f93d9388"
+  },
+  "receipt_sha256": "d7965659eead420208514668c7e2567ae32b95e802cce93f1c20f3c9f343c21e"
+}
