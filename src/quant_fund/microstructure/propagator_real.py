@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import csv
 import math
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,7 @@ from quant_fund.microstructure.lobster import (
     parse_orderbook_row,
     resync_band,
 )
+from quant_fund.microstructure.maker_age_bench import _MO_PMF, _spec
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -42,6 +44,7 @@ from quant_fund.microstructure.zi_lob_simulator import (
     RegimeState,
     ZILobConfig,
     ZILobSimulator,
+    santa_fe_config,
 )
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -161,10 +164,28 @@ def propagator_real_bench(tape_dir: Path, ticker: str = "AMZN", *, seed: int = 7
     split = SplitFlow(
         p_start=0.10, size_tail=1.2, k_min=10, k_max=600, intensity_mult=3.0, seed=seed
     )
+    deep = replace(
+        santa_fe_config(seed=seed + 3),
+        hawkes=_spec(),
+        lo_offset_gain=80.0,
+        touch_pull=0.4,
+        cxl_touch_bias=0.5,
+        cxl_dist_decay=3.0,
+        cxl_requote=0.5,
+        mo_size_pmf=_MO_PMF,
+        band=40,
+        lam=3.5,
+        theta_cxl=0.4,
+        lo_offset=4,
+    )
+    split_deep = SplitFlow(
+        p_start=0.10, size_tail=1.2, k_min=10, k_max=600, intensity_mult=3.0, seed=seed + 3
+    )
     arms = {
         "iid": propagator_sim(seed=seed),
         "regime": propagator_sim(flow=regime, seed=seed + 1),
         "split": propagator_sim(flow=split, seed=seed + 2),
+        "deep_split": propagator_sim(deep, flow=split_deep, seed=seed + 3, horizon=60000),
     }
     table: dict[str, Any] = {"real": real, "sim_arms": arms}
     divergences: list[str] = []
@@ -189,7 +210,10 @@ def propagator_real_bench(tape_dir: Path, ticker: str = "AMZN", *, seed: int = 7
             "trade; the log-log slope marks whether impact accumulates "
             "(positive) or is absorbed (negative) over the horizon. "
             "Sim arms share the estimator, so gaps isolate the flow "
-            "mechanism, not the measurement."
+            "mechanism, not the measurement. The deep_split arm pairs "
+            "metaorder splitting with the deep-book regime (band=40, "
+            "churn knobs) — testing whether book depth, not just flow "
+            "correlation, closes the lag-1 undershoot."
         ),
     }
     payload["git_revision"] = git_revision()
