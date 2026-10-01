@@ -507,6 +507,7 @@ src/quant_fund/monitoring/monitor_chain.py
 src/quant_fund/native/__init__.py
 src/quant_fund/native/conformance.py
 src/quant_fund/native/reference.py
+src/quant_fund/native/warmup_spec.py
 src/quant_fund/northset/__init__.py
 src/quant_fund/northset/benches.py
 src/quant_fund/northset/candles.py
