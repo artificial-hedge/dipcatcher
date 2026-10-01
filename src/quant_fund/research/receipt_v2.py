@@ -775,8 +775,23 @@ def _verify_v2(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         from quant_fund.research.lane_contracts import lane_contract_errors
 
         errors.extend(lane_contract_errors(payload_body))
+        errors.extend(_tape_binding_errors(payload_body))
+    errors.extend(_tape_binding_errors(body))
     errors.extend(_kind_consistency_errors(body))
     return _result(path, payload, convention, errors)
+
+
+def _tape_binding_errors(payload: Mapping[str, Any]) -> list[str]:
+    """A declared tape binding must resolve to a committed ``data/manifests`` pin.
+
+    Ratchet-in contract: receipts declaring ``tape_manifest_sha256`` or
+    ``dataset_sha256`` under a non-synthetic ``data_label`` fail closed when
+    the digest is unknown to the tape registry; bodies without bindings
+    stay admissible.
+    """
+    from quant_fund.research.tape_registry import tape_binding_errors
+
+    return tape_binding_errors(payload)
 
 
 def _carries_v2_evidence(payload: Mapping[str, Any]) -> bool:
@@ -889,6 +904,7 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
         )
 
         errors.extend(cost_calibration_contract_errors(payload))
+    errors.extend(_tape_binding_errors(payload))
     if payload.get("schema") == "custody_proof.v1":
         from quant_fund.research.custody import custody_contract_errors
 
