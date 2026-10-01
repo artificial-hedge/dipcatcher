@@ -118,6 +118,7 @@ from numpy.typing import NDArray
 from quant_fund.microstructure.zi_lob_simulator import (
     MM_TAG,
     ZI_LOB_REVISION,
+    AdversarialFlow,
     MarkovRegimeFlow,
     MMState,
     QuotePolicy,
@@ -1026,7 +1027,7 @@ def run_rl_mm_session(
     training: bool = False,
     learn_every: int = 1,
     decision_interval: float = 1.0,
-    flow: MarkovRegimeFlow | ScenarioRegimeFlow | None = None,
+    flow: MarkovRegimeFlow | ScenarioRegimeFlow | AdversarialFlow | None = None,
     inventory_cap: int | None = None,
     sample_interval: float = 25.0,
     reward_phi: float = 1e-3,
@@ -1065,8 +1066,12 @@ def run_rl_mm_session(
         raise ValueError("training=True requires an agent")
     if not isinstance(config, ZILobConfig):
         raise TypeError("config must be a ZILobConfig")
-    if flow is not None and not isinstance(flow, (MarkovRegimeFlow, ScenarioRegimeFlow)):
-        raise TypeError("flow must be a MarkovRegimeFlow / ScenarioRegimeFlow or None")
+    if flow is not None and not isinstance(
+        flow, (MarkovRegimeFlow, ScenarioRegimeFlow, AdversarialFlow)
+    ):
+        raise TypeError(
+            "flow must be a MarkovRegimeFlow / ScenarioRegimeFlow / AdversarialFlow or None"
+        )
     h = _pos_finite(horizon, "horizon")
     di = _pos_finite(decision_interval, "decision_interval")
     si = _pos_finite(sample_interval, "sample_interval")
@@ -1124,6 +1129,7 @@ def run_rl_mm_session(
     prev_action: int | None = None
     action_hist = [0] * (agent.n_actions if agent is not None else 0)
     rewards: list[float] = []
+    rewards_mo: list[int] = []
     losses: list[float] = []
     eps_initial = agent.epsilon if agent is not None else None
     wall = float(cap) * fw if cap is not None else 0.0
@@ -1161,6 +1167,10 @@ def run_rl_mm_session(
                 ask_oid = None
                 ask_level_live = None
             max_abs_inv = max(max_abs_inv, abs(inventory))
+        if isinstance(flow, AdversarialFlow):
+            # Feedback channel: the adversary's picker reads the defender's
+            # post-fill inventory when the pending boundary resolves.
+            flow.note_inventory(float(inventory))
 
     def _smart_post(side: Side, level: int | None) -> None:
         """Keep the resting order when the target level is unchanged (FIFO
@@ -1226,6 +1236,7 @@ def run_rl_mm_session(
         n_ev = max(sim.n_events - events_at_prev, 0)
         gamma_eff = float(agent.config.gamma_event) ** n_ev
         rewards.append(r)
+        rewards_mo.append(sim.n_mo_arrivals)
         if training:
             agent.store_transition(prev_state, prev_action, r, next_state, gamma_eff, done)
             if done or len(rewards) % le == 0:
@@ -1420,6 +1431,7 @@ def run_rl_mm_session(
         "action_grid": [list(g) for g in agent.action_grid] if agent is not None else None,
         "action_histogram": action_hist if agent is not None else None,
         "sim_internal_reward_path": rewards if agent is not None else None,
+        "sim_internal_reward_mo_index": rewards_mo if agent is not None else None,
         "sim_internal_reward_mean": float(rw.mean()) if rw is not None else None,
         "sim_internal_reward_min": float(rw.min()) if rw is not None else None,
         "sim_internal_reward_max": float(rw.max()) if rw is not None else None,
