@@ -1,0 +1,194 @@
+{
+  "claim": "refit_stability_diagnostic",
+  "data_label": "SYNTHETIC",
+  "evidence": [
+    "planted_two_state_stream",
+    "block_bootstrap_restarts",
+    "hungarian_state_matching",
+    "label_switching_invariant"
+  ],
+  "git_revision": "ed877708701346484dcf768b74135c17eef160e5",
+  "inputs_sha256": "f592abc079d256d1069f6be6212fc6f125e4e7b8940a324a74bdfe82399ad4e8",
+  "interpretation": "stable",
+  "kind": "hmm_stability",
+  "live_pnl_claim": false,
+  "params": {
+    "block_len": 39,
+    "max_dev": 0.25,
+    "min_share": 0.9,
+    "n_inits": 5,
+    "n_iter": 30,
+    "n_obs": 4,
+    "n_restarts": 8,
+    "n_states": 2,
+    "n_steps": 1500
+  },
+  "planted": {
+    "A": [
+      [
+        0.93,
+        0.07
+      ],
+      [
+        0.09,
+        0.91
+      ]
+    ],
+    "B": [
+      [
+        0.6,
+        0.4,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.4,
+        0.6
+      ]
+    ],
+    "pi": [
+      0.5,
+      0.5
+    ]
+  },
+  "receipt_sha256": "2bc9e56bc1daa675d5528e1b999ef7e15693de013c3406baaf14d9af0a1efc83",
+  "recovery": {
+    "state_path_agreement": 1.0,
+    "truth_assignment": [
+      1,
+      0
+    ],
+    "truth_dev_a": 0.022706540702683395,
+    "truth_dev_b": 0.030070840477898715
+  },
+  "report": {
+    "block_len": 39,
+    "max_observed_dev": 0.05806198248588089,
+    "n_failed": 0,
+    "n_matched": 8,
+    "n_restarts": 8,
+    "n_stable": 8,
+    "restarts": [
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.03467019223118469,
+        "dev_a": 0.03467019223118469,
+        "dev_b": 0.01412813980888585,
+        "restart": 0,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.008015305923679448,
+        "dev_a": 0.006167617121136127,
+        "dev_b": 0.008015305923679448,
+        "restart": 1,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.006084651714997611,
+        "dev_a": 0.004605401245711418,
+        "dev_b": 0.006084651714997611,
+        "restart": 2,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.03345165878128125,
+        "dev_a": 0.0058228882695544465,
+        "dev_b": 0.03345165878128125,
+        "restart": 3,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.02803498078942871,
+        "dev_a": 0.02803498078942871,
+        "dev_b": 0.022729079438596825,
+        "restart": 4,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.02658642126758599,
+        "dev_a": 0.02658642126758599,
+        "dev_b": 0.023836992350540827,
+        "restart": 5,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.05806198248588089,
+        "dev_a": 0.05806198248588089,
+        "dev_b": 0.026409768712883457,
+        "restart": 6,
+        "stable": true
+      },
+      {
+        "assignment": [
+          0,
+          1
+        ],
+        "dev": 0.029099820984203262,
+        "dev_a": 0.029099820984203262,
+        "dev_b": 0.019341970232339564,
+        "restart": 7,
+        "stable": true
+      }
+    ],
+    "seed": 7,
+    "stable_share": 1.0,
+    "states": [
+      {
+        "a_row_max_dev": 0.04089015084796965,
+        "assignment_consistency": 1.0,
+        "b_row_max_dev": 0.02550491368429575,
+        "ref_share": 0.404809655638616,
+        "share_spread": 0.07965475945796274,
+        "state": 0
+      },
+      {
+        "a_row_max_dev": 0.01294369598005829,
+        "assignment_consistency": 1.0,
+        "b_row_max_dev": 0.014057804621823045,
+        "ref_share": 0.595190344361384,
+        "share_spread": 0.07965475945796285,
+        "state": 1
+      }
+    ],
+    "stream_sha256": "f592abc079d256d1069f6be6212fc6f125e4e7b8940a324a74bdfe82399ad4e8",
+    "thresholds": {
+      "max_dev": 0.25,
+      "min_share": 0.9
+    },
+    "verdict": "stable"
+  },
+  "research_only": true,
+  "schema": "hmm_stability.v1",
+  "seed": 7,
+  "verdict": "stable"
+}

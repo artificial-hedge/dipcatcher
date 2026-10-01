@@ -1,0 +1,44 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "e0d284057e8f77aa2940b5a6a6947a499c628009a61fd8ecd1ef7192391aa144",
+  "inputs_sha256": "5f5ba69a36a374769a3cced3c5c0b6823b34b46c1011dee883d80dad8aa993bd",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "members": [
+    {
+      "name": "audit_coverage.json",
+      "sha256": "55b86a5eb518a34f27dbab49d986383f50cb1f8cb340b6416b15006e827fa84a"
+    },
+    {
+      "name": "audit_coverage_fx1.json",
+      "sha256": "fc8fd25fc58d928284effa716493741a0a873f83451d2f962b7904a4c475d061"
+    },
+    {
+      "name": "lattice_known_inconsistent.json",
+      "sha256": "0b8a1221b7133842211d9d9d085fd166119b896706b79921587341bd3f247c58"
+    },
+    {
+      "name": "legacy_quarantine.json",
+      "sha256": "1614aced1a4eb83f36ee0e006debe1f3617c987b4a87ce6ba858e699952ecd7b"
+    }
+  ],
+  "members_added": [
+    "audit_coverage.json",
+    "audit_coverage_fx1.json",
+    "lattice_known_inconsistent.json",
+    "legacy_quarantine.json"
+  ],
+  "members_removed": [],
+  "n_members": 4,
+  "params": {
+    "head_sha": "f1de46b1f316e8250ec3be08b2f3e7d69f8685a9",
+    "pattern": "*.json"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "5da8d034442419cdad4dcb87eb32d462af0bc44c252f44a9fe6da95420726fef",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

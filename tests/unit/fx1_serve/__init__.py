@@ -1,1 +1,1 @@
-"""Unit tests for the fx-1 serving lane."""
+"""fx-1 serving-lane unit tests."""
