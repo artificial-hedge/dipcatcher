@@ -1,7 +1,7 @@
 {
   "directories": {
     "api": {
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "audit": {
@@ -24,12 +24,12 @@
       "status": "audited"
     },
     "compute": {
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "config": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "data": {
@@ -38,12 +38,12 @@
       "status": "audited"
     },
     "diffbacktest": {
-      "n_modules": 6,
+      "n_modules": 8,
       "status": "audited"
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 8,
+      "n_modules": 9,
       "status": "audited"
     },
     "features": {
@@ -51,11 +51,11 @@
       "status": "audited"
     },
     "formal": {
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "fusion": {
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "hedge_lab": {
@@ -64,12 +64,12 @@
       "status": "audited"
     },
     "hmm": {
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "labels": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "leakage": {
@@ -106,11 +106,11 @@
     },
     "monitoring": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 5,
+      "n_modules": 7,
       "status": "audited"
     },
     "native": {
-      "n_modules": 4,
+      "n_modules": 7,
       "status": "audited"
     },
     "northset": {
@@ -135,7 +135,7 @@
     },
     "pit": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "portfolio": {
@@ -166,11 +166,11 @@
       "status": "audited"
     },
     "registry": {
-      "n_modules": 4,
+      "n_modules": 7,
       "status": "audited"
     },
     "reporting": {
-      "n_modules": 4,
+      "n_modules": 6,
       "status": "audited"
     },
     "research": {
@@ -180,7 +180,7 @@
     },
     "risk": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "robustness": {
