@@ -1,0 +1,21 @@
+{
+  "collected_at": "2026-09-30T11:51:03.303507+00:00",
+  "frame_csv_sha256": "3e3fe1817be9774b56127794191616fd45c2231dc3c44eba293f0ef9237107a2",
+  "n_names": 424,
+  "n_rows": 1132803,
+  "promotion_receipt_sha256": null,
+  "receipt_sha256": "fd986d7426c90eef5f57c7caa7d237facddad7150769be871f31a70650d0bd15",
+  "schema": "tape_manifest.v1",
+  "source_label": "yahoo_eod_us_wide",
+  "tape_files": [
+    {
+      "n_bytes": 19756938,
+      "path": "data/file_us_wide/bronze/bars.parquet",
+      "sha256": "e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117"
+    }
+  ],
+  "window": {
+    "end": "2026-09-18 20:00:00+00:00",
+    "start": "2016-01-04 21:00:00+00:00"
+  }
+}
