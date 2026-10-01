@@ -30,7 +30,7 @@ from fx1.forecast.features import (
 from fx1.forecast.protocol import FeaturePipeline, ForecastModel
 from fx1.forecast.registry import create_model, load_symbol
 from fx1.forecast.schema import SchemaError, validate_feature_schema, validate_forecast_schema
-from quant_fund.schemas.errors import LeakageError
+from quant_fund.schemas.errors import LeakageError, PointInTimeError
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 _META_KEY = b"fx1_harness"
@@ -101,6 +101,9 @@ def load_bars(provider: Any, config: Fx1HarnessConfig) -> pl.DataFrame:
         raise TypeError("get_bars must return a polars DataFrame")
     if bars.is_empty():
         raise ValueError("provider returned no bars")
+    missing = [name for name in ("event_time", "available_time") if name not in bars.columns]
+    if missing:
+        raise PointInTimeError(f"provider bars missing required columns: {missing}")
     if config.data.resample:
         bars = resample_ohlcv(bars, config.data.resample)
     else:
