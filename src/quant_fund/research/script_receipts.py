@@ -341,7 +341,17 @@ def deps_hygiene_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     return errors
 
 
-#: script-schema tag → contract-check function (dispatch lives in receipt_v2).
+def _divergence_entry_ok(d: object) -> bool:
+    if isinstance(d, str):
+        return True
+    # ``{arm, diverges}`` rows (markout.v1 and later lanes).
+    return (
+        isinstance(d, Mapping)
+        and isinstance(d.get("arm"), str)
+        and isinstance(d.get("diverges"), bool)
+    )
+
+
 def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """Deep-check the wave-21b measurement receipts (tape/sim lanes).
 
@@ -378,9 +388,9 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
             errors.append(f"forbidden_headline_metric:{key}")
     divergences = payload.get("divergences")
     if divergences is not None and (
-        not isinstance(divergences, list) or any(not isinstance(d, str) for d in divergences)
+        not isinstance(divergences, list) or any(not _divergence_entry_ok(d) for d in divergences)
     ):
-        errors.append("divergences_not_str_list")
+        errors.append("divergences_bad_entry")
     real = payload.get("real")
     if real is not None and not isinstance(real, Mapping):
         errors.append("real_not_object")
@@ -421,6 +431,7 @@ _MEASUREMENT_SCHEMAS = (
     "lob_resilience.v1",
     "marketable_limit.v1",
     "maker_age.v1",
+    "markout.v1",
     "metaorder_detect.v1",
     "mid_jump.v1",
     "order_lifetime.v1",
