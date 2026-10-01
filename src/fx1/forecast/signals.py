@@ -7,6 +7,8 @@ can be turned into a diagnostic position for the existing return metrics.
 
 from __future__ import annotations
 
+import math
+
 import polars as pl
 
 from fx1.forecast.schema import SchemaError
@@ -27,7 +29,9 @@ def map_signals(frame: pl.DataFrame, mapping: str, *, threshold: float = 0.0) ->
         raise ValueError(f"unknown signal mapping {mapping!r}; expected {sorted(SIGNAL_MAPPINGS)}")
     if "score" not in frame.columns:
         raise SchemaError("signal mapping requires a score column")
-    if not (threshold >= 0.0) or threshold != threshold:
+    # ``inf >= 0`` is True, so a bare sign check cannot keep non-finite input
+    # out; an inf threshold would silently map every score to zero.
+    if not math.isfinite(threshold) or threshold < 0.0:
         raise ValueError("threshold must be finite and >= 0")
     finite = pl.col("score").is_not_null() & pl.col("score").is_finite()
     if mapping == "sign":

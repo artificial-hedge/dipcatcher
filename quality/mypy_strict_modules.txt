@@ -138,6 +138,7 @@ src/quant_fund/hmm/__init__.py
 src/quant_fund/hmm/cli.py
 src/quant_fund/hmm/discrete.py
 src/quant_fund/hmm/eisner.py
+src/quant_fund/hmm/hmm_stability.py
 src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py
 src/quant_fund/labels/engine.py
@@ -288,6 +289,7 @@ src/quant_fund/microstructure/impact_instant.py
 src/quant_fund/microstructure/impact_law.py
 src/quant_fund/microstructure/impact_propagator.py
 src/quant_fund/microstructure/impulse_mm.py
+src/quant_fund/microstructure/initiative_fade_bench.py
 src/quant_fund/microstructure/intraday_shape.py
 src/quant_fund/microstructure/kyle_lambda.py
 src/quant_fund/microstructure/lob_exec.py
@@ -311,6 +313,7 @@ src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_depletion.py
 src/quant_fund/microstructure/queue_fate.py
 src/quant_fund/microstructure/queue_jump.py
+src/quant_fund/microstructure/queue_occupancy.py
 src/quant_fund/microstructure/queue_priority.py
 src/quant_fund/microstructure/quote_place.py
 src/quant_fund/microstructure/regime_filter.py
