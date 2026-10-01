@@ -1,0 +1,30 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "842459581e43dac032f55771796b38cea06f33929784d8349cb62e1df5bde162",
+  "inputs_sha256": "a332cd78e6e53a3cf8eb2f925a8fa819e04b0e483714e56c137b550de130c68b",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "616873fdc3c9a1ce27360988626f7e7a65625f7a38ff0c75c3cb56eb73973c51",
+  "members": [
+    {
+      "name": "cvxpy/__init__.pyi",
+      "sha256": "6b5f9a9adca5c62fdd1f67cc89adab051333b67acba6b53d4e2a1ed8360a1f0f"
+    }
+  ],
+  "members_added": [
+    "cvxpy/__init__.pyi"
+  ],
+  "members_removed": [],
+  "n_members": 1,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "c2b24dba7fd4bdc909acb17f457e75b03702c3adc7393154d93053d73b49c420",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}
