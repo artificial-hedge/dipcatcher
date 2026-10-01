@@ -96,8 +96,9 @@ flowchart LR
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|3| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
-  fx1_forecast -->|4| quant_fund_schemas
-  fx1_forecast -->|2| quant_fund_utils
+  fx1_forecast -->|1| quant_fund_research
+  fx1_forecast -->|5| quant_fund_schemas
+  fx1_forecast -->|4| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
   fx1_hypotheses -->|1| fx1_honesty
   fx1_mrm -->|1| fx1_modelcard
@@ -155,7 +156,7 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_quant_models
   quant_fund_cli -->|1| quant_fund_reality
   quant_fund_cli -->|3| quant_fund_reporting
-  quant_fund_cli -->|53| quant_fund_research
+  quant_fund_cli -->|52| quant_fund_research
   quant_fund_cli -->|1| quant_fund_schemas
   quant_fund_cli -->|1| quant_fund_stress
   quant_fund_cli -->|12| quant_fund_utils
@@ -192,6 +193,7 @@ flowchart LR
   quant_fund_hedge_lab -->|5| quant_fund_risk
   quant_fund_hedge_lab -->|6| quant_fund_utils
   quant_fund_hedge_lab -->|1| quant_fund_validation
+  quant_fund_hmm -->|3| quant_fund_utils
   quant_fund_labels -->|1| quant_fund_config
   quant_fund_labels -->|1| quant_fund_data
   quant_fund_labels -->|1| quant_fund_schemas
@@ -266,7 +268,7 @@ flowchart LR
   quant_fund_pipeline -->|1| quant_fund_labels
   quant_fund_pipeline -->|2| quant_fund_lightspeed
   quant_fund_pipeline -->|15| quant_fund_metrics
-  quant_fund_pipeline -->|78| quant_fund_models
+  quant_fund_pipeline -->|77| quant_fund_models
   quant_fund_pipeline -->|4| quant_fund_portfolio
   quant_fund_pipeline -->|5| quant_fund_registry
   quant_fund_pipeline -->|2| quant_fund_reporting
@@ -326,7 +328,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|2| quant_fund_schemas
-  quant_fund_research -->|127| quant_fund_utils
+  quant_fund_research -->|126| quant_fund_utils
   quant_fund_research -->|11| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
