@@ -213,6 +213,10 @@ jobs:
             --splits 4
             --group "${{ matrix.shard }}"
             --durations-path .test_durations
+            # least_duration keeps per-shard predicted runtime flat; the default
+            # duration_based_chunks algorithm packs contiguous collection ranges
+            # and left wall-clock skewed under xdist --dist loadfile.
+            --splitting-algorithm least_duration
           )
           if [ "${{ matrix.python }}" = "3.12" ]; then
             # Partial shards stay under the project threshold; the coverage job combines them.
@@ -668,8 +672,24 @@ jobs:
         run: uv sync --frozen --all-groups
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
+      - name: Evidence bundle round-trip — export, then audit with the standalone script
+        run: |
+          make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+          make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+      - name: Fetch PR base for chain-extension proofs
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Chain-consistency proofs — a PR may extend, never rewrite
+        if: github.event_name == 'pull_request'
+        run: EPOCH_BASE=FETCH_HEAD make epoch-consistency
       - name: Cross-receipt consistency lattice
         run: make lattice-check
+      - name: Fetch PR base for the admission diff
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Admission gate on diff-changed receipts
+        if: github.event_name == 'pull_request'
+        run: make admission-gate ADMISSION_BASE=FETCH_HEAD
 
   pretrade-risk:
     runs-on: ubuntu-latest
