@@ -91,3 +91,6 @@ mutants/
 # host-local evidence — proof-run orchestration is pending.
 proofs/
 leakage-report.json
+
+# Advisory lock taken by `corpus-epoch` stamps (serialized head read->write)
+.epoch_stamp.lock
