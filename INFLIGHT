@@ -886,3 +886,135 @@ note: 210 -> 225 tests. ruff check + format clean. Second full run scored
   99.05% (208 killed, survivors M0032 + M0200); M0200 then closed by the
   monkeypatch test (verified killed in isolation). Final full campaign
   running to confirm 209/210.
+
+wave 30 (2026-09-30): 6 lanes merged into w30-canon —
+  lp_iv (local-projection IV IRFs, weak-IV F 792 vs 8.6, AR grid
+  inversion width 0.21 vs 2.44, irf_relerr 0.117 vs naive 0.392) +
+  bispectrum (Hinich test p .10 gauss / 3e-13 quad / .03 volterra) +
+  functional_linear (B-spline basis + FPCA congruence .98/.91, FLM
+  beta relerr 0.014, R2 0.93) + gas_score (GAS-t vol + GAS-Poisson
+  intensity, sig2_corr 0.82, lam_corr 0.61, LR vs static 46) +
+  count_data (NB-2 alpha 0.794 vs 0.8, ZIP pi 0.393 vs 0.35, Vuong
+  z 7.47 picks ZIP, hurdle composed on discrete.logit) + lyapunov
+  (Rosenstein lambda 0.693 ~ ln2, Henon 0.414 ~ 0.419, FNN 74%->0%
+  at dim 2, Cao dim 3; white noise unsaturated) → PR stacked on w29
+  (151→157 families)
+- wave 31 canon (devin/w31-canon off w26-canon tip): kernel_iv
+  (regularized Fredholm KIV + Landweber-Fridman + poly CMT, relerr .40
+  vs naive 1.85) + multistate (CTMC intensity relerr .057, expm pmat,
+  illness-death Aalen-Johansen .153) + partial_linear (Robinson/Speckman/
+  series, beta_err .015 vs OLS .396, g_corr .997) + heckman (two-step
+  IMR .0198 vs OLS .0312; ML rho at boundary — honest) + rd (sharp LL
+  tau_err .133 t 11.8, fuzzy .353, McCrary share-z 9.87 manip vs 0.40
+  clean, donut .339) + bounds (Manski width 3.11 covers mu, MAR point
+  .002, Lee bounds [.06,1.37] cover tau=1) → PR stacked on w26
+  (157→163 families)
+- wave 32 canon (devin/w32-canon off w31-canon tip): extreme_value
+  (Hill index alpha_err .17, GPD MLE xi_err .38, POT VaR<ES, return
+  levels) + double_ml (PLR cross-fit theta_err .015 vs OLS .214,
+  AIPW IRM ate_err .016) + bunching (excess mass at kink b 2.75
+  z 18.5, clean |b| 0.40 dominance rule, Poisson-WLS counterfactual)
+  + causal_forest (propensity-transformed honest leaves, CATE corr
+  .96, ATE .03, x1 top importance) + gaussian_process (ARD kernel,
+  Type-II ML sigma_n err .013, closed-form LOO, coverage 1.0) +
+  markov_switching (Hamilton filter + Kim smoother + EM, mu_err
+  .032, regime accuracy .959) — optimal_transport lane superseded:
+  w31-canon already carries a same-named module from a parallel
+  session → PR stacked on w31 (163→169 families)
+- wave 33 canon (devin/w33-canon off w32-canon tip): causal_impact
+  (BSTS local-level + ridge regression, ML innovation-likelihood
+  variance split — MoM collapsed q to 0 and faked detections;
+  cum_effect z 2.9, posterior tail .001 vs null .054) + weak_iv
+  (AR exact-pivot size ok strong AND weak, CLR chi2 power,
+  first-stage F 330 vs 4.6 flags weak, AR-inverted CI covers)
+  + synth_did (simplex-QP unit+time weights, placebo p .028 vs
+  null .44; factor-selection DGP: SDID err .10 vs DiD 6.31)
+  + permutation_inference (Fisher sharp-null exact, Westfall-
+  Young max-T stepdown, Pitman CI covers, null reject rate .04)
+  + propensity_score (IRLS PS, caliper match ATT err .066, IPW/
+  overlap err <.01 vs raw bias .398, max|SMD| .66→~0)
+  + cluster_robust (CR1/CR2 sandwich, wild cluster bootstrap
+  Rademacher/Webb-6pt, size ok at 30 and 8 clusters, power 1)
+  → PR stacked on w32 (169→175 families)
+wave 34 — causal panel + IV diagnostics (models/matrix_completion,
+  models/gsynth, models/rif_regression, models/shift_share,
+  models/entropy_balancing, models/did_diagnostics):
+  matrix_completion (nuclear-norm soft-impute, lambda via 20%-stride
+  holdout grid, att err .003 on stationary factors, honest placebo
+  RMSE) + gsynth (Xu IFE factor ALS, treated-loading counterfactual,
+  att err .028 under factor drift where DiD/SDID strain) +
+  rif_regression (RIF of quantile/variance/Gini, HC1 SEs,
+  unconditional q90 vs q50 gradient detected) + shift_share
+  (Bartik first-stage F=40, IV err .13 vs OLS .50, Rotemberg
+  top-1 .20 hhi .13) + entropy_balancing (Hainmueller EB via
+  log-sum-exp Newton dual, exact balance smd→0, att err .12 vs
+  raw .83; honest converged flag when moment set infeasible) +
+  did_diagnostics (Goodman-Bacon exhaustive 2x2 decomposition with
+  clean/forbidden split, Sun-Abraham cohort CATTs; TWFE bias 1.31
+  vs mean CATT under growing effects)
+  → PR stacked on w33 (175→181 families)
+
+w35 — sensitivity/robustness canon
+  (models/honest_did, models/many_iv, models/fama_macbeth,
+  models/specification_curve, models/sign_restricted_var,
+  models/panel_quantile_fe):
+  honest_did (Rambachan-Roth Δ^SD: linear-extrapolation bias bound
+  + FLCI, breakdown Mbar*=6 clean vs .45 violated) + many_iv (LIML
+  via scalar AR-ratio minimization — err .021 vs 2SLS .158 under
+  k=40/pi=.10; JIVE, HFUL leverage-robust) + fama_macbeth (two-pass
+  lambda err .15, Shanken inflation 1.37, honest priced-idio SE
+  ratio) + specification_curve (Simonsohn multiverse grid, median
+  .53 vs true .5, shuffle p .01 real vs .78 null) +
+  sign_restricted_var (Uhlig QR draws with free column signs, pos
+  restriction accepts 54%, median IRF positive) +
+  panel_quantile_fe (Machado-Santos Silva moments, beta50 err .07,
+  tau gradient 1.73 hetero vs 1.14 homo)
+  → PR stacked on w34 (181→187 families)
+
+wave 36 — 6 model lanes + integration
+  (models/arellano_bond, models/bvar_minnesota, models/mediation_analysis,
+  models/competing_risks, models/stochastic_frontier,
+  models/regression_kink):
+  arellano_bond (FD-GMM rho .50 vs true .6, within-OLS .45 biased,
+  AR(2) p .16, Sargan p .56) + bvar_minnesota (Theil dummy
+  observations, per-equation solve, own-lag err .038 vs OLS .145,
+  monotone shrinkage) + mediation_analysis (quasi-Bayesian ACME
+  .478 vs true .48, ADE .21, null non-gated honest coverage) +
+  competing_risks (Aalen-Johansen CIF .92, pseudo-value beta1 .163
+  z=7.3, beta2 ~0) + stochastic_frontier (composed-error MLE,
+  sigma_u .615 vs null .018, resid skew -.48, eff_corr .76) +
+  regression_kink (fuzzy RKD b_rk .64 vs true .5, fs kink .90,
+  delta-method SE)
+  → PR stacked on w35 (187→193 families)
+
+wave 37 — 6 model lanes + integration
+  (models/spatial_econometrics, models/ordered_choice,
+  models/triple_difference, models/distribution_regression,
+  models/simex, models/lp_did):
+  spatial_econometrics (SAR concentrated likelihood, rho .644 vs
+  .6, beta err .05 vs OLS .35, Moran cleared) + ordered_choice
+  (threshold MLE, beta0 .996 vs 1.0, mae_prob .002, null .029) +
+  triple_difference (ddd 1.095 vs 1.0, naive DiD 1.85 confounded,
+  cell contrast exact) + distribution_regression (CFM logit CDF,
+  mean|b1| 1.52 hetero vs 2.86 homo) + simex (corrected .79 vs
+  naive .60 at reliability .6, extrapolation r2 1.0) + lp_did
+  (ramp tracked .30/.77/1.14 vs .4/.8/1.2, z=20, null .11)
+  → PR stacked on w36 (193→199 families)
+wave 38 canon (devin/w38-canon-integration): control_function
+  (CF beta .977 vs OLS 1.32 under rho=.6, DWH p~0) +
+  kernel_regression (local-linear rmse .085, deriv corr .998,
+  LOO-CV bw) + censored_quantile (CH 3-step .973 vs naive .89,
+  censor share .115) + threshold_ar (SETAR c .499/.5, phi gap
+  .55, sup-F p .016) + fractional_response (QMLE 1.379 vs 1.4,
+  in-bounds 1.0 vs OLS .95) + interval_censoring (Turnbull med
+  1.296 vs true 1.386, naive 1.2, ISE 2e-4)
+  → PR stacked on w37 (199→205 families)
+wave 39 canon (devin/w39-canon-integration): maximum_score
+  (direction cos .994, score .72 vs null .55) + sieve_estimation
+  (beta .801/.8, g corr .996, sieve r2 .98 vs linear .47) +
+  nested_logit (beta 1.35/1.2, lambda .62 nest corr detected) +
+  aft_model (beta -.45/-.5 under 35% censoring, naive err .16 vs
+  .05) + distance_covariance (dcor .485 vs pearson .002 on
+  quadratic, perm p .008) + panel_unitroot (IPS+LLC reject at
+  rho=.85, keep at rho=1.0: p .61/.83)
+  → PR stacked on w38 (205→211 families)
