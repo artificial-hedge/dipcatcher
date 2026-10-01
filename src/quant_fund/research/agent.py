@@ -216,6 +216,14 @@ from quant_fund.research.benches_w28 import (
     bench_sindy,
     bench_surrogate_nonlinear,
 )
+from quant_fund.research.benches_w29 import (
+    bench_hj_distance,
+    bench_hmc,
+    bench_proxy_svar,
+    bench_rqa,
+    bench_sbi,
+    bench_tensor_decomp,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1930,6 +1938,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "callaway_did": bench_callaway_did(),
         "surrogate_nonlinear": bench_surrogate_nonlinear(),
         "sindy": bench_sindy(),
+        "hmc": bench_hmc(),
+        "proxy_svar": bench_proxy_svar(),
+        "sbi": bench_sbi(),
+        "rqa": bench_rqa(),
+        "hj_distance": bench_hj_distance(),
+        "tensor_decomp": bench_tensor_decomp(),
     }
 
     hyps = _build_hypotheses(families, rankers)
