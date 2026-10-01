@@ -3587,7 +3587,13 @@ def test_timestamp_utcoffset_redundant_arm_is_documented_equivalent() -> None:
     ever produces fixed-offset timezones, whose ``utcoffset()`` is never
     None when ``tzinfo`` is not None — no string input can distinguish
     the two arms.  This test pins that redundancy claim so a future
-    survivor is recognized as the known equivalent, not a new gap."""
+    survivor is recognized as the known equivalent, not a new gap.
+
+    NOTE (full-campaign re-run): the "99.52% / 209 killed" figure above was
+    measured against the harness DEFAULT 50-mutant sample, not all 210. The
+    genuinely-full 210-mutant run found 15 survivors; M0032 is the only
+    provably-equivalent one and the other 14 are closed by the tests appended
+    below. See INFLIGHT 2026-10-01."""
     from datetime import datetime
 
     samples = [
@@ -3600,3 +3606,252 @@ def test_timestamp_utcoffset_redundant_arm_is_documented_equivalent() -> None:
         parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
         assert parsed.tzinfo is not None
         assert parsed.utcoffset() is not None  # never None given tzinfo
+
+
+# ---------------------------------------------------------------------------
+# Full 210-mutant campaign kill tests (2026-10-01)
+#
+# The prior close-out reported 99.52% (209/210) but the harness defaults to
+# --max-mutants 50, so that figure came from a 50-mutant seed-7 sample, not
+# the full sweep. Re-running all 210 surfaced 15 survivors; M0032 is provably
+# equivalent (pinned above) and the other 14 are closed here. Each test
+# docstring names the exact mutant + line it kills.
+# ---------------------------------------------------------------------------
+
+
+def test_verify_rejects_non_string_generated_at(tmp_path: Path) -> None:
+    """Kills M0031 (Or->And, line 195) and M0059 (False->True, line 196).
+
+    ``_timestamp_valid``'s guard is ``not isinstance(value, str) or not
+    value.strip()``. With a non-string the ``or`` short-circuits to the
+    isinstance arm and returns False cleanly; the And mutant instead
+    evaluates ``value.strip()`` on the non-string and raises AttributeError.
+    Only strings had ever been passed, so both mutants survived.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["generated_at"] = 1757980800
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "invalid_notebook_generated_at" in result["errors"]
+
+
+def test_verify_rejects_unparseable_generated_at(tmp_path: Path) -> None:
+    """Kills M0106 (False->True, line 200) — the ``except ValueError`` arm.
+
+    A syntactically invalid timestamp string raises ValueError inside
+    ``fromisoformat``. The original returns False (fail-closed); the mutant
+    returns True and then dereferences the unbound ``parsed`` name. Every
+    prior timestamp test used a *parseable* naive string, which reaches line
+    201 instead and never exercised this handler.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["generated_at"] = "not-a-timestamp"
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "invalid_notebook_generated_at" in result["errors"]
+
+
+@pytest.mark.parametrize("key", ["version", "disclaimer", "ranking_target"])
+def test_verify_rejects_non_string_notebook_identity_field(tmp_path: Path, key: str) -> None:
+    """Kills M0064 (Or->And, line 249) on the notebook identity loop.
+
+    Same ``or``/``and`` shape as the timestamp guard, applied to
+    version / data_source / disclaimer / ranking_target. ``data_source``
+    is excluded from the parametrization: a non-string there also trips the
+    isinstance check on line 256, so it cannot isolate this mutant.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload[key] = 1
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert f"invalid_notebook_{key}" in result["errors"]
+
+
+def test_verify_rejects_non_string_hypothesis_id(tmp_path: Path) -> None:
+    """Kills M0113 (Or->And, line 313) on the hypothesis id guard."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["hypotheses"] = [
+        {
+            "id": 7,
+            "statement": "x",
+            "test": "test",
+            "statistic": 0.0,
+            "p_value": 1.0,
+            "reject_raw": False,
+            "reject_fdr": False,
+            "decision": "x",
+            "family": "calibration",
+        }
+    ]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "invalid_hypothesis_id:0" in result["errors"]
+
+
+@pytest.mark.parametrize("field", ["statement", "test", "decision"])
+def test_verify_rejects_non_string_hypothesis_text_field(tmp_path: Path, field: str) -> None:
+    """Kills M0159 (Or->And, line 323) on the statement/test/decision guard."""
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    hypothesis = {
+        "id": "H1",
+        "statement": "x",
+        "test": "test",
+        "statistic": 0.0,
+        "p_value": 1.0,
+        "reject_raw": False,
+        "reject_fdr": False,
+        "decision": "x",
+        "family": "calibration",
+    }
+    hypothesis[field] = 3.5
+    payload["hypotheses"] = [hypothesis]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert f"invalid_hypothesis_{field}:0" in result["errors"]
+
+
+def test_verify_rejects_non_string_runtime_fingerprint_field(tmp_path: Path) -> None:
+    """Kills M0122 (Or->And, line 386) on the runtime fingerprint guard.
+
+    The guard is ``not isinstance(runtime.get(field), str) or not
+    runtime[field]``. A non-string short-circuits on the isinstance arm; the
+    And mutant would index and truth-test the non-string instead. Prior
+    runtime tests only ever removed fields or set a package *version* to a
+    non-string, never a fingerprint field.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["runtime"]["python"] = 3.12
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "runtime_field_invalid:python" in result["errors"]
+
+
+def test_verify_rejects_empty_packages_dict(tmp_path: Path) -> None:
+    """Kills M0079 (Or->And, line 389) on the packages guard.
+
+    ``not isinstance(packages, dict) or not packages`` distinguishes an empty
+    dict (``not packages`` is True) from a populated one. The And mutant lets
+    ``{}`` fall through to the elif branch and reports missing *required*
+    packages instead of ``runtime_packages_missing``, so the error token
+    differs and the mutant is observable.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["provenance"]["runtime"]["packages"] = {}
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "runtime_packages_missing" in result["errors"]
+
+
+def test_verify_rejects_non_numeric_hypothesis_p_value(tmp_path: Path) -> None:
+    """Kills M0053 (False->True, line 179) in ``_p_value_valid``.
+
+    The non-numeric arm returns False. Flipping it to True lets a string
+    p_value reach ``math.isnan`` and raise TypeError. Prior p_value tests
+    covered the numeric range boundaries (0.0, 1.0, 1.5, -1e-12) and the
+    None/NaN unavailable paths, never a non-numeric type.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["hypotheses"] = [
+        {
+            "id": "H1",
+            "statement": "x",
+            "test": "test",
+            "statistic": 0.0,
+            "p_value": "0.05",
+            "reject_raw": False,
+            "reject_fdr": False,
+            "decision": "x",
+            "family": "calibration",
+        }
+    ]
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert "invalid_hypothesis_p_value:0" in result["errors"]
+
+
+def test_verify_rejects_unreadable_receipt_json(tmp_path: Path) -> None:
+    """Kills M0186 (False->True, line 902) — the unreadable-receipt branch.
+
+    A file that is not valid JSON takes the ``except (OSError,
+    json.JSONDecodeError)`` path, which returns a ``valid: False`` stub. The
+    mutant reports the unreadable receipt as valid. No prior test fed
+    malformed JSON (they all round-tripped a dict), so the flag was never
+    observed.
+    """
+    path = tmp_path / "corrupt.json"
+    path.write_text("{not json at all")
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert any(error.startswith("unreadable:") for error in result["errors"])
+
+
+def test_verify_rejects_non_string_immutable_json_pointer(tmp_path: Path) -> None:
+    """Kills M0098 (negation, line 848), M0100 (And->Or, line 856),
+    M0142 (And->Or, line 849) on the immutable-artifact path ternary.
+
+    ``immutable_json`` set to a non-string drives the ternary to its
+    ``else ... else None`` arm, so ``immutable_path`` is None and the
+    hash-verification block is skipped. The mutants respectively make the
+    relative-path test invert, make the ``is not None and is_file()`` guard
+    an ``or`` (evaluating ``None.is_file()``), and turn the relative-path
+    conjunction into a disjunction — all observable as a crash or a changed
+    error set. The existing non-string test only covered
+    ``immutable_markdown``'s *pointer*, which reaches a different arm.
+    """
+    path = _receipt(tmp_path)
+    payload = json.loads(path.read_text())
+    payload["artifacts"]["immutable_json"] = 42
+    path.write_text(json.dumps(payload))
+    result = verify_research_artifact(path)
+    assert result["valid"] is False
+    assert any(error.startswith("artifact_") for error in result["errors"])
+
+
+def test_verify_treats_unresolvable_artifact_path_as_outside_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Kills M0200 (False->True, line 841) — the ``except OSError`` arm.
+
+    ``Path.resolve()`` can raise OSError (symlink loops, vanished parents,
+    permission faults). The handler fails closed by setting
+    ``inside_receipt = False``; the mutant would set it True and accept an
+    artifact whose real location cannot be established. The branch is
+    unreachable with ordinary fixture paths, so ``Path.resolve`` is patched
+    to raise for the artifact check specifically — patching the whole method
+    would also break line 805's ``receipt_root`` computation.
+    """
+    path = _receipt(tmp_path)
+    original_resolve = Path.resolve
+    receipt_root = path.resolve().parent
+    artifact_name = f"{'a' * 64}.json"
+
+    def flaky_resolve(self: Path, *args: object, **kwargs: object) -> Path:
+        # Let receipt_root (the parent) resolve normally; raise only when the
+        # immutable artifact itself is being checked.
+        if self.name == artifact_name:
+            raise OSError("simulated unresolvable path")
+        return original_resolve(self, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(Path, "resolve", flaky_resolve)
+    result = verify_research_artifact(path)
+    monkeypatch.undo()
+
+    assert receipt_root.is_dir()
+    assert result["valid"] is False
+    assert "artifact_outside_receipt_root:immutable_json" in result["errors"]
