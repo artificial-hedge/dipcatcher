@@ -18,12 +18,30 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _is_live_claim_value(value: object) -> bool:
+    """True when *value* asserts the claim — any truthy form, not just ``true``.
+
+    ``1``, ``"yes"``, ``"recorded"`` all assert the claim; only an explicit
+    false token (``false``, ``0``, ``"no"``, ``"none"``, empty) or ``None``
+    disclaims it.
+    """
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, int | float):
+        return value != 0
+    if isinstance(value, str):
+        return value.strip().lower() not in {"", "false", "0", "no", "none", "null"}
+    return True
+
+
 def _claims_live(payload: object) -> bool:
     """Fail-closed scan: any mapping key token implying a live claim."""
     if isinstance(payload, dict):
         for key, value in payload.items():
             token = str(key).lower().replace("-", "_").replace("_", "")
-            if token == "livepnlclaim" and (value is True or str(value).lower() == "true"):
+            if token == "livepnlclaim" and _is_live_claim_value(value):
                 return True
             if _claims_live(value):
                 return True

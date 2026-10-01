@@ -19,10 +19,12 @@ FORBIDDEN_HEADLINE_TOKENS: frozenset[str] = frozenset({"sharpe", "sortino", "cal
 _FORBIDDEN_CLAIM_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
     re.compile(p, re.IGNORECASE)
     for p in (
-        r"\blive (?:trading )?(?:p(?:&|and|n)l|profits?|returns?|gains?)\b",
-        r"\breal money (returns?|gains?|profits?)\b",
-        r"\bguaranteed (returns?|alpha|profits?)\b",
-        r"\bsynthetic results? (show|prove|demonstrate)s? (live|real|market)\b",
+        r"\blive[-\s]+(?:trading[-\s]+)?(?:p(?:&|and|n)l|profits?|returns?|gains?)\b",
+        r"\b(?:p(?:&|and|n)l|profits?|returns?|gains?)\s+(?:from|of)\s+live[-\s]+(?:trading|markets?|accounts?)\b",
+        r"\breal[-\s]+money\s+(?:returns?|gains?|profits?)\b",
+        r"\bguaranteed\s+(?:returns?|alpha|profits?)\b",
+        r"\bsynthetic\s+(?:results?|data|evidence|series|benchmarks?|backtests?)\s+"
+        r"(?:shows?|proves?|demonstrates?)\s+(?:live|real|market)\b",
     )
 )
 
@@ -41,14 +43,30 @@ def _contains_forbidden_headline(text: str) -> str | None:
 
     A headline claim is a forbidden token immediately followed by a numeric
     value or ratio phrasing (e.g. "Sharpe 2.1", "pnl: +$4,200", "Sharpe is
-    2.1", "Sharpe ratio of 2.1"). Bare discussion of why these metrics are
-    forbidden is allowed.
+    2.1", "Sharpe ratio of 2.1"). The gap between token and number may also
+    be a run of non-word separators — "Sharpe — 2.1", "pnl - $4,200",
+    "nav (1.9)", "sharpe…2.1" all headline the same claim. Bare discussion
+    of why these metrics are forbidden is allowed.
     """
-    bridge = r"(?:ratio|score|value|reading)\b"
-    connector = r"(?:of|=|:|is|was|at|to|reads?|[\"'])"
+    bridge = (
+        r"(?:ratio|score|value|reading|level|figure|number|metric|multiple|"
+        r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
+        r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
+        r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
+    )
+    connector = (
+        r"(?:of|=|:|is|was|were|are|at|to|for|per|the|a|an|this|that|its|our|"
+        r"your|their|my|about|roughly|approximately|around|over|under|above|"
+        r"below|current(?:ly)?|latest|reported|expected|projected|stood|stands|"
+        r"sits|sat|hits?|reached|reaches|posted|came|rose|fell|grew|implied|"
+        r"delivered|generated|produced|whole|all|entire|same|given|first|last|"
+        r"single|rolling|trailing|net|gross|calendar|fiscal|respective|"
+        r"corresponding|reads?|[\"']|[^\w\s]+)"
+    )
     for token in FORBIDDEN_HEADLINE_TOKENS:
         pattern = re.compile(
-            rf"\b{token}\b\s*(?:{bridge}\s*)?(?:{connector}\s*){{0,2}}[-+$]?\d[\d,.%$]*",
+            rf"\b{re.escape(token)}\b\s*(?:(?:{bridge}|{connector})\s*){{0,6}}"
+            rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )
         if pattern.search(text):

@@ -1,0 +1,1053 @@
+{
+  "data_label": "CORPUS",
+  "dataset_unspecified": [],
+  "evidence": [
+    "cross_receipt_claim_equality",
+    "inputs_fingerprint_edges",
+    "code_staleness_audit"
+  ],
+  "file_digests": {
+    "lattice_drill_vol_bench_a.json": "33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481",
+    "lattice_drill_vol_bench_b.json": "49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988"
+  },
+  "generated_at_commit": "3ed517880c5e600b48a8f43494c1f4c138427109",
+  "groups": [
+    {
+      "claim_path": "results[0].dm_qlike_mean",
+      "disagreements": [
+        {
+          "claim_path": "results[0].dm_qlike_mean",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.04633954712413588,
+            0.036929924620796604
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[0].dm_qlike_se",
+      "disagreements": [
+        {
+          "claim_path": "results[0].dm_qlike_se",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.010288210847160438,
+            0.008602752619556994
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[0].dm_qlike_t",
+      "disagreements": [
+        {
+          "claim_path": "results[0].dm_qlike_t",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            4.504140497560435,
+            4.292803275179885
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[0].epromotion_anytime_p",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[0].epromotion_evalue",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[0].horizon",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[0].model",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[0].mse",
+      "disagreements": [
+        {
+          "claim_path": "results[0].mse",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            1.5964757045866172e-08,
+            1.3257127418799274e-08
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[0].n_origins",
+      "disagreements": [
+        {
+          "claim_path": "results[0].n_origins",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            48,
+            64
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[0].qlike",
+      "disagreements": [
+        {
+          "claim_path": "results[0].qlike",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.10780923167964705,
+            0.09108392870118556
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[0].seed",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[0].shard",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[0].status",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].dm_qlike_mean",
+      "disagreements": [
+        {
+          "claim_path": "results[1].dm_qlike_mean",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.046041483471145554,
+            0.035829020985259405
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[1].dm_qlike_se",
+      "disagreements": [
+        {
+          "claim_path": "results[1].dm_qlike_se",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.013186723334349061,
+            0.011023498936181472
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[1].dm_qlike_t",
+      "disagreements": [
+        {
+          "claim_path": "results[1].dm_qlike_t",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            3.4915029536727826,
+            3.250240344983472
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[1].epromotion_anytime_p",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].epromotion_evalue",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].horizon",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].model",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].mse",
+      "disagreements": [
+        {
+          "claim_path": "results[1].mse",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            1.4708880474877249e-08,
+            1.2144444512517402e-08
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[1].n_origins",
+      "disagreements": [
+        {
+          "claim_path": "results[1].n_origins",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            48,
+            64
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[1].qlike",
+      "disagreements": [
+        {
+          "claim_path": "results[1].qlike",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.10751116802665672,
+            0.08998302506564836
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[1].seed",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].shard",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[1].status",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[2].horizon",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[2].model",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[2].mse",
+      "disagreements": [
+        {
+          "claim_path": "results[2].mse",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            9.508139071862291e-09,
+            8.02611350968144e-09
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[2].n_origins",
+      "disagreements": [
+        {
+          "claim_path": "results[2].n_origins",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            48,
+            64
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[2].qlike",
+      "disagreements": [
+        {
+          "claim_path": "results[2].qlike",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.06146968455551116,
+            0.05415400408038895
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[2].seed",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[2].shard",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[2].status",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].dm_qlike_mean",
+      "disagreements": [
+        {
+          "claim_path": "results[3].dm_qlike_mean",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.042155951814459164,
+            0.034268668137320185
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[3].dm_qlike_se",
+      "disagreements": [
+        {
+          "claim_path": "results[3].dm_qlike_se",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.012539227473735166,
+            0.010190995103279012
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[3].dm_qlike_t",
+      "disagreements": [
+        {
+          "claim_path": "results[3].dm_qlike_t",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            3.3619257568107437,
+            3.3626419981591438
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[3].epromotion_anytime_p",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].epromotion_evalue",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].horizon",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].model",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].mse",
+      "disagreements": [
+        {
+          "claim_path": "results[3].mse",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            1.4058917591298095e-08,
+            1.1811529853278772e-08
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[3].n_origins",
+      "disagreements": [
+        {
+          "claim_path": "results[3].n_origins",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            48,
+            64
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[3].qlike",
+      "disagreements": [
+        {
+          "claim_path": "results[3].qlike",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.10362563636997031,
+            0.08842267221770914
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[3].seed",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].shard",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[3].status",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].dm_qlike_mean",
+      "disagreements": [
+        {
+          "claim_path": "results[4].dm_qlike_mean",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.0739795165866113,
+            0.05926575645053096
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[4].dm_qlike_se",
+      "disagreements": [
+        {
+          "claim_path": "results[4].dm_qlike_se",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.022007474616159053,
+            0.017908563988808652
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[4].dm_qlike_t",
+      "disagreements": [
+        {
+          "claim_path": "results[4].dm_qlike_t",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            3.361563190548525,
+            3.3093528039192357
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[4].epromotion_anytime_p",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].epromotion_evalue",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].horizon",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].model",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].mse",
+      "disagreements": [
+        {
+          "claim_path": "results[4].mse",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            1.8365818440903653e-08,
+            1.5245770199440637e-08
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[4].n_origins",
+      "disagreements": [
+        {
+          "claim_path": "results[4].n_origins",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            48,
+            64
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[4].qlike",
+      "disagreements": [
+        {
+          "claim_path": "results[4].qlike",
+          "files": [
+            "lattice_drill_vol_bench_a.json",
+            "lattice_drill_vol_bench_b.json"
+          ],
+          "values": [
+            0.13544920114212247,
+            0.11341976053091991
+          ]
+        }
+      ],
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "inconsistent"
+    },
+    {
+      "claim_path": "results[4].seed",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].shard",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    },
+    {
+      "claim_path": "results[4].status",
+      "files": [
+        "lattice_drill_vol_bench_a.json",
+        "lattice_drill_vol_bench_b.json"
+      ],
+      "fingerprint": "7c41e018b1349591dc531682e322de12d95fe4d42bfefc4d8a19c8d34c91096b",
+      "n_receipts": 2,
+      "tier": "dataset",
+      "verdict": "consistent"
+    }
+  ],
+  "inputs_sha256": "8cc8a9b05d889df404369c02eda15ac34f621b162acfabbbdf8a5e922a8c9086",
+  "inputs_unspecified": [],
+  "kind": "receipt_lattice.v1",
+  "live_pnl_claim": false,
+  "n_claim_groups": 60,
+  "n_consistent_groups": 33,
+  "n_dataset_unspecified": 0,
+  "n_drift_groups": 0,
+  "n_inconsistent_groups": 27,
+  "n_inputs_unspecified": 0,
+  "n_parse_errors": 0,
+  "n_receipts": 2,
+  "n_singleton_claims": 120,
+  "n_stale_code": 0,
+  "params": {
+    "float_abs_tol": 1e-12,
+    "float_rel_tol": 1e-09,
+    "glob": "lattice_drill_*.json",
+    "head_sha": "3ed517880c5e600b48a8f43494c1f4c138427109"
+  },
+  "parse_errors": [],
+  "receipt_sha256": "0320c1ccb34db8ec154a66b9fcdbb37189def4f1d7eab8736b589016ecc01d44",
+  "research_only": true,
+  "schema": "receipt_lattice.v1",
+  "stale_code": [],
+  "verdict": "inconsistent"
+}

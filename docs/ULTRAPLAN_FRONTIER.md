@@ -215,16 +215,32 @@ fleet contract.
 Each: pinned artifact + sha256, zero-shot, native output honored
 (quantile/sample/path), per-model coverage disclosed.
 
-- [ ] P2.1 `moirai2` — Salesforce/moirai-2.0-R-small via uni2ts; quantile
-      head maps directly onto our CRPS/pinball path.
+- [~] P2.1 `moirai2` — Salesforce/moirai-2.0-R-small via uni2ts; quantile
+      head maps directly onto our CRPS/pinball path. Adapter landed:
+      `Moirai2Distribution` (`models/moirai2.py`) — lazy fail-closed
+      import, `availability()` gate, causal-window `predict_from_history`,
+      registered in `FLEET_HEAD_REGISTRY`. Dep evidence: `uv add uni2ts`
+      fails resolution — every published uni2ts (1.1.0–2.0.0) pins
+      `scipy>=1.11.3,<1.12.dev0` and `numpy~=1.26.0` against pinned
+      `scipy>=1.14` / `numpy>=2.0` (upstream main pins the same ranges, so
+      git install does not help either), plus `gluonts~=0.14.3` → `toolz<1`
+      vs `exchange-calendars==4.13.2` → `toolz>=1`. Lane stays fail-closed
+      until upstream loosens. Fleet cell open pending a resolvable dep.
 - [ ] P2.2 `tirex2` — NX-AI TiRex-2; prefer a decontaminated checkpoint for
       the fev-bench/GIFT overlap question; sample-path → distribution.
 - [ ] P2.3 `sundial` — THU-MT flow-matching; sample paths → empirical dist.
 - [ ] P2.4 `toto` — Datadog Toto if public weights resolve; else document
       unavailable.
-- [ ] P2.5 `tabpfn_ts` — PriorLabs tabpfn-time-series (CPU-feasible, 11M).
-- [ ] P2.6 `kronos_base` in the v5 fleet (only the v1 3-asset run beat it;
-      fleet-scale evidence missing).
+- [~] P2.5 `tabpfn_ts` — PriorLabs tabpfn-time-series (CPU-feasible, 11M).
+      Adapter landed: `TabpfnTsDistribution` (`models/tabpfn_ts.py`) — lazy
+      fail-closed import, causal-window `predict_from_history`, registered in
+      `FLEET_HEAD_REGISTRY`. Dep evidence: `tabpfn-time-series` transitively
+      pins `toolz<1` (via gluonts) while `exchange-calendars==4.13.2` requires
+      `toolz>=1` — unsatisfiable in uv.lock, so the lane stays fail-closed
+      until upstream loosens. Fleet cell open pending a resolvable dep.
+- [x] P2.6 `kronos_base` fleet head — wraps the real Kronos adapter,
+      candle-envelope → 5/50/95 quantiles (#377). v5-fleet-scale cell
+      remains remote-gated like the rest of the fleet.
 - [~] P2.7 Classical neural baselines: N-BEATS / N-HiTS / DLinear via a small
       harness (Darts or direct) — closes the "only foundation models"
       objection.
@@ -247,9 +263,23 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       protocol; watch microstructure-noise caveat (disclose).
 - [~] P3.2 Multi-horizon: h∈{1,5,20} daily + {1,6} 4h on identical origins
       (megaplan Phase D); targets emit native paths, challengers use P1.10.
-- [ ] P3.3 Second domain: Stooq US equity dailies (remote `data/file_us`
-      tapes) OR Binance non-USDT quotes — requires same bar-integrity
-      hashing + availability-time discipline.
+- [x] P3.2 Multi-horizon (daily half): `research/multih_fleet.py` +
+      `quant multih-fleet` — identical origins, h∈{1,5,20}; 1-step heads
+      extended via `iid_sqrt` (μ×h, σ×√h) and causal `empirical_ratio`
+      (trailing h-sum/1-step dispersion), `hstep_*` scored on native blocks;
+      proper scores on realized h-step sums; sealed `multih_fleet_eval`
+      receipt. Result: empirical_ratio wins clustered/break shards, native
+      hstep wins where horizon structure matters — the construction
+      discriminates as designed. 4h {1,6} remains remote-gated (P3.1 bars).
+- [x] P3.3 Second domain: US equity dailies — the committed 424-name
+      `data/file_us_wide` yahoo corpus ran through `real_benchmark`'s
+      preregistered two-phase harness (protocol hash-pins the parquet;
+      prepare audits splits, then validation scores before test).
+      Verdict: honest negative — on 495 validation dates / 431 test
+      dates, no baseline (ridge, rolling_mean_20, historical_mean) beat
+      the zero-return forecast on equal-weight MSE; `promote: false`,
+      `claim: fixed_split_forecast_diagnostic`. Sealed receipts:
+      `receipts/real_benchmark_us_wide_{manifest,validation,test}.json`.
 - [x] P3.4 Cross-sectional lane: rank-IC eval vs targets on the panel
       (existing ranking bench + northset) — a different claim axis.
       Harness landed: `research/cross_sectional.py` + `dipcatcher rankic` —
@@ -268,10 +298,45 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       HAR-RV, realized-GARCH, dip_garch_t and RV baselines with QLIKE/MSE on
       cumulative h-step realized variance, NW loss diffs vs `har`, sealed
       receipts). Real-data vol cells still open.
+- [x] P3.9 Selection-concordance lane: does "head X wins" survive the choice
+      of multiple-comparison correction? `research/concordance.py`
+      (`quant_fund.research.concordance.run_concordance_eval`) runs MCS /
+      Romano–Wolf StepM / pairwise DM on
+      the same pinball loss tensor per shard — eliminated-set Jaccard,
+      Kendall-τ on elimination confidence, SPA/Reality-Check decisiveness on
+      differentials-vs-best. A head MCS keeps but StepM rejects is flagged:
+      dependence-fragile selection, not evidence.
+- [x] P3.7 Distributional coherence bench
+      (`quant_fund.research.coherence.run_coherence`) —
+      `research/coherence.py` reconciles per-name marginal quantile grids
+      to the aggregate distribution on SYNTHETIC correlated panels
+      (gauss/independent/heavy-tail/regime-break copulas). Methods:
+      direct aggregate fit, naive sum-of-quantiles (comonotone bound),
+      independent MC convolution, and a Gaussian copula MC fit on
+      in-sample PIT z-scores. Proper scores only; sealed receipt.v2.
+
+### P3b — Sequential inference suite (new statistical layer)
+
+- [x] Anytime-valid head promotion: `research/evalues.py` `LossEProcess`
+      (betting e-process, Ville/Ramdas) wired into `vol_bench` — #380.
+- [x] Sequential fleet elimination: `research/fleet_race.py` + `dipcatcher
+      race` (two e-processes per head vs fixed incumbent) — #381.
+- [x] Corpus-level inference: `research/corpus_inference.py` harvests all
+      committed receipts → pooled BH-FDR + e-value product — #382.
+- [x] Online FDR over the receipt stream: `research/online_fdr.py`
+      Foster–Stine alpha-investing — #383.
+- [x] Verifier contracts for the family: `research/evalue_contracts.py`
+      deep-checks the kinds — #384, #398 (extended).
+- [x] Winner's-curse correction: `research/winner_curse.py` bootstrap
+      selection-bias + split-half honest control — #385.
+- [x] Anytime-valid drift alarms: `research/drift_alarm.py` level-shift
+      e-process + Page–Hinkley diagnostic — #386.
+- [x] Composite verdict: `research/honest_verdict.py` — #387.
+- [x] Registry completeness ratchet (no orphan heads) — #388.
+      See `docs/SEQUENTIAL_INFERENCE.md` for the architecture.
 
 ### P4 — Industry-grade bar (the open one)
 
-- [~] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
 - [x] P4.1 Profile `run_backtest` on the 11-asset workload (cProfile +
       allocation trace); classify remaining 5.4× gap: interpreter loop vs
       per-order gate cost vs polars overhead.
@@ -287,23 +352,20 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       fail-closed refusal of unsupported workload classes, byte-identical
       property suite `tests/property/test_fast_replay_byte_identity.py`,
       scope/gap analysis `docs/FAST_REPLAY_P42.md`, receipt
-      `receipts/fast_replay_p42_conformance_20260927.json`.
-- [~] P4.3 If fast path can't reach ≤1× honestly, write the argument:
+      `receipts/fast_replay_p42_conformance_20260928.json`.
+      `receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json`.
 - [x] P4.3 If fast path can't reach ≤1× honestly, write the argument:
       per-order risk gates + fail-closed semantics are the product; vectorbt
       is a vectorized reducer without them; show latency decomposition
       table + the 3/3 fault-injection wins.
-- [~] P4.4 NautilusTrader conformance replay attempt (third incumbent):
-      Landed: `docs/P4_3_FAST_PATH_ARGUMENT.md` — ~80% per-order
-      gate/cost/schema, ~15% interpreter, ~5% marshalling decomposition of
-      the residual ~5.3×; byte-identity + fault-injection parity cited as
-      the claim. Numbers from the P4.1/P6.8 profile sweep.
-- [ ] P4.4 NautilusTrader conformance replay attempt (third incumbent):
-      same bars/panel/costs; document matched or not-fair with receipts.
+- [x] P4.4 NautilusTrader conformance replay attempt (third incumbent):
+      same bars/panel/costs — attempted and sealed not-fair/attempted
+      verdict: `receipts/nautilus_conformance_*.json` (#232).
 - [~] P4.5 UX evidence: `dipcatcher doctor` self-check output, error-message
       quality suite, `--help` coverage vs incumbent CLIs/APIs.
-- [~] P4.6 Security evidence: `uv audit`/`pip-audit` receipt, secrets scan
-      (gitleaks), no-`eval`/no-`pickle-load` audit, input-validation matrix.
+- [x] P4.6 Security evidence: sealed `receipts/deps_security_hygiene_*.json`
+      (pin audit + `uv audit`), gitleaks in CI with allowlist ratchet,
+      no-`eval`/no-`pickle` sweep clean, SHA-pinned actions.
 - [ ] P4.7 Write the industry-grade verdict in PROOF.md only after P4.1–P4.6.
 
 ### P5 — Strategy performance (highest honest result; locked holdout)
@@ -323,8 +385,11 @@ Dev-window tuning only; the holdout stays locked. Negative results recorded.
 - [~] P5.4 Cost-side improvements: maker-fill assumption variant (limit-at-
       touch model already in SimulatedBroker — measure fee drag delta),
       hysteresis parameter robustness surface (not retuned on holdout).
-- [ ] P5.5 Cross-venue funding/basis: gated on second-venue data
-      availability; otherwise documented out-of-scope.
+- [x] P5.5 Cross-venue funding/basis: OKX resolved as second venue
+      (Binance geo-blocked HTTP 451, Bybit 403); `research/crossvenue_basis.py`
+      + `dipcatcher xvenue-basis` (kraken-okx preset) -> spot-vs-futures
+      basis + daily funding differential across venues; sealed
+      `crossvenue_basis.v1` receipt (descriptive stats only).
 - [x] P5.6 Capacity analysis (`research/capacity_overlay.py::
       run_capacity_bench` + `dipcatcher capacity --dev`): 4 seeded
       SYNTHETIC books × AUM grid -> feasible-date share, days-to-trade,
@@ -339,7 +404,7 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
 - [x] P6.1 Money paths: `simulated_broker.py`, `carry_engine.py`,
       `perp_engine.py`, `engine.py`, `sleeves.py`, `risk_gate.py`,
       `costs.py`, `implementation_shortfall.py`, `pnl_attribution.py`.
-- [~] P6.2 Statistical core: `scoring.py`, `inference.py`, `snooping.py`,
+- [x] P6.2 Statistical core: `scoring.py`, `inference.py`, `snooping.py`,
       `hac.py`, `evalues.py`, `conformal.py`, `multiple_testing.py`,
       `cpcv.py`, `purging.py`, `embargo.py`, `walk_forward.py`, `fdr.py`,
       `gates.py`.
@@ -351,9 +416,13 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
 - [x] P6.3 Data integrity: `ingest.py`, `point_in_time.py`, `universe.py`,
       `corporate_actions.py`, `security_master.py`, `sources/`, `lake.py`,
       `calendars.py`.
-- [~] P6.4 Model layer: every file in `models/` vs its cited paper;
-      `pipeline/train.py`, `pipeline/forecast.py`, `fusion/engine.py`,
-      `labels/engine.py`, `features/`.
+- [x] P6.4 Model layer: every file in `models/` audited line-by-line
+      vs cited behavior; `pipeline/` causal gates verified.
+      Completion evidence: `quality/audit_coverage.json` marks
+      Completion evidence: `quality/audit_coverage.json` +
+      `quality/audit_coverage_fx1.json` mark
+      `models/` and the named dirs `audited` under CI enforcement
+      + `docs/AUDIT_LEDGER.md` per-directory findings (#334+).
 - [x] P6.5 Exec/microstructure: `almgren_chriss.py`, `microstructure/*`,
       `northset/*` estimators (Kyle λ, Roll, VPIN, OFI).
 - [x] P6.6 Infra: `paper/*` (ledger atomicity, resume), `registry/`,
@@ -364,68 +433,62 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       `predicates`, `session`/`candle`/`kyle`/`northset` honesty checkers,
       `consistency`, `families`); `__init__.py` re-exports all 444 public
       names so `from quant_fund.research.catalog import X` is unchanged.
-- [~] P6.8 Perf sweep: cProfile top-20 hot paths across engine, features,
 - [x] P6.8 Perf sweep: cProfile top-20 hot paths across engine, features,
       scoring; fix only where semantics bit-identical.
-- [~] P6.9 Test-quality audit: mutation spot-checks on money-path
-      Landed: `docs/PERF_SWEEP.md` + `scripts/_perf_identity.py`
-      (byte-identity replay vs frozen pre-change engine, 7 workloads).
-- [ ] P6.9 Test-quality audit: mutation spot-checks on money-path
-      conditionals; property tests (hypothesis) for accounting identities;
-      coverage gaps in `tests/` map.
-- [~] P6.10 Dependency hygiene: pin audit, `uv audit` receipt, license
-      scan, dead-dep removal.
+- [x] P6.9 Test-quality audit: mutation spot-checks on money-path
+      conditionals (#221, #372, #397 — survivors pinned), property tests
+      for accounting identities, verifier mutation-fuzz (#368).
+- [x] P6.10 Dependency hygiene: sealed `receipts/deps_security_hygiene_*.json`
+      (pin audit + `uv audit` + license scan), verifier contract
+      re-derives it (#349).
 
 ### P7 — Frontier infrastructure upgrades
 
-- [~] P7.1 CI reproduction job: merge+inference is pure numpy — gated on the
-- [x] P7.1 CI reproduction job: merge+inference is pure numpy — gated on the
-      repo-policy decision (commit loss matrices + bar parquets or fetch
-      from artifact store). Draft the workflow; flag for user.
-- [x] P7.2 Receipt v2 schema: unified `receipt.json` fields across eval,
-      Drafted + partially live: `.github/workflows/reproduce_sota.yml` —
+- [x] P7.1 CI reproduction job: `.github/workflows/reproduce_sota.yml` —
       the *native* leg runs unconditionally (both committed parts reproduce
-      their committed merged receipts bit-exact, verified locally):
-      `nd_*.paths.npz` → `native/MERGED_d1_native.json` and
-      `nh_*.paths.npz` → `native/MERGED_h4_native.json`, verified by
-      `scripts/check_sota_reproduction.py` (recursive compare; volatile
-      timestamp keys dropped, implementation-hash drift reported as
-      warnings, part paths normalized to basename). The kronos leg
-      (`mega-arena/spliced/d1_*.mega.npz` → `mega-arena/merge_d1.json`)
-      stays gated on the real policy decision: the reference receipt's
-      `timestamp_source=reconstructed_from_hash_verified_bars` requires
-      `--bars-root data/raw/sources`, which is gitignored — commit the bar
-      parquets or set the `SOTA_ARTIFACT_URI` repo variable (s3:// prefix
-      mirroring sources/) to lift the gate; the workflow notices-and-skips
+      their merged receipts bit-exact via `scripts/check_sota_reproduction.py`;
+      volatile timestamp keys dropped, implementation-hash drift reported as
+      warnings). The kronos leg stays gated on the repo-policy decision:
+      `--bars-root data/raw/sources` is gitignored — commit the bar
+      parquets or set `SOTA_ARTIFACT_URI`; the workflow notices-and-skips
       until then.
-- [ ] P7.2 Receipt v2 schema: unified `receipt.json` fields across eval,
-      incumbent, carry, paper lanes (dataset hash, code hash, params,
-      environment, `live_pnl_claim`, verdict).
-      Partially landed: `research/receipt_v2.py` defines the unified
-      `receipt.v2` envelope (pydantic model + published
-      `receipt_v2.schema.json`), `dipcatcher verify-receipt` validates v1/v2
-      structure + seal/digest consistency, and `fleet_eval` writes v2 behind
-      `--receipt-version 2` (default stays v1). Incumbent/carry/paper lanes
-      still emit v1 — migrate them onto `build_receipt_v2` next.
+- [~] P7.2 Receipt v2 schema: unified envelope across eval/incumbent/
+      carry/paper lanes (dataset hash, code hash, params, environment,
+      `live_pnl_claim`, verdict).
+      Partially landed: `research/receipt_v2.py` defines `receipt.v2`
+      (pydantic + published `receipt_v2.schema.json`); `dipcatcher
+      verify-receipt` validates v1/v2; `fleet_eval`, `vol_bench`,
+      `capacity_overlay`, `cross_sectional` emit v2 behind
+      `--receipt-version 2`. Remaining v1 writers migrating on an
+      in-flight sweep.
 - [~] P7.3 Experiment registry hardening: mlflow.db exists locally — wire
-      fleet runs into it or document why not.
-- [~] P7.4 Determinism sweep: BLAS threading notes already documented; add
-      per-receipt `numpy`/`scipy`/`blas` fingerprint block.
-      Partially landed: every `receipt.v2` envelope carries an `environment`
-      block (python/numpy/polars/scipy versions, BLAS/LAPACK build from
-      `np.__config__.CONFIG`, loaded BLAS threadpools via threadpoolctl) with
-      a `fingerprint_sha256` digest over the block. Still open: adopt v2 in
-      the remaining lanes and sweep fingerprints across machines.
-- [~] P7.5 Remote-fleet ops: consolidate `spawn_*.ps1` into one parametrized
-      a `fingerprint_sha256` digest over the block. Adopted by every
-      receipt-producing lane (`fleet_eval`, `capacity_overlay`,
-      `cross_sectional`, `vol_bench` via `--receipt-version 2`; v1 remains the
-      default seal and still verifies). Still open: cross-machine fingerprint
+      fleet runs into it or document why not. (PR #218 open.)
+- [~] P7.4 Determinism sweep: every `receipt.v2` envelope carries an
+      `environment` block (python/numpy/polars/scipy versions, BLAS/LAPACK
+      build from `np.__config__.CONFIG`, threadpools via threadpoolctl)
+      with a `fingerprint_sha256` digest. Cross-process determinism proven:
+      `sim_live` receipts are byte-identical under different PYTHONHASHSEED
+      (`tests/unit/determinism/`). Still open: cross-machine fingerprint
       sweeps.
-- [ ] P7.5 Remote-fleet ops: consolidate `spawn_*.ps1` into one parametrized
-      launcher + watchdog (auto-respawn dead shards, heartbeat file).
-- [~] P7.6 `AGENTS.md` refresh: remote conventions (powershell-only, WMI
-      spawn, Defender exclusions, durable paths), durable staging dirs.
+- [x] P7.5 Remote-fleet ops: consolidated into `scripts/fleet_spawn.ps1`
+      (JSON-manifest WMI launcher, Win32_Process + `cmd /c` redirect,
+      dry-run + spawn receipt) + `scripts/fleet_watchdog.ps1` (PID liveness,
+      output staleness, bounded respawn, `.dsh-24x7/fleet_heartbeat.json`)
+      + `scripts/fleet_manifest_sota.ps1`.
+- [x] P7.6 `AGENTS.md` refresh: remote conventions landed — PowerShell-only,
+      WMI spawn survives ssh teardown, parametrized launcher + watchdog,
+      `.dsh-24x7` durable paths, thread-pinning env block, Defender
+      exclusions.
+- [x] P7.7 Evidence chain-of-custody: `research/evidence_audit.py` +
+      `dipcatcher verify-all` — set-level receipt audit (filename↔digest
+      binding, duplicate-seal detection, unsealed-legacy accounting,
+      evidence-index freshness via byte-compared regen) emitting a sealed
+      `evidence_audit` receipt. Also fixed `receipts-reverify` dispatch:
+      v2 envelopes and sealed v1 receipts now route to `verify-receipt`
+      instead of the notebook-schema `verify-research`, which had never
+      verified a sealed receipt correctly. The 7 committed pre-envelope
+      artifacts moved to `receipts/legacy-unsealed/` — retained for
+      provenance, outside the seal-verified set.
 
 ## Execution rules
 

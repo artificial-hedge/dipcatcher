@@ -120,6 +120,52 @@ def collect(
     typer.echo(f"receipt: {result.receipt}")
 
 
+@app.command("promote-bars")
+def promote_bars_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    source_file: Path | None = typer.Option(
+        None,
+        "--source-file",
+        help="Collected source parquet (default <data.root>/raw/sources/<source>.parquet)",
+    ),
+    source: str | None = typer.Option(
+        None, "--source", help="Resolve the collected frame under data.root/raw/sources/"
+    ),
+    dest_dir: Path | None = typer.Option(
+        None,
+        "--dest-dir",
+        help="Directory the parquet provider reads (default <data.root>/raw)",
+    ),
+    filename: str = typer.Option("bars.parquet", "--filename", help="Bars filename"),
+    force: bool = typer.Option(False, "--force", help="Replace an existing bars file"),
+) -> None:
+    """Publish a collected source frame as ``bars.parquet`` for ``source: parquet``.
+
+    Runs the same bars/PIT contract the provider enforces at read time, refuses
+    to overwrite without ``--force``, and writes a provenance receipt linking
+    the source parquet (and its collect receipt) to the published file.
+    """
+    from quant_fund.data.promote import promote_bars
+    from quant_fund.data.sources.base import SourceError
+
+    cfg = _cfg(config)
+    root = Path(cfg.data.root)
+    src = source_file
+    if src is None:
+        if not source:
+            raise typer.BadParameter("pass --source-file or --source")
+        if source in {".", ".."} or "/" in source or "\\" in source:
+            raise typer.BadParameter("--source must be a path-safe label")
+        src = root / "raw" / "sources" / f"{source}.parquet"
+    dest = dest_dir or (root / "raw")
+    try:
+        result = promote_bars(src, dest, filename=filename, force=force)
+    except SourceError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(f"rows={result['rows']} data={result['data']}")
+    typer.echo(f"receipt: {result['receipt']}")
+
+
 @app.command("build-features")
 def build_features_cmd(config: Path = typer.Option(Path("configs/research.yaml"))) -> None:
     from quant_fund.pipeline.dataset import build_gold
@@ -138,10 +184,95 @@ def build_labels_cmd(config: Path = typer.Option(Path("configs/research.yaml")))
     typer.echo(f"labels rows={labs.height}")
 
 
+@app.command("membership-coverage")
+def membership_coverage_cmd(
+    membership: Path = typer.Option(
+        ...,
+        "--membership",
+        help="Point-in-time index membership JSON (current + newest-first changes)",
+    ),
+    bars: list[Path] = typer.Option(
+        [],
+        "--bars",
+        help="Parquet bar panel (repeatable). Unioned before coverage.",
+    ),
+    anchor: list[str] = typer.Option(
+        [],
+        "--anchor",
+        help="Coverage anchor YYYY-MM-DD (repeatable). Default: 2016-01-04,2020-01-02,2023-01-03",
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Write JSON coverage report"),
+    label: str = typer.Option(
+        "bars",
+        "--label",
+        help="Short label for the source set (echoed in the report)",
+    ),
+) -> None:
+    """Report point-in-time index-membership price coverage.
+
+    For each anchor date, finds the first panel session on or after that day
+    and prints the fraction of index members with at least one real bar.
+    Research diagnostic only — not a live-trading claim.
+    """
+    import json
+
+    import polars as pl
+
+    from quant_fund.data.index_membership import (
+        coverage_report_dict,
+        load_membership,
+        membership_price_coverage,
+        merge_bar_panels,
+    )
+    from quant_fund.proofcore.contracts import sha256_hex_bytes
+    from quant_fund.utils.hashing import canonical_json_bytes
+
+    if not membership.is_file():
+        raise typer.BadParameter(f"membership file not found: {membership}")
+    if not bars:
+        raise typer.BadParameter("pass at least one --bars parquet")
+    anchors = anchor or ["2016-01-04", "2020-01-02", "2023-01-03"]
+    frames: list[pl.DataFrame] = []
+    for path in bars:
+        if not path.is_file():
+            raise typer.BadParameter(f"bars parquet not found: {path}")
+        frames.append(pl.read_parquet(path))
+    panel = merge_bar_panels(frames)
+    member_payload = load_membership(membership)
+    member_hash = sha256_hex_bytes(membership.read_bytes())
+    rows = membership_price_coverage(panel, member_payload, anchors)
+    report = coverage_report_dict(
+        rows,
+        sources=[label],
+        membership_path=str(membership),
+        membership_sha256=member_hash,
+        extra={"n_bar_rows": panel.height, "bar_paths": [str(path) for path in bars]},
+    )
+    typer.echo(
+        f"membership_coverage label={label} members_file={membership.name} "
+        f"sha256={member_hash[:12]}… n_bars={panel.height}"
+    )
+    typer.echo("| anchor | session | members | with_bar | coverage | n_missing |")
+    typer.echo("|---|---|---:|---:|---:|---:|")
+    for row in rows:
+        session = row["session"] or "—"
+        typer.echo(
+            f"| {row['anchor']} | {session} | {row['members']} | {row['with_bar']} | "
+            f"{float(row['coverage']):.6f} | {row['n_missing']} |"
+        )
+    typer.echo(f"mean_coverage={float(report['mean_coverage']):.6f}")
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        report["report_sha256"] = sha256_hex_bytes(canonical_json_bytes(report))
+        out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        typer.echo(f"wrote {out}")
+
+
 __all__ = [
     "build_features_cmd",
     "build_labels_cmd",
     "collect",
     "doctor",
     "ingest",
+    "membership_coverage_cmd",
 ]
