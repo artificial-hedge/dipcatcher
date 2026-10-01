@@ -424,6 +424,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "aft_model",
         "distance_covariance",
         "panel_unitroot",
+        # SOTA canon wave 40 batteries (see research/benches_w40.py):
+        # McFadden-Train mixed logit (random-coefficients
+        # simulated MLE, quasi-random draws), Cragg two-part
+        # hurdle (participation logit + truncated-normal amount),
+        # Zellner SUR (feasible-GLS Kronecker system), Diebold-
+        # Yilmaz connectedness (VAR generalized FEVD), Newey-
+        # Powell nonparametric series IV (basis projection +
+        # DWH endogeneity check), Politis-Romano-Wolf
+        # subsampling (block recentered CI, minimal-assumption
+        # coverage). Same SYNTHETIC diagnostic contract.
+        "mixed_logit",
+        "hurdle",
+        "sur_model",
+        "connectedness",
+        "nonparametric_iv",
+        "subsampling",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

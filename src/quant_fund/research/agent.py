@@ -308,6 +308,14 @@ from quant_fund.research.benches_w39 import (
     bench_panel_unitroot,
     bench_sieve_estimation,
 )
+from quant_fund.research.benches_w40 import (
+    bench_connectedness,
+    bench_hurdle,
+    bench_mixed_logit,
+    bench_nonparametric_iv,
+    bench_subsampling,
+    bench_sur_model,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2092,6 +2100,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "aft_model": bench_aft_model(),
         "distance_covariance": bench_distance_covariance(),
         "panel_unitroot": bench_panel_unitroot(),
+        "mixed_logit": bench_mixed_logit(),
+        "hurdle": bench_hurdle(),
+        "sur_model": bench_sur_model(),
+        "connectedness": bench_connectedness(),
+        "nonparametric_iv": bench_nonparametric_iv(),
+        "subsampling": bench_subsampling(),
     }
 
     hyps = _build_hypotheses(families, rankers)
