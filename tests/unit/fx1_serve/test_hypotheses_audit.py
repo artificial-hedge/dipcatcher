@@ -8,7 +8,7 @@ from quant_fund.research.receipt_v2 import verify_receipt_payload
 
 def test_score_gate() -> None:
     r = hypotheses_audit()
-    assert all(v == "raise:ValueError" for v in r["forbidden_rejected"].values())
+    assert all(c["outcome"] == "raise:ValueError" for c in r["forbidden_cases"])
     assert r["evasion_rejected"] == "raise:ValueError"
     assert r["unknown_rejected"] == "raise:ValueError"
     assert r["allowed_accept"] is True  # incl. rank_ic post-fix

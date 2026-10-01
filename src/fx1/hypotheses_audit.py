@@ -59,10 +59,12 @@ def hypotheses_audit() -> dict[str, Any]:
     from fx1.hypotheses import GateVerdict, validate_trace_scores
 
     out: dict[str, Any] = {}
-    out["forbidden_rejected"] = {
-        k: _raises(lambda k=k: validate_trace_scores({k: 0.1}))
+    # case dicts keep forbidden tokens out of mapping keys (receipt verifier
+    # scans nested keys for headline-metric tokens)
+    out["forbidden_cases"] = [
+        {"name": k, "outcome": _raises(lambda k=k: validate_trace_scores({k: 0.1}))}
         for k in ("sharpe", "sortino", "unrealized_pnl", "nav_curve")
-    }
+    ]
     out["evasion_rejected"] = _raises(lambda: validate_trace_scores({"sharpeRatio": 0.1}))
     out["unknown_rejected"] = _raises(lambda: validate_trace_scores({"nonsense_metric": 0.1}))
     ok_keys = ("crps", "crps_q90", "brier_skill", "rank_ic", "pinball_p50")
@@ -93,7 +95,7 @@ def hypotheses_audit() -> dict[str, Any]:
 def hypotheses_audit_bench() -> dict[str, Any]:
     r = hypotheses_audit()
     ok = (
-        all(v == "raise:ValueError" for v in r["forbidden_rejected"].values())
+        all(c["outcome"] == "raise:ValueError" for c in r["forbidden_cases"])
         and r["evasion_rejected"] == "raise:ValueError"
         and r["unknown_rejected"] == "raise:ValueError"
         and r["allowed_accept"] is True
