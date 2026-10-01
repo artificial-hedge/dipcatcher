@@ -56,7 +56,7 @@ import math
 from collections import deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
@@ -211,6 +211,20 @@ class RegimeState:
         _prob(self.p_buy, "p_buy")
 
 
+class MOFlow(Protocol):
+    """MO-clock flow driver consumed by ZILobSimulator.
+
+    ``current()`` returns the effective ``RegimeState`` (intensity
+    multiplier + buy probability); ``advance()`` is called once per
+    market-order event. Structural — SplitFlow and MarkovRegimeFlow
+    both satisfy it.
+    """
+
+    def current(self) -> RegimeState: ...
+
+    def advance(self) -> None: ...
+
+
 class MarkovRegimeFlow:
     """Two-state Markov modulation of MO intensity and direction.
 
@@ -330,7 +344,7 @@ class ZILobSimulator:
     (on cancel-by-id paths used by sessions), and non-finite horizons raise.
     """
 
-    def __init__(self, config: ZILobConfig, flow: MarkovRegimeFlow | None = None) -> None:
+    def __init__(self, config: ZILobConfig, flow: MOFlow | None = None) -> None:
         if not isinstance(config, ZILobConfig):
             raise TypeError("config must be a ZILobConfig")
         self._cfg = config
