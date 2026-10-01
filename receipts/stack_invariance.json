@@ -1,0 +1,35 @@
+{
+ "claim": {
+  "checks": {
+   "duplicate_symmetry": {
+    "ok": true,
+    "weight_split_diff": 8.854028621385623e-15
+   },
+   "overlap_rejected": {
+    "ok": true
+   },
+   "permutation": {
+    "ok": true,
+    "oof_dev": 4.440892098500626e-16,
+    "weight_dev": 5.551115123125783e-17
+   },
+   "regularization": {
+    "max_weight_at_1e12": 9.538654445642583e-11,
+    "ok": true
+   },
+   "sign_discipline": {
+    "unit_confidence_positive": true,
+    "zero_confidence_output_zero": true
+   }
+  },
+  "ok": true
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "999afcea815d5e2bf91415db41e901ead23dfe93",
+ "interpretation": "Stacker contracts hold: column order cannot leak into weights; heavy ridge kills weights; duplicate members split evenly; leaking folds fail closed; zero confidence zeros the alpha term.",
+ "kind": "stack_invariance",
+ "live_pnl_claim": false,
+ "receipt_sha256": "786b6b98f83419c7b14df0fd076ddec11d7c9e0eb1645a144b5fa6f8d2eaf9ed",
+ "research_only": true,
+ "schema": "stack_invariance.v1"
+}
