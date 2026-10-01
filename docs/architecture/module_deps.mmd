@@ -91,11 +91,12 @@ flowchart LR
   fx1_eval -->|10| fx1_honesty
   fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
+  fx1_forecast -->|1| fx1_honesty
   fx1_forecast -->|1| quant_fund_config
-  fx1_forecast -->|3| quant_fund_data
+  fx1_forecast -->|4| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
-  fx1_forecast -->|4| quant_fund_schemas
-  fx1_forecast -->|2| quant_fund_utils
+  fx1_forecast -->|5| quant_fund_schemas
+  fx1_forecast -->|4| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
   fx1_hypotheses -->|1| fx1_honesty
   fx1_mrm -->|1| fx1_modelcard

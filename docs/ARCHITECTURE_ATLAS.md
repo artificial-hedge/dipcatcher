@@ -159,11 +159,12 @@ flowchart LR
   fx1_eval -->|10| fx1_honesty
   fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
+  fx1_forecast -->|1| fx1_honesty
   fx1_forecast -->|1| quant_fund_config
-  fx1_forecast -->|3| quant_fund_data
+  fx1_forecast -->|4| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
-  fx1_forecast -->|4| quant_fund_schemas
-  fx1_forecast -->|2| quant_fund_utils
+  fx1_forecast -->|5| quant_fund_schemas
+  fx1_forecast -->|4| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
   fx1_hypotheses -->|1| fx1_honesty
   fx1_mrm -->|1| fx1_modelcard
@@ -604,7 +605,7 @@ sequenceDiagram
 | `fx1.data` | 14 |
 | `fx1.doctor` | 1 |
 | `fx1.eval` | 19 |
-| `fx1.forecast` | 11 |
+| `fx1.forecast` | 12 |
 | `fx1.harness` | 1 |
 | `fx1.honesty` | 1 |
 | `fx1.hypotheses` | 1 |
@@ -664,9 +665,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **894**
+- Modules scanned: **895**
 - Packages: **65**
-- Cross-package import edges: **276**
+- Cross-package import edges: **277**
 
 <!-- END GENERATED: coverage -->
 

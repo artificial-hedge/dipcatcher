@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 894,
+  "module_count": 895,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -497,6 +497,62 @@
     {
       "dst": "quant_fund.utils.hashing",
       "src": "fx1.forecast.artifacts"
+    },
+    {
+      "dst": "fx1.forecast.artifacts",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.config",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.evaluate",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.features",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.protocol",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.registry",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.runner",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.schema",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.signals",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.honesty",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "quant_fund.data.adapters.synthetic",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "fx1.forecast.core_audit"
     },
     {
       "dst": "fx1.forecast.artifacts",
@@ -9038,6 +9094,7 @@
     "fx1.forecast",
     "fx1.forecast.artifacts",
     "fx1.forecast.config",
+    "fx1.forecast.core_audit",
     "fx1.forecast.dummy",
     "fx1.forecast.evaluate",
     "fx1.forecast.features",
@@ -10019,7 +10076,12 @@
     },
     {
       "dst": "fx1.forecast",
-      "imports": 25,
+      "imports": 34,
+      "src": "fx1.forecast"
+    },
+    {
+      "dst": "fx1.honesty",
+      "imports": 1,
       "src": "fx1.forecast"
     },
     {
@@ -10029,7 +10091,7 @@
     },
     {
       "dst": "quant_fund.data",
-      "imports": 3,
+      "imports": 4,
       "src": "fx1.forecast"
     },
     {
@@ -10039,12 +10101,12 @@
     },
     {
       "dst": "quant_fund.schemas",
-      "imports": 4,
+      "imports": 5,
       "src": "fx1.forecast"
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 2,
+      "imports": 4,
       "src": "fx1.forecast"
     },
     {
