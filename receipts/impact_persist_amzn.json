@@ -57,6 +57,44 @@
    },
    "n_fills": 10141
   },
+  "lv": {
+   "instant_abs_ticks": 0.3095664280031822,
+   "instant_signed_ticks": 0.3095664280031822,
+   "kernel_mean_ticks": {
+    "1": 0.30239968137010853,
+    "20": 0.27699810888822535,
+    "200": 0.31442374738519774,
+    "5": 0.28081099930258047,
+    "50": 0.28269307324840764
+   },
+   "kernel_n": {
+    "1": 10043,
+    "20": 10047,
+    "200": 10039,
+    "5": 10037,
+    "50": 10048
+   },
+   "n_fills": 10141
+  },
+  "lv_split": {
+   "instant_abs_ticks": 0.429140832595217,
+   "instant_signed_ticks": 0.429140832595217,
+   "kernel_mean_ticks": {
+    "1": 0.4114965532577274,
+    "20": 1.050261244888687,
+    "200": 3.39894512400404,
+    "5": 0.5488095238095239,
+    "50": 1.6266621206955336
+   },
+   "kernel_n": {
+    "1": 8994,
+    "20": 8804,
+    "200": 8911,
+    "5": 8820,
+    "50": 8799
+   },
+   "n_fills": 12643
+  },
   "split": {
    "instant_abs_ticks": 0.5114713979810339,
    "instant_signed_ticks": 0.5114713979810339,
@@ -79,6 +117,7 @@
  },
  "claims": {
   "deep_impact_decays": true,
+  "lv_needs_persistent_flow": true,
   "split_continuation_close": true,
   "sweeps_move_the_touch": true
  },
@@ -101,11 +140,18 @@
   "deep_split@5:+3.26_vs_0.68",
   "deep_split@20:+3.12_vs_1.51",
   "deep_split@50:+3.10_vs_2.57",
-  "deep_split@200:+1.51_vs_4.64"
+  "deep_split@200:+1.51_vs_4.64",
+  "lv:instant_+0.31_vs_0.89",
+  "lv@20:+0.28_vs_1.51",
+  "lv@50:+0.28_vs_2.57",
+  "lv@200:+0.31_vs_4.64",
+  "lv_split:instant_+0.43_vs_0.89",
+  "lv_split@50:+1.63_vs_2.57",
+  "lv_split@200:+3.40_vs_4.64"
  ],
- "git_revision": "6f467c0af6b5c2d9a29103a32360df8155fc02a5",
+ "git_revision": "b2bb82629971fc94a7c64aa709213d1b429a6f76",
  "horizon": 60000,
- "interpretation": "SplitFlow alone nearly reproduces the tape's continuation envelope (~4.1 vs 4.64 ticks @200ev) but undershoots the instantaneous component (~0.5 vs 0.89). The sized/deep arms overshoot instant impact ~4-5x and the drift then decays \u2014 multi-level sweeps against a sparse anchored book displace the mid too far, and the re-quote cycle pulls it back. The tape's shape needs both ingredients at once: shallow per-event sweep depth AND persistent same-direction flow \u2014 a latent-value anchoring term or sweep-size-at-touch calibration is the candidate next mechanism.",
+ "interpretation": "SplitFlow alone nearly reproduces the tape's continuation envelope (~4.1 vs 4.64 ticks @200ev) but undershoots the instantaneous component (~0.5 vs 0.89). The sized/deep arms overshoot instant impact ~4-5x and the drift then decays \u2014 multi-level sweeps against a sparse anchored book displace the mid too far, and the re-quote cycle pulls it back. Latent-value anchoring (ref_fill_gain) is measurable only under persistent flow \u2014 sign-random fills cancel in the reference level \u2014 and front-loads kernel mass into long lags, so it complements rather than replaces SplitFlow's smoother continuation. The residual gap is the instantaneous term: the tape's fills carry ~0.9 ticks of immediate signed impact no current arm produces without overshooting.",
  "kind": "impact_persist_bench",
  "lags": [
   1,
@@ -124,7 +170,7 @@
    "50": 2.5696
   }
  },
- "receipt_sha256": "a1f99f7df4ed13eaf8055a70ed43c8b1d145c71369a1dda88d8200bdcc5f6b65",
+ "receipt_sha256": "3d4d8ed1f2f263a74844fa5843778a16e399cbcf50806aae604b0ab34d7a20f5",
  "research_only": true,
  "schema": "impact_persist.v1",
  "seed": 7

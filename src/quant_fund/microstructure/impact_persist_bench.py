@@ -118,6 +118,17 @@ def _measure(cfg: ZILobConfig, flow: Any, horizon: int) -> dict[str, Any]:
     }
 
 
+def _lv_cfg(seed: int) -> Any:
+    # Latent-value anchoring: ref_halflife=0 freezes the passive EMA so the
+    # reference level moves ONLY on fills (pure Glosten–Milgrom channel);
+    # each fill shifts it ref_fill_gain ticks per unit consumed.
+    return replace(
+        santa_fe_config(seed=seed),
+        anchor="ref",
+        ref_fill_gain=0.3,
+    )
+
+
 def _arms(seed: int, horizon: int) -> dict[str, dict[str, Any]]:
     iid_cfg = santa_fe_config(seed=seed)
     split_flow = SplitFlow(
@@ -126,16 +137,21 @@ def _arms(seed: int, horizon: int) -> dict[str, dict[str, Any]]:
     deep_split_flow = SplitFlow(
         p_start=0.10, size_tail=1.2, k_min=10, k_max=600, intensity_mult=3.0, seed=29
     )
+    lv_split_flow = SplitFlow(
+        p_start=0.10, size_tail=1.2, k_min=10, k_max=600, intensity_mult=3.0, seed=41
+    )
     return {
         "iid": _measure(iid_cfg, None, horizon),
         "split": _measure(iid_cfg, split_flow, horizon),
         "deep": _measure(_deep_cfg(seed), None, horizon),
         "deep_split": _measure(_deep_cfg(seed), deep_split_flow, horizon),
+        "lv": _measure(_lv_cfg(seed), None, horizon),
+        "lv_split": _measure(_lv_cfg(seed), lv_split_flow, horizon),
     }
 
 
 def impact_persist_bench(*, horizon: int = 60000, seed: int = 7) -> dict[str, Any]:
-    """Run the four arms and seal the receipt."""
+    """Run the six arms and seal the receipt."""
     arms = _arms(seed, horizon)
     divergences: list[str] = []
     for name, arm in arms.items():
@@ -174,6 +190,11 @@ def impact_persist_bench(*, horizon: int = 60000, seed: int = 7) -> dict[str, An
             and arms["deep"]["kernel_mean_ticks"]["1"] is not None
             and arms["deep"]["kernel_mean_ticks"]["200"] < arms["deep"]["kernel_mean_ticks"]["1"]
         ),
+        "lv_needs_persistent_flow": bool(
+            arms["lv"]["kernel_mean_ticks"]["200"] is not None
+            and arms["lv"]["kernel_mean_ticks"]["1"] is not None
+            and arms["lv"]["kernel_mean_ticks"]["200"] - arms["lv"]["kernel_mean_ticks"]["1"] < 0.5
+        ),
     }
     payload: dict[str, Any] = {
         "schema": IMPACT_PERSIST_SCHEMA,
@@ -191,11 +212,14 @@ def impact_persist_bench(*, horizon: int = 60000, seed: int = 7) -> dict[str, An
             "instantaneous component (~0.5 vs 0.89). The sized/deep arms "
             "overshoot instant impact ~4-5x and the drift then decays — "
             "multi-level sweeps against a sparse anchored book displace the "
-            "mid too far, and the re-quote cycle pulls it back. The tape's "
-            "shape needs both ingredients at once: shallow per-event sweep "
-            "depth AND persistent same-direction flow — a latent-value "
-            "anchoring term or sweep-size-at-touch calibration is the "
-            "candidate next mechanism."
+            "mid too far, and the re-quote cycle pulls it back. Latent-value "
+            "anchoring (ref_fill_gain) is measurable only under persistent "
+            "flow — sign-random fills cancel in the reference level — and "
+            "front-loads kernel mass into long lags, so it complements "
+            "rather than replaces SplitFlow's smoother continuation. The "
+            "residual gap is the instantaneous term: the tape's fills carry "
+            "~0.9 ticks of immediate signed impact no current arm produces "
+            "without overshooting."
         ),
         "git_revision": git_revision(),
         "data_label": "SYNTHETIC",

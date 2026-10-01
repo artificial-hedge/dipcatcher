@@ -17,7 +17,7 @@ def test_bench_smoke_and_seal() -> None:
     assert out["kind"] == "impact_persist_bench"
     assert out["data_label"] == "SYNTHETIC"
     assert out["research_only"] is True
-    assert set(out["arms"]) == {"iid", "split", "deep", "deep_split"}
+    assert set(out["arms"]) == {"iid", "split", "deep", "deep_split", "lv", "lv_split"}
     for arm in out["arms"].values():
         assert set(arm["kernel_mean_ticks"]) == {"1", "5", "20", "50", "200"}
     seal = out.pop("receipt_sha256")
