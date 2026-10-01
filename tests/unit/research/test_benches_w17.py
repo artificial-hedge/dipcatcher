@@ -49,8 +49,12 @@ import numpy as np
 import pytest
 
 from quant_fund.research.benches_w17 import (
+    bench_adaptive_eps,
+    bench_conformal_oce,
     bench_diffpts,
+    bench_diffusion_forecaster,
     bench_extra_conformal,
+    bench_greek_neutral,
     bench_multilevel_mm,
     bench_passive_impact,
     bench_rlmm_c51,
@@ -84,6 +88,11 @@ _FAMILIES = (
     "sga_uq",
     "passive_impact",
     "stochastic_tracking",
+    # main-lineage wave-17 families (merged canon)
+    "conformal_oce",
+    "adaptive_eps",
+    "greek_neutral",
+    "diffusion_forecaster",
 )
 # The four numpy/scipy families (diffpts / multilevel_mm / rlmm_c51 are
 # torch-gated and handled apart).
@@ -92,11 +101,15 @@ _NUMPY_BLOBS = (
     "sga_uq",
     "passive_impact",
     "stochastic_tracking",
+    "conformal_oce",
+    "adaptive_eps",
 )
 _TORCH_BLOBS = (
     "diffpts",
     "multilevel_mm",
     "rlmm_c51",
+    "greek_neutral",
+    "diffusion_forecaster",
 )
 
 
@@ -133,6 +146,26 @@ def passive_impact() -> dict[str, float]:
 @pytest.fixture(scope="module")
 def stochastic_tracking() -> dict[str, float]:
     return bench_stochastic_tracking()
+
+
+@pytest.fixture(scope="module")
+def conformal_oce() -> dict[str, float]:
+    return bench_conformal_oce()
+
+
+@pytest.fixture(scope="module")
+def adaptive_eps() -> dict[str, float]:
+    return bench_adaptive_eps()
+
+
+@pytest.fixture(scope="module")
+def greek_neutral() -> dict[str, float]:
+    return bench_greek_neutral()
+
+
+@pytest.fixture(scope="module")
+def diffusion_forecaster() -> dict[str, float]:
+    return bench_diffusion_forecaster()
 
 
 def test_families_registered_as_optional() -> None:
@@ -289,6 +322,8 @@ def test_numpy_benches_are_deterministic(
     sga_uq: dict[str, float],
     passive_impact: dict[str, float],
     stochastic_tracking: dict[str, float],
+    conformal_oce: dict[str, float],
+    adaptive_eps: dict[str, float],
 ) -> None:
     # Seeded from module constants (stochastic_tracking is RNG-free), so a
     # fresh call must reproduce each fixture bit-for-bit.
@@ -296,6 +331,8 @@ def test_numpy_benches_are_deterministic(
     assert bench_sga_uq() == sga_uq
     assert bench_passive_impact() == passive_impact
     assert bench_stochastic_tracking() == stochastic_tracking
+    assert bench_conformal_oce() == conformal_oce
+    assert bench_adaptive_eps() == adaptive_eps
 
 
 @requires_torch
@@ -303,9 +340,93 @@ def test_torch_benches_are_deterministic(
     diffpts: dict[str, float],
     multilevel_mm: dict[str, float],
     rlmm_c51: dict[str, float],
+    greek_neutral: dict[str, float],
+    diffusion_forecaster: dict[str, float],
 ) -> None:
     # The torch benches seed numpy + torch throughout (single-threaded CPU
     # trainers), so a fresh tiny-budget run reproduces each fixture bit-for-bit.
     assert bench_diffpts() == diffpts
     assert bench_multilevel_mm() == multilevel_mm
     assert bench_rlmm_c51() == rlmm_c51
+    assert bench_greek_neutral() == greek_neutral
+    assert bench_diffusion_forecaster() == diffusion_forecaster
+
+
+def test_conformal_oce_guarantee_and_margin_ablation(conformal_oce: dict[str, float]) -> None:
+    assert conformal_oce["oce_delta"] == pytest.approx(0.1)
+    assert conformal_oce["oce_alpha"] == pytest.approx(0.3)
+    # Farzaneh & Simeone 2026 Eq. 20: the CERTIFIED policy's exact population
+    # CVaR exceeds epsilon in at most delta of trials (SHRUNK trials = 100;
+    # documented budget delta + 0.02).
+    assert conformal_oce["oce_violation_rate_certified"] <= conformal_oce["oce_delta"] + 0.02
+    # The uncertified risk-neutral model-greedy baseline violates visibly more
+    # — the guarantee is not vacuous (cf. the paper's VaR baseline at 53.4%).
+    assert (
+        conformal_oce["oce_baseline_violation_rate"] > conformal_oce["oce_violation_rate_certified"]
+    )
+    # Certificates are issued at a healthy rate (fail-closed otherwise).
+    assert 0.0 < conformal_oce["oce_cert_rate"] <= 1.0
+    # The Hoeffding radius follows the sqrt(n'/n) concentration law:
+    # sqrt(3000 / 750) = 2.0 (trials-independent; ~0.1 documented slack).
+    assert conformal_oce["oce_radius_ratio"] == pytest.approx(2.0, abs=0.1)
+    # Dropping the Hoeffding margin OVER-certifies (the plug-in UCB is looser):
+    # the margin's role in the guarantee.
+    assert conformal_oce["oce_plugin_cert_rate"] > conformal_oce["oce_cert_rate"]
+
+
+def test_adaptive_eps_sample_efficiency_and_fdr(adaptive_eps: dict[str, float]) -> None:
+    assert adaptive_eps["eps_alpha"] == pytest.approx(0.1)
+    # Lin, Ma, Ren & Wei 2026: on the seeded planted world every seed reaches
+    # full discovery inside the shrunk budget (no censoring)...
+    assert adaptive_eps["eps_censored"] == 0.0
+    assert adaptive_eps["eps_discovery_samples_mean"] > 0.0
+    # ...with FEWER total samples than uniform round-robin + e-BH and than the
+    # fixed-design e-BH baseline (paper Sections 1 and 6; budget > 1.0 — the
+    # lane asserts > 1.1 at the full budget, documented wider slack here).
+    assert adaptive_eps["eps_speedup_vs_round_robin"] > 1.0
+    assert adaptive_eps["eps_speedup_vs_fixed_design"] > 1.0
+    # FDR controlled at the data-dependent discovery stop (FDP <= alpha/2)...
+    assert adaptive_eps["eps_fdp_at_discovery_mean"] <= 0.05
+    # ...with full power: every planted nonnull is rejected at discovery.
+    assert adaptive_eps["eps_tpr_mean"] == 1.0
+
+
+@requires_torch
+def test_greek_neutral_exposure_fall_and_interior_optimum(greek_neutral: dict[str, float]) -> None:
+    # Tan, Roberts & Zohren 2026 §6.3 (DP-L1, tiny seeded config): realized
+    # gross delta exposure FALLS from the unregularized baseline to the best
+    # alpha (monotone exposure fall; their eqs. 14-15 diagnostics).
+    assert greek_neutral["gnp_gross_delta_exposure_reduction"] > 0.0
+    assert greek_neutral["gnp_gross_delta_exposure_baseline"] > 0.0
+    # The OOS risk-adjusted objective has an INTERIOR optimum: the best alpha
+    # is strictly inside the (0, 25) grid — calibrated regularization holds or
+    # improves, extreme alpha degrades (the module computes the flag from the
+    # sim_internal objective, which stays out of the blob).
+    assert greek_neutral["gnp_interior_optimum"] == 1.0
+    assert 0.0 < greek_neutral["gnp_best_alpha"] < 25.0
+    # Bias -> neutrality direction: the baseline's persistent net directional
+    # tilt moves TOWARD zero at the best alpha.
+    assert abs(greek_neutral["gnp_net_delta_exposure_best"]) < abs(
+        greek_neutral["gnp_net_delta_exposure_baseline"]
+    )
+
+
+@requires_torch
+def test_diffusion_forecaster_crps_gain_and_calibration(
+    diffusion_forecaster: dict[str, float],
+) -> None:
+    # Ye et al. 2026 (§4.2 / Table 2): the full-ELBO diffusion beats the
+    # Gaussian density baseline on the CRPS proper score over the shared
+    # seeded SYNTHETIC heteroskedastic stream.
+    assert diffusion_forecaster["crps_gain_vs_ngboost"] > 0.0
+    assert diffusion_forecaster["diffpts_crps"] > 0.0
+    assert diffusion_forecaster["ngboost_crps"] > 0.0
+    assert diffusion_forecaster["crps_gain_vs_ngboost"] == pytest.approx(
+        diffusion_forecaster["ngboost_crps"] - diffusion_forecaster["diffpts_crps"], abs=1e-12
+    )
+    # The 90% central interval stays near nominal (lane window, documented).
+    assert 0.75 <= diffusion_forecaster["diffpts_coverage_90"] <= 0.96
+    # PIT uniformity is not strongly rejected by the KS test (weak documented
+    # bound — the shrunk n_samples = 80 adds MC noise to the PIT estimate).
+    assert 0.0 <= diffusion_forecaster["diffpts_pit_ks_pvalue"] <= 1.0
+    assert diffusion_forecaster["diffpts_pit_ks_pvalue"] > 0.01
