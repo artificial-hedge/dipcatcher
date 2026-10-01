@@ -510,6 +510,7 @@ src/quant_fund/monitoring/__init__.py
 src/quant_fund/monitoring/alert_budget.py
 src/quant_fund/monitoring/dashboard.py
 src/quant_fund/monitoring/drift.py
+src/quant_fund/monitoring/kill_audit.py
 src/quant_fund/monitoring/kill_switch.py
 src/quant_fund/monitoring/monitor_chain.py
 src/quant_fund/native/__init__.py
