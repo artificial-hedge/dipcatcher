@@ -218,10 +218,10 @@ flowchart LR
   quant_fund_metrics -->|1| quant_fund_validation
   quant_fund_microstructure -->|1| quant_fund_labels
   quant_fund_microstructure -->|1| quant_fund_metrics
-  quant_fund_microstructure -->|2| quant_fund_models
+  quant_fund_microstructure -->|1| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|85| quant_fund_utils
+  quant_fund_microstructure -->|83| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
