@@ -1,0 +1,39 @@
+{
+ "claim": {
+  "flags": {
+   "quote_substring_nonce": false,
+   "unlisted_extra_verifies": true
+  },
+  "ok": true,
+  "results": {
+   "key_gate": {
+    "unset_fails_closed": "raise:RuntimeError"
+   },
+   "quote": {
+    "empty_signature": false,
+    "honest_quote_verifies": true,
+    "nonce_missing": false,
+    "one_char_nonce_binds": false,
+    "wrong_checkpoint": false
+   },
+   "release": {
+    "forged_signature_fails": true,
+    "honest_release_verifies": true,
+    "missing_manifest_fails": true,
+    "tampered_artifact_fails": true,
+    "unlisted_extra_file_passes": true
+   },
+   "zkml_manifest": {
+    "claimed_coverage_without_proof": "raise:ValueError"
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "17ccfeea799d6950c59b5c98e966a163f14f5633",
+ "interpretation": "Attestation contract holds on structural edges; substring nonce binding now fails closed below 8 chars. Remaining weakness flagged honestly: unlisted extra checkpoint files verify clean (manifest-scoped, not closed-world).",
+ "kind": "attestation_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "811b4351b8d212b7f2c6d1f05bef64920d0da12978079aeaf4098ac182f97b3e",
+ "research_only": true,
+ "schema": "attestation_audit.v1"
+}

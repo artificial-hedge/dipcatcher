@@ -1,0 +1,94 @@
+{
+  "claim": {
+    "generative_process": "AR(1) returns with regime-mixed phi",
+    "n_bars": 4000,
+    "primary": "sign of 5-bar trailing momentum",
+    "result": {
+      "base_rate": 0.5345518277416125,
+      "folds": [
+        {
+          "fold": 0.0,
+          "n_test": 798.0,
+          "n_train": 3156.0
+        },
+        {
+          "fold": 1.0,
+          "n_test": 799.0,
+          "n_train": 3150.0
+        },
+        {
+          "fold": 2.0,
+          "n_test": 799.0,
+          "n_train": 3152.0
+        },
+        {
+          "fold": 3.0,
+          "n_test": 799.0,
+          "n_train": 3153.0
+        },
+        {
+          "fold": 4.0,
+          "n_test": 799.0,
+          "n_train": 3194.0
+        }
+      ],
+      "gating": {
+        "gate": 0.5,
+        "gated_accuracy": 0.5370871683811587,
+        "primary_accuracy": 0.5345518277416125,
+        "share_taken": 0.9248873309964948
+      },
+      "n_events": 3994,
+      "n_negative": 1859,
+      "n_positive": 2135,
+      "n_unobservable": 0,
+      "oof": {
+        "auc": 0.5281208073137456,
+        "brier": 0.24883196426211618,
+        "brier_null": 0.2488061711997139,
+        "brier_skill": -0.00010366729361210858,
+        "calibration": [
+          {
+            "bin_hi": 0.5,
+            "bin_lo": 0.4,
+            "empirical": 0.5033333333333333,
+            "mean_pred": 0.48229991471123496,
+            "n": 300.0
+          },
+          {
+            "bin_hi": 0.6000000000000001,
+            "bin_lo": 0.5,
+            "empirical": 0.527992277992278,
+            "mean_pred": 0.5505159799607175,
+            "n": 3108.0
+          },
+          {
+            "bin_hi": 0.7000000000000001,
+            "bin_lo": 0.6000000000000001,
+            "empirical": 0.5836236933797909,
+            "mean_pred": 0.6281733839342405,
+            "n": 574.0
+          },
+          {
+            "bin_hi": 0.8,
+            "bin_lo": 0.7000000000000001,
+            "empirical": 0.6666666666666666,
+            "mean_pred": 0.7260166821471269,
+            "n": 12.0
+          }
+        ]
+      }
+    },
+    "seed": 7
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "2a8049acf68f3df2358596d96bb11a8a98c1cd44",
+  "interpretation": {
+    "brier_skill_positive": "meta-model beats the base-rate null OOF",
+    "gated_beats_primary": "p>gate subset is more accurate than the raw primary"
+  },
+  "kind": "meta_model",
+  "receipt_sha256": "5db3826e5fba49e27f4caa323bf67bbefc5d253672b4e88b2f9304e82af790c4",
+  "research_only": true,
+  "schema": "meta_model.v1"
+}
