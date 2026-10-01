@@ -64,7 +64,7 @@
       "status": "audited"
     },
     "hmm": {
-      "n_modules": 4,
+      "n_modules": 5,
       "status": "audited"
     },
     "labels": {
@@ -96,7 +96,7 @@
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 77,
+      "n_modules": 104,
       "status": "audited"
     },
     "models": {
