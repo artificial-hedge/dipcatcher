@@ -969,6 +969,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "procrustes",
         "isotonic",
         "hrp",
+        # Wave 72 — Thurstone-Harman
+        # principal-axis factor analysis
+        # (SMC-iterated communalities +
+        # Kaiser varimax), Neal (2003)
+        # slice sampling (stepping-out +
+        # shrinkage MCMC), Kuiper (1960)
+        # rotation-invariant V-statistic
+        # (one- and two-sample, Stephens
+        # tail), Eilers-Marx P-splines
+        # (de Boor basis + difference
+        # penalty + GCV), Duchon-Wahba
+        # thin-plate splines (r^2 log r
+        # radial kernel + ridge), and
+        # James-Stein minimax shrinkage
+        # (positive-part + Efron-Morris
+        # empirical Bayes). Same
+        # SYNTHETIC diagnostic contract.
+        "factor_analysis",
+        "slice_sampling",
+        "kuiper",
+        "p_spline",
+        "thin_plate",
+        "james_stein",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -565,6 +565,14 @@ from quant_fund.research.benches_w71 import (
     bench_manova,
     bench_procrustes,
 )
+from quant_fund.research.benches_w72 import (
+    bench_factor_analysis,
+    bench_james_stein,
+    bench_kuiper,
+    bench_p_spline,
+    bench_slice_sampling,
+    bench_thin_plate,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2542,6 +2550,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "procrustes": bench_procrustes(),
         "isotonic": bench_isotonic(),
         "hrp": bench_hrp(),
+        "factor_analysis": bench_factor_analysis(),
+        "slice_sampling": bench_slice_sampling(),
+        "kuiper": bench_kuiper(),
+        "p_spline": bench_p_spline(),
+        "thin_plate": bench_thin_plate(),
+        "james_stein": bench_james_stein(),
     }
 
     hyps = _build_hypotheses(families, rankers)

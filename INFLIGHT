@@ -1815,3 +1815,30 @@ detail: |
   - Canon staged on top of w70-canon so the chain stays clean as
     the open stack lands.
 note: canon PR to follow.
+
+---
+owner: devin (wave 72 canon)
+slice: PAF/varimax factor analysis, slice-sampling MCMC, Kuiper V,
+  Eilers-Marx P-splines, thin-plate surfaces, James-Stein shrinkage
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w72-lanes: factor_analysis.py (SMC-iterated
+    principal-axis + Kaiser varimax; planted 2-factor congruence
+    >0.9), slice_sampling.py (Neal stepping-out + shrinkage MCMC;
+    Gamma(3,1) mean err <0.3, bimodal modes recovered),
+    kuiper.py (rotation-invariant V = D+ + D-, Stephens corrected
+    tail; vonmises bump rejected, null size held), p_spline.py
+    (Eilers-Marx B-spline basis + difference penalty + GCV; smooth
+    recovery MSE ratio <0.4), thin_plate.py (Duchon-Wahba r^2 log r
+    radial kernel + ridge system; held-out ratio <0.3, lam=0
+    interpolation exact), james_stein.py (positive-part + Efron-
+    Morris EB; JS gain >0.15, PP weakly dominant).
+  - benches_w72.py: +420..425 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "factor_analysis","slice_sampling","kuiper",
+    "p_spline","thin_plate","james_stein" (386->392); agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w72.
+  - Canon staged on top of w71-canon so the chain stays clean as
+    the open stack lands.
+note: canon PR to follow.
