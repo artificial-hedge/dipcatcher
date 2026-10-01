@@ -1,0 +1,251 @@
+{
+  "claim": "maker_age_at_fill_times_forward_drift_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_oldfill_0.787_vs_0.370",
+    "regime_oldfill_0.755_vs_0.370",
+    "split_oldfill_0.635_vs_0.370"
+  ],
+  "fwd_horizon_s": 1.0,
+  "git_revision": "5ef335cb721d5166471d14ae89d14920abbe4cc8",
+  "interpretation": "Each EXECUTION's resting order is linked to its SUBMISSION time \u2014 exact maker age, no replay. signed \u0394mid at +1s is in the aggressor's direction: positive = adverse to the maker. A monotone increase of drift with maker age is the stale-quote pickoff signature: informed flow preferentially lifts quotes whose prices went stale. Sim uses TradeEvent.maker_t_submit directly.",
+  "kind": "stale_quote",
+  "real": {
+    "age_bins": [
+      {
+        "age_hi_s": 0.1,
+        "age_lo_s": 0.0,
+        "mean_signed_dmid_ticks": 3.1364546820230346,
+        "mean_size_age_s": 0.014683207119040552,
+        "n": 1998,
+        "share": 0.2373767375549483
+      },
+      {
+        "age_hi_s": 0.5,
+        "age_lo_s": 0.1,
+        "mean_signed_dmid_ticks": 3.4336801040312093,
+        "mean_size_age_s": 0.26133890156177914,
+        "n": 769,
+        "share": 0.09136271830818582
+      },
+      {
+        "age_hi_s": 1.0,
+        "age_lo_s": 0.5,
+        "mean_signed_dmid_ticks": 2.9414715719063547,
+        "mean_size_age_s": 0.7296776843329302,
+        "n": 598,
+        "share": 0.0710466912201497
+      },
+      {
+        "age_hi_s": 5.0,
+        "age_lo_s": 1.0,
+        "mean_signed_dmid_ticks": 3.0015495867768593,
+        "mean_size_age_s": 2.740134767857137,
+        "n": 1939,
+        "share": 0.2303671141736961
+      },
+      {
+        "age_hi_s": 30.0,
+        "age_lo_s": 5.0,
+        "mean_signed_dmid_ticks": 3.7130074203404626,
+        "mean_size_age_s": 12.603617196047656,
+        "n": 2291,
+        "share": 0.2721872401093026
+      },
+      {
+        "age_hi_s": null,
+        "age_lo_s": 30.0,
+        "mean_signed_dmid_ticks": 3.104014598540146,
+        "mean_size_age_s": 162.5351912794817,
+        "n": 822,
+        "share": 0.09765949863371748
+      }
+    ],
+    "mean_signed_dmid_ticks": 3.2725543801259955,
+    "median_age_s": 2.3534706589998677,
+    "n": 8417,
+    "n_with_drift": 8413,
+    "ok": true,
+    "share_age_gt_5s": 0.3698467387430201
+  },
+  "receipt_sha256": "01d0b903cdfe3ba892e2303d594abc944cbbdf4338d8865644008ff97c309c95",
+  "research_only": true,
+  "schema": "stale_quote.v1",
+  "sim_arms": {
+    "iid": {
+      "age_bins": [
+        {
+          "age_hi_s": 0.1,
+          "age_lo_s": 0.0,
+          "mean_signed_dmid_ticks": 0.0005000000000002558,
+          "mean_size_age_s": 0.04890022346083924,
+          "n": 20,
+          "share": 0.004004805766920304
+        },
+        {
+          "age_hi_s": 0.5,
+          "age_lo_s": 0.1,
+          "mean_signed_dmid_ticks": -0.0008962264150943289,
+          "mean_size_age_s": 0.28791871464082475,
+          "n": 106,
+          "share": 0.021225470564677613
+        },
+        {
+          "age_hi_s": 1.0,
+          "age_lo_s": 0.5,
+          "mean_signed_dmid_ticks": -4.310344827594537e-05,
+          "mean_size_age_s": 0.7609012966561918,
+          "n": 116,
+          "share": 0.023227873448137766
+        },
+        {
+          "age_hi_s": 5.0,
+          "age_lo_s": 1.0,
+          "mean_signed_dmid_ticks": 0.00028658536585355384,
+          "mean_size_age_s": 2.8558355312421275,
+          "n": 820,
+          "share": 0.16419703644373249
+        },
+        {
+          "age_hi_s": 30.0,
+          "age_lo_s": 5.0,
+          "mean_signed_dmid_ticks": -0.00014377601210752183,
+          "mean_size_age_s": 14.847633127766592,
+          "n": 2643,
+          "share": 0.5292350820985182
+        },
+        {
+          "age_hi_s": null,
+          "age_lo_s": 30.0,
+          "mean_signed_dmid_ticks": -0.0003374709076802639,
+          "mean_size_age_s": 58.35743499624516,
+          "n": 1289,
+          "share": 0.2581097316780136
+        }
+      ],
+      "mean_signed_dmid_ticks": -0.00013416099319185615,
+      "median_age_s": 14.689738327389932,
+      "n": 4994,
+      "n_with_drift": 4994,
+      "ok": true,
+      "share_age_gt_5s": 0.7873448137765319
+    },
+    "regime": {
+      "age_bins": [
+        {
+          "age_hi_s": 0.1,
+          "age_lo_s": 0.0,
+          "mean_signed_dmid_ticks": 0.0038333333333341103,
+          "mean_size_age_s": 0.041924746740846786,
+          "n": 30,
+          "share": 0.005868544600938967
+        },
+        {
+          "age_hi_s": 0.5,
+          "age_lo_s": 0.1,
+          "mean_signed_dmid_ticks": 0.00014925373134314784,
+          "mean_size_age_s": 0.29155571179002365,
+          "n": 134,
+          "share": 0.02621283255086072
+        },
+        {
+          "age_hi_s": 1.0,
+          "age_lo_s": 0.5,
+          "mean_signed_dmid_ticks": 0.00041958041958113114,
+          "mean_size_age_s": 0.7562715543329314,
+          "n": 143,
+          "share": 0.02797339593114241
+        },
+        {
+          "age_hi_s": 5.0,
+          "age_lo_s": 1.0,
+          "mean_signed_dmid_ticks": -0.00019576719576758916,
+          "mean_size_age_s": 2.9907676138395556,
+          "n": 945,
+          "share": 0.18485915492957747
+        },
+        {
+          "age_hi_s": 30.0,
+          "age_lo_s": 5.0,
+          "mean_signed_dmid_ticks": 1.9623233909136707e-05,
+          "mean_size_age_s": 14.695984850713806,
+          "n": 2548,
+          "share": 0.4984350547730829
+        },
+        {
+          "age_hi_s": null,
+          "age_lo_s": 30.0,
+          "mean_signed_dmid_ticks": -0.000769817073170844,
+          "mean_size_age_s": 57.32176685195119,
+          "n": 1312,
+          "share": 0.2566510172143975
+        }
+      ],
+      "mean_signed_dmid_ticks": -0.00018583724569638728,
+      "median_age_s": 13.57299257188697,
+      "n": 5112,
+      "n_with_drift": 5112,
+      "ok": true,
+      "share_age_gt_5s": 0.7550860719874805
+    },
+    "split": {
+      "age_bins": [
+        {
+          "age_hi_s": 0.1,
+          "age_lo_s": 0.0,
+          "mean_signed_dmid_ticks": -0.0010638297872336798,
+          "mean_size_age_s": 0.05078494203449437,
+          "n": 47,
+          "share": 0.010854503464203233
+        },
+        {
+          "age_hi_s": 0.5,
+          "age_lo_s": 0.1,
+          "mean_signed_dmid_ticks": 0.002283950617283891,
+          "mean_size_age_s": 0.300207287384427,
+          "n": 162,
+          "share": 0.03741339491916859
+        },
+        {
+          "age_hi_s": 1.0,
+          "age_lo_s": 0.5,
+          "mean_signed_dmid_ticks": 0.0018478260869562314,
+          "mean_size_age_s": 0.7335403727412446,
+          "n": 184,
+          "share": 0.04249422632794457
+        },
+        {
+          "age_hi_s": 5.0,
+          "age_lo_s": 1.0,
+          "mean_signed_dmid_ticks": 0.0018549747048902945,
+          "mean_size_age_s": 2.829150765518413,
+          "n": 1186,
+          "share": 0.27390300230946885
+        },
+        {
+          "age_hi_s": 30.0,
+          "age_lo_s": 5.0,
+          "mean_signed_dmid_ticks": 0.0013870129870131207,
+          "mean_size_age_s": 14.068149358021646,
+          "n": 1925,
+          "share": 0.4445727482678984
+        },
+        {
+          "age_hi_s": null,
+          "age_lo_s": 30.0,
+          "mean_signed_dmid_ticks": 0.002826876513316874,
+          "mean_size_age_s": 58.783368350616904,
+          "n": 826,
+          "share": 0.1907621247113164
+        }
+      ],
+      "mean_signed_dmid_ticks": 0.0018163972286373762,
+      "median_age_s": 8.879939253345583,
+      "n": 4330,
+      "n_with_drift": 4330,
+      "ok": true,
+      "share_age_gt_5s": 0.6353348729792148
+    }
+  },
+  "ticker": "AMZN"
+}
