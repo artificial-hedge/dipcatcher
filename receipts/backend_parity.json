@@ -1,0 +1,19 @@
+{
+  "claim": {
+    "divergent": [],
+    "invariant": "jax hard mode reproduces the numpy book elementwise",
+    "n_checks": 28,
+    "n_strategies": 7,
+    "status": "ok",
+    "tol": 1e-09,
+    "worst_abs_diff": 2.3314683517128287e-15
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "518d85e04c487dc54a23d6a0881e18e3965ecdca",
+  "interpretation": "28 runs across 7 strategies; worst |\u0394| = 2.33e-15 (tol 1e-09). Backends agree \u2014 the differentiable book is the same book.",
+  "kind": "backend_parity",
+  "live_pnl_claim": false,
+  "receipt_sha256": "daeb6d1edeaf13393137dd2b8a7ce0a9bfd9a4459e9b888a28c85312dd7d7852",
+  "research_only": true,
+  "schema": "backend_parity.v1"
+}

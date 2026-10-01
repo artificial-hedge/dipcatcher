@@ -1,0 +1,48 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "body_limits": {
+    "malformed_length": 400,
+    "oversized_declared": 413
+   },
+   "empty_key_equals_unset": {
+    "loopback_status": 200,
+    "remote_status": 403
+   },
+   "key_required": {
+    "no_key_status": 401,
+    "public_still_public": 200,
+    "right_key_status": 200,
+    "wrong_key_status": 401
+   },
+   "loopback_no_key_allowed": {
+    "status": 200
+   },
+   "public_path_no_key": {
+    "ok": true,
+    "status": 200
+   },
+   "remote_no_key_refused": {
+    "ok": true,
+    "remote_on_public_path": true,
+    "status": 403
+   },
+   "security_headers_on_errors": {
+    "cache": "no-store",
+    "csp_present": true,
+    "frame": "DENY",
+    "nosniff": "nosniff",
+    "on_status": 401
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "f4aeb1a4962b96f2b322a01da8e59027eb625a09",
+ "interpretation": "Auth middleware contract pinned: public-path bypass, loopback gate when unset, remote refusal, empty-key treated as unset, 401 on missing/wrong key, 400/413 body limits, security headers present even on error responses.",
+ "kind": "middleware_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "21004886f25bbe572310dd84706e44e89e6a696ea11e154d6c3fae4d7b08430a",
+ "research_only": true,
+ "schema": "middleware_audit.v1"
+}
