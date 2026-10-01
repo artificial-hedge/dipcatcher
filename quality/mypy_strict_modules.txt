@@ -6,6 +6,7 @@ quant_fund.microstructure.intraday_exec
 quant_fund.microstructure.tape_surgery
 quant_fund.monitoring.monitor_chain
 quant_fund.native.conformance
+quant_fund.registry.promotion_gate
 src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
