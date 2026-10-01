@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -344,6 +345,79 @@ def evaluate(frame: pl.DataFrame, spec: ExperimentSpec = ExperimentSpec()) -> di
     return report
 
 
+def ranker_prob_contract_errors(report: Mapping[str, Any]) -> list[str]:
+    """Fail-closed contract for a ``ranker_probability_experiment`` report.
+
+    Re-derives every claim that is computable from the sealed payload alone:
+    the untrainable-fold count against the fold list, the honesty flags, and —
+    on measured reports — the ``gate_pass`` verdict itself. A tampered gate
+    must keep all four inputs consistent or the seal check fails anyway.
+    """
+    errors: list[str] = []
+    if report.get("kind") != "ranker_probability_experiment":
+        errors.append("kind_not_ranker_probability_experiment")
+    for flag in ("research_only", "synthetic_is_correctness_only"):
+        if report.get(flag) is not True:
+            errors.append(f"{flag}_not_true")
+    for flag in ("production_promotion", "forward_evidence_accepted"):
+        if report.get(flag) is not False:
+            errors.append(f"{flag}_not_false")
+    status = report.get("status")
+    if status not in {"unmeasured", "measured"}:
+        errors.append("status_invalid")
+    folds = report.get("folds")
+    untrainable: int | None = None
+    if isinstance(folds, list):
+        untrainable = sum(
+            1 for f in folds if not isinstance(f, Mapping) or f.get("status") != "scored"
+        )
+        n_unt = report.get("n_untrainable_folds")
+        if n_unt is not None and n_unt != untrainable:
+            errors.append("n_untrainable_folds_mismatch")
+    elif status == "measured":
+        errors.append("folds_missing")
+    if status == "unmeasured" and report.get("gate_pass") is not False:
+        errors.append("unmeasured_gate_must_be_false")
+    if status == "measured":
+        spec = report.get("spec")
+        losses = report.get("losses")
+        paired = report.get("paired_brier")
+        if (
+            not isinstance(spec, Mapping)
+            or not isinstance(losses, Mapping)
+            or not isinstance(paired, Mapping)
+        ):
+            errors.append("measured_report_missing_blocks")
+        else:
+            controls = ("momentum_platt", "train_base_rate")
+            ranker = losses.get("ranker_platt")
+            n_scored = report.get("n_scored_dates")
+            min_dates = spec.get("min_test_dates")
+            expected = (
+                isinstance(n_scored, int)
+                and isinstance(min_dates, int)
+                and n_scored >= min_dates
+                and (untrainable if untrainable is not None else 1) == 0
+                and all(
+                    isinstance(paired.get(name), Mapping)
+                    and isinstance(paired[name].get("ci_high"), int | float)
+                    and paired[name]["ci_high"] < 0.0
+                    for name in controls
+                )
+                and isinstance(ranker, Mapping)
+                and all(
+                    isinstance(losses.get(name), Mapping)
+                    and isinstance(ranker.get("log_loss"), int | float)
+                    and isinstance(losses[name].get("log_loss"), int | float)
+                    and ranker["log_loss"] <= losses[name]["log_loss"]
+                    for name in controls
+                )
+            )
+            if report.get("gate_pass") is not expected:
+                errors.append("gate_pass_mismatch")
+    return errors
+
+
 def _load_gold(features: Path, labels: Path, spec: ExperimentSpec) -> pl.DataFrame:
     feat = pl.read_parquet(features)
     lab = pl.read_parquet(labels)
@@ -368,6 +442,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--test-dates", type=int, default=63)
     parser.add_argument("--n-boot", type=int, default=2000)
     parser.add_argument("--feature-columns", nargs="+", default=PUBLIC_FEATURES)
+    parser.add_argument(
+        "--receipt-version",
+        type=int,
+        choices=(1, 2),
+        default=1,
+        help="receipt schema version: 1 = strict-digest receipt (default), "
+        "2 = unified receipt.v2 envelope",
+    )
     args = parser.parse_args(argv)
     spec = ExperimentSpec(
         features=tuple(args.feature_columns),
@@ -417,10 +499,40 @@ def main(argv: list[str] | None = None) -> int:
     result["data_scope"] = "exploratory_previously_inspected_or_unverified"
     result["holdout_previously_inspected_or_unverified"] = True
     result["receipt_sha256"] = _digest(result)
+    if args.receipt_version == 2:
+        from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+        document: dict[str, Any] = seal_receipt(
+            wrap_receipt_v2(
+                result,
+                code_files=(
+                    Path(__file__),
+                    Path(ranking.__file__),
+                    Path(calibration.__file__),
+                    Path(inference.__file__),
+                ),
+                verdict="pass" if result["gate_pass"] else "fail",
+                kind="ranker_probability_eval",
+                data_label="REAL" if raw_inputs else "UNKNOWN",
+                dataset={
+                    "input_sha256": result["input_sha256"],
+                    "bronze_input_sha256": raw_inputs,
+                },
+                params={
+                    "features": list(spec.features),
+                    "train_dates": spec.train_dates,
+                    "cal_dates": spec.cal_dates,
+                    "test_dates": spec.test_dates,
+                    "n_boot": spec.n_boot,
+                },
+            )
+        )
+    else:
+        document = result
     args.output.parent.mkdir(parents=True, exist_ok=True)
     publish_text_once(
         args.output,
-        json.dumps(result, indent=2, sort_keys=True, allow_nan=False) + "\n",
+        json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n",
     )
     print(
         json.dumps(

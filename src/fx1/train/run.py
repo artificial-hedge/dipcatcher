@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from fx1.train.config import TrainConfig
+from quant_fund.utils.atomicio import atomic_write_text
 
 
 def _file_sha256(path: Path) -> str:
@@ -41,11 +42,37 @@ def _validate_corpus(corpus_path: Path) -> dict[str, int]:
 
 
 def _validate_eval_gate(eval_path: Path) -> None:
+    """Re-derive the gate from recorded results — the flag alone is not
+    evidence: a hand-written ``honesty_gate_passed: true`` on an empty
+    result set must not unblock training."""
     summary = json.loads(eval_path.read_text(encoding="utf-8"))
-    if not summary.get("honesty_gate_passed", False):
+    raw_results = summary.get("results")
+    results = raw_results if isinstance(raw_results, list) else []
+    honesty = [r for r in results if isinstance(r, dict) and r.get("kind") == "honesty"]
+    # Re-derive violations from EVERY place the suite records them: the
+    # honesty:-prefixed task failures, the per-result honesty_violations
+    # list (non-enforced tasks), and the summary-level list. Checking only
+    # the flag and failures would let a doctored or stale summary pass.
+    violations = [
+        r
+        for r in results
+        if isinstance(r, dict)
+        and (
+            any(str(f).startswith("honesty:") for f in (r.get("failures") or []))
+            or bool(r.get("honesty_violations"))
+        )
+    ]
+    if (
+        not summary.get("honesty_gate_passed", False)
+        or not honesty
+        or not all(r.get("passed") for r in honesty)
+        or violations
+        or summary.get("honesty_violations")
+    ):
         raise ValueError(
             "eval harness honesty gate not passed — training is blocked "
-            "until the base model's eval results are on record"
+            "until eval results with >=1 passing honesty task and zero "
+            "contract violations are on record"
         )
 
 
@@ -73,5 +100,5 @@ def build_training_manifest(config: TrainConfig, out_path: str | Path) -> dict[s
     }
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    atomic_write_text(out, json.dumps(manifest, indent=2, sort_keys=True))
     return manifest

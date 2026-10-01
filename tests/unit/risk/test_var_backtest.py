@@ -9,6 +9,8 @@ from quant_fund.metrics.var_backtest import (
     basel_zone,
     christoffersen_test,
     dq_test,
+    dumitrescu_hurlin_test,
+    kratz_test,
     kupiec_test,
     tuff_test,
 )
@@ -95,6 +97,115 @@ class TestBaselZone:
     def test_failclosed(self):
         with pytest.raises(ValueError):
             basel_zone(np.array([0.2] * 50))
+
+
+class TestKratz:
+    ALPHAS = np.array([0.95, 0.975, 0.99, 0.999])
+
+    def _var(self, n: int, scale: float = 1.0) -> np.ndarray:
+        from scipy import stats
+
+        return np.stack([np.full(n, scale * stats.norm.ppf(a)) for a in self.ALPHAS], axis=1)
+
+    def test_correct_spec_not_rejected(self):
+        rng = np.random.default_rng(0)
+        r = rng.standard_normal(2000)
+        out = kratz_test(r, self._var(2000), self.ALPHAS)
+        assert out["df"] == 4.0
+        assert out["pvalue"] > 0.01
+        assert out["counts"].sum() == 2000.0
+
+    def test_perfect_counts_statistic_zero(self):
+        # Crafted exact multinomial counts: 950/40/10 vs expected 950/40/10.
+        r = np.concatenate([np.full(950, 0.0), np.full(40, 0.7), np.full(10, 2.0)])
+        v = np.stack([np.full(1000, 0.5), np.full(1000, 1.0)], axis=1)
+        out = kratz_test(r, v, np.array([0.95, 0.99]))
+        assert abs(out["statistic"]) < 1e-12
+        assert out["pvalue"] == 1.0
+
+    def test_underestimated_var_rejected(self):
+        rng = np.random.default_rng(0)
+        r = rng.standard_normal(2000)
+        out = kratz_test(r, self._var(2000, scale=0.8), self.ALPHAS)
+        assert out["pvalue"] < 0.001
+
+    def test_tail_shape_miss_rejected(self):
+        # Student-t(4) is matched at alpha=0.95 by the normal VaR but has
+        # a much fatter deeper tail — the multinomial sees the band pileup
+        # a single-level Kupiec misses.
+        rng = np.random.default_rng(0)
+        r = rng.standard_t(4, 2000) / np.sqrt(2.0)
+        out = kratz_test(r, self._var(2000), self.ALPHAS)
+        assert out["pvalue"] < 0.001
+
+    def test_failclosed(self):
+        n = 200
+        v = self._var(n)
+        r = np.zeros(n)
+        with pytest.raises(ValueError):
+            kratz_test(np.zeros(20), self._var(20), self.ALPHAS)  # too short
+        with pytest.raises(ValueError):
+            kratz_test(r, v[:, 0], self.ALPHAS)  # 1-D var
+        with pytest.raises(ValueError):
+            kratz_test(r, v, self.ALPHAS[:2])  # mismatched alphas
+        with pytest.raises(ValueError):
+            kratz_test(r, v[:, ::-1], self.ALPHAS)  # non-monotone VaR
+        with pytest.raises(ValueError):
+            kratz_test(r, v, np.array([0.9, 0.8]))  # alphas not increasing
+        rr = r.copy()
+        rr[5] = np.nan
+        with pytest.raises(ValueError):
+            kratz_test(rr, v, self.ALPHAS)
+
+
+class TestDumitrescuHurlin:
+    def test_correct_panel_not_rejected(self):
+        rng = np.random.default_rng(0)
+        h = (rng.random((250, 50)) < 0.01).astype(float)
+        out = dumitrescu_hurlin_test(h)
+        assert out["pvalue"] > 0.01
+        assert out["n_series"] == 50.0
+        assert out["expected_lr"] > 0
+
+    def test_undercovered_panel_rejected(self):
+        rng = np.random.default_rng(0)
+        h = (rng.random((250, 50)) < 0.05).astype(float)  # 5% violations at 99%
+        assert dumitrescu_hurlin_test(h)["pvalue"] < 0.001
+
+    def test_rogue_subset_rejected(self):
+        # Most series correct, a rogue 20% run hot — the pool detects it.
+        rng = np.random.default_rng(0)
+        h = (rng.random((250, 50)) < 0.01).astype(float)
+        h[:, :10] = (rng.random((250, 10)) < 0.08).astype(float)
+        assert dumitrescu_hurlin_test(h)["pvalue"] < 0.001
+
+    def test_exact_moments_no_mc(self):
+        # Deterministic: identical inputs give bit-identical output.
+        rng = np.random.default_rng(1)
+        h = (rng.random((250, 30)) < 0.01).astype(float)
+        a = dumitrescu_hurlin_test(h)
+        b = dumitrescu_hurlin_test(h)
+        assert a == b
+
+    def test_failclosed(self):
+        rng = np.random.default_rng(0)
+        h = (rng.random((250, 10)) < 0.01).astype(float)
+        with pytest.raises(ValueError):
+            dumitrescu_hurlin_test(h[:, 0])  # 1-D
+        with pytest.raises(ValueError):
+            dumitrescu_hurlin_test(h[:20])  # T < 30
+        with pytest.raises(ValueError):
+            dumitrescu_hurlin_test(h[:, 0:1])  # N < 2
+        bad = h.copy()
+        bad[0, 0] = np.nan
+        with pytest.raises(ValueError):
+            dumitrescu_hurlin_test(bad)
+        bad2 = h.copy()
+        bad2[0, 0] = 0.5
+        with pytest.raises(ValueError):
+            dumitrescu_hurlin_test(bad2)
+        with pytest.raises(ValueError):
+            dumitrescu_hurlin_test(h, alpha=0.4)
 
 
 class TestDQ:

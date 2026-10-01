@@ -11,8 +11,9 @@ per-origin observation through the anytime-valid monitor family:
 - ``EProcessDriftAlarm`` — head-vs-fleet-median loss drift (drift_alarm)
 
 Each monitor is lazy-imported and probed per (shard, head) cell; a lane
-whose module is not merged yet contributes ``lane_missing`` rows instead
-of being silently skipped — the receipt records which lanes ran.
+whose module is not merged yet contributes ``None`` columns (recorded as
+``lanes_available[...] = false`` on the receipt) instead of being
+silently skipped — the receipt records which lanes ran.
 
 Drift pairing: every head's loss diff is taken against the fleet median
 at the same origin (computed across the cell's heads), so a head that
@@ -22,7 +23,9 @@ market-wide.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -33,9 +36,10 @@ from quant_fund.research.fleet_eval import (
     DEFAULT_TAUS,
     HeadFactory,
     ShardGenerator,
+    _atomic_write_text,
 )
 from quant_fund.research.verdict_run import predict_eval_matrix
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 MONITOR_RUN_SCHEMA = "monitor_run.v1"
@@ -77,7 +81,8 @@ def monitor_fleet(
 
     Returns (row frame, ``monitor_run.v1`` receipt). Each cell row carries
     one column per lane's alarm flag; a lane that cannot be imported shows
-    ``lane_missing`` rather than an error or a fabricated pass.
+    ``None`` rather than an error or a fabricated pass, and the receipt's
+    ``lanes_available`` map records the miss.
     """
     from quant_fund.research.verdict_run import resolved_names
 
@@ -129,10 +134,15 @@ def monitor_fleet(
     rows: list[dict[str, Any]] = []
     shard_names: list[str] = []
     shard_labels: dict[str, str] = {}
+    shard_digests: dict[str, dict[str, str]] = {}
 
     for shard_index, (shard_name, generator) in enumerate(resolved.items()):
         shard = generator(n_shard, int(seed) + shard_index)
         shard_names.append(shard_name)
+        shard_digests[shard_name] = {
+            "x_sha256": hash_bytes(np.asarray(shard.x, dtype=float).tobytes()),
+            "y_sha256": hash_bytes(np.asarray(shard.y, dtype=float).tobytes()),
+        }
         label = str(shard.config.get("data_label") or "").strip()
         if not label:
             label = "UNKNOWN"
@@ -157,7 +167,9 @@ def monitor_fleet(
                     "status": "ok",
                     "error": None,
                 }
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded per cell.
                 cell[name] = {
                     "status": "error",
                     "error": str(exc),
@@ -267,6 +279,7 @@ def monitor_fleet(
         "research_only": True,
         "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
+        "dataset_sha256": hash_bytes(canonical_json_bytes({"shards": shard_digests})),
         "code_revision": git_revision(),
         "params": {
             "n_train": n_train,
@@ -300,4 +313,48 @@ def monitor_fleet(
     return frame, receipt
 
 
-__all__ = ["MONITOR_RUN_SCHEMA", "monitor_fleet"]
+def write_monitor_receipt(
+    receipt: Mapping[str, Any],
+    receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
+) -> Path:
+    """Seal a monitor_run receipt and write ``monitor_run_<hash>.json``.
+
+    Filename digest = canonical ``receipt_sha256``. Atomic, fail-closed on
+    a malformed receipt. ``receipt_version=2`` wraps the same body in the
+    unified ``receipt.v2`` envelope instead.
+    """
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+
+    if (
+        receipt.get("schema") != MONITOR_RUN_SCHEMA
+        or receipt.get("kind") != "monitor_run"
+        or receipt.get("research_only") is not True
+        or receipt.get("live_pnl_claim") is not False
+        or not isinstance(receipt.get("inputs_sha256"), str)
+        or not isinstance(receipt.get("dataset_sha256"), str)
+        or not isinstance(receipt.get("params"), Mapping)
+    ):
+        raise ValueError("monitor_run receipt violates its contract")
+    if receipt_version == 1:
+        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        digest = hash_bytes(canonical_json_bytes(canonical))
+        payload = {**canonical, "receipt_sha256": digest}
+    elif receipt_version == 2:
+        payload = seal_receipt(
+            wrap_receipt_v2(
+                receipt,
+                code_files=(Path(__file__),),
+                verdict="fail" if receipt.get("n_alarm_rows") else "pass",
+            )
+        )
+        digest = str(payload["receipt_sha256"])
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    path = Path(receipts_dir) / f"monitor_run_{digest[:16]}.json"
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return path
+
+
+__all__ = ["MONITOR_RUN_SCHEMA", "monitor_fleet", "write_monitor_receipt"]

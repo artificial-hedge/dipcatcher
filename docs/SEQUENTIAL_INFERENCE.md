@@ -92,6 +92,96 @@ pooled via `emerge_mean` (valid under the arbitrary dependence between
 receipts), and a single corrupt artifact withholds the pooled claim —
 the `suite_health.v1` receipt is itself sealed and verifiable.
 
+## Extended lane roster
+
+The core trio (coverage / drift / verdict) is joined by lanes that each
+attack a defect class the others are structurally blind to. All emit
+sealed receipts and all are fail-closed on missing or malformed
+observations.
+
+- `research/coverage_watch.py` — anytime-valid audit of the *nominal
+  coverage rate*: an e-process over the breach indicator stream
+  `1{y_t < q_lo or y_t > q_hi}` against the exact binomial null. Catches
+  under-coverage (intervals too thin) and over-coverage equally;
+  latched `alarmed` flag is the ever-crossed semantics — Ville's bound
+  is about the supremum, so a decayed final e-value does not un-fire
+  the alarm.
+- `research/coverage_cs.py` — the confidence-sequence twin: maintains a
+  time-uniform confidence interval on the breach probability itself,
+  so the answer is an interval that excludes the nominal rate *from
+  some origin onward*, not just a point alarm.
+- `research/tail_watch.py` — nested-quantile consistency: among the
+  `τ`-breaches, exactly `τ'/τ` must also breach the deeper `τ'`
+  quantile under *any* correct conditional tail — shape-free. Catches
+  the failure coverage lanes are blind to: the right breach *rate*
+  with the wrong tail *depth* (e.g. a head whose intervals breach at
+  the nominal 20% but whose breaches land 73% deep instead of 50%).
+- `research/calibration_eprocess.py` — e-process over the PIT
+  histogram: any systematic non-uniformity of the probability
+  integral transform is a calibration violation; the lane uses GRAPA
+  adaptive bets (predictable `λ_t` fitted from past PITs), which stays
+  valid under serial dependence and out-grows fixed bets on biased
+  streams.
+- `research/conformal_monitor.py` — Vovk's conformal martingale on the
+  exchangeability of per-origin PIT values: the only lane whose null
+  is *the whole predictive law*, not a summary statistic.
+- `research/serial_watch.py` — independence audit: PITs can be uniform
+  (calibration-clean) yet serially dependent (clusters of high/low
+  PITs) — a defect any level-wise lane misses. The lane bets on the
+  lag-1 structure of the uniform PIT stream; null = iid Uniform(0,1).
+- `research/changepoint_localize.py` — scan for *where* the stream
+  shifted: per-candidate-split e-values with a Bonferroni correction
+  over overlapping windows (the un-corrected version alarmed on 25%
+  of stationary streams; corrected: 0/40 with detection preserved).
+- `research/quantile_ladder.py` — multi-level calibration family: a
+  per-level e-process on the breach indicator at every
+  `τ ∈ {0.05,…,0.95}` merged by the dependence-robust mean (valid
+  under arbitrary cross-level dependence); the per-level family is
+  reported separately at the Bonferroni threshold — a head can pass
+  every single-level audit yet fail the ladder (mid too wide, tails
+  too thin, cancelling out).
+- `research/xwatch.py` — cross-head lead e-process: whether head A's
+  per-origin loss *leads* head B's — catches informational
+  look-ahead/clone defects between fleet heads.
+- `research/mcs_seq.py` — `AnytimeMCS`: a sequential model confidence
+  set. Hansen's MCS is a fixed-sample batch test; this maintains a
+  survivor set that contains an optimal head with probability ≥ 1−α
+  *uniformly over time* via pairwise e-processes plus a union bound,
+  with permanent elimination — publishable-grade machinery.
+- `scripts/panel_audit_drill.py` — cross-sectional coverage e-process:
+  pools the breach stream across the panel dimension (24-symbol real
+  tape), isolating a systematic *across-instrument* calibration miss
+  from per-name noise.
+- `research/emerge.py` — the valid pooling toolbox: arithmetic mean
+  and harmonic mean of e-values (each valid under arbitrary
+  dependence), product under independence, Bonferroni and
+  Simes-with-`H_k` for p-values, and the p↔e calibrators.
+  `lane_power.py` rides on it for the suite's capability bench.
+
+## Per-lane evidence ledger (real tape)
+
+Each lane has a sealed `yahoo_eod` drill receipt committed under
+`receipts/` — the 2,693-bar NVDA Yahoo EOD return series through the
+full fleet. The convergent verdict across independent lanes:
+
+| lane | real-tape verdict | evidence |
+|---|---|---|
+| coverage_watch | 10/12 heads alarm; 80% intervals breach at 33–48% | fhs_skew e≈1.8e23 |
+| coverage_cs | breach-rate CS exits the nominal band at origins ~47–56 | same heads |
+| tail_watch | fhs_skew breaches land 73% deep vs exact 50% | e=220 |
+| calibration (PIT) | all 12 heads non-uniform | fhs_skew e≈2.6e22 |
+| conformal_monitor | gaussian_pit alarmed at origin 55 | pooled conformal e |
+| mcs_seq | 9/12 heads eliminated; survivors {fhs_skew, hstep_t, qar} | pairwise e-processes |
+| panel_audit | all 12 heads under-cover across 24 symbols (36–49% breach) | fhs_skew pooled e≈2.8e47 |
+| changepoint | τ̂=34 (regime onset) + winner-gap τ̂=220 | scan-corrected |
+| drift_alarm | correctly silent on persistent-from-start defects | level-shift contract |
+| loss_cs | conf_t beats empirical; CS excludes zero | first confirmed positive |
+| honest_verdict | composite = `not_supported` | all lanes composite |
+
+The cross-lane scientific point: `fhs_skew` *wins* the pinball MCS
+while being the worst-calibrated head — a score-optimal model is not a
+trusted model. That is the claim the suite exists to make honestly.
+
 ### Self-drill evidence
 
 `receipts/monitor_run_drill_clean.json` and

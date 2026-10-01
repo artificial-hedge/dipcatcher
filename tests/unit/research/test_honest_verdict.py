@@ -49,13 +49,12 @@ def test_report_shape_and_stamps() -> None:
 
 
 def test_verdict_inconclusive_when_lanes_missing_or_confirmed() -> None:
-    """On main (lanes on branches) components are unavailable → inconclusive;
-    once merged, a dominant winner with stable edge → confirmed-ish."""
+    """Any unavailable lane forces inconclusive; once every lane merges,
+    a dominant winner with stable edge → confirmed-ish."""
     rep = honest_verdict(_streams(), seed=1, n_boot=300)
     unavailable = rep["unavailable_lanes"]
     if unavailable:
         assert rep["verdict"] == "inconclusive"
-        assert {"winner_curse", "promotion", "drift"} <= set(unavailable)
     else:
         assert rep["verdict"] in {"confirmed", "supported_with_caveats"}
 
@@ -102,15 +101,26 @@ def test_alpha_validated() -> None:
         honest_verdict(_streams(), alpha=1.5, n_boot=200)
 
 
-def test_extension_lanes_never_veto_core_verdict() -> None:
-    """A missing extension lane is recorded but must not flip inconclusive."""
+def test_any_unavailable_lane_forces_inconclusive() -> None:
+    """A missing lane — core or extension — is recorded AND vetoes: an
+    un-runnable component cannot vouch for the claim."""
     rep = honest_verdict(_streams(11), seed=0, n_boot=300)
-    core_missing = {"winner_curse", "promotion", "drift"} & set(rep["unavailable_lanes"])
-    if not core_missing:
-        assert rep["verdict"] != "inconclusive"
+    if rep["unavailable_lanes"]:
+        assert rep["verdict"] == "inconclusive"
     # extension lanes recorded when absent
     for lane in ("magnitude", "calibration", "localize"):
         assert lane in rep["components"]
+
+
+def test_unavailable_lanes_recorded_and_nonempty_means_inconclusive() -> None:
+    """Skipped lanes (no runner-up, pits not supplied, no drift) do NOT
+    veto — only a lane that cannot be imported/executed does."""
+    rep = honest_verdict(_streams(11), seed=0, n_boot=300)
+    # on a checkout without every extension module this must be inconclusive
+    assert (rep["verdict"] == "inconclusive") == bool(rep["unavailable_lanes"])
+    calib = rep["components"]["calibration"]
+    if calib.get("skipped"):
+        assert "calibration" not in rep["unavailable_lanes"]
 
 
 def test_pits_unlock_calibration_lane() -> None:
@@ -124,3 +134,30 @@ def test_pits_unlock_calibration_lane() -> None:
         assert calib == {}  # lane absent on this checkout — honest empty detail
     elif "skipped" not in calib:
         assert "final_evalue" in calib and "miscalibrated" in calib
+
+
+def test_dataset_sha256_tracks_stream_content() -> None:
+    """Same loss streams share dataset_sha256 regardless of seed/n_boot;
+    a mutated stream changes it."""
+    r1 = honest_verdict(_streams(3), seed=0, n_boot=100)
+    r2 = honest_verdict(_streams(3), seed=9, n_boot=150)
+    d1, d2 = r1["dataset_sha256"], r2["dataset_sha256"]
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2
+    alt = _streams(3)
+    alt["winner"] = np.asarray(alt["winner"], dtype=float) * 2.0
+    r3 = honest_verdict(alt, seed=0, n_boot=100)
+    assert r3["dataset_sha256"] != d1
+
+
+def test_dataset_sha256_includes_supplied_pits() -> None:
+    def _pits(seed: int, heads: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+        rng = np.random.default_rng(seed)
+        return {h: rng.uniform(0, 1, 200) for h in heads}
+
+    scores = _streams(4)
+    without = honest_verdict(scores, seed=0, n_boot=100)
+    with_pits = honest_verdict(scores, pits=_pits(17, scores), seed=0, n_boot=100)
+    same_pits = honest_verdict(scores, pits=_pits(17, scores), seed=5, n_boot=150)
+    assert with_pits["dataset_sha256"] != without["dataset_sha256"]
+    assert with_pits["dataset_sha256"] == same_pits["dataset_sha256"]
