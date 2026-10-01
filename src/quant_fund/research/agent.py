@@ -192,6 +192,14 @@ from quant_fund.research.benches_w25 import (
     bench_kinetic_ising,
     bench_tda_persistence,
 )
+from quant_fund.research.benches_w26 import (
+    bench_factor_nowcast,
+    bench_marchenko_pastur,
+    bench_modularity_communities,
+    bench_skill_ratings,
+    bench_stationary_bootstrap,
+    bench_stein_thinning,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1888,6 +1896,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "kernel_changepoint": bench_kernel_changepoint(),
         "kinetic_ising": bench_kinetic_ising(),
         "heterogeneous_abm": bench_heterogeneous_abm(),
+        "marchenko_pastur": bench_marchenko_pastur(),
+        "factor_nowcast": bench_factor_nowcast(),
+        "stationary_bootstrap": bench_stationary_bootstrap(),
+        "skill_ratings": bench_skill_ratings(),
+        "modularity_communities": bench_modularity_communities(),
+        "stein_thinning": bench_stein_thinning(),
     }
 
     hyps = _build_hypotheses(families, rankers)

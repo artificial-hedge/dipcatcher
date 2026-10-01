@@ -292,6 +292,18 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kernel_changepoint",
         "kinetic_ising",
         "heterogeneous_abm",
+        # SOTA canon wave 26 batteries (see research/benches_w26.py):
+        # Marchenko-Pastur RMT covariance denoising, dynamic-factor
+        # nowcasting (Kalman+EM), Politis-Romano stationary bootstrap,
+        # Elo/Glicko-2/Bradley-Terry skill ratings, Louvain community
+        # detection, kernel-Stein thinning/herding. Same SYNTHETIC
+        # diagnostic contract.
+        "marchenko_pastur",
+        "factor_nowcast",
+        "stationary_bootstrap",
+        "skill_ratings",
+        "modularity_communities",
+        "stein_thinning",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1010,3 +1010,4 @@ w25 INTEGRATED 2026-09-30: canon devin/w25-canon off w24; 6 lanes —
   s@J.T, nMF/TAP/PL inversion, PL J relerr 0.10), heterogeneous_abm
   (Brock-Hommes bounded map, beta-sharpened chartist dominance).
   Scorecard 121 -> 127 OPTIONAL families.
+w26 INTEGRATED — devin/w26-canon: marchenko_pastur (child a092503c) + factor_nowcast + stationary_bootstrap + skill_ratings + modularity_communities + stein_thinning → PR stacked on w25 (127→133 families); modularity Louvain rebuilt with stay-baseline gain + self-loop aggregation (was collapsing to 1 community)
