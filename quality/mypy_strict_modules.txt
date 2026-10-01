@@ -257,6 +257,7 @@ src/quant_fund/microstructure/abc_calibrate.py
 src/quant_fund/microstructure/adversarial_mm.py
 src/quant_fund/microstructure/almgren_chriss.py
 src/quant_fund/microstructure/bench.py
+src/quant_fund/microstructure/book_depletion.py
 src/quant_fund/microstructure/book_metrics.py
 src/quant_fund/microstructure/book_panel.py
 src/quant_fund/microstructure/cancel_cluster.py
