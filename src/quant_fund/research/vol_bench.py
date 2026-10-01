@@ -598,8 +598,10 @@ def run_vol_bench(
         "claim": "research_only",
         "data_label": "SYNTHETIC",
         "live_pnl_claim": False,
-        "generated_at": datetime.now(UTC).isoformat(),
-        "git_revision": git_revision(),
+        "meta": {
+            "generated_at": datetime.now(UTC).isoformat(),
+            "git_revision": git_revision(),
+        },
         "seed": int(seed),
         "horizons": [int(h) for h in horizon_set],
         "min_history": min_history,
@@ -729,18 +731,28 @@ def vol_bench_receipt_v2(receipt: Mapping[str, Any]) -> dict[str, Any]:
     """
     from quant_fund.research.receipt_v2 import build_receipt_v2
 
-    if vol_bench_contract_errors(receipt):
+    body = {key: value for key, value in receipt.items() if key != "meta"}
+    if vol_bench_contract_errors(body):
         raise ValueError("vol-bench receipt violates its synthetic research contract")
+    meta = receipt.get("meta")
+    meta_map: Mapping[str, Any] = meta if isinstance(meta, Mapping) else {}
+    generated_at = meta_map.get("generated_at") or receipt.get("generated_at")
+    revision = (
+        meta_map.get("git_revision")
+        or meta_map.get("code_revision")
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+    )
     return build_receipt_v2(
         kind=str(receipt["kind"]),
         data_label=str(receipt["data_label"]),
-        dataset=vol_bench_dataset_identity(receipt),
-        params=vol_bench_params(receipt),
+        dataset=vol_bench_dataset_identity(body),
+        params=vol_bench_params(body),
         code_files=(Path(__file__),),
-        verdict=vol_bench_verdict(receipt),
-        payload=dict(receipt),
-        generated_at=str(receipt["generated_at"]),
-        revision=str(receipt["git_revision"]),
+        verdict=vol_bench_verdict(body),
+        payload=dict(body),
+        generated_at=None if generated_at is None else str(generated_at),
+        revision=None if revision is None else str(revision),
     )
 
 
@@ -784,9 +796,9 @@ def write_vol_bench_receipt(
     from quant_fund.research.receipt_v2 import seal_receipt
 
     if receipt_version == 1:
-        if vol_bench_contract_errors(receipt):
+        body = {key: value for key, value in receipt.items() if key != "meta"}
+        if vol_bench_contract_errors(body):
             raise ValueError("vol-bench receipt violates its synthetic research contract")
-        body: Mapping[str, Any] = receipt
     elif receipt_version == 2:
         body = vol_bench_receipt_v2(receipt)
     else:
