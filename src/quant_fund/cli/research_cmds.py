@@ -479,6 +479,76 @@ def verify_all_cmd(
     raise typer.Exit(code=0 if receipt["verdict"] == "pass" else 1)
 
 
+@app.command("replay")
+def replay_cmd(
+    receipt_path: Path = typer.Argument(
+        ..., help="Replay-declared receipt JSON to re-execute and prove."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Proof receipt path (default: receipts/replay_proof_<digest16>.json).",
+    ),
+    timeout: float = typer.Option(
+        120.0, "--timeout", help="Subprocess timeout in seconds for the replayed lane."
+    ),
+) -> None:
+    """Re-execute a receipt's declared lane argv and seal a ``replay_proof.v1`` receipt.
+
+    Reads the optional ``replay`` manifest ``{argv, artifacts, cwd?}``, runs
+    argv under the repo root (``dipcatcher``/``quant`` resolve to this
+    interpreter's ``quant_fund.cli.main``), re-hashes each declared artifact
+    file, and compares observed bytes against the pinned digests. The
+    ``replay_proof.v1`` body is wrapped in a sealed ``receipt.v2`` envelope;
+    the envelope verdict is pass iff the lane exits 0 AND every artifact
+    matches — fail closed on any deviation. Exits non-zero on a fail
+    verdict or a non-declared receipt.
+    """
+    import quant_fund.research.replay_proof as _replay_proof_mod
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    root = Path.cwd()
+    try:
+        body = _replay_proof_mod.run_replay(receipt_path, root=root, timeout_s=timeout)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    document = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(_replay_proof_mod.__file__),),
+            verdict=body["verdict"],
+            dataset={
+                "receipt": body["receipt"],
+                "source_receipt_sha256": body["source_receipt_sha256"],
+            },
+            params={"argv": body["argv"], "timeout_s": body["timeout_s"]},
+        )
+    )
+    digest = str(document["receipt_sha256"])
+    out_path = out if out is not None else Path("receipts") / f"replay_proof_{digest[:16]}.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_text(out_path, json.dumps(document, indent=2, sort_keys=True) + "\n")
+    typer.echo(
+        format_data_label(
+            synthetic=body["data_label"] == "SYNTHETIC", data_source=body["data_label"]
+        )
+    )
+    typer.echo(
+        f"argv={' '.join(body['argv'])} exit_code={body['exit_code']} "
+        f"timed_out={body['timed_out']} elapsed_s={body['elapsed_s']}"
+    )
+    for row in body["artifacts"]:
+        typer.echo(
+            f"artifact {row['path']}: match={row['match']} "
+            f"expected={row['expected_sha256'][:16]} observed={(row['observed_sha256'] or '-')[:16]}"
+        )
+    typer.echo(f"all_match={body['all_match']} verdict={body['verdict']}")
+    typer.echo(f"receipt={out_path}")
+    raise typer.Exit(code=0 if body["verdict"] == "pass" else 1)
+
+
 @app.command("vol-bench")
 def vol_bench(
     config: Path = typer.Option(Path("configs/research.yaml")),
@@ -1426,6 +1496,7 @@ __all__ = [
     "verify_identities",
     "verify_all_cmd",
     "verify_receipt_cmd",
+    "replay_cmd",
     "vol_bench",
 ]
 
@@ -3464,4 +3535,463 @@ def admit_batch_cmd(
         typer.echo(f"receipt={path}")
     typer.echo(f"admit-batch candidates={batch['n_candidates']} verdict={batch['verdict']}")
     if strict and batch["verdict"] != "admit":
+        raise typer.Exit(code=1)
+
+@app.command("graph")
+def graph_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Receipt corpus directory to audit."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = receipt_graph.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero unless the citation graph verdict is 'clean'.",
+    ),
+) -> None:
+    """Provenance citation-graph audit over a receipt corpus.
+
+    Resolves digest and filename references between corpus members and
+    reports resolved edges, dangling references, filename cycles,
+    unresolvable receipt names, and orphans. Structural audit only —
+    no P&L.
+    """
+    from quant_fund.research.receipt_graph import receipt_graph, write_graph_receipt
+
+    root = Path(corpus_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"corpus dir {root} does not exist")
+    receipt = receipt_graph(root)
+    try:
+        path = write_graph_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"graph members={receipt['n_members']} edges={receipt['n_edges']} "
+        f"dangling={receipt['n_dangling']} cycles={receipt['n_cycles']} "
+        f"verdict={receipt['verdict']}"
+    )
+    typer.echo(f"receipt={path}")
+    if strict and receipt["verdict"] != "clean":
+        raise typer.Exit(code=1)
+@app.command("basis-carry")
+def basis_carry_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    spot_path: Path | None = typer.Option(
+        None,
+        "--spot",
+        help="Spot daily frame (parquet/CSV with event_time|date + close).",
+    ),
+    spot_source: str | None = typer.Option(
+        None,
+        "--spot-source",
+        help="Collect the spot frame inline via a registered source (e.g. kraken_spot).",
+    ),
+    pair: str = typer.Option(
+        "XBTUSD", "--pair", help="Spot pair passed to --spot-source (kraken_spot default XBTUSD)."
+    ),
+    contract: list[str] = typer.Option(
+        [],
+        "--contract",
+        help="Dated contract symbol, collected via kraken_futures_mark (repeatable).",
+    ),
+    contracts_file: Path | None = typer.Option(
+        None,
+        "--contracts-file",
+        help="Text file with one contract symbol per line (# comments allowed).",
+    ),
+    contract_path: list[str] = typer.Option(
+        [],
+        "--contract-path",
+        help="SYM=PATH future mark frame inputs, parquet/CSV (repeatable).",
+    ),
+    delivery: list[str] = typer.Option(
+        [],
+        "--delivery",
+        help="SYM=ISO8601 delivery-instant override (repeatable); default derives "
+        "the Kraken FI_/FF_ symbol tail (FI 16:00Z, FF 08:00Z on the dated day).",
+    ),
+    data_label: str | None = typer.Option(
+        None,
+        "--data-label",
+        help="Provenance label sealed into the receipt; every declared input shares "
+        "it (default 'kraken' when inputs are collected from Kraken sources, "
+        "required for file inputs — e.g. SYNTHETIC for fixtures).",
+    ),
+    tolerance: float = typer.Option(
+        0.005,
+        "--tolerance",
+        help="|convergence_residual| share-of-spot tolerance for the settlement anchor.",
+    ),
+    min_overlap: int = typer.Option(5, "--min-overlap", help="Minimum shared dates per contract."),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = basis_carry.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero when any contract fails to produce a measured row.",
+    ),
+) -> None:
+    """Settlement-anchored cash-and-carry bench (P5.3).
+
+    Inner-joins spot and dated-future mark closes on calendar date, reports the
+    annualized basis curve by days-to-delivery, the basis at fixed dte buckets,
+    and the convergence residual at the last observed date — for delivered
+    contracts that is the true terminal settlement anchor. Descriptive
+    statistics only, sealed as a ``basis_carry.v1`` receipt; never P&L.
+    """
+    import polars as pl
+
+    from quant_fund.data.collector import collect_source
+    from quant_fund.research.basis_carry import (
+        CarryContractInput,
+        kraken_delivery_from_symbol,
+        run_basis_carry,
+        write_basis_carry_receipt,
+    )
+
+    cfg = _cfg(config)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+
+    def load_frame(path: Path) -> pl.DataFrame:
+        if not path.is_file():
+            raise typer.BadParameter(f"frame path {path} does not exist")
+        if path.suffix == ".parquet":
+            return pl.read_parquet(path)
+        return pl.read_csv(path)
+
+    # --delivery SYM=ISO8601 overrides.
+    delivery_overrides: dict[str, str] = {}
+    for item in delivery:
+        key, sep, value = item.partition("=")
+        if not sep or not key.strip() or not value.strip():
+            raise typer.BadParameter(f"--delivery must be SYM=ISO8601, got {item!r}")
+        delivery_overrides[key.strip().upper()] = value.strip()
+
+    if spot_path is not None and spot_source is not None:
+        raise typer.BadParameter("pass either --spot or --spot-source, not both")
+    used_files = spot_path is not None or bool(contract_path)
+    if data_label is None and used_files:
+        raise typer.BadParameter("file inputs need --data-label (e.g. SYNTHETIC for fixtures)")
+    resolved_label = data_label or "kraken"
+    if spot_source is not None:
+        spot_result = collect_source(
+            spot_source, cfg.data.root, fetch_kwargs={"pair": pair, "interval": 1440}
+        )
+        spot_frame = spot_result.frame
+        typer.echo(f"spot source={spot_source} rows={spot_frame.height} data={spot_result.data}")
+    elif spot_path is not None:
+        spot_frame = load_frame(spot_path)
+    else:
+        raise typer.BadParameter("a spot input is required: --spot PATH or --spot-source NAME")
+
+    contract_symbols = [symbol.strip() for symbol in contract if symbol.strip()]
+    if contracts_file is not None:
+        if not contracts_file.is_file():
+            raise typer.BadParameter(f"contracts file {contracts_file} does not exist")
+        contract_symbols.extend(
+            line.strip().split("#")[0].strip()
+            for line in contracts_file.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        )
+
+    inputs: list[CarryContractInput] = []
+    seen: set[str] = set()
+    for spec in contract_path:
+        key, sep, value = spec.partition("=")
+        if not sep or not key.strip():
+            raise typer.BadParameter(f"--contract-path must be SYM=PATH, got {spec!r}")
+        symbol = key.strip().upper()
+        if symbol in seen:
+            raise typer.BadParameter(f"duplicate contract {symbol!r}")
+        seen.add(symbol)
+        if symbol in delivery_overrides:
+            delivery_instant: str = delivery_overrides[symbol]
+        else:
+            try:
+                delivery_instant = kraken_delivery_from_symbol(symbol).isoformat()
+            except ValueError:
+                delivery_instant = "UNRESOLVED"
+        inputs.append(
+            CarryContractInput(
+                symbol=symbol,
+                frame=load_frame(Path(value)),
+                delivery=delivery_instant,
+                data_label=resolved_label,
+            )
+        )
+    for symbol_raw in contract_symbols:
+        symbol = symbol_raw.upper()
+        if symbol in seen:
+            raise typer.BadParameter(f"duplicate contract {symbol!r}")
+        seen.add(symbol)
+        mark_result = collect_source(
+            "kraken_futures_mark", cfg.data.root, fetch_kwargs={"symbol": symbol}
+        )
+        typer.echo(f"mark {symbol} rows={mark_result.frame.height} data={mark_result.data}")
+        if symbol in delivery_overrides:
+            delivery_instant = delivery_overrides[symbol]
+        else:
+            try:
+                delivery_instant = kraken_delivery_from_symbol(symbol).isoformat()
+            except ValueError:
+                delivery_instant = "UNRESOLVED"
+        inputs.append(
+            CarryContractInput(
+                symbol=symbol,
+                frame=mark_result.frame,
+                delivery=delivery_instant,
+                data_label=resolved_label,
+            )
+        )
+    if not inputs:
+        raise typer.BadParameter(
+            "no contract inputs: pass --contract, --contracts-file, or --contract-path"
+        )
+
+    try:
+        frame, receipt = run_basis_carry(
+            spot=spot_frame,
+            spot_label=resolved_label,
+            contracts=inputs,
+            tolerance=tolerance,
+            min_overlap=min_overlap,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_basis_carry_receipt(receipt, out_dir, receipt_version=receipt_version)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
+    typer.echo(frame)
+    typer.echo(f"verdict={receipt['verdict']}")
+    typer.echo(f"receipt={path}")
+    if strict and receipt["n_error_rows"]:
+        raise typer.Exit(code=1)
+
+
+#: ``source:ARG`` legs resolve through this table — the symbol kwarg name and
+#: the daily-resolution defaults differ per venue adapter (Kraken takes
+#: ``pair``/``symbol``, OKX takes ``inst_id``). File legs bypass it entirely.
+_XVENUE_SOURCE_KWARGS: dict[str, tuple[str, dict[str, Any]]] = {
+    "kraken_spot": ("pair", {"interval": 1440}),
+    "kraken_futures_mark": ("symbol", {"tick_type": "mark", "resolution": "1d"}),
+    "kraken_funding": ("symbol", {}),
+    "okx_spot": ("inst_id", {"bar": "1Dutc"}),
+    "okx_mark": ("inst_id", {"bar": "1Dutc"}),
+    "okx_funding": ("inst_id", {}),
+}
+
+#: Canonical BTC legs for ``--preset kraken-okx``: Kraken spot + perpetual
+#: mark/funding against OKX spot + linear-swap mark/funding.
+_XVENUE_PRESETS: dict[str, list[dict[str, str]]] = {
+    "kraken-okx": [
+        {
+            "venue": "kraken",
+            "spot": "kraken_spot:XBTUSD",
+            "mark": "kraken_futures_mark:PF_XBTUSD",
+            "funding": "kraken_funding:PF_XBTUSD",
+        },
+        {
+            "venue": "okx",
+            "spot": "okx_spot:BTC-USDT",
+            "mark": "okx_mark:BTC-USDT-SWAP",
+            "funding": "okx_funding:BTC-USDT-SWAP",
+        },
+    ],
+}
+
+_XVENUE_LEG_FIELDS = ("venue", "spot", "mark", "funding")
+
+
+def _xvenue_parse_leg_spec(spec: str) -> dict[str, str]:
+    """Parse one ``--leg`` spec: comma-separated venue/spot/mark/funding keys."""
+    out: dict[str, str] = {}
+    for chunk in spec.split(","):
+        key, sep, value = chunk.partition("=")
+        key, value = key.strip().lower(), value.strip()
+        if not sep or not key or not value:
+            raise typer.BadParameter(
+                f"--leg entries must be key=value pairs, got {chunk!r} in {spec!r}"
+            )
+        if key not in _XVENUE_LEG_FIELDS:
+            raise typer.BadParameter(
+                f"unknown --leg key {key!r}; expected one of {sorted(_XVENUE_LEG_FIELDS)}"
+            )
+        if key in out:
+            raise typer.BadParameter(f"duplicate --leg key {key!r}")
+        out[key] = value
+    if "venue" not in out or "spot" not in out or "mark" not in out:
+        raise typer.BadParameter(
+            "--leg needs at least venue=, spot=, and mark= (funding= is optional)"
+        )
+    return out
+
+
+def _xvenue_frame(spec_value: str, *, cfg_root: Path, field: str, venue: str) -> Any:
+    """Resolve one leg field to a frame: ``source:ARG`` collect or file path."""
+    import polars as pl
+
+    from quant_fund.data.collector import collect_source
+
+    head, sep, arg = spec_value.partition(":")
+    if sep and head in _XVENUE_SOURCE_KWARGS:
+        symbol_kwarg, defaults = _XVENUE_SOURCE_KWARGS[head]
+        fetch_kwargs = {symbol_kwarg: arg, **defaults}
+        result = collect_source(head, cfg_root, fetch_kwargs=fetch_kwargs)
+        typer.echo(f"{venue}.{field} source={head} arg={arg} rows={result.frame.height}")
+        return result.frame
+    path = Path(spec_value)
+    if not path.is_file():
+        raise typer.BadParameter(
+            f"{venue}.{field}: {spec_value!r} is neither a known source:ARG "
+            f"({sorted(_XVENUE_SOURCE_KWARGS)}) nor an existing file"
+        )
+    if path.suffix == ".parquet":
+        return pl.read_parquet(path)
+    return pl.read_csv(path)
+
+
+@app.command("xvenue-basis")
+def xvenue_basis_cmd(
+    config: Path = typer.Option(Path("configs/research.yaml")),
+    leg: list[str] = typer.Option(
+        [],
+        "--leg",
+        help="One venue leg, comma-separated key=value: "
+        "'venue=kraken,spot=kraken_spot:XBTUSD,mark=kraken_futures_mark:PF_XBTUSD,"
+        "funding=kraken_funding:PF_XBTUSD'. Each field is source:ARG or a "
+        "parquet/CSV path. Repeat >= 2 times.",
+    ),
+    preset: str | None = typer.Option(
+        None,
+        "--preset",
+        help="Expand a canned pair of legs instead of passing --leg "
+        f"(choices: {sorted(_XVENUE_PRESETS)}).",
+    ),
+    asset: str = typer.Option(
+        "BTC", "--asset", help="Underlying asset label sealed into the receipt."
+    ),
+    data_label: str | None = typer.Option(
+        None,
+        "--data-label",
+        help="Provenance label for legs that load frames from files (e.g. "
+        "SYNTHETIC for fixtures). Source-collected legs are labeled by venue.",
+    ),
+    min_overlap: int = typer.Option(
+        5, "--min-overlap", help="Minimum shared dates per leg and per venue pair."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = crossvenue_basis.v1 (default), "
+        "2 = unified receipt.v2 envelope.",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero when any leg or venue pair fails to produce a measured row.",
+    ),
+) -> None:
+    """Cross-venue funding/basis bench (P5.5).
+
+    Inner-joins each venue's spot and mark closes on calendar date, then
+    diffs the basis (and the daily-summed realized funding rates, where both
+    venues have history) across every venue pair — the cross-venue carry
+    differential. Descriptive statistics only, sealed as a
+    ``crossvenue_basis.v1`` receipt; never P&L.
+    """
+    from quant_fund.research.crossvenue_basis import (
+        VenueLeg,
+        run_crossvenue_basis,
+        write_crossvenue_basis_receipt,
+    )
+
+    cfg = _cfg(config)
+    if receipt_version not in (1, 2):
+        raise typer.BadParameter("--receipt-version must be 1 or 2")
+    if preset is not None and leg:
+        raise typer.BadParameter("pass either --preset or --leg, not both")
+    if preset is not None:
+        if preset not in _XVENUE_PRESETS:
+            raise typer.BadParameter(
+                f"unknown --preset {preset!r}; expected one of {sorted(_XVENUE_PRESETS)}"
+            )
+        leg_specs = _XVENUE_PRESETS[preset]
+    else:
+        leg_specs = [_xvenue_parse_leg_spec(spec) for spec in leg]
+    if len(leg_specs) < 2:
+        raise typer.BadParameter("crossvenue basis needs >= 2 legs (--leg or --preset)")
+
+    uses_files = False
+    for spec in leg_specs:
+        for field in ("spot", "mark", "funding"):
+            value = spec.get(field)
+            if value is not None and value.split(":", 1)[0] not in _XVENUE_SOURCE_KWARGS:
+                uses_files = True
+    if uses_files and data_label is None:
+        raise typer.BadParameter("file inputs need --data-label (e.g. SYNTHETIC for fixtures)")
+
+    legs: list[VenueLeg] = []
+    for spec in leg_specs:
+        venue = spec["venue"].lower()
+        leg_uses_files = any(
+            spec[field].split(":", 1)[0] not in _XVENUE_SOURCE_KWARGS for field in ("spot", "mark")
+        ) or (
+            spec.get("funding") is not None
+            and spec["funding"].split(":", 1)[0] not in _XVENUE_SOURCE_KWARGS
+        )
+        label = data_label if leg_uses_files else venue
+        if not label:
+            raise typer.BadParameter(f"leg {venue!r} needs --data-label for its file inputs")
+        legs.append(
+            VenueLeg(
+                venue=venue,
+                spot=_xvenue_frame(spec["spot"], cfg_root=cfg.data.root, field="spot", venue=venue),
+                mark=_xvenue_frame(spec["mark"], cfg_root=cfg.data.root, field="mark", venue=venue),
+                funding=(
+                    _xvenue_frame(
+                        spec["funding"], cfg_root=cfg.data.root, field="funding", venue=venue
+                    )
+                    if spec.get("funding")
+                    else None
+                ),
+                data_label=str(label),
+            )
+        )
+
+    try:
+        frame, receipt = run_crossvenue_basis(legs=legs, asset=asset, min_overlap=min_overlap)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    path = write_crossvenue_basis_receipt(receipt, out_dir, receipt_version=receipt_version)
+    typer.echo(
+        format_data_label(
+            synthetic=receipt["data_label"] == "SYNTHETIC",
+            data_source=str(receipt["data_label"]),
+        )
+    )
+    if receipt["data_label"] == "SYNTHETIC":
+        typer.echo("SYNTHETIC")
+    typer.echo(frame)
+    typer.echo(f"verdict={receipt['verdict']}")
+    typer.echo(f"receipt={path}")
+    if strict and receipt["n_error_rows"]:
         raise typer.Exit(code=1)
