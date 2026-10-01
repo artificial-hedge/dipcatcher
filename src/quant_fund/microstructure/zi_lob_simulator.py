@@ -492,9 +492,10 @@ class ZILobConfig:
     # deep queues that promote to touch must arrive already thin;
     # ice_budget.v1 diagnosed bounded total depth at the touch as the
     # missing ingredient for the tape's 47% emptied-touch share. 0 is
-    # unbounded and bit-identical (pure gate, no extra draws). Iceberg
-    # re-rests and chase/requote internals bypass the cap — they are
-    # mechanism bookkeeping, not new flow.
+    # unbounded and bit-identical (pure gate, no extra draws). Requotes
+    # and chase re-sites respect the cap (they are visible flow); only
+    # iceberg re-rests bypass it — the hidden reserve is not part of the
+    # visible queue the cap bounds.
     near_level_cap: int = 0
     # ``near_level_span`` >= 0: how far behind the own touch (in ticks)
     # the ``near_level_cap`` band reaches. Levels beyond the band are
@@ -1582,7 +1583,11 @@ class ZILobSimulator:
         """Cancel+replace half of the biased path: re-rest the removed
         order at the same level with a fresh submit time (back of the
         level's queue). Only active when ``cxl_requote > 0``."""
-        if self._cfg.cxl_requote > 0.0 and self._rng.random() < self._cfg.cxl_requote:
+        if (
+            self._cfg.cxl_requote > 0.0
+            and self._rng.random() < self._cfg.cxl_requote
+            and not self._touch_capped(order.side, order.level)
+        ):
             self._rest(order.side, order.level, "requote")
             self.n_requotes += 1
 
@@ -2233,7 +2238,7 @@ class ZILobSimulator:
             self.cxl_dist[min(d_hit, 20)] += 1
             if d_hit == 0:
                 self.n_cxl_touch += 1
-            if reprice_tgt is not None:
+            if reprice_tgt is not None and not self._touch_capped(chase_order.side, reprice_tgt):
                 self._rest(chase_order.side, reprice_tgt, "chase")
             else:
                 self._maybe_requote(chase_order)

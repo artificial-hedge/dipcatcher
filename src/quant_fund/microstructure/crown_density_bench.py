@@ -193,7 +193,12 @@ def _sim_crown(
         tot.append(sum(len(d) for d in bids.values()) + sum(len(d) for d in asks.values()))
         while seen < len(sim.trades):
             tr = sim.trades[seen]
-            fills.append(sim.n_events)
+            # sim.n_events is the just-completed 1-indexed step; the
+            # per-step snapshots below are 0-indexed, so the fill's own
+            # row is n_events - 1. Recording n_events would compare the
+            # book one event *after* the fill — an emptied touch that
+            # re-seeds next event never counts as a reveal.
+            fills.append(sim.n_events - 1)
             signs.append(1 if tr.aggressor == "buy" else -1)
             levels.append(tr.level)
             seen += 1

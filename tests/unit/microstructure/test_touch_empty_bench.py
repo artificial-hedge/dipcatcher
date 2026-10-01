@@ -1,4 +1,4 @@
-"""Tests for thin_touch_bench (near-touch depth cap)."""
+"""Tests for touch_empty_bench (near-band cap + corrected reveal index)."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ import pytest
 
 from quant_fund.microstructure.crown_density_bench import _DEEP, _sim_crown
 from quant_fund.microstructure.place_law_bench import _calibrated
-from quant_fund.microstructure.thin_touch_bench import (
+from quant_fund.microstructure.touch_empty_bench import (
     _CELLS,
-    THIN_TOUCH_SCHEMA,
-    thin_touch_bench,
+    TOUCH_EMPTY_SCHEMA,
+    touch_empty_bench,
 )
 from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator
 
@@ -47,24 +47,31 @@ def test_cap_refuses_full_touch() -> None:
     sim._rest("buy", 90, "manual")  # noqa: SLF001 — bid below the ask touch
     sim._rest("sell", 100, "manual")  # noqa: SLF001
     sim._rest("sell", 100, "manual")  # noqa: SLF001 — ask touch full at 2
-    # Level 100 is the ask touch and full -> capped; deeper level is not.
     assert sim._touch_capped("sell", 100)  # noqa: SLF001
     assert not sim._touch_capped("sell", 104)  # noqa: SLF001 — out of band
     sim._rest("sell", 104, "manual")  # noqa: SLF001
     assert len(sim._asks[104]) == 1  # noqa: SLF001
 
 
+def test_reveal_index_counts_empties() -> None:
+    """Under the corrected index the deep arm's touches empty on ~most
+    fills — the pre-fix index hid them behind immediate re-seeds."""
+    out = _sim_crown("deep", dict(_DEEP), horizon=4000, seed=11, collect_counts=True)
+    assert out["n_fills"] > 0
+    assert out["n_reveals"] > 0.3 * out["n_fills"]
+
+
 @pytest.mark.slow
 def test_bench_smoke() -> None:
-    out = thin_touch_bench(horizon=3000, seed=5)
-    assert out["schema"] == THIN_TOUCH_SCHEMA
+    out = touch_empty_bench(horizon=3000, seed=5)
+    assert out["schema"] == TOUCH_EMPTY_SCHEMA
     assert out["data_label"] == "SYNTHETIC"
     assert len(out["cells"]) == len(_CELLS)
     assert set(out["claims"]) == {
         "grid_evaluated",
-        "cap_lifts_empties",
-        "cap_reaches_tape_empty",
-        "hidden_survives_cap",
+        "index_fix_unmasks_empties",
+        "touch_stack_lowers_empties",
+        "empty_band_reached",
         "joint_thin_cell",
     }
     assert out["receipt_sha256"]
