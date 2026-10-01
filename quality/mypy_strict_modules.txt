@@ -503,6 +503,7 @@ src/quant_fund/models/weighted_conformal.py
 src/quant_fund/models/whitening.py
 src/quant_fund/models/xva.py
 src/quant_fund/monitoring/__init__.py
+src/quant_fund/monitoring/alert_budget.py
 src/quant_fund/monitoring/dashboard.py
 src/quant_fund/monitoring/drift.py
 src/quant_fund/monitoring/kill_switch.py
