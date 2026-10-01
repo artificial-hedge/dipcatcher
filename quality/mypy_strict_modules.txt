@@ -299,6 +299,7 @@ src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_depletion.py
 src/quant_fund/microstructure/quote_place.py
 src/quant_fund/microstructure/regime_filter.py
+src/quant_fund/microstructure/regime_quoting.py
 src/quant_fund/microstructure/rl_market_maker.py
 src/quant_fund/microstructure/round_lot.py
 src/quant_fund/microstructure/scenario_bandit.py
