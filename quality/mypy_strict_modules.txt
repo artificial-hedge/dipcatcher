@@ -349,6 +349,7 @@ src/quant_fund/microstructure/tape_surgery.py
 src/quant_fund/microstructure/tick_rule.py
 src/quant_fund/microstructure/trade_decomp.py
 src/quant_fund/microstructure/vendor_book_map.py
+src/quant_fund/microstructure/vol_clock.py
 src/quant_fund/microstructure/vol_signature.py
 src/quant_fund/microstructure/vpin.py
 src/quant_fund/microstructure/waiting_times.py
