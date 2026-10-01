@@ -44,6 +44,14 @@
       "doc": "docs/AUDIT_FX1_WAVE3.md",
       "status": "audited"
     },
+    "eval/rubric_banks.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
+    "eval/rubric_eval.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
     "harness.py": {
       "doc": "docs/AUDIT_FX1_WAVE3.md",
       "status": "audited"

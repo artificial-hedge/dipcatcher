@@ -114,7 +114,7 @@
       "status": "audited"
     },
     "northset": {
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "observe": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 120,
+      "n_modules": 121,
       "status": "audited"
     },
     "risk": {
@@ -237,9 +237,29 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "metrics/adaptive_eps.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
+    "metrics/conformal_oce.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
+    "models/diffusion_forecaster.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
+    "models/greek_neutral_portfolios.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
+    },
+    "research/benches_w16.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
     }
   },
   "schema_version": "audit-coverage/v1",
