@@ -241,7 +241,9 @@ flowchart LR
   quant_fund_features -->|1| quant_fund_schemas
   quant_fund_features -->|1| quant_fund_utils
   quant_fund_formal -->|1| quant_fund_execution
+  quant_fund_formal -->|10| quant_fund_microstructure
   quant_fund_formal -->|1| quant_fund_schemas
+  quant_fund_formal -->|6| quant_fund_utils
   quant_fund_fusion -->|1| quant_fund_config
   quant_fund_hedge_lab -->|1| quant_fund_backtest
   quant_fund_hedge_lab -->|5| quant_fund_config
@@ -285,7 +287,7 @@ flowchart LR
   quant_fund_microstructure -->|1| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|1| quant_fund_utils
+  quant_fund_microstructure -->|89| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
@@ -626,8 +628,8 @@ sequenceDiagram
 | `quant_fund.diffbacktest` | 5 |
 | `quant_fund.execution` | 8 |
 | `quant_fund.features` | 9 |
-| `quant_fund.formal` | 4 |
-| `quant_fund.fusion` | 2 |
+| `quant_fund.formal` | 7 |
+| `quant_fund.fusion` | 3 |
 | `quant_fund.hedge_lab` | 16 |
 | `quant_fund.hmm` | 4 |
 | `quant_fund.labels` | 4 |
@@ -636,7 +638,7 @@ sequenceDiagram
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 75 |
-| `quant_fund.microstructure` | 9 |
+| `quant_fund.microstructure` | 54 |
 | `quant_fund.models` | 209 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
@@ -664,9 +666,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **894**
+- Modules scanned: **943**
 - Packages: **65**
-- Cross-package import edges: **276**
+- Cross-package import edges: **278**
 
 <!-- END GENERATED: coverage -->
 
