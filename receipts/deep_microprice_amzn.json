@@ -1,0 +1,195 @@
+{
+  "claim": "depth_weighted_microprice_predictive_rank_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_bestdepth_1_vs_2",
+    "regime_bestdepth_1_vs_2"
+  ],
+  "fwd_events": 10,
+  "git_revision": "2336cc798d06fbb1279444712f85d39af359fd05",
+  "interpretation": "M_k = sum_j<=k (b_sz*a_px + a_sz*b_px)/sum_j<=k (b_sz+a_sz) \u2014 the Stoikov imbalance generalized to k levels. OLS R^2 of forward 10-event \u0394mid on M_k \u2212 mid per depth says which depth carries signal. best_depth/best_r2 give the argmax. Prices in ticks (LOBSTER price units / 100).",
+  "kind": "deep_microprice",
+  "max_depth": 5,
+  "real": {
+    "best_depth": 2,
+    "best_r2": 0.010400247063253487,
+    "fwd_events": 10,
+    "n": 269748,
+    "ok": true,
+    "per_depth": [
+      {
+        "corr": 0.08182825752567807,
+        "levels": 1,
+        "ok": true,
+        "r2": 0.006695863729669349,
+        "slope": 0.03427258802009295
+      },
+      {
+        "corr": 0.10198160159201525,
+        "levels": 2,
+        "ok": true,
+        "r2": 0.010400247063253487,
+        "slope": 0.04408538909571879
+      },
+      {
+        "corr": 0.09798209036736234,
+        "levels": 3,
+        "ok": true,
+        "r2": 0.009600490032738884,
+        "slope": 0.041233765892573514
+      },
+      {
+        "corr": 0.07888181093203382,
+        "levels": 4,
+        "ok": true,
+        "r2": 0.006222340095897949,
+        "slope": 0.032104042889453135
+      },
+      {
+        "corr": 0.06811655873414915,
+        "levels": 5,
+        "ok": true,
+        "r2": 0.004639865573763502,
+        "slope": 0.026980864535386617
+      }
+    ]
+  },
+  "receipt_sha256": "ea0693386f4fff5467d03e69ee7d07daf13928e1c0c94819c2315da9c1affb03",
+  "research_only": true,
+  "schema": "deep_microprice.v1",
+  "sim_arms": {
+    "iid": {
+      "best_depth": 1,
+      "best_r2": 0.036876783289727766,
+      "fwd_events": 10,
+      "n": 29894,
+      "ok": true,
+      "per_depth": [
+        {
+          "corr": 0.19203328693152946,
+          "levels": 1,
+          "ok": true,
+          "r2": 0.036876783289727766,
+          "slope": 0.4847626239380957
+        },
+        {
+          "corr": 0.18574819212477048,
+          "levels": 2,
+          "ok": true,
+          "r2": 0.03450239087762108,
+          "slope": 0.3098276720281087
+        },
+        {
+          "corr": 0.1688575406262507,
+          "levels": 3,
+          "ok": true,
+          "r2": 0.02851286902634631,
+          "slope": 0.2598974302171717
+        },
+        {
+          "corr": 0.1500067509309473,
+          "levels": 4,
+          "ok": true,
+          "r2": 0.022502025324859787,
+          "slope": 0.22618643235337438
+        },
+        {
+          "corr": 0.14517657129916506,
+          "levels": 5,
+          "ok": true,
+          "r2": 0.02107623685418214,
+          "slope": 0.21679767219409943
+        }
+      ]
+    },
+    "regime": {
+      "best_depth": 1,
+      "best_r2": 0.02599243637142623,
+      "fwd_events": 10,
+      "n": 28832,
+      "ok": true,
+      "per_depth": [
+        {
+          "corr": 0.16122169944342396,
+          "levels": 1,
+          "ok": true,
+          "r2": 0.02599243637142623,
+          "slope": 0.4626077908192838
+        },
+        {
+          "corr": 0.14050690918205005,
+          "levels": 2,
+          "ok": true,
+          "r2": 0.01974219152789325,
+          "slope": 0.27260335772136157
+        },
+        {
+          "corr": 0.10622710232105774,
+          "levels": 3,
+          "ok": true,
+          "r2": 0.011284197267528828,
+          "slope": 0.18821959984799072
+        },
+        {
+          "corr": 0.08493334690668486,
+          "levels": 4,
+          "ok": true,
+          "r2": 0.007213673416771704,
+          "slope": 0.1455345594940221
+        },
+        {
+          "corr": 0.0814724930818129,
+          "levels": 5,
+          "ok": true,
+          "r2": 0.006637767128966465,
+          "slope": 0.13905905803969934
+        }
+      ]
+    },
+    "split": {
+      "best_depth": 2,
+      "best_r2": 0.023364068926959636,
+      "fwd_events": 10,
+      "n": 22611,
+      "ok": true,
+      "per_depth": [
+        {
+          "corr": 0.1393414768460082,
+          "levels": 1,
+          "ok": true,
+          "r2": 0.019416047169626416,
+          "slope": 0.71968183131101
+        },
+        {
+          "corr": 0.15285309590243784,
+          "levels": 2,
+          "ok": true,
+          "r2": 0.023364068926959636,
+          "slope": 0.5466383340524864
+        },
+        {
+          "corr": 0.14916437049730769,
+          "levels": 3,
+          "ok": true,
+          "r2": 0.022250009425857864,
+          "slope": 0.48958350557833874
+        },
+        {
+          "corr": 0.14108669091384143,
+          "levels": 4,
+          "ok": true,
+          "r2": 0.019905454353017715,
+          "slope": 0.45158416023527276
+        },
+        {
+          "corr": 0.14012593271285537,
+          "levels": 5,
+          "ok": true,
+          "r2": 0.019635277018647534,
+          "slope": 0.4467967382484095
+        }
+      ]
+    }
+  },
+  "ticker": "AMZN"
+}
