@@ -70,6 +70,7 @@ flowchart LR
     fx1_train["fx1.train"]
   end
   fx1_bench -->|1| fx1_honesty
+  fx1_bench -->|1| quant_fund_utils
   fx1_cli -->|1| fx1
   fx1_cli -->|2| fx1_bench
   fx1_cli -->|7| fx1_data
@@ -83,6 +84,7 @@ flowchart LR
   fx1_cli -->|1| fx1_serve
   fx1_cli -->|3| fx1_train
   fx1_data -->|3| fx1_honesty
+  fx1_data -->|1| quant_fund_utils
   fx1_doctor -->|1| fx1
   fx1_doctor -->|1| fx1_data
   fx1_doctor -->|1| fx1_eval
@@ -99,11 +101,13 @@ flowchart LR
   fx1_forecast -->|1| quant_fund_validation
   fx1_hypotheses -->|1| fx1_honesty
   fx1_mrm -->|1| fx1_modelcard
+  fx1_mrm -->|1| quant_fund_utils
   fx1_reward -->|1| fx1_honesty
   fx1_serve -->|1| fx1_honesty
   fx1_serve -->|1| fx1_modelcard
   fx1_train -->|1| fx1_data
   fx1_train -->|5| fx1_eval
+  fx1_train -->|3| quant_fund_utils
   quant_fund -->|1| fx1
   quant_fund -->|1| quant_fund_public
   quant_fund_api -->|2| quant_fund
