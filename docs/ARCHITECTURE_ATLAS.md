@@ -285,16 +285,16 @@ flowchart LR
   quant_fund_microstructure -->|1| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|1| quant_fund_utils
+  quant_fund_microstructure -->|81| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
   quant_fund_models -->|48| quant_fund_metrics
   quant_fund_models -->|3| quant_fund_pipeline
-  quant_fund_models -->|2| quant_fund_research
+  quant_fund_models -->|4| quant_fund_research
   quant_fund_models -->|2| quant_fund_schemas
   quant_fund_models -->|1| quant_fund_stress
-  quant_fund_models -->|17| quant_fund_utils
+  quant_fund_models -->|19| quant_fund_utils
   quant_fund_monitoring -->|2| quant_fund_config
   quant_fund_monitoring -->|1| quant_fund_models
   quant_fund_monitoring -->|1| quant_fund_schemas
@@ -377,7 +377,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_hedge_lab
   quant_fund_research -->|83| quant_fund_metrics
   quant_fund_research -->|7| quant_fund_microstructure
-  quant_fund_research -->|97| quant_fund_models
+  quant_fund_research -->|99| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|13| quant_fund_pipeline
   quant_fund_research -->|6| quant_fund_portfolio
@@ -627,7 +627,7 @@ sequenceDiagram
 | `quant_fund.execution` | 8 |
 | `quant_fund.features` | 9 |
 | `quant_fund.formal` | 4 |
-| `quant_fund.fusion` | 2 |
+| `quant_fund.fusion` | 3 |
 | `quant_fund.hedge_lab` | 16 |
 | `quant_fund.hmm` | 4 |
 | `quant_fund.labels` | 4 |
@@ -636,8 +636,8 @@ sequenceDiagram
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 75 |
-| `quant_fund.microstructure` | 9 |
-| `quant_fund.models` | 209 |
+| `quant_fund.microstructure` | 50 |
+| `quant_fund.models` | 211 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
@@ -664,7 +664,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **895**
+- Modules scanned: **939**
 - Packages: **65**
 - Cross-package import edges: **276**
 
