@@ -99,6 +99,81 @@ def _check_side(side: str) -> Side:
     return side  # type: ignore[return-value]
 
 
+def _check_size_pmf(
+    pmf: tuple[tuple[int, float], ...] | None, name: str
+) -> tuple[tuple[int, float], ...] | None:
+    """Validate a size pmf: ``((size, weight), ...)`` with int sizes >= 1.
+
+    Weights need only be positive and finite — they are normalized at
+    draw time. ``None`` (default) means unit-size events and consumes
+    zero RNG draws, preserving the legacy bit-identical event stream.
+    """
+    if pmf is None:
+        return None
+    if not isinstance(pmf, (tuple, list)) or len(pmf) == 0:
+        raise ValueError(f"{name} must be a non-empty (size, weight) table")
+    out: list[tuple[int, float]] = []
+    total = 0.0
+    for entry in pmf:
+        if not isinstance(entry, (tuple, list)) or len(entry) != 2:
+            raise ValueError(f"{name} entries must be (size, weight) pairs")
+        size, w = entry
+        if isinstance(size, bool) or int(size) < 1:
+            raise ValueError(f"{name} sizes must be ints >= 1, got {size!r}")
+        w = float(w)
+        if not math.isfinite(w) or w <= 0.0:
+            raise ValueError(f"{name} weights must be positive and finite, got {w!r}")
+        out.append((int(size), w))
+        total += w
+    if total <= 0.0:  # pragma: no cover - positive-weight guard above
+        raise ValueError(f"{name} weights must sum > 0")
+    return tuple(out)
+
+
+# ---------------------------------------------------------------------------
+# Self-exciting event clock (multivariate Hawkes modulation)
+# ---------------------------------------------------------------------------
+
+# Event-type order for the Hawkes kernel: limit, market, cancel.
+HAWKES_TYPES: tuple[str, str, str] = ("limit", "market", "cancel")
+
+
+@dataclass(frozen=True)
+class HawkesClockSpec:
+    """Excitation kernel for an optional Hawkes event clock.
+
+    ``kernel[i][j]`` is the intensity jump (events/s) that one event of type
+    ``i`` adds to the type-``j`` intensity; the jump decays as
+    ``exp(-beta * dt)`` with a shared decay rate ``beta``. Event types are
+    indexed by ``HAWKES_TYPES``: 0 = limit, 1 = market, 2 = cancel.
+
+    A jump of ``alpha`` decaying at ``beta`` contributes branching ratio
+    ``alpha / beta`` expected direct children, so the branching matrix is
+    ``kernel / beta``. Fail-closed unless the matrix is finite,
+    non-negative, 3x3 and strictly sub-critical (spectral radius < 1) —
+    a super-critical kernel explodes and would silently fabricate a tape.
+    """
+
+    kernel: tuple[tuple[float, float, float], ...]
+    beta: float
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kernel, (tuple, list)) or len(self.kernel) != 3:
+            raise ValueError("kernel must be a 3x3 matrix")
+        k = np.asarray(self.kernel, dtype=np.float64)
+        if k.shape != (3, 3):
+            raise ValueError("kernel must be a 3x3 matrix")
+        if not np.all(np.isfinite(k)) or bool((k < 0.0).any()):
+            raise ValueError("kernel entries must be non-negative and finite")
+        _pos_finite(self.beta, "beta")
+        rho = float(np.max(np.abs(np.linalg.eigvals(k / float(self.beta)))))
+        if not math.isfinite(rho) or rho >= 1.0:
+            raise ValueError(
+                f"Hawkes kernel must be sub-critical (spectral radius < 1), got {rho:.4f}"
+            )
+        object.__setattr__(self, "kernel", tuple(tuple(float(x) for x in row) for row in k))
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -148,6 +223,22 @@ class ZILobConfig:
     anchor: str = "touch"
     ref_halflife: float = 0.0
     seed: int = 0
+    # Optional event-size tables ``((size, weight), ...)``. When set, each
+    # market-order event consumes ``size`` resting units in one burst
+    # (sweeping levels when the touch is thin, so multi-level sweeps
+    # emerge) and each limit-order event deposits ``size`` units at its
+    # level. ``None`` keeps the unit-size default with zero extra RNG
+    # draws — an unset table is bit-identical to the legacy stream.
+    mo_size_pmf: tuple[tuple[int, float], ...] | None = None
+    lo_size_pmf: tuple[tuple[int, float], ...] | None = None
+    # Optional self-exciting event clock. When set, the homogeneous
+    # Poisson superposition is replaced by a 3-type multivariate Hawkes
+    # process over (limit, market, cancel) whose baselines are the same
+    # rates (``2*lam*band``, ``2*mu``, ``theta_cxl*depth``) plus a decaying
+    # excitation state — the tape's submit/cancel storms and post-exec
+    # cancel retreat become expressible. ``None`` keeps the Poisson clock
+    # bit-identical (zero change to the draw stream).
+    hawkes: HawkesClockSpec | None = None
 
     def __post_init__(self) -> None:
         _pos_finite(self.s0, "s0")
@@ -170,6 +261,10 @@ class ZILobConfig:
             raise ValueError("init_depth must be >= 1 when init_levels > 0")
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise ValueError(f"seed must be an int, got {self.seed!r}")
+        _check_size_pmf(self.mo_size_pmf, "mo_size_pmf")
+        _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
+        if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
+            raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
 
 
 def santa_fe_config(
@@ -283,6 +378,253 @@ class MarkovRegimeFlow:
         return float(total / self.n_mo)
 
 
+class HawkesClock:
+    """Ogata-thinning clock for a 3-type mutually-exciting Hawkes process.
+
+    Drives ``ZILobSimulator.step`` when ``config.hawkes`` is set. The
+    per-type intensity is ``bases[k] + e[k]`` where ``bases`` are the
+    state's current homogeneous rates (the depth-proportional cancel
+    baseline is exact: book depth is constant between events) and ``e``
+    is the decaying excitation. Between events each intensity is
+    non-increasing, so thinning with the start-of-gap intensity as the
+    upper bound is exact Ogata sampling. The accepted proposal's uniform
+    is reused for the type draw — it is uniform on the accepted range —
+    so a zero kernel consumes the same draws as the Poisson clock and is
+    bit-identical to it.
+    """
+
+    _MAX_PROPOSALS = 100_000
+
+    def __init__(self, spec: HawkesClockSpec, rng: np.random.Generator) -> None:
+        self._k = np.asarray(spec.kernel, dtype=np.float64)
+        self._beta = float(spec.beta)
+        self._rng = rng
+        self._e = np.zeros(3, dtype=np.float64)
+        self.n_proposals = 0
+        self.n_rejected = 0
+
+    def step(self, bases: tuple[float, float, float]) -> tuple[float, int]:
+        """Draw ``(dt, kind)`` for the next event; kind indexes HAWKES_TYPES."""
+        base = np.asarray(bases, dtype=np.float64)
+        lam = base + self._e
+        for _ in range(self._MAX_PROPOSALS):
+            total = float(lam.sum())
+            if not math.isfinite(total) or total <= 0.0:
+                raise RuntimeError(f"degenerate Hawkes intensity {lam!r}")
+            dt = float(self._rng.exponential(1.0 / total))
+            decay = math.exp(-self._beta * dt)
+            lam_s = base + self._e * decay
+            u = float(self._rng.random()) * total
+            self.n_proposals += 1
+            if u <= float(lam_s.sum()):
+                kind = int(np.searchsorted(np.cumsum(lam_s), u, side="right"))
+                if kind > 2:  # pragma: no cover - u < sum(lam_s) by acceptance
+                    kind = 2
+                self._e *= decay
+                self._e += self._k[kind]
+                return dt, kind
+            self.n_rejected += 1
+            lam = lam_s
+        raise RuntimeError(f"Hawkes thinning exceeded {self._MAX_PROPOSALS} proposals")
+
+
+class ScenarioRegimeFlow:
+    """Deterministic exogenous regime plan replayed on the MO clock.
+
+    The scenario ``ξ`` of Moret & Lillo (2026, Sec. 9, Algorithm C): a stored
+    schedule of ``(leg, length_in_MO_events)`` pairs rather than a stochastic
+    Markov chain. ``p_buy(m) = legs[k].p_buy`` whenever
+    ``C[k-1] <= m < C[k]`` where ``C`` is the cumulative MO-count boundary;
+    once the plan is exhausted the final leg's parameters persist (plans are
+    sized at generation time to cover the episode's MO horizon, so exhaustion
+    is a bounded edge case, not a silent wrap). Same consumption contract as
+    :class:`MarkovRegimeFlow` — ``current()`` / ``advance()`` on the MO clock.
+    Fully deterministic: no RNG is drawn after construction.
+    """
+
+    def __init__(self, legs: Sequence[tuple[RegimeState, int]]) -> None:
+        if not legs:
+            raise ValueError("ScenarioRegimeFlow requires at least one leg")
+        self._legs: tuple[tuple[RegimeState, int], ...] = ()
+        for i, item in enumerate(legs):
+            st, n = item
+            if not isinstance(st, RegimeState):
+                raise TypeError(f"legs[{i}][0] must be a RegimeState")
+            if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+                raise ValueError(f"legs[{i}][1] must be an int >= 1, got {n!r}")
+            self._legs += ((st, int(n)),)
+        self._bounds: tuple[int, ...] = tuple(
+            sum(n for _, n in self._legs[: k + 1]) for k in range(len(self._legs))
+        )
+        self._leg_idx = 0
+        self.n_mo = 0
+        self.state_mo_counts: list[int] = [0] * len(self._legs)
+        self.transitions: list[tuple[int, int]] = []
+
+    @property
+    def n_legs(self) -> int:
+        return len(self._legs)
+
+    @property
+    def total_mo(self) -> int:
+        """MO horizon the plan was sized for (sum of leg lengths)."""
+        return self._bounds[-1]
+
+    @property
+    def state_index(self) -> int:
+        """Index of the active leg (saturates at the last leg when exhausted)."""
+        return self._leg_idx
+
+    def current(self) -> RegimeState:
+        return self._legs[self._leg_idx][0]
+
+    def advance(self) -> None:
+        """One MO-clock tick: count the visit, then move past any boundary."""
+        self.state_mo_counts[self._leg_idx] += 1
+        self.n_mo += 1
+        while self._leg_idx < len(self._legs) - 1 and self.n_mo >= self._bounds[self._leg_idx]:
+            self._leg_idx += 1
+            self.transitions.append((self.n_mo, self._leg_idx))
+
+    def expected_p_buy(self) -> float:
+        """Visit-weighted mean buy probability realized so far (fail-closed)."""
+        if self.n_mo == 0:
+            raise ValueError("expected_p_buy undefined before any MO event")
+        total = sum(
+            self.state_mo_counts[k] * self._legs[k][0].p_buy for k in range(len(self._legs))
+        )
+        return float(total / self.n_mo)
+
+
+class AdversarialFlow:
+    """Learned-adversary regime flow — the adversary picks each leg's
+    ``p_buy`` at the boundary, in feedback with the defender's state.
+
+    The Glielmo-style semi-MDP adversary of Moret & Lillo (2026): rather
+    than replaying a stored plan, the flow *extends itself* at regime
+    boundaries. When a leg's MO budget is exhausted, ``advance()`` marks a
+    boundary pending; the next ``current()`` call resolves it by invoking
+    ``picker(obs)`` — lazily, so the observation reflects the fills that the
+    triggering market order just produced (``advance`` runs inside
+    ``sim.step()`` before the session's fill handler). Leg durations come
+    from ``duration_sampler(rng)`` — the adversary controls direction, not
+    duration, matching the paper's Pareto leg lengths.
+
+    ``note_inventory(inventory)`` is the feedback channel: the session
+    calls it after draining fills so the picker sees the defender's raw
+    inventory at boundary time (normalisation is the picker's job — the
+    flow stays policy-agnostic). ``boundary_log`` records every resolution
+    as ``(n_mo, inventory, prev_p_buy, chosen_p_buy)`` — the adversary's
+    transition tuples plus enough context to audit what was chosen and why.
+
+    Consumption contract identical to the other flows: ``current()`` /
+    ``advance()`` on the MO clock, ``expected_p_buy()`` fail-closed before
+    the first MO. Deterministic given ``seed`` and the inventory feedback —
+    ``rng`` only draws leg durations.
+    """
+
+    def __init__(
+        self,
+        *,
+        picker: Callable[[float, float], float],
+        duration_sampler: Callable[[np.random.Generator], int],
+        seed: int,
+        first_p_buy: float = 0.5,
+        intensity_mult: float = 1.0,
+        max_legs: int = 10_000,
+    ) -> None:
+        if not callable(picker):
+            raise TypeError("picker must be callable")
+        if not callable(duration_sampler):
+            raise TypeError("duration_sampler must be callable")
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise ValueError(f"seed must be an int, got {seed!r}")
+        _prob(first_p_buy, "first_p_buy")
+        _pos_finite(intensity_mult, "intensity_mult")
+        if isinstance(max_legs, bool) or int(max_legs) < 1:
+            raise ValueError(f"max_legs must be an int >= 1, got {max_legs!r}")
+        self._picker = picker
+        self._duration_sampler = duration_sampler
+        self._rng = np.random.default_rng(seed)
+        self._max_legs = int(max_legs)
+        self._intensity_mult = float(intensity_mult)
+        self._inv_norm = 0.0
+        self._pending = False
+        first = float(duration_sampler(self._rng))
+        if not math.isfinite(first) or first < 1:
+            raise ValueError(f"duration_sampler returned {first!r}, expected an int >= 1")
+        self._legs: list[tuple[RegimeState, int]] = [
+            (RegimeState("adversary:leg0", intensity_mult, first_p_buy), int(first))
+        ]
+        self._bound = int(first)
+        self._leg_idx = 0
+        self.n_mo = 0
+        self.state_mo_counts: list[int] = [0]
+        self.transitions: list[tuple[int, int]] = []
+        self.boundary_log: list[tuple[int, float, float, float]] = []
+
+    def note_inventory(self, inventory: float) -> None:
+        """Record the defender's raw inventory for the next pick."""
+        v = float(inventory)
+        if not math.isfinite(v):
+            raise ValueError(f"inventory must be finite, got {inventory!r}")
+        self._inv_norm = v
+
+    def _resolve_leg(self) -> None:
+        if not self._pending:
+            return
+        self._pending = False
+        if len(self._legs) >= self._max_legs:
+            # fail closed: unbounded self-extension must not run forever
+            raise RuntimeError(
+                f"AdversarialFlow exceeded max_legs={self._max_legs} — "
+                "the episode horizon should exhaust before this many legs"
+            )
+        prev_p_buy = self._legs[self._leg_idx][0].p_buy
+        p_buy = float(self._picker(self._inv_norm, prev_p_buy))
+        if not math.isfinite(p_buy) or not (0.0 < p_buy < 1.0):
+            raise RuntimeError(f"adversary picker returned p_buy={p_buy!r} — must lie in (0,1)")
+        n = int(self._duration_sampler(self._rng))
+        if n < 1:
+            raise RuntimeError(f"duration_sampler returned {n!r}, expected >= 1")
+        self._legs.append(
+            (RegimeState(f"adversary:leg{len(self._legs)}", self._intensity_mult, p_buy), n)
+        )
+        self.boundary_log.append((self.n_mo, self._inv_norm, prev_p_buy, p_buy))
+        self.transitions.append((self.n_mo, len(self._legs) - 1))
+        self.state_mo_counts.append(0)
+        self._bound += n
+        self._leg_idx += 1
+
+    @property
+    def n_legs(self) -> int:
+        return len(self._legs)
+
+    @property
+    def state_index(self) -> int:
+        return self._leg_idx
+
+    def current(self) -> RegimeState:
+        self._resolve_leg()
+        return self._legs[self._leg_idx][0]
+
+    def advance(self) -> None:
+        """One MO-clock tick; a boundary is resolved lazily on next current()."""
+        self.state_mo_counts[self._leg_idx] += 1
+        self.n_mo += 1
+        if self.n_mo >= self._bound:
+            self._pending = True
+
+    def expected_p_buy(self) -> float:
+        """Visit-weighted mean buy probability realized so far (fail-closed)."""
+        if self.n_mo == 0:
+            raise ValueError("expected_p_buy undefined before any MO event")
+        total = sum(
+            self.state_mo_counts[k] * self._legs[k][0].p_buy for k in range(len(self._legs))
+        )
+        return float(total / self.n_mo)
+
+
 # ---------------------------------------------------------------------------
 # Events / records
 # ---------------------------------------------------------------------------
@@ -375,10 +717,35 @@ class ZILobSimulator:
         weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
         self._dist_cdf = np.cumsum(weights / weights.sum())
         self._dist_cdf[-1] = 1.0
+        # Event-size tables (None → unit-size, zero extra RNG draws).
+        self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
+        self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
+        self._hawkes = HawkesClock(config.hawkes, self._rng) if config.hawkes is not None else None
+        self.n_mo_units = 0
+        self.n_lo_units = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
                 self._rest("buy", -k, "zi_seed")
                 self._rest("sell", k, "zi_seed")
+
+    @staticmethod
+    def _size_cdf(
+        pmf: tuple[tuple[int, float], ...] | None,
+    ) -> tuple[tuple[int, ...], Array] | None:
+        if pmf is None:
+            return None
+        sizes = tuple(int(s) for s, _ in pmf)
+        w = np.asarray([w for _, w in pmf], dtype=np.float64)
+        cdf = np.cumsum(w / w.sum())
+        cdf[-1] = 1.0
+        return sizes, cdf
+
+    def _draw_size(self, table: tuple[tuple[int, ...], Array] | None) -> int:
+        """Draw an event size; 1 with no RNG draw when the table is unset."""
+        if table is None:
+            return 1
+        sizes, cdf = table
+        return sizes[int(np.searchsorted(cdf, float(self._rng.random()), side="left"))]
 
     # -- grid helpers -------------------------------------------------------
 
@@ -502,6 +869,10 @@ class ZILobSimulator:
             "n_submitted": self.n_submitted,
             "n_orders_created": self._n_orders_created,
             "resting": self.total_depth,
+            "n_mo_units": self.n_mo_units,
+            "n_lo_units": self.n_lo_units,
+            "n_hawkes_proposals": self._hawkes.n_proposals if self._hawkes else 0,
+            "n_hawkes_rejected": self._hawkes.n_rejected if self._hawkes else 0,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -642,27 +1013,36 @@ class ZILobSimulator:
             # (volume-diffusion / square-root regime). Crossing placements are
             # dropped — that aggressiveness is already in the market-order flow.
             ref = int(round(self._ref_ema))
+            k = self._draw_size(self._lo_size_cdf)
             if want_buy:
                 level = ref - dist
                 if ba is None or level < ba:
-                    self._rest("buy", level, "zi")
+                    for _ in range(k):
+                        self._rest("buy", level, "zi")
                     self.n_lo_arrivals += 1
+                    self.n_lo_units += k
                 return
             level = ref + dist
             if bb is None or level > bb:
-                self._rest("sell", level, "zi")
+                for _ in range(k):
+                    self._rest("sell", level, "zi")
                 self.n_lo_arrivals += 1
+                self.n_lo_units += k
             return
         # Touch anchoring (Moret & Lillo market-making setting): band follows the
         # best opposite quote; fall back to the reference level when a side is
         # empty so the book can always recover.
+        k = self._draw_size(self._lo_size_cdf)
         if want_buy:
             anchor = ba if ba is not None else self._ref_level + 1
-            self._rest("buy", anchor - dist, "zi")
+            for _ in range(k):
+                self._rest("buy", anchor - dist, "zi")
         else:
             anchor = bb if bb is not None else self._ref_level - 1
-            self._rest("sell", anchor + dist, "zi")
+            for _ in range(k):
+                self._rest("sell", anchor + dist, "zi")
         self.n_lo_arrivals += 1
+        self.n_lo_units += k
 
     def _cancel_event(self) -> None:
         bid_d, ask_d = self.bid_depth, self.ask_depth
@@ -695,9 +1075,13 @@ class ZILobSimulator:
         total = lo_rate + mo_rate + cxl_rate
         if not math.isfinite(total) or total <= 0.0:
             raise RuntimeError(f"degenerate event rate {total!r}")
-        dt = float(self._rng.exponential(1.0 / total))
+        if self._hawkes is not None:
+            dt, kind = self._hawkes.step((lo_rate, mo_rate, cxl_rate))
+        else:
+            dt = float(self._rng.exponential(1.0 / total))
+            u = float(self._rng.random()) * total
+            kind = 0 if u < lo_rate else (1 if u < lo_rate + mo_rate else 2)
         self._t += dt
-        u = float(self._rng.random()) * total
         self.n_events += 1
         bb, ba = self.best_bid_level, self.best_ask_level
         if bb is not None and ba is not None:
@@ -708,13 +1092,19 @@ class ZILobSimulator:
                 # EMA of the mid level; frozen (hl == 0) keeps the seed mid.
                 alpha = min(1.0, dt / hl)
                 self._ref_ema += alpha * (mid_level - self._ref_ema)
-        if u < lo_rate:
+        if kind == 0:
             self._limit_order_event()
             return "limit"
-        if u < lo_rate + mo_rate:
+        if kind == 1:
             side: Side = "buy" if float(self._rng.random()) < p_buy_eff else "sell"
             self.n_mo_arrivals += 1
-            self._consume_best(side)
+            # A size-k MO is a burst of unit fills; each consumes the current
+            # opposite best, so a burst that exhausts the touch sweeps deeper
+            # levels (the tape's multi-level sweep footprint).
+            k = self._draw_size(self._mo_size_cdf)
+            self.n_mo_units += k
+            for _ in range(k):
+                self._consume_best(side)
             if self._flow is not None:
                 self._flow.advance()
             return "market"
@@ -946,7 +1336,7 @@ def run_mm_session(
     policy: QuotePolicy,
     horizon: float,
     decision_interval: float = 1.0,
-    flow: MarkovRegimeFlow | None = None,
+    flow: MarkovRegimeFlow | ScenarioRegimeFlow | AdversarialFlow | None = None,
     inventory_cap: int | None = None,
     sample_interval: float = 25.0,
 ) -> dict[str, Any]:
@@ -1078,6 +1468,10 @@ def run_mm_session(
             elif tr.maker_order_id == ask_oid:
                 ask_oid = None
             max_abs_inv = max(max_abs_inv, abs(inventory))
+        if isinstance(flow, AdversarialFlow):
+            # Feedback channel: the adversary's picker reads the defender's
+            # post-fill inventory when a pending boundary resolves.
+            flow.note_inventory(float(inventory))
 
     _requote()
     _record_path()

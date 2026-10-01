@@ -1,0 +1,30 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "10cb6a20d9e20be71e8e87ee574963c97b2d3f753c7b035cebbb7a8e60b08b7b",
+  "inputs_sha256": "2da7943861166cac37240f7cc74e61f3175536961fb12c94bc60dfa115d0a7fb",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "0a1b0518337e67447e538dc941bdbf1fca80f206da06e5c7c29b44a2bade853d",
+  "members": [
+    {
+      "name": "cost_calibration_flat_vs_ohlc.md",
+      "sha256": "26ad09bf1239b7393d96487c1ee214797cbbebde46a505cd3f881844b06acdb1"
+    }
+  ],
+  "members_added": [
+    "cost_calibration_flat_vs_ohlc.md"
+  ],
+  "members_removed": [],
+  "n_members": 1,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "11743a5d7f52dc4f74d676ab6d9262e872b87c776c82ef04c09126217f8fd7b5",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}
