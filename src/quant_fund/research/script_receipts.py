@@ -412,6 +412,7 @@ _MEASUREMENT_SCHEMAS = (
     "deep_book_bench.v1",
     "deep_microprice.v1",
     "depth_consumption.v1",
+    "depth_tilt.v1",
     "empirical_flow.v1",
     "hawkes_clock.v1",
     "event_burst.v1",

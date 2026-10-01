@@ -1,0 +1,116 @@
+{
+  "schema": "depth_tilt.v1",
+  "kind": "depth_tilt_bench",
+  "ticker": "AMZN",
+  "horizon": 30000,
+  "seed": 0,
+  "real": {
+    "ok": true,
+    "n_fills": 8974,
+    "horizons": [
+      1,
+      2,
+      5,
+      10,
+      20,
+      50,
+      100
+    ],
+    "tilt_path": {
+      "1": 0.16341924656873602,
+      "2": 0.1506292589467525,
+      "5": 0.12689484150252683,
+      "10": 0.12436160081195098,
+      "20": 0.1066309409605273,
+      "50": 0.0893641224460979,
+      "100": 0.06935729601854108
+    },
+    "tilt_base": 0.10299666361019369
+  },
+  "sim_arms": {
+    "iid": {
+      "ok": true,
+      "n_fills": 5147,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": -0.02376055400060084,
+        "2": -0.023769801503108805,
+        "5": -0.01849317251929847,
+        "10": -0.006022298145519046,
+        "20": -0.005807721677329329,
+        "50": -0.0013513082892473995,
+        "100": 0.00606307465795447
+      },
+      "tilt_base": -0.009538270544685942
+    },
+    "split": {
+      "ok": true,
+      "n_fills": 6412,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": 0.0013349095075920344,
+        "2": 0.0028318343726823564,
+        "5": 0.014705092158700405,
+        "10": 0.019829249843845338,
+        "20": 0.023906012931945882,
+        "50": 0.03402432855040471,
+        "100": 0.01892333587771319
+      },
+      "tilt_base": -0.004247077101299053
+    },
+    "lv_cd300": {
+      "ok": true,
+      "n_fills": 1411,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": -0.20570236126579144,
+        "2": -0.20291361524529491,
+        "5": -0.1984470336597996,
+        "10": -0.1889952718676123,
+        "20": -0.16761567038162783,
+        "50": -0.18115361201298702,
+        "100": -0.18615401115401115
+      },
+      "tilt_base": 0.007446904761904761
+    }
+  },
+  "divergences": [
+    "iid:tilt20_-0.005807721677329329_vs_0.1066309409605273",
+    "split:tilt20_0.023906012931945882_vs_0.1066309409605273",
+    "lv_cd300:tilt20_-0.16761567038162783_vs_0.1066309409605273"
+  ],
+  "claims": {
+    "tape_accommodates": true,
+    "cooldown_digs_hole": true,
+    "no_arm_matches_tilt": true
+  },
+  "interpretation": "Post-fill touch-depth tilt is the placement-side channel of continuation. The tape accommodates: after a buy fill the bid side stays heavier than the ask for ~100 events. iid flow is flat, metaorder splitting tilts weakly positive, and the vacancy-cooldown arm tilts strongly negative \u2014 suppressing refill on emptied levels deepens the hole instead of leaning into it. No arm reproduces the accommodation: the missing mechanism is directional LO placement biased toward the unhit side, distinct from both vacancy memory and MO persistence.",
+  "git_revision": "0a6478de79cb3aa8b5b28d0102b638a1c6e587eb",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "36f3df7ad410a8d904181c4786d4c3ffff55006513941556e78c33f5e9c5f0cc"
+}
