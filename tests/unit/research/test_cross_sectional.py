@@ -97,8 +97,8 @@ def test_regime_flip_has_small_mean_ic_despite_large_absolute_ic() -> None:
 def test_bench_is_deterministic() -> None:
     _, receipt_a = run_cross_sectional_bench(seed=42)
     _, receipt_b = run_cross_sectional_bench(seed=42)
-    payload_a = {k: v for k, v in receipt_a.items() if k != "generated_at"}
-    payload_b = {k: v for k, v in receipt_b.items() if k != "generated_at"}
+    payload_a = {k: v for k, v in receipt_a.items() if k not in ("generated_at", "meta")}
+    payload_b = {k: v for k, v in receipt_b.items() if k not in ("generated_at", "meta")}
     assert payload_a == payload_b
 
 

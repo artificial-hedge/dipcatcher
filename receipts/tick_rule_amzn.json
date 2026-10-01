@@ -1,0 +1,73 @@
+{
+  "claim": "sign_inference_misclassification_measured",
+  "data_label": "MIXED",
+  "git_revision": "956bc3e9b8d4561beebe5a8e82b56b0cdfbc867e",
+  "interpretation": "Real LOBSTER tape has ground-truth aggressor labels; the misclass rates measure how much noise sign inference would inject. On sim, fills at the touch mostly classify right \u2014 hidden/mid fills are where rules fail.",
+  "kind": "tick_rule",
+  "real": {
+    "n_execs": 11419,
+    "quote_rule": {
+      "misclass_rate": 0.0938,
+      "n": 11419,
+      "rule": "quote_rule",
+      "undecided": 0
+    },
+    "tick_rule": {
+      "misclass_rate": 0.1324,
+      "n": 11419,
+      "rule": "tick_rule",
+      "undecided": 0
+    }
+  },
+  "receipt_sha256": "4231bf0e2878bebadb85669c24dae8ce1836a9821bb1448721ab15953a6694a7",
+  "research_only": true,
+  "schema": "tick_rule.v1",
+  "sim_arms": {
+    "iid": {
+      "n_execs": 3319,
+      "quote_rule": {
+        "misclass_rate": 0.1232,
+        "n": 3319,
+        "rule": "quote_rule",
+        "undecided": 0
+      },
+      "tick_rule": {
+        "misclass_rate": 0.1271,
+        "n": 3319,
+        "rule": "tick_rule",
+        "undecided": 0
+      }
+    },
+    "regime": {
+      "n_execs": 3723,
+      "quote_rule": {
+        "misclass_rate": 0.1322,
+        "n": 3723,
+        "rule": "quote_rule",
+        "undecided": 0
+      },
+      "tick_rule": {
+        "misclass_rate": 0.1198,
+        "n": 3723,
+        "rule": "tick_rule",
+        "undecided": 0
+      }
+    },
+    "split": {
+      "n_execs": 4244,
+      "quote_rule": {
+        "misclass_rate": 0.2017,
+        "n": 4244,
+        "rule": "quote_rule",
+        "undecided": 0
+      },
+      "tick_rule": {
+        "misclass_rate": 0.2092,
+        "n": 4244,
+        "rule": "tick_rule",
+        "undecided": 0
+      }
+    }
+  },
+  "ticker": "AMZN"
+}

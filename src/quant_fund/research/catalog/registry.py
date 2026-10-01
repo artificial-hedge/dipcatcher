@@ -167,6 +167,100 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "extra_tilt",
         "forecast_selection",
         "rl_market_maker",
+        # SOTA canon wave 17 batteries (see research/benches_w17.py):
+        # conformal risk-averse decision making with optimized-certainty-
+        # equivalent (OCE) risk control (high-probability CVaR certificates,
+        # the Hoeffding-margin ablation, the sqrt(n) radius law), e-PS
+        # sample-efficient multiple testing with adaptive data collection
+        # (simple-vs-simple specialization), (torch-gated) greek-neutral
+        # option portfolios — hedging as a training inductive bias (delta-
+        # exposure monotonicity + interior optimum), and (torch-gated) the
+        # DiffPTS full-ELBO diffusion forecaster vs the NGBoost Gaussian
+        # baseline (CRPS gain, coverage, PIT). Seeded SYNTHETIC streams;
+        # correctness diagnostics only, never promotion gates.
+        "conformal_oce",
+        "adaptive_eps",
+        "greek_neutral",
+        "diffusion_forecaster",
+        # SOTA canon wave 17 (execution theory / distributional RL / DiffPTS
+        # ELBO / multi-step UQ) + wave 18 (path-space flows, neural SDEs,
+        # StocBench sampler budgets, agentic LOB, FASE eval, K-line paths).
+        # Seeded SYNTHETIC streams; correctness diagnostics only, never
+        # promotion gates.
+        "diffpts",
+        "extra_conformal",
+        "multilevel_mm",
+        "rlmm_c51",
+        "sga_uq",
+        "passive_impact",
+        "stochastic_tracking",
+        "gslice",
+        "neural_sde",
+        "stocbench",
+        "agentic_lob",
+        "fase_eval",
+        "kit_paths",
+        # SOTA canon waves 19+ (numpy/scipy lanes): Langevin impact, event-time
+        # flow, Fukasawa IV, IVS diffusion, RCCP, DCP, and the wave 20-29
+        # families below. Seeded SYNTHETIC streams; correctness diagnostics
+        # only, never promotion gates.
+        "langevin_impact",
+        "event_time_flow",
+        "fukasawa_iv",
+        "ivs_diffusion",
+        "rccp",
+        "dcp",
+        "varswap_stopping",
+        "hidden_markov_equilibrium",
+        "gaussian_normalized_coords",
+        "liquidity_tail_lob",
+        "arl_mm",
+        "bocpd_changepoint",
+        "rough_heston_rbergomi",
+        "signature_features",
+        "signature_martingale_test",
+        "svi_surface",
+        "propagator_impact",
+        "queue_reactive",
+        "koopman_edmd",
+        "sig_gan",
+        "neural_tpp",
+        "pmcmc_sv",
+        "multifractal_vol",
+        "spci_conformal",
+        "hawkes_em",
+        "fernholz_spt",
+        "breeden_litzenberger",
+        "tda_persistence",
+        "fractional_ou",
+        "fourier_hermite",
+        "kernel_changepoint",
+        "kinetic_ising",
+        "heterogeneous_abm",
+        "marchenko_pastur",
+        "factor_nowcast",
+        "stationary_bootstrap",
+        "skill_ratings",
+        "modularity_communities",
+        "stein_thinning",
+        "durbin_koopman",
+        "dp_mixture",
+        "expert_aggregation",
+        "instrumental_quantile",
+        "implied_tree",
+        "ensemble_kalman_inversion",
+        "enkf",
+        "causal_discovery",
+        "knockoffs",
+        "callaway_did",
+        "surrogate_nonlinear",
+        "sindy",
+        "hmc",
+        "proxy_svar",
+        "sbi",
+        "rqa",
+        "hj_distance",
+        "tensor_decomp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

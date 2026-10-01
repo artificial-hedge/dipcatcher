@@ -67,6 +67,7 @@ from quant_fund.models.covariance import (
     ewma,
     ledoit_wolf,
     ledoit_wolf_nonlinear,
+    ledoit_wolf_quest,
     oas,
     repair_psd,
     require_implemented_optimizer_covariance,
@@ -174,6 +175,9 @@ from .covariance import (
 )
 from .covariance import (
     _named_ledoit_wolf_nonlinear_optimizer_estimate as _named_ledoit_wolf_nonlinear_optimizer_estimate,
+)
+from .covariance import (
+    _named_ledoit_wolf_quest_optimizer_estimate as _named_ledoit_wolf_quest_optimizer_estimate,
 )
 from .covariance import (
     _named_oas_optimizer_estimate as _named_oas_optimizer_estimate,
@@ -516,6 +520,7 @@ __all__ = [
     "latest_decision",
     "ledoit_wolf",
     "ledoit_wolf_nonlinear",
+    "ledoit_wolf_quest",
     "load_joblib_artifact",
     "log",
     "market_risk_overlay_asof",
