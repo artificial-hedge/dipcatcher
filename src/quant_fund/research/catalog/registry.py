@@ -1068,6 +1068,28 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fay_herriot",
         "cluster_sampling",
         "design_effects",
+        # Wave-77 families — Liang-Zeger
+        # (1986) GEE marginal models,
+        # Laird-Ware (1982) LMM via EM
+        # ML + BLUPs, Cohen (1960) /
+        # Fleiss (1971) / Krippendorff
+        # (1970) inter-rater agreement +
+        # Lin (1989) CCC + Bland-Altman
+        # (1986) LoA, Liu-Ting-Zhou
+        # (2008) isolation forest +
+        # Hariri (2019) extended variant,
+        # HEGY (1990) seasonal unit
+        # roots + Canova-Hansen (1995)
+        # seasonal stability, and van
+        # Buuren (2011) MICE PMM +
+        # Rubin (1987) pooling. Same
+        # SYNTHETIC diagnostic contract.
+        "gee",
+        "lmm",
+        "interrater",
+        "isolation_forest",
+        "hegy",
+        "mice",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

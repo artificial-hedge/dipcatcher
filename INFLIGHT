@@ -1945,3 +1945,31 @@ detail: |
   - Canon staged on top of w75-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+---
+owner: devin (wave 77 canon)
+slice: 6 model modules + benches_w77 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w77-lanes: gee.py (Liang-Zeger 1986 marginal
+    models, independence/exchangeable/AR1 working correlation,
+    Huber-Royall sandwich SE, gaussian+binomial families),
+    lmm.py (Laird-Ware 1982 EM ML: random intercept and
+    intercept+slope unstructured D, BLUPs, ICC),
+    interrater.py (Cohen 1960 + weighted 1968, Fleiss 1971,
+    Krippendorff alpha nominal/ordinal/interval, Lin 1989 CCC,
+    Bland-Altman 1986), isolation_forest.py (Liu-Ting-Zhou
+    2008 path-length scores + Hariri 2019 extended random-
+    hyperplane variant), hegy.py (HEGY 1990 quarterly roots
+    + Canova-Hansen 1995 seasonal stability, internally
+    simulated MC null distributions), mice.py (van Buuren
+    2011 chained PMM on originally-observed donors + Rubin
+    1987 / Barnard-Rubin pooling).
+  - benches_w77.py: +450..455 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "gee","lmm","interrater","isolation_forest",
+    "hegy","mice" (416->422); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w77.
+  - Canon staged on top of w76-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.

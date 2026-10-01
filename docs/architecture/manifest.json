@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1549,
+  "module_count": 1556,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10111,6 +10111,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w77",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches_w810",
       "src": "quant_fund.research.agent"
     },
@@ -12265,6 +12269,30 @@
     {
       "dst": "quant_fund.models.poststrat",
       "src": "quant_fund.research.benches_w76"
+    },
+    {
+      "dst": "quant_fund.models.gee",
+      "src": "quant_fund.research.benches_w77"
+    },
+    {
+      "dst": "quant_fund.models.hegy",
+      "src": "quant_fund.research.benches_w77"
+    },
+    {
+      "dst": "quant_fund.models.interrater",
+      "src": "quant_fund.research.benches_w77"
+    },
+    {
+      "dst": "quant_fund.models.isolation_forest",
+      "src": "quant_fund.research.benches_w77"
+    },
+    {
+      "dst": "quant_fund.models.lmm",
+      "src": "quant_fund.research.benches_w77"
+    },
+    {
+      "dst": "quant_fund.models.mice",
+      "src": "quant_fund.research.benches_w77"
     },
     {
       "dst": "quant_fund.metrics.anytime_fdr",
@@ -15795,6 +15823,7 @@
     "quant_fund.models.gaussian_copula_default",
     "quant_fund.models.gaussian_normalized_coords",
     "quant_fund.models.gaussian_process",
+    "quant_fund.models.gee",
     "quant_fund.models.geweke_spectral",
     "quant_fund.models.giacomini_rossi",
     "quant_fund.models.gil_pelaez",
@@ -15814,6 +15843,7 @@
     "quant_fund.models.heckman",
     "quant_fund.models.hedging",
     "quant_fund.models.hedonic",
+    "quant_fund.models.hegy",
     "quant_fund.models.heston_qe",
     "quant_fund.models.heterogeneous_abm",
     "quant_fund.models.hidden_markov_equilibrium",
@@ -15836,9 +15866,11 @@
     "quant_fund.models.information_share",
     "quant_fund.models.ingarch",
     "quant_fund.models.innovations_ets",
+    "quant_fund.models.interrater",
     "quant_fund.models.interrupted_ts",
     "quant_fund.models.interval_censoring",
     "quant_fund.models.io_hmm",
+    "quant_fund.models.isolation_forest",
     "quant_fund.models.isomap",
     "quant_fund.models.isotonic",
     "quant_fund.models.item_response",
@@ -15877,6 +15909,7 @@
     "quant_fund.models.lewbel_iv",
     "quant_fund.models.lgbm_q2",
     "quant_fund.models.libor_market",
+    "quant_fund.models.lmm",
     "quant_fund.models.local_projection",
     "quant_fund.models.local_stoch_vol",
     "quant_fund.models.localized_conformal",
@@ -15905,6 +15938,7 @@
     "quant_fund.models.merton_model",
     "quant_fund.models.meta_analysis",
     "quant_fund.models.mfdfa",
+    "quant_fund.models.mice",
     "quant_fund.models.midas_regression",
     "quant_fund.models.mixed_logit",
     "quant_fund.models.mixture",
@@ -16365,6 +16399,7 @@
     "quant_fund.research.benches_w74",
     "quant_fund.research.benches_w75",
     "quant_fund.research.benches_w76",
+    "quant_fund.research.benches_w77",
     "quant_fund.research.benches_w810",
     "quant_fund.research.calibration_eprocess",
     "quant_fund.research.calibration_eval",
@@ -18311,7 +18346,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 414,
+      "imports": 420,
       "src": "quant_fund.research"
     },
     {
@@ -18356,7 +18391,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 386,
+      "imports": 387,
       "src": "quant_fund.research"
     },
     {

@@ -605,6 +605,14 @@ from quant_fund.research.benches_w76 import (
     bench_horvitz_thompson,
     bench_poststrat,
 )
+from quant_fund.research.benches_w77 import (
+    bench_gee,
+    bench_hegy,
+    bench_interrater,
+    bench_isolation_forest,
+    bench_lmm,
+    bench_mice,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2612,6 +2620,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "fay_herriot": bench_fay_herriot(),
         "cluster_sampling": bench_cluster_sampling(),
         "design_effects": bench_design_effects(),
+        "gee": bench_gee(),
+        "lmm": bench_lmm(),
+        "interrater": bench_interrater(),
+        "isolation_forest": bench_isolation_forest(),
+        "hegy": bench_hegy(),
+        "mice": bench_mice(),
     }
 
     hyps = _build_hypotheses(families, rankers)
