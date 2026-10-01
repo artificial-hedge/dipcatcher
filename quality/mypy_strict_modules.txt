@@ -137,6 +137,7 @@ src/quant_fund/hmm/__init__.py
 src/quant_fund/hmm/cli.py
 src/quant_fund/hmm/discrete.py
 src/quant_fund/hmm/eisner.py
+src/quant_fund/hmm/hmm_stability.py
 src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py
 src/quant_fund/labels/engine.py
@@ -294,6 +295,7 @@ src/quant_fund/microstructure/lob_resilience.py
 src/quant_fund/microstructure/lob_shape.py
 src/quant_fund/microstructure/lobster.py
 src/quant_fund/microstructure/marketable_limit.py
+src/quant_fund/microstructure/markout.py
 src/quant_fund/microstructure/metaorder_decay.py
 src/quant_fund/microstructure/metaorder_detect.py
 src/quant_fund/microstructure/microprice.py
@@ -307,6 +309,9 @@ src/quant_fund/microstructure/price_clustering.py
 src/quant_fund/microstructure/price_improvement.py
 src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_depletion.py
+src/quant_fund/microstructure/queue_jump.py
+src/quant_fund/microstructure/queue_occupancy.py
+src/quant_fund/microstructure/queue_priority.py
 src/quant_fund/microstructure/quote_place.py
 src/quant_fund/microstructure/regime_filter.py
 src/quant_fund/microstructure/regime_quoting.py
@@ -316,6 +321,7 @@ src/quant_fund/microstructure/scenario_bandit.py
 src/quant_fund/microstructure/sign_autocorr_real.py
 src/quant_fund/microstructure/sign_predict.py
 src/quant_fund/microstructure/sim_real_ledger.py
+src/quant_fund/microstructure/sim_sensitivity.py
 src/quant_fund/microstructure/split_flow.py
 src/quant_fund/microstructure/split_flow_bench.py
 src/quant_fund/microstructure/spread_decomp.py
@@ -331,6 +337,7 @@ src/quant_fund/microstructure/vendor_book_map.py
 src/quant_fund/microstructure/vol_clock.py
 src/quant_fund/microstructure/vol_signature.py
 src/quant_fund/microstructure/vpin.py
+src/quant_fund/microstructure/waiting_times.py
 src/quant_fund/microstructure/zi_lob_simulator.py
 src/quant_fund/models/__init__.py
 src/quant_fund/models/agaci.py
