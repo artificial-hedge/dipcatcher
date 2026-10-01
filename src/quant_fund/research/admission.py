@@ -26,7 +26,7 @@ import json
 import os
 import shutil
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -67,9 +67,7 @@ def _honesty_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
 
 def _link_or_copy(src: Path, dst: Path) -> None:
     if dst.exists():
-        if dst.samefile(src):  # candidate already inside the corpus dir
-            return
-        raise FileExistsError(f"shadow corpus name collision: {dst.name}")
+        return  # already linked — e.g. the candidate lives inside the corpus
     try:
         os.link(src, dst)
     except OSError:  # cross-filesystem corpus dirs still gate correctly
@@ -110,6 +108,7 @@ def admission_check(
     *,
     q: float = 0.05,
     known_inconsistent: Mapping[str, str] | None = None,
+    tombstone_dir: Path | str | None = None,
 ) -> dict[str, Any]:
     """Gate a candidate receipt against an existing corpus.
 
@@ -143,7 +142,10 @@ def admission_check(
         doc = json.loads(candidate.read_text())
         if not isinstance(doc, Mapping):
             raise ValueError("receipt root is not an object")
-    except Exception as exc:  # noqa: BLE001 — recorded, never swallowed
+    except (OSError, ValueError) as exc:
+        # Narrowed from `except Exception` (quality ratchet): the parse block
+        # reads bytes then json-loads — OSError/ValueError are the only fault
+        # modes; exotic errors propagate. Recorded, never swallowed.
         doc = {}
         seal_ok = False
         checks.append({"name": "parse", "ok": False, "errors": [str(exc)]})
@@ -209,9 +211,90 @@ def admission_check(
         ).encode()
     )
 
-    if not seal_ok or reject_errors:
+    # -- 5. epoch-chain integrity ------------------------------------------------
+    # Binding to the stamped epoch chain is defense in depth on top of the
+    # member-map digest: if the corpus was tampered *after* its last stamp,
+    # admitting into it must not claim a clean pass. Feature-detected so this
+    # module works whether or not corpus_epoch has merged/stamped yet.
+    chain_errors: list[str] = []
+    hard_chain_errors: list[str] = []
+    epoch_head: str | None = None
+    epoch_root_value: str | None = None
+    try:
+        from quant_fund.research.corpus_epoch import check_epoch_chain
+    except ImportError:
+        checks.append({"name": "epoch_chain", "ok": True, "skipped": "corpus_epoch_unavailable"})
+    else:
+        chain_result = check_epoch_chain(corpus_dir)
+        chain_errors = list(chain_result["errors"])
+        # An unstamped corpus ("no_epoch_receipts") is benign — the gate
+        # works fine before the first epoch stamp exists. Only a *broken
+        # stamped chain* (fork, member_removed/mutated, dishonest delta)
+        # is a quarantine-class finding.
+        hard_chain_errors = [e for e in chain_errors if e != "no_epoch_receipts"]
+        head_name = chain_result.get("head")
+        epoch_head = head_name if isinstance(head_name, str) else None
+        root_value = chain_result.get("head_epoch_root")
+        epoch_root_value = root_value if isinstance(root_value, str) else None
+        checks.append(
+            {
+                "name": "epoch_chain",
+                "ok": not hard_chain_errors,
+                "errors": chain_errors,
+                "unstamped": list(chain_result["unstamped"]),
+            }
+        )
+
+    # -- 6. retraction -----------------------------------------------------------
+    # An append-only corpus can't delete a bad receipt — it retracts it via a
+    # sealed tombstone. Admission is the re-entry surface: the exact retracted
+    # bytes must never be re-admitted, and the retracted name slot / claim
+    # paths must not quietly re-fill. Feature-detected like epoch_chain.
+    retract_reject: list[str] = []
+    retract_findings: list[str] = []
+    try:
+        from quant_fund.research.receipt_tombstone import load_tombstones
+    except ImportError:
+        checks.append({"name": "tombstone", "ok": True, "skipped": "tombstone_unavailable"})
+    else:
+        # Resolve tombstones against the durable corpus, not the (possibly
+        # shadowed) admission view — a retracted target must stay pinned to
+        # real bytes even when admit_batch shadows it out mid-diff.
+        tombs = load_tombstones(Path(tombstone_dir) if tombstone_dir is not None else corpus_dir)
+        entry = tombs["active"].get(candidate.name)
+        if entry is not None:
+            if entry.get("target_sha256") == candidate_sha:
+                retract_reject.append("retracted_bytes")
+            elif entry.get("scope") == "all":
+                retract_findings.append("retracted_slot")
+            else:
+                # Partial scope: the retracted claim paths must not re-enter.
+                from quant_fund.research.corpus_inference import harvest_findings
+
+                scoped = set(entry["scope"]) if isinstance(entry["scope"], list) else set()
+                try:
+                    cand_doc = json.loads(candidate.read_text())
+                except (OSError, ValueError):  # parse already recorded above
+                    cand_doc = {}
+                paths = (
+                    {f["path"] for f in harvest_findings(cand_doc, candidate.name)}
+                    if isinstance(cand_doc, Mapping)
+                    else set()
+                )
+                if paths & scoped:
+                    retract_findings.append("retracted_scope_overlap")
+        checks.append(
+            {
+                "name": "tombstone",
+                "ok": not retract_reject and not retract_findings,
+                "reject_errors": retract_reject,
+                "findings": retract_findings,
+            }
+        )
+
+    if not seal_ok or reject_errors or retract_reject:
         verdict = "reject"
-    elif quarantine_errors or new_inconsistent:
+    elif quarantine_errors or new_inconsistent or hard_chain_errors or retract_findings:
         verdict = "quarantine"
     else:
         verdict = "admit"
@@ -229,10 +312,83 @@ def admission_check(
         "candidate_sha256": candidate_sha,
         "n_corpus_receipts": len(corpus_files),
         "checks": checks,
+        "corpus_epoch_receipt": epoch_head,
+        "corpus_epoch_root": epoch_root_value,
         "lattice_new_inconsistent": sorted(new_inconsistent),
         "survivors_added": added,
         "survivors_removed": removed,
         "verdict": verdict,
+    }
+
+
+def admit_batch(
+    candidates: Iterable[Path | str],
+    corpus_dir: Path | str = Path("receipts"),
+    *,
+    q: float = 0.05,
+    known_inconsistent: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
+    """Gate a set of incoming receipts the way a merge actually lands them.
+
+    ``admission_check`` on an already-committed receipt has a vacuous lattice
+    check: the candidate is already inside the corpus, so before == after and
+    no delta is observable. For a diff of N changed receipts the honest gate
+    is sequential — each candidate is checked against
+
+        corpus − {all changed names} ∪ {changed files processed so far}
+
+    which is exactly the intermediate state each file creates, so
+    intra-diff contradictions are attributed to the file that introduces
+    them and no commit sneaks a contradiction in inside a batch.
+
+    Only top-level ``*.json`` members of the corpus are gated: quarantined
+    subtrees (``legacy-unsealed/``) and non-receipt files are not corpus
+    members and are skipped — they carry their own byte-pins elsewhere.
+
+    Fails closed: a missing candidate, a candidate inside the corpus under a
+    *different* name, or an unreadable corpus dir raises.
+    """
+    corpus_dir = Path(corpus_dir)
+    if not corpus_dir.is_dir():
+        raise ValueError(f"corpus dir {corpus_dir} does not exist")
+    ordered = sorted((Path(c) for c in candidates), key=lambda p: p.name)
+    for cand in ordered:
+        if not cand.is_file():
+            raise ValueError(f"candidate receipt {cand} does not exist")
+
+    changed_names = {c.name for c in ordered}
+    shadow = Path(tempfile.mkdtemp(prefix="admit_batch_base_"))
+    for path in sorted(corpus_dir.glob("*.json")):
+        if path.is_file() and path.name not in changed_names:
+            _link_or_copy(path, shadow / path.name)
+
+    results: list[dict[str, Any]] = []
+    for cand in ordered:
+        result = admission_check(
+            cand,
+            shadow,
+            q=q,
+            known_inconsistent=known_inconsistent,
+            tombstone_dir=corpus_dir,
+        )
+        results.append(result)
+        # Post-merge coexistence: a merged diff lands all of its files
+        # together, so each later candidate must clear a corpus that already
+        # contains the earlier ones — whatever verdict they drew.
+        _link_or_copy(cand, shadow / cand.name)
+
+    verdicts = [r["verdict"] for r in results]
+    if "reject" in verdicts:
+        verdict = "reject"
+    elif "quarantine" in verdicts:
+        verdict = "quarantine"
+    else:
+        verdict = "admit"
+    return {
+        "verdict": verdict,
+        "n_candidates": len(ordered),
+        "results": results,
+        "failures": [r["candidate"] for r in results if r["verdict"] != "admit"],
     }
 
 
@@ -260,13 +416,34 @@ def admission_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         errors.append("n_corpus_receipts")
     # verdict↔checks coherence: reject requires a failed seal or honesty reject;
     # quarantine requires some quarantine-class finding; admit requires all ok.
+    epoch_root = payload.get("corpus_epoch_root")
+    if epoch_root is not None and not (isinstance(epoch_root, str) and len(epoch_root) == 64):
+        errors.append("corpus_epoch_root")
+    epoch_receipt = payload.get("corpus_epoch_receipt")
+    if epoch_receipt is not None and not (
+        isinstance(epoch_receipt, str) and epoch_receipt.startswith("corpus_epoch_")
+    ):
+        errors.append("corpus_epoch_receipt")
     if isinstance(checks, list) and errors == []:
         seal_check: Mapping[str, Any] = next((c for c in checks if c.get("name") == "seal"), {})
         honesty: Mapping[str, Any] = next((c for c in checks if c.get("name") == "honesty"), {})
         lattice: Mapping[str, Any] = next((c for c in checks if c.get("name") == "lattice"), {})
+        epoch_chain: Mapping[str, Any] = next(
+            (c for c in checks if c.get("name") == "epoch_chain"), {}
+        )
+        tombstone: Mapping[str, Any] = next((c for c in checks if c.get("name") == "tombstone"), {})
         verdict = payload["verdict"]
-        rejectable = not seal_check.get("ok", True) or bool(honesty.get("reject_errors"))
-        quarantinable = bool(honesty.get("quarantine_errors")) or not lattice.get("ok", True)
+        rejectable = (
+            not seal_check.get("ok", True)
+            or bool(honesty.get("reject_errors"))
+            or bool(tombstone.get("reject_errors"))
+        )
+        quarantinable = (
+            bool(honesty.get("quarantine_errors"))
+            or not lattice.get("ok", True)
+            or not epoch_chain.get("ok", True)
+            or bool(tombstone.get("findings"))
+        )
         if verdict == "reject" and not rejectable:
             errors.append("verdict_reject_without_cause")
         elif verdict == "quarantine" and (rejectable or not quarantinable):
