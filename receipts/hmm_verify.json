@@ -1,0 +1,25 @@
+{
+  "kind": "hmm_verify",
+  "schema": "hmm_verify.v1",
+  "git_revision": "c76cfe553c8bc8e9b6373debcaf4ad14438c8002",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "claim": {
+    "seed": 0,
+    "n_trials": 40,
+    "checks": {
+      "forward": 40,
+      "viterbi_path": 40,
+      "viterbi_prob": 40,
+      "gamma": 40,
+      "bw_ascent": 40
+    },
+    "failures": [],
+    "ok": true
+  },
+  "interpretation": {
+    "ok": "pedagogical HMM code matches exhaustive enumeration \u2014 not just the textbook instance",
+    "fail": "a recursion disagrees with the enumeration oracle \u2014 see failures[]"
+  },
+  "receipt_sha256": "2022f016f3207a83226f8faa9f16f8586785ad3f0ebe30c6dd2b6af3a8cd15c2"
+}
