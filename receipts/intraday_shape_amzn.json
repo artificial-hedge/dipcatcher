@@ -1,0 +1,79 @@
+{
+  "claim": "intraday_u_shape_measured_real_vs_flat_sim",
+  "data_label": "MIXED",
+  "git_revision": "a67a117a446dd50d0d4f5797f40cae942e88b5c3",
+  "interpretation": "u_shape = edge-third mean / middle-third mean of activity. Real equities show >1 (U). Sim arms are flat by construction (~1.0) \u2014 a calendar-intensity term is an open calibration gap.",
+  "kind": "intraday_shape",
+  "real": {
+    "activity_u_shape": 2.0356973434535104,
+    "bin_seconds": 1800.0,
+    "events_per_bin": [
+      17218,
+      24746,
+      24280,
+      25239,
+      17266,
+      18667,
+      14148,
+      12352,
+      19962,
+      19438,
+      15109,
+      25890,
+      32988
+    ],
+    "execs_per_bin": [
+      650,
+      678,
+      1090,
+      612,
+      312,
+      490,
+      450,
+      410,
+      446,
+      537,
+      487,
+      941,
+      1871
+    ],
+    "mean_spread_per_bin": [
+      20.8306,
+      15.0082,
+      11.7104,
+      13.1362,
+      14.5839,
+      14.2995,
+      13.5394,
+      11.4141,
+      13.1075,
+      11.8666,
+      13.46,
+      11.6578,
+      9.2434
+    ],
+    "n_bins": 13,
+    "spread_u_shape": 0.9981512703792916
+  },
+  "receipt_sha256": "d343852f17997a1327850c071d00ed98c343a00c74d570c6fb6b8a027c1aa55d",
+  "research_only": true,
+  "schema": "intraday_shape.v1",
+  "sim_arms": {
+    "iid": {
+      "activity_u_shape": 0.9998537631613156,
+      "mean_spread_ticks": 1.806,
+      "spread_u_shape": 0.9905088621129443
+    },
+    "regime": {
+      "activity_u_shape": 0.9998537631613156,
+      "mean_spread_ticks": 1.899,
+      "spread_u_shape": 1.0362580587581967
+    },
+    "split": {
+      "activity_u_shape": 0.9998537631613156,
+      "mean_spread_ticks": 2.258,
+      "spread_u_shape": 1.0126428370360943
+    }
+  },
+  "ticker": "AMZN"
+}
