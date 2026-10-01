@@ -630,3 +630,23 @@ def test_session_fail_closed() -> None:
         run_mm_session(config=cfg, policy=pol, horizon=100.0, inventory_cap=0)
     with pytest.raises(TypeError):
         run_mm_session(config=cfg, policy="not-callable", horizon=100.0)  # type: ignore[arg-type]
+
+
+def test_repost_frac_zero_is_bit_identical() -> None:
+    a = ZILobSimulator(santa_fe_config(seed=11))
+    a.run(300.0)
+    b = ZILobSimulator(
+        replace(santa_fe_config(seed=11), repost_frac=0.0, repost_window=500, repost_band=3)
+    )
+    b.run(300.0)
+    assert [(t.price, t.level, t.aggressor) for t in a.trades] == [
+        (t.price, t.level, t.aggressor) for t in b.trades
+    ]
+
+
+def test_repost_reseeds_emptied_levels() -> None:
+    sim = ZILobSimulator(replace(santa_fe_config(seed=11), repost_frac=0.8, repost_window=500))
+    sim.run(400.0)
+    ec = sim.event_counts()
+    # n_lo_reposts counts reposted rests, bounded by LO arrivals.
+    assert 0 < ec["n_lo_reposts"] <= ec["n_lo_arrivals"]

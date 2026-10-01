@@ -16,7 +16,7 @@ def test_bench_sim_only() -> None:
     assert out["schema"] == RESEED_HAZARD_SCHEMA
     assert out["research_only"] is True
     assert out["tape"] is None
-    assert len(out["sim_arms"]) == 3
+    assert len(out["sim_arms"]) == 5
     for arm in out["sim_arms"]:
         assert arm["n_emptied"] > 0
         if arm["reseed_rate_500"] is not None:
