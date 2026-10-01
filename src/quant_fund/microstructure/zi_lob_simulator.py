@@ -542,6 +542,16 @@ class ZILobConfig:
     # instead of pinning the touch or exiting. Draws one extra uniform
     # per release pick only when nonzero; 0 = pure delete.
     chase_reprice: float = 0.0
+    # ``mid_dark_frac`` ∈ [0, 1]: share of LO events that rest at the
+    # midpoint as HIDDEN pegged depth — dark orders absorb marketable
+    # flow at mid without entering the visible book, so they carry flow
+    # without pressing the touch. The placement class the wave-23
+    # mechanism map diagnosed as missing (iceberg/hidden share ~21% on
+    # the tape). A dark peg lapses when the visible mid moves or after
+    # ``mid_dark_ttl`` events (re-quoting, not resting). Draws one extra
+    # uniform per LO event only when the knob is on; 0 bit-identical.
+    mid_dark_frac: float = 0.0
+    mid_dark_ttl: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -632,6 +642,7 @@ class ZILobConfig:
         _prob(self.vac_chase_frac, "vac_chase_frac")
         _prob(self.chase_release, "chase_release")
         _prob(self.chase_reprice, "chase_reprice")
+        _prob(self.mid_dark_frac, "mid_dark_frac")
         for _name in (
             "hit_refill_band",
             "hit_refill_window",
@@ -639,6 +650,7 @@ class ZILobConfig:
             "unhit_step_window",
             "unhit_imp_window",
             "vac_chase_window",
+            "mid_dark_ttl",
         ):
             _v = getattr(self, _name)
             if isinstance(_v, bool) or int(_v) < 0:
@@ -1164,10 +1176,20 @@ class ZILobSimulator:
         )
         self.n_mo_units = 0
         self.n_lo_units = 0
+        self.n_dark_placed = 0
+        self.n_dark_fills = 0
+        self.n_dark_lapses = 0
         # Vacancy memory: (side, level) -> event index the level emptied.
         # Populated only when ``refill_cooldown`` or ``vac_chase_window`` > 0.
         self._vacancy: dict[tuple[str, int], int] = {}
         self._chase_oids: set[int] = set()
+        # Hidden midpoint-pegged depth: side -> deque of (order, expiry
+        # event index). Never enters the visible book; pegs lapse when
+        # the visible mid moves or TTL passes (re-quote, not rest).
+        self._dark: dict[Side, deque[tuple[_Order, int]]] = {
+            "buy": deque(),
+            "sell": deque(),
+        }
         # Post-fill accommodation state; pinned at 0 when lo_tilt_gain == 0.
         self._tilt = 0.0
         # Post-fill marker: (hit_side, narrow_deadline, relief_deadline)
@@ -1335,6 +1357,9 @@ class ZILobSimulator:
             "n_touch_pulls": self.n_touch_pulls,
             "n_cxl_touch": self.n_cxl_touch,
             "n_requotes": self.n_requotes,
+            "n_dark_placed": self.n_dark_placed,
+            "n_dark_fills": self.n_dark_fills,
+            "n_dark_lapses": self.n_dark_lapses,
         }
 
     def fate_by_class(self) -> dict[PlacementClass, dict[str, int]]:
@@ -1561,31 +1586,8 @@ class ZILobSimulator:
         self._chase_oids.discard(oid)
         return order
 
-    def _consume_best(self, aggressor: Side) -> TradeEvent | None:
-        """Match one unit MO against the opposite best (price-time priority)."""
-        book = self._asks if aggressor == "buy" else self._bids
-        if not book:
-            self.n_mo_noop += 1
-            return None
-        level = min(book) if aggressor == "buy" else max(book)
-        order = self._remove_resting_at(book, level, 0)
-        if order.tag == "iceberg":
-            self.n_hidden_fills += 1
-        trade = TradeEvent(
-            t=self._t,
-            aggressor=aggressor,
-            price=self.level_to_price(level),
-            level=level,
-            qty=1,
-            maker_order_id=order.order_id,
-            maker_side=order.side,
-            maker_tag=order.tag,
-            maker_t_submit=order.t_submit,
-            maker_queue_ahead_at_submit=order.queue_ahead,
-            maker_placement_class=order.placement_class,
-        )
-        self.trades.append(trade)
-        self.n_fills += 1
+    def _post_fill_markers(self, aggressor: Side) -> None:
+        """Arm the post-fill state shared by visible and dark fills."""
         gain = self._cfg.ref_fill_gain
         if gain > 0.0:
             self._ref_ema += (1.0 if aggressor == "buy" else -1.0) * gain
@@ -1614,6 +1616,68 @@ class ZILobSimulator:
                 self.n_events + tw,
                 self.n_events + iw,
             )
+
+    def _consume_best(self, aggressor: Side) -> TradeEvent | None:
+        """Match one unit MO against the opposite best (price-time priority)."""
+        # Midpoint dark liquidity matches first: a resting dark peg fills
+        # the aggressor at mid before the visible touch is consumed.
+        dark_side: Side = "sell" if aggressor == "buy" else "buy"
+        dark_dq = self._dark[dark_side]
+        while dark_dq:
+            order, exp = dark_dq[0]
+            bb_d, ba_d = self.best_bid_level, self.best_ask_level
+            if (
+                bb_d is None
+                or ba_d is None
+                or order.level != bb_d + ba_d
+                or (exp > 0 and self.n_events > exp)
+            ):
+                dark_dq.popleft()
+                self.n_dark_lapses += 1
+                continue
+            dark_dq.popleft()
+            trade = TradeEvent(
+                t=self._t,
+                aggressor=aggressor,
+                price=0.5 * (self.level_to_price(bb_d) + self.level_to_price(ba_d)),
+                level=order.level,
+                qty=1,
+                maker_order_id=order.order_id,
+                maker_side=order.side,
+                maker_tag=order.tag,
+                maker_t_submit=order.t_submit,
+                maker_queue_ahead_at_submit=order.queue_ahead,
+                maker_placement_class=order.placement_class,
+            )
+            self.trades.append(trade)
+            self.n_fills += 1
+            self.n_dark_fills += 1
+            self._post_fill_markers(aggressor)
+            return trade
+        book = self._asks if aggressor == "buy" else self._bids
+        if not book:
+            self.n_mo_noop += 1
+            return None
+        level = min(book) if aggressor == "buy" else max(book)
+        order = self._remove_resting_at(book, level, 0)
+        if order.tag == "iceberg":
+            self.n_hidden_fills += 1
+        trade = TradeEvent(
+            t=self._t,
+            aggressor=aggressor,
+            price=self.level_to_price(level),
+            level=level,
+            qty=1,
+            maker_order_id=order.order_id,
+            maker_side=order.side,
+            maker_tag=order.tag,
+            maker_t_submit=order.t_submit,
+            maker_queue_ahead_at_submit=order.queue_ahead,
+            maker_placement_class=order.placement_class,
+        )
+        self.trades.append(trade)
+        self.n_fills += 1
+        self._post_fill_markers(aggressor)
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
@@ -1680,6 +1744,37 @@ class ZILobSimulator:
                 (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy")
             ):
                 dist = min(dist, self._cfg.hit_narrow_dist)
+        # Midpoint dark peg: the event's units rest hidden at the mid
+        # instead of entering the visible book (only when a mid exists —
+        # spread >= 2 ticks). Consumes one extra uniform only when on.
+        md = self._cfg.mid_dark_frac
+        if (
+            md > 0.0
+            and ba is not None
+            and bb is not None
+            and ba - bb >= 2
+            and float(self._rng.random()) < md
+        ):
+            k = self._draw_size(self._lo_size_cdf)
+            dark_side: Side = "buy" if want_buy else "sell"
+            ttl = self._cfg.mid_dark_ttl
+            exp = self.n_events + ttl if ttl > 0 else 0
+            for _ in range(k):
+                order = _Order(
+                    order_id=self._new_id(),
+                    side=dark_side,
+                    level=bb + ba,  # doubled-lattice index of the pegged mid
+                    tag="mid_dark",
+                    t_submit=self._t,
+                    queue_ahead=0,
+                    placement_class="improve",
+                )
+                self._dark[dark_side].append((order, exp))
+                self._n_orders_created += 1
+                self.n_dark_placed += 1
+            self.n_lo_arrivals += 1
+            self.n_lo_units += k
+            return
         if self._cfg.anchor == "ref":
             # Absolute-space anchoring: LOs deposit around a slow reference level
             # so cumulative liquidity grows with distance from the reference and

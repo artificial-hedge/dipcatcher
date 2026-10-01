@@ -446,6 +446,7 @@ _MEASUREMENT_SCHEMAS = (
     "maker_age.v1",
     "markout.v1",
     "metaorder_detect.v1",
+    "mid_dark.v1",
     "mid_jump.v1",
     "order_lifetime.v1",
     "order_revision.v1",
