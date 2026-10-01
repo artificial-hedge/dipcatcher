@@ -48,11 +48,24 @@ def _contains_forbidden_headline(text: str) -> str | None:
     "nav (1.9)", "sharpe…2.1" all headline the same claim. Bare discussion
     of why these metrics are forbidden is allowed.
     """
-    bridge = r"(?:ratio|score|value|reading)\b"
-    connector = r"(?:of|=|:|is|was|at|to|reads?|[\"']|[^\w\s]+)"
+    bridge = (
+        r"(?:ratio|score|value|reading|level|figure|number|metric|multiple|"
+        r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
+        r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
+        r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
+    )
+    connector = (
+        r"(?:of|=|:|is|was|were|are|at|to|for|per|the|a|an|this|that|its|our|"
+        r"your|their|my|about|roughly|approximately|around|over|under|above|"
+        r"below|current(?:ly)?|latest|reported|expected|projected|stood|stands|"
+        r"sits|sat|hits?|reached|reaches|posted|came|rose|fell|grew|implied|"
+        r"delivered|generated|produced|whole|all|entire|same|given|first|last|"
+        r"single|rolling|trailing|net|gross|calendar|fiscal|respective|"
+        r"corresponding|reads?|[\"']|[^\w\s]+)"
+    )
     for token in FORBIDDEN_HEADLINE_TOKENS:
         pattern = re.compile(
-            rf"\b{re.escape(token)}\b\s*(?:{bridge}\s*)?(?:{connector}\s*){{0,3}}"
+            rf"\b{re.escape(token)}\b\s*(?:(?:{bridge}|{connector})\s*){{0,6}}"
             rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )
