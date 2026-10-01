@@ -454,7 +454,9 @@ def _load_epoch_receipt(corpus_dir: Path, name: str) -> tuple[dict[str, Any] | N
         return None, "epoch_receipt_tampered"
     if path.name != f"corpus_epoch_{seal[:16]}.json":
         return None, "epoch_receipt_name_mismatch"
-    return payload, None
+    # Unwrap a receipt.v2 envelope — the epoch body lives under "payload".
+    inner = payload.get("payload")
+    return (inner if isinstance(inner, dict) else payload), None
 
 
 def member_proof(
