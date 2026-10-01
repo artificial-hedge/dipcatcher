@@ -286,6 +286,7 @@ src/quant_fund/metrics/watch.py
 src/quant_fund/microstructure/__init__.py
 src/quant_fund/microstructure/abc_calibrate.py
 src/quant_fund/microstructure/bench.py
+src/quant_fund/microstructure/book_depletion.py
 src/quant_fund/microstructure/book_metrics.py
 src/quant_fund/microstructure/book_panel.py
 src/quant_fund/microstructure/cancel_cluster.py
