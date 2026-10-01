@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1465,
+  "module_count": 1472,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10063,6 +10063,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w65",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches_w810",
       "src": "quant_fund.research.agent"
     },
@@ -11929,6 +11933,30 @@
     {
       "dst": "quant_fund.models.transfer_entropy",
       "src": "quant_fund.research.benches_w64"
+    },
+    {
+      "dst": "quant_fund.models.cos_method",
+      "src": "quant_fund.research.benches_w65"
+    },
+    {
+      "dst": "quant_fund.models.esscher",
+      "src": "quant_fund.research.benches_w65"
+    },
+    {
+      "dst": "quant_fund.models.libor_market",
+      "src": "quant_fund.research.benches_w65"
+    },
+    {
+      "dst": "quant_fund.models.obizhaeva_wang",
+      "src": "quant_fund.research.benches_w65"
+    },
+    {
+      "dst": "quant_fund.models.shadow_rate",
+      "src": "quant_fund.research.benches_w65"
+    },
+    {
+      "dst": "quant_fund.models.spread_options",
+      "src": "quant_fund.research.benches_w65"
     },
     {
       "dst": "quant_fund.metrics.anytime_fdr",
@@ -15335,6 +15363,7 @@
     "quant_fund.models.convexity_adj",
     "quant_fund.models.copula",
     "quant_fund.models.corradi_swanson",
+    "quant_fund.models.cos_method",
     "quant_fund.models.count",
     "quant_fund.models.count_data",
     "quant_fund.models.covariance",
@@ -15396,6 +15425,7 @@
     "quant_fund.models.entropy_balancing",
     "quant_fund.models.entropy_pooling",
     "quant_fund.models.ers_dfgls",
+    "quant_fund.models.esscher",
     "quant_fund.models.ets",
     "quant_fund.models.event_study",
     "quant_fund.models.expectile",
@@ -15504,6 +15534,7 @@
     "quant_fund.models.leisen_reimer",
     "quant_fund.models.lewbel_iv",
     "quant_fund.models.lgbm_q2",
+    "quant_fund.models.libor_market",
     "quant_fund.models.local_projection",
     "quant_fund.models.local_stoch_vol",
     "quant_fund.models.localized_conformal",
@@ -15555,6 +15586,7 @@
     "quant_fund.models.nonparametric_iv",
     "quant_fund.models.nowcasting",
     "quant_fund.models.oaxaca_blinder",
+    "quant_fund.models.obizhaeva_wang",
     "quant_fund.models.odd_residual_flows",
     "quant_fund.models.olley_pakes",
     "quant_fund.models.online_crc",
@@ -15635,6 +15667,7 @@
     "quant_fund.models.sbi",
     "quant_fund.models.seasonal",
     "quant_fund.models.selective_inference",
+    "quant_fund.models.shadow_rate",
     "quant_fund.models.sheppard_heavy",
     "quant_fund.models.shift_share",
     "quant_fund.models.short_rate",
@@ -15655,6 +15688,7 @@
     "quant_fund.models.spectral",
     "quant_fund.models.spectral_clustering",
     "quant_fund.models.spectral_pca",
+    "quant_fund.models.spread_options",
     "quant_fund.models.srisk",
     "quant_fund.models.stable",
     "quant_fund.models.stable_dist",
@@ -15945,6 +15979,7 @@
     "quant_fund.research.benches_w62",
     "quant_fund.research.benches_w63",
     "quant_fund.research.benches_w64",
+    "quant_fund.research.benches_w65",
     "quant_fund.research.benches_w810",
     "quant_fund.research.calibration_eprocess",
     "quant_fund.research.calibration_eval",
@@ -17891,7 +17926,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 342,
+      "imports": 348,
       "src": "quant_fund.research"
     },
     {
@@ -17936,7 +17971,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 374,
+      "imports": 375,
       "src": "quant_fund.research"
     },
     {

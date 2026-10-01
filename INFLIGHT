@@ -1552,3 +1552,44 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715 land.
 note: canon PR to follow.
 
+---
+owner: devin (wave 65 canon)
+slice: models/libor_market.py, models/cos_method.py,
+  models/obizhaeva_wang.py, models/spread_options.py,
+  models/esscher.py, models/shadow_rate.py,
+  research/benches_w65.py, registry/agent wiring,
+  tests/unit/research/test_benches_w65.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w65-lanes (c50b6dbe): six new models, all
+    bench_*() self-checks score=1.0, 32 unit tests green.
+  - libor_market.py (LFM terminal-measure drift mu_i =
+    -sigma_i * sum_{j>i} delta_j L_j sigma_j rho_ij/(1+d_jL_j)
+    via Cholesky; caplet MC vs Black-76 2.6%, swaption <=
+    caplet strip, swap rate err 5e-5), cos_method.py (Fang-
+    Oosterlee cosine inversion on [a,b] from cumulants,
+    chi/psi closed forms; vs Black-76 call 6e-14, put 2e-15,
+    parity exact), obizhaeva_wang.py (transient-impact OW
+    schedule = end blocks + rho*block continuous rate;
+    closed-form within 3% of exact KKT-QP solution, 9.5%
+    better than TWAP, resilience-4 cost 0.49x resilience-1),
+    spread_options.py (Margrabe exchange, Kirk approximation,
+    quanto drift adjustment; MC Margrabe err 0.49%, Kirk
+    0.06%, quanto rho effect +3336bp), esscher.py (Gerber-Shiu
+    two-tail Esscher pricing on exponential-Levy CFs with
+    Gauss-Legendre Gil-Pelaez; VG-vs-GP agreement 0.0, Black-
+    Scholes limit 8e-15, VG martingale theta 1.75),
+    shadow_rate.py (Wu-Xia censored short rate + affine long
+    yields; EKF recovers latent state corr 0.9996, bound
+    share 0.82 vs true 0.85, monotone yield loadings).
+  - benches_w65.py: +378..383 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "libor_market","cos_method",
+    "obizhaeva_wang","spread_options","esscher","shadow_rate";
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w65.
+  - Canon staged on top of w64-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/#717
+    land.
+note: canon PR to follow.

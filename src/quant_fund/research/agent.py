@@ -509,6 +509,14 @@ from quant_fund.research.benches_w64 import (
     bench_saddlepoint,
     bench_transfer_entropy,
 )
+from quant_fund.research.benches_w65 import (
+    bench_cos_method,
+    bench_esscher,
+    bench_libor_market,
+    bench_obizhaeva_wang,
+    bench_shadow_rate,
+    bench_spread_options,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2444,6 +2452,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "brownian_bridge": bench_brownian_bridge(),
         "jarrow_turnbull": bench_jarrow_turnbull(),
         "campbell_shiller": bench_campbell_shiller(),
+        "libor_market": bench_libor_market(),
+        "cos_method": bench_cos_method(),
+        "obizhaeva_wang": bench_obizhaeva_wang(),
+        "spread_options": bench_spread_options(),
+        "esscher": bench_esscher(),
+        "shadow_rate": bench_shadow_rate(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -817,6 +817,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "brownian_bridge",
         "jarrow_turnbull",
         "campbell_shiller",
+        # Wave 65 — LIBOR market model (terminal-
+        # measure forward simulation, Black caplets,
+        # MC swaptions), Fang-Oosterlee COS Fourier-
+        # cosine pricing, Obizhaeva-Wang transient-
+        # impact optimal execution (block + rate
+        # schedule, KKT cost), Margrabe/Kirk spread
+        # and quanto options, Gerber-Shiu Esscher-
+        # measure pricing on exponential-Levy CFs,
+        # and Wu-Xia shadow-rate EKF term structure
+        # at the zero lower bound. Same SYNTHETIC
+        # diagnostic contract.
+        "libor_market",
+        "cos_method",
+        "obizhaeva_wang",
+        "spread_options",
+        "esscher",
+        "shadow_rate",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
