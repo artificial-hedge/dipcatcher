@@ -190,16 +190,18 @@ def sim_attr(cfg: Any, flow: Any, horizon: int) -> dict[str, Any]:
     per_event: list[tuple[int, float, int, str, str, float]] = []
     for j, sign in anchors:
         hit_side = "sell" if sign > 0 else "buy"  # aggressor buy hit asks
-        for i in range(j + 1, min(j + 1 + _K200_LAG, n_ev)):
-            m1, m0 = mid[i], mid[i - 1]
+        # Event m (1-indexed, matching mut_log's n_events) produced the
+        # move mid[m-1] - mid[m-2]; lag = m - j matches the tape side.
+        for m_ev in range(j + 1, min(j + 1 + _K200_LAG, n_ev + 1)):
+            m1, m0 = mid[m_ev - 1], mid[m_ev - 2]
             if m1 is None or m0 is None or m1 == m0:
                 continue
-            mut = mut_by_ev.get(i)
+            mut = mut_by_ev.get(m_ev)
             if mut is None:
                 continue
             ch, side = mut
             rel = "hit" if side == hit_side else "unhit"
-            per_event.append((j, sign, i, ch, rel, m1 - m0))
+            per_event.append((j, sign, m_ev, ch, rel, m1 - m0))
     res = _attr_totals(per_event)
     res["n_events"] = n_ev
     res["ok"] = True
@@ -220,8 +222,6 @@ def continuation_attr_bench(
         "calibrated": sim_attr(cfg, _split(3.0, seed + 1), horizon),
     }
 
-    tape_shares = tape["positive_channel_shares"] if tape else {}
-    cal_shares = arms["calibrated"]["positive_channel_shares"]
     tape_k200 = tape["k200_signed_ticks"] if tape else None
     cal_k200 = arms["calibrated"]["k200_signed_ticks"]
     gap = (
@@ -242,15 +242,27 @@ def continuation_attr_bench(
                 and abs(tape["positive_share_sum"] - 1.0) < 0.05
             )
         ),
-        "fill_channel_is_the_gap": bool(
+        # The LO channel is the measured gap: the tape reprices the mid
+        # WITH the drift post-fill while the calibrated sim's post-fill
+        # LO arrivals drag it back (negative signed contribution).
+        "lo_channel_is_the_gap": bool(
             tape is not None
-            and gap.get("fill", 0.0) > gap.get("lo", 0.0)
-            and gap.get("fill", 0.0) > abs(gap.get("cxl", 0.0))
+            and gap.get("lo", 0.0) > gap.get("fill", 0.0)
+            and gap.get("lo", 0.0) > abs(gap.get("cxl", 0.0))
+        ),
+        "sim_lo_repricing_against_drift": bool(
+            tape is not None
+            and tape["k200_per_channel_ticks"]["lo"] > 0.0
+            and arms["calibrated"]["k200_per_channel_ticks"]["lo"] < 0.0
+        ),
+        "sim_fill_channel_overshoots": bool(
+            tape is not None
+            and arms["calibrated"]["k200_per_channel_ticks"]["fill"]
+            > tape["k200_per_channel_ticks"]["fill"]
         ),
         "tape_cxl_against_drift": bool(
             tape is not None and tape["k200_per_channel_ticks"]["cxl"] < 0.0
         ),
-        "sim_fill_share_lower": bool(cal_shares["fill"] < tape_shares.get("fill", 1.0)),
         "k200_gap_on_tape": bool(tape_k200 is not None and cal_k200 < tape_k200 - 0.5),
     }
     payload: dict[str, Any] = {
@@ -266,14 +278,14 @@ def continuation_attr_bench(
         "claims": claims,
         "interpretation": (
             "The tape's +200 drift is carried roughly equally by "
-            "follow-through fills (fill channel ~0.47 of positive drift) "
-            "and LO repricing (~0.53); cancels push AGAINST the drift. "
-            "The calibrated sim is short almost entirely on the fill "
-            "channel (tape +2.5 ticks vs sim +0.1): its continuation "
-            "orders rarely move the mid because the consumed touch "
-            "refills before the next child fires — the mechanism gap is "
-            "post-fill hit-side depth, i.e. what arrives between the "
-            "parent's slices."
+            "follow-through fills (+2.52 ticks) and LO repricing "
+            "(+2.81); cancels push AGAINST the drift (-0.68). The "
+            "calibrated sim's fills actually OVERSHOOT (+4.85) — the gap "
+            "is the LO channel: post-fill limit arrivals on the tape "
+            "reprice the mid WITH the drift while the sim's hit-side "
+            "refill drags it back (-2.53, a 5.34-tick shortfall). The "
+            "mechanism gap is which SIDE of the book the post-fill "
+            "placements land on, not the fill cadence."
         ),
         "git_revision": git_revision(),
         "data_label": "MIXED" if tape is not None else "SYNTHETIC",

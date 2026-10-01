@@ -90,9 +90,9 @@ def test_bench_seals(tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> None:
         "n_events": 100,
         "n_anchor_fills": 40,
         "windows": {},
-        "k200_per_channel_ticks": {"fill": 0.1, "lo": 1.5, "cxl": 0.4, "none": 0.0},
-        "k200_signed_ticks": 2.0,
-        "positive_channel_shares": {"fill": 0.05, "lo": 0.75, "cxl": 0.2, "none": 0.0},
+        "k200_per_channel_ticks": {"fill": 4.9, "lo": -2.5, "cxl": -0.2, "none": 0.0},
+        "k200_signed_ticks": 2.2,
+        "positive_channel_shares": {"fill": 1.0, "lo": -0.5, "cxl": -0.04, "none": 0.0},
         "positive_share_sum": 1.0,
     }
     monkeypatch.setattr(m, "lobster_attr", lambda *a: fake_pane)
