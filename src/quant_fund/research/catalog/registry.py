@@ -462,6 +462,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "competing_risks",
         "stochastic_frontier",
         "regression_kink",
+        # SOTA canon wave 37 batteries (see research/benches_w37.py):
+        # spatial autoregression (concentrated-likelihood SAR with
+        # log-determinant Jacobian + Moran's I residual test),
+        # ordered probit/logit (latent-threshold MLE with ordered
+        # cutpoints), triple difference (saturated DDD + eight-cell
+        # contrast under confounded post shocks), distribution
+        # regression (per-threshold logit CDF path, Chernozhukov-
+        # Fernández-Val-Melly), SIMEX measurement-error correction
+        # (noise-dose quadratic extrapolation + jackknife SE),
+        # LP-DiD clean event studies (per-horizon clean weighting
+        # of Dube-Girardi-Jordà-Taylor). Same SYNTHETIC diagnostic
+        # contract.
+        "spatial_econometrics",
+        "ordered_choice",
+        "triple_difference",
+        "distribution_regression",
+        "simex",
+        "lp_did",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

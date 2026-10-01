@@ -280,6 +280,14 @@ from quant_fund.research.benches_w36 import (
     bench_regression_kink,
     bench_stochastic_frontier,
 )
+from quant_fund.research.benches_w37 import (
+    bench_distribution_regression,
+    bench_lp_did,
+    bench_ordered_choice,
+    bench_simex,
+    bench_spatial_econometrics,
+    bench_triple_difference,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2042,6 +2050,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "competing_risks": bench_competing_risks(),
         "stochastic_frontier": bench_stochastic_frontier(),
         "regression_kink": bench_regression_kink(),
+        "spatial_econometrics": bench_spatial_econometrics(),
+        "ordered_choice": bench_ordered_choice(),
+        "triple_difference": bench_triple_difference(),
+        "distribution_regression": bench_distribution_regression(),
+        "simex": bench_simex(),
+        "lp_did": bench_lp_did(),
     }
 
     hyps = _build_hypotheses(families, rankers)
