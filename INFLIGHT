@@ -1107,3 +1107,13 @@ wave 48 canon (devin/w48-canon-integration): tmle
   .22 vs quiet .09) + marginal_treatment (local-
   IV MTE, ate .45 vs naive -.26)
   → PR stacked on w47 (259→265 families)
+wave 49 canon (devin/w49-canon-integration): eisenberg_noe
+  (EN clearing fixed point: 1 cascade default,
+  quiet clears) + fire_sales (Cont-Wagalath: 3
+  defaults, price -92%, quiet 0) + delta_covar
+  (tail-conditional: heavy -2.81 vs light -1.72)
+  + blanchard_quah (LR-demand exactly 0, supply
+  .06) + tvp_var (Kalman+RTS break track: pre
+  .46 vs post 1.70 true 1.7) + meta_analysis
+  (DL RE .33 vs true .4, Egger 4.6 vs 1.3)
+  → PR stacked on w48 (265→271 families)

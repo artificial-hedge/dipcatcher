@@ -547,6 +547,19 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cover_up",
         "vpin",
         "marginal_treatment",
+        # wave 49 — Eisenberg-Noe clearing-vector default contagion,
+        # Cont-Wagalath fire-sale deleveraging cascades, Adrian-
+        # Brunnermeier delta-CoVaR systemic contribution, Blanchard-Quah
+        # long-run-restriction SVAR identification, Kalman/RTS TVP
+        # regression, DerSimonian-Laird random-effects meta-analysis
+        # with Egger funnel asymmetry. Same SYNTHETIC diagnostic
+        # contract.
+        "eisenberg_noe",
+        "fire_sales",
+        "delta_covar",
+        "blanchard_quah",
+        "tvp_var",
+        "meta_analysis",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
