@@ -265,6 +265,8 @@ src/quant_fund/microstructure/candle_book_features.py
 src/quant_fund/microstructure/deep_microprice.py
 src/quant_fund/microstructure/depth_consumption.py
 src/quant_fund/microstructure/dgm_mm.py
+src/quant_fund/microstructure/empirical_flow.py
+src/quant_fund/microstructure/empirical_flow_bench.py
 src/quant_fund/microstructure/event_burst.py
 src/quant_fund/microstructure/event_granger.py
 src/quant_fund/microstructure/event_matrix.py
@@ -275,6 +277,7 @@ src/quant_fund/microstructure/exec_shortfall.py
 src/quant_fund/microstructure/fill_hazard.py
 src/quant_fund/microstructure/flow_memory.py
 src/quant_fund/microstructure/glft_closed_form.py
+src/quant_fund/microstructure/hawkes_clock_bench.py
 src/quant_fund/microstructure/hawkes_mv.py
 src/quant_fund/microstructure/hawkes_real.py
 src/quant_fund/microstructure/hidden_depth.py
@@ -290,6 +293,7 @@ src/quant_fund/microstructure/lob_resilience.py
 src/quant_fund/microstructure/lob_shape.py
 src/quant_fund/microstructure/lobster.py
 src/quant_fund/microstructure/marketable_limit.py
+src/quant_fund/microstructure/markout.py
 src/quant_fund/microstructure/metaorder_decay.py
 src/quant_fund/microstructure/metaorder_detect.py
 src/quant_fund/microstructure/microprice.py
@@ -303,6 +307,7 @@ src/quant_fund/microstructure/price_clustering.py
 src/quant_fund/microstructure/price_improvement.py
 src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_depletion.py
+src/quant_fund/microstructure/queue_jump.py
 src/quant_fund/microstructure/queue_occupancy.py
 src/quant_fund/microstructure/queue_priority.py
 src/quant_fund/microstructure/quote_place.py
@@ -324,11 +329,13 @@ src/quant_fund/microstructure/stale_quote.py
 src/quant_fund/microstructure/streak_stats.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/tape_digest.py
+src/quant_fund/microstructure/tape_stats.py
 src/quant_fund/microstructure/tick_rule.py
 src/quant_fund/microstructure/vendor_book_map.py
 src/quant_fund/microstructure/vol_clock.py
 src/quant_fund/microstructure/vol_signature.py
 src/quant_fund/microstructure/vpin.py
+src/quant_fund/microstructure/waiting_times.py
 src/quant_fund/microstructure/zi_lob_simulator.py
 src/quant_fund/models/__init__.py
 src/quant_fund/models/agaci.py
