@@ -528,6 +528,13 @@ class ZILobConfig:
     # bit-identical.
     vac_chase_frac: float = 0.0
     vac_chase_window: int = 0
+    # ``chase_release`` ∈ [0, 1]: a cancel event picks a chase-tagged
+    # order (one rerouted by ``_unhit_chase``/``_vac_chase``) with this
+    # probability — the re-quote churn that RELEASES the touch press so
+    # the chase reprices without pinning the spread. Draws one uniform
+    # per cancel event only when the knob is on and chase orders exist;
+    # 0 keeps every path bit-identical.
+    chase_release: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -616,6 +623,7 @@ class ZILobConfig:
         _prob(self.hit_refill_damp, "hit_refill_damp")
         _prob(self.unhit_imp_frac, "unhit_imp_frac")
         _prob(self.vac_chase_frac, "vac_chase_frac")
+        _prob(self.chase_release, "chase_release")
         for _name in (
             "hit_refill_band",
             "hit_refill_window",
@@ -1149,8 +1157,9 @@ class ZILobSimulator:
         self.n_mo_units = 0
         self.n_lo_units = 0
         # Vacancy memory: (side, level) -> event index the level emptied.
-        # Populated only when ``refill_cooldown`` > 0.
+        # Populated only when ``refill_cooldown`` or ``vac_chase_window`` > 0.
         self._vacancy: dict[tuple[str, int], int] = {}
+        self._chase_oids: set[int] = set()
         # Post-fill accommodation state; pinned at 0 when lo_tilt_gain == 0.
         self._tilt = 0.0
         # Post-fill marker: (hit_side, narrow_deadline, relief_deadline)
@@ -1374,6 +1383,8 @@ class ZILobSimulator:
         )
         dq.append(oid)
         self._orders[oid] = order
+        if tag == "chase":
+            self._chase_oids.add(oid)
         self._n_orders_created += 1
         self._fate_placed[order.placement_class] += 1
         return oid
@@ -1539,6 +1550,7 @@ class ZILobSimulator:
             del book[level]
             self._level_vacated("buy" if book is self._bids else "sell", level)
         order = self._orders.pop(oid)
+        self._chase_oids.discard(oid)
         return order
 
     def _consume_best(self, aggressor: Side) -> TradeEvent | None:
@@ -1684,6 +1696,7 @@ class ZILobSimulator:
                 chase = self._unhit_chase("buy")
                 if chase is None:
                     chase = self._vac_chase("buy")
+                chased = chase is not None
                 if chase is not None:
                     level = chase
                 elif want_join and bb is not None:
@@ -1705,13 +1718,14 @@ class ZILobSimulator:
                     elif bb is not None and level > bb:
                         self.n_lo_improve += 1
                     for _ in range(k):
-                        self._rest("buy", level, "zi")
+                        self._rest("buy", level, "chase" if chased else "zi")
                     self.n_lo_arrivals += 1
                     self.n_lo_units += k
                 return
             chase = self._unhit_chase("sell")
             if chase is None:
                 chase = self._vac_chase("sell")
+            chased = chase is not None
             if chase is not None:
                 level = chase
             elif want_join and ba is not None:
@@ -1733,7 +1747,7 @@ class ZILobSimulator:
                 elif ba is not None and level < ba:
                     self.n_lo_improve += 1
                 for _ in range(k):
-                    self._rest("sell", level, "zi")
+                    self._rest("sell", level, "chase" if chased else "zi")
                 self.n_lo_arrivals += 1
                 self.n_lo_units += k
             return
@@ -1749,6 +1763,7 @@ class ZILobSimulator:
             chase = self._unhit_chase("buy")
             if chase is None:
                 chase = self._vac_chase("buy")
+            chased = chase is not None
             if chase is not None:
                 level = chase
             elif imp and ba is not None and bb is not None and ba > bb:
@@ -1770,11 +1785,12 @@ class ZILobSimulator:
             elif bb is not None and level == bb:
                 self.n_lo_join += 1
             for _ in range(k):
-                self._rest("buy", level, "zi")
+                self._rest("buy", level, "chase" if chased else "zi")
         else:
             chase = self._unhit_chase("sell")
             if chase is None:
                 chase = self._vac_chase("sell")
+            chased = chase is not None
             if chase is not None:
                 level = chase
             elif imp and ba is not None and bb is not None and ba > bb:
@@ -1796,7 +1812,7 @@ class ZILobSimulator:
             elif ba is not None and level == ba:
                 self.n_lo_join += 1
             for _ in range(k):
-                self._rest("sell", level, "zi")
+                self._rest("sell", level, "chase" if chased else "zi")
         self.n_lo_arrivals += 1
         self.n_lo_units += k
 
@@ -1804,6 +1820,25 @@ class ZILobSimulator:
         bid_d, ask_d = self.bid_depth, self.ask_depth
         total = bid_d + ask_d
         if total == 0:
+            return
+        release = self._cfg.chase_release
+        if release > 0.0 and self._chase_oids and float(self._rng.random()) < release:
+            oid = int(self._rng.choice(tuple(self._chase_oids)))
+            chase_order = self._orders.get(oid)
+            if chase_order is None:  # pragma: no cover - set/registry invariant
+                self._chase_oids.discard(oid)
+                return
+            chase_book = self._asks if chase_order.side == "sell" else self._bids
+            chase_touch = min(chase_book) if chase_book is self._asks else max(chase_book)
+            chase_dq = chase_book[chase_order.level]
+            self._remove_resting_at(chase_book, chase_order.level, chase_dq.index(oid))
+            self.cxl_ages.append(self.t - chase_order.t_submit)
+            self.n_cancellations += 1
+            d_hit = abs(chase_order.level - chase_touch)
+            self.cxl_dist[min(d_hit, 20)] += 1
+            if d_hit == 0:
+                self.n_cxl_touch += 1
+            self._maybe_requote(chase_order)
             return
         relief = self._cfg.cxl_unhit_relief
         if relief > 0.0 and self._hit_retreat is not None:
