@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 894,
+  "module_count": 895,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -2877,6 +2877,22 @@
     {
       "dst": "quant_fund.hmm.discrete",
       "src": "quant_fund.hmm.eisner"
+    },
+    {
+      "dst": "quant_fund.hmm.discrete",
+      "src": "quant_fund.hmm.hmm_stability"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
+      "src": "quant_fund.hmm.hmm_stability"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.hmm.hmm_stability"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.hmm.hmm_stability"
     },
     {
       "dst": "quant_fund.labels.engine",
@@ -9217,6 +9233,7 @@
     "quant_fund.hmm.cli",
     "quant_fund.hmm.discrete",
     "quant_fund.hmm.eisner",
+    "quant_fund.hmm.hmm_stability",
     "quant_fund.labels",
     "quant_fund.labels.barriers",
     "quant_fund.labels.engine",
@@ -10589,6 +10606,11 @@
     },
     {
       "dst": "quant_fund.hmm",
+      "imports": 4,
+      "src": "quant_fund.hmm"
+    },
+    {
+      "dst": "quant_fund.utils",
       "imports": 3,
       "src": "quant_fund.hmm"
     },
