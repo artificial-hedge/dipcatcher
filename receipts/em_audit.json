@@ -1,0 +1,43 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "dead_state_row_preserved": {
+    "note": "states with zero posterior mass keep their prior A row",
+    "ok": true
+   },
+   "log_linear_consistent": {
+    "linear_final": 1.4634480617230271e-09,
+    "log_final": -20.34247049951209,
+    "ok": true
+   },
+   "monotone_linear": {
+    "min_delta": 2.447361638261512e-11,
+    "n_iter": 16,
+    "ok": true
+   },
+   "monotone_log": {
+    "min_delta": 0.016864668310539344,
+    "ok": true
+   },
+   "seed_bitwise": {
+    "n_iter": 9,
+    "ok": true
+   },
+   "underflow_boundary": {
+    "linear": "raise:ValueError",
+    "log_space_survives": true,
+    "note": "linear trellis underflows on long tapes; log-space is the contract",
+    "ok": true
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "7c2be7c5515762f4097a804cd268003671bc1ccc",
+ "interpretation": "Baum\u2013Welch contract holds: EM likelihood non-decreasing in both spaces, log-space history is ln(linear) to 1e-6, same-seed restarts bitwise, dead states keep prior rows.",
+ "kind": "em_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "b32f69987e6533db141dfd4bff1fd897d6286a4795e628a8682a3b270d894d4a",
+ "research_only": true,
+ "schema": "em_audit.v1"
+}
