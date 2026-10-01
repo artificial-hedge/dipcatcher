@@ -216,6 +216,7 @@ def _sim_crown(
         out_extra["hidden_fill_share"] = round(counts["n_hidden_fills"] / n_f, 4) if n_f else None
         out_extra["n_mo_units"] = counts["n_mo_units"]
         out_extra["n_mo_arrivals"] = counts["n_mo_arrivals"]
+        out_extra["n_lo_capped"] = counts["n_lo_capped"]
         # Sweep footprint: distinct levels consumed by the trades of one
         # event index (a size-k MO burst prints all its levels under one
         # event). sweep_width.v1 tape pin: p_ge2 = 0.045, max = 8.

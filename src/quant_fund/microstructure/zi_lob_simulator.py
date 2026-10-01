@@ -484,6 +484,22 @@ class ZILobConfig:
     # — a voluminous-but-shallow band that stays sweepable. ``None``
     # means crown placements use the shared LO size draw bit-identically.
     crown_size_pmf: tuple[tuple[int, float], ...] | None = None
+    # ``near_level_cap`` >= 0: maximum resting units at any level within
+    # ``near_level_span`` ticks behind a side's own touch — an LO arrival
+    # landing in that band on a full level is refused (makers decline to
+    # join a full queue: queue_fate.v1 shows join fill rate collapsing
+    # with queue depth). The cap is on the BAND, not just the touch —
+    # deep queues that promote to touch must arrive already thin;
+    # ice_budget.v1 diagnosed bounded total depth at the touch as the
+    # missing ingredient for the tape's 47% emptied-touch share. 0 is
+    # unbounded and bit-identical (pure gate, no extra draws). Iceberg
+    # re-rests and chase/requote internals bypass the cap — they are
+    # mechanism bookkeeping, not new flow.
+    near_level_cap: int = 0
+    # ``near_level_span`` >= 0: how far behind the own touch (in ticks)
+    # the ``near_level_cap`` band reaches. Levels beyond the band are
+    # uncapped; span 0 caps the touch only.
+    near_level_span: int = 3
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -707,6 +723,10 @@ class ZILobConfig:
             raise ValueError(f"crown_offset must be an int >= 0, got {self.crown_offset!r}")
         if isinstance(self.crown_cap, bool) or int(self.crown_cap) < 0:
             raise ValueError(f"crown_cap must be an int >= 0, got {self.crown_cap!r}")
+        if isinstance(self.near_level_cap, bool) or int(self.near_level_cap) < 0:
+            raise ValueError(f"near_level_cap must be an int >= 0, got {self.near_level_cap!r}")
+        if isinstance(self.near_level_span, bool) or int(self.near_level_span) < 0:
+            raise ValueError(f"near_level_span must be an int >= 0, got {self.near_level_span!r}")
         _check_size_pmf(self.crown_size_pmf, "crown_size_pmf")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
@@ -1211,6 +1231,7 @@ class ZILobSimulator:
         self.n_touch_pulls = 0
         self.n_hit_flees = 0
         self.n_cxl_touch = 0
+        self.n_lo_capped = 0
         self.n_requotes = 0
         # Cancel-distance histogram: bucket d counts cancels d ticks
         # from that side's touch; index 20 collects the tail.
@@ -1450,6 +1471,7 @@ class ZILobSimulator:
             "n_touch_pulls": self.n_touch_pulls,
             "n_hit_flees": self.n_hit_flees,
             "n_cxl_touch": self.n_cxl_touch,
+            "n_lo_capped": self.n_lo_capped,
             "n_requotes": self.n_requotes,
             "n_dark_placed": self.n_dark_placed,
             "n_dark_fills": self.n_dark_fills,
@@ -1755,6 +1777,24 @@ class ZILobSimulator:
                 self.n_events + fw,
             )
 
+    def _touch_capped(self, side: Side, level: int) -> bool:
+        """True when an LO arrival is refused: the near-touch band level
+        it lands on is already at ``near_level_cap`` units."""
+        cap = self._cfg.near_level_cap
+        if cap <= 0:
+            return False
+        book = self._bids if side == "buy" else self._asks
+        if not book:
+            return False
+        best = max(book) if side == "buy" else min(book)
+        span = self._cfg.near_level_span
+        if side == "buy":
+            in_band = best - span <= level <= best
+        else:
+            in_band = best <= level <= best + span
+        dq = book.get(level)
+        return in_band and dq is not None and len(dq) >= cap
+
     def _spend_ice(self, side: Side, level: int) -> bool:
         """Spend one unit of the level's hidden-refill budget."""
         b = self._cfg.iceberg_budget
@@ -2008,6 +2048,9 @@ class ZILobSimulator:
                     elif bb is not None and level > bb:
                         self.n_lo_improve += 1
                     for _ in range(k):
+                        if self._touch_capped("buy", level):
+                            self.n_lo_capped += 1
+                            break
                         self._rest("buy", level, "chase" if chased else "zi")
                     self.n_lo_arrivals += 1
                     self.n_lo_units += k
@@ -2050,6 +2093,9 @@ class ZILobSimulator:
                 elif ba is not None and level < ba:
                     self.n_lo_improve += 1
                 for _ in range(k):
+                    if self._touch_capped("sell", level):
+                        self.n_lo_capped += 1
+                        break
                     self._rest("sell", level, "chase" if chased else "zi")
                 self.n_lo_arrivals += 1
                 self.n_lo_units += k
@@ -2105,6 +2151,9 @@ class ZILobSimulator:
             elif bb is not None and level == bb:
                 self.n_lo_join += 1
             for _ in range(k):
+                if self._touch_capped("buy", level):
+                    self.n_lo_capped += 1
+                    break
                 self._rest("buy", level, "chase" if chased else "zi")
         else:
             chase = self._unhit_chase("sell")
@@ -2146,6 +2195,9 @@ class ZILobSimulator:
             elif ba is not None and level == ba:
                 self.n_lo_join += 1
             for _ in range(k):
+                if self._touch_capped("sell", level):
+                    self.n_lo_capped += 1
+                    break
                 self._rest("sell", level, "chase" if chased else "zi")
         self.n_lo_arrivals += 1
         self.n_lo_units += k
