@@ -1,0 +1,109 @@
+{
+  "code_files": {
+    "replay_proof.py": "9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e"
+  },
+  "code_sha256": "d29be93ddc48260376f341703c501c22a318fa703ee6f4562f2e90a6a7efac8e",
+  "data_label": "SYNTHETIC",
+  "dataset_hash": "18940e535e06df923f96fefbfb741425c3c1920937f1acce2ee8b8ef795f1521",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-29T23:01:04.985762+00:00",
+  "git_revision": "084c4df6f18df54bd5b250b3c511c57c2d1be169",
+  "kind": "replay_proof",
+  "live_pnl_claim": false,
+  "params_hash": "6790ba697bdae9544001c4c188a31f97979060c30355678b03b320d7531487c9",
+  "payload": {
+    "all_match": true,
+    "argv": [
+      "dipcatcher",
+      "vol-bench",
+      "--models",
+      "rv_roll,rv_ewma,har",
+      "--shards",
+      "garch_vol,rough_vol",
+      "--horizons",
+      "1",
+      "--min-history",
+      "60",
+      "--n-origins",
+      "10",
+      "--n-bars",
+      "200",
+      "--seed",
+      "7",
+      "--out-dir",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "expected_sha256": "8594d8d5d8b0f4a50891ce3c47ae273d06890af537ed27a6274eb85587ecfd32",
+        "match": true,
+        "observed_sha256": "8594d8d5d8b0f4a50891ce3c47ae273d06890af537ed27a6274eb85587ecfd32",
+        "path": "data/metadata/replay/vol_bench_c584407c8097493e.json"
+      }
+    ],
+    "data_label": "SYNTHETIC",
+    "elapsed_s": 1.16173,
+    "exit_code": 0,
+    "kind": "replay_proof",
+    "live_pnl_claim": false,
+    "receipt": "receipts/vol_bench_f3bf2afc2f159ace.json",
+    "receipt_sha256": "7ff0911b668f9ea394300d56d56b6f92915e13c4ec443b956727af9f298488a9",
+    "research_only": true,
+    "resolved_argv": [
+      "/Users/devin/repos/dipcatcher/.venv/bin/python",
+      "-m",
+      "quant_fund.cli.main",
+      "vol-bench",
+      "--models",
+      "rv_roll,rv_ewma,har",
+      "--shards",
+      "garch_vol,rough_vol",
+      "--horizons",
+      "1",
+      "--min-history",
+      "60",
+      "--n-origins",
+      "10",
+      "--n-bars",
+      "200",
+      "--seed",
+      "7",
+      "--out-dir",
+      "data/metadata/replay"
+    ],
+    "schema": "replay_proof.v1",
+    "source_receipt_seal": "f3bf2afc2f159acea32293b04760b07db7584dd45d460d1b4c295711b31d4aea",
+    "source_receipt_sha256": "b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3",
+    "stderr_tail": "<frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour\n",
+    "timed_out": false,
+    "timeout_s": 120.0,
+    "verdict": "pass"
+  },
+  "receipt_sha256": "701ae84c3d9813e092f5b8072a25e373f854db43a5443893ecbe7159888a355e",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}
