@@ -403,12 +403,8 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.models.fbm import fbm_contract_errors
 
         return fbm_contract_errors(payload)
-    if schema == "sigkernel_mmd.v1":
-        from quant_fund.microstructure.sigkernel_mmd import (
-            sigkernel_mmd_contract_errors,
-        )
+    if schema == "vol_of_vol.v1":
+        from quant_fund.research.vol_of_vol import vol_of_vol_contract_errors
 
-        return sigkernel_mmd_contract_errors(payload)
-    if schema in _MEASURE_SCHEMAS:
-        return _measurement_claim_contract_errors(payload)
+        return vol_of_vol_contract_errors(payload)
     return []

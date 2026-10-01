@@ -331,12 +331,14 @@ class OptimizerConfig(StrictConfigModel):
     # Named covariance path for optimize_asof / /risk/portfolio. Default stays
     # trailing Ledoit–Wolf 2004 plus the GARCH/RGARCH overlay. dcc_gaussian,
     # dcc_student_t, adcc, ccc, agdcc, agdcc_full, and ewma are explicit
-    # one-step paths. oas, ledoit_wolf_nonlinear, and sample are explicit
-    # trailing paths plus the overlay. Generic dcc and catalog estimators
-    # that are not optimizer-wired (factor) fail closed rather than
-    # silently substituting. Named ledoit_wolf_nonlinear is analytical
-    # 2020 spectral shrinkage and must not silently size as 2004 linear
-    # Ledoit–Wolf. Named agdcc is diagonal CES AG-DCC; named agdcc_full
+    # one-step paths. oas, ledoit_wolf_nonlinear, ledoit_wolf_quest, and
+    # sample are explicit trailing paths plus the overlay. Generic dcc and
+    # catalog estimators that are not optimizer-wired (factor) fail closed
+    # rather than silently substituting. Named ledoit_wolf_nonlinear is
+    # analytical 2020 spectral shrinkage and must not silently size as
+    # 2004 linear Ledoit–Wolf. Named ledoit_wolf_quest is numerical QuEST
+    # inversion (2015/2017) and must not silently size as analytical 2020
+    # or 2004 linear. Named agdcc is diagonal CES AG-DCC; named agdcc_full
     # is unrestricted CES AG-DCC and must not silently size as diagonal
     # AG-DCC. Scalar CES ADCC is not diagonal AG-DCC. CCC is Bollerslev
     # constant correlation, not Engle DCC.
