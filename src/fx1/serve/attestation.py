@@ -44,13 +44,20 @@ class TEEQuote(BaseModel):
         )
 
 
+_MIN_NONCE_LEN = 8
+
+
 def verify_quote(quote: TEEQuote, *, expected_checkpoint_sha256: str, nonce: str) -> bool:
     """Structural verification: checkpoint binding + anti-replay nonce.
 
     Cryptographic verification of the platform signature requires the vendor
     certificate chain and is delegated to platform SDKs at deployment; this
-    check fails closed on any structural mismatch.
+    check fails closed on any structural mismatch. The echo check is a
+    substring match, so nonces shorter than ``_MIN_NONCE_LEN`` are refused:
+    a 1- or few-character nonce binds incidentally to almost any report_data.
     """
+    if len(nonce) < _MIN_NONCE_LEN:
+        return False
     if quote.checkpoint_sha256 != expected_checkpoint_sha256:
         return False
     if nonce not in quote.report_data:
