@@ -633,6 +633,7 @@ src/quant_fund/reporting/__init__.py
 src/quant_fund/reporting/report.py
 src/quant_fund/reporting/tearsheet.py
 src/quant_fund/research/__init__.py
+src/quant_fund/research/adaptive_conformal.py
 src/quant_fund/research/agent.py
 src/quant_fund/research/basis_carry.py
 src/quant_fund/research/benches/__init__.py
