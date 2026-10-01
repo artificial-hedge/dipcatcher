@@ -133,3 +133,51 @@ def pedroni_panel_adf(y: Array, x: Array, lags: int = 1) -> dict[str, float | Ar
         "tstats": tstats,
         "n_units": float(N),
     }
+
+
+def synth_panel_coint(
+    t: int = 120,
+    n: int = 12,
+    cointegrated: bool = True,
+    seed: int = 0,
+) -> dict[str, Array]:
+    """N panels of length T: cointegrated case shares a random-
+    walk factor (y = x + stationary deviation); null case uses
+    independent random walks."""
+    rng = np.random.default_rng(seed)
+    x = np.cumsum(rng.normal(0, 1, (t, n)), axis=0)
+    if cointegrated:
+        y = x + np.cumsum(rng.normal(0, 0.15, (t, n)), axis=0) * 0.0
+        y = y + rng.normal(0, 0.5, (t, n))
+    else:
+        y = np.cumsum(rng.normal(0, 1, (t, n)), axis=0)
+    return {"y": y, "x": x}
+
+
+def bench_panel_coint(seed: int = 20261231 + 247) -> dict[str, float]:
+    """Panel-cointegration self-check: Kao and Pedroni tests
+    reject no-cointegration on the cointegrated panel and fail
+    to reject on independent random walks. All ``synthetic_*``."""
+    d = synth_panel_coint(cointegrated=True, seed=seed)
+    kao = kao_test(d["y"], d["x"])
+    ped = pedroni_panel_adf(d["y"], d["x"])
+    dn = synth_panel_coint(cointegrated=False, seed=seed + 1)
+    kao_n = kao_test(dn["y"], dn["x"])
+    ped_n = pedroni_panel_adf(dn["y"], dn["x"])
+    kao_b = kao_test(d["y"], d["x"])
+
+    stat = float(kao["t_stat"])
+    return {
+        "synthetic_kao_stat": stat,
+        "synthetic_kao_p": float(kao["pvalue"]),
+        "synthetic_pedroni_stat": float(ped["statistic"]),
+        "synthetic_pedroni_p": float(ped["pvalue"]),
+        "synthetic_kao_p_null": float(kao_n["pvalue"]),
+        "synthetic_pedroni_p_null": float(ped_n["pvalue"]),
+        "synthetic_detects": float(
+            float(kao["pvalue"]) < 0.05
+            and float(ped["pvalue"]) < 0.1
+            and float(kao_n["pvalue"]) > float(kao["pvalue"])
+        ),
+        "synthetic_determinism": float(stat == float(kao_b["t_stat"])),
+    }

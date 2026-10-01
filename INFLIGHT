@@ -1047,3 +1047,12 @@ wave 42 canon (devin/w42-canon-integration): variance_ratio (VR
   + two_way_cluster (beta .497, SE inflation 1.81x iid, null
   .99)
   → PR stacked on w41 (223→229 families)
+wave 43 canon (devin/w43-canon-integration): bai_perron (2 true
+  breaks located within 3 obs, null finds 0) + favar (explained
+  .75, factor corr .85) + panel_coint (Kao -40.6, Pedroni -47.2
+  both separate cointegrated vs indep panels) + vuong_test
+  (z 7.2 selects nested-in-nonnested, -6.7 reverse, null
+  indistinguishable p~0) + merton_model (V 113/110, sv .19/.25,
+  DD ordering + dp .77 levered vs .26 safe) + white_reality
+  (RC+SPA p 0 with edges vs .22/.25 null)
+  → PR stacked on w42 (229→235 families)

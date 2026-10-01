@@ -472,6 +472,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "stambaugh",
         "roy_model",
         "two_way_cluster",
+        # SOTA canon wave 43 batteries (see research/benches_w43.py):
+        # Bai-Perron multiple structural breaks (sequential F-tests
+        # + BIC), Bernanke-Boivin-Eliasz FAVAR (PCA factors +
+        # VAR), Kao/Pedroni panel cointegration tests, Vuong
+        # non-nested model selection (omega^2 distinguishability
+        # + LR), Merton structural credit distance-to-default
+        # (KMV fixed-point inversion), White Reality Check +
+        # Hansen SPA data-snooping control (stationary-bootstrap
+        # max-statistics). Same SYNTHETIC diagnostic contract.
+        "bai_perron",
+        "favar",
+        "panel_coint",
+        "vuong_test",
+        "merton_model",
+        "white_reality",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
