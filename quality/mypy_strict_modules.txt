@@ -278,6 +278,7 @@ src/quant_fund/microstructure/hawkes_mv.py
 src/quant_fund/microstructure/hawkes_real.py
 src/quant_fund/microstructure/hidden_depth.py
 src/quant_fund/microstructure/impact_instant.py
+src/quant_fund/microstructure/impact_law.py
 src/quant_fund/microstructure/impact_propagator.py
 src/quant_fund/microstructure/impulse_mm.py
 src/quant_fund/microstructure/intraday_shape.py
