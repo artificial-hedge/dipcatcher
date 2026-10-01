@@ -292,6 +292,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "heckman",
         "rd",
         "bounds",
+        # SOTA canon wave 32 batteries (see research/benches_w32.py):
+        # peaks-over-threshold extreme value (Hill tail index, GPD
+        # MLE, POT VaR/ES, return levels), cross-fitted double/debiased
+        # ML (PLR + AIPW IRM on ML nuisance residuals), bunching
+        # estimation at kinks (excess mass vs polynomial counterfactual,
+        # Poisson-WLS + bootstrap se), honest causal forests
+        # (propensity-transformed leaves, honest split/est halves),
+        # Gaussian-process regression (ARD kernel, Type-II ML,
+        # closed-form LOO), Hamilton/Kim Markov-switching EM
+        # (filter/smoother/regime forecasts). Same SYNTHETIC contract.
+        "extreme_value",
+        "double_ml",
+        "bunching",
+        "causal_forest",
+        "gaussian_process",
+        "markov_switching",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

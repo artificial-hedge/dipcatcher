@@ -244,6 +244,14 @@ from quant_fund.research.benches_w31 import (
     bench_partial_linear,
     bench_rd,
 )
+from quant_fund.research.benches_w32 import (
+    bench_bunching,
+    bench_causal_forest,
+    bench_double_ml,
+    bench_extreme_value,
+    bench_gaussian_process,
+    bench_markov_switching,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1980,6 +1988,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "heckman": bench_heckman(),
         "rd": bench_rd(),
         "bounds": bench_bounds(),
+        "extreme_value": bench_extreme_value(),
+        "double_ml": bench_double_ml(),
+        "bunching": bench_bunching(),
+        "causal_forest": bench_causal_forest(),
+        "gaussian_process": bench_gaussian_process(),
+        "markov_switching": bench_markov_switching(),
     }
 
     hyps = _build_hypotheses(families, rankers)
