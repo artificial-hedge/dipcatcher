@@ -410,6 +410,7 @@ _MEASUREMENT_SCHEMAS = (
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",
     "closure_fit.v1",
+    "closure_stack.v1",
     "continuation_attr.v1",
     "cxl_shield.v1",
     "deep_book_bench.v1",
