@@ -102,6 +102,7 @@ src/quant_fund/diffbacktest/jax_core.py
 src/quant_fund/diffbacktest/numpy_core.py
 src/quant_fund/diffbacktest/spec.py
 src/quant_fund/diffbacktest/study.py
+src/quant_fund/diffbacktest/trust_step.py
 src/quant_fund/execution/__init__.py
 src/quant_fund/execution/almgren_chriss.py
 src/quant_fund/execution/cash_constrained_oe.py
