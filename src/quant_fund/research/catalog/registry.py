@@ -261,6 +261,37 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rqa",
         "hj_distance",
         "tensor_decomp",
+        # SOTA canon wave 30 batteries (see research/benches_w30.py):
+        # local-projection IV impulse responses with weak-IV
+        # first-stage F and AR grid-inversion bands, bispectral
+        # Hinich gaussianity test + quadratic phase coupling,
+        # functional linear regression via B-spline/FPCA,
+        # score-driven (GAS/GAS-t/GAS-Poisson) filters, NB-2/
+        # ZIP/hurdle count regression + Vuong non-nested test,
+        # largest-Lyapunov/FNN/Cao nonlinear-dynamics estimators.
+        # Same SYNTHETIC diagnostic contract.
+        "lp_iv",
+        "bispectrum",
+        "functional_linear",
+        "gas_score",
+        "count_data",
+        "lyapunov",
+        # SOTA canon wave 31 batteries (see research/benches_w31.py):
+        # kernel nonparametric IV (regularized Fredholm inverse +
+        # Landweber-Fridman + polynomial conditional-moment test),
+        # continuous-time Markov multistate models (intensity MLE,
+        # transition matrix expm, illness-death Aalen-Johansen),
+        # partially-linear semiparametrics (Robinson/Speckman/series
+        # + CV bandwidth), Heckman two-step + ML selection correction,
+        # sharp/fuzzy regression discontinuity (IK/CCT bandwidth,
+        # McCrary density test, donut), Manski/Lee partial-
+        # identification bounds. Same SYNTHETIC diagnostic contract.
+        "kernel_iv",
+        "multistate",
+        "partial_linear",
+        "heckman",
+        "rd",
+        "bounds",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

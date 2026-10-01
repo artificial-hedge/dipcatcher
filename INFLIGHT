@@ -886,3 +886,26 @@ note: 210 -> 225 tests. ruff check + format clean. Second full run scored
   99.05% (208 killed, survivors M0032 + M0200); M0200 then closed by the
   monkeypatch test (verified killed in isolation). Final full campaign
   running to confirm 209/210.
+
+wave 30 (2026-09-30): 6 lanes merged into w30-canon —
+  lp_iv (local-projection IV IRFs, weak-IV F 792 vs 8.6, AR grid
+  inversion width 0.21 vs 2.44, irf_relerr 0.117 vs naive 0.392) +
+  bispectrum (Hinich test p .10 gauss / 3e-13 quad / .03 volterra) +
+  functional_linear (B-spline basis + FPCA congruence .98/.91, FLM
+  beta relerr 0.014, R2 0.93) + gas_score (GAS-t vol + GAS-Poisson
+  intensity, sig2_corr 0.82, lam_corr 0.61, LR vs static 46) +
+  count_data (NB-2 alpha 0.794 vs 0.8, ZIP pi 0.393 vs 0.35, Vuong
+  z 7.47 picks ZIP, hurdle composed on discrete.logit) + lyapunov
+  (Rosenstein lambda 0.693 ~ ln2, Henon 0.414 ~ 0.419, FNN 74%->0%
+  at dim 2, Cao dim 3; white noise unsaturated) → PR stacked on w29
+  (151→157 families)
+- wave 31 canon (devin/w31-canon off w26-canon tip): kernel_iv
+  (regularized Fredholm KIV + Landweber-Fridman + poly CMT, relerr .40
+  vs naive 1.85) + multistate (CTMC intensity relerr .057, expm pmat,
+  illness-death Aalen-Johansen .153) + partial_linear (Robinson/Speckman/
+  series, beta_err .015 vs OLS .396, g_corr .997) + heckman (two-step
+  IMR .0198 vs OLS .0312; ML rho at boundary — honest) + rd (sharp LL
+  tau_err .133 t 11.8, fuzzy .353, McCrary share-z 9.87 manip vs 0.40
+  clean, donut .339) + bounds (Manski width 3.11 covers mu, MAR point
+  .002, Lee bounds [.06,1.37] cover tau=1) → PR stacked on w26
+  (157→163 families)
