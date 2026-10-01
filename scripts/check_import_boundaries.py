@@ -53,6 +53,7 @@ UNCLASSIFIED_RULE = "unclassified-package"
 class Layer:
     name: str
     packages: frozenset[str]
+    modules: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -263,6 +264,12 @@ def _subpackage(module: str) -> str | None:
 
 
 def _layer_of(module: str, layers: tuple[Layer, ...]) -> Layer | None:
+    # A named audit harness can have a different role from its package.
+    # Exact assignments apply to both ends of every edge; they grant no
+    # import exemption and do not classify neighboring or child modules.
+    for layer in layers:
+        if module in layer.modules:
+            return layer
     sub = _subpackage(module)
     if sub is None:
         return None
@@ -419,16 +426,28 @@ def load_config(path: Path) -> Config:
 
     layers: list[Layer] = []
     seen_packages: set[str] = set()
+    seen_modules: set[str] = set()
     for i, item in enumerate(raw.get("layers", [])):
         name = item.get("name")
         packages = _str_list(item.get("packages", []), f"layers[{i}].packages")
+        modules = _str_list(item.get("modules", []), f"layers[{i}].modules")
         if not isinstance(name, str):
             raise ValueError(f"layers[{i}]: missing string 'name'")
         dup = seen_packages & set(packages)
         if dup:
             raise ValueError(f"layers[{i}]: packages claimed twice: {sorted(dup)}")
         seen_packages |= set(packages)
-        layers.append(Layer(name, frozenset(packages)))
+        if any(
+            not module.startswith("quant_fund.")
+            or not all(part.isidentifier() for part in module.split("."))
+            for module in modules
+        ):
+            raise ValueError(f"layers[{i}].modules: expected exact quant_fund module names")
+        duplicate_modules = seen_modules & set(modules)
+        if duplicate_modules:
+            raise ValueError(f"layers[{i}]: modules claimed twice: {sorted(duplicate_modules)}")
+        seen_modules |= set(modules)
+        layers.append(Layer(name, frozenset(packages), frozenset(modules)))
 
     denies = tuple(
         DenyRule(

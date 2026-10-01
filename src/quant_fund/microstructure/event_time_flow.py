@@ -96,13 +96,13 @@ from numpy.typing import NDArray
 from scipy.special import zeta as _sp_zeta
 from scipy.stats import poisson as _poisson
 
+from quant_fund.metrics.mean_segmentation import binary_segmentation
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
     ZILobConfig,
     ZILobSimulator,
     santa_fe_config,
 )
-from quant_fund.models.changepoint import binary_segmentation
 
 Array = NDArray[np.float64]
 IntArray = NDArray[np.intp]

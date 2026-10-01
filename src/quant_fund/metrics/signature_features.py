@@ -114,7 +114,7 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
-from quant_fund.models.path_signatures import (
+from quant_fund.features.path_signatures import (
     lead_lag_transform,
     logsignature,
     signature,

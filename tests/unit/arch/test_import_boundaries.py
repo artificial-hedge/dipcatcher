@@ -222,6 +222,42 @@ class TestEvaluation(unittest.TestCase):
         v = checker.evaluate([self._site("quant_fund.data.x", "quant_fund.newpkg.y")], cfg)
         self.assertEqual(v[0].rule, "unclassified-package")
 
+    def test_exact_module_layer_enforces_both_directions(self):
+        cfg = _config(
+            layers=(
+                checker.Layer("low", frozenset({"registry", "schemas"})),
+                checker.Layer(
+                    "high",
+                    frozenset({"research"}),
+                    frozenset({"quant_fund.registry.audit"}),
+                ),
+            )
+        )
+        allowed = self._site("quant_fund.registry.audit", "quant_fund.research.receipt")
+        self.assertEqual(checker.evaluate([allowed], cfg), [])
+        reverse = self._site("quant_fund.registry.lookup", "quant_fund.registry.audit")
+        neighbor = self._site("quant_fund.registry.lookup", "quant_fund.research.receipt")
+        child = self._site("quant_fund.registry.audit.child", "quant_fund.research.receipt")
+        for site in (reverse, neighbor, child):
+            violations = checker.evaluate([site], cfg)
+            self.assertEqual([v.rule for v in violations], ["layer-order"])
+
+    def test_exact_module_layer_does_not_exempt_hard_rules(self):
+        cfg = _config(
+            layers=(
+                checker.Layer("low", frozenset({"registry"})),
+                checker.Layer(
+                    "high",
+                    frozenset({"cli"}),
+                    frozenset({"quant_fund.registry.audit"}),
+                ),
+            ),
+            denies=(checker.DenyRule("no-cli", "**", ("quant_fund.cli.**",)),),
+        )
+        for lazy in (False, True):
+            site = self._site("quant_fund.registry.audit", "quant_fund.cli.main", lazy=lazy)
+            self.assertEqual([v.rule for v in checker.evaluate([site], cfg)], ["no-cli"])
+
     def test_deny_rule_with_except_importers(self):
         cfg = _config(
             denies=(
@@ -316,6 +352,24 @@ class TestConfigLoading(unittest.TestCase):
                 checker.load_config(bad)
             with self.assertRaises(ValueError):
                 checker.load_config(Path(tmp) / "missing.toml")
+
+    def test_exact_module_config_rejects_patterns_and_duplicate_claims(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "layers.toml"
+            for module in ("quant_fund.registry.**", "registry.audit", "quant_fund..audit"):
+                path.write_text(
+                    f'[[layers]]\nname = "audit"\nmodules = ["{module}"]\n',
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(ValueError, "exact quant_fund module names"):
+                    checker.load_config(path)
+            path.write_text(
+                '[[layers]]\nname = "low"\nmodules = ["quant_fund.registry.audit"]\n'
+                '[[layers]]\nname = "high"\nmodules = ["quant_fund.registry.audit"]\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "modules claimed twice"):
+                checker.load_config(path)
 
 
 class TestEndToEnd(unittest.TestCase):

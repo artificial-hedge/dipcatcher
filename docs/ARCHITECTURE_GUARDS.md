@@ -19,7 +19,7 @@ config/usage error.
 
 ## The layer rules
 
-`quant_fund`'s 47 top-level packages are assigned to eight ordered layers. A
+`quant_fund`'s top-level packages are assigned to eight ordered layers. A
 module may import its own layer and anything below it; importing a higher
 layer at module scope is a `layer-order` violation.
 
@@ -30,7 +30,7 @@ layer at module scope is a `layer-order` violation.
 | `analytics` | models, portfolio, quant_models, risk, monitoring, diffbacktest, mc_engine, lightspeed, native, reporting, validation | models + allocation + the tools that score them |
 | `execution` | execution, pretrade, parity, formal | simulated broker, cost models, pre-trade and parity checks |
 | `orchestration` | pipeline, backtest | the train/forecast and replay engines that research drives |
-| `research` | research, robustness, leakage, audit, stress, proof, reality | research catalog/benches and its verification tooling |
+| `research` | research, robustness, leakage, audit, stress, proof, reality, parity_leak_audit | research catalog/benches and its verification tooling |
 | `simulation` | hedge_lab, market_sim, paper | books/sessions that consume research outputs and the engines |
 | `interface` | api, cli, simtest | entry points |
 
@@ -49,6 +49,17 @@ Two deliberate exemptions:
 A package that no layer claims is itself a violation
 (`unclassified-package`): when you add a top-level package under
 `quant_fund`, you must add it to a layer in the config — that is the point.
+
+A layer may also name fully qualified exact `modules`. These assignments
+take precedence over the package classification on both ends of an import;
+they still enforce layer order and all hard rules. The sole such assignment,
+`quant_fund.registry.contract_probe`, is a research audit harness that forges
+and reseals receipts to measure deep verifier coverage. It is classified
+alongside research verification rather than foundation registry primitives.
+Neighboring and child modules retain their package's layer, and foundation
+modules cannot import this harness at module scope. `parity_leak_audit` also
+belongs to research: it orchestrates synthetic correctness probes across
+parity, leakage scanners, and proof contracts.
 
 ## Hard rules (`[[deny]]`, `[[allow_only]]`)
 
@@ -118,9 +129,9 @@ How to update it:
 
 * Static `ast` analysis only — it sees import statements, not
   `importlib`/`__import__` dynamic loads.
-* Layers are per-package granularity (first module segment under
-  `quant_fund`); finer-grained boundaries inside a package need
-  `[[deny]]`/`[[allow_only]]` rules.
+* Layers use the first module segment under `quant_fund`, with explicit exact
+  module assignments for separately evidenced orchestration roles. Pattern
+  boundaries inside a package use `[[deny]]`/`[[allow_only]]` rules.
 * `layer-order` deliberately ignores function-level imports; a lazy import
   can still violate `[[deny]]` rules.
 * `tests/unit/test_architecture.py` keeps its own hardcoded checks (module
