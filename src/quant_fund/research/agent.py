@@ -129,8 +129,12 @@ from quant_fund.research.benches_w16 import (
     bench_vol_loss_decomposition,
 )
 from quant_fund.research.benches_w17 import (
+    bench_adaptive_eps,
+    bench_conformal_oce,
     bench_diffpts,
+    bench_diffusion_forecaster,
     bench_extra_conformal,
+    bench_greek_neutral,
     bench_multilevel_mm,
     bench_passive_impact,
     bench_rlmm_c51,
@@ -1888,7 +1892,17 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rlmm_c51": bench_rlmm_c51(),
         "sga_uq": bench_sga_uq(),
         "passive_impact": bench_passive_impact(),
+        "lp_iv": bench_lp_iv(),
+        "bispectrum": bench_bispectrum(),
+        "functional_linear": bench_functional_linear(),
+        "gas_score": bench_gas_score(),
+        "count_data": bench_count_data(),
+        "lyapunov": bench_lyapunov(),
         "stochastic_tracking": bench_stochastic_tracking(),
+        "conformal_oce": bench_conformal_oce(),
+        "adaptive_eps": bench_adaptive_eps(),
+        "greek_neutral": bench_greek_neutral(),
+        "diffusion_forecaster": bench_diffusion_forecaster(),
         "gslice": bench_gslice(),
         "neural_sde": bench_neural_sde(),
         "stocbench": bench_stocbench(),
@@ -1952,12 +1966,6 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rqa": bench_rqa(),
         "hj_distance": bench_hj_distance(),
         "tensor_decomp": bench_tensor_decomp(),
-        "lp_iv": bench_lp_iv(),
-        "bispectrum": bench_bispectrum(),
-        "functional_linear": bench_functional_linear(),
-        "gas_score": bench_gas_score(),
-        "count_data": bench_count_data(),
-        "lyapunov": bench_lyapunov(),
     }
 
     hyps = _build_hypotheses(families, rankers)

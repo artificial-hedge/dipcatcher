@@ -184,6 +184,31 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sga_uq",
         "passive_impact",
         "stochastic_tracking",
+        # Main-lineage wave-17 batteries (same canon wave, four additional
+        # families): OCE risk control (high-probability CVaR certificates,
+        # Hoeffding-margin ablation, sqrt(n) radius law), e-PS
+        # sample-efficient multiple testing (simple-vs-simple), torch-gated
+        # greek-neutral option portfolios, and the torch-gated
+        # diffusion_forecaster DiffPTS variant (distinct from ``diffpts``
+        # above — see benches_w17 docstring).
+        "conformal_oce",
+        "adaptive_eps",
+        "greek_neutral",
+        "diffusion_forecaster",
+        # SOTA canon wave 30 batteries (see research/benches_w30.py):
+        # local-projection IV impulse responses with weak-IV first-stage F
+        # and AR grid-inversion bands, bispectral Hinich gaussianity test +
+        # quadratic phase coupling, functional linear regression via
+        # B-spline/FPCA, score-driven (GAS/GAS-t/GAS-Poisson) filters,
+        # NB-2/ZIP/hurdle count regression + Vuong non-nested test,
+        # largest-Lyapunov/FNN/Cao nonlinear-dynamics estimators. Same
+        # SYNTHETIC diagnostic contract.
+        "lp_iv",
+        "bispectrum",
+        "functional_linear",
+        "gas_score",
+        "count_data",
+        "lyapunov",
         # SOTA canon wave 18 batteries (see research/benches_w18.py):
         # G-SLiCE path-space flow matching vs a GP-prior baseline and the
         # latent neural SDE probabilistic forecaster vs its exact oracle
@@ -348,21 +373,6 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rqa",
         "hj_distance",
         "tensor_decomp",
-        # SOTA canon wave 30 batteries (see research/benches_w30.py):
-        # local-projection IV impulse responses with weak-IV
-        # first-stage F and AR grid-inversion bands, bispectral
-        # Hinich gaussianity test + quadratic phase coupling,
-        # functional linear regression via B-spline/FPCA,
-        # score-driven (GAS/GAS-t/GAS-Poisson) filters, NB-2/
-        # ZIP/hurdle count regression + Vuong non-nested test,
-        # largest-Lyapunov/FNN/Cao nonlinear-dynamics estimators.
-        # Same SYNTHETIC diagnostic contract.
-        "lp_iv",
-        "bispectrum",
-        "functional_linear",
-        "gas_score",
-        "count_data",
-        "lyapunov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
