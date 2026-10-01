@@ -275,9 +275,11 @@ def crash_leverage(
     for i in range(lb, len(r)):
         base = wealth[i - lb]
         last = wealth[i]
-        if base <= _EPS:
+        if base <= 0.0:
             lev[i] = 0.0  # wealth ≤ 0 at the lookback anchor: book is ruined
             continue
+        if base <= _EPS:
+            continue  # near-zero anchor makes the trailing ratio meaningless
         trail = last / base - 1.0
         if trail <= float(crash_return):
             lev[i] = 0.0
