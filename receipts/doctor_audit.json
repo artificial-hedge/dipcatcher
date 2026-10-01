@@ -1,0 +1,25 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bank_count_int": true,
+   "corrupt_ledger": true,
+   "empty_receipts_zero": true,
+   "flags_only": true,
+   "ledger_missing": true,
+   "missing_data": true,
+   "missing_everything": true,
+   "missing_receipts": true,
+   "sentinel_absent": true,
+   "unset_flags": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "1e2cd55a6adab2f116a09b3306c39b8ecf50638c",
+ "interpretation": "Doctor contract holds: presence flags only (sentinel secret never appears in output), missing/corrupt inputs degrade to labels rather than raising, unset envs read 'unset'.",
+ "kind": "doctor_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "0598491dfff5b9308c81f30ff43e0c4f275af39b041d42479deaa8afea40a65e",
+ "research_only": true,
+ "schema": "doctor_audit.v1"
+}

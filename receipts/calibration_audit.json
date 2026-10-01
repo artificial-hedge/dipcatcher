@@ -1,0 +1,32 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bad_bins_refuses": true,
+   "bad_mode_refuses": true,
+   "bad_n_refuses": true,
+   "bank_deterministic": true,
+   "constant_fails_closed": true,
+   "exploding_fails_closed": true,
+   "extract_exp": true,
+   "extract_last_wins": true,
+   "extract_oob_none": true,
+   "extract_pct_scales": true,
+   "extract_unparseable_none": true,
+   "oracle_true_exact": true,
+   "oracle_unknown_empty": true,
+   "prompts_carry_label": true,
+   "seed_changes_bank": true,
+   "true_oracle_passes": true,
+   "truths_bounded": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "1d1d021e3fcd86880618a4cff3b165a89edecc67",
+ "interpretation": "Calibration eval contract holds: extraction is last-number with %-scaling and fail-soft; the bank is seed-deterministic with labeled prompts and bounded truths; the true oracle passes while exploding and constant models fail closed.",
+ "kind": "calibration_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "fd300b4eb13b1b662afe0d125b35f007585da6f3d2ac948673cd47b32e78693b",
+ "research_only": true,
+ "schema": "calibration_audit.v1"
+}
