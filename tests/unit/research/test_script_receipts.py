@@ -244,6 +244,7 @@ _KIND_DISPATCHED_SCHEMAS = frozenset(
         "panel_audit.v1",
         "suite_health.v1",
         "tail_audit.v1",
+        "receipt_admission.v1",
     }
 )
 

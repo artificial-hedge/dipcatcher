@@ -1,0 +1,44 @@
+{
+  "arms": [
+    {
+      "hidden_fill_share": 0.0,
+      "iceberg_reload": 0.0,
+      "n_fills": 806,
+      "n_hidden_fills": 0,
+      "n_lo_arrivals": 2442,
+      "name": "reload_0.0"
+    },
+    {
+      "hidden_fill_share": 0.16066838046272494,
+      "iceberg_reload": 0.25,
+      "n_fills": 778,
+      "n_hidden_fills": 125,
+      "n_lo_arrivals": 2461,
+      "name": "reload_0.25"
+    }
+  ],
+  "claims": {
+    "hidden_share_realistic": true,
+    "legacy_has_no_hidden_fills": true,
+    "reload_produces_hidden_fills": true
+  },
+  "data_label": "MIXED",
+  "divergences": [
+    "reload_0.0_hidden_0.000_vs_0.2141"
+  ],
+  "git_revision": "86c243e457f6f50b34b0c19cc3543b06df1bc6f0",
+  "horizon": 4000.0,
+  "interpretation": "A Bernoulli same-price refill after each touch fill models the iceberg reserve: hidden fills make up p\u00b7(fills on refilled levels) of volume. p=0.25 targets the tape's 21.4% fill share. The reload chain is geometric \u2014 true icebergs have finite reserves and a visible peak \u2014 so the model is a first-order approximation; the residual divergence (sim hidden fills are unit-sized while real hidden fills average 90 shares) is logged honestly.",
+  "kind": "iceberg_bench",
+  "real_tape_targets": {
+    "hidden_fill_share": 0.2141,
+    "hidden_volume_share": 0.2436,
+    "source_receipts": [
+      "hidden_depth.v1"
+    ]
+  },
+  "receipt_sha256": "be37a495b60e8ea9f8719892cc489f603c28504b63e18bc7b1bf7f030deed3e1",
+  "research_only": true,
+  "schema": "iceberg.v1",
+  "seed": 11
+}
