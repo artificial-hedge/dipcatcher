@@ -278,6 +278,7 @@ src/quant_fund/microstructure/event_matrix.py
 src/quant_fund/microstructure/exec_cost_real.py
 src/quant_fund/microstructure/exec_cost_split.py
 src/quant_fund/microstructure/glft_closed_form.py
+src/quant_fund/microstructure/hawkes_mv.py
 src/quant_fund/microstructure/hawkes_real.py
 src/quant_fund/microstructure/hidden_depth.py
 src/quant_fund/microstructure/imbalance_predict.py
@@ -293,6 +294,7 @@ src/quant_fund/microstructure/mid_jump.py
 src/quant_fund/microstructure/order_lifetime.py
 src/quant_fund/microstructure/order_revision.py
 src/quant_fund/microstructure/post_trade_drift.py
+src/quant_fund/microstructure/price_clustering.py
 src/quant_fund/microstructure/price_improvement.py
 src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_fate.py
@@ -676,6 +678,7 @@ src/quant_fund/research/coherence.py
 src/quant_fund/research/concordance.py
 src/quant_fund/research/cost_allocation.py
 src/quant_fund/research/cross_sectional.py
+src/quant_fund/research/energy_score.py
 src/quant_fund/research/explainability/__init__.py
 src/quant_fund/research/explainability/attribution.py
 src/quant_fund/research/explainability/drift.py
@@ -702,9 +705,11 @@ src/quant_fund/research/receipt_v2.py
 src/quant_fund/research/research100.py
 src/quant_fund/research/research100_benchmark.py
 src/quant_fund/research/research100_cli.py
+src/quant_fund/research/selective_inference.py
 src/quant_fund/research/shadow_journal.py
 src/quant_fund/research/sota_evidence.py
 src/quant_fund/research/sota_protocol.py
+src/quant_fund/research/spa_test.py
 src/quant_fund/research/verify.py
 src/quant_fund/research/vol_bench.py
 src/quant_fund/risk/__init__.py
