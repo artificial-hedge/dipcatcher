@@ -472,6 +472,203 @@ class HawkesClock:
         raise RuntimeError(f"Hawkes thinning exceeded {self._MAX_PROPOSALS} proposals")
 
 
+class ScenarioRegimeFlow:
+    """Deterministic exogenous regime plan replayed on the MO clock.
+
+    The scenario ``ξ`` of Moret & Lillo (2026, Sec. 9, Algorithm C): a stored
+    schedule of ``(leg, length_in_MO_events)`` pairs rather than a stochastic
+    Markov chain. ``p_buy(m) = legs[k].p_buy`` whenever
+    ``C[k-1] <= m < C[k]`` where ``C`` is the cumulative MO-count boundary;
+    once the plan is exhausted the final leg's parameters persist (plans are
+    sized at generation time to cover the episode's MO horizon, so exhaustion
+    is a bounded edge case, not a silent wrap). Same consumption contract as
+    :class:`MarkovRegimeFlow` — ``current()`` / ``advance()`` on the MO clock.
+    Fully deterministic: no RNG is drawn after construction.
+    """
+
+    def __init__(self, legs: Sequence[tuple[RegimeState, int]]) -> None:
+        if not legs:
+            raise ValueError("ScenarioRegimeFlow requires at least one leg")
+        self._legs: tuple[tuple[RegimeState, int], ...] = ()
+        for i, item in enumerate(legs):
+            st, n = item
+            if not isinstance(st, RegimeState):
+                raise TypeError(f"legs[{i}][0] must be a RegimeState")
+            if isinstance(n, bool) or not isinstance(n, int) or n < 1:
+                raise ValueError(f"legs[{i}][1] must be an int >= 1, got {n!r}")
+            self._legs += ((st, int(n)),)
+        self._bounds: tuple[int, ...] = tuple(
+            sum(n for _, n in self._legs[: k + 1]) for k in range(len(self._legs))
+        )
+        self._leg_idx = 0
+        self.n_mo = 0
+        self.state_mo_counts: list[int] = [0] * len(self._legs)
+        self.transitions: list[tuple[int, int]] = []
+
+    @property
+    def n_legs(self) -> int:
+        return len(self._legs)
+
+    @property
+    def total_mo(self) -> int:
+        """MO horizon the plan was sized for (sum of leg lengths)."""
+        return self._bounds[-1]
+
+    @property
+    def state_index(self) -> int:
+        """Index of the active leg (saturates at the last leg when exhausted)."""
+        return self._leg_idx
+
+    def current(self) -> RegimeState:
+        return self._legs[self._leg_idx][0]
+
+    def advance(self) -> None:
+        """One MO-clock tick: count the visit, then move past any boundary."""
+        self.state_mo_counts[self._leg_idx] += 1
+        self.n_mo += 1
+        while self._leg_idx < len(self._legs) - 1 and self.n_mo >= self._bounds[self._leg_idx]:
+            self._leg_idx += 1
+            self.transitions.append((self.n_mo, self._leg_idx))
+
+    def expected_p_buy(self) -> float:
+        """Visit-weighted mean buy probability realized so far (fail-closed)."""
+        if self.n_mo == 0:
+            raise ValueError("expected_p_buy undefined before any MO event")
+        total = sum(
+            self.state_mo_counts[k] * self._legs[k][0].p_buy for k in range(len(self._legs))
+        )
+        return float(total / self.n_mo)
+
+
+class AdversarialFlow:
+    """Learned-adversary regime flow — the adversary picks each leg's
+    ``p_buy`` at the boundary, in feedback with the defender's state.
+
+    The Glielmo-style semi-MDP adversary of Moret & Lillo (2026): rather
+    than replaying a stored plan, the flow *extends itself* at regime
+    boundaries. When a leg's MO budget is exhausted, ``advance()`` marks a
+    boundary pending; the next ``current()`` call resolves it by invoking
+    ``picker(obs)`` — lazily, so the observation reflects the fills that the
+    triggering market order just produced (``advance`` runs inside
+    ``sim.step()`` before the session's fill handler). Leg durations come
+    from ``duration_sampler(rng)`` — the adversary controls direction, not
+    duration, matching the paper's Pareto leg lengths.
+
+    ``note_inventory(inventory)`` is the feedback channel: the session
+    calls it after draining fills so the picker sees the defender's raw
+    inventory at boundary time (normalisation is the picker's job — the
+    flow stays policy-agnostic). ``boundary_log`` records every resolution
+    as ``(n_mo, inventory, prev_p_buy, chosen_p_buy)`` — the adversary's
+    transition tuples plus enough context to audit what was chosen and why.
+
+    Consumption contract identical to the other flows: ``current()`` /
+    ``advance()`` on the MO clock, ``expected_p_buy()`` fail-closed before
+    the first MO. Deterministic given ``seed`` and the inventory feedback —
+    ``rng`` only draws leg durations.
+    """
+
+    def __init__(
+        self,
+        *,
+        picker: Callable[[float, float], float],
+        duration_sampler: Callable[[np.random.Generator], int],
+        seed: int,
+        first_p_buy: float = 0.5,
+        intensity_mult: float = 1.0,
+        max_legs: int = 10_000,
+    ) -> None:
+        if not callable(picker):
+            raise TypeError("picker must be callable")
+        if not callable(duration_sampler):
+            raise TypeError("duration_sampler must be callable")
+        if isinstance(seed, bool) or not isinstance(seed, int):
+            raise ValueError(f"seed must be an int, got {seed!r}")
+        _prob(first_p_buy, "first_p_buy")
+        _pos_finite(intensity_mult, "intensity_mult")
+        if isinstance(max_legs, bool) or int(max_legs) < 1:
+            raise ValueError(f"max_legs must be an int >= 1, got {max_legs!r}")
+        self._picker = picker
+        self._duration_sampler = duration_sampler
+        self._rng = np.random.default_rng(seed)
+        self._max_legs = int(max_legs)
+        self._intensity_mult = float(intensity_mult)
+        self._inv_norm = 0.0
+        self._pending = False
+        first = float(duration_sampler(self._rng))
+        if not math.isfinite(first) or first < 1:
+            raise ValueError(f"duration_sampler returned {first!r}, expected an int >= 1")
+        self._legs: list[tuple[RegimeState, int]] = [
+            (RegimeState("adversary:leg0", intensity_mult, first_p_buy), int(first))
+        ]
+        self._bound = int(first)
+        self._leg_idx = 0
+        self.n_mo = 0
+        self.state_mo_counts: list[int] = [0]
+        self.transitions: list[tuple[int, int]] = []
+        self.boundary_log: list[tuple[int, float, float, float]] = []
+
+    def note_inventory(self, inventory: float) -> None:
+        """Record the defender's raw inventory for the next pick."""
+        v = float(inventory)
+        if not math.isfinite(v):
+            raise ValueError(f"inventory must be finite, got {inventory!r}")
+        self._inv_norm = v
+
+    def _resolve_leg(self) -> None:
+        if not self._pending:
+            return
+        self._pending = False
+        if len(self._legs) >= self._max_legs:
+            # fail closed: unbounded self-extension must not run forever
+            raise RuntimeError(
+                f"AdversarialFlow exceeded max_legs={self._max_legs} — "
+                "the episode horizon should exhaust before this many legs"
+            )
+        prev_p_buy = self._legs[self._leg_idx][0].p_buy
+        p_buy = float(self._picker(self._inv_norm, prev_p_buy))
+        if not math.isfinite(p_buy) or not (0.0 < p_buy < 1.0):
+            raise RuntimeError(f"adversary picker returned p_buy={p_buy!r} — must lie in (0,1)")
+        n = int(self._duration_sampler(self._rng))
+        if n < 1:
+            raise RuntimeError(f"duration_sampler returned {n!r}, expected >= 1")
+        self._legs.append(
+            (RegimeState(f"adversary:leg{len(self._legs)}", self._intensity_mult, p_buy), n)
+        )
+        self.boundary_log.append((self.n_mo, self._inv_norm, prev_p_buy, p_buy))
+        self.transitions.append((self.n_mo, len(self._legs) - 1))
+        self.state_mo_counts.append(0)
+        self._bound += n
+        self._leg_idx += 1
+
+    @property
+    def n_legs(self) -> int:
+        return len(self._legs)
+
+    @property
+    def state_index(self) -> int:
+        return self._leg_idx
+
+    def current(self) -> RegimeState:
+        self._resolve_leg()
+        return self._legs[self._leg_idx][0]
+
+    def advance(self) -> None:
+        """One MO-clock tick; a boundary is resolved lazily on next current()."""
+        self.state_mo_counts[self._leg_idx] += 1
+        self.n_mo += 1
+        if self.n_mo >= self._bound:
+            self._pending = True
+
+    def expected_p_buy(self) -> float:
+        """Visit-weighted mean buy probability realized so far (fail-closed)."""
+        if self.n_mo == 0:
+            raise ValueError("expected_p_buy undefined before any MO event")
+        total = sum(
+            self.state_mo_counts[k] * self._legs[k][0].p_buy for k in range(len(self._legs))
+        )
+        return float(total / self.n_mo)
+
+
 # ---------------------------------------------------------------------------
 # Events / records
 # ---------------------------------------------------------------------------
@@ -1183,7 +1380,7 @@ def run_mm_session(
     policy: QuotePolicy,
     horizon: float,
     decision_interval: float = 1.0,
-    flow: MarkovRegimeFlow | None = None,
+    flow: MarkovRegimeFlow | ScenarioRegimeFlow | AdversarialFlow | None = None,
     inventory_cap: int | None = None,
     sample_interval: float = 25.0,
 ) -> dict[str, Any]:
@@ -1315,6 +1512,10 @@ def run_mm_session(
             elif tr.maker_order_id == ask_oid:
                 ask_oid = None
             max_abs_inv = max(max_abs_inv, abs(inventory))
+        if isinstance(flow, AdversarialFlow):
+            # Feedback channel: the adversary's picker reads the defender's
+            # post-fill inventory when a pending boundary resolves.
+            flow.note_inventory(float(inventory))
 
     _requote()
     _record_path()
