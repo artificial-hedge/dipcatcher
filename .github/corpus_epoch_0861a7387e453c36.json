@@ -1,0 +1,46 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "ebc1c4936ae0fdde421736df84e9dc721793b8b78ae8abeb8a3d3178a19d733c",
+  "inputs_sha256": "64faff681bc07abe12ac05ff9fb9ddd852b8de41919993c15be4c3cb288b3793",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "b0d8758c33f10083e7ef71a8d74ff3df0e4c0b0caa00b055f4a2eb4cd12fbf27",
+  "members": [
+    {
+      "name": "HISTORY_REWRITE_PLAN.md",
+      "sha256": "2f8ab97634040aab5853a8423c417b45206dcaa4ee31acea1280d0eecd4b9f54"
+    },
+    {
+      "name": "PULL_REQUEST_TEMPLATE.md",
+      "sha256": "b758ec958f9d43f8b32f85f39fe53da4958d147922444eb809b5de364b51e345"
+    },
+    {
+      "name": "codeql/codeql-config.yml",
+      "sha256": "6161b0f5c3279766ddbfbe9e7ad0a77ebab208afb5ab0617ad27ad8e713b1a7e"
+    },
+    {
+      "name": "corpus_epoch_66b11cb0bac7bc80.json",
+      "sha256": "416012ace1be36fb1f26d55af3de7970eaf58fd1f7538f2b6ac066972e001d19"
+    },
+    {
+      "name": "dependabot.yml",
+      "sha256": "a7ba5d4145a5b183c3763b5a2d540c40849d7153385f7e0404733203106261c4"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_66b11cb0bac7bc80.json"
+  ],
+  "members_removed": [],
+  "n_members": 5,
+  "params": {
+    "head_sha": "4f427a8a3b092a88014d9784b634ca7a229078a0",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_66b11cb0bac7bc80.json",
+  "prev_epoch_sha256": "e76fa3ce7a8b6ccdf91c6dafec51769c9cb64b6e6f1b624b8ec6792a3753d90b",
+  "receipt_sha256": "0861a7387e453c360df0ed75f417020c92c9887c6f52fbea08aa985a1c022c06",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
