@@ -99,6 +99,37 @@ def _check_side(side: str) -> Side:
     return side  # type: ignore[return-value]
 
 
+def _check_size_pmf(
+    pmf: tuple[tuple[int, float], ...] | None, name: str
+) -> tuple[tuple[int, float], ...] | None:
+    """Validate a size pmf: ``((size, weight), ...)`` with int sizes >= 1.
+
+    Weights need only be positive and finite — they are normalized at
+    draw time. ``None`` (default) means unit-size events and consumes
+    zero RNG draws, preserving the legacy bit-identical event stream.
+    """
+    if pmf is None:
+        return None
+    if not isinstance(pmf, (tuple, list)) or len(pmf) == 0:
+        raise ValueError(f"{name} must be a non-empty (size, weight) table")
+    out: list[tuple[int, float]] = []
+    total = 0.0
+    for entry in pmf:
+        if not isinstance(entry, (tuple, list)) or len(entry) != 2:
+            raise ValueError(f"{name} entries must be (size, weight) pairs")
+        size, w = entry
+        if isinstance(size, bool) or int(size) < 1:
+            raise ValueError(f"{name} sizes must be ints >= 1, got {size!r}")
+        w = float(w)
+        if not math.isfinite(w) or w <= 0.0:
+            raise ValueError(f"{name} weights must be positive and finite, got {w!r}")
+        out.append((int(size), w))
+        total += w
+    if total <= 0.0:  # pragma: no cover - positive-weight guard above
+        raise ValueError(f"{name} weights must sum > 0")
+    return tuple(out)
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -148,6 +179,14 @@ class ZILobConfig:
     anchor: str = "touch"
     ref_halflife: float = 0.0
     seed: int = 0
+    # Optional event-size tables ``((size, weight), ...)``. When set, each
+    # market-order event consumes ``size`` resting units in one burst
+    # (sweeping levels when the touch is thin, so multi-level sweeps
+    # emerge) and each limit-order event deposits ``size`` units at its
+    # level. ``None`` keeps the unit-size default with zero extra RNG
+    # draws — an unset table is bit-identical to the legacy stream.
+    mo_size_pmf: tuple[tuple[int, float], ...] | None = None
+    lo_size_pmf: tuple[tuple[int, float], ...] | None = None
 
     def __post_init__(self) -> None:
         _pos_finite(self.s0, "s0")
@@ -170,6 +209,8 @@ class ZILobConfig:
             raise ValueError("init_depth must be >= 1 when init_levels > 0")
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise ValueError(f"seed must be an int, got {self.seed!r}")
+        _check_size_pmf(self.mo_size_pmf, "mo_size_pmf")
+        _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
 
 
 def santa_fe_config(
@@ -572,10 +613,34 @@ class ZILobSimulator:
         weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
         self._dist_cdf = np.cumsum(weights / weights.sum())
         self._dist_cdf[-1] = 1.0
+        # Event-size tables (None → unit-size, zero extra RNG draws).
+        self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
+        self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
+        self.n_mo_units = 0
+        self.n_lo_units = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
                 self._rest("buy", -k, "zi_seed")
                 self._rest("sell", k, "zi_seed")
+
+    @staticmethod
+    def _size_cdf(
+        pmf: tuple[tuple[int, float], ...] | None,
+    ) -> tuple[tuple[int, ...], Array] | None:
+        if pmf is None:
+            return None
+        sizes = tuple(int(s) for s, _ in pmf)
+        w = np.asarray([w for _, w in pmf], dtype=np.float64)
+        cdf = np.cumsum(w / w.sum())
+        cdf[-1] = 1.0
+        return sizes, cdf
+
+    def _draw_size(self, table: tuple[tuple[int, ...], Array] | None) -> int:
+        """Draw an event size; 1 with no RNG draw when the table is unset."""
+        if table is None:
+            return 1
+        sizes, cdf = table
+        return sizes[int(np.searchsorted(cdf, float(self._rng.random()), side="left"))]
 
     # -- grid helpers -------------------------------------------------------
 
@@ -699,6 +764,8 @@ class ZILobSimulator:
             "n_submitted": self.n_submitted,
             "n_orders_created": self._n_orders_created,
             "resting": self.total_depth,
+            "n_mo_units": self.n_mo_units,
+            "n_lo_units": self.n_lo_units,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -839,27 +906,36 @@ class ZILobSimulator:
             # (volume-diffusion / square-root regime). Crossing placements are
             # dropped — that aggressiveness is already in the market-order flow.
             ref = int(round(self._ref_ema))
+            k = self._draw_size(self._lo_size_cdf)
             if want_buy:
                 level = ref - dist
                 if ba is None or level < ba:
-                    self._rest("buy", level, "zi")
+                    for _ in range(k):
+                        self._rest("buy", level, "zi")
                     self.n_lo_arrivals += 1
+                    self.n_lo_units += k
                 return
             level = ref + dist
             if bb is None or level > bb:
-                self._rest("sell", level, "zi")
+                for _ in range(k):
+                    self._rest("sell", level, "zi")
                 self.n_lo_arrivals += 1
+                self.n_lo_units += k
             return
         # Touch anchoring (Moret & Lillo market-making setting): band follows the
         # best opposite quote; fall back to the reference level when a side is
         # empty so the book can always recover.
+        k = self._draw_size(self._lo_size_cdf)
         if want_buy:
             anchor = ba if ba is not None else self._ref_level + 1
-            self._rest("buy", anchor - dist, "zi")
+            for _ in range(k):
+                self._rest("buy", anchor - dist, "zi")
         else:
             anchor = bb if bb is not None else self._ref_level - 1
-            self._rest("sell", anchor + dist, "zi")
+            for _ in range(k):
+                self._rest("sell", anchor + dist, "zi")
         self.n_lo_arrivals += 1
+        self.n_lo_units += k
 
     def _cancel_event(self) -> None:
         bid_d, ask_d = self.bid_depth, self.ask_depth
@@ -911,7 +987,13 @@ class ZILobSimulator:
         if u < lo_rate + mo_rate:
             side: Side = "buy" if float(self._rng.random()) < p_buy_eff else "sell"
             self.n_mo_arrivals += 1
-            self._consume_best(side)
+            # A size-k MO is a burst of unit fills; each consumes the current
+            # opposite best, so a burst that exhausts the touch sweeps deeper
+            # levels (the tape's multi-level sweep footprint).
+            k = self._draw_size(self._mo_size_cdf)
+            self.n_mo_units += k
+            for _ in range(k):
+                self._consume_best(side)
             if self._flow is not None:
                 self._flow.advance()
             return "market"
