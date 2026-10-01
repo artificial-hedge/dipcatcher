@@ -66,6 +66,39 @@ class TestLoOffsetGain:
         assert all(sim._hawkes.excitation(k) >= 0.0 for k in range(3))
 
 
+class TestTouchPull:
+    def test_rejects_out_of_range(self) -> None:
+        with pytest.raises(ValueError, match="touch_pull"):
+            replace(santa_fe_config(seed=0), touch_pull=-0.1)
+
+    def test_zero_is_bit_identical(self) -> None:
+        a = _run(santa_fe_config(seed=8), 100.0)
+        b = _run(replace(santa_fe_config(seed=8), touch_pull=0.0), 100.0)
+        assert [(t.aggressor, t.price, t.qty) for t in a.trades] == [
+            (t.aggressor, t.price, t.qty) for t in b.trades
+        ]
+
+    def test_pull_fires_and_counts(self) -> None:
+        sim = _run(replace(santa_fe_config(seed=8), touch_pull=1.0), 300.0)
+        assert sim.n_touch_pulls > 0
+        assert sim.n_touch_pulls <= sim.n_fills
+        c = sim.event_counts()
+        assert c["n_touch_pulls"] == sim.n_touch_pulls
+
+    def test_pull_cannot_exhaust_book(self) -> None:
+        # Pulling the last resting order on the hit side must be safe.
+        sim = ZILobSimulator(
+            replace(santa_fe_config(seed=4), init_levels=1, init_depth=1, touch_pull=1.0)
+        )
+        fills = sim.inject_market_order("sell", qty=1)
+        assert fills  # the fill happened; the pull drained the seeded bid
+        assert sim.best_bid_level is None
+        # Book recovers via fallback anchor.
+        while sim.t < 50.0:
+            sim.step()
+        assert sim.best_bid_level is not None
+
+
 def test_bench_smoke() -> None:
     from quant_fund.microstructure.spread_response_bench import spread_response_bench
 

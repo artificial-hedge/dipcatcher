@@ -43,23 +43,23 @@ def _run_arm(cfg: ZILobConfig, horizon: float) -> dict[str, Any]:
     sim = ZILobSimulator(cfg)
     series: list[tuple[float, int]] = []  # (t, spread) after each event
     fill_times: list[float] = []
-    after_spread: list[int] = []  # spread right after each fill
+    before_spread: list[int] = []  # spread just BEFORE each fill
     while sim.t < horizon:
         prev_fills = sim.n_fills
         sim.step()
         sp = sim.spread_ticks
         if sp is not None:
-            series.append((sim.t, sp))
             if sim.n_fills > prev_fills:
                 fill_times.append(sim.t)
-                after_spread.append(sp)
+                before_spread.append(series[-1][1] if series else sp)
+            series.append((sim.t, sp))
     ts = np.asarray([t for t, _ in series])
     sp_arr = np.asarray([s for _, s in series], dtype=np.float64)
 
     kernel: dict[str, Any] = {}
     for h in _HORIZONS:
         deltas: list[float] = []
-        for t_f, s0 in zip(fill_times, after_spread, strict=True):
+        for t_f, s0 in zip(fill_times, before_spread, strict=True):
             idx = int(np.searchsorted(ts, t_f + h, side="left"))
             if idx >= ts.size:
                 continue
@@ -94,8 +94,17 @@ def spread_response_bench(horizon: float = 4000.0, seed: int = 13) -> dict[str, 
         {
             "name": "excitation_coupled",
             "lo_offset": 12,
-            "gain": 150.0,
-            **_run_arm(replace(base, hawkes=hawkes, lo_offset_gain=150.0), horizon),
+            "gain": 80.0,
+            "touch_pull": 0.4,
+            **_run_arm(
+                replace(
+                    base,
+                    hawkes=hawkes,
+                    lo_offset_gain=80.0,
+                    touch_pull=0.4,
+                ),
+                horizon,
+            ),
         },
     ]
     real: dict[str, Any] = {
@@ -125,6 +134,7 @@ def spread_response_bench(horizon: float = 4000.0, seed: int = 13) -> dict[str, 
             "coupling_widens_after_fills": bool(
                 coupled["0.1s"]["share_wider"] > arms[0]["kernel"]["0.1s"]["share_wider"]
             ),
+            "instant_component_present": bool(coupled["0.1s"]["median_delta"] >= 1.0),
             "kernel_persists_past_1s": bool(
                 coupled["5.0s"]["share_wider"] > 0.5 and coupled["5.0s"]["median_delta"] > 0.0
             ),
@@ -135,15 +145,18 @@ def spread_response_bench(horizon: float = 4000.0, seed: int = 13) -> dict[str, 
             "coupled to MO excitation: the effective offset grows by "
             "round(gain * e_MO) ticks while fills cluster. A fast+slow "
             "decay bank (4/s, 0.15/s) gives the kernel the tape's "
-            "multi-second persistence — share_wider rises to 0.71 at 5s "
-            "vs real ~0.65 flat. Honest divergence: the real kernel is "
-            "instant (median +2 ticks by 10ms) and flat; ours builds over "
-            "~1s because the offset acts through new placements, not "
-            "through instant re-quotes of existing liquidity — the "
-            "immediate component needs event-driven re-placement, an "
-            "expressivity gap logged in divergences. The static-offset "
-            "arm's kernel stays near zero at all horizons: a "
-            "time-invariant floor moves the level, not the response."
+            "multi-second persistence — share_wider reaches ~0.8 vs the "
+            "tape's ~0.65 flat, median delta +1-3 ticks vs real ~+2. The "
+            "instant component comes from ``touch_pull`` (front-order "
+            "withdrawal on the hit side the moment liquidity is "
+            "consumed); the persistent component from excitation-coupled "
+            "placement depth over the slow decay bank. Residual "
+            "divergence: the coupled kernel overshoots share_wider by "
+            "~0.1-0.2 and keeps rising where the real kernel is flat — "
+            "fine-grained gain/dwell calibration is left to the ABC "
+            "lane. The static-offset arm's kernel stays near zero at all "
+            "horizons: a time-invariant floor moves the level, not the "
+            "response."
         ),
     }
     payload["git_revision"] = git_revision()

@@ -357,6 +357,11 @@ class ZILobConfig:
     # toxicity is high and relaxes as excitation decays (the tape's
     # post-fill spread kernel). Requires ``hawkes``; 0 ignores it.
     lo_offset_gain: float = 0.0
+    # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
+    # order on the hit side is pulled — the tape's instant re-quote
+    # retreat (spread widens the moment liquidity is consumed, before
+    # any new deposit arrives). 0 is bit-identical legacy (zero draws).
+    touch_pull: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -407,6 +412,7 @@ class ZILobConfig:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
+        _prob(self.touch_pull, "touch_pull")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
             raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
@@ -671,6 +677,7 @@ class ZILobSimulator:
         self.n_submitted = 0
         self.n_lo_improve = 0
         self.n_hidden_fills = 0
+        self.n_touch_pulls = 0
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -849,6 +856,7 @@ class ZILobSimulator:
             ),
             "n_lo_improve": self.n_lo_improve,
             "n_hidden_fills": self.n_hidden_fills,
+            "n_touch_pulls": self.n_touch_pulls,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -951,6 +959,13 @@ class ZILobSimulator:
         p = self._cfg.iceberg_reload
         if p > 0.0 and float(self._rng.random()) < p:
             self._rest(order.side, level, "iceberg")
+        # Touch pull: the front order on the hit side is withdrawn with
+        # probability ``touch_pull`` — instant quote defense, the kernel's
+        # t~0 component.
+        if self._cfg.touch_pull > 0.0 and book and float(self._rng.random()) < self._cfg.touch_pull:
+            next_level = min(book) if aggressor == "buy" else max(book)
+            self._remove_resting_at(book, next_level, 0)
+            self.n_touch_pulls += 1
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:
