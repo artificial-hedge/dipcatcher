@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1120,
+  "module_count": 1121,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -5221,6 +5221,26 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.queue_fate"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.queue_occupancy"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -12332,6 +12352,7 @@
     "quant_fund.microstructure.propagator_impact",
     "quant_fund.microstructure.propagator_real",
     "quant_fund.microstructure.queue_fate",
+    "quant_fund.microstructure.queue_occupancy",
     "quant_fund.microstructure.queue_reactive",
     "quant_fund.microstructure.quote_place",
     "quant_fund.microstructure.rl_market_maker",
@@ -14075,7 +14096,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 141,
+      "imports": 144,
       "src": "quant_fund.microstructure"
     },
     {
@@ -14095,7 +14116,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 98,
+      "imports": 100,
       "src": "quant_fund.microstructure"
     },
     {
