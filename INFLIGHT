@@ -1039,3 +1039,13 @@ wave 30 (2026-09-30): 6 lanes merged into w30-canon —
   (Rosenstein lambda 0.693 ~ ln2, Henon 0.414 ~ 0.419, FNN 74%->0%
   at dim 2, Cao dim 3; white noise unsaturated) → PR stacked on w29
   (151→157 families)
+- wave 31 canon (devin/w31-canon off w26-canon tip): kernel_iv
+  (regularized Fredholm KIV + Landweber-Fridman + poly CMT, relerr .40
+  vs naive 1.85) + multistate (CTMC intensity relerr .057, expm pmat,
+  illness-death Aalen-Johansen .153) + partial_linear (Robinson/Speckman/
+  series, beta_err .015 vs OLS .396, g_corr .997) + heckman (two-step
+  IMR .0198 vs OLS .0312; ML rho at boundary — honest) + rd (sharp LL
+  tau_err .133 t 11.8, fuzzy .353, McCrary share-z 9.87 manip vs 0.40
+  clean, donut .339) + bounds (Manski width 3.11 covers mu, MAR point
+  .002, Lee bounds [.06,1.37] cover tau=1) → PR stacked on w26
+  (157→163 families)

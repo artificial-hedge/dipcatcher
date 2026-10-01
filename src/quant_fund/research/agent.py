@@ -232,6 +232,14 @@ from quant_fund.research.benches_w30 import (
     bench_lp_iv,
     bench_lyapunov,
 )
+from quant_fund.research.benches_w31 import (
+    bench_bounds,
+    bench_heckman,
+    bench_kernel_iv,
+    bench_multistate,
+    bench_partial_linear,
+    bench_rd,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1958,6 +1966,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gas_score": bench_gas_score(),
         "count_data": bench_count_data(),
         "lyapunov": bench_lyapunov(),
+        "kernel_iv": bench_kernel_iv(),
+        "multistate": bench_multistate(),
+        "partial_linear": bench_partial_linear(),
+        "heckman": bench_heckman(),
+        "rd": bench_rd(),
+        "bounds": bench_bounds(),
     }
 
     hyps = _build_hypotheses(families, rankers)
