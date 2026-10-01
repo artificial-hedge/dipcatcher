@@ -19,6 +19,7 @@ from quant_fund.utils.reproducibility import git_revision
 LANE_RECEIPTS = {
     "propagator": "propagator_real_amzn.json",
     "hawkes": "hawkes_real_amzn.json",
+    "hawkes_mv": "hawkes_mv.json",
     "order_lifetime": "order_lifetime_amzn.json",
     "vpin": "vpin_amzn.json",
     "intraday_shape": "intraday_shape_amzn.json",

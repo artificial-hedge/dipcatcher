@@ -43,7 +43,7 @@
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 8,
+      "n_modules": 13,
       "status": "audited"
     },
     "features": {
@@ -51,7 +51,7 @@
       "status": "audited"
     },
     "formal": {
-      "n_modules": 4,
+      "n_modules": 5,
       "status": "audited"
     },
     "fusion": {
@@ -91,17 +91,17 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 73,
+      "n_modules": 95,
       "status": "audited"
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 52,
+      "n_modules": 95,
       "status": "audited"
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 207,
+      "n_modules": 249,
       "status": "audited"
     },
     "monitoring": {
@@ -114,7 +114,7 @@
       "status": "audited"
     },
     "northset": {
-      "n_modules": 9,
+      "n_modules": 10,
       "status": "audited"
     },
     "observe": {
@@ -130,7 +130,7 @@
       "status": "audited"
     },
     "pipeline": {
-      "n_modules": 21,
+      "n_modules": 22,
       "status": "audited"
     },
     "pit": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 118,
+      "n_modules": 172,
       "status": "audited"
     },
     "risk": {
