@@ -1202,6 +1202,31 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "circular_tests",
         "graded_irt",
         "welch_anova",
+        # wave 83 — Lin (1989)
+        # concordance correlation +
+        # Bland-Altman (1986) limits
+        # of agreement, Belsley-Kuh-
+        # Welsch (1980) influence
+        # diagnostics, Lan-DeMets
+        # (1983) alpha-spending group
+        # sequential (O'Brien-Fleming
+        # 1979 / Pocock 1977) +
+        # conditional power, Torgerson
+        # (1958) classical MDS +
+        # SMACOF (de Leeuw 1977),
+        # Benzécri (1973) correspon-
+        # dence analysis, and Mardia
+        # (1976) / Fisher-Lee (1983) /
+        # Jammalamadaka-Sarma (1988)
+        # circular correlation.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lin_ccc",
+        "influence",
+        "group_sequential",
+        "mds",
+        "correspondence_analysis",
+        "circular_correlation",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

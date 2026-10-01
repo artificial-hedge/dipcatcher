@@ -2111,3 +2111,30 @@ detail: |
     module files + test_benches_w82 (40+ tests).
   - Canon staged on top of w81-canon.
 note: canon PR to follow.
+
+---
+owner: devin (wave 83 canon)
+slice: six models lanes + benches_w83 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - src/quant_fund/models: lin_ccc_blandaltman.py (Lin 1989
+    concordance correlation + Bland-Altman 1986 limits of
+    agreement), influence_diagnostics.py (Belsley-Kuh-Welsch
+    1980 leverage/studentized/Cook/DFBETAS/DFFITS/COVRATIO
+    via QR rank-1 update identities), group_sequential.py
+    (Lan-DeMets 1983 alpha-spending, O'Brien-Fleming 1979 /
+    Pocock 1977 boundaries via Armitage-McPherson-Rowe
+    recursion + conditional power), mds.py (Torgerson 1958
+    classical scaling + de Leeuw 1977 SMACOF),
+    correspondence_analysis.py (Benzecri 1973 SVD on
+    standardized residuals), circular_correlation.py
+    (Mardia 1976 circular-linear, Fisher-Lee 1983
+    circular-circular, Jammalamadaka-Sarma 1988 rank).
+  - benches_w83.py: +486..491 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "lin_ccc","influence","group_sequential",
+    "mds","correspondence_analysis","circular_correlation"
+    (452->458); agent.py wiring; tests: 6 module files +
+    test_benches_w83 (39+ tests).
+  - Canon staged on top of w82-canon.
+note: canon PR to follow.

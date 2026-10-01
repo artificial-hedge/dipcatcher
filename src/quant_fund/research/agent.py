@@ -653,6 +653,14 @@ from quant_fund.research.benches_w82 import (
     bench_passing_bablok,
     bench_welch_anova,
 )
+from quant_fund.research.benches_w83 import (
+    bench_circular_correlation,
+    bench_correspondence_analysis,
+    bench_group_sequential,
+    bench_influence,
+    bench_lin_ccc,
+    bench_mds,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2696,6 +2704,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "circular_tests": bench_circular_tests(),
         "graded_irt": bench_graded_irt(),
         "welch_anova": bench_welch_anova(),
+        "lin_ccc": bench_lin_ccc(),
+        "influence": bench_influence(),
+        "group_sequential": bench_group_sequential(),
+        "mds": bench_mds(),
+        "correspondence_analysis": bench_correspondence_analysis(),
+        "circular_correlation": bench_circular_correlation(),
     }
 
     hyps = _build_hypotheses(families, rankers)
