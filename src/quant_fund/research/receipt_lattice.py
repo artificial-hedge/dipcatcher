@@ -39,9 +39,24 @@ from typing import Any
 
 from quant_fund.research.fleet_eval import _atomic_write_text
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.receipt import verified_corpus_files
 from quant_fund.utils.reproducibility import git_revision
 
 LATTICE_SCHEMA = "receipt_lattice.v1"
+
+# Kinds that attest corpus/process state rather than measured claims — their
+# payloads describe the corpus itself (chain position, admission verdicts,
+# prior audit verdicts), so grouping them would false-flag legitimate
+# advancing stamps, a mix of admit/quarantine decisions, or successive
+# lattice runs disagreeing as the corpus evolves.
+_META_AUDIT_KINDS = frozenset(
+    {
+        "corpus_epoch.v1",
+        "receipt_admission.v1",
+        "receipt_lattice.v1",
+        "receipt_graph.v1",
+    }
+)
 
 # Subtree roots that carry measured claims. Provenance lives elsewhere.
 _CLAIM_REGIONS = (
@@ -202,6 +217,11 @@ def receipt_lattice(
     directory; unreadable receipts are recorded and downgrade the verdict to
     at most ``"partially_unreadable"``.
 
+    Receipts are scanned recursively (matching the epoch chain's member
+    semantics) minus quarantined subdirs; file identity in groups is the
+    POSIX path relative to the corpus root, identical to the basename for
+    flat corpora. ``known_inconsistent`` keys use the same relative names.
+
     ``known_inconsistent`` maps receipt filename -> sha256 of the file's
     bytes. A claim group whose members are *all* pinned with byte-exact
     digests is reported with ``verdict: "inconsistent"`` plus
@@ -216,7 +236,7 @@ def receipt_lattice(
     if float_rel_tol <= 0 or float_abs_tol <= 0:
         raise ValueError("drift tolerances must be positive")
 
-    receipt_files = sorted(p for p in root.glob(glob) if p.is_file())
+    receipt_files = verified_corpus_files(root, pattern=glob)
     digests: dict[str, str] = {}
     errors: list[dict[str, str]] = []
     unspecified: list[str] = []
@@ -226,9 +246,10 @@ def receipt_lattice(
     edges: dict[tuple[str, str, str], list[tuple[str, Any]]] = {}
 
     for path in receipt_files:
+        rel = path.relative_to(root).as_posix()
         try:
             raw = path.read_bytes()
-            digests[path.name] = hash_bytes(raw)
+            digests[rel] = hash_bytes(raw)
             doc = json.loads(raw)
             if not isinstance(doc, Mapping):
                 raise ValueError("receipt root is not an object")
@@ -236,30 +257,32 @@ def receipt_lattice(
             # Narrowed from `except Exception` (quality ratchet): receipt read/parse
             # faults are IO/JSON plus the explicit shape ValueError above; exotic
             # errors propagate. Recorded, never skipped.
-            errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
+            errors.append({"file": rel, "error": f"{type(exc).__name__}: {exc}"})
             continue
 
         inputs = _inputs_fingerprint(doc)
         if inputs is None:
-            unspecified.append(path.name)
+            unspecified.append(rel)
         code = _code_fingerprint(doc)
         if head_sha is not None and code is not None and code != head_sha:
-            stale.append({"file": path.name, "claimed_code": code, "head": head_sha})
+            stale.append({"file": rel, "claimed_code": code, "head": head_sha})
 
         dataset = _dataset_fingerprint(doc)
         if dataset is None:
-            dataset_unspecified.append(path.name)
+            dataset_unspecified.append(rel)
         body = doc.get("payload")
         inner = body if isinstance(body, Mapping) else doc
+        if inner.get("kind") in _META_AUDIT_KINDS:
+            continue
         for claim_path, value in _walk_claims(inner, ""):
             key = (
                 "inputs",
-                inputs if inputs is not None else f"unspecified:{path.name}",
+                inputs if inputs is not None else f"unspecified:{rel}",
                 claim_path,
             )
-            edges.setdefault(key, []).append((path.name, value))
+            edges.setdefault(key, []).append((rel, value))
             if dataset is not None:
-                edges.setdefault(("dataset", dataset, claim_path), []).append((path.name, value))
+                edges.setdefault(("dataset", dataset, claim_path), []).append((rel, value))
 
     groups: list[dict[str, Any]] = []
     n_consistent = n_drift = n_inconsistent = 0
