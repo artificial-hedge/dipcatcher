@@ -1,0 +1,37 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "cycle": {
+    "outcome": "raise:ValueError"
+   },
+   "list_semantics": {
+    "nested_merge_keeps_sibling": true,
+    "overlay_list_replaces": true,
+    "scalar_overlay_wins": true
+   },
+   "nested_chain_up": {
+    "outcome": "raise:ValueError"
+   },
+   "parent_dir_inherit": {
+    "note": "root binds to the child's dir \u2014 inheriting upward escapes it",
+    "outcome": "raise:ValueError"
+   },
+   "root_escape": {
+    "outcome": "raise:ValueError"
+   },
+   "same_dir_inherit": {
+    "detail": "override + non-overlapping parent key survives",
+    "ok": true
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "519eeae7d9803a1678e78766d45c9f2d22946be3",
+ "interpretation": "Config inheritance semantics pinned: upward inherit fails closed (root = child dir), cycles raise, escapes raise, list overlays replace rather than append.",
+ "kind": "inherit_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "da06c1d3831396e30858d20b631b7617a6df9826e64b4edfed52e67b07448445",
+ "research_only": true,
+ "schema": "inherit_audit.v1"
+}

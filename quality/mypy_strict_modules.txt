@@ -62,6 +62,7 @@ src/quant_fund/compute/parallel.py
 src/quant_fund/compute/provenance.py
 src/quant_fund/config/__init__.py
 src/quant_fund/config/impact.py
+src/quant_fund/config/inherit_audit.py
 src/quant_fund/config/loader.py
 src/quant_fund/config/models.py
 src/quant_fund/config/schema_fingerprint.py
