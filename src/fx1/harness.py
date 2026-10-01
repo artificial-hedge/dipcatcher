@@ -232,12 +232,16 @@ class Harness:
         """
         command = self.get(name)
         argv = list(command.argv)
-        if config is not None:
-            resolved = config.resolve()
-            configs_dir = (Path.cwd() / "configs").resolve()
+        configs_dir = (Path.cwd() / "configs").resolve()
+
+        def check_contained(raw: str) -> Path:
+            resolved = Path(raw).resolve()
             if configs_dir not in resolved.parents and resolved != configs_dir:
                 raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
-            argv += ["--config", str(resolved)]
+            return resolved
+
+        if config is not None:
+            argv += ["--config", str(check_contained(str(config)))]
         if extra_args:
             if any(a == "--config" or a.startswith("--config=") for a in extra_args):
                 raise ValueError(

@@ -200,6 +200,8 @@ nav:
       - market-sim audit: AUDIT_MARKET_SIM.md
       - models audit: AUDIT_MODELS.md
       - mutation audit: AUDIT_MUTATION.md
+      - fx1 wave-3 audit: AUDIT_FX1_WAVE3.md
+      - wave-16/17 module audit: AUDIT_WAVE1617.md
       - PIT-vault audit: AUDIT_PIT_VAULT.md
       - pretrade audit: AUDIT_PRETRADE.md
       - Data quality: DATA_QUALITY.md

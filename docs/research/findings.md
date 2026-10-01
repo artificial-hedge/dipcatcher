@@ -33,6 +33,7 @@ does not score them.
 - `receipts/concordance_df424fa2f6b1c4e9.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/conformal_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/corpus_epoch_d479e96760271bba.json`: corpus_epoch.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/corpus_real_drill.json`: corpus_inference.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cost_calibration_eval_df9b8d7068bf709b.json`: cost_calibration.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/coverage_cs_real_drill.json`: coverage_cs.v1; no reality_gate, backtest_overfitting block, or candidate band search

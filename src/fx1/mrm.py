@@ -22,6 +22,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from fx1.modelcard import ModelCard
+from quant_fund.utils.atomicio import atomic_write_text
 
 FIVE_ACTIVITIES = (
     "development",
@@ -163,5 +164,5 @@ def compile_dossier(
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(dossier.model_dump_json(indent=2), encoding="utf-8")
+    atomic_write_text(out, dossier.model_dump_json(indent=2))
     return dossier

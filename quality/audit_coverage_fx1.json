@@ -44,6 +44,14 @@
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "eval/rubric_banks.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
+    "eval/rubric_eval.py": {
+      "doc": "docs/AUDIT_WAVE1617.md",
+      "status": "audited"
+    },
     "harness.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
