@@ -40,8 +40,13 @@ def generate_sbom(lockfile: str | Path = "uv.lock") -> SBOM:
     for block in re.split(r"\n\[\[package\]\]\n", text):
         name_m = re.search(r'^name = "([^"]+)"', block, re.MULTILINE)
         ver_m = re.search(r'^version = "([^"]+)"', block, re.MULTILINE)
-        if not name_m or not ver_m:
+        if not name_m and not ver_m:
             continue
+        if not name_m or not ver_m:
+            raise ValueError(
+                "malformed [[package]] block in lockfile: name without version "
+                "or vice versa — refusing to emit an incomplete SBOM"
+            )
         hash_m = re.search(r'hash = "sha256:([0-9a-f]{64})"', block)
         entries.append(
             SBOMEntry(
