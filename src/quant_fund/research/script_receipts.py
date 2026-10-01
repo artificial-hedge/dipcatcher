@@ -425,6 +425,7 @@ _MEASUREMENT_SCHEMAS = (
     "forecast_pipeline_audit.v1",
     "exec_cost_real.v1",
     "exec_cost_split.v1",
+    "flee_wide.v1",
     "glft_bench.v1",
     "hawkes_mv.v1",
     "hawkes_real.v1",
