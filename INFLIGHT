@@ -1000,3 +1000,13 @@ slice: WAVE 24 — six lanes + benches_w24 wiring — INTEGRATED
 note: w25 lanes in flight (tda_persistence child done 76c5896;
   fractional_ou/fourier_hermite/kernel_changepoint/kinetic_ising/
   heterogeneous_abm local-built and pushed).
+w25 INTEGRATED 2026-09-30: canon devin/w25-canon off w24; 6 lanes —
+  tda_persistence (Takens embedding, VR persistence w/ 1-dim boundary
+  reduction, landscapes, bottleneck), fractional_ou (circulant spectral
+  sim + Whittle joint MLE w/ Nyquist-bandwidth sigma normalization),
+  fourier_hermite (Gram-Charlier density repair + analytic option
+  moments, call relerr 0.001), kernel_changepoint (unbiased MMD scan,
+  permutation thresholds, binseg), kinetic_ising (kinetic dynamics
+  s@J.T, nMF/TAP/PL inversion, PL J relerr 0.10), heterogeneous_abm
+  (Brock-Hommes bounded map, beta-sharpened chartist dominance).
+  Scorecard 121 -> 127 OPTIONAL families.

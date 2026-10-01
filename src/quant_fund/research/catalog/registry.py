@@ -280,6 +280,18 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hawkes_em",
         "fernholz_spt",
         "breeden_litzenberger",
+        # SOTA canon wave 25 batteries (see research/benches_w25.py):
+        # TDA persistence regime detection, fractional-OU spectral
+        # simulation + Whittle MLE, Fourier-Hermite density/pricing,
+        # kernel-MMD change-point detection, kinetic-Ising coupling
+        # inversion, Brock-Hommes heterogeneous-agent markets. Same
+        # SYNTHETIC diagnostic contract.
+        "tda_persistence",
+        "fractional_ou",
+        "fourier_hermite",
+        "kernel_changepoint",
+        "kinetic_ising",
+        "heterogeneous_abm",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

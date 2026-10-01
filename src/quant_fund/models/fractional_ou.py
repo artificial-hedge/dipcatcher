@@ -147,9 +147,14 @@ def estimate_fou(
 ) -> FOUEstimate:
     """Joint Whittle MLE of (H, a, sigma) on a stationary series.
 
-    Sigma is profiled out: for fixed (H, a) the MLE scale is
-    ``hat(sigma)^2 = mean(I / f_1)`` where f_1 is the unit-sigma
-    spectrum. Optimization: Nelder-Mead on (H, log a) with seeded
+    (H, a) are fit on the Whittle shape likelihood (scale profiled
+    out); sigma is then recovered from the Whittle level —
+    ``sigma^2 = mean(I / f_1) * C(h, a)`` where ``C = (1/pi) int_0^pi
+    f_1`` is the unit-sigma variance over the Nyquist bandwidth. This
+    matches the rescale-to-std convention of ``simulate_fou_exact``:
+    the sim's spectral level is sigma^2 / C, so the profiled
+    periodogram level is sigma^2 / C and multiplying by C recovers
+    sigma. Optimization: Nelder-Mead on (H, log a) with seeded
     multistart over the H grid.
     """
     v = np.asarray(x, dtype=float).ravel()
@@ -187,7 +192,8 @@ def estimate_fou(
             best = (float(res.fun), float(res.x[0]), float(np.exp(res.x[1])))
     nll, h_hat, a_hat = best
     spec1 = np.maximum(fou_spectrum(wabs, h_hat, a_hat, 1.0), 1e-300)
-    sigma_hat = float(np.sqrt(np.mean(periodo / spec1)))
+    level = float(np.mean(periodo / spec1))
+    sigma_hat = float(np.sqrt(max(level * _unit_variance(h_hat, a_hat), 0.0)))
     return FOUEstimate(
         h=h_hat,
         a=a_hat,
@@ -195,6 +201,18 @@ def estimate_fou(
         loglik=-nll,
         converged=bool(np.isfinite(nll)),
     )
+
+
+def _unit_variance(h: float, a: float) -> float:
+    """Variance of the unit-sigma fOU over the Nyquist bandwidth.
+
+    ``C(h, a) = (1/pi) int_0^pi f_1(w) dw`` — trapezoid on a dense
+    uniform grid (geometric grids under-resolve the |w|^{1-2H} mass at
+    low frequency for H < 1/2). This is the spectral-level-to-variance
+    convention ``simulate_fou_exact`` and the periodogram share.
+    """
+    w = np.linspace(1e-6, np.pi, 8192)
+    return float(np.trapezoid(fou_spectrum(w, h, a, 1.0), w) / np.pi)
 
 
 def fou_autocov_theoretical(lags: FloatArray, h: float, a: float, sigma: float = 1.0) -> FloatArray:
@@ -241,8 +259,10 @@ def bench_fractional_ou(seed: int = 20260201) -> dict[str, float]:
     lags = np.arange(0, 8, dtype=float)
     emp = np.array([np.cov(xs[: xs.size - int(t)], xs[int(t) :])[0, 1] for t in lags])
     theo = fou_autocov_theoretical(lags, 0.35, 0.8)
+    emp_acf = emp / emp[0]
+    theo_acf = theo / theo[0]
     out["synthetic_autocov_l2_relerr"] = float(
-        np.linalg.norm(emp - theo) / max(np.linalg.norm(theo), 1e-12)
+        np.linalg.norm(emp_acf - theo_acf) / max(np.linalg.norm(theo_acf), 1e-12)
     )
     # determinism
     e1 = estimate_fou(x, seed=7)
