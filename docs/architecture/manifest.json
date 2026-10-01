@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 894,
+  "module_count": 895,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3517,6 +3517,18 @@
     {
       "dst": "quant_fund.microstructure.candle_book_features",
       "src": "quant_fund.microstructure.bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.book_depletion"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.book_depletion"
+    },
+    {
+      "dst": "quant_fund.utils.receipt",
+      "src": "quant_fund.microstructure.book_depletion"
     },
     {
       "dst": "quant_fund.schemas.order_book",
@@ -9340,6 +9352,7 @@
     "quant_fund.metrics.watch",
     "quant_fund.microstructure",
     "quant_fund.microstructure.bench",
+    "quant_fund.microstructure.book_depletion",
     "quant_fund.microstructure.book_metrics",
     "quant_fund.microstructure.book_panel",
     "quant_fund.microstructure.candle_book_features",
@@ -10754,7 +10767,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 12,
+      "imports": 13,
       "src": "quant_fund.microstructure"
     },
     {
@@ -10774,7 +10787,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 3,
       "src": "quant_fund.microstructure"
     },
     {
