@@ -253,6 +253,101 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # arXiv:1810.10971; see the module docstring for the verified
         # companion citation set). Same SYNTHETIC diagnostic contract.
         "signature_martingale_test",
+        # SOTA canon wave 23 batteries (see research/benches_w23.py):
+        # SVI/SSVI surface calibration + no-arb checks (Gatheral &
+        # Jacquier 2014, arXiv:1204.0646), transient propagator impact
+        # kernel estimation, queue-reactive CTMC limit-book dynamics,
+        # Koopman/EDMD nonlinear-spectrum extraction, signature-
+        # Wasserstein GAN generation (arXiv:2006.05421), and transformer
+        # neural temporal point processes with Hawkes fallback. Same
+        # SYNTHETIC diagnostic contract.
+        "svi_surface",
+        "propagator_impact",
+        "queue_reactive",
+        "koopman_edmd",
+        "sig_gan",
+        "neural_tpp",
+        # SOTA canon wave 24 batteries (see research/benches_w24.py):
+        # particle-MCMC stochastic-volatility estimation, multifractal
+        # volatility diagnostics, SPCI online quantile regression,
+        # EM-estimated multivariate Hawkes branching, Fernholz
+        # stochastic-portfolio-theory analytics, and Breeden-Litzenberger
+        # risk-neutral density extraction. Same SYNTHETIC diagnostic
+        # contract.
+        "pmcmc_sv",
+        "multifractal_vol",
+        "spci_conformal",
+        "hawkes_em",
+        "fernholz_spt",
+        "breeden_litzenberger",
+        # SOTA canon wave 25 batteries (see research/benches_w25.py):
+        # TDA persistence regime detection, fractional-OU spectral
+        # simulation + Whittle MLE, Fourier-Hermite density/pricing,
+        # kernel-MMD change-point detection, kinetic-Ising coupling
+        # inversion, Brock-Hommes heterogeneous-agent markets. Same
+        # SYNTHETIC diagnostic contract.
+        "tda_persistence",
+        "fractional_ou",
+        "fourier_hermite",
+        "kernel_changepoint",
+        "kinetic_ising",
+        "heterogeneous_abm",
+        # SOTA canon wave 26 batteries (see research/benches_w26.py):
+        # Marchenko-Pastur RMT covariance denoising, dynamic-factor
+        # nowcasting (Kalman+EM), Politis-Romano stationary bootstrap,
+        # Elo/Glicko-2/Bradley-Terry skill ratings, Louvain community
+        # detection, kernel-Stein thinning/herding. Same SYNTHETIC
+        # diagnostic contract.
+        "marchenko_pastur",
+        "factor_nowcast",
+        "stationary_bootstrap",
+        "skill_ratings",
+        "modularity_communities",
+        "stein_thinning",
+        # SOTA canon wave 27 batteries (see research/benches_w27.py):
+        # Durbin-Koopman state-space smoothing + simulation smoother,
+        # Dirichlet-process mixture regime discovery (CAVI), prediction
+        # with expert advice (hedge/fixed-share/specialist), Chernozhukov-
+        # Hansen IVQR with AR weak-IV inference, Derman-Kani implied
+        # binomial tree, ensemble Kalman inversion. Same SYNTHETIC
+        # diagnostic contract.
+        "durbin_koopman",
+        "dp_mixture",
+        "expert_aggregation",
+        "instrumental_quantile",
+        "implied_tree",
+        "ensemble_kalman_inversion",
+        # SOTA canon wave 28 batteries (see research/benches_w28.py):
+        # sequential ensemble Kalman data assimilation (EnKF/EAKF/LETKF
+        # + Gaspari-Cohn localization on Lorenz-96), stable-PC/GES/LiNGAM
+        # causal structure discovery, Barber-Candes knockoff FDR filter
+        # with stability selection, Callaway-Sant'Anna group-time ATT
+        # with pretrend Wald + cluster bootstrap, surrogate-data
+        # nonlinearity tests (AAFT/IAAFT + BDS + Keenan + Tsay), SINDy
+        # sparse identification of nonlinear dynamics. Same SYNTHETIC
+        # diagnostic contract.
+        "enkf",
+        "causal_discovery",
+        "knockoffs",
+        "callaway_did",
+        "surrogate_nonlinear",
+        "sindy",
+        # SOTA canon wave 29 batteries (see research/benches_w29.py):
+        # Hamiltonian Monte Carlo + NUTS with dual-averaging adaptation
+        # and ESS/Rhat diagnostics, proxy-SVAR external-instrument IRFs
+        # with weak-IV first-stage F and Uhlig sign restrictions,
+        # simulation-based inference (ABC rejection, SMC-ABC, neural
+        # ratio estimation), recurrence quantification analysis
+        # (DET/LAM/ENTR/TT), Hansen-Jagannathan SDF distance + KRS
+        # pricing-error test + MV bound, CP/Tucker multilinear tensor
+        # decomposition with CORCONDIA + missing-entry EM. Same
+        # SYNTHETIC diagnostic contract.
+        "hmc",
+        "proxy_svar",
+        "sbi",
+        "rqa",
+        "hj_distance",
+        "tensor_decomp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
