@@ -326,8 +326,10 @@ def run_capacity_bench(
         "data_label": data_label,
         "live_pnl_claim": False,
         "dev_only": True,
-        "generated_at": datetime.now(UTC).isoformat(),
-        "git_revision": git_revision(),
+        "meta": {
+            "generated_at": datetime.now(UTC).isoformat(),
+            "git_revision": git_revision(),
+        },
         "seed": int(seed),
         "books": book_meta,
         "inputs_sha256": inputs_sha256,
@@ -545,18 +547,28 @@ def capacity_receipt_v2(receipt: Mapping[str, object]) -> dict[str, object]:
     """
     from quant_fund.research.receipt_v2 import build_receipt_v2
 
-    if capacity_contract_errors(receipt):
+    body = {key: value for key, value in receipt.items() if key != "meta"}
+    if capacity_contract_errors(body):
         raise ValueError("capacity receipt violates its synthetic research contract")
+    meta = receipt.get("meta")
+    meta_map: Mapping[str, object] = meta if isinstance(meta, Mapping) else {}
+    generated_at = meta_map.get("generated_at") or receipt.get("generated_at")
+    revision = (
+        meta_map.get("git_revision")
+        or meta_map.get("code_revision")
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+    )
     return build_receipt_v2(
         kind=str(receipt["kind"]),
         data_label=str(receipt["data_label"]),
-        dataset=capacity_dataset_identity(receipt),
-        params=capacity_params(receipt),
+        dataset=capacity_dataset_identity(body),
+        params=capacity_params(body),
         code_files=(Path(__file__),),
-        verdict=capacity_verdict(receipt),
-        payload=dict(receipt),
-        generated_at=str(receipt["generated_at"]),
-        revision=str(receipt["git_revision"]),
+        verdict=capacity_verdict(body),
+        payload=dict(body),
+        generated_at=None if generated_at is None else str(generated_at),
+        revision=None if revision is None else str(revision),
     )
 
 
@@ -599,9 +611,9 @@ def write_capacity_receipt(
     from quant_fund.research.receipt_v2 import seal_receipt
 
     if receipt_version == 1:
-        if capacity_contract_errors(receipt):
+        body = {key: value for key, value in receipt.items() if key != "meta"}
+        if capacity_contract_errors(body):
             raise ValueError("capacity receipt violates the honesty contract")
-        body: Mapping[str, object] = receipt
     elif receipt_version == 2:
         body = capacity_receipt_v2(receipt)
     else:
