@@ -44,6 +44,8 @@ _LEDGER = (
     / "reality-us-liquid-daily-2026-09-27"
     / "trials.jsonl"
 )
+_SPEC = _ROOT / "research" / "reality" / "survivorship" / "preregistration.json"
+_MEMBERSHIP = _ROOT / "research" / "reality" / "survivorship" / "membership.json"
 
 
 def _spec() -> dict:
