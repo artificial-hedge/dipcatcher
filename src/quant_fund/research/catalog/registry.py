@@ -622,6 +622,18 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pesaran_cd",
         "hausman_tests",
         "cusum_monitor",
+        # wave 48 — targeted maximum likelihood (TMLE) ATE, Lewbel
+        # heteroskedasticity-generated instruments, proximal/
+        # negative-control confounding bridge, Cover universal
+        # portfolio (best-CRP tracking), VPIN volume-clock flow
+        # toxicity, marginal treatment effects (local-IV MTE
+        # curve). Same SYNTHETIC diagnostic contract.
+        "tmle",
+        "lewbel_iv",
+        "proximal_causal",
+        "cover_up",
+        "vpin",
+        "marginal_treatment",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

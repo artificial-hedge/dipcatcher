@@ -368,6 +368,14 @@ from quant_fund.research.benches_w47 import (
     bench_pesaran_cd,
     bench_rosenbaum_sensitivity,
 )
+from quant_fund.research.benches_w48 import (
+    bench_cover_up,
+    bench_lewbel_iv,
+    bench_marginal_treatment,
+    bench_proximal_causal,
+    bench_tmle,
+    bench_vpin,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2196,6 +2204,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pesaran_cd": bench_pesaran_cd(),
         "hausman_tests": bench_hausman_tests(),
         "cusum_monitor": bench_cusum_monitor(),
+        "tmle": bench_tmle(),
+        "lewbel_iv": bench_lewbel_iv(),
+        "proximal_causal": bench_proximal_causal(),
+        "cover_up": bench_cover_up(),
+        "vpin": bench_vpin(),
+        "marginal_treatment": bench_marginal_treatment(),
     }
 
     hyps = _build_hypotheses(families, rankers)

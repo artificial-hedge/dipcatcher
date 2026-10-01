@@ -1237,3 +1237,13 @@ wave 47 canon (devin/w47-canon-integration): rosenbaum_sensitivity
   cusum_monitor (CSW boundary, detect 222 vs
   break 180, null silent)
   → PR stacked on w46 (253→259 families)
+wave 48 canon (devin/w48-canon-integration): tmle
+  (targeting eps, rd .059 vs .039, naive .19) +
+  lewbel_iv (hetero-generated IV: beta 1.02 vs
+  ols 1.32, F 1686) + proximal_causal (neg-ctrl
+  bridge 2SLS: .99 vs naive 1.59) + cover_up
+  (Dirichlet .5 simplex integral: w_max .77,
+  regret .93) + vpin (volume-clock BVC: burst
+  .22 vs quiet .09) + marginal_treatment (local-
+  IV MTE, ate .45 vs naive -.26)
+  → PR stacked on w47 (259→265 families)
