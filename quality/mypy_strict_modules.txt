@@ -1,6 +1,7 @@
 src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
+src/quant_fund/api/error_shape.py
 src/quant_fund/api/param_fuzz.py
 src/quant_fund/api/research_api.py
 src/quant_fund/api/surface_pin.py
