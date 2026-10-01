@@ -51,6 +51,14 @@ def test_brier_minimized_at_event_frequency(n_one: int, n_zero: int, q: float) -
         assert at_q > at_p + 1e-12
 
 
+# Absolute tolerance for comparisons against mathematically-EQUAL score
+# values: the mean over n terms is rounded differently for each candidate, so
+# exact ties can surface as 1-ulp inversions (hypothesis shrinks straight to
+# them). 1e-12 is ~4 orders above double-precision noise at these magnitudes
+# and ~8 orders below any genuine propriety violation the tests must catch.
+_TIE_TOL = 1e-12
+
+
 @given(
     tau=st.floats(0.02, 0.98, allow_nan=False, allow_infinity=False),
     delta=st.floats(0.01, 0.5, allow_nan=False, allow_infinity=False),
@@ -62,13 +70,21 @@ def test_pinball_minimized_at_empirical_quantile(tau: float, delta: float) -> No
     The minimizer is the order statistic X_(ceil(n*tau)); np.quantile's
     default linear interpolation can land off the minimizing interval at
     extreme tau, so the minimizer is taken directly.
+
+    The comparison carries ``_TIE_TOL``: when n*tau is an integer (or within
+    float resolution of one — hypothesis shrinks tau onto such rationals) the
+    pinball surface has a flat minimizer plateau [X_(k), X_(k+1)], and a
+    shifted quantile can stay inside it (order-statistic gaps at extreme tau
+    exceed the 0.01 delta floor). Both means are then mathematically equal
+    and only summation-rounding noise separates them. Off-plateau shifts are
+    larger by >= O(delta/n), far above the tolerance.
     """
     rng = np.random.default_rng(7)
     y = rng.standard_t(df=4, size=2000)
     q_true = float(np.sort(y)[max(int(np.ceil(y.size * tau)) - 1, 0)])
     at_true = mean_pinball(y, np.full(y.shape, q_true), tau)
     for shifted in (q_true - delta, q_true + delta, q_true + 5 * delta):
-        assert mean_pinball(y, np.full(y.shape, shifted), tau) >= at_true
+        assert mean_pinball(y, np.full(y.shape, shifted), tau) >= at_true - _TIE_TOL
 
 
 @given(
@@ -97,13 +113,25 @@ _TAUS = np.linspace(0.05, 0.95, 19)
     w1=st.floats(0.2, 0.8, allow_nan=False, allow_infinity=False),
     mu2=st.floats(0.5, 3.0, allow_nan=False, allow_infinity=False),
     s2=st.floats(0.3, 2.0, allow_nan=False, allow_infinity=False),
-    shift=st.floats(0.02, 0.4, allow_nan=False, allow_infinity=False),
+    shift=st.floats(0.1, 0.4, allow_nan=False, allow_infinity=False),
 )
 @settings(max_examples=30, deadline=None)
 def test_crps_from_quantiles_minimized_by_true_mixture(
     w1: float, mu2: float, s2: float, shift: float
 ) -> None:
-    """The mixture's true quantile grid beats shifted and scale-stretched grids."""
+    """The mixture's true quantile grid beats shifted and scale-stretched grids.
+
+    shift is floored at 0.1: the population CRPS gap of a perturbed grid is
+    O(shift^2) (the true grid is a stationary point) while the single-sample
+    fluctuation is O(shift/sqrt(n)) — first-order empirical-CDF noise. At
+    n=8000, shifts below ~0.1 are noise-dominated at narrow-component-
+    dominant corners (w1 -> 0.8): reproducible seeded counterexamples there
+    put the stretched grid ~2e-5 BELOW the true grid, so the strict
+    inequality is untestable in that regime at any float tolerance. Above the
+    floor the worst-case gap over a dense parameter sweep is >= 3.5e-4,
+    orders above both the MC noise and _TIE_TOL rounding scales, so the
+    strict '>' stays exact.
+    """
     rng = np.random.default_rng(13)
     weights = np.array([w1, 1.0 - w1])
     mu = np.array([0.0, mu2])

@@ -33,7 +33,19 @@ from quant_fund.research.reality_sweep import assert_cost_lock
 _ROOT = Path(__file__).resolve().parents[2]
 _SPEC = _ROOT / "research" / "reality" / "survivorship" / "preregistration.json"
 _MEMBERSHIP = _ROOT / "research" / "reality" / "survivorship" / "membership.json"
-_LEDGER = _ROOT / "research" / "reality" / "trials.jsonl"
+# The decided us-liquid-daily ledger archived at 3dafeb7a; its first 29
+# lines are the pinned prior-study prefix (the file carries 42 total after
+# the survivorship trials appended).
+_LEDGER = (
+    _ROOT
+    / "research"
+    / "reality"
+    / "studies"
+    / "reality-us-liquid-daily-2026-09-27"
+    / "trials.jsonl"
+)
+_SPEC = _ROOT / "research" / "reality" / "survivorship" / "preregistration.json"
+_MEMBERSHIP = _ROOT / "research" / "reality" / "survivorship" / "membership.json"
 
 
 def _spec() -> dict:

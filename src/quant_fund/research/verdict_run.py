@@ -108,7 +108,9 @@ def verdict_streams(
                 model = factories[name]()
                 model.fit(shard.x[:n_train], shard.y[:n_train])
                 q = predict_eval_matrix(shard, model, n_train, n_eval, tau_arr)
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded in status rows.
                 status = "error"
                 err = str(exc)
                 q = None
@@ -194,7 +196,6 @@ def run_verdict(
     # rides under `run` so verify-receipt dispatch is unaffected
     verdict["run"] = {
         "schema": VERDICT_RUN_SCHEMA,
-        "code_revision": git_revision(),
         "status_sha256": hash_bytes(status.write_csv().encode("utf-8")),
         "params": {
             "n_train": n_train,
@@ -208,6 +209,7 @@ def run_verdict(
         },
         "excluded_heads": excluded,
     }
+    verdict["meta"] = {"code_revision": git_revision()}
     return verdict, status
 
 
@@ -233,7 +235,7 @@ def write_verdict_receipt(
     the same body in the unified ``receipt.v2`` envelope instead.
     """
     if receipt_version == 1:
-        payload = seal_receipt(verdict)
+        payload = seal_receipt({key: value for key, value in verdict.items() if key != "meta"})
     elif receipt_version == 2:
         run_obj = verdict.get("run")
         run: Mapping[str, Any] = run_obj if isinstance(run_obj, Mapping) else {}

@@ -167,7 +167,9 @@ def monitor_fleet(
                     "status": "ok",
                     "error": None,
                 }
-            except Exception as exc:
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded per cell.
                 cell[name] = {
                     "status": "error",
                     "error": str(exc),
@@ -278,7 +280,7 @@ def monitor_fleet(
         "live_pnl_claim": False,
         "inputs_sha256": hash_bytes(frame.write_csv().encode("utf-8")),
         "dataset_sha256": hash_bytes(canonical_json_bytes({"shards": shard_digests})),
-        "code_revision": git_revision(),
+        "meta": {"code_revision": git_revision()},
         "params": {
             "n_train": n_train,
             "n_eval": n_eval,
@@ -336,7 +338,8 @@ def write_monitor_receipt(
     ):
         raise ValueError("monitor_run receipt violates its contract")
     if receipt_version == 1:
-        canonical = json.loads(canonical_json_bytes(dict(receipt)))
+        body = {key: value for key, value in receipt.items() if key != "meta"}
+        canonical = json.loads(canonical_json_bytes(body))
         digest = hash_bytes(canonical_json_bytes(canonical))
         payload = {**canonical, "receipt_sha256": digest}
     elif receipt_version == 2:

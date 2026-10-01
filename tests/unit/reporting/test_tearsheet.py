@@ -30,9 +30,17 @@ class TestNavAndReturns:
             T._nav_and_returns(pl.DataFrame({"event_time": [1, 2]}))
 
     def test_nan_filtered_short(self) -> None:
+        # Interior-NaN contract (tearsheet fix b98fd1c4): a bar return is only
+        # measurable between consecutive finite NAVs. The NaN row is filtered
+        # out of nav, but the 1.0 -> 1.1 move spans the missing bar and must
+        # not be fabricated into a single-bar return -> rets is empty here.
+        # (test_institutional.py covers the chain-break case with a
+        # measurable adjacent pair.)
         eq = pl.DataFrame({"event_time": [1, 2, 3], "nav": [1.0, float("nan"), 1.1]})
         nav, rets = T._nav_and_returns(eq)
-        assert nav.size == 2 and rets.size == 1
+        # Interior NaN breaks the return chain: both adjacent pairs are
+        # unmeasurable, so no 1-bar return is fabricated across the gap.
+        assert nav.size == 2 and rets.size == 0
 
 
 class TestPeriodReturns:
