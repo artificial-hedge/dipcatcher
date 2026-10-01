@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 894,
+  "module_count": 897,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3555,8 +3555,40 @@
       "src": "quant_fund.microstructure.candle_book_features"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.lobster"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.lobster"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.queue_occupancy"
+    },
+    {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
       "src": "quant_fund.microstructure.rl_market_maker"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.split_flow"
     },
     {
       "dst": "quant_fund.microstructure.book_metrics",
@@ -9343,7 +9375,10 @@
     "quant_fund.microstructure.book_metrics",
     "quant_fund.microstructure.book_panel",
     "quant_fund.microstructure.candle_book_features",
+    "quant_fund.microstructure.lobster",
+    "quant_fund.microstructure.queue_occupancy",
     "quant_fund.microstructure.rl_market_maker",
+    "quant_fund.microstructure.split_flow",
     "quant_fund.microstructure.synthetic_lob",
     "quant_fund.microstructure.vendor_book_map",
     "quant_fund.microstructure.zi_lob_simulator",
@@ -10754,7 +10789,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 12,
+      "imports": 16,
       "src": "quant_fund.microstructure"
     },
     {
@@ -10774,7 +10809,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 5,
       "src": "quant_fund.microstructure"
     },
     {
