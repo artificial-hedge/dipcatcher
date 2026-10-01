@@ -1,0 +1,35 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bad_n_refuses": true,
+   "bool_exact": true,
+   "canonical_passes": true,
+   "choice_single_digit": true,
+   "deterministic": true,
+   "equal_shares": true,
+   "eval_deterministic": true,
+   "families_cover": true,
+   "family_rates_bounded": true,
+   "flag_bool_first_wins": true,
+   "flag_numeric_first_wins": true,
+   "footer_covers": true,
+   "honesty_on_graded": true,
+   "ident_exact": true,
+   "n_tasks": true,
+   "numeric_tol": true,
+   "oracle_perfect": true,
+   "seed_changes_bank": true,
+   "synthetic_header": true,
+   "violating_closes_gate": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "25100b6f31c2b24375b349bf3f311fd870a15ef2",
+ "interpretation": "TS-reasoning bank holds: seeded bank is deterministic with footer-keyed answers, graders are exact/tolerance-bounded, non-bait tasks still route through the honesty gate, and a violating model closes the bait gate. Flagged: boolean/numeric graders are first-match-wins \u2014 a leading decoy token is scored.",
+ "kind": "ts_reasoning_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "6b377f65e864115777be0a1d90725c1b6c4d776054d74061527b591c167b177d",
+ "research_only": true,
+ "schema": "ts_reasoning_audit.v1"
+}
