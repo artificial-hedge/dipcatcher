@@ -44,7 +44,9 @@ class HostedK3Backend:
         self._api_url = api_url
 
     def complete(self, messages: list[dict[str, str]]) -> str:
-        body = json.dumps({"model": self._model, "messages": messages}).encode()
+        # temperature pinned to 0 — eval/teacher runs must be deterministic;
+        # unpinned sampling makes eval results unreproducible across replays.
+        body = json.dumps({"model": self._model, "messages": messages, "temperature": 0.0}).encode()
         request = urllib.request.Request(
             self._api_url,
             data=body,
@@ -56,7 +58,12 @@ class HostedK3Backend:
         )
         with urllib.request.urlopen(request, timeout=120) as response:  # noqa: S310 — pinned Moonshot API URL  # nosec B310
             payload = json.loads(response.read().decode())
-        return str(payload["choices"][0]["message"]["content"])
+        content = payload["choices"][0]["message"]["content"]
+        if not isinstance(content, str):
+            raise RuntimeError(
+                f"malformed completion payload: content is {type(content).__name__}, not str"
+            )
+        return content
 
 
 class LocalFx1Backend:
@@ -108,4 +115,4 @@ def get_backend(kind: str, **kwargs: object) -> InferenceBackend:
     backends = {"hosted_k3": HostedK3Backend, "local_fx1": LocalFx1Backend}
     if kind not in backends:
         raise KeyError(f"unknown backend {kind!r}; choose from {sorted(backends)}")
-    return cast(InferenceBackend, backends[kind](**kwargs))  # type: ignore[arg-type]
+    return cast(InferenceBackend, backends[kind](**kwargs))
