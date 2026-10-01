@@ -476,6 +476,7 @@ _MEASUREMENT_SCHEMAS = (
     "sweep_width_bench.v1",
     "tape_digest.v1",
     "tick_rule.v1",
+    "touch_follow.v1",
     "unhit_chase.v1",
     "vac_chase.v1",
     "vol_signature.v1",
