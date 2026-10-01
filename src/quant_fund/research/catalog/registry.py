@@ -523,6 +523,18 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oaxaca_blinder",
         "binscatter",
         "dfl_decomp",
+        # wave 47 — Rosenbaum sensitivity bounds for matched pairs,
+        # AIPW doubly-robust ATE, CAVI mean-field Gaussian mixture,
+        # Pesaran CD cross-section dependence, Hausman FE-RE + DWH
+        # endogeneity batteries, CUSUM structural-break monitoring
+        # (Chu-Stinchcombe-White boundary). Same SYNTHETIC
+        # diagnostic contract.
+        "rosenbaum_sensitivity",
+        "aipw_ate",
+        "cavi_gmm",
+        "pesaran_cd",
+        "hausman_tests",
+        "cusum_monitor",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
