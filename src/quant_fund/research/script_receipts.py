@@ -436,6 +436,7 @@ _MEASUREMENT_SCHEMAS = (
     "level_gap.v1",
     "lob_exec.v1",
     "lob_resilience.v1",
+    "lo_response.v1",
     "marketable_limit.v1",
     "maker_age.v1",
     "markout.v1",
