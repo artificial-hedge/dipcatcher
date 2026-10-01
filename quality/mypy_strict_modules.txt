@@ -154,6 +154,7 @@ src/quant_fund/hedge_lab/zoo.py
 src/quant_fund/hmm/__init__.py
 src/quant_fund/hmm/cli.py
 src/quant_fund/hmm/discrete.py
+src/quant_fund/hmm/duration_check.py
 src/quant_fund/hmm/eisner.py
 src/quant_fund/hmm/verify.py
 src/quant_fund/labels/__init__.py
