@@ -94,3 +94,5 @@ leakage-report.json
 
 # Advisory lock taken by `corpus-epoch` stamps (serialized head read->write)
 .epoch_stamp.lock
+# TypeScript API client uses a committed npm lockfile; installed tools are local.
+clients/typescript/node_modules/
