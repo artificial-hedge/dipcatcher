@@ -1,0 +1,24 @@
+{
+  "claim": "hidden_fill_price_improvement_measured",
+  "data_label": "REAL",
+  "divergences": [
+    "sim_has_no_hidden_mechanism_to_price_improve"
+  ],
+  "git_revision": "0e8582ec5a1dcf8935c096d1902de62f91309f4d",
+  "interpretation": "Positive improvement = hidden fills execute inside the spread, worth the quoted spread minus realized slippage; zero = they print at the touch (dark liquidity doesn't improve price, just adds size).",
+  "kind": "price_improvement",
+  "real": {
+    "at_touch_share": 0.0,
+    "improved_share": 1.0,
+    "mean_improvement_ticks": 2.7674,
+    "median_improvement_ticks": 1.0,
+    "n_hidden": 2445,
+    "n_priced": 2444,
+    "p90_improvement_ticks": 6.0,
+    "worse_share": 0.0
+  },
+  "receipt_sha256": "566e4dbccbf136950e650255c59d7b917dd11475f58425a63b241ceda533022e",
+  "research_only": true,
+  "schema": "price_improvement.v1",
+  "ticker": "AMZN"
+}

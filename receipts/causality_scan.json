@@ -1,0 +1,66 @@
+{
+  "kind": "causality_scan",
+  "schema": "causality_scan.v1",
+  "git_revision": "2708c6c76c721ebb46cba09b96f0c29b296cf305",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "appending future data never changes past outputs",
+    "n_ops": 7,
+    "n_leaks": 0,
+    "verdict": "causal"
+  },
+  "interpretation": {
+    "rolling_mean": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    },
+    "rolling_std": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    },
+    "ema": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    },
+    "rsi": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    },
+    "bollinger_mid": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    },
+    "simple_returns": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    },
+    "wealth_index": {
+      "status": "causal",
+      "n_shared": 256,
+      "n_diff": 0,
+      "first_diff_index": null,
+      "max_abs_diff": 0.0
+    }
+  },
+  "receipt_sha256": "cd74d037fa9a2b249b3b1abd9402379b34fc43f696f633a0cf91d577f5b9dbb0"
+}
