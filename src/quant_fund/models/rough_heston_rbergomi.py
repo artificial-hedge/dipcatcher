@@ -39,10 +39,11 @@ Honesty: all outputs are SYNTHETIC diagnostics on seeded fixtures — implied
 skew recovery, CF-vs-MC pricing gaps, and kernel convergence checks. No
 market data; no P&L/NAV claims.
 
-Composition notes: ``models/fourier_pricing`` exists for classical
-characteristic-function pricing; the fractional Riccati solver here is the
-Volterra analogue it does not cover. ``models/stoch_vol`` is the classical
-Kalman SV filter — unrelated to the fractional driver. Pure numpy/scipy.
+Composition notes: ``models/rough_vol`` is the estimation layer (GJR
+moment-scaling H, RFSV/fOU simulation); this module is the pricing layer —
+fractional Riccati characteristic functions and Volterra simulators it
+deliberately does not provide. ``models/fourier_pricing`` handles classical
+CFs; ``models/stoch_vol`` is the Kalman SV filter. Pure numpy/scipy.
 """
 
 from __future__ import annotations
