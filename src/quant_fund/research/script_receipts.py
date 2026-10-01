@@ -429,6 +429,7 @@ _MEASUREMENT_SCHEMAS = (
     "hawkes_real.v1",
     "hidden_depth.v1",
     "hidden_depth_bench.v1",
+    "hit_starve.v1",
     "iceberg.v1",
     "impact_instant.v1",
     "impact_persist.v1",

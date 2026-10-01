@@ -483,6 +483,17 @@ class ZILobConfig:
     # ``_hit_retreat``.
     cxl_unhit_damp_decay: float = 0.0
     cxl_unhit_window: int = 0
+    # ``hit_refill_damp`` > 0: while the marker's starve window is live, an
+    # LO arrival landing on the HIT side within ``hit_refill_band`` ticks
+    # of that side's touch is dropped. The tape's fill-channel continuation
+    # (+2.5 ticks of the k200 drift) needs the consumed side to stay thin
+    # so the next aggressor walks a level; refilling the touch before the
+    # child fires is exactly what the calibrated sim does. Window is
+    # independent of the unhit-side relief window. 0 defaults keep every
+    # path bit-identical; the marker gains a ``starve_until`` field.
+    hit_refill_damp: float = 0.0
+    hit_refill_band: int = 0
+    hit_refill_window: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -568,6 +579,11 @@ class ZILobConfig:
             )
         if isinstance(self.cxl_unhit_window, bool) or int(self.cxl_unhit_window) < 0:
             raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
+        _prob(self.hit_refill_damp, "hit_refill_damp")
+        for _name in ("hit_refill_band", "hit_refill_window"):
+            _v = getattr(self, _name)
+            if isinstance(_v, bool) or int(_v) < 0:
+                raise ValueError(f"{_name} must be a non-negative int, got {_v!r}")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
             raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
@@ -1098,7 +1114,7 @@ class ZILobSimulator:
         # of the last fill; a deadline of n_events means that channel off.
         # (hit_side, narrow_until, relief_until, fill_event) — the fill's
         # n_events lets damp_decay compute elapsed time.
-        self._hit_retreat: tuple[str, int, int, int] | None = None
+        self._hit_retreat: tuple[str, int, int, int, int] | None = None
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1377,6 +1393,28 @@ class ZILobSimulator:
         t0 = self._vacancy.get((side, int(level)))
         return t0 is not None and self.n_events - t0 < self._cfg.refill_cooldown
 
+    def _hit_starved(self, side: Side, level: int) -> bool:
+        """True when a hit-side arrival inside the starve window is dropped.
+
+        Draws the survival uniform only when the damp knob is on, the
+        marker's starve window is live, and the placement lands on the
+        hit side within ``hit_refill_band`` ticks of that side's touch —
+        at damp 0 (or an inactive marker) the RNG stream is untouched.
+        """
+        damp = self._cfg.hit_refill_damp
+        if damp <= 0.0 or self._hit_retreat is None:
+            return False
+        hit_side, _n_u, _r_u, _fe, s_until = self._hit_retreat
+        if side != hit_side or self.n_events >= s_until:
+            return False
+        book = self._asks if side == "sell" else self._bids
+        if not book:
+            return False
+        touch = min(book) if side == "sell" else max(book)
+        if abs(int(level) - touch) > self._cfg.hit_refill_band:
+            return False
+        return float(self._rng.random()) < damp
+
     def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> _Order:
         dq = book[level]
         oid = dq[idx]
@@ -1425,7 +1463,8 @@ class ZILobSimulator:
             if (self._cfg.cxl_unhit_relief > 0.0 or self._cfg.cxl_unhit_damp > 0.0)
             else 0
         )
-        if nw or rw:
+        sw = self._cfg.hit_refill_window if self._cfg.hit_refill_damp > 0.0 else 0
+        if nw or rw or sw:
             # Hit side = the side the aggressor consumed (resting side).
             hit = "sell" if aggressor == "buy" else "buy"
             self._hit_retreat = (
@@ -1433,6 +1472,7 @@ class ZILobSimulator:
                 self.n_events + nw,
                 self.n_events + rw,
                 self.n_events,
+                self.n_events + sw,
             )
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
@@ -1493,8 +1533,8 @@ class ZILobSimulator:
         # Post-fill narrowing: while the marker is live, placements on the
         # unhit side clamp to near-touch distance (accommodation channel).
         if self._hit_retreat is not None:
-            hit_side, n_until, r_until, _fill_ev = self._hit_retreat
-            if self.n_events >= max(n_until, r_until):
+            hit_side, n_until, r_until, _fill_ev, s_until = self._hit_retreat
+            if self.n_events >= max(n_until, r_until, s_until):
                 self._hit_retreat = None
             elif self.n_events < n_until and (
                 (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy")
@@ -1530,6 +1570,9 @@ class ZILobSimulator:
                 if self._is_cooled("buy", level):
                     self.n_lo_suppressed += 1
                     return
+                if self._hit_starved("buy", level):
+                    self.n_lo_suppressed += 1
+                    return
                 if ba is None or level < ba:
                     if bb is not None and level == bb:
                         self.n_lo_join += 1
@@ -1547,6 +1590,9 @@ class ZILobSimulator:
             else:
                 level = ref + dist
             if self._is_cooled("sell", level):
+                self.n_lo_suppressed += 1
+                return
+            if self._hit_starved("sell", level):
                 self.n_lo_suppressed += 1
                 return
             if bb is None or level > bb:
@@ -1577,6 +1623,10 @@ class ZILobSimulator:
                 self.n_lo_suppressed += 1
                 self.n_lo_arrivals += 1
                 return
+            if self._hit_starved("buy", level):
+                self.n_lo_suppressed += 1
+                self.n_lo_arrivals += 1
+                return
             if bb is not None and level > bb:
                 self.n_lo_improve += 1  # deposit strictly inside the spread
             elif bb is not None and level == bb:
@@ -1590,6 +1640,10 @@ class ZILobSimulator:
                 anchor = (bb if bb is not None else self._ref_level - 1) + off
                 level = anchor + dist
             if self._is_cooled("sell", level):
+                self.n_lo_suppressed += 1
+                self.n_lo_arrivals += 1
+                return
+            if self._hit_starved("sell", level):
                 self.n_lo_suppressed += 1
                 self.n_lo_arrivals += 1
                 return
@@ -1609,7 +1663,7 @@ class ZILobSimulator:
             return
         relief = self._cfg.cxl_unhit_relief
         if relief > 0.0 and self._hit_retreat is not None:
-            hit_side, _n_until, r_until, _fill_ev = self._hit_retreat
+            hit_side, _n_until, r_until, _fill_ev, _s_u = self._hit_retreat
             if self.n_events >= r_until:
                 pass  # marker stays for hit_narrow; relief expired
             elif float(self._rng.random()) < relief:
@@ -1697,7 +1751,7 @@ class ZILobSimulator:
             book, idx = self._asks, k - bid_d
         damp = self._cfg.cxl_unhit_damp
         if damp > 0.0 and self._hit_retreat is not None:
-            hit_side, _n_u, r_until, fill_ev = self._hit_retreat
+            hit_side, _n_u, r_until, fill_ev, _s_u = self._hit_retreat
             unhit_book = self._bids if hit_side == "sell" else self._asks
             if self.n_events < r_until and book is unhit_book:
                 decay = self._cfg.cxl_unhit_damp_decay
