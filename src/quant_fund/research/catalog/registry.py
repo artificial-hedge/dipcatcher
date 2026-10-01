@@ -487,6 +487,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "vuong_test",
         "merton_model",
         "white_reality",
+        # SOTA canon wave 44 batteries (see research/benches_w44.py):
+        # Johansen ML cointegration rank (trace/lmax vs
+        # Osterwald-Lenum) + reduced-rank VECM, Easley-O'Hara
+        # PIN (stabilized EHO mixture MLE), Kyle (1985) lambda
+        # + single-auction equilibrium, Oster (2019) selection-
+        # on-observables delta*/beta* bounds, Storey-Tibshirani
+        # q-values + pi0 smoother, Kiefer-Vogelsang fixed-b HAR
+        # inference (simulated Brownian-bridge limit).
+        # Same SYNTHETIC diagnostic contract.
+        "johansen_vecm",
+        "pin_model",
+        "kyle_lambda",
+        "oster_bounds",
+        "storey_fdr",
+        "kiefer_vogelsang",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
