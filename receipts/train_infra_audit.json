@@ -1,0 +1,27 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bounds_enforced": true,
+   "classify_order": true,
+   "curriculum_deterministic": true,
+   "deepspeed_carries_seed": true,
+   "k3_gates": true,
+   "k3_valid_ok": true,
+   "level_counts": true,
+   "long_ctx_needs_8": true,
+   "mxfp4_needs_zero3": true,
+   "nodes_min2": true,
+   "refusal_last": true,
+   "world_size": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "fbec9e9598cf3389333dd7c94cc38a9a7eb30459",
+ "interpretation": "Train-infra contract holds: K3 disclosure gates refuse wrong-model/few-node/no-preserve configs; numeric bounds enforced; curriculum is level-ordered and input-order invariant under a fixed seed; cluster physics enforced.",
+ "kind": "train_infra_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "cb430f5d4add6c0994f6f1774cb2214999774f5937b8611aa3574406efcbd32a",
+ "research_only": true,
+ "schema": "train_infra_audit.v1"
+}
