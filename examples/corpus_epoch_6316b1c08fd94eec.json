@@ -1,0 +1,58 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "26b45957a6b87872cdf9077e9b11399c2b0ce16724e18227381d0c9c82dc2f7f",
+  "inputs_sha256": "1a3a7cff42ee11dc29c77c5b7024620c84de90ceaf6500c1002228d7d1fbf5da",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "416be9dd4a6779755dc5b21a1199481502b6043099efb8cea7e69415c5a56014",
+  "members": [
+    {
+      "name": "01_receipt_round_trip.py",
+      "sha256": "ccc21f03af3877fe19e3cec5c217fefa1f750e71cd1e806f77b0ed7b5a400d48"
+    },
+    {
+      "name": "02_purged_walkforward_conformal.py",
+      "sha256": "301c12051f0bf949eb8e9a49a61c7493773086174974815607f9602665695560"
+    },
+    {
+      "name": "03_synthetic_l2_book.py",
+      "sha256": "9739f4aef5a96684e6faedde7d1bb72dd373fab5c25d54c85126402a0b87a157"
+    },
+    {
+      "name": "04_hf_ohlcv_1m.py",
+      "sha256": "44fd2d3f47ba0bb8f0c9f7d92a6460ffdf9b1eba2d31351e4f7ce75f0896ef7d"
+    },
+    {
+      "name": "05_phase1_evidence.py",
+      "sha256": "ba04234cce5ce86e8d54736561806ac0de9b8443e8ad78b687605a9b744f012b"
+    },
+    {
+      "name": "README.md",
+      "sha256": "4629e4fb14b1cb05ad657690cf89b8675d139378d1e308a26bb76ab0d526d2dc"
+    },
+    {
+      "name": "corpus_epoch_220d69b9f68c38e7.json",
+      "sha256": "2e1da21be9a1f79b55220d0597e3268737bad34df54f7c961b3ebf95e216c1b4"
+    },
+    {
+      "name": "fixtures/hf_ohlcv_1m/ohlcv_sample.parquet",
+      "sha256": "a9e45a27ff54acf82efd38649840083742d7963386c6407cbf1a3f8ebc5486b8"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_220d69b9f68c38e7.json"
+  ],
+  "members_removed": [],
+  "n_members": 8,
+  "params": {
+    "head_sha": "4f427a8a3b092a88014d9784b634ca7a229078a0",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_220d69b9f68c38e7.json",
+  "prev_epoch_sha256": "4a0f28d4e5cb4030bb63c6d3bf072fad94e09b193314acfb7fd302a05901e5c2",
+  "receipt_sha256": "6316b1c08fd94eecf26b64afb8214eacb019a5dad0d659de34fb3ec2f83c06a7",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
