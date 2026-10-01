@@ -175,9 +175,9 @@ def test_crash_leverage_boundary_and_dead_base() -> None:
     # One tick shallower → no crash.
     lev = crash_leverage(np.array([0.0, -0.19]), lookback=1, crash_return=-0.2)
     assert lev[1] == pytest.approx(1.0)
-    # wealth ≈ 0 → base ≤ _EPS → skip (leverage stays 1, not 0).
+    # wealth = 0 → base ≤ 0 → book is ruined → flatten to 0 (fail closed).
     lev = crash_leverage(np.array([-1.0, -0.5]), lookback=1)
-    assert lev[1] == pytest.approx(1.0)
+    assert lev[1] == pytest.approx(0.0)
     # i < lookback never writes.
     lev = crash_leverage(np.full(30, -0.03), lookback=10, crash_return=-0.2)
     assert np.all(lev[:10] == 1.0)
@@ -1026,6 +1026,7 @@ def test_overlay_snapshot_full_contract() -> None:
         "kelly_fraction": 0.25,
         "crc_alpha": 0.05,
         "n_observe": 0,
+        "ruined": False,
         "n_halt": 0,
         "n_scaled": 0,
         "last_scale": 1.0,
