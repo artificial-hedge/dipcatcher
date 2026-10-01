@@ -1,0 +1,101 @@
+{
+  "code_files": {
+    "replay_proof.py": "9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e"
+  },
+  "code_sha256": "d29be93ddc48260376f341703c501c22a318fa703ee6f4562f2e90a6a7efac8e",
+  "data_label": "SYNTHETIC",
+  "dataset_hash": "125a1c1da9abcb487f09a5b4d8611cfbb7c50f5f1021e89eb707e7bf13cefd98",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-29T23:00:43.421727+00:00",
+  "git_revision": "084c4df6f18df54bd5b250b3c511c57c2d1be169",
+  "kind": "replay_proof",
+  "live_pnl_claim": false,
+  "params_hash": "ee7ab3c9bed960071690918e2d93626dafd2d9dd150a8979e78a491b6ff2ede9",
+  "payload": {
+    "all_match": true,
+    "argv": [
+      "dipcatcher",
+      "fleet",
+      "--models",
+      "empirical,gaussian,qar,hstep_t,hstep_emp",
+      "--shards",
+      "iid_gaussian,regime_switch",
+      "--n-train",
+      "128",
+      "--n-eval",
+      "64",
+      "--seed",
+      "7",
+      "--out-dir",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "expected_sha256": "1904079220e70c8076b7149d3340dffa3ca457627873764f16c0f29d3db36f6c",
+        "match": true,
+        "observed_sha256": "1904079220e70c8076b7149d3340dffa3ca457627873764f16c0f29d3db36f6c",
+        "path": "data/metadata/replay/fleet_eval_9418dee658765f89.json"
+      }
+    ],
+    "data_label": "SYNTHETIC",
+    "elapsed_s": 1.526571,
+    "exit_code": 0,
+    "kind": "replay_proof",
+    "live_pnl_claim": false,
+    "receipt": "receipts/fleet_eval_5e907be710811a44.json",
+    "receipt_sha256": "bd096130dbd902637e985ecd64678bb3051d513e59ecb3b28970a6a56627d37b",
+    "research_only": true,
+    "resolved_argv": [
+      "/Users/devin/repos/dipcatcher/.venv/bin/python",
+      "-m",
+      "quant_fund.cli.main",
+      "fleet",
+      "--models",
+      "empirical,gaussian,qar,hstep_t,hstep_emp",
+      "--shards",
+      "iid_gaussian,regime_switch",
+      "--n-train",
+      "128",
+      "--n-eval",
+      "64",
+      "--seed",
+      "7",
+      "--out-dir",
+      "data/metadata/replay"
+    ],
+    "schema": "replay_proof.v1",
+    "source_receipt_seal": "5e907be710811a448c7268f805138bf0e59efffecdb21b7a467678681f85c9e4",
+    "source_receipt_sha256": "c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1",
+    "stderr_tail": "<frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour\n",
+    "timed_out": false,
+    "timeout_s": 120.0,
+    "verdict": "pass"
+  },
+  "receipt_sha256": "0de5fa4e0c739037f0fb56ca1911d744f241a2675a9ac44b467da5bae0393870",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}
