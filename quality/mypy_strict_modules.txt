@@ -780,6 +780,7 @@ src/quant_fund/research/shift_conformal.py
 src/quant_fund/research/sota_evidence.py
 src/quant_fund/research/sota_protocol.py
 src/quant_fund/research/spa_test.py
+src/quant_fund/research/tape_registry.py
 src/quant_fund/research/verify.py
 src/quant_fund/research/vol_bench.py
 src/quant_fund/risk/__init__.py

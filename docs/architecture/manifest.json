@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1160,
+  "module_count": 1161,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -2440,6 +2440,10 @@
     },
     {
       "dst": "quant_fund.research.suite_health",
+      "src": "quant_fund.cli.research_cmds"
+    },
+    {
+      "dst": "quant_fund.research.tape_registry",
       "src": "quant_fund.cli.research_cmds"
     },
     {
@@ -11467,6 +11471,10 @@
       "src": "quant_fund.research.receipt_v2"
     },
     {
+      "dst": "quant_fund.research.tape_registry",
+      "src": "quant_fund.research.receipt_v2"
+    },
+    {
       "dst": "quant_fund.research.vol_bench",
       "src": "quant_fund.research.receipt_v2"
     },
@@ -11661,6 +11669,10 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.research.tail_watch"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.tape_registry"
     },
     {
       "dst": "quant_fund.metrics.scoring",
@@ -13415,6 +13427,7 @@
     "quant_fund.research.stocbench",
     "quant_fund.research.suite_health",
     "quant_fund.research.tail_watch",
+    "quant_fund.research.tape_registry",
     "quant_fund.research.verdict_run",
     "quant_fund.research.verify",
     "quant_fund.research.vine_dominance",
@@ -14150,7 +14163,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 26,
+      "imports": 27,
       "src": "quant_fund.cli"
     },
     {
@@ -15245,7 +15258,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 249,
+      "imports": 250,
       "src": "quant_fund.research"
     },
     {
@@ -15260,7 +15273,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 90,
+      "imports": 91,
       "src": "quant_fund.research"
     },
     {
