@@ -2004,3 +2004,33 @@ detail: |
   - Canon staged on top of w77-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+
+---
+owner: devin (wave 79 canon)
+slice: six models lanes + benches_w79 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: fastica.py (Hyvarinen 1999
+    FastICA deflationary tanh-alpha fixed-point + Gram-
+    Schmidt reortho + whitening), barrier_options.py
+    (Reiner-Rubinstein 1991 six-term a-f decomposition,
+    all 8 single-barrier types, in+out=vanilla parity),
+    tost.py (Schuirmann 1987 two-one-sided equivalence
+    for means/ratios + Fisher-z correlations), msm_causal.py
+    (Robins 2000 two-visit MSM stabilized IPTW, Gaussian
+    density + logistic propensities, treatment-confounder
+    feedback), nmf.py (Lee-Seung 1999/2001 fro/KL
+    multiplicative updates + SVD seeding + cophenetic
+    consensus), auxiliary_pf.py (Pitt-Shephard 1999 APF
+    two-stage lookahead resampling for SV state space vs
+    bootstrap PF loglik).
+  - benches_w79.py: +462..467 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-
+    token filter).
+  - registry +6 -> "fastica","barrier_options","tost",
+    "msm_causal","nmf","auxiliary_pf" (428->434); agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w79.
+  - Canon staged on top of w78-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.

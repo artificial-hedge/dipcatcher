@@ -1114,6 +1114,27 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "risk_parity",
         "mst_topology",
         "e_divisive",
+        # wave 79 — Hyvarinen (1999)
+        # FastICA deflationary ICA,
+        # Reiner-Rubinstein (1991)
+        # closed-form barrier options,
+        # Schuirmann (1987) TOST
+        # equivalence testing, Robins
+        # (2000) marginal structural
+        # models via stabilized IPTW,
+        # Lee-Seung (1999/2001)
+        # multiplicative-update NMF
+        # with cophenetic consensus,
+        # and Pitt-Shephard (1999)
+        # auxiliary particle filter.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "fastica",
+        "barrier_options",
+        "tost",
+        "msm_causal",
+        "nmf",
+        "auxiliary_pf",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

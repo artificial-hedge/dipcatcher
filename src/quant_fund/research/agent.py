@@ -621,6 +621,14 @@ from quant_fund.research.benches_w78 import (
     bench_risk_parity,
     bench_spc,
 )
+from quant_fund.research.benches_w79 import (
+    bench_auxiliary_pf,
+    bench_barrier_options,
+    bench_fastica,
+    bench_msm_causal,
+    bench_nmf,
+    bench_tost,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2640,6 +2648,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "risk_parity": bench_risk_parity(),
         "mst_topology": bench_mst_topology(),
         "e_divisive": bench_e_divisive(),
+        "fastica": bench_fastica(),
+        "barrier_options": bench_barrier_options(),
+        "tost": bench_tost(),
+        "msm_causal": bench_msm_causal(),
+        "nmf": bench_nmf(),
+        "auxiliary_pf": bench_auxiliary_pf(),
     }
 
     hyps = _build_hypotheses(families, rankers)
