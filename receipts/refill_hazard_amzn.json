@@ -1,0 +1,151 @@
+{
+  "schema": "refill_hazard.v1",
+  "kind": "refill_hazard_bench",
+  "ticker": "AMZN",
+  "horizon": 30000,
+  "seed": 7,
+  "max_delay": 400,
+  "real": {
+    "ok": true,
+    "n_empty": 4239,
+    "p_never_within_cap": 0.5112,
+    "median_delay_events": 86.0,
+    "hazard_cdf": {
+      "1": 0.0682,
+      "5": 0.1302,
+      "10": 0.1496,
+      "20": 0.1673,
+      "50": 0.2031,
+      "100": 0.2595,
+      "200": 0.3553,
+      "400": 0.4888
+    },
+    "p_refill_as_touch": 0.763,
+    "by_pre_gap": {
+      "gap_1": {
+        "n": 2976,
+        "p_refill_within_cap": 0.4815
+      },
+      "gap_2_4": {
+        "n": 718,
+        "p_refill_within_cap": 0.532
+      },
+      "gap_5p": {
+        "n": 545,
+        "p_refill_within_cap": 0.4716
+      }
+    }
+  },
+  "sim_arms": {
+    "iid": {
+      "ok": true,
+      "n_empty": 2503,
+      "p_never_within_cap": 0.1131,
+      "median_delay_events": 17.0,
+      "hazard_cdf": {
+        "1": 0.0431,
+        "5": 0.2014,
+        "10": 0.3276,
+        "20": 0.4886,
+        "50": 0.6928,
+        "100": 0.7887,
+        "200": 0.8498,
+        "400": 0.8869
+      },
+      "p_refill_as_touch": 0.8014,
+      "by_pre_gap": {
+        "gap_1": {
+          "n": 1883,
+          "p_refill_within_cap": 0.9044
+        },
+        "gap_2_4": {
+          "n": 586,
+          "p_refill_within_cap": 0.8396
+        },
+        "gap_5p": {
+          "n": 34,
+          "p_refill_within_cap": 0.7353
+        }
+      }
+    },
+    "split": {
+      "ok": true,
+      "n_empty": 4251,
+      "p_never_within_cap": 0.2289,
+      "median_delay_events": 16.0,
+      "hazard_cdf": {
+        "1": 0.043,
+        "5": 0.1717,
+        "10": 0.2988,
+        "20": 0.4472,
+        "50": 0.594,
+        "100": 0.6664,
+        "200": 0.7238,
+        "400": 0.7711
+      },
+      "p_refill_as_touch": 0.7834,
+      "by_pre_gap": {
+        "gap_1": {
+          "n": 1836,
+          "p_refill_within_cap": 0.7887
+        },
+        "gap_2_4": {
+          "n": 974,
+          "p_refill_within_cap": 0.7094
+        },
+        "gap_5p": {
+          "n": 1441,
+          "p_refill_within_cap": 0.7904
+        }
+      }
+    },
+    "lv_split": {
+      "ok": true,
+      "n_empty": 4290,
+      "p_never_within_cap": 0.1911,
+      "median_delay_events": 16.0,
+      "hazard_cdf": {
+        "1": 0.0415,
+        "5": 0.1765,
+        "10": 0.3063,
+        "20": 0.4697,
+        "50": 0.6508,
+        "100": 0.7145,
+        "200": 0.7646,
+        "400": 0.8089
+      },
+      "p_refill_as_touch": 0.8121,
+      "by_pre_gap": {
+        "gap_1": {
+          "n": 1877,
+          "p_refill_within_cap": 0.8055
+        },
+        "gap_2_4": {
+          "n": 895,
+          "p_refill_within_cap": 0.7397
+        },
+        "gap_5p": {
+          "n": 1518,
+          "p_refill_within_cap": 0.8538
+        }
+      }
+    }
+  },
+  "divergences": [
+    "iid:p_never_0.1131_vs_0.5112",
+    "iid:median_delay_17.0_vs_86.0",
+    "split:p_never_0.2289_vs_0.5112",
+    "split:median_delay_16.0_vs_86.0",
+    "lv_split:p_never_0.1911_vs_0.5112",
+    "lv_split:median_delay_16.0_vs_86.0"
+  ],
+  "claims": {
+    "tape_levels_have_memory": true,
+    "sim_refill_is_fast": true
+  },
+  "interpretation": "The hole behind an emptied touch is a level-memory structure, not a placement geometry: on the tape an emptied price stays empty for tens to hundreds of events (median delay + p_never are the headline stats) and is usually re-occupied as the new touch by an improving submission, while sim arms re-occupy levels almost immediately (or never, when the level can only be reached inside the spread). Placement-law and inner-edge knobs cannot express this \u2014 the missing mechanism is a per-price refill timescale.",
+  "git_revision": "1b16381c31766ed38944fbeeb483f791872a53c7",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "0121aae932587d6f769f4637acdfc56eeec114f624fb504cd9a2f9b0750d0741"
+}
