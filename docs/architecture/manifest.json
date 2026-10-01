@@ -4083,18 +4083,6 @@
       "src": "quant_fund.microstructure.mid_jump"
     },
     {
-      "dst": "quant_fund.microstructure.zi_lob_simulator",
-      "src": "quant_fund.microstructure.ofi_forecast"
-    },
-    {
-      "dst": "quant_fund.utils.hashing",
-      "src": "quant_fund.microstructure.ofi_forecast"
-    },
-    {
-      "dst": "quant_fund.utils.reproducibility",
-      "src": "quant_fund.microstructure.ofi_forecast"
-    },
-    {
       "dst": "quant_fund.microstructure.lobster",
       "src": "quant_fund.microstructure.order_lifetime"
     },
@@ -4585,6 +4573,10 @@
     {
       "dst": "quant_fund.utils.numeric",
       "src": "quant_fund.models.count"
+    },
+    {
+      "dst": "quant_fund.models.quest",
+      "src": "quant_fund.models.covariance"
     },
     {
       "dst": "quant_fund.models.volatility",
@@ -11013,7 +11005,6 @@
     "quant_fund.microstructure.marketable_limit",
     "quant_fund.microstructure.metaorder_detect",
     "quant_fund.microstructure.mid_jump",
-    "quant_fund.microstructure.ofi_forecast",
     "quant_fund.microstructure.order_lifetime",
     "quant_fund.microstructure.order_revision",
     "quant_fund.microstructure.post_trade_drift",
@@ -11185,6 +11176,7 @@
     "quant_fund.models.qrf",
     "quant_fund.models.quantile_bandit",
     "quant_fund.models.quantile_forest",
+    "quant_fund.models.quest",
     "quant_fund.models.qvar",
     "quant_fund.models.random_projection",
     "quant_fund.models.ranking",
@@ -12501,7 +12493,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 116,
+      "imports": 115,
       "src": "quant_fund.microstructure"
     },
     {
@@ -12521,7 +12513,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 85,
+      "imports": 83,
       "src": "quant_fund.microstructure"
     },
     {
@@ -12546,7 +12538,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 92,
+      "imports": 93,
       "src": "quant_fund.models"
     },
     {
