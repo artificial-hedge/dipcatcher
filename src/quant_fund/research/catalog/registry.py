@@ -1135,6 +1135,26 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "msm_causal",
         "nmf",
         "auxiliary_pf",
+        # wave 80 — Royston-Parmar
+        # (2011/2013) RMST + Uno (2004)
+        # variance, Hull (2018) OIS
+        # zero-curve bootstrap with
+        # fixed-point tenor stripping,
+        # Henze-Zirkler (1990) BHEP
+        # MVN test, Epps-Singleton
+        # (1985) ECF normality,
+        # Watson (1961) U^2 circular
+        # uniformity + Stephens (1970)
+        # table, and Szekely-Rizzo
+        # (2005) energy-distance MVN.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "rmst",
+        "ois_curve",
+        "henze_zirkler",
+        "epps_singleton",
+        "watson",
+        "energy_test",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

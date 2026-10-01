@@ -2034,3 +2034,31 @@ detail: |
   - Canon staged on top of w78-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+
+---
+owner: devin (wave 80 canon)
+slice: six models lanes + benches_w80 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - src/quant_fund/models: rmst.py (Royston-Parmar
+    2011/2013 restricted mean survival time + Uno 2004
+    residual-area variance + two-arm diff/ratio z-tests),
+    ois_curve.py (Hull 2018 OIS bootstrap, log-linear DF
+    interp, fixed-point tenor stripping, par repricing),
+    henze_zirkler.py (Henze-Zirkler 1990 BHEP ECF MVN test,
+    lognormal null moments), epps_singleton.py (Epps-
+    Singleton 1985 ECF normality G1 chi2(4)), watson.py
+    (Watson 1961 U^2 circular uniformity, Stephens 1970
+    modified table + Rayleigh), energy_test.py (Szekely-
+    Rizzo 2005 energy MVN statistic, hyp1f1 moments,
+    parametric bootstrap).
+  - benches_w80.py: +468..473 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-
+    token filter).
+  - registry +6 -> "rmst","ois_curve","henze_zirkler",
+    "epps_singleton","watson","energy_test" (434->440);
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w80.
+  - Canon staged on top of w79-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.

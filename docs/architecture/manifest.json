@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1570,
+  "module_count": 1577,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10123,6 +10123,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w80",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches_w810",
       "src": "quant_fund.research.agent"
     },
@@ -12349,6 +12353,30 @@
     {
       "dst": "quant_fund.models.tost",
       "src": "quant_fund.research.benches_w79"
+    },
+    {
+      "dst": "quant_fund.models.energy_test",
+      "src": "quant_fund.research.benches_w80"
+    },
+    {
+      "dst": "quant_fund.models.epps_singleton",
+      "src": "quant_fund.research.benches_w80"
+    },
+    {
+      "dst": "quant_fund.models.henze_zirkler",
+      "src": "quant_fund.research.benches_w80"
+    },
+    {
+      "dst": "quant_fund.models.ois_curve",
+      "src": "quant_fund.research.benches_w80"
+    },
+    {
+      "dst": "quant_fund.models.rmst",
+      "src": "quant_fund.research.benches_w80"
+    },
+    {
+      "dst": "quant_fund.models.watson",
+      "src": "quant_fund.research.benches_w80"
     },
     {
       "dst": "quant_fund.metrics.anytime_fdr",
@@ -15826,6 +15854,7 @@
     "quant_fund.models.empirical_wavelets",
     "quant_fund.models.enbpi",
     "quant_fund.models.enbpi_multihorizon",
+    "quant_fund.models.energy_test",
     "quant_fund.models.engle_granger",
     "quant_fund.models.engle_kroner_bekk",
     "quant_fund.models.engle_ng",
@@ -15834,6 +15863,7 @@
     "quant_fund.models.ensemble_kalman_inversion",
     "quant_fund.models.entropy_balancing",
     "quant_fund.models.entropy_pooling",
+    "quant_fund.models.epps_singleton",
     "quant_fund.models.ers_dfgls",
     "quant_fund.models.esscher",
     "quant_fund.models.ets",
@@ -15904,6 +15934,7 @@
     "quant_fund.models.hedging",
     "quant_fund.models.hedonic",
     "quant_fund.models.hegy",
+    "quant_fund.models.henze_zirkler",
     "quant_fund.models.heston_qe",
     "quant_fund.models.heterogeneous_abm",
     "quant_fund.models.hidden_markov_equilibrium",
@@ -16038,6 +16069,7 @@
     "quant_fund.models.oaxaca_blinder",
     "quant_fund.models.obizhaeva_wang",
     "quant_fund.models.odd_residual_flows",
+    "quant_fund.models.ois_curve",
     "quant_fund.models.olley_pakes",
     "quant_fund.models.omega",
     "quant_fund.models.online_crc",
@@ -16103,6 +16135,7 @@
     "quant_fund.models.ripley_k",
     "quant_fund.models.risk_parity",
     "quant_fund.models.rl",
+    "quant_fund.models.rmst",
     "quant_fund.models.rmt",
     "quant_fund.models.robinhood_plus",
     "quant_fund.models.robinhood_plus.autoregress",
@@ -16211,6 +16244,7 @@
     "quant_fund.models.vuong_test",
     "quant_fund.models.wald_sprt",
     "quant_fund.models.watch",
+    "quant_fund.models.watson",
     "quant_fund.models.wavelet_coherence",
     "quant_fund.models.wavelet_modwt",
     "quant_fund.models.wavelets",
@@ -16470,6 +16504,7 @@
     "quant_fund.research.benches_w77",
     "quant_fund.research.benches_w78",
     "quant_fund.research.benches_w79",
+    "quant_fund.research.benches_w80",
     "quant_fund.research.benches_w810",
     "quant_fund.research.calibration_eprocess",
     "quant_fund.research.calibration_eval",
@@ -18416,7 +18451,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 432,
+      "imports": 438,
       "src": "quant_fund.research"
     },
     {
@@ -18461,7 +18496,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 389,
+      "imports": 390,
       "src": "quant_fund.research"
     },
     {

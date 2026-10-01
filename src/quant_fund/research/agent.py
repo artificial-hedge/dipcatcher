@@ -629,6 +629,14 @@ from quant_fund.research.benches_w79 import (
     bench_nmf,
     bench_tost,
 )
+from quant_fund.research.benches_w80 import (
+    bench_energy_test,
+    bench_epps_singleton,
+    bench_henze_zirkler,
+    bench_ois_curve,
+    bench_rmst,
+    bench_watson,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2654,6 +2662,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "msm_causal": bench_msm_causal(),
         "nmf": bench_nmf(),
         "auxiliary_pf": bench_auxiliary_pf(),
+        "rmst": bench_rmst(),
+        "ois_curve": bench_ois_curve(),
+        "henze_zirkler": bench_henze_zirkler(),
+        "epps_singleton": bench_epps_singleton(),
+        "watson": bench_watson(),
+        "energy_test": bench_energy_test(),
     }
 
     hyps = _build_hypotheses(families, rankers)
