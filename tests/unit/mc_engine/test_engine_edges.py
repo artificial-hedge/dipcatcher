@@ -19,6 +19,7 @@ from quant_fund.mc_engine.engine import (
     simulate_chunk,
 )
 from quant_fund.mc_engine.scenario import GbmPortfolioGenerator, IdentityShockGenerator
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 pytestmark = pytest.mark.synthetic
 
@@ -209,6 +210,11 @@ class TestResume:
         generator = self._partial_checkpoint(tmp_path)
         manifest = json.loads((tmp_path / "manifest.json").read_text())
         manifest.pop("payload")
+        # Manifests are sealed on write; re-seal the tampered body so the
+        # seal check passes and the missing-payload branch is exercised.
+        manifest["receipt_sha256"] = hash_bytes(
+            canonical_json_bytes({k: v for k, v in manifest.items() if k != "receipt_sha256"})
+        )
         (tmp_path / "manifest.json").write_text(json.dumps(manifest))
         with pytest.raises(ValueError, match="payload"):
             resume_simulation(tmp_path, generator)
