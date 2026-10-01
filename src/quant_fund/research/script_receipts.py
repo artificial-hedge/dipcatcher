@@ -440,6 +440,7 @@ _MEASUREMENT_SCHEMAS = (
     "stale_quote.v1",
     "streak_calibrate.v1",
     "streak_stats.v1",
+    "sweep_width_bench.v1",
     "tape_digest.v1",
     "tick_rule.v1",
     "vol_signature.v1",
