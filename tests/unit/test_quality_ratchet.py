@@ -37,9 +37,11 @@ MCCABE_SOFT_THRESHOLD = 10
 MCCABE_BASELINE_FLOOR = 1
 # `except Exception` handlers under src/quant_fund. Origin/main sat at 75;
 # four closed lazy-import guards narrowed to ImportError (catalog ×3 +
-# fast_replay forecast overlay), so the ceiling tightens to 71. New handlers
-# that push the total above this fail the test.
-EXCEPT_EXCEPTION_CEILING = 71
+# fast_replay forecast overlay), so the ceiling tightens to 71. The corpus-epoch
+# integrity substrate adds seven deliberate fail-closed handlers (noqa: BLE001
+# each): OTS explorer/calendar outages skip rather than fail, and verifier gates
+# convert unexpected exceptions into recorded gate errors. Ceiling 78.
+EXCEPT_EXCEPTION_CEILING = 78
 
 
 def test_mypy_strict_allowlist_only_grows() -> None:
