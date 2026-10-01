@@ -527,6 +527,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "connectedness",
         "nonparametric_iv",
         "subsampling",
+        # SOTA canon wave 41 batteries (see research/benches_w41.py):
+        # shared gamma frailty (Vaupel/Clayton clustered survival,
+        # marginal likelihood), interrupted/comparative time
+        # series (segmented regression, Newey-West SEs), Hayashi-
+        # Yoshida lead-lag covariance (non-synchronous ticks,
+        # shift-scan direction), PPML gravity (Santos Silva-
+        # Tenreyro multiplicative mean under heteroskedasticity),
+        # MacKinlay event study (market-model CAR, Patell z +
+        # BMP t), Mallows model averaging (Hansen Cp-simplex
+        # weights). Same SYNTHETIC diagnostic contract.
+        "frailty",
+        "interrupted_ts",
+        "lead_lag",
+        "ppml",
+        "event_study",
+        "model_averaging",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
