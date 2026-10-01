@@ -310,6 +310,7 @@ src/quant_fund/microstructure/intraday_exec.py
 src/quant_fund/microstructure/intraday_shape.py
 src/quant_fund/microstructure/lob_exec.py
 src/quant_fund/microstructure/lob_resilience.py
+src/quant_fund/microstructure/lob_shape.py
 src/quant_fund/microstructure/lobster.py
 src/quant_fund/microstructure/marketable_limit.py
 src/quant_fund/microstructure/markout.py
