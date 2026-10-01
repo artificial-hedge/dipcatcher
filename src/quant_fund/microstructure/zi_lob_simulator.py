@@ -414,6 +414,11 @@ class ZILobConfig:
     # way (the draw precedes the gate), so ``per_unit`` is
     # bit-identical.
     iceberg_reload_mode: str = "per_unit"
+    # ``iceberg_budget``: maximum number of hidden refills each
+    # (side, level) may spend over the whole run — the real iceberg is
+    # a finite reserve consumed once and gone. 0 (default) is
+    # unlimited, i.e. bit-identical to the legacy mechanism.
+    iceberg_budget: int = 0
     # ``lo_offset_gain`` couples the LO anchor offset to MO excitation:
     # the effective offset is ``lo_offset + round(gain * e_MO)`` where
     # ``e_MO`` is the Hawkes excitation state summed over banks — makers
@@ -690,6 +695,8 @@ class ZILobConfig:
                 "iceberg_reload_mode must be 'per_unit' or 'residual', "
                 f"got {self.iceberg_reload_mode!r}"
             )
+        if isinstance(self.iceberg_budget, bool) or int(self.iceberg_budget) < 0:
+            raise ValueError(f"iceberg_budget must be an int >= 0, got {self.iceberg_budget!r}")
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
         _prob(self.lo_improve_frac, "lo_improve_frac")
         _prob(self.place_join_frac, "place_join_frac")
@@ -1264,6 +1271,9 @@ class ZILobSimulator:
         # Vacancy memory: (side, level) -> event index the level emptied.
         # Populated only when ``refill_cooldown`` or ``vac_chase_window`` > 0.
         self._vacancy: dict[tuple[str, int], int] = {}
+        # Remaining hidden refills per (side, level); used only when
+        # ``iceberg_budget`` > 0.
+        self._ice_budget: dict[tuple[Side, int], int] = {}
         self._chase_oids: set[int] = set()
         # Hidden midpoint-pegged depth: side -> deque of (order, expiry
         # event index). Never enters the visible book; pegs lapse when
@@ -1745,6 +1755,18 @@ class ZILobSimulator:
                 self.n_events + fw,
             )
 
+    def _spend_ice(self, side: Side, level: int) -> bool:
+        """Spend one unit of the level's hidden-refill budget."""
+        b = self._cfg.iceberg_budget
+        if b <= 0:
+            return True
+        key = (side, level)
+        left = self._ice_budget.get(key, b)
+        if left <= 0:
+            return False
+        self._ice_budget[key] = left - 1
+        return True
+
     def _consume_best(self, aggressor: Side) -> TradeEvent | None:
         """Match one unit MO against the opposite best (price-time priority)."""
         # Midpoint dark liquidity matches first: a resting dark peg fills
@@ -1814,6 +1836,7 @@ class ZILobSimulator:
             p > 0.0
             and float(self._rng.random()) < p
             and (self._cfg.iceberg_reload_mode == "per_unit" or bool(book.get(level)))
+            and self._spend_ice(order.side, level)
         ):
             self._rest(order.side, level, "iceberg")
         # Touch pull: the front order on the hit side is withdrawn with
