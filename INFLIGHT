@@ -1049,3 +1049,15 @@ wave 30 (2026-09-30): 6 lanes merged into w30-canon —
   clean, donut .339) + bounds (Manski width 3.11 covers mu, MAR point
   .002, Lee bounds [.06,1.37] cover tau=1) → PR stacked on w26
   (157→163 families)
+- wave 32 canon (devin/w32-canon off w31-canon tip): extreme_value
+  (Hill index alpha_err .17, GPD MLE xi_err .38, POT VaR<ES, return
+  levels) + double_ml (PLR cross-fit theta_err .015 vs OLS .214,
+  AIPW IRM ate_err .016) + bunching (excess mass at kink b 2.75
+  z 18.5, clean |b| 0.40 dominance rule, Poisson-WLS counterfactual)
+  + causal_forest (propensity-transformed honest leaves, CATE corr
+  .96, ATE .03, x1 top importance) + gaussian_process (ARD kernel,
+  Type-II ML sigma_n err .013, closed-form LOO, coverage 1.0) +
+  markov_switching (Hamilton filter + Kim smoother + EM, mu_err
+  .032, regime accuracy .959) — optimal_transport lane superseded:
+  w31-canon already carries a same-named module from a parallel
+  session → PR stacked on w31 (163→169 families)
