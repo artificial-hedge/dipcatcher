@@ -479,6 +479,7 @@ _MEASUREMENT_SCHEMAS = (
     "vac_chase.v1",
     "vol_signature.v1",
     "vpin.v1",
+    "wave23_map.v1",
 )
 
 
