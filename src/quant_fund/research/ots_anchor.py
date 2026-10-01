@@ -310,7 +310,7 @@ def stamp_ots(
             responses.append(body)
         except OtsError:
             raise
-        except Exception:  # noqa: BLE001 — a dead calendar skips, not fails
+        except (OSError, ValueError, KeyError):  # a dead calendar skips, not fails
             continue
     if not responses:
         raise ValueError("no OTS calendar answered")

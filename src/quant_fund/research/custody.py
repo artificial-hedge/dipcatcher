@@ -294,7 +294,7 @@ def _git_rev() -> str | None:
         from quant_fund.utils.reproducibility import git_revision
 
         return git_revision()
-    except Exception:  # noqa: BLE001 — provenance garnish, never gate
+    except (ImportError, OSError, ValueError):  # provenance garnish, never gate
         return None
 
 

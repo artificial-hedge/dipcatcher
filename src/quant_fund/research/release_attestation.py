@@ -95,7 +95,7 @@ def _git_rev(root: Path) -> str | None:
             ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, timeout=10
         )
         return out.stdout.strip() or None
-    except Exception:  # noqa: BLE001 — garnish, never a gate
+    except (OSError, subprocess.SubprocessError):  # garnish, never a gate
         return None
 
 
