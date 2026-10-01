@@ -1,0 +1,316 @@
+{
+  "schema": "continuation_attr.v1",
+  "kind": "bench",
+  "ticker": "AMZN_2012-06-21",
+  "horizon": 20000,
+  "seed": 7,
+  "k200_lag": 200,
+  "tape": {
+    "n_anchor_fills": 8973,
+    "windows": {
+      "1_10": {
+        "n_anchor_fills": 6482,
+        "per_channel_ticks": {
+          "fill": {
+            "hit": 1.3562172169083617,
+            "unhit": -0.10544585004628201,
+            "total": 1.2507713668620797
+          },
+          "lo": {
+            "hit": -0.8135606294353595,
+            "unhit": 0.7151342178340019,
+            "total": -0.09842641160135761
+          },
+          "cxl": {
+            "hit": 0.3680191298981796,
+            "unhit": -0.2000154273372416,
+            "total": 0.168003702560938
+          },
+          "none": {
+            "hit": 0.0,
+            "unhit": 0.0,
+            "total": 0.0
+          }
+        }
+      },
+      "10_50": {
+        "n_anchor_fills": 8460,
+        "per_channel_ticks": {
+          "fill": {
+            "hit": 1.8026004728132388,
+            "unhit": -0.5629432624113475,
+            "total": 1.2396572104018913
+          },
+          "lo": {
+            "hit": -1.7362293144208039,
+            "unhit": 2.199704491725768,
+            "total": 0.4634751773049645
+          },
+          "cxl": {
+            "hit": 0.8858156028368794,
+            "unhit": -0.9136524822695036,
+            "total": -0.027836879432624112
+          },
+          "none": {
+            "hit": 0.0,
+            "unhit": 0.0,
+            "total": 0.0
+          }
+        }
+      },
+      "50_200": {
+        "n_anchor_fills": 8956,
+        "per_channel_ticks": {
+          "fill": {
+            "hit": 3.364671728450201,
+            "unhit": -2.9093345243412236,
+            "total": 0.4553372041089772
+          },
+          "lo": {
+            "hit": -5.610428762840554,
+            "unhit": 8.04388119696293,
+            "total": 2.433452434122376
+          },
+          "cxl": {
+            "hit": 3.207458686913801,
+            "unhit": -3.981129968736043,
+            "total": -0.7736712818222421
+          },
+          "none": {
+            "hit": 0.0,
+            "unhit": 0.0,
+            "total": 0.0
+          }
+        }
+      }
+    },
+    "k200_per_channel_ticks": {
+      "fill": 2.5224005349381478,
+      "lo": 2.8050261896801514,
+      "cxl": -0.682213306586426,
+      "none": 0.0
+    },
+    "k200_signed_ticks": 4.645213418031873,
+    "positive_channel_shares": {
+      "fill": 0.47347446812961536,
+      "lo": 0.5265255318703848,
+      "cxl": -0.1280568165177918,
+      "none": 0.0
+    },
+    "positive_share_sum": 1.0,
+    "n_events": 269748,
+    "ok": true
+  },
+  "sim_arms": {
+    "iid": {
+      "n_anchor_fills": 407,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 99,
+          "per_channel_ticks": {
+            "fill": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            },
+            "lo": {
+              "hit": -0.21717171717171718,
+              "unhit": 0.03535353535353535,
+              "total": -0.18181818181818182
+            },
+            "cxl": {
+              "hit": -0.08585858585858586,
+              "unhit": 0.020202020202020204,
+              "total": -0.06565656565656566
+            },
+            "none": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            }
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 273,
+          "per_channel_ticks": {
+            "fill": {
+              "hit": -0.03296703296703297,
+              "unhit": -0.02564102564102564,
+              "total": -0.05860805860805861
+            },
+            "lo": {
+              "hit": 0.09340659340659341,
+              "unhit": -0.027472527472527472,
+              "total": 0.06593406593406594
+            },
+            "cxl": {
+              "hit": -0.21978021978021978,
+              "unhit": 0.020146520146520148,
+              "total": -0.19963369963369965
+            },
+            "none": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            }
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 393,
+          "per_channel_ticks": {
+            "fill": {
+              "hit": -0.039440203562340966,
+              "unhit": 0.05216284987277354,
+              "total": 0.01272264631043257
+            },
+            "lo": {
+              "hit": 0.1005089058524173,
+              "unhit": -0.13994910941475827,
+              "total": -0.039440203562340966
+            },
+            "cxl": {
+              "hit": -0.1628498727735369,
+              "unhit": 0.1183206106870229,
+              "total": -0.044529262086514
+            },
+            "none": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            }
+          }
+        }
+      },
+      "k200_per_channel_ticks": {
+        "fill": -0.029484029484029485,
+        "lo": -0.04054054054054054,
+        "cxl": -0.19533169533169534,
+        "none": 0.0
+      },
+      "k200_signed_ticks": -0.2653562653562654,
+      "positive_channel_shares": {
+        "fill": 0.0,
+        "lo": 0.0,
+        "cxl": 0.0,
+        "none": 0.0
+      },
+      "positive_share_sum": 0,
+      "n_events": 20000,
+      "ok": true
+    },
+    "calibrated": {
+      "n_anchor_fills": 826,
+      "windows": {
+        "1_10": {
+          "n_anchor_fills": 274,
+          "per_channel_ticks": {
+            "fill": {
+              "hit": -0.0018248175182481751,
+              "unhit": 0.0036496350364963502,
+              "total": 0.0018248175182481751
+            },
+            "lo": {
+              "hit": -0.04562043795620438,
+              "unhit": -0.03102189781021898,
+              "total": -0.07664233576642336
+            },
+            "cxl": {
+              "hit": 0.08941605839416059,
+              "unhit": 0.012773722627737226,
+              "total": 0.10218978102189781
+            },
+            "none": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            }
+          }
+        },
+        "10_50": {
+          "n_anchor_fills": 665,
+          "per_channel_ticks": {
+            "fill": {
+              "hit": -0.006766917293233083,
+              "unhit": -0.010526315789473684,
+              "total": -0.017293233082706767
+            },
+            "lo": {
+              "hit": 0.08796992481203007,
+              "unhit": 0.2789473684210526,
+              "total": 0.3669172932330827
+            },
+            "cxl": {
+              "hit": 0.31353383458646616,
+              "unhit": -0.0037593984962406013,
+              "total": 0.3097744360902256
+            },
+            "none": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            }
+          }
+        },
+        "50_200": {
+          "n_anchor_fills": 822,
+          "per_channel_ticks": {
+            "fill": {
+              "hit": 0.10948905109489052,
+              "unhit": -0.017639902676399026,
+              "total": 0.09184914841849148
+            },
+            "lo": {
+              "hit": 0.2871046228710462,
+              "unhit": 0.8765206812652068,
+              "total": 1.163625304136253
+            },
+            "cxl": {
+              "hit": 0.33698296836982966,
+              "unhit": -0.2396593673965937,
+              "total": 0.09732360097323602
+            },
+            "none": {
+              "hit": 0.0,
+              "unhit": 0.0,
+              "total": 0.0
+            }
+          }
+        }
+      },
+      "k200_per_channel_ticks": {
+        "fill": 0.07990314769975787,
+        "lo": 1.4624697336561743,
+        "cxl": 0.3662227602905569,
+        "none": 0.0
+      },
+      "k200_signed_ticks": 1.908595641646489,
+      "positive_channel_shares": {
+        "fill": 0.04186489058039962,
+        "lo": 0.7662543609261021,
+        "cxl": 0.19188074849349826,
+        "none": 0.0
+      },
+      "positive_share_sum": 1.0,
+      "n_events": 20000,
+      "ok": true
+    }
+  },
+  "channel_gap_ticks": {
+    "fill": 2.4425,
+    "lo": 1.3426,
+    "cxl": -1.0484,
+    "none": 0.0
+  },
+  "claims": {
+    "drift_attributed": true,
+    "fill_channel_is_the_gap": true,
+    "tape_cxl_against_drift": true,
+    "sim_fill_share_lower": true,
+    "k200_gap_on_tape": true
+  },
+  "interpretation": "The tape's +200 drift is carried roughly equally by follow-through fills (fill channel ~0.47 of positive drift) and LO repricing (~0.53); cancels push AGAINST the drift. The calibrated sim is short almost entirely on the fill channel (tape +2.5 ticks vs sim +0.1): its continuation orders rarely move the mid because the consumed touch refills before the next child fires \u2014 the mechanism gap is post-fill hit-side depth, i.e. what arrives between the parent's slices.",
+  "git_revision": "4e856dddd889da9830f15dc4656420539225d493",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "d8bf86f23f457bff966373d50e18c9f21a9bb1e82c4ba43be79fbae58fcb938f"
+}
