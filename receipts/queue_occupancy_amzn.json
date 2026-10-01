@@ -1,0 +1,719 @@
+{
+ "claim": "queue_position_and_share_condition_fills",
+ "data_label": "MIXED",
+ "divergences": [],
+ "git_revision": "e8dccf195941fbd01dbb3863794a67f08c85638d",
+ "interpretation": "Per-(side, price) FIFO queues rebuilt from the message stream: submissions append, deletes remove, partial cancels shrink in place, executions decrement the named resting order \u2014 the tape's own victim record; LOBSTER deviates from strict FIFO (victim_at_front_rate < 1: iceberg/reserve fills reported under a displayed oid, same-ms sweeps), so the addressed order is authoritative and front-consumption is the fallback for untracked victims. Ghost depth \u2014 row-0 seed plus lazily materialized untracked-id events \u2014 covers pre-window orders ahead of every in-window order; displayed levels resync to the orderbook snapshot so silent ITCH updates land on the ghost region (bookkeeping, never burn). Burn attribution counts, per filled order, shares that departed ahead of it via executions vs cancels; rank-0 dwell is exit-time minus first-front time. Sim arms drive the identical recorder off the ZI-LOB order registry (unit lots, so share = 1/level-depth).",
+ "kind": "queue_occupancy",
+ "real": {
+  "fidelity": {
+   "evicted_silent_shares": 918729,
+   "exec_residual_shares": 1292,
+   "ghost_overrun_shares": 31765,
+   "max_queue_len_entries": 21,
+   "n_cancel_untracked_oid": 175,
+   "n_delete_untracked_oid": 6482,
+   "n_evicted_silent_orders": 8250,
+   "n_exec_events": 8974,
+   "n_exec_untracked_oid": 662,
+   "n_resync_events": 7329,
+   "n_tracked_exec_exits": 6076,
+   "registry_exit_match_rate": 0.998814,
+   "resync_shares_adjusted": 1178352,
+   "resync_tracked_overage": 918729,
+   "victim_at_front_rate": 0.920214,
+   "victim_position_hist": {
+    "1": 49,
+    "2": 1,
+    "3": 4
+   }
+  },
+  "fill_or_partial_rate": 0.049396,
+  "fill_rate": 0.046046,
+  "mechanism_present": true,
+  "median_rank_at_submit": {
+   "deleted": 1.0,
+   "filled": 0.0,
+   "open": 1.0
+  },
+  "median_share_at_submit": {
+   "deleted": 0.638978,
+   "filled": 1.0
+  },
+  "n_deleted": 116535,
+  "n_evicted_silent": 8250,
+  "n_filled": 6076,
+  "n_open_at_end": 651,
+  "n_orders": 131954,
+  "n_partial_filled": 442,
+  "ok": true,
+  "queue_ahead_burn": {
+   "cancel_burn_shares": 199479,
+   "exec_burn_share": 0.585626,
+   "exec_burn_shares": 281920,
+   "median_burn_coverage": 1.0,
+   "median_per_order_exec_share": 1.0,
+   "n_filled_with_ahead": 2964,
+   "still_standing_shares": 14779
+  },
+  "rank0_dwell_s": {
+   "all_exits": {
+    "median": 1.037264,
+    "n": 74935,
+    "p10": 0.000471,
+    "p90": 23.854255
+   },
+   "deleted_exits": {
+    "median": 0.799907,
+    "n": 61747,
+    "p10": 0.000625,
+    "p90": 13.559732
+   },
+   "filled_exits": {
+    "median": 0.168786,
+    "n": 6046,
+    "p10": 0.0,
+    "p90": 17.203845
+   },
+   "n_reached_front": 75339
+  },
+  "rank_buckets": {
+   "1": {
+    "fill_rate": 0.03872855976041383,
+    "median_shares_ahead": 100.0,
+    "n": 44076
+   },
+   "101p": {
+    "fill_rate": 0.0,
+    "median_shares_ahead": null,
+    "n": 0
+   },
+   "11_25": {
+    "fill_rate": 0.375,
+    "median_shares_ahead": 1100.0,
+    "n": 40
+   },
+   "2": {
+    "fill_rate": 0.033160976026665526,
+    "median_shares_ahead": 200.0,
+    "n": 23401
+   },
+   "26_100": {
+    "fill_rate": 0.0,
+    "median_shares_ahead": null,
+    "n": 0
+   },
+   "3_5": {
+    "fill_rate": 0.029421711193777476,
+    "median_shares_ahead": 300.0,
+    "n": 14785
+   },
+   "6_10": {
+    "fill_rate": 0.06378600823045268,
+    "median_shares_ahead": 600.0,
+    "n": 486
+   },
+   "front": {
+    "fill_rate": 0.06329577350201358,
+    "median_shares_ahead": 0.0,
+    "n": 49166
+   }
+  },
+  "share_deciles": {
+   "d0": {
+    "fill_rate": 0.07109338338808072,
+    "hi": 0.137931,
+    "lo": 0.000559,
+    "n": 12786
+   },
+   "d1": {
+    "fill_rate": 0.028972718582248695,
+    "hi": 0.260417,
+    "lo": 0.137931,
+    "n": 13599
+   },
+   "d2": {
+    "fill_rate": 0.03150478904456582,
+    "hi": 0.4,
+    "lo": 0.260417,
+    "n": 12633
+   },
+   "d3": {
+    "fill_rate": 0.02597949726162056,
+    "hi": 0.5,
+    "lo": 0.4,
+    "n": 7121
+   },
+   "d4": {
+    "fill_rate": 0.030238565567542928,
+    "hi": 0.625,
+    "lo": 0.5,
+    "n": 19743
+   },
+   "d5": {
+    "fill_rate": 0.02567191146578333,
+    "hi": 0.904977,
+    "lo": 0.625,
+    "n": 13283
+   },
+   "d6": {
+    "fill_rate": 0.038642009384487995,
+    "hi": 1.0,
+    "lo": 0.904977,
+    "n": 3623
+   },
+   "d7": {
+    "fill_rate": 0.0,
+    "hi": 1.0,
+    "lo": 1.0,
+    "n": 0
+   },
+   "d8": {
+    "fill_rate": 0.0,
+    "hi": 1.0,
+    "lo": 1.0,
+    "n": 0
+   },
+   "d9": {
+    "fill_rate": 0.06329577350201358,
+    "hi": 1.0,
+    "lo": 1.0,
+    "n": 49166
+   }
+  }
+ },
+ "receipt_sha256": "96406986c8cf16bc543e597d9a7995621576fdc5eb9bb9b57aca126b965b2d1b",
+ "research_only": true,
+ "schema": "queue_occupancy.v1",
+ "sim_arms": {
+  "iid": {
+   "fidelity": {
+    "evicted_silent_shares": 0,
+    "exec_residual_shares": 0,
+    "ghost_overrun_shares": 0,
+    "max_queue_len_entries": 11,
+    "n_cancel_untracked_oid": 0,
+    "n_delete_untracked_oid": 24,
+    "n_evicted_silent_orders": 0,
+    "n_exec_events": 5045,
+    "n_exec_untracked_oid": 6,
+    "n_resync_events": 0,
+    "n_tracked_exec_exits": 5039,
+    "registry_exit_match_rate": 1.0,
+    "resync_shares_adjusted": 0,
+    "resync_tracked_overage": 0,
+    "shares_ahead_selfcheck_rate": 1.0,
+    "victim_at_front_rate": 0.998811,
+    "victim_position_hist": {}
+   },
+   "fill_or_partial_rate": 0.336225,
+   "fill_rate": 0.336225,
+   "mechanism_present": true,
+   "median_rank_at_submit": {
+    "deleted": 2.0,
+    "filled": 1.0,
+    "open": 0.0
+   },
+   "median_share_at_submit": {
+    "deleted": 0.333333,
+    "filled": 0.5
+   },
+   "n_deleted": 9932,
+   "n_events": 30000,
+   "n_evicted_silent": 0,
+   "n_filled": 5039,
+   "n_open_at_end": 16,
+   "n_orders": 14987,
+   "n_partial_filled": 0,
+   "n_trades": 5045,
+   "ok": true,
+   "queue_ahead_burn": {
+    "cancel_burn_shares": 2116,
+    "exec_burn_share": 0.578066,
+    "exec_burn_shares": 2899,
+    "median_burn_coverage": 1.0,
+    "median_per_order_exec_share": 0.75,
+    "n_filled_with_ahead": 2643,
+    "still_standing_shares": 0
+   },
+   "rank0_dwell_s": {
+    "all_exits": {
+     "median": 11.241937,
+     "n": 9674,
+     "p10": 1.376913,
+     "p90": 62.666808
+    },
+    "deleted_exits": {
+     "median": 21.807869,
+     "n": 4635,
+     "p10": 2.652351,
+     "p90": 86.841143
+    },
+    "filled_exits": {
+     "median": 6.849421,
+     "n": 5039,
+     "p10": 0.95751,
+     "p90": 30.851258
+    },
+    "n_reached_front": 9685
+   },
+   "rank_buckets": {
+    "1": {
+     "fill_rate": 0.34377426870308053,
+     "median_shares_ahead": 1.0,
+     "n": 3863
+    },
+    "101p": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "11_25": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "2": {
+     "fill_rate": 0.24472573839662448,
+     "median_shares_ahead": 2.0,
+     "n": 2844
+    },
+    "26_100": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "3_5": {
+     "fill_rate": 0.16520260697081326,
+     "median_shares_ahead": 3.0,
+     "n": 3529
+    },
+    "6_10": {
+     "fill_rate": 0.10876132930513595,
+     "median_shares_ahead": 6.0,
+     "n": 331
+    },
+    "front": {
+     "fill_rate": 0.5420814479638009,
+     "median_shares_ahead": 0.0,
+     "n": 4420
+    }
+   },
+   "share_deciles": {
+    "d0": {
+     "fill_rate": 0.12782805429864252,
+     "hi": 0.2,
+     "lo": 0.090909,
+     "n": 884
+    },
+    "d1": {
+     "fill_rate": 0.14542190305206462,
+     "hi": 0.25,
+     "lo": 0.2,
+     "n": 1114
+    },
+    "d2": {
+     "fill_rate": 0.18439337252805987,
+     "hi": 0.333333,
+     "lo": 0.25,
+     "n": 1871
+    },
+    "d3": {
+     "fill_rate": 0.0,
+     "hi": 0.333333,
+     "lo": 0.333333,
+     "n": 0
+    },
+    "d4": {
+     "fill_rate": 0.24471830985915494,
+     "hi": 0.5,
+     "lo": 0.333333,
+     "n": 2840
+    },
+    "d5": {
+     "fill_rate": 0.0,
+     "hi": 0.5,
+     "lo": 0.5,
+     "n": 0
+    },
+    "d6": {
+     "fill_rate": 0.0,
+     "hi": 0.5,
+     "lo": 0.5,
+     "n": 0
+    },
+    "d7": {
+     "fill_rate": 0.34421980300673927,
+     "hi": 1.0,
+     "lo": 0.5,
+     "n": 3858
+    },
+    "d8": {
+     "fill_rate": 0.0,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 0
+    },
+    "d9": {
+     "fill_rate": 0.5420814479638009,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 4420
+    }
+   }
+  },
+  "regime": {
+   "fidelity": {
+    "evicted_silent_shares": 0,
+    "exec_residual_shares": 0,
+    "ghost_overrun_shares": 0,
+    "max_queue_len_entries": 11,
+    "n_cancel_untracked_oid": 0,
+    "n_delete_untracked_oid": 22,
+    "n_evicted_silent_orders": 0,
+    "n_exec_events": 5692,
+    "n_exec_untracked_oid": 8,
+    "n_resync_events": 0,
+    "n_tracked_exec_exits": 5684,
+    "registry_exit_match_rate": 1.0,
+    "resync_shares_adjusted": 0,
+    "resync_tracked_overage": 0,
+    "shares_ahead_selfcheck_rate": 1.0,
+    "victim_at_front_rate": 0.998595,
+    "victim_position_hist": {}
+   },
+   "fill_or_partial_rate": 0.382709,
+   "fill_rate": 0.382709,
+   "mechanism_present": true,
+   "median_rank_at_submit": {
+    "deleted": 2.0,
+    "filled": 0.0,
+    "open": 1.0
+   },
+   "median_share_at_submit": {
+    "deleted": 0.333333,
+    "filled": 1.0
+   },
+   "n_deleted": 9154,
+   "n_events": 30000,
+   "n_evicted_silent": 0,
+   "n_filled": 5684,
+   "n_open_at_end": 14,
+   "n_orders": 14852,
+   "n_partial_filled": 0,
+   "n_trades": 5692,
+   "ok": true,
+   "queue_ahead_burn": {
+    "cancel_burn_shares": 2080,
+    "exec_burn_share": 0.600154,
+    "exec_burn_shares": 3122,
+    "median_burn_coverage": 1.0,
+    "median_per_order_exec_share": 1.0,
+    "n_filled_with_ahead": 2789,
+    "still_standing_shares": 0
+   },
+   "rank0_dwell_s": {
+    "all_exits": {
+     "median": 9.519946,
+     "n": 10022,
+     "p10": 1.087874,
+     "p90": 57.125136
+    },
+    "deleted_exits": {
+     "median": 19.943942,
+     "n": 4338,
+     "p10": 2.459252,
+     "p90": 82.443555
+    },
+    "filled_exits": {
+     "median": 5.795944,
+     "n": 5684,
+     "p10": 0.724251,
+     "p90": 29.50773
+    },
+    "n_reached_front": 10029
+   },
+   "rank_buckets": {
+    "1": {
+     "fill_rate": 0.3723543245361902,
+     "median_shares_ahead": 1.0,
+     "n": 3827
+    },
+    "101p": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "11_25": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "2": {
+     "fill_rate": 0.2591792656587473,
+     "median_shares_ahead": 2.0,
+     "n": 2778
+    },
+    "26_100": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "3_5": {
+     "fill_rate": 0.19542083198968074,
+     "median_shares_ahead": 3.0,
+     "n": 3101
+    },
+    "6_10": {
+     "fill_rate": 0.14615384615384616,
+     "median_shares_ahead": 6.0,
+     "n": 260
+    },
+    "front": {
+     "fill_rate": 0.59250920998772,
+     "median_shares_ahead": 0.0,
+     "n": 4886
+    }
+   },
+   "share_deciles": {
+    "d0": {
+     "fill_rate": 0.14050822122571002,
+     "hi": 0.2,
+     "lo": 0.090909,
+     "n": 669
+    },
+    "d1": {
+     "fill_rate": 0.1817204301075269,
+     "hi": 0.25,
+     "lo": 0.2,
+     "n": 930
+    },
+    "d2": {
+     "fill_rate": 0.21525423728813559,
+     "hi": 0.333333,
+     "lo": 0.25,
+     "n": 1770
+    },
+    "d3": {
+     "fill_rate": 0.0,
+     "hi": 0.333333,
+     "lo": 0.333333,
+     "n": 0
+    },
+    "d4": {
+     "fill_rate": 0.2592725963269715,
+     "hi": 0.5,
+     "lo": 0.333333,
+     "n": 2777
+    },
+    "d5": {
+     "fill_rate": 0.0,
+     "hi": 0.5,
+     "lo": 0.5,
+     "n": 0
+    },
+    "d6": {
+     "fill_rate": 0.3730366492146597,
+     "hi": 1.0,
+     "lo": 0.5,
+     "n": 3820
+    },
+    "d7": {
+     "fill_rate": 0.0,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 0
+    },
+    "d8": {
+     "fill_rate": 0.0,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 0
+    },
+    "d9": {
+     "fill_rate": 0.59250920998772,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 4886
+    }
+   }
+  },
+  "split": {
+   "fidelity": {
+    "evicted_silent_shares": 0,
+    "exec_residual_shares": 0,
+    "ghost_overrun_shares": 0,
+    "max_queue_len_entries": 9,
+    "n_cancel_untracked_oid": 0,
+    "n_delete_untracked_oid": 15,
+    "n_evicted_silent_orders": 0,
+    "n_exec_events": 6415,
+    "n_exec_untracked_oid": 15,
+    "n_resync_events": 0,
+    "n_tracked_exec_exits": 6400,
+    "registry_exit_match_rate": 1.0,
+    "resync_shares_adjusted": 0,
+    "resync_tracked_overage": 0,
+    "shares_ahead_selfcheck_rate": 1.0,
+    "victim_at_front_rate": 0.997662,
+    "victim_position_hist": {}
+   },
+   "fill_or_partial_rate": 0.470761,
+   "fill_rate": 0.470761,
+   "mechanism_present": true,
+   "median_rank_at_submit": {
+    "deleted": 1.0,
+    "filled": 0.0,
+    "open": 1.0
+   },
+   "median_share_at_submit": {
+    "deleted": 0.5,
+    "filled": 1.0
+   },
+   "n_deleted": 7178,
+   "n_events": 30000,
+   "n_evicted_silent": 0,
+   "n_filled": 6400,
+   "n_open_at_end": 17,
+   "n_orders": 13595,
+   "n_partial_filled": 0,
+   "n_trades": 6415,
+   "ok": true,
+   "queue_ahead_burn": {
+    "cancel_burn_shares": 1307,
+    "exec_burn_share": 0.665643,
+    "exec_burn_shares": 2602,
+    "median_burn_coverage": 1.0,
+    "median_per_order_exec_share": 1.0,
+    "n_filled_with_ahead": 2256,
+    "still_standing_shares": 0
+   },
+   "rank0_dwell_s": {
+    "all_exits": {
+     "median": 6.143581,
+     "n": 10577,
+     "p10": 0.508019,
+     "p90": 58.044277
+    },
+    "deleted_exits": {
+     "median": 22.729373,
+     "n": 4177,
+     "p10": 2.831135,
+     "p90": 92.66488
+    },
+    "filled_exits": {
+     "median": 2.700179,
+     "n": 6400,
+     "p10": 0.307962,
+     "p90": 21.811286
+    },
+    "n_reached_front": 10587
+   },
+   "rank_buckets": {
+    "1": {
+     "fill_rate": 0.38192592592592595,
+     "median_shares_ahead": 1.0,
+     "n": 3375
+    },
+    "101p": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "11_25": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "2": {
+     "fill_rate": 0.2967391304347826,
+     "median_shares_ahead": 2.0,
+     "n": 1840
+    },
+    "26_100": {
+     "fill_rate": 0.0,
+     "median_shares_ahead": null,
+     "n": 0
+    },
+    "3_5": {
+     "fill_rate": 0.2607003891050584,
+     "median_shares_ahead": 3.0,
+     "n": 1542
+    },
+    "6_10": {
+     "fill_rate": 0.27941176470588236,
+     "median_shares_ahead": 6.0,
+     "n": 68
+    },
+    "front": {
+     "fill_rate": 0.6121122599704579,
+     "median_shares_ahead": 0.0,
+     "n": 6770
+    }
+   },
+   "share_deciles": {
+    "d0": {
+     "fill_rate": 0.24566473988439305,
+     "hi": 0.25,
+     "lo": 0.111111,
+     "n": 692
+    },
+    "d1": {
+     "fill_rate": 0.27645788336933047,
+     "hi": 0.333333,
+     "lo": 0.25,
+     "n": 926
+    },
+    "d2": {
+     "fill_rate": 0.2965779467680608,
+     "hi": 0.5,
+     "lo": 0.333333,
+     "n": 1841
+    },
+    "d3": {
+     "fill_rate": 0.0,
+     "hi": 0.5,
+     "lo": 0.5,
+     "n": 0
+    },
+    "d4": {
+     "fill_rate": 0.0,
+     "hi": 0.5,
+     "lo": 0.5,
+     "n": 0
+    },
+    "d5": {
+     "fill_rate": 0.38146167557932265,
+     "hi": 1.0,
+     "lo": 0.5,
+     "n": 3366
+    },
+    "d6": {
+     "fill_rate": 0.0,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 0
+    },
+    "d7": {
+     "fill_rate": 0.0,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 0
+    },
+    "d8": {
+     "fill_rate": 0.0,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 0
+    },
+    "d9": {
+     "fill_rate": 0.6121122599704579,
+     "hi": 1.0,
+     "lo": 1.0,
+     "n": 6770
+    }
+   }
+  }
+ },
+ "ticker": "AMZN"
+}

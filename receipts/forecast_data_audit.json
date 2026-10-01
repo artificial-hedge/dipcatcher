@@ -1,0 +1,531 @@
+{
+  "claim": {
+    "ok": true,
+    "results": [
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature frame is empty",
+        "probe": "empty_frame_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature frame missing columns: ['event_time']",
+        "probe": "missing_required_key_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "LeakageError: feature frame contains lookahead/label columns: ['future_close']",
+        "probe": "lookahead_column_raises_leakage",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "LeakageError: feature frame contains lookahead/label columns: ['fwd_ret']",
+        "probe": "label_like_prefix_raises_leakage",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature frame has columns outside the schema allow-list: ['aux_score']",
+        "probe": "undeclared_extra_column_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature frame has duplicate (event_time, security_id) rows",
+        "probe": "duplicate_key_rows_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature 'ret_1' must be numeric, got String",
+        "probe": "non_numeric_feature_dtype_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature 'ret_1' must be finite",
+        "probe": "nonfinite_feature_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "SchemaError: feature 'ret_1' must be finite",
+        "probe": "null_feature_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "declared numeric features pass the allow-list",
+        "probe": "clean_frame_accepted",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "feature dtypes limited to Float32/Float64/Int32/Int64 \u2014 UInt8/16 features are rejected; over-strict in the safe direction",
+        "probe": "narrow_numeric_dtype_allowlist",
+        "verdict": "flag"
+      },
+      {
+        "area": "schema.feature",
+        "detail": "close/security_id/event_time/available_time dtypes are not checked by the schema \u2014 a Utf8 close passes validation (it crashes upstream in the pipeline, never at predict time)",
+        "probe": "context_columns_dtype_unchecked",
+        "verdict": "flag"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: forecast frame is empty",
+        "probe": "empty_frame_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: forecast frame missing columns: ['horizon_bars']",
+        "probe": "missing_key_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: forecast frame needs predicted_return and/or predicted_price",
+        "probe": "no_prediction_column_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "LeakageError: forecast frame contains label columns: ['realized_return']",
+        "probe": "label_column_raises_leakage",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: forecast frame has duplicate (event_time, security_id, horizon_bars)",
+        "probe": "duplicate_keys_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: horizon_bars must be >= 1",
+        "probe": "horizon_zero_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: horizon_bars must be a non-null integer",
+        "probe": "horizon_null_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: horizon_bars must be a non-null integer",
+        "probe": "horizon_string_dtype_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: each forecast row needs predicted_return and/or predicted_price",
+        "probe": "both_predictions_null_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: predicted_return must be finite when present",
+        "probe": "nonfinite_predicted_return_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: predicted_price must be finite and positive when present",
+        "probe": "nonpositive_predicted_price_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: confidence must be null or inside [0, 1]",
+        "probe": "confidence_out_of_band_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: confidence must be null or inside [0, 1]",
+        "probe": "confidence_nan_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: quantile columns must be nondecreasing in tau on each row",
+        "probe": "quantile_crossing_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: quantile columns must be nondecreasing in tau on each row",
+        "probe": "quantile_ordering_partial_null_row",
+        "verdict": "fixed"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "SchemaError: quantile column 'q_0.0' tau must lie in (0, 1)",
+        "probe": "quantile_tau_out_of_band_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "ordered quantiles, bounded confidence, both predictions present",
+        "probe": "clean_ladder_accepted",
+        "verdict": "pass"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "horizon_bars accepts Int32/64 + UInt32/64 but not Int8/16 or UInt8/16 despite the 'non-null integer' message \u2014 over-strict in the safe direction (pinned in docs/AUDIT_FX1.md round 3)",
+        "probe": "horizon_dtype_allowlist_partial",
+        "verdict": "flag"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "a predicted_return of -3.5 (a negative future price) passes \u2014 the positivity bound exists only on predicted_price",
+        "probe": "predicted_return_below_minus_one_accepted",
+        "verdict": "flag"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "forecast frames have no allow-list; an unknown column like aux_score rides into evaluation (label-like names still raise)",
+        "probe": "extra_columns_tolerated",
+        "verdict": "flag"
+      },
+      {
+        "area": "schema.forecast",
+        "detail": "q_50 or q_5 do not match ^q_(0.X+)$ \u2014 treated as plain extra columns, escaping the ordering check",
+        "probe": "noncanonical_quantile_name_tolerated",
+        "verdict": "flag"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: bars require available_time so a feature at t cannot use a later release",
+        "probe": "missing_available_time_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: bars require event_time so a feature at t cannot use a later release",
+        "probe": "missing_event_time_rejected",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: null available_time",
+        "probe": "null_availability_rejected_no_cutoff",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: null available_time",
+        "probe": "null_availability_rejected_pit_path",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: event_time is after available_time",
+        "probe": "release_before_event_rejected_no_cutoff",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: event_time is after available_time",
+        "probe": "release_before_event_rejected_with_cutoff",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.pit",
+        "detail": "PointInTimeError: null event_time",
+        "probe": "null_event_time_rejected",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.pit",
+        "detail": "rows with event_time > decision_time are dropped",
+        "probe": "event_after_cutoff_excluded",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.pit",
+        "detail": "a bar whose release is after the decision is identical to absence",
+        "probe": "late_release_equals_absent_bar",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.pit",
+        "detail": "event_time == available_time == decision_time is observable",
+        "probe": "boundary_release_visible",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.pit",
+        "detail": "decision_time=None applies lineage checks but no visibility filter \u2014 callers get every valid row (fit-time semantics)",
+        "probe": "no_cutoff_returns_all_bars",
+        "verdict": "flag"
+      },
+      {
+        "area": "features.pit",
+        "detail": "as_utc stamps a naive datetime as UTC instead of refusing; a local-time stamp upstream would be silently reinterpreted",
+        "probe": "naive_timestamp_assumed_utc",
+        "verdict": "flag"
+      },
+      {
+        "area": "features.pit",
+        "detail": "only event_time/available_time are enforced non-null; ingested_time/source/revision_id may carry nulls",
+        "probe": "secondary_lineage_nulls_tolerated",
+        "verdict": "flag"
+      },
+      {
+        "area": "features.causality",
+        "detail": "perturbing closes after the decision time changes no feature row",
+        "probe": "future_close_invisible",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "ret_1=0.010000000000 vs manual 0.010000000000",
+        "probe": "ret_1_exact_trailing_return",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "mom_5=0.009798010100 vs manual 0.009798010100",
+        "probe": "mom_5_exact_trailing_return",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "perturbing a close before the rolling window leaves the decision-row features bit-identical",
+        "probe": "features_use_only_trailing_window",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "shuffled input produces identical feature rows",
+        "probe": "row_order_invariant",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "emitted columns ['available_time', 'close', 'event_time', 'mom_5', 'ret_1', 'security_id', 'vol_5']",
+        "probe": "only_declared_columns_emitted",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "no inf/NaN in any emitted feature column",
+        "probe": "all_features_finite",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "PointInTimeError: duplicate (security_id, event_time) bars",
+        "probe": "duplicate_bars_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "ValueError: lookbacks must be positive integers",
+        "probe": "empty_lookbacks_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "ValueError: lookbacks must be unique",
+        "probe": "duplicate_lookbacks_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "ValueError: vol_window must be >= 2",
+        "probe": "vol_window_below_two_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.causality",
+        "detail": "a panel shorter than the longest lookback returns an empty frame without SchemaError \u2014 the runner tolerates empty slices",
+        "probe": "empty_feature_frame_silent",
+        "verdict": "flag"
+      },
+      {
+        "area": "features.resample",
+        "detail": "bucket timestamp is the last source event_time, not bucket open",
+        "probe": "bucket_labeled_by_last_print",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "open=9.5 high=13.0 low=9.0 close=12.0 volume=15.0",
+        "probe": "ohlcv_aggregation_correct",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "bucket is observable only at its last print's release",
+        "probe": "bucket_availability_is_max",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "shuffled source rows produce identical buckets",
+        "probe": "row_order_invariant",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "PointInTimeError: resample input missing columns: ['close']",
+        "probe": "missing_column_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "ValueError: resample every must be a non-empty polars duration, e.g. '1d'",
+        "probe": "empty_every_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "PointInTimeError: resample bucket mixes sources; refusing to collapse provenance",
+        "probe": "mixed_sources_refused",
+        "verdict": "pass"
+      },
+      {
+        "area": "features.resample",
+        "detail": "PointInTimeError: resample bucket mixes revision ids; refusing to collapse provenance",
+        "probe": "mixed_revisions_refused",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.resample",
+        "detail": "PointInTimeError: bar event_time is after its available_time",
+        "probe": "per_bar_release_before_event_refused",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.resample",
+        "detail": "PointInTimeError: resample input has null available_time",
+        "probe": "null_lineage_refused",
+        "verdict": "fixed"
+      },
+      {
+        "area": "features.resample",
+        "detail": "two bars sharing (security_id, event_time) aggregate into 1 bucket row(s) \u2014 the pipeline's duplicate check only sees post-resample keys",
+        "probe": "duplicate_keys_merged_silently",
+        "verdict": "flag"
+      },
+      {
+        "area": "features.resample",
+        "detail": "every='bogus' raises a raw polars InvalidOperationError, not a typed PointInTimeError \u2014 loud crash, still fail-closed",
+        "probe": "invalid_every_raises_polars_error",
+        "verdict": "flag"
+      },
+      {
+        "area": "artifacts",
+        "detail": "FileNotFoundError: checkpoint not found: <scrubbed>/nope.pkl",
+        "probe": "missing_checkpoint_fails_closed",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "ValueError: cannot infer checkpoint format from 'model.bin'; set model.checkpoint_format to one of ['joblib', 'json', 'onnx', 'pickle', 'torch']",
+        "probe": "unknown_suffix_rejected",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "payload, format, sidecar version, and sha256 all bound",
+        "probe": "json_roundtrip_stamps_digest",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "UntrustedArtifactError: checkpoint SHA-256 does not match the trusted digest",
+        "probe": "safe_format_wrong_digest_refused",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "digest binding enforced even without unsafe opt-in",
+        "probe": "safe_format_correct_digest_accepted",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "UntrustedArtifactError: pickle, joblib, and full-module torch require allow_unsafe_deserialization=true and trusted_checkpoint_sha256",
+        "probe": "unsafe_pickle_requires_opt_in",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "UntrustedArtifactError: pickle, joblib, and full-module torch require allow_unsafe_deserialization=true and trusted_checkpoint_sha256",
+        "probe": "unsafe_opt_in_still_requires_digest",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "UntrustedArtifactError: trusted_checkpoint_sha256 must be 64 lowercase hex digits",
+        "probe": "digest_format_enforced",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "UntrustedArtifactError: checkpoint SHA-256 does not match the trusted digest",
+        "probe": "digest_mismatch_refused",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "the bytes whose sha256 matched are the bytes deserialized",
+        "probe": "opt_in_pickle_loads_checked_bytes",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "probe_artifact returns format/sha256/version metadata only \u2014 pickle bytes are hashed, never executed",
+        "probe": "probe_never_deserializes",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "weights_only=True load stamped with the file digest",
+        "probe": "torch_weights_only_default",
+        "verdict": "pass"
+      },
+      {
+        "area": "artifacts",
+        "detail": "json/onnx/torch-weights-only paths deserialize first and hash the file afterwards \u2014 a mid-load rewrite could make the stamped digest describe different bytes (the runner re-probes after load; single-shot callers see the gap)",
+        "probe": "safe_load_stamps_post_read_digest",
+        "verdict": "flag"
+      },
+      {
+        "area": "artifacts",
+        "detail": "the <path>.version sidecar stamps metadata without digest-binding \u2014 a version string can outlive its payload",
+        "probe": "sidecar_version_unhashed",
+        "verdict": "flag"
+      },
+      {
+        "area": "determinism",
+        "detail": "a second independent probe pass produces identical result rows",
+        "probe": "audit_results_reproducible",
+        "verdict": "pass"
+      },
+      {
+        "area": "determinism",
+        "detail": "receipt digest convention is byte-stable",
+        "probe": "canonical_json_sorted_bytes",
+        "verdict": "pass"
+      }
+    ]
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "interpretation": "fx1 forecast data layer adversarial audit: 63 contract probes pass, 9 defects fixed in this lane, 14 tolerated surfaces pinned as flags, 0 failures. Synthetic fixtures only \u2014 correctness evidence, not market evidence.",
+  "kind": "forecast_data_audit",
+  "live_pnl_claim": false,
+  "receipt_sha256": "940f1d32007060dce2d9acdbc61d6558c1de33a4743d75997a7f8892d43749e1",
+  "research_only": true,
+  "schema": "forecast_data_audit.v1"
+}
