@@ -137,6 +137,7 @@ src/quant_fund/hmm/__init__.py
 src/quant_fund/hmm/cli.py
 src/quant_fund/hmm/discrete.py
 src/quant_fund/hmm/eisner.py
+src/quant_fund/hmm/hmm_stability.py
 src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py
 src/quant_fund/labels/engine.py
