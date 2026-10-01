@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 977,
+  "module_count": 978,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -4253,6 +4253,22 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.quote_place"
+    },
+    {
+      "dst": "quant_fund.microstructure.hawkes_clock_bench",
+      "src": "quant_fund.microstructure.regime_clock_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.regime_clock_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.regime_clock_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.regime_clock_bench"
     },
     {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
@@ -11071,6 +11087,7 @@
     "quant_fund.microstructure.price_improvement",
     "quant_fund.microstructure.propagator_real",
     "quant_fund.microstructure.quote_place",
+    "quant_fund.microstructure.regime_clock_bench",
     "quant_fund.microstructure.rl_market_maker",
     "quant_fund.microstructure.round_lot",
     "quant_fund.microstructure.sign_autocorr_real",
@@ -12553,7 +12570,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 122,
+      "imports": 124,
       "src": "quant_fund.microstructure"
     },
     {
@@ -12573,7 +12590,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 87,
+      "imports": 89,
       "src": "quant_fund.microstructure"
     },
     {

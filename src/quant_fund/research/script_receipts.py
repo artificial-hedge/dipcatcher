@@ -424,6 +424,7 @@ _MEASUREMENT_SCHEMAS = (
     "price_improvement.v1",
     "propagator_real.v1",
     "quote_place.v1",
+    "regime_clock.v1",
     "round_lot.v1",
     "sign_autocorr_real.v1",
     "sign_predict.v1",

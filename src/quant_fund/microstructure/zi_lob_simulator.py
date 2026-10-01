@@ -209,6 +209,83 @@ class HawkesClockSpec:
         return tuple((float(row[0]), float(row[1]), float(row[2])) for row in k)
 
 
+@dataclass(frozen=True)
+class RateRegimeSpec:
+    """Markov-modulated baseline scaling (MMPP) for the event clock.
+
+    ``scales[s]`` multiplies the per-type base rates ``(lo, mo, cxl)``
+    while the chain sits in state ``s``; ``stay_probs[s]`` is the
+    per-event probability of remaining in ``s`` (geometric dwell).
+    Transitions move to a uniformly-chosen other state. Combined with
+    ``hawkes`` this is a Cox-Hawkes hybrid: the modulated bases feed the
+    thinning clock. ``None`` (or a single all-ones state) consumes zero
+    RNG draws and is bit-identical to the unmodulated clock.
+    """
+
+    scales: tuple[tuple[float, float, float], ...]
+    stay_probs: tuple[float, ...]
+    start: int = 0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.scales, (tuple, list)) or len(self.scales) < 1:
+            raise ValueError("scales must be a non-empty tuple of 3-vectors")
+        if len(self.scales) != len(self.stay_probs):
+            raise ValueError("scales and stay_probs must share a length")
+        for s in self.scales:
+            if not isinstance(s, (tuple, list)) or len(s) != 3:
+                raise ValueError("each scale must be a 3-vector")
+            for v in s:
+                _nonneg_finite(float(v), "scales")
+        for p in self.stay_probs:
+            if not (0.0 <= float(p) <= 1.0):
+                raise ValueError(f"stay_probs entries must be in [0, 1], got {p!r}")
+        if isinstance(self.start, bool) or not isinstance(self.start, int):
+            raise ValueError(f"start must be an int, got {self.start!r}")
+        if not 0 <= self.start < len(self.scales):
+            raise ValueError(f"start out of range: {self.start!r}")
+        object.__setattr__(
+            self,
+            "scales",
+            tuple((float(s[0]), float(s[1]), float(s[2])) for s in self.scales),
+        )
+        object.__setattr__(self, "stay_probs", tuple(float(p) for p in self.stay_probs))
+
+
+class RateRegimeFlow:
+    """Markov-modulated baseline multiplier driven per event.
+
+    ``ZILobSimulator.step`` multiplies the (lo, mo, cxl) bases by the
+    current state's scale vector before feeding the clock. The transition
+    check consumes one uniform per event when the chain can move; a
+    single-state spec (or a stay_prob of exactly 1) consumes zero draws.
+    """
+
+    def __init__(self, spec: RateRegimeSpec, rng: np.random.Generator) -> None:
+        self._scales = np.asarray(spec.scales, dtype=np.float64)
+        self._stay = np.asarray(spec.stay_probs, dtype=np.float64)
+        self._rng = rng
+        self.state = int(spec.start)
+        self.n_transitions = 0
+        self._frozen = len(spec.stay_probs) == 1 or float(self._stay[self.state]) >= 1.0
+
+    def scale(self) -> Array:
+        """Current ``(lo, mo, cxl)`` multipliers."""
+        s: Array = self._scales[self.state]
+        return s
+
+    def advance(self) -> None:
+        """Per-event transition step (uniform-over-others move)."""
+        if self._frozen:
+            return
+        if float(self._rng.random()) >= self._stay[self.state]:
+            n = self._scales.shape[0]
+            jump = 1 + int(float(self._rng.random()) * (n - 1))
+            self.state = (self.state + jump) % n
+            self.n_transitions += 1
+            if float(self._stay[self.state]) >= 1.0:
+                self._frozen = True
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -274,6 +351,12 @@ class ZILobConfig:
     # cancel retreat become expressible. ``None`` keeps the Poisson clock
     # bit-identical (zero change to the draw stream).
     hawkes: HawkesClockSpec | None = None
+    # Optional Markov-modulated baseline scaling (MMPP): the (lo, mo, cxl)
+    # base rates are multiplied by the current regime state's scale before
+    # the clock draws — produces session-level activity regimes on top of
+    # (or instead of) self-excitation. ``None`` keeps the constant-base
+    # clock bit-identical.
+    rate_regimes: RateRegimeSpec | None = None
 
     def __post_init__(self) -> None:
         _pos_finite(self.s0, "s0")
@@ -300,6 +383,8 @@ class ZILobConfig:
         _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
             raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
+        if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
+            raise TypeError(f"rate_regimes must be a RateRegimeSpec, got {self.rate_regimes!r}")
 
 
 def santa_fe_config(
@@ -568,6 +653,11 @@ class ZILobSimulator:
         self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
         self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
         self._hawkes = HawkesClock(config.hawkes, self._rng) if config.hawkes is not None else None
+        self._rate_flow = (
+            RateRegimeFlow(config.rate_regimes, self._rng)
+            if config.rate_regimes is not None
+            else None
+        )
         self.n_mo_units = 0
         self.n_lo_units = 0
         for k in range(1, config.init_levels + 1):
@@ -720,6 +810,9 @@ class ZILobSimulator:
             "n_lo_units": self.n_lo_units,
             "n_hawkes_proposals": self._hawkes.n_proposals if self._hawkes else 0,
             "n_hawkes_rejected": self._hawkes.n_rejected if self._hawkes else 0,
+            "n_regime_transitions": (
+                self._rate_flow.n_transitions if self._rate_flow is not None else 0
+            ),
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -919,6 +1012,12 @@ class ZILobSimulator:
         lo_rate = 2.0 * self._cfg.lam * self._cfg.band
         mo_rate = 2.0 * mu_eff
         cxl_rate = self._cfg.theta_cxl * float(self.total_depth)
+        if self._rate_flow is not None:
+            s = self._rate_flow.scale()
+            lo_rate *= float(s[0])
+            mo_rate *= float(s[1])
+            cxl_rate *= float(s[2])
+            self._rate_flow.advance()
         total = lo_rate + mo_rate + cxl_rate
         if not math.isfinite(total) or total <= 0.0:
             raise RuntimeError(f"degenerate event rate {total!r}")
