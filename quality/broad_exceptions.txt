@@ -29,6 +29,7 @@ src/quant_fund/portfolio/optimizer.py 2
 src/quant_fund/pretrade/config.py 1
 src/quant_fund/pretrade/engine.py 3
 src/quant_fund/pretrade/shadow.py 6
+src/quant_fund/proof/replay.py 1
 src/quant_fund/proof/verify.py 4
 src/quant_fund/proofcore/ci.py 1
 src/quant_fund/proofcore/provenance.py 3
