@@ -574,6 +574,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gil_pelaez",
         "hedonic",
         "dea",
+        # wave 51 — Bakshi-Kapadia-Madan model-free option-implied
+        # variance/skew/kurtosis spanning integrals, Phillips-Shi-Yu
+        # GSADF recursive bubble detection + date stamping, Pesaran-
+        # Shin-Smith pooled-mean-group panel ARDL, Ross recovery
+        # theorem state-price to physical transitions, Ait-Sahalia
+        # closed-form CKLS likelihood expansion, Toda-Yamamoto
+        # augmented-lag Granger MWALD. Same SYNTHETIC diagnostic
+        # contract.
+        "bkm_moments",
+        "gsadf_bubble",
+        "pmg_ardl",
+        "ross_recovery",
+        "ait_sahalia",
+        "toda_yamamoto",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
