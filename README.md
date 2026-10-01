@@ -856,7 +856,7 @@ dipcatcher/
 ├── reports/         # generated markdown reports (e.g. cost calibration)
 ├── LICENSE          # proprietary, all-rights-reserved
 ├── README.md        # this file
-├── Makefile         # every gate and workflow below is a make target
+├── Makefile         # every gate and workflow below is a Makefile target
 ├── pyproject.toml   # package + tool config; version from fx1.__version__
 └── CITATION.cff     # citation metadata
 ```
@@ -1736,7 +1736,7 @@ schedule and on `workflow_dispatch`.
 | Workflow file | Declared name | Trigger | What it gates |
 |---|---|---|---|
 | `ci.yml` | CI | push to main, PR to main (+ legacy branch), schedule | Lint, typecheck, sharded test matrix (Python 3.12/3.13), coverage, wheel/sdist build+install smoke. |
-| `fx1.yml` | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
+|  fx1.yml | fx1 | push to main / fx-1/**, PR | fx-1 lint, types, tests, honesty inheritance, corpus-contract smoke. |
 | `codeql.yml` | CodeQL | push to main, PR, schedule | Static security analysis (CodeQL). |
 | `scorecard.yml` | Scorecard | branch_protection_rule change, weekly schedule, push to main | OpenSSF Scorecard supply-chain posture. |
 | `secret-scan.yml` | Secret scan | push to main, PR | Repository secret scanning. |
