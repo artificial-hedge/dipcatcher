@@ -1973,3 +1973,34 @@ detail: |
   - Canon staged on top of w76-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+---
+owner: devin (wave 78 canon)
+slice: 6 model modules + benches_w78 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w78-lanes: multiple_comparisons.py (Tukey
+    1949 HSD via studentized_range, Dunnett 1955 many-to-
+    one with equicorrelated multivariate-t MC null, Games-
+    Howell 1976 Welch, Scheffe 1953 S-method F),
+    rank_aggregation.py (Plackett 1975/Luce 1959 Hunter
+    2004 MM, Borda, Condorcet-Copeland, MC3 maximin
+    stationary ranking), spc.py (Montgomery xbar-R factor
+    tables, Roberts 1959 EWMA time-varying limits, Page
+    1954 tabular CUSUM, Kane 1986 Cp/Cpk/Cpm capability,
+    phase-I reference windows), risk_parity.py (Roncalli
+    2013/Maillard 2010 ERC via cyclical coordinate descent
+    + RC shares + effective rank), mst_topology.py
+    (Mantegna 1999 MST degree/hub/path concentration +
+    Tumminello 2005 PMFG planar bound), e_divisive.py
+    (Matteson-James 2014 energy-divergence recursive
+    bisection + permutation significance).
+  - benches_w78.py: +456..461 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-
+    token filter).
+  - registry +6 -> "multiple_comparisons","rank_aggregation",
+    "spc","risk_parity","mst_topology","e_divisive"
+    (422->428); agent.py import+dict wiring; tests: 6 module
+    files + test_benches_w78.
+  - Canon staged on top of w77-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.

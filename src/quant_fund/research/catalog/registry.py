@@ -1090,6 +1090,30 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "isolation_forest",
         "hegy",
         "mice",
+        # Wave-78 families — Tukey (1949)
+        # HSD / Dunnett (1955) many-to-
+        # one / Games-Howell (1976) /
+        # Scheffe (1953) S-method post-
+        # hoc comparisons, Plackett
+        # (1975)-Luce (1959) MM + Borda
+        # + Condorcet-Copeland + MC3
+        # rank aggregation, Montgomery
+        # / Roberts (1959) / Page (1954)
+        # SPC (xbar-R, EWMA, CUSUM,
+        # Kane capability), Roncalli
+        # (2013)/Maillard (2010) ERC
+        # risk parity, Mantegna (1999)
+        # MST + Tumminello (2005) PMFG
+        # topology, and Matteson-James
+        # (2014) E-divisive energy
+        # changepoints. Same SYNTHETIC
+        # diagnostic contract.
+        "multiple_comparisons",
+        "rank_aggregation",
+        "spc",
+        "risk_parity",
+        "mst_topology",
+        "e_divisive",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

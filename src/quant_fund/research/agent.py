@@ -613,6 +613,14 @@ from quant_fund.research.benches_w77 import (
     bench_lmm,
     bench_mice,
 )
+from quant_fund.research.benches_w78 import (
+    bench_e_divisive,
+    bench_mst_topology,
+    bench_multiple_comparisons,
+    bench_rank_aggregation,
+    bench_risk_parity,
+    bench_spc,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2626,6 +2634,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "isolation_forest": bench_isolation_forest(),
         "hegy": bench_hegy(),
         "mice": bench_mice(),
+        "multiple_comparisons": bench_multiple_comparisons(),
+        "rank_aggregation": bench_rank_aggregation(),
+        "spc": bench_spc(),
+        "risk_parity": bench_risk_parity(),
+        "mst_topology": bench_mst_topology(),
+        "e_divisive": bench_e_divisive(),
     }
 
     hyps = _build_hypotheses(families, rankers)
