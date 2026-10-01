@@ -258,3 +258,40 @@ coverage under drift; CRPS non-worsening on calibration); ruff + ruff-format
   green. Remaining backlog: mutation campaign on verify.py + catalog,
   fx1 capability.py/CLI wiring (owner calls), Tier-B deep-kernel-hedging
   follow-ups.
+- **Wave 19: INTEGRATED 2026-09-30 (PR #452, stacked on #446)** — all six
+  lanes landed + six OPTIONAL families (`benches_w19.py`, scorecard
+  93→99): generalized-Langevin latent-liquidity impact (2609.37872),
+  event-time order-flow memory and subordinated observables
+  (2609.13715), Fukasawa first-order implied-variance (2609.13961),
+  AD-Seq-Vol IVS diffusion + no-arb penalties (2609.13402, torch-gated),
+  RCCP retrieval-corrected conformal (2608.10553), DCP distribution-aware
+  conformal (2605.26569). 285 lane tests + 16 bench tests;
+  ruff/format/mypy clean; research suite green incl. executed-flag
+  invariant. Remaining backlog: mutation campaign on verify.py +
+  catalog, fx1 capability.py/CLI wiring (owner calls), Tier-B
+  follow-ups.
+
+- **Wave 20: INTEGRATED 2026-09-30** — five lanes landed (varswap
+  optimal stopping; hidden-Markov equilibrium pricing with the §5.5
+  calibration reproduced to printed digits; Gaussian normalized
+  coordinates + CDF-deformation arb checks, Sun 2609.14212; liquidity-tail
+  LOB equilibrium, Cetin-Lin-Livieri 2607.01198; adversarial-RL market
+  making, Yang & Xu 2609.22785 — torch-gated), five OPTIONAL families
+  wired (scorecard 99→105). A locally built `metrics/sga_uq` lane was
+  dropped: wave-17 `sga_multistep_uq` already canonizes arXiv:2609.28582
+  as a strict superset — the dup is recorded so later waves skip it.
+  Canon: `devin/w20-canon`. PR #477 stacked on #452.
+
+- **Wave 21: INTEGRATED 2026-09-30** — three lanes landed and wired
+  (scorecard 105→108): BOCPD change points (Adams & MacKay 0710.3742),
+  rough-vol pricing — fractional Riccati rHeston CF + rBergomi/Volterra
+  simulators (El Euch & Rosenbaum 1609.02108; Abi Jaber-Larsson-Pulido
+  1708.08796, corrected from the spec's 1708.07719), and signature
+  features — Goursat-PDE signature kernel + lead-lag MMD
+  (Chevyrev-Oberhauser 1810.10971; Salvi et al 2006.14794, corrected
+  from the spec's 2006.14742). Canon: `devin/w21-canon`. PR #479
+  stacked on #477. Duplicates recorded for later waves:
+  `metrics/multipower_variation` (models/realized already canonizes
+  BPV/TPQ/BNS/Lee-Mykland) and Hawkes GOF (hawkes_residuals owns the
+  compensator+KS battery). Wave-22 lane signature_martingale_test
+  running as a child — integrates on `devin/w22-canon`.
