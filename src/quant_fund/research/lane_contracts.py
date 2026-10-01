@@ -215,12 +215,91 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         return _p42_conformance_contract_errors(payload)
     if payload.get("kind") in SIM_LIVE_KINDS:
         return sim_live_contract_errors(payload)
+    if schema == "corpus_epoch.v1" or payload.get("kind") == "corpus_epoch.v1":
+        from quant_fund.research.corpus_epoch import epoch_contract_errors
+
+        return epoch_contract_errors(payload)
+    if schema == "corpus_proof.v1" or payload.get("kind") == "corpus_proof.v1":
+        from quant_fund.research.epoch_merkle import corpus_proof_errors
+
+        return corpus_proof_errors(payload)
+    if schema == "corpus_absence.v1" or payload.get("kind") == "corpus_absence.v1":
+        from quant_fund.research.epoch_merkle import corpus_absence_errors
+
+        return corpus_absence_errors(payload)
+    if schema == "corpus_history_absence.v1" or payload.get("kind") == "corpus_history_absence.v1":
+        from quant_fund.research.epoch_merkle import history_absence_errors
+
+        return history_absence_errors(payload)
+    if schema == "repo_integrity.v1" or payload.get("kind") == "repo_integrity":
+        from quant_fund.research.repo_integrity import repo_integrity_contract_errors
+
+        return repo_integrity_contract_errors(payload)
+    if schema == "epoch_consistency.v1" or payload.get("kind") == "epoch_consistency.v1":
+        from quant_fund.research.epoch_consistency import consistency_contract_errors
+
+        return consistency_contract_errors(payload)
+    if schema == "epoch_delta.v1" or payload.get("kind") == "epoch_delta.v1":
+        from quant_fund.research.epoch_delta import epoch_delta_errors
+
+        return epoch_delta_errors(payload)
+    if schema == "epoch_position.v1" or payload.get("kind") == "epoch_position.v1":
+        from quant_fund.research.epoch_merkle import epoch_position_errors
+
+        return epoch_position_errors(payload)
+    if schema == "integrity_checkpoint.v1" or payload.get("kind") == "integrity_checkpoint":
+        from quant_fund.research.integrity_checkpoint import checkpoint_contract_errors
+
+        return checkpoint_contract_errors(payload)
+    if schema == "integrity_witness.v1" or payload.get("kind") == "integrity_witness":
+        from quant_fund.research.integrity_witness import witness_contract_errors
+
+        return witness_contract_errors(payload)
+    if schema == "auditor_bundle.v1" or payload.get("kind") == "auditor_bundle":
+        from quant_fund.research.auditor_bundle import bundle_contract_errors
+
+        return bundle_contract_errors(payload)
     if schema == "receipt_lattice.v1" or payload.get("kind") == "receipt_lattice.v1":
         from quant_fund.research.receipt_lattice import lattice_contract_errors
 
         return lattice_contract_errors(payload)
+    if schema == "receipt_graph.v1" or payload.get("kind") == "receipt_graph.v1":
+        from quant_fund.research.receipt_graph import graph_contract_errors
+
+        return graph_contract_errors(payload)
     if payload.get("kind") in ("xwatch", "xwatch.v1"):
         from quant_fund.research.xwatch import xwatch_contract_errors
 
         return xwatch_contract_errors(payload)
+    if schema == "tamper_drill.v1" or payload.get("kind") == "tamper_drill":
+        from quant_fund.research.tamper_drill import drill_contract_errors
+
+        return drill_contract_errors(payload)
+    if schema == "checkpoint_chain.v1" or payload.get("kind") == "checkpoint_chain":
+        from quant_fund.research.checkpoint_chain import chain_contract_errors
+
+        return chain_contract_errors(payload)
+    if schema in ("fuzz_drill.v1", "receipt_fuzz.v1") or payload.get("kind") in (
+        "fuzz_drill",
+        "receipt_fuzz",
+    ):
+        from quant_fund.research.fuzz_drill import fuzz_contract_errors
+
+        return fuzz_contract_errors(payload)
+    if schema == "receipt_tombstone.v1" or payload.get("kind") == "receipt_tombstone.v1":
+        from quant_fund.research.receipt_tombstone import tombstone_contract_errors
+
+        return tombstone_contract_errors(payload)
+    if schema == "rough_vol.v1":
+        from quant_fund.models.rbergomi import rough_vol_contract_errors
+
+        return rough_vol_contract_errors(payload)
+    if schema == "fbm_circulant.v1":
+        from quant_fund.models.fbm import fbm_contract_errors
+
+        return fbm_contract_errors(payload)
+    if schema == "vol_of_vol.v1":
+        from quant_fund.research.vol_of_vol import vol_of_vol_contract_errors
+
+        return vol_of_vol_contract_errors(payload)
     return []
