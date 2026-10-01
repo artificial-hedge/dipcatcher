@@ -1232,6 +1232,12 @@ wave 51 (devin/w51-canon-integration): BKM model-free option-implied
   moments, GSADF recursive bubble detection, PSS pooled-mean-group
   ARDL, Ross recovery, Ait-Sahalia CKLS likelihood, Toda-Yamamoto
   MWALD — 6 modules + benches_w51 (scorecard 277->283 families).
+wave 55 (devin/w55-canon-integration): Diebold-Mariano + HLN
+  accuracy test, Engle-Granger/Phillips-Ouliaris cointegration,
+  Glosten-Milgrom learning, Hasbrouck information share, BDS
+  independence test, Cochrane-Piazzesi bond factor, Engle-Ng
+  asymmetry diagnostics — 7 modules + benches_w55 (scorecard
+  301->308 families).
 
 ## wave 52 (devin/w52-canon-integration, in flight)
   6 SOTA lanes on devin/w52-lanes: nardl (Shin-Yu-Greenwood-Nimmo
