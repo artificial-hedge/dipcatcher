@@ -344,6 +344,7 @@ src/quant_fund/microstructure/trade_decomp.py
 src/quant_fund/microstructure/vendor_book_map.py
 src/quant_fund/microstructure/vol_signature.py
 src/quant_fund/microstructure/vpin.py
+src/quant_fund/microstructure/waiting_times.py
 src/quant_fund/microstructure/zi_lob_simulator.py
 src/quant_fund/models/__init__.py
 src/quant_fund/models/agaci.py
