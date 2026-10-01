@@ -32,12 +32,16 @@ import math
 import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy import optimize as opt
 from scipy import stats as sstats
 from scipy.special import gammaln
+
+if TYPE_CHECKING:
+    from quant_fund.models.rvine import RVineSpec
 
 Array = NDArray[np.float64]
 
@@ -151,6 +155,11 @@ class VineMatrix:
     # map onto tree_edges.
     ordering: Array | None = field(default=None)
     structure: str = field(default="rvine")
+    # Internal handle produced by ``vine_fit(structure="rvine")``: the fitted
+    # edge list + sampling arrays that the generic R-vine paths consume.
+    # Hand-built matrices leave it None and keep the legacy warn/degrade
+    # behaviour.
+    rvine_spec: RVineSpec | None = field(default=None, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         m = np.asarray(self.matrix, dtype=np.float64)
@@ -892,6 +901,11 @@ def vine_sample(
     diag = np.array([vm.matrix[j, j] for j in range(dim)])
     dvals = np.sort(diag)
 
+    if structure == "rvine" and vm.rvine_spec is not None:
+        from quant_fund.models.rvine import rvine_sample as _rvine_sim
+
+        return _rvine_sim(n, cast("RVineSpec", vm.rvine_spec), rng)
+
     if structure == "cvine" or (
         structure == "rvine" and np.allclose(dvals, np.arange(1, dim + 1, dtype=float)[::-1])
     ):
@@ -1107,10 +1121,15 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
                 break
         return total_ll
 
-    # Generic R-vine: edge endpoints are variable labels in vine space, and
-    # the correct arguments are conditioned transforms that the stored
-    # structure does not describe — refuse rather than silently evaluate
-    # wrong-conditioning densities.
+    if structure == "rvine" and vm.rvine_spec is not None:
+        from quant_fund.models.rvine import rvine_logpdf_edges
+
+        return float(rvine_logpdf_edges(m, cast("RVineSpec", vm.rvine_spec)).sum())
+
+    # Generic R-vine without a fitted spec: edge endpoints are variable
+    # labels in vine space, and the correct arguments are conditioned
+    # transforms that ``tree_edges`` alone does not describe — refuse rather
+    # than silently evaluate wrong-conditioning densities.
     raise ValueError(
         "vine_logpdf requires structure='cvine' or 'dvine' "
         "(generic R-vine evaluation is unsupported)"
@@ -1205,8 +1224,36 @@ def vine_fit(
     n_obs, d = m.shape
     if d > max_dim:
         raise ValueError(f"dimension {d} exceeds max_dim={max_dim}")
-    if structure not in ("cvine", "dvine"):
-        raise ValueError("structure must be 'cvine' or 'dvine'")
+    if structure not in ("cvine", "dvine", "rvine"):
+        raise ValueError("structure must be 'cvine', 'dvine' or 'rvine'")
+
+    if structure == "rvine":
+        from quant_fund.models.rvine import rvine_fit
+
+        spec = rvine_fit(m, families=families, criterion=criterion, tau_threshold=tau_threshold)
+        tree_edges_r = [[(e.x, e.y, tuple(e.cond)) for e in tree_list] for tree_list in spec.edges]
+        fam_r: dict[tuple[int, int], str] = {}
+        par_r: dict[tuple[int, int], dict[str, float]] = {}
+        n_par = 0
+        for t, tree_list in enumerate(spec.edges):
+            for eidx, e in enumerate(tree_list):
+                fam_r[(t, eidx)] = e.family
+                par_r[(t, eidx)] = dict(e.params)
+                n_par += 2 if e.family == "t" else 1
+        vm_r = VineMatrix(
+            matrix=np.asarray(spec.matrix, dtype=np.float64),
+            families=fam_r,
+            params=par_r,
+            loglik=float(spec.loglik),
+            tree_edges=tree_edges_r,
+            ordering=None,
+            structure="rvine",
+            rvine_spec=spec,
+        )
+        vm_r.n_params = n_par
+        vm_r.aic = _aic(spec.loglik, n_par)
+        vm_r.bic = _bic(spec.loglik, n_par, n_obs)
+        return vm_r
 
     # Determine variable ordering via MST on |tau|
     tau_full = np.zeros((d, d), dtype=np.float64)

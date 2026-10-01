@@ -260,6 +260,71 @@ def vine_audit() -> dict[str, bool]:
         and np.all((out > 0) & (out < 1))
     )
 
+    # -- general R-vine engine (structure='rvine' fitted path) ----------------------
+    # Dißmann select + peel + edge-DAG replay + Rosenblatt sampling.  On a
+    # chain-dominated DGP the engine must rediscover the D-vine and at least
+    # match the specialized fits; on a star-dominated one the C-vine.
+    ar5 = np.array(
+        [
+            [1.0, 0.85, 0.7225, 0.6141, 0.5220],
+            [0.85, 1.0, 0.85, 0.7225, 0.6141],
+            [0.7225, 0.85, 1.0, 0.85, 0.7225],
+            [0.6141, 0.7225, 0.85, 1.0, 0.85],
+            [0.5220, 0.6141, 0.7225, 0.85, 1.0],
+        ]
+    )
+    u5 = _u_matrix(rng, ar5, 2500)
+    vm_r5 = vine_fit(u5, families=("gaussian",), structure="rvine")
+    vm_c5 = vine_fit(u5, families=("gaussian",), structure="cvine")
+    vm_d5 = vine_fit(u5, families=("gaussian",), structure="dvine")
+    results["rvine_fit_runs"] = vm_r5.structure == "rvine" and vm_r5.rvine_spec is not None
+    # sequential Dißmann selection is greedy — no domination guarantee over
+    # the specialized ladders, whose separate ordering heuristic can land a
+    # luckier hub.  Pins: never worse than the *min* of the specialized
+    # fits, exact D-vine recovery on the chain DGP, and within-noise of the
+    # best specialized fit.
+    results["rvine_never_worst_structure"] = vm_r5.loglik >= min(vm_c5.loglik, vm_d5.loglik) - 1e-9
+    results["rvine_matches_dvine_on_chain"] = abs(vm_r5.loglik - vm_d5.loglik) < 1e-6
+    results["rvine_within_noise_of_best"] = (max(vm_c5.loglik, vm_d5.loglik) - vm_r5.loglik) < 3.0
+    ll_r5 = vine_logpdf(vm_r5, u5)
+    results["rvine_logpdf_matches_fit_loglik"] = abs(ll_r5 - vm_r5.loglik) < 1e-9
+    s_r5 = vine_sample(vm_r5, 4000, seed=13)
+    results["rvine_sample_in_unit"] = bool(np.all((s_r5 > 0) & (s_r5 < 1)))
+    results["rvine_sample_margins_uniform"] = bool(np.all(np.abs(s_r5.mean(axis=0) - 0.5) < 0.03))
+    tau_d = _kendall_tau_pair(u5[:, 0], u5[:, 4])
+    tau_s = _kendall_tau_pair(s_r5[:, 0], s_r5[:, 4])
+    results["rvine_sample_tau_matches"] = abs(tau_s - tau_d) < 0.06
+    # cross-pair surface, not just the endpoint pair
+    max_tau_err = max(
+        abs(_kendall_tau_pair(s_r5[:, i], s_r5[:, j]) - _kendall_tau_pair(u5[:, i], u5[:, j]))
+        for i in range(5)
+        for j in range(i + 1, 5)
+    )
+    results["rvine_sample_tau_surface"] = max_tau_err < 0.06
+    vm_r5_b = vine_fit(u5, families=("gaussian",), structure="rvine")
+    results["rvine_fit_deterministic"] = bool(
+        np.array_equal(vm_r5.matrix, vm_r5_b.matrix)
+        and vm_r5.params == vm_r5_b.params
+        and abs(vm_r5.loglik - vm_r5_b.loglik) < 1e-12
+    )
+    # star-dominated DGP: engine should land on a C-vine-shaped structure
+    star = np.full((5, 5), 0.6)
+    np.fill_diagonal(star, 1.0)
+    u_star = _u_matrix(rng, star, 2500)
+    vm_rstar = vine_fit(u_star, families=("gaussian",), structure="rvine")
+    vm_cstar = vine_fit(u_star, families=("gaussian",), structure="cvine")
+    # equicorrelated: every ordering is equivalent in theory, so the gap is
+    # pure ordering/estimation noise (measured ±0.1 across seeds) — pin it
+    # symmetric, in either direction.
+    results["rvine_star_within_noise_of_cvine"] = abs(vm_cstar.loglik - vm_rstar.loglik) < 0.25
+    # spec-less hand-built rvine still refuses logpdf (no silent degrade)
+    try:
+        vine_logpdf(vm_r, u3)
+    except ValueError:
+        results["rvine_speclss_logpdf_still_refused"] = True
+    else:
+        results["rvine_speclss_logpdf_still_refused"] = False
+
     # -- deterministic fit + family selection --------------------------------------
     vm_rerun = vine_fit(u3, families=("gaussian",), structure="cvine")
     vm_rerun2 = vine_fit(u3, families=("gaussian",), structure="cvine")
@@ -331,9 +396,14 @@ def vine_audit_bench() -> dict[str, Any]:
             "Aas et al. 2009 scheme).  End-to-end recovery checks: AR(1) "
             "partial-ρ ≈ 0 recovered exactly, sampled τ surface matches "
             "target, fitted loglik equals the eval path, and column "
-            "orderings round-trip.  flag_* keys pin documented warts "
-            "(silent hinv fallback, gas truncation/|β| guard, generic "
-            "R-vine degrade-to-independent)."
+            "orderings round-trip.  The general R-vine engine (Dißmann "
+            "MST select + leaf-peel + edge-DAG replay + inverse-Rosenblatt "
+            "sampling) is exercised on chain- and star-dominated DGPs: it "
+            "rediscovers the D-vine loglik exactly on AR(1) data, is never "
+            "the worst structure, and recovers the full pairwise τ surface "
+            "from samples.  flag_* keys pin documented warts on spec-less "
+            "hand-built matrices (silent hinv fallback, gas truncation/|β| "
+            "guard, degrade-to-independent without a fitted spec)."
         ),
     }
     payload["receipt_sha256"] = hash_bytes(canonical_json_bytes(payload))

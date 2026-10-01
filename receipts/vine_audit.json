@@ -1,7 +1,7 @@
 {
   "claim": {
-    "n_passed": 46,
-    "n_probes": 46,
+    "n_passed": 58,
+    "n_probes": 58,
     "ok": true,
     "results": {
       "bad_structure_rejected": true,
@@ -44,7 +44,19 @@
       "ordering_changes_eval": true,
       "ordering_not_permutation_rejected": true,
       "ordering_roundtrip_sample": true,
+      "rvine_fit_deterministic": true,
+      "rvine_fit_runs": true,
+      "rvine_logpdf_matches_fit_loglik": true,
       "rvine_logpdf_refused": true,
+      "rvine_matches_dvine_on_chain": true,
+      "rvine_never_worst_structure": true,
+      "rvine_sample_in_unit": true,
+      "rvine_sample_margins_uniform": true,
+      "rvine_sample_tau_matches": true,
+      "rvine_sample_tau_surface": true,
+      "rvine_speclss_logpdf_still_refused": true,
+      "rvine_star_within_noise_of_cvine": true,
+      "rvine_within_noise_of_best": true,
       "sample_bounds_strict": true,
       "sample_margins_uniform": true,
       "sample_seeded_deterministic": true,
@@ -53,11 +65,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "9d70ea6ce8c1b5e70218ac28f6cf309680670111",
-  "interpretation": "Vine copula audit: pins four correctness fixes found by this audit \u2014 the Joe h-function's swapped partial derivative, vine_logpdf's missing Rosenblatt transforms (tree edges were evaluated on raw marginals), the samplers' wrong conditioning source (marginals instead of Rosenblatt values), and the D-vine fit's IndexError ladder (rewritten to the double-array Aas et al. 2009 scheme).  End-to-end recovery checks: AR(1) partial-\u03c1 \u2248 0 recovered exactly, sampled \u03c4 surface matches target, fitted loglik equals the eval path, and column orderings round-trip.  flag_* keys pin documented warts (silent hinv fallback, gas truncation/|\u03b2| guard, generic R-vine degrade-to-independent).",
+  "git_revision": "e8c777a09d1b0cae999253989d7e13b69cbd7137",
+  "interpretation": "Vine copula audit: pins four correctness fixes found by this audit \u2014 the Joe h-function's swapped partial derivative, vine_logpdf's missing Rosenblatt transforms (tree edges were evaluated on raw marginals), the samplers' wrong conditioning source (marginals instead of Rosenblatt values), and the D-vine fit's IndexError ladder (rewritten to the double-array Aas et al. 2009 scheme).  End-to-end recovery checks: AR(1) partial-\u03c1 \u2248 0 recovered exactly, sampled \u03c4 surface matches target, fitted loglik equals the eval path, and column orderings round-trip.  The general R-vine engine (Di\u00dfmann MST select + leaf-peel + edge-DAG replay + inverse-Rosenblatt sampling) is exercised on chain- and star-dominated DGPs: it rediscovers the D-vine loglik exactly on AR(1) data, is never the worst structure, and recovers the full pairwise \u03c4 surface from samples.  flag_* keys pin documented warts on spec-less hand-built matrices (silent hinv fallback, gas truncation/|\u03b2| guard, degrade-to-independent without a fitted spec).",
   "kind": "vine_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "382734c0ff2a8392c847ef2133b579c140925fb3377371557cba008e404cbede",
+  "receipt_sha256": "3abae4030dc43f0e8394bbb0d8abebcf5ea1d69b19ca1e586dc81d0857aa62f5",
   "research_only": true,
   "schema": "vine_audit.v1"
 }
