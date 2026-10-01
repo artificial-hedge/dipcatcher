@@ -24,7 +24,7 @@
       "status": "audited"
     },
     "compute": {
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "config": {
