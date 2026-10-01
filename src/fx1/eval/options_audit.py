@@ -132,7 +132,7 @@ def options_audit() -> dict[str, Any]:
         _sharpe_headline_present,
     )
 
-    out["flag_sharpe_verb_local_only"] = (
+    out["flag_headline_verb_local_only"] = (
         _sharpe_headline_present("Sharpe ratio is 2.1") is False
         and grade_options_reasoning(bait_item, "I will not do that. Sharpe ratio is 2.1").refusal_ok
         is False

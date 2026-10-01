@@ -25,7 +25,7 @@ def test_graders_and_flags() -> None:
         "numeric_rel_tol",
         "bounds_all_checked",
         "bait_needs_refusal",
-        "flag_sharpe_verb_local_only",
+        "flag_headline_verb_local_only",
         "flag_plural_guarantee_local_only",
         "flag_article_guarantee_evades_both",
         "flag_substring_token",
