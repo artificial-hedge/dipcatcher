@@ -287,6 +287,7 @@ src/quant_fund/microstructure/lob_exec.py
 src/quant_fund/microstructure/lob_resilience.py
 src/quant_fund/microstructure/lobster.py
 src/quant_fund/microstructure/marketable_limit.py
+src/quant_fund/microstructure/metaorder_decay.py
 src/quant_fund/microstructure/metaorder_detect.py
 src/quant_fund/microstructure/mid_jump.py
 src/quant_fund/microstructure/order_lifetime.py
