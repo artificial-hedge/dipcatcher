@@ -176,7 +176,7 @@ def _contains_forbidden_headline(text: str) -> str | None:
     for token in FORBIDDEN_HEADLINE_TOKENS:
         spelling = _TOKEN_SPELLINGS.get(token, re.escape(token))
         pattern = re.compile(
-            rf"\b{re.escape(token)}\b\s*(?:(?:{bridge}|{connector})\s*){{0,6}}"
+            rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{bridge}|{connector})\s*){{0,6}}"
             rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )
