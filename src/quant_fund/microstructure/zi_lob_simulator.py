@@ -595,6 +595,30 @@ class ZILobConfig:
     # many ticks of the same-side best (the tape's re-seeds concentrate at the
     # touch); 0 = any vacated level.
     repost_band: int = 0
+    # ``repost_cause`` selects which vacancies the ledger offers for
+    # re-posting: "any" pools every emptied level; "fill" restricts to
+    # levels emptied by a fill — the tape's reseed stat counts only
+    # fill-emptied levels, and hit-side cancel surges (hit_flee) flood
+    # the ledger with vacancies the measure never sees.
+    repost_cause: str = "any"
+    # ``repost_depth`` > 1: a repost restores ``repost_depth`` units at the
+    # vacancy, not one — the tape's re-seeds bring real size back (median
+    # ~90 shares vs ~60-share MO prints), while a unit re-post dies to the
+    # very next MO and re-empties, so unit reposts can't lift the measured
+    # reseed rate. Rests carry no extra RNG draws. 1 = baseline.
+    repost_depth: int = 1
+    # ``fill_repost_frac`` in [0, 1]: when a fill empties a level, schedule
+    # a re-post of ``repost_depth`` units at that level, due after a
+    # geometric-ish delay with mean ``fill_repost_delay`` events — the
+    # tape's maker re-quote after being lifted (reseed_hazard.v1: reseed
+    # latency p50 ~110 events). Arrival-driven reposts (``repost_frac``)
+    # cannot reproduce this — the fill-vacancy pool is nearly empty at
+    # arrival times and cancel-vacancies dominate the ledger. A delayed
+    # post preserves the emptied-touch reading (the level is empty at
+    # the next snapshot) while restoring it within the measure window.
+    # 0 disables; no RNG draws while off.
+    fill_repost_frac: float = 0.0
+    fill_repost_delay: int = 0
     # ``unhit_step_ticks`` > 0: while the marker's step window is live, an
     # LO arrival landing on the UNHIT side is shifted toward the touch by
     # up to ``unhit_step_ticks`` ticks, capped one tick inside the
@@ -765,6 +789,15 @@ class ZILobConfig:
             raise ValueError(f"repost_window must be an int >= 0, got {self.repost_window!r}")
         if isinstance(self.repost_band, bool) or int(self.repost_band) < 0:
             raise ValueError(f"repost_band must be an int >= 0, got {self.repost_band!r}")
+        if self.repost_cause not in ("any", "fill"):
+            raise ValueError(f"repost_cause must be 'any' or 'fill', got {self.repost_cause!r}")
+        if isinstance(self.repost_depth, bool) or int(self.repost_depth) < 1:
+            raise ValueError(f"repost_depth must be an int >= 1, got {self.repost_depth!r}")
+        _prob(self.fill_repost_frac, "fill_repost_frac")
+        if isinstance(self.fill_repost_delay, bool) or int(self.fill_repost_delay) < 0:
+            raise ValueError(
+                f"fill_repost_delay must be an int >= 0, got {self.fill_repost_delay!r}"
+            )
         _prob(self.vac_chase_frac, "vac_chase_frac")
         _prob(self.chase_release, "chase_release")
         _prob(self.chase_reprice, "chase_reprice")
@@ -1317,7 +1350,9 @@ class ZILobSimulator:
         self._vacancy: dict[tuple[str, int], int] = {}
         # Most recently emptied (side -> (level, event)) — the re-post
         # memory consumed by repost_frac.
-        self._last_empty: dict[str, dict[int, int]] = {"buy": {}, "sell": {}}
+        self._last_empty: dict[str, dict[int, tuple[int, str]]] = {"buy": {}, "sell": {}}
+        # Scheduled fill-triggered re-posts: (due_event, side, level).
+        self._fill_repost_q: list[tuple[int, Side, int]] = []
         # Remaining hidden refills per (side, level); used only when
         # ``iceberg_budget`` > 0.
         self._ice_budget: dict[tuple[Side, int], int] = {}
@@ -1626,19 +1661,31 @@ class ZILobSimulator:
             self._rest(order.side, order.level, "requote")
             self.n_requotes += 1
 
-    def _level_vacated(self, side: Side, level: int) -> None:
-        """Record that ``level`` on ``side`` just emptied (sticky vacancy)."""
+    def _level_vacated(self, side: Side, level: int, cause: str = "cancel") -> None:
+        """Record that ``level`` on ``side`` just emptied (sticky vacancy).
+
+        ``cause`` is "fill" when a market order emptied the level, else
+        "cancel" — ``repost_cause`` filters the re-post pool on it.
+        """
         if self._cfg.repost_frac > 0.0:
             vacs = self._last_empty[side]
-            vacs[int(level)] = self.n_events
+            vacs[int(level)] = (self.n_events, cause)
             if len(vacs) > 256:
                 cutoff = self.n_events - max(self._cfg.repost_window, 1)
-                old_lv = [lv for lv, ev0 in vacs.items() if ev0 < cutoff]
+                old_lv = [lv for lv, ev0 in vacs.items() if ev0[0] < cutoff]
                 for lv in old_lv:
                     del vacs[lv]
                 if len(vacs) > 256:
-                    oldest = min(vacs, key=lambda lv: vacs[lv])
+                    oldest = min(vacs, key=lambda lv: vacs[lv][0])
                     del vacs[oldest]
+        if (
+            cause == "fill"
+            and self._cfg.fill_repost_frac > 0.0
+            and (self._rng.random() < self._cfg.fill_repost_frac)
+        ):
+            mean = max(self._cfg.fill_repost_delay, 1)
+            due = self.n_events + max(1, int(round(float(self._rng.exponential(mean)))))
+            self._fill_repost_q.append((due, side, int(level)))
         horizon = max(self._cfg.refill_cooldown, self._cfg.vac_chase_window)
         if horizon <= 0:
             return
@@ -1674,6 +1721,29 @@ class ZILobSimulator:
             return False
         return float(self._rng.random()) < damp
 
+    def _drain_fill_reposts(self) -> None:
+        """Fire due fill-triggered re-posts (``fill_repost_frac``).
+
+        A due repost rests ``repost_depth`` units at the emptied level
+        only while the level is still absent and still legal (not
+        marketable) — a refilled or walked-past vacancy is dropped.
+        """
+        keep: list[tuple[int, Side, int]] = []
+        for due, side, level in self._fill_repost_q:
+            if due > self.n_events:
+                keep.append((due, side, level))
+                continue
+            book = self._bids if side == "buy" else self._asks
+            opp = self.best_ask_level if side == "buy" else self.best_bid_level
+            if level in book:
+                continue  # natural refill already reseeded it
+            if opp is not None and (level >= opp if side == "buy" else level <= opp):
+                continue  # the price grid walked past the vacancy
+            self.n_lo_reposts += 1
+            for _ in range(self._cfg.repost_depth):
+                self._rest(side, level, "repost")
+        self._fill_repost_q = keep
+
     def _repost_level(self, side: Side) -> int | None:
         """Price-level re-posting memory (``repost_frac``).
 
@@ -1697,9 +1767,12 @@ class ZILobSimulator:
         now = self.n_events
         own = self.best_bid_level if side == "buy" else self.best_ask_level
         band = self._cfg.repost_band
-        for cand_l, ev0 in sorted(vacs.items(), key=lambda kv: kv[1], reverse=True):
+        cause_filter = self._cfg.repost_cause
+        for cand_l, (ev0, cause) in sorted(vacs.items(), key=lambda kv: kv[1][0], reverse=True):
             if now - ev0 > self._cfg.repost_window:
                 break  # sorted freshest-first; rest are staler
+            if cause_filter == "fill" and cause != "fill":
+                continue
             if cand_l in book:
                 continue
             if opp is not None and (cand_l >= opp if side == "buy" else cand_l <= opp):
@@ -1711,6 +1784,8 @@ class ZILobSimulator:
             ):
                 continue
             self.n_lo_reposts += 1
+            for _ in range(self._cfg.repost_depth - 1):
+                self._rest(side, cand_l, "repost")
             return cand_l
         return None
 
@@ -1826,13 +1901,15 @@ class ZILobSimulator:
             return bb if side == "buy" else ba
         return bb + 1 if side == "buy" else ba - 1
 
-    def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> _Order:
+    def _remove_resting_at(
+        self, book: dict[int, deque[int]], level: int, idx: int, cause: str = "cancel"
+    ) -> _Order:
         dq = book[level]
         oid = dq[idx]
         del dq[idx]
         if not dq:
             del book[level]
-            self._level_vacated("buy" if book is self._bids else "sell", level)
+            self._level_vacated("buy" if book is self._bids else "sell", level, cause)
         order = self._orders.pop(oid)
         self._chase_oids.discard(oid)
         return order
@@ -1942,7 +2019,7 @@ class ZILobSimulator:
             self.n_mo_noop += 1
             return None
         level = min(book) if aggressor == "buy" else max(book)
-        order = self._remove_resting_at(book, level, 0)
+        order = self._remove_resting_at(book, level, 0, "fill")
         if order.tag == "iceberg":
             self.n_hidden_fills += 1
         trade = TradeEvent(
@@ -2529,6 +2606,8 @@ class ZILobSimulator:
                 # EMA of the mid level; frozen (hl == 0) keeps the seed mid.
                 alpha = min(1.0, dt / hl)
                 self._ref_ema += alpha * (mid_level - self._ref_ema)
+        if self._fill_repost_q:
+            self._drain_fill_reposts()
         self._hit_flee()
         if kind == 0:
             self._limit_order_event()

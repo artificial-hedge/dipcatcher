@@ -187,10 +187,12 @@ class _FlowSim(ZILobSimulator):
         self.flow_log.append(("add", side, level, self.n_events))
         return super()._rest(side, level, tag)
 
-    def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> Any:
+    def _remove_resting_at(
+        self, book: dict[int, deque[int]], level: int, idx: int, cause: str = "cancel"
+    ) -> Any:
         side = "buy" if book is self._bids else "sell"  # noqa: SLF001
         self.flow_log.append((self._rm_kind, side, level, self.n_events))
-        return super()._remove_resting_at(book, level, idx)
+        return super()._remove_resting_at(book, level, idx, cause)
 
     def _consume_best(self, aggressor: Side) -> Any:
         self._rm_kind = "fill"

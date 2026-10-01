@@ -154,10 +154,12 @@ class _AttrSim(ZILobSimulator):
         self.mut_log.append((self.n_events, "lo", side))
         return super()._rest(side, level, tag)
 
-    def _remove_resting_at(self, book: dict[int, Any], level: int, idx: int) -> Any:
+    def _remove_resting_at(
+        self, book: dict[int, Any], level: int, idx: int, cause: str = "cancel"
+    ) -> Any:
         side = "buy" if book is self._bids else "sell"
         self.mut_log.append((self.n_events, self._rm_kind, side))
-        return super()._remove_resting_at(book, level, idx)
+        return super()._remove_resting_at(book, level, idx, cause)
 
     def _consume_best(self, aggressor: Side) -> Any:
         self._rm_kind = "fill"

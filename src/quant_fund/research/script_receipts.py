@@ -470,6 +470,7 @@ _MEASUREMENT_SCHEMAS = (
     "regime_clock.v1",
     "release_chase.v1",
     "reload_gate.v1",
+    "repost_frontier.v1",
     "reseed_hazard.v1",
     "round_lot.v1",
     "sign_autocorr_real.v1",

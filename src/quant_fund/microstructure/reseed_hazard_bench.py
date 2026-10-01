@@ -7,18 +7,23 @@ land back as the best touch — makers re-post the emptied price rather
 than letting the book retreat. That is a *price-level memory* distinct
 from `refill_cooldown` (which suppresses refills).
 
-The ZI-LOB sim under-reseeds on every measured arm, and the divergence
-has a campaign-relevant twist: the mechanisms that manufacture the
-tape's emptied-touch share (vacancy memory, cancel retreat) actively
-suppress re-seeding — the joint cell re-seeds ~7% vs the deep arm's 25%
-and the tape's 54%. Producing empties and healing them are different
-channels; the tape does both.
+The measure counts an emptied level once per vacation episode — a
+swept level's constituent fills are one emptying on the tape, so the
+sim dedupes pending vacancies by (level, side). Under the per-vacation
+measure the deep arm re-seeds at roughly the tape's rate (0.59 vs 0.54)
+— the earlier under-reseeding finding was substantially the per-trade
+counting artifact. What survives correction is the suppression twist:
+the mechanisms that manufacture the emptied-touch share (vacancy
+memory, cancel retreat) suppress re-seeding — the joint cell re-seeds
+~16–34% vs the deep arm's ~59% and the tape's 54%. Producing empties
+and healing them remain different channels.
 
-``repost_frac`` supplies the healing channel: LO arrivals re-sited at
-freshest still-vacant levels restore the tape's reseed rate in the deep
-regime (0.62 vs 0.54), and ``repost_band`` concentrates reseeds near the
-touch, recovering the tape's at-touch share (0.87 vs 0.75). In the joint
-regime the two still do not compose — the residual is honest.
+``repost_frac`` supplies an explicit healing channel: LO arrivals
+re-sited at freshest still-vacant levels overshoot the tape's rate in
+the deep regime (0.96 vs 0.54), and ``repost_band`` concentrates reseeds
+near the touch, recovering the tape's at-touch share in the joint cell
+(0.87 vs 0.75). repost_frontier.v1 maps which grammar lands inside both
+bands at once.
 
 Evidence class: research / SYNTHETIC (ZI-LOB sim arms vs LOBSTER tape).
 """
@@ -134,34 +139,43 @@ def lobster_reseed(msg_path: Path, ob_path: Path) -> dict[str, Any]:
 
 
 def sim_reseed(regime: str, extra: dict[str, Any], *, horizon: int, seed: int) -> dict[str, Any]:
-    """Sim analog: emptied fill levels re-seeded within _WINDOW events."""
+    """Sim analog: emptied fill levels re-seeded within _WINDOW events.
+
+    The tape measure counts an emptied level once per transition to
+    empty (a swept level's constituent fills are one vacation). The sim
+    must dedupe the same way: one ``pending`` entry per (level, side)
+    vacancy episode — counting every fill at a level that reads empty at
+    step end would inflate ``n_emp`` per level depth and cap the
+    measured rate near 1/depth in deep regimes.
+    """
     sim = ZILobSimulator(_calibrated(seed, extra))
     seen = 0
-    pending: dict[tuple[int, str, int], None] = {}
+    pending: dict[tuple[int, str], int] = {}
     lat: list[int] = []
     resed_touch = 0
     n_emp = 0
     for _ in range(horizon):
         sim.step()
         ev_i = sim.n_events - 1
-        for lvl, book, ev0 in list(pending):
+        for (lvl, book), ev0 in list(pending.items()):
             d = sim._asks if book == "a" else sim._bids
             if lvl in d and len(d[lvl]) > 0:
                 lat.append(ev_i - ev0)
                 best = min(d.keys()) if book == "a" else max(d.keys())
                 if best == lvl:
                     resed_touch += 1
-                del pending[(lvl, book, ev0)]
+                del pending[(lvl, book)]
             elif ev_i - ev0 > _WINDOW:
-                del pending[(lvl, book, ev0)]
+                del pending[(lvl, book)]
         while seen < len(sim.trades):
             tr = sim.trades[seen]
             seen += 1
             lvl = tr.level
-            d = sim._asks if tr.aggressor == "buy" else sim._bids
-            if lvl not in d or len(d[lvl]) == 0:
+            book = "a" if tr.aggressor == "buy" else "b"
+            d = sim._asks if book == "a" else sim._bids
+            if (lvl not in d or len(d[lvl]) == 0) and (lvl, book) not in pending:
                 n_emp += 1
-                pending[(lvl, "a" if tr.aggressor == "buy" else "b", ev_i)] = None
+                pending[(lvl, book)] = ev_i
     out = _stats(n_emp, lat, resed_touch)
     out["regime"] = regime
     return out
