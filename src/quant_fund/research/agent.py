@@ -376,6 +376,14 @@ from quant_fund.research.benches_w48 import (
     bench_tmle,
     bench_vpin,
 )
+from quant_fund.research.benches_w49 import (
+    bench_blanchard_quah,
+    bench_delta_covar,
+    bench_eisenberg_noe,
+    bench_fire_sales,
+    bench_meta_analysis,
+    bench_tvp_var,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2210,6 +2218,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "cover_up": bench_cover_up(),
         "vpin": bench_vpin(),
         "marginal_treatment": bench_marginal_treatment(),
+        "eisenberg_noe": bench_eisenberg_noe(),
+        "fire_sales": bench_fire_sales(),
+        "delta_covar": bench_delta_covar(),
+        "blanchard_quah": bench_blanchard_quah(),
+        "tvp_var": bench_tvp_var(),
+        "meta_analysis": bench_meta_analysis(),
     }
 
     hyps = _build_hypotheses(families, rankers)
