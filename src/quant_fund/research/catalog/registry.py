@@ -739,6 +739,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "garch_in_mean",
         "log_acd",
         "wigner_ville",
+        # wave 61 — Dümbgen-Rufibach log-concave density MLE
+        # (shape-constrained, bandwidth-free nonparametric
+        # estimation), Sakoe-Chiba banded DTW with warp
+        # registration (phase/amplitude decomposition),
+        # Chow-Lin GLS + Denton proportional temporal
+        # disaggregation with exact additivity, Chen-Liu-Tiao
+        # joint-iterative AO/IO/LS/TC outlier battery
+        # (Bonferroni threshold, MAD-robust sigma), Rocha-
+        # Cribari-Neto beta autoregression (link-scale
+        # recursion, joint precision MLE), Ferland-Latour-
+        # Oraichi Poisson INGARCH(1,1). Same SYNTHETIC
+        # diagnostic contract.
+        "log_concave",
+        "dtw_warp",
+        "chow_lin",
+        "chen_tiao_outliers",
+        "beta_ar",
+        "ingarch",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

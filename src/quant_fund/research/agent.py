@@ -477,6 +477,14 @@ from quant_fund.research.benches_w60 import (
     bench_star_model,
     bench_wigner_ville,
 )
+from quant_fund.research.benches_w61 import (
+    bench_beta_ar,
+    bench_chen_tiao_outliers,
+    bench_chow_lin,
+    bench_dtw_warp,
+    bench_ingarch,
+    bench_log_concave,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2388,6 +2396,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "garch_in_mean": bench_garch_in_mean(),
         "log_acd": bench_log_acd(),
         "wigner_ville": bench_wigner_ville(),
+        "log_concave": bench_log_concave(),
+        "dtw_warp": bench_dtw_warp(),
+        "chow_lin": bench_chow_lin(),
+        "chen_tiao_outliers": bench_chen_tiao_outliers(),
+        "beta_ar": bench_beta_ar(),
+        "ingarch": bench_ingarch(),
     }
 
     hyps = _build_hypotheses(families, rankers)
