@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 894,
+  "module_count": 901,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3507,6 +3507,26 @@
       "src": "quant_fund.microstructure"
     },
     {
+      "dst": "quant_fund.microstructure.sim_real_ledger",
+      "src": "quant_fund.microstructure.abc_calibrate"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.abc_calibrate"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.abc_calibrate"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.abc_calibrate"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.abc_calibrate"
+    },
+    {
       "dst": "quant_fund.metrics.cross_section",
       "src": "quant_fund.microstructure.bench"
     },
@@ -3555,8 +3575,80 @@
       "src": "quant_fund.microstructure.candle_book_features"
     },
     {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.exec_cost_split"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.exec_cost_split"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.exec_cost_split"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.exec_cost_split"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.lob_exec"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.lob_exec"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.lob_exec"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.lobster"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.lobster"
+    },
+    {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
       "src": "quant_fund.microstructure.rl_market_maker"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.sim_real_ledger"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.sim_real_ledger"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.sim_real_ledger"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.sim_real_ledger"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.split_flow"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.split_flow_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.split_flow_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.split_flow_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.split_flow_bench"
     },
     {
       "dst": "quant_fund.microstructure.book_metrics",
@@ -9339,11 +9431,18 @@
     "quant_fund.metrics.wasserstein",
     "quant_fund.metrics.watch",
     "quant_fund.microstructure",
+    "quant_fund.microstructure.abc_calibrate",
     "quant_fund.microstructure.bench",
     "quant_fund.microstructure.book_metrics",
     "quant_fund.microstructure.book_panel",
     "quant_fund.microstructure.candle_book_features",
+    "quant_fund.microstructure.exec_cost_split",
+    "quant_fund.microstructure.lob_exec",
+    "quant_fund.microstructure.lobster",
     "quant_fund.microstructure.rl_market_maker",
+    "quant_fund.microstructure.sim_real_ledger",
+    "quant_fund.microstructure.split_flow",
+    "quant_fund.microstructure.split_flow_bench",
     "quant_fund.microstructure.synthetic_lob",
     "quant_fund.microstructure.vendor_book_map",
     "quant_fund.microstructure.zi_lob_simulator",
@@ -10754,7 +10853,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 12,
+      "imports": 23,
       "src": "quant_fund.microstructure"
     },
     {
@@ -10774,7 +10873,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 13,
       "src": "quant_fund.microstructure"
     },
     {
