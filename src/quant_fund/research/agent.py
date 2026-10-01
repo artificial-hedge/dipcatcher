@@ -129,8 +129,12 @@ from quant_fund.research.benches_w16 import (
     bench_vol_loss_decomposition,
 )
 from quant_fund.research.benches_w17 import (
+    bench_adaptive_eps,
+    bench_conformal_oce,
     bench_diffpts,
+    bench_diffusion_forecaster,
     bench_extra_conformal,
+    bench_greek_neutral,
     bench_multilevel_mm,
     bench_passive_impact,
     bench_rlmm_c51,
@@ -1881,6 +1885,10 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "sga_uq": bench_sga_uq(),
         "passive_impact": bench_passive_impact(),
         "stochastic_tracking": bench_stochastic_tracking(),
+        "conformal_oce": bench_conformal_oce(),
+        "adaptive_eps": bench_adaptive_eps(),
+        "greek_neutral": bench_greek_neutral(),
+        "diffusion_forecaster": bench_diffusion_forecaster(),
         "gslice": bench_gslice(),
         "neural_sde": bench_neural_sde(),
         "stocbench": bench_stocbench(),
