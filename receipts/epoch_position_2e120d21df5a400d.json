@@ -1,0 +1,70 @@
+{
+  "code_files": {
+    "epoch_merkle.py": "76816bf27d924082a2e55d80dc0242c054c33cab0b951a0a6c7a0417975eef97"
+  },
+  "code_sha256": "1efc3adf4b14923228d0dfb8404b62fe907e7e62ec674efe0e585804e9c7ff20",
+  "data_label": "CORPUS",
+  "dataset_hash": "0cdc32b7413091f0d46ed5546252480c7aeee0dfe0a730b997abd563b6ba2fb4",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-30T12:01:00.261816+00:00",
+  "git_revision": "462f3a9dd5818ef0e19f8174b1f2ff6b0fa206c5",
+  "kind": "epoch_position.v1",
+  "live_pnl_claim": false,
+  "params_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "payload": {
+    "chain_root": "07d40e6085e24eb63ee58f3bc674eb275735e4d1d01ef89b3115eaaab6456bc5",
+    "corpus_key": "receipts/*.json",
+    "data_label": "CORPUS",
+    "epoch_root_sha256": "fb3768440e12ff5a3668959d6c08e3700a7423c241484e803e7ba84df616969e",
+    "kind": "epoch_position.v1",
+    "live_pnl_claim": false,
+    "n_epochs": 42,
+    "path": [
+      {
+        "sha256": "9a34a73a2b60ce31fc692dc022fd3c338fba547f6d6ab6a41fd1394a824b51c8",
+        "side": "left"
+      },
+      {
+        "sha256": "63244828a5b35f7851ae661d8996fd57f92943a83bccc5f2a47d99d950f1ca5d",
+        "side": "left"
+      },
+      {
+        "sha256": "3ff8b03d7221de7c30cc6663f02d49042dfb190ac1d1987667f653e52647c6ff",
+        "side": "left"
+      }
+    ],
+    "position": 41,
+    "receipt": "corpus_epoch_6340cdebc9a6efe1.json",
+    "research_only": true,
+    "schema": "epoch_position.v1",
+    "sha256": "3e3473c359007fb425361a8a618d1e7b3de5edc23e1a0937ab241d2831c95dc0",
+    "simulated_only": false
+  },
+  "receipt_sha256": "2e120d21df5a400df51ba6c99b8f193aa7f40ee098391a2516b4648b558c135a",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}
