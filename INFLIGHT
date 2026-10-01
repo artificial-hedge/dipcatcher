@@ -1228,3 +1228,11 @@ detail: |
   ratchet green; receipts suite green; full PR-gate pytest in flight.
   Concurrent sessions remained active throughout; main checkout left
   untouched (concurrent session holds ~156 modified files there).
+
+w53 canon (2026-09-30): 6 lanes — corradi_swanson (OOS MSPE MBB test),
+engle_kroner_bekk (variance-targeted diagonal BEKK), heston_qe (Andersen
+QE discretization), model_confidence_set (HLN step-down block-boot),
+christoffersen_pelletier (Weibull-duration VaR clustering backtest),
+sheppard_heavy (two-equation realized-measure vol). benches_w53 seeds
++305..310; registry +6; audit re-pinned (metrics 98->107, models
+309->369, research 184->196).
