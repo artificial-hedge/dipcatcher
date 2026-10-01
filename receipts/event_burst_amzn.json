@@ -1,0 +1,98 @@
+{
+  "claim": "burstiness_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_B_0.0065_vs_0.8617",
+    "regime_B_0.0019_vs_0.8617",
+    "split_B_0.0272_vs_0.8617"
+  ],
+  "git_revision": "650b9b5996276a085ff7fe355404606381a49498",
+  "interpretation": "B>0 = bursty (clustered activity); real message traffic is dominated by cancel/submit storms around execs.",
+  "kind": "event_burst",
+  "real": {
+    "all": {
+      "burstiness_B": 0.8617,
+      "cv": 3.6689,
+      "mean_gap_ms": 86.7477,
+      "median_gap_ms": 0.6202,
+      "n_gaps": 269747,
+      "p99_gap_ms": 1461.1273
+    },
+    "cancel_partial": {
+      "burstiness_B": 0.9496,
+      "cv": 6.2204,
+      "mean_gap_ms": 7951.8343,
+      "median_gap_ms": 1588.4491,
+      "n_gaps": 2916,
+      "p99_gap_ms": 77800.3997
+    },
+    "delete": {
+      "burstiness_B": 0.7824,
+      "cv": 2.8621,
+      "mean_gap_ms": 189.5378,
+      "median_gap_ms": 6.2328,
+      "n_gaps": 123457,
+      "p99_gap_ms": 2567.0693
+    },
+    "execution": {
+      "burstiness_B": 0.7925,
+      "cv": 2.9393,
+      "mean_gap_ms": 2607.7517,
+      "median_gap_ms": 3.1319,
+      "n_gaps": 8973,
+      "p99_gap_ms": 39177.4578
+    },
+    "execution_hidden": {
+      "burstiness_B": 0.6279,
+      "cv": 2.0918,
+      "mean_gap_ms": 9573.8067,
+      "median_gap_ms": 844.2706,
+      "n_gaps": 2444,
+      "p99_gap_ms": 98854.2931
+    },
+    "submission": {
+      "burstiness_B": 0.7775,
+      "cv": 2.8262,
+      "mean_gap_ms": 177.3341,
+      "median_gap_ms": 4.2466,
+      "n_gaps": 131953,
+      "p99_gap_ms": 2339.7579
+    }
+  },
+  "receipt_sha256": "69e37402f62a0796d71a0d9964e2cbe3bd1e9c373a5a520f427c94c20c2aabd2",
+  "research_only": true,
+  "schema": "event_burst.v1",
+  "sim_arms": {
+    "iid": {
+      "all": {
+        "burstiness_B": 0.0065,
+        "cv": 1.0066,
+        "mean_gap_ms": 833.4545,
+        "median_gap_ms": 576.0651,
+        "n_gaps": 29999,
+        "p99_gap_ms": 3880.3036
+      }
+    },
+    "regime": {
+      "all": {
+        "burstiness_B": 0.0019,
+        "cv": 1.0019,
+        "mean_gap_ms": 827.6185,
+        "median_gap_ms": 568.6963,
+        "n_gaps": 29999,
+        "p99_gap_ms": 3816.4052
+      }
+    },
+    "split": {
+      "all": {
+        "burstiness_B": 0.0272,
+        "cv": 1.0276,
+        "mean_gap_ms": 751.9562,
+        "median_gap_ms": 514.5049,
+        "n_gaps": 29999,
+        "p99_gap_ms": 3524.6972
+      }
+    }
+  },
+  "ticker": "AMZN"
+}
