@@ -1,0 +1,28 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bad_base_refused": true,
+   "bad_candidate_refused": true,
+   "chosen_clean": true,
+   "empty_corpus_fails": true,
+   "eval_base_written": true,
+   "full_surface_screened": true,
+   "order_enforced": true,
+   "pair_prompt_is_bait": true,
+   "pairs_cover_baits": true,
+   "quality_gate_passed": true,
+   "receipt_before_ckpt": true,
+   "rejected_violating": true,
+   "stage_is_eval_base": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "31bf346f0ca4f8d898e64b84a0e045a0903e8ccb",
+ "interpretation": "Pipeline contract holds: stage order enforced, empty corpus fails closed, honesty gates refuse violating base AND candidate, receipt issued before compute. DPO pairs cover all 10 baits with clean chosen / violating rejected. Fixed: two chosen responses quoted forbidden tokens verbatim and could not pass the gate they teach.",
+ "kind": "pipeline_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "823142cd3863dcfe3f1b07b13b31d31bd8a2033eb152bb93a2a7a77d05d41a0f",
+ "research_only": true,
+ "schema": "pipeline_audit.v1"
+}
