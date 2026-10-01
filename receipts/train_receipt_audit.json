@@ -1,0 +1,25 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "env_names_only": true,
+   "forged_live_claim_fails": true,
+   "forged_research_fails": true,
+   "four_digests_bound": true,
+   "honesty_hardcoded": true,
+   "malformed_raises": "raise",
+   "missing_file_fails": true,
+   "non_git_fails_closed": true,
+   "tampered_corpus_fails": true,
+   "verify_ok": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "f09fff554aa474c96ad90617be4ee2b42940f15d",
+ "interpretation": "Training-receipt contract holds: four content digests bound, env fingerprint covers names only, non-git root fails closed, tampered/missing/forged all refuse, malformed JSON raises.",
+ "kind": "train_receipt_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "ab0de7ca312dc8e4df671ef28346ff41a5ef657bb9db428f391ee569e2accbef",
+ "research_only": true,
+ "schema": "train_receipt_audit.v1"
+}
