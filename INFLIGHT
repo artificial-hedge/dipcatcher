@@ -981,3 +981,48 @@ note: w24 lanes in flight (fernholz_spt + breeden_litzenberger
   children; pmcmc_sv/multifractal_vol/spci_conformal local-built;
   hawkes_em local). spci_conformal rescoped to residual-quantile
   forecasting — ACI already lives in models/conformal.py.
+
+owner: devin (wave-24 canon swarm)
+slice: WAVE 24 — six lanes + benches_w24 wiring — INTEGRATED
+  models/pmcmc_sv (child): particle-MCMC SV estimation, marginal-
+  likelihood PF, posterior recovery. models/multifractal_vol (child):
+  partition functions, singularity spectra, MRW cascade sim.
+  models/spci_conformal (local, 17 tests): IRLS pinball ridge
+  walk-forward, ACI comparator (rescoped — ACI lives in conformal.py).
+  models/hawkes_em (local, 19 tests): multivariate EM branching
+  estimation, spectral-radius diagnostics, EM-vs-MLE comparison.
+  metrics/fernholz_spt (child, 49 tests): market entropy, FG-portfolio
+  drift decomposition (master-eq residual ~3e-5), rank local times;
+  corrected FKK->arXiv:0803.3093 + Karatzas-Ruf->1603.08245.
+  models/breeden_litzenberger (child, 60 tests): BL RND extraction,
+  smoothing-spline smiles, arb checks, implied moments; L1 0.066
+  clean. Scorecard 115 -> 121 OPTIONAL families.
+note: w25 lanes in flight (tda_persistence child done 76c5896;
+  fractional_ou/fourier_hermite/kernel_changepoint/kinetic_ising/
+  heterogeneous_abm local-built and pushed).
+w25 INTEGRATED 2026-09-30: canon devin/w25-canon off w24; 6 lanes —
+  tda_persistence (Takens embedding, VR persistence w/ 1-dim boundary
+  reduction, landscapes, bottleneck), fractional_ou (circulant spectral
+  sim + Whittle joint MLE w/ Nyquist-bandwidth sigma normalization),
+  fourier_hermite (Gram-Charlier density repair + analytic option
+  moments, call relerr 0.001), kernel_changepoint (unbiased MMD scan,
+  permutation thresholds, binseg), kinetic_ising (kinetic dynamics
+  s@J.T, nMF/TAP/PL inversion, PL J relerr 0.10), heterogeneous_abm
+  (Brock-Hommes bounded map, beta-sharpened chartist dominance).
+  Scorecard 121 -> 127 OPTIONAL families.
+w26 INTEGRATED — devin/w26-canon: marchenko_pastur (child a092503c) + factor_nowcast + stationary_bootstrap + skill_ratings + modularity_communities + stein_thinning → PR stacked on w25 (127→133 families); modularity Louvain rebuilt with stay-baseline gain + self-loop aggregation (was collapsing to 1 community)
+w27 INTEGRATED — devin/w27-canon: durbin_koopman (NaN-masked Kalman + RTS + disturbance + simulation smoother; draw_cov_calib 0.97) + dp_mixture (Blei-Jordan CAVI DPMM, ARI 1.0, k_eff=3) + expert_aggregation (hedge/fixed-share/specialist, fixed-share beats static under switches) + instrumental_quantile (CH IVQR, AR size 0.03/power 1.0, weak-IV flag) + implied_tree (DK alternating-center, martingale err 1e-15, 0 violations) + ensemble_kalman_inversion (stochastic EKI + Tikhonov, relerr 0.012) → PR stacked on w26 (133→139 families)
+w28 INTEGRATED — devin/w28-canon: enkf (stochastic EnKF/EAKF/LETKF + GC taper on Lorenz-96, rmse/clim 0.56/0.64/0.96) + causal_discovery (stable-PC + v-structures + Meek + GES BIC + LiNGAM; skeleton F1 0.61, lingam acc 1.0) + knockoffs (equi/SDP model-X, signed-max OMP vs ridge; honest FDR-breach flag on OMP — null Ws skew positive, ridge FDR 0) + callaway_did (CS group-time ATT never/notyet controls, pretrend Wald, cluster bootstrap; bias 0.14, coverage 1.0) + surrogate_nonlinear (AAFT/IAAFT + BDS + Keenan + Tsay; BDS power 1.0 tent / size 0.0 on AR-resid, honest mean-test nulls on GARCH) + sindy (monomial library + STLSQ, Lorenz coef relerr 0.001) → PR stacked on w27 (139→145 families)
+w29 INTEGRATED — devin/w29-canon: hmc (leapfrog + dual-averaging NUTS,
+  uniform-over-slice candidate selection; ess/draw 1.0 HMC / 0.23 NUTS,
+  rhat 1.03, funnel capture 0.41) + proxy_svar (external-instrument
+  impact column, irf relerr 0.08, first-stage F 1056, weak-IV flag,
+  Uhlig Haar-QR sign draws keep 0.27) + sbi (ABC rejection + SMC-ABC +
+  hand-rolled tanh-MLP neural ratio estimation; MA(2)/g-and-k
+  posteriors, nre margin 0.55) + rqa (Takens + Fraser-Swinney delay +
+  DET/LAM/ENTR/TT; Lorenz 0.999 > periodic 0.94 > AR 0.81 > iid 0.18)
+  + hj_distance (HJ second-moment distance 0.008 vs 0.80 misspec, KRS
+  chi2 p 0.97 vs 1e-21, gross-return vertex slope sqrt(A-B^2/C)) +
+  tensor_decomp (CP-ALS + Tucker HOOI + CORCONDIA 100 vs overfit +
+  EM imputation; congruence 1.0, relerr 0.05) → PR stacked on w28
+  (145→151 families)
