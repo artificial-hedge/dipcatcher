@@ -405,6 +405,7 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
 #: committed receipt verifies on its seal alone.
 _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
+    "aftermath_flow.v1",
     "anchor_scan.v1",
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",

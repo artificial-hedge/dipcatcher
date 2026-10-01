@@ -455,6 +455,16 @@ class ZILobConfig:
     # real ~0.8s deleted median. Applies only inside the biased
     # branches; 0 keeps every path bit-identical.
     cxl_requote: float = 0.0
+    # ``cxl_unhit_relief`` ∈ [0, 1]: for ``cxl_unhit_window`` events
+    # after a fill, a canceled event on the UNHIT side is rerouted to
+    # the hit side with this probability — the sampled order is drawn
+    # uniformly from the hit side's resting depth. The tape's post-fill
+    # accommodation is add-driven, not cancel-driven: unhit cancels per
+    # fill stay ~equal to hit-side ones (aftermath_flow.v1) while the
+    # sim's depth-proportional kernel over-cancels the side that just
+    # stacked. Both knobs at 0 keep every path bit-identical.
+    cxl_unhit_relief: float = 0.0
+    cxl_unhit_window: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -532,6 +542,9 @@ class ZILobConfig:
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
         _prob(self.cxl_requote, "cxl_requote")
+        _prob(self.cxl_unhit_relief, "cxl_unhit_relief")
+        if isinstance(self.cxl_unhit_window, bool) or int(self.cxl_unhit_window) < 0:
+            raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
             raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
@@ -1058,8 +1071,9 @@ class ZILobSimulator:
         self._vacancy: dict[tuple[str, int], int] = {}
         # Post-fill accommodation state; pinned at 0 when lo_tilt_gain == 0.
         self._tilt = 0.0
-        # Post-fill marker: (hit_side, event_deadline) of the last fill.
-        self._hit_retreat: tuple[str, int] | None = None
+        # Post-fill marker: (hit_side, narrow_deadline, relief_deadline)
+        # of the last fill; a deadline of n_events means that channel off.
+        self._hit_retreat: tuple[str, int, int] | None = None
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1380,12 +1394,12 @@ class ZILobSimulator:
         if tg > 0.0:
             sign = 1.0 if aggressor == "buy" else -1.0
             self._tilt = max(-1.0, min(1.0, self._tilt + sign * tg))
-        if self._cfg.hit_narrow_window > 0 and self._cfg.hit_narrow_dist > 0:
+        nw = self._cfg.hit_narrow_window if self._cfg.hit_narrow_dist > 0 else 0
+        rw = self._cfg.cxl_unhit_window if self._cfg.cxl_unhit_relief > 0 else 0
+        if nw or rw:
             # Hit side = the side the aggressor consumed (resting side).
-            self._hit_retreat = (
-                "sell" if aggressor == "buy" else "buy",
-                self.n_events + self._cfg.hit_narrow_window,
-            )
+            hit = "sell" if aggressor == "buy" else "buy"
+            self._hit_retreat = (hit, self.n_events + nw, self.n_events + rw)
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
@@ -1445,10 +1459,12 @@ class ZILobSimulator:
         # Post-fill narrowing: while the marker is live, placements on the
         # unhit side clamp to near-touch distance (accommodation channel).
         if self._hit_retreat is not None:
-            hit_side, until = self._hit_retreat
-            if self.n_events >= until:
+            hit_side, n_until, r_until = self._hit_retreat
+            if self.n_events >= max(n_until, r_until):
                 self._hit_retreat = None
-            elif (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy"):
+            elif self.n_events < n_until and (
+                (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy")
+            ):
                 dist = min(dist, self._cfg.hit_narrow_dist)
         if self._cfg.anchor == "ref":
             # Absolute-space anchoring: LOs deposit around a slow reference level
@@ -1557,6 +1573,36 @@ class ZILobSimulator:
         total = bid_d + ask_d
         if total == 0:
             return
+        relief = self._cfg.cxl_unhit_relief
+        if relief > 0.0 and self._hit_retreat is not None:
+            hit_side, _n_until, r_until = self._hit_retreat
+            if self.n_events >= r_until:
+                pass  # marker stays for hit_narrow; relief expired
+            elif float(self._rng.random()) < relief:
+                # Post-fill cancel relief: route this cancel to the
+                # HIT side, uniform over its resting depth.
+                book = self._asks if hit_side == "sell" else self._bids
+                n = len(book) and sum(len(dq) for dq in book.values())
+                if n:
+                    touch = min(book) if book is self._asks else max(book)
+                    k = int(self._rng.integers(n))
+                    rel_lvl = 0
+                    rel_idx = 0
+                    for lvl in sorted(book):
+                        cnt = len(book[lvl])
+                        if k < cnt:
+                            rel_lvl, rel_idx = lvl, k
+                            break
+                        k -= cnt
+                    rel_order = self._remove_resting_at(book, rel_lvl, rel_idx)
+                    self.cxl_ages.append(self.t - rel_order.t_submit)
+                    self.n_cancellations += 1
+                    d_hit = abs(rel_lvl - touch)
+                    self.cxl_dist[min(d_hit, 20)] += 1
+                    if d_hit == 0:
+                        self.n_cxl_touch += 1
+                    self._maybe_requote(rel_order)
+                    return
         bias = self._cfg.cxl_touch_bias
         if bias > 0.0 and float(self._rng.random()) < bias:
             bb, ba = self.best_bid_level, self.best_ask_level
