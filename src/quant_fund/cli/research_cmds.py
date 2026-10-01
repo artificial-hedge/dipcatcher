@@ -1462,6 +1462,81 @@ def online_fdr_cmd(
     typer.echo(f"receipt={path}")
 
 
+@app.command("tape-pin")
+def tape_pin_cmd(
+    source_label: str = typer.Option(
+        ...,
+        "--source-label",
+        help="Label the manifest is filed under (e.g. yahoo_eod, synthetic_bench)",
+    ),
+    tape: list[Path] = typer.Option(
+        [],
+        "--tape",
+        help="Tape parquet to pin (repo-relative; repeatable, concatenated in order)",
+    ),
+    promotion_receipt: Path | None = typer.Option(
+        None,
+        "--promotion-receipt",
+        help="Optional bar_promotion.v1 receipt whose bytes are bound into the manifest",
+    ),
+    out_dir: Path = typer.Option(
+        Path("data") / "manifests", "--out-dir", help="Manifest output directory"
+    ),
+) -> None:
+    """Pin raw tape bytes into the committed ``data/manifests`` registry.
+
+    Writes ``<out_dir>/<source_label>.json`` (``tape_manifest.v1``): sealed
+    sha256/byte counts per tape file plus the canonical CSV digest lanes
+    hash as ``inputs_sha256``. Tapes stay gitignored — the manifest attests
+    bytes, it does not ship them.
+    """
+    from quant_fund.research.tape_registry import pin_tape
+
+    if not tape:
+        raise typer.BadParameter("pass at least one --tape parquet")
+    for path in tape:
+        if not path.is_file():
+            raise typer.BadParameter(f"tape file not found: {path}")
+    try:
+        result = pin_tape(
+            source_label,
+            list(tape),
+            out_dir=out_dir,
+            promotion_receipt=promotion_receipt,
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    manifest = result["manifest"]
+    typer.echo(
+        format_data_label(synthetic=source_label.upper() == "SYNTHETIC", data_source=source_label)
+    )
+    typer.echo(
+        f"tape_files={len(manifest['tape_files'])} n_rows={manifest['n_rows']} "
+        f"n_names={manifest['n_names']} frame_csv_sha256={manifest['frame_csv_sha256'][:12]}…"
+    )
+    typer.echo(f"receipt_sha256={manifest['receipt_sha256']}")
+    typer.echo(f"manifest={result['path']}")
+
+
+@app.command("tape-verify")
+def tape_verify_cmd(
+    manifest: Path = typer.Option(..., "--manifest", help="tape_manifest.v1 JSON to verify"),
+    root: Path = typer.Option(
+        Path("."), "--root", help="Repository root the manifest's tape paths resolve under"
+    ),
+) -> None:
+    """Re-hash a pinned manifest against the tape bytes on this machine.
+
+    Exits non-zero on any drift: stale seal, missing/tampered tape files, or
+    a profile/CSV digest that no longer re-derives — fail-closed.
+    """
+    from quant_fund.research.tape_registry import verify_manifest
+
+    errors = verify_manifest(manifest, root)
+    typer.echo(json.dumps({"manifest": str(manifest), "valid": not errors, "errors": errors}))
+    raise typer.Exit(code=0 if not errors else 1)
+
+
 __all__ = [
     "capacity",
     "cost_calibration",
@@ -1496,6 +1571,8 @@ __all__ = [
     "verify_identities",
     "verify_all_cmd",
     "verify_receipt_cmd",
+    "tape_pin_cmd",
+    "tape_verify_cmd",
     "replay_cmd",
     "vol_bench",
 ]
