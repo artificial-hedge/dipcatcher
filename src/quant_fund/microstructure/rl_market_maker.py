@@ -13,7 +13,9 @@ B4-i zero-intelligence LOB (``microstructure.zi_lob_simulator``), following
   state with (a) a Bayesian online change-point filter over the directional
   flow bias (Appendix A: Beta-Bernoulli run-length posterior) and (b) a
   queue-adjusted quote-exposure imbalance (Eqs. 12-13) restores profitability;
-  an optional scenario-bandit step (their Algorithm C) is NOT implemented here.
+  an optional scenario-bandit step (their Algorithm C) is implemented in
+  ``microstructure.scenario_bandit`` — a finite pool of exogenous regime
+  plans sampled by difficulty-weighted softmax bandit during fine-tuning.
 - Bellemare, Dabney, Munos (2017). A distributional perspective on
   reinforcement learning. *ICML 2017*, arXiv:1707.06887 — C51 atoms,
   categorical projection, cross-entropy loss.
@@ -116,10 +118,12 @@ from numpy.typing import NDArray
 from quant_fund.microstructure.zi_lob_simulator import (
     MM_TAG,
     ZI_LOB_REVISION,
+    AdversarialFlow,
     MarkovRegimeFlow,
     MMState,
     QuotePolicy,
     RegimeState,
+    ScenarioRegimeFlow,
     Side,
     ZILobConfig,
     ZILobSimulator,
@@ -1023,7 +1027,7 @@ def run_rl_mm_session(
     training: bool = False,
     learn_every: int = 1,
     decision_interval: float = 1.0,
-    flow: MarkovRegimeFlow | None = None,
+    flow: MarkovRegimeFlow | ScenarioRegimeFlow | AdversarialFlow | None = None,
     inventory_cap: int | None = None,
     sample_interval: float = 25.0,
     reward_phi: float = 1e-3,
@@ -1062,8 +1066,12 @@ def run_rl_mm_session(
         raise ValueError("training=True requires an agent")
     if not isinstance(config, ZILobConfig):
         raise TypeError("config must be a ZILobConfig")
-    if flow is not None and not isinstance(flow, MarkovRegimeFlow):
-        raise TypeError("flow must be a MarkovRegimeFlow or None")
+    if flow is not None and not isinstance(
+        flow, (MarkovRegimeFlow, ScenarioRegimeFlow, AdversarialFlow)
+    ):
+        raise TypeError(
+            "flow must be a MarkovRegimeFlow / ScenarioRegimeFlow / AdversarialFlow or None"
+        )
     h = _pos_finite(horizon, "horizon")
     di = _pos_finite(decision_interval, "decision_interval")
     si = _pos_finite(sample_interval, "sample_interval")
@@ -1121,9 +1129,11 @@ def run_rl_mm_session(
     prev_action: int | None = None
     action_hist = [0] * (agent.n_actions if agent is not None else 0)
     rewards: list[float] = []
+    rewards_mo: list[int] = []
     losses: list[float] = []
     eps_initial = agent.epsilon if agent is not None else None
     wall = float(cap) * fw if cap is not None else 0.0
+    penalty_sum = 0.0
 
     def _drain_trades() -> None:
         nonlocal trade_cursor, inventory, cash, bid_oid, ask_oid
@@ -1157,6 +1167,10 @@ def run_rl_mm_session(
                 ask_oid = None
                 ask_level_live = None
             max_abs_inv = max(max_abs_inv, abs(inventory))
+        if isinstance(flow, AdversarialFlow):
+            # Feedback channel: the adversary's picker reads the defender's
+            # post-fill inventory when the pending boundary resolves.
+            flow.note_inventory(float(inventory))
 
     def _smart_post(side: Side, level: int | None) -> None:
         """Keep the resting order when the target level is unchanged (FIFO
@@ -1205,7 +1219,7 @@ def run_rl_mm_session(
     def _close_transition(next_state: Array, done: bool) -> None:
         """Settle the reward for the previous decision (paper Eq. 16) and, in
         training mode, store the SMDP transition and run gradient steps."""
-        nonlocal prev_state, prev_action, events_at_prev
+        nonlocal prev_state, prev_action, events_at_prev, penalty_sum
         if prev_state is None or prev_action is None or agent is None:
             return
         mid_now = sim.mid
@@ -1218,9 +1232,11 @@ def run_rl_mm_session(
             fill_pnl += dq * (m - px)
         wall_term = max(abs(q) - wall, 0.0) ** 2 if cap is not None else 0.0
         r = fill_pnl - phi * q * q - phi * wall_term
+        penalty_sum += phi * q * q + phi * wall_term
         n_ev = max(sim.n_events - events_at_prev, 0)
         gamma_eff = float(agent.config.gamma_event) ** n_ev
         rewards.append(r)
+        rewards_mo.append(sim.n_mo_arrivals)
         if training:
             agent.store_transition(prev_state, prev_action, r, next_state, gamma_eff, done)
             if done or len(rewards) % le == 0:
@@ -1402,6 +1418,7 @@ def run_rl_mm_session(
         # metric, never market evidence, no live-trading claim.
         "sim_internal_mtm_pnl_path": mtm_path,
         "sim_internal_mtm_pnl_final": float(final_mtm),
+        "sim_internal_penalty_sum": float(penalty_sum),
         "mean_queue_ahead_at_fill": float(np.mean(queue_ahead_fills))
         if queue_ahead_fills
         else float("nan"),
@@ -1414,6 +1431,7 @@ def run_rl_mm_session(
         "action_grid": [list(g) for g in agent.action_grid] if agent is not None else None,
         "action_histogram": action_hist if agent is not None else None,
         "sim_internal_reward_path": rewards if agent is not None else None,
+        "sim_internal_reward_mo_index": rewards_mo if agent is not None else None,
         "sim_internal_reward_mean": float(rw.mean()) if rw is not None else None,
         "sim_internal_reward_min": float(rw.min()) if rw is not None else None,
         "sim_internal_reward_max": float(rw.max()) if rw is not None else None,
@@ -1446,7 +1464,7 @@ def train_c51_market_maker(
     reward_phi: float = 1e-3,
     reward_wall_fraction: float = 0.5,
     learn_every: int = 1,
-    flow_factory: Callable[[int], MarkovRegimeFlow | None] | None = None,
+    flow_factory: Callable[[int], MarkovRegimeFlow | ScenarioRegimeFlow | None] | None = None,
 ) -> dict[str, Any]:
     """Train the agent over ``n_episodes`` simulator sessions.
 
@@ -1479,8 +1497,10 @@ def train_c51_market_maker(
         ep_seed = seed_base + i
         cfg_i = replace(config, seed=ep_seed)
         flow_i = flow_factory(ep_seed) if flow_factory is not None else None
-        if flow_i is not None and not isinstance(flow_i, MarkovRegimeFlow):
-            raise TypeError("flow_factory must return a MarkovRegimeFlow or None")
+        if flow_i is not None and not isinstance(flow_i, (MarkovRegimeFlow, ScenarioRegimeFlow)):
+            raise TypeError(
+                "flow_factory must return a MarkovRegimeFlow / ScenarioRegimeFlow or None"
+            )
         agent.begin_episode()
         bundle = run_rl_mm_session(
             config=cfg_i,
