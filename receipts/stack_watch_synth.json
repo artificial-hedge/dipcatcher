@@ -1,0 +1,40 @@
+{
+  "kind": "stack_watch",
+  "schema": "stack_watch.v1",
+  "git_revision": "94b2fba6845fa38b4d8bcd8f791749cbe04f028d",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "claim": {
+    "stack_vs_oracle": {
+      "promoted": false,
+      "promotion_origin": null,
+      "final_evalue": 0.29953837012660545,
+      "anytime_p": 0.7500000000000001,
+      "win_share": 0.455
+    },
+    "per_member": {
+      "member_0": {
+        "promoted": true,
+        "promotion_origin": 118,
+        "final_evalue": 9666809.455677921,
+        "win_share": 0.6525
+      },
+      "member_1": {
+        "promoted": true,
+        "promotion_origin": 185,
+        "final_evalue": 40.86363868444821,
+        "win_share": 0.5875
+      }
+    },
+    "n_origins": 400,
+    "n_members": 2,
+    "stack_mean_pinball": 0.13056367391375745,
+    "oracle_mean_pinball": 0.11590474102061428,
+    "alpha": 0.05
+  },
+  "interpretation": {
+    "promoted_vs_oracle": "stack beats the per-origin best member \u2014 fusion learns combination structure",
+    "per_member": "win share and e-process vs each constituent"
+  },
+  "receipt_sha256": "04c3e37217601ab5c3dc6297fc395cbf8865ade584b121efe9f7dba31fcd39df"
+}
