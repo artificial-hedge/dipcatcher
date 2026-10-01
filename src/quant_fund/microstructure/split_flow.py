@@ -43,6 +43,13 @@ class SplitFlow:
     intensity_mult : float
         MO-intensity multiplier while a parent is active (parents are
         usually more aggressive than background).
+    purity : float
+        Parent-side fill probability while a parent is active. 1.0 (the
+        legacy default) emits a pure same-sign stream — every MO inside
+        the parent is on the parent's side. On a busy real tape other
+        participants' fills interleave between a parent's children, so
+        the *fill* run length is shorter than the parent's child count;
+        ``purity < 1`` admits that interleaving.
     seed : int
         RNG seed; the flow shares the simulator's determinism contract
         only when given a fixed seed — pass ``rng`` to share a stream.
@@ -56,6 +63,7 @@ class SplitFlow:
         k_min: int = 2,
         k_max: int = 200,
         intensity_mult: float = 1.0,
+        purity: float = 1.0,
         seed: int = 0,
         rng: Generator | None = None,
     ) -> None:
@@ -67,11 +75,14 @@ class SplitFlow:
             raise ValueError(f"bad size clip [{k_min}, {k_max}]")
         if not math.isfinite(intensity_mult) or intensity_mult <= 0.0:
             raise ValueError(f"intensity_mult must be > 0, got {intensity_mult!r}")
+        if not math.isfinite(purity) or not 0.5 <= purity <= 1.0:
+            raise ValueError(f"purity must be in [0.5, 1], got {purity!r}")
         self._p_start = float(p_start)
         self._tail = float(size_tail)
         self._k_min = int(k_min)
         self._k_max = int(k_max)
         self._mult = float(intensity_mult)
+        self._purity = float(purity)
         self._rng = rng if rng is not None else np.random.default_rng(seed)
         self._remaining = 0
         self._side: RegimeState = _BACKGROUND
@@ -100,7 +111,7 @@ class SplitFlow:
             self.n_parents += 1
             buy = float(self._rng.random()) < 0.5
             name = "parent_buy" if buy else "parent_sell"
-            self._side = RegimeState(name, self._mult, 1.0 if buy else 0.0)
+            self._side = RegimeState(name, self._mult, self._purity if buy else 1.0 - self._purity)
             self._remaining = k
 
 
