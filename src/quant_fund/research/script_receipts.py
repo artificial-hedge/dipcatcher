@@ -405,6 +405,7 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
 #: committed receipt verifies on its seal alone.
 _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
+    "anchor_scan.v1",
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",
     "deep_book_bench.v1",
@@ -425,8 +426,12 @@ _MEASUREMENT_SCHEMAS = (
     "hidden_depth_bench.v1",
     "iceberg.v1",
     "impact_instant.v1",
+    "impact_persist.v1",
     "improve_flow.v1",
+    "instant_decomp.v1",
     "intraday_shape.v1",
+    "joint_fit.v1",
+    "level_gap.v1",
     "lob_exec.v1",
     "lob_resilience.v1",
     "marketable_limit.v1",
