@@ -125,6 +125,7 @@ src/quant_fund/formal/order_lifecycle.py
 src/quant_fund/formal/seed_sweep.py
 src/quant_fund/formal/traces.py
 src/quant_fund/fusion/__init__.py
+src/quant_fund/fusion/attribution.py
 src/quant_fund/fusion/engine.py
 src/quant_fund/fusion/quantile_stack.py
 src/quant_fund/fusion/stack_watch.py
