@@ -126,6 +126,7 @@ src/quant_fund/features/liquidity.py
 src/quant_fund/features/metadata.py
 src/quant_fund/formal/__init__.py
 src/quant_fund/formal/accounting.py
+src/quant_fund/formal/engine_fuzz.py
 src/quant_fund/formal/fifo_priority.py
 src/quant_fund/formal/lob_invariants.py
 src/quant_fund/formal/order_lifecycle.py
