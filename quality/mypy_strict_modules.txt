@@ -529,6 +529,7 @@ src/quant_fund/native/__init__.py
 src/quant_fund/native/boundary_audit.py
 src/quant_fund/native/causality_scan.py
 src/quant_fund/native/conformance.py
+src/quant_fund/native/dispatch_audit.py
 src/quant_fund/native/reference.py
 src/quant_fund/native/warmup_spec.py
 src/quant_fund/northset/__init__.py
