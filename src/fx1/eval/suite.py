@@ -15,7 +15,7 @@ import re
 from collections.abc import Callable
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 
@@ -34,6 +34,25 @@ class EvalTask(BaseModel):
     forbidden_patterns: list[str] = Field(default_factory=list)
     required_tokens: list[str] = Field(default_factory=list)
     enforce_honesty: bool = True
+
+    @field_validator("required_tokens")
+    @classmethod
+    def _required_tokens_nonblank(cls, tokens: list[str]) -> list[str]:
+        # A blank token is trivially present in every response — the task
+        # would always pass its required-token check.
+        if any(not token.strip() for token in tokens):
+            raise ValueError("required_tokens must be non-blank")
+        return tokens
+
+    @field_validator("forbidden_patterns")
+    @classmethod
+    def _patterns_compile(cls, patterns: list[str]) -> list[str]:
+        for pattern in patterns:
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(f"forbidden_pattern does not compile: {pattern!r}") from exc
+        return patterns
 
 
 class EvalResult(BaseModel):
@@ -82,7 +101,15 @@ class SuiteSummary(dict[str, Any]):
 
 
 def run_suite(model_fn: ModelFn, tasks: list[EvalTask]) -> SuiteSummary:
-    """Run *tasks* against *model_fn* and return an auditable summary."""
+    """Run *tasks* against *model_fn* and return an auditable summary.
+
+    Refuses duplicate task names: results are consumed by name downstream
+    (comparison pairing), and a duplicated name would silently merge two
+    distinct measurements.
+    """
+    names = [t.name for t in tasks]
+    if len(set(names)) != len(names):
+        raise ValueError("duplicate task names in eval suite")
     results = [score_task(t, model_fn(t.messages)) for t in tasks]
     by_kind: dict[str, dict[str, int]] = {}
     for r in results:
