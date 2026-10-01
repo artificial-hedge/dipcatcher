@@ -293,6 +293,7 @@ src/quant_fund/microstructure/metaorder_decay.py
 src/quant_fund/microstructure/metaorder_detect.py
 src/quant_fund/microstructure/microprice.py
 src/quant_fund/microstructure/mid_jump.py
+src/quant_fund/microstructure/ofi_forecast.py
 src/quant_fund/microstructure/order_lifetime.py
 src/quant_fund/microstructure/order_revision.py
 src/quant_fund/microstructure/pin_estimator.py
