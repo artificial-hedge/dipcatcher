@@ -1,0 +1,60 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "4a0f28d4e5cb4030bb63c6d3bf072fad94e09b193314acfb7fd302a05901e5c2",
+  "inputs_sha256": "1a3a7cff42ee11dc29c77c5b7024620c84de90ceaf6500c1002228d7d1fbf5da",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "a7dfd773570301c0b95cb1a505f9586a306d997cd8bd94fa45bd7435da4064ab",
+  "members": [
+    {
+      "name": "01_receipt_round_trip.py",
+      "sha256": "ccc21f03af3877fe19e3cec5c217fefa1f750e71cd1e806f77b0ed7b5a400d48"
+    },
+    {
+      "name": "02_purged_walkforward_conformal.py",
+      "sha256": "301c12051f0bf949eb8e9a49a61c7493773086174974815607f9602665695560"
+    },
+    {
+      "name": "03_synthetic_l2_book.py",
+      "sha256": "9739f4aef5a96684e6faedde7d1bb72dd373fab5c25d54c85126402a0b87a157"
+    },
+    {
+      "name": "04_hf_ohlcv_1m.py",
+      "sha256": "44fd2d3f47ba0bb8f0c9f7d92a6460ffdf9b1eba2d31351e4f7ce75f0896ef7d"
+    },
+    {
+      "name": "05_phase1_evidence.py",
+      "sha256": "ba04234cce5ce86e8d54736561806ac0de9b8443e8ad78b687605a9b744f012b"
+    },
+    {
+      "name": "README.md",
+      "sha256": "4629e4fb14b1cb05ad657690cf89b8675d139378d1e308a26bb76ab0d526d2dc"
+    },
+    {
+      "name": "fixtures/hf_ohlcv_1m/ohlcv_sample.parquet",
+      "sha256": "a9e45a27ff54acf82efd38649840083742d7963386c6407cbf1a3f8ebc5486b8"
+    }
+  ],
+  "members_added": [
+    "01_receipt_round_trip.py",
+    "02_purged_walkforward_conformal.py",
+    "03_synthetic_l2_book.py",
+    "04_hf_ohlcv_1m.py",
+    "05_phase1_evidence.py",
+    "README.md",
+    "fixtures/hf_ohlcv_1m/ohlcv_sample.parquet"
+  ],
+  "members_removed": [],
+  "n_members": 7,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "220d69b9f68c38e7e9449f200bd1f7b8fa262857465eaf4c64f53d9d15a49825",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}
