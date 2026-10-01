@@ -349,6 +349,14 @@ class ZILobConfig:
     # reference is what LOs deposit around); 0 is bit-identical legacy
     # and consumes zero extra RNG draws.
     ref_fill_gain: float = 0.0
+    # ``refill_cooldown`` >= 0: per-price vacancy memory — when a book
+    # level empties (fill, touch pull, or last-cancel), ZI placements
+    # that would land on that exact (side, level) are suppressed for this
+    # many events: the vacated price stays empty on a timescale, matching
+    # the tape's measured refill hazard (~median 86 events, ~51% never
+    # re-occupied within 400 on AMZN). 0 = disabled (bit-identical: no
+    # extra RNG draws or bookkeeping).
+    refill_cooldown: int = 0
     seed: int = 0
     # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
     # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
@@ -448,6 +456,10 @@ class ZILobConfig:
         _nonneg_finite(self.density_exponent, "density_exponent")
         _nonneg_finite(self.ref_halflife, "ref_halflife")
         _nonneg_finite(self.ref_fill_gain, "ref_fill_gain")
+        if isinstance(self.refill_cooldown, bool) or int(self.refill_cooldown) < 0:
+            raise ValueError(
+                f"refill_cooldown must be a non-negative int, got {self.refill_cooldown!r}"
+            )
         if self.anchor not in ("touch", "ref"):
             raise ValueError(f"anchor must be 'touch' or 'ref', got {self.anchor!r}")
         if isinstance(self.band, bool) or int(self.band) < 1:
@@ -978,6 +990,10 @@ class ZILobSimulator:
         )
         self.n_mo_units = 0
         self.n_lo_units = 0
+        # Vacancy memory: (side, level) -> event index the level emptied.
+        # Populated only when ``refill_cooldown`` > 0.
+        self._vacancy: dict[tuple[str, int], int] = {}
+        self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
                 self._rest("buy", -k, "zi_seed")
@@ -1231,6 +1247,7 @@ class ZILobSimulator:
         dq.remove(order.order_id)
         if not dq:
             del book[order.level]
+            self._level_vacated(order.side, order.level)
         self.n_cancellations += 1
         self._fate_cancels[order.placement_class] += 1
         self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
@@ -1244,12 +1261,23 @@ class ZILobSimulator:
             self._rest(order.side, order.level, "requote")
             self.n_requotes += 1
 
+    def _level_vacated(self, side: Side, level: int) -> None:
+        """Record that ``level`` on ``side`` just emptied (sticky vacancy)."""
+        if self._cfg.refill_cooldown > 0:
+            self._vacancy[(side, int(level))] = self.n_events
+
+    def _is_cooled(self, side: Side, level: int) -> bool:
+        """True when (side, level) emptied within ``refill_cooldown`` events."""
+        t0 = self._vacancy.get((side, int(level)))
+        return t0 is not None and self.n_events - t0 < self._cfg.refill_cooldown
+
     def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> _Order:
         dq = book[level]
         oid = dq[idx]
         del dq[idx]
         if not dq:
             del book[level]
+            self._level_vacated("buy" if book is self._bids else "sell", level)
         order = self._orders.pop(oid)
         return order
 
@@ -1347,6 +1375,9 @@ class ZILobSimulator:
             k = self._draw_size(self._lo_size_cdf)
             if want_buy:
                 level = ref - dist
+                if self._is_cooled("buy", level):
+                    self.n_lo_suppressed += 1
+                    return
                 if ba is None or level < ba:
                     for _ in range(k):
                         self._rest("buy", level, "zi")
@@ -1354,6 +1385,9 @@ class ZILobSimulator:
                     self.n_lo_units += k
                 return
             level = ref + dist
+            if self._is_cooled("sell", level):
+                self.n_lo_suppressed += 1
+                return
             if bb is None or level > bb:
                 for _ in range(k):
                     self._rest("sell", level, "zi")
@@ -1374,6 +1408,10 @@ class ZILobSimulator:
             else:
                 anchor = (ba if ba is not None else self._ref_level + 1) - off
                 level = anchor - dist
+            if self._is_cooled("buy", level):
+                self.n_lo_suppressed += 1
+                self.n_lo_arrivals += 1
+                return
             if bb is not None and level > bb:
                 self.n_lo_improve += 1  # deposit strictly inside the spread
             elif bb is not None and level == bb:
@@ -1386,6 +1424,10 @@ class ZILobSimulator:
             else:
                 anchor = (bb if bb is not None else self._ref_level - 1) + off
                 level = anchor + dist
+            if self._is_cooled("sell", level):
+                self.n_lo_suppressed += 1
+                self.n_lo_arrivals += 1
+                return
             if ba is not None and level < ba:
                 self.n_lo_improve += 1
             elif ba is not None and level == ba:

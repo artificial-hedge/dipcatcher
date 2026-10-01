@@ -131,6 +131,80 @@
       }
     }
   },
+  "cooldown_scan": [
+    {
+      "refill_cooldown": 0,
+      "ok": true,
+      "n_empty": 718,
+      "p_never_within_cap": 0.5056,
+      "median_delay_events": 142.0,
+      "hazard_cdf": {
+        "1": 0.0,
+        "5": 0.0084,
+        "10": 0.0195,
+        "20": 0.0501,
+        "50": 0.0989,
+        "100": 0.1866,
+        "200": 0.3106,
+        "400": 0.4944
+      },
+      "p_refill_as_touch": 0.707
+    },
+    {
+      "refill_cooldown": 60,
+      "ok": true,
+      "n_empty": 678,
+      "p_never_within_cap": 0.5487,
+      "median_delay_events": 177.5,
+      "hazard_cdf": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0,
+        "50": 0.0,
+        "100": 0.1032,
+        "200": 0.264,
+        "400": 0.4513
+      },
+      "p_refill_as_touch": 0.6569
+    },
+    {
+      "refill_cooldown": 120,
+      "ok": true,
+      "n_empty": 706,
+      "p_never_within_cap": 0.5992,
+      "median_delay_events": 219.0,
+      "hazard_cdf": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0,
+        "50": 0.0,
+        "100": 0.0,
+        "200": 0.1813,
+        "400": 0.4008
+      },
+      "p_refill_as_touch": 0.636
+    },
+    {
+      "refill_cooldown": 240,
+      "ok": true,
+      "n_empty": 653,
+      "p_never_within_cap": 0.6983,
+      "median_delay_events": 303.0,
+      "hazard_cdf": {
+        "1": 0.0,
+        "5": 0.0,
+        "10": 0.0,
+        "20": 0.0,
+        "50": 0.0,
+        "100": 0.0,
+        "200": 0.0,
+        "400": 0.3017
+      },
+      "p_refill_as_touch": 0.5685
+    }
+  ],
   "divergences": [
     "iid:p_never_0.1131_vs_0.5112",
     "iid:median_delay_17.0_vs_86.0",
@@ -141,11 +215,12 @@
   ],
   "claims": {
     "tape_levels_have_memory": true,
-    "sim_refill_is_fast": true
+    "sim_refill_is_fast": true,
+    "cooldown_monotone_in_p_never": true
   },
   "interpretation": "The hole behind an emptied touch is a level-memory structure, not a placement geometry: on the tape an emptied price stays empty for tens to hundreds of events (median delay + p_never are the headline stats) and is usually re-occupied as the new touch by an improving submission, while sim arms re-occupy levels almost immediately (or never, when the level can only be reached inside the spread). Placement-law and inner-edge knobs cannot express this \u2014 the missing mechanism is a per-price refill timescale.",
-  "git_revision": "1b16381c31766ed38944fbeeb483f791872a53c7",
+  "git_revision": "f7f0b4038c5433f78a621101ff7b1cc4118cf804",
   "data_label": "MIXED",
   "research_only": true,
-  "receipt_sha256": "0121aae932587d6f769f4637acdfc56eeec114f624fb504cd9a2f9b0750d0741"
+  "receipt_sha256": "eab743e90b1f9369e4b21a91b38346411462a35dbd2b1e2baaa646527a6912ec"
 }

@@ -242,6 +242,42 @@ def refill_hazard_bench(
     if not msg or not ob:
         raise FileNotFoundError(f"no LOBSTER message/orderbook CSV pair under {tape_dir}")
     real = lobster_refill_hazard(msg[0], ob[0], max_delay=max_delay)
+    # Cooldown calibration on the anchored arm: does an explicit per-price
+    # vacancy window (``refill_cooldown`` events) move the sim's refill
+    # hazard toward the tape's? Each cell is the same arm with a stronger
+    # suppression window; cd=0 is the bare ref anchor.
+    cooldown_cells = [0, 60, 120, 240]
+    cooldown_scan = [
+        {
+            "refill_cooldown": cd,
+            **{
+                k: v
+                for k, v in sim_refill_hazard(
+                    replace(
+                        santa_fe_config(seed=seed + 3),
+                        anchor="ref",
+                        density_exponent=1.0,
+                        band=40,
+                        ref_fill_gain=0.3,
+                        refill_cooldown=cd,
+                    ),
+                    _split(seed + 3),
+                    horizon=horizon,
+                    max_delay=max_delay,
+                ).items()
+                if k
+                in (
+                    "ok",
+                    "n_empty",
+                    "p_never_within_cap",
+                    "median_delay_events",
+                    "p_refill_as_touch",
+                    "hazard_cdf",
+                )
+            },
+        }
+        for cd in cooldown_cells
+    ]
     arms = {
         "iid": sim_refill_hazard(horizon=horizon, seed=seed, max_delay=max_delay),
         "split": sim_refill_hazard(
@@ -285,6 +321,15 @@ def refill_hazard_bench(
             all(a.get("ok") for a in arms.values())
             and all((a.get("median_delay_events") or 1e9) < 20.0 for a in arms.values())
         ),
+        "cooldown_monotone_in_p_never": bool(
+            len(cooldown_scan) >= 2
+            and all(c.get("ok") for c in cooldown_scan)
+            and all(
+                float(cooldown_scan[i + 1]["p_never_within_cap"])
+                >= float(cooldown_scan[i]["p_never_within_cap"]) - 1e-9
+                for i in range(len(cooldown_scan) - 1)
+            )
+        ),
     }
     payload: dict[str, Any] = {
         "schema": REFILL_HAZARD_SCHEMA,
@@ -295,6 +340,7 @@ def refill_hazard_bench(
         "max_delay": max_delay,
         "real": real,
         "sim_arms": arms,
+        "cooldown_scan": cooldown_scan,
         "divergences": divergences,
         "claims": claims,
         "interpretation": (

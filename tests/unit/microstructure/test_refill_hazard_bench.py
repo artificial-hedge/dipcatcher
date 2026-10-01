@@ -94,3 +94,49 @@ def test_bench_receipt_seals_and_verifies(tmp_path: Path) -> None:
 def test_missing_tape_fails_closed(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         refill_hazard_bench(tmp_path, "AMZN", horizon=60, seed=1)
+
+
+def test_refill_cooldown_validation() -> None:
+    from dataclasses import replace
+
+    from quant_fund.microstructure.zi_lob_simulator import santa_fe_config
+
+    with pytest.raises(ValueError, match="refill_cooldown"):
+        replace(santa_fe_config(), refill_cooldown=-1)
+
+
+def test_refill_cooldown_suppresses_vacated_level() -> None:
+    """A level emptied by a fill rejects ZI placements inside the window."""
+    from dataclasses import replace
+
+    from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator, santa_fe_config
+
+    cfg = replace(santa_fe_config(seed=5), anchor="ref", band=8, refill_cooldown=50)
+    sim = ZILobSimulator(cfg)
+    for _ in range(2000):
+        sim.step()
+    assert sim._vacancy, "no level ever emptied under this seed"
+    # every vacated level within the window must be unoccupied or re-seeded
+    # only by paths other than ZI flow (none exist here) -> all cooled
+    # levels remain empty
+    cooled = [(s, lv) for (s, lv), t0 in sim._vacancy.items() if sim.n_events - t0 < 50]
+    book = {"buy": sim._bids, "sell": sim._asks}
+    for side, lv in cooled:
+        assert lv not in book[side]
+
+
+def test_refill_cooldown_zero_is_bit_identical() -> None:
+    """cd=0 consumes no extra draws: identical fill stream as legacy."""
+    from dataclasses import replace
+
+    from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator, santa_fe_config
+
+    a = ZILobSimulator(santa_fe_config(seed=11))
+    b = ZILobSimulator(replace(santa_fe_config(seed=11), refill_cooldown=0))
+    for _ in range(1500):
+        a.step()
+        b.step()
+    assert [(t.price, t.level, t.aggressor) for t in a.trades] == [
+        (t.price, t.level, t.aggressor) for t in b.trades
+    ]
+    assert b.n_lo_suppressed == 0
