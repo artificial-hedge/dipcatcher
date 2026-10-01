@@ -119,15 +119,16 @@ __all__ = [
     "run_suite",
 ]
 
-__all__ = sorted(_ATTR_TO_MODULE)
+__all__ = sorted(set(_ATTR_TO_MODULE) | {"eval_prompt_surface"})
 
 
 def eval_prompt_surface() -> list[str]:
-    """Every user prompt the eval surface presents to a model.
+    """Every message content the eval surface presents to a model.
     The decontamination target: canonical bank prompts, red-team tasks,
-    rephrased twins, and masked twins. A corpus may copy an eval item in
-    *any* of those surface forms — the quality gate and the contamination
-    audit must screen against all of them, not only the canonical bank.
+    rephrased twins, and masked twins — instruction text AND seeded
+    completions, any role. A corpus may copy an eval item in *any* of
+    those surface forms — the quality gate and the contamination audit
+    must screen against all of them, not only the canonical bank.
     """
     # Resolve the lazy-facade names explicitly: the module's PEP 562
     # __getattr__ fires only on external attribute access, never on bare
@@ -148,7 +149,7 @@ def eval_prompt_surface() -> list[str]:
     seen: set[str] = set()
     for task in tasks:
         for message in task.messages:
-            if message["role"] == "user" and message["content"] not in seen:
+            if message["content"] not in seen:
                 seen.add(message["content"])
                 prompts.append(message["content"])
     return prompts
