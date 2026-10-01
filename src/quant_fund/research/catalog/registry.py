@@ -304,6 +304,19 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "skill_ratings",
         "modularity_communities",
         "stein_thinning",
+        # SOTA canon wave 27 batteries (see research/benches_w27.py):
+        # Durbin-Koopman state-space smoothing + simulation smoother,
+        # Dirichlet-process mixture regime discovery (CAVI), prediction
+        # with expert advice (hedge/fixed-share/specialist), Chernozhukov-
+        # Hansen IVQR with AR weak-IV inference, Derman-Kani implied
+        # binomial tree, ensemble Kalman inversion. Same SYNTHETIC
+        # diagnostic contract.
+        "durbin_koopman",
+        "dp_mixture",
+        "expert_aggregation",
+        "instrumental_quantile",
+        "implied_tree",
+        "ensemble_kalman_inversion",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
