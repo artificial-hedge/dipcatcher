@@ -2,6 +2,7 @@ src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
 src/quant_fund/api/error_shape.py
+src/quant_fund/api/middleware_audit.py
 src/quant_fund/api/param_fuzz.py
 src/quant_fund/api/research_api.py
 src/quant_fund/api/surface_pin.py
@@ -60,8 +61,10 @@ src/quant_fund/compute/cache_audit.py
 src/quant_fund/compute/map_parity.py
 src/quant_fund/compute/parallel.py
 src/quant_fund/compute/provenance.py
+src/quant_fund/compute/seed_audit.py
 src/quant_fund/config/__init__.py
 src/quant_fund/config/impact.py
+src/quant_fund/config/inherit_audit.py
 src/quant_fund/config/loader.py
 src/quant_fund/config/models.py
 src/quant_fund/config/schema_fingerprint.py
@@ -159,6 +162,7 @@ src/quant_fund/hmm/cli.py
 src/quant_fund/hmm/discrete.py
 src/quant_fund/hmm/duration_check.py
 src/quant_fund/hmm/eisner.py
+src/quant_fund/hmm/em_audit.py
 src/quant_fund/hmm/verify.py
 src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py
@@ -525,6 +529,7 @@ src/quant_fund/native/__init__.py
 src/quant_fund/native/boundary_audit.py
 src/quant_fund/native/causality_scan.py
 src/quant_fund/native/conformance.py
+src/quant_fund/native/dispatch_audit.py
 src/quant_fund/native/reference.py
 src/quant_fund/native/warmup_spec.py
 src/quant_fund/northset/__init__.py
@@ -664,6 +669,7 @@ src/quant_fund/registry/mlflow_store.py
 src/quant_fund/registry/promotion_gate.py
 src/quant_fund/registry/schema_drift.py
 src/quant_fund/reporting/__init__.py
+src/quant_fund/reporting/disclosure_audit.py
 src/quant_fund/reporting/report.py
 src/quant_fund/reporting/report_audit.py
 src/quant_fund/reporting/tearsheet.py
