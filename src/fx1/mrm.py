@@ -92,13 +92,21 @@ def compile_dossier(
             raise FileNotFoundError(f"dossier artifact for {activity!r} missing: {path}")
         report_activity = "validation" if activity == "contamination_report" else activity
         hashes.setdefault(report_activity, {})[str(path)] = _sha(path)
-        if activity == "contamination_report" or "contamination" in path.name:
-            try:
-                report = json.loads(path.read_text(encoding="utf-8"))
-                contamination_flagged = contamination_flagged or bool(
-                    report.get("overall_flagged", True)
-                )
-            except json.JSONDecodeError:
+        # A contamination report laundered under another activity key with an
+        # innocuous filename must not escape flagging: parse every JSON
+        # artifact and honor any document that declares ``overall_flagged``.
+        declared = activity == "contamination_report" or "contamination" in path.name
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            if declared:
+                contamination_flagged = True
+        else:
+            if isinstance(report, dict) and "overall_flagged" in report:
+                contamination_flagged = contamination_flagged or bool(report["overall_flagged"])
+            elif declared:
+                # Declared contamination report that is unparseable JSON or
+                # lacks the flag entirely — treat as flagged, not silent.
                 contamination_flagged = True
     sections: list[DossierSection] = []
     summaries = {
