@@ -521,6 +521,7 @@ src/quant_fund/monitoring/kill_audit.py
 src/quant_fund/monitoring/kill_switch.py
 src/quant_fund/monitoring/monitor_chain.py
 src/quant_fund/native/__init__.py
+src/quant_fund/native/boundary_audit.py
 src/quant_fund/native/causality_scan.py
 src/quant_fund/native/conformance.py
 src/quant_fund/native/reference.py
