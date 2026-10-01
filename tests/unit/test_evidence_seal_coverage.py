@@ -30,9 +30,9 @@ SEAL_MARKERS = (
 # Files that write JSON but produce no durable evidence — or are sealed on an
 # open PR (remove the entry once that PR merges). Every entry needs a reason.
 UNSEALED_WRITERS: dict[str, str] = {
-    "cli/data_cmds.py": "membership-coverage --out dumps the diagnostic coverage report — CLI report output, not a receipt writer",
+    "cli/data_cmds.py": "membership-coverage --out report dump — CLI report output, not a receipt writer",
     "config/loader.py": "dump_resolved echoes the tracked config file — snapshot, not evidence",
-    "data/adapters/dolthub_stocks.py": "as-traded cache provenance sidecar under gitignored data/dolthub_stocks — regenerated with the cache, stays local, not committed evidence",
+    "data/adapters/dolthub_stocks.py": "cache provenance sidecar — self-digests the paired parquet (sha256 + dolt_commit) and is re-verified on every cache read",
     "data/ingest.py": "sealed on PR #261 (data_manifest receipt_sha256)",
     "data/sources/storage.py": "sealed on PR #261 (per-parquet provenance sidecar)",
     "hedge_lab/gated_race.py": "sealed on PR #257",
