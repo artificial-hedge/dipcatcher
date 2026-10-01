@@ -356,6 +356,14 @@ from quant_fund.research.benches_w45 import (
     bench_pesaran_cce,
     bench_wald_sprt,
 )
+from quant_fund.research.benches_w46 import (
+    bench_binscatter,
+    bench_blp_demand,
+    bench_dfl_decomp,
+    bench_oaxaca_blinder,
+    bench_olley_pakes,
+    bench_rust_ddc,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2176,6 +2184,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "wald_sprt": bench_wald_sprt(),
         "lee_bounds": bench_lee_bounds(),
         "barrett_donald": bench_barrett_donald(),
+        "blp_demand": bench_blp_demand(),
+        "olley_pakes": bench_olley_pakes(),
+        "rust_ddc": bench_rust_ddc(),
+        "oaxaca_blinder": bench_oaxaca_blinder(),
+        "binscatter": bench_binscatter(),
+        "dfl_decomp": bench_dfl_decomp(),
     }
 
     hyps = _build_hypotheses(families, rankers)
