@@ -396,6 +396,7 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
 _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
     "cancel_cluster.v1",
+    "cancel_gradient_bench.v1",
     "deep_microprice.v1",
     "depth_consumption.v1",
     "empirical_flow.v1",
@@ -416,6 +417,7 @@ _MEASUREMENT_SCHEMAS = (
     "lob_exec.v1",
     "lob_resilience.v1",
     "marketable_limit.v1",
+    "maker_age.v1",
     "metaorder_detect.v1",
     "mid_jump.v1",
     "order_lifetime.v1",
@@ -438,6 +440,7 @@ _MEASUREMENT_SCHEMAS = (
     "stale_quote.v1",
     "streak_calibrate.v1",
     "streak_stats.v1",
+    "sweep_width_bench.v1",
     "tape_digest.v1",
     "tick_rule.v1",
     "vol_signature.v1",
@@ -453,6 +456,7 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "incumbent_bench.v1": incumbent_bench_contract_errors,
     "fx1.dip_bench/v1": dip_bench_contract_errors,
     "deps_hygiene.v1": deps_hygiene_contract_errors,
+    **{s: measurement_receipt_contract_errors for s in _MEASUREMENT_SCHEMAS},
 }
 
 

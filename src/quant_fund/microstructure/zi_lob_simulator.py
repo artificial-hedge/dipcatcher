@@ -99,6 +99,193 @@ def _check_side(side: str) -> Side:
     return side  # type: ignore[return-value]
 
 
+def _check_size_pmf(
+    pmf: tuple[tuple[int, float], ...] | None, name: str
+) -> tuple[tuple[int, float], ...] | None:
+    """Validate a size pmf: ``((size, weight), ...)`` with int sizes >= 1.
+
+    Weights need only be positive and finite — they are normalized at
+    draw time. ``None`` (default) means unit-size events and consumes
+    zero RNG draws, preserving the legacy bit-identical event stream.
+    """
+    if pmf is None:
+        return None
+    if not isinstance(pmf, (tuple, list)) or len(pmf) == 0:
+        raise ValueError(f"{name} must be a non-empty (size, weight) table")
+    out: list[tuple[int, float]] = []
+    total = 0.0
+    for entry in pmf:
+        if not isinstance(entry, (tuple, list)) or len(entry) != 2:
+            raise ValueError(f"{name} entries must be (size, weight) pairs")
+        size, w = entry
+        if isinstance(size, bool) or int(size) < 1:
+            raise ValueError(f"{name} sizes must be ints >= 1, got {size!r}")
+        w = float(w)
+        if not math.isfinite(w) or w <= 0.0:
+            raise ValueError(f"{name} weights must be positive and finite, got {w!r}")
+        out.append((int(size), w))
+        total += w
+    if total <= 0.0:  # pragma: no cover - positive-weight guard above
+        raise ValueError(f"{name} weights must sum > 0")
+    return tuple(out)
+
+
+# ---------------------------------------------------------------------------
+# Self-exciting event clock (multivariate Hawkes modulation)
+# ---------------------------------------------------------------------------
+
+# Event-type order for the Hawkes kernel: limit, market, cancel.
+HAWKES_TYPES: tuple[str, str, str] = ("limit", "market", "cancel")
+
+
+@dataclass(frozen=True)
+class HawkesClockSpec:
+    """Excitation kernel for an optional Hawkes event clock.
+
+    ``kernel[i][j]`` is the intensity jump (events/s) that one event of type
+    ``i`` adds to the type-``j`` intensity; the jump decays as
+    ``exp(-beta * dt)`` with a shared decay rate ``beta``. Event types are
+    indexed by ``HAWKES_TYPES``: 0 = limit, 1 = market, 2 = cancel.
+
+    A jump of ``alpha`` decaying at ``beta`` contributes branching ratio
+    ``alpha / beta`` expected direct children, so the branching matrix is
+    ``kernel / beta``. Fail-closed unless the matrix is finite,
+    non-negative, 3x3 and strictly sub-critical (spectral radius < 1) —
+    a super-critical kernel explodes and would silently fabricate a tape.
+    """
+
+    kernel: tuple[tuple[float, float, float], ...]
+    beta: float
+    # Optional multi-timescale excitation: ``rates`` gives R decay banks and
+    # ``bank_weights`` the share of each kernel jump deposited in each bank
+    # (must sum to 1). A bank mixture approximates a power-law kernel
+    # (Omori-type clustering tail) while staying exactly Markovian for Ogata
+    # thinning. ``None`` keeps the single shared decay ``beta``.
+    rates: tuple[float, ...] | None = None
+    bank_weights: tuple[float, ...] | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kernel, (tuple, list)) or len(self.kernel) != 3:
+            raise ValueError("kernel must be a 3x3 matrix")
+        k = np.asarray(self.kernel, dtype=np.float64)
+        if k.shape != (3, 3):
+            raise ValueError("kernel must be a 3x3 matrix")
+        if not np.all(np.isfinite(k)) or bool((k < 0.0).any()):
+            raise ValueError("kernel entries must be non-negative and finite")
+        _pos_finite(self.beta, "beta")
+        rates = self.rates if self.rates is not None else (self.beta,)
+        weights = self.bank_weights
+        if weights is None:
+            weights = tuple(1.0 / len(rates) for _ in rates)
+        if len(rates) != len(weights) or len(rates) < 1:
+            raise ValueError("rates and bank_weights must share a non-empty length")
+        for r in rates:
+            _pos_finite(r, "rates")
+        wsum = sum(_nonneg_finite(w, "bank_weights") for w in weights)
+        if not math.isclose(wsum, 1.0, rel_tol=1e-6, abs_tol=1e-9):
+            raise ValueError(f"bank_weights must sum to 1, got {wsum!r}")
+        object.__setattr__(self, "rates", tuple(float(r) for r in rates))
+        object.__setattr__(self, "bank_weights", tuple(float(w) for w in weights))
+        # Children per edge = kernel_ij * H, H = sum_r w_r / beta_r.
+        h = float(sum(w / r for w, r in zip(weights, rates, strict=True)))
+        rho = float(np.max(np.abs(np.linalg.eigvals(k * h))))
+        if not math.isfinite(rho) or rho >= 1.0:
+            raise ValueError(
+                f"Hawkes kernel must be sub-critical (spectral radius < 1), got {rho:.4f}"
+            )
+        object.__setattr__(self, "kernel", tuple(tuple(float(x) for x in row) for row in k))
+
+    def branching_matrix(self) -> tuple[tuple[float, float, float], ...]:
+        """Effective children-per-event matrix ``kernel * H``."""
+        h = float(
+            sum(
+                w / r
+                for w, r in zip(
+                    self.bank_weights or (1.0,), self.rates or (self.beta,), strict=True
+                )
+            )
+        )
+        k = np.asarray(self.kernel, dtype=np.float64) * h
+        return tuple((float(row[0]), float(row[1]), float(row[2])) for row in k)
+
+
+@dataclass(frozen=True)
+class RateRegimeSpec:
+    """Markov-modulated baseline scaling (MMPP) for the event clock.
+
+    ``scales[s]`` multiplies the per-type base rates ``(lo, mo, cxl)``
+    while the chain sits in state ``s``; ``stay_probs[s]`` is the
+    per-event probability of remaining in ``s`` (geometric dwell).
+    Transitions move to a uniformly-chosen other state. Combined with
+    ``hawkes`` this is a Cox-Hawkes hybrid: the modulated bases feed the
+    thinning clock. ``None`` (or a single all-ones state) consumes zero
+    RNG draws and is bit-identical to the unmodulated clock.
+    """
+
+    scales: tuple[tuple[float, float, float], ...]
+    stay_probs: tuple[float, ...]
+    start: int = 0
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.scales, (tuple, list)) or len(self.scales) < 1:
+            raise ValueError("scales must be a non-empty tuple of 3-vectors")
+        if len(self.scales) != len(self.stay_probs):
+            raise ValueError("scales and stay_probs must share a length")
+        for s in self.scales:
+            if not isinstance(s, (tuple, list)) or len(s) != 3:
+                raise ValueError("each scale must be a 3-vector")
+            for v in s:
+                _nonneg_finite(float(v), "scales")
+        for p in self.stay_probs:
+            if not (0.0 <= float(p) <= 1.0):
+                raise ValueError(f"stay_probs entries must be in [0, 1], got {p!r}")
+        if isinstance(self.start, bool) or not isinstance(self.start, int):
+            raise ValueError(f"start must be an int, got {self.start!r}")
+        if not 0 <= self.start < len(self.scales):
+            raise ValueError(f"start out of range: {self.start!r}")
+        object.__setattr__(
+            self,
+            "scales",
+            tuple((float(s[0]), float(s[1]), float(s[2])) for s in self.scales),
+        )
+        object.__setattr__(self, "stay_probs", tuple(float(p) for p in self.stay_probs))
+
+
+class RateRegimeFlow:
+    """Markov-modulated baseline multiplier driven per event.
+
+    ``ZILobSimulator.step`` multiplies the (lo, mo, cxl) bases by the
+    current state's scale vector before feeding the clock. The transition
+    check consumes one uniform per event when the chain can move; a
+    single-state spec (or a stay_prob of exactly 1) consumes zero draws.
+    """
+
+    def __init__(self, spec: RateRegimeSpec, rng: np.random.Generator) -> None:
+        self._scales = np.asarray(spec.scales, dtype=np.float64)
+        self._stay = np.asarray(spec.stay_probs, dtype=np.float64)
+        self._rng = rng
+        self.state = int(spec.start)
+        self.n_transitions = 0
+        self._frozen = len(spec.stay_probs) == 1 or float(self._stay[self.state]) >= 1.0
+
+    def scale(self) -> Array:
+        """Current ``(lo, mo, cxl)`` multipliers."""
+        s: Array = self._scales[self.state]
+        return s
+
+    def advance(self) -> None:
+        """Per-event transition step (uniform-over-others move)."""
+        if self._frozen:
+            return
+        if float(self._rng.random()) >= self._stay[self.state]:
+            n = self._scales.shape[0]
+            jump = 1 + int(float(self._rng.random()) * (n - 1))
+            self.state = (self.state + jump) % n
+            self.n_transitions += 1
+            if float(self._stay[self.state]) >= 1.0:
+                self._frozen = True
+
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -148,6 +335,61 @@ class ZILobConfig:
     anchor: str = "touch"
     ref_halflife: float = 0.0
     seed: int = 0
+    # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
+    # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
+    # ``best_ask - dist``. Deep anchoring floors the spread near
+    # ``lo_offset + 1`` — the zero-intelligence version of
+    # adverse-selection-aware quoting (makers refuse the touch). 0 is
+    # bit-identical to the legacy placement.
+    lo_offset: int = 0
+    # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
+    # order of a level immediately re-rests one unit at the SAME level
+    # tagged ``iceberg`` — hidden reserve liquidity that refills after
+    # each fill (the synthetic iceberg approximation). A fill whose
+    # maker tag is ``iceberg`` counts in ``n_hidden_fills``: fills on
+    # liquidity that was not displayed before execution. 0 is
+    # bit-identical to the legacy matcher (zero RNG draws consumed).
+    iceberg_reload: float = 0.0
+    # ``lo_offset_gain`` couples the LO anchor offset to MO excitation:
+    # the effective offset is ``lo_offset + round(gain * e_MO)`` where
+    # ``e_MO`` is the Hawkes excitation state summed over banks — makers
+    # retreat while fills cluster, so the spread widens exactly when
+    # toxicity is high and relaxes as excitation decays (the tape's
+    # post-fill spread kernel). Requires ``hawkes``; 0 ignores it.
+    lo_offset_gain: float = 0.0
+    # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
+    # order on the hit side is pulled — the tape's instant re-quote
+    # retreat (spread widens the moment liquidity is consumed, before
+    # any new deposit arrives). 0 is bit-identical legacy (zero draws).
+    touch_pull: float = 0.0
+    # ``cxl_touch_bias`` ∈ [0, 1]: probability a cancellation event picks
+    # the front order at a touch instead of a uniform outstanding order.
+    # On the real tape cancels concentrate at the touch (propensity ~1.4x
+    # uniform, falling to ~0.7 deep — the re-quote cycle churns the
+    # front, not the back).
+    cxl_touch_bias: float = 0.0
+    # Optional event-size tables ``((size, weight), ...)``. When set, each
+    # market-order event consumes ``size`` resting units in one burst
+    # (sweeping levels when the touch is thin, so multi-level sweeps
+    # emerge) and each limit-order event deposits ``size`` units at its
+    # level. ``None`` keeps the unit-size default with zero extra RNG
+    # draws — an unset table is bit-identical to the legacy stream.
+    mo_size_pmf: tuple[tuple[int, float], ...] | None = None
+    lo_size_pmf: tuple[tuple[int, float], ...] | None = None
+    # Optional self-exciting event clock. When set, the homogeneous
+    # Poisson superposition is replaced by a 3-type multivariate Hawkes
+    # process over (limit, market, cancel) whose baselines are the same
+    # rates (``2*lam*band``, ``2*mu``, ``theta_cxl*depth``) plus a decaying
+    # excitation state — the tape's submit/cancel storms and post-exec
+    # cancel retreat become expressible. ``None`` keeps the Poisson clock
+    # bit-identical (zero change to the draw stream).
+    hawkes: HawkesClockSpec | None = None
+    # Optional Markov-modulated baseline scaling (MMPP): the (lo, mo, cxl)
+    # base rates are multiplied by the current regime state's scale before
+    # the clock draws — produces session-level activity regimes on top of
+    # (or instead of) self-excitation. ``None`` keeps the constant-base
+    # clock bit-identical.
+    rate_regimes: RateRegimeSpec | None = None
 
     def __post_init__(self) -> None:
         _pos_finite(self.s0, "s0")
@@ -170,6 +412,20 @@ class ZILobConfig:
             raise ValueError("init_depth must be >= 1 when init_levels > 0")
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise ValueError(f"seed must be an int, got {self.seed!r}")
+        _check_size_pmf(self.mo_size_pmf, "mo_size_pmf")
+        _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
+        if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
+            raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
+        _prob(self.iceberg_reload, "iceberg_reload")
+        _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
+        _prob(self.touch_pull, "touch_pull")
+        _prob(self.cxl_touch_bias, "cxl_touch_bias")
+        if self.lo_offset_gain > 0.0 and self.hawkes is None:
+            raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
+        if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
+            raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
+        if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
+            raise TypeError(f"rate_regimes must be a RateRegimeSpec, got {self.rate_regimes!r}")
 
 
 def santa_fe_config(
@@ -281,6 +537,69 @@ class MarkovRegimeFlow:
             raise ValueError("expected_p_buy undefined before any MO event")
         total = sum(self.state_mo_counts[i] * self._states[i].p_buy for i in range(2))
         return float(total / self.n_mo)
+
+
+class HawkesClock:
+    """Ogata-thinning clock for a 3-type mutually-exciting Hawkes process.
+
+    Drives ``ZILobSimulator.step`` when ``config.hawkes`` is set. The
+    per-type intensity is ``bases[k] + e[k]`` where ``bases`` are the
+    state's current homogeneous rates (the depth-proportional cancel
+    baseline is exact: book depth is constant between events) and ``e``
+    is the decaying excitation. Between events each intensity is
+    non-increasing, so thinning with the start-of-gap intensity as the
+    upper bound is exact Ogata sampling. The accepted proposal's uniform
+    is reused for the type draw — it is uniform on the accepted range —
+    so a zero kernel consumes the same draws as the Poisson clock and is
+    bit-identical to it.
+    """
+
+    _MAX_PROPOSALS = 100_000
+
+    def __init__(self, spec: HawkesClockSpec, rng: np.random.Generator) -> None:
+        self._k = np.asarray(spec.kernel, dtype=np.float64)
+        self._rates = np.asarray(spec.rates or (spec.beta,), dtype=np.float64)
+        self._w = np.asarray(spec.bank_weights or (1.0,), dtype=np.float64)
+        self._rng = rng
+        # Excitation state per (target type, decay bank).
+        self._e = np.zeros((3, self._rates.size), dtype=np.float64)
+        self.n_proposals = 0
+        self.n_rejected = 0
+
+    def excitation(self, kind: int) -> float:
+        """Current excitation state for ``kind`` summed over decay banks."""
+        return float(self._e[int(kind)].sum())
+
+    def _intensity(self, base: Array, decay_row: Array | None) -> Array:
+        """``base + e``; ``decay_row`` applies per-bank ``exp(-beta_r s)``."""
+        e = self._e if decay_row is None else self._e * decay_row[None, :]
+        return base + e.sum(axis=1)
+
+    def step(self, bases: tuple[float, float, float]) -> tuple[float, int]:
+        """Draw ``(dt, kind)`` for the next event; kind indexes HAWKES_TYPES."""
+        base = np.asarray(bases, dtype=np.float64)
+        lam = self._intensity(base, None)
+        for _ in range(self._MAX_PROPOSALS):
+            total = float(lam.sum())
+            if not math.isfinite(total) or total <= 0.0:
+                raise RuntimeError(f"degenerate Hawkes intensity {lam!r}")
+            dt = float(self._rng.exponential(1.0 / total))
+            decay_row = np.exp(-self._rates * dt)
+            lam_s = self._intensity(base, decay_row)
+            u = float(self._rng.random()) * total
+            self.n_proposals += 1
+            if u <= float(lam_s.sum()):
+                kind = int(np.searchsorted(np.cumsum(lam_s), u, side="right"))
+                if kind > 2:  # pragma: no cover - u <= sum(lam_s) by acceptance
+                    kind = 2
+                # Advance excitation to the event, then deposit the kernel
+                # jump across decay banks by share weight.
+                self._e *= decay_row[None, :]
+                self._e += self._k[kind][:, None] * self._w[None, :]
+                return dt, kind
+            self.n_rejected += 1
+            lam = lam_s
+        raise RuntimeError(f"Hawkes thinning exceeded {self._MAX_PROPOSALS} proposals")
 
 
 class ScenarioRegimeFlow:
@@ -560,6 +879,15 @@ class ZILobSimulator:
         self.n_fills = 0
         self.n_cancellations = 0
         self.n_submitted = 0
+        self.n_lo_improve = 0
+        self.n_hidden_fills = 0
+        self.n_touch_pulls = 0
+        self.n_cxl_touch = 0
+        # Cancel-distance histogram: bucket d counts cancels d ticks
+        # from that side's touch; index 20 collects the tail.
+        self.cxl_dist = [0] * 21
+        # Age (seconds) of each canceled order at removal.
+        self.cxl_ages: list[float] = []
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -572,10 +900,40 @@ class ZILobSimulator:
         weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
         self._dist_cdf = np.cumsum(weights / weights.sum())
         self._dist_cdf[-1] = 1.0
+        # Event-size tables (None → unit-size, zero extra RNG draws).
+        self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
+        self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
+        self._hawkes = HawkesClock(config.hawkes, self._rng) if config.hawkes is not None else None
+        self._rate_flow = (
+            RateRegimeFlow(config.rate_regimes, self._rng)
+            if config.rate_regimes is not None
+            else None
+        )
+        self.n_mo_units = 0
+        self.n_lo_units = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
                 self._rest("buy", -k, "zi_seed")
                 self._rest("sell", k, "zi_seed")
+
+    @staticmethod
+    def _size_cdf(
+        pmf: tuple[tuple[int, float], ...] | None,
+    ) -> tuple[tuple[int, ...], Array] | None:
+        if pmf is None:
+            return None
+        sizes = tuple(int(s) for s, _ in pmf)
+        w = np.asarray([w for _, w in pmf], dtype=np.float64)
+        cdf = np.cumsum(w / w.sum())
+        cdf[-1] = 1.0
+        return sizes, cdf
+
+    def _draw_size(self, table: tuple[tuple[int, ...], Array] | None) -> int:
+        """Draw an event size; 1 with no RNG draw when the table is unset."""
+        if table is None:
+            return 1
+        sizes, cdf = table
+        return sizes[int(np.searchsorted(cdf, float(self._rng.random()), side="left"))]
 
     # -- grid helpers -------------------------------------------------------
 
@@ -699,6 +1057,17 @@ class ZILobSimulator:
             "n_submitted": self.n_submitted,
             "n_orders_created": self._n_orders_created,
             "resting": self.total_depth,
+            "n_mo_units": self.n_mo_units,
+            "n_lo_units": self.n_lo_units,
+            "n_hawkes_proposals": self._hawkes.n_proposals if self._hawkes else 0,
+            "n_hawkes_rejected": self._hawkes.n_rejected if self._hawkes else 0,
+            "n_regime_transitions": (
+                self._rate_flow.n_transitions if self._rate_flow is not None else 0
+            ),
+            "n_lo_improve": self.n_lo_improve,
+            "n_hidden_fills": self.n_hidden_fills,
+            "n_touch_pulls": self.n_touch_pulls,
+            "n_cxl_touch": self.n_cxl_touch,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -779,6 +1148,8 @@ class ZILobSimulator:
             return None
         level = min(book) if aggressor == "buy" else max(book)
         order = self._remove_resting_at(book, level, 0)
+        if order.tag == "iceberg":
+            self.n_hidden_fills += 1
         trade = TradeEvent(
             t=self._t,
             aggressor=aggressor,
@@ -793,6 +1164,19 @@ class ZILobSimulator:
         )
         self.trades.append(trade)
         self.n_fills += 1
+        # Iceberg reload: the consumed level immediately re-rests one
+        # hidden unit with probability ``iceberg_reload`` — the display
+        # refill that makes a level absorb more than its visible depth.
+        p = self._cfg.iceberg_reload
+        if p > 0.0 and float(self._rng.random()) < p:
+            self._rest(order.side, level, "iceberg")
+        # Touch pull: the front order on the hit side is withdrawn with
+        # probability ``touch_pull`` — instant quote defense, the kernel's
+        # t~0 component.
+        if self._cfg.touch_pull > 0.0 and book and float(self._rng.random()) < self._cfg.touch_pull:
+            next_level = min(book) if aggressor == "buy" else max(book)
+            self._remove_resting_at(book, next_level, 0)
+            self.n_touch_pulls += 1
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:
@@ -839,32 +1223,67 @@ class ZILobSimulator:
             # (volume-diffusion / square-root regime). Crossing placements are
             # dropped — that aggressiveness is already in the market-order flow.
             ref = int(round(self._ref_ema))
+            k = self._draw_size(self._lo_size_cdf)
             if want_buy:
                 level = ref - dist
                 if ba is None or level < ba:
-                    self._rest("buy", level, "zi")
+                    for _ in range(k):
+                        self._rest("buy", level, "zi")
                     self.n_lo_arrivals += 1
+                    self.n_lo_units += k
                 return
             level = ref + dist
             if bb is None or level > bb:
-                self._rest("sell", level, "zi")
+                for _ in range(k):
+                    self._rest("sell", level, "zi")
                 self.n_lo_arrivals += 1
+                self.n_lo_units += k
             return
         # Touch anchoring (Moret & Lillo market-making setting): band follows the
         # best opposite quote; fall back to the reference level when a side is
         # empty so the book can always recover.
+        k = self._draw_size(self._lo_size_cdf)
+        off = int(self._cfg.lo_offset)
+        if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
+            off += int(round(self._cfg.lo_offset_gain * self._hawkes.excitation(1)))
         if want_buy:
-            anchor = ba if ba is not None else self._ref_level + 1
-            self._rest("buy", anchor - dist, "zi")
+            anchor = (ba if ba is not None else self._ref_level + 1) - off
+            level = anchor - dist
+            if bb is not None and level > bb:
+                self.n_lo_improve += 1  # deposit strictly inside the spread
+            for _ in range(k):
+                self._rest("buy", level, "zi")
         else:
-            anchor = bb if bb is not None else self._ref_level - 1
-            self._rest("sell", anchor + dist, "zi")
+            anchor = (bb if bb is not None else self._ref_level - 1) + off
+            level = anchor + dist
+            if ba is not None and level < ba:
+                self.n_lo_improve += 1
+            for _ in range(k):
+                self._rest("sell", level, "zi")
         self.n_lo_arrivals += 1
+        self.n_lo_units += k
 
     def _cancel_event(self) -> None:
         bid_d, ask_d = self.bid_depth, self.ask_depth
         total = bid_d + ask_d
         if total == 0:
+            return
+        bias = self._cfg.cxl_touch_bias
+        if bias > 0.0 and float(self._rng.random()) < bias:
+            bb, ba = self.best_bid_level, self.best_ask_level
+            tb = len(self._bids[bb]) if bb is not None else 0
+            ta = len(self._asks[ba]) if ba is not None else 0
+            draw = float(self._rng.random()) * (tb + ta)
+            if draw < tb and bb is not None:
+                order = self._remove_resting_at(self._bids, bb, 0)
+            elif ba is not None:
+                order = self._remove_resting_at(self._asks, ba, 0)
+            else:  # pragma: no cover - touch depth bookkeeping invariant
+                raise RuntimeError("touch cancel on an empty book")
+            self.cxl_ages.append(self.t - order.t_submit)
+            self.n_cancellations += 1
+            self.n_cxl_touch += 1
+            self.cxl_dist[0] += 1
             return
         k = int(self._rng.integers(total))
         if k < bid_d:
@@ -880,8 +1299,14 @@ class ZILobSimulator:
             idx -= n
         if level is None:  # pragma: no cover - depth accounting invariant
             raise RuntimeError("cancellation sampling missed the book")
-        self._remove_resting_at(book, level, idx)
+        touch = max(book) if book is self._bids else min(book)
+        order = self._remove_resting_at(book, level, idx)
+        self.cxl_ages.append(self.t - order.t_submit)
         self.n_cancellations += 1
+        dist = abs(level - touch)
+        self.cxl_dist[min(dist, 20)] += 1
+        if dist == 0:
+            self.n_cxl_touch += 1
 
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""
@@ -889,12 +1314,22 @@ class ZILobSimulator:
         lo_rate = 2.0 * self._cfg.lam * self._cfg.band
         mo_rate = 2.0 * mu_eff
         cxl_rate = self._cfg.theta_cxl * float(self.total_depth)
+        if self._rate_flow is not None:
+            s = self._rate_flow.scale()
+            lo_rate *= float(s[0])
+            mo_rate *= float(s[1])
+            cxl_rate *= float(s[2])
+            self._rate_flow.advance()
         total = lo_rate + mo_rate + cxl_rate
         if not math.isfinite(total) or total <= 0.0:
             raise RuntimeError(f"degenerate event rate {total!r}")
-        dt = float(self._rng.exponential(1.0 / total))
+        if self._hawkes is not None:
+            dt, kind = self._hawkes.step((lo_rate, mo_rate, cxl_rate))
+        else:
+            dt = float(self._rng.exponential(1.0 / total))
+            u = float(self._rng.random()) * total
+            kind = 0 if u < lo_rate else (1 if u < lo_rate + mo_rate else 2)
         self._t += dt
-        u = float(self._rng.random()) * total
         self.n_events += 1
         bb, ba = self.best_bid_level, self.best_ask_level
         if bb is not None and ba is not None:
@@ -905,13 +1340,19 @@ class ZILobSimulator:
                 # EMA of the mid level; frozen (hl == 0) keeps the seed mid.
                 alpha = min(1.0, dt / hl)
                 self._ref_ema += alpha * (mid_level - self._ref_ema)
-        if u < lo_rate:
+        if kind == 0:
             self._limit_order_event()
             return "limit"
-        if u < lo_rate + mo_rate:
+        if kind == 1:
             side: Side = "buy" if float(self._rng.random()) < p_buy_eff else "sell"
             self.n_mo_arrivals += 1
-            self._consume_best(side)
+            # A size-k MO is a burst of unit fills; each consumes the current
+            # opposite best, so a burst that exhausts the touch sweeps deeper
+            # levels (the tape's multi-level sweep footprint).
+            k = self._draw_size(self._mo_size_cdf)
+            self.n_mo_units += k
+            for _ in range(k):
+                self._consume_best(side)
             if self._flow is not None:
                 self._flow.advance()
             return "market"

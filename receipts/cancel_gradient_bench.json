@@ -1,0 +1,90 @@
+{
+  "arms": [
+    {
+      "buckets": {
+        "d11_plus": {
+          "cancel_share": 0.1897,
+          "depth_share": 0.1956,
+          "propensity": 0.9695
+        },
+        "d1_3": {
+          "cancel_share": 0.2072,
+          "depth_share": 0.2062,
+          "propensity": 1.0047
+        },
+        "d4_10": {
+          "cancel_share": 0.5493,
+          "depth_share": 0.545,
+          "propensity": 1.0079
+        },
+        "touch": {
+          "cancel_share": 0.0539,
+          "depth_share": 0.0532,
+          "propensity": 1.0134
+        }
+      },
+      "cxl_touch_bias": 0.0,
+      "n_cxl": 3654,
+      "n_cxl_touch": 197,
+      "name": "uniform"
+    },
+    {
+      "buckets": {
+        "d11_plus": {
+          "cancel_share": 0.1841,
+          "depth_share": 0.1894,
+          "propensity": 0.9718
+        },
+        "d1_3": {
+          "cancel_share": 0.1971,
+          "depth_share": 0.1935,
+          "propensity": 1.0183
+        },
+        "d4_10": {
+          "cancel_share": 0.5395,
+          "depth_share": 0.5635,
+          "propensity": 0.9574
+        },
+        "touch": {
+          "cancel_share": 0.0793,
+          "depth_share": 0.0535,
+          "propensity": 1.482
+        }
+      },
+      "cxl_touch_bias": 0.03,
+      "n_cxl": 3542,
+      "n_cxl_touch": 281,
+      "name": "touch_biased"
+    }
+  ],
+  "claims": {
+    "bias_concentrates_at_touch": true,
+    "bias_touch_magnitude_realistic": true,
+    "deep_residual_logged": true,
+    "uniform_is_flat": true
+  },
+  "data_label": "MIXED",
+  "divergences": [
+    "biased_d1_3_propensity_1.0183_vs_1.44"
+  ],
+  "git_revision": "5fa587647fcd400166ff1a38189c6a317de2e4da",
+  "horizon": 2500.0,
+  "interpretation": "Touch bias b redirects fraction ~b of cancels to the front: at b=0.03 touch propensity lands at ~1.5 vs the tape's 1.37. The uniform arm stays flat ~1.0 at every distance \u2014 the missing mechanism is structural, not parametric. Honest divergences: the real profile concentrates at 1-3 ticks too (1.44) and drains d>=11 to 0.68; the single-knob bias can't express near-touch bands or the tape's 50+ tick deep-book tail, both logged. A distance-decaying propensity kernel is the next refinement.",
+  "kind": "cancel_gradient_bench",
+  "real_tape_targets": {
+    "propensity": {
+      "d11_50": 0.68,
+      "d1_3": 1.44,
+      "d4_10": 1.11,
+      "d51_plus": 0.08,
+      "touch": 1.37
+    },
+    "source_receipts": [
+      "cancel_gradient.v1"
+    ]
+  },
+  "receipt_sha256": "5dbec96ab2e07f6b55388979583f747c59b874b7aca958040d158c22f12dd971",
+  "research_only": true,
+  "schema": "cancel_gradient_bench.v1",
+  "seed": 13
+}
