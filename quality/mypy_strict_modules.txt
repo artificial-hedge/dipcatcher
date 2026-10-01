@@ -1,5 +1,6 @@
 quant_fund.api.surface_pin
 quant_fund.config.impact
+quant_fund.fusion.stack_watch
 quant_fund.hmm.verify
 quant_fund.microstructure.intraday_exec
 quant_fund.monitoring.monitor_chain
