@@ -311,6 +311,7 @@ src/quant_fund/microstructure/impact_instant.py
 src/quant_fund/microstructure/impact_law.py
 src/quant_fund/microstructure/intraday_exec.py
 src/quant_fund/microstructure/intraday_shape.py
+src/quant_fund/microstructure/kyle_lambda.py
 src/quant_fund/microstructure/lob_exec.py
 src/quant_fund/microstructure/lob_resilience.py
 src/quant_fund/microstructure/lob_shape.py
