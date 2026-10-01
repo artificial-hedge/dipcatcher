@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1171,
+  "module_count": 1172,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -869,6 +869,34 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "fx1.forecast.core_audit"
+    },
+    {
+      "dst": "fx1.forecast.artifacts",
+      "src": "fx1.forecast.data_audit"
+    },
+    {
+      "dst": "fx1.forecast.features",
+      "src": "fx1.forecast.data_audit"
+    },
+    {
+      "dst": "fx1.forecast.schema",
+      "src": "fx1.forecast.data_audit"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "fx1.forecast.data_audit"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "fx1.forecast.data_audit"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "fx1.forecast.data_audit"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "fx1.forecast.data_audit"
     },
     {
       "dst": "fx1.forecast.artifacts",
@@ -12663,6 +12691,7 @@
     "fx1.forecast.artifacts",
     "fx1.forecast.config",
     "fx1.forecast.core_audit",
+    "fx1.forecast.data_audit",
     "fx1.forecast.dummy",
     "fx1.forecast.evaluate",
     "fx1.forecast.features",
@@ -13945,7 +13974,7 @@
     },
     {
       "dst": "fx1.forecast",
-      "imports": 37,
+      "imports": 40,
       "src": "fx1.forecast"
     },
     {
@@ -13969,13 +13998,18 @@
       "src": "fx1.forecast"
     },
     {
+      "dst": "quant_fund.research",
+      "imports": 1,
+      "src": "fx1.forecast"
+    },
+    {
       "dst": "quant_fund.schemas",
-      "imports": 5,
+      "imports": 6,
       "src": "fx1.forecast"
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 6,
+      "imports": 8,
       "src": "fx1.forecast"
     },
     {

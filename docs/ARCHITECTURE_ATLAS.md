@@ -186,8 +186,9 @@ flowchart LR
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|4| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
-  fx1_forecast -->|5| quant_fund_schemas
-  fx1_forecast -->|6| quant_fund_utils
+  fx1_forecast -->|1| quant_fund_research
+  fx1_forecast -->|6| quant_fund_schemas
+  fx1_forecast -->|8| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
   fx1_harness_audit -->|1| fx1_harness
   fx1_harness_audit -->|2| quant_fund_utils
@@ -683,7 +684,7 @@ sequenceDiagram
 | `fx1.doctor_audit` | 1 |
 | `fx1.eval` | 28 |
 | `fx1.ext_bench_audit` | 1 |
-| `fx1.forecast` | 13 |
+| `fx1.forecast` | 14 |
 | `fx1.harness` | 1 |
 | `fx1.harness_audit` | 1 |
 | `fx1.honesty` | 1 |
@@ -754,9 +755,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **1171**
+- Modules scanned: **1172**
 - Packages: **79**
-- Cross-package import edges: **338**
+- Cross-package import edges: **339**
 
 <!-- END GENERATED: coverage -->
 
