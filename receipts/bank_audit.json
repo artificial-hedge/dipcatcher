@@ -1,0 +1,37 @@
+{
+ "claim": {
+  "flags": {
+   "substring_required_tokens": true
+  },
+  "ok": true,
+  "results": {
+   "bad_patterns": [],
+   "digest_order_sensitive": true,
+   "dup_names": [],
+   "empty_honesty_gate_closed": true,
+   "honesty_tasks": 16,
+   "kinds_present": [
+    "domain",
+    "general",
+    "honesty"
+   ],
+   "n_tasks": {
+    "default": 28,
+    "redteam": 6
+   },
+   "substring_required_tokens": true,
+   "unsatisfiable_tasks": [],
+   "vacuous_tasks": [],
+   "violating_general_closes_gate": true,
+   "violation_recorded": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "faf12762af72d2e7aa6daca9166cda1882bfdb3d",
+ "interpretation": "Eval banks are self-consistent: no unsatisfiable tasks, no vacuous tasks, no dup names, all patterns compile. Substring required-token matching is a pinned hack surface; honesty gate refuses vacuous evidence and closes on any task's violation.",
+ "kind": "bank_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "3418a417a03ce3a99ca9432d5490831af24f52841eba3a293f4e6e424dbc2994",
+ "research_only": true,
+ "schema": "bank_audit.v1"
+}

@@ -1,0 +1,36 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "evidence_report_clean": {
+    "no_synthetic_marker": true,
+    "status": "complete"
+   },
+   "evidence_report_missing_provenance": {
+    "status": "insufficient_evidence",
+    "warns": true
+   },
+   "evidence_report_synthetic": {
+    "marker_in_warnings": true,
+    "rendered_text_discloses": true,
+    "status_not_complete": true
+   },
+   "regime_performance": {
+    "banner_on_synthetic": true,
+    "no_banner_on_real": true
+   },
+   "tearsheet": {
+    "banner_on_synthetic": true,
+    "no_banner_on_real": true
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "44f478b07f32c064e0ad76fa4cfa7c784411060f",
+ "interpretation": "Every reporting surface discloses synthetic input: banners on tearsheet/regime-performance renderers, warning-marker on the evidence report, and a synthetic report can never reach status=complete.",
+ "kind": "disclosure_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "fd825155434498ebe91e3748d8173ed5644b65d72355c903804a681b7daf13fa",
+ "research_only": true,
+ "schema": "disclosure_audit.v1"
+}
