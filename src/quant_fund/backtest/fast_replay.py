@@ -44,28 +44,31 @@ from quant_fund.backtest.engine import (
     _validate_bar_panel,
     run_backtest,
 )
-from quant_fund.config.models import AppConfig, FillConvention
+from quant_fund.config.models import AppConfig, CostConfig, FillConvention, RiskGateConfig
 from quant_fund.execution.spread_calibration import is_calibrated_spread_estimator
 from quant_fund.monitoring.kill_switch import KillSwitch
 from quant_fund.portfolio.risk_gate import LIMIT_ABS_SLACK, LIMIT_REL_SLACK, exceeds_limit, funded
 from quant_fund.schemas.errors import KillSwitchActive
 
 try:
-    from quant_fund.pipeline.forecast import (  # type: ignore[attr-defined]
+    from quant_fund.pipeline.forecast import (
         market_risk_overlay_asof as _mro_asof,
     )
-except Exception:  # pragma: no cover - older lineage lacks the module
+except ImportError:  # pragma: no cover - older lineage lacks the module
     _mro_asof = None  # type: ignore[assignment]
 
 try:
     from numba import njit
 
     HAVE_NUMBA = True
-except Exception:  # pragma: no cover - exercised only on numba-less envs
+except (ImportError, OSError):  # pragma: no cover - exercised only on numba-less envs
+    # Narrowed from `except Exception` (quality ratchet): a missing numba raises
+    # ImportError; a broken llvmlite native load raises OSError; exotic errors
+    # propagate instead of silently degrading every kernel.
     HAVE_NUMBA = False
 
-    def njit(*_a, **_k):  # type: ignore[no-redef]
-        def _deco(fn):
+    def njit(*_a: Any, **_k: Any) -> Any:  # type: ignore[no-redef]
+        def _deco(fn: Any) -> Any:
             return fn
 
         if len(_a) == 1 and callable(_a[0]) and not _k:
@@ -115,7 +118,10 @@ def _validate_panel_fast(weights: pl.DataFrame) -> None:
     try:
         vals = w.cast(pl.Float64, strict=False).to_numpy()
         ok = bool(np.isfinite(vals).all())
-    except Exception:
+    except (pl.exceptions.PolarsError, TypeError, ValueError):
+        # Narrowed from `except Exception` (quality ratchet): cast/to_numpy faults
+        # are polars/type errors; exotic errors propagate. Any enumerated anomaly
+        # still falls back to the reference validator, preserving the exact error.
         ok = False
     if not ok:
         # Reproduce the reference's first-offender error verbatim.
@@ -721,16 +727,16 @@ def _replay_driver(
     adv: np.ndarray,
     vol: np.ndarray,
     w_mat: np.ndarray,
-    market_vols: list | None,
+    market_vols: list[float | None] | None,
     use_next_open: bool,
     ref_carries: bool,
-    costs_cfg,
-    gate,
+    costs_cfg: CostConfig,
+    gate: RiskGateConfig,
     kill_blocks: bool,
     initial_nav: float,
-    dates: list,
+    dates: list[Any],
     sids: list[str],
-):
+) -> tuple[Any, ...] | None:
     """Allocate buffers, run the compiled kernel, materialise result rows.
 
     Returns ``(navs, fill_rows, cost_sum, reject_count, cash_reject_count,
@@ -848,7 +854,7 @@ def _replay_driver(
     # re-infers identical columns/dtypes — including the empty-weights edge
     # where the reference produces a 0x0 fills frame. Building dicts directly
     # (no intermediate polars frame) is ~10x faster than frame -> to_dicts.
-    navs: list[dict] = [
+    navs: list[dict[str, Any]] = [
         {
             "event_time": dates[int(navs_t[j])],
             "nav": navs_out[j, 0],
@@ -858,7 +864,7 @@ def _replay_driver(
         }
         for j in range(n_navs)
     ]
-    fill_rows: list[dict] = [
+    fill_rows: list[dict[str, Any]] = [
         {
             "fill_time": dates[int(f_et[j])],
             "signal_time": dates[int(f_st[j])],
@@ -1006,7 +1012,7 @@ def run_backtest_fast(
                 w_mat[piv_ti[in_range], ai_c] = np.where(np.isfinite(v), v, 0.0)[in_range]
             w_present[piv_ti[in_range]] = True
 
-    market_vols: list | None = None
+    market_vols: list[float | None] | None = None
     if ref_carries:
         # ``if dt in weights_by_date: last_target_w = ...`` — presence is at
         # the whole-row level: a date with ANY row replaces the carried target
@@ -1045,6 +1051,8 @@ def run_backtest_fast(
 
     kernel_out = None
     if HAVE_NUMBA:
+        from numba.core.errors import NumbaError  # HAVE_NUMBA guarantees the import
+
         try:
             kernel_out = _replay_driver(
                 exec_px=src_mat,
@@ -1067,10 +1075,11 @@ def run_backtest_fast(
             # Fail-closed paths reproduced by the kernel — same exceptions
             # the reference raises; propagate, do not fall back.
             raise
-        except Exception:
-            # Only numba machinery failures (compile/type errors on an
-            # exotic environment) land here — degrade to the interpreted
-            # loop, which is bit-identical, rather than failing the run.
+        except (NumbaError, TypeError, RuntimeError):
+            # Narrowed from `except Exception` (quality ratchet). Only numba
+            # machinery failures (compile/type errors on an exotic environment)
+            # land here — degrade to the interpreted loop, which is bit-identical,
+            # rather than failing the run. Exotic errors propagate.
             kernel_out = None
     if kernel_out is not None:
         (

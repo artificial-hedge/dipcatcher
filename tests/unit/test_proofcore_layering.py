@@ -37,10 +37,10 @@ TOP_LEVEL_WHITELIST: dict[str, frozenset[str]] = {
 # Additional quant_fund roots allowed ONLY inside function bodies (lazy
 # imports — §1.3: integration goes through function-level imports).
 LAZY_WHITELIST: dict[str, frozenset[str]] = {
-    # Adjudicated lazy edge (this durability sweep): proofcore/cli writes its
-    # outputs via utils.atomicio — utils is layer-0 and imports nothing in
-    # quant_fund, so the lazy edge cannot create a cycle.
-    "proofcore": frozenset({"utils"}),
+    # proofcore-standalone (configs/arch_boundaries.toml) and LH011 both bar
+    # every quant_fund edge from proofcore, lazy included — its cli carries an
+    # inlined atomic-writer instead of reaching utils.atomicio.
+    "proofcore": frozenset(),
     "pit": frozenset(),
     # Adjudicated lazy edges (LH011_LAZY_WHITELIST in leakage/rules.py):
     # proof lazily reaches pit (W1 vault seam), leakage (W3 watchdog), and
@@ -58,7 +58,9 @@ THIRD_PARTY_WHITELIST: dict[str, frozenset[str]] = {
     "proofcore": frozenset({"duckdb", "pydantic", "typer"}),
     "pit": frozenset({"polars", "pydantic", "numpy", "typer"}),
     "proof": frozenset({"polars", "pydantic", "numpy", "typer"}),
-    "leakage": frozenset({"pydantic", "typer"}),
+    # pandas/polars are lazy-only inside guard.py's hook install/remove —
+    # interposing their readers is the IO guard's purpose (W8).
+    "leakage": frozenset({"pandas", "polars", "pydantic", "typer"}),
     "reality": frozenset({"numpy", "scipy", "pydantic", "polars", "typer"}),
 }
 

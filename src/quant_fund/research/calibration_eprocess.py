@@ -62,7 +62,7 @@ from quant_fund.research.fleet_eval import (
     SyntheticShard,
     resolve_shard_generators,
 )
-from quant_fund.utils.hashing import hash_bytes
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
 CALIBRATION_AUDIT_SCHEMA = "calibration_audit.v1"
@@ -86,18 +86,32 @@ class _GrapaChannel:
     """Predictable-mixture bet on a centered PIT moment.
 
     λ_t is fitted from the moment's running mean/variance *before* seeing
-    u_t (GRAPA-style plug-in, Merton-fraction clipped for non-negativity),
-    so the bet is F_{t-1}-measurable — valid even when the underlying
-    series is serially dependent, since only the *PIT* stream enters the
-    history. ``moment(u)`` must satisfy E_U[moment]=0 and |moment|<=1.
+    u_t (GRAPA-style plug-in, clipped to ±lam_max), so the bet is
+    F_{t-1}-measurable — valid even when the underlying series is serially
+    dependent, since only the *PIT* stream enters the history.
+    ``moment(u)`` must satisfy E_U[moment]=0 and |moment|<=1.
+
+    The factor ``1 + λ·moment(u)`` is floored at 0 on return, but flooring
+    is NOT the safety mechanism — ``max(0, 1+λd) ≥ 1+λd``, so if the floor
+    ever bound, E[factor|null] could exceed 1. Validity therefore requires
+    ``lam_max · sup_u|moment(u)| ≤ 1``, which ``__init__`` certifies
+    numerically on a dense grid (the shipped moments are low-order
+    polynomials; callers adding a moment must keep it bounded).
     """
 
-    def __init__(
-        self, moment: Callable[[float], float], lam_max: float, scale_max: float = 1.0
-    ) -> None:
+    _CERT_GRID = 10_001
+
+    def __init__(self, moment: Callable[[float], float], lam_max: float) -> None:
+        if not (np.isfinite(lam_max) and 0.0 < lam_max < 1.0):
+            raise ValueError("lam_max must be in (0, 1)")
+        grid = np.linspace(0.0, 1.0, self._CERT_GRID)
+        m_max = float(np.max(np.abs([moment(float(u)) for u in grid])))
+        if not np.isfinite(m_max):
+            raise ValueError("moment must be finite on [0, 1]")
+        if lam_max * m_max > 1.0:
+            raise ValueError(f"uncertified bet: lam_max({lam_max}) * sup|moment|({m_max:.4f}) > 1")
         self._moment = moment
         self._lam_max = lam_max
-        self._scale_max = scale_max
         self._sum = 0.0
         self._sum2 = 0.0
         self._n = 0
@@ -305,7 +319,9 @@ def audit_head_calibration(
                 )
                 for name in channel_names:
                     row[f"wealth_{name}"] = proc.channel_wealths[name]
-            except Exception as exc:  # noqa: BLE001 — recorded, not crashed
+            except (ValueError, TypeError, RuntimeError, ArithmeticError, KeyError) as exc:
+                # Narrowed from `except Exception` (quality ratchet): head fit/predict
+                # faults are solver/numeric; exotic errors propagate. Recorded, not crashed.
                 row["status"] = "error"
                 row["error"] = str(exc)
                 for name in channel_names:
@@ -333,6 +349,18 @@ def audit_head_calibration(
             for k, v in sorted(shard_meta.items())
         ).encode()
     )
+    # Cross-receipt dataset fingerprint: evaluated-stream digests only —
+    # receipts over the same shard content edge in the consistency lattice.
+    dataset_sha256 = hash_bytes(
+        canonical_json_bytes(
+            {
+                "shards": {
+                    name: {"x_sha256": m["x_sha256"], "y_sha256": m["y_sha256"]}
+                    for name, m in shard_meta.items()
+                }
+            }
+        )
+    )
     if data_label is None:
         distinct = {str(m["data_label"]) for m in shard_meta.values()}
         if distinct == {"SYNTHETIC"}:
@@ -349,6 +377,7 @@ def audit_head_calibration(
         "live_pnl_claim": False,
         "generated_at_commit": git_revision(),
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "params": {
             "n_train": n_train,
             "n_eval": n_eval,

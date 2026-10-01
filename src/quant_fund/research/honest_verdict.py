@@ -37,6 +37,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
@@ -141,7 +143,7 @@ def _drift_component(
         detail={
             "eprocess_alarmed": ep.alarmed,
             "alarm_index": ep.alarm_index,
-            "final_evalue": float(np.exp(ep._log_e)),
+            "final_evalue": float(np.exp(ep.log_e)),
             "page_hinkley_alarmed": ph_alarm,
         },
     )
@@ -241,6 +243,32 @@ def honest_verdict(
     if not (0.0 < alpha < 1.0):
         raise ValueError("alpha must be in (0, 1)")
 
+    pit_arrays = {h: np.asarray(v, dtype=float).ravel() for h, v in (pits or {}).items()}
+    # Corpus-level fingerprint: digest over the evaluated stream content
+    # only — head names are just shard identities; receipts across lanes
+    # over the same streams agree, which is what the lattice edges on.
+    dataset_sha256 = hash_bytes(
+        canonical_json_bytes(
+            {
+                "shards": {
+                    h: {
+                        "losses_sha256": hash_bytes(np.ascontiguousarray(a).tobytes()),
+                        **(
+                            {
+                                "pits_sha256": hash_bytes(
+                                    np.ascontiguousarray(pit_arrays[h]).tobytes()
+                                )
+                            }
+                            if h in pit_arrays
+                            else {}
+                        ),
+                    }
+                    for h, a in arrays.items()
+                }
+            }
+        )
+    )
+
     wc = _winner_curse_component(arrays, seed, n_boot)
     if wc.available:
         winner = str(wc.detail["selected_head"])
@@ -263,13 +291,12 @@ def honest_verdict(
     )
 
     components = [wc, promo, drift, magnitude, calib, localize]
-    # Only the three core lanes veto the verdict; the extension lanes are
-    # recorded in unavailable_lanes but never block (they may not exist on
-    # a checkout that predates them).
-    unavailable = [c.name for c in (wc, promo, drift) if not c.available]
-    unavailable += [c.name for c in (magnitude, calib, localize) if not c.available]
+    # Every component lane is load-bearing: a lane that cannot run can
+    # neither vouch for nor veto the claim, so any unavailable lane
+    # degrades the composite to inconclusive (recorded, never silent).
+    unavailable = [c.name for c in components if not c.available]
 
-    if [c.name for c in (wc, promo, drift) if not c.available]:
+    if unavailable:
         verdict = "inconclusive"
     else:
         promoted = bool(promo.detail.get("promoted", False))
@@ -306,6 +333,7 @@ def honest_verdict(
         "n_obs": n,
         "n_heads": len(arrays),
         "inputs_sha256": _sha256_stream(arrays),
+        "dataset_sha256": dataset_sha256,
         "components": {c.name: c.detail for c in components},
         "unavailable_lanes": unavailable,
         "evidence": [

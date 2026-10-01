@@ -145,7 +145,10 @@ def test_v2_verdict_outside_enum_fails_even_resealed() -> None:
 
 
 def test_v2_dropped_schema_still_fails_closed() -> None:
-    """schema_version=2 alone routes to v2; a missing ``schema`` fails the model."""
+    """``schema_version: 2`` is a per-format counter and must NOT dispatch to
+    the v2 schema on its own (#261) — but the structural envelope fingerprint
+    still routes the stripped receipt to the v2 model, which fails it on the
+    missing ``schema`` field. Fail-closed either way."""
     receipt = {k: v for k, v in _generic_v2().items() if k != "schema"}
     _invalid_with(seal_receipt(receipt), "receipt_v2_schema")
 

@@ -77,3 +77,37 @@ def test_report_schema() -> None:
     assert rep["kind"] == "online_fdr.v1"
     assert rep["n_tests"] == 3
     assert "foster_stine_alpha_investing" in rep["evidence"]
+
+
+def test_online_fdr_receipt_v2_round_trip(tmp_path) -> None:
+    """receipt_version=2 seals the online_fdr.v1 body in the envelope."""
+    import json
+    from pathlib import Path
+
+    from quant_fund.research.online_fdr import write_online_fdr_receipt
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+    assert isinstance(tmp_path, Path)
+    proc = OnlineFDR(level=0.05)
+    for p in [0.5, 0.9, 0.01, 0.4]:
+        proc.update(p)
+    receipt = {
+        "kind": "online_fdr.v1",
+        "schema": "online_fdr.v1",
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "inputs_sha256": hash_bytes(
+            canonical_json_bytes({"digests": {"a.json": "0" * 64}, "level": 0.05})
+        ),
+        "params": {"level": 0.05, "receipts_dir": "receipts"},
+        "n_receipts": 1,
+        **proc.stream_report(),
+    }
+    path = write_online_fdr_receipt(receipt, tmp_path, receipt_version=2)
+    payload = json.loads(path.read_text())
+    assert payload["schema"] == "receipt.v2"
+    assert payload["payload"]["kind"] == "online_fdr.v1"
+    assert payload["payload"]["inputs_sha256"] == receipt["inputs_sha256"]
+    assert verify_receipt_file(path)["valid"] is True

@@ -4,16 +4,15 @@
 # Global ceiling lives in tests/unit/test_quality_ratchet.py.
 src/quant_fund/api/app.py 1
 src/quant_fund/audit/signing.py 2
-src/quant_fund/backtest/fast_replay.py 4
 src/quant_fund/cli/ops_cmds.py 1
 src/quant_fund/compute/parallel.py 1
 src/quant_fund/data/adapters/hf_ohlcv_1m.py 1
-src/quant_fund/data/concurrent_io.py 2
 src/quant_fund/hedge_lab/v2_slate.py 1
 src/quant_fund/leakage/ast_scan.py 1
 src/quant_fund/market_sim/book.py 1
 src/quant_fund/metrics/serial.py 1
 src/quant_fund/metrics/watch.py 1
+src/quant_fund/microstructure/hawkes_mv.py 1
 src/quant_fund/models/caviar.py 1
 src/quant_fund/models/covariance.py 1
 src/quant_fund/models/fracdiff.py 1
@@ -26,6 +25,7 @@ src/quant_fund/paper/loop.py 2
 src/quant_fund/paper/quantile_signals.py 3
 src/quant_fund/paper/sim_live.py 2
 src/quant_fund/parity/__main__.py 1
+src/quant_fund/pipeline/forecast_audit.py 2
 src/quant_fund/pit/vault.py 1
 src/quant_fund/portfolio/optimizer.py 2
 src/quant_fund/pretrade/config.py 1
@@ -35,6 +35,7 @@ src/quant_fund/proof/verify.py 4
 src/quant_fund/proofcore/ci.py 1
 src/quant_fund/proofcore/provenance.py 3
 src/quant_fund/research/benches/intervals.py 3
+src/quant_fund/research/expert_mixture.py 1
 src/quant_fund/research/fleet_eval.py 1
 src/quant_fund/research/identity_sweep.py 1
 src/quant_fund/research/reality_sweep.py 1

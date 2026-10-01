@@ -409,7 +409,12 @@ def test_fleet_registry_covers_default_heads() -> None:
         "hstep_emp",
         "nbeats",
         "nhits",
+        "sundial",
+        "toto2",
+        "tirex2",
+        "kronos_base",
         "moirai2",
+        "tabpfn_ts",
     }
     for factory in factories.values():
         assert factory().metadata().family == "distribution"
@@ -463,3 +468,130 @@ def test_receipt_embeds_head_versions() -> None:
     versions = receipt["model_versions"]
     assert set(versions) == {"empirical", "gaussian"}
     assert versions["empirical"] == {"head": "empirical", "version": "v1"}
+
+
+def test_fleet_v1_audit_committed_receipt_clean() -> None:
+    """The sealed fleet receipt committed to main must audit clean."""
+    from pathlib import Path
+
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    receipt_path = (
+        Path(__file__).resolve().parents[3] / "receipts" / "fleet_eval_5ddf15b0dc7d3ca1.json"
+    )
+    if not receipt_path.exists():
+        pytest.skip("committed fleet receipt not present")
+    result = verify_receipt_file(receipt_path)
+    assert result["valid"], result["errors"]
+
+
+def _minimal_fleet_receipt() -> dict[str, Any]:
+    _, receipt = run_distribution_fleet(
+        _two_head_factories(), shards=["iid_gaussian"], n_train=128, n_eval=64, seed=0
+    )
+    return receipt
+
+
+def test_fleet_v1_audit_clean_receipt() -> None:
+    from quant_fund.research.fleet_eval import fleet_v1_audit_errors
+
+    assert fleet_v1_audit_errors(_minimal_fleet_receipt()) == []
+
+
+def test_fleet_v1_audit_catches_tampering() -> None:
+    """Corrupting counts, dropping a cell, or faking an iid p-value must fail."""
+    from quant_fund.research.fleet_eval import fleet_v1_audit_errors
+
+    receipt = _minimal_fleet_receipt()
+    assert fleet_v1_audit_errors(receipt) == []
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["n_error_rows"] = 1
+    assert "n_error_rows_mismatch" in fleet_v1_audit_errors(tampered)
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"].pop()
+    assert "results_grid_incomplete" in fleet_v1_audit_errors(tampered)
+    assert "n_rows_mismatch" in fleet_v1_audit_errors(tampered)
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"][0]["status"] = "error"
+    tampered["results"][0]["error"] = "boom"
+    assert "n_error_rows_mismatch" in fleet_v1_audit_errors(tampered)
+
+    # A serially-dependent shard reporting an iid KS p-value is a false claim.
+    _, dep_receipt = run_distribution_fleet(
+        _two_head_factories(), shards=["regime_switch"], n_train=128, n_eval=64, seed=0
+    )
+    tampered = json.loads(json.dumps(dep_receipt))
+    for row in tampered["results"]:
+        row["pit_ks_p"] = 0.5
+    errors = fleet_v1_audit_errors(tampered)
+    assert any(e.startswith("row_pit_ks_p_on_dependent_shard") for e in errors)
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"][0]["pinball_0.5"] = -0.1
+    assert any(e.startswith("row_pinball_invalid") for e in fleet_v1_audit_errors(tampered))
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["shards"]["iid_gaussian"]["x_sha256"] = "nothex"
+    assert any(e.startswith("shard_digest_invalid") for e in fleet_v1_audit_errors(tampered))
+
+
+def test_dataset_sha256_tracks_shards_not_run_params() -> None:
+    """dataset_sha256 digests only evaluated shard content: identical shards
+    under different model sets edge together; a data swap changes it."""
+    _, r1 = run_distribution_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian", "heavy_tail"],
+        n_train=128,
+        n_eval=64,
+        seed=7,
+        taus=TAUS,
+    )
+    _, r2 = run_distribution_fleet(
+        {"empirical": lambda: EmpiricalDistribution(list(TAUS))},
+        shards=["iid_gaussian", "heavy_tail"],
+        n_train=128,
+        n_eval=64,
+        seed=7,
+        taus=TAUS,
+    )
+    _, r3 = run_distribution_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian", "bimodal_mixture"],
+        n_train=128,
+        n_eval=64,
+        seed=7,
+        taus=TAUS,
+    )
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # same data, different model set -> same dataset digest
+    assert r1["inputs_sha256"] != r2["inputs_sha256"]  # run params still differ
+    assert d1 != d3  # data swap must change it
+
+
+def test_dataset_sha256_edges_monitor_run_on_same_shards() -> None:
+    """Cross-lane edge: monitor_fleet digests the same per-shard x/y content,
+    so the same shard set + seed produces the identical dataset_sha256."""
+    from quant_fund.research.monitor_run import monitor_fleet
+
+    _, fleet_receipt = run_distribution_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian"],
+        n_train=128,
+        n_eval=64,
+        seed=3,
+        taus=TAUS,
+    )
+    _, mon_receipt = monitor_fleet(
+        _two_head_factories(),
+        shards=["iid_gaussian"],
+        n_train=128,
+        n_eval=64,
+        seed=3,
+        taus=TAUS,
+    )
+    assert fleet_receipt["dataset_sha256"] == mon_receipt["dataset_sha256"]
+    assert fleet_receipt["inputs_sha256"] != mon_receipt["inputs_sha256"]

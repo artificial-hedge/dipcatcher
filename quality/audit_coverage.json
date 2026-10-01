@@ -11,7 +11,7 @@
     },
     "backtest": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "calendars": {
@@ -34,7 +34,7 @@
     },
     "data": {
       "doc": "docs/AUDIT_P63_DATA.md",
-      "n_modules": 33,
+      "n_modules": 42,
       "status": "audited"
     },
     "diffbacktest": {
@@ -43,7 +43,7 @@
     },
     "execution": {
       "doc": "docs/AUDIT_P61_MONEY.md",
-      "n_modules": 6,
+      "n_modules": 8,
       "status": "audited"
     },
     "features": {
@@ -55,12 +55,12 @@
       "status": "audited"
     },
     "fusion": {
-      "n_modules": 2,
+      "n_modules": 3,
       "status": "audited"
     },
     "hedge_lab": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 15,
+      "n_modules": 16,
       "status": "audited"
     },
     "hmm": {
@@ -73,7 +73,7 @@
       "status": "audited"
     },
     "leakage": {
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "lightspeed": {
@@ -91,17 +91,17 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 58,
+      "n_modules": 75,
       "status": "audited"
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 7,
+      "n_modules": 51,
       "status": "audited"
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 152,
+      "n_modules": 208,
       "status": "audited"
     },
     "monitoring": {
@@ -139,7 +139,7 @@
       "status": "audited"
     },
     "portfolio": {
-      "n_modules": 13,
+      "n_modules": 14,
       "status": "audited"
     },
     "pretrade": {
@@ -148,12 +148,12 @@
     },
     "proof": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 8,
+      "n_modules": 9,
       "status": "audited"
     },
     "proofcore": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 6,
+      "n_modules": 7,
       "status": "audited"
     },
     "quant_models": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 62,
+      "n_modules": 120,
       "status": "audited"
     },
     "risk": {
@@ -202,12 +202,12 @@
     },
     "utils": {
       "doc": "docs/AUDIT_FRONTIER.md",
-      "n_modules": 7,
+      "n_modules": 9,
       "status": "audited"
     },
     "validation": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 11,
+      "n_modules": 13,
       "status": "audited"
     }
   },

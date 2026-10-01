@@ -1,0 +1,50 @@
+{
+  "claims": [
+    {
+      "kind": "theoretical",
+      "text": "time-uniform (lo, hi) on each head's true breach rate; nominal_inside is the coverage claim's bounded answer"
+    }
+  ],
+  "code_revision": "13f93ca3dd92d8d93d38335056c81b754a745045",
+  "data_label": "yahoo_eod",
+  "drill": {
+    "excluded_heads": [
+      "nbeats",
+      "nhits",
+      "lgbm_q2"
+    ],
+    "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
+    "n_eval": 300,
+    "n_train": 1000,
+    "shard": {
+      "data_label": "yahoo_eod",
+      "first": "2016-01-04 21:00:00+00:00",
+      "last": "2026-09-18 20:00:00+00:00",
+      "n_bars": 2693,
+      "source": "yahoo",
+      "symbol": "NVDA"
+    },
+    "tape": "/Users/devin/repos/dipcatcher/data/file_us_wide/bronze/bars.parquet"
+  },
+  "evidence": [
+    "time_uniform_confidence_sequence",
+    "bernoulli_lr_inversion",
+    "waudby_smith_ramdas",
+    "two_sided_interval_not_point_test"
+  ],
+  "inputs_sha256": "73fdc0206eeccdbc9c967dd058744d085fd7c4b999e2ae523e7f76c520b2b1fc",
+  "kind": "coverage_cs",
+  "level": "research",
+  "params": {
+    "alpha": 0.05,
+    "levels": [
+      0.8,
+      0.9
+    ],
+    "n_eval": 300,
+    "n_train": 1000,
+    "seed": 0
+  },
+  "receipt_sha256": "86c888a2c61fcdc1c0eb9bac0162f396dc468192ede2b3700db4114757782e00",
+  "schema": "coverage_cs.v1"
+}
