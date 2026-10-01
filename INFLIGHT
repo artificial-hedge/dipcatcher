@@ -1018,3 +1018,102 @@ wave 39 canon (devin/w39-canon-integration): maximum_score
   quadratic, perm p .008) + panel_unitroot (IPS+LLC reject at
   rho=.85, keep at rho=1.0: p .61/.83)
   → PR stacked on w38 (205→211 families)
+wave 40 canon (devin/w40-canon-integration): mixed_logit (mu
+  .945/1.0, sigma 1.38/1.2, hetero LR 30 vs MNL) + hurdle (gamma
+  .777/.8, beta 1.75/1.5, fit cor .77, pos-only bias .13) +
+  sur_model (beta .78/.8, -.53/-.5, resid corr .711/.7, uncorr
+  .10) + connectedness (TCI 19.4 vs .7 indep, net transmitter
+  +.024) + nonparametric_iv (err .295 vs OLS .473, DWH t 31 vs
+  -1.4 exog) + subsampling (theta .582/.6, CI brackets, MC
+  coverage .76 vs nominal .9)
+  → PR stacked on w39 (211→217 families)
+wave 41 canon (devin/w41-canon-integration): frailty (theta .577
+  vs .8 detected, beta .696/.7, nofrailty attenuates to .49, LR
+  230) + interrupted_ts (level .59/.8, slope .022/.02, p<.001
+  both, nobreak p .93, DW .85) + lead_lag (cov0 -3.1 nonsync →
+  cov* 25.8 at delta* 1.8 vs true 2.0, indep delta* 0) + ppml
+  (beta .748/.8 under hetero zeros, phi 5.6, t 8.6) +
+  event_study (CAR .046 injected, Patell 16.3, BMP 13.4, null p
+  .29) + model_averaging (argmax model 6 vs 1 sharp contrast,
+  entropy .66, mspe within 1.05x single)
+  → PR stacked on w40 (217→223 families)
+wave 42 canon (devin/w42-canon-integration): variance_ratio (VR
+  1.82/0.37 vs 1.03 iid, p<1e-8 both tails, null p .79) +
+  har_rv (beta .33/.26/.27 cascade, R2 .44 vs 0 flat) +
+  clark_west (CW t 8.42 real vs 1.81 null over-reject bounded)
+  + stambaugh (OLS .091→corrected .059 vs true .05, Bonf-Q
+  contains) + roy_model (price1 .526/.5, price0 .229/.3,
+  rho1 .55 positive selection, naive gap 1.0→corrected .3)
+  + two_way_cluster (beta .497, SE inflation 1.81x iid, null
+  .99)
+  → PR stacked on w41 (223→229 families)
+wave 43 canon (devin/w43-canon-integration): bai_perron (2 true
+  breaks located within 3 obs, null finds 0) + favar (explained
+  .75, factor corr .85) + panel_coint (Kao -40.6, Pedroni -47.2
+  both separate cointegrated vs indep panels) + vuong_test
+  (z 7.2 selects nested-in-nonnested, -6.7 reverse, null
+  indistinguishable p~0) + merton_model (V 113/110, sv .19/.25,
+  DD ordering + dp .77 levered vs .26 safe) + white_reality
+  (RC+SPA p 0 with edges vs .22/.25 null)
+  → PR stacked on w42 (229→235 families)
+wave 44 canon (devin/w44-canon-integration): johansen_vecm
+  (trace rank 1 vs 0 null, O-L crit, VECM ec sd 1.1<levels) +
+  pin_model (alpha .317/.3, mu 29.6/30, pin .24 vs .08 null) +
+  kyle_lambda (lambda .251/.25 eq, t 120, R2 .96) +
+  oster_bounds (short 1.50→full 1.03→star .71 vs true 1,
+  delta* 3.26) + storey_fdr (pi0 .75/.85 conservative, 44
+  discoveries vs 0 null) + kiefer_vogelsang (cv 1.99→3.47
+  in b, sim bridge limit, shifted p 0 vs null .83)
+  → PR stacked on w43 (235→241 families)
+wave 45 canon (devin/w45-canon-integration): conley_se
+  (spatial HAC SE inflates 3.64x vs OLS under rho_d=30,
+  null .94) + driscoll_kraay (period-aggregate scores,
+  Bartlett m4/m1 inflation 1.32 vs 1.20 null) +
+  pesaran_cce (CCEMG recovers beta .999 vs OLS 1.50
+  biased by factor) + wald_sprt (power .95, type1 .017,
+  ASN 62 vs theory 58.9) + lee_bounds (brackets true 1.0
+  [.37,1.27] where naive .82 is biased) +
+  barrett_donald (dominance p .99 vs reverse 0, crossing
+  p .03)
+  → PR stacked on w44 (241→247 families)
+wave 46 canon (devin/w46-canon-integration): blp_demand
+  (Newton+BFGS contraction, rival-x instruments: alpha
+  1.01, sigma .9 vs true 1; naive logit alpha .5) +
+  olley_pakes (investment-proxy phi inversion, eta-perp-k
+  moment: beta_k .49, beta_l .39 vs OLS l .84) +
+  rust_ddc (logsumexp contraction + NFXP: theta .106/0.1,
+  RC 8.41/8) + oaxaca_blinder (two-fold gap .688 exact,
+  comp .714) + binscatter (kink CEF reject p~1e-137,
+  clean accept .43/.20) + dfl_decomp (IRLS logit
+  reweighting: comp 1.12, struct .54, sum=gap 1.66)
+  → PR stacked on w45 (247→253 families)
+wave 47 canon (devin/w47-canon-integration): rosenbaum_sensitivity
+  (Wilcoxon signed-rank p-bounds, gamma* 4.0 vs
+  confound 3.5) + aipw_ate (doubly-robust, misspec
+  propensity: .68 vs .7, naive 1.90) + cavi_gmm
+  (NIG mean-field, ELBO mono, mu -1.50/1.55) +
+  pesaran_cd (rho_bar .33 vs theory .33) +
+  hausman_tests (FE-RE + DWH batteries) +
+  cusum_monitor (CSW boundary, detect 222 vs
+  break 180, null silent)
+  → PR stacked on w46 (253→259 families)
+wave 48 canon (devin/w48-canon-integration): tmle
+  (targeting eps, rd .059 vs .039, naive .19) +
+  lewbel_iv (hetero-generated IV: beta 1.02 vs
+  ols 1.32, F 1686) + proximal_causal (neg-ctrl
+  bridge 2SLS: .99 vs naive 1.59) + cover_up
+  (Dirichlet .5 simplex integral: w_max .77,
+  regret .93) + vpin (volume-clock BVC: burst
+  .22 vs quiet .09) + marginal_treatment (local-
+  IV MTE, ate .45 vs naive -.26)
+  → PR stacked on w47 (259→265 families)
+wave 49 canon (devin/w49-canon-integration): eisenberg_noe
+  (EN clearing fixed point: 1 cascade default,
+  quiet clears) + fire_sales (Cont-Wagalath: 3
+  defaults, price -92%, quiet 0) + delta_covar
+  (tail-conditional: heavy -2.81 vs light -1.72)
+  + blanchard_quah (LR-demand exactly 0, supply
+  .06) + tvp_var (Kalman+RTS break track: pre
+  .46 vs post 1.70 true 1.7) + meta_analysis
+  (DL RE .33 vs true .4, Egger 4.6 vs 1.3)
+  → PR stacked on w48 (265→271 families)
