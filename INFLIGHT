@@ -970,3 +970,19 @@ w35 — sensitivity/robustness canon
   panel_quantile_fe (Machado-Santos Silva moments, beta50 err .07,
   tau gradient 1.73 hetero vs 1.14 homo)
   → PR stacked on w34 (181→187 families)
+
+wave 36 — 6 model lanes + integration
+  (models/arellano_bond, models/bvar_minnesota, models/mediation_analysis,
+  models/competing_risks, models/stochastic_frontier,
+  models/regression_kink):
+  arellano_bond (FD-GMM rho .50 vs true .6, within-OLS .45 biased,
+  AR(2) p .16, Sargan p .56) + bvar_minnesota (Theil dummy
+  observations, per-equation solve, own-lag err .038 vs OLS .145,
+  monotone shrinkage) + mediation_analysis (quasi-Bayesian ACME
+  .478 vs true .48, ADE .21, null non-gated honest coverage) +
+  competing_risks (Aalen-Johansen CIF .92, pseudo-value beta1 .163
+  z=7.3, beta2 ~0) + stochastic_frontier (composed-error MLE,
+  sigma_u .615 vs null .018, resid skew -.48, eff_corr .76) +
+  regression_kink (fuzzy RKD b_rk .64 vs true .5, fs kink .90,
+  delta-method SE)
+  → PR stacked on w35 (187→193 families)
