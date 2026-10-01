@@ -396,6 +396,7 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
 _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
     "cancel_cluster.v1",
+    "cancel_gradient_bench.v1",
     "deep_microprice.v1",
     "depth_consumption.v1",
     "empirical_flow.v1",

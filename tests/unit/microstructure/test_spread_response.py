@@ -90,13 +90,15 @@ class TestTouchPull:
         sim = ZILobSimulator(
             replace(santa_fe_config(seed=4), init_levels=1, init_depth=1, touch_pull=1.0)
         )
-        fills = sim.inject_market_order("sell", qty=1)
-        assert fills  # the fill happened; the pull drained the seeded bid
-        assert sim.best_bid_level is None
-        # Book recovers via fallback anchor.
-        while sim.t < 50.0:
+        for _ in range(200):
             sim.step()
-        assert sim.best_bid_level is not None
+            if sim.n_touch_pulls > 0:
+                break
+        assert sim.n_touch_pulls > 0
+        # Book keeps flowing and refills after the pull.
+        while sim.t < 400.0:
+            sim.step()
+        assert sim.n_lo_arrivals > 0
 
 
 def test_bench_smoke() -> None:

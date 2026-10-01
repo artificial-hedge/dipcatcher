@@ -362,6 +362,12 @@ class ZILobConfig:
     # retreat (spread widens the moment liquidity is consumed, before
     # any new deposit arrives). 0 is bit-identical legacy (zero draws).
     touch_pull: float = 0.0
+    # ``cxl_touch_bias`` ∈ [0, 1]: probability a cancellation event picks
+    # the front order at a touch instead of a uniform outstanding order.
+    # On the real tape cancels concentrate at the touch (propensity ~1.4x
+    # uniform, falling to ~0.7 deep — the re-quote cycle churns the
+    # front, not the back).
+    cxl_touch_bias: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -413,6 +419,7 @@ class ZILobConfig:
         _prob(self.iceberg_reload, "iceberg_reload")
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
         _prob(self.touch_pull, "touch_pull")
+        _prob(self.cxl_touch_bias, "cxl_touch_bias")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
             raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
@@ -678,6 +685,10 @@ class ZILobSimulator:
         self.n_lo_improve = 0
         self.n_hidden_fills = 0
         self.n_touch_pulls = 0
+        self.n_cxl_touch = 0
+        # Cancel-distance histogram: bucket d counts cancels d ticks
+        # from that side's touch; index 20 collects the tail.
+        self.cxl_dist = [0] * 21
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -857,6 +868,7 @@ class ZILobSimulator:
             "n_lo_improve": self.n_lo_improve,
             "n_hidden_fills": self.n_hidden_fills,
             "n_touch_pulls": self.n_touch_pulls,
+            "n_cxl_touch": self.n_cxl_touch,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -1057,6 +1069,22 @@ class ZILobSimulator:
         total = bid_d + ask_d
         if total == 0:
             return
+        bias = self._cfg.cxl_touch_bias
+        if bias > 0.0 and float(self._rng.random()) < bias:
+            bb, ba = self.best_bid_level, self.best_ask_level
+            tb = len(self._bids[bb]) if bb is not None else 0
+            ta = len(self._asks[ba]) if ba is not None else 0
+            draw = float(self._rng.random()) * (tb + ta)
+            if draw < tb and bb is not None:
+                self._remove_resting_at(self._bids, bb, 0)
+            elif ba is not None:
+                self._remove_resting_at(self._asks, ba, 0)
+            else:  # pragma: no cover - touch depth bookkeeping invariant
+                raise RuntimeError("touch cancel on an empty book")
+            self.n_cancellations += 1
+            self.n_cxl_touch += 1
+            self.cxl_dist[0] += 1
+            return
         k = int(self._rng.integers(total))
         if k < bid_d:
             book, idx = self._bids, k
@@ -1071,8 +1099,13 @@ class ZILobSimulator:
             idx -= n
         if level is None:  # pragma: no cover - depth accounting invariant
             raise RuntimeError("cancellation sampling missed the book")
+        touch = max(book) if book is self._bids else min(book)
         self._remove_resting_at(book, level, idx)
         self.n_cancellations += 1
+        dist = abs(level - touch)
+        self.cxl_dist[min(dist, 20)] += 1
+        if dist == 0:
+            self.n_cxl_touch += 1
 
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""
