@@ -3448,3 +3448,20 @@ def admit_batch_cmd(
             raise typer.BadParameter(
                 "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
             )
+        pins = dict(raw_pins)
+    try:
+        batch = admit_batch(receipts, root, q=q, known_inconsistent=pins)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    for result in batch["results"]:
+        path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
+        failed = [c["name"] for c in result["checks"] if not c["ok"]]
+        typer.echo(
+            f"admission candidate={result['candidate']} corpus={result['n_corpus_receipts']} "
+            f"verdict={result['verdict']}" + (f" failed_checks={failed}" if failed else "")
+        )
+        typer.echo(f"receipt={path}")
+    typer.echo(f"admit-batch candidates={batch['n_candidates']} verdict={batch['verdict']}")
+    if strict and batch["verdict"] != "admit":
+        raise typer.Exit(code=1)
