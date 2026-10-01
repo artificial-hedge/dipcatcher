@@ -1,0 +1,90 @@
+{
+  "claim": "post_exec_cancel_retreat_measured",
+  "data_label": "MIXED",
+  "git_revision": "571bd6ae838d4ab4536d5dec498c4949c1801479",
+  "interpretation": "lift_k = post-exec cancel rate / baseline cancel rate, per hit side. >1 = book retreat (resiliency). The sim reports exec-on-exec lift instead (its anonymous theta_cxl cancels are not per-order timestamped) \u2014 the asymmetry is itself a documented mechanism gap.",
+  "kind": "cancel_cluster",
+  "real": {
+    "buy_side": {
+      "baseline_cxl_per_s": 2.62505,
+      "lift_0.5s": 5.7047,
+      "lift_10s": 1.5469,
+      "lift_2s": 2.7492,
+      "lift_60s": 1.1642,
+      "post_cxl_per_s_0.5": 14.975024015369836,
+      "post_cxl_per_s_10": 4.060576690089653,
+      "post_cxl_per_s_2": 7.216706730769231,
+      "post_cxl_per_s_60": 3.056034051076615
+    },
+    "n_cancels": 126375,
+    "n_execs": 8974,
+    "sell_side": {
+      "baseline_cxl_per_s": 2.77561,
+      "lift_0.5s": 7.336,
+      "lift_10s": 1.6754,
+      "lift_2s": 3.1655,
+      "lift_60s": 1.2423,
+      "post_cxl_per_s_0.5": 20.36189683860233,
+      "post_cxl_per_s_10": 4.650314729332774,
+      "post_cxl_per_s_2": 8.786056191467221,
+      "post_cxl_per_s_60": 3.4481832375275
+    }
+  },
+  "receipt_sha256": "be7a95df9f31b2ee1fbf316e727812797c04f0c1f418cc1da3777737d1a76ee0",
+  "research_only": true,
+  "schema": "cancel_cluster.v1",
+  "sim_arms": {
+    "iid": {
+      "both_sides": {
+        "baseline_cxl_per_s": 0.19881,
+        "lift_0.5s": 0.9517,
+        "lift_10s": 1.0031,
+        "lift_2s": 1.0366,
+        "lift_60s": 1.0122,
+        "post_cxl_per_s_0.5": 0.18921361855980717,
+        "post_cxl_per_s_10": 0.1994275384151853,
+        "post_cxl_per_s_2": 0.20608617053329317,
+        "post_cxl_per_s_60": 0.2012382965871338
+      },
+      "mode": "exec_on_exec_lift",
+      "n_execs": 3319
+    },
+    "regime": {
+      "both_sides": {
+        "baseline_cxl_per_s": 0.22472,
+        "lift_0.5s": 1.0901,
+        "lift_10s": 1.1243,
+        "lift_2s": 1.1119,
+        "lift_60s": 1.1023,
+        "post_cxl_per_s_0.5": 0.24496373892022563,
+        "post_cxl_per_s_10": 0.25264856144124764,
+        "post_cxl_per_s_2": 0.24986566362170876,
+        "post_cxl_per_s_60": 0.24771849456570555
+      },
+      "mode": "exec_on_exec_lift",
+      "n_execs": 3723
+    },
+    "split": {
+      "both_sides": {
+        "baseline_cxl_per_s": 0.2794,
+        "lift_0.5s": 1.2214,
+        "lift_10s": 1.1578,
+        "lift_2s": 1.1755,
+        "lift_60s": 1.0311,
+        "post_cxl_per_s_0.5": 0.3412679707753948,
+        "post_cxl_per_s_10": 0.32347949080622346,
+        "post_cxl_per_s_2": 0.3284232854112656,
+        "post_cxl_per_s_60": 0.28808171635904717
+      },
+      "mode": "exec_on_exec_lift",
+      "n_execs": 4244
+    }
+  },
+  "ticker": "AMZN",
+  "windows_s": [
+    0.5,
+    2.0,
+    10.0,
+    60.0
+  ]
+}
