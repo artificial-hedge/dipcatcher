@@ -240,6 +240,27 @@ same provenance gate: `SyntheticBook`/`CrossSectionalPanel` constructors
 must declare `data_label`, and a mixed corpus fails closed rather than
 inheriting a hard-coded SYNTHETIC stamp.
 
+### Tape manifests (`tape_manifest.v1`)
+
+Real-tape receipts used to attest their input only by self-declared
+digest (`inputs_sha256`/`dataset_sha256`) — nothing committed proved
+which bytes a digest names. `dipcatcher tape-pin` closes that gap: it
+writes a sealed `data/manifests/<source_label>.json` recording each tape
+file's sha256 and byte count, the frame's row/name/window profile, and
+`frame_csv_sha256` — `hash_bytes(frame.write_csv().encode())`, the exact
+bytes a lane seals as `inputs_sha256`. The tapes themselves stay
+gitignored; `dipcatcher tape-verify` re-hashes them and fails closed on
+any drift. `verify-receipt` consults the same registry: a receipt
+declaring a non-synthetic `data_label` that binds
+`tape_manifest_sha256`/`dataset_sha256` must resolve to a committed
+manifest's seal or tape digest, else `tape_manifest_unknown`. Receipts
+without a declared binding stay admissible — the check ratchets in, it
+does not retroactively seal old evidence. Pinned today:
+`yahoo_eod` (5-name 2024 collect, promoted under
+`data/raw/sources/yahoo_eod/`) and `yahoo_eod_us_wide` (the 424-name
+2016–2026 tape behind the `*_real_drill` receipts — its tape sha256 is
+the `dataset_sha256` `e22bf3…` the real_benchmark manifest cites).
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
@@ -247,6 +268,40 @@ dispatched by `verify-receipt` on the `kind` tag — each embedded claim
 is re-derived from the payload (e.g. `anytime_p == min(1, 1/E)`,
 `corpus_reject_at_alpha ⇔ E ≥ 1/q`), so a tampered verdict fails
 closed even under a valid reseal.
+
+## Reproduction
+
+`verify-receipt` re-derives claims but never re-runs a lane. Replay-declared
+receipts carry a `replay` manifest `{argv, artifacts: [{path, sha256}], cwd?}`;
+`dipcatcher replay <receipt>` re-executes argv under the repo root, re-hashes
+each declared artifact's raw bytes, and seals a `replay_proof.v1` receipt —
+fail closed on non-zero exit, timeout, missing artifact, or any digest
+mismatch. Coverage today:
+
+| lane | manifest receipt | replayable? |
+|---|---|---|
+| serial_watch | `serial_watch_78dd891261e2aae9.json` | yes — PIT fixture + argv are byte-deterministic |
+| fleet_eval (incl. hstep heads `hstep_t`/`hstep_emp`) | `fleet_eval_5e907be710811a44.json` | yes — seeded shards and heads |
+| vol_bench | `vol_bench_f3bf2afc2f159ace.json` | yes — seeded vol shards and forecasters |
+| cross_sectional_rankic | `rankic_eval_8d740c0ddf6d5c54.json` | yes — seeded panels and challengers |
+| capacity_overlay | `capacity_eval_3622d0c059d42009.json` | yes — seeded books and AUM ladder |
+| monitor_run (coverage_watch, tail_watch, drift_alarm, calibration, conformal, emerge) | `monitor_run_13d20aef00774027.json` | yes — seeded tournament; the six monitor lanes are streams inside one receipt |
+| honest_verdict | `honest_verdict_b133e8b3992af893.json` | yes — seeded tournament + bootstrap |
+
+The mechanism that makes these replayable is a provenance convention: lane
+reports keep wall-clock/revision stamps (`generated_at`, `git_revision`,
+`code_revision`) under a top-level `meta` block that writers strip before
+sealing — the seal covers every byte written, so the argv-produced artifact
+is byte-identical across checkouts, and the `receipt.v2` envelope still
+stamps `meta` on wrap. Lanes whose receipt body is not byte-deterministic
+(e.g. live-tape lanes binding wall-clock inputs or `data/` files that are
+regenerated, never committed) cannot be covered by replay — their byte
+identity is the committed file digest, and `verify-receipt` remains the
+integrity check. `coverage_cs`, `mcs_seq`, `panel_audit`, `changepoint`,
+`loss_cs`, `calibration`, and `conformal_monitor` as standalone CLIs fall in
+this group today: they either have no standalone argv (they are sub-lanes of
+`fleet-monitor`, covered transitively by the monitor manifest) or their
+evidence receipts bind non-deterministic inputs.
 
 ## References
 
