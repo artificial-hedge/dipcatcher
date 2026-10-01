@@ -235,9 +235,10 @@ def test_runner_works_when_io_guard_unavailable(tmp_path, monkeypatch) -> None:
     assert runner_mod._GUARD_UNAVAILABLE_LOGGED
 
 
-def test_tampered_wave2_sidecars_fail_verify(tmp_path) -> None:
+def test_tampered_wave2_sidecars_fail_verify(tmp_path, monkeypatch) -> None:
     """Task-2 contract: verify.py hash-checks trace/env/seeds via the config
     sidecar commitment (check 6b, mirroring the wave-1 config pattern)."""
+    monkeypatch.setenv("PROOFCORE_SIGNING_KEY", SIGNING_KEY.decode())
     _, bundle_dir, bundle_id, bundle_path = _mint(tmp_path)
 
     assert verify_bundle(bundle_path, bundle_dir=bundle_dir, strict_signature=False).ok
