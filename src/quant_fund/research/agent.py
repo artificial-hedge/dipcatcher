@@ -396,6 +396,14 @@ from quant_fund.research.benches_w50 import (
     bench_hedonic,
     bench_hjm,
 )
+from quant_fund.research.benches_w51 import (
+    bench_ait_sahalia,
+    bench_bkm_moments,
+    bench_gsadf_bubble,
+    bench_pmg_ardl,
+    bench_ross_recovery,
+    bench_toda_yamamoto,
+)
 from quant_fund.research.benches_w53 import (
     bench_christoffersen_pelletier,
     bench_corradi_swanson,
@@ -2254,6 +2262,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gil_pelaez": bench_gil_pelaez(),
         "hedonic": bench_hedonic(),
         "dea": bench_dea(),
+        "bkm_moments": bench_bkm_moments(),
+        "gsadf_bubble": bench_gsadf_bubble(),
+        "pmg_ardl": bench_pmg_ardl(),
+        "ross_recovery": bench_ross_recovery(),
+        "ait_sahalia": bench_ait_sahalia(),
+        "toda_yamamoto": bench_toda_yamamoto(),
         "corradi_swanson": bench_corradi_swanson(),
         "engle_kroner_bekk": bench_engle_kroner_bekk(),
         "heston_qe": bench_heston_qe(),

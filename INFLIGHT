@@ -1228,6 +1228,10 @@ detail: |
   ratchet green; receipts suite green; full PR-gate pytest in flight.
   Concurrent sessions remained active throughout; main checkout left
   untouched (concurrent session holds ~156 modified files there).
+wave 51 (devin/w51-canon-integration): BKM model-free option-implied
+  moments, GSADF recursive bubble detection, PSS pooled-mean-group
+  ARDL, Ross recovery, Ait-Sahalia CKLS likelihood, Toda-Yamamoto
+  MWALD — 6 modules + benches_w51 (scorecard 277->283 families).
 
 w53 canon (2026-09-30): 6 lanes — corradi_swanson (OOS MSPE MBB test),
 engle_kroner_bekk (variance-targeted diagonal BEKK), heston_qe (Andersen
