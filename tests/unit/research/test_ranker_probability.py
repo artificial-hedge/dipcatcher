@@ -161,5 +161,52 @@ def test_standalone_command_seals_a_complete_nonpromoting_receipt(tmp_path: Path
     assert receipt["n_scored_dates"] == 125
     assert receipt["holdout_previously_inspected_or_unverified"] is True
     assert receipt["production_promotion"] is False
+    original_bytes = output.read_bytes()
+    # Publish-once semantics: an identical re-run is a byte-identical no-op,
+    # while a destination holding different content still refuses the write.
+    assert main(args) == 0
+    assert output.read_bytes() == original_bytes
+    output.write_bytes(b'{"tampered": true}')
     with pytest.raises(FileExistsError):
         main(args)
+
+
+def test_standalone_command_receipt_version_two(tmp_path: Path) -> None:
+    """--receipt-version 2 seals the strict-digest receipt in the envelope."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    frame = _fixture()
+    features = tmp_path / "features.parquet"
+    labels = tmp_path / "labels.parquet"
+    output = tmp_path / "receipt_v2.json"
+    frame.drop("future_idio_return_1", "label_end_time_1").write_parquet(features)
+    frame.select(
+        "event_time", "security_id", "future_idio_return_1", "label_end_time_1"
+    ).write_parquet(labels)
+    args = [
+        "--features",
+        str(features),
+        "--labels",
+        str(labels),
+        "--output",
+        str(output),
+        "--train-dates",
+        "80",
+        "--cal-dates",
+        "25",
+        "--test-dates",
+        "25",
+        "--n-boot",
+        "100",
+        "--feature-columns",
+        "cs_pct_mom_20",
+        "cs_pct_reversal_1",
+        "--receipt-version",
+        "2",
+    ]
+    assert main(args) == 0
+    document = json.loads(output.read_text())
+    assert document["schema"] == "receipt.v2"
+    assert document["kind"] == "ranker_probability_eval"
+    assert document["payload"]["n_scored_dates"] == 125
+    assert verify_receipt_file(output)["valid"] is True

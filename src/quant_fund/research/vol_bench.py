@@ -36,6 +36,7 @@ from quant_fund.models.har import har_forecast, har_rv_fit
 from quant_fund.models.realized_garch import RealizedGARCHVol
 from quant_fund.models.rough_vol import simulate_fou
 from quant_fund.research.catalog import family_blob_forbidden_metrics_absent
+from quant_fund.research.evalues import LossEProcess
 from quant_fund.research.garch_benchmark import build_origins
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -47,6 +48,7 @@ DEFAULT_HORIZONS: tuple[int, ...] = (1, 5)
 DM_REFERENCE = "har"
 
 _VARIANCE_FLOOR = 1e-12
+_EPROMOTION_INIT_SCALE = 1e-4
 _INTRADAY_STEPS = 24
 _LN2 = float(np.log(2.0))
 _EWMA_LAMBDA = 0.94
@@ -255,10 +257,16 @@ def _forecast_rv_ewma(rets: Array, rv: Array, park: Array, h: int, seed: int) ->
 
 
 def _forecast_har(rets: Array, rv: Array, park: Array, h: int, seed: int) -> float:
-    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1."""
+    """HAR-RV (Corsi 2009) via ``models.har``; recursive rollout for h > 1.
+
+    Zero-return days (rv == 0 on real EOD tape) are floored at
+    ``_VARIANCE_FLOOR`` before the fit — a zero rv is unobserved variance,
+    not literal zero; the model's own strict-positivity contract stays.
+    """
     del rets, park, seed
-    fit = har_rv_fit(np.asarray(rv, dtype=float))
-    history = list(np.asarray(rv, dtype=float))
+    floored = np.maximum(np.asarray(rv, dtype=float), _VARIANCE_FLOOR)
+    fit = har_rv_fit(floored)
+    history = list(floored)
     total = 0.0
     for _ in range(h):
         step = har_forecast(fit, np.asarray(history, dtype=float))
@@ -457,6 +465,9 @@ def run_vol_bench(
         "dm_qlike_mean",
         "dm_qlike_se",
         "dm_qlike_t",
+        "epromotion_evalue",
+        "epromotion_origin",
+        "epromotion_anytime_p",
     ]
     rows: list[dict[str, Any]] = []
     shard_meta: dict[str, Any] = {}
@@ -495,6 +506,9 @@ def run_vol_bench(
                     "dm_qlike_mean": None,
                     "dm_qlike_se": None,
                     "dm_qlike_t": None,
+                    "epromotion_evalue": None,
+                    "epromotion_origin": None,
+                    "epromotion_anytime_p": None,
                 }
                 scored = _eval_shard_model(shard, forecaster, horizon, origins, shard_seed)
                 if isinstance(scored, str):
@@ -516,6 +530,19 @@ def run_vol_bench(
                     row_refs[model_name]["dm_qlike_mean"] = float(diff["mean_diff"])
                     row_refs[model_name]["dm_qlike_se"] = float(diff["se"])
                     row_refs[model_name]["dm_qlike_t"] = float(diff["t"])
+                    # Anytime-valid promotion: per-origin e-process on the
+                    # QLIKE stream vs the HAR incumbent (challenger=model).
+                    proc = LossEProcess(alpha=0.05, init_scale=_EPROMOTION_INIT_SCALE)
+                    for c_loss, b_loss in zip(
+                        qlike_loss(targets, forecasts).tolist(),
+                        qlike_loss(ref_targets, ref_forecasts).tolist(),
+                        strict=True,
+                    ):
+                        proc.update(c_loss, b_loss)
+                    final_state = proc.states[-1]
+                    row_refs[model_name]["epromotion_evalue"] = float(final_state.evalue)
+                    row_refs[model_name]["epromotion_origin"] = proc.promotion_origin
+                    row_refs[model_name]["epromotion_anytime_p"] = float(final_state.anytime_p)
 
     frame = pl.DataFrame(
         rows,
@@ -532,21 +559,25 @@ def run_vol_bench(
             "dm_qlike_mean": pl.Float64,
             "dm_qlike_se": pl.Float64,
             "dm_qlike_t": pl.Float64,
+            "epromotion_evalue": pl.Float64,
+            "epromotion_origin": pl.Int64,
+            "epromotion_anytime_p": pl.Float64,
         },
         orient="row",
     ).select(columns)
 
+    shard_digests = {
+        name: {
+            "returns_sha256": meta["returns_sha256"],
+            "rv_sha256": meta["rv_sha256"],
+            "parkinson_sha256": meta["parkinson_sha256"],
+        }
+        for name, meta in shard_meta.items()
+    }
     inputs_sha256 = hash_bytes(
         canonical_json_bytes(
             {
-                "shards": {
-                    name: {
-                        "returns_sha256": meta["returns_sha256"],
-                        "rv_sha256": meta["rv_sha256"],
-                        "parkinson_sha256": meta["parkinson_sha256"],
-                    }
-                    for name, meta in shard_meta.items()
-                },
+                "shards": shard_digests,
                 "models": sorted(str(k) for k in forecasters),
                 "horizons": [int(h) for h in horizon_set],
                 "min_history": min_history,
@@ -557,6 +588,10 @@ def run_vol_bench(
             }
         )
     )
+    # Corpus-level fingerprint: digest over the evaluated stream content only —
+    # receipts across lanes that evaluated the same shard set agree on it,
+    # which is what the cross-receipt lattice edges on.
+    dataset_sha256 = hash_bytes(canonical_json_bytes({"shards": shard_digests}))
     receipt: dict[str, Any] = {
         "schema": VOL_BENCH_SCHEMA,
         "kind": "vol_bench",
@@ -576,6 +611,7 @@ def run_vol_bench(
         "models": sorted(str(k) for k in forecasters),
         "shards": shard_meta,
         "inputs_sha256": inputs_sha256,
+        "dataset_sha256": dataset_sha256,
         "n_rows": len(rows),
         "n_error_rows": sum(1 for row in rows if row["status"] != "ok"),
         "results": rows,
@@ -618,31 +654,145 @@ def _atomic_write_text(path: Path, content: str) -> None:
             temporary_path.unlink(missing_ok=True)
 
 
+def vol_bench_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
+    """Fail-closed contract for a ``vol_bench.v1`` payload (writer + verifier)."""
+    research_blob = {key: value for key, value in receipt.items() if key != "live_pnl_claim"}
+    errors: list[str] = []
+    if receipt.get("schema") != VOL_BENCH_SCHEMA:
+        errors.append("schema_not_vol_bench_v1")
+    if receipt.get("kind") != "vol_bench":
+        errors.append("kind_not_vol_bench")
+    if receipt.get("data_label") != "SYNTHETIC":
+        errors.append("data_label_not_synthetic")
+    if receipt.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim_not_false")
+    if not isinstance(receipt.get("results"), list) or not receipt["results"]:
+        errors.append("results_missing_or_empty")
+    if not family_blob_forbidden_metrics_absent(research_blob):
+        errors.append("forbidden_metric_keys")
+    results = receipt.get("results")
+    if isinstance(results, list):
+        if receipt.get("n_rows") is not None and receipt.get("n_rows") != len(results):
+            errors.append("n_rows_mismatch")
+        error_rows = sum(
+            1 for row in results if not isinstance(row, Mapping) or row.get("status") != "ok"
+        )
+        if receipt.get("n_error_rows") is not None and receipt.get("n_error_rows") != error_rows:
+            errors.append("n_error_rows_mismatch")
+    return errors
+
+
+def vol_bench_dataset_identity(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """Shard content digests bound by a v2 ``dataset_hash``."""
+    shards = receipt.get("shards")
+    if not isinstance(shards, Mapping):
+        raise ValueError("vol-bench receipt has no shards block")
+    dataset: dict[str, Any] = {}
+    for name, meta in shards.items():
+        if not isinstance(meta, Mapping):
+            raise ValueError(f"vol-bench shard {name!r} metadata is not an object")
+        dataset[str(name)] = {
+            "returns_sha256": meta.get("returns_sha256"),
+            "rv_sha256": meta.get("rv_sha256"),
+            "parkinson_sha256": meta.get("parkinson_sha256"),
+        }
+    return dataset
+
+
+def vol_bench_params(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """The run parameters bound by a v2 ``params_hash``."""
+    return {
+        "seed": receipt.get("seed"),
+        "horizons": receipt.get("horizons"),
+        "min_history": receipt.get("min_history"),
+        "n_origins": receipt.get("n_origins"),
+        "stride": receipt.get("stride"),
+        "n_bars": receipt.get("n_bars"),
+        "models": receipt.get("models"),
+        "dm_reference": receipt.get("dm_reference"),
+    }
+
+
+def vol_bench_verdict(receipt: Mapping[str, Any]) -> str:
+    """pass iff every shard/model/horizon cell scored without error."""
+    n_error_rows = receipt.get("n_error_rows")
+    return "pass" if n_error_rows == 0 else "fail"
+
+
+def vol_bench_receipt_v2(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    """Wrap a ``vol_bench.v1`` payload in the unified ``receipt.v2`` envelope.
+
+    The v1 payload is embedded verbatim under ``payload``; the envelope binds
+    the shard content digests, run params, this module's source hash, and the
+    loaded numeric stack. Validates the v1 contract first — a malformed v1
+    receipt is never wrapped.
+    """
+    from quant_fund.research.receipt_v2 import build_receipt_v2
+
+    if vol_bench_contract_errors(receipt):
+        raise ValueError("vol-bench receipt violates its synthetic research contract")
+    return build_receipt_v2(
+        kind=str(receipt["kind"]),
+        data_label=str(receipt["data_label"]),
+        dataset=vol_bench_dataset_identity(receipt),
+        params=vol_bench_params(receipt),
+        code_files=(Path(__file__),),
+        verdict=vol_bench_verdict(receipt),
+        payload=dict(receipt),
+        generated_at=str(receipt["generated_at"]),
+        revision=str(receipt["git_revision"]),
+    )
+
+
+def vol_bench_v2_consistency_errors(envelope: Mapping[str, Any]) -> list[str]:
+    """Re-derive a vol-bench receipt.v2 envelope's bound digests from its payload."""
+    errors: list[str] = []
+    payload = envelope.get("payload")
+    if not isinstance(payload, Mapping):
+        return ["payload_not_object"]
+    contract_errors = vol_bench_contract_errors(payload)
+    errors.extend(f"payload_{name}" for name in contract_errors)
+    if contract_errors:
+        return errors
+    try:
+        dataset = vol_bench_dataset_identity(payload)
+    except ValueError as exc:
+        return [*errors, f"payload_{exc}"]
+    if hash_bytes(canonical_json_bytes(dataset)) != envelope.get("dataset_hash"):
+        errors.append("dataset_hash_mismatch")
+    if hash_bytes(canonical_json_bytes(vol_bench_params(payload))) != envelope.get("params_hash"):
+        errors.append("params_hash_mismatch")
+    if vol_bench_verdict(payload) != envelope.get("verdict"):
+        errors.append("verdict_mismatch")
+    return errors
+
+
 def write_vol_bench_receipt(
     receipt: Mapping[str, Any],
     receipts_dir: Path | str = Path("receipts"),
+    *,
+    receipt_version: int = 1,
 ) -> Path:
     """Seal a vol-bench receipt and write ``receipts/vol_bench_<hash>.json``.
 
     The filename hash is the sha256 of the canonical receipt payload; the
     same digest is embedded as ``receipt_sha256`` (the fleet_eval seal
     convention). The write is atomic and fail-closed on tampering.
+    ``receipt_version=2`` wraps the v1 payload in the unified ``receipt.v2``
+    envelope before sealing.
     """
-    research_blob = {key: value for key, value in receipt.items() if key != "live_pnl_claim"}
-    if (
-        receipt.get("schema") != VOL_BENCH_SCHEMA
-        or receipt.get("kind") != "vol_bench"
-        or receipt.get("data_label") != "SYNTHETIC"
-        or receipt.get("live_pnl_claim") is not False
-        or not isinstance(receipt.get("results"), list)
-        or not receipt["results"]
-        or not family_blob_forbidden_metrics_absent(research_blob)
-    ):
-        raise ValueError("vol-bench receipt violates its synthetic research contract")
-    canonical = json.loads(canonical_json_bytes(dict(receipt)))
-    digest = hash_bytes(canonical_json_bytes(canonical))
-    payload = {**canonical, "receipt_sha256": digest}
-    path = Path(receipts_dir) / f"vol_bench_{digest[:16]}.json"
+    from quant_fund.research.receipt_v2 import seal_receipt
+
+    if receipt_version == 1:
+        if vol_bench_contract_errors(receipt):
+            raise ValueError("vol-bench receipt violates its synthetic research contract")
+        body: Mapping[str, Any] = receipt
+    elif receipt_version == 2:
+        body = vol_bench_receipt_v2(receipt)
+    else:
+        raise ValueError(f"receipt_version must be 1 or 2, got {receipt_version!r}")
+    payload = seal_receipt(body)
+    path = Path(receipts_dir) / f"vol_bench_{payload['receipt_sha256'][:16]}.json"
     _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     return path
 
@@ -661,5 +811,11 @@ __all__ = [
     "resolve_vol_shard_generators",
     "rough_vol",
     "run_vol_bench",
+    "vol_bench_contract_errors",
+    "vol_bench_dataset_identity",
+    "vol_bench_params",
+    "vol_bench_receipt_v2",
+    "vol_bench_v2_consistency_errors",
+    "vol_bench_verdict",
     "write_vol_bench_receipt",
 ]

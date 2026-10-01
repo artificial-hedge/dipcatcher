@@ -180,3 +180,112 @@ def test_all_challengers_run_on_all_panels() -> None:
     expected = {(shard, chal) for shard in PANEL_GENERATORS for chal in CHALLENGERS}
     got = {(r["shard"], r["challenger"]) for r in combos.iter_rows(named=True)}
     assert got == expected
+
+
+def test_rankic_v1_audit_clean_and_tampered(tmp_path: Path) -> None:
+    """The audit recounts the grid, enforces IC bounds, catches tampering."""
+    from quant_fund.research.cross_sectional import rankic_v1_audit_errors
+
+    _, receipt = run_cross_sectional_bench(seed=11)
+    assert rankic_v1_audit_errors(receipt) == []
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"].pop()
+    assert "results_grid_incomplete" in rankic_v1_audit_errors(tampered)
+    assert "n_rows_mismatch" in rankic_v1_audit_errors(tampered)
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"][0]["mean_spearman"] = 1.5
+    assert any(e.startswith("row_mean_spearman_invalid") for e in rankic_v1_audit_errors(tampered))
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["results"][0]["p_spearman"] = 1.2
+    assert any(e.startswith("row_p_spearman_invalid") for e in rankic_v1_audit_errors(tampered))
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["panels"]["linear_signal"]["signal_sha256"] = "zz"
+    assert any(e.startswith("panel_digest_invalid") for e in rankic_v1_audit_errors(tampered))
+
+    tampered = json.loads(json.dumps(receipt))
+    tampered["n_error_rows"] = 7
+    assert "n_error_rows_mismatch" in rankic_v1_audit_errors(tampered)
+
+
+def test_rankic_v1_audit_committed_receipt_clean() -> None:
+    """The sealed rank-IC receipt committed to main must audit clean."""
+    from quant_fund.research.receipt_v2 import verify_receipt_file
+
+    receipt_path = (
+        Path(__file__).resolve().parents[3] / "receipts" / "rankic_eval_9ebdad7da83e7348.json"
+    )
+    if not receipt_path.exists():
+        pytest.skip("committed rankic receipt not present")
+    result = verify_receipt_file(receipt_path)
+    assert result["valid"], result["errors"]
+
+
+def test_data_label_derived_from_panels() -> None:
+    def real_panel(n_dates: int, n_assets: int, seed: int, horizons):
+        p = PANEL_GENERATORS["linear_signal"](n_dates, n_assets, seed, horizons)
+        return type(p)(
+            dates=p.dates,
+            asset_ids=p.asset_ids,
+            signal=p.signal,
+            forward=p.forward,
+            description=p.description,
+            data_label="yahoo_eod",
+        )
+
+    _, receipt = run_cross_sectional_bench(
+        panels={"yahoo_x": real_panel}, n_dates=52, n_assets=8, horizons=(1,)
+    )
+    assert receipt["data_label"] == "yahoo_eod"
+    assert receipt["panels"]["yahoo_x"]["data_label"] == "yahoo_eod"
+
+
+def test_mixed_data_labels_fail_closed() -> None:
+    def real_panel(n_dates: int, n_assets: int, seed: int, horizons):
+        p = PANEL_GENERATORS["linear_signal"](n_dates, n_assets, seed, horizons)
+        return type(p)(
+            dates=p.dates,
+            asset_ids=p.asset_ids,
+            signal=p.signal,
+            forward=p.forward,
+            description=p.description,
+            data_label="yahoo_eod",
+        )
+
+    with pytest.raises(ValueError, match="mixed data_label"):
+        run_cross_sectional_bench(
+            panels={"synth": PANEL_GENERATORS["pure_noise"], "real": real_panel},
+            n_dates=52,
+            n_assets=8,
+            horizons=(1,),
+        )
+
+
+def test_empty_label_rejected() -> None:
+    p = PANEL_GENERATORS["linear_signal"](52, 8, 0, (1,))
+    with pytest.raises(ValueError, match="data_label"):
+        type(p)(
+            dates=p.dates,
+            asset_ids=p.asset_ids,
+            signal=p.signal,
+            forward=p.forward,
+            description=p.description,
+            data_label=" ",
+        )
+
+
+def test_dataset_sha256_tracks_panels_not_run_params() -> None:
+    """Same panels under a different challenger set share dataset_sha256;
+    a different seed regenerates the panels and changes it."""
+    chal = list(CHALLENGERS)[:1]
+    _, r1 = run_cross_sectional_bench(seed=42, challengers=chal)
+    _, r2 = run_cross_sectional_bench(seed=42)
+    _, r3 = run_cross_sectional_bench(seed=43, challengers=chal)
+    d1, d2, d3 = (r["dataset_sha256"] for r in (r1, r2, r3))
+    assert len(d1) == 64 and all(c in "0123456789abcdef" for c in d1)
+    assert d1 == d2  # challenger set is a run param, not data
+    assert r1["inputs_sha256"] != r2["inputs_sha256"]
+    assert d1 != d3
