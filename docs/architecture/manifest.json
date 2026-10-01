@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1127,
+  "module_count": 1128,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -11223,6 +11223,14 @@
       "src": "quant_fund.research.sota_protocol"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.spa_test"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.spa_test"
+    },
+    {
       "dst": "quant_fund.metrics.bootstrap",
       "src": "quant_fund.research.stocbench"
     },
@@ -12995,6 +13003,7 @@
     "quant_fund.research.shadow_journal",
     "quant_fund.research.sota_evidence",
     "quant_fund.research.sota_protocol",
+    "quant_fund.research.spa_test",
     "quant_fund.research.stocbench",
     "quant_fund.research.suite_health",
     "quant_fund.research.tail_watch",
@@ -14843,7 +14852,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 72,
+      "imports": 74,
       "src": "quant_fund.research"
     },
     {
