@@ -1,0 +1,93 @@
+{
+  "arms": [
+    {
+      "gain": 0.0,
+      "kernel": {
+        "0.1s": {
+          "mean_delta": -0.058402860548271755,
+          "median_delta": 0.0,
+          "n": 839,
+          "share_wider": 0.03814064362336114
+        },
+        "0.5s": {
+          "mean_delta": -0.11442193087008343,
+          "median_delta": 0.0,
+          "n": 839,
+          "share_wider": 0.058402860548271755
+        },
+        "1.0s": {
+          "mean_delta": -0.1728247914183552,
+          "median_delta": 0.0,
+          "n": 839,
+          "share_wider": 0.08820023837902265
+        },
+        "5.0s": {
+          "mean_delta": -0.3694874851013111,
+          "median_delta": 0.0,
+          "n": 839,
+          "share_wider": 0.1907032181168057
+        }
+      },
+      "lo_offset": 12,
+      "n_fills": 839,
+      "name": "static_offset"
+    },
+    {
+      "gain": 150.0,
+      "kernel": {
+        "0.1s": {
+          "mean_delta": 0.4455764075067024,
+          "median_delta": 0.0,
+          "n": 1865,
+          "share_wider": 0.14101876675603217
+        },
+        "0.5s": {
+          "mean_delta": 1.036461126005362,
+          "median_delta": 0.0,
+          "n": 1865,
+          "share_wider": 0.32117962466487937
+        },
+        "1.0s": {
+          "mean_delta": 1.500804289544236,
+          "median_delta": 0.0,
+          "n": 1865,
+          "share_wider": 0.4546916890080429
+        },
+        "5.0s": {
+          "mean_delta": 3.253755364806867,
+          "median_delta": 3.0,
+          "n": 1864,
+          "share_wider": 0.7086909871244635
+        }
+      },
+      "lo_offset": 12,
+      "n_fills": 1865,
+      "name": "excitation_coupled"
+    }
+  ],
+  "claims": {
+    "coupling_widens_after_fills": true,
+    "kernel_persists_past_1s": true,
+    "static_kernel_is_flat": true
+  },
+  "data_label": "MIXED",
+  "divergences": [
+    "coupled_share_wider_0.141_vs_0.647"
+  ],
+  "git_revision": "ab602d66cea2e56bb961e6cb4eb804ae5d26f9f8",
+  "horizon": 4000.0,
+  "interpretation": "The real post-fill spread kernel (quote defense under adverse selection) is reproduced only when the LO anchor is coupled to MO excitation: the effective offset grows by round(gain * e_MO) ticks while fills cluster. A fast+slow decay bank (4/s, 0.15/s) gives the kernel the tape's multi-second persistence \u2014 share_wider rises to 0.71 at 5s vs real ~0.65 flat. Honest divergence: the real kernel is instant (median +2 ticks by 10ms) and flat; ours builds over ~1s because the offset acts through new placements, not through instant re-quotes of existing liquidity \u2014 the immediate component needs event-driven re-placement, an expressivity gap logged in divergences. The static-offset arm's kernel stays near zero at all horizons: a time-invariant floor moves the level, not the response.",
+  "kind": "spread_response_bench",
+  "real_tape_targets": {
+    "median_delta_ticks": 2.0,
+    "share_wider_pooled_0.1s": 0.647,
+    "share_wider_pooled_0.5s": 0.632,
+    "source_receipts": [
+      "spread_response.v1"
+    ]
+  },
+  "receipt_sha256": "ca02156ec534b62b540c59a928a91a048bc8f1106f79932eb44195ee171e8507",
+  "research_only": true,
+  "schema": "spread_response_bench.v1",
+  "seed": 13
+}

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 980,
+  "module_count": 981,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -4429,6 +4429,22 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.spread_response"
+    },
+    {
+      "dst": "quant_fund.microstructure.hawkes_clock_bench",
+      "src": "quant_fund.microstructure.spread_response_bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.spread_response_bench"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.spread_response_bench"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.spread_response_bench"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -11123,6 +11139,7 @@
     "quant_fund.microstructure.spread_dynamics",
     "quant_fund.microstructure.spread_floor_bench",
     "quant_fund.microstructure.spread_response",
+    "quant_fund.microstructure.spread_response_bench",
     "quant_fund.microstructure.stale_quote",
     "quant_fund.microstructure.streak_stats",
     "quant_fund.microstructure.synthetic_lob",
@@ -12596,7 +12613,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 126,
+      "imports": 128,
       "src": "quant_fund.microstructure"
     },
     {
@@ -12616,7 +12633,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 93,
+      "imports": 95,
       "src": "quant_fund.microstructure"
     },
     {

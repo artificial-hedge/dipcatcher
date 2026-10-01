@@ -350,6 +350,13 @@ class ZILobConfig:
     # liquidity that was not displayed before execution. 0 is
     # bit-identical to the legacy matcher (zero RNG draws consumed).
     iceberg_reload: float = 0.0
+    # ``lo_offset_gain`` couples the LO anchor offset to MO excitation:
+    # the effective offset is ``lo_offset + round(gain * e_MO)`` where
+    # ``e_MO`` is the Hawkes excitation state summed over banks — makers
+    # retreat while fills cluster, so the spread widens exactly when
+    # toxicity is high and relaxes as excitation decays (the tape's
+    # post-fill spread kernel). Requires ``hawkes``; 0 ignores it.
+    lo_offset_gain: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -399,6 +406,9 @@ class ZILobConfig:
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
+        _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
+        if self.lo_offset_gain > 0.0 and self.hawkes is None:
+            raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
             raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
         if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
@@ -542,6 +552,10 @@ class HawkesClock:
         self._e = np.zeros((3, self._rates.size), dtype=np.float64)
         self.n_proposals = 0
         self.n_rejected = 0
+
+    def excitation(self, kind: int) -> float:
+        """Current excitation state for ``kind`` summed over decay banks."""
+        return float(self._e[int(kind)].sum())
 
     def _intensity(self, base: Array, decay_row: Array | None) -> Array:
         """``base + e``; ``decay_row`` applies per-bank ``exp(-beta_r s)``."""
@@ -1004,6 +1018,8 @@ class ZILobSimulator:
         # empty so the book can always recover.
         k = self._draw_size(self._lo_size_cdf)
         off = int(self._cfg.lo_offset)
+        if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
+            off += int(round(self._cfg.lo_offset_gain * self._hawkes.excitation(1)))
         if want_buy:
             anchor = (ba if ba is not None else self._ref_level + 1) - off
             level = anchor - dist

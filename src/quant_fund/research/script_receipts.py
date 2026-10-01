@@ -434,6 +434,7 @@ _MEASUREMENT_SCHEMAS = (
     "spread_dynamics.v1",
     "spread_floor.v1",
     "spread_response.v1",
+    "spread_response_bench.v1",
     "stale_quote.v1",
     "streak_stats.v1",
     "tape_digest.v1",
