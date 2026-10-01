@@ -256,6 +256,14 @@ from quant_fund.research.benches_w33 import (
     bench_synth_did,
     bench_weak_iv,
 )
+from quant_fund.research.benches_w34 import (
+    bench_did_diagnostics,
+    bench_entropy_balancing,
+    bench_gsynth,
+    bench_matrix_completion,
+    bench_rif_regression,
+    bench_shift_share,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2000,6 +2008,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "permutation_inference": bench_permutation_inference(),
         "propensity_score": bench_propensity_score(),
         "cluster_robust": bench_cluster_robust(),
+        "matrix_completion": bench_matrix_completion(),
+        "gsynth": bench_gsynth(),
+        "rif_regression": bench_rif_regression(),
+        "shift_share": bench_shift_share(),
+        "entropy_balancing": bench_entropy_balancing(),
+        "did_diagnostics": bench_did_diagnostics(),
     }
 
     hyps = _build_hypotheses(families, rankers)

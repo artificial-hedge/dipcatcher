@@ -413,6 +413,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "permutation_inference",
         "propensity_score",
         "cluster_robust",
+        # SOTA canon wave 34 batteries (see research/benches_w34.py):
+        # matrix-completion causal panels (Nuclear-norm soft-impute,
+        # MCPanel ATT), generalized synthetic control (Xu IFE factor
+        # EM + treated-loading counterfactual), RIF regressions
+        # (Firpo-Fortin-Lemieux unconditional quantile/variance/Gini
+        # effects), shift-share IV (Bartik first-stage F, Rotemberg
+        # weights, AKM-style SEs), entropy balancing (Hainmueller
+        # calibration weights, exact moment match, ESS), DiD
+        # diagnostics (Goodman-Bacon decomposition of TWFE into
+        # clean vs forbidden 2x2s, Sun-Abraham cohort CATTs).
+        # Same SYNTHETIC diagnostic contract.
+        "matrix_completion",
+        "gsynth",
+        "rif_regression",
+        "shift_share",
+        "entropy_balancing",
+        "did_diagnostics",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

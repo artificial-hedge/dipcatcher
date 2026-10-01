@@ -1076,3 +1076,20 @@ wave 30 (2026-09-30): 6 lanes merged into w30-canon —
   + cluster_robust (CR1/CR2 sandwich, wild cluster bootstrap
   Rademacher/Webb-6pt, size ok at 30 and 8 clusters, power 1)
   → PR stacked on w32 (169→175 families)
+wave 34 — causal panel + IV diagnostics (models/matrix_completion,
+  models/gsynth, models/rif_regression, models/shift_share,
+  models/entropy_balancing, models/did_diagnostics):
+  matrix_completion (nuclear-norm soft-impute, lambda via 20%-stride
+  holdout grid, att err .003 on stationary factors, honest placebo
+  RMSE) + gsynth (Xu IFE factor ALS, treated-loading counterfactual,
+  att err .028 under factor drift where DiD/SDID strain) +
+  rif_regression (RIF of quantile/variance/Gini, HC1 SEs,
+  unconditional q90 vs q50 gradient detected) + shift_share
+  (Bartik first-stage F=40, IV err .13 vs OLS .50, Rotemberg
+  top-1 .20 hhi .13) + entropy_balancing (Hainmueller EB via
+  log-sum-exp Newton dual, exact balance smd→0, att err .12 vs
+  raw .83; honest converged flag when moment set infeasible) +
+  did_diagnostics (Goodman-Bacon exhaustive 2x2 decomposition with
+  clean/forbidden split, Sun-Abraham cohort CATTs; TWFE bias 1.31
+  vs mean CATT under growing effects)
+  → PR stacked on w33 (175→181 families)
