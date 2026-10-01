@@ -120,6 +120,20 @@ from quant_fund.research.benches_w15 import (
     bench_subspace_denoising,
     bench_vintage_eval,
 )
+from quant_fund.research.benches_w16 import (
+    bench_extra_tilt,
+    bench_forecast_selection,
+    bench_hierarchical_conformal,
+    bench_multisource_conformal,
+    bench_rl_market_maker,
+    bench_vol_loss_decomposition,
+)
+from quant_fund.research.benches_w17 import (
+    bench_adaptive_eps,
+    bench_conformal_oce,
+    bench_diffusion_forecaster,
+    bench_greek_neutral,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1764,6 +1778,16 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "vintage_eval": bench_vintage_eval(),
         "entropy_shapley": bench_entropy_shapley(),
         "fourier_pricing": bench_fourier_pricing(),
+        "vol_loss_decomposition": bench_vol_loss_decomposition(),
+        "hierarchical_conformal": bench_hierarchical_conformal(),
+        "multisource_conformal": bench_multisource_conformal(),
+        "extra_tilt": bench_extra_tilt(),
+        "forecast_selection": bench_forecast_selection(),
+        "rl_market_maker": bench_rl_market_maker(),
+        "conformal_oce": bench_conformal_oce(),
+        "adaptive_eps": bench_adaptive_eps(),
+        "greek_neutral": bench_greek_neutral(),
+        "diffusion_forecaster": bench_diffusion_forecaster(),
     }
 
     hyps = _build_hypotheses(families, rankers)

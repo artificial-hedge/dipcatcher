@@ -156,8 +156,8 @@ flowchart LR
   fx1_doctor -->|1| fx1_eval
   fx1_eval -->|1| fx1_data
   fx1_eval -->|1| fx1_harness
-  fx1_eval -->|8| fx1_honesty
-  fx1_eval -->|2| quant_fund_metrics
+  fx1_eval -->|10| fx1_honesty
+  fx1_eval -->|4| quant_fund_metrics
   fx1_eval -->|2| quant_fund_models
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|3| quant_fund_data
@@ -285,16 +285,16 @@ flowchart LR
   quant_fund_microstructure -->|1| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|1| quant_fund_utils
+  quant_fund_microstructure -->|81| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
-  quant_fund_models -->|46| quant_fund_metrics
+  quant_fund_models -->|48| quant_fund_metrics
   quant_fund_models -->|3| quant_fund_pipeline
-  quant_fund_models -->|2| quant_fund_research
+  quant_fund_models -->|4| quant_fund_research
   quant_fund_models -->|2| quant_fund_schemas
   quant_fund_models -->|1| quant_fund_stress
-  quant_fund_models -->|17| quant_fund_utils
+  quant_fund_models -->|19| quant_fund_utils
   quant_fund_monitoring -->|2| quant_fund_config
   quant_fund_monitoring -->|1| quant_fund_models
   quant_fund_monitoring -->|1| quant_fund_schemas
@@ -323,20 +323,20 @@ flowchart LR
   quant_fund_parity -->|1| quant_fund_schemas
   quant_fund_parity -->|1| quant_fund_utils
   quant_fund_pipeline -->|1| quant_fund
-  quant_fund_pipeline -->|17| quant_fund_config
-  quant_fund_pipeline -->|8| quant_fund_data
+  quant_fund_pipeline -->|18| quant_fund_config
+  quant_fund_pipeline -->|9| quant_fund_data
   quant_fund_pipeline -->|2| quant_fund_features
   quant_fund_pipeline -->|2| quant_fund_fusion
   quant_fund_pipeline -->|1| quant_fund_labels
   quant_fund_pipeline -->|2| quant_fund_lightspeed
   quant_fund_pipeline -->|15| quant_fund_metrics
-  quant_fund_pipeline -->|72| quant_fund_models
+  quant_fund_pipeline -->|77| quant_fund_models
   quant_fund_pipeline -->|4| quant_fund_portfolio
   quant_fund_pipeline -->|5| quant_fund_registry
   quant_fund_pipeline -->|2| quant_fund_reporting
   quant_fund_pipeline -->|2| quant_fund_research
-  quant_fund_pipeline -->|14| quant_fund_schemas
-  quant_fund_pipeline -->|17| quant_fund_utils
+  quant_fund_pipeline -->|16| quant_fund_schemas
+  quant_fund_pipeline -->|19| quant_fund_utils
   quant_fund_pipeline -->|4| quant_fund_validation
   quant_fund_pit -->|1| quant_fund_data
   quant_fund_pit -->|6| quant_fund_proofcore
@@ -349,11 +349,11 @@ flowchart LR
   quant_fund_pretrade -->|1| quant_fund_schemas
   quant_fund_pretrade -->|1| quant_fund_utils
   quant_fund_proof -->|1| quant_fund_config
-  quant_fund_proof -->|1| quant_fund_leakage
+  quant_fund_proof -->|2| quant_fund_leakage
   quant_fund_proof -->|1| quant_fund_metrics
-  quant_fund_proof -->|9| quant_fund_proofcore
+  quant_fund_proof -->|1| quant_fund_pit
+  quant_fund_proof -->|12| quant_fund_proofcore
   quant_fund_proof -->|1| quant_fund_utils
-  quant_fund_proofcore -->|1| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
   quant_fund_public -->|1| quant_fund_data
@@ -376,9 +376,9 @@ flowchart LR
   quant_fund_research -->|3| quant_fund_data
   quant_fund_research -->|4| quant_fund_execution
   quant_fund_research -->|1| quant_fund_hedge_lab
-  quant_fund_research -->|81| quant_fund_metrics
-  quant_fund_research -->|5| quant_fund_microstructure
-  quant_fund_research -->|94| quant_fund_models
+  quant_fund_research -->|83| quant_fund_metrics
+  quant_fund_research -->|7| quant_fund_microstructure
+  quant_fund_research -->|99| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|13| quant_fund_pipeline
   quant_fund_research -->|6| quant_fund_portfolio
@@ -604,7 +604,7 @@ sequenceDiagram
 | `fx1.cli` | 1 |
 | `fx1.data` | 14 |
 | `fx1.doctor` | 1 |
-| `fx1.eval` | 17 |
+| `fx1.eval` | 19 |
 | `fx1.forecast` | 11 |
 | `fx1.harness` | 1 |
 | `fx1.honesty` | 1 |
@@ -628,7 +628,7 @@ sequenceDiagram
 | `quant_fund.execution` | 8 |
 | `quant_fund.features` | 9 |
 | `quant_fund.formal` | 4 |
-| `quant_fund.fusion` | 2 |
+| `quant_fund.fusion` | 3 |
 | `quant_fund.hedge_lab` | 16 |
 | `quant_fund.hmm` | 4 |
 | `quant_fund.labels` | 4 |
@@ -636,16 +636,16 @@ sequenceDiagram
 | `quant_fund.lightspeed` | 8 |
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
-| `quant_fund.metrics` | 73 |
-| `quant_fund.microstructure` | 9 |
-| `quant_fund.models` | 207 |
+| `quant_fund.metrics` | 75 |
+| `quant_fund.microstructure` | 50 |
+| `quant_fund.models` | 211 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
 | `quant_fund.northset` | 9 |
 | `quant_fund.observe` | 9 |
 | `quant_fund.paper` | 9 |
 | `quant_fund.parity` | 11 |
-| `quant_fund.pipeline` | 21 |
+| `quant_fund.pipeline` | 22 |
 | `quant_fund.pit` | 7 |
 | `quant_fund.portfolio` | 14 |
 | `quant_fund.pretrade` | 9 |
@@ -656,7 +656,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 2 |
 | `quant_fund.reporting` | 4 |
-| `quant_fund.research` | 118 |
+| `quant_fund.research` | 119 |
 | `quant_fund.risk` | 5 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -665,7 +665,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **887**
+- Modules scanned: **939**
 - Packages: **65**
 - Cross-package import edges: **277**
 

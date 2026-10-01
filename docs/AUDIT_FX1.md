@@ -112,6 +112,44 @@ text). Gates after fixes: `make lint` clean, `uv run mypy src/fx1` clean,
     containing any `FORBIDDEN_HEADLINE_TOKENS` member are now rejected, and
     every value must be finite.
 
+15. **Contamination containment was pooled-union, both directions wrong** —
+    `src/fx1/eval/contamination.py` + `src/fx1/data/quality.py`. The score
+    was `|doc ∩ ∪eval| / |doc|`: it *missed* a verbatim eval item embedded
+    in a long doc (diluted below threshold) while *over-flagging* a benign
+    doc sharing small fragments across many unrelated prompts (union
+    inflates the numerator). Now per-item `|doc ∩ eval_i| / |eval_i|`,
+    max over items, and each finding records `eval_index` for triage.
+
+16. **`_hash_texts` collided on embedded newlines** —
+    `src/fx1/eval/contamination.py`. `"\n".join(sorted(texts))` makes
+    `["ab\ncd"]` and `["ab","cd"]` hash identically — a multisets-are-equal
+    check that isn't. Now per-item sha256 digests, sorted, re-hashed.
+
+17. **MRM dossier `complete`/`ship_eligible` were vacuous** —
+    `src/fx1/mrm.py`. All five DossierSections are constructed
+    unconditionally, so `complete` was structurally always True and a
+    one-artifact dossier could certify a checkpoint. An activity now counts
+    complete only with its own artifact pinned (governance is card-backed
+    by design), `ship_eligible` requires completeness, and `fx1 mrm` gained
+    a repeatable `--artifact activity=path` flag so a complete dossier is
+    actually reachable.
+
+18. **Reward `cites_receipt` was keyword soup** — `src/fx1/reward.py`.
+    Any 16-hex blob plus the word "receipt" *anywhere* in the text scored
+    the citation weight. A digest now earns it only within 80 chars of
+    provenance wording.
+
+19. **`_claims_live` missed truthy non-bool values** —
+    `src/fx1/data/ledgers.py`. `{"livePnlClaim": 1}` / `"yes"` passed as
+    clean — only `True`/`"true"` counted. Any non-denial value now flags;
+    explicit falsy (`false`/`0`/`no`/`none`/empty) stays clean.
+
+20. **Corpus ledger could fork memory from disk** —
+    `src/fx1/data/ledger.py` `_append` admitted the entry into `_entries`
+    *before* writing it; a failed write left the in-memory head chaining
+    over a link the file never recorded — every later entry diverged from
+    disk. Persist first, admit after.
+
 ## Findings — reviewed, documented (no change)
 
 - **Release verification tolerates extra files** —
@@ -127,9 +165,9 @@ text). Gates after fixes: `make lint` clean, `uv run mypy src/fx1` clean,
   must pass); the producer-side fix is finding 3 — a regenerated summary can
   no longer carry the flag on an empty honesty set.
 - **Reward receipt citation is a weak provenance signal** —
-  `src/fx1/reward.py:27`: `_RECEIPT_RE` matches any 8-64 hex string, so
-  fabricating a hash earns the `cites_receipt` weight. Proper scoring, not
-  provenance proof; the corpus pipeline does the real receipt binding.
+  `src/fx1/reward.py`: the ±80-char binding (finding 18) still treats any
+  *well-formed-looking* digest as a citation — the corpus pipeline does
+  the real receipt binding.
 - **`min_k_percent` never flags** — `contamination.py:~109`: the probe
   reports a value but `flagged` is always False (no reference distribution).
   Documented in its own `limitation` field; values still recorded.
@@ -164,6 +202,10 @@ text). Gates after fixes: `make lint` clean, `uv run mypy src/fx1` clean,
 live-claim variants, per-item min-k, vacuous gate, empty-compare, partial
 coverage, non-bait honesty grading, contamination_report key, garbage TEE
 quote, corpus/ingest/trace screening, ledger claim variants, compound
-forbidden keys + NaN, non-finite closes). One existing test fixture
+forbidden keys + NaN, non-finite closes, per-item contamination
+containment, multiset hash binding, mrm completeness, citation proximity,
+truthy claim values, ledger write-fork). One existing test fixture
 (`test_hardening.py::test_attestation_ladder_status`) was strengthened to
-write a structurally valid quote; no test or threshold was weakened.
+write a structurally valid quote; the mrm completeness contract tests in
+`test_moves1234.py`/`test_e2e.py`/`test_cli.py` were updated to pin
+real evidence per activity; no test or threshold was weakened.
