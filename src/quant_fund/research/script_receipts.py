@@ -399,6 +399,7 @@ _MEASUREMENT_SCHEMAS = (
     "deep_microprice.v1",
     "depth_consumption.v1",
     "empirical_flow.v1",
+    "hawkes_clock.v1",
     "event_burst.v1",
     "event_granger.v1",
     "event_matrix.v1",
