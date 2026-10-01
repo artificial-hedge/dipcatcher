@@ -452,6 +452,20 @@ class ZILobConfig:
     # empty-able while the band stacks. 0 preserves the original band
     # (touch included); only live when ``crown_stack_frac`` is nonzero.
     crown_offset: int = 0
+    # ``crown_cap`` >= 0: maximum resting depth (orders) at a level for a
+    # new crown stack to land there; a capped-out draw falls through to
+    # the default anchor placement. The tape's crown is dense but
+    # bounded (levels 1-3 sweepable — 47% of fills empty the touch);
+    # an unbounded crown accumulates until nothing can empty it. 0 is
+    # unbounded (original semantics); only live when ``crown_stack_frac``
+    # is nonzero.
+    crown_cap: int = 0
+    # ``crown_size_pmf``: optional ``((size, weight), ...)`` table drawn
+    # per crown placement instead of ``lo_size_pmf``. The tape's crown
+    # is a few LARGE orders (60-200 shares each), not many unit orders
+    # — a voluminous-but-shallow band that stays sweepable. ``None``
+    # means crown placements use the shared LO size draw bit-identically.
+    crown_size_pmf: tuple[tuple[int, float], ...] | None = None
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -666,6 +680,9 @@ class ZILobConfig:
             raise ValueError(f"crown_stack_span must be an int >= 0, got {self.crown_stack_span!r}")
         if isinstance(self.crown_offset, bool) or int(self.crown_offset) < 0:
             raise ValueError(f"crown_offset must be an int >= 0, got {self.crown_offset!r}")
+        if isinstance(self.crown_cap, bool) or int(self.crown_cap) < 0:
+            raise ValueError(f"crown_cap must be an int >= 0, got {self.crown_cap!r}")
+        _check_size_pmf(self.crown_size_pmf, "crown_size_pmf")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
@@ -1214,6 +1231,7 @@ class ZILobSimulator:
         # Event-size tables (None → unit-size, zero extra RNG draws).
         self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
         self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
+        self._crown_size_cdf = self._size_cdf(config.crown_size_pmf)
         self._hawkes = HawkesClock(config.hawkes, self._rng) if config.hawkes is not None else None
         self._rate_flow = (
             RateRegimeFlow(config.rate_regimes, self._rng)
@@ -1913,12 +1931,21 @@ class ZILobSimulator:
                 elif want_join and bb is not None:
                     level = bb
                 elif want_crown and bb is not None:
-                    level = (
+                    cand = (
                         bb
                         - self._cfg.crown_offset
                         - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
                     )
-                    self.n_lo_crown += 1
+                    if (
+                        self._cfg.crown_cap <= 0
+                        or len(self._bids.get(cand, ())) < self._cfg.crown_cap
+                    ):
+                        level = cand
+                        if self._cfg.crown_size_pmf is not None:
+                            k = self._draw_size(self._crown_size_cdf)
+                        self.n_lo_crown += 1
+                    else:
+                        level = ref - dist
                 elif want_imp and ba is not None and bb is not None and ba - bb > 1:
                     level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
                 else:
@@ -1949,12 +1976,18 @@ class ZILobSimulator:
             elif want_join and ba is not None:
                 level = ba
             elif want_crown and ba is not None:
-                level = (
+                cand = (
                     ba
                     + self._cfg.crown_offset
                     + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
                 )
-                self.n_lo_crown += 1
+                if self._cfg.crown_cap <= 0 or len(self._asks.get(cand, ())) < self._cfg.crown_cap:
+                    level = cand
+                    if self._cfg.crown_size_pmf is not None:
+                        k = self._draw_size(self._crown_size_cdf)
+                    self.n_lo_crown += 1
+                else:
+                    level = ref + dist
             elif want_imp and ba is not None and bb is not None and ba - bb > 1:
                 level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
             else:
@@ -1995,12 +2028,19 @@ class ZILobSimulator:
             if chase is not None:
                 level = chase
             elif want_crown and bb is not None:
-                level = (
+                cand = (
                     bb
                     - self._cfg.crown_offset
                     - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
                 )
-                self.n_lo_crown += 1
+                if self._cfg.crown_cap <= 0 or len(self._bids.get(cand, ())) < self._cfg.crown_cap:
+                    level = cand
+                    if self._cfg.crown_size_pmf is not None:
+                        k = self._draw_size(self._crown_size_cdf)
+                    self.n_lo_crown += 1
+                else:
+                    anchor = (ba if ba is not None else self._ref_level + 1) - off
+                    level = anchor - dist
             elif imp and ba is not None and bb is not None and ba > bb:
                 level = bb + int(self._rng.random() * (ba - bb))
             else:
@@ -2029,12 +2069,19 @@ class ZILobSimulator:
             if chase is not None:
                 level = chase
             elif want_crown and ba is not None:
-                level = (
+                cand = (
                     ba
                     + self._cfg.crown_offset
                     + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
                 )
-                self.n_lo_crown += 1
+                if self._cfg.crown_cap <= 0 or len(self._asks.get(cand, ())) < self._cfg.crown_cap:
+                    level = cand
+                    if self._cfg.crown_size_pmf is not None:
+                        k = self._draw_size(self._crown_size_cdf)
+                    self.n_lo_crown += 1
+                else:
+                    anchor = (bb if bb is not None else self._ref_level - 1) + off
+                    level = anchor + dist
             elif imp and ba is not None and bb is not None and ba > bb:
                 level = ba - int(self._rng.random() * (ba - bb))
             else:
