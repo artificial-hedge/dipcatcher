@@ -67,25 +67,24 @@ def _run_schedule(
     return results
 
 
+def _pool_invoke(payload: tuple[Callable[[Any, int], Any], Any, int], _seed: int) -> Any:
+    fn, item, task_seed = payload
+    return fn(item, task_seed)
+
+
 def _pool_with_seeds(
     fn: Callable[[Any, int], Any],
     items: Sequence[Any],
     seeds: list[int],
     max_workers: int | None,
 ) -> list[Any]:
-    """Process-pool execution that honors the audit's own seed list."""
+    """Process-pool execution honoring the audit's own seed list.
 
-    def _wrapper(payload: tuple[Any, int], _seed: int) -> Any:
-        item, task_seed = payload
-        return fn(item, task_seed)
-
-    return process_map(
-        _wrapper,
-        list(zip(items, seeds, strict=True)),
-        base_seed=0,
-        min_items=1,
-        max_workers=max_workers,
-    )
+    ``fn`` must be picklable (module-level) — same constraint process_map
+    already imposes on sweep workloads.
+    """
+    payloads = [(fn, item, seed) for item, seed in zip(items, seeds, strict=True)]
+    return process_map(_pool_invoke, payloads, base_seed=0, min_items=1, max_workers=max_workers)
 
 
 def map_parity(
