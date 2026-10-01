@@ -324,6 +324,14 @@ from quant_fund.research.benches_w41 import (
     bench_model_averaging,
     bench_ppml,
 )
+from quant_fund.research.benches_w42 import (
+    bench_clark_west,
+    bench_har_rv,
+    bench_roy_model,
+    bench_stambaugh,
+    bench_two_way_cluster,
+    bench_variance_ratio,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2120,6 +2128,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ppml": bench_ppml(),
         "event_study": bench_event_study(),
         "model_averaging": bench_model_averaging(),
+        "variance_ratio": bench_variance_ratio(),
+        "har_rv": bench_har_rv(),
+        "clark_west": bench_clark_west(),
+        "stambaugh": bench_stambaugh(),
+        "roy_model": bench_roy_model(),
+        "two_way_cluster": bench_two_way_cluster(),
     }
 
     hyps = _build_hypotheses(families, rankers)
