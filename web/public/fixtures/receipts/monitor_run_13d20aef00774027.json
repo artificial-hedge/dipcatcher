@@ -1,0 +1,76 @@
+{
+  "data_label": "SYNTHETIC",
+  "dataset_sha256": "22e7413691f9dd5bb44a0ebe9b59c73375475e96bf1c580c576c1a38530a0f09",
+  "evidence": [
+    "anytime_valid_monitor_lanes",
+    "per_shard_head_independence",
+    "fleet_median_drift_pairing",
+    "lazy_lane_resolution",
+    "proper_score_only"
+  ],
+  "inputs_sha256": "b1a31d66d88e2934bb13c29f4161d1f51ebaa0afaa3de2b135c73fbb44521b0b",
+  "kind": "monitor_run",
+  "lanes_available": {
+    "calibration": true,
+    "conformal": true,
+    "coverage": true,
+    "drift": true,
+    "emerge": true,
+    "tail": true
+  },
+  "level": "research",
+  "live_pnl_claim": false,
+  "n_alarm_rows": 0,
+  "n_rows": 6,
+  "params": {
+    "alpha": 0.05,
+    "data_labels": {
+      "iid_gaussian": "SYNTHETIC",
+      "regime_switch": "SYNTHETIC"
+    },
+    "heads": [
+      "empirical",
+      "gaussian",
+      "qar"
+    ],
+    "level": 0.9,
+    "n_eval": 64,
+    "n_train": 128,
+    "seed": 7,
+    "shards": [
+      "iid_gaussian",
+      "regime_switch"
+    ],
+    "tail_cell": [
+      0.05,
+      0.1
+    ]
+  },
+  "receipt_sha256": "13d20aef00774027a9772ced8a4a118c875cec064b33ed826e7b78311b411e83",
+  "replay": {
+    "argv": [
+      "dipcatcher",
+      "fleet-monitor",
+      "--models",
+      "empirical,gaussian,qar",
+      "--shards",
+      "iid_gaussian,regime_switch",
+      "--n-train",
+      "128",
+      "--n-eval",
+      "64",
+      "--seed",
+      "7",
+      "--out-dir",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/monitor_run_5a2fdb39470f5feb.json",
+        "sha256": "a57dca296b0cab9b3128f67956fe36150eebfdb0a026cc3db51a8a8728f231e4"
+      }
+    ]
+  },
+  "research_only": true,
+  "schema": "monitor_run.v1"
+}
