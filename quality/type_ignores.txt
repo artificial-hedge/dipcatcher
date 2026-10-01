@@ -31,6 +31,7 @@ src/quant_fund/models/covariance.py 1
 src/quant_fund/models/dynamic_subspace_denoising.py 1
 src/quant_fund/models/gas_score.py 2
 src/quant_fund/models/robinhood_plus/engine.py 1
+src/quant_fund/models/sur_model.py 3
 src/quant_fund/models/volatility.py 4
 src/quant_fund/observe/install.py 1
 src/quant_fund/paper/recon.py 2

@@ -40,36 +40,75 @@
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "cli_audit.py": {
+      "status": "audited"
+    },
     "doctor.py": {
       "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "doctor_audit.py": {
+      "status": "audited"
+    },
+    "ext_bench_audit.py": {
       "status": "audited"
     },
     "harness.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "harness_audit.py": {
+      "status": "audited"
+    },
     "honesty.py": {
       "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "honesty_audit.py": {
       "status": "audited"
     },
     "hypotheses.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "hypotheses_audit.py": {
+      "status": "audited"
+    },
     "modelcard.py": {
       "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "modelcard_audit.py": {
       "status": "audited"
     },
     "mrm.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "mrm_audit.py": {
+      "status": "audited"
+    },
     "reward.py": {
       "doc": "docs/AUDIT_LEDGER.md",
       "status": "audited"
     },
+    "reward_audit.py": {
+      "status": "audited"
+    },
+    "rt_audit.py": {
+      "status": "audited"
+    },
+    "rubric_audit.py": {
+      "status": "audited"
+    },
     "sbom.py": {
       "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "sbom_audit.py": {
+      "status": "audited"
+    },
+    "tail_audit.py": {
       "status": "audited"
     }
   },

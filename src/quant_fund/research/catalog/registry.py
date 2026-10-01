@@ -424,6 +424,156 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "aft_model",
         "distance_covariance",
         "panel_unitroot",
+        # SOTA canon wave 40 batteries (see research/benches_w40.py):
+        # McFadden-Train mixed logit (random-coefficients
+        # simulated MLE, quasi-random draws), Cragg two-part
+        # hurdle (participation logit + truncated-normal amount),
+        # Zellner SUR (feasible-GLS Kronecker system), Diebold-
+        # Yilmaz connectedness (VAR generalized FEVD), Newey-
+        # Powell nonparametric series IV (basis projection +
+        # DWH endogeneity check), Politis-Romano-Wolf
+        # subsampling (block recentered CI, minimal-assumption
+        # coverage). Same SYNTHETIC diagnostic contract.
+        "mixed_logit",
+        "hurdle",
+        "sur_model",
+        "connectedness",
+        "nonparametric_iv",
+        "subsampling",
+        # SOTA canon wave 41 batteries (see research/benches_w41.py):
+        # shared gamma frailty (Vaupel/Clayton clustered survival,
+        # marginal likelihood), interrupted/comparative time
+        # series (segmented regression, Newey-West SEs), Hayashi-
+        # Yoshida lead-lag covariance (non-synchronous ticks,
+        # shift-scan direction), PPML gravity (Santos Silva-
+        # Tenreyro multiplicative mean under heteroskedasticity),
+        # MacKinlay event study (market-model CAR, Patell z +
+        # BMP t), Mallows model averaging (Hansen Cp-simplex
+        # weights). Same SYNTHETIC diagnostic contract.
+        "frailty",
+        "interrupted_ts",
+        "lead_lag",
+        "ppml",
+        "event_study",
+        "model_averaging",
+        # SOTA canon wave 42 batteries (see research/benches_w42.py):
+        # Lo-MacKinlay variance-ratio test (VR(q) with
+        # heteroskedastic-robust z*), Corsi HAR realized-vol
+        # cascade (daily/weekly/monthly aggregates), Clark-West
+        # MSPE-adjusted nested-forecast test, Stambaugh
+        # predictive-regression bias + Campbell-Yogo
+        # Bonferroni-Q CI, Roy two-sector self-selection
+        # (probit + Mills-corrected wage equations), Cameron-
+        # Gelbach-Miller two-way clustered SEs (V1+V2−V12).
+        # Same SYNTHETIC diagnostic contract.
+        "variance_ratio",
+        "har_rv",
+        "clark_west",
+        "stambaugh",
+        "roy_model",
+        "two_way_cluster",
+        # SOTA canon wave 43 batteries (see research/benches_w43.py):
+        # Bai-Perron multiple structural breaks (sequential F-tests
+        # + BIC), Bernanke-Boivin-Eliasz FAVAR (PCA factors +
+        # VAR), Kao/Pedroni panel cointegration tests, Vuong
+        # non-nested model selection (omega^2 distinguishability
+        # + LR), Merton structural credit distance-to-default
+        # (KMV fixed-point inversion), White Reality Check +
+        # Hansen SPA data-snooping control (stationary-bootstrap
+        # max-statistics). Same SYNTHETIC diagnostic contract.
+        "bai_perron",
+        "favar",
+        "panel_coint",
+        "vuong_test",
+        "merton_model",
+        "white_reality",
+        # SOTA canon wave 44 batteries (see research/benches_w44.py):
+        # Johansen ML cointegration rank (trace/lmax vs
+        # Osterwald-Lenum) + reduced-rank VECM, Easley-O'Hara
+        # PIN (stabilized EHO mixture MLE), Kyle (1985) lambda
+        # + single-auction equilibrium, Oster (2019) selection-
+        # on-observables delta*/beta* bounds, Storey-Tibshirani
+        # q-values + pi0 smoother, Kiefer-Vogelsang fixed-b HAR
+        # inference (simulated Brownian-bridge limit).
+        # Same SYNTHETIC diagnostic contract.
+        "johansen_vecm",
+        "pin_model",
+        "kyle_lambda",
+        "oster_bounds",
+        "storey_fdr",
+        "kiefer_vogelsang",
+        # wave 45 — Conley spatial HAC, Driscoll-Kraay panel SEs,
+        # Pesaran CCE common-factors, Wald SPRT sequential test,
+        # Lee bounds on selection, Barrett-Donald dominance KS.
+        # Same SYNTHETIC diagnostic contract.
+        "conley_se",
+        "driscoll_kraay",
+        "pesaran_cce",
+        "wald_sprt",
+        "lee_bounds",
+        "barrett_donald",
+        # wave 46 — BLP random-coefficients demand, Olley-Pakes
+        # production proxy, Rust dynamic discrete choice,
+        # Oaxaca-Blinder wage decomposition, binscatter CEF +
+        # spec test, DFL reweighting decomposition. Same
+        # SYNTHETIC diagnostic contract.
+        "blp_demand",
+        "olley_pakes",
+        "rust_ddc",
+        "oaxaca_blinder",
+        "binscatter",
+        "dfl_decomp",
+        # wave 47 — Rosenbaum sensitivity bounds for matched pairs,
+        # AIPW doubly-robust ATE, CAVI mean-field Gaussian mixture,
+        # Pesaran CD cross-section dependence, Hausman FE-RE + DWH
+        # endogeneity batteries, CUSUM structural-break monitoring
+        # (Chu-Stinchcombe-White boundary). Same SYNTHETIC
+        # diagnostic contract.
+        "rosenbaum_sensitivity",
+        "aipw_ate",
+        "cavi_gmm",
+        "pesaran_cd",
+        "hausman_tests",
+        "cusum_monitor",
+        # wave 48 — targeted maximum likelihood (TMLE) ATE, Lewbel
+        # heteroskedasticity-generated instruments, proximal/
+        # negative-control confounding bridge, Cover universal
+        # portfolio (best-CRP tracking), VPIN volume-clock flow
+        # toxicity, marginal treatment effects (local-IV MTE
+        # curve). Same SYNTHETIC diagnostic contract.
+        "tmle",
+        "lewbel_iv",
+        "proximal_causal",
+        "cover_up",
+        "vpin",
+        "marginal_treatment",
+        # wave 49 — Eisenberg-Noe clearing-vector default contagion,
+        # Cont-Wagalath fire-sale deleveraging cascades, Adrian-
+        # Brunnermeier delta-CoVaR systemic contribution, Blanchard-Quah
+        # long-run-restriction SVAR identification, Kalman/RTS TVP
+        # regression, DerSimonian-Laird random-effects meta-analysis
+        # with Egger funnel asymmetry. Same SYNTHETIC diagnostic
+        # contract.
+        "eisenberg_noe",
+        "fire_sales",
+        "delta_covar",
+        "blanchard_quah",
+        "tvp_var",
+        "meta_analysis",
+        # wave 50 — Engle-Russell ACD(1,1) duration clustering
+        # (QMLE), Heath-Jarrow-Morton Gaussian forward-curve
+        # simulation, Vasicek affine term structure + Campbell-
+        # Shiller expectations-hypothesis regression, Gil-Pelaez
+        # characteristic-function inversion (CDF/quantiles),
+        # hedonic time-dummy + Bailey-Muth-Nourse repeat-sales
+        # indices, DEA CCR/BCC efficiency frontiers. Same
+        # SYNTHETIC diagnostic contract.
+        "acd_duration",
+        "hjm",
+        "affine_term",
+        "gil_pelaez",
+        "hedonic",
+        "dea",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
