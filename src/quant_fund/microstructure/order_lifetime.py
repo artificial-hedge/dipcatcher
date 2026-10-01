@@ -20,6 +20,7 @@ On the sim, the maker-side fill delay is directly on TradeEvent
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,7 @@ from quant_fund.microstructure.lobster import (
     SUBMISSION,
     parse_messages,
 )
+from quant_fund.microstructure.maker_age_bench import _MO_PMF, _spec
 from quant_fund.microstructure.split_flow import SplitFlow
 from quant_fund.microstructure.zi_lob_simulator import (
     MarkovRegimeFlow,
@@ -39,6 +41,7 @@ from quant_fund.microstructure.zi_lob_simulator import (
     RegimeState,
     ZILobConfig,
     ZILobSimulator,
+    santa_fe_config,
 )
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -138,12 +141,17 @@ def sim_fill_delays(
     delays = np.asarray(
         [tr.t - tr.maker_t_submit for tr in sim.trades if tr.t >= tr.maker_t_submit]
     )
+    cxl = np.asarray(sim.cxl_ages, dtype=float)
     return {
         "n_fills": int(delays.size),
         "fill_delay_p50_s": _pct(delays, 50),
         "fill_delay_p90_s": _pct(delays, 90),
         "fill_delay_p99_s": _pct(delays, 99),
         "fill_delay_hist_s": _hist(delays, (0.1, 1.0, 5.0, 20.0, 100.0, 500.0)),
+        "n_cancels": int(sim.n_cancellations),
+        "deleted_age_p50_s": _pct(cxl, 50) if cxl.size else None,
+        "deleted_age_p90_s": _pct(cxl, 90) if cxl.size else None,
+        "n_requotes": int(getattr(sim, "n_requotes", 0)),
     }
 
 
@@ -172,10 +180,32 @@ def order_lifetime_bench(tape_dir: Path, ticker: str = "AMZN", *, seed: int = 7)
             ),
             seed=seed + 2,
         ),
+        "requote": sim_fill_delays(
+            config=replace(
+                santa_fe_config(seed=seed + 3),
+                band=14,
+                lo_offset=12,
+                hawkes=_spec(),
+                lo_offset_gain=80.0,
+                touch_pull=0.4,
+                cxl_touch_bias=0.5,
+                cxl_dist_decay=3.0,
+                cxl_requote=0.5,
+                mo_size_pmf=_MO_PMF,
+            ),
+            seed=seed + 3,
+        ),
     }
+    rq = arms["requote"]
+    divergences: list[str] = []
+    del50 = rq["deleted_age_p50_s"]
+    real_del50 = real["lifetime_s_p50_deleted"]
+    if del50 is not None and real_del50 is not None and del50 < 0.5 * float(real_del50):
+        divergences.append(f"requote_deleted_p50_{del50:.3f}_vs_{real_del50:.3f}")
     payload: dict[str, Any] = {
         "kind": "order_lifetime",
         "schema": "order_lifetime.v1",
+        "divergences": divergences,
         "ticker": ticker,
         "real": real,
         "sim_arms": arms,
@@ -185,7 +215,12 @@ def order_lifetime_bench(tape_dir: Path, ticker: str = "AMZN", *, seed: int = 7)
             "HFT churn. Exec-vs-cancel volume share is the honest depth "
             "discount. Sim arm measures maker fill delay only (cancels "
             "are anonymous theta_cxl events), so cross-side comparison "
-            "is on fill-delay shape, not cancel share."
+            "is on fill-delay shape, not cancel share. The requote arm "
+            "adds the cancel+replace churn (bias 0.5, decay L=3, "
+            "requote 0.5): deleted p50 collapses ~5x toward the real "
+            "0.80s and overshoots it — the sim book is shallow enough "
+            "(~5 resting) that the churn zone covers the whole book, "
+            "unlike the tape's deep slow tail. Logged, not hidden."
         ),
     }
     payload["git_revision"] = git_revision()
