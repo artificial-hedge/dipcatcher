@@ -62,11 +62,11 @@ def _bucket_stats(
             i0 = int(np.searchsorted(mid_times, t, "left")) - 1
             if i0 < 0:
                 continue
-            e = 2.0 * s * (p - mids[i0])
+            m0 = mids[i0]
             j = int(np.searchsorted(mid_times, mid_times[i0] + MARKOUT_S, "left"))
-            if j >= mids.size:
+            if j >= mids.size or not np.isfinite(m0) or not np.isfinite(mids[j]):
                 continue
-            eff.append(e)
+            eff.append(2.0 * s * (p - m0))
             rea.append(2.0 * s * (p - mids[j]))
             buys += int(s > 0)
             sizes.append(sz)
