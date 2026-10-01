@@ -107,6 +107,11 @@ small Alpaca account. It is research and simulated paper trading only — there
 is no live broker connectivity anywhere in this tree, and nothing in this
 document authorizes, promises, or implies otherwise.
 
+The dip question, in `fx1.bench.dip` and
+`receipts/legacy-unsealed/dip_bench_crypto_1d_20260925.json`, is the probability that a
+drawdown recovers within 1, 3, 6, or 12 months. That committed receipt scores
+an in-sample climatology baseline on 11 historical crypto series. Disclaimer
+from the file:
 The distribution name on PyPI-style metadata is `fx-1`; the two console
 entry points installed by this project are `dipcatcher` (the research
 harness, formerly and internally called "dipcatcher") and `fx1` (the
@@ -205,6 +210,35 @@ failure modes at once, using three linked ideas:
    quietly rerun until something looks better. See
    [Evidence and sealed receipts](#evidence-and-sealed-receipts).
 
+- **Sealed receipts.** Phase-1 benchmark and tournament files carry
+  `receipt_sha256`, the SHA-256 of the other fields.
+  `dipcatcher verify-research` recomputes it and exits nonzero on a mismatch
+  (`docs/RECEIPT_VERIFICATION.md`). Paper promotion receipts use the same
+  seal. Files under `receipts/` record the input and script hashes the result
+  claims (`inputs_sha256`, `script_sha256`, `bar_files_sha256`, and related
+  fields).
+- **Fail-closed verification.** An invalid notebook, a missing metric, or a
+  non-finite metric does not promote. SYNTHETIC evidence marked as live fails
+  the gate in `quant_fund.validation.gates`. `dipcatcher doctor` exits nonzero
+  until a data manifest and a valid research receipt are both present.
+- **Published negative results.**
+  `receipts/legacy-unsealed/adaptive_mix_band_search_20asset_1d_20260922.json` records
+  `selected_band: null` and `eligible: false` on every candidate.
+  `receipts/legacy-unsealed/basis_pair_candidate_20asset_1d_20260922.json` records
+  `development_eligible: false`. A sealed blocked tournament stays a
+  reviewable failure (`valid: true`, `state: "blocked"`) with no test receipt
+  and no selected candidate (`docs/RECEIPT_VERIFICATION.md`).
+- **qlib parity receipt.** `receipts/legacy-unsealed/incumbent_bench_qlib.json` is one matched
+  workload against qlib 0.9.7 on Binance daily bars (`BTCUSDT`, `ETHUSDT`,
+  `SOLUSDT`), with `research_only: true` and `live_pnl_claim: false`. Copied
+  from that file, `nav_max_rel_diff` is `1.0290734772388363e-07`. Disclaimer,
+  copied verbatim: "Single matched workload vs qlib 0.9.x on real Binance
+  daily bars. Correctness is NAV parity; latency is single-process wall time.
+  Not a claim of superiority across all product dimensions."
+- **Synthetic stays labeled.** Default research and paper configs set
+  `data.source: synthetic`. The CLI prints `DATA_LABEL=SYNTHETIC` and the
+  word `SYNTHETIC`. The CI smoke fails if that notebook's `data_source` is
+  anything else.
 `fx-1` (the model line, [described below](#fx-1)) exists because the same
 discipline that makes the research harness auditable also makes it a
 uniquely well-labeled training corpus: every receipt that passes the ship
