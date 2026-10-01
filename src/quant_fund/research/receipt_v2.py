@@ -379,28 +379,39 @@ def wrap_receipt_v2(
     ``generated_at``/``git_revision``/``code_revision``/``generated_at_commit``
     stamp the envelope. Callers may override any binding explicitly when the
     lane's identity lives in differently named fields.
+
+    A top-level ``meta`` block is volatile provenance (wall-clock stamps and
+    the checked-out revision): replay-declared lanes keep it out of the
+    sealed artifact so argv-produced bytes are byte-identical across runs.
+    The envelope still stamps it here — ``meta`` never enters the embedded
+    payload.
     """
+    meta = receipt.get("meta")
+    meta_map: Mapping[str, Any] = meta if isinstance(meta, Mapping) else {}
+    sealed_body = {key: value for key, value in receipt.items() if key != "meta"}
     if dataset is not None:
         bound_dataset: Mapping[str, Any] = dataset
     else:
         bound_dataset = {
-            key: receipt[key]
+            key: sealed_body[key]
             for key in ("inputs_sha256", "dataset_sha256", "weights_sha256")
-            if key in receipt
+            if key in sealed_body
         }
         if not bound_dataset:
-            bound_dataset = {"payload_sha256": hash_bytes(canonical_json_bytes(dict(receipt)))}
+            bound_dataset = {"payload_sha256": hash_bytes(canonical_json_bytes(dict(sealed_body)))}
     lane_params = receipt.get("params")
     bound_params = (
         params if params is not None else lane_params if isinstance(lane_params, Mapping) else {}
     )
     revision = (
         revision
+        or meta_map.get("git_revision")
+        or meta_map.get("code_revision")
         or receipt.get("git_revision")
         or receipt.get("code_revision")
         or receipt.get("generated_at_commit")
     )
-    generated_at = generated_at or receipt.get("generated_at")
+    generated_at = generated_at or meta_map.get("generated_at") or receipt.get("generated_at")
     return build_receipt_v2(
         kind=str(kind or receipt.get("kind") or receipt.get("schema") or "receipt"),
         data_label=str(data_label or receipt.get("data_label") or "UNKNOWN"),
@@ -408,7 +419,7 @@ def wrap_receipt_v2(
         params=bound_params,
         code_files=code_files,
         verdict=verdict,
-        payload=dict(receipt),
+        payload=dict(sealed_body),
         generated_at=str(generated_at) if generated_at is not None else None,
         revision=str(revision) if revision is not None else None,
     )
@@ -607,6 +618,10 @@ _LANE_CONSISTENCY: dict[str, str] = {
     "capacity_overlay_eval": "quant_fund.research.capacity_overlay.capacity_v2_consistency_errors",
     "cross_sectional_rankic_eval": "quant_fund.research.cross_sectional.rankic_v2_consistency_errors",
     "vol_bench": "quant_fund.research.vol_bench.vol_bench_v2_consistency_errors",
+    "basis_carry": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
+    "basis_carry_eval": "quant_fund.research.basis_carry.basis_carry_v2_consistency_errors",
+    "crossvenue_basis": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
+    "crossvenue_basis_eval": "quant_fund.research.crossvenue_basis.crossvenue_basis_v2_consistency_errors",
 }
 
 
@@ -890,6 +905,14 @@ def _verify_v1(path: Path, payload: Mapping[str, Any]) -> ReceiptVerification:
 
         errors.extend(cost_calibration_contract_errors(payload))
     errors.extend(_tape_binding_errors(payload))
+    if payload.get("schema") == "custody_proof.v1":
+        from quant_fund.research.custody import custody_contract_errors
+
+        errors.extend(custody_contract_errors(payload))
+    if payload.get("schema") == "release_attestation.v1":
+        from quant_fund.research.release_attestation import release_contract_errors
+
+        errors.extend(release_contract_errors(payload))
     return _result(path, payload, convention, errors)
 
 
