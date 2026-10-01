@@ -390,6 +390,13 @@ class ZILobConfig:
     # (or instead of) self-excitation. ``None`` keeps the constant-base
     # clock bit-identical.
     rate_regimes: RateRegimeSpec | None = None
+    # ``p_buy_drift`` is a per-second linear drift applied to the effective
+    # buy probability wherever it is derived (flat config or regime arm):
+    # ``p_eff = clip(p_buy + p_buy_drift * t, 0, 1)`` evaluated at each MO
+    # side draw — the tape's intraday initiative fade becomes expressible
+    # without disturbing regime composition. 0 skips the clip entirely
+    # (bit-identical to the legacy side draw).
+    p_buy_drift: float = 0.0
 
     def __post_init__(self) -> None:
         _pos_finite(self.s0, "s0")
@@ -426,6 +433,8 @@ class ZILobConfig:
             raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
         if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
             raise TypeError(f"rate_regimes must be a RateRegimeSpec, got {self.rate_regimes!r}")
+        if not math.isfinite(float(self.p_buy_drift)):
+            raise ValueError(f"p_buy_drift must be finite, got {self.p_buy_drift!r}")
 
 
 def santa_fe_config(
@@ -1199,9 +1208,13 @@ class ZILobSimulator:
 
     def _flow_params(self) -> tuple[float, float]:
         if self._flow is None:
-            return self._cfg.mu, self._cfg.p_buy
-        st = self._flow.current()
-        return self._cfg.mu * st.intensity_mult, st.p_buy
+            mu, p_buy = self._cfg.mu, self._cfg.p_buy
+        else:
+            st = self._flow.current()
+            mu, p_buy = self._cfg.mu * st.intensity_mult, st.p_buy
+        if self._cfg.p_buy_drift != 0.0:
+            p_buy = min(1.0, max(0.0, p_buy + self._cfg.p_buy_drift * self._t))
+        return mu, p_buy
 
     def _limit_order_event(self) -> None:
         lam, band = self._cfg.lam, self._cfg.band

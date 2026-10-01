@@ -413,6 +413,7 @@ _MEASUREMENT_SCHEMAS = (
     "hidden_depth.v1",
     "iceberg.v1",
     "impact_instant.v1",
+    "initiative_fade.v1",
     "intraday_shape.v1",
     "lob_exec.v1",
     "lob_resilience.v1",
