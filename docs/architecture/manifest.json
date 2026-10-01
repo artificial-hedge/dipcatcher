@@ -1451,6 +1451,10 @@
       "src": "quant_fund.cli.data_cmds"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.cli.data_cmds"
+    },
+    {
       "dst": "quant_fund.utils.logging",
       "src": "quant_fund.cli.data_cmds"
     },
@@ -1920,6 +1924,10 @@
     },
     {
       "dst": "quant_fund.proofcore.contracts",
+      "src": "quant_fund.data.adapters.dolthub_stocks"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.data.adapters.dolthub_stocks"
     },
     {
@@ -10481,7 +10489,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 10,
+      "imports": 11,
       "src": "quant_fund.cli"
     },
     {
@@ -10536,7 +10544,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 12,
+      "imports": 13,
       "src": "quant_fund.data"
     },
     {
