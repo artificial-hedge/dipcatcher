@@ -64,6 +64,7 @@ from quant_fund.cli.research_cmds import (
     cost_calibration,
     corpus,
     lattice_cmd,
+    graph_cmd,
     online_fdr_cmd,
     replay_cmd,
 )
@@ -193,6 +194,7 @@ __all__ = [
     "cost_calibration",
     "corpus",
     "lattice_cmd",
+    "graph_cmd",
     "online_fdr_cmd",
     "replay_cmd",
     "session_book_cmd",
