@@ -956,3 +956,28 @@ detail: |
   Wiese' doesn't exist). Adapter drops synthetic_live_pnl_claim —
   pnl is a forbidden headline token. Scorecard 108->109.
 note: full stack #442/#446/#452/#477/#479/#491 open; CI queued.
+---
+owner: devin (wave-23 canon swarm)
+slice: WAVE 23 — six lanes + benches_w23 wiring
+status: INTEGRATED 2026-10-01 — stacked on #491 canon
+detail: |
+  Six lanes, 4 built locally (session cap) + 2 child sessions:
+  models/svi_surface (child, 61 tests): raw SVI + natural/SSVI/eSSVI
+  slices, Gatheral g(k) butterfly checks, calendar-arb detection +
+  PAVA repair, Lee wing bounds; calib rmse 1.4e-15 exact / 3.8e-3
+  noisy, arb F1 1.0. Lane corrected 1001.4077->1002.3633 and noted
+  eSSVI is SSRN-only. models/sig_gan (child, 27 tests): SigCWGAN-lite
+  residual-GRU on signature-moment distance; GBM 5.95->0.13, OU
+  15.3->0.15, numpy AR mirror fallback; corrected Sig-SDE id to
+  2006.00218. microstructure/propagator_impact (local, 25 tests):
+  Toeplitz ridge kernel LS, power-law fit, half-life/permanent-mass
+  diagnostics, expected-cost curves. microstructure/queue_reactive
+  (local, 28 tests): CTMC birth-death queues, dwell-time MLE, joint
+  stationary law, queue-value curves. models/koopman_edmd (local, 33
+  tests): delay embedding + EDMD spectra, implied timescales, regime
+  separation AUC. models/neural_tpp (local, 18 tests): transformer
+  TPP with Hawkes-MLE fallback, marked thinning sim.
+note: w24 lanes in flight (fernholz_spt + breeden_litzenberger
+  children; pmcmc_sv/multifractal_vol/spci_conformal local-built;
+  hawkes_em local). spci_conformal rescoped to residual-quantile
+  forecasting — ACI already lives in models/conformal.py.

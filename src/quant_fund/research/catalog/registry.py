@@ -253,6 +253,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # arXiv:1810.10971; see the module docstring for the verified
         # companion citation set). Same SYNTHETIC diagnostic contract.
         "signature_martingale_test",
+        # SOTA canon wave 23 batteries (see research/benches_w23.py):
+        # SVI/SSVI surface calibration + no-arb checks (Gatheral &
+        # Jacquier 2014, arXiv:1204.0646), transient propagator impact
+        # kernel estimation, queue-reactive CTMC limit-book dynamics,
+        # Koopman/EDMD nonlinear-spectrum extraction, signature-
+        # Wasserstein GAN generation (arXiv:2006.05421), and transformer
+        # neural temporal point processes with Hawkes fallback. Same
+        # SYNTHETIC diagnostic contract.
+        "svi_surface",
+        "propagator_impact",
+        "queue_reactive",
+        "koopman_edmd",
+        "sig_gan",
+        "neural_tpp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

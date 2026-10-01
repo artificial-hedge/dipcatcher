@@ -168,6 +168,14 @@ from quant_fund.research.benches_w21 import (
 from quant_fund.research.benches_w22 import (
     bench_signature_martingale_test,
 )
+from quant_fund.research.benches_w23 import (
+    bench_koopman_edmd,
+    bench_neural_tpp,
+    bench_propagator_impact,
+    bench_queue_reactive,
+    bench_sig_gan,
+    bench_svi_surface,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1846,6 +1854,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rough_heston_rbergomi": bench_rough_heston_rbergomi(),
         "signature_features": bench_signature_features(),
         "signature_martingale_test": bench_signature_martingale_test(),
+        "svi_surface": bench_svi_surface(),
+        "propagator_impact": bench_propagator_impact(),
+        "queue_reactive": bench_queue_reactive(),
+        "koopman_edmd": bench_koopman_edmd(),
+        "sig_gan": bench_sig_gan(),
+        "neural_tpp": bench_neural_tpp(),
     }
 
     hyps = _build_hypotheses(families, rankers)
