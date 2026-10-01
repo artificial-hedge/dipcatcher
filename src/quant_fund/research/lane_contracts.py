@@ -204,6 +204,111 @@ def sim_live_contract_errors(receipt: Mapping[str, Any]) -> list[str]:
     return errors
 
 
+#: Tape/bench measurement lanes commit receipts with a narrative ``claim``
+#: string, a probe-map ``claim`` dict, or a named ``claims`` dict. The generic
+#: contract re-derives every internal-consistency field the shape exposes and
+#: pins the honesty envelope: revision, data label, research-only, no live
+#: claim. (The seal + forbidden-metric scan live in receipt_v2 itself.)
+_MEASURE_SCHEMAS = frozenset(
+    {
+        "abc_calibrate.v1",
+        "cancel_cluster.v1",
+        "deep_microprice.v1",
+        "depth_consumption.v1",
+        "event_burst.v1",
+        "event_granger.v1",
+        "event_matrix.v1",
+        "exec_cost_real.v1",
+        "exec_cost_split.v1",
+        "forecast_pipeline_audit.v1",
+        "glft_bench.v1",
+        "hawkes_mv.v1",
+        "hawkes_real.v1",
+        "hidden_depth.v1",
+        "impact_instant.v1",
+        "intraday_shape.v1",
+        "lob_exec.v1",
+        "lob_resilience.v1",
+        "marketable_limit.v1",
+        "metaorder_detect.v1",
+        "mid_jump.v1",
+        "order_lifetime.v1",
+        "order_revision.v1",
+        "post_trade_drift.v1",
+        "price_clustering.v1",
+        "price_improvement.v1",
+        "propagator_real.v1",
+        "quote_place.v1",
+        "round_lot.v1",
+        "sign_autocorr_real.v1",
+        "sign_predict.v1",
+        "sim_real_ledger.v1",
+        "split_flow.v1",
+        "spread_dynamics.v1",
+        "spread_response.v1",
+        "stale_quote.v1",
+        "streak_stats.v1",
+        "tape_digest.v1",
+        "tick_rule.v1",
+        "vol_signature.v1",
+        "vpin.v1",
+    }
+)
+
+_HEX = frozenset("0123456789abcdef")
+
+
+def _measurement_claim_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Generic deep check for measurement-lane receipts.
+
+    Re-derives whatever consistency the claim shape exposes: a dict claim's
+    ``n_probes``/``n_passed``/``ok`` must match its ``results`` map, string
+    claims must be non-empty, ``claims`` maps must be non-empty; and the
+    honesty envelope (kind, 7-40-hex revision, data label enum,
+    research_only, live_pnl_claim not true) is pinned for every shape.
+    """
+    errors: list[str] = []
+    if not isinstance(payload.get("kind"), str) or not payload.get("kind"):
+        errors.append("kind_missing")
+    rev = payload.get("git_revision")
+    if (
+        not isinstance(rev, str)
+        or not 7 <= len(rev) <= 40
+        or any(ch not in _HEX for ch in rev.lower())
+    ):
+        errors.append("git_revision_not_hex")
+    if payload.get("data_label") not in {"SYNTHETIC", "MIXED", "REAL"}:
+        errors.append("data_label_invalid")
+    if payload.get("research_only") is not True:
+        errors.append("research_only_not_true")
+    if payload.get("live_pnl_claim") is True:
+        errors.append("live_pnl_claim_true")
+    claim = payload.get("claim")
+    if isinstance(claim, str):
+        if not claim.strip():
+            errors.append("claim_empty")
+    elif isinstance(claim, dict):
+        results = claim.get("results")
+        if isinstance(results, dict) and all(isinstance(v, bool) for v in results.values()):
+            if claim.get("n_probes") != len(results):
+                errors.append("n_probes_mismatch")
+            if claim.get("n_passed") != sum(1 for v in results.values() if v):
+                errors.append("n_passed_mismatch")
+            if claim.get("ok") is not None and claim.get("ok") != all(results.values()):
+                errors.append("ok_mismatch")
+    elif claim is not None:
+        errors.append("claim_unexpected_type")
+    claims = payload.get("claims")
+    if claims is not None and not isinstance(claims, dict):
+        errors.append("claims_not_mapping")
+    elif isinstance(claims, dict) and not claims:
+        errors.append("claims_empty")
+    interp = payload.get("interpretation")
+    if interp is not None and (not isinstance(interp, str) or not interp.strip()):
+        errors.append("interpretation_empty")
+    return errors
+
+
 def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
     """Deep-verify a committed lane receipt; ``[]`` when the schema is unknown."""
     schema = payload.get("schema")

@@ -1,11 +1,3 @@
-quant_fund.api.surface_pin
-quant_fund.config.impact
-quant_fund.fusion.stack_watch
-quant_fund.hmm.verify
-quant_fund.microstructure.intraday_exec
-quant_fund.microstructure.tape_surgery
-quant_fund.monitoring.monitor_chain
-quant_fund.native.conformance
 src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
@@ -307,6 +299,7 @@ src/quant_fund/microstructure/impact_instant.py
 src/quant_fund/microstructure/impact_law.py
 src/quant_fund/microstructure/impact_propagator.py
 src/quant_fund/microstructure/impulse_mm.py
+src/quant_fund/microstructure/initiative_fade_bench.py
 src/quant_fund/microstructure/intraday_exec.py
 src/quant_fund/microstructure/intraday_shape.py
 src/quant_fund/microstructure/kyle_lambda.py
