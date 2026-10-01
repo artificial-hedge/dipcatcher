@@ -936,6 +936,10 @@ def suite_health_cmd(
                 or is_known_contract_legacy(p, result["errors"])
             ):
                 bad.append(f"{row['file']}: {result['errors']}")
+        epoch_state = receipt.get("corpus_epoch")
+        if isinstance(epoch_state, dict) and epoch_state.get("chain_ok") is False:
+            for err in epoch_state.get("errors") or []:
+                bad.append(f"corpus_epoch: {err}")
         if bad:
             typer.echo("STRICT FAILURE — unverifiable receipts:", err=True)
             for line in bad:
@@ -1324,8 +1328,10 @@ def online_fdr_cmd(
     except ValueError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
+    from quant_fund.utils.receipt import verified_corpus_files
+
     files = sorted(
-        (p for p in root.glob("*.json") if p.is_file()),
+        verified_corpus_files(root),
         key=lambda p: (p.stat().st_mtime, p.name),
     )
     digests: dict[str, str] = {}
@@ -1498,6 +1504,142 @@ def lattice_cmd(
     typer.echo(f"receipt={path}")
     if strict and receipt["verdict"] == "inconsistent":
         raise typer.Exit(code=1)
+
+
+@app.command()
+def corpus_epoch(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Evidence corpus to epoch-stamp / chain-check."
+    ),
+    check: bool = typer.Option(
+        False,
+        "--check",
+        help="Verify the committed epoch chain against the live corpus "
+        "(single fork-free chain, monotone membership, head == live root).",
+    ),
+    allowed_removals: Path | None = typer.Option(
+        None,
+        "--allowed-removals",
+        help="JSON map of receipt filename -> sha256 whose removal is acknowledged "
+        "(e.g. moved to legacy-unsealed/).",
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = corpus_epoch.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    glob: str = typer.Option(
+        "*.json",
+        "--glob",
+        help="Member file pattern — chains are per-(dir, glob); stamp non-JSON evidence "
+        "dirs with e.g. --glob '*.md' or '*'.",
+    ),
+    heads_pin: Path | None = typer.Option(
+        None,
+        "--heads-pin",
+        help="Committed epoch-heads pin (e.g. quality/epoch_heads.json). --check "
+        "enforces it (missing/mutated/rolled-back head is an error); write mode "
+        "updates it so the pin and the new epoch land in the same commit.",
+    ),
+) -> None:
+    """Corpus epoch: hash-chained integrity root over the evidence store.
+
+    Seals the corpus's full membership (name -> sha256 over file bytes) into a
+    ``corpus_epoch.v1`` receipt linked to the previous epoch, so receipt
+    deletion or rewrite becomes detectable without trusting git. ``--check``
+    walks the committed chain and fails on forks, removed or mutated members,
+    and drift between the head epoch and the live corpus. Provenance evidence
+    only, never a market or P&L claim.
+    """
+    from quant_fund.research.corpus_epoch import (
+        check_epoch_chain,
+        corpus_epoch,
+        epoch_heads_key,
+        load_heads_pin,
+        update_heads_pin,
+        write_epoch_receipt,
+    )
+
+    root = Path(corpus_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"corpus dir {root} does not exist")
+    allowed: dict[str, str] | None = None
+    if allowed_removals is not None:
+        if not allowed_removals.is_file():
+            raise typer.BadParameter(f"allowed-removals file {allowed_removals} does not exist")
+        try:
+            raw_allowed = json.loads(allowed_removals.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"allowed-removals is not JSON: {exc}") from exc
+        if not isinstance(raw_allowed, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64
+            for k, v in raw_allowed.items()
+        ):
+            raise typer.BadParameter(
+                "allowed-removals must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        allowed = dict(raw_allowed)
+    expected_head: dict[str, str] | None = None
+    if heads_pin is not None:
+        if not heads_pin.is_file():
+            raise typer.BadParameter(f"heads-pin file {heads_pin} does not exist")
+        try:
+            expected_head = load_heads_pin(heads_pin).get(epoch_heads_key(root, glob))
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"heads-pin is not a valid pin file: {exc}") from exc
+        if check and expected_head is None:
+            raise typer.BadParameter(
+                f"heads-pin {heads_pin} has no entry for {epoch_heads_key(root, glob)}"
+            )
+    if check:
+        result = check_epoch_chain(
+            root, allowed_removals=allowed, pattern=glob, expected_head=expected_head
+        )
+        typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+        for name in result["unstamped"]:
+            typer.echo(f"epoch-chain info: unstamped member {name}")
+        if result["errors"]:
+            for err in result["errors"]:
+                typer.echo(f"epoch-chain error: {err}")
+            raise typer.Exit(code=1)
+        typer.echo("epoch-chain intact")
+        return
+    head_sha: str | None = None
+    try:
+        import subprocess
+
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        if proc.returncode == 0:
+            head_sha = proc.stdout.strip() or None
+    except (OSError, subprocess.SubprocessError):
+        head_sha = None
+    if heads_pin is not None and Path(out_dir) != root:
+        raise typer.BadParameter(
+            "--heads-pin requires --out-dir == --corpus-dir (the pinned head must "
+            "be a corpus member)"
+        )
+    receipt = corpus_epoch(root, head_sha=head_sha, pattern=glob)
+    try:
+        path = write_epoch_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    if heads_pin is not None:
+        update_heads_pin(heads_pin, root, glob, path)
+        typer.echo(f"heads-pin={heads_pin}")
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"epoch members={receipt['n_members']} "
+        f"added={len(receipt['members_added'])} removed={len(receipt['members_removed'])} "
+        f"verdict={receipt['verdict']} root={receipt['epoch_root_sha256'][:16]}"
+    )
+    typer.echo(f"receipt={path}")
 
 
 @app.command()

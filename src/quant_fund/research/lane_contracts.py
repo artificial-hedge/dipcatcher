@@ -215,6 +215,10 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         return _p42_conformance_contract_errors(payload)
     if payload.get("kind") in SIM_LIVE_KINDS:
         return sim_live_contract_errors(payload)
+    if schema == "corpus_epoch.v1" or payload.get("kind") == "corpus_epoch.v1":
+        from quant_fund.research.corpus_epoch import epoch_contract_errors
+
+        return epoch_contract_errors(payload)
     if schema == "receipt_admission.v1" or payload.get("kind") == "receipt_admission.v1":
         from quant_fund.research.admission import admission_contract_errors
 
@@ -227,4 +231,12 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.xwatch import xwatch_contract_errors
 
         return xwatch_contract_errors(payload)
+    if schema == "rough_vol.v1":
+        from quant_fund.models.rbergomi import rough_vol_contract_errors
+
+        return rough_vol_contract_errors(payload)
+    if schema == "fbm_circulant.v1":
+        from quant_fund.models.fbm import fbm_contract_errors
+
+        return fbm_contract_errors(payload)
     return []
