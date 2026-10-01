@@ -195,6 +195,7 @@ nav:
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
       - Audit ledger: AUDIT_LEDGER.md
+      - Evidence integrity: EVIDENCE_INTEGRITY.md
       - fx1 audit: AUDIT_FX1.md
       - fx1 eval-harness audit: AUDIT_FX1_EVALHARNESS.md
       - market-sim audit: AUDIT_MARKET_SIM.md
