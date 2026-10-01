@@ -5915,11 +5915,27 @@
       "src": "quant_fund.proof.bundle"
     },
     {
+      "dst": "quant_fund.pit.vault",
+      "src": "quant_fund.proof.cli"
+    },
+    {
       "dst": "quant_fund.proof.bundle",
       "src": "quant_fund.proof.cli"
     },
     {
+      "dst": "quant_fund.proof.replay",
+      "src": "quant_fund.proof.cli"
+    },
+    {
+      "dst": "quant_fund.proof.runner",
+      "src": "quant_fund.proof.cli"
+    },
+    {
       "dst": "quant_fund.proof.verify",
+      "src": "quant_fund.proof.cli"
+    },
+    {
+      "dst": "quant_fund.proofcore.contracts",
       "src": "quant_fund.proof.cli"
     },
     {
@@ -5935,11 +5951,19 @@
       "src": "quant_fund.proof.replay"
     },
     {
+      "dst": "quant_fund.proofcore.ci",
+      "src": "quant_fund.proof.replay"
+    },
+    {
       "dst": "quant_fund.proofcore.contracts",
       "src": "quant_fund.proof.replay"
     },
     {
       "dst": "quant_fund.config.models",
+      "src": "quant_fund.proof.runner"
+    },
+    {
+      "dst": "quant_fund.leakage.guard",
       "src": "quant_fund.proof.runner"
     },
     {
@@ -5960,6 +5984,10 @@
     },
     {
       "dst": "quant_fund.proof.sign",
+      "src": "quant_fund.proof.runner"
+    },
+    {
+      "dst": "quant_fund.proofcore.ci",
       "src": "quant_fund.proof.runner"
     },
     {
@@ -11149,7 +11177,7 @@
     },
     {
       "dst": "quant_fund.leakage",
-      "imports": 1,
+      "imports": 2,
       "src": "quant_fund.proof"
     },
     {
@@ -11158,13 +11186,18 @@
       "src": "quant_fund.proof"
     },
     {
+      "dst": "quant_fund.pit",
+      "imports": 1,
+      "src": "quant_fund.proof"
+    },
+    {
       "dst": "quant_fund.proof",
-      "imports": 13,
+      "imports": 15,
       "src": "quant_fund.proof"
     },
     {
       "dst": "quant_fund.proofcore",
-      "imports": 9,
+      "imports": 12,
       "src": "quant_fund.proof"
     },
     {
