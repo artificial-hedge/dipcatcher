@@ -9,11 +9,37 @@ with their own exclusion set and honesty contract.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from pathlib import Path
 from typing import Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 ALWAYS_EXCLUDED = ("receipt_sha256",)
+
+# Subdirectories under a receipts root whose contents are governed by a
+# separate authority (``quality/legacy_quarantine.json`` byte-pins
+# ``receipts/legacy-unsealed/``) rather than per-file seal verification.
+# Corpus scanners (evidence audit, suite health, lattice, receipts-reverify)
+# skip these; the epoch chain still hashes them as members.
+QUARANTINED_SUBDIRS = frozenset({"legacy-unsealed"})
+
+
+def is_quarantined(path: Path, root: Path) -> bool:
+    """True iff ``path`` sits under a quarantined top-level subdir of ``root``."""
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        return True
+    return len(rel.parts) > 1 and rel.parts[0] in QUARANTINED_SUBDIRS
+
+
+def verified_corpus_files(root: Path, *, pattern: str = "*.json") -> list[Path]:
+    """Recursive corpus listing minus quarantined subdirs, sorted.
+
+    Per-file verification must match the epoch chain's ``rglob`` member
+    semantics — a claim receipt dropped in a subdirectory is still corpus
+    evidence, not a blind spot."""
+    return sorted(p for p in root.rglob(pattern) if p.is_file() and not is_quarantined(p, root))
 
 
 def seal_receipt(receipt: Mapping[str, Any], *, exclude: Iterable[str] = ()) -> dict[str, Any]:
