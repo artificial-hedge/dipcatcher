@@ -485,6 +485,14 @@ from quant_fund.research.benches_w61 import (
     bench_ingarch,
     bench_log_concave,
 )
+from quant_fund.research.benches_w62 import (
+    bench_asian_option,
+    bench_bfast,
+    bench_black_litterman,
+    bench_entropy_pooling,
+    bench_narrative_svar,
+    bench_stable_dist,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2402,6 +2410,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "chen_tiao_outliers": bench_chen_tiao_outliers(),
         "beta_ar": bench_beta_ar(),
         "ingarch": bench_ingarch(),
+        "entropy_pooling": bench_entropy_pooling(),
+        "narrative_svar": bench_narrative_svar(),
+        "bfast": bench_bfast(),
+        "stable_dist": bench_stable_dist(),
+        "asian_option": bench_asian_option(),
+        "black_litterman": bench_black_litterman(),
     }
 
     hyps = _build_hypotheses(families, rankers)

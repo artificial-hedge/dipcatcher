@@ -1440,3 +1440,40 @@ detail: |
   - Canon staged on top of w60-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710 land.
 note: canon PR to follow.
+
+---
+owner: devin (wave 62 canon)
+slice: models/entropy_pooling.py, models/narrative_svar.py,
+  models/bfast.py, models/stable_dist.py,
+  models/asian_option.py, models/black_litterman.py,
+  research/benches_w62.py, registry/agent wiring,
+  tests/unit/research/test_benches_w62.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w62-lanes (92149e8a): six new models, all
+    bench_*() self-checks score=1.0, 30 unit tests green.
+  - entropy_pooling.py (Meucci min-relative-entropy views —
+    dual exponential tilting via BFGS on log-partition,
+    effective_n reporting), narrative_svar.py (Antolin-Diaz
+    & Rubio-Ramirez event-level sign + dominance
+    restrictions over RWZ rotation draws, honest admissible
+    set not point estimate), bfast.py (Verbesselt seasonal+
+    trend break detection — Chow-F scan, BIC second break,
+    honest n_breaks_capped flag), stable_dist.py (Nolan S(0)
+    alpha-stable: McCulloch quantile init + Kogon-Williams
+    CF regression on weighted frequency grid), asian_option.py
+    (Kemna-Vorst geometric closed form + Turnbull-Wakeman
+    moment matching + geometric-CV arithmetic MC, 99%+
+    variance reduction), black_litterman.py (reverse-
+    optimized equilibrium + He-Litterman posterior with
+    Idzorek omega, exact no-view collapse).
+  - benches_w62.py: +360..365 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "entropy_pooling","narrative_svar","bfast",
+    "stable_dist","asian_option","black_litterman"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w62.
+  - Canon staged on top of w61-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711 land.
+note: canon PR to follow.

@@ -757,6 +757,25 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "chen_tiao_outliers",
         "beta_ar",
         "ingarch",
+        # wave 62 — Meucci entropy pooling (min relative
+        # entropy posterior under scenario views, dual-
+        # exponential tilting), Antolin-Diaz & Rubio-Ramirez
+        # narrative SVAR (event-level sign + dominance
+        # restrictions over rotation draws), Verbesselt BFAST
+        # seasonal+trend break detection (Chow-F scan + BIC
+        # second break), Nolan alpha-stable fit (McCulloch
+        # quantile init + Kogon-Williams CF regression),
+        # Kemna-Vorst geometric Asian closed form +
+        # Turnbull-Wakeman moment match + geometric-CV
+        # arithmetic MC, Black-Litterman reverse-optimized
+        # equilibrium + Idzorek view posterior. Same
+        # SYNTHETIC diagnostic contract.
+        "entropy_pooling",
+        "narrative_svar",
+        "bfast",
+        "stable_dist",
+        "asian_option",
+        "black_litterman",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

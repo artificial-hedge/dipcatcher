@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 430,
+      "n_modules": 436,
       "status": "audited"
     },
     "monitoring": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 206,
+      "n_modules": 207,
       "status": "audited"
     },
     "risk": {
