@@ -340,7 +340,10 @@ def receipt_graph(
             doc = json.loads(path.read_bytes())
             if not isinstance(doc, Mapping):
                 raise ValueError("receipt root is not an object")
-        except Exception as exc:  # noqa: BLE001 — recorded, never skipped
+        except (OSError, ValueError) as exc:
+            # Narrowed from `except Exception` (quality ratchet): read_bytes
+            # faults are OSError; non-object roots are the ValueError raised
+            # above. Recorded, never skipped.
             errors.append({"file": path.name, "error": f"{type(exc).__name__}: {exc}"})
             entry["kind"] = None
             entry["receipt_sha256"] = None
