@@ -722,6 +722,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wavelet_coherence",
         "tar_coint",
         "extreme_qr",
+        # wave 60 — Shumway-Stoffer EM state-space estimation
+        # (RTS smoother + closed-form M-step, lag-1 covariance
+        # recursion), Geweke-Porter-Hudak residual memory test
+        # + Marinucci-Robinson fractional cointegration, Teras-
+        # vira LSTAR/ESTAR grid-NLS with Luukkonen-Saikkonen-
+        # Terasvirta LM3 linearity test, Engle-Lilien-Robins
+        # GARCH-in-mean joint QMLE (risk premium in the mean),
+        # Bauwens-Giot logarithmic ACD (Weibull/lognormal
+        # innovations, unconstrained positivity), Wigner-Ville
+        # and pseudo-WVD analytic-signal time-frequency
+        # distribution. Same SYNTHETIC diagnostic contract.
+        "kalman_em",
+        "fractional_coint",
+        "star_model",
+        "garch_in_mean",
+        "log_acd",
+        "wigner_ville",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

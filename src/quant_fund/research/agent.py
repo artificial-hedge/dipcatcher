@@ -469,6 +469,14 @@ from quant_fund.research.benches_w59 import (
     bench_tar_coint,
     bench_wavelet_coherence,
 )
+from quant_fund.research.benches_w60 import (
+    bench_fractional_coint,
+    bench_garch_in_mean,
+    bench_kalman_em,
+    bench_log_acd,
+    bench_star_model,
+    bench_wigner_ville,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2374,6 +2382,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "wavelet_coherence": bench_wavelet_coherence(),
         "tar_coint": bench_tar_coint(),
         "extreme_qr": bench_extreme_qr(),
+        "kalman_em": bench_kalman_em(),
+        "fractional_coint": bench_fractional_coint(),
+        "star_model": bench_star_model(),
+        "garch_in_mean": bench_garch_in_mean(),
+        "log_acd": bench_log_acd(),
+        "wigner_ville": bench_wigner_ville(),
     }
 
     hyps = _build_hypotheses(families, rankers)
