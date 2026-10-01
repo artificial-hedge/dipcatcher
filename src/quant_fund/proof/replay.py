@@ -32,19 +32,19 @@ from __future__ import annotations
 
 import json
 import platform
-import shutil
-import subprocess
 import tempfile
 from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
+import polars as pl
 from pydantic import ValidationError
 
 from quant_fund.proofcore.contracts import (
     DecisionTrace,
     Divergence,
     ProofBundleV1,
+    ProofcoreError,
     ProofError,
     ReplayVerdict,
     RunSpec,
@@ -109,7 +109,8 @@ def expected_seeds_sidecar(spec: RunSpec) -> dict[str, Any]:
 
 # ---------------------------------------------------------------------------
 # Current-environment probes (private; tests monkeypatch these, not the gate).
-# The formulas mirror proof.runner (W6), which wrote the stored fingerprints.
+# Integration reconciliation: runner and replay share the SAME canonical
+# helpers in proofcore.ci (env_fingerprint §2.2, code_fingerprint §7.2).
 # ---------------------------------------------------------------------------
 
 
@@ -119,45 +120,30 @@ def _current_python_tag() -> str:
 
 
 def _current_env_fingerprint() -> str:
-    """``platform|python tag|quant_fund-dev`` — mirrors proof.runner (W6)."""
+    """COMPAT SHIM (expires wave 3): the W6 development-time literal
+    ``platform|python tag|quant_fund-dev``, accepted so bundles minted before
+    the §2.2 reconciliation still replay. New bundles mint the canonical
+    ``_current_env_fingerprint_contracts`` form; remove this accept-arm once
+    no dev-minted bundles remain in scope (track: wave-3 cleanup)."""
     return f"{platform.platform()}|{platform.python_version()}|quant_fund-dev"
 
 
 def _current_env_fingerprint_contracts() -> str:
-    """Contracts-style variant (§2.2): real ``quant_fund.__version__`` or dev.
+    """Canonical §2.2 variant via ``proofcore.ci.env_fingerprint`` — exactly
+    what the reconciled runner mints (integration amendment, single source)."""
+    from quant_fund.proofcore import ci
 
-    Read from the installed ``fx-1`` distribution metadata rather than
-    importing ``quant_fund`` — keeps ``proof/`` layering-clean (the package
-    dist name is ``fx-1``; its version is the canonical semver)."""
-    version = "dev"
-    try:
-        version = importlib_metadata.version("fx-1") or "dev"
-    except importlib_metadata.PackageNotFoundError:
-        version = "dev"
-    return f"{platform.platform()}|{platform.python_version()}|{version}"
+    return ci.env_fingerprint()
 
 
 def _current_code_fingerprint() -> str:
-    """Git revision of the working tree, else ``"nogit"`` (mirrors W6; the
-    src-tree hash fallback is W8 §7.2, integration wave)."""
-    git = shutil.which("git")
-    if git is None:
-        return "nogit"
-    try:
-        proc = subprocess.run(
-            [git, "rev-parse", "HEAD"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            cwd=Path(__file__).resolve().parent,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return "nogit"
-    revision = proc.stdout.strip()
-    if proc.returncode != 0 or not revision:
-        return "nogit"
-    return revision
+    """Git revision in a worktree, else the W8 §7.2 src-tree hash fallback —
+    via ``proofcore.ci.code_fingerprint`` so runner and replay agree (the
+    pre-integration ``"nogit"`` fallback here would have diverged from the
+    runner's minted fingerprint on nogit machines)."""
+    from quant_fund.proofcore import ci
+
+    return ci.code_fingerprint()
 
 
 def _current_package_pins() -> dict[str, str]:
@@ -297,7 +283,19 @@ def _default_executor(spec: RunSpec, vault: Any, tmp_bundle_dir: Path) -> Decisi
         ok, result = run_proven(spec, vault=vault, bundle_dir=tmp_bundle_dir)
     except ReplayUnavailable:
         raise
-    except Exception as exc:  # runner fails closed by raising (§4.4)
+    except (
+        ProofcoreError,
+        OSError,
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
+        RuntimeError,
+        pl.exceptions.PolarsError,
+    ) as exc:
+        # Narrowed from `except Exception` (quality ratchet): runner faults are
+        # ProofError plus the IO/numeric/validation/polars failures of mint+backtest;
+        # exotic errors propagate. Runner fails closed by raising (§4.4).
         raise ReplayUnavailable(str(exc)) from exc
     if not ok:
         raise ReplayUnavailable(str(result))
@@ -447,7 +445,20 @@ def replay_bundle(
             return False, f"runner_unavailable:{exc}"
         except ProofError as exc:
             return False, f"replay_reexecute_failed:{exc}"
-        except Exception as exc:
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+            AttributeError,
+            RuntimeError,
+            ArithmeticError,
+            pl.exceptions.PolarsError,
+        ) as exc:
+            # Narrowed from `except Exception` (quality ratchet): executor faults are
+            # the IO/numeric/validation/polars failures of the re-run stack; exotic
+            # errors propagate. Any enumerated failure still yields a failed verdict.
             return False, f"replay_reexecute_error:{exc.__class__.__name__}"
         try:
             fresh_trace = DecisionTrace.model_validate(fresh)
