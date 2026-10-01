@@ -480,6 +480,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "distribution_regression",
         "simex",
         "lp_did",
+        # SOTA canon wave 38 batteries (see research/benches_w38.py):
+        # control-function endogeneity correction (two-stage CF +
+        # Durbin-Wu-Hausman), kernel regression (Nadaraya-Watson +
+        # local-linear derivatives, LOO-CV bandwidth), censored
+        # quantile regression (Powell CLAD via Chernozhukov-Hong
+        # three-step), SETAR threshold autoregression (CLS threshold
+        # + sup-F linearity), Papke-Wooldridge fractional response
+        # (quasi-MLE logit for [0,1] outcomes), Turnbull interval-
+        # censored NPMLE (self-consistency EM). Same SYNTHETIC
+        # diagnostic contract.
+        "control_function",
+        "kernel_regression",
+        "censored_quantile",
+        "threshold_ar",
+        "fractional_response",
+        "interval_censoring",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

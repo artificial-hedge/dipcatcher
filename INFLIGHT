@@ -1140,3 +1140,12 @@ wave 37 — 6 model lanes + integration
   naive .60 at reliability .6, extrapolation r2 1.0) + lp_did
   (ramp tracked .30/.77/1.14 vs .4/.8/1.2, z=20, null .11)
   → PR stacked on w36 (193→199 families)
+wave 38 canon (devin/w38-canon-integration): control_function
+  (CF beta .977 vs OLS 1.32 under rho=.6, DWH p~0) +
+  kernel_regression (local-linear rmse .085, deriv corr .998,
+  LOO-CV bw) + censored_quantile (CH 3-step .973 vs naive .89,
+  censor share .115) + threshold_ar (SETAR c .499/.5, phi gap
+  .55, sup-F p .016) + fractional_response (QMLE 1.379 vs 1.4,
+  in-bounds 1.0 vs OLS .95) + interval_censoring (Turnbull med
+  1.296 vs true 1.386, naive 1.2, ISE 2e-4)
+  → PR stacked on w37 (199→205 families)
