@@ -149,4 +149,75 @@ def test_bench_smoke() -> None:
     assert r["claims"]["poisson_stream_is_memoryless"]
     assert len(r["receipt_sha256"]) == 64
     names = {a["name"] for a in r["arms"]}
-    assert names == {"poisson", "hawkes_self", "hawkes_cross"}
+    assert names == {"poisson", "hawkes_self", "hawkes_cross", "hawkes_powerlaw"}
+
+
+class TestMultiTimescale:
+    def test_rejects_mismatched_banks(self) -> None:
+        with pytest.raises(ValueError, match="non-empty length"):
+            HawkesClockSpec(_ZERO, 1.0, rates=(4.0, 1.0), bank_weights=(1.0,))
+
+    def test_rejects_weights_not_summing_to_one(self) -> None:
+        with pytest.raises(ValueError, match="sum to 1"):
+            HawkesClockSpec(_ZERO, 1.0, rates=(4.0, 1.0), bank_weights=(0.9, 0.9))
+
+    def test_rejects_nonpositive_rate(self) -> None:
+        with pytest.raises(ValueError, match="rates"):
+            HawkesClockSpec(_ZERO, 1.0, rates=(4.0, 0.0), bank_weights=(0.5, 0.5))
+
+    def test_rejects_negative_weight(self) -> None:
+        with pytest.raises(ValueError, match="bank_weights"):
+            HawkesClockSpec(_ZERO, 1.0, rates=(4.0, 1.0), bank_weights=(1.5, -0.5))
+
+    def test_subcritical_uses_effective_h(self) -> None:
+        # kernel/beta alone is sub-critical (rho = 0.5), but with most
+        # weight on the slow bank H blows past it -> must still raise.
+        k = ((2.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+        with pytest.raises(ValueError, match="sub-critical"):
+            HawkesClockSpec(k, 4.0, rates=(100.0, 0.05), bank_weights=(0.05, 0.95))
+
+    def test_branching_matrix_scales_by_h(self) -> None:
+        rates = (4.0, 1.0)
+        weights = (0.5, 0.5)
+        h = sum(w / r for w, r in zip(weights, rates, strict=True))
+        spec = HawkesClockSpec(
+            ((h, 0, 0), (0, 0, 0), (0, 0, 0)),  # jump alpha = h
+            4.0,
+            rates=rates,
+            bank_weights=weights,
+        )
+        b = np.asarray(spec.branching_matrix())
+        assert b.shape == (3, 3)
+        assert b[0, 0] == pytest.approx(h * h)  # alpha * H
+        # Single-rate: branching ratio reduces to alpha / beta.
+        spec2 = HawkesClockSpec(((2.0, 0, 0), (0, 0, 0), (0, 0, 0)), 4.0)
+        assert spec2.branching_matrix()[0][0] == pytest.approx(0.5)
+
+    def test_zero_kernel_multi_bank_is_poisson_identical(self) -> None:
+        spec = HawkesClockSpec(_ZERO, BETA, rates=(16.0, 4.0, 1.0), bank_weights=(0.5, 0.25, 0.25))
+        ev_pl = _events(ZILobSimulator(_with_hawkes(spec, seed=11)), 200.0)
+        ev_p = _events(ZILobSimulator(santa_fe_config(seed=11)), 200.0)
+        assert ev_pl == ev_p
+
+    def test_multi_bank_determinism(self) -> None:
+        spec = HawkesClockSpec(
+            ((1.0, 0.0, 0.0), (0.0, 2.0, 0.0), (0.0, 0.0, 1.0)),
+            BETA,
+            rates=(16.0, 4.0, 1.0),
+            bank_weights=(0.5, 0.3, 0.2),
+        )
+        a = _events(ZILobSimulator(_with_hawkes(spec, seed=3)), 300.0)
+        b = _events(ZILobSimulator(_with_hawkes(spec, seed=3)), 300.0)
+        assert a == b
+
+    def test_multi_bank_excites(self) -> None:
+        spec = HawkesClockSpec(
+            # eta = alpha * H = 8 * (0.7/16 + 0.3/4) = 0.95 (sub-critical).
+            ((0.0, 0.0, 0.0), (0.0, 8.0, 0.0), (0.0, 0.0, 0.0)),
+            BETA,
+            rates=(16.0, 4.0),
+            bank_weights=(0.7, 0.3),
+        )
+        n_pl = len(_events(ZILobSimulator(_with_hawkes(spec, seed=5)), 200.0))
+        n_p = len(_events(ZILobSimulator(santa_fe_config(seed=5)), 200.0))
+        assert n_pl > n_p * 1.2
