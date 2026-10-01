@@ -67,6 +67,8 @@ from quant_fund.cli.research_cmds import (
     graph_cmd,
     online_fdr_cmd,
     replay_cmd,
+    tape_pin_cmd,
+    tape_verify_cmd,
 )
 from quant_fund.cli.book_cmds import (
     session_book_cmd,
@@ -197,6 +199,8 @@ __all__ = [
     "graph_cmd",
     "online_fdr_cmd",
     "replay_cmd",
+    "tape_pin_cmd",
+    "tape_verify_cmd",
     "session_book_cmd",
     "vendor_book_map_cmd",
     "book_panel_cmd",
