@@ -588,6 +588,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ross_recovery",
         "ait_sahalia",
         "toda_yamamoto",
+        # wave 55 — Diebold-Mariano + Harvey-Leybourne-Newbold
+        # predictive-accuracy test, Engle-Granger/Phillips-Ouliaris
+        # residual cointegration + ECM adjustment speed, Glosten-
+        # Milgrom sequential-trade learning with martingale-price
+        # diagnostics, Hasbrouck information share bounds +
+        # Gonzalo-Granger permanent weights, BDS correlation-
+        # integral independence test, Cochrane-Piazzesi tent-shaped
+        # return-forecasting bond factor, Engle-Ng sign/size-bias
+        # asymmetry diagnostics. Same SYNTHETIC diagnostic contract.
+        "diebold_mariano",
+        "engle_granger",
+        "glosten_milgrom",
+        "hasbrouck_is",
+        "bds",
+        "cochrane_piazzesi",
+        "engle_ng",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
