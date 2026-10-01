@@ -404,6 +404,14 @@ from quant_fund.research.benches_w51 import (
     bench_ross_recovery,
     bench_toda_yamamoto,
 )
+from quant_fund.research.benches_w52 import (
+    bench_bandi_russell,
+    bench_beveridge_nelson,
+    bench_growth_at_risk,
+    bench_hong_li,
+    bench_melick_thomas,
+    bench_nardl,
+)
 from quant_fund.research.benches_w55 import (
     bench_bds,
     bench_cochrane_piazzesi,
@@ -2276,6 +2284,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "bds": bench_bds(),
         "cochrane_piazzesi": bench_cochrane_piazzesi(),
         "engle_ng": bench_engle_ng(),
+        "nardl": bench_nardl(),
+        "growth_at_risk": bench_growth_at_risk(),
+        "melick_thomas": bench_melick_thomas(),
+        "bandi_russell": bench_bandi_russell(),
+        "hong_li": bench_hong_li(),
+        "beveridge_nelson": bench_beveridge_nelson(),
     }
 
     hyps = _build_hypotheses(families, rankers)

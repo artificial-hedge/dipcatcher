@@ -604,6 +604,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bds",
         "cochrane_piazzesi",
         "engle_ng",
+        # wave 52 — Shin-Yu-Greenwood-Nimmo nonlinear ARDL
+        # (asymmetric long/short-run multipliers, bounds-F),
+        # Adrian-Boyarchenko-Giannone growth-at-risk (Koenker-
+        # Bassett LP quantiles + isotonic crossing fix), Melick-
+        # Thomas mixture implied-PDF recovery (martingale-pinned
+        # least squares), Bandi-Russell noise/volatility
+        # separation (optimal sparse sampling), Hong-Li PIT
+        # density-forecast M-statistic, Beveridge-Nelson
+        # permanent/transitory decomposition. Same SYNTHETIC
+        # diagnostic contract.
+        "nardl",
+        "growth_at_risk",
+        "melick_thomas",
+        "bandi_russell",
+        "hong_li",
+        "beveridge_nelson",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
