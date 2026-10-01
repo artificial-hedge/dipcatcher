@@ -357,6 +357,17 @@ class ZILobConfig:
     # re-occupied within 400 on AMZN). 0 = disabled (bit-identical: no
     # extra RNG draws or bookkeeping).
     refill_cooldown: int = 0
+    # ``lo_tilt_gain`` >= 0: post-fill LO side bias (accommodation) — each
+    # fill adds its aggressor sign times this gain to a tilt state in
+    # [-1, 1], and the LO side draw becomes P(buy) = (1 + tilt) / 2. On
+    # the tape the book leans *into* the flow direction for ~100 events
+    # after a fill (depth_tilt.v1: signed tilt +0.16 -> +0.07); flat
+    # flow cannot express that. ``lo_tilt_decay`` in [0, 1] is the
+    # per-event geometric decay of the tilt state. gain == 0 disables
+    # the mechanism bit-identically (tilt pinned at 0; the side draw
+    # consumes the same RNG).
+    lo_tilt_gain: float = 0.0
+    lo_tilt_decay: float = 0.0
     seed: int = 0
     # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
     # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
@@ -460,6 +471,10 @@ class ZILobConfig:
             raise ValueError(
                 f"refill_cooldown must be a non-negative int, got {self.refill_cooldown!r}"
             )
+        _nonneg_finite(self.lo_tilt_gain, "lo_tilt_gain")
+        d = self.lo_tilt_decay
+        if isinstance(d, bool) or not math.isfinite(d) or d < 0.0 or d > 1.0:
+            raise ValueError(f"lo_tilt_decay must be in [0, 1], got {d!r}")
         if self.anchor not in ("touch", "ref"):
             raise ValueError(f"anchor must be 'touch' or 'ref', got {self.anchor!r}")
         if isinstance(self.band, bool) or int(self.band) < 1:
@@ -993,6 +1008,8 @@ class ZILobSimulator:
         # Vacancy memory: (side, level) -> event index the level emptied.
         # Populated only when ``refill_cooldown`` > 0.
         self._vacancy: dict[tuple[str, int], int] = {}
+        # Post-fill accommodation state; pinned at 0 when lo_tilt_gain == 0.
+        self._tilt = 0.0
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1309,6 +1326,10 @@ class ZILobSimulator:
         gain = self._cfg.ref_fill_gain
         if gain > 0.0:
             self._ref_ema += (1.0 if aggressor == "buy" else -1.0) * gain
+        tg = self._cfg.lo_tilt_gain
+        if tg > 0.0:
+            sign = 1.0 if aggressor == "buy" else -1.0
+            self._tilt = max(-1.0, min(1.0, self._tilt + sign * tg))
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
@@ -1364,7 +1385,7 @@ class ZILobSimulator:
         if dist > band:
             dist = band
         ba, bb = self.best_ask_level, self.best_bid_level
-        want_buy = u < bid_rate
+        want_buy = u < bid_rate * (1.0 + self._tilt) if self._tilt != 0.0 else u < bid_rate
         if self._cfg.anchor == "ref":
             # Absolute-space anchoring: LOs deposit around a slow reference level
             # so cumulative liquidity grows with distance from the reference and
@@ -1541,6 +1562,8 @@ class ZILobSimulator:
             kind = 0 if u < lo_rate else (1 if u < lo_rate + mo_rate else 2)
         self._t += dt
         self.n_events += 1
+        if self._cfg.lo_tilt_decay > 0.0:
+            self._tilt *= 1.0 - self._cfg.lo_tilt_decay
         bb, ba = self.best_bid_level, self.best_ask_level
         if bb is not None and ba is not None:
             mid_level = 0.5 * (bb + ba)

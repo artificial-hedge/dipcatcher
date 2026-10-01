@@ -174,6 +174,20 @@ def depth_tilt_bench(
             _split(seed + 2),
             horizon,
         ),
+        "lv_cd300_tilt": sim_tilt_path(
+            replace(
+                santa_fe_config(seed=seed + 3),
+                anchor="ref",
+                density_exponent=1.0,
+                band=40,
+                ref_fill_gain=0.3,
+                refill_cooldown=300,
+                lo_tilt_gain=0.2,
+                lo_tilt_decay=0.02,
+            ),
+            _split(seed + 3),
+            horizon,
+        ),
     }
     divergences: list[str] = []
     if real.get("ok") and real["tilt_path"].get("20") is not None:
@@ -192,6 +206,13 @@ def depth_tilt_bench(
             arms["lv_cd300"].get("ok")
             and arms["lv_cd300"]["tilt_path"].get("20") is not None
             and float(arms["lv_cd300"]["tilt_path"]["20"]) < -0.05
+        ),
+        "tilt_knob_helps": bool(
+            arms["lv_cd300_tilt"].get("ok")
+            and arms["lv_cd300_tilt"]["tilt_path"].get("50") is not None
+            and arms["lv_cd300"]["tilt_path"].get("50") is not None
+            and float(arms["lv_cd300_tilt"]["tilt_path"]["50"])
+            > float(arms["lv_cd300"]["tilt_path"]["50"]) + 0.05
         ),
         "no_arm_matches_tilt": bool(
             real.get("ok")
@@ -221,9 +242,13 @@ def depth_tilt_bench(
             "flat, metaorder splitting tilts weakly positive, and the "
             "vacancy-cooldown arm tilts strongly negative — suppressing "
             "refill on emptied levels deepens the hole instead of leaning "
-            "into it. No arm reproduces the accommodation: the missing "
-            "mechanism is directional LO placement biased toward the unhit "
-            "side, distinct from both vacancy memory and MO persistence."
+            "into it. No arm reproduces the accommodation: the "
+            "lo_tilt_gain side-bias arm tilts in the right direction at "
+            "long lags but stays attenuated and dips negative at short "
+            "lags (the emptied touch dominates first). The residual "
+            "channel is directional LO placement biased toward the unhit "
+            "side at *near-touch* distances — a placement-class response, "
+            "not a rate response."
         ),
         "git_revision": git_revision(),
         "data_label": "MIXED",

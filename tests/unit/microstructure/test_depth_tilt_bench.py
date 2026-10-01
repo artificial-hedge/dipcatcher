@@ -56,7 +56,7 @@ def test_bench_seals_and_verifies(tmp_path: Path) -> None:
     msg, ob = _write_tape(tmp_path, n=60)
     payload = depth_tilt_bench(tmp_path, "AMZN", horizon=400, seed=3)
     assert payload["schema"] == "depth_tilt.v1"
-    assert set(payload["sim_arms"]) == {"iid", "split", "lv_cd300"}
+    assert set(payload["sim_arms"]) == {"iid", "split", "lv_cd300", "lv_cd300_tilt"}
     receipt = tmp_path / "receipt.json"
     receipt.write_text(__import__("json").dumps(payload))
     result = verify_receipt_file(receipt)
@@ -66,3 +66,34 @@ def test_bench_seals_and_verifies(tmp_path: Path) -> None:
 def test_missing_tape_fails_closed(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError):
         depth_tilt_bench(tmp_path, "AMZN", horizon=60, seed=1)
+
+
+def test_lo_tilt_validation_and_response() -> None:
+    from dataclasses import replace
+
+    from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator, santa_fe_config
+
+    with pytest.raises(ValueError, match="lo_tilt_decay"):
+        replace(santa_fe_config(), lo_tilt_decay=1.5)
+    with pytest.raises(ValueError, match="lo_tilt_gain"):
+        replace(santa_fe_config(), lo_tilt_gain=-0.1)
+
+    sim = ZILobSimulator(replace(santa_fe_config(seed=5), lo_tilt_gain=0.5, lo_tilt_decay=0.0))
+    for _ in range(3000):
+        sim.step()
+    assert sim._tilt != 0.0 or not sim.trades
+
+
+def test_lo_tilt_zero_is_bit_identical() -> None:
+    from dataclasses import replace
+
+    from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator, santa_fe_config
+
+    a = ZILobSimulator(santa_fe_config(seed=13))
+    b = ZILobSimulator(replace(santa_fe_config(seed=13), lo_tilt_gain=0.0))
+    for _ in range(1500):
+        a.step()
+        b.step()
+    assert [(t.price, t.level, t.aggressor) for t in a.trades] == [
+        (t.price, t.level, t.aggressor) for t in b.trades
+    ]

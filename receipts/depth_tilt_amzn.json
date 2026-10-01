@@ -96,21 +96,46 @@
         "100": -0.18615401115401115
       },
       "tilt_base": 0.007446904761904761
+    },
+    "lv_cd300_tilt": {
+      "ok": true,
+      "n_fills": 1282,
+      "horizons": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50,
+        100
+      ],
+      "tilt_path": {
+        "1": -0.11574705221114061,
+        "2": -0.11894366823276777,
+        "5": -0.12321744869138235,
+        "10": -0.12386603375527426,
+        "20": -0.11632958336779992,
+        "50": -0.11339128335144272,
+        "100": -0.09320803633750416
+      },
+      "tilt_base": 0.00893879741825456
     }
   },
   "divergences": [
     "iid:tilt20_-0.005807721677329329_vs_0.1066309409605273",
     "split:tilt20_0.023906012931945882_vs_0.1066309409605273",
-    "lv_cd300:tilt20_-0.16761567038162783_vs_0.1066309409605273"
+    "lv_cd300:tilt20_-0.16761567038162783_vs_0.1066309409605273",
+    "lv_cd300_tilt:tilt20_-0.11632958336779992_vs_0.1066309409605273"
   ],
   "claims": {
     "tape_accommodates": true,
     "cooldown_digs_hole": true,
+    "tilt_knob_helps": true,
     "no_arm_matches_tilt": true
   },
-  "interpretation": "Post-fill touch-depth tilt is the placement-side channel of continuation. The tape accommodates: after a buy fill the bid side stays heavier than the ask for ~100 events. iid flow is flat, metaorder splitting tilts weakly positive, and the vacancy-cooldown arm tilts strongly negative \u2014 suppressing refill on emptied levels deepens the hole instead of leaning into it. No arm reproduces the accommodation: the missing mechanism is directional LO placement biased toward the unhit side, distinct from both vacancy memory and MO persistence.",
-  "git_revision": "0a6478de79cb3aa8b5b28d0102b638a1c6e587eb",
+  "interpretation": "Post-fill touch-depth tilt is the placement-side channel of continuation. The tape accommodates: after a buy fill the bid side stays heavier than the ask for ~100 events. iid flow is flat, metaorder splitting tilts weakly positive, and the vacancy-cooldown arm tilts strongly negative \u2014 suppressing refill on emptied levels deepens the hole instead of leaning into it. No arm reproduces the accommodation: the lo_tilt_gain side-bias arm tilts in the right direction at long lags but stays attenuated and dips negative at short lags (the emptied touch dominates first). The residual channel is directional LO placement biased toward the unhit side at *near-touch* distances \u2014 a placement-class response, not a rate response.",
+  "git_revision": "6f910466f8151e8e3aab766b495cabf80231eb22",
   "data_label": "MIXED",
   "research_only": true,
-  "receipt_sha256": "36f3df7ad410a8d904181c4786d4c3ffff55006513941556e78c33f5e9c5f0cc"
+  "receipt_sha256": "1024bb0a267cc261dc029160775e2b4f9575bb6772c96bea8242eb57817e5f95"
 }
