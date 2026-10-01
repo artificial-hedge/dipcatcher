@@ -459,6 +459,7 @@ _MEASUREMENT_SCHEMAS = (
     "sign_autocorr_real.v1",
     "sign_predict.v1",
     "sim_real_ledger.v1",
+    "shield_decay.v1",
     "split_flow.v1",
     "spread_dynamics.v1",
     "spread_floor.v1",

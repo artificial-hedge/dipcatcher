@@ -474,6 +474,14 @@ class ZILobConfig:
     # damping removes it. Marker shared with the relief/narrow channels;
     # 0 keeps every path bit-identical.
     cxl_unhit_damp: float = 0.0
+    # ``cxl_unhit_damp_decay`` > 0: the suppression probability decays
+    # exponentially with events-since-fill, ``damp * exp(-elapsed/decay)``.
+    # The tape's unhit-side protection is heavy in the first ~10 events and
+    # gone by ~50 (unhit cxl/add 0.61 -> 0.90 -> 0.93 across the bench
+    # windows), so a flat window over-shields late. 0 keeps the flat kernel
+    # bit-identical; the marker's fill time is already carried in
+    # ``_hit_retreat``.
+    cxl_unhit_damp_decay: float = 0.0
     cxl_unhit_window: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
@@ -554,6 +562,10 @@ class ZILobConfig:
         _prob(self.cxl_requote, "cxl_requote")
         _prob(self.cxl_unhit_relief, "cxl_unhit_relief")
         _prob(self.cxl_unhit_damp, "cxl_unhit_damp")
+        if isinstance(self.cxl_unhit_damp_decay, bool) or self.cxl_unhit_damp_decay < 0.0:
+            raise ValueError(
+                f"cxl_unhit_damp_decay must be >= 0, got {self.cxl_unhit_damp_decay!r}"
+            )
         if isinstance(self.cxl_unhit_window, bool) or int(self.cxl_unhit_window) < 0:
             raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
@@ -1084,7 +1096,9 @@ class ZILobSimulator:
         self._tilt = 0.0
         # Post-fill marker: (hit_side, narrow_deadline, relief_deadline)
         # of the last fill; a deadline of n_events means that channel off.
-        self._hit_retreat: tuple[str, int, int] | None = None
+        # (hit_side, narrow_until, relief_until, fill_event) — the fill's
+        # n_events lets damp_decay compute elapsed time.
+        self._hit_retreat: tuple[str, int, int, int] | None = None
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1414,7 +1428,12 @@ class ZILobSimulator:
         if nw or rw:
             # Hit side = the side the aggressor consumed (resting side).
             hit = "sell" if aggressor == "buy" else "buy"
-            self._hit_retreat = (hit, self.n_events + nw, self.n_events + rw)
+            self._hit_retreat = (
+                hit,
+                self.n_events + nw,
+                self.n_events + rw,
+                self.n_events,
+            )
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
@@ -1474,7 +1493,7 @@ class ZILobSimulator:
         # Post-fill narrowing: while the marker is live, placements on the
         # unhit side clamp to near-touch distance (accommodation channel).
         if self._hit_retreat is not None:
-            hit_side, n_until, r_until = self._hit_retreat
+            hit_side, n_until, r_until, _fill_ev = self._hit_retreat
             if self.n_events >= max(n_until, r_until):
                 self._hit_retreat = None
             elif self.n_events < n_until and (
@@ -1590,7 +1609,7 @@ class ZILobSimulator:
             return
         relief = self._cfg.cxl_unhit_relief
         if relief > 0.0 and self._hit_retreat is not None:
-            hit_side, _n_until, r_until = self._hit_retreat
+            hit_side, _n_until, r_until, _fill_ev = self._hit_retreat
             if self.n_events >= r_until:
                 pass  # marker stays for hit_narrow; relief expired
             elif float(self._rng.random()) < relief:
@@ -1678,14 +1697,13 @@ class ZILobSimulator:
             book, idx = self._asks, k - bid_d
         damp = self._cfg.cxl_unhit_damp
         if damp > 0.0 and self._hit_retreat is not None:
-            hit_side, _n_u, r_until = self._hit_retreat
+            hit_side, _n_u, r_until, fill_ev = self._hit_retreat
             unhit_book = self._bids if hit_side == "sell" else self._asks
-            if (
-                self.n_events < r_until
-                and book is unhit_book
-                and (float(self._rng.random()) < damp)
-            ):
-                return  # protected: the unhit-side order survives
+            if self.n_events < r_until and book is unhit_book:
+                decay = self._cfg.cxl_unhit_damp_decay
+                eff = damp * math.exp(-(self.n_events - fill_ev) / decay) if decay > 0.0 else damp
+                if float(self._rng.random()) < eff:
+                    return  # protected: the unhit-side order survives
         level = None
         for lvl in sorted(book):
             n = len(book[lvl])

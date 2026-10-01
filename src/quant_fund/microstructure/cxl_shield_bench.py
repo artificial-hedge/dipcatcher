@@ -65,6 +65,7 @@ def _shield_cell(
     *,
     horizon: int,
     seed: int,
+    damp_decay: float = 0.0,
 ) -> dict[str, Any]:
     """One (relief, damp, window) cell: flow channels + price kernel.
 
@@ -72,12 +73,15 @@ def _shield_cell(
     window (``aftermath_flow`` bookkeeping) and the signed mid-drift at
     lag 0 / +200 (``closure_fit`` bookkeeping) — so each cell's verdict
     pairs the channel it fixes with the price response it bends.
+    ``damp_decay`` > 0 replaces the flat suppression with the decayed
+    kernel ``damp * exp(-elapsed/damp_decay)``.
     """
     cfg = _calibrated(
         seed,
         {
             "cxl_unhit_relief": relief,
             "cxl_unhit_damp": damp,
+            "cxl_unhit_damp_decay": damp_decay,
             "cxl_unhit_window": window,
         },
     )
@@ -152,6 +156,7 @@ def _shield_cell(
     return {
         "relief": relief,
         "damp": damp,
+        "damp_decay": damp_decay,
         "window": window,
         "n_fills": len(fills),
         "unhit_cxl_per_add": u_cxl / max(1e-9, u_add),
