@@ -1842,3 +1842,28 @@ detail: |
   - Canon staged on top of w71-canon so the chain stays clean as
     the open stack lands.
 note: canon PR to follow.
+---
+owner: devin (wave 73 canon)
+slice: 6 model modules + benches_w73 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w73-lanes: mardia.py (Mardia b1p chi^2 + b2p z
+    omnibus MVN test; t(4) kurtosis rejected, MVN null held),
+    mantel.py (row/col-permutation distance correlation +
+    first-order partial), moran.py (Moran I + Geary c +
+    Getis-Ord G on weight matrices; ring-lattice sinusoid
+    rejected, iid held), friedman.py (Friedman Q + Kendall W
+    + Page L ordered-alternative; monotone effect rejected),
+    contingency.py (Fisher-Irwin exact, McNemar exact/chi^2,
+    CMH common-odds, phi + Cramér V), hoeffding.py
+    (Hoeffding D + permutation p; circular dependence
+    detected where rho~0).
+  - benches_w73.py: +426..431 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "mardia","mantel","moran","friedman",
+    "contingency","hoeffding" (392->398); agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w73.
+  - Canon staged on top of w72-canon so the chain stays clean as
+    the open stack lands.
+note: canon PR to follow.

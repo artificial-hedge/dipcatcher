@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1521,
+  "module_count": 1528,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10095,6 +10095,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w73",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches_w810",
       "src": "quant_fund.research.agent"
     },
@@ -12153,6 +12157,30 @@
     {
       "dst": "quant_fund.models.thin_plate",
       "src": "quant_fund.research.benches_w72"
+    },
+    {
+      "dst": "quant_fund.models.contingency",
+      "src": "quant_fund.research.benches_w73"
+    },
+    {
+      "dst": "quant_fund.models.friedman",
+      "src": "quant_fund.research.benches_w73"
+    },
+    {
+      "dst": "quant_fund.models.hoeffding",
+      "src": "quant_fund.research.benches_w73"
+    },
+    {
+      "dst": "quant_fund.models.mantel",
+      "src": "quant_fund.research.benches_w73"
+    },
+    {
+      "dst": "quant_fund.models.mardia",
+      "src": "quant_fund.research.benches_w73"
+    },
+    {
+      "dst": "quant_fund.models.moran",
+      "src": "quant_fund.research.benches_w73"
     },
     {
       "dst": "quant_fund.metrics.anytime_fdr",
@@ -15558,6 +15586,7 @@
     "quant_fund.models.conformal_transfer",
     "quant_fund.models.conley_se",
     "quant_fund.models.connectedness",
+    "quant_fund.models.contingency",
     "quant_fund.models.control_function",
     "quant_fund.models.convexity_adj",
     "quant_fund.models.copula",
@@ -15657,6 +15686,7 @@
     "quant_fund.models.fractional_ou",
     "quant_fund.models.fractional_response",
     "quant_fund.models.frailty",
+    "quant_fund.models.friedman",
     "quant_fund.models.fukasawa_iv",
     "quant_fund.models.functional",
     "quant_fund.models.functional_linear",
@@ -15697,6 +15727,7 @@
     "quant_fund.models.higham_corr",
     "quant_fund.models.hjm",
     "quant_fund.models.hmc",
+    "quant_fund.models.hoeffding",
     "quant_fund.models.honest_did",
     "quant_fund.models.hong_li",
     "quant_fund.models.hpd_conformal",
@@ -15762,7 +15793,9 @@
     "quant_fund.models.mala",
     "quant_fund.models.malliavin_greeks",
     "quant_fund.models.manova",
+    "quant_fund.models.mantel",
     "quant_fund.models.many_iv",
+    "quant_fund.models.mardia",
     "quant_fund.models.marginal_treatment",
     "quant_fund.models.market_making",
     "quant_fund.models.markov_switching",
@@ -15784,6 +15817,7 @@
     "quant_fund.models.moirai2",
     "quant_fund.models.moment_inequalities",
     "quant_fund.models.momentum",
+    "quant_fund.models.moran",
     "quant_fund.models.ms_var",
     "quant_fund.models.msgarch",
     "quant_fund.models.muller_watson",
@@ -16225,6 +16259,7 @@
     "quant_fund.research.benches_w70",
     "quant_fund.research.benches_w71",
     "quant_fund.research.benches_w72",
+    "quant_fund.research.benches_w73",
     "quant_fund.research.benches_w810",
     "quant_fund.research.calibration_eprocess",
     "quant_fund.research.calibration_eval",
@@ -18171,7 +18206,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 390,
+      "imports": 396,
       "src": "quant_fund.research"
     },
     {
@@ -18216,7 +18251,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 382,
+      "imports": 383,
       "src": "quant_fund.research"
     },
     {

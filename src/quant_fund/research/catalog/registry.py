@@ -992,6 +992,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "p_spline",
         "thin_plate",
         "james_stein",
+        # Wave-73 families — Mardia
+        # (1970) multivariate skew/kurtosis
+        # omnibus (n*b1p chi^2 + b2p z),
+        # Mantel (1967) distance-matrix
+        # correlation + partial form
+        # (row/col permutation), Moran
+        # (1950) I + Geary (1954) c +
+        # Getis-Ord (1992) G spatial
+        # autocorrelation, Friedman (1937)
+        # blocked ranks + Kendall W +
+        # Page (1963) ordered L, Fisher
+        # (1922) exact + McNemar (1947)
+        # + Cochran-Mantel-Haenszel (1959)
+        # contingency tables, and
+        # Hoeffding (1948) D non-monotone
+        # independence. Same SYNTHETIC
+        # diagnostic contract.
+        "mardia",
+        "mantel",
+        "moran",
+        "friedman",
+        "contingency",
+        "hoeffding",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

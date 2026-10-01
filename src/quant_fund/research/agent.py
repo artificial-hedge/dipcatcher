@@ -573,6 +573,14 @@ from quant_fund.research.benches_w72 import (
     bench_slice_sampling,
     bench_thin_plate,
 )
+from quant_fund.research.benches_w73 import (
+    bench_contingency,
+    bench_friedman,
+    bench_hoeffding,
+    bench_mantel,
+    bench_mardia,
+    bench_moran,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2556,6 +2564,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "p_spline": bench_p_spline(),
         "thin_plate": bench_thin_plate(),
         "james_stein": bench_james_stein(),
+        "mardia": bench_mardia(),
+        "mantel": bench_mantel(),
+        "moran": bench_moran(),
+        "friedman": bench_friedman(),
+        "contingency": bench_contingency(),
+        "hoeffding": bench_hoeffding(),
     }
 
     hyps = _build_hypotheses(families, rankers)
