@@ -151,6 +151,37 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "vintage_eval",
         "entropy_shapley",
         "fourier_pricing",
+        # SOTA canon wave 16 batteries (see research/benches_w16.py):
+        # loss-choice-vs-model-choice decomposition for volatility forecasts
+        # (validation level alignment and the loss-dominated -> model-dominated
+        # QLIKE-ratio flip), generalized hierarchical conformal prediction
+        # (GHCP), multi-source randomly localized conformal prediction
+        # (MS-RLCP), conformal prediction under an exponential-tilt joint shift
+        # (ExTRA-WCP / -WCP-T), target-alignment dilution accounting with
+        # cautious forecast selection, and (torch-gated) the C51 distributional
+        # RL market maker on the zero-intelligence LOB. Seeded SYNTHETIC
+        # streams; correctness diagnostics only, never promotion gates.
+        "vol_loss_decomposition",
+        "hierarchical_conformal",
+        "multisource_conformal",
+        "extra_tilt",
+        "forecast_selection",
+        "rl_market_maker",
+        # SOTA canon wave 17 batteries (see research/benches_w17.py):
+        # conformal risk-averse decision making with optimized-certainty-
+        # equivalent (OCE) risk control (high-probability CVaR certificates,
+        # the Hoeffding-margin ablation, the sqrt(n) radius law), e-PS
+        # sample-efficient multiple testing with adaptive data collection
+        # (simple-vs-simple specialization), (torch-gated) greek-neutral
+        # option portfolios — hedging as a training inductive bias (delta-
+        # exposure monotonicity + interior optimum), and (torch-gated) the
+        # DiffPTS full-ELBO diffusion forecaster vs the NGBoost Gaussian
+        # baseline (CRPS gain, coverage, PIT). Seeded SYNTHETIC streams;
+        # correctness diagnostics only, never promotion gates.
+        "conformal_oce",
+        "adaptive_eps",
+        "greek_neutral",
+        "diffusion_forecaster",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

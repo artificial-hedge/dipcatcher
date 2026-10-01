@@ -355,6 +355,7 @@ Each: pinned artifact + sha256, zero-shot, native output honored
       fail-closed refusal of unsupported workload classes, byte-identical
       property suite `tests/property/test_fast_replay_byte_identity.py`,
       scope/gap analysis `docs/FAST_REPLAY_P42.md`, receipt
+      `receipts/fast_replay_p42_conformance_20260928.json`.
       `receipts/legacy-unsealed/fast_replay_p42_conformance_20260927.json`.
 - [x] P4.3 If fast path can't reach ≤1× honestly, write the argument:
       per-order risk gates + fail-closed semantics are the product; vectorbt
@@ -417,6 +418,7 @@ waiver in the audit log. Output: [AUDIT_FRONTIER.md](AUDIT_FRONTIER.md) ledger.
       `calendars.py`.
 - [x] P6.4 Model layer: every file in `models/` audited line-by-line
       vs cited behavior; `pipeline/` causal gates verified.
+      Completion evidence: `quality/audit_coverage.json` marks
       Completion evidence: `quality/audit_coverage.json` +
       `quality/audit_coverage_fx1.json` mark
       `models/` and the named dirs `audited` under CI enforcement

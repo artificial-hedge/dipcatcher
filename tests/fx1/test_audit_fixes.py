@@ -188,6 +188,37 @@ def test_mrm_parses_contamination_report_key(tmp_path: Path):
     assert str(report) in validation.artifact_hashes
 
 
+def test_mrm_incomplete_dossier_cannot_certify_ship(tmp_path: Path):
+    """All five sections are built unconditionally — a validation-only
+    dossier must not report complete, and its ship stamp must be False."""
+    artifact = tmp_path / "eval.json"
+    artifact.write_text("{}", encoding="utf-8")
+    dossier = compile_dossier(
+        modelcard_path=_card(tmp_path),
+        artifacts={"validation": artifact},
+        out_path=tmp_path / "dossier.json",
+    )
+    assert dossier.complete is False
+    assert dossier.ship_eligible is False
+
+
+def test_mrm_complete_dossier_preserves_card_ship_eligible(tmp_path: Path):
+    artifacts = {
+        a: tmp_path / f"{a}.json"
+        for a in ("development", "implementation", "validation", "monitoring")
+    }
+    for p in artifacts.values():
+        p.write_text("{}", encoding="utf-8")
+    dossier = compile_dossier(
+        modelcard_path=_card(tmp_path),
+        artifacts=artifacts,
+        out_path=tmp_path / "dossier.json",
+    )
+    assert dossier.complete is True
+    # governance is evidenced by the signed card alone
+    assert dossier.ship_eligible is True
+
+
 # ---------------------------------------------------------------------------
 # attestation.py — a garbage quote file must not earn the TEE tier
 # ---------------------------------------------------------------------------
@@ -269,6 +300,10 @@ def test_trace_admission_refuses_contract_violation(tmp_path: Path):
         {"livePnlClaim": "true"},
         {"live-pnl-claim": True},
         {"results": {"live_pnl_claim": True}},
+        # Truthy-but-not-True values are claims too — fail-closed, not
+        # silently treated as clean.
+        {"livePnlClaim": 1},
+        {"live_pnl_claim": "yes"},
     ],
 )
 def test_ledger_live_claim_variants_become_negative(tmp_path: Path, payload: dict):
@@ -276,6 +311,39 @@ def test_ledger_live_claim_variants_become_negative(tmp_path: Path, payload: dic
     src.write_text(json.dumps(payload), encoding="utf-8")
     examples = ledger_examples(src, SYSTEM)
     assert len(examples) == 1 and examples[0].negative
+
+
+def test_ledger_falsy_claim_values_are_clean(tmp_path: Path):
+    # Explicit denials stay eligible as positive examples.
+    for value in (False, "false", 0, "0", "no", None):
+        src = tmp_path / "artifact.json"
+        src.write_text(json.dumps({"live_pnl_claim": value}), encoding="utf-8")
+        examples = ledger_examples(src, SYSTEM)
+        assert len(examples) == 1 and not examples[0].negative, value
+
+
+# ---------------------------------------------------------------------------
+# ledger.py — a failed append must not fork memory away from disk
+# ---------------------------------------------------------------------------
+def test_corpus_ledger_failed_write_does_not_fork_the_chain(tmp_path: Path):
+    from fx1.data.ledger import GENESIS, CorpusLedger
+
+    blocker = tmp_path / "blocker"
+    blocker.write_text("x", encoding="utf-8")  # a file, not a dir
+    ledger = CorpusLedger(blocker / "ledger.jsonl")  # parent is a file → write fails
+    with pytest.raises(OSError):
+        ledger.record_example(
+            source_sha256="a" * 64, transform_sha256="b" * 64, example_sha256="c" * 64
+        )
+    # The failed entry never entered the chain — otherwise a later append
+    # would chain over a link the file on disk never recorded.
+    assert ledger.audit_export()["entries"] == 0
+
+    good = CorpusLedger(tmp_path / "ok" / "ledger.jsonl")
+    good.record_example(source_sha256="a" * 64, transform_sha256="b" * 64, example_sha256="c" * 64)
+    reloaded = CorpusLedger(tmp_path / "ok" / "ledger.jsonl")
+    assert reloaded.verify_chain()
+    assert reloaded.audit_export()["chain_head"] != GENESIS
 
 
 # ---------------------------------------------------------------------------
@@ -376,6 +444,13 @@ def test_reward_bare_hex_does_not_count_as_receipt():
         "verify with dipcatcher verify-research"
     )
     assert "cites_receipt" in cited.components
+
+
+def test_reward_hex_far_from_provenance_wording_does_not_count():
+    # A hex blob + the word "receipt" anywhere else in the text is keyword
+    # soup, not a citation — the digest must sit beside provenance wording.
+    text = "ab12cd34ef567890" + " padding " * 20 + "receipt"
+    assert "cites_receipt" not in score_response(text).components
 
 
 # ---------------------------------------------------------------------------

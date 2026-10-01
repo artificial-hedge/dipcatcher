@@ -56,12 +56,10 @@ import math
 from collections import deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import numpy as np
 from numpy.typing import NDArray
-
-from quant_fund.models.market_making import as_optimal_quotes
 
 Array = NDArray[np.float64]
 Side = Literal["buy", "sell"]
@@ -213,6 +211,20 @@ class RegimeState:
         _prob(self.p_buy, "p_buy")
 
 
+class MOFlow(Protocol):
+    """MO-clock flow driver consumed by ZILobSimulator.
+
+    ``current()`` returns the effective ``RegimeState`` (intensity
+    multiplier + buy probability); ``advance()`` is called once per
+    market-order event. Structural — SplitFlow and MarkovRegimeFlow
+    both satisfy it.
+    """
+
+    def current(self) -> RegimeState: ...
+
+    def advance(self) -> None: ...
+
+
 class MarkovRegimeFlow:
     """Two-state Markov modulation of MO intensity and direction.
 
@@ -332,7 +344,7 @@ class ZILobSimulator:
     (on cancel-by-id paths used by sessions), and non-finite horizons raise.
     """
 
-    def __init__(self, config: ZILobConfig, flow: MarkovRegimeFlow | None = None) -> None:
+    def __init__(self, config: ZILobConfig, flow: MOFlow | None = None) -> None:
         if not isinstance(config, ZILobConfig):
             raise TypeError("config must be a ZILobConfig")
         self._cfg = config
@@ -757,6 +769,12 @@ def avellaneda_stoikov_quotes(
     is the fill-intensity decay of ``lambda(delta) = A exp(-kappa*delta)`` in
     inverse *price* units (``kappa_price = kappa_tick / tick``).
     """
+    # Lazy: models.market_making owns the A-S closed form (analytics layer) —
+    # a deferred import is the sanctioned layer-order cycle-breaker
+    # (docs/ARCHITECTURE_GUARDS.md); microstructure must not depend on it at
+    # import time.
+    from quant_fund.models.market_making import as_optimal_quotes
+
     tk = _check_tick(tick)
     raw = as_optimal_quotes(mid, inventory, gamma, sigma, tau, kappa)
     out: dict[str, Any] = {
