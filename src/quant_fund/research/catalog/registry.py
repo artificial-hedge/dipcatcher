@@ -430,6 +430,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shift_share",
         "entropy_balancing",
         "did_diagnostics",
+        # SOTA canon wave 35 batteries (see research/benches_w35.py):
+        # honest DiD (Rambachan-Roth Δ^SD sensitivity + FLCI breakdown
+        # M̄*), many-weak-IV estimators (LIML via AR-ratio minimization,
+        # JIVE, HFUL leverage-robust), Fama-MacBeth two-pass risk
+        # prices (FM SEs + Shanken EIV inflation), specification-curve
+        # multiverse (full spec grid + shuffle p-value), sign-restricted
+        # VAR (Uhlig QR draws, median IRF under sign restrictions),
+        # panel quantile FE (Machado-Santos Silva moments: location +
+        # absolute-residual scale + Φ^{-1}(τ) shift). Same SYNTHETIC
+        # diagnostic contract.
+        "honest_did",
+        "many_iv",
+        "fama_macbeth",
+        "specification_curve",
+        "sign_restricted_var",
+        "panel_quantile_fe",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
