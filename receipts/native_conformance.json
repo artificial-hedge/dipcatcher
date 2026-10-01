@@ -1,0 +1,117 @@
+{
+  "kind": "native_conformance",
+  "schema": "native_conformance.v1",
+  "git_revision": "49c678f2292d86a388aa7141a12b0049edc206d6",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "claim": {
+    "seed": 0,
+    "backend": "python",
+    "n_kernels": 12,
+    "per_kernel": {
+      "bollinger": {
+        "contract": "tolerant",
+        "n_cases": 5,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "book_features": {
+        "contract": "tolerant",
+        "n_cases": 2,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "ema": {
+        "contract": "tolerant",
+        "n_cases": 15,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "hash_bytes": {
+        "contract": "bit_exact",
+        "n_cases": 4,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "hash_many": {
+        "contract": "bit_exact",
+        "n_cases": 3,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "rolling_mean": {
+        "contract": "bit_exact",
+        "n_cases": 15,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "rolling_std": {
+        "contract": "bit_exact",
+        "n_cases": 15,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "rsi": {
+        "contract": "tolerant",
+        "n_cases": 10,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "simple_returns": {
+        "contract": "bit_exact",
+        "n_cases": 5,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "turnover": {
+        "contract": "tolerant",
+        "n_cases": 4,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "turnover_series": {
+        "contract": "tolerant",
+        "n_cases": 3,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      },
+      "wealth_index": {
+        "contract": "bit_exact",
+        "n_cases": 4,
+        "verdict": "reference_only",
+        "max_abs_err": 0.0,
+        "worst_case": -1,
+        "invariant_errors": []
+      }
+    },
+    "n_failing_kernels": 0,
+    "ok": true
+  },
+  "interpretation": {
+    "reference_only": "python backend active \u2014 contract verified structurally, native parity unexercised",
+    "mismatch": "native kernel diverged from the NumPy oracle beyond its declared contract"
+  },
+  "receipt_sha256": "f4c7217b9b45ef3b1da8a809f54883380d54165992a1e5bc3591d1dece595535"
+}
