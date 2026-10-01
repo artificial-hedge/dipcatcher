@@ -30,6 +30,7 @@ from quant_fund.research.receipt_v2 import (
     wrap_receipt_v2,
 )
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.receipt import verified_corpus_files
 from quant_fund.utils.reproducibility import git_revision
 
 SUITE_HEALTH_SCHEMA = "suite_health.v1"
@@ -40,6 +41,15 @@ def _lazy_corpus() -> Any:
         import importlib
 
         return importlib.import_module("quant_fund.research.corpus_inference")
+    except ImportError:
+        return None
+
+
+def _lazy_epoch_check() -> Any:
+    try:
+        import importlib
+
+        return importlib.import_module("quant_fund.research.corpus_epoch").check_epoch_chain
     except ImportError:
         return None
 
@@ -62,7 +72,9 @@ def suite_health(
     root = Path(receipts_dir)
     if not root.is_dir():
         raise ValueError(f"receipts dir not found: {root}")
-    files = sorted(root.glob("*.json"))
+    # Recursive to match the epoch chain's member semantics — a receipt in a
+    # subdirectory is still corpus evidence; quarantined subdirs are skipped.
+    files = verified_corpus_files(root)
     if not files:
         raise ValueError(f"no receipts under {root}")
 
@@ -75,9 +87,10 @@ def suite_health(
 
     for path in files:
         result = verify_receipt_file(path)
+        rel = path.relative_to(root).as_posix()
         try:
             raw = path.read_bytes()
-            digests[path.name] = hash_bytes(raw)
+            digests[rel] = hash_bytes(raw)
             payload: Any = json.loads(raw)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             # Narrowed from `except Exception` (quality ratchet): receipt read/parse
@@ -87,12 +100,12 @@ def suite_health(
         if isinstance(payload, dict):
             body = payload.get("payload")
             inner = body if isinstance(body, dict) else payload
-            labels[path.name] = str(inner.get("data_label") or "UNKNOWN")
+            labels[rel] = str(inner.get("data_label") or "UNKNOWN")
         else:
-            labels[path.name] = "UNKNOWN"
+            labels[rel] = "UNKNOWN"
         n_findings = 0
         if corpus_mod is not None and isinstance(payload, dict):
-            for f in corpus_mod.harvest_findings(payload, path.name):
+            for f in corpus_mod.harvest_findings(payload, rel):
                 n_findings += 1
                 e = f.get("evalue")
                 if isinstance(e, (int, float)) and np.isfinite(e) and e > 0:
@@ -100,7 +113,7 @@ def suite_health(
         findings_total += n_findings
         rows.append(
             {
-                "file": path.name,
+                "file": rel,
                 "kind": str(kind) if kind else None,
                 "valid": result["valid"],
                 "n_errors": len(result["errors"]),
@@ -123,6 +136,25 @@ def suite_health(
     # a corrupt artifact poisons the corpus, so the suite stays silent.
     pooled = float(emerge_mean(evalues)) if evalues and n_failed == 0 else None
     pooled_alarmed = bool(pooled is not None and pooled >= 1.0 / alpha)
+
+    # Epoch-chain attestation: the health receipt pins the membership-chain
+    # state it ran under, so a stamped-then-tampered corpus is visible in the
+    # audit record itself, not only via `corpus-epoch --check`.
+    epoch_check = _lazy_epoch_check()
+    if epoch_check is None:
+        epoch_state: dict[str, Any] = {"available": False}
+    else:
+        chain = epoch_check(root)
+        epoch_state = {
+            "available": True,
+            "head": chain.get("head"),
+            "head_epoch_root": chain.get("head_epoch_root"),
+            "errors": list(chain["errors"]),
+            "n_unstamped": len(chain["unstamped"]),
+            # "no_epoch_receipts" = unstamped corpus — benign; a stamped chain
+            # that is broken is the integrity violation.
+            "chain_ok": not [e for e in chain["errors"] if e != "no_epoch_receipts"],
+        }
 
     receipt: dict[str, Any] = {
         "schema": SUITE_HEALTH_SCHEMA,
@@ -150,6 +182,7 @@ def suite_health(
         "n_receipts": frame.height,
         "n_ok": n_ok,
         "n_failed": n_failed,
+        "corpus_epoch": epoch_state,
         "corpus_lane_available": corpus_mod is not None,
         "n_findings_harvested": findings_total,
         "n_evalues_pooled": len(evalues),
