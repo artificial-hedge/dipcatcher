@@ -399,8 +399,11 @@ Dev-window tuning only; the holdout stays locked. Negative results recorded.
 - [~] P5.4 Cost-side improvements: maker-fill assumption variant (limit-at-
       touch model already in SimulatedBroker — measure fee drag delta),
       hysteresis parameter robustness surface (not retuned on holdout).
-- [ ] P5.5 Cross-venue funding/basis: gated on second-venue data
-      availability; otherwise documented out-of-scope.
+- [x] P5.5 Cross-venue funding/basis: OKX resolved as second venue
+      (Binance geo-blocked HTTP 451, Bybit 403); `research/crossvenue_basis.py`
+      + `dipcatcher xvenue-basis` (kraken-okx preset) -> spot-vs-futures
+      basis + daily funding differential across venues; sealed
+      `crossvenue_basis.v1` receipt (descriptive stats only).
 - [x] P5.6 Capacity analysis (`research/capacity_overlay.py::
       run_capacity_bench` + `dipcatcher capacity --dev`): 4 seeded
       SYNTHETIC books × AUM grid -> feasible-date share, days-to-trade,
