@@ -184,6 +184,46 @@ from quant_fund.research.benches_w24 import (
     bench_pmcmc_sv,
     bench_spci_conformal,
 )
+from quant_fund.research.benches_w25 import (
+    bench_fourier_hermite,
+    bench_fractional_ou,
+    bench_heterogeneous_abm,
+    bench_kernel_changepoint,
+    bench_kinetic_ising,
+    bench_tda_persistence,
+)
+from quant_fund.research.benches_w26 import (
+    bench_factor_nowcast,
+    bench_marchenko_pastur,
+    bench_modularity_communities,
+    bench_skill_ratings,
+    bench_stationary_bootstrap,
+    bench_stein_thinning,
+)
+from quant_fund.research.benches_w27 import (
+    bench_dp_mixture,
+    bench_durbin_koopman,
+    bench_ensemble_kalman_inversion,
+    bench_expert_aggregation,
+    bench_implied_tree,
+    bench_instrumental_quantile,
+)
+from quant_fund.research.benches_w28 import (
+    bench_callaway_did,
+    bench_causal_discovery,
+    bench_enkf,
+    bench_knockoffs,
+    bench_sindy,
+    bench_surrogate_nonlinear,
+)
+from quant_fund.research.benches_w29 import (
+    bench_hj_distance,
+    bench_hmc,
+    bench_proxy_svar,
+    bench_rqa,
+    bench_sbi,
+    bench_tensor_decomp,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1874,6 +1914,36 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hawkes_em": bench_hawkes_em(),
         "fernholz_spt": bench_fernholz_spt(),
         "breeden_litzenberger": bench_breeden_litzenberger(),
+        "tda_persistence": bench_tda_persistence(),
+        "fractional_ou": bench_fractional_ou(),
+        "fourier_hermite": bench_fourier_hermite(),
+        "kernel_changepoint": bench_kernel_changepoint(),
+        "kinetic_ising": bench_kinetic_ising(),
+        "heterogeneous_abm": bench_heterogeneous_abm(),
+        "marchenko_pastur": bench_marchenko_pastur(),
+        "factor_nowcast": bench_factor_nowcast(),
+        "stationary_bootstrap": bench_stationary_bootstrap(),
+        "skill_ratings": bench_skill_ratings(),
+        "modularity_communities": bench_modularity_communities(),
+        "stein_thinning": bench_stein_thinning(),
+        "durbin_koopman": bench_durbin_koopman(),
+        "dp_mixture": bench_dp_mixture(),
+        "expert_aggregation": bench_expert_aggregation(),
+        "instrumental_quantile": bench_instrumental_quantile(),
+        "implied_tree": bench_implied_tree(),
+        "ensemble_kalman_inversion": bench_ensemble_kalman_inversion(),
+        "enkf": bench_enkf(),
+        "causal_discovery": bench_causal_discovery(),
+        "knockoffs": bench_knockoffs(),
+        "callaway_did": bench_callaway_did(),
+        "surrogate_nonlinear": bench_surrogate_nonlinear(),
+        "sindy": bench_sindy(),
+        "hmc": bench_hmc(),
+        "proxy_svar": bench_proxy_svar(),
+        "sbi": bench_sbi(),
+        "rqa": bench_rqa(),
+        "hj_distance": bench_hj_distance(),
+        "tensor_decomp": bench_tensor_decomp(),
     }
 
     hyps = _build_hypotheses(families, rankers)
