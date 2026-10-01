@@ -336,6 +336,14 @@ from quant_fund.research.benches_w43 import (
     bench_vuong_test,
     bench_white_reality,
 )
+from quant_fund.research.benches_w44 import (
+    bench_johansen_vecm,
+    bench_kiefer_vogelsang,
+    bench_kyle_lambda,
+    bench_oster_bounds,
+    bench_pin_model,
+    bench_storey_fdr,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2140,6 +2148,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "vuong_test": bench_vuong_test(),
         "merton_model": bench_merton_model(),
         "white_reality": bench_white_reality(),
+        "johansen_vecm": bench_johansen_vecm(),
+        "pin_model": bench_pin_model(),
+        "kyle_lambda": bench_kyle_lambda(),
+        "oster_bounds": bench_oster_bounds(),
+        "storey_fdr": bench_storey_fdr(),
+        "kiefer_vogelsang": bench_kiefer_vogelsang(),
     }
 
     hyps = _build_hypotheses(families, rankers)

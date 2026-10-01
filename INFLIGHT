@@ -1196,3 +1196,12 @@ wave 43 canon (devin/w43-canon-integration): bai_perron (2 true
   DD ordering + dp .77 levered vs .26 safe) + white_reality
   (RC+SPA p 0 with edges vs .22/.25 null)
   → PR stacked on w42 (229→235 families)
+wave 44 canon (devin/w44-canon-integration): johansen_vecm
+  (trace rank 1 vs 0 null, O-L crit, VECM ec sd 1.1<levels) +
+  pin_model (alpha .317/.3, mu 29.6/30, pin .24 vs .08 null) +
+  kyle_lambda (lambda .251/.25 eq, t 120, R2 .96) +
+  oster_bounds (short 1.50→full 1.03→star .71 vs true 1,
+  delta* 3.26) + storey_fdr (pi0 .75/.85 conservative, 44
+  discoveries vs 0 null) + kiefer_vogelsang (cv 1.99→3.47
+  in b, sim bridge limit, shifted p 0 vs null .83)
+  → PR stacked on w43 (235→241 families)
