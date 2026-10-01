@@ -45,4 +45,3 @@ Fetch failures: 149.
 - Fills stay at the open on the same price basis as the mark.
 - Annualized ratio is mean/std × √252 on net simple returns; it is an
   overfitting diagnostic here, not a promotion.
-
