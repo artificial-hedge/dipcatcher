@@ -419,6 +419,7 @@ _MEASUREMENT_SCHEMAS = (
     "improve_flow.v1",
     "instant_decomp.v1",
     "intraday_shape.v1",
+    "level_gap.v1",
     "lob_exec.v1",
     "lob_resilience.v1",
     "marketable_limit.v1",
