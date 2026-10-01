@@ -182,6 +182,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "adaptive_eps",
         "greek_neutral",
         "diffusion_forecaster",
+        # SOTA canon wave 17 (execution theory / distributional RL / DiffPTS
+        # ELBO / multi-step UQ) + wave 18 (path-space flows, neural SDEs,
+        # StocBench sampler budgets, agentic LOB, FASE eval, K-line paths).
+        # Seeded SYNTHETIC streams; correctness diagnostics only, never
+        # promotion gates.
+        "diffpts",
+        "extra_conformal",
+        "multilevel_mm",
+        "rlmm_c51",
+        "sga_uq",
+        "passive_impact",
+        "stochastic_tracking",
+        "gslice",
+        "neural_sde",
+        "stocbench",
+        "agentic_lob",
+        "fase_eval",
+        "kit_paths",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

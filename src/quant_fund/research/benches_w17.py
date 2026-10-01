@@ -61,6 +61,8 @@ Documented deviations (wave-17 brief):
 
 from __future__ import annotations
 
+import math
+
 import numpy as np
 
 from quant_fund.metrics.adaptive_eps import bench_eps_efficiency, make_simple_vs_simple_world
@@ -390,6 +392,228 @@ def bench_diffusion_forecaster() -> dict[str, float]:
         return {}
     except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
         return {}
+
+
+def bench_diffpts() -> dict[str, float]:
+    """DiffPTS LSNM diffusion on an AR(1)-bimodal stream (SYNTHETIC, torch).
+
+    Emits CRPS for the DDPM ancestral sampler and two DDIM NFE budgets plus
+    coverage/PIT/pinball diagnostics and the CRPS gap vs the NGboost/QRF
+    baselines.  Shrunk: 220/60 train/test, 96 samples, hidden (16,), 50
+    epochs, 20-step schedule, DDIM budgets (2, 8).
+    """
+    try:
+        from quant_fund.models.diffpts import evaluate_synthetic_stream
+
+        raw = evaluate_synthetic_stream(
+            n_train=_DIFFPTS_N_TRAIN,
+            n_test=_DIFFPTS_N_TEST,
+            lookback=_DIFFPTS_LOOKBACK,
+            kind="ar1_bimodal",
+            seed=_DIFFPTS_SEED,
+            n_samples=_DIFFPTS_N_SAMPLES,
+            ddim_budgets=(2, 8),
+            hidden=_DIFFPTS_HIDDEN,
+            epochs=_DIFFPTS_EPOCHS,
+            n_steps=_DIFFPTS_N_STEPS,
+        )
+        mapped = {
+            "diffpts_ddpm_crps": float(raw["diffpts_ddpm_crps"]),
+            "diffpts_ddpm_nfe": float(raw["diffpts_ddpm_nfe"]),
+            "diffpts_ddim2_crps": float(raw["diffpts_ddim2_crps"]),
+            "diffpts_ddim2_nfe": float(raw["diffpts_ddim2_nfe"]),
+            "diffpts_ddim8_crps": float(raw["diffpts_ddim8_crps"]),
+            "diffpts_ddim8_nfe": float(raw["diffpts_ddim8_nfe"]),
+            "diffpts_coverage_90": float(raw["diffpts_coverage_90"]),
+            "diffpts_width_90": float(raw["diffpts_width_90"]),
+            "diffpts_pit_ks": float(raw["diffpts_pit_ks"]),
+            "diffpts_pinball_mean": float(raw["diffpts_pinball_mean"]),
+            "diffpts_crps_minus_ngboost": float(raw["crps_diffpts_minus_ngboost"]),
+            "diffpts_crps_minus_qrf": float(raw["crps_diffpts_minus_qrf"]),
+        }
+        return _finite_blob(mapped)
+    except ImportError:
+        return {}
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+def bench_extra_conformal() -> dict[str, float]:
+    """Extrapolated weighted conformal on a synthetic covariate-shift stream.
+
+    The module's own ``bench_extra_conformal``/``bench_extra_harm`` helpers
+    already emit the lane blob; we filter the str stamps (dgp/claim/mode)
+    and re-key floats under the family prefix.  Claim: weighted coverage
+    beats unweighted under the planted shift; extra-harm reports the
+    harmonic-mean power-shift gap.
+    """
+    try:
+        from quant_fund.models import extra_conformal as _extra_conformal_core_bench
+
+        main = _extra_conformal_core_bench.bench_extra_conformal(seed=_SEED + 51)
+        harm = _extra_conformal_core_bench.bench_extra_harm(seed=_SEED + 51)
+        mapped = {
+            "xc_coverage": float(main["coverage"]),
+            "xc_mean_width": float(main["mean_width"]),
+            "xc_unweighted_coverage": float(main["unweighted_coverage"]),
+            "xc_coverage_error": float(main["coverage_error"]),
+            "xc_unweighted_coverage_error": float(main["unweighted_coverage_error"]),
+            "xc_ess_fraction": float(main["ess_fraction"]),
+            "xc_alpha": float(main["alpha"]),
+            "xc_n_cal": float(main["n"]),
+            "xc_harm_coverage": float(harm["coverage"]),
+            "xc_harm_unweighted_coverage": float(harm["unweighted_coverage"]),
+            "xc_harm_coverage_gap": float(harm["harm_coverage_gap"]),
+            "xc_harm_ess_fraction": float(harm["ess_fraction"]),
+        }
+        return _finite_blob(mapped)
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+def bench_multilevel_mm() -> dict[str, float]:
+    """Cheridito-Weiss multi-level MM: completion + inventory-cap telemetry.
+
+    Trains a tiny level-grouped actor (hidden (16,)) for 3 episodes at
+    horizon 30 on the Santa-Fe ZI world, then evaluates completion rate and
+    fill telemetry across {agent, glft, random} on 2 seeds at horizon 40.
+    Emits no PnL keys -- only coverage of the task contract (completion,
+    cap violations).  TORCH-GATED.
+    """
+    try:
+        from quant_fund.microstructure.multilevel_mm import (
+            MultiLevelMMAgent,
+            MultiLevelMMConfig,
+            MultiLevelSpec,
+            evaluate_multilevel_mm,
+            train_multilevel_mm,
+        )
+        from quant_fund.microstructure.zi_lob_simulator import santa_fe_config
+
+        spec = MultiLevelSpec()
+        cfg = santa_fe_config(seed=_MLMM_SEED)
+        agent = MultiLevelMMAgent(
+            spec,
+            MultiLevelMMConfig(
+                hidden_actor=(16,),
+                hidden_critic=(16,),
+                seed=_MLMM_SEED,
+            ),
+        )
+        train_multilevel_mm(
+            agent=agent,
+            config=cfg,
+            horizon=_MLMM_TRAIN_HORIZON,
+            n_episodes=_MLMM_TRAIN_EPISODES,
+            seed_base=_MLMM_SEED,
+            decision_interval=1.0,
+        )
+        ev = evaluate_multilevel_mm(
+            config=cfg,
+            horizon=_MLMM_EVAL_HORIZON,
+            agent=agent,
+            n_seeds=_MLMM_EVAL_SEEDS,
+            seed_base=_MLMM_SEED + 777,
+            decision_interval=1.0,
+            arms=_MLMM_ARMS,
+        )
+        metrics = ev["metrics"]
+        cap = float(ev["inventory_cap"])
+        violations = 0.0
+        for rows in ev["sessions"].values():
+            for row in rows:
+                if float(row["max_abs_inventory"]) > cap + 1e-9:
+                    violations += 1.0
+        mapped = {
+            "mlmm_agent_session_completion": float(metrics["agent_session_completion_rate"]),
+            "mlmm_glft_session_completion": float(metrics["glft_session_completion_rate"]),
+            "mlmm_random_session_completion": float(metrics["random_session_completion_rate"]),
+            "mlmm_inventory_cap_violations": violations,
+            "mlmm_inventory_cap": cap,
+            "mlmm_agent_fills_mean": float(metrics["agent_n_fills_mean"]),
+            "mlmm_n_levels": float(spec.n_levels),
+            "mlmm_lots": float(spec.lots),
+            "mlmm_horizon": float(ev["horizon"]),
+            "mlmm_eval_seeds": float(_MLMM_EVAL_SEEDS),
+        }
+        return _finite_blob(mapped)
+    except ImportError:
+        return {}
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+_SEED = 20261017  # wave-17 stamp seed
+
+# --- diffpts: shrunk DiffPTS stream (torch-gated) ---------------------------
+_DIFFPTS_SEED = _SEED + 41
+_DIFFPTS_N_TRAIN = 220
+_DIFFPTS_N_TEST = 60
+_DIFFPTS_LOOKBACK = 8
+_DIFFPTS_N_SAMPLES = 96
+_DIFFPTS_HIDDEN = (16,)
+_DIFFPTS_EPOCHS = 50
+_DIFFPTS_N_STEPS = 20
+
+# --- multilevel_mm: shrunk Cheridito-Weiss world (torch-gated) ---------------
+_MLMM_SEED = _SEED + 42
+_MLMM_TRAIN_EPISODES = 3
+_MLMM_TRAIN_HORIZON = 30.0
+_MLMM_EVAL_HORIZON = 40.0
+_MLMM_EVAL_SEEDS = 2
+_MLMM_ARMS = ("agent", "glft", "random")
+
+# --- rlmm_c51: shrunk Algorithm-C scenario bandit (torch-gated) --------------
+_RLMM_SEED = _SEED + 43
+_RLMM_EPISODES = 4
+_RLMM_HORIZON = 120.0
+_RLMM_POOL_SIZE = 6
+_RLMM_EXPECTED_MOS = 30
+
+# --- sga_uq: shrunk DAG-certificate panel budget ------------------------------
+_SGA_SEED = _SEED + 44
+_SGA_HORIZON = 8
+_SGA_PHI = 0.6
+_SGA_SIGMA = 0.5
+_SGA_N_PANELS = 2000
+_SGA_N_SAMPLES = 64
+
+# --- passive_impact: paper Table-1 spec (eta = temporary_impact x tick) -------
+_PIM_SEED = _SEED + 45
+_PIM_N_UNITS = 20
+_PIM_HORIZON = 300.0
+_PIM_N_GRID = 120
+_PIM_N_PATHS = 64
+_PIM_CMP_UNITS = 8
+_PIM_CMP_HORIZON = 120.0
+_PIM_CMP_N_PATHS = 24
+_PIM_CMP_N_GRID = 60
+
+# --- stochastic_tracking: Nutz-Voss sharp-rate sweep (RNG-free) ---------------
+_ST_HORIZON = 1.0
+_ST_N_STEPS = 400
+_ST_BETA = 1.0
+_ST_LAM = 1.0
+_ST_XI = 1.0
+_ST_N_EPS = 8
+
+
+def _finite_blob(mapped: dict[str, float]) -> dict[str, float]:
+    """``{}`` unless every emitted value is finite (ruff-bench contract)."""
+    if all(math.isfinite(v) for v in mapped.values()):
+        return mapped
+    return {}
+
+
+def _num(v: object, key: str) -> float:
+    """Narrow a ``dict[str, object]`` entry to a finite float (fail-closed)."""
+    if isinstance(v, (bool, np.bool_)):
+        raise TypeError(f"{key} is bool, not a number")
+    if isinstance(v, (int, float, np.integer, np.floating)):
+        f = float(v)
+        if math.isfinite(f):
+            return f
+    raise ValueError(f"{key} is not a finite number: {v!r}")
 
 
 def bench_rlmm_c51() -> dict[str, float]:
