@@ -1637,3 +1637,48 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
     #717/#720 land.
 note: canon PR to follow.
+---
+owner: devin (wave 67 canon)
+slice: >-
+  src/quant_fund/models/{nested_sampling,smc_samplers,
+  synthetic_likelihood,state_dependent_lp,moment_inequalities,
+  euler_risk}.py + tests, research/benches_w67.py,
+  registry/agent wiring, tests/unit/research/test_benches_w67.py
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - Lanes on devin/w67-lanes (ee93c35c): six new models, all
+    score=1.0 SYNTHETIC benches, 38 unit tests green:
+    nested_sampling.py (Skilling evidence Z + posterior draws
+    + information H; MH constrained draws on truncated prior,
+    dead-point logX trajectory; Gaussian vs analytic logz_err
+    0.033 mean_err 0.003 sd_err 0.016), smc_samplers.py
+    (Del-Moral beta-tempering ladder, ESS<0.5n resample, RW
+    Metropolis mutation, log-mean-weight logZ estimator;
+    posterior mean_err 0.007 sd 0.39 vs 0.40 analytic, logz_err
+    0.54 within MC-variance tolerance — Jensen bias on the
+    log-transformed mean-weight estimator documented in bench),
+    synthetic_likelihood.py (Wood/Drovandi Gaussian surrogate
+    on summary stats, shrink+ridge PSD, RW-MH BSL chain;
+    mean_err 0.008 sd_err 0.0005, likelihood-ratio 107),
+    state_dependent_lp.py (Auerbach-Gorodnichenko logistic
+    transition interacted LP per horizon, Newey-West SEs;
+    beta_E 0.75 vs true 1.0, beta_R 3.05 vs 2.8, gap 2.29),
+    moment_inequalities.py (Andrews-Soares max-stat GMS,
+    kappa=sqrt(n/ln n) selection, correlation-preserving
+    Gaussian bootstrap; null p 0.65, violated p 0.0, deep
+    stat 19 vs crit 2.05), euler_risk.py (ES contributions
+    w_i E[X_i | L >= q] summing to ES exactly, Gaussian-
+    kernel-smoothed VaR contributions; Euler sum err 1e-15,
+    analytic rel err 0.007).
+  - benches_w67.py: +390..395 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "nested_sampling","smc_samplers",
+    "synthetic_likelihood","state_dependent_lp",
+    "moment_inequalities","euler_risk" (356->362); agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w67.
+  - Canon staged on top of w66-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
+    #717/#720/#723 land.
+note: canon PR to follow.

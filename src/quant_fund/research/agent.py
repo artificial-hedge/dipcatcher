@@ -525,6 +525,14 @@ from quant_fund.research.benches_w66 import (
     bench_permutation_entropy,
     bench_svgd,
 )
+from quant_fund.research.benches_w67 import (
+    bench_euler_risk,
+    bench_moment_inequalities,
+    bench_nested_sampling,
+    bench_smc_samplers,
+    bench_state_dependent_lp,
+    bench_synthetic_likelihood,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2472,6 +2480,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ews_signals": bench_ews_signals(),
         "permutation_entropy": bench_permutation_entropy(),
         "svgd": bench_svgd(),
+        "nested_sampling": bench_nested_sampling(),
+        "smc_samplers": bench_smc_samplers(),
+        "synthetic_likelihood": bench_synthetic_likelihood(),
+        "state_dependent_lp": bench_state_dependent_lp(),
+        "moment_inequalities": bench_moment_inequalities(),
+        "euler_risk": bench_euler_risk(),
     }
 
     hyps = _build_hypotheses(families, rankers)

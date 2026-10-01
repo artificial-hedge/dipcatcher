@@ -853,6 +853,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ews_signals",
         "permutation_entropy",
         "svgd",
+        # Wave 67 — Skilling nested-sampling
+        # evidence estimation (prior-shrinkage
+        # trajectory, posterior-weighted dead
+        # points), Del-Moral tempering SMC with
+        # ESS-triggered resample + RW mutation,
+        # Wood/Drovandi Bayesian synthetic
+        # likelihood (Gaussian surrogate on
+        # summaries + RW-MH), Auerbach-
+        # Gorodnichenko state-dependent local
+        # projections (logistic transition,
+        # Newey-West), Andrews-Soares GMS
+        # moment-inequality testing (kappa
+        # selection + bootstrap max-stat), and
+        # Euler risk contributions (ES tail
+        # conditional means, kernel-smoothed
+        # VaR). Same SYNTHETIC diagnostic
+        # contract.
+        "nested_sampling",
+        "smc_samplers",
+        "synthetic_likelihood",
+        "state_dependent_lp",
+        "moment_inequalities",
+        "euler_risk",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
