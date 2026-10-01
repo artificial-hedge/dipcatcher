@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1147,
+  "module_count": 1148,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -5037,6 +5037,22 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.impact_law"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.impulse_mm"
+    },
+    {
+      "dst": "quant_fund.models.market_making",
+      "src": "quant_fund.microstructure.impulse_mm"
+    },
+    {
+      "dst": "quant_fund.utils.receipt",
+      "src": "quant_fund.microstructure.impulse_mm"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.impulse_mm"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -12641,6 +12657,7 @@
     "quant_fund.microstructure.hmm_learn",
     "quant_fund.microstructure.impact_instant",
     "quant_fund.microstructure.impact_law",
+    "quant_fund.microstructure.impulse_mm",
     "quant_fund.microstructure.intraday_exec",
     "quant_fund.microstructure.intraday_shape",
     "quant_fund.microstructure.kyle_lambda",
@@ -14422,12 +14439,12 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 167,
+      "imports": 168,
       "src": "quant_fund.microstructure"
     },
     {
       "dst": "quant_fund.models",
-      "imports": 3,
+      "imports": 4,
       "src": "quant_fund.microstructure"
     },
     {
@@ -14442,7 +14459,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 144,
+      "imports": 146,
       "src": "quant_fund.microstructure"
     },
     {

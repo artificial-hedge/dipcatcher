@@ -343,10 +343,10 @@ flowchart LR
   quant_fund_metrics -->|1| quant_fund_validation
   quant_fund_microstructure -->|1| quant_fund_labels
   quant_fund_microstructure -->|2| quant_fund_metrics
-  quant_fund_microstructure -->|3| quant_fund_models
+  quant_fund_microstructure -->|4| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|144| quant_fund_utils
+  quant_fund_microstructure -->|146| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
@@ -719,7 +719,7 @@ sequenceDiagram
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 95 |
-| `quant_fund.microstructure` | 88 |
+| `quant_fund.microstructure` | 89 |
 | `quant_fund.models` | 248 |
 | `quant_fund.monitoring` | 7 |
 | `quant_fund.native` | 7 |
@@ -748,7 +748,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **1147**
+- Modules scanned: **1148**
 - Packages: **79**
 - Cross-package import edges: **332**
 

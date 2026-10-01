@@ -310,6 +310,7 @@ src/quant_fund/microstructure/hidden_depth.py
 src/quant_fund/microstructure/hmm_learn.py
 src/quant_fund/microstructure/impact_instant.py
 src/quant_fund/microstructure/impact_law.py
+src/quant_fund/microstructure/impulse_mm.py
 src/quant_fund/microstructure/intraday_exec.py
 src/quant_fund/microstructure/intraday_shape.py
 src/quant_fund/microstructure/kyle_lambda.py
