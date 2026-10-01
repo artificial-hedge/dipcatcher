@@ -1,0 +1,48 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "detection": {
+    "bad_threshold_raises": "raise:ValueError",
+    "boundary_out": {
+     "h1": false,
+     "h2": false,
+     "h3": true
+    },
+    "depth": 0.11,
+    "h1_observable": true,
+    "h1_recovered": true,
+    "misaligned_raises": "raise:ValueError",
+    "n_events": 1,
+    "nonfinite_raises": "raise:ValueError",
+    "rearm": true
+   },
+   "honesty": {
+    "camel_sharpe": "raise:ValueError",
+    "clean": "accepted",
+    "nav_suffix": "raise:ValueError",
+    "panel_false_positive_guard": "accepted",
+    "pnl_embedded": "raise:ValueError",
+    "pnl_underscored": "raise:ValueError",
+    "sharpe": "raise:ValueError"
+   },
+   "scoring": {
+    "baseline_h1": 0.5,
+    "baseline_h2": 1.0,
+    "baseline_nan_on_empty": true,
+    "brier_overall_absent_when_empty": true,
+    "ghost_dropped": true,
+    "h2_skips_unobservable": true,
+    "oor_prob_raises": "raise:ValueError"
+   }
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "6d6b08e00ee0d184f61ec77833fbb56a9aa9b03f",
+ "interpretation": "Dip bench contract holds: causal detection, exact recovery window, unobservable horizons never imputed, honesty gate now substring-matched (embedded/camel evasions closed).",
+ "kind": "dip_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "8ced1bffd89bc41146b015014383f00dfecde048034f1168ece2af41fceb737c",
+ "research_only": true,
+ "schema": "dip_audit.v1"
+}
