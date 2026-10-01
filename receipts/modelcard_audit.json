@@ -1,0 +1,32 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bad_hash_rejected": true,
+   "bad_versions": [
+    "fx-1.v1",
+    "fx-2.v1.0",
+    "fx-1.v1.0.0",
+    "FX-1.v1.0",
+    "fx-1.v-1.0"
+   ],
+   "good_version_ok": true,
+   "live_rejected": true,
+   "nested_dir_ok": true,
+   "nonresearch_rejected": true,
+   "roundtrip": true,
+   "ship_baseline": true,
+   "ship_dishonest_refused": true,
+   "ship_domain_tie_refused": true,
+   "ship_general_regress_refused": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "759c28cbaeca78c40813075571d431b1b9cdb304",
+ "interpretation": "Model-card contract holds: version pattern strict, live claims and non-research scope rejected at validation, ship gate needs honesty + strict domain gain + non-regressed general, 64-hex digests enforced, save/load round-trips.",
+ "kind": "modelcard_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "29c6a85dddc977d64159853df5188f2d40f65f0a3e5c7cf9ce4d84feff1253f1",
+ "research_only": true,
+ "schema": "modelcard_audit.v1"
+}
