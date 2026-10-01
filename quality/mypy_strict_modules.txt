@@ -683,6 +683,7 @@ src/quant_fund/research/receipt_v2.py
 src/quant_fund/research/research100.py
 src/quant_fund/research/research100_benchmark.py
 src/quant_fund/research/research100_cli.py
+src/quant_fund/research/selective_inference.py
 src/quant_fund/research/shadow_journal.py
 src/quant_fund/research/sota_evidence.py
 src/quant_fund/research/sota_protocol.py
