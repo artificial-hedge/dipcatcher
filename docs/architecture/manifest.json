@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 894,
+  "module_count": 895,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3577,6 +3577,14 @@
     {
       "dst": "quant_fund.microstructure.synthetic_lob",
       "src": "quant_fund.microstructure.vendor_book_map"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.waiting_times"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.waiting_times"
     },
     {
       "dst": "quant_fund.models.market_making",
@@ -9346,6 +9354,7 @@
     "quant_fund.microstructure.rl_market_maker",
     "quant_fund.microstructure.synthetic_lob",
     "quant_fund.microstructure.vendor_book_map",
+    "quant_fund.microstructure.waiting_times",
     "quant_fund.microstructure.zi_lob_simulator",
     "quant_fund.models",
     "quant_fund.models.agaci",
@@ -10754,7 +10763,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 12,
+      "imports": 13,
       "src": "quant_fund.microstructure"
     },
     {
@@ -10774,7 +10783,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 1,
+      "imports": 2,
       "src": "quant_fund.microstructure"
     },
     {
