@@ -96,8 +96,9 @@ flowchart LR
   fx1_forecast -->|1| quant_fund_config
   fx1_forecast -->|3| quant_fund_data
   fx1_forecast -->|3| quant_fund_metrics
-  fx1_forecast -->|4| quant_fund_schemas
-  fx1_forecast -->|2| quant_fund_utils
+  fx1_forecast -->|1| quant_fund_research
+  fx1_forecast -->|5| quant_fund_schemas
+  fx1_forecast -->|4| quant_fund_utils
   fx1_forecast -->|1| quant_fund_validation
   fx1_hypotheses -->|1| fx1_honesty
   fx1_mrm -->|1| fx1_modelcard
@@ -192,6 +193,7 @@ flowchart LR
   quant_fund_hedge_lab -->|5| quant_fund_risk
   quant_fund_hedge_lab -->|6| quant_fund_utils
   quant_fund_hedge_lab -->|1| quant_fund_validation
+  quant_fund_hmm -->|3| quant_fund_utils
   quant_fund_labels -->|1| quant_fund_config
   quant_fund_labels -->|1| quant_fund_data
   quant_fund_labels -->|1| quant_fund_schemas
