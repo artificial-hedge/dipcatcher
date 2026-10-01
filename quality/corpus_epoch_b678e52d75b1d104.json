@@ -1,0 +1,133 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "f7be34d1367e2d3e460108fc227504890c9af70bf74e4323f65d51705b3ce67f",
+  "inputs_sha256": "5f5ba69a36a374769a3cced3c5c0b6823b34b46c1011dee883d80dad8aa993bd",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "members": [
+    {
+      "name": "audit_coverage.json",
+      "sha256": "34aefb7b1ec70ae9a71e2102354ce75c74bfd30b4d6e083624d98010695457c7"
+    },
+    {
+      "name": "audit_coverage_fx1.json",
+      "sha256": "fc8fd25fc58d928284effa716493741a0a873f83451d2f962b7904a4c475d061"
+    },
+    {
+      "name": "corpus_epoch_04a4a3584e800319.json",
+      "sha256": "6bf1a9d0c1382c69f5313876416983d06e0362c17e72c3792d1d6a8e6493393b"
+    },
+    {
+      "name": "corpus_epoch_13cd8590c5faa2ef.json",
+      "sha256": "40f4f84f1061ab2230de210acdb528555e4487bd03ee6a8e6f23b64f4f3d0e92"
+    },
+    {
+      "name": "corpus_epoch_1685df6df5e15b1f.json",
+      "sha256": "2d6aed7722039a26877a32920c722b37cc0583d30e19a9c1f35fa85b7096eb07"
+    },
+    {
+      "name": "corpus_epoch_17d56d9f81a3553e.json",
+      "sha256": "baaaa1275e71561ce9fab0897d577f09d1800c669a5289a490c88c9f2f9ad024"
+    },
+    {
+      "name": "corpus_epoch_1e34d6a2cdee07e0.json",
+      "sha256": "0dbd3116ffa7f198460ddfa152fc5493c63ca415d821230bf2a233bd417f9069"
+    },
+    {
+      "name": "corpus_epoch_2753e1bb976f674d.json",
+      "sha256": "10b0fc48ac9f401252b712134de394ad8219b85a2ecdaa4ca47f51ed81fcb316"
+    },
+    {
+      "name": "corpus_epoch_29c0ce5453fc7685.json",
+      "sha256": "cc8526a96e4ed8a485bfb013dd9de005d072b3627d7bab92e0af967ec4be078a"
+    },
+    {
+      "name": "corpus_epoch_41cf27df31eb2299.json",
+      "sha256": "7e6c7272fe368c7ac18b9aedfb670b555525219f885624912b3e580ad4409742"
+    },
+    {
+      "name": "corpus_epoch_5da8d034442419cd.json",
+      "sha256": "7da46746f1e3ec217f0a4926787a950fbfbb501f106b19af4ef5d69c06154b6b"
+    },
+    {
+      "name": "corpus_epoch_6d264d37f201b084.json",
+      "sha256": "ad4c5b0c5a349858754aefb179d860179cfb1526d8fa529ea8386575f2c8e37b"
+    },
+    {
+      "name": "corpus_epoch_96a80946be3a61cc.json",
+      "sha256": "a68065b39940a15aea78657d3d6bb376995418c9e3f60366964d70ab362891cb"
+    },
+    {
+      "name": "corpus_epoch_9bd59a99ac50cd75.json",
+      "sha256": "3318a3abb975ffdbd68cfcf641d27e9f0879d00617af392a8d594e4c91a46ffd"
+    },
+    {
+      "name": "corpus_epoch_9dc2a14a3371a193.json",
+      "sha256": "0b832ea2b21c234896b11e17f922690a8bfa9901b62528f310b559cc98df88bb"
+    },
+    {
+      "name": "corpus_epoch_a5e19640ac40b885.json",
+      "sha256": "72db44d1609e9269382d173d609597aa9019c26e8ea6162cd30362aa3f3b1963"
+    },
+    {
+      "name": "corpus_epoch_a6a2f06843a428b3.json",
+      "sha256": "c7a66291df9a8755827a079939b13608535727816df68b75cde7723e154596a9"
+    },
+    {
+      "name": "corpus_epoch_b1d06039429c2a47.json",
+      "sha256": "5fe200c8b02584b7632a9f9eab9f9797580c8a7377a60c4d7951155305277e12"
+    },
+    {
+      "name": "corpus_epoch_b7cb58364ac7dfb8.json",
+      "sha256": "af8bcff2c9aaf213b0de917993f907a156ad0a1864503e31cd52a142226ee2c7"
+    },
+    {
+      "name": "corpus_epoch_bac8273b777b3fd5.json",
+      "sha256": "b3b9a2926e27637ea313a4db3713141d335fec7e3986f6f533ad5695337e16a5"
+    },
+    {
+      "name": "corpus_epoch_d9b174f1b1224460.json",
+      "sha256": "555f6b74b93d60d951b2fedfee232fdf43428b2bf6fa89bad597687a849b4f63"
+    },
+    {
+      "name": "corpus_epoch_db0a8b6a8ce5ca06.json",
+      "sha256": "25d4a79608697092fdd4b608cc09ce7e95e9437262044b88b515e6d44edbd72a"
+    },
+    {
+      "name": "corpus_epoch_fb571fde15aff42e.json",
+      "sha256": "36965798743d26e0b27fd27d0ae9e061aa85f11fa4f699d7c813f276d3b8894e"
+    },
+    {
+      "name": "crown_jewels.json",
+      "sha256": "c4ca5fad40aabb8fd43433c8ef1b210562fb1b0295afa54ebe9a06f8148e2a3f"
+    },
+    {
+      "name": "lattice_known_inconsistent.json",
+      "sha256": "0b8a1221b7133842211d9d9d085fd166119b896706b79921587341bd3f247c58"
+    },
+    {
+      "name": "legacy_quarantine.json",
+      "sha256": "1614aced1a4eb83f36ee0e006debe1f3617c987b4a87ce6ba858e699952ecd7b"
+    },
+    {
+      "name": "repo_integrity.json",
+      "sha256": "b173b740449de6850631b876b1f0db6740266ef6ab867601ac745f0f4e00017a"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_db0a8b6a8ce5ca06.json"
+  ],
+  "members_removed": [],
+  "n_members": 27,
+  "params": {
+    "head_sha": "340336d63db8c73b524ac765cf1249f78695a43b",
+    "pattern": "*.json"
+  },
+  "prev_epoch_receipt": "corpus_epoch_db0a8b6a8ce5ca06.json",
+  "prev_epoch_sha256": "84b6b00a280a92a923a7077c384757ed1e40ea13bbfaa9c5b50d8374d8faeee9",
+  "receipt_sha256": "b678e52d75b1d104201e730ea38f15acb045c7e3ab0408792df5feae358b8b32",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
