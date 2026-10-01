@@ -444,6 +444,14 @@ class ZILobConfig:
     # the crown band. Level is uniform on the closed span, so span 0
     # degenerates to join-the-touch.
     crown_stack_span: int = 3
+    # ``crown_offset`` >= 0: distance (ticks) the crown band starts
+    # behind the own touch — buys land on ``[bb - crown_offset -
+    # crown_stack_span, bb - crown_offset]``. The tape's crown is dense
+    # *behind* a thin touch (depth_consumption.v1: median fill eats 90%
+    # of the touch, 47% full sweeps), so offset > 0 keeps the touch
+    # empty-able while the band stacks. 0 preserves the original band
+    # (touch included); only live when ``crown_stack_frac`` is nonzero.
+    crown_offset: int = 0
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -656,6 +664,8 @@ class ZILobConfig:
         _prob(self.crown_stack_frac, "crown_stack_frac")
         if isinstance(self.crown_stack_span, bool) or int(self.crown_stack_span) < 0:
             raise ValueError(f"crown_stack_span must be an int >= 0, got {self.crown_stack_span!r}")
+        if isinstance(self.crown_offset, bool) or int(self.crown_offset) < 0:
+            raise ValueError(f"crown_offset must be an int >= 0, got {self.crown_offset!r}")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
@@ -1903,7 +1913,11 @@ class ZILobSimulator:
                 elif want_join and bb is not None:
                     level = bb
                 elif want_crown and bb is not None:
-                    level = bb - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                    level = (
+                        bb
+                        - self._cfg.crown_offset
+                        - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                    )
                     self.n_lo_crown += 1
                 elif want_imp and ba is not None and bb is not None and ba - bb > 1:
                     level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
@@ -1935,7 +1949,11 @@ class ZILobSimulator:
             elif want_join and ba is not None:
                 level = ba
             elif want_crown and ba is not None:
-                level = ba + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                level = (
+                    ba
+                    + self._cfg.crown_offset
+                    + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                )
                 self.n_lo_crown += 1
             elif want_imp and ba is not None and bb is not None and ba - bb > 1:
                 level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
@@ -1977,7 +1995,11 @@ class ZILobSimulator:
             if chase is not None:
                 level = chase
             elif want_crown and bb is not None:
-                level = bb - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                level = (
+                    bb
+                    - self._cfg.crown_offset
+                    - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                )
                 self.n_lo_crown += 1
             elif imp and ba is not None and bb is not None and ba > bb:
                 level = bb + int(self._rng.random() * (ba - bb))
@@ -2007,7 +2029,11 @@ class ZILobSimulator:
             if chase is not None:
                 level = chase
             elif want_crown and ba is not None:
-                level = ba + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                level = (
+                    ba
+                    + self._cfg.crown_offset
+                    + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                )
                 self.n_lo_crown += 1
             elif imp and ba is not None and bb is not None and ba > bb:
                 level = ba - int(self._rng.random() * (ba - bb))
