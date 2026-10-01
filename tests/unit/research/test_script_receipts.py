@@ -222,6 +222,7 @@ _LANE_COVERED_SCHEMAS = frozenset(
         "rough_vol.v1",
         "fbm_circulant.v1",
         "corpus_epoch.v1",
+        "basis_carry.v1",
         "vol_of_vol.v1",
     }
 )
@@ -243,6 +244,7 @@ _KIND_DISPATCHED_SCHEMAS = frozenset(
         "panel_audit.v1",
         "suite_health.v1",
         "tail_audit.v1",
+        "receipt_admission.v1",
     }
 )
 
