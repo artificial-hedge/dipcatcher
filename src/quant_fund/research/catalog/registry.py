@@ -167,6 +167,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "extra_tilt",
         "forecast_selection",
         "rl_market_maker",
+        # SOTA canon wave 17 batteries (see research/benches_w17.py):
+        # conformal risk-averse decision making with optimized-certainty-
+        # equivalent (OCE) risk control (high-probability CVaR certificates,
+        # the Hoeffding-margin ablation, the sqrt(n) radius law), e-PS
+        # sample-efficient multiple testing with adaptive data collection
+        # (simple-vs-simple specialization), (torch-gated) greek-neutral
+        # option portfolios — hedging as a training inductive bias (delta-
+        # exposure monotonicity + interior optimum), and (torch-gated) the
+        # DiffPTS full-ELBO diffusion forecaster vs the NGBoost Gaussian
+        # baseline (CRPS gain, coverage, PIT). Seeded SYNTHETIC streams;
+        # correctness diagnostics only, never promotion gates.
+        "conformal_oce",
+        "adaptive_eps",
+        "greek_neutral",
+        "diffusion_forecaster",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
