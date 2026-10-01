@@ -11909,6 +11909,83 @@ counted. Prose that contains such a token is quoted verbatim.
 - `schema`: cost_calibration.v1
 - `seed`: 7
 
+### `receipts/cost_calibration_eval_f130c7e871e9aa64.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/cost_calibration_eval_f130c7e871e9aa64.json | da4f8269942b5c87bebed33e422d6326cb73d327f48648d97b02e6e6b36dd1e9 | f130c7e871e9aa649e029c016f980603a0ab9f144db4fed7635b90087fcde3c3 | not_checked | bd0acf9bb24a5ba460ee205a119942c200f94b90 | inputs_sha256=0d16296663381c891551b80bd2443b7b9b07455ccacdb973ea8b4dcb7548f441 | unspecified | absent | true | false |
+
+- `claim`: execution_diagnostic_only
+- `closed_form`:
+  - `corwin_schultz_effective_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_half_spread_bps`: 4.040599102981917
+  - `corwin_schultz_relative`: 0.0008081198205963833
+  - `floor_binds`: false
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `estimators`:
+  - flat
+  - corwin_schultz
+  - abdi_ranaldo
+  - roll
+- `generated_at`: 2026-09-30T13:08:05.561461+00:00
+- `git_revision`: bd0acf9bb24a5ba460ee205a119942c200f94b90
+- `half_spread_bps_floor`: 1.0
+- `kind`: cost_calibration_eval
+- `lookback`: 20
+- `n_dates`: 20
+- `n_names`: 3
+- `planted_rel_spread`: 0.002
+- `receipt_sha256`: f130c7e871e9aa649e029c016f980603a0ab9f144db4fed7635b90087fcde3c3
+- `research_only`: true
+- `results`:
+  - [0]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: flat
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [1]
+    - `commission`: 625.1519380423003
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 2437.6575722223597
+    - `spread_estimator`: corwin_schultz
+    - `total_cost`: 3062.8095102646603
+    - `turnover`: 0.0
+  - [2]
+    - `commission`: 625.57417041541
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 38
+    - `research_only`: true
+    - `spread`: 625.57417041541
+    - `spread_estimator`: abdi_ranaldo
+    - `total_cost`: 1251.14834083082
+    - `turnover`: 0.0
+  - [3]
+    - `commission`: 625.5662666663776
+    - `data_source`: file
+    - `half_spread_bps_floor`: 1.0
+    - `impact`: 0.0
+    - `n_fills`: 37
+    - `research_only`: true
+    - `spread`: 739.1584537248116
+    - `spread_estimator`: roll
+    - `total_cost`: 1364.7247203911893
+    - `turnover`: 0.0
+- `schema`: cost_calibration.v1
+- `seed`: 7
+
 ### `receipts/coverage_cs_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |

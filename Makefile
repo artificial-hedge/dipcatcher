@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify
+.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit admission-gate stamp-epochs sign-pins anchor-pins checkpoint anchor-checkpoint witness-checkpoint verify-witness witness-bundle verify-bundle epoch-consistency verify-rotations rotate-key tamper-drill fuzz-drill fuzz-receipts evidence-bundle bundle-verify
 
 .DEFAULT_GOAL := help
 
@@ -15,6 +15,13 @@ test: ## PR-gate lab tests (not network, not slow; xdist)
 test-full: ## Full offline lab suite, including slow tests
 	uv run pytest -n auto --dist loadfile -m "not network"
 
+test-durations: ## Refresh checked-in .test_durations for pytest-split CI shards
+	# PR gate first, then slow tests so schedule/full shards stay balanced too.
+	uv run pytest -n auto --dist loadfile -m "not network and not slow" \
+		--store-durations --durations-path .test_durations --clean-durations
+	uv run pytest -n auto --dist loadfile -m "slow and not network" \
+		--store-durations --durations-path .test_durations
+
 parity-smoke: ## SYNTHETIC backtest/shadow parity smoke (simulated broker only)
 	uv run pytest -q tests/unit/parity
 	uv run python -m quant_fund.parity smoke --out data/metadata/parity-smoke
@@ -29,6 +36,7 @@ lint: ## Ruff check + format check on src/ and tests/
 	uv run ruff check src tests
 	uv run ruff format --check src tests
 	uv run python scripts/check_mypy_strict_allowlist.py
+	uv run python scripts/check_mccabe_ratchet.py
 
 fmt: ## Auto-fix lint + format
 	uv run ruff check --fix src tests
@@ -66,6 +74,9 @@ evidence: ## Regenerate docs/evidence/index.md from sealed receipts
 	uv run python scripts/build_evidence_report.py
 
 ci: lint typecheck coverage ## Local mirror of the CI gate
+
+code-inventory: ## Report tracked semantic Python LOC and feature/test counts
+	uv run python scripts/code_quality_inventory.py --summary-only
 
 formal: ## TLC order-lifecycle check + Z3/conformance/stateful tests
 	bash scripts/run_tlc.sh
@@ -147,8 +158,13 @@ PROOFCORE_DB ?= data/metadata/proofcore.duckdb
 DEFAULT_PROOFCORE_DB := data/metadata/proofcore.duckdb
 COMMITTED_TRIAL_LEDGER ?= research/reality/trials.jsonl
 
-proofcore-test: ## PROOFCORE W5 tests: contracts, provenance DB, CI helpers, layering gate
-	uv run pytest tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py -q
+proofcore-test: ## PROOFCORE tests: W5 contracts/provenance/CI/layering + W6 scheduler/runner/estimators + W7 replay + W8 guard/fixes + wave-2 e2e
+	uv run pytest tests/unit/test_proofcore_*.py tests/end_to_end/test_proofcore_smoke.py \
+		tests/unit/test_scheduler.py tests/unit/test_proven_runner.py \
+		tests/unit/test_estimators.py tests/unit/test_replay_engine.py \
+		tests/unit/test_io_guard.py tests/unit/test_cscv_combo_guard.py \
+		tests/unit/test_fingerprint_fallback.py tests/unit/test_wave2_e2e.py \
+		tests/property/test_replay_determinism.py -q
 
 proofcore-coverage: ## Per-package coverage floors (A3 #2): pit/proof/reality/proofcore 90, leakage 85
 	# Subset run over the PROOFCORE test lanes; the global 80% floor still
@@ -297,6 +313,18 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 	uv run dipcatcher lattice --strict \
 		--known-inconsistent quality/lattice_known_inconsistent.json \
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
+
+ADMISSION_BASE ?= origin/main
+admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
+	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
+		| grep '^receipts/[^/]*\.json$$' || true); \
+	if [ -n "$$changed" ]; then \
+		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
+			--known-inconsistent quality/lattice_known_inconsistent.json \
+			--out-dir "$${RUNNER_TEMP:-/tmp}/admission"; \
+	else \
+		echo "admission-gate: no corpus receipt changes vs $(ADMISSION_BASE)"; \
+	fi
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"

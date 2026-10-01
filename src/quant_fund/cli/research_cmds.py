@@ -3321,3 +3321,130 @@ def fuzz_receipts_cmd(
         typer.echo(f"receipt={path}")
     if not result["ok"]:
         raise typer.Exit(code=1)
+
+@app.command()
+def admit(
+    receipt: Path = typer.Argument(..., help="Candidate receipt JSON to gate."),
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Committed evidence corpus the candidate joins."
+    ),
+    q: float = typer.Option(0.05, "--q", help="BH-FDR level for the corpus delta check."),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = receipt_admission.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    known_inconsistent: Path | None = typer.Option(
+        None,
+        "--known-inconsistent",
+        help="JSON map of receipt filename -> sha256 whose byte-exact "
+        "inconsistent claim groups are acknowledged (demo artifacts).",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero unless the verdict is 'admit'.",
+    ),
+) -> None:
+    """Receipt admission gate: may this receipt join the evidence corpus?
+
+    verify-receipt answers validity; ``admit`` answers admission — seal +
+    honesty stamps + lattice delta (new contradictions against the corpus)
+    + corpus-FDR delta. Verdicts: admit | quarantine | reject. Provenance
+    evidence only, never a market or P&L claim.
+    """
+    from quant_fund.research.admission import admission_check, write_admission_receipt
+
+    candidate = Path(receipt)
+    root = Path(corpus_dir)
+    if not candidate.is_file():
+        raise typer.BadParameter(f"candidate receipt {candidate} does not exist")
+    if not root.is_dir():
+        raise typer.BadParameter(f"corpus dir {root} does not exist")
+    pins: dict[str, str] | None = None
+    if known_inconsistent is not None:
+        if not known_inconsistent.is_file():
+            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
+        try:
+            raw_pins = json.loads(known_inconsistent.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+        if not isinstance(raw_pins, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+        ):
+            raise typer.BadParameter(
+                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+            )
+        pins = dict(raw_pins)
+    result = admission_check(candidate, root, q=q, known_inconsistent=pins)
+    try:
+        path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    failed = [c["name"] for c in result["checks"] if not c["ok"]]
+    typer.echo(
+        f"admission candidate={result['candidate']} corpus={result['n_corpus_receipts']} "
+        f"verdict={result['verdict']}" + (f" failed_checks={failed}" if failed else "")
+    )
+    typer.echo(f"receipt={path}")
+    if strict and result["verdict"] != "admit":
+        raise typer.Exit(code=1)
+
+
+@app.command("admit-batch")
+def admit_batch_cmd(
+    receipts: list[Path] = typer.Argument(
+        ..., help="Incoming receipt JSONs to gate as one diff (e.g. PR-changed files)."
+    ),
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Committed evidence corpus the batch joins."
+    ),
+    q: float = typer.Option(0.05, "--q", help="BH-FDR level for the corpus delta check."),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = receipt_admission.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    known_inconsistent: Path | None = typer.Option(
+        None,
+        "--known-inconsistent",
+        help="JSON map of receipt filename -> sha256 whose byte-exact "
+        "inconsistent claim groups are acknowledged (demo artifacts).",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero unless every candidate's verdict is 'admit'.",
+    ),
+) -> None:
+    """Batch admission gate for a diff of receipts.
+
+    Each file is gated against ``corpus minus the whole batch plus the
+    already-processed files`` — the state a merge actually creates — so a
+    committed receipt's lattice delta is never vacuous and intra-diff
+    contradictions are attributed to the file that introduces them. Writes
+    one admission receipt per candidate. ``--strict`` fails on any verdict
+    other than ``admit``.
+    """
+    from quant_fund.research.admission import admit_batch, write_admission_receipt
+
+    root = Path(corpus_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"corpus dir {root} does not exist")
+    pins: dict[str, str] | None = None
+    if known_inconsistent is not None:
+        if not known_inconsistent.is_file():
+            raise typer.BadParameter(f"known-inconsistent file {known_inconsistent} does not exist")
+        try:
+            raw_pins = json.loads(known_inconsistent.read_text())
+        except (OSError, ValueError) as exc:
+            raise typer.BadParameter(f"known-inconsistent is not JSON: {exc}") from exc
+        if not isinstance(raw_pins, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and len(v) == 64 for k, v in raw_pins.items()
+        ):
+            raise typer.BadParameter(
+                "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
+            )
