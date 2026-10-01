@@ -35,7 +35,21 @@ WORKFLOW_ACTIVATED = REPO_ROOT / ".github" / "workflows" / "proofcore.yml"
 MAKEFILE = REPO_ROOT / "Makefile"
 
 # §9.3/§12 (lead-adjudicated): pit/proof/reality/proofcore 90, leakage 85.
-EXPECTED_FLOORS = {"pit": 91, "proof": 91, "leakage": 86, "reality": 91, "proofcore": 91}
+# Main raised the package floors +1 (2026-09-28 measurements); the wave-2
+# amendment adds per-MODULE floors (dotted keys) for the new wave-2 modules,
+# all 90 (WAVE2.md §1.6: every new module >= 90%).
+EXPECTED_FLOORS = {
+    "pit": 91,
+    "proof": 91,
+    "leakage": 86,
+    "reality": 91,
+    "proofcore": 91,
+    "proofcore.scheduler": 90,
+    "proof.runner": 90,
+    "proof.estimators": 90,
+    "proof.replay": 90,
+    "leakage.guard": 90,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +60,7 @@ EXPECTED_FLOORS = {"pit": 91, "proof": 91, "leakage": 86, "reality": 91, "proofc
 def test_coverage_floors_parse_from_pyproject() -> None:
     floors = coverage_floors(PYPROJECT)
     assert floors == EXPECTED_FLOORS
-    assert set(floors) == set(REQUIRED_FLOOR_PACKAGES)
+    assert set(REQUIRED_FLOOR_PACKAGES) <= set(floors)
 
 
 def test_coverage_floors_fail_closed_on_missing_table(tmp_path: Path) -> None:
@@ -59,7 +73,8 @@ def test_coverage_floors_fail_closed_on_missing_table(tmp_path: Path) -> None:
 def test_coverage_floors_reject_floor_below_global_ratchet(tmp_path: Path) -> None:
     fake = tmp_path / "pyproject.toml"
     rows = "\n".join(
-        f"{pkg} = {70 if pkg == 'leakage' else floor}" for pkg, floor in EXPECTED_FLOORS.items()
+        f"{json.dumps(pkg) if '.' in pkg else pkg} = {70 if pkg == 'leakage' else floor}"
+        for pkg, floor in EXPECTED_FLOORS.items()
     )
     fake.write_text(f"[tool.proofcore.coverage-floors]\n{rows}\n")
     with pytest.raises(ProofcoreError, match="raise-never-lower"):
@@ -67,14 +82,14 @@ def test_coverage_floors_reject_floor_below_global_ratchet(tmp_path: Path) -> No
 
 
 def test_coverage_gate_reports_failures_via_runner() -> None:
-    """The gate shells out per package and collects every failure."""
+    """The gate shells out per floor entry and collects every failure."""
     calls: list[list[str]] = []
 
     import subprocess
 
     def fake_runner(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         calls.append(cmd)
-        rc = 1 if "leakage" in cmd[4] else 0
+        rc = 1 if "leakage/*" in cmd[4] else 0
         return subprocess.CompletedProcess(cmd, rc, stdout="TOTAL 42%", stderr="")
 
     failures = coverage_gate(PYPROJECT, runner=fake_runner)
@@ -83,8 +98,30 @@ def test_coverage_gate_reports_failures_via_runner() -> None:
     for cmd in calls:
         include = cmd[4]
         floor = int(cmd[5].split("=")[1])
-        pkg = include.removeprefix("--include=src/quant_fund/").removesuffix("/*")
-        assert floor == EXPECTED_FLOORS[pkg]
+        name = include.removeprefix("--include=src/quant_fund/")
+        # Package entries glob the tree; dotted module entries name the file.
+        name = name.removesuffix("/*").replace("/", ".").removesuffix(".py")
+        assert floor == EXPECTED_FLOORS[name]
+
+
+def test_coverage_floors_reject_bad_module_entry(tmp_path: Path) -> None:
+    """Wave-2 module floors are validated too: non-int or sub-80 fails closed."""
+    fake = tmp_path / "pyproject.toml"
+    rows = "\n".join(
+        f"{json.dumps(pkg) if '.' in pkg else pkg} = {floor}"
+        for pkg, floor in EXPECTED_FLOORS.items()
+    )
+    fake.write_text(f"[tool.proofcore.coverage-floors]\n{rows}\n'replay.broken' = 75\n")
+    with pytest.raises(ProofcoreError, match="raise-never-lower"):
+        coverage_floors(fake)
+
+
+def test_module_floor_include_pattern() -> None:
+    """Dotted floor keys map to exactly one module file, packages to a tree."""
+    from quant_fund.proofcore import ci
+
+    assert ci._include_pattern("src/quant_fund", "pit") == "src/quant_fund/pit/*"
+    assert ci._include_pattern("src/quant_fund", "proof.runner") == "src/quant_fund/proof/runner.py"
 
 
 # ---------------------------------------------------------------------------
