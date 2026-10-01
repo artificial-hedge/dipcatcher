@@ -292,6 +292,14 @@ from quant_fund.research.benches_w37 import (
     bench_spatial_econometrics,
     bench_triple_difference,
 )
+from quant_fund.research.benches_w38 import (
+    bench_censored_quantile,
+    bench_control_function,
+    bench_fractional_response,
+    bench_interval_censoring,
+    bench_kernel_regression,
+    bench_threshold_ar,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2064,6 +2072,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "distribution_regression": bench_distribution_regression(),
         "simex": bench_simex(),
         "lp_did": bench_lp_did(),
+        "control_function": bench_control_function(),
+        "kernel_regression": bench_kernel_regression(),
+        "censored_quantile": bench_censored_quantile(),
+        "threshold_ar": bench_threshold_ar(),
+        "fractional_response": bench_fractional_response(),
+        "interval_censoring": bench_interval_censoring(),
     }
 
     hyps = _build_hypotheses(families, rankers)
