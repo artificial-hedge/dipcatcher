@@ -475,6 +475,7 @@ _MEASUREMENT_SCHEMAS = (
     "tape_digest.v1",
     "tick_rule.v1",
     "unhit_chase.v1",
+    "vac_chase.v1",
     "vol_signature.v1",
     "vpin.v1",
 )

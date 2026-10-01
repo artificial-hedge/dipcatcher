@@ -517,6 +517,17 @@ class ZILobConfig:
     # field.
     unhit_imp_frac: float = 0.0
     unhit_imp_window: int = 0
+    # ``vac_chase_frac`` > 0: the vacancy-COUPLED chase — an LO arrival on
+    # the side opposite a recently-emptied level is rerouted with
+    # probability ``vac_chase_frac`` to one tick inside the spread, but
+    # ONLY while that emptied level stays vacant and within
+    # ``vac_chase_window`` events of its vacancy. Unlike ``unhit_imp``
+    # (fixed post-fill window) the chase dies the moment the hit side
+    # repairs — it cannot fight the refill mechanism. Draws one uniform
+    # per eligible arrival only when the knob is on; 0 keeps every path
+    # bit-identical.
+    vac_chase_frac: float = 0.0
+    vac_chase_window: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -604,12 +615,14 @@ class ZILobConfig:
             raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
         _prob(self.hit_refill_damp, "hit_refill_damp")
         _prob(self.unhit_imp_frac, "unhit_imp_frac")
+        _prob(self.vac_chase_frac, "vac_chase_frac")
         for _name in (
             "hit_refill_band",
             "hit_refill_window",
             "unhit_step_ticks",
             "unhit_step_window",
             "unhit_imp_window",
+            "vac_chase_window",
         ):
             _v = getattr(self, _name)
             if isinstance(_v, bool) or int(_v) < 0:
@@ -1415,8 +1428,13 @@ class ZILobSimulator:
 
     def _level_vacated(self, side: Side, level: int) -> None:
         """Record that ``level`` on ``side`` just emptied (sticky vacancy)."""
-        if self._cfg.refill_cooldown > 0:
-            self._vacancy[(side, int(level))] = self.n_events
+        horizon = max(self._cfg.refill_cooldown, self._cfg.vac_chase_window)
+        if horizon <= 0:
+            return
+        self._vacancy[(side, int(level))] = self.n_events
+        stale = [k for k, t0 in self._vacancy.items() if self.n_events - t0 > horizon]
+        for k in stale:
+            del self._vacancy[k]
 
     def _is_cooled(self, side: Side, level: int) -> bool:
         """True when (side, level) emptied within ``refill_cooldown`` events."""
@@ -1473,6 +1491,36 @@ class ZILobSimulator:
             return None
         hit_side, _n_u, _r_u, _fe, _s_u, _t_u, i_until = self._hit_retreat
         if side == hit_side or self.n_events >= i_until:
+            return None
+        if float(self._rng.random()) >= frac:
+            return None
+        ba, bb = self.best_ask_level, self.best_bid_level
+        if ba is None or bb is None:
+            return None
+        if ba - bb <= 1:
+            return bb if side == "buy" else ba
+        return bb + 1 if side == "buy" else ba - 1
+
+    def _vac_chase(self, side: Side) -> int | None:
+        """Vacancy-coupled chase: reroute ``side``'s arrival to the chase
+        level (one tick inside the spread, touch when the spread is 1)
+        with probability ``vac_chase_frac`` while a level emptied on the
+        OPPOSITE side is still vacant within ``vac_chase_window`` events.
+        Unlike ``_unhit_chase`` the trigger is the vacancy itself — the
+        chase expires the moment the hit side repairs. Draws its uniform
+        only for eligible arrivals with the knob on — at 0 the RNG
+        stream is untouched."""
+        frac = self._cfg.vac_chase_frac
+        window = self._cfg.vac_chase_window
+        if frac <= 0.0 or window <= 0:
+            return None
+        opp = "sell" if side == "buy" else "buy"
+        book = self._asks if opp == "sell" else self._bids
+        now = self.n_events
+        for (vac_side, vac_level), t0 in self._vacancy.items():
+            if vac_side == opp and now - t0 < window and vac_level not in book:
+                break
+        else:
             return None
         if float(self._rng.random()) >= frac:
             return None
@@ -1634,6 +1682,8 @@ class ZILobSimulator:
             )
             if want_buy:
                 chase = self._unhit_chase("buy")
+                if chase is None:
+                    chase = self._vac_chase("buy")
                 if chase is not None:
                     level = chase
                 elif want_join and bb is not None:
@@ -1660,6 +1710,8 @@ class ZILobSimulator:
                     self.n_lo_units += k
                 return
             chase = self._unhit_chase("sell")
+            if chase is None:
+                chase = self._vac_chase("sell")
             if chase is not None:
                 level = chase
             elif want_join and ba is not None:
@@ -1695,6 +1747,8 @@ class ZILobSimulator:
         imp = self._cfg.lo_improve_frac > 0.0 and self._rng.random() < self._cfg.lo_improve_frac
         if want_buy:
             chase = self._unhit_chase("buy")
+            if chase is None:
+                chase = self._vac_chase("buy")
             if chase is not None:
                 level = chase
             elif imp and ba is not None and bb is not None and ba > bb:
@@ -1719,6 +1773,8 @@ class ZILobSimulator:
                 self._rest("buy", level, "zi")
         else:
             chase = self._unhit_chase("sell")
+            if chase is None:
+                chase = self._vac_chase("sell")
             if chase is not None:
                 level = chase
             elif imp and ba is not None and bb is not None and ba > bb:
