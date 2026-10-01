@@ -268,6 +268,14 @@ from quant_fund.research.benches_w34 import (
     bench_rif_regression,
     bench_shift_share,
 )
+from quant_fund.research.benches_w35 import (
+    bench_fama_macbeth,
+    bench_honest_did,
+    bench_many_iv,
+    bench_panel_quantile_fe,
+    bench_sign_restricted_var,
+    bench_specification_curve,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2022,6 +2030,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "shift_share": bench_shift_share(),
         "entropy_balancing": bench_entropy_balancing(),
         "did_diagnostics": bench_did_diagnostics(),
+        "honest_did": bench_honest_did(),
+        "many_iv": bench_many_iv(),
+        "fama_macbeth": bench_fama_macbeth(),
+        "specification_curve": bench_specification_curve(),
+        "sign_restricted_var": bench_sign_restricted_var(),
+        "panel_quantile_fe": bench_panel_quantile_fe(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -953,3 +953,20 @@ wave 34 — causal panel + IV diagnostics (models/matrix_completion,
   clean/forbidden split, Sun-Abraham cohort CATTs; TWFE bias 1.31
   vs mean CATT under growing effects)
   → PR stacked on w33 (175→181 families)
+
+w35 — sensitivity/robustness canon
+  (models/honest_did, models/many_iv, models/fama_macbeth,
+  models/specification_curve, models/sign_restricted_var,
+  models/panel_quantile_fe):
+  honest_did (Rambachan-Roth Δ^SD: linear-extrapolation bias bound
+  + FLCI, breakdown Mbar*=6 clean vs .45 violated) + many_iv (LIML
+  via scalar AR-ratio minimization — err .021 vs 2SLS .158 under
+  k=40/pi=.10; JIVE, HFUL leverage-robust) + fama_macbeth (two-pass
+  lambda err .15, Shanken inflation 1.37, honest priced-idio SE
+  ratio) + specification_curve (Simonsohn multiverse grid, median
+  .53 vs true .5, shuffle p .01 real vs .78 null) +
+  sign_restricted_var (Uhlig QR draws with free column signs, pos
+  restriction accepts 54%, median IRF positive) +
+  panel_quantile_fe (Machado-Santos Silva moments, beta50 err .07,
+  tau gradient 1.73 hetero vs 1.14 homo)
+  → PR stacked on w34 (181→187 families)
