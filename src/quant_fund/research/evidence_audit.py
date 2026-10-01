@@ -40,6 +40,7 @@ from quant_fund.research.receipt_v2 import (
     seal_receipt,
     verify_receipt_file,
 )
+from quant_fund.utils.receipt import verified_corpus_files
 
 EVIDENCE_AUDIT_SCHEMA = "evidence_audit.v1"
 EVIDENCE_AUDIT_KIND = "evidence_audit"
@@ -61,11 +62,15 @@ def _filename_digest_status(path: Path, seal: object) -> bool | None:
 
 
 def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
-    """Verify every ``*.json`` in ``receipts_dir``. Never raises per-file:
-    an unreadable or unparseable file is a row with ``valid=False``."""
+    """Verify every ``*.json`` under ``receipts_dir`` recursively — matching
+    the epoch chain's member semantics, so a receipt in a subdirectory is
+    audited rather than invisible. Quarantined subdirs (``legacy-unsealed``)
+    are governed by ``quality/legacy_quarantine.json`` instead. Never raises
+    per-file: an unreadable or unparseable file is a row with
+    ``valid=False``."""
     directory = Path(receipts_dir)
     rows: list[dict[str, Any]] = []
-    for path in sorted(directory.glob("*.json")):
+    for path in verified_corpus_files(directory):
         result = verify_receipt_file(path)
         try:
             seal = json.loads(path.read_text()).get("receipt_sha256")
@@ -74,7 +79,7 @@ def audit_receipts_dir(receipts_dir: Path | str) -> list[dict[str, Any]]:
         sealed = isinstance(seal, str) and len(seal) == 64
         rows.append(
             {
-                "file": path.name,
+                "file": path.relative_to(directory).as_posix(),
                 "file_sha256": _file_sha256(path),
                 "schema": result["schema"],
                 "kind": result["kind"],
@@ -153,13 +158,13 @@ def run_evidence_audit(
     # duplicate-seal detection needs the seal itself — re-verify cheaply via
     # the JSON bodies already on disk (verify_receipt_file does not echo it).
     seal_by_file: dict[str, str] = {}
-    for path in sorted(directory.glob("*.json")):
+    for path in verified_corpus_files(directory):
         try:
             seal = json.loads(path.read_text()).get("receipt_sha256")
         except (OSError, UnicodeError, json.JSONDecodeError):
             continue
         if isinstance(seal, str) and len(seal) == 64:
-            seal_by_file[path.name] = seal
+            seal_by_file[path.relative_to(directory).as_posix()] = seal
     dup: dict[str, list[str]] = {}
     for name, seal in seal_by_file.items():
         dup.setdefault(seal, []).append(name)
