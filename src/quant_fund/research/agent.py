@@ -493,6 +493,14 @@ from quant_fund.research.benches_w62 import (
     bench_narrative_svar,
     bench_stable_dist,
 )
+from quant_fund.research.benches_w63 import (
+    bench_convexity_adj,
+    bench_first_passage,
+    bench_higham_corr,
+    bench_jln_uncertainty,
+    bench_lee_carter,
+    bench_power_law,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2416,6 +2424,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "stable_dist": bench_stable_dist(),
         "asian_option": bench_asian_option(),
         "black_litterman": bench_black_litterman(),
+        "higham_corr": bench_higham_corr(),
+        "lee_carter": bench_lee_carter(),
+        "power_law": bench_power_law(),
+        "convexity_adj": bench_convexity_adj(),
+        "jln_uncertainty": bench_jln_uncertainty(),
+        "first_passage": bench_first_passage(),
     }
 
     hyps = _build_hypotheses(families, rankers)

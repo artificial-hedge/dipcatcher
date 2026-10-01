@@ -1477,3 +1477,41 @@ detail: |
   - Canon staged on top of w61-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711 land.
 note: canon PR to follow.
+
+---
+owner: devin (wave 63 canon)
+slice: models/higham_corr.py, models/lee_carter.py,
+  models/power_law.py, models/convexity_adj.py,
+  models/jln_uncertainty.py, models/first_passage.py,
+  research/benches_w63.py, registry/agent wiring,
+  tests/unit/research/test_benches_w63.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w63-lanes (cf36075a): six new models, all
+    bench_*() self-checks score=1.0, 30 unit tests green.
+  - higham_corr.py (Higham Dykstra alternating corrections +
+    Qi-Sun semismooth Newton on the dual — both agree on the
+    Frobenius optimum), lee_carter.py (Lee-Carter SVD on
+    age-centred log mortality + random-walk-drift kappa
+    forecast, beats naive last-value baseline), power_law.py
+    (Clauset-Shalizi-Newman: KS-optimal x_min, Hill MLE alpha,
+    parametric-bootstrap p-value; accepts true Pareto, rejects
+    exponential tail), convexity_adj.py (Vasicek/Hull-White
+    exact Gaussian convexity — validated against independent
+    path-simulated MC, honest SE reporting; Hull heuristic
+    kept as labeled reference), jln_uncertainty.py (JLN common
+    factor of rolling forecast-error variances; corr 0.96 to
+    planted latent uncertainty), first_passage.py (inverse-
+    Gaussian hitting-time CDF vs path MC within 4 SE;
+    Siegmund corrected-continuity lift recovers the
+    discretely-monitored hit probability).
+  - benches_w63.py: +366..371 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "higham_corr","lee_carter","power_law",
+    "convexity_adj","jln_uncertainty","first_passage";
+    agent.py import+dict wiring; tests: 6 module files +
+    test_benches_w63.
+  - Canon staged on top of w62-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713 land.
+note: canon PR to follow.

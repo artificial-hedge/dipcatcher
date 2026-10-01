@@ -776,6 +776,26 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "stable_dist",
         "asian_option",
         "black_litterman",
+        # wave 63 — Higham/Qi-Sun nearest correlation
+        # matrix (Dykstra alternating corrections and
+        # semismooth Newton on the dual), Lee-Carter
+        # stochastic mortality (age-centred SVD +
+        # random-walk kappa), Clauset-Shalizi-Newman
+        # power-law tails (KS-optimal x_min + Hill MLE +
+        # parametric-bootstrap p-value), Vasicek/Hull-
+        # White futures convexity adjustment (Gaussian
+        # integral closed form vs Hull heuristic),
+        # Jurado-Ludvigson-Ng macro uncertainty factor
+        # (common factor of forecast-error variances),
+        # inverse-Gaussian first-passage law with the
+        # Siegmund corrected-continuity barrier lift.
+        # Same SYNTHETIC diagnostic contract.
+        "higham_corr",
+        "lee_carter",
+        "power_law",
+        "convexity_adj",
+        "jln_uncertainty",
+        "first_passage",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
