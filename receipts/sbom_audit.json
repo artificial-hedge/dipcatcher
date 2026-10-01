@@ -1,0 +1,28 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "half_block_raises": "raise:ValueError",
+   "hash_carried": true,
+   "hashless_none": true,
+   "inj_names": [
+    "evil",
+    "real"
+   ],
+   "injection_contained": true,
+   "lockfile_sha": true,
+   "missing_raises": "raise:FileNotFoundError",
+   "n_entries": 2,
+   "no_packages_raises": "raise:ValueError",
+   "sorted": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "537ce7f6c24ce63e5b8727da469e1ef9a13180e3",
+ "interpretation": "SBOM contract holds: sorted hash-pinned entries, lockfile digest bound, malformed/half-formed package blocks fail closed, quoted-name injection contained.",
+ "kind": "sbom_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "944d30d45c7e7bae836b415a39167a37ec54aca2e2d1f38afc0e967fac989ccf",
+ "research_only": true,
+ "schema": "sbom_audit.v1"
+}
