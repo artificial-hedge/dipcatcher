@@ -1,0 +1,172 @@
+{
+  "claim": "cancel_propensity_gradient_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "split_touchprop_0.685_vs_1.373"
+  ],
+  "git_revision": "85d6544e56977f87d2ebc03ec6922a8096b800af",
+  "interpretation": "Cancel propensity = share of cancels at distance bucket d divided by share of resting volume at d. >1 at the touch = queue-skimming exits; ~1 uniform = inventory-driven exit. LOBSTER ids link DELETE to SUBMISSION price; distances use the pre-event touch. Sim orders carry level directly. Depth distribution is volume-weighted (per-share basis).",
+  "kind": "cancel_gradient",
+  "real": {
+    "at_touch_propensity": 1.3734665006042697,
+    "at_touch_share": 0.15096049896049896,
+    "buckets": [
+      {
+        "bucket": "touch",
+        "cancel_share": 0.15096049896049896,
+        "depth_share": 0.10991203563689572,
+        "propensity": 1.3734665006042697
+      },
+      {
+        "bucket": "d1_3",
+        "cancel_share": 0.1503866943866944,
+        "depth_share": 0.10440773357101911,
+        "propensity": 1.4403788804054438
+      },
+      {
+        "bucket": "d4_10",
+        "cancel_share": 0.4327817047817048,
+        "depth_share": 0.38917485042331956,
+        "propensity": 1.1120495178733993
+      },
+      {
+        "bucket": "d11_50",
+        "cancel_share": 0.2654220374220374,
+        "depth_share": 0.39066127371049203,
+        "propensity": 0.679417324632833
+      },
+      {
+        "bucket": "d51_plus",
+        "cancel_share": 0.0004490644490644491,
+        "depth_share": 0.005844106658273582,
+        "propensity": 0.07684056354938396
+      }
+    ],
+    "median_distance_ticks": 7.0,
+    "n_cancels": 120250,
+    "ok": true
+  },
+  "receipt_sha256": "6d6f88025d8b1a6566d3a7dcb238423788ea9cdf0b662b3226c6a105bcb1197c",
+  "research_only": true,
+  "schema": "cancel_gradient.v1",
+  "sim_arms": {
+    "iid": {
+      "at_touch_propensity": 0.763509898341359,
+      "at_touch_share": 0.1436625390113762,
+      "buckets": [
+        {
+          "bucket": "touch",
+          "cancel_share": 0.1436625390113762,
+          "depth_share": 0.18816067653276955,
+          "propensity": 0.763509898341359
+        },
+        {
+          "bucket": "d1_3",
+          "cancel_share": 0.6271015805899527,
+          "depth_share": 0.5834281997072694,
+          "propensity": 1.0748564791770367
+        },
+        {
+          "bucket": "d4_10",
+          "cancel_share": 0.22661834289741267,
+          "depth_share": 0.2252398764026671,
+          "propensity": 1.0061199931236033
+        },
+        {
+          "bucket": "d11_50",
+          "cancel_share": 0.0026175375012584315,
+          "depth_share": 0.003171247357293869,
+          "propensity": 0.8253968253968255
+        },
+        {
+          "bucket": "d51_plus",
+          "cancel_share": 0.0,
+          "depth_share": 0.0,
+          "propensity": null
+        }
+      ],
+      "median_distance_ticks": 2.0,
+      "n_cancels": 9933,
+      "ok": true
+    },
+    "regime": {
+      "at_touch_propensity": 0.7488717047416001,
+      "at_touch_share": 0.1481030859418206,
+      "buckets": [
+        {
+          "bucket": "touch",
+          "cancel_share": 0.1481030859418206,
+          "depth_share": 0.1977683026399347,
+          "propensity": 0.7488717047416001
+        },
+        {
+          "bucket": "d1_3",
+          "cancel_share": 0.6390885963942042,
+          "depth_share": 0.5977501587589585,
+          "propensity": 1.069156715442907
+        },
+        {
+          "bucket": "d4_10",
+          "cancel_share": 0.21148103085941822,
+          "depth_share": 0.20321146693277692,
+          "propensity": 1.0406943764122174
+        },
+        {
+          "bucket": "d11_50",
+          "cancel_share": 0.001327286804557018,
+          "depth_share": 0.0012700716683298557,
+          "propensity": 1.0450487461880007
+        },
+        {
+          "bucket": "d51_plus",
+          "cancel_share": 0.0,
+          "depth_share": 0.0,
+          "propensity": null
+        }
+      ],
+      "median_distance_ticks": 2.0,
+      "n_cancels": 9041,
+      "ok": true
+    },
+    "split": {
+      "at_touch_propensity": 0.6845906437072582,
+      "at_touch_share": 0.1281157399337633,
+      "buckets": [
+        {
+          "bucket": "touch",
+          "cancel_share": 0.1281157399337633,
+          "depth_share": 0.18714211348256116,
+          "propensity": 0.6845906437072582
+        },
+        {
+          "bucket": "d1_3",
+          "cancel_share": 0.5152518738016385,
+          "depth_share": 0.4491150442477876,
+          "propensity": 1.1472603298440425
+        },
+        {
+          "bucket": "d4_10",
+          "cancel_share": 0.28272616350008717,
+          "depth_share": 0.28396668401874026,
+          "propensity": 0.9956314575319293
+        },
+        {
+          "bucket": "d11_50",
+          "cancel_share": 0.07373191563534949,
+          "depth_share": 0.07977615825091099,
+          "propensity": 0.92423497510934
+        },
+        {
+          "bucket": "d51_plus",
+          "cancel_share": 0.0001743071291615827,
+          "depth_share": 0.0,
+          "propensity": null
+        }
+      ],
+      "median_distance_ticks": 3.0,
+      "n_cancels": 5737,
+      "ok": true
+    }
+  },
+  "ticker": "AMZN"
+}

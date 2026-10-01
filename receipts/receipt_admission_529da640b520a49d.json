@@ -1,0 +1,50 @@
+{
+  "candidate": "verdict_real_drill.json",
+  "candidate_sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7",
+  "checks": [
+    {
+      "errors": [],
+      "name": "seal",
+      "ok": true
+    },
+    {
+      "name": "honesty",
+      "ok": true,
+      "quarantine_errors": [],
+      "reject_errors": []
+    },
+    {
+      "groups_after": 60,
+      "name": "lattice",
+      "new_inconsistent_groups": 0,
+      "ok": true
+    },
+    {
+      "name": "corpus",
+      "ok": true,
+      "survivors_added": 0,
+      "survivors_removed": 0
+    }
+  ],
+  "data_label": "CORPUS",
+  "inputs_sha256": "c97148a70d34f378383d668cba10f5ab0faf4d11ce06d0fba38804593c24f737",
+  "kind": "receipt_admission.v1",
+  "lattice_new_inconsistent": [],
+  "live_pnl_claim": false,
+  "n_corpus_receipts": 55,
+  "params": {
+    "corpus_dir": "receipts",
+    "known_inconsistent": [
+      "lattice_drill_vol_bench_a.json",
+      "lattice_drill_vol_bench_b.json"
+    ],
+    "q": 0.05
+  },
+  "receipt_sha256": "529da640b520a49d1df62963800b4544b67e594e86b0b4a6475acb294356600c",
+  "research_only": true,
+  "schema": "receipt_admission.v1",
+  "simulated_only": false,
+  "survivors_added": [],
+  "survivors_removed": [],
+  "verdict": "admit"
+}

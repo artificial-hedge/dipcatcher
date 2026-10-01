@@ -806,8 +806,10 @@ def run_distribution_fleet(
         "kind": "distribution_fleet_eval",
         "data_label": "SYNTHETIC",
         "live_pnl_claim": False,
-        "generated_at": datetime.now(UTC).isoformat(),
-        "git_revision": git_revision(),
+        "meta": {
+            "generated_at": datetime.now(UTC).isoformat(),
+            "git_revision": git_revision(),
+        },
         "seed": int(seed),
         "n_train": n_train,
         "n_eval": n_eval,
@@ -1030,18 +1032,28 @@ def fleet_receipt_v2(receipt: Mapping[str, Any]) -> dict[str, Any]:
     loaded numeric stack. Validates the v1 contract first — a malformed v1
     receipt is never wrapped.
     """
-    if fleet_v1_contract_errors(receipt):
+    body = {key: value for key, value in receipt.items() if key != "meta"}
+    if fleet_v1_contract_errors(body):
         raise ValueError("fleet receipt violates its synthetic research contract")
+    meta = receipt.get("meta")
+    meta_map: Mapping[str, Any] = meta if isinstance(meta, Mapping) else {}
+    generated_at = meta_map.get("generated_at") or receipt.get("generated_at")
+    revision = (
+        meta_map.get("git_revision")
+        or meta_map.get("code_revision")
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+    )
     return build_receipt_v2(
         kind=str(receipt["kind"]),
         data_label=str(receipt["data_label"]),
-        dataset=fleet_dataset_identity(receipt),
-        params=fleet_params(receipt),
+        dataset=fleet_dataset_identity(body),
+        params=fleet_params(body),
         code_files=(Path(__file__),),
-        verdict=fleet_v1_verdict(receipt),
-        payload=dict(receipt),
-        generated_at=str(receipt["generated_at"]),
-        revision=str(receipt["git_revision"]),
+        verdict=fleet_v1_verdict(body),
+        payload=dict(body),
+        generated_at=None if generated_at is None else str(generated_at),
+        revision=None if revision is None else str(revision),
     )
 
 
@@ -1082,9 +1094,9 @@ def write_fleet_receipt(
     payload in the unified ``receipt.v2`` envelope before sealing.
     """
     if receipt_version == 1:
-        if fleet_v1_contract_errors(receipt):
+        body = {key: value for key, value in receipt.items() if key != "meta"}
+        if fleet_v1_contract_errors(body):
             raise ValueError("fleet receipt violates its synthetic research contract")
-        body: Mapping[str, Any] = receipt
     elif receipt_version == 2:
         body = fleet_receipt_v2(receipt)
     else:
