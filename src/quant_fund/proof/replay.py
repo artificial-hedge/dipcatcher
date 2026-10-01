@@ -37,6 +37,7 @@ from importlib import metadata as importlib_metadata
 from pathlib import Path
 from typing import Any
 
+import polars as pl
 from pydantic import ValidationError
 
 from quant_fund.proofcore.contracts import (
@@ -444,7 +445,18 @@ def replay_bundle(
             return False, f"runner_unavailable:{exc}"
         except ProofError as exc:
             return False, f"replay_reexecute_failed:{exc}"
-        except Exception as exc:
+        except (
+            OSError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+            AttributeError,
+            RuntimeError,
+            ArithmeticError,
+            pl.exceptions.PolarsError,
+        ) as exc:
+            # Preserve the narrow executor fault list from the quality ratchet.
             return False, f"replay_reexecute_error:{exc.__class__.__name__}"
         try:
             fresh_trace = DecisionTrace.model_validate(fresh)
