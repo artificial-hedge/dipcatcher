@@ -100,6 +100,7 @@ src/quant_fund/data/sources/registry.py
 src/quant_fund/data/sources/storage.py
 src/quant_fund/data/universe.py
 src/quant_fund/diffbacktest/__init__.py
+src/quant_fund/diffbacktest/backend_parity.py
 src/quant_fund/diffbacktest/grad_fidelity.py
 src/quant_fund/diffbacktest/jax_core.py
 src/quant_fund/diffbacktest/numpy_core.py

@@ -38,7 +38,7 @@
       "status": "audited"
     },
     "diffbacktest": {
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "execution": {
