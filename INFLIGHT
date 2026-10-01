@@ -1177,3 +1177,13 @@ wave 41 canon (devin/w41-canon-integration): frailty (theta .577
   .29) + model_averaging (argmax model 6 vs 1 sharp contrast,
   entropy .66, mspe within 1.05x single)
   → PR stacked on w40 (217→223 families)
+wave 42 canon (devin/w42-canon-integration): variance_ratio (VR
+  1.82/0.37 vs 1.03 iid, p<1e-8 both tails, null p .79) +
+  har_rv (beta .33/.26/.27 cascade, R2 .44 vs 0 flat) +
+  clark_west (CW t 8.42 real vs 1.81 null over-reject bounded)
+  + stambaugh (OLS .091→corrected .059 vs true .05, Bonf-Q
+  contains) + roy_model (price1 .526/.5, price0 .229/.3,
+  rho1 .55 positive selection, naive gap 1.0→corrected .3)
+  + two_way_cluster (beta .497, SE inflation 1.81x iid, null
+  .99)
+  → PR stacked on w41 (223→229 families)

@@ -543,6 +543,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ppml",
         "event_study",
         "model_averaging",
+        # SOTA canon wave 42 batteries (see research/benches_w42.py):
+        # Lo-MacKinlay variance-ratio test (VR(q) with
+        # heteroskedastic-robust z*), Corsi HAR realized-vol
+        # cascade (daily/weekly/monthly aggregates), Clark-West
+        # MSPE-adjusted nested-forecast test, Stambaugh
+        # predictive-regression bias + Campbell-Yogo
+        # Bonferroni-Q CI, Roy two-sector self-selection
+        # (probit + Mills-corrected wage equations), Cameron-
+        # Gelbach-Miller two-way clustered SEs (V1+V2−V12).
+        # Same SYNTHETIC diagnostic contract.
+        "variance_ratio",
+        "har_rv",
+        "clark_west",
+        "stambaugh",
+        "roy_model",
+        "two_way_cluster",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
