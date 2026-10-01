@@ -1,0 +1,50 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "0effacb916fabebd2f06c3aa8cb3c80c8695f13f5b7718bb49c0c5a5cda85e3c",
+  "inputs_sha256": "9e01384f48c1fbcff2a179ae1cf15cde0d0b606ab8855ac0787a7f93f2006254",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "d3c2425b7a95d706487e5d04ed04a94750cff7015ca25713666c124fb9ec831a",
+  "members": [
+    {
+      "name": "corpus_epoch_ba4dfc5e9539492b.json",
+      "sha256": "83aeacb1b785346cbc7099e2aea6e97e27279a6712725ca5468809855813cf33"
+    },
+    {
+      "name": "typescript/README.md",
+      "sha256": "a98aba7d9db4f9bda68a887a426689e18501a474b79d542bea8ba605025e37ec"
+    },
+    {
+      "name": "typescript/client.ts",
+      "sha256": "3a1c659be32ed94101ac92b15f2cacdecef4b51e5117c79c47245439fd2fe03f"
+    },
+    {
+      "name": "typescript/openapi.json",
+      "sha256": "9e8e7b9240f3ab928009282b75f85127d52dc6215fa6d633386bc2caf651dc8a"
+    },
+    {
+      "name": "typescript/package.json",
+      "sha256": "228ee04275b7894efaa19ecb888dc121e9fb211dc3efffeb0f04683bec227ce1"
+    },
+    {
+      "name": "typescript/schema.d.ts",
+      "sha256": "f4a32590d0cb5587d0922ed83ec02474433d61f0f4f7cb4b4be4fe5eb43aaaab"
+    }
+  ],
+  "members_added": [
+    "corpus_epoch_ba4dfc5e9539492b.json"
+  ],
+  "members_removed": [],
+  "n_members": 6,
+  "params": {
+    "head_sha": "4f427a8a3b092a88014d9784b634ca7a229078a0",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": "corpus_epoch_ba4dfc5e9539492b.json",
+  "prev_epoch_sha256": "9723e879154493731970840047c9af2e069173594ddf7a5ceeea7626a8b04726",
+  "receipt_sha256": "54655917bf13602b94e2c175dac70ba438ee4d62a9a4cd35335a1e6c0a15485b",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "advancing"
+}
