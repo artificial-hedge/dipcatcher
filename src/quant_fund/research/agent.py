@@ -437,6 +437,14 @@ from quant_fund.research.benches_w55 import (
     bench_glosten_milgrom,
     bench_hasbrouck_is,
 )
+from quant_fund.research.benches_w56 import (
+    bench_ers_dfgls,
+    bench_kpss,
+    bench_lee_strazicich,
+    bench_ng_perron,
+    bench_phillips_perron,
+    bench_zivot_andrews,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2318,6 +2326,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "romano_wolf": bench_romano_wolf(),
         "christensen_diebold_rudebusch": bench_christensen_diebold_rudebusch(),
         "danielsson_devries": bench_danielsson_devries(),
+        "kpss": bench_kpss(),
+        "ers_dfgls": bench_ers_dfgls(),
+        "ng_perron": bench_ng_perron(),
+        "phillips_perron": bench_phillips_perron(),
+        "zivot_andrews": bench_zivot_andrews(),
+        "lee_strazicich": bench_lee_strazicich(),
     }
 
     hyps = _build_hypotheses(families, rankers)

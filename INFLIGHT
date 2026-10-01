@@ -1243,3 +1243,28 @@ wave 54 (devin/w54-canon-integration): Pesaran-Timmermann sign test,
   correlation, Romano-Wolf stepdown, Christensen-Diebold-Rudebusch
   AFNS curve, Danielsson-de Vries tail-simulation VaR — 6 modules +
   benches_w54 (scorecard 295->301 families).
+
+---
+owner: devin (wave 56 canon)
+slice: unit-root inference battery — KPSS, ERS DF-GLS, Ng-Perron,
+  Phillips-Perron, Zivot-Andrews, Lee-Strazicich
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - models: kpss.py (level/trend LM stationarity test, Bartlett NW
+    LRV, l4 lag rule), ers_dfgls.py (quasi-detrended DF t-stat at
+    c=-7/-13.5, Ng-Perron MAIC lag pick), ng_perron.py (MZa/MZt/MSB/
+    MPT battery, AR spectral-density LRV, unanimous-reject gate),
+    phillips_perron.py (Z_pi/Z_t nonparametric corrections, joint
+    AND decision), zivot_andrews.py (model-C endogenous level+trend
+    break, min-t over trimmed lambda grid, break-date recovery),
+    lee_strazicich.py (LM score unit root under crash-function
+    null, lagged partial-sum regressor, lambda-invariant
+    conservative cv floor).
+  - benches_w56.py: +324..329 seed stamps, canonical adapter
+    structure (try-import, finite-blob, forbidden-token filter).
+  - registry +6 -> "kpss","ers_dfgls","ng_perron",
+    "phillips_perron","zivot_andrews","lee_strazicich"; agent.py
+    import+dict wiring; tests: 6 module files + test_benches_w56.
+  - Canon staged on top of w54-canon (carries w52/w53 merges) so
+    the chain stays clean as #691/#695/#698 land.
+note: canon PR to follow.

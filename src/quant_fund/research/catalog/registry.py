@@ -651,6 +651,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "romano_wolf",
         "christensen_diebold_rudebusch",
         "danielsson_devries",
+        # wave 56 — Kwiatkowski-Phillips-Schmidt-Shin level/trend
+        # stationarity LM test, Elliott-Rothenberg-Stock DF-GLS
+        # quasi-differenced unit-root test with Ng-Perron MAIC lag
+        # selection, Ng-Perron modified-ADF battery (MZ_a/MZ_t/MSB/
+        # MPT with AR spectral-density LRV), Phillips-Perron Z
+        # nonparametric unit-root corrections, Zivot-Andrews
+        # endogenous level+trend break minimum-t test, Lee-
+        # Strazicich LM unit-root with endogenous crash break.
+        # Same SYNTHETIC diagnostic contract.
+        "kpss",
+        "ers_dfgls",
+        "ng_perron",
+        "phillips_perron",
+        "zivot_andrews",
+        "lee_strazicich",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
