@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1032,
+  "module_count": 1034,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -9847,6 +9847,14 @@
       "src": "quant_fund.research.lane_contracts"
     },
     {
+      "dst": "quant_fund.research.vine_dominance",
+      "src": "quant_fund.research.lane_contracts"
+    },
+    {
+      "dst": "quant_fund.research.vine_panel",
+      "src": "quant_fund.research.lane_contracts"
+    },
+    {
       "dst": "quant_fund.research.xwatch",
       "src": "quant_fund.research.lane_contracts"
     },
@@ -10553,6 +10561,42 @@
     {
       "dst": "quant_fund.utils.hashing",
       "src": "quant_fund.research.verify"
+    },
+    {
+      "dst": "quant_fund.models.pair_vine_copula",
+      "src": "quant_fund.research.vine_dominance"
+    },
+    {
+      "dst": "quant_fund.research.loss_cs",
+      "src": "quant_fund.research.vine_dominance"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.vine_dominance"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.vine_dominance"
+    },
+    {
+      "dst": "quant_fund.models.pair_vine_copula",
+      "src": "quant_fund.research.vine_panel"
+    },
+    {
+      "dst": "quant_fund.research.loss_cs",
+      "src": "quant_fund.research.vine_panel"
+    },
+    {
+      "dst": "quant_fund.research.receipt_v2",
+      "src": "quant_fund.research.vine_panel"
+    },
+    {
+      "dst": "quant_fund.utils.atomicio",
+      "src": "quant_fund.research.vine_panel"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.vine_panel"
     },
     {
       "dst": "quant_fund.metrics.vol_eval",
@@ -12103,6 +12147,8 @@
     "quant_fund.research.tail_watch",
     "quant_fund.research.verdict_run",
     "quant_fund.research.verify",
+    "quant_fund.research.vine_dominance",
+    "quant_fund.research.vine_panel",
     "quant_fund.research.vol_bench",
     "quant_fund.research.winner_curse",
     "quant_fund.research.xwatch",
@@ -13874,7 +13920,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 97,
+      "imports": 99,
       "src": "quant_fund.research"
     },
     {
@@ -13919,7 +13965,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 222,
+      "imports": 228,
       "src": "quant_fund.research"
     },
     {
@@ -13934,7 +13980,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 68,
+      "imports": 71,
       "src": "quant_fund.research"
     },
     {
