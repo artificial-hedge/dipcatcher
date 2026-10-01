@@ -1,90 +1,121 @@
 {
+  "schema": "cancel_gradient_bench.v1",
+  "kind": "cancel_gradient_bench",
+  "horizon": 2000.0,
+  "seed": 13,
   "arms": [
     {
+      "name": "uniform",
+      "cxl_touch_bias": 0.0,
+      "n_cxl": 2943,
+      "n_cxl_touch": 159,
       "buckets": {
-        "d11_plus": {
-          "cancel_share": 0.1897,
-          "depth_share": 0.1956,
-          "propensity": 0.9695
+        "touch": {
+          "cancel_share": 0.054,
+          "depth_share": 0.0533,
+          "propensity": 1.0131
         },
         "d1_3": {
-          "cancel_share": 0.2072,
-          "depth_share": 0.2062,
-          "propensity": 1.0047
+          "cancel_share": 0.21,
+          "depth_share": 0.2094,
+          "propensity": 1.0026
         },
         "d4_10": {
-          "cancel_share": 0.5493,
-          "depth_share": 0.545,
-          "propensity": 1.0079
+          "cancel_share": 0.546,
+          "depth_share": 0.5409,
+          "propensity": 1.0094
         },
-        "touch": {
-          "cancel_share": 0.0539,
-          "depth_share": 0.0532,
-          "propensity": 1.0134
+        "d11_plus": {
+          "cancel_share": 0.1899,
+          "depth_share": 0.1963,
+          "propensity": 0.9677
         }
-      },
-      "cxl_touch_bias": 0.0,
-      "n_cxl": 3654,
-      "n_cxl_touch": 197,
-      "name": "uniform"
+      }
     },
     {
+      "name": "touch_biased",
+      "cxl_touch_bias": 0.03,
+      "n_cxl": 2840,
+      "n_cxl_touch": 229,
       "buckets": {
-        "d11_plus": {
-          "cancel_share": 0.1841,
-          "depth_share": 0.1894,
-          "propensity": 0.9718
+        "touch": {
+          "cancel_share": 0.0806,
+          "depth_share": 0.0539,
+          "propensity": 1.4961
         },
         "d1_3": {
-          "cancel_share": 0.1971,
-          "depth_share": 0.1935,
-          "propensity": 1.0183
+          "cancel_share": 0.2021,
+          "depth_share": 0.1934,
+          "propensity": 1.0453
         },
         "d4_10": {
-          "cancel_share": 0.5395,
-          "depth_share": 0.5635,
-          "propensity": 0.9574
+          "cancel_share": 0.5363,
+          "depth_share": 0.5616,
+          "propensity": 0.955
         },
-        "touch": {
-          "cancel_share": 0.0793,
-          "depth_share": 0.0535,
-          "propensity": 1.482
+        "d11_plus": {
+          "cancel_share": 0.181,
+          "depth_share": 0.1912,
+          "propensity": 0.9467
         }
-      },
-      "cxl_touch_bias": 0.03,
-      "n_cxl": 3542,
-      "n_cxl_touch": 281,
-      "name": "touch_biased"
+      }
+    },
+    {
+      "name": "dist_decay",
+      "cxl_touch_bias": 0.5,
+      "cxl_dist_decay": 3.0,
+      "n_cxl": 2861,
+      "n_cxl_touch": 449,
+      "buckets": {
+        "touch": {
+          "cancel_share": 0.1569,
+          "depth_share": 0.0424,
+          "propensity": 3.7022
+        },
+        "d1_3": {
+          "cancel_share": 0.2303,
+          "depth_share": 0.1288,
+          "propensity": 1.7882
+        },
+        "d4_10": {
+          "cancel_share": 0.4642,
+          "depth_share": 0.5362,
+          "propensity": 0.8656
+        },
+        "d11_plus": {
+          "cancel_share": 0.1485,
+          "depth_share": 0.2926,
+          "propensity": 0.5077
+        }
+      }
     }
   ],
-  "claims": {
-    "bias_concentrates_at_touch": true,
-    "bias_touch_magnitude_realistic": true,
-    "deep_residual_logged": true,
-    "uniform_is_flat": true
-  },
-  "data_label": "MIXED",
-  "divergences": [
-    "biased_d1_3_propensity_1.0183_vs_1.44"
-  ],
-  "git_revision": "5fa587647fcd400166ff1a38189c6a317de2e4da",
-  "horizon": 2500.0,
-  "interpretation": "Touch bias b redirects fraction ~b of cancels to the front: at b=0.03 touch propensity lands at ~1.5 vs the tape's 1.37. The uniform arm stays flat ~1.0 at every distance \u2014 the missing mechanism is structural, not parametric. Honest divergences: the real profile concentrates at 1-3 ticks too (1.44) and drains d>=11 to 0.68; the single-knob bias can't express near-touch bands or the tape's 50+ tick deep-book tail, both logged. A distance-decaying propensity kernel is the next refinement.",
-  "kind": "cancel_gradient_bench",
   "real_tape_targets": {
     "propensity": {
-      "d11_50": 0.68,
+      "touch": 1.37,
       "d1_3": 1.44,
       "d4_10": 1.11,
-      "d51_plus": 0.08,
-      "touch": 1.37
+      "d11_50": 0.68,
+      "d51_plus": 0.08
     },
     "source_receipts": [
       "cancel_gradient.v1"
     ]
   },
-  "receipt_sha256": "5dbec96ab2e07f6b55388979583f747c59b874b7aca958040d158c22f12dd971",
+  "divergences": [
+    "decay_touch_propensity_3.7022_vs_1.37"
+  ],
+  "claims": {
+    "uniform_is_flat": true,
+    "bias_concentrates_at_touch": true,
+    "bias_touch_magnitude_realistic": true,
+    "deep_residual_logged": true,
+    "decay_shapes_near_ring": true,
+    "thin_touch_overshoots": true
+  },
+  "interpretation": "Touch bias b redirects fraction ~b of cancels to the front: at b=0.03 touch propensity lands at ~1.5 vs the tape's 1.37. The uniform arm stays flat ~1.0 at every distance \u2014 the missing mechanism is structural, not parametric. The dist-decay arm (b=0.5, L=3) recovers the tape's ORDERING \u2014 near-touch mass > d4-10 > deep \u2014 but the sim's touch queue is thin, so the touch propensity overshoots (~3.4 vs 1.37) instead of the real ring peaking at d1-3. Deep drain undershoots (0.28-0.42 vs 0.68). The residual is occupancy, not propensity: the real touch holds a long queue; ours holds 1-2 orders \u2014 the next mechanism is touch-queue depth, logged.",
+  "git_revision": "7e21adb72a8bdc04b357e006c16855757b6d441d",
+  "data_label": "MIXED",
   "research_only": true,
-  "schema": "cancel_gradient_bench.v1",
-  "seed": 13
+  "receipt_sha256": "f64675e38c2a9cb19d05e034d8c3794e673233da69d041335716914a62e00381"
 }

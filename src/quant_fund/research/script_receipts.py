@@ -411,6 +411,7 @@ _MEASUREMENT_SCHEMAS = (
     "hawkes_mv.v1",
     "hawkes_real.v1",
     "hidden_depth.v1",
+    "hidden_depth_bench.v1",
     "iceberg.v1",
     "impact_instant.v1",
     "improve_flow.v1",
