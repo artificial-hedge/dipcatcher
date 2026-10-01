@@ -1,5 +1,3 @@
-quant_fund.monitoring.monitor_chain
-quant_fund.native.conformance
 src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
