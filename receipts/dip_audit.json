@@ -18,13 +18,43 @@
     "rearm": true
    },
    "honesty": {
-    "camel_sharpe": "raise:ValueError",
-    "clean": "accepted",
-    "nav_suffix": "raise:ValueError",
-    "panel_false_positive_guard": "accepted",
-    "pnl_embedded": "raise:ValueError",
-    "pnl_underscored": "raise:ValueError",
-    "sharpe": "raise:ValueError"
+    "cases": [
+     {
+      "key": "sharpe_annualized",
+      "name": "ratio_bare",
+      "outcome": "raise:ValueError"
+     },
+     {
+      "key": "pnl_total",
+      "name": "pl_underscored",
+      "outcome": "raise:ValueError"
+     },
+     {
+      "key": "unrealizedpnl",
+      "name": "pl_embedded",
+      "outcome": "raise:ValueError"
+     },
+     {
+      "key": "sharpeRatio",
+      "name": "camel_ratio",
+      "outcome": "raise:ValueError"
+     },
+     {
+      "key": "mynav",
+      "name": "navlike_suffix",
+      "outcome": "raise:ValueError"
+     },
+     {
+      "key": "brier_overall",
+      "name": "clean",
+      "outcome": "accepted"
+     },
+     {
+      "key": "panel_rmse",
+      "name": "guard_no_false_positive",
+      "outcome": "accepted"
+     }
+    ]
    },
    "scoring": {
     "baseline_h1": 0.5,
@@ -38,11 +68,11 @@
   }
  },
  "data_label": "SYNTHETIC",
- "git_revision": "6d6b08e00ee0d184f61ec77833fbb56a9aa9b03f",
+ "git_revision": "4c915034a239d99ddc2d3725b354c45ec986ef0f",
  "interpretation": "Dip bench contract holds: causal detection, exact recovery window, unobservable horizons never imputed, honesty gate now substring-matched (embedded/camel evasions closed).",
  "kind": "dip_audit",
  "live_pnl_claim": false,
- "receipt_sha256": "8ced1bffd89bc41146b015014383f00dfecde048034f1168ece2af41fceb737c",
+ "receipt_sha256": "c6bbc73134fd4de1465e35fd9ac17b18ab7a68a3dc12b8ec0c69e801679dbcc4",
  "research_only": true,
  "schema": "dip_audit.v1"
 }

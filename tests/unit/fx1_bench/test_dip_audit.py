@@ -16,10 +16,11 @@ def test_dip_contract() -> None:
     assert s["baseline_h1"] == 0.5
     assert s["h2_skips_unobservable"] is True
     assert s["oor_prob_raises"] == "raise:ValueError"
-    for k in ("sharpe", "pnl_underscored", "pnl_embedded", "camel_sharpe", "nav_suffix"):
-        assert h[k] == "raise:ValueError", k
-    assert h["clean"] == "accepted"
-    assert h["panel_false_positive_guard"] == "accepted"
+    outcomes = {c["name"]: c["outcome"] for c in h["cases"]}
+    for n in ("ratio_bare", "pl_underscored", "pl_embedded", "camel_ratio", "navlike_suffix"):
+        assert outcomes[n] == "raise:ValueError", n
+    assert outcomes["clean"] == "accepted"
+    assert outcomes["guard_no_false_positive"] == "accepted"
 
 
 def test_bench_ok_and_verifies() -> None:
