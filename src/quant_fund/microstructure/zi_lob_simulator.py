@@ -1473,6 +1473,15 @@ class ZILobSimulator:
             "n_hit_flees": self.n_hit_flees,
             "n_cxl_touch": self.n_cxl_touch,
             "n_lo_capped": self.n_lo_capped,
+            "placed_join": self._fate_placed["join"],
+            "placed_improve": self._fate_placed["improve"],
+            "placed_deep": self._fate_placed["deep"],
+            "fills_join": self._fate_fills["join"],
+            "fills_improve": self._fate_fills["improve"],
+            "fills_deep": self._fate_fills["deep"],
+            "cancels_join": self._fate_cancels["join"],
+            "cancels_improve": self._fate_cancels["improve"],
+            "cancels_deep": self._fate_cancels["deep"],
             "n_requotes": self.n_requotes,
             "n_dark_placed": self.n_dark_placed,
             "n_dark_fills": self.n_dark_fills,
@@ -1681,6 +1690,8 @@ class ZILobSimulator:
         order = self._remove_resting_at(book, lvl, idx)
         self.cxl_ages.append(self.t - order.t_submit)
         self.n_cancellations += 1
+        self._fate_cancels[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
         self.n_hit_flees += 1
         d_hit = abs(lvl - touch)
         self.cxl_dist[min(d_hit, 20)] += 1
@@ -1872,6 +1883,8 @@ class ZILobSimulator:
         )
         self.trades.append(trade)
         self.n_fills += 1
+        self._fate_fills[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "fill"))
         self._post_fill_markers(aggressor)
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
@@ -1889,8 +1902,11 @@ class ZILobSimulator:
         # t~0 component.
         if self._cfg.touch_pull > 0.0 and book and float(self._rng.random()) < self._cfg.touch_pull:
             next_level = min(book) if aggressor == "buy" else max(book)
-            self._remove_resting_at(book, next_level, 0)
+            pulled = self._remove_resting_at(book, next_level, 0)
             self.n_touch_pulls += 1
+            self.n_cancellations += 1
+            self._fate_cancels[pulled.placement_class] += 1
+            self.fate_log.append((pulled.placement_class, pulled.queue_ahead, "cancel"))
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:
@@ -2234,6 +2250,8 @@ class ZILobSimulator:
             self._remove_resting_at(chase_book, chase_order.level, chase_dq.index(oid))
             self.cxl_ages.append(self.t - chase_order.t_submit)
             self.n_cancellations += 1
+            self._fate_cancels[chase_order.placement_class] += 1
+            self.fate_log.append((chase_order.placement_class, chase_order.queue_ahead, "cancel"))
             d_hit = abs(chase_order.level - chase_touch)
             self.cxl_dist[min(d_hit, 20)] += 1
             if d_hit == 0:
@@ -2267,6 +2285,10 @@ class ZILobSimulator:
                     rel_order = self._remove_resting_at(book, rel_lvl, rel_idx)
                     self.cxl_ages.append(self.t - rel_order.t_submit)
                     self.n_cancellations += 1
+                    self._fate_cancels[rel_order.placement_class] += 1
+                    self.fate_log.append(
+                        (rel_order.placement_class, rel_order.queue_ahead, "cancel")
+                    )
                     d_hit = abs(rel_lvl - touch)
                     self.cxl_dist[min(d_hit, 20)] += 1
                     if d_hit == 0:
@@ -2305,6 +2327,8 @@ class ZILobSimulator:
                     raise RuntimeError("weighted cancel missed the book")
                 self.cxl_ages.append(self.t - order.t_submit)
                 self.n_cancellations += 1
+                self._fate_cancels[order.placement_class] += 1
+                self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
                 d_hit = abs(lvl_hit - touch_lvl)
                 self.cxl_dist[min(d_hit, 20)] += 1
                 if d_hit == 0:
@@ -2322,6 +2346,8 @@ class ZILobSimulator:
                 raise RuntimeError("touch cancel on an empty book")
             self.cxl_ages.append(self.t - order.t_submit)
             self.n_cancellations += 1
+            self._fate_cancels[order.placement_class] += 1
+            self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
             self.n_cxl_touch += 1
             self.cxl_dist[0] += 1
             self._maybe_requote(order)
@@ -2353,6 +2379,8 @@ class ZILobSimulator:
         order = self._remove_resting_at(book, level, idx)
         self.cxl_ages.append(self.t - order.t_submit)
         self.n_cancellations += 1
+        self._fate_cancels[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
         dist = abs(level - touch)
         self.cxl_dist[min(dist, 20)] += 1
         if dist == 0:
