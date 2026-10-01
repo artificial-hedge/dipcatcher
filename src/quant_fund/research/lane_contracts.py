@@ -227,4 +227,12 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.xwatch import xwatch_contract_errors
 
         return xwatch_contract_errors(payload)
+    if schema == "rough_vol.v1":
+        from quant_fund.models.rbergomi import rough_vol_contract_errors
+
+        return rough_vol_contract_errors(payload)
+    if schema == "fbm_circulant.v1":
+        from quant_fund.models.fbm import fbm_contract_errors
+
+        return fbm_contract_errors(payload)
     return []

@@ -1,0 +1,107 @@
+{
+  "claim": "round_lot_size_distribution_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_round_lot_share_gap_+0.37",
+    "regime_round_lot_share_gap_+0.37",
+    "split_round_lot_share_gap_+0.37"
+  ],
+  "git_revision": "a94698943dcd1477c463633f528f0f2d3fe3c79c",
+  "interpretation": "Real tape lumps at round lots; a smooth size generator understates round_share. Gap > 0.15 flags the divergence.",
+  "kind": "round_lot",
+  "real": {
+    "mean_size": 68.34,
+    "median_size": 60.0,
+    "mode": "execution_sizes",
+    "multiple_of_100_share": 0.3634,
+    "n_trades": 8974,
+    "p95_size": 183.0,
+    "round_lot_share": 0.3741,
+    "size_hist": {
+      "0-25": 3513,
+      "100-150": 3008,
+      "1000-2500": 9,
+      "150-200": 74,
+      "200-300": 237,
+      "25-50": 688,
+      "2500-inf": 1,
+      "300-400": 94,
+      "400-500": 35,
+      "50-100": 1267,
+      "500-750": 36,
+      "750-1000": 12
+    }
+  },
+  "receipt_sha256": "86a822594a3e07b62a370a550784abb3b8deebf49476879c6f9edbac837f756b",
+  "research_only": true,
+  "schema": "round_lot.v1",
+  "sim_arms": {
+    "iid": {
+      "mean_size": 1.0,
+      "median_size": 1.0,
+      "multiple_of_100_share": 0.0,
+      "n_trades": 3319,
+      "p95_size": 1.0,
+      "round_lot_share": 0.0,
+      "size_hist": {
+        "0-25": 3319,
+        "100-150": 0,
+        "1000-2500": 0,
+        "150-200": 0,
+        "200-300": 0,
+        "25-50": 0,
+        "2500-inf": 0,
+        "300-400": 0,
+        "400-500": 0,
+        "50-100": 0,
+        "500-750": 0,
+        "750-1000": 0
+      }
+    },
+    "regime": {
+      "mean_size": 1.0,
+      "median_size": 1.0,
+      "multiple_of_100_share": 0.0,
+      "n_trades": 3723,
+      "p95_size": 1.0,
+      "round_lot_share": 0.0,
+      "size_hist": {
+        "0-25": 3723,
+        "100-150": 0,
+        "1000-2500": 0,
+        "150-200": 0,
+        "200-300": 0,
+        "25-50": 0,
+        "2500-inf": 0,
+        "300-400": 0,
+        "400-500": 0,
+        "50-100": 0,
+        "500-750": 0,
+        "750-1000": 0
+      }
+    },
+    "split": {
+      "mean_size": 1.0,
+      "median_size": 1.0,
+      "multiple_of_100_share": 0.0,
+      "n_trades": 4244,
+      "p95_size": 1.0,
+      "round_lot_share": 0.0,
+      "size_hist": {
+        "0-25": 4244,
+        "100-150": 0,
+        "1000-2500": 0,
+        "150-200": 0,
+        "200-300": 0,
+        "25-50": 0,
+        "2500-inf": 0,
+        "300-400": 0,
+        "400-500": 0,
+        "50-100": 0,
+        "500-750": 0,
+        "750-1000": 0
+      }
+    }
+  },
+  "ticker": "AMZN"
+}

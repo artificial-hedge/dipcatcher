@@ -1,0 +1,497 @@
+{
+  "claim": "spread_response_kernel_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid@0.01s_0.0_vs_100.0",
+    "iid@0.05s_0.0_vs_100.0",
+    "iid@0.1s_0.0_vs_200.0",
+    "iid@0.5s_0.0_vs_200.0",
+    "iid@1.0s_0.0_vs_200.0",
+    "iid@5.0s_0.0_vs_200.0",
+    "regime@0.01s_0.0_vs_100.0",
+    "regime@0.05s_0.0_vs_100.0",
+    "regime@0.1s_0.0_vs_200.0",
+    "regime@0.5s_0.0_vs_200.0",
+    "regime@1.0s_0.0_vs_200.0",
+    "regime@5.0s_0.0_vs_200.0",
+    "split@0.01s_0.0_vs_100.0",
+    "split@0.05s_0.0_vs_100.0",
+    "split@0.1s_0.0_vs_200.0",
+    "split@0.5s_0.0_vs_200.0",
+    "split@1.0s_0.0_vs_200.0",
+    "split@5.0s_0.0_vs_200.0"
+  ],
+  "git_revision": "0895c831a7ddc29a714a451dd4b15357c09f18c7",
+  "horizons_s": [
+    0.01,
+    0.05,
+    0.1,
+    0.5,
+    1.0,
+    5.0
+  ],
+  "interpretation": "kernel[h] = median (spread@t+h \u2212 spread@t) in ticks around executions, per aggressor direction. Positive-and-decaying = the book defends after impact; near-zero = fills barely move the quote state. share_wider = fraction of execs whose spread is wider at horizon h.",
+  "kind": "spread_response",
+  "real": {
+    "baseline_spread": 1300.0,
+    "by_dir": {
+      "buy_initiated": {
+        "kernel": {
+          "0.01s": {
+            "mean_delta": 223.91846921797006,
+            "median_delta": 100.0,
+            "share_wider": 0.6545341098169717
+          },
+          "0.05s": {
+            "mean_delta": 231.21880199667223,
+            "median_delta": 200.0,
+            "share_wider": 0.6641014975041597
+          },
+          "0.1s": {
+            "mean_delta": 238.040765391015,
+            "median_delta": 200.0,
+            "share_wider": 0.6638935108153078
+          },
+          "0.5s": {
+            "mean_delta": 177.99500831946756,
+            "median_delta": 200.0,
+            "share_wider": 0.639351081530782
+          },
+          "1s": {
+            "mean_delta": 206.4475873544093,
+            "median_delta": 200.0,
+            "share_wider": 0.6512063227953411
+          },
+          "5s": {
+            "mean_delta": 173.5648918469218,
+            "median_delta": 200.0,
+            "share_wider": 0.5998336106489185
+          }
+        },
+        "n": 4808,
+        "ok": true
+      },
+      "pooled": {
+        "kernel": {
+          "0.01s": {
+            "mean_delta": 232.78359705816803,
+            "median_delta": 100.0,
+            "share_wider": 0.6151103186984622
+          },
+          "0.05s": {
+            "mean_delta": 245.3198127925117,
+            "median_delta": 100.0,
+            "share_wider": 0.6308223757521729
+          },
+          "0.1s": {
+            "mean_delta": 253.1201248049922,
+            "median_delta": 200.0,
+            "share_wider": 0.6375083574771563
+          },
+          "0.5s": {
+            "mean_delta": 222.7546244706931,
+            "median_delta": 200.0,
+            "share_wider": 0.6297080454646757
+          },
+          "1s": {
+            "mean_delta": 237.86494316915534,
+            "median_delta": 200.0,
+            "share_wider": 0.6378426565634054
+          },
+          "5s": {
+            "mean_delta": 216.9935368843325,
+            "median_delta": 200.0,
+            "share_wider": 0.6124359260084689
+          }
+        },
+        "n": 8974,
+        "ok": true
+      },
+      "sell_initiated": {
+        "kernel": {
+          "0.01s": {
+            "mean_delta": 243.014882381181,
+            "median_delta": 100.0,
+            "share_wider": 0.5696111377820451
+          },
+          "0.05s": {
+            "mean_delta": 261.5938550168027,
+            "median_delta": 100.0,
+            "share_wider": 0.5924147863658186
+          },
+          "0.1s": {
+            "mean_delta": 270.5232837253961,
+            "median_delta": 100.0,
+            "share_wider": 0.6070571291406625
+          },
+          "0.5s": {
+            "mean_delta": 274.4119059049448,
+            "median_delta": 200.0,
+            "share_wider": 0.6185789726356217
+          },
+          "1s": {
+            "mean_delta": 274.1238598175708,
+            "median_delta": 200.0,
+            "share_wider": 0.6224195871339414
+          },
+          "5s": {
+            "mean_delta": 267.1147383581373,
+            "median_delta": 200.0,
+            "share_wider": 0.6269803168506961
+          }
+        },
+        "n": 4166,
+        "ok": true
+      }
+    },
+    "ok": true
+  },
+  "receipt_sha256": "8f491ea43b843d681928d489ecae215da9a5a54e962c5c8fed987673a95a10ca",
+  "research_only": true,
+  "schema": "spread_response.v1",
+  "sim_arms": {
+    "iid": {
+      "baseline_spread": 2.0,
+      "by_dir": {
+        "buy_initiated": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.15161290322580645,
+              "median_delta": 0.0,
+              "share_wider": 0.11290322580645161
+            },
+            "0.05s": {
+              "mean_delta": -0.15604838709677418,
+              "median_delta": 0.0,
+              "share_wider": 0.11411290322580646
+            },
+            "0.1s": {
+              "mean_delta": -0.16330645161290322,
+              "median_delta": 0.0,
+              "share_wider": 0.11491935483870967
+            },
+            "0.5s": {
+              "mean_delta": -0.19233870967741937,
+              "median_delta": 0.0,
+              "share_wider": 0.13669354838709677
+            },
+            "1s": {
+              "mean_delta": -0.24193548387096775,
+              "median_delta": 0.0,
+              "share_wider": 0.15403225806451612
+            },
+            "5s": {
+              "mean_delta": -0.5173387096774194,
+              "median_delta": 0.0,
+              "share_wider": 0.2
+            }
+          },
+          "n": 2480,
+          "ok": true
+        },
+        "pooled": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.1637264618434093,
+              "median_delta": 0.0,
+              "share_wider": 0.10327056491575817
+            },
+            "0.05s": {
+              "mean_delta": -0.16669970267591674,
+              "median_delta": 0.0,
+              "share_wider": 0.10445986124876115
+            },
+            "0.1s": {
+              "mean_delta": -0.17244796828543113,
+              "median_delta": 0.0,
+              "share_wider": 0.10644202180376611
+            },
+            "0.5s": {
+              "mean_delta": -0.21129831516352823,
+              "median_delta": 0.0,
+              "share_wider": 0.12705649157581764
+            },
+            "1s": {
+              "mean_delta": -0.24380574826560952,
+              "median_delta": 0.0,
+              "share_wider": 0.15004955401387512
+            },
+            "5s": {
+              "mean_delta": -0.4622398414271556,
+              "median_delta": 0.0,
+              "share_wider": 0.2091179385530228
+            }
+          },
+          "n": 5045,
+          "ok": true
+        },
+        "sell_initiated": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.17543859649122806,
+              "median_delta": 0.0,
+              "share_wider": 0.09395711500974659
+            },
+            "0.05s": {
+              "mean_delta": -0.1769980506822612,
+              "median_delta": 0.0,
+              "share_wider": 0.09512670565302145
+            },
+            "0.1s": {
+              "mean_delta": -0.18128654970760233,
+              "median_delta": 0.0,
+              "share_wider": 0.09824561403508772
+            },
+            "0.5s": {
+              "mean_delta": -0.22962962962962963,
+              "median_delta": 0.0,
+              "share_wider": 0.11773879142300195
+            },
+            "1s": {
+              "mean_delta": -0.24561403508771928,
+              "median_delta": 0.0,
+              "share_wider": 0.14619883040935672
+            },
+            "5s": {
+              "mean_delta": -0.40896686159844053,
+              "median_delta": 0.0,
+              "share_wider": 0.2179337231968811
+            }
+          },
+          "n": 2565,
+          "ok": true
+        }
+      },
+      "ok": true
+    },
+    "regime": {
+      "baseline_spread": 2.0,
+      "by_dir": {
+        "buy_initiated": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.16305469556243551,
+              "median_delta": 0.0,
+              "share_wider": 0.1348469212246302
+            },
+            "0.05s": {
+              "mean_delta": -0.16339869281045752,
+              "median_delta": 0.0,
+              "share_wider": 0.13863089095287237
+            },
+            "0.1s": {
+              "mean_delta": -0.17337461300309598,
+              "median_delta": 0.0,
+              "share_wider": 0.13794289645682833
+            },
+            "0.5s": {
+              "mean_delta": -0.21671826625386997,
+              "median_delta": 0.0,
+              "share_wider": 0.16408668730650156
+            },
+            "1s": {
+              "mean_delta": -0.2714138286893705,
+              "median_delta": 0.0,
+              "share_wider": 0.17956656346749225
+            },
+            "5s": {
+              "mean_delta": -0.41589267285861714,
+              "median_delta": 0.0,
+              "share_wider": 0.2411420708634331
+            }
+          },
+          "n": 2907,
+          "ok": true
+        },
+        "pooled": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.17164441321152496,
+              "median_delta": 0.0,
+              "share_wider": 0.12666900913562895
+            },
+            "0.05s": {
+              "mean_delta": -0.17550948699929725,
+              "median_delta": 0.0,
+              "share_wider": 0.12965565706254392
+            },
+            "0.1s": {
+              "mean_delta": -0.18183415319747012,
+              "median_delta": 0.0,
+              "share_wider": 0.1314125087842586
+            },
+            "0.5s": {
+              "mean_delta": -0.2364722417427969,
+              "median_delta": 0.0,
+              "share_wider": 0.15372452565003514
+            },
+            "1s": {
+              "mean_delta": -0.28952916373858045,
+              "median_delta": 0.0,
+              "share_wider": 0.17164441321152496
+            },
+            "5s": {
+              "mean_delta": -0.4425509486999297,
+              "median_delta": 0.0,
+              "share_wider": 0.23576950105411104
+            }
+          },
+          "n": 5692,
+          "ok": true
+        },
+        "sell_initiated": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.18061041292639138,
+              "median_delta": 0.0,
+              "share_wider": 0.11813285457809695
+            },
+            "0.05s": {
+              "mean_delta": -0.1881508078994614,
+              "median_delta": 0.0,
+              "share_wider": 0.12028725314183124
+            },
+            "0.1s": {
+              "mean_delta": -0.19066427289048474,
+              "median_delta": 0.0,
+              "share_wider": 0.12459605026929982
+            },
+            "0.5s": {
+              "mean_delta": -0.2570915619389587,
+              "median_delta": 0.0,
+              "share_wider": 0.14290843806104128
+            },
+            "1s": {
+              "mean_delta": -0.3084380610412926,
+              "median_delta": 0.0,
+              "share_wider": 0.16337522441651706
+            },
+            "5s": {
+              "mean_delta": -0.4703770197486535,
+              "median_delta": 0.0,
+              "share_wider": 0.23016157989228006
+            }
+          },
+          "n": 2785,
+          "ok": true
+        }
+      },
+      "ok": true
+    },
+    "split": {
+      "baseline_spread": 1.0,
+      "by_dir": {
+        "buy_initiated": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.24074074074074073,
+              "median_delta": 0.0,
+              "share_wider": 0.15520282186948853
+            },
+            "0.05s": {
+              "mean_delta": -0.24720752498530277,
+              "median_delta": 0.0,
+              "share_wider": 0.16078777189888302
+            },
+            "0.1s": {
+              "mean_delta": -0.24279835390946503,
+              "median_delta": 0.0,
+              "share_wider": 0.16725455614344503
+            },
+            "0.5s": {
+              "mean_delta": -0.3115814226925338,
+              "median_delta": 0.0,
+              "share_wider": 0.19135802469135801
+            },
+            "1s": {
+              "mean_delta": -0.36390358612580836,
+              "median_delta": 0.0,
+              "share_wider": 0.21075837742504408
+            },
+            "5s": {
+              "mean_delta": -0.5490887713109935,
+              "median_delta": 0.0,
+              "share_wider": 0.26778365667254556
+            }
+          },
+          "n": 3402,
+          "ok": true
+        },
+        "pooled": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.2402182385035074,
+              "median_delta": 0.0,
+              "share_wider": 0.1547934528448948
+            },
+            "0.05s": {
+              "mean_delta": -0.2505066250974279,
+              "median_delta": 0.0,
+              "share_wider": 0.15915822291504286
+            },
+            "0.1s": {
+              "mean_delta": -0.24988308651597818,
+              "median_delta": 0.0,
+              "share_wider": 0.16477007014809042
+            },
+            "0.5s": {
+              "mean_delta": -0.30132501948558066,
+              "median_delta": 0.0,
+              "share_wider": 0.1897116134060795
+            },
+            "1s": {
+              "mean_delta": -0.34777864380358536,
+              "median_delta": 0.0,
+              "share_wider": 0.2127825409197194
+            },
+            "5s": {
+              "mean_delta": -0.5045985970381918,
+              "median_delta": 0.0,
+              "share_wider": 0.2751363990646921
+            }
+          },
+          "n": 6415,
+          "ok": true
+        },
+        "sell_initiated": {
+          "kernel": {
+            "0.01s": {
+              "mean_delta": -0.23962827746432128,
+              "median_delta": 0.0,
+              "share_wider": 0.15433123133089943
+            },
+            "0.05s": {
+              "mean_delta": -0.25423166279455695,
+              "median_delta": 0.0,
+              "share_wider": 0.1573182874211749
+            },
+            "0.1s": {
+              "mean_delta": -0.25788250912711586,
+              "median_delta": 0.0,
+              "share_wider": 0.161964819117159
+            },
+            "0.5s": {
+              "mean_delta": -0.2897444407567209,
+              "median_delta": 0.0,
+              "share_wider": 0.18785263856621306
+            },
+            "1s": {
+              "mean_delta": -0.3295718552937272,
+              "median_delta": 0.0,
+              "share_wider": 0.21506803849983405
+            },
+            "5s": {
+              "mean_delta": -0.4543644208430136,
+              "median_delta": 0.0,
+              "share_wider": 0.2834384334550282
+            }
+          },
+          "n": 3013,
+          "ok": true
+        }
+      },
+      "ok": true
+    }
+  },
+  "ticker": "AMZN"
+}
