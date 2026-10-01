@@ -364,6 +364,46 @@ from quant_fund.research.benches_w46 import (
     bench_olley_pakes,
     bench_rust_ddc,
 )
+from quant_fund.research.benches_w47 import (
+    bench_aipw_ate,
+    bench_cavi_gmm,
+    bench_cusum_monitor,
+    bench_hausman_tests,
+    bench_pesaran_cd,
+    bench_rosenbaum_sensitivity,
+)
+from quant_fund.research.benches_w48 import (
+    bench_cover_up,
+    bench_lewbel_iv,
+    bench_marginal_treatment,
+    bench_proximal_causal,
+    bench_tmle,
+    bench_vpin,
+)
+from quant_fund.research.benches_w49 import (
+    bench_blanchard_quah,
+    bench_delta_covar,
+    bench_eisenberg_noe,
+    bench_fire_sales,
+    bench_meta_analysis,
+    bench_tvp_var,
+)
+from quant_fund.research.benches_w50 import (
+    bench_acd_duration,
+    bench_affine_term,
+    bench_dea,
+    bench_gil_pelaez,
+    bench_hedonic,
+    bench_hjm,
+)
+from quant_fund.research.benches_w51 import (
+    bench_ait_sahalia,
+    bench_bkm_moments,
+    bench_gsadf_bubble,
+    bench_pmg_ardl,
+    bench_ross_recovery,
+    bench_toda_yamamoto,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2190,6 +2230,36 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "oaxaca_blinder": bench_oaxaca_blinder(),
         "binscatter": bench_binscatter(),
         "dfl_decomp": bench_dfl_decomp(),
+        "rosenbaum_sensitivity": bench_rosenbaum_sensitivity(),
+        "aipw_ate": bench_aipw_ate(),
+        "cavi_gmm": bench_cavi_gmm(),
+        "pesaran_cd": bench_pesaran_cd(),
+        "hausman_tests": bench_hausman_tests(),
+        "cusum_monitor": bench_cusum_monitor(),
+        "tmle": bench_tmle(),
+        "lewbel_iv": bench_lewbel_iv(),
+        "proximal_causal": bench_proximal_causal(),
+        "cover_up": bench_cover_up(),
+        "vpin": bench_vpin(),
+        "marginal_treatment": bench_marginal_treatment(),
+        "eisenberg_noe": bench_eisenberg_noe(),
+        "fire_sales": bench_fire_sales(),
+        "delta_covar": bench_delta_covar(),
+        "blanchard_quah": bench_blanchard_quah(),
+        "tvp_var": bench_tvp_var(),
+        "meta_analysis": bench_meta_analysis(),
+        "acd_duration": bench_acd_duration(),
+        "hjm": bench_hjm(),
+        "affine_term": bench_affine_term(),
+        "gil_pelaez": bench_gil_pelaez(),
+        "hedonic": bench_hedonic(),
+        "dea": bench_dea(),
+        "bkm_moments": bench_bkm_moments(),
+        "gsadf_bubble": bench_gsadf_bubble(),
+        "pmg_ardl": bench_pmg_ardl(),
+        "ross_recovery": bench_ross_recovery(),
+        "ait_sahalia": bench_ait_sahalia(),
+        "toda_yamamoto": bench_toda_yamamoto(),
     }
 
     hyps = _build_hypotheses(families, rankers)

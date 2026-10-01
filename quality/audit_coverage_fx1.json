@@ -1,122 +1,122 @@
 {
- "directories": {
-  "bench": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 5,
-   "status": "audited"
+  "directories": {
+    "bench": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 5,
+      "status": "audited"
+    },
+    "data": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 20,
+      "status": "audited"
+    },
+    "eval": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 28,
+      "status": "audited"
+    },
+    "forecast": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 14,
+      "status": "audited"
+    },
+    "serve": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 7,
+      "status": "audited"
+    },
+    "train": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "n_modules": 13,
+      "status": "audited"
+    }
   },
-  "data": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 20,
-   "status": "audited"
+  "modules": {
+    "__init__.py": {
+      "reason": "package surface only",
+      "status": "waived"
+    },
+    "cli.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "cli_audit.py": {
+      "status": "audited"
+    },
+    "doctor.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "doctor_audit.py": {
+      "status": "audited"
+    },
+    "ext_bench_audit.py": {
+      "status": "audited"
+    },
+    "harness.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "harness_audit.py": {
+      "status": "audited"
+    },
+    "honesty.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "honesty_audit.py": {
+      "status": "audited"
+    },
+    "hypotheses.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "hypotheses_audit.py": {
+      "status": "audited"
+    },
+    "modelcard.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "modelcard_audit.py": {
+      "status": "audited"
+    },
+    "mrm.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "mrm_audit.py": {
+      "status": "audited"
+    },
+    "reward.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "reward_audit.py": {
+      "status": "audited"
+    },
+    "rt_audit.py": {
+      "status": "audited"
+    },
+    "rubric_audit.py": {
+      "status": "audited"
+    },
+    "sbom.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "sbom_audit.py": {
+      "status": "audited"
+    },
+    "tail_audit.py": {
+      "status": "audited"
+    }
   },
-  "eval": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 28,
-   "status": "audited"
-  },
-  "forecast": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 14,
-   "status": "audited"
-  },
-  "serve": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 7,
-   "status": "audited"
-  },
-  "train": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "n_modules": 13,
-   "status": "audited"
+  "schema_version": "audit-coverage/v1",
+  "statuses": {
+    "audited": "every module reviewed line-by-line for honesty/causality/determinism contracts",
+    "partial": "some modules reviewed; remainder pending",
+    "pending": "not yet audited",
+    "waived": "exempt with reason"
   }
- },
- "modules": {
-  "__init__.py": {
-   "reason": "package surface only",
-   "status": "waived"
-  },
-  "cli.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "cli_audit.py": {
-   "status": "audited"
-  },
-  "doctor.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "doctor_audit.py": {
-   "status": "audited"
-  },
-  "ext_bench_audit.py": {
-   "status": "audited"
-  },
-  "harness.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "harness_audit.py": {
-   "status": "audited"
-  },
-  "honesty.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "honesty_audit.py": {
-   "status": "audited"
-  },
-  "hypotheses.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "hypotheses_audit.py": {
-   "status": "audited"
-  },
-  "modelcard.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "modelcard_audit.py": {
-   "status": "audited"
-  },
-  "mrm.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "mrm_audit.py": {
-   "status": "audited"
-  },
-  "reward.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "reward_audit.py": {
-   "status": "audited"
-  },
-  "rt_audit.py": {
-   "status": "audited"
-  },
-  "rubric_audit.py": {
-   "status": "audited"
-  },
-  "sbom.py": {
-   "doc": "docs/AUDIT_LEDGER.md",
-   "status": "audited"
-  },
-  "sbom_audit.py": {
-   "status": "audited"
-  },
-  "tail_audit.py": {
-   "status": "audited"
-  }
- },
- "schema_version": "audit-coverage/v1",
- "statuses": {
-  "audited": "every module reviewed line-by-line for honesty/causality/determinism contracts",
-  "partial": "some modules reviewed; remainder pending",
-  "pending": "not yet audited",
-  "waived": "exempt with reason"
- }
 }

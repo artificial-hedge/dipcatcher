@@ -523,6 +523,71 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "oaxaca_blinder",
         "binscatter",
         "dfl_decomp",
+        # wave 47 — Rosenbaum sensitivity bounds for matched pairs,
+        # AIPW doubly-robust ATE, CAVI mean-field Gaussian mixture,
+        # Pesaran CD cross-section dependence, Hausman FE-RE + DWH
+        # endogeneity batteries, CUSUM structural-break monitoring
+        # (Chu-Stinchcombe-White boundary). Same SYNTHETIC
+        # diagnostic contract.
+        "rosenbaum_sensitivity",
+        "aipw_ate",
+        "cavi_gmm",
+        "pesaran_cd",
+        "hausman_tests",
+        "cusum_monitor",
+        # wave 48 — targeted maximum likelihood (TMLE) ATE, Lewbel
+        # heteroskedasticity-generated instruments, proximal/
+        # negative-control confounding bridge, Cover universal
+        # portfolio (best-CRP tracking), VPIN volume-clock flow
+        # toxicity, marginal treatment effects (local-IV MTE
+        # curve). Same SYNTHETIC diagnostic contract.
+        "tmle",
+        "lewbel_iv",
+        "proximal_causal",
+        "cover_up",
+        "vpin",
+        "marginal_treatment",
+        # wave 49 — Eisenberg-Noe clearing-vector default contagion,
+        # Cont-Wagalath fire-sale deleveraging cascades, Adrian-
+        # Brunnermeier delta-CoVaR systemic contribution, Blanchard-Quah
+        # long-run-restriction SVAR identification, Kalman/RTS TVP
+        # regression, DerSimonian-Laird random-effects meta-analysis
+        # with Egger funnel asymmetry. Same SYNTHETIC diagnostic
+        # contract.
+        "eisenberg_noe",
+        "fire_sales",
+        "delta_covar",
+        "blanchard_quah",
+        "tvp_var",
+        "meta_analysis",
+        # wave 50 — Engle-Russell ACD(1,1) duration clustering
+        # (QMLE), Heath-Jarrow-Morton Gaussian forward-curve
+        # simulation, Vasicek affine term structure + Campbell-
+        # Shiller expectations-hypothesis regression, Gil-Pelaez
+        # characteristic-function inversion (CDF/quantiles),
+        # hedonic time-dummy + Bailey-Muth-Nourse repeat-sales
+        # indices, DEA CCR/BCC efficiency frontiers. Same
+        # SYNTHETIC diagnostic contract.
+        "acd_duration",
+        "hjm",
+        "affine_term",
+        "gil_pelaez",
+        "hedonic",
+        "dea",
+        # wave 51 — Bakshi-Kapadia-Madan model-free option-implied
+        # variance/skew/kurtosis spanning integrals, Phillips-Shi-Yu
+        # GSADF recursive bubble detection + date stamping, Pesaran-
+        # Shin-Smith pooled-mean-group panel ARDL, Ross recovery
+        # theorem state-price to physical transitions, Ait-Sahalia
+        # closed-form CKLS likelihood expansion, Toda-Yamamoto
+        # augmented-lag Granger MWALD. Same SYNTHETIC diagnostic
+        # contract.
+        "bkm_moments",
+        "gsadf_bubble",
+        "pmg_ardl",
+        "ross_recovery",
+        "ait_sahalia",
+        "toda_yamamoto",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
