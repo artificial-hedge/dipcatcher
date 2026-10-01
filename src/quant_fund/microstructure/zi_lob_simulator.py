@@ -156,6 +156,13 @@ class HawkesClockSpec:
 
     kernel: tuple[tuple[float, float, float], ...]
     beta: float
+    # Optional multi-timescale excitation: ``rates`` gives R decay banks and
+    # ``bank_weights`` the share of each kernel jump deposited in each bank
+    # (must sum to 1). A bank mixture approximates a power-law kernel
+    # (Omori-type clustering tail) while staying exactly Markovian for Ogata
+    # thinning. ``None`` keeps the single shared decay ``beta``.
+    rates: tuple[float, ...] | None = None
+    bank_weights: tuple[float, ...] | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.kernel, (tuple, list)) or len(self.kernel) != 3:
@@ -166,12 +173,40 @@ class HawkesClockSpec:
         if not np.all(np.isfinite(k)) or bool((k < 0.0).any()):
             raise ValueError("kernel entries must be non-negative and finite")
         _pos_finite(self.beta, "beta")
-        rho = float(np.max(np.abs(np.linalg.eigvals(k / float(self.beta)))))
+        rates = self.rates if self.rates is not None else (self.beta,)
+        weights = self.bank_weights
+        if weights is None:
+            weights = tuple(1.0 / len(rates) for _ in rates)
+        if len(rates) != len(weights) or len(rates) < 1:
+            raise ValueError("rates and bank_weights must share a non-empty length")
+        for r in rates:
+            _pos_finite(r, "rates")
+        wsum = sum(_nonneg_finite(w, "bank_weights") for w in weights)
+        if not math.isclose(wsum, 1.0, rel_tol=1e-6, abs_tol=1e-9):
+            raise ValueError(f"bank_weights must sum to 1, got {wsum!r}")
+        object.__setattr__(self, "rates", tuple(float(r) for r in rates))
+        object.__setattr__(self, "bank_weights", tuple(float(w) for w in weights))
+        # Children per edge = kernel_ij * H, H = sum_r w_r / beta_r.
+        h = float(sum(w / r for w, r in zip(weights, rates, strict=True)))
+        rho = float(np.max(np.abs(np.linalg.eigvals(k * h))))
         if not math.isfinite(rho) or rho >= 1.0:
             raise ValueError(
                 f"Hawkes kernel must be sub-critical (spectral radius < 1), got {rho:.4f}"
             )
         object.__setattr__(self, "kernel", tuple(tuple(float(x) for x in row) for row in k))
+
+    def branching_matrix(self) -> tuple[tuple[float, float, float], ...]:
+        """Effective children-per-event matrix ``kernel * H``."""
+        h = float(
+            sum(
+                w / r
+                for w, r in zip(
+                    self.bank_weights or (1.0,), self.rates or (self.beta,), strict=True
+                )
+            )
+        )
+        k = np.asarray(self.kernel, dtype=np.float64) * h
+        return tuple((float(row[0]), float(row[1]), float(row[2])) for row in k)
 
 
 # ---------------------------------------------------------------------------
@@ -397,31 +432,40 @@ class HawkesClock:
 
     def __init__(self, spec: HawkesClockSpec, rng: np.random.Generator) -> None:
         self._k = np.asarray(spec.kernel, dtype=np.float64)
-        self._beta = float(spec.beta)
+        self._rates = np.asarray(spec.rates or (spec.beta,), dtype=np.float64)
+        self._w = np.asarray(spec.bank_weights or (1.0,), dtype=np.float64)
         self._rng = rng
-        self._e = np.zeros(3, dtype=np.float64)
+        # Excitation state per (target type, decay bank).
+        self._e = np.zeros((3, self._rates.size), dtype=np.float64)
         self.n_proposals = 0
         self.n_rejected = 0
+
+    def _intensity(self, base: Array, decay_row: Array | None) -> Array:
+        """``base + e``; ``decay_row`` applies per-bank ``exp(-beta_r s)``."""
+        e = self._e if decay_row is None else self._e * decay_row[None, :]
+        return base + e.sum(axis=1)
 
     def step(self, bases: tuple[float, float, float]) -> tuple[float, int]:
         """Draw ``(dt, kind)`` for the next event; kind indexes HAWKES_TYPES."""
         base = np.asarray(bases, dtype=np.float64)
-        lam = base + self._e
+        lam = self._intensity(base, None)
         for _ in range(self._MAX_PROPOSALS):
             total = float(lam.sum())
             if not math.isfinite(total) or total <= 0.0:
                 raise RuntimeError(f"degenerate Hawkes intensity {lam!r}")
             dt = float(self._rng.exponential(1.0 / total))
-            decay = math.exp(-self._beta * dt)
-            lam_s = base + self._e * decay
+            decay_row = np.exp(-self._rates * dt)
+            lam_s = self._intensity(base, decay_row)
             u = float(self._rng.random()) * total
             self.n_proposals += 1
             if u <= float(lam_s.sum()):
                 kind = int(np.searchsorted(np.cumsum(lam_s), u, side="right"))
-                if kind > 2:  # pragma: no cover - u < sum(lam_s) by acceptance
+                if kind > 2:  # pragma: no cover - u <= sum(lam_s) by acceptance
                     kind = 2
-                self._e *= decay
-                self._e += self._k[kind]
+                # Advance excitation to the event, then deposit the kernel
+                # jump across decay banks by share weight.
+                self._e *= decay_row[None, :]
+                self._e += self._k[kind][:, None] * self._w[None, :]
                 return dt, kind
             self.n_rejected += 1
             lam = lam_s
