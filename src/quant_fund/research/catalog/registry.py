@@ -261,6 +261,232 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rqa",
         "hj_distance",
         "tensor_decomp",
+        # SOTA canon wave 30 batteries (see research/benches_w30.py):
+        # local-projection IV impulse responses with weak-IV
+        # first-stage F and AR grid-inversion bands, bispectral
+        # Hinich gaussianity test + quadratic phase coupling,
+        # functional linear regression via B-spline/FPCA,
+        # score-driven (GAS/GAS-t/GAS-Poisson) filters, NB-2/
+        # ZIP/hurdle count regression + Vuong non-nested test,
+        # largest-Lyapunov/FNN/Cao nonlinear-dynamics estimators.
+        # Same SYNTHETIC diagnostic contract.
+        "lp_iv",
+        "bispectrum",
+        "functional_linear",
+        "gas_score",
+        "count_data",
+        "lyapunov",
+        # SOTA canon wave 31 batteries (see research/benches_w31.py):
+        # kernel nonparametric IV (regularized Fredholm inverse +
+        # Landweber-Fridman + polynomial conditional-moment test),
+        # continuous-time Markov multistate models (intensity MLE,
+        # transition matrix expm, illness-death Aalen-Johansen),
+        # partially-linear semiparametrics (Robinson/Speckman/series
+        # + CV bandwidth), Heckman two-step + ML selection correction,
+        # sharp/fuzzy regression discontinuity (IK/CCT bandwidth,
+        # McCrary density test, donut), Manski/Lee partial-
+        # identification bounds. Same SYNTHETIC diagnostic contract.
+        "kernel_iv",
+        "multistate",
+        "partial_linear",
+        "heckman",
+        "rd",
+        "bounds",
+        # SOTA canon wave 32 batteries (see research/benches_w32.py):
+        # peaks-over-threshold extreme value (Hill tail index, GPD
+        # MLE, POT VaR/ES, return levels), cross-fitted double/debiased
+        # ML (PLR + AIPW IRM on ML nuisance residuals), bunching
+        # estimation at kinks (excess mass vs polynomial counterfactual,
+        # Poisson-WLS + bootstrap se), honest causal forests
+        # (propensity-transformed leaves, honest split/est halves),
+        # Gaussian-process regression (ARD kernel, Type-II ML,
+        # closed-form LOO), Hamilton/Kim Markov-switching EM
+        # (filter/smoother/regime forecasts). Same SYNTHETIC contract.
+        "extreme_value",
+        "double_ml",
+        "bunching",
+        "causal_forest",
+        "gaussian_process",
+        "markov_switching",
+        # SOTA canon wave 33 batteries (see research/benches_w33.py):
+        # BSTS causal impact (local-level + spike-slab regression,
+        # simulation counterfactual, posterior tail prob), weak-IV
+        # robust inference (Anderson-Rubin, Moreira CLR, first-stage
+        # F + partial R2, AR-inverted confidence sets), synthetic
+        # DiD (unit + time simplex weights, placebo inference),
+        # Fisher/Pitman randomization inference (sharp-null
+        # permutation, Westfall-Young max-T, Pitman CI inversion),
+        # propensity-score pipeline (IRLS PS, caliper matching, IPW
+        # + overlap weights, SMD balance), cluster-robust inference
+        # (CR1/CR2 sandwich, CGM/Webb wild cluster bootstrap).
+        # Same SYNTHETIC diagnostic contract.
+        "causal_impact",
+        "weak_iv",
+        "synth_did",
+        "permutation_inference",
+        "propensity_score",
+        "cluster_robust",
+        # SOTA canon wave 34 batteries (see research/benches_w34.py):
+        # matrix-completion causal panels (Nuclear-norm soft-impute,
+        # MCPanel ATT), generalized synthetic control (Xu IFE factor
+        # EM + treated-loading counterfactual), RIF regressions
+        # (Firpo-Fortin-Lemieux unconditional quantile/variance/Gini
+        # effects), shift-share IV (Bartik first-stage F, Rotemberg
+        # weights, AKM-style SEs), entropy balancing (Hainmueller
+        # calibration weights, exact moment match, ESS), DiD
+        # diagnostics (Goodman-Bacon decomposition of TWFE into
+        # clean vs forbidden 2x2s, Sun-Abraham cohort CATTs).
+        # Same SYNTHETIC diagnostic contract.
+        "matrix_completion",
+        "gsynth",
+        "rif_regression",
+        "shift_share",
+        "entropy_balancing",
+        "did_diagnostics",
+        # SOTA canon wave 35 batteries (see research/benches_w35.py):
+        # honest DiD (Rambachan-Roth Δ^SD sensitivity + FLCI breakdown
+        # M̄*), many-weak-IV estimators (LIML via AR-ratio minimization,
+        # JIVE, HFUL leverage-robust), Fama-MacBeth two-pass risk
+        # prices (FM SEs + Shanken EIV inflation), specification-curve
+        # multiverse (full spec grid + shuffle p-value), sign-restricted
+        # VAR (Uhlig QR draws, median IRF under sign restrictions),
+        # panel quantile FE (Machado-Santos Silva moments: location +
+        # absolute-residual scale + Φ^{-1}(τ) shift). Same SYNTHETIC
+        # diagnostic contract.
+        "honest_did",
+        "many_iv",
+        "fama_macbeth",
+        "specification_curve",
+        "sign_restricted_var",
+        "panel_quantile_fe",
+        # SOTA canon wave 36 batteries (see research/benches_w36.py):
+        # Arellano-Bond FD-GMM dynamic panels (collapsed lags, AR(2)
+        # and Sargan diagnostics), Minnesota-prior BVAR (Theil dummy
+        # observations, per-equation shrinkage profile), quasi-Bayesian
+        # mediation analysis (ACME/ADE via coefficient draws),
+        # competing-risks Aalen-Johansen CIFs with Klein-Andersen
+        # pseudo-value regressions, stochastic-frontier composed-error
+        # MLE (normal/half-normal + Jondrow efficiency), regression-
+        # kink design (slope-discontinuity ratio, delta-method SE).
+        # Same SYNTHETIC diagnostic contract.
+        "arellano_bond",
+        "bvar_minnesota",
+        "mediation_analysis",
+        "competing_risks",
+        "stochastic_frontier",
+        "regression_kink",
+        # SOTA canon wave 37 batteries (see research/benches_w37.py):
+        # spatial autoregression (concentrated-likelihood SAR with
+        # log-determinant Jacobian + Moran's I residual test),
+        # ordered probit/logit (latent-threshold MLE with ordered
+        # cutpoints), triple difference (saturated DDD + eight-cell
+        # contrast under confounded post shocks), distribution
+        # regression (per-threshold logit CDF path, Chernozhukov-
+        # Fernández-Val-Melly), SIMEX measurement-error correction
+        # (noise-dose quadratic extrapolation + jackknife SE),
+        # LP-DiD clean event studies (per-horizon clean weighting
+        # of Dube-Girardi-Jordà-Taylor). Same SYNTHETIC diagnostic
+        # contract.
+        "spatial_econometrics",
+        "ordered_choice",
+        "triple_difference",
+        "distribution_regression",
+        "simex",
+        "lp_did",
+        # SOTA canon wave 38 batteries (see research/benches_w38.py):
+        # control-function endogeneity correction (two-stage CF +
+        # Durbin-Wu-Hausman), kernel regression (Nadaraya-Watson +
+        # local-linear derivatives, LOO-CV bandwidth), censored
+        # quantile regression (Powell CLAD via Chernozhukov-Hong
+        # three-step), SETAR threshold autoregression (CLS threshold
+        # + sup-F linearity), Papke-Wooldridge fractional response
+        # (quasi-MLE logit for [0,1] outcomes), Turnbull interval-
+        # censored NPMLE (self-consistency EM). Same SYNTHETIC
+        # diagnostic contract.
+        "control_function",
+        "kernel_regression",
+        "censored_quantile",
+        "threshold_ar",
+        "fractional_response",
+        "interval_censoring",
+        # SOTA canon wave 39 batteries (see research/benches_w39.py):
+        # Manski maximum score (smoothed-score distribution-free
+        # binary response), Chen sieve partial-linear estimation
+        # (B-spline basis), McFadden nested logit (two-level FIML,
+        # inclusive-value λ), Weibull AFT (SEV MLE under right
+        # censoring), distance covariance dependence test
+        # (Székely-Rizzo-Bakirov + permutation), panel unit-root
+        # tests (IPS + LLC, simulated moments). Same SYNTHETIC
+        # diagnostic contract.
+        "maximum_score",
+        "sieve_estimation",
+        "nested_logit",
+        "aft_model",
+        "distance_covariance",
+        "panel_unitroot",
+        # SOTA canon wave 40 batteries (see research/benches_w40.py):
+        # McFadden-Train mixed logit (random-coefficients
+        # simulated MLE, quasi-random draws), Cragg two-part
+        # hurdle (participation logit + truncated-normal amount),
+        # Zellner SUR (feasible-GLS Kronecker system), Diebold-
+        # Yilmaz connectedness (VAR generalized FEVD), Newey-
+        # Powell nonparametric series IV (basis projection +
+        # DWH endogeneity check), Politis-Romano-Wolf
+        # subsampling (block recentered CI, minimal-assumption
+        # coverage). Same SYNTHETIC diagnostic contract.
+        "mixed_logit",
+        "hurdle",
+        "sur_model",
+        "connectedness",
+        "nonparametric_iv",
+        "subsampling",
+        # SOTA canon wave 41 batteries (see research/benches_w41.py):
+        # shared gamma frailty (Vaupel/Clayton clustered survival,
+        # marginal likelihood), interrupted/comparative time
+        # series (segmented regression, Newey-West SEs), Hayashi-
+        # Yoshida lead-lag covariance (non-synchronous ticks,
+        # shift-scan direction), PPML gravity (Santos Silva-
+        # Tenreyro multiplicative mean under heteroskedasticity),
+        # MacKinlay event study (market-model CAR, Patell z +
+        # BMP t), Mallows model averaging (Hansen Cp-simplex
+        # weights). Same SYNTHETIC diagnostic contract.
+        "frailty",
+        "interrupted_ts",
+        "lead_lag",
+        "ppml",
+        "event_study",
+        "model_averaging",
+        # SOTA canon wave 42 batteries (see research/benches_w42.py):
+        # Lo-MacKinlay variance-ratio test (VR(q) with
+        # heteroskedastic-robust z*), Corsi HAR realized-vol
+        # cascade (daily/weekly/monthly aggregates), Clark-West
+        # MSPE-adjusted nested-forecast test, Stambaugh
+        # predictive-regression bias + Campbell-Yogo
+        # Bonferroni-Q CI, Roy two-sector self-selection
+        # (probit + Mills-corrected wage equations), Cameron-
+        # Gelbach-Miller two-way clustered SEs (V1+V2−V12).
+        # Same SYNTHETIC diagnostic contract.
+        "variance_ratio",
+        "har_rv",
+        "clark_west",
+        "stambaugh",
+        "roy_model",
+        "two_way_cluster",
+        # SOTA canon wave 43 batteries (see research/benches_w43.py):
+        # Bai-Perron multiple structural breaks (sequential F-tests
+        # + BIC), Bernanke-Boivin-Eliasz FAVAR (PCA factors +
+        # VAR), Kao/Pedroni panel cointegration tests, Vuong
+        # non-nested model selection (omega^2 distinguishability
+        # + LR), Merton structural credit distance-to-default
+        # (KMV fixed-point inversion), White Reality Check +
+        # Hansen SPA data-snooping control (stationary-bootstrap
+        # max-statistics). Same SYNTHETIC diagnostic contract.
+        "bai_perron",
+        "favar",
+        "panel_coint",
+        "vuong_test",
+        "merton_model",
+        "white_reality",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

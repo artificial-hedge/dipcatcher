@@ -226,3 +226,50 @@ def refit_segments(y: Array, x: Array, breaks: Array) -> dict[str, Array]:
         "bic": np.array([bic]),
         "n_segments": np.array([len(bounds) - 1]),
     }
+
+
+def synth_bai_perron(
+    t: int = 400,
+    breaks: tuple[int, ...] = (133, 266),
+    betas: tuple[float, ...] = (0.5, -1.0, 0.8),
+    sigma: float = 0.6,
+    seed: int = 0,
+) -> dict[str, Array]:
+    """Piecewise-constant regression with known breakpoints."""
+    rng = np.random.default_rng(seed)
+    x = rng.normal(0.0, 1.0, (t, 1))
+    bounds = (0,) + breaks + (t,)
+    b_vec = np.concatenate(
+        [np.full(bounds[i + 1] - bounds[i], betas[i]) for i in range(len(betas))]
+    )
+    y = x[:, 0] * b_vec + rng.normal(0.0, sigma, t)
+    return {"y": y, "x": x}
+
+
+def bench_bai_perron(seed: int = 20261231 + 245) -> dict[str, float]:
+    """Bai-Perron self-check: sequential sup-Wald recovers the
+    two simulated breaks within tolerance; a no-break series
+    returns zero breaks. All ``synthetic_*``."""
+    d = synth_bai_perron(breaks=(133, 266), seed=seed)
+    x1 = np.column_stack([np.ones(400), d["x"]])
+    out = sequential_breaks(d["y"], x1, m_max=5)
+    found = np.sort(out["breaks"]).astype(float)
+    dn = synth_bai_perron(breaks=(400,), betas=(0.5,), seed=seed + 1)
+    outn = sequential_breaks(dn["y"], x1, m_max=5)
+    out_b = sequential_breaks(d["y"], x1, m_max=5)
+
+    n_found = float(found.size)
+    if found.size >= 2:
+        err = float(np.abs(found[:2] - np.array([133.0, 266.0])).max())
+    else:
+        err = 400.0
+    return {
+        "synthetic_n_breaks": n_found,
+        "synthetic_break_err": err,
+        "synthetic_n_null": float(outn["breaks"].size),
+        "synthetic_last_supwald": float(out["last_sup_wald"][0]),
+        "synthetic_detects": float(
+            n_found == 2.0 and err < 25.0 and float(outn["breaks"].size) <= 1.0
+        ),
+        "synthetic_determinism": float(n_found == float(np.sort(out_b["breaks"]).size)),
+    }

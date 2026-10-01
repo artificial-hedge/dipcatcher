@@ -1,0 +1,21 @@
+{
+  "kind": "kill_audit",
+  "schema": "kill_audit.v1",
+  "git_revision": "cb3c2e76d4ebc1d484d3fd59a2044cbd47820190",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "invariant": "the kill switch implements its declared state matrix; unknown states fail closed on every action",
+    "verdict": "ok",
+    "n_checks": 57,
+    "n_violations": 0
+  },
+  "interpretation": {
+    "n_checks": 57,
+    "n_violations": 0,
+    "verdict": "ok",
+    "violations": []
+  },
+  "receipt_sha256": "493cd55611dd273c687b0e94c6b3b6e11ed233ee9a3381cd498b7c38eb280e7c"
+}
