@@ -641,6 +641,7 @@ src/quant_fund/reality/report.py
 src/quant_fund/reality/spa.py
 src/quant_fund/registry/__init__.py
 src/quant_fund/registry/artifact_store.py
+src/quant_fund/registry/lineage_dag.py
 src/quant_fund/registry/mlflow_store.py
 src/quant_fund/registry/promotion_gate.py
 src/quant_fund/reporting/__init__.py
