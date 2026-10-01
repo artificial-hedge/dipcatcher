@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1149,
+  "module_count": 1150,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -5037,6 +5037,18 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.impact_law"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.impact_propagator"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.impact_propagator"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.impact_propagator"
     },
     {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
@@ -12669,6 +12681,7 @@
     "quant_fund.microstructure.hmm_learn",
     "quant_fund.microstructure.impact_instant",
     "quant_fund.microstructure.impact_law",
+    "quant_fund.microstructure.impact_propagator",
     "quant_fund.microstructure.impulse_mm",
     "quant_fund.microstructure.intraday_exec",
     "quant_fund.microstructure.intraday_shape",
@@ -14452,7 +14465,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 169,
+      "imports": 170,
       "src": "quant_fund.microstructure"
     },
     {
@@ -14472,7 +14485,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 148,
+      "imports": 150,
       "src": "quant_fund.microstructure"
     },
     {
