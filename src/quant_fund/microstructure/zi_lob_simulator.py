@@ -464,6 +464,16 @@ class ZILobConfig:
     # sim's depth-proportional kernel over-cancels the side that just
     # stacked. Both knobs at 0 keep every path bit-identical.
     cxl_unhit_relief: float = 0.0
+    # ``cxl_unhit_damp`` ∈ [0, 1]: for ``cxl_unhit_window`` events after
+    # a fill, a cancel event whose depth-proportional pick lands on the
+    # UNHIT side is suppressed with this probability — the sampled order
+    # survives. On the tape the unhit side's *count* of cancels stays
+    # equal to the hit side's despite holding ~1.6x the adds — a lower
+    # per-depth cancel hazard, i.e. protection, not relocation. Unlike
+    # ``cxl_unhit_relief`` (which reroutes the mass onto the hit side),
+    # damping removes it. Marker shared with the relief/narrow channels;
+    # 0 keeps every path bit-identical.
+    cxl_unhit_damp: float = 0.0
     cxl_unhit_window: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
@@ -543,6 +553,7 @@ class ZILobConfig:
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
         _prob(self.cxl_requote, "cxl_requote")
         _prob(self.cxl_unhit_relief, "cxl_unhit_relief")
+        _prob(self.cxl_unhit_damp, "cxl_unhit_damp")
         if isinstance(self.cxl_unhit_window, bool) or int(self.cxl_unhit_window) < 0:
             raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
@@ -1395,7 +1406,11 @@ class ZILobSimulator:
             sign = 1.0 if aggressor == "buy" else -1.0
             self._tilt = max(-1.0, min(1.0, self._tilt + sign * tg))
         nw = self._cfg.hit_narrow_window if self._cfg.hit_narrow_dist > 0 else 0
-        rw = self._cfg.cxl_unhit_window if self._cfg.cxl_unhit_relief > 0 else 0
+        rw = (
+            self._cfg.cxl_unhit_window
+            if (self._cfg.cxl_unhit_relief > 0.0 or self._cfg.cxl_unhit_damp > 0.0)
+            else 0
+        )
         if nw or rw:
             # Hit side = the side the aggressor consumed (resting side).
             hit = "sell" if aggressor == "buy" else "buy"
@@ -1661,6 +1676,16 @@ class ZILobSimulator:
             book, idx = self._bids, k
         else:
             book, idx = self._asks, k - bid_d
+        damp = self._cfg.cxl_unhit_damp
+        if damp > 0.0 and self._hit_retreat is not None:
+            hit_side, _n_u, r_until = self._hit_retreat
+            unhit_book = self._bids if hit_side == "sell" else self._asks
+            if (
+                self.n_events < r_until
+                and book is unhit_book
+                and (float(self._rng.random()) < damp)
+            ):
+                return  # protected: the unhit-side order survives
         level = None
         for lvl in sorted(book):
             n = len(book[lvl])
