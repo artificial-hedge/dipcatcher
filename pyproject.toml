@@ -3,10 +3,20 @@ name = "fx-1"
 dynamic = ["version"]
 description = "fx-1: a quant LLM fine-tuned from Kimi K3 open weights. dipcatcher is the harness - data engine, evaluation, and verification for fx-1. Not a promise of live profit."
 readme = "README.md"
+# Proprietary — all rights reserved. See the LICENSE file at the repository
+# root. This is not an open-source license: forking, copying, and
+# redistribution are prohibited without the Owner's written permission.
+license = { file = "LICENSE" }
 authors = [
     { name = "Advaith Vaithianathan", email = "140935487+cosmic-hydra@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
+classifiers = [
+    "License :: Other/Proprietary License",
+    # PyPI refuses any upload carrying a "Private ::" classifier — a second,
+    # independent guard against an accidental public package upload.
+    "Private :: Do Not Upload",
+]
 dependencies = [
     "polars>=1.17",
     "pyarrow>=17",
@@ -113,6 +123,7 @@ only-include = [
     "scripts",
     "pyproject.toml",
     "README.md",
+    "LICENSE",
     "SECURITY.md",
     ".env.example",
     "Makefile",
@@ -133,9 +144,11 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C901", "DTZ"]
 ignore = ["E501", "B008", "UP042", "SIM108", "SIM115"]
 
 [tool.ruff.lint.mccabe]
-# Ceiling is validate_ledger_schema (paper ledger, left intact).
+# Hard ceiling is validate_ledger_schema (paper ledger, left intact).
 # verify_research_artifact was 196 before it was split. Raising this
 # fails tests/unit/test_quality_ratchet.py. Lowering it is allowed.
+# Per-function ceilings (may only decrease) live in
+# quality/mccabe_baseline.txt — see scripts/check_mccabe_ratchet.py.
 max-complexity = 74
 
 [tool.ruff.lint.per-file-ignores]
@@ -376,3 +389,11 @@ proof = 91
 leakage = 86
 reality = 91
 proofcore = 91
+# Wave-2 per-MODULE floors (WAVE2.md §1.6, amendment I5): every new wave-2
+# module >= 90%, enforced alongside the package floors above. Dotted keys map
+# to single module files in `proofcore.ci coverage-gate`.
+"proofcore.scheduler" = 90
+"proof.runner" = 90
+"proof.estimators" = 90
+"proof.replay" = 90
+"leakage.guard" = 90

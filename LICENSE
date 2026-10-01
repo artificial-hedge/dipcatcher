@@ -1,0 +1,132 @@
+ARTIFICIAL HEDGE PROPRIETARY LICENSE
+Version 1.0, last updated 2026-09-30
+
+Copyright (c) 2026 Advaith Vaithianathan. All rights reserved.
+
+This repository — its source code, object code, build and configuration
+files, documentation, receipts, datasets, fixtures, notebooks, trained
+model artifacts (if any), and every other file it contains, in any form
+(collectively, the "Software") — is the sole and exclusive property of
+Advaith Vaithianathan, founder of Artificial Hedge ("the Owner"). The
+Software is made visible in this hosted repository for evaluation and
+reference only. Visibility is not, and must never be construed as, a
+grant of rights.
+
+1. NO LICENSE GRANTED BY DEFAULT
+
+   No license, right, or interest in the Software — express, implied,
+   by estoppel, or otherwise — is granted to any person or entity by
+   virtue of viewing, cloning, downloading, starring, watching, or
+   otherwise accessing this repository. All rights not expressly and
+   affirmatively granted in writing by the Owner are reserved.
+
+2. PROHIBITED ACTS
+
+   Except as permitted under Section 3, no person or entity may, in
+   whole or in part, and whether for commercial or non-commercial
+   purposes:
+
+   a. copy, reproduce, or duplicate the Software by any means;
+   b. fork, mirror, re-host, or otherwise create or maintain a copy of
+      this repository or its history on GitHub or any other platform;
+   c. modify, translate, adapt, or create derivative works based on the
+      Software;
+   d. distribute, publish, sublicense, rent, lease, rebrand, or resell
+      the Software or any derivative of it;
+   e. incorporate the Software, in whole or in part, into another
+      product, service, dataset, model, or codebase;
+   f. use the Software, or any output, receipt, forecast, model weight,
+      or dataset produced by it, to train, fine-tune, distill, or
+      evaluate a third-party model, product, or service;
+   g. remove, obscure, or alter any copyright, receipt-integrity, or
+      proprietary notice contained in the Software; or
+   h. circumvent, disable, or interfere with any technical or
+      contractual measure that restricts access to or use of the
+      Software.
+
+   Colloquially: no one other than the Owner may fork, copy, or steal
+   this code, in any form, for any reason, without prior written
+   permission from the Owner.
+
+3. LIMITED PERMITTED USE
+
+   The only uses permitted without a separate written agreement from
+   the Owner are:
+
+   a. viewing the Software in this repository, as hosted, strictly for
+      personal evaluation, security research disclosed in accordance
+      with `SECURITY.md`, or academic reference; and
+   b. use by the Owner and by collaborators, employees, or contractors
+      of Artificial Hedge who have been explicitly authorized in
+      writing by the Owner, subject to the terms of that authorization.
+
+   Any broader use — including internal production use by an
+   organization other than Artificial Hedge, redistribution, or
+   commercial exploitation — requires a separate signed license
+   agreement with the Owner. Requests should be directed to the Owner
+   using the contact details published in `pyproject.toml` and
+   `CITATION.cff`.
+
+4. THIRD-PARTY AND VENDORED COMPONENTS
+
+   This license governs only the original work authored for this
+   repository. It does not relicense, and claims no ownership over:
+
+   a. third-party open-source dependencies declared in `pyproject.toml`
+      and locked in `uv.lock`, each of which remains governed by its
+      own upstream license;
+   b. vendored third-party source under `third_party/` (for example
+      `third_party/kronos`, distributed under the MIT License, Copyright
+      (c) 2025 ShiYu — see `third_party/kronos/LICENSE`), which remains
+      governed by its own license text; and
+   c. the base model constant referenced by the `fx1` package
+      (`moonshotai/Kimi-K3`), which is governed exclusively by
+      Moonshot AI's own Kimi K3 License, as described in `docs/FX1.md`.
+      Nothing in this license grants any right to that base model or
+      its weights, and nothing in the Kimi K3 License extends any right
+      to the Owner's original work in this repository.
+
+   Where this license and an applicable third-party license conflict as
+   to third-party code, the third-party license controls solely for
+   that code.
+
+5. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+   NON-INFRINGEMENT. THE OWNER DOES NOT WARRANT THAT THE SOFTWARE IS
+   ACCURATE, COMPLETE, RELIABLE, OR FREE OF DEFECTS.
+
+6. NO INVESTMENT ADVICE; NO LIABILITY
+
+   The Software produces research, backtest, and simulated-paper
+   evidence only, as described in `README.md` and
+   `docs/INSTITUTIONAL_READINESS.md`. It is not investment advice, not a
+   solicitation, and not a promise of live trading performance. TO THE
+   MAXIMUM EXTENT PERMITTED BY LAW, THE OWNER SHALL NOT BE LIABLE FOR
+   ANY CLAIM, DAMAGES, TRADING LOSS, OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM OR IN CONNECTION
+   WITH THE SOFTWARE OR ITS USE.
+
+7. ENFORCEMENT
+
+   Unauthorized copying, forking, or distribution of the Software is a
+   violation of the Owner's copyright and of this license, and may be
+   pursued as such under applicable copyright law and international
+   treaty (including the Berne Convention and the TRIPS Agreement), in
+   addition to any other remedy available to the Owner. The Owner may
+   revoke any permission granted under Section 3 at any time, for any
+   reason, on written notice.
+
+8. SEVERABILITY AND ENTIRE AGREEMENT
+
+   If any provision of this license is held unenforceable, the
+   remaining provisions remain in full force and effect. This license
+   is the entire agreement between the Owner and any viewer of the
+   Software regarding its subject matter, unless superseded by a
+   separate signed written agreement with the Owner.
+
+For licensing inquiries, commercial use, or authorized-collaborator
+access, contact Advaith Vaithianathan through the channels published in
+this repository (`pyproject.toml`, `CITATION.cff`).

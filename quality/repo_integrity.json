@@ -1,0 +1,207 @@
+{
+  "data_label": "SYNTHETIC",
+  "gates": {
+    "checkpoint": {
+      "anchored": false,
+      "errors": [],
+      "ok": true,
+      "revision_ancestor": true,
+      "signed": true
+    },
+    "crown_jewels": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.box-soft-verify": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.cursor": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.dsh-24x7": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.github": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:.github/workflows": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:artifacts": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:clients": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:configs": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:data/metadata": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:deploy": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:docker": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:docs": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:examples": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:notebooks": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:quality": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:receipts": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:replay": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:reports": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:research": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:rust": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:scripts": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:spec": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:src": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:tests": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:third_party": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:typings": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:verifier": {
+      "errors": [],
+      "ok": true
+    },
+    "epoch:web": {
+      "errors": [],
+      "ok": true
+    },
+    "key_rotation": {
+      "errors": [],
+      "ok": true
+    },
+    "lattice": {
+      "errors": [],
+      "ok": true
+    },
+    "pin_signatures": {
+      "errors": [],
+      "ok": true,
+      "signed": true
+    },
+    "quorum_rotations": {
+      "errors": [],
+      "ok": true
+    },
+    "spine": {
+      "errors": [],
+      "ok": true,
+      "signed": true
+    },
+    "timestamp_anchors": {
+      "anchored": true,
+      "errors": [],
+      "fresh": {
+        "quality/checkpoint.json": false,
+        "quality/crown_jewels.json": false,
+        "quality/epoch_heads.json": false
+      },
+      "ok": true
+    },
+    "witness": {
+      "errors": [],
+      "ok": true
+    }
+  },
+  "kind": "repo_integrity",
+  "mode": "full",
+  "ok": true,
+  "params": {
+    "corpora": [
+      "receipts",
+      "verifier",
+      "quality",
+      ".github/workflows",
+      "configs",
+      "artifacts",
+      ".dsh-24x7",
+      "data/metadata",
+      "src",
+      "tests",
+      "scripts",
+      "docs",
+      "research",
+      "replay",
+      "reports",
+      "notebooks",
+      "examples",
+      "clients",
+      "typings",
+      "spec",
+      "docker",
+      "deploy",
+      "third_party",
+      "rust",
+      "web",
+      ".box-soft-verify",
+      ".cursor",
+      ".github"
+    ]
+  },
+  "pins": {
+    "crown_jewels_sha256": "20913a2277d00745a2c3515a30cd0d3ab4c5b1c987dca926c99ce7b1e1f65e5d",
+    "epoch_heads_sha256": "a0b2dba883bd4316803649ae30fad0d7f01b47b3ab80984f06e8a8d063153ef8",
+    "gate_pins_signed": true,
+    "timestamps_anchored": true
+  },
+  "receipt_sha256": "45b1f3bcbb089962458a74904bf610750849c90a4d583cd1e8c39fda5138ef92",
+  "schema": "repo_integrity.v1"
+}
