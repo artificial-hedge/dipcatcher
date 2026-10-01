@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 934,
+  "module_count": 935,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3593,6 +3593,26 @@
     {
       "dst": "quant_fund.northset.estimators",
       "src": "quant_fund.microstructure.candle_book_features"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.deep_microprice"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.deep_microprice"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.deep_microprice"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.deep_microprice"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.deep_microprice"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -10034,6 +10054,7 @@
     "quant_fund.microstructure.book_panel",
     "quant_fund.microstructure.cancel_cluster",
     "quant_fund.microstructure.candle_book_features",
+    "quant_fund.microstructure.deep_microprice",
     "quant_fund.microstructure.depth_consumption",
     "quant_fund.microstructure.event_burst",
     "quant_fund.microstructure.event_granger",
@@ -11482,7 +11503,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 108,
+      "imports": 111,
       "src": "quant_fund.microstructure"
     },
     {
@@ -11502,7 +11523,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 77,
+      "imports": 79,
       "src": "quant_fund.microstructure"
     },
     {
