@@ -160,6 +160,7 @@ def _sim_crown(
     *,
     horizon: int,
     seed: int,
+    collect_counts: bool = False,
 ) -> dict[str, Any]:
     """Crown depth + emptied-touch reveal gap on one sim arm."""
     cfg = _calibrated(seed, extra)
@@ -205,6 +206,12 @@ def _sim_crown(
     )
     cr = np.asarray(crown, float)
     tv = np.asarray(tot, float)
+    out_extra: dict[str, Any] = {}
+    if collect_counts:
+        counts = sim.event_counts()
+        n_f = len(fills)
+        out_extra["n_hidden_fills"] = counts["n_hidden_fills"]
+        out_extra["hidden_fill_share"] = round(counts["n_hidden_fills"] / n_f, 4) if n_f else None
     n_sp = len(spreads)
     return {
         "regime": regime,
@@ -220,6 +227,7 @@ def _sim_crown(
         "reveal_gap_ticks_mean": None if not gaps else round(float(np.mean(gaps)), 4),
         "reveal_gap_ticks_p50": None if not gaps else round(float(np.median(gaps)), 4),
         "n_reveals": len(gaps),
+        **out_extra,
     }
 
 

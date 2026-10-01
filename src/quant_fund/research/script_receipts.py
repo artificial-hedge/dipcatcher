@@ -437,6 +437,7 @@ _MEASUREMENT_SCHEMAS = (
     "hidden_depth_bench.v1",
     "hit_flee.v1",
     "hit_starve.v1",
+    "ice_crown.v1",
     "iceberg.v1",
     "impact_instant.v1",
     "impact_persist.v1",
