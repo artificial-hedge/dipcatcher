@@ -22,6 +22,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from fx1.modelcard import ModelCard
+from quant_fund.utils.atomicio import atomic_write_text
 
 FIVE_ACTIVITIES = (
     "development",
@@ -62,7 +63,13 @@ class MRMDossier(BaseModel):
 
     @property
     def complete(self) -> bool:
-        return {s.activity for s in self.sections} == set(FIVE_ACTIVITIES)
+        """True only when every activity carries activity-specific evidence.
+
+        The model card is added to every section's backing, so an activity
+        is evidenced iff its section pins more than the card alone — except
+        ``governance``, whose evidence *is* the signed card.
+        """
+        return all(len(s.artifact_hashes) > 1 or s.activity == "governance" for s in self.sections)
 
 
 def compile_dossier(
@@ -84,12 +91,17 @@ def compile_dossier(
         path = Path(artifact)
         if not path.exists():
             raise FileNotFoundError(f"dossier artifact for {activity!r} missing: {path}")
-        hashes.setdefault(activity, {})[str(path)] = _sha(path)
-        if activity == "validation" and "contamination" in path.name:
+        report_activity = "validation" if activity == "contamination_report" else activity
+        hashes.setdefault(report_activity, {})[str(path)] = _sha(path)
+        if activity == "contamination_report" or "contamination" in path.name:
+            report: object = None
             try:
                 report = json.loads(path.read_text(encoding="utf-8"))
-                contamination_flagged = bool(report.get("overall_flagged", True))
             except json.JSONDecodeError:
+                report = None
+            # Valid JSON that is not an object ("[]", "null") has no
+            # overall_flagged field — the dossier cannot certify it clean.
+            if not isinstance(report, dict) or bool(report.get("overall_flagged", True)):
                 contamination_flagged = True
     sections: list[DossierSection] = []
     summaries = {
@@ -130,14 +142,21 @@ def compile_dossier(
                 summary=summaries[activity],
             )
         )
+    is_complete = all(
+        activity in hashes or activity == "governance" for activity in FIVE_ACTIVITIES
+    )
     dossier = MRMDossier(
         model_version=card.version,
         base_model=card.base_model,
         sections=sections,
         contamination_flagged=contamination_flagged,
-        ship_eligible=card.eval_delta.ship_eligible,
+        # A flagged contamination audit invalidates ship eligibility even
+        # when the card's eval delta passed — and so does an incomplete
+        # dossier: the five-activity pack cannot certify a checkpoint on
+        # evidence it never pinned.
+        ship_eligible=(card.eval_delta.ship_eligible and not contamination_flagged and is_complete),
     )
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(dossier.model_dump_json(indent=2), encoding="utf-8")
+    atomic_write_text(out, dossier.model_dump_json(indent=2))
     return dossier
