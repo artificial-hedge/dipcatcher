@@ -453,6 +453,14 @@ from quant_fund.research.benches_w57 import (
     bench_wavelet_modwt,
     bench_wooldridge_serial,
 )
+from quant_fund.research.benches_w58 import (
+    bench_bates_svj,
+    bench_echo_state,
+    bench_extremogram,
+    bench_pelt_wbs,
+    bench_spectral_pca,
+    bench_stl_loess,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2346,6 +2354,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "bai_ng_ic": bench_bai_ng_ic(),
         "wooldridge_serial": bench_wooldridge_serial(),
         "lasso_pds": bench_lasso_pds(),
+        "extremogram": bench_extremogram(),
+        "echo_state": bench_echo_state(),
+        "bates_svj": bench_bates_svj(),
+        "stl_loess": bench_stl_loess(),
+        "pelt_wbs": bench_pelt_wbs(),
+        "spectral_pca": bench_spectral_pca(),
     }
 
     hyps = _build_hypotheses(families, rankers)

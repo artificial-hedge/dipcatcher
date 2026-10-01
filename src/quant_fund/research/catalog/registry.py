@@ -684,6 +684,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bai_ng_ic",
         "wooldridge_serial",
         "lasso_pds",
+        # wave 58 — Davis-Mikosch extremogram + Ferro-Segers
+        # extremal index tail-dependence battery, Jaeger echo-
+        # state reservoir (spectral-radius normalized, ridge
+        # readout, NARMA driver), Bates stochastic-volatility-
+        # plus-jump pricing (little-trap Riccati + Merton
+        # compensator, Gauss-Legendre probabilities), Cleveland
+        # STL robust LOESS seasonal decomposition, Killick-
+        # Fearnhead-Eckley PELT pruned optimal partitioning +
+        # Fryzlewicz wild binary segmentation, Brillinger
+        # dynamic principal components (Daniell-smoothed
+        # cross-spectral eigendecomposition). Same SYNTHETIC
+        # diagnostic contract.
+        "extremogram",
+        "echo_state",
+        "bates_svj",
+        "stl_loess",
+        "pelt_wbs",
+        "spectral_pca",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1318,3 +1318,31 @@ detail: |
     as #691/#695/#698/#702 land.
 note: canon PR to follow.
 
+
+---
+owner: devin (wave 58 canon)
+slice: extremes/segmentation/generative battery — extremogram,
+  echo-state, Bates SVJ, STL-LOESS, PELT+WBS, spectral PCA
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - extremogram.py (Davis-Mikosch lagged tail correlogram,
+    admissible-denominator bias fix, Ferro-Segers intervals
+    extremal index, chi(u) tail profile), echo_state.py
+    (Jaeger ESN — spectral-radius normalized reservoir, leak,
+    ridge readout, washout, NARMA-10 driver), bates_svj.py
+    (little-trap Riccati Heston CF + Merton lognormal-jump
+    compensator, Gauss-Legendre P1/P2 probabilities),
+    stl_loess.py (Cleveland STL inner/outer loops, tricube
+    local-linear LOESS, bisquare robustness weights),
+    pelt_wbs.py (PELT pruning inequality optimal partition +
+    Fryzlewicz wild binary segmentation random-interval
+    CUSUM), spectral_pca.py (Brillinger dynamic PCA — Daniell-
+    smoothed cross-spectral eigendecomposition).
+  - benches_w58.py: +336..341 seed stamps, canonical adapter
+    structure (try-import, finite-blob, forbidden-token filter).
+  - registry +6 -> "extremogram","echo_state","bates_svj",
+    "stl_loess","pelt_wbs","spectral_pca"; agent.py import+dict
+    wiring; tests: 6 module files + test_benches_w58.
+  - Canon staged on top of w57-canon so the chain stays clean
+    as #695/#698/#702/#704 land.
+note: canon PR to follow.
