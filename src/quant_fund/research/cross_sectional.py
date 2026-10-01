@@ -430,8 +430,10 @@ def run_cross_sectional_bench(
         "kind": "cross_sectional_rankic_eval",
         "data_label": data_label,
         "live_pnl_claim": False,
-        "generated_at": datetime.now(UTC).isoformat(),
-        "git_revision": git_revision(),
+        "meta": {
+            "generated_at": datetime.now(UTC).isoformat(),
+            "git_revision": git_revision(),
+        },
         "seed": int(seed),
         "n_assets": n_assets,
         "n_dates": n_dates,
@@ -639,18 +641,28 @@ def rankic_receipt_v2(receipt: Mapping[str, Any]) -> dict[str, Any]:
     """
     from quant_fund.research.receipt_v2 import build_receipt_v2
 
-    if rankic_contract_errors(receipt):
+    body = {key: value for key, value in receipt.items() if key != "meta"}
+    if rankic_contract_errors(body):
         raise ValueError("rank-IC receipt violates its synthetic research contract")
+    meta = receipt.get("meta")
+    meta_map: Mapping[str, Any] = meta if isinstance(meta, Mapping) else {}
+    generated_at = meta_map.get("generated_at") or receipt.get("generated_at")
+    revision = (
+        meta_map.get("git_revision")
+        or meta_map.get("code_revision")
+        or receipt.get("git_revision")
+        or receipt.get("code_revision")
+    )
     return build_receipt_v2(
         kind=str(receipt["kind"]),
         data_label=str(receipt["data_label"]),
-        dataset=rankic_dataset_identity(receipt),
-        params=rankic_params(receipt),
+        dataset=rankic_dataset_identity(body),
+        params=rankic_params(body),
         code_files=(Path(__file__),),
-        verdict=rankic_verdict(receipt),
-        payload=dict(receipt),
-        generated_at=str(receipt["generated_at"]),
-        revision=str(receipt["git_revision"]),
+        verdict=rankic_verdict(body),
+        payload=dict(body),
+        generated_at=None if generated_at is None else str(generated_at),
+        revision=None if revision is None else str(revision),
     )
 
 
@@ -691,9 +703,9 @@ def write_rankic_receipt(
     from quant_fund.research.receipt_v2 import seal_receipt
 
     if receipt_version == 1:
-        if rankic_contract_errors(receipt):
+        body = {key: value for key, value in receipt.items() if key != "meta"}
+        if rankic_contract_errors(body):
             raise ValueError("rank-IC receipt violates its synthetic research contract")
-        body: Mapping[str, Any] = receipt
     elif receipt_version == 2:
         body = rankic_receipt_v2(receipt)
     else:
