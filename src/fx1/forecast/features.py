@@ -52,27 +52,34 @@ def normalize_bar_times(bars: pl.DataFrame) -> pl.DataFrame:
 def visible_bars(bars: pl.DataFrame, decision_time: datetime | None) -> pl.DataFrame:
     """Drop bars that were not observable at ``decision_time``.
 
-    ``available_time`` is required. When the full dipcatcher PIT columns are
-    present, :func:`quant_fund.data.point_in_time.filter_available` is used.
+    ``event_time`` and ``available_time`` are required. When the full
+    dipcatcher PIT columns are present,
+    :func:`quant_fund.data.point_in_time.filter_available` is used.
+
+    Row lineage is validated before any cutoff — including when
+    ``decision_time`` is None: a bar released before it happened, or stamped
+    with a null lineage timestamp, is corrupt regardless of where the
+    decision falls. The full-PIT-column path used to drop null-availability
+    rows silently while the sparse path raised; both now fail closed.
     """
     frame = normalize_bar_times(bars)
-    if "available_time" not in frame.columns:
-        raise PointInTimeError(
-            "bars require available_time so a feature at t cannot use a later release"
-        )
+    for name in ("event_time", "available_time"):
+        if name not in frame.columns:
+            raise PointInTimeError(
+                f"bars require {name} so a feature at t cannot use a later release"
+            )
+        if frame[name].null_count():
+            raise PointInTimeError(f"null {name}")
+    if frame.filter(pl.col("event_time") > pl.col("available_time")).height:
+        raise PointInTimeError("event_time is after available_time")
     if decision_time is None:
         return frame
     cutoff = as_utc(decision_time)
     if set(PIT_COLS).issubset(frame.columns):
         frame = filter_available(frame, cutoff)
     else:
-        if frame.filter(pl.col("available_time").is_null()).height:
-            raise PointInTimeError("null available_time")
         frame = frame.filter(pl.col("available_time") <= cutoff)
-    frame = frame.filter(pl.col("event_time") <= cutoff)
-    if frame.filter(pl.col("event_time") > pl.col("available_time")).height:
-        raise PointInTimeError("event_time is after available_time")
-    return frame
+    return frame.filter(pl.col("event_time") <= cutoff)
 
 
 def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
@@ -98,6 +105,14 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
     missing = [name for name in required if name not in frame.columns]
     if missing:
         raise PointInTimeError(f"resample input missing columns: {missing}")
+    # Per-bar lineage, not just the aggregate: one bar released before its own
+    # event (or stamped null lineage) is corrupt even when another bar's later
+    # release would lift the bucket max past it.
+    for name in ("event_time", "available_time"):
+        if frame[name].null_count():
+            raise PointInTimeError(f"resample input has null {name}")
+    if frame.filter(pl.col("event_time") > pl.col("available_time")).height:
+        raise PointInTimeError("bar event_time is after its available_time")
     frame = frame.sort(["security_id", "event_time"])
     frame = frame.with_columns(pl.col("event_time").dt.truncate(every).alias("_bucket"))
     aggs: list[pl.Expr] = [
@@ -115,6 +130,7 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
         aggs.append(pl.col("source").n_unique().alias("_n_source"))
         aggs.append(pl.col("source").first().alias("source"))
     if "revision_id" in frame.columns:
+        aggs.append(pl.col("revision_id").n_unique().alias("_n_revision"))
         aggs.append(pl.col("revision_id").first().alias("revision_id"))
     out = frame.group_by(["security_id", "_bucket"], maintain_order=True).agg(aggs)
     if "_n_source" in out.columns:
@@ -122,6 +138,13 @@ def resample_ohlcv(bars: pl.DataFrame, every: str) -> pl.DataFrame:
         if mixed.height:
             raise PointInTimeError("resample bucket mixes sources; refusing to collapse provenance")
         out = out.drop("_n_source")
+    if "_n_revision" in out.columns:
+        mixed = out.filter(pl.col("_n_revision") > 1)
+        if mixed.height:
+            raise PointInTimeError(
+                "resample bucket mixes revision ids; refusing to collapse provenance"
+            )
+        out = out.drop("_n_revision")
     late = out.filter(pl.col("available_time") < pl.col("event_time"))
     if late.height:
         raise PointInTimeError("resampled available_time is before the bucket's last print")

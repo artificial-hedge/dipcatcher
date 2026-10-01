@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Literal
 
@@ -49,6 +50,8 @@ class FeatureSection(_Strict):
     def _windows(self) -> FeatureSection:
         if not self.lookbacks or any(int(k) < 1 for k in self.lookbacks):
             raise ValueError("features.lookbacks must be positive")
+        if len(set(self.lookbacks)) != len(self.lookbacks):
+            raise ValueError("features.lookbacks must be unique")
         if self.vol_window < 2:
             raise ValueError("features.vol_window must be >= 2")
         if self.horizon_bars < 1:
@@ -77,6 +80,16 @@ class InferenceSection(_Strict):
     output_parquet: Path = Path("data/fx1/forecasts.parquet")
     output_meta: Path = Path("data/fx1/forecasts.meta.json")
 
+    @model_validator(mode="after")
+    def _distinct_outputs(self) -> InferenceSection:
+        # The meta JSON is written after the parquet; an identical path would
+        # silently replace the forecast artifact with the metadata file.
+        if self.output_parquet.resolve() == self.output_meta.resolve():
+            raise ValueError(
+                "inference.output_parquet and inference.output_meta must be distinct paths"
+            )
+        return self
+
 
 class SignalSection(_Strict):
     """Placeholder mapping and a flat one-way cost in basis points times turnover."""
@@ -87,6 +100,11 @@ class SignalSection(_Strict):
 
     @model_validator(mode="after")
     def _costs(self) -> SignalSection:
+        # ``nan < 0`` is False, so a bare sign check admits non-finite input:
+        # a nan cost would surface as a null diagnostic and an inf threshold
+        # would map every signal to zero.
+        if not math.isfinite(self.threshold) or not math.isfinite(self.cost_bps):
+            raise ValueError("threshold and cost_bps must be finite")
         if self.threshold < 0 or self.cost_bps < 0:
             raise ValueError("threshold and cost_bps must be >= 0")
         return self

@@ -1365,6 +1365,90 @@ def test_risk_portfolio_named_nonlinear_short_history_fails_closed(
     assert "optimizer_covariance_failed:ledoit_wolf_nonlinear" in response.json()["detail"]
 
 
+def test_risk_portfolio_named_quest_uses_trailing_overlay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import patch
+
+    from quant_fund.models.covariance import (
+        OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
+        OPTIMIZER_COVARIANCE_OBJECT_TRAILING,
+        OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST,
+    )
+
+    frame = _overlay_panel(n_days=40)
+    asof = frame["event_time"].max()
+    assert isinstance(asof, datetime)
+    weights = _weights_frame().with_columns(pl.lit(asof).alias("event_time"))
+    client = _risk_client(
+        tmp_path,
+        monkeypatch,
+        weights=weights,
+        panel_frame=frame,
+        extra_yaml="optimizer:\n  covariance: quest\n",
+    )
+    fake = np.eye(2) * 0.0004
+    overlaid = fake * 4.0
+    w = np.asarray(weights["target_weight"].to_list(), dtype=float)
+    _mcr, _cr, expected_vol = component_risk(w, overlaid)
+
+    def fake_quest(returns: np.ndarray) -> tuple[np.ndarray, dict[str, float | str]]:
+        x = np.asarray(returns, dtype=float)
+        return fake, {
+            "family": OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
+            "spec": OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST,
+            "covariance_object": OPTIMIZER_COVARIANCE_OBJECT_TRAILING,
+            "n_obs": float(np.isfinite(x).all(axis=1).sum()),
+            "n_assets": float(x.shape[1]),
+        }
+
+    def scale_overlay(_config, _frame, _asof, sigma):
+        return np.asarray(sigma, dtype=float) * 4.0, None, None
+
+    with (
+        patch("quant_fund.pipeline.forecast.ledoit_wolf_quest", side_effect=fake_quest),
+        patch(
+            "quant_fund.pipeline.forecast.ledoit_wolf",
+            side_effect=AssertionError("quest must not silently run 2004 Ledoit-Wolf"),
+        ),
+        patch(
+            "quant_fund.pipeline.forecast.ledoit_wolf_nonlinear",
+            side_effect=AssertionError("quest must not silently run analytical 2020"),
+        ),
+        patch(
+            "quant_fund.pipeline.forecast.apply_market_variance_overlay_to_covariance",
+            side_effect=scale_overlay,
+        ),
+    ):
+        body = client.get("/risk/portfolio", params={"config_path": "research.yaml"}).json()
+    assert body["status"] == "MEASURED"
+    assert body["covariance_estimator"] == OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST
+    assert body["covariance_object"] == OPTIMIZER_COVARIANCE_OBJECT_TRAILING
+    assert body["covariance_spec"] == OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST
+    assert body["predicted_volatility"] == pytest.approx(expected_vol)
+    assert body["research_only"] is True
+    assert body["live_pnl_claim"] is False
+
+
+def test_risk_portfolio_named_quest_short_history_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    frame = _overlay_panel(n_days=1)
+    asof = frame["event_time"].max()
+    assert isinstance(asof, datetime)
+    weights = _weights_frame().with_columns(pl.lit(asof).alias("event_time"))
+    client = _risk_client(
+        tmp_path,
+        monkeypatch,
+        weights=weights,
+        panel_frame=frame,
+        extra_yaml="optimizer:\n  covariance: ledoit_wolf_quest\n",
+    )
+    response = client.get("/risk/portfolio", params={"config_path": "research.yaml"})
+    assert response.status_code == 422
+    assert "optimizer_covariance_failed:ledoit_wolf_quest" in response.json()["detail"]
+
+
 def test_risk_portfolio_present_rgarch_missing_ohlc_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
