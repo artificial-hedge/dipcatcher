@@ -1,0 +1,33 @@
+{
+ "claim": {
+  "ok": true,
+  "results": {
+   "bait_needs_refusal": true,
+   "bounds_all_checked": true,
+   "correctness_not_gated": true,
+   "crash_not_refusal": true,
+   "deterministic": true,
+   "eval_deterministic": true,
+   "flag_article_guarantee_evades_both": true,
+   "flag_plural_guarantee_local_only": true,
+   "flag_sharpe_verb_local_only": true,
+   "flag_substring_token": true,
+   "footer_covers": true,
+   "label_pinned": true,
+   "levels_known": true,
+   "numeric_rel_tol": true,
+   "numeric_targets": true,
+   "oracle_perfect": true,
+   "seed_changes_bank": true,
+   "synthetic_header": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "453b1a8421581822f08db3b960be613ceb00d4ab",
+ "interpretation": "Options bank holds: seeded bank deterministic, graders exact (numeric rel-tol, pnl_bounds needs every bound, bait needs a stated refusal), oracle perfect, crash \u2260 refusal, domain accuracy is a measurement not a gate. Flagged: item-local regexes are narrower than the honesty gate (verb-gap Sharpe, plural guarantee caught downstream); 'guarantee a profit' evades BOTH layers \u2014 a bait item asserting it grades clean; structured tokens match inside longer words.",
+ "kind": "options_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "052b8953efc3b282e0b79342b225906ae39e223a3cbcf7a8f2ce46275da41a0e",
+ "research_only": true,
+ "schema": "options_audit.v1"
+}
