@@ -1,0 +1,150 @@
+{
+  "claim": "instantaneous_impact_curve_measured",
+  "data_label": "MIXED",
+  "divergences": [
+    "iid_unit_impact_0.00_vs_0.97",
+    "regime_unit_impact_0.00_vs_0.97",
+    "split_unit_impact_0.00_vs_0.97",
+    "iid_no_size_dimension",
+    "regime_no_size_dimension",
+    "split_no_size_dimension"
+  ],
+  "git_revision": "be49ca12b4d1d24f9f76ab831266b36fdd840745",
+  "interpretation": "Per exec: signed \u0394mid (aggressor sign \u00d7 mid change, ticks) vs exec size in shares, from the orderbook snapshots. Bins are size octiles; alpha_loglog is the weighted log-log slope of mean |\u0394mid| vs mean size (instantaneous impact exponent). p_move = P(\u0394mid\u22600 | exec). The sim's fills are all unit lots \u2014 alpha is undefined there and the unit-lot \u0394mid is compared to the real smallest-size bin.",
+  "kind": "impact_instant",
+  "real": {
+    "alpha_loglog": 0.14079701910436004,
+    "mean_abs_dmid_ticks": 0.8869511923334076,
+    "mean_signed_dmid_ticks": 0.8869511923334076,
+    "n": 8974,
+    "ok": true,
+    "p_move": 0.4723646088700691,
+    "size_bins": [
+      {
+        "mean_abs_dmid_ticks": 0.9738955823293173,
+        "mean_signed_dmid_ticks": 0.9738955823293173,
+        "mean_size": 2.895582329317269,
+        "n": 996,
+        "p_move": 0.5080321285140562,
+        "size_hi": 6.0,
+        "size_lo": 0.999999999
+      },
+      {
+        "mean_abs_dmid_ticks": 0.5711348684210527,
+        "mean_signed_dmid_ticks": 0.5711348684210527,
+        "mean_size": 8.665296052631579,
+        "n": 1216,
+        "p_move": 0.5180921052631579,
+        "size_hi": 14.0,
+        "size_lo": 6.0
+      },
+      {
+        "mean_abs_dmid_ticks": 0.523014440433213,
+        "mean_signed_dmid_ticks": 0.523014440433213,
+        "mean_size": 17.637184115523464,
+        "n": 1108,
+        "p_move": 0.41606498194945846,
+        "size_hi": 21.0,
+        "size_lo": 14.0
+      },
+      {
+        "mean_abs_dmid_ticks": 0.6185701830863121,
+        "mean_signed_dmid_ticks": 0.6185701830863121,
+        "mean_size": 37.5745422842197,
+        "n": 1147,
+        "p_move": 0.3147340889276373,
+        "size_hi": 60.0,
+        "size_lo": 21.0
+      },
+      {
+        "mean_abs_dmid_ticks": 0.6993006993006993,
+        "mean_signed_dmid_ticks": 0.6993006993006993,
+        "mean_size": 80.42357642357642,
+        "n": 1001,
+        "p_move": 0.2917082917082917,
+        "size_hi": 100.0,
+        "size_lo": 60.0
+      },
+      {
+        "mean_abs_dmid_ticks": 1.2281802624073017,
+        "mean_signed_dmid_ticks": 1.2281802624073017,
+        "mean_size": 130.25755847119225,
+        "n": 3506,
+        "p_move": 0.567313177410154,
+        "size_hi": 4000.000000001,
+        "size_lo": 100.0
+      }
+    ],
+    "size_max": 4000.0,
+    "size_median": 60.0
+  },
+  "receipt_sha256": "c84a1d4d6a85c978feca58b9659d9d290e00d66a95210cb5730f9e79bef98258",
+  "research_only": true,
+  "schema": "impact_instant.v1",
+  "sim_arms": {
+    "iid": {
+      "alpha_loglog": null,
+      "mean_abs_dmid_ticks": 0.0032681564245809255,
+      "mean_signed_dmid_ticks": 0.0032681564245809255,
+      "n": 5012,
+      "ok": true,
+      "p_move": 0.4928172386272945,
+      "size_bins": [
+        {
+          "mean_abs_dmid_ticks": 0.0032681564245809255,
+          "mean_signed_dmid_ticks": 0.0032681564245809255,
+          "mean_size": 1.0,
+          "n": 5012,
+          "p_move": 0.4928172386272945,
+          "size_hi": 1.000000001,
+          "size_lo": 1.0
+        }
+      ],
+      "size_max": 1.0,
+      "size_median": 1.0
+    },
+    "regime": {
+      "alpha_loglog": null,
+      "mean_abs_dmid_ticks": 0.0036200989722116233,
+      "mean_signed_dmid_ticks": 0.0036200989722116233,
+      "n": 5254,
+      "ok": true,
+      "p_move": 0.5078035782261134,
+      "size_bins": [
+        {
+          "mean_abs_dmid_ticks": 0.0036200989722116233,
+          "mean_signed_dmid_ticks": 0.0036200989722116233,
+          "mean_size": 1.0,
+          "n": 5254,
+          "p_move": 0.5078035782261134,
+          "size_hi": 1.000000001,
+          "size_lo": 1.0
+        }
+      ],
+      "size_max": 1.0,
+      "size_median": 1.0
+    },
+    "split": {
+      "alpha_loglog": null,
+      "mean_abs_dmid_ticks": 0.004714315181518147,
+      "mean_signed_dmid_ticks": 0.004714315181518147,
+      "n": 4848,
+      "ok": true,
+      "p_move": 0.5806518151815182,
+      "size_bins": [
+        {
+          "mean_abs_dmid_ticks": 0.004714315181518147,
+          "mean_signed_dmid_ticks": 0.004714315181518147,
+          "mean_size": 1.0,
+          "n": 4848,
+          "p_move": 0.5806518151815182,
+          "size_hi": 1.000000001,
+          "size_lo": 1.0
+        }
+      ],
+      "size_max": 1.0,
+      "size_median": 1.0
+    }
+  },
+  "ticker": "AMZN"
+}
