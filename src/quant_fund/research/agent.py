@@ -176,6 +176,14 @@ from quant_fund.research.benches_w23 import (
     bench_sig_gan,
     bench_svi_surface,
 )
+from quant_fund.research.benches_w24 import (
+    bench_breeden_litzenberger,
+    bench_fernholz_spt,
+    bench_hawkes_em,
+    bench_multifractal_vol,
+    bench_pmcmc_sv,
+    bench_spci_conformal,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1860,6 +1868,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "koopman_edmd": bench_koopman_edmd(),
         "sig_gan": bench_sig_gan(),
         "neural_tpp": bench_neural_tpp(),
+        "pmcmc_sv": bench_pmcmc_sv(),
+        "multifractal_vol": bench_multifractal_vol(),
+        "spci_conformal": bench_spci_conformal(),
+        "hawkes_em": bench_hawkes_em(),
+        "fernholz_spt": bench_fernholz_spt(),
+        "breeden_litzenberger": bench_breeden_litzenberger(),
     }
 
     hyps = _build_hypotheses(families, rankers)

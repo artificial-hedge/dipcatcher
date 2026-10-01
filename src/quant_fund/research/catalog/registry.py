@@ -267,6 +267,19 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "koopman_edmd",
         "sig_gan",
         "neural_tpp",
+        # SOTA canon wave 24 batteries (see research/benches_w24.py):
+        # particle-MCMC stochastic-volatility estimation, multifractal
+        # volatility diagnostics, SPCI online quantile regression,
+        # EM-estimated multivariate Hawkes branching, Fernholz
+        # stochastic-portfolio-theory analytics, and Breeden-Litzenberger
+        # risk-neutral density extraction. Same SYNTHETIC diagnostic
+        # contract.
+        "pmcmc_sv",
+        "multifractal_vol",
+        "spci_conformal",
+        "hawkes_em",
+        "fernholz_spt",
+        "breeden_litzenberger",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -981,3 +981,22 @@ note: w24 lanes in flight (fernholz_spt + breeden_litzenberger
   children; pmcmc_sv/multifractal_vol/spci_conformal local-built;
   hawkes_em local). spci_conformal rescoped to residual-quantile
   forecasting — ACI already lives in models/conformal.py.
+
+owner: devin (wave-24 canon swarm)
+slice: WAVE 24 — six lanes + benches_w24 wiring — INTEGRATED
+  models/pmcmc_sv (child): particle-MCMC SV estimation, marginal-
+  likelihood PF, posterior recovery. models/multifractal_vol (child):
+  partition functions, singularity spectra, MRW cascade sim.
+  models/spci_conformal (local, 17 tests): IRLS pinball ridge
+  walk-forward, ACI comparator (rescoped — ACI lives in conformal.py).
+  models/hawkes_em (local, 19 tests): multivariate EM branching
+  estimation, spectral-radius diagnostics, EM-vs-MLE comparison.
+  metrics/fernholz_spt (child, 49 tests): market entropy, FG-portfolio
+  drift decomposition (master-eq residual ~3e-5), rank local times;
+  corrected FKK->arXiv:0803.3093 + Karatzas-Ruf->1603.08245.
+  models/breeden_litzenberger (child, 60 tests): BL RND extraction,
+  smoothing-spline smiles, arb checks, implied moments; L1 0.066
+  clean. Scorecard 115 -> 121 OPTIONAL families.
+note: w25 lanes in flight (tda_persistence child done 76c5896;
+  fractional_ou/fourier_hermite/kernel_changepoint/kinetic_ising/
+  heterogeneous_abm local-built and pushed).
