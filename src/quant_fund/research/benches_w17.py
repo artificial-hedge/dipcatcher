@@ -55,6 +55,18 @@ SHRUNK Monte-Carlo budgets (relative to each lane's own test suite):
 The whole battery is designed to fit inside a ~60 s envelope on the dev box
 when torch is installed (the three torch benches dominate); torch-gated
 families return ``{}`` cleanly when the ``nn`` extra is absent.
+
+Main-lineage wave-17 families (merged canon — the bench batteries above and
+these four run side by side; ``diffpts`` here and ``diffusion_forecaster``
+below are two DISTINCT DiffPTS implementations: full-ELBO/LSNM vs the
+diffusion_forecaster wrapper — see INFLIGHT duplicates note):
+
+- ``conformal_oce``: OCE risk-controlled decision making (high-probability
+  CVaR certificates, Hoeffding-margin ablation, sqrt(n) radius law).
+- ``adaptive_eps``: e-PS sample-efficient multiple testing (simple-vs-simple).
+- ``greek_neutral``: greek-neutral option portfolios (TORCH-GATED).
+- ``diffusion_forecaster``: DiffPTS full-ELBO forecaster vs NGBoost baseline
+  (TORCH-GATED); shrunk n_samples/epochs vs the lane reference.
 """
 
 from __future__ import annotations
@@ -62,6 +74,9 @@ from __future__ import annotations
 import math
 
 import numpy as np
+
+from quant_fund.metrics.adaptive_eps import bench_eps_efficiency, make_simple_vs_simple_world
+from quant_fund.metrics.conformal_oce import bench_oce_calibration
 
 _SEED = 20261017  # wave-17 stamp seed
 
@@ -569,5 +584,331 @@ def bench_stochastic_tracking() -> dict[str, float]:
             "st_n_steps": float(grid.n_steps),
         }
         return _finite_blob(mapped)
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+#: Lane-verified default seed of ``bench_oce_calibration`` (pinned explicitly so
+#: the blob is reproducible independent of any default drift).
+_OCE_SEED = 20260930
+
+#: OCE Monte-Carlo trials SHRUNK from the module default 200 (wave-17 <= 10 s
+#: budget; measured ~1.5 s at 100). The asserted statistics are rates over the
+#: certified trials; 100 trials keeps them far inside the documented slack.
+_OCE_TRIALS = 100
+
+#: e-PS planted world (the lane suite's simple-vs-simple fixture: 12 hypotheses,
+#: 3 planted nonnulls, staggered effects 0.8 + 0.2 k, unit variance) and the
+#: lane-verified seed.
+_EPS_SEED = 20260930
+_EPS_N_HYP = 12
+_EPS_K_NONNULL = 3
+_EPS_EFFECT = 0.8
+_EPS_STAGGER = 0.2
+_EPS_ALPHA = 0.1
+
+#: e-PS bench budget SHRUNK from the lane's n_seeds = 8 / budget = 3000
+#: (brief: shrunk seeds/budget; measured ~0.05 s). Discovery completes on every
+#: seed (eps_censored == 0) at this budget.
+_EPS_N_SEEDS = 6
+_EPS_BUDGET = 2500
+_EPS_N_PER_ARM_MAX = 150
+
+#: Greek-neutral lane tiny seeded config (tests/unit/models lane fixture, used
+#: AS-IS per the brief): 5 moneyness x 2 tenor straddle grid on a flat 20-vol
+#: BSM surface, GBM training ensemble with positive drift (delta accumulation
+#: rewarded) vs regime-switch evaluation ensemble with opposite drift (the tilt
+#: uncompensated), DP-L1 penalty over a 5-alpha grid.
+_GNP_S0 = 100.0
+_GNP_SIGMA = 0.20
+_GNP_DT = 1.0 / 252.0
+_GNP_STEPS = 24
+_GNP_MONEYNESSES = (0.92, 0.96, 1.00, 1.04, 1.08)
+_GNP_MATURITIES = (0.10, 0.20)
+_GNP_ALPHAS = (0.0, 0.3, 1.0, 3.0, 25.0)
+_GNP_EPOCHS = 300
+_GNP_LR = 0.05
+_GNP_SEED = 0
+_GNP_N_TRAIN_PATHS = 128
+_GNP_TRAIN_PATH_SEED = 11
+_GNP_N_EVAL_PATHS = 384
+_GNP_EVAL_PATH_SEED = 99
+
+#: DiffPTS reference design (lane-documented: train 700 / test 400, epochs
+#: <= 200, NGBoost 60 rounds) with SHRUNK MC samples (200 -> 80) and TORF
+#: comparison epochs (200 -> 20; TORF is not part of the emitted claim).
+_DIFF_SEED = 0
+_DIFF_N_TRAIN = 700
+_DIFF_N_TEST = 400
+_DIFF_EPOCHS = 200
+_DIFF_N_SAMPLES = 80
+_DIFF_NGBOOST_ROUNDS = 60
+_DIFF_TORF_EPOCHS = 20
+
+
+def _as_float(value: object) -> float:
+    """Narrow an object-typed bench blob value to float (fail-closed).
+
+    ``bench_eps_efficiency`` returns ``dict[str, object]``; the adapter reads
+    only numeric keys and raises TypeError on anything else, which the bench's
+    fail-closed guard converts to ``{}`` (no ``type: ignore`` needed, so the
+    quality/type_ignores.txt manifest stays untouched).
+    """
+    if isinstance(value, (bool, int, float)):
+        return float(value)
+    raise TypeError(f"non-numeric bench value: {value!r}")
+
+
+def bench_conformal_oce() -> dict[str, float]:
+    """High-probability OCE risk control certificates, SYNTHETIC (wave 17).
+
+    Farzaneh & Simeone (2026), "Conformal Risk-Averse Decision Making with
+    Optimized Certainty Equivalent Risk Control", arXiv:2608.28179 (Eq. 19-20
+    Hoeffding + union-bound UCB over the reserve grid, Algorithm 1); Ben-Tal &
+    Teboulle (2007), Mathematical Finance 17(3) (OCE); Rockafellar & Uryasev
+    (2000), CVaR; Angelopoulos, Bates, Candes, Jordan & Lei (2025), AoAS 19(2)
+    (learn-then-test). Thin float-only adapter over the module's
+    ``bench_oce_calibration`` (which returns a mixed float|str blob — the
+    ``dgp`` / ``claim`` str stamps are filtered; wave-12 ``rwcv`` precedent): on
+    the seeded SYNTHETIC bimodal beam digital-twin world (trial-varying
+    Dirichlet perturbations of the true conditional law; violations measured
+    against the EXACT population CVaR of the deployed policy), the certified
+    reserve must hold the Eq. 20 guarantee (``oce_violation_rate_certified``
+    <= delta + 0.02), the uncertified risk-neutral model-greedy baseline must
+    violate visibly more (``oce_baseline_violation_rate`` > certified rate — the
+    guarantee is not vacuous), the Hoeffding radius must follow the sqrt(n'/n)
+    law (``oce_radius_ratio`` = sqrt(3000/750) = 2.0 within 0.1), and dropping
+    the margin must over-certify (``oce_plugin_cert_rate`` > ``oce_cert_rate``
+    — the margin's role). SHRUNK to trials = 100 (module default 200; ~1.5 s).
+    Seeded SYNTHETIC; population-CVaR violation / certificate-rate calibration
+    diagnostics only, never market evidence.
+    """
+    try:
+        raw = bench_oce_calibration(seed=_OCE_SEED, trials=_OCE_TRIALS)
+        mapped = {
+            "oce_violation_rate_certified": float(raw["violation_rate_certified"]),
+            "oce_baseline_violation_rate": float(raw["baseline_violation_rate"]),
+            "oce_cert_rate": float(raw["cert_rate"]),
+            "oce_radius_ratio": float(raw["radius_ratio"]),
+            "oce_plugin_cert_rate": float(raw["plugin_cert_rate"]),
+            "oce_delta": float(raw["delta"]),
+            "oce_alpha": float(raw["alpha"]),
+        }
+        if not all(np.isfinite(v) for v in mapped.values()):
+            return {}
+        return mapped
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+def bench_adaptive_eps() -> dict[str, float]:
+    """e-PS sample-efficient multiple testing, SYNTHETIC (wave 17).
+
+    Lin, Ma, Ren & Wei (2026), "Sample-Efficient Multiple Testing with Adaptive
+    Data Collection", arXiv:2609.26651 (Algorithm 1 posterior sampling over
+    mean log-e-increments; Theorem 3.2 / 4.1-4.2 sample complexity for the
+    simple-vs-simple specialization, Eq. 12 LR increments); Wang & Ramdas
+    (2022), JRSS-B 84(3) (e-BH, FDR <= alpha at arbitrary stopping times).
+    Thin float-only adapter over the module's ``bench_eps_efficiency`` on ONE
+    specialization (simple-vs-simple; the module returns a ``dict[str, object]``
+    blob whose ``label`` / ``specialization`` str stamps and config ints are
+    filtered or narrowed via ``_as_float`` — wave-12 ``rwcv`` precedent): on the
+    seeded SYNTHETIC planted Gaussian world (12 hypotheses, 3 nonnulls with
+    staggered effects 0.8 + 0.2 k, unit variance), stopped exactly at the
+    full-discovery time tau_*, adaptive e-PS must need FEWER total samples than
+    both uniform round-robin allocation + e-BH and the fixed-design e-BH
+    baseline (``eps_speedup_vs_round_robin`` / ``eps_speedup_vs_fixed_design``
+    > 1.0 — the lane asserts > 1.1 at the full budget; documented wider slack),
+    with FDR controlled at the data-dependent stop
+    (``eps_fdp_at_discovery_mean`` <= 0.05 = alpha/2) and full power at
+    discovery (``eps_tpr_mean`` == 1.0, ``eps_censored`` == 0). SHRUNK to
+    n_seeds = 6 / budget = 2500 (lane: 8 / 3000; measured ~0.05 s). Seeded
+    SYNTHETIC; discovery-sample / FDP / TPR correctness diagnostics only, never
+    market evidence.
+    """
+    try:
+        world = make_simple_vs_simple_world(
+            _EPS_N_HYP,
+            _EPS_K_NONNULL,
+            effect=_EPS_EFFECT,
+            stagger=_EPS_STAGGER,
+            var=1.0,
+            seed=_EPS_SEED,
+        )
+        raw = bench_eps_efficiency(
+            world,
+            _EPS_ALPHA,
+            n_seeds=_EPS_N_SEEDS,
+            seed=_EPS_SEED,
+            budget=_EPS_BUDGET,
+            n_per_arm_max=_EPS_N_PER_ARM_MAX,
+        )
+        mapped = {
+            "eps_discovery_samples_mean": _as_float(raw["eps_discovery_samples_mean"]),
+            "eps_speedup_vs_round_robin": _as_float(raw["eps_speedup_vs_round_robin"]),
+            "eps_speedup_vs_fixed_design": _as_float(raw["eps_speedup_vs_fixed_design"]),
+            "eps_fdp_at_discovery_mean": _as_float(raw["eps_fdp_at_discovery_mean"]),
+            "eps_tpr_mean": _as_float(raw["eps_tpr_mean"]),
+            "eps_censored": _as_float(raw["eps_censored"]),
+            "eps_alpha": _as_float(raw["alpha"]),
+        }
+        if not all(np.isfinite(v) for v in mapped.values()):
+            return {}
+        return mapped
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+def bench_greek_neutral() -> dict[str, float]:
+    """Greek-neutral option portfolios as inductive bias, SYNTHETIC (w17, torch).
+
+    Tan, Roberts & Zohren (2026), "Taming the Greeks: Option Portfolios with
+    Inductive Biases", arXiv:2609.33767 (eq. 6 penalized objective J + alpha *
+    penalty; eqs. 12-13 Greek-ratio drift penalty DP-L1; eqs. 14-15 realized
+    exposure diagnostics; the Section 6.3 exposure-vs-performance trade-off);
+    Black & Scholes (1973) / Merton (1973) via ``quant_fund.models.options``.
+    TORCH-GATED (wave-12 ``deep_hedging`` precedent): the module imports torch
+    lazily, so a torch-less environment raises ImportError and this bench
+    returns ``{}``. Thin adapter over the module's ``penalty_strength_sweep``
+    at the lane's tiny seeded config, dp_l1 variant ONLY (the budget-fitting
+    choice per the brief): static delta-neutral straddle book (5 moneyness x 2
+    tenor, flat 20-vol BSM), GBM training ensemble with positive drift
+    (directional tilt rewarded in-sample) vs an independent regime-switch
+    evaluation ensemble with opposite drift (the tilt uncompensated OOS),
+    5-alpha grid (0, 0.3, 1, 3, 25), 300 full-batch Adam epochs, seed 0
+    (~5.6 s measured). The sweep must reproduce the paper's central trade-off:
+    realized gross delta exposure FALLS from baseline to the best alpha
+    (``gnp_gross_delta_exposure_reduction`` > 0 — monotone exposure fall), the
+    risk-adjusted objective has an INTERIOR optimum (``gnp_interior_optimum``
+    == 1.0 at ``gnp_best_alpha`` in (0, max)), and the persistent net
+    directional tilt moves TOWARD neutrality (|``gnp_net_delta_exposure_best``|
+    < |``gnp_net_delta_exposure_baseline``| — bias -> neutrality direction).
+    Honesty: the Sharpe-like objective values are ``sim_internal_*`` keys and
+    stay OUT of the blob; only ``gnp_*`` exposure / flag keys are emitted.
+    Seeded SYNTHETIC; exposure calibration diagnostics only, never market
+    evidence, no live-trading claim.
+    """
+    try:
+        # Local import: the module imports cleanly without torch, but every
+        # training entry point raises ImportError lazily; the guard below lets
+        # torch-less environments skip cleanly (deep_hedging precedent).
+        from quant_fund.models import greek_neutral_portfolios as gnp
+
+        universe = gnp.build_straddle_universe(
+            [m * _GNP_S0 for m in _GNP_MONEYNESSES],
+            list(_GNP_MATURITIES),
+            s0=_GNP_S0,
+            sigma=_GNP_SIGMA,
+            r=0.0,
+        )
+        train_paths = gnp.simulate_path_ensemble(
+            _GNP_N_TRAIN_PATHS,
+            _GNP_STEPS,
+            s0=_GNP_S0,
+            mu=0.6,
+            sigma=0.20,
+            dt=_GNP_DT,
+            seed=_GNP_TRAIN_PATH_SEED,
+        )
+        eval_paths = gnp.simulate_path_ensemble(
+            _GNP_N_EVAL_PATHS,
+            _GNP_STEPS,
+            kind="regime_switch",
+            s0=_GNP_S0,
+            mu=-0.3,
+            sigma_low=0.25,
+            sigma_high=0.60,
+            p_stay_low=0.90,
+            p_stay_high=0.90,
+            initial_regime=0.0,
+            dt=_GNP_DT,
+            seed=_GNP_EVAL_PATH_SEED,
+        )
+        train_marks = gnp.mark_straddle_book(universe, train_paths, dt=_GNP_DT)
+        eval_marks = gnp.mark_straddle_book(universe, eval_paths, dt=_GNP_DT)
+        res = gnp.penalty_strength_sweep(
+            train_marks,
+            eval_marks,
+            alphas=_GNP_ALPHAS,
+            variant="dp_l1",
+            epochs=_GNP_EPOCHS,
+            lr=_GNP_LR,
+            seed=_GNP_SEED,
+        )
+        metrics = res.metrics
+        mapped = {
+            "gnp_gross_delta_exposure_reduction": float(
+                metrics["gnp_gross_delta_exposure_reduction"]
+            ),
+            "gnp_interior_optimum": float(metrics["gnp_interior_optimum"]),
+            "gnp_best_alpha": float(metrics["gnp_best_alpha"]),
+            "gnp_gross_delta_exposure_baseline": float(
+                metrics["gnp_gross_delta_exposure_baseline"]
+            ),
+            "gnp_net_delta_exposure_baseline": float(metrics["gnp_net_delta_exposure_baseline"]),
+            "gnp_net_delta_exposure_best": float(res.net_delta_exposure_by_alpha[res.best_index]),
+        }
+        if not all(np.isfinite(v) for v in mapped.values()):
+            return {}
+        return mapped
+    except ImportError:
+        return {}
+    except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
+        return {}
+
+
+def bench_diffusion_forecaster() -> dict[str, float]:
+    """DiffPTS full-ELBO diffusion forecaster vs NGBoost, SYNTHETIC (w17, torch).
+
+    Ye, Li, Liu, Jiang, Sekimoto & Jiang (2026), "DiffPTS: Rethinking Diffusion
+    ELBO for Probabilistic Time Series Forecasting", arXiv:2609.32363 (NeurIPS
+    2026; Proposition 3.3 joint denoising + LSNM NLL objective, Algorithm 2
+    sampling, the Section 4.2 / Table 2 CRPS win over density baselines); Duan
+    et al. (2020), ICML (NGBoost Gaussian natural-parameter boosting, the
+    ``score='crps'`` baseline). TORCH-GATED (wave-12 ``deep_hedging``
+    precedent): torch is imported lazily, so a torch-less environment returns
+    ``{}``. Thin float-only adapter over the module's ``bench_diffpts`` (the
+    ``dgp`` / ``claim`` / ``noise`` / ``schedule`` / ``synthetic`` str stamps
+    are filtered; wave-12 ``rwcv`` precedent): on the SHARED seeded SYNTHETIC
+    heteroskedastic student-t stream of the TORF/DeRegiME lanes, the full-ELBO
+    diffusion forecaster must beat the Gaussian density baseline on the CRPS
+    proper score (``crps_gain_vs_ngboost`` > 0; reference +0.0234 at the lane
+    config, +0.0230 here), keep its 90% central interval near nominal
+    (``diffpts_coverage_90`` in [0.75, 0.96]), and stay PIT-calibrated
+    (``diffpts_pit_ks_pvalue`` a valid KS p-value not strongly rejecting
+    uniformity). Reference design kept (train 700 / test 400 / epochs 200 /
+    NGBoost 60 rounds — the fair baseline is NOT shrunk; n_test = 400 is part
+    of the fixture, see the module deviations note); SHRUNK MC samples 200 ->
+    80 and TORF comparison 200 -> 20 epochs (~8-10 s measured at idle vs
+    ~40 s). Seeded SYNTHETIC; CRPS / coverage / PIT calibration diagnostics
+    only, never market evidence.
+    """
+    try:
+        # Local import: the module imports cleanly without torch, but the
+        # DiffPTS/TORF fits raise ImportError lazily; the guard below lets
+        # torch-less environments skip cleanly (deep_hedging precedent).
+        from quant_fund.models.diffusion_forecaster import bench_diffpts
+
+        raw = bench_diffpts(
+            n_train=_DIFF_N_TRAIN,
+            n_test=_DIFF_N_TEST,
+            seed=_DIFF_SEED,
+            epochs=_DIFF_EPOCHS,
+            n_samples=_DIFF_N_SAMPLES,
+            ngboost_rounds=_DIFF_NGBOOST_ROUNDS,
+            torf_epochs=_DIFF_TORF_EPOCHS,
+        )
+        mapped = {
+            "diffpts_crps": float(raw["diffpts_crps"]),
+            "ngboost_crps": float(raw["ngboost_crps"]),
+            "crps_gain_vs_ngboost": float(raw["crps_gain_vs_ngboost"]),
+            "diffpts_coverage_90": float(raw["coverage_90"]),
+            "diffpts_pit_ks_pvalue": float(raw["pit_ks_pvalue"]),
+        }
+        if not all(np.isfinite(v) for v in mapped.values()):
+            return {}
+        return mapped
+    except ImportError:
+        return {}
     except (ValueError, RuntimeError, FloatingPointError, KeyError, TypeError):
         return {}
