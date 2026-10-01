@@ -1205,3 +1205,14 @@ wave 44 canon (devin/w44-canon-integration): johansen_vecm
   discoveries vs 0 null) + kiefer_vogelsang (cv 1.99→3.47
   in b, sim bridge limit, shifted p 0 vs null .83)
   → PR stacked on w43 (235→241 families)
+wave 45 canon (devin/w45-canon-integration): conley_se
+  (spatial HAC SE inflates 3.64x vs OLS under rho_d=30,
+  null .94) + driscoll_kraay (period-aggregate scores,
+  Bartlett m4/m1 inflation 1.32 vs 1.20 null) +
+  pesaran_cce (CCEMG recovers beta .999 vs OLS 1.50
+  biased by factor) + wald_sprt (power .95, type1 .017,
+  ASN 62 vs theory 58.9) + lee_bounds (brackets true 1.0
+  [.37,1.27] where naive .82 is biased) +
+  barrett_donald (dominance p .99 vs reverse 0, crossing
+  p .03)
+  → PR stacked on w44 (241→247 families)
