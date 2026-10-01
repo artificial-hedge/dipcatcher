@@ -330,6 +330,8 @@ src/quant_fund/microstructure/queue_jump.py
 src/quant_fund/microstructure/queue_occupancy.py
 src/quant_fund/microstructure/queue_priority.py
 src/quant_fund/microstructure/quote_place.py
+src/quant_fund/microstructure/regime_filter.py
+src/quant_fund/microstructure/regime_quoting.py
 src/quant_fund/microstructure/rl_market_maker.py
 src/quant_fund/microstructure/round_lot.py
 src/quant_fund/microstructure/side_imbalance.py

@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1138,
+  "module_count": 1140,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -5389,6 +5389,34 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.quote_place"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.regime_filter"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.regime_filter"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.regime_filter"
+    },
+    {
+      "dst": "quant_fund.microstructure.regime_filter",
+      "src": "quant_fund.microstructure.regime_quoting"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.regime_quoting"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.regime_quoting"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.regime_quoting"
     },
     {
       "dst": "quant_fund.microstructure.zi_lob_simulator",
@@ -12561,6 +12589,8 @@
     "quant_fund.microstructure.queue_priority",
     "quant_fund.microstructure.queue_reactive",
     "quant_fund.microstructure.quote_place",
+    "quant_fund.microstructure.regime_filter",
+    "quant_fund.microstructure.regime_quoting",
     "quant_fund.microstructure.rl_market_maker",
     "quant_fund.microstructure.rlmm_c51",
     "quant_fund.microstructure.round_lot",
@@ -14309,7 +14339,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 159,
+      "imports": 162,
       "src": "quant_fund.microstructure"
     },
     {
@@ -14329,7 +14359,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 128,
+      "imports": 132,
       "src": "quant_fund.microstructure"
     },
     {
