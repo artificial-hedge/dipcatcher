@@ -1917,3 +1917,31 @@ detail: |
   - Canon staged on top of w74-canon so the chain stays clean as
     the open stack lands.
 note: canon PR to follow.
+---
+owner: devin (wave 76 canon)
+slice: 6 model modules + benches_w76 + registry/agent wiring
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w76-lanes: horvitz_thompson.py (Horvitz-
+    Thompson 1952 total + Hartley-Rao/SYG-approx variance;
+    Hajek 1971 ratio mean + linearized SE), poststrat.py
+    (post-stratification weights + Deming-Stephan 1940 IPF
+    raking over marginal tables + Kish design effect),
+    calibration_survey.py (Deville-Sarndal 1992 GREG weights
+    + truncated/bounded calibration), fay_herriot.py
+    (Fay-Herriot 1979 area-level EBLUP: moment-A Newton
+    iteration + B-s shrinkage + Prasad-Rao g1+g2 MSE),
+    cluster_sampling.py (one-stage cluster totals/means +
+    Sen-Yates-Grundy-style variance + ICC + deff),
+    design_effects.py (Kish 1965 deff = 1 + CV^2, effective
+    n, weight-share concentration, Winsorized deff curve).
+  - benches_w76.py: +444..449 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "horvitz_thompson","poststrat",
+    "calibration_survey","fay_herriot","cluster_sampling",
+    "design_effects" (410->416); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w76.
+  - Canon staged on top of w75-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.

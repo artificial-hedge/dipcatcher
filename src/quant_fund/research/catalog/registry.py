@@ -1052,6 +1052,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "g_theory",
         "omega",
         "rasch_fit",
+        # Wave-76 families — Horvitz-Thompson
+        # (1952) / Hajek (1971) design-based
+        # survey estimation, post-stratification
+        # + Deming-Stephan (1940) iterative
+        # raking, Deville-Sarndal (1992) GREG
+        # calibration, Fay-Herriot (1979) EBLUP
+        # small-area estimation, one-stage
+        # cluster sampling, and Kish (1965)
+        # design effects. Same SYNTHETIC
+        # diagnostic contract.
+        "horvitz_thompson",
+        "poststrat",
+        "calibration_survey",
+        "fay_herriot",
+        "cluster_sampling",
+        "design_effects",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

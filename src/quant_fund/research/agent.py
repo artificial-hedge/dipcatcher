@@ -597,6 +597,14 @@ from quant_fund.research.benches_w75 import (
     bench_omega,
     bench_rasch_fit,
 )
+from quant_fund.research.benches_w76 import (
+    bench_calibration_survey,
+    bench_cluster_sampling,
+    bench_design_effects,
+    bench_fay_herriot,
+    bench_horvitz_thompson,
+    bench_poststrat,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2598,6 +2606,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "g_theory": bench_g_theory(),
         "omega": bench_omega(),
         "rasch_fit": bench_rasch_fit(),
+        "horvitz_thompson": bench_horvitz_thompson(),
+        "poststrat": bench_poststrat(),
+        "calibration_survey": bench_calibration_survey(),
+        "fay_herriot": bench_fay_herriot(),
+        "cluster_sampling": bench_cluster_sampling(),
+        "design_effects": bench_design_effects(),
     }
 
     hyps = _build_hypotheses(families, rankers)
