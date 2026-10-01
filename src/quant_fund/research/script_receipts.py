@@ -446,6 +446,7 @@ _MEASUREMENT_SCHEMAS = (
     "instant_decomp.v1",
     "intraday_shape.v1",
     "joint_fit.v1",
+    "joint_stability.v1",
     "level_gap.v1",
     "lob_exec.v1",
     "lob_resilience.v1",
