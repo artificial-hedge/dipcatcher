@@ -55,16 +55,24 @@ def resolve_allowed_config_path(config_path: str) -> Path:
     pass an unresolved tmp path) cannot spuriously 400 the allowlist.
     """
     configs_dir = _CONFIGS_DIR.resolve()
+    if len(config_path) > 512:
+        raise HTTPException(status_code=400, detail="config_path too long")
     raw = Path(config_path)
     if raw.is_absolute():
-        candidate = raw.resolve()
+        try:
+            candidate = raw.resolve()
+        except OSError as exc:
+            raise HTTPException(status_code=400, detail="config_path is not a valid path") from exc
     else:
         # Strip leading "configs/" so both "research.yaml" and "configs/research.yaml" work
         parts = raw.parts
-        if parts and parts[0] == "configs":
-            candidate = (configs_dir.joinpath(*parts[1:])).resolve()
-        else:
-            candidate = (configs_dir / raw).resolve()
+        try:
+            if parts and parts[0] == "configs":
+                candidate = (configs_dir.joinpath(*parts[1:])).resolve()
+            else:
+                candidate = (configs_dir / raw).resolve()
+        except OSError as exc:
+            raise HTTPException(status_code=400, detail="config_path is not a valid path") from exc
     try:
         candidate.relative_to(configs_dir)
     except ValueError as exc:
