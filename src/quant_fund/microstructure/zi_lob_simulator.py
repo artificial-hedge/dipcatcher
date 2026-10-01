@@ -342,6 +342,14 @@ class ZILobConfig:
     # adverse-selection-aware quoting (makers refuse the touch). 0 is
     # bit-identical to the legacy placement.
     lo_offset: int = 0
+    # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
+    # order of a level immediately re-rests one unit at the SAME level
+    # tagged ``iceberg`` — hidden reserve liquidity that refills after
+    # each fill (the synthetic iceberg approximation). A fill whose
+    # maker tag is ``iceberg`` counts in ``n_hidden_fills``: fills on
+    # liquidity that was not displayed before execution. 0 is
+    # bit-identical to the legacy matcher (zero RNG draws consumed).
+    iceberg_reload: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -390,6 +398,7 @@ class ZILobConfig:
         _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
+        _prob(self.iceberg_reload, "iceberg_reload")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
             raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
         if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
@@ -647,6 +656,7 @@ class ZILobSimulator:
         self.n_cancellations = 0
         self.n_submitted = 0
         self.n_lo_improve = 0
+        self.n_hidden_fills = 0
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -824,6 +834,7 @@ class ZILobSimulator:
                 self._rate_flow.n_transitions if self._rate_flow is not None else 0
             ),
             "n_lo_improve": self.n_lo_improve,
+            "n_hidden_fills": self.n_hidden_fills,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -904,6 +915,8 @@ class ZILobSimulator:
             return None
         level = min(book) if aggressor == "buy" else max(book)
         order = self._remove_resting_at(book, level, 0)
+        if order.tag == "iceberg":
+            self.n_hidden_fills += 1
         trade = TradeEvent(
             t=self._t,
             aggressor=aggressor,
@@ -918,6 +931,12 @@ class ZILobSimulator:
         )
         self.trades.append(trade)
         self.n_fills += 1
+        # Iceberg reload: the consumed level immediately re-rests one
+        # hidden unit with probability ``iceberg_reload`` — the display
+        # refill that makes a level absorb more than its visible depth.
+        p = self._cfg.iceberg_reload
+        if p > 0.0 and float(self._rng.random()) < p:
+            self._rest(order.side, level, "iceberg")
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:

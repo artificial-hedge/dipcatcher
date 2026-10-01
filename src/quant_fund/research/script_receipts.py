@@ -410,6 +410,7 @@ _MEASUREMENT_SCHEMAS = (
     "hawkes_mv.v1",
     "hawkes_real.v1",
     "hidden_depth.v1",
+    "iceberg.v1",
     "impact_instant.v1",
     "intraday_shape.v1",
     "lob_exec.v1",
