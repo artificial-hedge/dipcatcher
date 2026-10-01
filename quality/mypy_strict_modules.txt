@@ -2,6 +2,7 @@ src/quant_fund/__init__.py
 src/quant_fund/api/__init__.py
 src/quant_fund/api/app.py
 src/quant_fund/api/error_shape.py
+src/quant_fund/api/middleware_audit.py
 src/quant_fund/api/param_fuzz.py
 src/quant_fund/api/research_api.py
 src/quant_fund/api/surface_pin.py
@@ -528,6 +529,7 @@ src/quant_fund/native/__init__.py
 src/quant_fund/native/boundary_audit.py
 src/quant_fund/native/causality_scan.py
 src/quant_fund/native/conformance.py
+src/quant_fund/native/dispatch_audit.py
 src/quant_fund/native/reference.py
 src/quant_fund/native/warmup_spec.py
 src/quant_fund/northset/__init__.py

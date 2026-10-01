@@ -1,0 +1,40 @@
+{
+ "claim": {
+  "flags": {
+   "long_ticker_escapes": true,
+   "lowercase_escapes": true
+  },
+  "ok": true,
+  "results": {
+   "allowlist_survives": true,
+   "consistent_surface": true,
+   "dates_masked": [
+    true,
+    true,
+    true,
+    true
+   ],
+   "deterministic": true,
+   "gap_empty_raises": "raise:ValueError",
+   "gap_mismatch_raises": "raise:ValueError",
+   "gap_over_budget": true,
+   "gap_value": 0.25,
+   "gap_within": true,
+   "interleaved": true,
+   "long_ticker_escapes": true,
+   "lowercase_escapes": true,
+   "same_placeholder": true,
+   "twin_forbidden_kept": true,
+   "twin_name": true,
+   "twin_required_masked": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "3d6d77b4f8751830f5ee17744e0a49beacfc0e12",
+ "interpretation": "Masking contract holds: deterministic consistent placeholders, all four date formats masked, allowlist survives, twins interleave, gap report fail-closed. Pinned escapes: >6-char tickers and lowercase forms evade the masker (visible in flags).",
+ "kind": "masking_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "6756a6a683a45f94461f08f38a8140c32bedd726ea36cd780725ea45445e7110",
+ "research_only": true,
+ "schema": "masking_audit.v1"
+}
