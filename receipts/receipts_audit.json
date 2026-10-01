@@ -1,0 +1,27 @@
+{
+ "claim": {
+  "flags": {
+   "truthiness_coercion_eligible": true
+  },
+  "ok": true,
+  "results": {
+   "all_parseable_loaded": true,
+   "claim_contract_eligible": true,
+   "coercion_flag": true,
+   "digest_binds_bytes": true,
+   "explicit_live_wins": true,
+   "fails_closed_default": true,
+   "multi_dir": true,
+   "nested_scanned": true,
+   "synthetic_class": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "0f506df976595a147c484af11c81ec74643a9b45",
+ "interpretation": "Receipt eligibility contract holds: absent markers fail closed, explicit live claim always wins, claim contract resolves, digests bind bytes, unparseable skipped. Flag pinned: truthiness coercion \u2014 {'research_only': 'yes', 'live_pnl_claim': null} is eligible because values are never type-checked.",
+ "kind": "receipts_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "408de2954d1627f2a6d31478748c19484acff6b0c4025a5c976264641647800a",
+ "research_only": true,
+ "schema": "receipts_audit.v1"
+}
