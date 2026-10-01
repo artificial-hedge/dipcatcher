@@ -796,6 +796,27 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "convexity_adj",
         "jln_uncertainty",
         "first_passage",
+        # wave 64 — Lugannani-Rice saddlepoint tail
+        # probabilities and the renormalized saddlepoint
+        # density (gamma/normal CGF), Kraskov-Stogbauer-
+        # Grassberger kNN mutual information plus its
+        # conditional form, Schreiber transfer entropy
+        # built on the conditional KSG estimator,
+        # Brownian-bridge midpoint moments with the
+        # closed-form barrier hit probability for MC
+        # refinement, Jarrow-Turnbull reduced-form
+        # credit (piecewise-flat hazard bootstrap,
+        # survival curve, risky bond, par CDS), and
+        # Campbell-Shiller log-linear VAR return
+        # variance decomposition (dividend-news vs
+        # discount-rate news). Same SYNTHETIC
+        # diagnostic contract.
+        "saddlepoint",
+        "mutual_info",
+        "transfer_entropy",
+        "brownian_bridge",
+        "jarrow_turnbull",
+        "campbell_shiller",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

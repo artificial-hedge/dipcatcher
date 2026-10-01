@@ -501,6 +501,14 @@ from quant_fund.research.benches_w63 import (
     bench_lee_carter,
     bench_power_law,
 )
+from quant_fund.research.benches_w64 import (
+    bench_brownian_bridge,
+    bench_campbell_shiller,
+    bench_jarrow_turnbull,
+    bench_mutual_info,
+    bench_saddlepoint,
+    bench_transfer_entropy,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2430,6 +2438,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "convexity_adj": bench_convexity_adj(),
         "jln_uncertainty": bench_jln_uncertainty(),
         "first_passage": bench_first_passage(),
+        "saddlepoint": bench_saddlepoint(),
+        "mutual_info": bench_mutual_info(),
+        "transfer_entropy": bench_transfer_entropy(),
+        "brownian_bridge": bench_brownian_bridge(),
+        "jarrow_turnbull": bench_jarrow_turnbull(),
+        "campbell_shiller": bench_campbell_shiller(),
     }
 
     hyps = _build_hypotheses(families, rankers)

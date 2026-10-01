@@ -1515,3 +1515,40 @@ detail: |
   - Canon staged on top of w62-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713 land.
 note: canon PR to follow.
+---
+owner: devin (wave 64 canon)
+slice: models/saddlepoint.py, models/mutual_info.py,
+  models/transfer_entropy.py, models/brownian_bridge.py,
+  models/jarrow_turnbull.py, models/campbell_shiller.py,
+  research/benches_w64.py, registry/agent wiring,
+  tests/unit/research/test_benches_w64.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w64-lanes (768915bd): six new models, all
+    bench_*() self-checks score=1.0, 32 unit tests green.
+  - saddlepoint.py (Lugannani-Rice tail probs + renormalized
+    saddlepoint density on gamma/normal CGF; gamma tail error
+    6e-6, normal exact), mutual_info.py (Kraskov-Stogbauer-
+    Grassberger kNN MI + conditional form; indep ~0, Gaussian
+    0.324 vs true 0.337, nonlinear 2.19 nats),
+    transfer_entropy.py (Schreiber TE on conditional KSG;
+    driven AR system recovers direction 0.298 vs -0.024),
+    brownian_bridge.py (bridge midpoint mean/var, exact
+    barrier hit probability; bridge-refined midpoint MC
+    reproduces the closed form to 0.0014),
+    jarrow_turnbull.py (reduced-form credit: piecewise-flat
+    hazard bootstrap repricing to 6e-12, risky bond, par CDS
+    vs continuous-accrual within 0.8%), campbell_shiller.py
+    (Campbell 1991 log-linear VAR decomposition; dividend-
+    news/discount-news/covariance shares sum to exactly 1).
+  - benches_w64.py: +372..377 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "saddlepoint","mutual_info",
+    "transfer_entropy","brownian_bridge","jarrow_turnbull",
+    "campbell_shiller"; agent.py import+dict wiring; tests:
+    6 module files + test_benches_w64.
+  - Canon staged on top of w63-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715 land.
+note: canon PR to follow.
+
