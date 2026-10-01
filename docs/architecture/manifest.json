@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1151,
+  "module_count": 1152,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -11127,6 +11127,18 @@
       "src": "quant_fund.research.quantile_ladder"
     },
     {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.quantile_mosaic"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.quantile_mosaic"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.quantile_mosaic"
+    },
+    {
       "dst": "quant_fund.config.loader",
       "src": "quant_fund.research.ranker_probability"
     },
@@ -13278,6 +13290,7 @@
     "quant_fund.research.phase1_verify",
     "quant_fund.research.prospective_sota",
     "quant_fund.research.quantile_ladder",
+    "quant_fund.research.quantile_mosaic",
     "quant_fund.research.ranker_probability",
     "quant_fund.research.real_benchmark",
     "quant_fund.research.reality_survivorship",
@@ -15128,7 +15141,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 242,
+      "imports": 243,
       "src": "quant_fund.research"
     },
     {
@@ -15143,7 +15156,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 80,
+      "imports": 82,
       "src": "quant_fund.research"
     },
     {
