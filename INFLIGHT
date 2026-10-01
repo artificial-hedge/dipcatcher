@@ -1593,3 +1593,47 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/#717
     land.
 note: canon PR to follow.
+
+---
+owner: devin (wave 66 canon)
+slice: models/mlmc.py, models/black_karasinski.py,
+  models/debtrank.py, models/ews_signals.py,
+  models/permutation_entropy.py, models/svgd.py,
+  research/benches_w66.py, registry/agent wiring,
+  tests/unit/research/test_benches_w66.py
+status: COMPLETE + VERIFIED 2026-10-01
+detail: |
+  - Lanes on devin/w66-lanes (7199b685): six new models, all
+    bench_*() self-checks score=1.0, 40 unit tests green.
+  - mlmc.py (Giles multilevel MC: coupled coarse/fine Euler
+    levels with summed Brownian innovations, fixed-N level
+    allocation, log-log beta fit; BS call err 0.17 inside
+    4-sigma band, beta 0.99), black_karasinski.py (Hull
+    moment-matched trinomial probs with expected-position
+    branching, brentq alpha calibration per level, Arrow-
+    Debreu bond repricing 3e-16, caplet vol monotone,
+    lognormal positivity), debtrank.py (Battiston R1
+    cumulative distress propagation, per-node profile,
+    in-strength comparator; small hub rank 0 vs in-strength
+    leader rank 7 — propagation beats centrality),
+    ews_signals.py (Scheffer rolling AC1/variance/skew,
+    Kendall-tau trend, IAAFT phase surrogates; imposed CSD
+    detected tau 0.81/0.87 p=0.016, stationary control
+    clean), permutation_entropy.py (Bandt-Pompe ordinal
+    patterns, normalized Shannon entropy, Rosso JS
+    complexity-entropy plane; ordering periodic < AR <
+    noise, C noise 0.003 < C AR 0.11), svgd.py (Liu-Wang
+    RBF-kernel particle transport, median bandwidth,
+    score + repulsion; Gaussian mean err 2e-4 var err
+    4%, bimodal split 45/55).
+  - benches_w66.py: +384..389 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "mlmc","black_karasinski","debtrank",
+    "ews_signals","permutation_entropy","svgd"; agent.py
+    import+dict wiring; tests: 6 module files +
+    test_benches_w66.
+  - Canon staged on top of w65-canon so the chain stays clean
+    as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
+    #717/#720 land.
+note: canon PR to follow.

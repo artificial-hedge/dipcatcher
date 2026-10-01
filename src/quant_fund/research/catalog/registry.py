@@ -834,6 +834,25 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "spread_options",
         "esscher",
         "shadow_rate",
+        # Wave 66 — Giles multilevel Monte Carlo
+        # (coupled coarse/fine Euler levels, variance
+        # decay beta), Black-Karasinski calibrated
+        # trinomial lattice (Arrow-Debreu bond
+        # repricing, caplets), Battiston DebtRank
+        # systemic-risk propagation vs in-strength
+        # centrality, Scheffer critical-slowing-down
+        # early-warning signals (rolling AC1/variance
+        # Kendall-tau + IAAFT surrogates), Bandt-
+        # Pompe permutation entropy on the Rosso
+        # complexity-entropy plane, and Liu-Wang
+        # SVGD particle posterior transport. Same
+        # SYNTHETIC diagnostic contract.
+        "mlmc",
+        "black_karasinski",
+        "debtrank",
+        "ews_signals",
+        "permutation_entropy",
+        "svgd",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

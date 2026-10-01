@@ -517,6 +517,14 @@ from quant_fund.research.benches_w65 import (
     bench_shadow_rate,
     bench_spread_options,
 )
+from quant_fund.research.benches_w66 import (
+    bench_black_karasinski,
+    bench_debtrank,
+    bench_ews_signals,
+    bench_mlmc,
+    bench_permutation_entropy,
+    bench_svgd,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2458,6 +2466,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "spread_options": bench_spread_options(),
         "esscher": bench_esscher(),
         "shadow_rate": bench_shadow_rate(),
+        "mlmc": bench_mlmc(),
+        "black_karasinski": bench_black_karasinski(),
+        "debtrank": bench_debtrank(),
+        "ews_signals": bench_ews_signals(),
+        "permutation_entropy": bench_permutation_entropy(),
+        "svgd": bench_svgd(),
     }
 
     hyps = _build_hypotheses(families, rankers)
