@@ -1787,3 +1787,31 @@ detail: |
   - Canon staged on top of w69-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+
+---
+owner: devin (wave 71 canon)
+slice: Rasch/2PL IRT JML, latent class EM, MANOVA omnibus,
+  orthogonal Procrustes, isotonic PAVA, hierarchical risk parity
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w71-lanes: item_response.py (Rasch JML alternating
+    Newton + two-stage 2PL item calibration on Rasch abilities with
+    log-a ridge; difficulty MAE 0.156, theta rho 0.85, disc ordering
+    corr 0.71), latent_class.py (restarted Bernoulli EM + BIC;
+    planted 2-class acc 0.9+, pi err <0.1), manova.py (Wilks/Pillai/
+    Hotelling-Lawley/Roy + Bartlett chi^2; planted shift p<0.01,
+    null size respected), procrustes.py (Schonemann orthogonal
+    alignment + GPA consensus; rot err <1e-6, scale 1/3 recovered,
+    GPA disp<0.02), isotonic.py (PAVA + Zadrozny-Elkan calibration;
+    monotone MSE ratio <0.5, Brier improvement), hrp.py (Lopez de
+    Prado Ward dendrogram + recursive IVP bisection; block spread
+    <0.6, diagonal-cov IVP limit dev <0.15).
+  - benches_w71.py: +414..419 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "item_response","latent_class","manova",
+    "procrustes","isotonic","hrp" (380->386); agent.py import+dict
+    wiring; tests: 6 module files + test_benches_w71.
+  - Canon staged on top of w70-canon so the chain stays clean as
+    the open stack lands.
+note: canon PR to follow.

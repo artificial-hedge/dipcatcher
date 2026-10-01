@@ -946,6 +946,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "polychoric",
         "compositional",
         "sure_screening",
+        # Wave 71 — Birnbaum/Lord item
+        # response theory (Rasch JML +
+        # two-stage 2PL calibration),
+        # Lazarsfeld-Goodman latent class
+        # EM (restarted Bernoulli mixture
+        # + BIC), Wilks/Pillai/Hotelling-
+        # Roy MANOVA omnibus (Bartlett
+        # chi^2), Schonemann-Gower
+        # orthogonal + generalized
+        # Procrustes shape alignment,
+        # Barlow PAVA isotonic regres-
+        # sion + Zadrozny-Elkan calibra-
+        # tion, and Lopez de Prado
+        # hierarchical risk parity (Ward
+        # dendrogram + recursive IVP
+        # bisection). Same SYNTHETIC
+        # diagnostic contract.
+        "item_response",
+        "latent_class",
+        "manova",
+        "procrustes",
+        "isotonic",
+        "hrp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

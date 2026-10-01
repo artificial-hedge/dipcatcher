@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1507,
+  "module_count": 1514,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10087,6 +10087,10 @@
       "src": "quant_fund.research.agent"
     },
     {
+      "dst": "quant_fund.research.benches_w71",
+      "src": "quant_fund.research.agent"
+    },
+    {
       "dst": "quant_fund.research.benches_w810",
       "src": "quant_fund.research.agent"
     },
@@ -12097,6 +12101,30 @@
     {
       "dst": "quant_fund.models.sure_screening",
       "src": "quant_fund.research.benches_w70"
+    },
+    {
+      "dst": "quant_fund.models.hrp",
+      "src": "quant_fund.research.benches_w71"
+    },
+    {
+      "dst": "quant_fund.models.isotonic",
+      "src": "quant_fund.research.benches_w71"
+    },
+    {
+      "dst": "quant_fund.models.item_response",
+      "src": "quant_fund.research.benches_w71"
+    },
+    {
+      "dst": "quant_fund.models.latent_class",
+      "src": "quant_fund.research.benches_w71"
+    },
+    {
+      "dst": "quant_fund.models.manova",
+      "src": "quant_fund.research.benches_w71"
+    },
+    {
+      "dst": "quant_fund.models.procrustes",
+      "src": "quant_fund.research.benches_w71"
     },
     {
       "dst": "quant_fund.metrics.anytime_fdr",
@@ -15643,6 +15671,7 @@
     "quant_fund.models.honest_did",
     "quant_fund.models.hong_li",
     "quant_fund.models.hpd_conformal",
+    "quant_fund.models.hrp",
     "quant_fund.models.hsmm",
     "quant_fund.models.hstep",
     "quant_fund.models.hurdle",
@@ -15655,6 +15684,8 @@
     "quant_fund.models.interval_censoring",
     "quant_fund.models.io_hmm",
     "quant_fund.models.isomap",
+    "quant_fund.models.isotonic",
+    "quant_fund.models.item_response",
     "quant_fund.models.iv_approx",
     "quant_fund.models.ivs_diffusion",
     "quant_fund.models.ivx",
@@ -15679,6 +15710,7 @@
     "quant_fund.models.kronos_fleet",
     "quant_fund.models.kyle_lambda",
     "quant_fund.models.lasso_pds",
+    "quant_fund.models.latent_class",
     "quant_fund.models.leadlag",
     "quant_fund.models.lee_bounds",
     "quant_fund.models.lee_carter",
@@ -15698,6 +15730,7 @@
     "quant_fund.models.lp_iv",
     "quant_fund.models.mala",
     "quant_fund.models.malliavin_greeks",
+    "quant_fund.models.manova",
     "quant_fund.models.many_iv",
     "quant_fund.models.marginal_treatment",
     "quant_fund.models.market_making",
@@ -15778,6 +15811,7 @@
     "quant_fund.models.power_law",
     "quant_fund.models.ppml",
     "quant_fund.models.predictive_regression",
+    "quant_fund.models.procrustes",
     "quant_fund.models.propensity_score",
     "quant_fund.models.proximal_causal",
     "quant_fund.models.proxy_svar",
@@ -16155,6 +16189,7 @@
     "quant_fund.research.benches_w68",
     "quant_fund.research.benches_w69",
     "quant_fund.research.benches_w70",
+    "quant_fund.research.benches_w71",
     "quant_fund.research.benches_w810",
     "quant_fund.research.calibration_eprocess",
     "quant_fund.research.calibration_eval",
@@ -18101,7 +18136,7 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 378,
+      "imports": 384,
       "src": "quant_fund.research"
     },
     {
@@ -18146,7 +18181,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 380,
+      "imports": 381,
       "src": "quant_fund.research"
     },
     {

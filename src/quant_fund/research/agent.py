@@ -557,6 +557,14 @@ from quant_fund.research.benches_w70 import (
     bench_polychoric,
     bench_sure_screening,
 )
+from quant_fund.research.benches_w71 import (
+    bench_hrp,
+    bench_isotonic,
+    bench_item_response,
+    bench_latent_class,
+    bench_manova,
+    bench_procrustes,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2528,6 +2536,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "polychoric": bench_polychoric(),
         "compositional": bench_compositional(),
         "sure_screening": bench_sure_screening(),
+        "item_response": bench_item_response(),
+        "latent_class": bench_latent_class(),
+        "manova": bench_manova(),
+        "procrustes": bench_procrustes(),
+        "isotonic": bench_isotonic(),
+        "hrp": bench_hrp(),
     }
 
     hyps = _build_hypotheses(families, rankers)
