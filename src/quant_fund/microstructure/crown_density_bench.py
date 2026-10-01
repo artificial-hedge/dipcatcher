@@ -172,6 +172,7 @@ def _sim_crown(
     spreads: list[int] = []
     fills: list[int] = []
     signs: list[int] = []
+    levels: list[int] = []
     seen = 0
     for _ in range(horizon):
         sim.step()
@@ -194,6 +195,7 @@ def _sim_crown(
             tr = sim.trades[seen]
             fills.append(sim.n_events)
             signs.append(1 if tr.aggressor == "buy" else -1)
+            levels.append(tr.level)
             seen += 1
     bb_a = np.asarray(bb, dtype=np.int64)
     ba_a = np.asarray(ba, dtype=np.int64)
@@ -212,6 +214,17 @@ def _sim_crown(
         n_f = len(fills)
         out_extra["n_hidden_fills"] = counts["n_hidden_fills"]
         out_extra["hidden_fill_share"] = round(counts["n_hidden_fills"] / n_f, 4) if n_f else None
+        out_extra["n_mo_units"] = counts["n_mo_units"]
+        out_extra["n_mo_arrivals"] = counts["n_mo_arrivals"]
+        # Sweep footprint: distinct levels consumed by the trades of one
+        # event index (a size-k MO burst prints all its levels under one
+        # event). sweep_width.v1 tape pin: p_ge2 = 0.045, max = 8.
+        width: dict[int, set[int]] = {}
+        for ev, lvl in zip(fills, levels, strict=True):
+            width.setdefault(ev, set()).add(lvl)
+        widths = np.asarray([len(v) for v in width.values()], dtype=float)
+        out_extra["sweep_p_ge2"] = round(float(np.mean(widths >= 2)), 4) if len(widths) else None
+        out_extra["sweep_max_levels"] = int(widths.max()) if len(widths) else 0
     n_sp = len(spreads)
     return {
         "regime": regime,
