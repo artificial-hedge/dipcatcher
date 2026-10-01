@@ -657,6 +657,7 @@ src/quant_fund/research/coherence.py
 src/quant_fund/research/concordance.py
 src/quant_fund/research/cost_allocation.py
 src/quant_fund/research/cross_sectional.py
+src/quant_fund/research/energy_score.py
 src/quant_fund/research/explainability/__init__.py
 src/quant_fund/research/explainability/attribution.py
 src/quant_fund/research/explainability/drift.py
