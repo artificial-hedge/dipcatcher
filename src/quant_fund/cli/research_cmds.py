@@ -479,6 +479,76 @@ def verify_all_cmd(
     raise typer.Exit(code=0 if receipt["verdict"] == "pass" else 1)
 
 
+@app.command("replay")
+def replay_cmd(
+    receipt_path: Path = typer.Argument(
+        ..., help="Replay-declared receipt JSON to re-execute and prove."
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Proof receipt path (default: receipts/replay_proof_<digest16>.json).",
+    ),
+    timeout: float = typer.Option(
+        120.0, "--timeout", help="Subprocess timeout in seconds for the replayed lane."
+    ),
+) -> None:
+    """Re-execute a receipt's declared lane argv and seal a ``replay_proof.v1`` receipt.
+
+    Reads the optional ``replay`` manifest ``{argv, artifacts, cwd?}``, runs
+    argv under the repo root (``dipcatcher``/``quant`` resolve to this
+    interpreter's ``quant_fund.cli.main``), re-hashes each declared artifact
+    file, and compares observed bytes against the pinned digests. The
+    ``replay_proof.v1`` body is wrapped in a sealed ``receipt.v2`` envelope;
+    the envelope verdict is pass iff the lane exits 0 AND every artifact
+    matches — fail closed on any deviation. Exits non-zero on a fail
+    verdict or a non-declared receipt.
+    """
+    import quant_fund.research.replay_proof as _replay_proof_mod
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    root = Path.cwd()
+    try:
+        body = _replay_proof_mod.run_replay(receipt_path, root=root, timeout_s=timeout)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    document = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(_replay_proof_mod.__file__),),
+            verdict=body["verdict"],
+            dataset={
+                "receipt": body["receipt"],
+                "source_receipt_sha256": body["source_receipt_sha256"],
+            },
+            params={"argv": body["argv"], "timeout_s": body["timeout_s"]},
+        )
+    )
+    digest = str(document["receipt_sha256"])
+    out_path = out if out is not None else Path("receipts") / f"replay_proof_{digest[:16]}.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_text(out_path, json.dumps(document, indent=2, sort_keys=True) + "\n")
+    typer.echo(
+        format_data_label(
+            synthetic=body["data_label"] == "SYNTHETIC", data_source=body["data_label"]
+        )
+    )
+    typer.echo(
+        f"argv={' '.join(body['argv'])} exit_code={body['exit_code']} "
+        f"timed_out={body['timed_out']} elapsed_s={body['elapsed_s']}"
+    )
+    for row in body["artifacts"]:
+        typer.echo(
+            f"artifact {row['path']}: match={row['match']} "
+            f"expected={row['expected_sha256'][:16]} observed={(row['observed_sha256'] or '-')[:16]}"
+        )
+    typer.echo(f"all_match={body['all_match']} verdict={body['verdict']}")
+    typer.echo(f"receipt={out_path}")
+    raise typer.Exit(code=0 if body["verdict"] == "pass" else 1)
+
+
 @app.command("vol-bench")
 def vol_bench(
     config: Path = typer.Option(Path("configs/research.yaml")),
@@ -1392,6 +1462,81 @@ def online_fdr_cmd(
     typer.echo(f"receipt={path}")
 
 
+@app.command("tape-pin")
+def tape_pin_cmd(
+    source_label: str = typer.Option(
+        ...,
+        "--source-label",
+        help="Label the manifest is filed under (e.g. yahoo_eod, synthetic_bench)",
+    ),
+    tape: list[Path] = typer.Option(
+        [],
+        "--tape",
+        help="Tape parquet to pin (repo-relative; repeatable, concatenated in order)",
+    ),
+    promotion_receipt: Path | None = typer.Option(
+        None,
+        "--promotion-receipt",
+        help="Optional bar_promotion.v1 receipt whose bytes are bound into the manifest",
+    ),
+    out_dir: Path = typer.Option(
+        Path("data") / "manifests", "--out-dir", help="Manifest output directory"
+    ),
+) -> None:
+    """Pin raw tape bytes into the committed ``data/manifests`` registry.
+
+    Writes ``<out_dir>/<source_label>.json`` (``tape_manifest.v1``): sealed
+    sha256/byte counts per tape file plus the canonical CSV digest lanes
+    hash as ``inputs_sha256``. Tapes stay gitignored — the manifest attests
+    bytes, it does not ship them.
+    """
+    from quant_fund.research.tape_registry import pin_tape
+
+    if not tape:
+        raise typer.BadParameter("pass at least one --tape parquet")
+    for path in tape:
+        if not path.is_file():
+            raise typer.BadParameter(f"tape file not found: {path}")
+    try:
+        result = pin_tape(
+            source_label,
+            list(tape),
+            out_dir=out_dir,
+            promotion_receipt=promotion_receipt,
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    manifest = result["manifest"]
+    typer.echo(
+        format_data_label(synthetic=source_label.upper() == "SYNTHETIC", data_source=source_label)
+    )
+    typer.echo(
+        f"tape_files={len(manifest['tape_files'])} n_rows={manifest['n_rows']} "
+        f"n_names={manifest['n_names']} frame_csv_sha256={manifest['frame_csv_sha256'][:12]}…"
+    )
+    typer.echo(f"receipt_sha256={manifest['receipt_sha256']}")
+    typer.echo(f"manifest={result['path']}")
+
+
+@app.command("tape-verify")
+def tape_verify_cmd(
+    manifest: Path = typer.Option(..., "--manifest", help="tape_manifest.v1 JSON to verify"),
+    root: Path = typer.Option(
+        Path("."), "--root", help="Repository root the manifest's tape paths resolve under"
+    ),
+) -> None:
+    """Re-hash a pinned manifest against the tape bytes on this machine.
+
+    Exits non-zero on any drift: stale seal, missing/tampered tape files, or
+    a profile/CSV digest that no longer re-derives — fail-closed.
+    """
+    from quant_fund.research.tape_registry import verify_manifest
+
+    errors = verify_manifest(manifest, root)
+    typer.echo(json.dumps({"manifest": str(manifest), "valid": not errors, "errors": errors}))
+    raise typer.Exit(code=0 if not errors else 1)
+
+
 __all__ = [
     "capacity",
     "cost_calibration",
@@ -1426,6 +1571,9 @@ __all__ = [
     "verify_identities",
     "verify_all_cmd",
     "verify_receipt_cmd",
+    "tape_pin_cmd",
+    "tape_verify_cmd",
+    "replay_cmd",
     "vol_bench",
 ]
 

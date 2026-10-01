@@ -917,6 +917,97 @@ counted. Prose that contains such a token is quoted verbatim.
 - `research_only`: true
 - `schema`: calibration_audit.v1
 
+### `receipts/capacity_eval_3622d0c059d42009.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/capacity_eval_3622d0c059d42009.json | 57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b | 3622d0c059d42009e9870101afb35c232ac27d58456fa915dc482db6679c3116 | not_checked | absent | inputs_sha256=c077426959f2bafc71eecbe4c8507d337fcbc842a84c574ff1a4a7eebc4ac9a3 | unspecified | absent | absent | false |
+
+- `books`:
+  - [0]
+    - `adv_sha256`: 8ecaf67526c80a674e9fd3b972398e12d551a8391e381a39b829e5de918eb790
+    - `data_label`: SYNTHETIC
+    - `n_dates`: 60
+    - `n_names`: 8
+    - `name`: uniform
+    - `weights_sha256`: 5f939a795d092e615b019dcadf28e4eed6bbb1c67021d9b7f07c3f0a8d61fbeb
+  - [1]
+    - `adv_sha256`: bbda34e4c6f87974736f20d0826f529b29ffd62104d2e07f3a61207f43583ceb
+    - `data_label`: SYNTHETIC
+    - `n_dates`: 60
+    - `n_names`: 8
+    - `name`: concentrated
+    - `weights_sha256`: 49eb808f97fdcccc19a3b438163529736d9d0a89838cfa9fb7e4d4d9e8f2f1cf
+- `data_label`: SYNTHETIC
+- `dev_only`: true
+- `kind`: capacity_overlay_eval
+- `n_rows`: 4
+- `receipt_sha256`: 3622d0c059d42009e9870101afb35c232ac27d58456fa915dc482db6679c3116
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - capacity
+    - --dev
+    - --books
+    - uniform,concentrated
+    - --n-dates
+    - 60
+    - --n-names
+    - 8
+    - --seed
+    - 11
+    - --aum-grid
+    - 1e6,1e7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/capacity_eval_ad7dd6aef6c94d20.json
+      - `sha256`: 044638ce5091d330368059531cd2ce3d0001c8694a915750af9a56a6c928b4d8
+- `results`:
+  - [0]
+    - `aum`: 1000000.0
+    - `book`: uniform
+    - `days_to_trade`: 0.10643505246394389
+    - `feasible`: 1
+    - `impact_bps`: 58.62177950726087
+    - `max_participation`: 0.010643505246394389
+    - `mean_participation`: 0.004054086569775791
+    - `participation_cap`: 0.1
+    - `status`: ok
+  - [1]
+    - `aum`: 10000000.0
+    - `book`: uniform
+    - `days_to_trade`: 1.064350524639439
+    - `feasible`: 0
+    - `impact_bps`: 185.37834373512757
+    - `max_participation`: 0.10643505246394389
+    - `mean_participation`: 0.0405408656977579
+    - `participation_cap`: 0.1
+    - `status`: ok
+  - [2]
+    - `aum`: 1000000.0
+    - `book`: concentrated
+    - `days_to_trade`: 0.24473014809391208
+    - `feasible`: 1
+    - `impact_bps`: 36.2896332221317
+    - `max_participation`: 0.02447301480939121
+    - `mean_participation`: 0.003480376246735458
+    - `participation_cap`: 0.1
+    - `status`: ok
+  - [3]
+    - `aum`: 10000000.0
+    - `book`: concentrated
+    - `days_to_trade`: 2.447301480939121
+    - `feasible`: 0
+    - `impact_bps`: 114.7578964340513
+    - `max_participation`: 0.2447301480939121
+    - `mean_participation`: 0.03480376246735458
+    - `participation_cap`: 0.1
+    - `status`: ok
+- `schema`: capacity_overlay.v1
+- `seed`: 11
+
 ### `receipts/capacity_eval_cd0854242ed8a9ec.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -16180,6 +16271,888 @@ counted. Prose that contains such a token is quoted verbatim.
 - `schema_version`: 2
 - `verdict`: pass
 
+### `receipts/evidence_audit_5c9f07c823727701.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/evidence_audit_5c9f07c823727701.json | 6124e972cc182ef134a5c411f2794c4f2e3fcea205f6a0bfc0a05f4ec912cd23 | 5c9f07c8237277012e9d161b1cde3d10b4f9042ba1a5c0b218bfe8d347a67b35 | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `evidence_audit.py`: ecc96ca2d055d319af60bf3a09ffe233db996376a1b4bb3da01cd459dd22d27b
+- `data_label`: META
+- `dataset_hash`: 82d91e2c395b45f991064e11f9d50774889854f26609e16d7bc99f73f74c18d8
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:08:37.017455+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: evidence_audit
+- `params_hash`: 310f4d153960b0eefb359a85344a67e97474b12e4cf51a0275440e00aa555918
+- `payload`:
+  - `check_index`: true
+  - `duplicate_seals`:
+  - `files`:
+    - [0]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: calib_real_drill.json
+      - `file_sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+      - `filename_digest_ok`: null
+      - `kind`: calibration_audit.v1
+      - `schema`: calibration_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [1]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: capacity_eval_3622d0c059d42009.json
+      - `file_sha256`: 57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b
+      - `filename_digest_ok`: true
+      - `kind`: capacity_overlay_eval
+      - `schema`: capacity_overlay.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [2]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: capacity_eval_cd0854242ed8a9ec.json
+      - `file_sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+      - `filename_digest_ok`: true
+      - `kind`: capacity_overlay_eval
+      - `schema`: capacity_overlay.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [3]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coherence_2dd641ab766a536a.json
+      - `file_sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+      - `filename_digest_ok`: true
+      - `kind`: coherence_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [4]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: concordance_df424fa2f6b1c4e9.json
+      - `file_sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+      - `filename_digest_ok`: true
+      - `kind`: selection_concordance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [5]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [6]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_pit.json
+      - `file_sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [7]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: corpus_real_drill.json
+      - `file_sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+      - `filename_digest_ok`: null
+      - `kind`: corpus_inference.v1
+      - `schema`: corpus_inference.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [8]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: cost_calibration_eval_df9b8d7068bf709b.json
+      - `file_sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+      - `filename_digest_ok`: true
+      - `kind`: cost_calibration_eval
+      - `schema`: cost_calibration.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [9]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_cs_real_drill.json
+      - `file_sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+      - `filename_digest_ok`: null
+      - `kind`: coverage_cs
+      - `schema`: coverage_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [10]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_real_drill.json
+      - `file_sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+      - `filename_digest_ok`: null
+      - `kind`: coverage_audit
+      - `schema`: coverage_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [11]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [12]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_pit.json
+      - `file_sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [13]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: deps_security_hygiene_f3b4e6fd22e439b7.json
+      - `file_sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+      - `filename_digest_ok`: true
+      - `kind`: null
+      - `schema`: deps_hygiene.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+    - [14]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [15]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_pit.json
+      - `file_sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [16]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: emerge_real_drill.json
+      - `file_sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+      - `filename_digest_ok`: null
+      - `kind`: emerge_drill.v1
+      - `schema`: emerge_drill.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [17]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_3464d8f8197bf737.json
+      - `file_sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [18]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_d449e1ca0cc119a6.json
+      - `file_sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [19]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fast_replay_p42_conformance_20260928.json
+      - `file_sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
+    - [20]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_eval_5ddf15b0dc7d3ca1.json
+      - `file_sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+      - `filename_digest_ok`: true
+      - `kind`: distribution_fleet_eval
+      - `schema`: fleet_eval.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [21]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_eval_5e907be710811a44.json
+      - `file_sha256`: c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1
+      - `filename_digest_ok`: true
+      - `kind`: distribution_fleet_eval
+      - `schema`: fleet_eval.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [22]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_race_real_drill.json
+      - `file_sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+      - `filename_digest_ok`: null
+      - `kind`: fleet_race.v1
+      - `schema`: fleet_race.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [23]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: honest_verdict_b133e8b3992af893.json
+      - `file_sha256`: 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a
+      - `filename_digest_ok`: true
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+    - [24]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: honest_verdict_real_drill.json
+      - `file_sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+    - [25]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lane_power_drill.json
+      - `file_sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+      - `filename_digest_ok`: null
+      - `kind`: lane_power
+      - `schema`: lane_power.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [26]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_verdict.json
+      - `file_sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+      - `filename_digest_ok`: null
+      - `kind`: receipt_lattice.v1
+      - `schema`: receipt_lattice.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: inconsistent
+    - [27]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_a.json
+      - `file_sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [28]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_b.json
+      - `file_sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [29]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_conf_t_vs_empirical.json
+      - `file_sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [30]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_gaussian_vs_conf_t.json
+      - `file_sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [31]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_real_drill.json
+      - `file_sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [32]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_vol_drill.json
+      - `file_sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [33]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_13d20aef00774027.json
+      - `file_sha256`: 3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d
+      - `filename_digest_ok`: true
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [34]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_clean.json
+      - `file_sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [35]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_defect.json
+      - `file_sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [36]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_real_drill.json
+      - `file_sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [37]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: multih_fleet_eval_5db1cab214e291d7.json
+      - `file_sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+      - `filename_digest_ok`: true
+      - `kind`: multih_fleet_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [38]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: nautilus_conformance_7bf19a08c147547b.json
+      - `file_sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+      - `filename_digest_ok`: true
+      - `kind`: nautilus_conformance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: blocked
+    - [39]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: panel_audit_real_drill.json
+      - `file_sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+      - `filename_digest_ok`: null
+      - `kind`: panel_audit.v1
+      - `schema`: panel_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [40]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: rankic_eval_8d740c0ddf6d5c54.json
+      - `file_sha256`: e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81
+      - `filename_digest_ok`: true
+      - `kind`: cross_sectional_rankic_eval
+      - `schema`: cross_sectional_rankic.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [41]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: rankic_eval_9ebdad7da83e7348.json
+      - `file_sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+      - `filename_digest_ok`: true
+      - `kind`: cross_sectional_rankic_eval
+      - `schema`: cross_sectional_rankic.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [42]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_manifest.json
+      - `file_sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: 1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [43]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_test.json
+      - `file_sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [44]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_validation.json
+      - `file_sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [45]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_0de5fa4e0c739037.json
+      - `file_sha256`: 4a870f4bb735b8ebf2c87ae3dde8994dfe2220d55ead2f10871ed2c893cf70c2
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [46]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_701ae84c3d9813e0.json
+      - `file_sha256`: 4f49bb965f299970c04f1d01673142e0b6e5df77004c5d034b6bb6028760ad18
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [47]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_73137fe1a97c3538.json
+      - `file_sha256`: 74fbc282a7a1d5eb53bcfa17e44a460f8235f5950c463233abf70099e1a5c91a
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [48]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_7e1d9b632f022f5a.json
+      - `file_sha256`: a3a21f8a745cb80cac90f8e53f9512294c297e0caf5d3a4665d5f07214de4517
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [49]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_b23a176a5c91e210.json
+      - `file_sha256`: 1f4a8bd88480f4ddd2f07791b2f00deaa39c83a2151cd9395d395f1e20a4a7ad
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [50]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_cbbad2b0389750e5.json
+      - `file_sha256`: a320cc68307ecffe319ee675feaefa837472ff8a41f07416ac7208e1e98e1667
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [51]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: replay_proof_f5fe541481bbf231.json
+      - `file_sha256`: bf65017c57348aed947123163223ef59ebf385c9907052b2497016d3753ae2ce
+      - `filename_digest_ok`: true
+      - `kind`: replay_proof
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [52]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_140b073ea589b0c7.json
+      - `file_sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [53]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_1e8e1446e506fce1.json
+      - `file_sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [54]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_2c14615c26efd19b.json
+      - `file_sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [55]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_46445c3b227aa15e.json
+      - `file_sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [56]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_47297eff3cb55178.json
+      - `file_sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [57]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_4f4a495b59d022fb.json
+      - `file_sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [58]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_771602cd1580476c.json
+      - `file_sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [59]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_78dd891261e2aae9.json
+      - `file_sha256`: cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [60]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_85db152db863d25d.json
+      - `file_sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [61]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_8977244ef78bfd2f.json
+      - `file_sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [62]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_a6fd40311ce0fa04.json
+      - `file_sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [63]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_d311f5ea367a66a9.json
+      - `file_sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [64]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_dbd21a6c99c81e00.json
+      - `file_sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [65]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: suite_health_drill.json
+      - `file_sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+      - `filename_digest_ok`: null
+      - `kind`: suite_health
+      - `schema`: suite_health.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [66]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: tail_real_drill.json
+      - `file_sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+      - `filename_digest_ok`: null
+      - `kind`: tail_audit
+      - `schema`: tail_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [67]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: verdict_real_drill.json
+      - `file_sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+    - [68]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: vol_bench_f3bf2afc2f159ace.json
+      - `file_sha256`: b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3
+      - `filename_digest_ok`: true
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+  - `findings`:
+  - `index_fresh`: true
+  - `n_files`: 69
+  - `n_invalid_sealed`: 2
+  - `n_sealed`: 69
+  - `n_unsealed`: 0
+  - `n_valid`: 67
+  - `receipts_dir`: receipts
+  - `schema`: evidence_audit.v1
+- `receipt_sha256`: 5c9f07c8237277012e9d161b1cde3d10b4f9042ba1a5c0b218bfe8d347a67b35
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/evidence_audit_d449e1ca0cc119a6.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -16272,6 +17245,732 @@ counted. Prose that contains such a token is quoted verbatim.
   - `receipts_dir`: receipts
   - `schema`: evidence_audit.v1
 - `receipt_sha256`: d449e1ca0cc119a62dbef15f3916494ff65cc018494b36253a6f6f5807173b2b
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/evidence_audit_f45ae8d6bc7cd677.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/evidence_audit_f45ae8d6bc7cd677.json | 04128fa07fd2ca3650981d0cad06d07f921a525b301945b2c539ddd8c7447989 | f45ae8d6bc7cd677b07900271ed460acece232a669cefebb69aa621e19bbbb62 | not_checked | 9fa14508146de03f33c930ad4d3c2de95395a137 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `evidence_audit.py`: ecc96ca2d055d319af60bf3a09ffe233db996376a1b4bb3da01cd459dd22d27b
+- `data_label`: META
+- `dataset_hash`: b5fb7ae4c47405236edb0bc400843d2039a3255c09e4eb4d0d1b973208eccf49
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-30T22:37:06.052479+00:00
+- `git_revision`: 9fa14508146de03f33c930ad4d3c2de95395a137
+- `kind`: evidence_audit
+- `params_hash`: 310f4d153960b0eefb359a85344a67e97474b12e4cf51a0275440e00aa555918
+- `payload`:
+  - `check_index`: true
+  - `duplicate_seals`:
+  - `files`:
+    - [0]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: calib_real_drill.json
+      - `file_sha256`: 667678dba192c0418d4fb2d1d68054ab18f7f1745cd89cba706caa8f57536f5c
+      - `filename_digest_ok`: null
+      - `kind`: calibration_audit.v1
+      - `schema`: calibration_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [1]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: capacity_eval_cd0854242ed8a9ec.json
+      - `file_sha256`: e0a6c8250891cd5065edfc3bb385e6fdd640e5ca376cac496420815ab16881ed
+      - `filename_digest_ok`: true
+      - `kind`: capacity_overlay_eval
+      - `schema`: capacity_overlay.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [2]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coherence_2dd641ab766a536a.json
+      - `file_sha256`: dcaf457766306077f90249a7154302297b30fc63417e2fc9a46517c71e4265fd
+      - `filename_digest_ok`: true
+      - `kind`: coherence_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [3]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: concordance_df424fa2f6b1c4e9.json
+      - `file_sha256`: d35b4d196b598847e2bcb69e7b3d5536bbab0e654f94ec9a32f17554d0a7e81c
+      - `filename_digest_ok`: true
+      - `kind`: selection_concordance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [4]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [5]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: conformal_real_drill_gaussian_pit.json
+      - `file_sha256`: 94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e
+      - `filename_digest_ok`: null
+      - `kind`: conformal_monitor.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [6]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: corpus_real_drill.json
+      - `file_sha256`: 082f16234bae90433c9f699d575a57b2ef5f1bf826fdb61ccba838e936f9f119
+      - `filename_digest_ok`: null
+      - `kind`: corpus_inference.v1
+      - `schema`: corpus_inference.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [7]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: cost_calibration_eval_df9b8d7068bf709b.json
+      - `file_sha256`: 6c8a3677f6a72ea8b9790126779d5b0c67838c3c4461dbd1f9fc1ef62fc0509b
+      - `filename_digest_ok`: true
+      - `kind`: cost_calibration_eval
+      - `schema`: cost_calibration.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [8]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_cs_real_drill.json
+      - `file_sha256`: 9dfc169e6c3cb41c803c92114a4b33004d407295fc69c7a7de3dab3141a624b7
+      - `filename_digest_ok`: null
+      - `kind`: coverage_cs
+      - `schema`: coverage_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [9]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: coverage_real_drill.json
+      - `file_sha256`: 2521152de17c0974039cb4f4867cda6f2ad1299e3f00135fc0764e32fd17759a
+      - `filename_digest_ok`: null
+      - `kind`: coverage_audit
+      - `schema`: coverage_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [10]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 64a38aba74a56b44aa64dfd68ca1859d4d142c9dc2f4e0a657b447a041e434b7
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [11]
+      - `contract_legacy`: true
+      - `digest_convention`: canonical_json
+      - `errors`:
+        - missing_params
+      - `file`: cp_real_drill_gaussian_pit.json
+      - `file_sha256`: 6deaa336ee288e28ea35f93caa5d8b8b8436c99fd47efb97ceed792f6d3b8a62
+      - `filename_digest_ok`: null
+      - `kind`: changepoint_localize.v1
+      - `schema`: changepoint_localize.v1
+      - `sealed`: true
+      - `valid`: false
+      - `verdict`: null
+    - [12]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: deps_security_hygiene_f3b4e6fd22e439b7.json
+      - `file_sha256`: 66176b021f554077ceca2ed34a87b1de89e50fb905aee26f14a232c52d4a59e7
+      - `filename_digest_ok`: true
+      - `kind`: null
+      - `schema`: deps_hygiene.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: locked env clean: uv audit + pip-audit report 0 known vulnerabilities across 206 pins; license scan finds no GPL-family runtime dep; gitleaks 8.30.1 over full history (408 commits) finds no leaks; bandit medium+ reports 0 findings; no eval/exec; pickle/torch loads behind fail-closed sha256 trust gate
+    - [13]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_minus_conf_t_pinball.json
+      - `file_sha256`: 732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [14]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: drift_real_drill_gaussian_pit.json
+      - `file_sha256`: 295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64
+      - `filename_digest_ok`: null
+      - `kind`: drift_alarm.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [15]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: emerge_real_drill.json
+      - `file_sha256`: a06f8d2a40795ff00601716908a168232e5ecd9d42af62ea230d849c7e5baa3d
+      - `filename_digest_ok`: null
+      - `kind`: emerge_drill.v1
+      - `schema`: emerge_drill.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [16]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_3464d8f8197bf737.json
+      - `file_sha256`: 77c38c8edc534276ad901f4c64c5024f8e79c99c5ece43b001b003f362584a5d
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [17]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: evidence_audit_d449e1ca0cc119a6.json
+      - `file_sha256`: deb75d4ab1744617a0032397524891613c50282581f913d344e4acda9c6cd9d1
+      - `filename_digest_ok`: true
+      - `kind`: evidence_audit
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [18]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fast_replay_p42_conformance_20260928.json
+      - `file_sha256`: e8fd3b17e82fc21f39ecd184025c69b336f7be0ea18005d132a9c234e85acec6
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: vectorized replay path is byte-identical to the reference event loop on the matched-workload class, selected by an explicit fast flag; unsupported workload classes refuse fail-closed
+    - [19]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_eval_5ddf15b0dc7d3ca1.json
+      - `file_sha256`: 67713fe534eb3c4a508e4c0211836026af4f9efe8c27cd2cc7d69118a9cd1b98
+      - `filename_digest_ok`: true
+      - `kind`: distribution_fleet_eval
+      - `schema`: fleet_eval.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [20]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: fleet_race_real_drill.json
+      - `file_sha256`: 0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def
+      - `filename_digest_ok`: null
+      - `kind`: fleet_race.v1
+      - `schema`: fleet_race.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [21]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: honest_verdict_real_drill.json
+      - `file_sha256`: f9badb4a33ec9c0a35a10131cfca24d6f8caa531d5a9882c8f6d59da4073abca
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+    - [22]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lane_power_drill.json
+      - `file_sha256`: f0d9effae801a0ab06dfad9cbd222c55a45c71128f01b27b060c20e5624e273e
+      - `filename_digest_ok`: null
+      - `kind`: lane_power
+      - `schema`: lane_power.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [23]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_verdict.json
+      - `file_sha256`: 1268fa068051b57089c454f4f750dc5c8db833b56e52fe0378f91480525fc978
+      - `filename_digest_ok`: null
+      - `kind`: receipt_lattice.v1
+      - `schema`: receipt_lattice.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: inconsistent
+    - [24]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_a.json
+      - `file_sha256`: 33f9defac50df4f692db60eacc585c3a93eb06b7039e3be866984cee02c28481
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [25]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: lattice_drill_vol_bench_b.json
+      - `file_sha256`: 49651398e997ff6685e1ef31a1686e3799cb20c12595a8234b47c1a187990988
+      - `filename_digest_ok`: null
+      - `kind`: vol_bench
+      - `schema`: vol_bench.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [26]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_conf_t_vs_empirical.json
+      - `file_sha256`: 1859b044469b2c4ca7f0db5ed195aeb56868ef9aea0f46b5f763cf8301591763
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [27]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: loss_cs_real_drill_gaussian_vs_conf_t.json
+      - `file_sha256`: 60e68e2af9cd2544458a8ac821e1468b47b322798cb498a3e116d3f0ce0964de
+      - `filename_digest_ok`: null
+      - `kind`: loss_cs.v1
+      - `schema`: loss_cs.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [28]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: markout_amzn.json
+      - `file_sha256`: 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864
+      - `filename_digest_ok`: null
+      - `kind`: markout
+      - `schema`: markout.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [29]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_real_drill.json
+      - `file_sha256`: 047c2d4e487c7f3ff8571cb456fbf75c3ca1419b100fe2a77c3c5c4832d60a53
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [30]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: mcs_vol_drill.json
+      - `file_sha256`: 9d2b8e91aa81a8c1f2527135680f13ee4c8c71de6daa01f752fe1a4d9abd59c0
+      - `filename_digest_ok`: null
+      - `kind`: mcs_seq.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [31]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_clean.json
+      - `file_sha256`: 6baa7552e7954a8c081b94f02f1034bf0430b77eee57d4d852952e057aede65c
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [32]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_drill_defect.json
+      - `file_sha256`: e5a8b3d2432a2c2a60969286a54cbabeb7a05ef6ea8d1cecf9410beca77033df
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [33]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: monitor_run_real_drill.json
+      - `file_sha256`: 409a097a1fae3128d9a1100e78ac4a42dcfbfd405a2a9b6bef63fbd42caee3c1
+      - `filename_digest_ok`: null
+      - `kind`: monitor_run
+      - `schema`: monitor_run.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [34]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: multih_fleet_eval_5db1cab214e291d7.json
+      - `file_sha256`: 07cd44dd6a795bc0b93e21824b5a963f9c89902f405f91ce6c991e38cbdd4516
+      - `filename_digest_ok`: true
+      - `kind`: multih_fleet_eval
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: pass
+    - [35]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: nautilus_conformance_7bf19a08c147547b.json
+      - `file_sha256`: 3a10fca306535858496b88890cab846c2bcffa9e7408980315162a6a5451f960
+      - `filename_digest_ok`: true
+      - `kind`: nautilus_conformance
+      - `schema`: receipt.v2
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: blocked
+    - [36]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: panel_audit_real_drill.json
+      - `file_sha256`: 0da1154c057ee11386df9fe306cf03d63cfaee1a7915df4e51e51b570e2a35de
+      - `filename_digest_ok`: null
+      - `kind`: panel_audit.v1
+      - `schema`: panel_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [37]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: rankic_eval_9ebdad7da83e7348.json
+      - `file_sha256`: ff139132f80998e336918077dffacfe6d7a660305d025ca635cdcbe7837251d4
+      - `filename_digest_ok`: true
+      - `kind`: cross_sectional_rankic_eval
+      - `schema`: cross_sectional_rankic.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [38]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_manifest.json
+      - `file_sha256`: b6e858a81744c40d82a119027400b70b46974444019913e1ea4dc15fc288fb69
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: 1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [39]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_test.json
+      - `file_sha256`: df39bc572dd89e636fd56346687a2de7dfed873a9e4b3c51e2d87dbcc62d955a
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [40]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: real_benchmark_us_wide_validation.json
+      - `file_sha256`: 8c4d8dd4b5af7419dfdf11f5f15f87b437d94db7f33d1b3719842be79b22a0a3
+      - `filename_digest_ok`: null
+      - `kind`: null
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [41]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_140b073ea589b0c7.json
+      - `file_sha256`: b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [42]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_1e8e1446e506fce1.json
+      - `file_sha256`: 30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [43]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_2c14615c26efd19b.json
+      - `file_sha256`: b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [44]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_46445c3b227aa15e.json
+      - `file_sha256`: 46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [45]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_47297eff3cb55178.json
+      - `file_sha256`: a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [46]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_4f4a495b59d022fb.json
+      - `file_sha256`: 6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [47]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_771602cd1580476c.json
+      - `file_sha256`: 52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [48]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_85db152db863d25d.json
+      - `file_sha256`: 4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [49]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_8977244ef78bfd2f.json
+      - `file_sha256`: 7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [50]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_a6fd40311ce0fa04.json
+      - `file_sha256`: dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [51]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_d311f5ea367a66a9.json
+      - `file_sha256`: 4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [52]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: serial_watch_dbd21a6c99c81e00.json
+      - `file_sha256`: 072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f
+      - `filename_digest_ok`: true
+      - `kind`: serial_watch.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [53]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: suite_health_drill.json
+      - `file_sha256`: 5a7d32e1da6c12cd23d1d713f996f242cf6dec95b22923b0264ec96818734de4
+      - `filename_digest_ok`: null
+      - `kind`: suite_health
+      - `schema`: suite_health.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [54]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: tail_real_drill.json
+      - `file_sha256`: 9b36d560170c53b02f873de648f4c9ea83d7e30e61ab0ad598a2ea4d05b477e4
+      - `filename_digest_ok`: null
+      - `kind`: tail_audit
+      - `schema`: tail_audit.v1
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: null
+    - [55]
+      - `contract_legacy`: false
+      - `digest_convention`: canonical_json
+      - `errors`:
+      - `file`: verdict_real_drill.json
+      - `file_sha256`: 63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7
+      - `filename_digest_ok`: null
+      - `kind`: honest_verdict.v1
+      - `schema`: unknown
+      - `sealed`: true
+      - `valid`: true
+      - `verdict`: not_supported
+  - `findings`:
+  - `index_fresh`: true
+  - `n_files`: 56
+  - `n_invalid_sealed`: 2
+  - `n_sealed`: 56
+  - `n_unsealed`: 0
+  - `n_valid`: 54
+  - `receipts_dir`: receipts
+  - `schema`: evidence_audit.v1
+- `receipt_sha256`: f45ae8d6bc7cd677b07900271ed460acece232a669cefebb69aa621e19bbbb62
 - `schema`: receipt.v2
 - `schema_version`: 2
 - `verdict`: pass
@@ -18982,6 +20681,312 @@ counted. Prose that contains such a token is quoted verbatim.
   - 0.9
   - 0.95
 
+### `receipts/fleet_eval_5e907be710811a44.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/fleet_eval_5e907be710811a44.json | c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1 | 5e907be710811a448c7268f805138bf0e59efffecdb21b7a467678681f85c9e4 | not_checked | absent | inputs_sha256=ca64872956b0c9fb2ce99d12504ae02cf54610a95efea34c53ede9c48fd5f443 | unspecified | absent | absent | false |
+
+- `data_label`: SYNTHETIC
+- `kind`: distribution_fleet_eval
+- `model_versions`:
+  - `empirical`:
+    - `head`: empirical
+    - `version`: v1
+  - `gaussian`:
+    - `head`: gaussian
+    - `version`: v1
+  - `hstep_emp`:
+    - `head`: hstep
+    - `version`: v1
+  - `hstep_t`:
+    - `head`: hstep
+    - `version`: v1
+  - `qar`:
+    - `head`: qar
+    - `version`: v1
+- `models`:
+  - empirical
+  - gaussian
+  - hstep_emp
+  - hstep_t
+  - qar
+- `n_error_rows`: 0
+- `n_eval`: 64
+- `n_rows`: 10
+- `n_train`: 128
+- `receipt_sha256`: 5e907be710811a448c7268f805138bf0e59efffecdb21b7a467678681f85c9e4
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - fleet
+    - --models
+    - empirical,gaussian,qar,hstep_t,hstep_emp
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/fleet_eval_9418dee658765f89.json
+      - `sha256`: 1904079220e70c8076b7149d3340dffa3ca457627873764f16c0f29d3db36f6c
+- `results`:
+  - [0]
+    - `coverage_80`: 0.75
+    - `coverage_90`: 0.90625
+    - `crps`: 0.009466660066469929
+    - `error`: null
+    - `family`: distribution
+    - `model`: empirical
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0016455991044574154
+    - `pinball_0.1`: 0.0027697298880024366
+    - `pinball_0.25`: 0.005160878046247369
+    - `pinball_0.5`: 0.0067971322122166635
+    - `pinball_0.75`: 0.005899595616393208
+    - `pinball_0.9`: 0.0032023020990120735
+    - `pinball_0.95`: 0.0016780920934117566
+    - `pit_ks`: 0.09861788199866184
+    - `pit_ks_p`: 0.5298376418958527
+    - `seed`: 7
+    - `shard`: iid_gaussian
+    - `status`: ok
+  - [1]
+    - `coverage_80`: 0.765625
+    - `coverage_90`: 0.90625
+    - `crps`: 0.009413058212869852
+    - `error`: null
+    - `family`: distribution
+    - `model`: gaussian
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0015630630588126997
+    - `pinball_0.1`: 0.002771573954415142
+    - `pinball_0.25`: 0.005185950068952102
+    - `pinball_0.5`: 0.006750982884428852
+    - `pinball_0.75`: 0.0058905528928857
+    - `pinball_0.9`: 0.0031276384494235508
+    - `pinball_0.95`: 0.0016475006737709731
+    - `pit_ks`: 0.08956606882724061
+    - `pit_ks_p`: 0.6504412231379546
+    - `seed`: 7
+    - `shard`: iid_gaussian
+    - `status`: ok
+  - [2]
+    - `coverage_80`: 0.71875
+    - `coverage_90`: 0.890625
+    - `crps`: 0.009605247965573849
+    - `error`: null
+    - `family`: distribution
+    - `model`: qar
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0016540541383107685
+    - `pinball_0.1`: 0.002743165249645447
+    - `pinball_0.25`: 0.005170615918802055
+    - `pinball_0.5`: 0.006712071030714845
+    - `pinball_0.75`: 0.006213295101327136
+    - `pinball_0.9`: 0.003225665682499545
+    - `pinball_0.95`: 0.0018395848036675845
+    - `pit_ks`: 0.09952680663843394
+    - `pit_ks_p`: 0.5181371984963417
+    - `seed`: 7
+    - `shard`: iid_gaussian
+    - `status`: ok
+  - [3]
+    - `coverage_80`: 0.75
+    - `coverage_90`: 0.90625
+    - `crps`: 0.00941428508499235
+    - `error`: null
+    - `family`: distribution
+    - `model`: hstep_t
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0015613608033042447
+    - `pinball_0.1`: 0.002769856378425242
+    - `pinball_0.25`: 0.005177740163532663
+    - `pinball_0.5`: 0.006750982884428852
+    - `pinball_0.75`: 0.0058905528928857006
+    - `pinball_0.9`: 0.003140699593415551
+    - `pinball_0.95`: 0.0016486355107766097
+    - `pit_ks`: 0.08770862981301075
+    - `pit_ks_p`: 0.6755692279949145
+    - `seed`: 7
+    - `shard`: iid_gaussian
+    - `status`: ok
+  - [4]
+    - `coverage_80`: 0.75
+    - `coverage_90`: 0.90625
+    - `crps`: 0.009466660066469929
+    - `error`: null
+    - `family`: distribution
+    - `model`: hstep_emp
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0016455991044574147
+    - `pinball_0.1`: 0.0027697298880024366
+    - `pinball_0.25`: 0.005160878046247369
+    - `pinball_0.5`: 0.0067971322122166635
+    - `pinball_0.75`: 0.005899595616393209
+    - `pinball_0.9`: 0.0032023020990120743
+    - `pinball_0.95`: 0.0016780920934117568
+    - `pit_ks`: 0.09861788199866217
+    - `pit_ks_p`: 0.5298376418958487
+    - `seed`: 7
+    - `shard`: iid_gaussian
+    - `status`: ok
+  - [5]
+    - `coverage_80`: 0.96875
+    - `coverage_90`: 1.0
+    - `crps`: 0.009603513524494758
+    - `error`: null
+    - `family`: distribution
+    - `model`: empirical
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.002785849397830756
+    - `pinball_0.1`: 0.0046039186410845815
+    - `pinball_0.25`: 0.0074271478089587475
+    - `pinball_0.5`: 0.005242654521618642
+    - `pinball_0.75`: 0.004817885899789753
+    - `pinball_0.9`: 0.004437719529663061
+    - `pinball_0.95`: 0.002748063083124831
+    - `pit_ks`: 0.31224787204760174
+    - `pit_ks_p`: null
+    - `seed`: 8
+    - `shard`: regime_switch
+    - `status`: ok
+  - [6]
+    - `coverage_80`: 0.96875
+    - `coverage_90`: 1.0
+    - `crps`: 0.0096406690220009
+    - `error`: null
+    - `family`: distribution
+    - `model`: gaussian
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.002914410723915092
+    - `pinball_0.1`: 0.004769391352017307
+    - `pinball_0.25`: 0.007203136202436758
+    - `pinball_0.5`: 0.005104440669116631
+    - `pinball_0.75`: 0.005375043639996348
+    - `pinball_0.9`: 0.004029744648745209
+    - `pinball_0.95`: 0.0026268240449658148
+    - `pit_ks`: 0.30291716699956917
+    - `pit_ks_p`: null
+    - `seed`: 8
+    - `shard`: regime_switch
+    - `status`: ok
+  - [7]
+    - `coverage_80`: 0.984375
+    - `coverage_90`: 1.0
+    - `crps`: 0.00923428098889812
+    - `error`: null
+    - `family`: distribution
+    - `model`: qar
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0029774190290607467
+    - `pinball_0.1`: 0.0045218405922917565
+    - `pinball_0.25`: 0.006759112852252844
+    - `pinball_0.5`: 0.005256206171103561
+    - `pinball_0.75`: 0.004620056789006715
+    - `pinball_0.9`: 0.004161146486031415
+    - `pinball_0.95`: 0.0027014574522245434
+    - `pit_ks`: 0.3258407137354916
+    - `pit_ks_p`: null
+    - `seed`: 8
+    - `shard`: regime_switch
+    - `status`: ok
+  - [8]
+    - `coverage_80`: 0.96875
+    - `coverage_90`: 1.0
+    - `crps`: 0.009544535748182773
+    - `error`: null
+    - `family`: distribution
+    - `model`: hstep_t
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.0029057463744273054
+    - `pinball_0.1`: 0.004733329242586955
+    - `pinball_0.25`: 0.007099679022316869
+    - `pinball_0.5`: 0.005104440669116631
+    - `pinball_0.75`: 0.0052870019485251555
+    - `pinball_0.9`: 0.003977290671391971
+    - `pinball_0.95`: 0.0026181596954780286
+    - `pit_ks`: 0.30047499040043485
+    - `pit_ks_p`: null
+    - `seed`: 8
+    - `shard`: regime_switch
+    - `status`: ok
+  - [9]
+    - `coverage_80`: 0.96875
+    - `coverage_90`: 1.0
+    - `crps`: 0.009603513524494758
+    - `error`: null
+    - `family`: distribution
+    - `model`: hstep_emp
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `pinball_0.05`: 0.002785849397830756
+    - `pinball_0.1`: 0.0046039186410845815
+    - `pinball_0.25`: 0.0074271478089587475
+    - `pinball_0.5`: 0.005242654521618642
+    - `pinball_0.75`: 0.004817885899789752
+    - `pinball_0.9`: 0.004437719529663061
+    - `pinball_0.95`: 0.002748063083124831
+    - `pit_ks`: 0.31224787204760174
+    - `pit_ks_p`: null
+    - `seed`: 8
+    - `shard`: regime_switch
+    - `status`: ok
+- `schema`: fleet_eval.v1
+- `seed`: 7
+- `shards`:
+  - `iid_gaussian`:
+    - `config`:
+      - `data_label`: SYNTHETIC
+      - `mu`: 0.0
+      - `seed`: 7
+      - `serial_dependence`: false
+      - `sigma`: 0.02
+    - `n`: 192
+    - `seed`: 7
+    - `x_sha256`: 9ea77139a1584321c11c9b7ed81b372a4da7d0cdd71d467ff0c43730d9fd1c18
+    - `y_sha256`: 14baedd59f7929da41b0ebfae5abb3c8087c42a6176df884c21cecf2d236fc08
+  - `regime_switch`:
+    - `config`:
+      - `data_label`: SYNTHETIC
+      - `n_state1`: 117
+      - `p_leave`:
+        - 0.04
+        - 0.08
+      - `rho`: 0.1
+      - `seed`: 8
+      - `serial_dependence`: true
+      - `sigma`:
+        - 0.008
+        - 0.035
+    - `n`: 192
+    - `seed`: 8
+    - `x_sha256`: 9ea77139a1584321c11c9b7ed81b372a4da7d0cdd71d467ff0c43730d9fd1c18
+    - `y_sha256`: a5ec7bbe3add5ccd6885d9bba654b07668d37460494900464482ce13aa8a2612
+- `taus`:
+  - 0.05
+  - 0.1
+  - 0.25
+  - 0.5
+  - 0.75
+  - 0.9
+  - 0.95
+
 ### `receipts/fleet_race_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -19114,6 +21119,127 @@ counted. Prose that contains such a token is quoted verbatim.
   - `yahoo_lin`: fhs_skew
   - `yahoo_maa`: fhs_skew
   - `yahoo_rjf`: fhs_skew
+
+### `receipts/honest_verdict_b133e8b3992af893.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/honest_verdict_b133e8b3992af893.json | 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a | b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882 | not_checked | absent | inputs_sha256=8d8cdbcb4d70535f3b10e5dfa969b96fffdc18784fd00979e8bd587e7ee9a626 | unspecified | absent | true | false |
+
+- `alpha`: 0.05
+- `components`:
+  - `calibration`:
+    - `alarm_origin`: 119
+    - `channel_wealths`:
+      - `grapa_disp`: 1030.4024638903657
+      - `grapa_loc`: 0.4851113698532761
+      - `loc_hi`: 0.9385093598974767
+      - `loc_lo`: 0.00044817339722807835
+      - `overconf`: 1.0460856313663306e-16
+      - `underconf`: 0.0
+    - `final_evalue`: 171.97108879891894
+    - `miscalibrated`: true
+  - `drift`:
+    - `alarm_index`: null
+    - `eprocess_alarmed`: false
+    - `final_evalue`: 0.15722828774744887
+    - `page_hinkley_alarmed`: true
+  - `localize`:
+    - `skipped`: no_drift_alarm
+  - `magnitude`:
+    - `alpha`: 0.05
+    - `bound`: 0.002735780949881265
+    - `challenger`: challenger
+    - `cs_high`: 0.00014372628968201232
+    - `cs_low`: -0.0002043815517922361
+    - `data_label`: UNKNOWN
+    - `evidence`:
+      - ville_inequality
+      - betting_confidence_sequence
+      - bounded_increments
+      - time_uniform_coverage
+    - `excludes_zero`: false
+    - `incumbent`: incumbent
+    - `interpretation`: inconclusive
+    - `kind`: loss_cs.v1
+    - `lam`: 0.5
+    - `mean_diff`: -2.8897283353086835e-05
+    - `n`: 128
+    - `schema`: loss_cs.v1
+  - `promotion`:
+    - `anytime_p`: 0.4139527740625888
+    - `final_evalue`: 2.0599286482028627
+    - `promoted`: false
+    - `promotion_origin`: null
+    - `runner_up`: gaussian
+  - `winner_curse`:
+    - `corrected_score`: 0.004185345768262392
+    - `honest_score`: 0.00418459397378382
+    - `naive_score`: 0.00418254937835278
+    - `selected_head`: qar
+    - `selection_aware_ci`:
+      - 0.0038444700889850784
+      - 0.004508393721572966
+    - `selection_bias`: 2.796389909611764e-06
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - selection_bias_corrected
+  - anytime_valid_promotion
+  - level_shift_monitor
+  - magnitude_confidence_sequence
+  - pit_uniformity_when_supplied
+  - changepoint_localization_when_drifted
+  - proper_score_only
+- `kind`: honest_verdict.v1
+- `n_heads`: 3
+- `n_obs`: 128
+- `receipt_sha256`: b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - verdict
+    - --models
+    - empirical,gaussian,qar
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --n-boot
+    - 200
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/honest_verdict_9a043a885f02042b.json
+      - `sha256`: 9725bced9cbbf03beea8c4f111e61e3c076d8875441fa2c0757fae11d0770549
+- `research_only`: true
+- `run`:
+  - `excluded_heads`:
+  - `params`:
+    - `alpha`: 0.05
+    - `data_labels`:
+      - `iid_gaussian`: SYNTHETIC
+      - `regime_switch`: SYNTHETIC
+    - `heads`:
+      - empirical
+      - gaussian
+      - qar
+    - `n_boot`: 200
+    - `n_eval`: 64
+    - `n_train`: 128
+    - `seed`: 7
+    - `shards`:
+      - iid_gaussian
+      - regime_switch
+  - `schema`: honest_verdict_run.v1
+  - `status_sha256`: 742d8432903c98fbdfd73bb27ce17dfa0cd276a9f505243bf100ef777bfd1032
+- `unavailable_lanes`:
+- `verdict`: not_supported
+- `winner`: qar
 
 ### `receipts/honest_verdict_real_drill.json`
 
@@ -20770,6 +22896,538 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `receipt_sha256`: 4524b1c08314ae160bd4831ee4994b8a12865a1278e4398750a2afc9a1a3b743
 - `schema`: loss_cs.v1
 
+### `receipts/markout_amzn.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/markout_amzn.json | 70730f6f3bd4e398497f1e302f3b375c739a548b856b68f2282f4fa18b3de864 | a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9 | not_checked | 17c1e4d59806b28f67f7051bd80bf47edf3bed9d | absent | unspecified | absent | true | absent |
+
+- `kind`: markout
+- `schema`: markout.v1
+- `ticker`: AMZN
+- `real`:
+  - `horizons_s`:
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 1.0
+    - 2.0
+    - 5.0
+    - 10.0
+    - 30.0
+  - `n_executions`: 8974
+  - `sides`:
+    - `buy`:
+      - `mean`:
+        - 1.8120840266222962
+        - 2.0348377703826954
+        - 2.633839434276206
+        - 3.141742928452579
+        - 3.8300395256916997
+        - 4.345681581685744
+        - 4.80685618729097
+        - 5.306231640788922
+        - 5.366828855510895
+      - `median`:
+        - 1.0
+        - 1.0
+        - 1.5
+        - 2.0
+        - 2.5
+        - 3.0
+        - 3.5
+        - 4.5
+        - 3.5
+      - `n`:
+        - 4808
+        - 4808
+        - 4808
+        - 4808
+        - 4807
+        - 4805
+        - 4784
+        - 4766
+        - 4727
+    - `sell`:
+      - `mean`:
+        - 1.4675948151704272
+        - 1.578852616418627
+        - 1.9087854056649063
+        - 2.2695725264169067
+        - 2.7596731554914684
+        - 3.4125
+        - 4.09822072613609
+        - 4.857523624909135
+        - 6.315479115479116
+      - `median`:
+        - 0.5
+        - 0.5
+        - 0.5
+        - 1.0
+        - 1.5
+        - 2.0
+        - 3.0
+        - 3.5
+        - 5.0
+      - `n`:
+        - 4166
+        - 4166
+        - 4166
+        - 4164
+        - 4161
+        - 4160
+        - 4159
+        - 4127
+        - 4070
+  - `signed`:
+    - `mean`:
+      - 1.6521618007577445
+      - 1.823155783374192
+      - 2.2972476041898817
+      - 2.736959429335711
+      - 3.333407671721677
+      - 3.91266034578918
+      - 4.47730068209773
+      - 5.0979984257281
+      - 5.805729225872456
+    - `median`:
+      - 0.5
+      - 1.0
+      - 1.0
+      - 1.5
+      - 2.0
+      - 2.5
+      - 3.5
+      - 4.0
+      - 4.5
+    - `n`:
+      - 8974
+      - 8974
+      - 8974
+      - 8972
+      - 8968
+      - 8965
+      - 8943
+      - 8893
+      - 8797
+    - `noise_floor_sem`:
+      - 0.03418024606033118
+      - 0.03582530557733215
+      - 0.04229604920920552
+      - 0.04816844187842592
+      - 0.057086964058393176
+      - 0.06717101456204723
+      - 0.0782473596427618
+      - 0.09699452615786051
+      - 0.15611922579743887
+  - `toxicity_half_life_s`: 0.05
+  - `n_book_events`: 269748
+  - `tape_files`:
+    - AMZN_2012-06-21_34200000_57600000_message_10.csv
+    - AMZN_2012-06-21_34200000_57600000_orderbook_10.csv
+  - `tape_sha256`: c85a75b51f3616a683f825c2e03f984535e9329a8be5ab12325130d32223a2c5
+  - `data_label`: REAL_LOBSTER_SAMPLE
+- `sim_arms`:
+  - `iid`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 9105
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.0014508928571428572
+          - 0.0035706315554563713
+          - 0.00022326412145568208
+          - -0.0006700915791824883
+          - -0.00949508489722967
+          - -0.015876565295169946
+          - -0.03954167602785891
+          - -0.040843806104129264
+          - -0.04262957146062374
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4480
+          - 4481
+          - 4479
+          - 4477
+          - 4476
+          - 4472
+          - 4451
+          - 4456
+          - 4457
+      - `sell`:
+        - `mean`:
+          - -0.005749668288367979
+          - -0.007408226448474126
+          - -0.007520460075204601
+          - -0.004758742806551572
+          - -0.00420726306465899
+          - -0.0021050299135829823
+          - -0.0034390947415132017
+          - 0.0058823529411764705
+          - -0.013780840186708157
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4522
+          - 4522
+          - 4521
+          - 4518
+          - 4516
+          - 4513
+          - 4507
+          - 4505
+          - 4499
+    - `signed`:
+      - `mean`:
+        - -0.0021661852921572985
+        - -0.0019437965122736866
+        - -0.0036666666666666666
+        - -0.002723735408560311
+        - -0.0068394128113879
+        - -0.008959376739009461
+        - -0.021377539629381558
+        - -0.017352973998437674
+        - -0.02813756141134435
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - `n`:
+        - 9002
+        - 9003
+        - 9000
+        - 8995
+        - 8992
+        - 8985
+        - 8958
+        - 8961
+        - 8956
+      - `noise_floor_sem`:
+        - 0.005060761913509212
+        - 0.0051622043427196635
+        - 0.005400778996993859
+        - 0.005754719843043273
+        - 0.006427321026182346
+        - 0.0075119320331005785
+        - 0.00981252717966765
+        - 0.012119135727581595
+        - 0.017429448674705694
+    - `toxicity_half_life_s`: null
+    - `n_events`: 54146
+    - `sim_seconds`: 45000.0
+    - `flow`: iid_zi
+    - `seed`: 7
+    - `data_label`: SYNTHETIC
+  - `markov_regime`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 10344
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.00361794500723589
+          - 0.004654530409598676
+          - 0.005703027789299046
+          - 0.007481296758104738
+          - -0.0042860129625757895
+          - -0.0013652593992858643
+          - 0.02435408725116476
+          - 0.017887746358183375
+          - 0.0998911860718172
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4837
+          - 4834
+          - 4822
+          - 4812
+          - 4783
+          - 4761
+          - 4722
+          - 4668
+          - 4595
+      - `sell`:
+        - `mean`:
+          - -0.01810344827586207
+          - -0.01886182366889416
+          - -0.01307542684244651
+          - -0.01634906886097878
+          - -0.025893824485373782
+          - -0.03628068650879861
+          - -0.07070817803113352
+          - -0.09598411297440423
+          - -0.19876819708846585
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+        - `n`:
+          - 4640
+          - 4639
+          - 4627
+          - 4618
+          - 4615
+          - 4603
+          - 4561
+          - 4532
+          - 4465
+    - `signed`:
+      - `mean`:
+        - -0.00701698849846998
+        - -0.006861606671592948
+        - -0.0034924330616996507
+        - -0.0041887592788971365
+        - -0.014896786550329857
+        - -0.018528406663818883
+        - -0.022352687708714854
+        - -0.03820652173913044
+        - -0.04729580573951435
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+      - `n`:
+        - 9477
+        - 9473
+        - 9449
+        - 9430
+        - 9398
+        - 9364
+        - 9283
+        - 9200
+        - 9060
+      - `noise_floor_sem`:
+        - 0.006020692316762725
+        - 0.006142118442148533
+        - 0.006555385122683627
+        - 0.007109779186827386
+        - 0.00800840464230981
+        - 0.00920911521190748
+        - 0.011704716467079355
+        - 0.01435264889056644
+        - 0.020150868836827932
+    - `toxicity_half_life_s`: null
+    - `n_events`: 54192
+    - `sim_seconds`: 45000.0
+    - `flow`: markov_regime_calm_bursty
+    - `seed`: 8
+    - `data_label`: SYNTHETIC
+  - `split`:
+    - `horizons_s`:
+      - 0.05
+      - 0.1
+      - 0.25
+      - 0.5
+      - 1.0
+      - 2.0
+      - 5.0
+      - 10.0
+      - 30.0
+    - `n_executions`: 13014
+    - `sides`:
+      - `buy`:
+        - `mean`:
+          - 0.08253094910591471
+          - 0.0840683572216097
+          - 0.11624649859943978
+          - 0.14793741109530584
+          - 0.2212068465332173
+          - 0.3152798789712557
+          - 0.6062809917355372
+          - 1.0435691878703381
+          - 2.3922287390029324
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.5
+          - 0.5
+          - 2.0
+        - `n`:
+          - 3635
+          - 3628
+          - 3570
+          - 3515
+          - 3447
+          - 3305
+          - 3025
+          - 2869
+          - 2728
+      - `sell`:
+        - `mean`:
+          - 0.11901782921488896
+          - 0.11874217772215269
+          - 0.13925855513307986
+          - 0.17192070198245044
+          - 0.20587253920587253
+          - 0.35470836261419536
+          - 0.62
+          - 1.082559547840129
+          - 2.619916142557652
+        - `median`:
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.0
+          - 0.5
+          - 0.5
+          - 2.0
+        - `n`:
+          - 3197
+          - 3196
+          - 3156
+          - 3077
+          - 2997
+          - 2846
+          - 2650
+          - 2477
+          - 2385
+    - `signed`:
+      - `mean`:
+        - 0.09960480093676816
+        - 0.10030773739742087
+        - 0.12704430567945288
+        - 0.15913228155339806
+        - 0.21407510862818124
+        - 0.33352300438953014
+        - 0.6126872246696036
+        - 1.0616348671904228
+        - 2.4984353608449053
+      - `median`:
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.0
+        - 0.5
+        - 0.5
+        - 2.0
+      - `n`:
+        - 6832
+        - 6824
+        - 6726
+        - 6592
+        - 6444
+        - 6151
+        - 5675
+        - 5346
+        - 5113
+      - `noise_floor_sem`:
+        - 0.011362642800730068
+        - 0.011674244567031235
+        - 0.012093806581306625
+        - 0.013125434371388495
+        - 0.015198775698658499
+        - 0.019218147594887335
+        - 0.027223895455151945
+        - 0.040215717629467275
+        - 0.06643099397144156
+    - `toxicity_half_life_s`: 0.05
+    - `n_events`: 64237
+    - `sim_seconds`: 45000.0
+    - `flow`: split_metaorder_powerlaw
+    - `seed`: 9
+    - `n_episodes`: 205
+    - `data_label`: SYNTHETIC
+- `divergences`:
+  - [0]
+    - `arm`: iid
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: -0.021377539629381558
+    - `abs_gap_ticks`: 4.498678221727111
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+  - [1]
+    - `arm`: markov_regime
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: -0.022352687708714854
+    - `abs_gap_ticks`: 4.4996533698064445
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+  - [2]
+    - `arm`: split
+    - `horizon_s`: 5.0
+    - `real_mean_ticks`: 4.47730068209773
+    - `arm_mean_ticks`: 0.6126872246696036
+    - `abs_gap_ticks`: 3.8646134574281263
+    - `threshold_ticks`: 2.238650341048865
+    - `diverges`: true
+- `claim`: markout_curve_measured
+- `interpretation`: Post-execution adverse-selection curve: signed mid move in ticks at h in {0.05..30}s after each visible EXECUTION, sign-adjusted so positive = drift in the aggressor's direction (toxic flow). Real arm is the official LOBSTER AMZN 2012-06-21 level-10 sample; sim arms are labeled SYNTHETIC ZI-LOB variants (iid baseline, Markov calm/bursty regime flow, power-law metaorder splitting flow) under the identical measurement. 'divergences' flags arms whose 5s markout differs from the tape's by more than half the tape value. toxicity_half_life_s is the first horizon whose pooled signed mean exceeds its own standard-error floor (std/sqrt(n)); None when no horizon clears it. Research-only; no live-trading claim.
+- `git_revision`: 17c1e4d59806b28f67f7051bd80bf47edf3bed9d
+- `data_label`: MIXED
+- `research_only`: true
+- `receipt_sha256`: a21b2306c78b157e4fad493a7fd3d2b744a20d918d65ec12e26a0270ee1833c9
+
 ### `receipts/mcs_real_drill.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -20864,6 +23522,73 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - realized_garch
   - rv_ewma
   - rv_roll
+
+### `receipts/monitor_run_13d20aef00774027.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/monitor_run_13d20aef00774027.json | 3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d | 13d20aef00774027a9772ced8a4a118c875cec064b33ed826e7b78311b411e83 | not_checked | absent | inputs_sha256=b1a31d66d88e2934bb13c29f4161d1f51ebaa0afaa3de2b135c73fbb44521b0b | unspecified | absent | true | false |
+
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - anytime_valid_monitor_lanes
+  - per_shard_head_independence
+  - fleet_median_drift_pairing
+  - lazy_lane_resolution
+  - proper_score_only
+- `kind`: monitor_run
+- `lanes_available`:
+  - `calibration`: true
+  - `conformal`: true
+  - `coverage`: true
+  - `drift`: true
+  - `emerge`: true
+  - `tail`: true
+- `level`: research
+- `n_alarm_rows`: 0
+- `n_rows`: 6
+- `params`:
+  - `alpha`: 0.05
+  - `data_labels`:
+    - `iid_gaussian`: SYNTHETIC
+    - `regime_switch`: SYNTHETIC
+  - `heads`:
+    - empirical
+    - gaussian
+    - qar
+  - `level`: 0.9
+  - `n_eval`: 64
+  - `n_train`: 128
+  - `seed`: 7
+  - `shards`:
+    - iid_gaussian
+    - regime_switch
+  - `tail_cell`:
+    - 0.05
+    - 0.1
+- `receipt_sha256`: 13d20aef00774027a9772ced8a4a118c875cec064b33ed826e7b78311b411e83
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - fleet-monitor
+    - --models
+    - empirical,gaussian,qar
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/monitor_run_5a2fdb39470f5feb.json
+      - `sha256`: a57dca296b0cab9b3128f67956fe36150eebfdb0a026cc3db51a8a8728f231e4
+- `research_only`: true
+- `schema`: monitor_run.v1
 
 ### `receipts/monitor_run_drill_clean.json`
 
@@ -36794,6 +39519,241 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
     - `pooled_evalue`: 9059835319.321789
     - `shard`: FFIV
 
+### `receipts/rankic_eval_8d740c0ddf6d5c54.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/rankic_eval_8d740c0ddf6d5c54.json | e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81 | 8d740c0ddf6d5c5436264a719179b2ea00d66d4a6b5e2d68dd662e7590defb71 | not_checked | absent | inputs_sha256=9073fb912af25dca9cd48eca45f475c9ef13c0c77ada98992c68661b2006b2d8 | unspecified | absent | absent | false |
+
+- `challengers`:
+  - identity
+  - noisy
+  - lagged
+- `data_label`: SYNTHETIC
+- `horizons`:
+  - 1
+  - 5
+- `kind`: cross_sectional_rankic_eval
+- `n_assets`: 16
+- `n_dates`: 60
+- `n_error_rows`: 0
+- `n_rows`: 12
+- `panels`:
+  - `linear_signal`:
+    - `data_label`: SYNTHETIC
+    - `description`: linear_signal: fwd = beta*signal + eps
+    - `forward_sha256`:
+      - `1`: 83938f636602c215a26c175dbee2f53fa64767db147ba6040945220cb535a657
+      - `5`: de13071a97e853308be089d94a8b6292f57718b8f43e34dca942d9f1095bb1a3
+    - `n_assets`: 16
+    - `n_dates`: 60
+    - `seed`: 104740
+    - `signal_sha256`: c7884445bca9d6fec2393903596fc0b54fbf9ca2a1df0bd55cdecc06e190ae06
+  - `pure_noise`:
+    - `data_label`: SYNTHETIC
+    - `description`: pure_noise: fwd independent of signal
+    - `forward_sha256`:
+      - `1`: a881044a3be91bd2525f21feaa8c4c9c67313da8bd2eb8817d89a89d1ba29702
+      - `5`: cbf40b4f83d6ed1c9efa4737f40f22b3a76e53032c269a6864448f4f59873d1a
+    - `n_assets`: 16
+    - `n_dates`: 60
+    - `seed`: 11
+    - `signal_sha256`: 83beddccaef4913fc22b82476f2a47e5296220c67b65502a6985a96a7947a54a
+- `receipt_sha256`: 8d740c0ddf6d5c5436264a719179b2ea00d66d4a6b5e2d68dd662e7590defb71
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - rankic
+    - --panels
+    - pure_noise,linear_signal
+    - --challengers
+    - identity,noisy,lagged
+    - --n-assets
+    - 16
+    - --n-dates
+    - 60
+    - --horizons
+    - 1,5
+    - --seed
+    - 11
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/rankic_eval_02738b0fa12b6676.json
+      - `sha256`: 211c506b2840a3a5ed65759db4a90b63b460a3f28850761e6eac99806c55d298
+- `results`:
+  - [0]
+    - `challenger`: identity
+    - `error`: 
+    - `horizon`: 1
+    - `icir_ann_pearson`: -1.9009782088751646
+    - `icir_pearson`: -0.11975037115325438
+    - `mean_pearson`: -0.029132726573750066
+    - `mean_spearman`: -0.02023928215353938
+    - `n_dates`: 59
+    - `p_spearman`: 0.5212153650308186
+    - `shard`: pure_noise
+    - `status`: ok
+    - `t_pearson`: -1.0864487092922395
+    - `t_spearman`: -0.6453964804947411
+  - [1]
+    - `challenger`: identity
+    - `error`: 
+    - `horizon`: 5
+    - `icir_ann_pearson`: -3.181236294678684
+    - `icir_pearson`: -0.20039904993934257
+    - `mean_pearson`: -0.04671045762208652
+    - `mean_spearman`: -0.043957219251336895
+    - `n_dates`: 55
+    - `p_spearman`: 0.16389724796779584
+    - `shard`: pure_noise
+    - `status`: ok
+    - `t_pearson`: -1.5078063434783282
+    - `t_spearman`: -1.4112823477319312
+  - [2]
+    - `challenger`: noisy
+    - `error`: 
+    - `horizon`: 1
+    - `icir_ann_pearson`: 0.3159084349299725
+    - `icir_pearson`: 0.01990036085457947
+    - `mean_pearson`: 0.004151154783926075
+    - `mean_spearman`: 0.018295114656031904
+    - `n_dates`: 59
+    - `p_spearman`: 0.47816234594986795
+    - `shard`: pure_noise
+    - `status`: ok
+    - `t_pearson`: 0.23070406655351647
+    - `t_spearman`: 0.713883391524331
+  - [3]
+    - `challenger`: noisy
+    - `error`: 
+    - `horizon`: 5
+    - `icir_ann_pearson`: -1.1327100490435362
+    - `icir_pearson`: -0.07135402612649934
+    - `mean_pearson`: -0.016480471607701247
+    - `mean_spearman`: 0.030374331550802137
+    - `n_dates`: 55
+    - `p_spearman`: 0.2046213278988016
+    - `shard`: pure_noise
+    - `status`: ok
+    - `t_pearson`: -0.7670130261443983
+    - `t_spearman`: 1.2840074521801748
+  - [4]
+    - `challenger`: lagged
+    - `error`: 
+    - `horizon`: 1
+    - `icir_ann_pearson`: -0.3351867773680959
+    - `icir_pearson`: -0.021114782277932256
+    - `mean_pearson`: -0.004633875014238986
+    - `mean_spearman`: 0.003988035892323026
+    - `n_dates`: 59
+    - `p_spearman`: 0.8840237932471338
+    - `shard`: pure_noise
+    - `status`: ok
+    - `t_pearson`: -0.17756925014623462
+    - `t_spearman`: 0.14651389172110124
+  - [5]
+    - `challenger`: lagged
+    - `error`: 
+    - `horizon`: 5
+    - `icir_ann_pearson`: -3.1192536516764973
+    - `icir_pearson`: -0.19649451043966915
+    - `mean_pearson`: -0.04585461395643827
+    - `mean_spearman`: -0.06203208556149732
+    - `n_dates`: 55
+    - `p_spearman`: 0.02183669959525495
+    - `shard`: pure_noise
+    - `status`: ok
+    - `t_pearson`: -1.7753433666931444
+    - `t_spearman`: -2.3615298104851985
+  - [6]
+    - `challenger`: identity
+    - `error`: 
+    - `horizon`: 1
+    - `icir_ann_pearson`: 24.05834890256328
+    - `icir_pearson`: 1.5155335274049084
+    - `mean_pearson`: 0.32009660976431614
+    - `mean_spearman`: 0.30558325024925226
+    - `n_dates`: 59
+    - `p_spearman`: 4.320068427633945e-15
+    - `shard`: linear_signal
+    - `status`: ok
+    - `t_pearson`: 10.315092006069307
+    - `t_spearman`: 10.536371557789227
+  - [7]
+    - `challenger`: identity
+    - `error`: 
+    - `horizon`: 5
+    - `icir_ann_pearson`: 20.447672610228103
+    - `icir_pearson`: 1.2880823003983457
+    - `mean_pearson`: 0.3250210495917273
+    - `mean_spearman`: 0.31828877005347583
+    - `n_dates`: 55
+    - `p_spearman`: 7.306060609585616e-11
+    - `shard`: linear_signal
+    - `status`: ok
+    - `t_pearson`: 8.700203290887131
+    - `t_spearman`: 8.080873988546475
+  - [8]
+    - `challenger`: noisy
+    - `error`: 
+    - `horizon`: 1
+    - `icir_ann_pearson`: 5.870630458212197
+    - `icir_pearson`: 0.36981495789501523
+    - `mean_pearson`: 0.09180780456101234
+    - `mean_spearman`: 0.06550348953140579
+    - `n_dates`: 59
+    - `p_spearman`: 0.008778074736495152
+    - `shard`: linear_signal
+    - `status`: ok
+    - `t_pearson`: 4.359570753406414
+    - `t_spearman`: 2.712345300455227
+  - [9]
+    - `challenger`: noisy
+    - `error`: 
+    - `horizon`: 5
+    - `icir_ann_pearson`: 4.009475893297263
+    - `icir_pearson`: 0.2525732405088834
+    - `mean_pearson`: 0.0662299888073039
+    - `mean_spearman`: 0.05641711229946524
+    - `n_dates`: 55
+    - `p_spearman`: 0.07679457477986884
+    - `shard`: linear_signal
+    - `status`: ok
+    - `t_pearson`: 2.0038056663470662
+    - `t_spearman`: 1.8040976769676234
+  - [10]
+    - `challenger`: lagged
+    - `error`: 
+    - `horizon`: 1
+    - `icir_ann_pearson`: 0.44417944905770834
+    - `icir_pearson`: 0.027980675230770937
+    - `mean_pearson`: 0.007679206482883079
+    - `mean_spearman`: 0.005583250249252248
+    - `n_dates`: 59
+    - `p_spearman`: 0.8567181440194039
+    - `shard`: linear_signal
+    - `status`: ok
+    - `t_pearson`: 0.23048484733110872
+    - `t_spearman`: 0.18135894458447757
+  - [11]
+    - `challenger`: lagged
+    - `error`: 
+    - `horizon`: 5
+    - `icir_ann_pearson`: 0.5615668527397992
+    - `icir_pearson`: 0.03537538659254142
+    - `mean_pearson`: 0.010302578401837693
+    - `mean_spearman`: 0.005882352941176472
+    - `n_dates`: 55
+    - `p_spearman`: 0.8965438224558474
+    - `shard`: linear_signal
+    - `status`: ok
+    - `t_pearson`: 0.25957480241352054
+    - `t_spearman`: 0.13064222081735188
+- `schema`: cross_sectional_rankic.v1
+- `seed`: 11
+
 ### `receipts/rankic_eval_9ebdad7da83e7348.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -38070,6 +41030,668 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
   - Historical availability timestamps were reconstructed.
 - `receipt_sha256`: 519c05933f3756cfc92503f3dd5147540ab4cade2471238b40a3f3ac47d525b7
 
+### `receipts/replay_proof_0de5fa4e0c739037.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_0de5fa4e0c739037.json | 4a870f4bb735b8ebf2c87ae3dde8994dfe2220d55ead2f10871ed2c893cf70c2 | 0de5fa4e0c739037f0fb56ca1911d744f241a2675a9ac44b467da5bae0393870 | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e
+- `data_label`: SYNTHETIC
+- `dataset_hash`: 125a1c1da9abcb487f09a5b4d8611cfbb7c50f5f1021e89eb707e7bf13cefd98
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:00:43.421727+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: replay_proof
+- `params_hash`: ee7ab3c9bed960071690918e2d93626dafd2d9dd150a8979e78a491b6ff2ede9
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - fleet
+    - --models
+    - empirical,gaussian,qar,hstep_t,hstep_emp
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 1904079220e70c8076b7149d3340dffa3ca457627873764f16c0f29d3db36f6c
+      - `match`: true
+      - `observed_sha256`: 1904079220e70c8076b7149d3340dffa3ca457627873764f16c0f29d3db36f6c
+      - `path`: data/metadata/replay/fleet_eval_9418dee658765f89.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 1.526571
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/fleet_eval_5e907be710811a44.json
+  - `receipt_sha256`: bd096130dbd902637e985ecd64678bb3051d513e59ecb3b28970a6a56627d37b
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - fleet
+    - --models
+    - empirical,gaussian,qar,hstep_t,hstep_emp
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: 5e907be710811a448c7268f805138bf0e59efffecdb21b7a467678681f85c9e4
+  - `source_receipt_sha256`: c95ce361609bdb00912147e0f87548fdbd2c0221ad27b8c1a4d0ba558b9330e1
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: 0de5fa4e0c739037f0fb56ca1911d744f241a2675a9ac44b467da5bae0393870
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/replay_proof_701ae84c3d9813e0.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_701ae84c3d9813e0.json | 4f49bb965f299970c04f1d01673142e0b6e5df77004c5d034b6bb6028760ad18 | 701ae84c3d9813e092f5b8072a25e373f854db43a5443893ecbe7159888a355e | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e
+- `data_label`: SYNTHETIC
+- `dataset_hash`: 18940e535e06df923f96fefbfb741425c3c1920937f1acce2ee8b8ef795f1521
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:01:04.985762+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: replay_proof
+- `params_hash`: 6790ba697bdae9544001c4c188a31f97979060c30355678b03b320d7531487c9
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - vol-bench
+    - --models
+    - rv_roll,rv_ewma,har
+    - --shards
+    - garch_vol,rough_vol
+    - --horizons
+    - 1
+    - --min-history
+    - 60
+    - --n-origins
+    - 10
+    - --n-bars
+    - 200
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 8594d8d5d8b0f4a50891ce3c47ae273d06890af537ed27a6274eb85587ecfd32
+      - `match`: true
+      - `observed_sha256`: 8594d8d5d8b0f4a50891ce3c47ae273d06890af537ed27a6274eb85587ecfd32
+      - `path`: data/metadata/replay/vol_bench_c584407c8097493e.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 1.16173
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/vol_bench_f3bf2afc2f159ace.json
+  - `receipt_sha256`: 7ff0911b668f9ea394300d56d56b6f92915e13c4ec443b956727af9f298488a9
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - vol-bench
+    - --models
+    - rv_roll,rv_ewma,har
+    - --shards
+    - garch_vol,rough_vol
+    - --horizons
+    - 1
+    - --min-history
+    - 60
+    - --n-origins
+    - 10
+    - --n-bars
+    - 200
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: f3bf2afc2f159acea32293b04760b07db7584dd45d460d1b4c295711b31d4aea
+  - `source_receipt_sha256`: b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: 701ae84c3d9813e092f5b8072a25e373f854db43a5443893ecbe7159888a355e
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/replay_proof_73137fe1a97c3538.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_73137fe1a97c3538.json | 74fbc282a7a1d5eb53bcfa17e44a460f8235f5950c463233abf70099e1a5c91a | 73137fe1a97c353801a74dde771cfb93687be41a1f90367d1ffed1928c0a77f2 | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e
+- `data_label`: SYNTHETIC
+- `dataset_hash`: 0b471c03f48953123217a050a504b0e5ef74a3f8f8028315cfc0373fcd9780b9
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:02:22.715579+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: replay_proof
+- `params_hash`: 0c4de3448b3bbbe2e3bb725d08f3a8fd0154a7444b782cb0c2a5569cf925b730
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - rankic
+    - --panels
+    - pure_noise,linear_signal
+    - --challengers
+    - identity,noisy,lagged
+    - --n-assets
+    - 16
+    - --n-dates
+    - 60
+    - --horizons
+    - 1,5
+    - --seed
+    - 11
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 211c506b2840a3a5ed65759db4a90b63b460a3f28850761e6eac99806c55d298
+      - `match`: true
+      - `observed_sha256`: 211c506b2840a3a5ed65759db4a90b63b460a3f28850761e6eac99806c55d298
+      - `path`: data/metadata/replay/rankic_eval_02738b0fa12b6676.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 1.362575
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/rankic_eval_8d740c0ddf6d5c54.json
+  - `receipt_sha256`: cdb77f25d556db9cc75854e4ec17bb86913f79b2f7ee382ad92ec0ab85d6a758
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - rankic
+    - --panels
+    - pure_noise,linear_signal
+    - --challengers
+    - identity,noisy,lagged
+    - --n-assets
+    - 16
+    - --n-dates
+    - 60
+    - --horizons
+    - 1,5
+    - --seed
+    - 11
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: 8d740c0ddf6d5c5436264a719179b2ea00d66d4a6b5e2d68dd662e7590defb71
+  - `source_receipt_sha256`: e48fce1ae4cebf94e417773bdef20c9ed7b0822397505c6a51e8843a8da06c81
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: 73137fe1a97c353801a74dde771cfb93687be41a1f90367d1ffed1928c0a77f2
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/replay_proof_7e1d9b632f022f5a.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_7e1d9b632f022f5a.json | a3a21f8a745cb80cac90f8e53f9512294c297e0caf5d3a4665d5f07214de4517 | 7e1d9b632f022f5ab6a81e191f8f337197bbdcd3c60993b8d167a893fe6c6ba3 | not_checked | c0194c18e3d54182d305da821214c8b1479818df | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 99ef4dfb2d3735fc1a615e2766453808340ca477782f51ce084119704c457f2c
+- `data_label`: SYNTHETIC
+- `dataset_hash`: e0321f38590d1bd7d2873151e9badcd1608500bbc73e953c199ef4429203abe7
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T21:51:07.844789+00:00
+- `git_revision`: c0194c18e3d54182d305da821214c8b1479818df
+- `kind`: replay_proof
+- `params_hash`: 2fea0b96b9f669237c72fdf33e91b98c41061dd0b0ed559bc526d94cabfc8d4e
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - serial-watch
+    - tests/fixtures/replay/serial_pits.json
+    - --data-label
+    - SYNTHETIC
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
+      - `match`: true
+      - `observed_sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
+      - `path`: data/metadata/replay/serial_watch_e4787cdf189656a3.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 0.224175
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/serial_watch_78dd891261e2aae9.json
+  - `receipt_sha256`: ef5e06b7998882ce77161d89b0405faa215956f651ff2b9437d6988a88e842f7
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - serial-watch
+    - tests/fixtures/replay/serial_pits.json
+    - --data-label
+    - SYNTHETIC
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940
+  - `source_receipt_sha256`: cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: 7e1d9b632f022f5ab6a81e191f8f337197bbdcd3c60993b8d167a893fe6c6ba3
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/replay_proof_b23a176a5c91e210.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_b23a176a5c91e210.json | 1f4a8bd88480f4ddd2f07791b2f00deaa39c83a2151cd9395d395f1e20a4a7ad | b23a176a5c91e21035a3f9db90631b74fbab5506dac91a0da9b414aec5acdd20 | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e
+- `data_label`: SYNTHETIC
+- `dataset_hash`: 49cba43ce11ccf132af65c4d20abd38852e6131ca88447f8e0133e523ac18bef
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:03:13.153025+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: replay_proof
+- `params_hash`: 66553045f97bfae37cfb560d29cfc4396826a1a4269b692164a86615ef739fe1
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - verdict
+    - --models
+    - empirical,gaussian,qar
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --n-boot
+    - 200
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 9725bced9cbbf03beea8c4f111e61e3c076d8875441fa2c0757fae11d0770549
+      - `match`: true
+      - `observed_sha256`: 9725bced9cbbf03beea8c4f111e61e3c076d8875441fa2c0757fae11d0770549
+      - `path`: data/metadata/replay/honest_verdict_9a043a885f02042b.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 1.215214
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/honest_verdict_b133e8b3992af893.json
+  - `receipt_sha256`: 716f6dc0d62177af8bc328bd80c1895a079b292170d951ae95f49008ba6d77db
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - verdict
+    - --models
+    - empirical,gaussian,qar
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --n-boot
+    - 200
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: b133e8b3992af8937df8b38e6d89432215769344f3fd58af3251652ceba7c882
+  - `source_receipt_sha256`: 1a003a670945452a5c86d033900bc33429f2981422c8938b1b8e2469fc764f3a
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: b23a176a5c91e21035a3f9db90631b74fbab5506dac91a0da9b414aec5acdd20
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/replay_proof_cbbad2b0389750e5.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_cbbad2b0389750e5.json | a320cc68307ecffe319ee675feaefa837472ff8a41f07416ac7208e1e98e1667 | cbbad2b0389750e56507a2efec7d184b07f2373c32e15220b7598a3e660eb82b | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e
+- `data_label`: SYNTHETIC
+- `dataset_hash`: 279e61bfda0a6b4758cd9cc44966ffb5f50f5cb3276834e2d97e36bbedc92038
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:02:55.583398+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: replay_proof
+- `params_hash`: 2363c0ce5a072aaf0a69e4f25b3d309bdf42457f207eaf98ebf6729ba97b5739
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - fleet-monitor
+    - --models
+    - empirical,gaussian,qar
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: a57dca296b0cab9b3128f67956fe36150eebfdb0a026cc3db51a8a8728f231e4
+      - `match`: true
+      - `observed_sha256`: a57dca296b0cab9b3128f67956fe36150eebfdb0a026cc3db51a8a8728f231e4
+      - `path`: data/metadata/replay/monitor_run_5a2fdb39470f5feb.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 1.208536
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/monitor_run_13d20aef00774027.json
+  - `receipt_sha256`: fc5c8be152b9379e979e9fa1abeb33a46d8aa4adbb83b2b76d7f682e6a6b481f
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - fleet-monitor
+    - --models
+    - empirical,gaussian,qar
+    - --shards
+    - iid_gaussian,regime_switch
+    - --n-train
+    - 128
+    - --n-eval
+    - 64
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: 13d20aef00774027a9772ced8a4a118c875cec064b33ed826e7b78311b411e83
+  - `source_receipt_sha256`: 3ce1cd7f59c301be6b4710326ab905313725317bee3669ae8e755f6d422bc12d
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: cbbad2b0389750e56507a2efec7d184b07f2373c32e15220b7598a3e660eb82b
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
+### `receipts/replay_proof_f5fe541481bbf231.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/replay_proof_f5fe541481bbf231.json | bf65017c57348aed947123163223ef59ebf385c9907052b2497016d3753ae2ce | f5fe541481bbf231a61c5f8a12cb329851b5aac5940e4f30ab16aecdbf348165 | not_checked | 084c4df6f18df54bd5b250b3c511c57c2d1be169 | absent | unspecified | absent | absent | false |
+
+- `code_files`:
+  - `replay_proof.py`: 9acbc460607c9d5cf9dc470a0f5bc6f7d4374cea18b1e3987dfa038e5b8e187e
+- `data_label`: SYNTHETIC
+- `dataset_hash`: 1f545c4c94164920e254853aafa38cfbfebf7eb700f2e5884dec1bfbd5fdb915
+- `environment`:
+  - `blas`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `byteorder`: little
+  - `fingerprint_sha256`: 207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab
+  - `implementation`: CPython
+  - `lapack`:
+    - `found`: true
+    - `name`: accelerate
+    - `version`: null
+  - `machine`: arm64
+  - `packages`:
+    - `numpy`: 2.5.3
+    - `polars`: 1.44.2
+    - `scipy`: 1.18.1
+  - `platform`: macOS-26.5.2-arm64-arm-64bit
+  - `python`: 3.12.14
+  - `threadpools`:
+- `generated_at`: 2026-09-29T23:02:37.197178+00:00
+- `git_revision`: 084c4df6f18df54bd5b250b3c511c57c2d1be169
+- `kind`: replay_proof
+- `params_hash`: 8d2c5080877f61542bc72d633740c8ae0d5007c035deae261b46c8e84abf510e
+- `payload`:
+  - `all_match`: true
+  - `argv`:
+    - dipcatcher
+    - capacity
+    - --dev
+    - --books
+    - uniform,concentrated
+    - --n-dates
+    - 60
+    - --n-names
+    - 8
+    - --seed
+    - 11
+    - --aum-grid
+    - 1e6,1e7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `expected_sha256`: 044638ce5091d330368059531cd2ce3d0001c8694a915750af9a56a6c928b4d8
+      - `match`: true
+      - `observed_sha256`: 044638ce5091d330368059531cd2ce3d0001c8694a915750af9a56a6c928b4d8
+      - `path`: data/metadata/replay/capacity_eval_ad7dd6aef6c94d20.json
+  - `data_label`: SYNTHETIC
+  - `elapsed_s`: 1.388483
+  - `exit_code`: 0
+  - `kind`: replay_proof
+  - `receipt`: receipts/capacity_eval_3622d0c059d42009.json
+  - `receipt_sha256`: 5aefef286d1225facee3ebd565bbafebd3338aff69d72a60ee032e0f858ea875
+  - `research_only`: true
+  - `resolved_argv`:
+    - /Users/devin/repos/dipcatcher/.venv/bin/python
+    - -m
+    - quant_fund.cli.main
+    - capacity
+    - --dev
+    - --books
+    - uniform,concentrated
+    - --n-dates
+    - 60
+    - --n-names
+    - 8
+    - --seed
+    - 11
+    - --aum-grid
+    - 1e6,1e7
+    - --out-dir
+    - data/metadata/replay
+  - `schema`: replay_proof.v1
+  - `source_receipt_seal`: 3622d0c059d42009e9870101afb35c232ac27d58456fa915dc482db6679c3116
+  - `source_receipt_sha256`: 57ad3394513fe58e48127141858a990580fade56ae4755ad0a3b868aa2568f2b
+  - `stderr_tail`: <frozen runpy>:128: RuntimeWarning: 'quant_fund.cli.main' found in sys.modules after import of package 'quant_fund.cli', but prior to execution of 'quant_fund.cli.main'; this may result in unpredictable behaviour
+
+  - `timed_out`: false
+  - `timeout_s`: 120.0
+  - `verdict`: pass
+- `receipt_sha256`: f5fe541481bbf231a61c5f8a12cb329851b5aac5940e4f30ab16aecdbf348165
+- `schema`: receipt.v2
+- `schema_version`: 2
+- `verdict`: pass
+
 ### `receipts/serial_watch_140b073ea589b0c7.json`
 
 | source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
@@ -38488,6 +42110,68 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `pooled_alarmed`: false
 - `pooled_evalue`: 1.267130129950862e-10
 - `receipt_sha256`: 771602cd1580476c5d3aea8cd46b7d9226dc73c59b64acb2ceacb194477c77e3
+- `research_only`: true
+
+### `receipts/serial_watch_78dd891261e2aae9.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/serial_watch_78dd891261e2aae9.json | cafb78f75257cff2a338fe26021e82a4eae4b8049feeb02c7256ccfef805db0f | 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940 | not_checked | absent | absent | unspecified | absent | true | false |
+
+- `alarm_origins`:
+  - `lag1_pos`: 89
+- `alarmed_lags`:
+  - 1
+- `alpha`: 0.05
+- `any_lag_alarmed`: true
+- `data_label`: SYNTHETIC
+- `evidence`:
+  - ville_inequality
+  - rademacher_sign_products
+  - union_bound_2k_processes
+  - bonferroni_per_lag
+  - anytime_valid
+- `kind`: serial_watch.v1
+- `lam`: 0.5
+- `n_lags`: 5
+- `n_origins`: 256
+- `per_lag`:
+  - `1`:
+    - `alarmed`: true
+    - `neg`: 1.5075232903345804e-34
+    - `pos`: 91.69763492148864
+  - `2`:
+    - `alarmed`: false
+    - `neg`: 5.341064566257998e-29
+    - `pos`: 0.00034509055538239854
+  - `3`:
+    - `alarmed`: false
+    - `neg`: 1.70307641649403e-22
+    - `pos`: 1.4429972487063937e-10
+  - `4`:
+    - `alarmed`: false
+    - `neg`: 6.033897559053358e-17
+    - `pos`: 5.430507803148022e-16
+  - `5`:
+    - `alarmed`: false
+    - `neg`: 4.469553747446933e-18
+    - `pos`: 9.77491404566644e-15
+- `pooled_alarmed`: false
+- `pooled_evalue`: 9.169798001218833
+- `receipt_sha256`: 78dd891261e2aae98cc73a80328f2a6fb89a21e65b5979065b458007e491c940
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - serial-watch
+    - tests/fixtures/replay/serial_pits.json
+    - --data-label
+    - SYNTHETIC
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/serial_watch_e4787cdf189656a3.json
+      - `sha256`: 4d9bdab0b8d16e132715d80f057c981674e5324f51c8210188b223ce725576ba
 - `research_only`: true
 
 ### `receipts/serial_watch_85db152db863d25d.json`
@@ -39005,3 +42689,184 @@ Omitted 3 fields whose names tokenize to a forbidden research-headline metric.
 - `unavailable_lanes`:
 - `verdict`: not_supported
 - `winner`: gaussian
+
+### `receipts/vol_bench_f3bf2afc2f159ace.json`
+
+| source | file sha256 | embedded seal | seal | git revision | dataset hash | data class | promote | research_only | live_pnl_claim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| receipts/vol_bench_f3bf2afc2f159ace.json | b9b70f7186d75054e91ee734b87b8aeeba22d66af713806a8d5410a9bc603ee3 | f3bf2afc2f159acea32293b04760b07db7584dd45d460d1b4c295711b31d4aea | not_checked | absent | inputs_sha256=9bf80b4bc0721991e245a7a34983a851cc7e722713f5f6212446aec936c67302 | unspecified | absent | absent | false |
+
+- `claim`: research_only
+- `data_label`: SYNTHETIC
+- `dm_reference`: har
+- `horizons`:
+  - 1
+- `kind`: vol_bench
+- `min_history`: 60
+- `models`:
+  - har
+  - rv_ewma
+  - rv_roll
+- `n_bars`: 200
+- `n_error_rows`: 0
+- `n_origins`: 10
+- `n_rows`: 6
+- `receipt_sha256`: f3bf2afc2f159acea32293b04760b07db7584dd45d460d1b4c295711b31d4aea
+- `replay`:
+  - `argv`:
+    - dipcatcher
+    - vol-bench
+    - --models
+    - rv_roll,rv_ewma,har
+    - --shards
+    - garch_vol,rough_vol
+    - --horizons
+    - 1
+    - --min-history
+    - 60
+    - --n-origins
+    - 10
+    - --n-bars
+    - 200
+    - --seed
+    - 7
+    - --out-dir
+    - data/metadata/replay
+  - `artifacts`:
+    - [0]
+      - `path`: data/metadata/replay/vol_bench_c584407c8097493e.json
+      - `sha256`: 8594d8d5d8b0f4a50891ce3c47ae273d06890af537ed27a6274eb85587ecfd32
+- `results`:
+  - [0]
+    - `dm_qlike_mean`: 0.026282817105292722
+    - `dm_qlike_se`: 0.023566845208215056
+    - `dm_qlike_t`: 1.1152454591644247
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 1.0
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_roll
+    - `mse`: 3.932024779468782e-09
+    - `n_origins`: 10
+    - `qlike`: 0.11126354674782028
+    - `seed`: 7
+    - `shard`: garch_vol
+    - `status`: ok
+  - [1]
+    - `dm_qlike_mean`: 0.030448239544444134
+    - `dm_qlike_se`: 0.012281091759916499
+    - `dm_qlike_t`: 2.479277912719639
+    - `epromotion_anytime_p`: 1.0
+    - `epromotion_evalue`: 1.0
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_ewma
+    - `mse`: 3.9100970206722025e-09
+    - `n_origins`: 10
+    - `qlike`: 0.1154289691869717
+    - `seed`: 7
+    - `shard`: garch_vol
+    - `status`: ok
+  - [2]
+    - `dm_qlike_mean`: null
+    - `dm_qlike_se`: null
+    - `dm_qlike_t`: null
+    - `epromotion_anytime_p`: null
+    - `epromotion_evalue`: null
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: har
+    - `mse`: 2.500331818486244e-09
+    - `n_origins`: 10
+    - `qlike`: 0.08498072964252756
+    - `seed`: 7
+    - `shard`: garch_vol
+    - `status`: ok
+  - [3]
+    - `dm_qlike_mean`: 0.052878800151732186
+    - `dm_qlike_se`: 0.0751954896897419
+    - `dm_qlike_t`: 0.7032177111939981
+    - `epromotion_anytime_p`: 0.5892857142857143
+    - `epromotion_evalue`: 1.696969696969697
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_roll
+    - `mse`: 1.4262236853662166e-07
+    - `n_origins`: 10
+    - `qlike`: 0.1334280472455576
+    - `seed`: 8
+    - `shard`: rough_vol
+    - `status`: ok
+  - [4]
+    - `dm_qlike_mean`: 0.00874331189813149
+    - `dm_qlike_se`: 0.04519296766068152
+    - `dm_qlike_t`: 0.19346620394080222
+    - `epromotion_anytime_p`: 0.5892857142857143
+    - `epromotion_evalue`: 1.696969696969697
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: rv_ewma
+    - `mse`: 1.11496408638407e-07
+    - `n_origins`: 10
+    - `qlike`: 0.0892925589919569
+    - `seed`: 8
+    - `shard`: rough_vol
+    - `status`: ok
+  - [5]
+    - `dm_qlike_mean`: null
+    - `dm_qlike_se`: null
+    - `dm_qlike_t`: null
+    - `epromotion_anytime_p`: null
+    - `epromotion_evalue`: null
+    - `epromotion_origin`: null
+    - `error`: null
+    - `horizon`: 1
+    - `model`: har
+    - `mse`: 1.2548993848632043e-07
+    - `n_origins`: 10
+    - `qlike`: 0.08054924709382541
+    - `seed`: 8
+    - `shard`: rough_vol
+    - `status`: ok
+- `schema`: vol_bench.v1
+- `seed`: 7
+- `shards`:
+  - `garch_vol`:
+    - `config`:
+      - `alpha`: 0.05
+      - `beta`: 0.9
+      - `burn`: 128
+      - `data_label`: SYNTHETIC
+      - `gamma`: 0.08
+      - `intraday_steps`: 24
+      - `omega`: 4e-06
+      - `persistence`: 0.99
+      - `process`: gjr_garch_1_1
+      - `seed`: 7
+    - `n`: 200
+    - `parkinson_sha256`: bb5a06a1548a38a310ee4eded08a1180ee522245172eea2acc81ae97e9778015
+    - `returns_sha256`: a18b838f11608d59bd5e528bdd9fc90e4a962b4172be20d3d9ad926417b19823
+    - `rv_sha256`: bae765dc72bb29c614d0ef402d65f5256efb5c0e91b561f57c0acdde6661a0dc
+    - `seed`: 7
+  - `rough_vol`:
+    - `config`:
+      - `base_var`: 0.0004
+      - `burn`: 128
+      - `data_label`: SYNTHETIC
+      - `hurst`: 0.1
+      - `intraday_steps`: 24
+      - `process`: rough_fou_logvol
+      - `seed`: 8
+      - `vol_of_logvol`: 0.75
+    - `n`: 200
+    - `parkinson_sha256`: f3edfbe36c2ac830dc677b0ec78b6b8d4bc6d82d47ae2697da655999b1808878
+    - `returns_sha256`: 28df1304f4bd66ff73589805060717b4fca43788f35b241639b158e34ae25b76
+    - `rv_sha256`: e95f54b6ca2cd8bf33e8edd948ceaf186740fa1dae5f629b45b5bb9517ddc080
+    - `seed`: 8
+- `stride`: 1
+- `target`: cumulative_realized_variance
