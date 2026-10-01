@@ -232,13 +232,24 @@ class Harness:
         """
         command = self.get(name)
         argv = list(command.argv)
-        if config is not None:
-            resolved = config.resolve()
-            configs_dir = (Path.cwd() / "configs").resolve()
+        configs_dir = (Path.cwd() / "configs").resolve()
+
+        def check_contained(raw: str) -> Path:
+            resolved = Path(raw).resolve()
             if configs_dir not in resolved.parents and resolved != configs_dir:
                 raise ValueError(f"config path {resolved} escapes the configs/ allowlist")
-            argv += ["--config", str(resolved)]
+            return resolved
+
+        if config is not None:
+            argv += ["--config", str(check_contained(str(config)))]
         if extra_args:
+            # --config passed through extra_args must obey the same
+            # containment as the keyword arg — otherwise it is a bypass.
+            for i, arg in enumerate(extra_args):
+                if arg == "--config" and i + 1 < len(extra_args):
+                    check_contained(extra_args[i + 1])
+                elif arg.startswith("--config="):
+                    check_contained(arg.split("=", 1)[1])
             argv += list(extra_args)
         code, out, err = self._runner(argv, command.timeout_s)
         return HarnessResult(command=name, exit_code=code, stdout=out, stderr=err)
