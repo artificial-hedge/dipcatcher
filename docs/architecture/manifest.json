@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1156,
+  "module_count": 1158,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -10956,6 +10956,22 @@
     },
     {
       "dst": "quant_fund.metrics.scoring",
+      "src": "quant_fund.research.mean_eprocess"
+    },
+    {
+      "dst": "quant_fund.research.fleet_eval",
+      "src": "quant_fund.research.mean_eprocess"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.mean_eprocess"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.mean_eprocess"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
       "src": "quant_fund.research.monitor_run"
     },
     {
@@ -11137,6 +11153,22 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.research.phase1_verify"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.research.policy_eprocess"
+    },
+    {
+      "dst": "quant_fund.research.mean_eprocess",
+      "src": "quant_fund.research.policy_eprocess"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.policy_eprocess"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.policy_eprocess"
     },
     {
       "dst": "quant_fund.metrics.scoring",
@@ -13322,6 +13354,7 @@
     "quant_fund.research.legacy_unsealed",
     "quant_fund.research.loss_cs",
     "quant_fund.research.mcs_seq",
+    "quant_fund.research.mean_eprocess",
     "quant_fund.research.monitor_run",
     "quant_fund.research.multih_fleet",
     "quant_fund.research.net_replay",
@@ -13335,6 +13368,7 @@
     "quant_fund.research.pairs.pit",
     "quant_fund.research.pairs.spread",
     "quant_fund.research.phase1_verify",
+    "quant_fund.research.policy_eprocess",
     "quant_fund.research.prospective_sota",
     "quant_fund.research.quantile_ladder",
     "quant_fund.research.quantile_mosaic",
@@ -15134,12 +15168,12 @@
     },
     {
       "dst": "quant_fund.metrics",
-      "imports": 107,
+      "imports": 108,
       "src": "quant_fund.research"
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 16,
+      "imports": 17,
       "src": "quant_fund.research"
     },
     {
@@ -15189,7 +15223,7 @@
     },
     {
       "dst": "quant_fund.research",
-      "imports": 245,
+      "imports": 247,
       "src": "quant_fund.research"
     },
     {
@@ -15204,7 +15238,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 84,
+      "imports": 88,
       "src": "quant_fund.research"
     },
     {

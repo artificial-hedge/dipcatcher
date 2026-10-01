@@ -445,8 +445,8 @@ flowchart LR
   quant_fund_research -->|3| quant_fund_data
   quant_fund_research -->|9| quant_fund_execution
   quant_fund_research -->|1| quant_fund_hedge_lab
-  quant_fund_research -->|107| quant_fund_metrics
-  quant_fund_research -->|16| quant_fund_microstructure
+  quant_fund_research -->|108| quant_fund_metrics
+  quant_fund_research -->|17| quant_fund_microstructure
   quant_fund_research -->|136| quant_fund_models
   quant_fund_research -->|6| quant_fund_northset
   quant_fund_research -->|13| quant_fund_pipeline
@@ -458,7 +458,7 @@ flowchart LR
   quant_fund_research -->|1| quant_fund_reporting
   quant_fund_research -->|1| quant_fund_robustness
   quant_fund_research -->|1| quant_fund_schemas
-  quant_fund_research -->|84| quant_fund_utils
+  quant_fund_research -->|88| quant_fund_utils
   quant_fund_research -->|11| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
@@ -739,7 +739,7 @@ sequenceDiagram
 | `quant_fund.reality` | 8 |
 | `quant_fund.registry` | 7 |
 | `quant_fund.reporting` | 6 |
-| `quant_fund.research` | 141 |
+| `quant_fund.research` | 143 |
 | `quant_fund.risk` | 7 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
@@ -748,7 +748,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **1156**
+- Modules scanned: **1158**
 - Packages: **79**
 - Cross-package import edges: **332**
 
