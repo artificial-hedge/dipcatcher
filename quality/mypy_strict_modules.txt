@@ -304,6 +304,7 @@ src/quant_fund/microstructure/glft_closed_form.py
 src/quant_fund/microstructure/hawkes_mv.py
 src/quant_fund/microstructure/hawkes_real.py
 src/quant_fund/microstructure/hidden_depth.py
+src/quant_fund/microstructure/hmm_learn.py
 src/quant_fund/microstructure/impact_instant.py
 src/quant_fund/microstructure/intraday_exec.py
 src/quant_fund/microstructure/intraday_shape.py
