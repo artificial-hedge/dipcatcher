@@ -1027,3 +1027,13 @@ wave 40 canon (devin/w40-canon-integration): mixed_logit (mu
   -1.4 exog) + subsampling (theta .582/.6, CI brackets, MC
   coverage .76 vs nominal .9)
   → PR stacked on w39 (211→217 families)
+wave 41 canon (devin/w41-canon-integration): frailty (theta .577
+  vs .8 detected, beta .696/.7, nofrailty attenuates to .49, LR
+  230) + interrupted_ts (level .59/.8, slope .022/.02, p<.001
+  both, nobreak p .93, DW .85) + lead_lag (cov0 -3.1 nonsync →
+  cov* 25.8 at delta* 1.8 vs true 2.0, indep delta* 0) + ppml
+  (beta .748/.8 under hetero zeros, phi 5.6, t 8.6) +
+  event_study (CAR .046 injected, Patell 16.3, BMP 13.4, null p
+  .29) + model_averaging (argmax model 6 vs 1 sharp contrast,
+  entropy .66, mspe within 1.05x single)
+  → PR stacked on w40 (217→223 families)

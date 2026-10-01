@@ -316,6 +316,14 @@ from quant_fund.research.benches_w40 import (
     bench_subsampling,
     bench_sur_model,
 )
+from quant_fund.research.benches_w41 import (
+    bench_event_study,
+    bench_frailty,
+    bench_interrupted_ts,
+    bench_lead_lag,
+    bench_model_averaging,
+    bench_ppml,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2106,6 +2114,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "connectedness": bench_connectedness(),
         "nonparametric_iv": bench_nonparametric_iv(),
         "subsampling": bench_subsampling(),
+        "frailty": bench_frailty(),
+        "interrupted_ts": bench_interrupted_ts(),
+        "lead_lag": bench_lead_lag(),
+        "ppml": bench_ppml(),
+        "event_study": bench_event_study(),
+        "model_averaging": bench_model_averaging(),
     }
 
     hyps = _build_hypotheses(families, rankers)
