@@ -1,0 +1,35 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "9d1c7ace1bfe1633f9b583b60f8a7aa697112ee429ce189b3c51770cddab04ba",
+  "inputs_sha256": "4a49a844f9f769e2c2c2ddbd3d4249d64e8b896ba1fbcd304b8f3c97d9f97f49",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "64556955d0be7bd1dfa654a41212e1d44a45e864a65266722e7bf5cc3deae7ff",
+  "members": [
+    {
+      "name": "environment.json",
+      "sha256": "cb41c9b9bf037abef26d47236fccb02408e44f3529c3ef23d43c42ff5d299c10"
+    },
+    {
+      "name": "install.sh",
+      "sha256": "1d88604d9dcb668cedb5e69facd5ab98d338a607a913f441ca2b9b1e13826960"
+    }
+  ],
+  "members_added": [
+    "environment.json",
+    "install.sh"
+  ],
+  "members_removed": [],
+  "n_members": 2,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "fe416fbfe9a8f39c1a66f4f0d77c552cee23f61e25b933748026a288d0ab666a",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}
