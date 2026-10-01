@@ -140,10 +140,18 @@ def test_full_lifecycle(tmp_path: Path, monkeypatch):
     backend = LocalFx1Backend(ckpt)  # must serve: signed + ship-eligible
     assert backend.card.version == "fx-1.v0.1"
 
-    # 7. MRM dossier
+    # 7. MRM dossier — each activity pinned to the artifact the lifecycle
+    # actually produced; completeness means activity-specific evidence.
+    monitoring_path = tmp_path / "monitoring_report.json"
+    monitoring_path.write_text(gap.model_dump_json())
     dossier = compile_dossier(
         modelcard_path=ckpt / "modelcard.json",
-        artifacts={"validation": audit_path},
+        artifacts={
+            "development": tmp_path / "corpus.split.json",
+            "implementation": ckpt / "release.manifest.json",
+            "validation": audit_path,
+            "monitoring": monitoring_path,
+        },
         out_path=tmp_path / "dossier.json",
     )
     assert dossier.complete and dossier.ship_eligible
