@@ -221,6 +221,7 @@ _LANE_COVERED_SCHEMAS = frozenset(
         "vine_dominance.v1",
         "vine_panel.v1",
         "corpus_epoch.v1",
+        "receipt_admission.v1",
     }
 )
 #: schemas whose receipts dispatch to evalue_family_contract_errors via their
