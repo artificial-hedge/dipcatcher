@@ -349,9 +349,10 @@ flowchart LR
   quant_fund_pretrade -->|1| quant_fund_schemas
   quant_fund_pretrade -->|1| quant_fund_utils
   quant_fund_proof -->|1| quant_fund_config
-  quant_fund_proof -->|1| quant_fund_leakage
+  quant_fund_proof -->|2| quant_fund_leakage
   quant_fund_proof -->|1| quant_fund_metrics
-  quant_fund_proof -->|9| quant_fund_proofcore
+  quant_fund_proof -->|1| quant_fund_pit
+  quant_fund_proof -->|12| quant_fund_proofcore
   quant_fund_proof -->|1| quant_fund_utils
   quant_fund_public -->|1| quant_fund_backtest
   quant_fund_public -->|2| quant_fund_config
@@ -666,7 +667,7 @@ sequenceDiagram
 
 - Modules scanned: **939**
 - Packages: **65**
-- Cross-package import edges: **276**
+- Cross-package import edges: **277**
 
 <!-- END GENERATED: coverage -->
 
