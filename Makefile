@@ -1,4 +1,4 @@
-.PHONY: help test test-full coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory
+.PHONY: help test test-full test-durations coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory admission-gate
 
 .DEFAULT_GOAL := help
 
@@ -14,6 +14,14 @@ test: ## PR-gate lab tests (not network, not slow; xdist)
 
 test-full: ## Full offline lab suite, including slow tests
 	uv run pytest -n auto --dist loadfile -m "not network"
+
+
+test-durations: ## Refresh checked-in .test_durations for pytest-split CI shards
+	# PR gate first, then slow tests so schedule/full shards stay balanced too.
+	uv run pytest -n auto --dist loadfile -m "not network and not slow" \
+		--store-durations --durations-path .test_durations --clean-durations
+	uv run pytest -n auto --dist loadfile -m "slow and not network" \
+		--store-durations --durations-path .test_durations
 
 parity-smoke: ## SYNTHETIC backtest/shadow parity smoke (simulated broker only)
 	uv run pytest -q tests/unit/parity
@@ -210,11 +218,25 @@ receipts-reverify: ## Fail-closed audit; schema-specific committed receipt verif
 
 evidence-audit: ## CI gate: re-verify every committed receipt; fail on any unverifiable non-legacy artifact
 	uv run dipcatcher suite-health --strict --out-dir "$${RUNNER_TEMP:-/tmp}/evidence-audit"
+	uv run dipcatcher corpus-epoch --corpus-dir receipts --check --heads-pin quality/epoch_heads.json
+	uv run dipcatcher corpus-epoch --corpus-dir verifier --glob '*.md' --check --heads-pin quality/epoch_heads.json
 
 lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsistent' verdicts
 	uv run dipcatcher lattice --strict \
 		--known-inconsistent quality/lattice_known_inconsistent.json \
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
+
+ADMISSION_BASE ?= origin/main
+admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
+	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
+		| grep '^receipts/[^/]*\.json$$' || true); \
+	if [ -n "$$changed" ]; then \
+		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
+			--known-inconsistent quality/lattice_known_inconsistent.json \
+			--out-dir "$${RUNNER_TEMP:-/tmp}/admission"; \
+	else \
+		echo "admission-gate: no corpus receipt changes vs $(ADMISSION_BASE)"; \
+	fi
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"
