@@ -549,6 +549,14 @@ from quant_fund.research.benches_w69 import (
     bench_stockwell,
     bench_vmd,
 )
+from quant_fund.research.benches_w70 import (
+    bench_compositional,
+    bench_cyclostationary,
+    bench_empirical_wavelets,
+    bench_nonparametric_tests,
+    bench_polychoric,
+    bench_sure_screening,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2514,6 +2522,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "isomap": bench_isomap(),
         "kriging": bench_kriging(),
         "innovations_ets": bench_innovations_ets(),
+        "cyclostationary": bench_cyclostationary(),
+        "empirical_wavelets": bench_empirical_wavelets(),
+        "nonparametric_tests": bench_nonparametric_tests(),
+        "polychoric": bench_polychoric(),
+        "compositional": bench_compositional(),
+        "sure_screening": bench_sure_screening(),
     }
 
     hyps = _build_hypotheses(families, rankers)

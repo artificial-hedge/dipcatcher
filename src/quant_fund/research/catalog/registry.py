@@ -920,6 +920,32 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "isomap",
         "kriging",
         "innovations_ets",
+        # Wave 70 — Dandawate-Giannakis
+        # cyclic-moment cyclostationarity
+        # (per-segment demeaned second-
+        # order moment), Gilles empirical
+        # wavelet transform (spectrum-
+        # minima band boundaries + Meyer-
+        # raised-cosine filters), rank-
+        # based inference (Mann-Whitney
+        # common-language effect size,
+        # Wilcoxon, Kruskal-Wallis,
+        # Jonckheere-Terpstra trend),
+        # Drasgow polychoric/tetrachoric
+        # latent correlations (threshold-
+        # ML + bivariate-normal integrals),
+        # Aitchison compositional analy-
+        # sis (clr/ilr + variation matrix
+        # + Dirichlet moment fit), and
+        # Fan-Lv SIS/ISIS sure-indepen-
+        # dence screening. Same
+        # SYNTHETIC diagnostic contract.
+        "cyclostationary",
+        "empirical_wavelets",
+        "nonparametric_tests",
+        "polychoric",
+        "compositional",
+        "sure_screening",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

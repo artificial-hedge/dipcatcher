@@ -1754,3 +1754,36 @@ detail: |
   - Canon staged on top of w68-canon so the chain stays clean
     as the open stack lands.
 note: canon PR to follow.
+
+---
+owner: devin (wave 70 canon)
+slice: Dandawate-Giannakis cyclostationarity, Gilles EWT, rank
+  tests, Drasgow polychoric, Aitchison CoDA, Fan-Lv SIS/ISIS
+status: COMPLETE + VERIFIED 2026-09-30
+detail: |
+  - lanes/devin/w70-lanes: cyclostationary.py (cyclic-moment
+    alpha detector with per-segment demeaned x^2 + cyclic
+    autocorrelation; planted alpha err 0.0008, contrast 4.13),
+    empirical_wavelets.py (spectrum-minima band boundaries +
+    Gilles Meyer raised-cosine filters centered on edges;
+    cover err 8e-5, leakage 8e-33), nonparametric_tests.py
+    (Mann-Whitney U + common-language ES, Wilcoxon signed-rank,
+    Kruskal-Wallis, Jonckheere-Terpstra trend; planted-shift CL
+    dev 0.235, JT p 6.6e-5, null size 0.82), polychoric.py
+    (threshold-ML polychoric/tetrachoric via 20pt Gauss-
+    Laguerre bivariate-normal rectangle integrals; planted rho
+    err 0.007), compositional.py (clr/ilr + Helmert sub-
+    composition inverses, variation matrix, Dirichlet moments;
+    ilr roundtrip 3e-16, a0 err 0.024), sure_screening.py
+    (Fan-Lv SIS marginal-|corr| screening + ISIS residualized
+    re-screening; strong+hidden recovered, top-gap 0.81).
+  - benches_w70.py: +408..413 seed stamps, canonical adapter
+    structure (lazy _core import, finite-blob, forbidden-token
+    filter).
+  - registry +6 -> "cyclostationary","empirical_wavelets",
+    "nonparametric_tests","polychoric","compositional",
+    "sure_screening" (374->380); agent.py import+dict wiring;
+    tests: 6 module files + test_benches_w70.
+  - Canon staged on top of w69-canon so the chain stays clean
+    as the open stack lands.
+note: canon PR to follow.
