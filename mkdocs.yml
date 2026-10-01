@@ -157,6 +157,8 @@ nav:
       - Research centre: RESEARCH_CENTRE.md
       - Research 100: RESEARCH100.md
       - Research 100 catalog: RESEARCH100_CATALOG.md
+      - Benchmark family lifecycle: BENCHMARK_FAMILY_LIFECYCLE.md
+      - Wave 13 backlog: SOTA_WAVE13_BACKLOG.md
       - Stress and scenarios: STRESS.md
       - Northset: NORTHSET.md
       - Market simulator: MARKET_SIM.md
@@ -193,6 +195,7 @@ nav:
       - ML and RL capabilities: ML_RL_CAPABILITIES.md
       - Frontier audit: AUDIT_FRONTIER.md
       - Audit ledger: AUDIT_LEDGER.md
+      - Evidence integrity: EVIDENCE_INTEGRITY.md
       - fx1 audit: AUDIT_FX1.md
       - fx1 eval-harness audit: AUDIT_FX1_EVALHARNESS.md
       - market-sim audit: AUDIT_MARKET_SIM.md
