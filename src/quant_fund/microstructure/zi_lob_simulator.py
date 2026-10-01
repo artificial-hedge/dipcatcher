@@ -357,6 +357,15 @@ class ZILobConfig:
     # toxicity is high and relaxes as excitation decays (the tape's
     # post-fill spread kernel). Requires ``hawkes``; 0 ignores it.
     lo_offset_gain: float = 0.0
+    # ``lo_improve_frac`` ∈ [0, 1]: probability an LO uses improve
+    # anchoring instead of the deep anchor — placed uniformly on the
+    # open spread [own_touch, opp_touch - 1], so dist 0 joins the touch
+    # and anything deeper sits strictly inside. The deep-anchor kernel
+    # can never emit inside-spread flow (``off + dist < spread`` is
+    # unreachable once the spread floors near ``lo_offset + 1``); the
+    # tape's 10.3% inside-spread share and join flow need this second
+    # placement component. 0 is bit-identical to the legacy placement.
+    lo_improve_frac: float = 0.0
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -418,6 +427,7 @@ class ZILobConfig:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
+        _prob(self.lo_improve_frac, "lo_improve_frac")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
@@ -880,6 +890,7 @@ class ZILobSimulator:
         self.n_cancellations = 0
         self.n_submitted = 0
         self.n_lo_improve = 0
+        self.n_lo_join = 0
         self.n_hidden_fills = 0
         self.n_touch_pulls = 0
         self.n_cxl_touch = 0
@@ -1065,6 +1076,7 @@ class ZILobSimulator:
                 self._rate_flow.n_transitions if self._rate_flow is not None else 0
             ),
             "n_lo_improve": self.n_lo_improve,
+            "n_lo_join": self.n_lo_join,
             "n_hidden_fills": self.n_hidden_fills,
             "n_touch_pulls": self.n_touch_pulls,
             "n_cxl_touch": self.n_cxl_touch,
@@ -1246,18 +1258,29 @@ class ZILobSimulator:
         off = int(self._cfg.lo_offset)
         if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
             off += int(round(self._cfg.lo_offset_gain * self._hawkes.excitation(1)))
+        imp = self._cfg.lo_improve_frac > 0.0 and self._rng.random() < self._cfg.lo_improve_frac
         if want_buy:
-            anchor = (ba if ba is not None else self._ref_level + 1) - off
-            level = anchor - dist
+            if imp and ba is not None and bb is not None and ba > bb:
+                level = bb + int(self._rng.random() * (ba - bb))
+            else:
+                anchor = (ba if ba is not None else self._ref_level + 1) - off
+                level = anchor - dist
             if bb is not None and level > bb:
                 self.n_lo_improve += 1  # deposit strictly inside the spread
+            elif bb is not None and level == bb:
+                self.n_lo_join += 1
             for _ in range(k):
                 self._rest("buy", level, "zi")
         else:
-            anchor = (bb if bb is not None else self._ref_level - 1) + off
-            level = anchor + dist
+            if imp and ba is not None and bb is not None and ba > bb:
+                level = ba - int(self._rng.random() * (ba - bb))
+            else:
+                anchor = (bb if bb is not None else self._ref_level - 1) + off
+                level = anchor + dist
             if ba is not None and level < ba:
                 self.n_lo_improve += 1
+            elif ba is not None and level == ba:
+                self.n_lo_join += 1
             for _ in range(k):
                 self._rest("sell", level, "zi")
         self.n_lo_arrivals += 1
