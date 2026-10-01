@@ -177,8 +177,12 @@ def _ece(pairs: list[tuple[float, bool]], *, n_bins: int) -> float:
 
 
 def assert_bench_output_honest(metrics: dict[str, float]) -> None:
-    """Fail-closed: bench output keys must not contain forbidden tokens."""
+    """Fail-closed: bench output keys must not contain forbidden tokens.
+
+    Matching is a substring check on the normalized key — tokenization alone
+    let ``unrealizedpnl`` / ``sharpeRatio`` evade whole-word matching.
+    """
     for key in metrics:
-        tokens = set(key.lower().replace("-", "_").split("_"))
-        if tokens & _FORBIDDEN_TOKENS:
+        norm = key.lower().replace("-", "_")
+        if any(token in norm for token in _FORBIDDEN_TOKENS):
             raise ValueError(f"bench metric key {key!r} contains a forbidden headline token")
