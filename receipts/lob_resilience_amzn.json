@@ -1,0 +1,67 @@
+{
+  "claim": "resilience_measured",
+  "data_label": "MIXED",
+  "depletion_rule": "size_drops_to_<=0.2x_prior",
+  "divergences": [
+    "iid_refill_ratio_202.54",
+    "regime_refill_ratio_231.00",
+    "split_refill_ratio_226.00"
+  ],
+  "git_revision": "86348ebd72f37dd7713b2a6ca08e5056ffbcaca3",
+  "interpretation": "Depleted touch levels that never refill indicate liquidity withdrawal; fast refill = resilient book.",
+  "kind": "lob_resilience",
+  "real": {
+    "ask": {
+      "mean_refill_s": 11.131,
+      "median_refill_s": 0.0239,
+      "n_depletions": 1528,
+      "n_recovered": 1527,
+      "n_unrecovered": 1,
+      "p90_refill_s": 5.9401,
+      "recovery_share": 0.9993
+    },
+    "bid": {
+      "mean_refill_s": 18.2644,
+      "median_refill_s": 0.0133,
+      "n_depletions": 897,
+      "n_recovered": 896,
+      "n_unrecovered": 1,
+      "p90_refill_s": 5.0972,
+      "recovery_share": 0.9989
+    }
+  },
+  "receipt_sha256": "6ce00f56a2c85e7526236824185b1f70cf195bbdb3c9f3cc979187f774f6b80d",
+  "recovery_rule": "size_recovers_to_>=0.5x_prior",
+  "research_only": true,
+  "schema": "lob_resilience.v1",
+  "sim_arms": {
+    "iid": {
+      "mean_refill_s": 10.1853,
+      "median_refill_s": 4.8408,
+      "n_depletions": 66,
+      "n_recovered": 66,
+      "n_unrecovered": 0,
+      "p90_refill_s": 27.3222,
+      "recovery_share": 1.0
+    },
+    "regime": {
+      "mean_refill_s": 19.3497,
+      "median_refill_s": 5.5209,
+      "n_depletions": 38,
+      "n_recovered": 38,
+      "n_unrecovered": 0,
+      "p90_refill_s": 51.4749,
+      "recovery_share": 1.0
+    },
+    "split": {
+      "mean_refill_s": 13.4926,
+      "median_refill_s": 5.4014,
+      "n_depletions": 20,
+      "n_recovered": 20,
+      "n_unrecovered": 0,
+      "p90_refill_s": 37.1583,
+      "recovery_share": 1.0
+    }
+  },
+  "ticker": "AMZN"
+}

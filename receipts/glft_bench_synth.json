@@ -1,0 +1,89 @@
+{
+  "A": 1.5,
+  "Ts": [
+    0.02,
+    0.2,
+    1.0
+  ],
+  "cells": [
+    {
+      "T": 0.02,
+      "gamma": 0.05,
+      "quote_err_ticks_max": 1.544964366440027e-05,
+      "quote_err_ticks_mean": 5.206558963595971e-06,
+      "sigma": 0.02,
+      "theta_max_abs_lin": 0.01447372435771192,
+      "theta_max_abs_ode": 0.01447372439526676,
+      "xi": 0.011334623380607018
+    },
+    {
+      "T": 0.2,
+      "gamma": 0.05,
+      "quote_err_ticks_max": 0.01252622639960066,
+      "quote_err_ticks_mean": 0.004624633193337872,
+      "sigma": 0.02,
+      "theta_max_abs_lin": 0.1446524571866686,
+      "theta_max_abs_ode": 0.1446526769763158,
+      "xi": 0.1033250668081005
+    },
+    {
+      "T": 1.0,
+      "gamma": 0.05,
+      "quote_err_ticks_max": 0.7109532795237072,
+      "quote_err_ticks_mean": 0.34416678621869656,
+      "sigma": 0.02,
+      "theta_max_abs_lin": 0.7192037449166406,
+      "theta_max_abs_ode": 0.7195033563824136,
+      "xi": 0.36200816601529917
+    },
+    {
+      "T": 0.02,
+      "gamma": 0.2,
+      "quote_err_ticks_max": 1.2400090010356024e-05,
+      "quote_err_ticks_mean": 4.17629810363825e-06,
+      "sigma": 0.02,
+      "theta_max_abs_lin": 0.013804266255235806,
+      "theta_max_abs_ode": 0.013804266258734306,
+      "xi": 0.010396000592441022
+    },
+    {
+      "T": 0.2,
+      "gamma": 0.2,
+      "quote_err_ticks_max": 0.010140861731799955,
+      "quote_err_ticks_mean": 0.0037213183671243786,
+      "sigma": 0.02,
+      "theta_max_abs_lin": 0.1380185021393641,
+      "theta_max_abs_ode": 0.13801862529747622,
+      "xi": 0.09506328872169312
+    },
+    {
+      "T": 1.0,
+      "gamma": 0.2,
+      "quote_err_ticks_max": 0.5908716417042159,
+      "quote_err_ticks_mean": 0.28141981768165697,
+      "sigma": 0.02,
+      "theta_max_abs_lin": 0.6876832040911894,
+      "theta_max_abs_ode": 0.6878906170102616,
+      "xi": 0.33648472734428125
+    }
+  ],
+  "claim": "glft_closed_form_validity_mapped",
+  "data_label": "SYNTHETIC",
+  "git_revision": "6577de161f55d0bab6f25d7adf3e090a261d5ccc",
+  "interpretation": "\u03b8_lin is the textbook closed form; quote_err shows the tick error vs the true nonlinear solve, indexed by the real expansion parameter \u03be=k\u00b7max|\u0394\u03b8| (driven by the forcing timescale \u03bd\u00b7T/\u03b3, not \u03c3); the grid sweeps T across it. ok=True iff every \u03be<0.05 cell is within one tick.",
+  "k": 1.5,
+  "kind": "glft_bench",
+  "mc_check": {
+    "abs_diff": 0.00011294983911969148,
+    "mc_se": 0.0006014206360484227,
+    "value_mc": -0.9647771977419097,
+    "value_pde": -0.96466424790279
+  },
+  "ok": true,
+  "q_max": 3,
+  "receipt_sha256": "928cee34e71d70203863dbc40681b695c5a04f0ac44128edec1af3fe99b439ba",
+  "research_only": true,
+  "schema": "glft_bench.v1",
+  "sigma": 0.02,
+  "tick": 0.01
+}
