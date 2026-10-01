@@ -335,6 +335,13 @@ class ZILobConfig:
     anchor: str = "touch"
     ref_halflife: float = 0.0
     seed: int = 0
+    # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
+    # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
+    # ``best_ask - dist``. Deep anchoring floors the spread near
+    # ``lo_offset + 1`` — the zero-intelligence version of
+    # adverse-selection-aware quoting (makers refuse the touch). 0 is
+    # bit-identical to the legacy placement.
+    lo_offset: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -381,6 +388,8 @@ class ZILobConfig:
             raise ValueError(f"seed must be an int, got {self.seed!r}")
         _check_size_pmf(self.mo_size_pmf, "mo_size_pmf")
         _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
+        if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
+            raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
             raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
         if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
@@ -637,6 +646,7 @@ class ZILobSimulator:
         self.n_fills = 0
         self.n_cancellations = 0
         self.n_submitted = 0
+        self.n_lo_improve = 0
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -813,6 +823,7 @@ class ZILobSimulator:
             "n_regime_transitions": (
                 self._rate_flow.n_transitions if self._rate_flow is not None else 0
             ),
+            "n_lo_improve": self.n_lo_improve,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -973,14 +984,21 @@ class ZILobSimulator:
         # best opposite quote; fall back to the reference level when a side is
         # empty so the book can always recover.
         k = self._draw_size(self._lo_size_cdf)
+        off = int(self._cfg.lo_offset)
         if want_buy:
-            anchor = ba if ba is not None else self._ref_level + 1
+            anchor = (ba if ba is not None else self._ref_level + 1) - off
+            level = anchor - dist
+            if bb is not None and level > bb:
+                self.n_lo_improve += 1  # deposit strictly inside the spread
             for _ in range(k):
-                self._rest("buy", anchor - dist, "zi")
+                self._rest("buy", level, "zi")
         else:
-            anchor = bb if bb is not None else self._ref_level - 1
+            anchor = (bb if bb is not None else self._ref_level - 1) + off
+            level = anchor + dist
+            if ba is not None and level < ba:
+                self.n_lo_improve += 1
             for _ in range(k):
-                self._rest("sell", anchor + dist, "zi")
+                self._rest("sell", level, "zi")
         self.n_lo_arrivals += 1
         self.n_lo_units += k
 

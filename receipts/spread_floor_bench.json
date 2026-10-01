@@ -1,0 +1,103 @@
+{
+  "arms": [
+    {
+      "lo_improve_share": 0.053022269353128315,
+      "lo_offset": 0,
+      "mean_spread_ticks": 1.7265132528290423,
+      "median_spread_ticks": 1.0,
+      "n_events": 13167,
+      "n_fills": 757,
+      "n_obs": 13167,
+      "name": "offset_0",
+      "p90_spread_ticks": 3.0,
+      "spread_occupancy": {
+        "1-1": 0.5246449456975772,
+        "14-21": 0.0,
+        "2-2": 0.2963469279258753,
+        "22-34": 0.0,
+        "3-3": 0.12242728032201716,
+        "35-inf": 0.0,
+        "4-5": 0.05331510594668489,
+        "6-8": 0.003265740107845371,
+        "9-13": 0.0
+      },
+      "tight_share_le2": 0.8209918736234526
+    },
+    {
+      "lo_improve_share": 0.05271928495682472,
+      "lo_offset": 8,
+      "mean_spread_ticks": 9.619655198602567,
+      "median_spread_ticks": 9.0,
+      "n_events": 13167,
+      "n_fills": 757,
+      "n_obs": 13167,
+      "name": "offset_8",
+      "p90_spread_ticks": 11.0,
+      "spread_occupancy": {
+        "1-1": 0.0,
+        "14-21": 0.003265740107845371,
+        "2-2": 0.003721424774056353,
+        "22-34": 0.0,
+        "3-3": 0.010252904989747095,
+        "35-inf": 0.0,
+        "4-5": 0.00379737221842485,
+        "6-8": 0.0,
+        "9-13": 0.9789625579099264
+      },
+      "tight_share_le2": 0.003721424774056353
+    },
+    {
+      "lo_improve_share": 0.05271928495682472,
+      "lo_offset": 12,
+      "mean_spread_ticks": 13.548568390673655,
+      "median_spread_ticks": 13.0,
+      "n_events": 13167,
+      "n_fills": 757,
+      "n_obs": 13167,
+      "name": "offset_12",
+      "p90_spread_ticks": 15.0,
+      "spread_occupancy": {
+        "1-1": 0.0,
+        "14-21": 0.4729247360826308,
+        "2-2": 0.003721424774056353,
+        "22-34": 0.0,
+        "3-3": 0.010252904989747095,
+        "35-inf": 0.0,
+        "4-5": 0.00379737221842485,
+        "6-8": 0.0,
+        "9-13": 0.5093035619351409
+      },
+      "tight_share_le2": 0.003721424774056353
+    }
+  ],
+  "band": 14,
+  "claims": {
+    "legacy_hugs_touch": true,
+    "offset_produces_improvements": true,
+    "offset_widens_spread": true,
+    "wide_occupancy_emerges": true
+  },
+  "data_label": "MIXED",
+  "divergences": [
+    "offset_0_mean_1.727_vs_13.086"
+  ],
+  "git_revision": "6860a74c09ab7c9d883c23603864c83907bb9666",
+  "horizon": 4000.0,
+  "interpretation": "Deep anchoring is the zero-intelligence counterpart of adverse-selection-aware quoting: makers refuse the touch and post deeper, flooring the spread near the offset while MOs still push it wider. The offset arm moves occupancy out of the 1-2 tick trap toward the tape's 9-21 plateau and produces inside-spread quote improvements (real: 10.3% of submits) that the touch-anchored placement structurally cannot. Residual shape gaps (the real distribution is a plateau, not a point mass) are logged as divergences \u2014 spread *stochasticity* needs a state-dependent floor, e.g. excitation-driven offsets.",
+  "kind": "spread_floor_bench",
+  "real_tape_targets": {
+    "lo_improve_share": 0.1031,
+    "mean_spread_ticks": 13.086,
+    "median_spread_ticks": 13.0,
+    "p90_spread_ticks": 19.0,
+    "source_receipts": [
+      "spread_dynamics.v1",
+      "marketable_limit.v1"
+    ],
+    "tight_share_le2": 0.0138
+  },
+  "receipt_sha256": "a7b2f0de852367783e2d3f7b20f54b0cd439477d654f2321b02c92e3e871445d",
+  "research_only": true,
+  "schema": "spread_floor.v1",
+  "seed": 7
+}
