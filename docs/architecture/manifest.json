@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1145,
+  "module_count": 1146,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -8947,6 +8947,14 @@
       "src": "quant_fund.research"
     },
     {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.research.adaptive_conformal"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.research.adaptive_conformal"
+    },
+    {
       "dst": "quant_fund",
       "src": "quant_fund.research.agent"
     },
@@ -13090,6 +13098,7 @@
     "quant_fund.reporting.report_audit",
     "quant_fund.reporting.tearsheet",
     "quant_fund.research",
+    "quant_fund.research.adaptive_conformal",
     "quant_fund.research.agent",
     "quant_fund.research.allocation",
     "quant_fund.research.allocation.constraints",
@@ -15065,7 +15074,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 78,
+      "imports": 80,
       "src": "quant_fund.research"
     },
     {
