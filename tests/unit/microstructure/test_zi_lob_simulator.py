@@ -14,6 +14,7 @@ fixtures. Pure numpy.
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -162,6 +163,8 @@ def test_santa_fe_calibration_matches_paper() -> None:
         {"band": 0},
         {"density_exponent": -1.0},
         {"ref_halflife": -5.0},
+        {"ref_fill_gain": -0.1},
+        {"ref_fill_gain": float("nan")},
         {"anchor": "sideways"},
         {"init_levels": 2, "init_depth": 0},
         {"seed": 1.5},
@@ -593,6 +596,27 @@ def test_session_honesty_no_forbidden_headline_keys(mm_results: dict) -> None:
         assert r["claim"] == "simulator_internal_diagnostic_only"
         assert r["label"] == "SYNTHETIC"
         assert r["data_source"] == "SYNTHETIC_ZI_LOB_v1"
+
+
+def test_ref_fill_gain_moves_reference_per_fill() -> None:
+    """Each fill shifts _ref_ema by exactly ref_fill_gain in its direction."""
+    cfg = replace(santa_fe_config(seed=4), anchor="ref", ref_halflife=0.0, ref_fill_gain=0.25)
+    sim = ZILobSimulator(cfg)
+    sim.run(200.0)
+    net = sum(1 if t.aggressor == "buy" else -1 for t in sim.trades)
+    assert sim._ref_ema == pytest.approx(0.25 * net)
+    assert sim.n_fills > 0
+
+
+def test_ref_fill_gain_zero_is_bit_identical() -> None:
+    a = ZILobSimulator(santa_fe_config(seed=8))
+    a.run(150.0)
+    b = ZILobSimulator(replace(santa_fe_config(seed=8), ref_fill_gain=0.0))
+    b.run(150.0)
+    assert [(t.t, t.price, t.level) for t in a.trades] == [
+        (t.t, t.price, t.level) for t in b.trades
+    ]
+    assert a._ref_ema == b._ref_ema
 
 
 def test_session_fail_closed() -> None:

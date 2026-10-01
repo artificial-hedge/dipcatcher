@@ -340,6 +340,15 @@ class ZILobConfig:
     density_exponent: float = 0.0
     anchor: str = "touch"
     ref_halflife: float = 0.0
+    # ``ref_fill_gain`` >= 0: informed-flow anchoring — each market-order
+    # fill shifts the slow reference level by ``ref_fill_gain`` ticks per
+    # unit consumed, in the fill direction. The book's latent-value
+    # estimate moves on trade prints (Glosten–Milgrom), so a fill
+    # produces *persistent* post-fill drift even when the aggressor flow
+    # itself has no memory. Bites only with ``anchor="ref"`` (the
+    # reference is what LOs deposit around); 0 is bit-identical legacy
+    # and consumes zero extra RNG draws.
+    ref_fill_gain: float = 0.0
     seed: int = 0
     # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
     # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
@@ -438,6 +447,7 @@ class ZILobConfig:
         _prob(self.p_buy, "p_buy")
         _nonneg_finite(self.density_exponent, "density_exponent")
         _nonneg_finite(self.ref_halflife, "ref_halflife")
+        _nonneg_finite(self.ref_fill_gain, "ref_fill_gain")
         if self.anchor not in ("touch", "ref"):
             raise ValueError(f"anchor must be 'touch' or 'ref', got {self.anchor!r}")
         if isinstance(self.band, bool) or int(self.band) < 1:
@@ -1268,6 +1278,9 @@ class ZILobSimulator:
         )
         self.trades.append(trade)
         self.n_fills += 1
+        gain = self._cfg.ref_fill_gain
+        if gain > 0.0:
+            self._ref_ema += (1.0 if aggressor == "buy" else -1.0) * gain
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
