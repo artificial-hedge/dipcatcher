@@ -34,7 +34,6 @@ src/quant_fund/pretrade/shadow.py 6
 src/quant_fund/proof/verify.py 4
 src/quant_fund/proofcore/ci.py 1
 src/quant_fund/proofcore/provenance.py 3
-src/quant_fund/research/admission.py 2
 src/quant_fund/research/benches/intervals.py 3
 src/quant_fund/research/expert_mixture.py 1
 src/quant_fund/research/fleet_eval.py 1

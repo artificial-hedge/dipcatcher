@@ -142,7 +142,10 @@ def admission_check(
         doc = json.loads(candidate.read_text())
         if not isinstance(doc, Mapping):
             raise ValueError("receipt root is not an object")
-    except Exception as exc:  # noqa: BLE001 — recorded, never swallowed
+    except (OSError, ValueError) as exc:
+        # Narrowed from `except Exception` (quality ratchet): the parse block
+        # reads bytes then json-loads — OSError/ValueError are the only fault
+        # modes; exotic errors propagate. Recorded, never swallowed.
         doc = {}
         seal_ok = False
         checks.append({"name": "parse", "ok": False, "errors": [str(exc)]})
@@ -271,7 +274,7 @@ def admission_check(
                 scoped = set(entry["scope"]) if isinstance(entry["scope"], list) else set()
                 try:
                     cand_doc = json.loads(candidate.read_text())
-                except Exception:  # noqa: BLE001 — parse already recorded
+                except (OSError, ValueError):  # parse already recorded above
                     cand_doc = {}
                 paths = (
                     {f["path"] for f in harvest_findings(cand_doc, candidate.name)}
