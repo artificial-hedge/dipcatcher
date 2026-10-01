@@ -309,6 +309,7 @@ src/quant_fund/microstructure/sign_predict.py
 src/quant_fund/microstructure/sim_real_ledger.py
 src/quant_fund/microstructure/split_flow.py
 src/quant_fund/microstructure/split_flow_bench.py
+src/quant_fund/microstructure/spread_decomp.py
 src/quant_fund/microstructure/spread_dynamics.py
 src/quant_fund/microstructure/spread_response.py
 src/quant_fund/microstructure/stale_quote.py
