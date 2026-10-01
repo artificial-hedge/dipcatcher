@@ -27,7 +27,6 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.stats import norm
 
-from quant_fund.diffbacktest.spec import LIVE_PNL_CLAIM, RESEARCH_ONLY
 from quant_fund.fusion.quantile_stack import cross_fitted_quantile_stack
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -284,8 +283,8 @@ def attribution_bench(
         "schema": "attribution.v1",
         "git_revision": git_revision(),
         "data_label": "SYNTHETIC",
-        "research_only": RESEARCH_ONLY,
-        "live_pnl_claim": LIVE_PNL_CLAIM,
+        "research_only": True,
+        "live_pnl_claim": False,
         "claim": {
             "invariant": "phantom members get flagged; signal members earn positive LOO delta",
             "verdict": "ok" if fn == 0 and fp == 0 else "partial",
