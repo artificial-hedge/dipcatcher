@@ -240,9 +240,16 @@ def test_mrm_dossier_compiles_five_activities(tmp_path: Path):
     ).save(card_path)
     art = tmp_path / "contamination_report.json"
     art.write_text(json.dumps({"overall_flagged": False}), encoding="utf-8")
+    # complete requires each non-governance activity to pin real evidence —
+    # a validation-only dossier is incomplete (see test_audit_fixes).
+    artifacts = {"validation": art}
+    for activity in ("development", "implementation", "monitoring"):
+        f = tmp_path / f"{activity}.json"
+        f.write_text(json.dumps({"artifact": activity}), encoding="utf-8")
+        artifacts[activity] = f
     dossier = compile_dossier(
         modelcard_path=card_path,
-        artifacts={"validation": art},
+        artifacts=artifacts,
         out_path=tmp_path / "dossier.json",
     )
     assert dossier.complete
