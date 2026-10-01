@@ -1053,6 +1053,27 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
     wrong-conditioning bug (the pair densities live on conditioned
     uniforms).
     """
+    return float(_vine_logpdf_rows(vm, u).sum())
+
+
+def vine_logpdf_rows(vm: VineMatrix, u: Array) -> Array:
+    """Per-observation vine log-density, shape (n,); sums to ``vine_logpdf``.
+
+    Needed by lanes that score *individual* held-out observations (e.g.
+    confidence sequences on log-loss differentials) rather than totals.
+    """
+    return _vine_logpdf_rows(vm, u)
+
+
+def _edge_logpdf_rows(fam: str, par: dict[str, float], u1: Array, u2: Array) -> Array:
+    """Per-observation log pair-copula density (vectorized, no row sum)."""
+    from quant_fund.models.rvine import _vec_logpdf
+
+    return _vec_logpdf(fam, par, u1, u2)
+
+
+def _vine_logpdf_rows(vm: VineMatrix, u: Array) -> Array:
+    """Per-observation vine log-density — the row-wise spine of vine_logpdf."""
     m = _as_finite_matrix(u)
     if m.shape[1] != vm.dim:
         raise ValueError(f"u has {m.shape[1]} columns but vine has dim={vm.dim}")
@@ -1061,7 +1082,7 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
     d = vm.dim
     structure = vm.structure
 
-    total_ll = 0.0
+    row_ll = np.zeros(m.shape[0], dtype=np.float64)
 
     if structure == "cvine":
         # h_data[t][c] = F(x_{t+c} | x_0..t-1); col 0 is the tree root.
@@ -1075,7 +1096,7 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
                 if key not in vm.families:
                     continue
                 fam, par = vm.pair_copula(tree, edge_idx)
-                total_ll += _edge_loglik(fam, par, cur[:, 0], cur[:, leaf_var - tree])
+                row_ll += _edge_logpdf_rows(fam, par, cur[:, 0], cur[:, leaf_var - tree])
             if tree < d - 2 and cur.shape[1] > 1:
                 # Push: next root col + remaining leaf transforms.
                 first: Array
@@ -1093,7 +1114,7 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
                     else:
                         next_cols.append(cur[:, leaf_var - tree])
                 h_data.append(np.column_stack([np.asarray(c, dtype=np.float64) for c in next_cols]))
-        return total_ll
+        return row_ll
 
     if structure == "dvine":
         # Double-array ladder (mirrors vine_fit):
@@ -1109,7 +1130,7 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
                 key = (tree, s)
                 if key in vm.families:
                     fam, par = vm.pair_copula(tree, s)
-                    total_ll += _edge_loglik(fam, par, v_left[s], v_right[s + 1])
+                    row_ll += _edge_logpdf_rows(fam, par, v_left[s], v_right[s + 1])
                     next_left.append(_h_eval(v_left[s], v_right[s + 1], fam, par))
                     next_right.append(_h_eval(v_right[s + 1], v_left[s], fam, par))
                 else:
@@ -1119,12 +1140,12 @@ def vine_logpdf(vm: VineMatrix, u: Array) -> float:
             v_right = next_right
             if not v_left:
                 break
-        return total_ll
+        return row_ll
 
     if structure == "rvine" and vm.rvine_spec is not None:
         from quant_fund.models.rvine import rvine_logpdf_edges
 
-        return float(rvine_logpdf_edges(m, cast("RVineSpec", vm.rvine_spec)).sum())
+        return rvine_logpdf_edges(m, cast("RVineSpec", vm.rvine_spec))
 
     # Generic R-vine without a fitted spec: edge endpoints are variable
     # labels in vine space, and the correct arguments are conditioned
