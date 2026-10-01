@@ -208,6 +208,14 @@ from quant_fund.research.benches_w27 import (
     bench_implied_tree,
     bench_instrumental_quantile,
 )
+from quant_fund.research.benches_w28 import (
+    bench_callaway_did,
+    bench_causal_discovery,
+    bench_enkf,
+    bench_knockoffs,
+    bench_sindy,
+    bench_surrogate_nonlinear,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1916,6 +1924,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "instrumental_quantile": bench_instrumental_quantile(),
         "implied_tree": bench_implied_tree(),
         "ensemble_kalman_inversion": bench_ensemble_kalman_inversion(),
+        "enkf": bench_enkf(),
+        "causal_discovery": bench_causal_discovery(),
+        "knockoffs": bench_knockoffs(),
+        "callaway_did": bench_callaway_did(),
+        "surrogate_nonlinear": bench_surrogate_nonlinear(),
+        "sindy": bench_sindy(),
     }
 
     hyps = _build_hypotheses(families, rankers)

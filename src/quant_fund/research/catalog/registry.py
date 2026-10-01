@@ -317,6 +317,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "instrumental_quantile",
         "implied_tree",
         "ensemble_kalman_inversion",
+        # SOTA canon wave 28 batteries (see research/benches_w28.py):
+        # sequential ensemble Kalman data assimilation (EnKF/EAKF/LETKF
+        # + Gaspari-Cohn localization on Lorenz-96), stable-PC/GES/LiNGAM
+        # causal structure discovery, Barber-Candes knockoff FDR filter
+        # with stability selection, Callaway-Sant'Anna group-time ATT
+        # with pretrend Wald + cluster bootstrap, surrogate-data
+        # nonlinearity tests (AAFT/IAAFT + BDS + Keenan + Tsay), SINDy
+        # sparse identification of nonlinear dynamics. Same SYNTHETIC
+        # diagnostic contract.
+        "enkf",
+        "causal_discovery",
+        "knockoffs",
+        "callaway_did",
+        "surrogate_nonlinear",
+        "sindy",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

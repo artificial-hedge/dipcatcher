@@ -91,7 +91,7 @@
     },
     "metrics": {
       "doc": "docs/AUDIT_P62_STATS.md",
-      "n_modules": 89,
+      "n_modules": 93,
       "status": "audited"
     },
     "microstructure": {
@@ -101,7 +101,7 @@
     },
     "models": {
       "doc": "docs/AUDIT_MODELS.md",
-      "n_modules": 240,
+      "n_modules": 242,
       "status": "audited"
     },
     "monitoring": {
@@ -175,7 +175,7 @@
     },
     "research": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 131,
+      "n_modules": 132,
       "status": "audited"
     },
     "risk": {
