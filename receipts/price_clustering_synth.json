@@ -1,0 +1,133 @@
+{
+  "arms": {
+    "markov_regime": {
+      "chi2_dof": 9,
+      "chi2_p_value": 8.994690370482329e-08,
+      "chi2_stat": 50.41630483487445,
+      "excess_round_share": -0.007970863102688741,
+      "n_events": 36081,
+      "n_reachable_levels": 124,
+      "n_submits": 17911,
+      "price_domain_residues_match": true,
+      "residue0_reachable": true,
+      "residue_shares": [
+        0.09686784657473062,
+        0.09949193233208643,
+        0.10178102841829044,
+        0.10088772262855229,
+        0.1070850315448607,
+        0.1038467980570599,
+        0.09926860588465189,
+        0.09753782591703422,
+        0.09586287756127519,
+        0.09737033108145832
+      ],
+      "uniform_baseline_shares": [
+        0.10483870967741936,
+        0.10483870967741936,
+        0.10483870967741936,
+        0.10483870967741936,
+        0.0967741935483871,
+        0.0967741935483871,
+        0.0967741935483871,
+        0.0967741935483871,
+        0.0967741935483871,
+        0.0967741935483871
+      ]
+    },
+    "ref_band": {
+      "chi2_dof": 8,
+      "chi2_p_value": 0.9870593684016313,
+      "chi2_stat": 1.7787615516573514,
+      "excess_round_share": 0.0,
+      "n_events": 36099,
+      "n_reachable_levels": 10,
+      "n_submits": 18071,
+      "price_domain_residues_match": true,
+      "residue0_reachable": false,
+      "residue_shares": [
+        0.0,
+        0.09960710530684522,
+        0.1008798627635438,
+        0.10004980355265342,
+        0.09949643074539317,
+        0.19772010403408777,
+        0.10115654916717393,
+        0.10126722372862597,
+        0.10115654916717393,
+        0.09866637153450279
+      ],
+      "uniform_baseline_shares": [
+        0.0,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.2,
+        0.1,
+        0.1,
+        0.1,
+        0.1
+      ]
+    },
+    "touch_zi": {
+      "chi2_dof": 9,
+      "chi2_p_value": 6.3966239795277906e-27,
+      "chi2_stat": 145.8432410727627,
+      "excess_round_share": 0.008863204627435922,
+      "n_events": 35653,
+      "n_reachable_levels": 84,
+      "n_submits": 17848,
+      "price_domain_residues_match": true,
+      "residue0_reachable": true,
+      "residue_shares": [
+        0.10410129986553115,
+        0.0969296279695204,
+        0.09367996414164052,
+        0.09636934110264456,
+        0.09547288211564321,
+        0.09631331241595698,
+        0.10107575078440162,
+        0.10314881219184223,
+        0.10337292693859255,
+        0.1095360824742268
+      ],
+      "uniform_baseline_shares": [
+        0.09523809523809523,
+        0.09523809523809523,
+        0.09523809523809523,
+        0.10714285714285714,
+        0.10714285714285714,
+        0.10714285714285714,
+        0.10714285714285714,
+        0.09523809523809523,
+        0.09523809523809523,
+        0.09523809523809523
+      ]
+    }
+  },
+  "claim": "synthetic_placement_diagnostic_only",
+  "data_label": "SYNTHETIC",
+  "detector_probe": {
+    "chi2_p_value": 0.0,
+    "detected": true,
+    "excess_round_share": 0.0850891089108911,
+    "n": 60000,
+    "planted_residue0_multiplier": 2.0
+  },
+  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "interpretation": "No round-number preference: touch-arm excess_round_share=+0.0089 at residue 0, regime arm -0.0080 \u2014 both under 1pt. The omnibus chi-square fires anyway (p=6.4e-27): ZI submits concentrate near the wandering anchor, so placement is not uniform over the reachable hull \u2014 a level-density effect, not residue-0 clustering. The ref-anchor arm leaves residue 0 unreachable by construction (reachable levels at \u00b11..\u00b15 only) \u2014 reachable-set normalization keeps its excess at +0.0000 where a naive 1/m baseline would fabricate a -0.1 deficit. Detector probe recovered the planted 2x round-level preference (p=0.0e+00). SYNTHETIC placement diagnostic only \u2014 not market evidence.",
+  "kind": "price_clustering",
+  "label": "SYNTHETIC",
+  "live_pnl_claim": false,
+  "params": {
+    "band": 5,
+    "horizon": 30000.0,
+    "m": 10,
+    "seed": 0
+  },
+  "receipt_sha256": "8400d4b19ddd23f395f27334e7d26f7f392a17a9b2af4510b3b1e241f30e2404",
+  "research_only": true,
+  "schema": "price_clustering.v1",
+  "simulated_only": true
+}
