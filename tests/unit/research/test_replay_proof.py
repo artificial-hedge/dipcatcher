@@ -269,3 +269,89 @@ def test_committed_serial_watch_lane_replays(tmp_path: Path) -> None:
     assert body["all_match"] is True
     assert body["verdict"] == "pass"
     assert replay_proof_contract_errors(body) == []
+
+
+# --- committed replay-declared lanes (beyond serial-watch) ----------------
+
+
+def _committed_lane_receipts() -> list[Path]:
+    """Committed receipts carrying a valid ``replay`` manifest, minus the
+    serial-watch receipt already covered by ``test_committed_serial_watch_lane_replays``."""
+    receipts_dir = REPO_ROOT / "receipts"
+    if not receipts_dir.is_dir():
+        return []
+    found: list[Path] = []
+    for candidate in sorted(receipts_dir.glob("*.json")):
+        if candidate.name == DECLARED_RECEIPT.name:
+            continue
+        try:
+            if replay_manifest(candidate) is not None:
+                found.append(candidate)
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+    return found
+
+
+def _mirror_lane_run_inputs(root: Path) -> None:
+    """Mirror the repo inputs every lane argv reads: ``configs/`` wholesale
+    (research.yaml composes base.yaml; fleet/vol-bench/verdict/fleet-monitor
+    resolve it relative to cwd) — lanes that do not read it are unaffected."""
+    src_dir = REPO_ROOT / "configs"
+    if not src_dir.is_dir():
+        return
+    dst_dir = root / "configs"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    for src in src_dir.iterdir():
+        if src.is_file():
+            (dst_dir / src.name).write_bytes(src.read_bytes())
+
+
+@pytest.mark.parametrize(
+    "declared",
+    _committed_lane_receipts(),
+    ids=lambda path: path.name.removesuffix(".json"),
+)
+def test_committed_lane_replays(tmp_path: Path, declared: Path) -> None:
+    """Each committed replay-declared lane re-executes argv and reproduces
+    its pinned artifact bytes end-to-end."""
+    source = json.loads(declared.read_text())
+    manifest = replay_manifest(declared)
+    assert manifest is not None
+
+    _mirror_lane_run_inputs(tmp_path)
+    receipt = _write_receipt(tmp_path / "receipts", source, name=declared.name)
+
+    body = run_replay(receipt, root=tmp_path, timeout_s=180.0)
+    assert body["source_receipt_sha256"] == _file_sha256(receipt)
+    assert body["source_receipt_sha256"] == _file_sha256(declared)
+    assert body["source_receipt_seal"] == source["receipt_sha256"]
+    assert body["argv"] == manifest["argv"]
+    assert body["exit_code"] == 0
+    assert body["all_match"] is True
+    assert body["verdict"] == "pass"
+    assert replay_proof_contract_errors(body) == []
+
+
+@pytest.mark.parametrize(
+    "declared",
+    _committed_lane_receipts(),
+    ids=lambda path: path.name.removesuffix(".json"),
+)
+def test_committed_lane_forged_digest_fails(tmp_path: Path, declared: Path) -> None:
+    """Pinning a wrong artifact digest in an otherwise valid manifest fails
+    closed: argv still runs to completion but the comparison reports fail."""
+    source = json.loads(declared.read_text())
+    manifest = source.get("replay") or (source.get("payload") or {}).get("replay")
+    assert isinstance(manifest, dict) and manifest["artifacts"]
+    forged = json.loads(json.dumps(source))
+    forged_manifest = forged.get("replay") or forged["payload"]["replay"]
+    forged_manifest["artifacts"][0]["sha256"] = "0" * 64
+
+    _mirror_lane_run_inputs(tmp_path)
+    receipt = _write_receipt(tmp_path / "receipts", forged, name=declared.name)
+
+    body = run_replay(receipt, root=tmp_path, timeout_s=180.0)
+    assert body["exit_code"] == 0
+    assert body["all_match"] is False
+    assert body["verdict"] == "fail"
+    assert replay_proof_contract_errors(body) == []

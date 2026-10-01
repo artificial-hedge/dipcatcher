@@ -50,3 +50,19 @@ def test_synthetic_commentary_without_numbers_allowed():
     # presenting results - not a violation.
     text = "I will not rename synthetic evidence; the label stays."
     assert validate_fx1_output(text) == text
+
+
+def test_synthetic_numeric_commentary_without_presentation_allowed():
+    """A numeric mention WITHOUT a presentation verb is commentary, not
+    evidence presentation (mutation-testing find: the And->Or mutant of
+    ``numeric and presenting`` survived — no test exercised the numeric-only
+    arm). Fails closed only when BOTH arms fire."""
+    text = "The synthetic fixture ships 3 seeded lanes; nothing is claimed."
+    assert validate_fx1_output(text) == text
+
+
+def test_synthetic_presentation_verb_without_number_allowed():
+    """A presentation verb WITHOUT any numeric claim is commentary (the
+    presenting-only arm of the same And — the mutant would raise here)."""
+    text = "We do not present results from synthetic runs in headlines."
+    assert validate_fx1_output(text) == text
