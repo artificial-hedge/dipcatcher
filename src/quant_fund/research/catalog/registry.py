@@ -588,6 +588,54 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ross_recovery",
         "ait_sahalia",
         "toda_yamamoto",
+        # wave 55 — Diebold-Mariano + Harvey-Leybourne-Newbold
+        # predictive-accuracy test, Engle-Granger/Phillips-Ouliaris
+        # residual cointegration + ECM adjustment speed, Glosten-
+        # Milgrom sequential-trade learning with martingale-price
+        # diagnostics, Hasbrouck information share bounds +
+        # Gonzalo-Granger permanent weights, BDS correlation-
+        # integral independence test, Cochrane-Piazzesi tent-shaped
+        # return-forecasting bond factor, Engle-Ng sign/size-bias
+        # asymmetry diagnostics. Same SYNTHETIC diagnostic contract.
+        "diebold_mariano",
+        "engle_granger",
+        "glosten_milgrom",
+        "hasbrouck_is",
+        "bds",
+        "cochrane_piazzesi",
+        "engle_ng",
+        # wave 52 — Shin-Yu-Greenwood-Nimmo nonlinear ARDL
+        # (asymmetric long/short-run multipliers, bounds-F),
+        # Adrian-Boyarchenko-Giannone growth-at-risk (Koenker-
+        # Bassett LP quantiles + isotonic crossing fix), Melick-
+        # Thomas mixture implied-PDF recovery (martingale-pinned
+        # least squares), Bandi-Russell noise/volatility
+        # separation (optimal sparse sampling), Hong-Li PIT
+        # density-forecast M-statistic, Beveridge-Nelson
+        # permanent/transitory decomposition. Same SYNTHETIC
+        # diagnostic contract.
+        "nardl",
+        "growth_at_risk",
+        "melick_thomas",
+        "bandi_russell",
+        "hong_li",
+        "beveridge_nelson",
+        # wave 53 — Corradi-Swanson out-of-sample predictive-
+        # accuracy test (moving-block bootstrap), Engle-Kroner
+        # variance-targeted diagonal BEKK(1,1) multivariate
+        # GARCH, Andersen quadratic-exponential Heston
+        # discretization (positive under Feller violation),
+        # Hansen-Lunde-Nason model confidence set (block-boot
+        # T_max step-down), Christoffersen-Pelletier Weibull-
+        # duration VaR clustering backtest, Shephard-Sheppard
+        # HEAVY(P) two-equation realized-measure volatility.
+        # Same SYNTHETIC diagnostic contract.
+        "corradi_swanson",
+        "engle_kroner_bekk",
+        "heston_qe",
+        "model_confidence_set",
+        "christoffersen_pelletier",
+        "sheppard_heavy",
         # wave 54 — Pesaran-Timmermann directional-accuracy sign test,
         # Giacomini-Rossi fluctuation predictive-ability break
         # detection, Muller-Watson low-frequency correlation and
