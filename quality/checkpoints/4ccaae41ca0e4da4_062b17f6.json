@@ -1,0 +1,50 @@
+{
+  "algorithm": "ed25519",
+  "key_id": "bc3bcff676056adf",
+  "payload": {
+    "at": "2026-09-29T23:51:09+00:00",
+    "code": {
+      "revision": "1dfd3879875c3a89dbe8425a98907a5001398bab",
+      "worktree_sha256": "38e49ac0cc0a7293bceafad76683cc404ab28195c09b27584bb70caa3b38b3ee"
+    },
+    "heads": {
+      ".github/workflows/*.yml": {
+        "receipt": "corpus_epoch_909054c1b0499ef9.json",
+        "sha256": "c5f024b2d3f3c20d2c1fe0d6b8df40769a65dec04dafc5a6805e106f0ee16817"
+      },
+      "configs/*": {
+        "receipt": "corpus_epoch_0f9752e7c31f8596.json",
+        "sha256": "c59780d853d0f62d924a3bb673430c93ef060ecb8be9fc006a0c7fa5b815a479"
+      },
+      "quality/*.json": {
+        "receipt": "corpus_epoch_473f030e9aad9a89.json",
+        "sha256": "cda1ff99f81ec813d858452204e4d6cf9975e59e2f4350df4309ccd6e175a77d"
+      },
+      "receipts/*.json": {
+        "receipt": "corpus_epoch_404d16a7af1d3862.json",
+        "sha256": "24ba29424ef385c4916dc96e4ae775496ec1bde9ebc95e4e126d8b44e36ff8d2"
+      },
+      "verifier/*.md": {
+        "receipt": "corpus_epoch_30b5409791dfb780.json",
+        "sha256": "34b16b214c1cb7d47f5ca7fe6ecd5f49d90a1755e53bbf0bc01f36f49de0f453"
+      }
+    },
+    "missing_pins": [],
+    "pins": {
+      "gate_pins.sig": "d5995059d902cce522a59ea8875661863d8cfbeeb586ea6405c80c302ab2c6fc",
+      "quality/crown_jewels.json": "574a4a7db8a52353baf1a7c19bda8b66d46c583b1012138a97bc229c1856108d",
+      "quality/epoch_heads.json": "e94fbcdedded07ce7aaa0cd2da6dfb8aac30b7615e449437ee6c9dcacaa8a21c"
+    },
+    "prev_sha256": "288e97ee072017ee7f43099bbcf6eb6d79a95e2d6e33d8d8cc5666cbf1aa3b8e",
+    "schema": "integrity_checkpoint.v1",
+    "spine": {
+      "n_archives": 20,
+      "tip": "fdd3ee1811654c76_19a106d5.json"
+    },
+    "witness": {
+      "n_proofs": 29
+    }
+  },
+  "schema": "integrity_checkpoint_sig.v1",
+  "signature": "862a37d2f75cc4b9198682c6ba0ca0a70e03e8d2194dd7818463aae0981168f8537ffcf063e5419e9e546e108ccbe5915339265b8146d13cc0ad0478cfda030e"
+}
