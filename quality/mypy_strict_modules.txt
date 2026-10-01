@@ -54,6 +54,7 @@ src/quant_fund/cli/train_cmds.py
 src/quant_fund/compute/__init__.py
 src/quant_fund/compute/cache.py
 src/quant_fund/compute/parallel.py
+src/quant_fund/compute/provenance.py
 src/quant_fund/config/__init__.py
 src/quant_fund/config/loader.py
 src/quant_fund/config/models.py
@@ -113,7 +114,10 @@ src/quant_fund/features/liquidity.py
 src/quant_fund/features/metadata.py
 src/quant_fund/formal/__init__.py
 src/quant_fund/formal/accounting.py
+src/quant_fund/formal/fifo_priority.py
+src/quant_fund/formal/lob_invariants.py
 src/quant_fund/formal/order_lifecycle.py
+src/quant_fund/formal/seed_sweep.py
 src/quant_fund/formal/traces.py
 src/quant_fund/fusion/__init__.py
 src/quant_fund/fusion/engine.py
@@ -142,6 +146,7 @@ src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py
 src/quant_fund/labels/engine.py
 src/quant_fund/labels/forward.py
+src/quant_fund/labels/meta_model.py
 src/quant_fund/leakage/__init__.py
 src/quant_fund/leakage/ast_scan.py
 src/quant_fund/leakage/cli.py
@@ -263,6 +268,7 @@ src/quant_fund/microstructure/book_metrics.py
 src/quant_fund/microstructure/book_panel.py
 src/quant_fund/microstructure/cancel_cluster.py
 src/quant_fund/microstructure/cancel_gradient.py
+src/quant_fund/microstructure/cancel_lead.py
 src/quant_fund/microstructure/candle_book_features.py
 src/quant_fund/microstructure/deep_microprice.py
 src/quant_fund/microstructure/depth_consumption.py
@@ -310,6 +316,7 @@ src/quant_fund/microstructure/price_clustering.py
 src/quant_fund/microstructure/price_improvement.py
 src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_depletion.py
+src/quant_fund/microstructure/queue_fate.py
 src/quant_fund/microstructure/queue_jump.py
 src/quant_fund/microstructure/queue_occupancy.py
 src/quant_fund/microstructure/queue_priority.py
@@ -331,10 +338,12 @@ src/quant_fund/microstructure/spread_dynamics.py
 src/quant_fund/microstructure/spread_response.py
 src/quant_fund/microstructure/stale_quote.py
 src/quant_fund/microstructure/streak_stats.py
+src/quant_fund/microstructure/sweep_width.py
 src/quant_fund/microstructure/synthetic_lob.py
 src/quant_fund/microstructure/tape_digest.py
 src/quant_fund/microstructure/tape_stats.py
 src/quant_fund/microstructure/tick_rule.py
+src/quant_fund/microstructure/trade_decomp.py
 src/quant_fund/microstructure/vendor_book_map.py
 src/quant_fund/microstructure/vol_clock.py
 src/quant_fund/microstructure/vol_signature.py
@@ -656,6 +665,7 @@ src/quant_fund/reality/psr.py
 src/quant_fund/reality/report.py
 src/quant_fund/reality/spa.py
 src/quant_fund/registry/__init__.py
+src/quant_fund/registry/artifact_store.py
 src/quant_fund/registry/mlflow_store.py
 src/quant_fund/reporting/__init__.py
 src/quant_fund/reporting/report.py
@@ -741,6 +751,7 @@ src/quant_fund/research/tape_registry.py
 src/quant_fund/research/verify.py
 src/quant_fund/research/vol_bench.py
 src/quant_fund/risk/__init__.py
+src/quant_fund/risk/decay_watch.py
 src/quant_fund/risk/gates.py
 src/quant_fund/risk/overlay.py
 src/quant_fund/risk/pyrisk.py
