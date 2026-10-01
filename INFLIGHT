@@ -986,3 +986,17 @@ wave 36 — 6 model lanes + integration
   regression_kink (fuzzy RKD b_rk .64 vs true .5, fs kink .90,
   delta-method SE)
   → PR stacked on w35 (187→193 families)
+
+wave 37 — 6 model lanes + integration
+  (models/spatial_econometrics, models/ordered_choice,
+  models/triple_difference, models/distribution_regression,
+  models/simex, models/lp_did):
+  spatial_econometrics (SAR concentrated likelihood, rho .644 vs
+  .6, beta err .05 vs OLS .35, Moran cleared) + ordered_choice
+  (threshold MLE, beta0 .996 vs 1.0, mae_prob .002, null .029) +
+  triple_difference (ddd 1.095 vs 1.0, naive DiD 1.85 confounded,
+  cell contrast exact) + distribution_regression (CFM logit CDF,
+  mean|b1| 1.52 hetero vs 2.86 homo) + simex (corrected .79 vs
+  naive .60 at reliability .6, extrapolation r2 1.0) + lp_did
+  (ramp tracked .30/.77/1.14 vs .4/.8/1.2, z=20, null .11)
+  → PR stacked on w36 (193→199 families)
