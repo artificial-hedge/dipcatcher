@@ -220,6 +220,7 @@ _LANE_COVERED_SCHEMAS = frozenset(
         "receipt_lattice.v1",
         "rough_vol.v1",
         "fbm_circulant.v1",
+        "corpus_epoch.v1",
     }
 )
 #: schemas whose receipts dispatch to evalue_family_contract_errors via their
