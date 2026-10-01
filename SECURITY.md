@@ -76,9 +76,20 @@ hit unexpected personal data and report it.
 
 ## Supply chain
 
-- Dependencies are locked (`uv.lock`). CI runs `pip-audit --strict` (the
-  `audit` job in `.github/workflows/ci.yml`) and Bandit. Dependabot tracks
-  the `uv`, `pip`, and `github-actions` ecosystems.
+- Python dependencies are locked (`uv.lock`), npm projects each have a
+  `package-lock.json`, and the native extension has `Cargo.lock`. CI audits
+  every platform's Python pins, including all groups and optional extras,
+  with `pip-audit --strict` and runs Bandit. The dependency-audit workflow
+  also checks all three npm projects, Rust, and the independently resolved
+  vendored Kronos requirements on dependency changes and weekly.
+- Run `make audit-all` locally (requires npm and `cargo-audit`; install the
+  latter with `cargo install cargo-audit --version 0.22.2 --locked`). The
+  individual targets are `audit`, `audit-js`, `audit-rust`, and `audit-kronos`.
+  Kronos still uses requirements files rather than a lockfile; its audit
+  checks a fresh Python 3.12 resolution without installing the model stack.
+- Dependabot tracks root Python via `uv`, vendored Kronos via `pip`, all npm
+  projects, Cargo, and GitHub Actions. Root Python updates have one owner
+  so pip update PRs cannot leave `uv.lock` stale.
 - Pull requests run dependency review. CodeQL (`security-extended`) analyzes
   `src/`, `tests/`, and `scripts/`. OpenSSF Scorecard runs on pull requests,
   on `main`, and weekly.
