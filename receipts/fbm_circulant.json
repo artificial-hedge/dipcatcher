@@ -1,0 +1,88 @@
+{
+  "claim": {
+    "autocorr": {
+      "lags": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "measured": [
+        -0.42581077745483753,
+        -0.02616535811201328,
+        -0.010813960742523774,
+        -0.007064498051105565,
+        -0.004449295124694729,
+        -0.0030987390933316394,
+        -0.002957661133765445,
+        -0.002518793998236701
+      ],
+      "theoretical": [
+        -0.42565082250148245,
+        -0.0258328851892764,
+        -0.011627806730552748,
+        -0.006777610234528053,
+        -0.004491165522140017,
+        -0.0032176695773720176,
+        -0.0024303377867253007,
+        -0.0019071987554422076
+      ]
+    },
+    "brownian_autocorr": [
+      0.0003420793877520312,
+      0.00016056990311282893,
+      -0.00023331244178965358,
+      0.0008856056953635034,
+      0.000735179671891748,
+      0.0005869786824037233,
+      9.34742324169373e-05,
+      -0.0007521038337375348
+    ],
+    "hybrid_variance_ratio": {
+      "median": 0.894010775076065,
+      "p10": 0.8655834661103484,
+      "p90": 0.922307639689213
+    },
+    "n_passed": 5,
+    "n_probes": 5,
+    "ok": true,
+    "params": {
+      "h": 0.1,
+      "n": 1024,
+      "n_paths": 2000,
+      "seed": 71
+    },
+    "results": {
+      "autocorr_closed_form": true,
+      "brownian_limit": true,
+      "exact_variance_scaling": true,
+      "hybrid_deficit_pinned": true,
+      "self_similar": true
+    },
+    "riemann_variance_ratio": {
+      "median": 0.761684906295924,
+      "p10": 0.7166365741679585,
+      "p90": 0.8136050187363507
+    },
+    "self_similar_ratio": {
+      "measured": 1.186453883998065,
+      "theoretical": 1.148698354997035
+    },
+    "variance_ratio": {
+      "p10": 0.955295222620468,
+      "p90": 1.0224962763304968
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "76a0cc4320f879da681695af07bb6faa1894e63c",
+  "interpretation": "Davies-Harte circulant embedding gives *exact* fGN/fBM draws (no Volterra discretization error). Differenced against the BLP hybrid scheme, it measures the kappa=1 point-mass deficit directly: hybrid Var / exact Var sits at ~0.85 for H=0.10, consistent with the rough_vol receipt's self-reported ratio. SYNTHETIC model-correctness evidence; no market claims.",
+  "kind": "fbm_circulant",
+  "live_pnl_claim": false,
+  "receipt_sha256": "d5b9f2fbead32c9c520cb577ad246804ef59df6c3cd3274328633ada9f455862",
+  "research_only": true,
+  "schema": "fbm_circulant.v1"
+}
