@@ -54,11 +54,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "17c1e4d59806b28f67f7051bd80bf47edf3bed9d",
+  "git_revision": "c0d127bf760fdae841e027fbc66f90b7d1d516d2",
   "interpretation": "All probes hold: the forecast pipeline is deterministic, fails closed on degenerate inputs, never reads past asof, and stamps SYNTHETIC data honestly. Flagged warts are documented behavior, deliberately not fixed.",
   "kind": "forecast_pipeline_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "c3962bbe9fa57ff3d607a77a87ba42c7f4fde6ae4a95307a77f0bafde18e880e",
+  "receipt_sha256": "b96983f04ff66a1f9c8be770c415d678a9d3a0c4e17f63668ab184dada1abdea",
   "research_only": true,
   "schema": "forecast_pipeline_audit.v1"
 }
