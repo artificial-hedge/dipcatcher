@@ -316,7 +316,7 @@ flowchart LR
   quant_fund_hedge_lab -->|5| quant_fund_risk
   quant_fund_hedge_lab -->|6| quant_fund_utils
   quant_fund_hedge_lab -->|1| quant_fund_validation
-  quant_fund_hmm -->|6| quant_fund_utils
+  quant_fund_hmm -->|9| quant_fund_utils
   quant_fund_labels -->|1| quant_fund_config
   quant_fund_labels -->|1| quant_fund_data
   quant_fund_labels -->|1| quant_fund_schemas
@@ -712,7 +712,7 @@ sequenceDiagram
 | `quant_fund.formal` | 8 |
 | `quant_fund.fusion` | 7 |
 | `quant_fund.hedge_lab` | 16 |
-| `quant_fund.hmm` | 7 |
+| `quant_fund.hmm` | 8 |
 | `quant_fund.labels` | 7 |
 | `quant_fund.leakage` | 8 |
 | `quant_fund.lightspeed` | 8 |
@@ -748,7 +748,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **1119**
+- Modules scanned: **1120**
 - Packages: **79**
 - Cross-package import edges: **332**
 

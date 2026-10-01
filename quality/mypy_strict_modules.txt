@@ -163,6 +163,7 @@ src/quant_fund/hmm/discrete.py
 src/quant_fund/hmm/duration_check.py
 src/quant_fund/hmm/eisner.py
 src/quant_fund/hmm/em_audit.py
+src/quant_fund/hmm/hmm_stability.py
 src/quant_fund/hmm/verify.py
 src/quant_fund/labels/__init__.py
 src/quant_fund/labels/barriers.py

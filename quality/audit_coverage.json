@@ -64,7 +64,7 @@
       "status": "audited"
     },
     "hmm": {
-      "n_modules": 7,
+      "n_modules": 8,
       "status": "audited"
     },
     "labels": {
@@ -130,7 +130,7 @@
       "status": "audited"
     },
     "pipeline": {
-      "n_modules": 22,
+      "n_modules": 23,
       "status": "audited"
     },
     "pit": {
