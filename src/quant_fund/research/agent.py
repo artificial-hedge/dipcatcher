@@ -300,6 +300,14 @@ from quant_fund.research.benches_w38 import (
     bench_kernel_regression,
     bench_threshold_ar,
 )
+from quant_fund.research.benches_w39 import (
+    bench_aft_model,
+    bench_distance_covariance,
+    bench_maximum_score,
+    bench_nested_logit,
+    bench_panel_unitroot,
+    bench_sieve_estimation,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2078,6 +2086,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "threshold_ar": bench_threshold_ar(),
         "fractional_response": bench_fractional_response(),
         "interval_censoring": bench_interval_censoring(),
+        "maximum_score": bench_maximum_score(),
+        "sieve_estimation": bench_sieve_estimation(),
+        "nested_logit": bench_nested_logit(),
+        "aft_model": bench_aft_model(),
+        "distance_covariance": bench_distance_covariance(),
+        "panel_unitroot": bench_panel_unitroot(),
     }
 
     hyps = _build_hypotheses(families, rankers)

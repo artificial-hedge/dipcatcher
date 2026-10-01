@@ -1009,3 +1009,12 @@ wave 38 canon (devin/w38-canon-integration): control_function
   in-bounds 1.0 vs OLS .95) + interval_censoring (Turnbull med
   1.296 vs true 1.386, naive 1.2, ISE 2e-4)
   → PR stacked on w37 (199→205 families)
+wave 39 canon (devin/w39-canon-integration): maximum_score
+  (direction cos .994, score .72 vs null .55) + sieve_estimation
+  (beta .801/.8, g corr .996, sieve r2 .98 vs linear .47) +
+  nested_logit (beta 1.35/1.2, lambda .62 nest corr detected) +
+  aft_model (beta -.45/-.5 under 35% censoring, naive err .16 vs
+  .05) + distance_covariance (dcor .485 vs pearson .002 on
+  quadratic, perm p .008) + panel_unitroot (IPS+LLC reject at
+  rho=.85, keep at rho=1.0: p .61/.83)
+  → PR stacked on w38 (205→211 families)

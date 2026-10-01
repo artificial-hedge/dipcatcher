@@ -409,6 +409,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "threshold_ar",
         "fractional_response",
         "interval_censoring",
+        # SOTA canon wave 39 batteries (see research/benches_w39.py):
+        # Manski maximum score (smoothed-score distribution-free
+        # binary response), Chen sieve partial-linear estimation
+        # (B-spline basis), McFadden nested logit (two-level FIML,
+        # inclusive-value λ), Weibull AFT (SEV MLE under right
+        # censoring), distance covariance dependence test
+        # (Székely-Rizzo-Bakirov + permutation), panel unit-root
+        # tests (IPS + LLC, simulated moments). Same SYNTHETIC
+        # diagnostic contract.
+        "maximum_score",
+        "sieve_estimation",
+        "nested_logit",
+        "aft_model",
+        "distance_covariance",
+        "panel_unitroot",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
