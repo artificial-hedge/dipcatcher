@@ -66,6 +66,17 @@
  },
  "receipts": [
   {
+   "created_at": "2026-09-29T19:49:36.110321+00:00",
+   "evidence_level": null,
+   "file": "receipts/basis_carry_dd7705fc0f2f1c25.json",
+   "id": "basis_carry_dd7705fc0f2f1c25",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 9,
+   "research_only": true,
+   "schema": "basis_carry.v1"
+  },
+  {
    "created_at": null,
    "evidence_level": null,
    "file": "receipts/calib_real_drill.json",
@@ -207,6 +218,17 @@
    "n_hashes": 1,
    "research_only": true,
    "schema": "changepoint_localize.v1"
+  },
+  {
+   "created_at": "2026-09-29T22:57:37.934872+00:00",
+   "evidence_level": null,
+   "file": "receipts/crossvenue_basis_3f4ff76f517655a7.json",
+   "id": "crossvenue_basis_3f4ff76f517655a7",
+   "live_pnl_claim": false,
+   "n_hash_matches": 0,
+   "n_hashes": 13,
+   "research_only": true,
+   "schema": "receipt.v2"
   },
   {
    "created_at": null,

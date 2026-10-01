@@ -27,6 +27,7 @@ does not score them.
 
 - `research/reality/trials.jsonl`: absent
 - `data/metadata/real_benchmark/us_wide_20260925/manifest.json`: no candidate_count and benchmark; not a trial batch
+- `receipts/basis_carry_dd7705fc0f2f1c25.json`: basis_carry.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/calib_real_drill.json`: calibration_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/capacity_eval_cd0854242ed8a9ec.json`: capacity_overlay.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/coherence_2dd641ab766a536a.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
@@ -79,6 +80,7 @@ does not score them.
 - `receipts/coverage_real_drill.json`: coverage_audit.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cp_real_drill_gaussian_minus_conf_t_pinball.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/cp_real_drill_gaussian_pit.json`: changepoint_localize.v1; no reality_gate, backtest_overfitting block, or candidate band search
+- `receipts/crossvenue_basis_3f4ff76f517655a7.json`: receipt.v2; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/deps_security_hygiene_f3b4e6fd22e439b7.json`: deps_hygiene.v1; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
 - `receipts/drift_real_drill_gaussian_pit.json`: no schema; no reality_gate, backtest_overfitting block, or candidate band search
