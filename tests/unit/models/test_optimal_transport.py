@@ -1,93 +1,110 @@
-"""Canon tests: Sinkhorn OT, W2 barycenters (1-D and Gaussian)."""
+"""Tests for optimal transport (models/optimal_transport.py)."""
 
 from __future__ import annotations
+
+import math
 
 import numpy as np
 import pytest
 
 from quant_fund.models.optimal_transport import (
-    gaussian_bures,
-    sinkhorn_plan,
-    wasserstein_barycenter_1d,
+    bench_optimal_transport,
+    ot_plan,
+    sinkhorn,
+    synth_measures,
+    wasserstein_barycenter,
+    wasserstein_distance,
 )
 
 
-def test_sinkhorn_marginals_exact() -> None:
-    a = np.array([0.3, 0.7])
-    b = np.array([0.4, 0.6])
-    cost = np.abs(np.subtract.outer(np.arange(2.0), np.arange(2.0)))
-    out = sinkhorn_plan(a, b, cost, eps=0.01)
-    np.testing.assert_allclose(out["plan"].sum(axis=1), a, atol=1e-6)
-    np.testing.assert_allclose(out["plan"].sum(axis=0), b, atol=1e-6)
+@pytest.fixture
+def measures():
+    return synth_measures(n_bins=40, seed=3)
 
 
-def test_sinkhorn_diagonal_cheapest() -> None:
-    a = np.full(4, 0.25)
-    cost = np.abs(np.subtract.outer(np.arange(4.0), np.arange(4.0)))
-    out = sinkhorn_plan(a, a, cost, eps=0.005)
-    assert out["cost"] < 0.05  # identity coupling ~ free
-    assert np.trace(out["plan"]) > 0.8
+def _cost(s):
+    d = s[:, None] - s[None, :]
+    return d * d
 
 
-def test_sinkhorn_degenerates_to_lp_cost() -> None:
-    a = np.array([0.5, 0.5])
-    b = np.array([0.5, 0.5])
-    cost = np.array([[0.0, 1.0], [1.0, 0.0]])
-    out = sinkhorn_plan(a, b, cost, eps=0.001)
-    # OT LP cost is 0 (identity permutation)
-    assert out["cost"] < 0.01
-
-
-def test_wasserstein_barycenter_midpoint_gaussians() -> None:
-    supports = np.stack(
-        [
-            np.sort(np.random.default_rng(1).normal(0, 1, 500)),
-            np.sort(np.random.default_rng(2).normal(2, 1, 500)),
-        ]
+def test_sinkhorn_marginals(measures):
+    s = np.asarray(measures["support"])
+    c = _cost(s)
+    p = sinkhorn(np.asarray(measures["m0"]), np.asarray(measures["m1"]), c)
+    plan = np.asarray(p["plan"])
+    assert np.allclose(
+        plan.sum(axis=1), np.asarray(measures["m0"]) / measures["m0"].sum(), atol=1e-4
     )
-    probs = np.full((2, 500), 1 / 500)
-    out = wasserstein_barycenter_1d(supports, probs, np.array([0.5, 0.5]), n_grid=100)
-    # barycenter of N(0,1) and N(2,1) under W2 is N(1,1)
-    assert abs(np.mean(out["quantile"]) - 1.0) < 0.15
+    assert np.allclose(
+        plan.sum(axis=0), np.asarray(measures["m1"]) / measures["m1"].sum(), atol=1e-4
+    )
+    assert p["marginal_violation"] < 1e-5
 
 
-def test_wasserstein_barycenter_identical_members() -> None:
-    sup = np.tile(np.linspace(-1, 1, 50), (3, 1))
-    probs = np.full((3, 50), 1 / 50)
-    out = wasserstein_barycenter_1d(sup, probs, np.full(3, 1 / 3), n_grid=50)
-    np.testing.assert_allclose(out["quantile"], np.linspace(-1, 1, 50), atol=0.05)
+def test_ot_monotone_in_translation(measures):
+    s = np.asarray(measures["support"])
+    c = _cost(s)
+    m0 = np.asarray(measures["m0"])
+    d0 = sinkhorn(m0, m0, c)["ot_cost"]
+    d1 = sinkhorn(m0, np.asarray(measures["m1"]), c)["ot_cost"]
+    d2 = sinkhorn(m0, np.asarray(measures["m2"]), c)["ot_cost"]
+    assert d0 <= d1 <= d2
 
 
-def test_gaussian_bures_identical() -> None:
-    cov = np.array([[1.0, 0.2], [0.2, 2.0]])
-    out = gaussian_bures(np.zeros((2, 2)), np.stack([cov, cov]), np.array([0.5, 0.5]))
-    np.testing.assert_allclose(out["cov"], cov, atol=1e-6)
+def test_wasserstein_cloud():
+    rng = np.random.default_rng(0)
+    x = rng.normal(0, 1, 200)
+    y = rng.normal(2.0, 1, 200)
+    near = wasserstein_distance(x, x + 0.1, eps=0.05)
+    far = wasserstein_distance(x, y, eps=0.05)
+    assert far["ot_cost"] > near["ot_cost"]
+    assert far["w_p_exact"] > 0
 
 
-def test_gaussian_bures_diagonal_closed_form() -> None:
-    # W2 barycenter variance of diagonal Gaussians: sqrt(S) = mean of sqrt
-    c1 = np.diag([1.0, 4.0])
-    c2 = np.diag([9.0, 16.0])
-    out = gaussian_bures(np.zeros((2, 2)), np.stack([c1, c2]), np.array([0.5, 0.5]))
-    expected = np.diag([((1 + 3) / 2) ** 2, ((2 + 4) / 2) ** 2])
-    np.testing.assert_allclose(np.diag(out["cov"]), np.diag(expected), atol=1e-3)
+def test_barycenter_is_average(measures):
+    s = np.asarray(measures["support"])
+    out = wasserstein_barycenter([np.asarray(measures["m0"]), np.asarray(measures["m2"])], s)
+    b = np.asarray(out["barycenter"])
+    c0 = float((np.asarray(measures["m0"]) * s).sum())
+    c2 = float((np.asarray(measures["m2"]) * s).sum())
+    cb = float((b * s).sum())
+    assert abs(cb - 0.5 * (c0 + c2)) < 0.3
+    assert abs(b.sum() - 1.0) < 1e-3
 
 
-def test_gaussian_bures_mean() -> None:
-    c = np.eye(2)
-    means = np.array([[0.0, 0.0], [2.0, 4.0]])
-    out = gaussian_bures(means, np.stack([c, c]), np.array([0.25, 0.75]))
-    np.testing.assert_allclose(out["mean"], [1.5, 3.0])
+def test_ot_plan_shape(measures):
+    s = np.asarray(measures["support"])
+    p = ot_plan(np.asarray(measures["m0"]), np.asarray(measures["m1"]), _cost(s))
+    assert p.shape == (40, 40)
+    assert (p >= 0).all()
 
 
-def test_ot_validation() -> None:
+def test_validation():
     with pytest.raises(ValueError):
-        sinkhorn_plan(np.array([0.5, 0.4]), np.array([1.0]), np.zeros((2, 1)), 0.1)
+        sinkhorn(np.array([0.5, 0.5]), -np.ones(3), np.ones((2, 3)))
     with pytest.raises(ValueError):
-        sinkhorn_plan(np.array([0.5, 0.5]), np.array([1.0]), np.zeros((3, 1)), 0.1)
+        sinkhorn(np.ones(4) / 4, np.ones(4) / 4, np.ones((3, 3)))
     with pytest.raises(ValueError):
-        sinkhorn_plan(np.array([0.5, 0.5]), np.array([1.0]), np.zeros((2, 1)), -1.0)
+        sinkhorn(np.ones(4) / 4, np.ones(4) / 4, np.ones((4, 4)), eps=0.0)
     with pytest.raises(ValueError):
-        wasserstein_barycenter_1d(np.ones((2, 4)), np.ones((2, 4)), np.ones(3))
+        wasserstein_distance(np.ones(3), np.ones(3))
     with pytest.raises(ValueError):
-        gaussian_bures(np.zeros((2, 2)), np.stack([np.eye(2), np.zeros((2, 2))]), np.ones(2) / 2)
+        wasserstein_barycenter([np.ones(4) / 4], np.linspace(0, 1, 4))
+
+
+def test_determinism(measures):
+    s = np.asarray(measures["support"])
+    c = _cost(s)
+    a = sinkhorn(np.asarray(measures["m0"]), np.asarray(measures["m1"]), c)["ot_cost"]
+    b = sinkhorn(np.asarray(measures["m0"]), np.asarray(measures["m1"]), c)["ot_cost"]
+    assert a == b
+
+
+def test_bench_keys():
+    out = bench_optimal_transport()
+    for k, v in out.items():
+        assert k.startswith("synthetic_")
+        assert math.isfinite(v)
+    assert out["synthetic_ot_monotone"] == 1.0
+    assert out["synthetic_bary_center_err"] < 0.3
+    assert out["synthetic_determinism"] == 1.0
