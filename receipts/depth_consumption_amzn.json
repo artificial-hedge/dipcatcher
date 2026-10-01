@@ -1,0 +1,31 @@
+{
+  "claim": "depth_consumption_share_measured",
+  "data_label": "MIXED",
+  "divergences": [],
+  "git_revision": "bdd321ad27f2ff089949654d7c551a4337eedc72",
+  "interpretation": "Low consumption share = fills nibble the touch (icebergs or large posted size); high share = sweeps. Over-sweep (>1) marks hidden liquidity also filling at that level.",
+  "kind": "depth_consumption",
+  "real": {
+    "full_sweep_share": 0.4724,
+    "mean_consumption": 0.6703,
+    "median_consumption": 0.903,
+    "n_exec_total": 8974,
+    "n_fills": 8974,
+    "n_with_depth": 8974,
+    "over_sweep_share": 0.0,
+    "p90_consumption": 1.0
+  },
+  "receipt_sha256": "99492b84e9d16c3f07fc3913aacef3bec03c0475fa49b38aa6c4ffca5122d6f7",
+  "research_only": true,
+  "schema": "depth_consumption.v1",
+  "sim": {
+    "full_sweep_share": 0.4773,
+    "mean_consumption": 0.6809,
+    "median_consumption": 0.5,
+    "mode": "qty_vs_maker_queue_at_submit",
+    "n_fills": 3319,
+    "over_sweep_share": 0.0,
+    "p90_consumption": 1.0
+  },
+  "ticker": "AMZN"
+}
