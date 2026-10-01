@@ -17,9 +17,9 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `cli/` | All 15 modules: argv-list subprocess only, no shell, config-error UX | #205 doctor UX |
 | `compute/` | Per-task seed derivation (murmur-finalize mix) so process_map result order = item order; serial fallback on pool failure; task exceptions propagate | — |
 | `config/` | safe_load, inherit path-containment, cycle detection | — |
-| `data/` | PIT sources, atomic writes, universe tie parity, manifest seals | #176 P6.3 fixes, #261 manifest seal, #275 pooled_stream atomic |
+| `data/` | PIT sources, atomic writes, universe tie parity, manifest seals; merge-wave (42 modules): `index_membership` PIT replay, `adapters/dolthub_stocks` provenance (sealed on #428), `quality/` report package — `AUDIT_P63_DATA.md` | #176 P6.3 fixes, #261 manifest seal, #275 pooled_stream atomic, #428 merge-wave |
 | `diffbacktest/` | `delay>=1` structural gate; `end = t - delay` verified causal in every builder; adversarial radius documented as upper bound | — |
-| `execution/` | Money-path fills, costs | #173 P6.6, #174 P6.1 (exec-NAV leak, leverage-cap trap) |
+| `execution/` | Money-path fills, costs; merge-wave-2 +1 (`cash_constrained_oe` QCQP solve: DCP-convexity gate, infeasible → RuntimeError, inventory residual checked) | #173 P6.6, #174 P6.1 (exec-NAV leak, leverage-cap trap), #428 merge-wave |
 | `features/` | lot_spread eps dead-zone parity with zero_share | #337 |
 | `formal/` | Z3-checked closed forms (NAV/cost/split/dividend); sim-only lifecycle spec — nothing submits orders; real-vs-IEEE gap documented | — |
 | `fusion/` | Cross-fitted ridge stacking is OOF-only (leakage-safe); finite guards on stacker inputs/params | — |
@@ -30,9 +30,9 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `lightspeed/` | Vol measurement → sizing causality | #328 unmeasurable vol de-risks flat |
 | `market_sim/` | Agent/book/simulator/ecology, AS quote guards, metaorder counters | #284 (child audit), #335 edge tests |
 | `mc_engine/` | Philox counter streams, chunk-pure engine, checkpoint fingerprinting, TDigest/Welford/P² merges, POT/GPD | #268 KATs, #295/#319 coverage |
-| `metrics/` | Proper-score suite, VaR backtests, inference (HAC/DM/MCS) | #206 clustered-variance, #304 propriety, #312 DQ, #315 KLM |
-| `microstructure/` | Quote/impact estimators | #175 P6.5 |
-| `models/` | All 152 modules estimator-by-estimator (child lane, `AUDIT_MODELS.md` on #345): estimator contracts, NaN/fail-closed edges, spec drift | #345 — 25 contract fixes |
+| `metrics/` | Proper-score suite, VaR backtests, inference (HAC/DM/MCS); merge-wave-2 +11 (CS/e-process/conformal-inference/OT rows — `AUDIT_RESEARCH.md`) | #206 clustered-variance, #304 propriety, #312 DQ, #315 KLM, #428 merge-wave |
+| `microstructure/` | Quote/impact estimators; merge-wave-2 +1 (`zi_lob_simulator` seeded event-driven LOB, SYNTHETIC label) | #175 P6.5, #428 merge-wave |
+| `models/` | All 152 modules estimator-by-estimator (child lane, `AUDIT_MODELS.md` on #345): estimator contracts, NaN/fail-closed edges, spec drift; merge-wave +27 (foundation-model adapters fail-closed, `robinhood_plus` PIT engine), merge-wave-2 +25 (conformal/OT/deep-finance suite, seeded SYNTHETIC) — `AUDIT_MODELS.md` | #345 — 25 contract fixes, #428 merge-wave |
 | `monitoring/` | PSI drift emits `insufficient_data` not false all-clear; kill_switch: unknown state blocks, invalid transitions raise, auto-flatten never on exception | — |
 | `native/` | env-gated dispatch; docs honestly separate bit-exact kernels (cumsum, wealth, SHA-256) from tolerance kernels (EMA/RSI/book-OLS) | — |
 | `northset/` | All 9 modules: estimators (Kyle/Roll/Parkinson/GK/RS/YZ/CS/AR/CKS/BNS formula-verified), CKS OFI, sweep battery (executable next-open timing, cross-sectional demeaning, PIT vol regimes, matched eligible controls, predeclared primary test) | #317 flat-bar junk + VPIN remainder |
@@ -41,10 +41,10 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `parity/` | `__main__` dual-clock smoke, fail-closed report | — |
 | `pit/` | Vault enforcement | #289 (child: 12 enforcement gaps) |
 | `pipeline/` | All 21 modules: purged walk-forward (observed label-end fallback), asof-bounded everything, unfitted-clone GARCH/RGARCH refits, spec-bytes + full-history digest caches, named-estimator family/spec/object pinning, PIT history builders (strict `<` origins, null `available_time` fail-closed, duplicate-key rejection on the full frame), labeled homoskedastic fallback emitted per-row | #213 (calibration unrealized-label fallback) |
-| `portfolio/` | Optimizer (infeasible diagnostics), allocators (PSD cov), factor betas (trailing ridge), conformal (chrono split), attribution (prev-bar weights) | #332 non-PSD refusal, fingerprint framing |
+| `portfolio/` | Optimizer (infeasible diagnostics), allocators (PSD cov), factor betas (trailing ridge), conformal (chrono split), attribution (prev-bar weights); merge-wave-2 +1 (`wasserstein_dro` SOC program, infeasible → RuntimeError) | #332 non-PSD refusal, fingerprint framing, #428 merge-wave |
 | `pretrade/` | Hot risk-gate surface | #287 (child audit doc) |
 | `proof/` | HMAC env-only, merkle canonical dumps | — |
-| `research/` | 62 modules audited via `AUDIT_RESEARCH.md` on #341 (receipt writers/verifiers first, then signal→return causality, forced SYNTHETIC stamps, degenerate-input handling); +51 modules built this campaign, each shipped with sealed receipts + contract tests: 19-lane sequential-inference suite (e-processes, MCS, monitors — #380-#410), `receipt_lattice` cross-claim determinism (#414), `corpus_epoch` hash-chained membership root, `admission` gate | #341 — `oos_rank_scores` no-fold fallback lacked boundary purge (real look-ahead, fixed); `sota_receipt.json` unsealed/non-atomic (fixed); `benches/common.py` purge gap fixed on #342 (documented below); #394 `changepoint_localize` max-over-candidates level inflation (Bonferroni-fixed); #380 e-process clipped-bet supermartingale violation (sign-bet fix) |
+| `research/` | 62 modules audited via `AUDIT_RESEARCH.md` on #341 (receipt writers/verifiers first, then signal→return causality, forced SYNTHETIC stamps, degenerate-input handling); +51 modules built this campaign, each shipped with sealed receipts + contract tests: 19-lane sequential-inference suite (e-processes, MCS, monitors — #380-#410), `receipt_lattice` cross-claim determinism (#414), `corpus_epoch` hash-chained membership root, `admission` gate; merge-wave-2 benches_w11–15 and capability_value audit recorded in `AUDIT_RESEARCH.md` | #341 — `oos_rank_scores` no-fold fallback lacked boundary purge (real look-ahead, fixed); `sota_receipt.json` unsealed/non-atomic (fixed); `benches/common.py` purge gap fixed on #342 (documented below); #394 `changepoint_localize` max-over-candidates level inflation (Bonferroni-fixed); #380 e-process clipped-bet supermartingale violation (sign-bet fix) |
 | `proofcore/` | Hash-chain export ordering | #279 wall-clock → genesis walk |
 | `quant_models/` | BS/Greeks/GEX/HRP/TSMOM/risk-parity/MC; causal TSMOM, honest receipts | — |
 | `reality/` | Bailey–LdP PSR/DSR/MinTRL, CSCV/PBO ω-logit, SPA, BH-FDR — all verified against papers | — |
@@ -56,7 +56,7 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 | `simtest/` | Deterministic exchange timeline, IEEE-hex event log, real ddmin shrinking, replay re-derivation, conservation rebuild | — |
 | `stress/` | replay/reverse/bootstrap/garch_copula/jumps | — |
 | `utils/` | Hashing, atomic io | #161 selector injection, #332 fingerprint framing |
-| `validation/` | Purging/embargo/CPCV/walk-forward/FDR line-by-line vs papers | #211 (P6.2 audit + 22 KATs) |
+| `validation/` | Purging/embargo/CPCV/walk-forward/FDR line-by-line vs papers; merge-wave-2 +2 (`agent_referee` frozen anytime-valid e-value referee on post-submission data only; `vintage_eval` revision-aware audit, SYNTHETIC-only) | #211 (P6.2 audit + 22 KATs), #428 merge-wave |
 
 ## Deferred findings (audited, fix pending)
 
@@ -67,8 +67,11 @@ honest labeling (SYNTHETIC forced, forbidden metrics gated), and durable writes
 ## fx1 (the gated product — `quality/audit_coverage_fx1.json`)
 
 Parallel manifest, same schema + ratchet tests: 65/66 modules `audited`
-(`__init__.py` waived as package surface). Directory pins: eval 14, forecast
+(`__init__.py` waived as package surface). Directory pins: eval 17, forecast
 11, bench 3, serve 5, data 14, train 9; root modules audited individually.
+Merge-wave-2 (eval +3): `ext_bench`/`ext_bench_banks`/`options_reasoning_eval`
+are sealed SYNTHETIC correctness-gate banks — uppercase SYNTHETIC stamps
+validated, `used_fallback` disclosed, schema errors fail closed.
 
 | Area | Verified | Findings → fix |
 |---|---|---|
