@@ -588,6 +588,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ross_recovery",
         "ait_sahalia",
         "toda_yamamoto",
+        # wave 54 — Pesaran-Timmermann directional-accuracy sign test,
+        # Giacomini-Rossi fluctuation predictive-ability break
+        # detection, Muller-Watson low-frequency correlation and
+        # predictive tests over cosine transforms, Romano-Wolf
+        # stepdown familywise multiple-testing, Christensen-
+        # Diebold-Rudebusch arbitrage-free Nelson-Siegel yield curve
+        # with the verified adjustment-to-yield formula, Danielsson-
+        # de Vries tail-simulation extreme VaR. Same SYNTHETIC
+        # diagnostic contract.
+        "pesaran_timmermann",
+        "giacomini_rossi",
+        "muller_watson",
+        "romano_wolf",
+        "christensen_diebold_rudebusch",
+        "danielsson_devries",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
