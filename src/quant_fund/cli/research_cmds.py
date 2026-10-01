@@ -1555,10 +1555,10 @@ def admit(
                 "known-inconsistent must be a JSON object mapping filename -> 64-hex sha256"
             )
         pins = dict(raw_pins)
-    result = admission_check(candidate, root, q=q, known_inconsistent=pins)
     try:
+        result = admission_check(candidate, root, q=q, known_inconsistent=pins)
         path = write_admission_receipt(result, out_dir, receipt_version=receipt_version)
-    except ValueError as exc:
+    except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     failed = [c["name"] for c in result["checks"] if not c["ok"]]
@@ -1629,7 +1629,7 @@ def admit_batch_cmd(
         pins = dict(raw_pins)
     try:
         batch = admit_batch(receipts, root, q=q, known_inconsistent=pins)
-    except ValueError as exc:
+    except (OSError, ValueError) as exc:
         raise typer.BadParameter(str(exc)) from exc
     typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
     for result in batch["results"]:

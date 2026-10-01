@@ -127,16 +127,19 @@ def test_verdict_check_coherence_contract() -> None:
     assert "verdict_admit_with_findings" in admission_contract_errors(base)
 
 
-def test_written_receipt_verifies(corpus: Path, tmp_path: Path) -> None:
+@pytest.mark.parametrize("receipt_version", [1, 2])
+def test_written_receipt_verifies(corpus: Path, tmp_path: Path, receipt_version: int) -> None:
     candidate = _write(tmp_path, "c.json", _claim_body(2.0))
     result = admission_check(candidate, corpus)
     out = tmp_path / "out"
     out.mkdir()
-    path = write_admission_receipt(result, out)
+    path = write_admission_receipt(result, out, receipt_version=receipt_version)
     ver = verify_receipt_file(path)
     assert ver["valid"], ver["errors"]
     doc = json.loads(path.read_text())
-    assert doc["kind"] == ADMISSION_SCHEMA
+    claim = doc["payload"] if receipt_version == 2 else doc
+    assert claim["kind"] == ADMISSION_SCHEMA
+    assert path.name == f"receipt_admission_{doc['receipt_sha256'][:16]}.json"
 
 
 def test_fails_closed_on_missing_candidate(corpus: Path, tmp_path: Path) -> None:
@@ -388,3 +391,88 @@ def test_retracted_bytes_rejected_end_to_end(tmp_path: Path) -> None:
     tomb2 = next(c for c in res2["checks"] if c["name"] == "tombstone")
     assert tomb2["reject_errors"] == ["retracted_bytes"]
     assert res2["verdict"] == "reject"
+
+
+def test_candidate_inside_corpus_is_idempotent(corpus: Path) -> None:
+    """Re-gating a member must not crash on the shadow dir's self-link."""
+    member = corpus / "a.json"
+    result = admission_check(member, corpus)
+    assert result["verdict"] == "admit"
+    assert result["lattice_new_inconsistent"] == []
+
+
+def test_name_collision_with_corpus_member_fails_closed(corpus: Path, tmp_path: Path) -> None:
+    """A foreign receipt sharing a member's filename is refused, not merged."""
+    intruder = _write(tmp_path, "a.json", _claim_body(7.7, dataset="ab" * 32))
+    with pytest.raises(FileExistsError, match="collision"):
+        admission_check(intruder, corpus)
+
+
+def test_candidate_inside_copied_corpus_is_idempotent(
+    corpus: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Copied shadows preserve exact-byte idempotence when hard links fail."""
+
+    def no_hard_links(*args: object) -> None:
+        raise OSError("hard links unavailable")
+
+    monkeypatch.setattr("quant_fund.research.admission.os.link", no_hard_links)
+    member = corpus / "a.json"
+    result = admission_check(member, corpus)
+    assert result["verdict"] == "admit"
+    assert result["lattice_new_inconsistent"] == []
+
+
+@pytest.mark.parametrize("command", ["admit", "admit-batch"])
+def test_cli_writes_verified_v2_receipt(corpus: Path, tmp_path: Path, command: str) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    candidate = _write(
+        tmp_path, "clean.json", _claim_body(2.0, dataset="ee" * 32, inputs="ef" * 32)
+    )
+    output = tmp_path / "out"
+    result = CliRunner().invoke(
+        app,
+        [
+            command,
+            str(candidate),
+            "--corpus-dir",
+            str(corpus),
+            "--out-dir",
+            str(output),
+            "--receipt-version",
+            "2",
+            "--strict",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    written = list(output.glob("receipt_admission_*.json"))
+    assert len(written) == 1
+    assert verify_receipt_file(written[0])["valid"]
+    assert json.loads(written[0].read_text())["payload"]["verdict"] == "admit"
+
+
+def test_cli_name_collision_fails_closed(corpus: Path, tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from quant_fund.cli.main import app
+
+    candidate = _write(tmp_path, "a.json", _claim_body(7.7))
+    output = tmp_path / "out"
+    result = CliRunner().invoke(
+        app,
+        [
+            "admit",
+            str(candidate),
+            "--corpus-dir",
+            str(corpus),
+            "--out-dir",
+            str(output),
+            "--strict",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "collision" in result.output
+    assert not list(output.glob("receipt_admission_*.json"))

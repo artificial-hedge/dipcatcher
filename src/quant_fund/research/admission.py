@@ -67,7 +67,12 @@ def _honesty_errors(doc: Mapping[str, Any]) -> tuple[list[str], list[str]]:
 
 def _link_or_copy(src: Path, dst: Path) -> None:
     if dst.exists():
-        return  # already linked — e.g. the candidate lives inside the corpus
+        # A copied shadow member is the same immutable receipt even when
+        # cross-filesystem hard links are unavailable. Different bytes in
+        # the same filename slot always fail closed.
+        if dst.samefile(src) or dst.read_bytes() == src.read_bytes():
+            return
+        raise FileExistsError(f"shadow corpus name collision: {dst.name}")
     try:
         os.link(src, dst)
     except OSError:  # cross-filesystem corpus dirs still gate correctly
