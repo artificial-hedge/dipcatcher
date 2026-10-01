@@ -1,0 +1,621 @@
+{
+  "kind": "imbalance_predict",
+  "schema": "imbalance_predict.v1",
+  "ticker": "AMZN",
+  "tape_sha256": "c85a75b51f3616a683f825c2e03f984535e9329a8be5ab12325130d32223a2c5",
+  "tape_files": [
+    "AMZN_2012-06-21_34200000_57600000_message_10.csv",
+    "AMZN_2012-06-21_34200000_57600000_orderbook_10.csv"
+  ],
+  "real": {
+    "ok": true,
+    "n": 269747,
+    "n_by_type": {
+      "exec": 11418,
+      "submission": 131954,
+      "cancel": 126375
+    },
+    "overall_p_buy": 0.4977,
+    "overall_mean_signed_flow": -0.0046,
+    "quintile_edges": [
+      -0.4599,
+      0.0,
+      0.3072,
+      0.7241
+    ],
+    "by_type": {
+      "exec": {
+        "quintiles": [
+          {
+            "quintile": 0,
+            "n": 2267,
+            "imb_lo": -0.996,
+            "imb_hi": -0.4604,
+            "p_buy": 0.4102,
+            "mean_signed_flow": -0.1795
+          },
+          {
+            "quintile": 1,
+            "n": 2293,
+            "imb_lo": -0.4599,
+            "imb_hi": -0.0025,
+            "p_buy": 0.4235,
+            "mean_signed_flow": -0.1531
+          },
+          {
+            "quintile": 2,
+            "n": 2277,
+            "imb_lo": 0.0,
+            "imb_hi": 0.3066,
+            "p_buy": 0.4866,
+            "mean_signed_flow": -0.0268
+          },
+          {
+            "quintile": 3,
+            "n": 2246,
+            "imb_lo": 0.3072,
+            "imb_hi": 0.7238,
+            "p_buy": 0.6086,
+            "mean_signed_flow": 0.2173
+          },
+          {
+            "quintile": 4,
+            "n": 2335,
+            "imb_lo": 0.7241,
+            "imb_hi": 0.9992,
+            "p_buy": 0.654,
+            "mean_signed_flow": 0.3079
+          }
+        ],
+        "p_buy_slope_per_quintile": 0.0673,
+        "mean_signed_flow_slope_per_quintile": 0.1345,
+        "n": 11418
+      },
+      "submission": {
+        "quintiles": [
+          {
+            "quintile": 0,
+            "n": 26484,
+            "imb_lo": -0.9971,
+            "imb_hi": -0.4607,
+            "p_buy": 0.4426,
+            "mean_signed_flow": -0.1148
+          },
+          {
+            "quintile": 1,
+            "n": 25194,
+            "imb_lo": -0.4599,
+            "imb_hi": -0.0022,
+            "p_buy": 0.4755,
+            "mean_signed_flow": -0.049
+          },
+          {
+            "quintile": 2,
+            "n": 27245,
+            "imb_lo": 0.0,
+            "imb_hi": 0.3066,
+            "p_buy": 0.4712,
+            "mean_signed_flow": -0.0577
+          },
+          {
+            "quintile": 3,
+            "n": 26645,
+            "imb_lo": 0.3072,
+            "imb_hi": 0.7233,
+            "p_buy": 0.5041,
+            "mean_signed_flow": 0.0081
+          },
+          {
+            "quintile": 4,
+            "n": 26386,
+            "imb_lo": 0.7241,
+            "imb_hi": 0.9993,
+            "p_buy": 0.5091,
+            "mean_signed_flow": 0.0182
+          }
+        ],
+        "p_buy_slope_per_quintile": 0.0162,
+        "mean_signed_flow_slope_per_quintile": 0.0323,
+        "n": 131954
+      }
+    },
+    "quintiles": [
+      {
+        "quintile": 0,
+        "n": 53878,
+        "imb_lo": -0.9971,
+        "imb_hi": -0.4604,
+        "p_buy": 0.4657,
+        "mean_signed_flow": -0.0686
+      },
+      {
+        "quintile": 1,
+        "n": 52013,
+        "imb_lo": -0.4599,
+        "imb_hi": -0.0022,
+        "p_buy": 0.4828,
+        "mean_signed_flow": -0.0344
+      },
+      {
+        "quintile": 2,
+        "n": 55906,
+        "imb_lo": 0.0,
+        "imb_hi": 0.3066,
+        "p_buy": 0.4931,
+        "mean_signed_flow": -0.0137
+      },
+      {
+        "quintile": 3,
+        "n": 53974,
+        "imb_lo": 0.3072,
+        "imb_hi": 0.7238,
+        "p_buy": 0.5148,
+        "mean_signed_flow": 0.0296
+      },
+      {
+        "quintile": 4,
+        "n": 53976,
+        "imb_lo": 0.7241,
+        "imb_hi": 0.9995,
+        "p_buy": 0.5317,
+        "mean_signed_flow": 0.0634
+      }
+    ],
+    "p_buy_slope_per_quintile": 0.0164,
+    "mean_signed_flow_slope_per_quintile": 0.0328
+  },
+  "sim_arms": {
+    "iid": {
+      "ok": true,
+      "n": 29894,
+      "n_by_type": {
+        "exec": 5036,
+        "submission": 14924,
+        "cancel": 9934
+      },
+      "overall_p_buy": 0.5004,
+      "overall_mean_signed_flow": 0.0009,
+      "quintile_edges": [
+        -0.3333,
+        0.0,
+        0.0,
+        0.3333
+      ],
+      "by_type": {
+        "exec": {
+          "quintiles": [
+            {
+              "quintile": 0,
+              "n": 665,
+              "imb_lo": -0.7778,
+              "imb_hi": -0.4,
+              "p_buy": 0.4707,
+              "mean_signed_flow": -0.0586
+            },
+            {
+              "quintile": 1,
+              "n": 951,
+              "imb_lo": -0.3333,
+              "imb_hi": -0.1111,
+              "p_buy": 0.4984,
+              "mean_signed_flow": -0.0032
+            },
+            {
+              "quintile": 2,
+              "n": 0
+            },
+            {
+              "quintile": 3,
+              "n": 1947,
+              "imb_lo": 0.0,
+              "imb_hi": 0.25,
+              "p_buy": 0.4997,
+              "mean_signed_flow": -0.0005
+            },
+            {
+              "quintile": 4,
+              "n": 1473,
+              "imb_lo": 0.3333,
+              "imb_hi": 0.8,
+              "p_buy": 0.4847,
+              "mean_signed_flow": -0.0305
+            }
+          ],
+          "p_buy_slope_per_quintile": 0.0029,
+          "mean_signed_flow_slope_per_quintile": 0.0059,
+          "n": 5036
+        },
+        "submission": {
+          "quintiles": [
+            {
+              "quintile": 0,
+              "n": 2048,
+              "imb_lo": -0.8,
+              "imb_hi": -0.4,
+              "p_buy": 0.499,
+              "mean_signed_flow": -0.002
+            },
+            {
+              "quintile": 1,
+              "n": 2905,
+              "imb_lo": -0.3333,
+              "imb_hi": -0.0909,
+              "p_buy": 0.4971,
+              "mean_signed_flow": -0.0059
+            },
+            {
+              "quintile": 2,
+              "n": 0
+            },
+            {
+              "quintile": 3,
+              "n": 5537,
+              "imb_lo": 0.0,
+              "imb_hi": 0.2727,
+              "p_buy": 0.5032,
+              "mean_signed_flow": 0.0063
+            },
+            {
+              "quintile": 4,
+              "n": 4434,
+              "imb_lo": 0.3333,
+              "imb_hi": 0.8,
+              "p_buy": 0.5,
+              "mean_signed_flow": 0.0
+            }
+          ],
+          "p_buy_slope_per_quintile": 0.0008,
+          "mean_signed_flow_slope_per_quintile": 0.0016,
+          "n": 14924
+        }
+      },
+      "quintiles": [
+        {
+          "quintile": 0,
+          "n": 4135,
+          "imb_lo": -0.8,
+          "imb_hi": -0.4,
+          "p_buy": 0.5045,
+          "mean_signed_flow": 0.0089
+        },
+        {
+          "quintile": 1,
+          "n": 5784,
+          "imb_lo": -0.3333,
+          "imb_hi": -0.0909,
+          "p_buy": 0.4957,
+          "mean_signed_flow": -0.0086
+        },
+        {
+          "quintile": 2,
+          "n": 0
+        },
+        {
+          "quintile": 3,
+          "n": 10949,
+          "imb_lo": 0.0,
+          "imb_hi": 0.2727,
+          "p_buy": 0.5049,
+          "mean_signed_flow": 0.0098
+        },
+        {
+          "quintile": 4,
+          "n": 9026,
+          "imb_lo": 0.3333,
+          "imb_hi": 0.8182,
+          "p_buy": 0.4962,
+          "mean_signed_flow": -0.0075
+        }
+      ],
+      "p_buy_slope_per_quintile": -0.0007,
+      "mean_signed_flow_slope_per_quintile": -0.0014,
+      "mechanism_present": true
+    },
+    "regime": {
+      "ok": true,
+      "n": 28832,
+      "n_by_type": {
+        "exec": 5482,
+        "submission": 14289,
+        "cancel": 9061
+      },
+      "overall_p_buy": 0.5026,
+      "overall_mean_signed_flow": 0.0052,
+      "quintile_edges": [
+        -0.3333,
+        0.0,
+        0.0,
+        0.3333
+      ],
+      "by_type": {
+        "exec": {
+          "quintiles": [
+            {
+              "quintile": 0,
+              "n": 687,
+              "imb_lo": -0.8,
+              "imb_hi": -0.4,
+              "p_buy": 0.5269,
+              "mean_signed_flow": 0.0539
+            },
+            {
+              "quintile": 1,
+              "n": 1053,
+              "imb_lo": -0.3333,
+              "imb_hi": -0.1111,
+              "p_buy": 0.5052,
+              "mean_signed_flow": 0.0104
+            },
+            {
+              "quintile": 2,
+              "n": 0
+            },
+            {
+              "quintile": 3,
+              "n": 2186,
+              "imb_lo": 0.0,
+              "imb_hi": 0.2727,
+              "p_buy": 0.5265,
+              "mean_signed_flow": 0.0531
+            },
+            {
+              "quintile": 4,
+              "n": 1556,
+              "imb_lo": 0.3333,
+              "imb_hi": 0.8,
+              "p_buy": 0.5212,
+              "mean_signed_flow": 0.0424
+            }
+          ],
+          "p_buy_slope_per_quintile": 0.001,
+          "mean_signed_flow_slope_per_quintile": 0.002,
+          "n": 5482
+        },
+        "submission": {
+          "quintiles": [
+            {
+              "quintile": 0,
+              "n": 1914,
+              "imb_lo": -0.8,
+              "imb_hi": -0.4,
+              "p_buy": 0.511,
+              "mean_signed_flow": 0.0219
+            },
+            {
+              "quintile": 1,
+              "n": 2814,
+              "imb_lo": -0.3333,
+              "imb_hi": -0.1111,
+              "p_buy": 0.5131,
+              "mean_signed_flow": 0.0263
+            },
+            {
+              "quintile": 2,
+              "n": 0
+            },
+            {
+              "quintile": 3,
+              "n": 5390,
+              "imb_lo": 0.0,
+              "imb_hi": 0.2727,
+              "p_buy": 0.5063,
+              "mean_signed_flow": 0.0126
+            },
+            {
+              "quintile": 4,
+              "n": 4171,
+              "imb_lo": 0.3333,
+              "imb_hi": 0.8,
+              "p_buy": 0.5028,
+              "mean_signed_flow": 0.0055
+            }
+          ],
+          "p_buy_slope_per_quintile": -0.0023,
+          "mean_signed_flow_slope_per_quintile": -0.0047,
+          "n": 14289
+        }
+      },
+      "quintiles": [
+        {
+          "quintile": 0,
+          "n": 3887,
+          "imb_lo": -0.8,
+          "imb_hi": -0.4,
+          "p_buy": 0.5143,
+          "mean_signed_flow": 0.0286
+        },
+        {
+          "quintile": 1,
+          "n": 5588,
+          "imb_lo": -0.3333,
+          "imb_hi": -0.0909,
+          "p_buy": 0.5032,
+          "mean_signed_flow": 0.0064
+        },
+        {
+          "quintile": 2,
+          "n": 0
+        },
+        {
+          "quintile": 3,
+          "n": 10885,
+          "imb_lo": 0.0,
+          "imb_hi": 0.2727,
+          "p_buy": 0.5003,
+          "mean_signed_flow": 0.0006
+        },
+        {
+          "quintile": 4,
+          "n": 8472,
+          "imb_lo": 0.3333,
+          "imb_hi": 0.8182,
+          "p_buy": 0.4998,
+          "mean_signed_flow": -0.0005
+        }
+      ],
+      "p_buy_slope_per_quintile": -0.0032,
+      "mean_signed_flow_slope_per_quintile": -0.0064,
+      "mechanism_present": true
+    },
+    "split": {
+      "ok": true,
+      "n": 22611,
+      "n_by_type": {
+        "exec": 6342,
+        "submission": 10474,
+        "cancel": 5795
+      },
+      "overall_p_buy": 0.5013,
+      "overall_mean_signed_flow": 0.0027,
+      "quintile_edges": [
+        -0.3333,
+        0.0,
+        0.0,
+        0.3333
+      ],
+      "by_type": {
+        "exec": {
+          "quintiles": [
+            {
+              "quintile": 0,
+              "n": 535,
+              "imb_lo": -0.7778,
+              "imb_hi": -0.4286,
+              "p_buy": 0.4561,
+              "mean_signed_flow": -0.0879
+            },
+            {
+              "quintile": 1,
+              "n": 1114,
+              "imb_lo": -0.3333,
+              "imb_hi": -0.0909,
+              "p_buy": 0.4417,
+              "mean_signed_flow": -0.1167
+            },
+            {
+              "quintile": 2,
+              "n": 0
+            },
+            {
+              "quintile": 3,
+              "n": 3141,
+              "imb_lo": 0.0,
+              "imb_hi": 0.25,
+              "p_buy": 0.5486,
+              "mean_signed_flow": 0.0971
+            },
+            {
+              "quintile": 4,
+              "n": 1552,
+              "imb_lo": 0.3333,
+              "imb_hi": 0.7778,
+              "p_buy": 0.5863,
+              "mean_signed_flow": 0.1727
+            }
+          ],
+          "p_buy_slope_per_quintile": 0.0367,
+          "mean_signed_flow_slope_per_quintile": 0.0735,
+          "n": 6342
+        },
+        "submission": {
+          "quintiles": [
+            {
+              "quintile": 0,
+              "n": 958,
+              "imb_lo": -0.7778,
+              "imb_hi": -0.4286,
+              "p_buy": 0.4927,
+              "mean_signed_flow": -0.0146
+            },
+            {
+              "quintile": 1,
+              "n": 1877,
+              "imb_lo": -0.3333,
+              "imb_hi": -0.0909,
+              "p_buy": 0.5024,
+              "mean_signed_flow": 0.0048
+            },
+            {
+              "quintile": 2,
+              "n": 0
+            },
+            {
+              "quintile": 3,
+              "n": 4935,
+              "imb_lo": 0.0,
+              "imb_hi": 0.25,
+              "p_buy": 0.4926,
+              "mean_signed_flow": -0.0148
+            },
+            {
+              "quintile": 4,
+              "n": 2704,
+              "imb_lo": 0.3333,
+              "imb_hi": 0.7778,
+              "p_buy": 0.5081,
+              "mean_signed_flow": 0.0163
+            }
+          ],
+          "p_buy_slope_per_quintile": 0.0021,
+          "mean_signed_flow_slope_per_quintile": 0.0042,
+          "n": 10474
+        }
+      },
+      "quintiles": [
+        {
+          "quintile": 0,
+          "n": 2034,
+          "imb_lo": -0.7778,
+          "imb_hi": -0.4286,
+          "p_buy": 0.5103,
+          "mean_signed_flow": 0.0206
+        },
+        {
+          "quintile": 1,
+          "n": 4097,
+          "imb_lo": -0.3333,
+          "imb_hi": -0.0909,
+          "p_buy": 0.4933,
+          "mean_signed_flow": -0.0134
+        },
+        {
+          "quintile": 2,
+          "n": 0
+        },
+        {
+          "quintile": 3,
+          "n": 10652,
+          "imb_lo": 0.0,
+          "imb_hi": 0.25,
+          "p_buy": 0.502,
+          "mean_signed_flow": 0.0039
+        },
+        {
+          "quintile": 4,
+          "n": 5828,
+          "imb_lo": 0.3333,
+          "imb_hi": 0.7778,
+          "p_buy": 0.5027,
+          "mean_signed_flow": 0.0055
+        }
+      ],
+      "p_buy_slope_per_quintile": -0.0007,
+      "mean_signed_flow_slope_per_quintile": -0.0013,
+      "mechanism_present": true
+    }
+  },
+  "headline": {
+    "p_buy_slope_per_quintile": 0.0164
+  },
+  "divergences": [
+    "iid_slope_-0.001_vs_0.016",
+    "regime_slope_-0.003_vs_0.016",
+    "split_slope_-0.001_vs_0.016"
+  ],
+  "claim": "touch_imbalance_predicts_next_sign_measured",
+  "interpretation": "Each signed event is scored against the touch imbalance at the prior book row. p_buy_slope_per_quintile is the OLS slope of P(next event = buy) across imbalance quintiles; a positive monotone gradient means queue skew anticipates the next event's direction. Quintile edges are pooled so the exec/submission-conditioned tables share bins. ZI-LOB arms re-use the same machinery on the sim's own book \u2014 its symmetric flows leave slope near zero unless a flow driver (regime/split) injects direction persistence.",
+  "git_revision": "89eb864d67f80f6b6cedc2bedc4a59adf7fec11a",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "215076b906ebb50c8caf67e88fc7c8283deebcb2aa304b044ff2e39b8fb380a5"
+}
