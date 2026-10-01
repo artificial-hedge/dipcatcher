@@ -131,6 +131,50 @@ def _check_size_pmf(
 
 
 # ---------------------------------------------------------------------------
+# Self-exciting event clock (multivariate Hawkes modulation)
+# ---------------------------------------------------------------------------
+
+# Event-type order for the Hawkes kernel: limit, market, cancel.
+HAWKES_TYPES: tuple[str, str, str] = ("limit", "market", "cancel")
+
+
+@dataclass(frozen=True)
+class HawkesClockSpec:
+    """Excitation kernel for an optional Hawkes event clock.
+
+    ``kernel[i][j]`` is the intensity jump (events/s) that one event of type
+    ``i`` adds to the type-``j`` intensity; the jump decays as
+    ``exp(-beta * dt)`` with a shared decay rate ``beta``. Event types are
+    indexed by ``HAWKES_TYPES``: 0 = limit, 1 = market, 2 = cancel.
+
+    A jump of ``alpha`` decaying at ``beta`` contributes branching ratio
+    ``alpha / beta`` expected direct children, so the branching matrix is
+    ``kernel / beta``. Fail-closed unless the matrix is finite,
+    non-negative, 3x3 and strictly sub-critical (spectral radius < 1) —
+    a super-critical kernel explodes and would silently fabricate a tape.
+    """
+
+    kernel: tuple[tuple[float, float, float], ...]
+    beta: float
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.kernel, (tuple, list)) or len(self.kernel) != 3:
+            raise ValueError("kernel must be a 3x3 matrix")
+        k = np.asarray(self.kernel, dtype=np.float64)
+        if k.shape != (3, 3):
+            raise ValueError("kernel must be a 3x3 matrix")
+        if not np.all(np.isfinite(k)) or bool((k < 0.0).any()):
+            raise ValueError("kernel entries must be non-negative and finite")
+        _pos_finite(self.beta, "beta")
+        rho = float(np.max(np.abs(np.linalg.eigvals(k / float(self.beta)))))
+        if not math.isfinite(rho) or rho >= 1.0:
+            raise ValueError(
+                f"Hawkes kernel must be sub-critical (spectral radius < 1), got {rho:.4f}"
+            )
+        object.__setattr__(self, "kernel", tuple(tuple(float(x) for x in row) for row in k))
+
+
+# ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
@@ -187,6 +231,14 @@ class ZILobConfig:
     # draws — an unset table is bit-identical to the legacy stream.
     mo_size_pmf: tuple[tuple[int, float], ...] | None = None
     lo_size_pmf: tuple[tuple[int, float], ...] | None = None
+    # Optional self-exciting event clock. When set, the homogeneous
+    # Poisson superposition is replaced by a 3-type multivariate Hawkes
+    # process over (limit, market, cancel) whose baselines are the same
+    # rates (``2*lam*band``, ``2*mu``, ``theta_cxl*depth``) plus a decaying
+    # excitation state — the tape's submit/cancel storms and post-exec
+    # cancel retreat become expressible. ``None`` keeps the Poisson clock
+    # bit-identical (zero change to the draw stream).
+    hawkes: HawkesClockSpec | None = None
 
     def __post_init__(self) -> None:
         _pos_finite(self.s0, "s0")
@@ -211,6 +263,8 @@ class ZILobConfig:
             raise ValueError(f"seed must be an int, got {self.seed!r}")
         _check_size_pmf(self.mo_size_pmf, "mo_size_pmf")
         _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
+        if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
+            raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
 
 
 def santa_fe_config(
@@ -322,6 +376,56 @@ class MarkovRegimeFlow:
             raise ValueError("expected_p_buy undefined before any MO event")
         total = sum(self.state_mo_counts[i] * self._states[i].p_buy for i in range(2))
         return float(total / self.n_mo)
+
+
+class HawkesClock:
+    """Ogata-thinning clock for a 3-type mutually-exciting Hawkes process.
+
+    Drives ``ZILobSimulator.step`` when ``config.hawkes`` is set. The
+    per-type intensity is ``bases[k] + e[k]`` where ``bases`` are the
+    state's current homogeneous rates (the depth-proportional cancel
+    baseline is exact: book depth is constant between events) and ``e``
+    is the decaying excitation. Between events each intensity is
+    non-increasing, so thinning with the start-of-gap intensity as the
+    upper bound is exact Ogata sampling. The accepted proposal's uniform
+    is reused for the type draw — it is uniform on the accepted range —
+    so a zero kernel consumes the same draws as the Poisson clock and is
+    bit-identical to it.
+    """
+
+    _MAX_PROPOSALS = 100_000
+
+    def __init__(self, spec: HawkesClockSpec, rng: np.random.Generator) -> None:
+        self._k = np.asarray(spec.kernel, dtype=np.float64)
+        self._beta = float(spec.beta)
+        self._rng = rng
+        self._e = np.zeros(3, dtype=np.float64)
+        self.n_proposals = 0
+        self.n_rejected = 0
+
+    def step(self, bases: tuple[float, float, float]) -> tuple[float, int]:
+        """Draw ``(dt, kind)`` for the next event; kind indexes HAWKES_TYPES."""
+        base = np.asarray(bases, dtype=np.float64)
+        lam = base + self._e
+        for _ in range(self._MAX_PROPOSALS):
+            total = float(lam.sum())
+            if not math.isfinite(total) or total <= 0.0:
+                raise RuntimeError(f"degenerate Hawkes intensity {lam!r}")
+            dt = float(self._rng.exponential(1.0 / total))
+            decay = math.exp(-self._beta * dt)
+            lam_s = base + self._e * decay
+            u = float(self._rng.random()) * total
+            self.n_proposals += 1
+            if u <= float(lam_s.sum()):
+                kind = int(np.searchsorted(np.cumsum(lam_s), u, side="right"))
+                if kind > 2:  # pragma: no cover - u < sum(lam_s) by acceptance
+                    kind = 2
+                self._e *= decay
+                self._e += self._k[kind]
+                return dt, kind
+            self.n_rejected += 1
+            lam = lam_s
+        raise RuntimeError(f"Hawkes thinning exceeded {self._MAX_PROPOSALS} proposals")
 
 
 class ScenarioRegimeFlow:
@@ -616,6 +720,7 @@ class ZILobSimulator:
         # Event-size tables (None → unit-size, zero extra RNG draws).
         self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
         self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
+        self._hawkes = HawkesClock(config.hawkes, self._rng) if config.hawkes is not None else None
         self.n_mo_units = 0
         self.n_lo_units = 0
         for k in range(1, config.init_levels + 1):
@@ -766,6 +871,8 @@ class ZILobSimulator:
             "resting": self.total_depth,
             "n_mo_units": self.n_mo_units,
             "n_lo_units": self.n_lo_units,
+            "n_hawkes_proposals": self._hawkes.n_proposals if self._hawkes else 0,
+            "n_hawkes_rejected": self._hawkes.n_rejected if self._hawkes else 0,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -968,9 +1075,13 @@ class ZILobSimulator:
         total = lo_rate + mo_rate + cxl_rate
         if not math.isfinite(total) or total <= 0.0:
             raise RuntimeError(f"degenerate event rate {total!r}")
-        dt = float(self._rng.exponential(1.0 / total))
+        if self._hawkes is not None:
+            dt, kind = self._hawkes.step((lo_rate, mo_rate, cxl_rate))
+        else:
+            dt = float(self._rng.exponential(1.0 / total))
+            u = float(self._rng.random()) * total
+            kind = 0 if u < lo_rate else (1 if u < lo_rate + mo_rate else 2)
         self._t += dt
-        u = float(self._rng.random()) * total
         self.n_events += 1
         bb, ba = self.best_bid_level, self.best_ask_level
         if bb is not None and ba is not None:
@@ -981,10 +1092,10 @@ class ZILobSimulator:
                 # EMA of the mid level; frozen (hl == 0) keeps the seed mid.
                 alpha = min(1.0, dt / hl)
                 self._ref_ema += alpha * (mid_level - self._ref_ema)
-        if u < lo_rate:
+        if kind == 0:
             self._limit_order_event()
             return "limit"
-        if u < lo_rate + mo_rate:
+        if kind == 1:
             side: Side = "buy" if float(self._rng.random()) < p_buy_eff else "sell"
             self.n_mo_arrivals += 1
             # A size-k MO is a burst of unit fills; each consumes the current
