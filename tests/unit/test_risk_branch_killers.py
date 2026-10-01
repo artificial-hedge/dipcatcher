@@ -175,7 +175,7 @@ def test_crash_leverage_boundary_and_dead_base() -> None:
     # One tick shallower → no crash.
     lev = crash_leverage(np.array([0.0, -0.19]), lookback=1, crash_return=-0.2)
     assert lev[1] == pytest.approx(1.0)
-    # wealth = 0 → base ≤ 0 → book is ruined → flatten to 0 (fail closed).
+    # wealth ≈ 0 → base ≤ _EPS → book is ruined → flatten (fail-closed).
     lev = crash_leverage(np.array([-1.0, -0.5]), lookback=1)
     assert lev[1] == pytest.approx(0.0)
     # i < lookback never writes.
@@ -1638,10 +1638,12 @@ def test_crash_leverage_no_prewarm_writes() -> None:
 
 
 def test_crash_degenerate_base_continues_not_breaks() -> None:
-    # A base below _EPS skips that bar only; later windows still evaluate.
+    # A base below _EPS is a ruined anchor → flatten that bar; later windows
+    # still evaluate on their own merits (i=4 flattens on the trail, not the
+    # stale base).
     r = np.array([-0.9999999999999, 1e12, -0.5, -0.5, -0.5])
     lev = crash_leverage(r, lookback=3, crash_return=-0.2)
-    assert lev[3] == 1.0
+    assert lev[3] == 0.0
     assert lev[4] == 0.0
 
 
