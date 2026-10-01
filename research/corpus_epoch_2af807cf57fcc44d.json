@@ -1,0 +1,115 @@
+{
+  "data_label": "CORPUS",
+  "epoch_root_sha256": "89867475533463d66e86597fbcab4529d679eb584ee9fbe164b1b344c6dc0fe9",
+  "inputs_sha256": "17e34109f41886a62ba23862601c28a2014ca335b78af387b14adbea7fb62c13",
+  "kind": "corpus_epoch.v1",
+  "live_pnl_claim": false,
+  "member_tree_root": "df5285c9b5191781598788228d26358a2f6eed917c6ccd25955d5af8fa944923",
+  "members": [
+    {
+      "name": "reality/README.md",
+      "sha256": "eef1dfc1faf6f5cdc4aa2aa1f980cbc1a328bed39315df328030c1cb0bb3e118"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/audit/checkpoints.jsonl",
+      "sha256": "da5a783c331b8b4fd66cc134d3fc9a604daebf246f496a8ff58b66faf183e22d"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/audit/ed25519.pub",
+      "sha256": "54879d02aa54417db57a89dc3a2edcbe3770e049e1e7ff8f3a87f9289d2f9cea"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/audit/entries.jsonl",
+      "sha256": "9cf0b70ddedf2cce4deee3d9272a730ec15d6cea9e4b50397ff183786dad574a"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/audit/trust_pub.hex",
+      "sha256": "54879d02aa54417db57a89dc3a2edcbe3770e049e1e7ff8f3a87f9289d2f9cea"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/preregistration.json",
+      "sha256": "7cc62d9d4985add3afbb9b7963365ff6794c94561b604ad696d8a133d5fd2a38"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/receipt.json",
+      "sha256": "60a726be8ba6cf29e8454d9246f10431848d2552cdc458c42ff4d5833d580edc"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/returns.parquet",
+      "sha256": "92a2a62f7066a3f42cab162831c84d8fd3d378c867784418588c60d1b2ad1649"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/trials.csv",
+      "sha256": "9d6d6cc4e23f109ec16e64b93a7a601f7be8b8e3427f81fa522bd597e88e22b6"
+    },
+    {
+      "name": "reality/studies/reality-us-liquid-daily-2026-09-27/trials.jsonl",
+      "sha256": "34344796b05c2d847c56f471198896a2e133b48090d2e0acabcc9935e2f242a6"
+    },
+    {
+      "name": "reality/survivorship/audit/checkpoints.jsonl",
+      "sha256": "5adbf7af743703691913800118d7333751d57b8622a2fc1de482d1b931506334"
+    },
+    {
+      "name": "reality/survivorship/audit/ed25519.pub",
+      "sha256": "d82700886d1f9596daec82b2a1e844da08ad75f7b7dae8d51851fb989ff15662"
+    },
+    {
+      "name": "reality/survivorship/audit/entries.jsonl",
+      "sha256": "86a1f662682c929ce2e409b20186aeca542cdf353443869651e47bd05af556c6"
+    },
+    {
+      "name": "reality/survivorship/audit/trust_pub.hex",
+      "sha256": "d82700886d1f9596daec82b2a1e844da08ad75f7b7dae8d51851fb989ff15662"
+    },
+    {
+      "name": "reality/survivorship/membership.json",
+      "sha256": "6bedcb36dbf5713bec084f8b4c44ea7d59680a0a05a39a1214d712c52f00df19"
+    },
+    {
+      "name": "reality/survivorship/membership.provenance.json",
+      "sha256": "e675f1d857ec1fdcec71b9bb14f8bf6fae2a6b8739bbb9c934101d46d6ef0b21"
+    },
+    {
+      "name": "reality/survivorship/preregistration.json",
+      "sha256": "f7b0c71d6729790c68d6bc0d5ba3e1961e2abfd8a4e19f4abc64b4df8732a57b"
+    },
+    {
+      "name": "reality/survivorship/receipt.json",
+      "sha256": "8e798bee6dad41f9bcb3af9ef0d665f0ef0211b0ec7dd6667772c1314c71d420"
+    }
+  ],
+  "members_added": [
+    "reality/README.md",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/audit/checkpoints.jsonl",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/audit/ed25519.pub",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/audit/entries.jsonl",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/audit/trust_pub.hex",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/preregistration.json",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/receipt.json",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/returns.parquet",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/trials.csv",
+    "reality/studies/reality-us-liquid-daily-2026-09-27/trials.jsonl",
+    "reality/survivorship/audit/checkpoints.jsonl",
+    "reality/survivorship/audit/ed25519.pub",
+    "reality/survivorship/audit/entries.jsonl",
+    "reality/survivorship/audit/trust_pub.hex",
+    "reality/survivorship/membership.json",
+    "reality/survivorship/membership.provenance.json",
+    "reality/survivorship/preregistration.json",
+    "reality/survivorship/receipt.json"
+  ],
+  "members_removed": [],
+  "n_members": 18,
+  "params": {
+    "head_sha": "42b00e30b6839b538a177618e9035d8f73ccda4e",
+    "pattern": "*"
+  },
+  "prev_epoch_receipt": null,
+  "prev_epoch_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "receipt_sha256": "2af807cf57fcc44d52b94fdbcd0cf9a6fbe7bacb6d06f7b997edd7906110da19",
+  "research_only": true,
+  "schema": "corpus_epoch.v1",
+  "simulated_only": false,
+  "verdict": "genesis"
+}

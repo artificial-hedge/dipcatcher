@@ -1,0 +1,402 @@
+{
+  "claim": "research_only",
+  "cross_contract": {
+    "frac_within_tolerance": 0.4,
+    "n_contracts": 5,
+    "n_delivered": 5,
+    "residual_max_abs": 0.00825956686641372,
+    "residual_mean": -0.003865422359408857,
+    "residual_std": 0.004219440789149606,
+    "residuals": [
+      -0.0021258985685353796,
+      -0.005910546520925502,
+      -0.005617618882193931,
+      0.0025865190410242485,
+      -0.00825956686641372
+    ],
+    "tolerance": 0.005
+  },
+  "data_label": "kraken",
+  "dataset_sha256": "9ea6d3660c9e58fa113e9e33adcfa6dd5c3c5dd7b0ac8dd224199a95f9df69d1",
+  "generated_at": "2026-09-29T19:49:36.110321+00:00",
+  "git_revision": "c0194c18e3d54182d305da821214c8b1479818df",
+  "inputs": {
+    "contracts": {
+      "FF_XBTUSD_260925": {
+        "data_label": "kraken",
+        "delivery": "2026-09-25T08:00:00+00:00",
+        "first_date": "2026-02-20",
+        "last_date": "2026-09-25",
+        "n_rows": 218,
+        "sha256": "2fa871f3470f9732620f8bd3a280ff0d531b0fbd19df9fa6304bc6d9ac40db51"
+      },
+      "FI_XBTUSD_250926": {
+        "data_label": "kraken",
+        "delivery": "2025-09-26T16:00:00+00:00",
+        "first_date": "2025-02-28",
+        "last_date": "2025-09-26",
+        "n_rows": 211,
+        "sha256": "2a110aa376d72d00714721b11db5ebfdadd57e402af23480a1d0f9d7a9ad71db"
+      },
+      "FI_XBTUSD_251226": {
+        "data_label": "kraken",
+        "delivery": "2025-12-26T16:00:00+00:00",
+        "first_date": "2025-05-30",
+        "last_date": "2025-12-26",
+        "n_rows": 211,
+        "sha256": "c683120e3bcdc190221d809b4d89035922f47df1561be538488562ee7a0b49b0"
+      },
+      "FI_XBTUSD_260327": {
+        "data_label": "kraken",
+        "delivery": "2026-03-27T16:00:00+00:00",
+        "first_date": "2025-08-29",
+        "last_date": "2026-03-27",
+        "n_rows": 211,
+        "sha256": "ff1e15ea34d99f632fef0b4adfea74b3b33180de1b221fa5c6a1feb5e69ced84"
+      },
+      "FI_XBTUSD_260626": {
+        "data_label": "kraken",
+        "delivery": "2026-06-26T16:00:00+00:00",
+        "first_date": "2025-11-28",
+        "last_date": "2026-06-26",
+        "n_rows": 211,
+        "sha256": "c93e84dfb2060fa9f4b5dec3459b9c7b1988d43046aacf8e6b64c1fcc7b72bd2"
+      }
+    },
+    "params": {
+      "annualization_days": 365.0,
+      "convergence_note": "convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement",
+      "dte_buckets": [
+        90.0,
+        60.0,
+        30.0,
+        14.0,
+        7.0,
+        1.0
+      ],
+      "dte_floor_days": 1.0,
+      "min_overlap": 5,
+      "tolerance": 0.005
+    },
+    "spot": {
+      "data_label": "kraken",
+      "first_date": "2024-10-09",
+      "last_date": "2026-09-28",
+      "n_rows": 720,
+      "sha256": "f148611c431d93d77886f7db686fa8a82e14a0c2ee3f77a80a6a80095642d7cf"
+    }
+  },
+  "inputs_sha256": "a5a7bd6664572a7515af9e91359c5ad63a7b528d8fac675a4afbce2c8d593be4",
+  "kind": "basis_carry",
+  "live_pnl_claim": false,
+  "n_contracts": 5,
+  "n_error_rows": 0,
+  "n_rows": 5,
+  "params": {
+    "annualization_days": 365.0,
+    "convergence_note": "convergence_residual is the basis at the last observed shared date; for contracts still listed it is measured residual_dte_days before delivery, not at settlement",
+    "dte_buckets": [
+      90.0,
+      60.0,
+      30.0,
+      14.0,
+      7.0,
+      1.0
+    ],
+    "dte_floor_days": 1.0,
+    "min_overlap": 5,
+    "tolerance": 0.005
+  },
+  "receipt_sha256": "dd7705fc0f2f1c25f7c7bbe3f131395931007080cddc9378c5c45e1dee79b8a8",
+  "research_only": true,
+  "results": [
+    {
+      "ann_basis_mean": -0.005951836711651675,
+      "ann_basis_n": 217,
+      "ann_basis_std": 0.10462648582634972,
+      "basis_diff_std": 0.005572170633201624,
+      "basis_first": 0.022329257861628714,
+      "basis_last": -0.0021258985685353796,
+      "basis_max": 0.022329257861628714,
+      "basis_min": -0.020580120962240576,
+      "contract": "FF_XBTUSD_260925",
+      "convergence_residual": -0.0021258985685353796,
+      "delivered": true,
+      "delivery": "2026-09-25T08:00:00+00:00",
+      "dte_buckets": {
+        "1": {
+          "ann_basis": null,
+          "basis": -0.0021258985685353796,
+          "date": "2026-09-25",
+          "dte_days": 0.3333333333333333
+        },
+        "14": {
+          "ann_basis": -0.15638619380362703,
+          "basis": -0.005712737673191855,
+          "date": "2026-09-12",
+          "dte_days": 13.333333333333334
+        },
+        "30": {
+          "ann_basis": -0.12628006137956038,
+          "basis": -0.010148534613151884,
+          "date": "2026-08-27",
+          "dte_days": 29.333333333333332
+        },
+        "60": {
+          "ann_basis": -0.0034781871112633963,
+          "basis": -0.0005654039322419037,
+          "date": "2026-07-28",
+          "dte_days": 59.333333333333336
+        },
+        "7": {
+          "ann_basis": -0.30920701890392543,
+          "basis": -0.005365235944451674,
+          "date": "2026-09-19",
+          "dte_days": 6.333333333333333
+        },
+        "90": {
+          "ann_basis": -0.019649045099214803,
+          "basis": -0.0048090813576160425,
+          "date": "2026-06-28",
+          "dte_days": 89.33333333333333
+        }
+      },
+      "first_date": "2026-02-20",
+      "last_date": "2026-09-25",
+      "n_dates": 218,
+      "residual_dte_days": 0.3333333333333333,
+      "status": "ok"
+    },
+    {
+      "ann_basis_mean": 0.047906092717365976,
+      "ann_basis_n": 210,
+      "ann_basis_std": 0.023798523409683775,
+      "basis_diff_std": 0.005832924510682373,
+      "basis_first": -0.00016214126097742896,
+      "basis_last": -0.005910546520925502,
+      "basis_max": 0.06214810042407721,
+      "basis_min": -0.005910546520925502,
+      "contract": "FI_XBTUSD_250926",
+      "convergence_residual": -0.005910546520925502,
+      "delivered": true,
+      "delivery": "2025-09-26T16:00:00+00:00",
+      "dte_buckets": {
+        "1": {
+          "ann_basis": null,
+          "basis": -0.005910546520925502,
+          "date": "2025-09-26",
+          "dte_days": 0.6666666666666666
+        },
+        "14": {
+          "ann_basis": 0.10982284241782463,
+          "basis": 0.0041120881635897805,
+          "date": "2025-09-13",
+          "dte_days": 13.666666666666666
+        },
+        "30": {
+          "ann_basis": 0.04098208841836609,
+          "basis": 0.003330964264141171,
+          "date": "2025-08-28",
+          "dte_days": 29.666666666666668
+        },
+        "60": {
+          "ann_basis": 0.08190535030233229,
+          "basis": 0.013389093793714592,
+          "date": "2025-07-29",
+          "dte_days": 59.666666666666664
+        },
+        "7": {
+          "ann_basis": -0.01309604276182913,
+          "basis": -0.00023919712806993844,
+          "date": "2025-09-20",
+          "dte_days": 6.666666666666667
+        },
+        "90": {
+          "ann_basis": 0.04197883939935576,
+          "basis": 0.010312609861576895,
+          "date": "2025-06-29",
+          "dte_days": 89.66666666666667
+        }
+      },
+      "first_date": "2025-02-28",
+      "last_date": "2025-09-26",
+      "n_dates": 211,
+      "residual_dte_days": 0.6666666666666666,
+      "status": "ok"
+    },
+    {
+      "ann_basis_mean": 0.026016246386637673,
+      "ann_basis_n": 210,
+      "ann_basis_std": 0.06825742556171652,
+      "basis_diff_std": 0.005713341989918736,
+      "basis_first": 8.373413882184243e-05,
+      "basis_last": -0.005617618882193931,
+      "basis_max": 0.03975683524169132,
+      "basis_min": -0.017734980103374355,
+      "contract": "FI_XBTUSD_251226",
+      "convergence_residual": -0.005617618882193931,
+      "delivered": true,
+      "delivery": "2025-12-26T16:00:00+00:00",
+      "dte_buckets": {
+        "1": {
+          "ann_basis": null,
+          "basis": -0.005617618882193931,
+          "date": "2025-12-26",
+          "dte_days": 0.6666666666666666
+        },
+        "14": {
+          "ann_basis": -0.0661010425430854,
+          "basis": -0.0024750162048095903,
+          "date": "2025-12-13",
+          "dte_days": 13.666666666666666
+        },
+        "30": {
+          "ann_basis": 0.024039485971212478,
+          "basis": 0.0019538942935506034,
+          "date": "2025-11-27",
+          "dte_days": 29.666666666666668
+        },
+        "60": {
+          "ann_basis": 0.04262656153849514,
+          "basis": 0.006968177639626145,
+          "date": "2025-10-28",
+          "dte_days": 59.666666666666664
+        },
+        "7": {
+          "ann_basis": -0.12521861210869875,
+          "basis": -0.002287097938058425,
+          "date": "2025-12-20",
+          "dte_days": 6.666666666666667
+        },
+        "90": {
+          "ann_basis": 0.05428198113789836,
+          "basis": 0.013335025503282794,
+          "date": "2025-09-28",
+          "dte_days": 89.66666666666667
+        }
+      },
+      "first_date": "2025-05-30",
+      "last_date": "2025-12-26",
+      "n_dates": 211,
+      "residual_dte_days": 0.6666666666666666,
+      "status": "ok"
+    },
+    {
+      "ann_basis_mean": 0.06382504232428857,
+      "ann_basis_n": 210,
+      "ann_basis_std": 0.14428892885164102,
+      "basis_diff_std": 0.006272707912933614,
+      "basis_first": -0.0001741695810244147,
+      "basis_last": 0.0025865190410242485,
+      "basis_max": 0.04180801518642847,
+      "basis_min": -0.016077497217856646,
+      "contract": "FI_XBTUSD_260327",
+      "convergence_residual": 0.0025865190410242485,
+      "delivered": true,
+      "delivery": "2026-03-27T16:00:00+00:00",
+      "dte_buckets": {
+        "1": {
+          "ann_basis": null,
+          "basis": 0.0025865190410242485,
+          "date": "2026-03-27",
+          "dte_days": 0.6666666666666666
+        },
+        "14": {
+          "ann_basis": 0.18986224065060717,
+          "basis": 0.007108997138515885,
+          "date": "2026-03-14",
+          "dte_days": 13.666666666666666
+        },
+        "30": {
+          "ann_basis": 0.08948908107934185,
+          "basis": 0.007273541749827785,
+          "date": "2026-02-26",
+          "dte_days": 29.666666666666668
+        },
+        "60": {
+          "ann_basis": 0.01102338605728856,
+          "basis": 0.0018019964422416913,
+          "date": "2026-01-27",
+          "dte_days": 59.666666666666664
+        },
+        "7": {
+          "ann_basis": 0.3767408170872671,
+          "basis": 0.006881110814379308,
+          "date": "2026-03-21",
+          "dte_days": 6.666666666666667
+        },
+        "90": {
+          "ann_basis": -0.023824549098608108,
+          "basis": -0.005852788773995965,
+          "date": "2025-12-28",
+          "dte_days": 89.66666666666667
+        }
+      },
+      "first_date": "2025-08-29",
+      "last_date": "2026-03-27",
+      "n_dates": 211,
+      "residual_dte_days": 0.6666666666666666,
+      "status": "ok"
+    },
+    {
+      "ann_basis_mean": 9.404742959199314e-05,
+      "ann_basis_n": 210,
+      "ann_basis_std": 0.0027733312420510497,
+      "basis_diff_std": 0.0006161572493513994,
+      "basis_first": 1.0999563327580444e-07,
+      "basis_last": -0.00825956686641372,
+      "basis_max": 0.00043417356566328346,
+      "basis_min": -0.00825956686641372,
+      "contract": "FI_XBTUSD_260626",
+      "convergence_residual": -0.00825956686641372,
+      "delivered": true,
+      "delivery": "2026-06-26T16:00:00+00:00",
+      "dte_buckets": {
+        "1": {
+          "ann_basis": null,
+          "basis": -0.00825956686641372,
+          "date": "2026-06-26",
+          "dte_days": 0.6666666666666666
+        },
+        "14": {
+          "ann_basis": 0.00828124218916916,
+          "basis": 0.0003100739084529092,
+          "date": "2026-06-13",
+          "dte_days": 13.666666666666666
+        },
+        "30": {
+          "ann_basis": 0.001758922610631562,
+          "basis": 0.00014296265967690322,
+          "date": "2026-05-28",
+          "dte_days": 29.666666666666668
+        },
+        "60": {
+          "ann_basis": -0.00066677351651706,
+          "basis": -0.00010899767986899885,
+          "date": "2026-04-28",
+          "dte_days": 59.666666666666664
+        },
+        "7": {
+          "ann_basis": -0.027575209999673642,
+          "basis": -0.0005036568036470072,
+          "date": "2026-06-20",
+          "dte_days": 6.666666666666667
+        },
+        "90": {
+          "ann_basis": 0.0005480977629498348,
+          "basis": 0.0001346468477018316,
+          "date": "2026-03-29",
+          "dte_days": 89.66666666666667
+        }
+      },
+      "first_date": "2025-11-28",
+      "last_date": "2026-06-26",
+      "n_dates": 211,
+      "residual_dte_days": 0.6666666666666666,
+      "status": "ok"
+    }
+  ],
+  "schema": "basis_carry.v1",
+  "simulated_only": false,
+  "verdict": "5/5 contracts measured, 5 delivered; residual mean -0.38654% max |residual| 0.82596%; 40% within tolerance 0.50%"
+}
