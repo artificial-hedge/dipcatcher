@@ -31,14 +31,11 @@ from quant_fund.research.reality_survivorship import (
 from quant_fund.research.reality_sweep import assert_cost_lock
 
 _ROOT = Path(__file__).resolve().parents[2]
-<<<<<<< HEAD
-=======
 _SPEC = _ROOT / "research" / "reality" / "survivorship" / "preregistration.json"
 _MEMBERSHIP = _ROOT / "research" / "reality" / "survivorship" / "membership.json"
 # The decided us-liquid-daily ledger archived at 3dafeb7a; its first 29
 # lines are the pinned prior-study prefix (the file carries 42 total after
 # the survivorship trials appended).
->>>>>>> origin/main
 _LEDGER = (
     _ROOT
     / "research"
