@@ -661,6 +661,7 @@ src/quant_fund/registry/contract_probe.py
 src/quant_fund/registry/lineage_dag.py
 src/quant_fund/registry/mlflow_store.py
 src/quant_fund/registry/promotion_gate.py
+src/quant_fund/registry/schema_drift.py
 src/quant_fund/reporting/__init__.py
 src/quant_fund/reporting/report.py
 src/quant_fund/reporting/report_audit.py
