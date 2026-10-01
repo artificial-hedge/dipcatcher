@@ -25,16 +25,16 @@ def _write_tape(tmp_path: Path, n: int = 400) -> tuple[Path, Path]:
         for i in range(n):
             if i % 10 == 4:
                 # execution: direction -1 => resting sell side consumed (buy fill)
-                mw.writerow([i + 1.0, 4, 25, 1050000, -1, i])
+                mw.writerow([i + 1.0, 4, i, 25, 1050000, -1])
                 bid, ask = 1040000, 1060000
             elif i % 10 == 9:
-                mw.writerow([i + 1.0, 4, 25, 1040000, 1, i])
+                mw.writerow([i + 1.0, 4, i, 25, 1040000, 1])
                 bid, ask = 1040000, 1060000
             else:
                 # submission: after buy fills tilt toward bids (unhit side)
                 direction = 1 if (i % 3) else -1
                 px = 1045000 if direction == 1 else 1055000
-                mw.writerow([i + 1.0, 1, 40, px, direction, i])
+                mw.writerow([i + 1.0, 1, i, 40, px, direction])
                 bid, ask = 1045000, 1055000
             ow.writerow(
                 x

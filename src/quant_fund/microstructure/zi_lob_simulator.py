@@ -377,6 +377,14 @@ class ZILobConfig:
     # barely registers at the touch. 0 disables bit-identically.
     hit_narrow_dist: int = 0
     hit_narrow_window: int = 0
+    # ``place_mode_frac`` in [0, 1]: when > 0 the LO placement distance
+    # law switches from the monotone P(d) ~ d**density_exponent family
+    # to a shifted Binomial, ``d ~ 1 + Bin(band - 1, place_mode_frac)``
+    # — a hump-shaped law with mode at ``1 + frac * (band - 1)`` ticks.
+    # The tape's placement law peaks at 8-13 ticks with thin mass below
+    # 5 (place_law.v1); monotone families cannot express that shape. 0
+    # keeps the legacy law bit-identically (same weights, same draws).
+    place_mode_frac: float = 0.0
     seed: int = 0
     # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
     # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
@@ -488,6 +496,7 @@ class ZILobConfig:
             _v = getattr(self, _name)
             if isinstance(_v, bool) or int(_v) < 0:
                 raise ValueError(f"{_name} must be a non-negative int, got {_v!r}")
+        _prob(self.place_mode_frac, "place_mode_frac")
         if self.anchor not in ("touch", "ref"):
             raise ValueError(f"anchor must be 'touch' or 'ref', got {self.anchor!r}")
         if isinstance(self.band, bool) or int(self.band) < 1:
@@ -1002,9 +1011,23 @@ class ZILobSimulator:
         # Slow absolute-price reference (EMA of the mid level) for anchor="ref".
         # Frozen at the seed mid (level 0) when ref_halflife == 0.
         self._ref_ema = 0.0
-        # Limit-order placement distance law P(d) ∝ d**density_exponent, d ∈ [1, band].
+        # Limit-order placement distance law over d ∈ [1, band]: the
+        # monotone P(d) ∝ d**density_exponent family, or — when
+        # place_mode_frac > 0 — a shifted Binomial hump d ~ 1 +
+        # Bin(band - 1, frac) built by the p_{k+1} recurrence.
         band = int(config.band)
-        weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
+        if config.place_mode_frac > 0.0:
+            frac = float(config.place_mode_frac)
+            n_bin = band - 1
+            weights = np.zeros(band, dtype=np.float64)
+            if frac >= 1.0:
+                weights[-1] = 1.0
+            else:
+                weights[0] = (1.0 - frac) ** n_bin
+                for k in range(n_bin):
+                    weights[k + 1] = weights[k] * (n_bin - k) / (k + 1) * frac / (1.0 - frac)
+        else:
+            weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
         self._dist_cdf = np.cumsum(weights / weights.sum())
         self._dist_cdf[-1] = 1.0
         # Event-size tables (None → unit-size, zero extra RNG draws).

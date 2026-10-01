@@ -37,7 +37,7 @@ def test_hurst_validation() -> None:
 
 def test_lag1_autocorr() -> None:
     # Σ a_t a_{t+1} / n = -(n-1)/n for a perfectly alternating sequence
-    assert lag1_autocorr(np.tile([1.0, -1.0], 500)) == pytest.approx(-0.998)
+    assert lag1_autocorr(np.tile([1.0, -1.0], 500)) == pytest.approx(-0.999)
     assert lag1_autocorr(np.ones(500)) == pytest.approx(0.998)
     assert np.isnan(lag1_autocorr(np.ones(3)))
 
