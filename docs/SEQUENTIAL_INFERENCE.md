@@ -240,6 +240,27 @@ same provenance gate: `SyntheticBook`/`CrossSectionalPanel` constructors
 must declare `data_label`, and a mixed corpus fails closed rather than
 inheriting a hard-coded SYNTHETIC stamp.
 
+### Tape manifests (`tape_manifest.v1`)
+
+Real-tape receipts used to attest their input only by self-declared
+digest (`inputs_sha256`/`dataset_sha256`) — nothing committed proved
+which bytes a digest names. `dipcatcher tape-pin` closes that gap: it
+writes a sealed `data/manifests/<source_label>.json` recording each tape
+file's sha256 and byte count, the frame's row/name/window profile, and
+`frame_csv_sha256` — `hash_bytes(frame.write_csv().encode())`, the exact
+bytes a lane seals as `inputs_sha256`. The tapes themselves stay
+gitignored; `dipcatcher tape-verify` re-hashes them and fails closed on
+any drift. `verify-receipt` consults the same registry: a receipt
+declaring a non-synthetic `data_label` that binds
+`tape_manifest_sha256`/`dataset_sha256` must resolve to a committed
+manifest's seal or tape digest, else `tape_manifest_unknown`. Receipts
+without a declared binding stay admissible — the check ratchets in, it
+does not retroactively seal old evidence. Pinned today:
+`yahoo_eod` (5-name 2024 collect, promoted under
+`data/raw/sources/yahoo_eod/`) and `yahoo_eod_us_wide` (the 424-name
+2016–2026 tape behind the `*_real_drill` receipts — its tape sha256 is
+the `dataset_sha256` `e22bf3…` the real_benchmark manifest cites).
+
 ## Verifier coverage
 
 Every kind above has a contract check in `research/evalue_contracts.py`
