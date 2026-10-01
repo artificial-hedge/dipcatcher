@@ -350,6 +350,49 @@ class ZILobConfig:
     # liquidity that was not displayed before execution. 0 is
     # bit-identical to the legacy matcher (zero RNG draws consumed).
     iceberg_reload: float = 0.0
+    # ``lo_offset_gain`` couples the LO anchor offset to MO excitation:
+    # the effective offset is ``lo_offset + round(gain * e_MO)`` where
+    # ``e_MO`` is the Hawkes excitation state summed over banks — makers
+    # retreat while fills cluster, so the spread widens exactly when
+    # toxicity is high and relaxes as excitation decays (the tape's
+    # post-fill spread kernel). Requires ``hawkes``; 0 ignores it.
+    lo_offset_gain: float = 0.0
+    # ``lo_improve_frac`` ∈ [0, 1]: probability an LO uses improve
+    # anchoring instead of the deep anchor — placed uniformly on the
+    # open spread [own_touch, opp_touch - 1], so dist 0 joins the touch
+    # and anything deeper sits strictly inside. The deep-anchor kernel
+    # can never emit inside-spread flow (``off + dist < spread`` is
+    # unreachable once the spread floors near ``lo_offset + 1``); the
+    # tape's 10.3% inside-spread share and join flow need this second
+    # placement component. 0 is bit-identical to the legacy placement.
+    lo_improve_frac: float = 0.0
+    # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
+    # order on the hit side is pulled — the tape's instant re-quote
+    # retreat (spread widens the moment liquidity is consumed, before
+    # any new deposit arrives). 0 is bit-identical legacy (zero draws).
+    touch_pull: float = 0.0
+    # ``cxl_touch_bias`` ∈ [0, 1]: probability a cancellation event picks
+    # the front order at a touch instead of a uniform outstanding order.
+    # On the real tape cancels concentrate at the touch (propensity ~1.4x
+    # uniform, falling to ~0.7 deep — the re-quote cycle churns the
+    # front, not the back).
+    cxl_touch_bias: float = 0.0
+    # ``cxl_dist_decay`` > 0 changes the biased branch into a
+    # distance-decaying propensity kernel: the biased cancel draws a
+    # resting order with weight ``exp(-d / L)`` where ``d`` is its
+    # distance from its own side's touch. The real profile is a
+    # near-touch RING (d1-3 propensity 1.44 > touch 1.37), which the
+    # pure front-pick cannot express; ``L`` ~ 3 reproduces the ring.
+    # 0 keeps the front-order pick bit-identical.
+    cxl_dist_decay: float = 0.0
+    # ``cxl_requote`` ∈ [0, 1]: probability a *biased* cancel is a
+    # re-quote — the removed order is immediately replaced by a fresh
+    # order on the same side at the same level (back of that level's
+    # FIFO). The tape's cancel churn is cancel+replace, so the book
+    # keeps its depth while resting lifetimes collapse toward the
+    # real ~0.8s deleted median. Applies only inside the biased
+    # branches; 0 keeps every path bit-identical.
+    cxl_requote: float = 0.0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -399,6 +442,14 @@ class ZILobConfig:
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
+        _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
+        _prob(self.lo_improve_frac, "lo_improve_frac")
+        _prob(self.touch_pull, "touch_pull")
+        _prob(self.cxl_touch_bias, "cxl_touch_bias")
+        _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
+        _prob(self.cxl_requote, "cxl_requote")
+        if self.lo_offset_gain > 0.0 and self.hawkes is None:
+            raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
             raise TypeError(f"hawkes must be a HawkesClockSpec, got {self.hawkes!r}")
         if self.rate_regimes is not None and not isinstance(self.rate_regimes, RateRegimeSpec):
@@ -542,6 +593,10 @@ class HawkesClock:
         self._e = np.zeros((3, self._rates.size), dtype=np.float64)
         self.n_proposals = 0
         self.n_rejected = 0
+
+    def excitation(self, kind: int) -> float:
+        """Current excitation state for ``kind`` summed over decay banks."""
+        return float(self._e[int(kind)].sum())
 
     def _intensity(self, base: Array, decay_row: Array | None) -> Array:
         """``base + e``; ``decay_row`` applies per-bank ``exp(-beta_r s)``."""
@@ -853,7 +908,16 @@ class ZILobSimulator:
         self.n_cancellations = 0
         self.n_submitted = 0
         self.n_lo_improve = 0
+        self.n_lo_join = 0
         self.n_hidden_fills = 0
+        self.n_touch_pulls = 0
+        self.n_cxl_touch = 0
+        self.n_requotes = 0
+        # Cancel-distance histogram: bucket d counts cancels d ticks
+        # from that side's touch; index 20 collects the tail.
+        self.cxl_dist = [0] * 21
+        # Age (seconds) of each canceled order at removal.
+        self.cxl_ages: list[float] = []
         self._n_orders_created = 0
         # Reference level for LO bands when the opposite side is empty
         # (keeps book recovery possible; falls back to the seeded mid level).
@@ -1031,7 +1095,11 @@ class ZILobSimulator:
                 self._rate_flow.n_transitions if self._rate_flow is not None else 0
             ),
             "n_lo_improve": self.n_lo_improve,
+            "n_lo_join": self.n_lo_join,
             "n_hidden_fills": self.n_hidden_fills,
+            "n_touch_pulls": self.n_touch_pulls,
+            "n_cxl_touch": self.n_cxl_touch,
+            "n_requotes": self.n_requotes,
         }
 
     # -- order lifecycle ----------------------------------------------------
@@ -1095,6 +1163,14 @@ class ZILobSimulator:
         self.n_cancellations += 1
         return True
 
+    def _maybe_requote(self, order: _Order) -> None:
+        """Cancel+replace half of the biased path: re-rest the removed
+        order at the same level with a fresh submit time (back of the
+        level's queue). Only active when ``cxl_requote > 0``."""
+        if self._cfg.cxl_requote > 0.0 and self._rng.random() < self._cfg.cxl_requote:
+            self._rest(order.side, order.level, "requote")
+            self.n_requotes += 1
+
     def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> _Order:
         dq = book[level]
         oid = dq[idx]
@@ -1134,6 +1210,13 @@ class ZILobSimulator:
         p = self._cfg.iceberg_reload
         if p > 0.0 and float(self._rng.random()) < p:
             self._rest(order.side, level, "iceberg")
+        # Touch pull: the front order on the hit side is withdrawn with
+        # probability ``touch_pull`` — instant quote defense, the kernel's
+        # t~0 component.
+        if self._cfg.touch_pull > 0.0 and book and float(self._rng.random()) < self._cfg.touch_pull:
+            next_level = min(book) if aggressor == "buy" else max(book)
+            self._remove_resting_at(book, next_level, 0)
+            self.n_touch_pulls += 1
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:
@@ -1201,18 +1284,31 @@ class ZILobSimulator:
         # empty so the book can always recover.
         k = self._draw_size(self._lo_size_cdf)
         off = int(self._cfg.lo_offset)
+        if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
+            off += int(round(self._cfg.lo_offset_gain * self._hawkes.excitation(1)))
+        imp = self._cfg.lo_improve_frac > 0.0 and self._rng.random() < self._cfg.lo_improve_frac
         if want_buy:
-            anchor = (ba if ba is not None else self._ref_level + 1) - off
-            level = anchor - dist
+            if imp and ba is not None and bb is not None and ba > bb:
+                level = bb + int(self._rng.random() * (ba - bb))
+            else:
+                anchor = (ba if ba is not None else self._ref_level + 1) - off
+                level = anchor - dist
             if bb is not None and level > bb:
                 self.n_lo_improve += 1  # deposit strictly inside the spread
+            elif bb is not None and level == bb:
+                self.n_lo_join += 1
             for _ in range(k):
                 self._rest("buy", level, "zi")
         else:
-            anchor = (bb if bb is not None else self._ref_level - 1) + off
-            level = anchor + dist
+            if imp and ba is not None and bb is not None and ba > bb:
+                level = ba - int(self._rng.random() * (ba - bb))
+            else:
+                anchor = (bb if bb is not None else self._ref_level - 1) + off
+                level = anchor + dist
             if ba is not None and level < ba:
                 self.n_lo_improve += 1
+            elif ba is not None and level == ba:
+                self.n_lo_join += 1
             for _ in range(k):
                 self._rest("sell", level, "zi")
         self.n_lo_arrivals += 1
@@ -1222,6 +1318,59 @@ class ZILobSimulator:
         bid_d, ask_d = self.bid_depth, self.ask_depth
         total = bid_d + ask_d
         if total == 0:
+            return
+        bias = self._cfg.cxl_touch_bias
+        if bias > 0.0 and float(self._rng.random()) < bias:
+            bb, ba = self.best_bid_level, self.best_ask_level
+            decay = self._cfg.cxl_dist_decay
+            if decay > 0.0:
+                # Distance-decaying propensity: pick the side
+                # proportional to its resting depth, then an order on
+                # that side weighted exp(-dist/L) — the tape's
+                # near-touch ring instead of a touch-only spike.
+                side_bid = float(self._rng.random()) * total < bid_d
+                book = self._bids if side_bid else self._asks
+                touch_lvl = max(book) if side_bid else min(book)
+                r = float(self._rng.random())
+                wsum = 0.0
+                wts: list[tuple[int, int, float]] = []
+                for lvl, dq in book.items():
+                    w = math.exp(-abs(lvl - touch_lvl) / decay)
+                    for idx in range(len(dq)):
+                        wsum += w
+                        wts.append((lvl, idx, wsum))
+                tgt = r * wsum
+                order = None
+                lvl_hit = None
+                for lvl, idx, cs in wts:
+                    if tgt <= cs:
+                        order = self._remove_resting_at(book, lvl, idx)
+                        lvl_hit = lvl
+                        break
+                if order is None or lvl_hit is None:  # pragma: no cover
+                    raise RuntimeError("weighted cancel missed the book")
+                self.cxl_ages.append(self.t - order.t_submit)
+                self.n_cancellations += 1
+                d_hit = abs(lvl_hit - touch_lvl)
+                self.cxl_dist[min(d_hit, 20)] += 1
+                if d_hit == 0:
+                    self.n_cxl_touch += 1
+                self._maybe_requote(order)
+                return
+            tb = len(self._bids[bb]) if bb is not None else 0
+            ta = len(self._asks[ba]) if ba is not None else 0
+            draw = float(self._rng.random()) * (tb + ta)
+            if draw < tb and bb is not None:
+                order = self._remove_resting_at(self._bids, bb, 0)
+            elif ba is not None:
+                order = self._remove_resting_at(self._asks, ba, 0)
+            else:  # pragma: no cover - touch depth bookkeeping invariant
+                raise RuntimeError("touch cancel on an empty book")
+            self.cxl_ages.append(self.t - order.t_submit)
+            self.n_cancellations += 1
+            self.n_cxl_touch += 1
+            self.cxl_dist[0] += 1
+            self._maybe_requote(order)
             return
         k = int(self._rng.integers(total))
         if k < bid_d:
@@ -1237,8 +1386,14 @@ class ZILobSimulator:
             idx -= n
         if level is None:  # pragma: no cover - depth accounting invariant
             raise RuntimeError("cancellation sampling missed the book")
-        self._remove_resting_at(book, level, idx)
+        touch = max(book) if book is self._bids else min(book)
+        order = self._remove_resting_at(book, level, idx)
+        self.cxl_ages.append(self.t - order.t_submit)
         self.n_cancellations += 1
+        dist = abs(level - touch)
+        self.cxl_dist[min(dist, 20)] += 1
+        if dist == 0:
+            self.n_cxl_touch += 1
 
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""
