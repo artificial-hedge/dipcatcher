@@ -323,20 +323,20 @@ flowchart LR
   quant_fund_parity -->|1| quant_fund_schemas
   quant_fund_parity -->|1| quant_fund_utils
   quant_fund_pipeline -->|1| quant_fund
-  quant_fund_pipeline -->|17| quant_fund_config
-  quant_fund_pipeline -->|8| quant_fund_data
+  quant_fund_pipeline -->|18| quant_fund_config
+  quant_fund_pipeline -->|9| quant_fund_data
   quant_fund_pipeline -->|2| quant_fund_features
   quant_fund_pipeline -->|2| quant_fund_fusion
   quant_fund_pipeline -->|1| quant_fund_labels
   quant_fund_pipeline -->|2| quant_fund_lightspeed
   quant_fund_pipeline -->|15| quant_fund_metrics
-  quant_fund_pipeline -->|72| quant_fund_models
+  quant_fund_pipeline -->|77| quant_fund_models
   quant_fund_pipeline -->|4| quant_fund_portfolio
   quant_fund_pipeline -->|5| quant_fund_registry
   quant_fund_pipeline -->|2| quant_fund_reporting
   quant_fund_pipeline -->|2| quant_fund_research
-  quant_fund_pipeline -->|14| quant_fund_schemas
-  quant_fund_pipeline -->|17| quant_fund_utils
+  quant_fund_pipeline -->|16| quant_fund_schemas
+  quant_fund_pipeline -->|19| quant_fund_utils
   quant_fund_pipeline -->|4| quant_fund_validation
   quant_fund_pit -->|1| quant_fund_data
   quant_fund_pit -->|6| quant_fund_proofcore
@@ -644,7 +644,7 @@ sequenceDiagram
 | `quant_fund.observe` | 9 |
 | `quant_fund.paper` | 9 |
 | `quant_fund.parity` | 11 |
-| `quant_fund.pipeline` | 21 |
+| `quant_fund.pipeline` | 22 |
 | `quant_fund.pit` | 7 |
 | `quant_fund.portfolio` | 14 |
 | `quant_fund.pretrade` | 9 |
@@ -664,7 +664,7 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **894**
+- Modules scanned: **895**
 - Packages: **65**
 - Cross-package import edges: **276**
 
