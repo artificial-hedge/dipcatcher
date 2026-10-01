@@ -263,6 +263,10 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.receipt_lattice import lattice_contract_errors
 
         return lattice_contract_errors(payload)
+    if schema == "receipt_graph.v1" or payload.get("kind") == "receipt_graph.v1":
+        from quant_fund.research.receipt_graph import graph_contract_errors
+
+        return graph_contract_errors(payload)
     if payload.get("kind") in ("xwatch", "xwatch.v1"):
         from quant_fund.research.xwatch import xwatch_contract_errors
 

@@ -3465,3 +3465,47 @@ def admit_batch_cmd(
     typer.echo(f"admit-batch candidates={batch['n_candidates']} verdict={batch['verdict']}")
     if strict and batch["verdict"] != "admit":
         raise typer.Exit(code=1)
+
+@app.command("graph")
+def graph_cmd(
+    corpus_dir: Path = typer.Option(
+        Path("receipts"), "--corpus-dir", help="Receipt corpus directory to audit."
+    ),
+    out_dir: Path = typer.Option(Path("receipts"), "--out-dir", help="Receipt output directory."),
+    receipt_version: int = typer.Option(
+        1,
+        "--receipt-version",
+        help="Receipt schema version: 1 = receipt_graph.v1 (default), 2 = unified receipt.v2 envelope.",
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit nonzero unless the citation graph verdict is 'clean'.",
+    ),
+) -> None:
+    """Provenance citation-graph audit over a receipt corpus.
+
+    Resolves digest and filename references between corpus members and
+    reports resolved edges, dangling references, filename cycles,
+    unresolvable receipt names, and orphans. Structural audit only —
+    no P&L.
+    """
+    from quant_fund.research.receipt_graph import receipt_graph, write_graph_receipt
+
+    root = Path(corpus_dir)
+    if not root.is_dir():
+        raise typer.BadParameter(f"corpus dir {root} does not exist")
+    receipt = receipt_graph(root)
+    try:
+        path = write_graph_receipt(receipt, out_dir, receipt_version=receipt_version)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    typer.echo(format_data_label(synthetic=True, data_source="SYNTHETIC"))
+    typer.echo(
+        f"graph members={receipt['n_members']} edges={receipt['n_edges']} "
+        f"dangling={receipt['n_dangling']} cycles={receipt['n_cycles']} "
+        f"verdict={receipt['verdict']}"
+    )
+    typer.echo(f"receipt={path}")
+    if strict and receipt["verdict"] != "clean":
+        raise typer.Exit(code=1)
