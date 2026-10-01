@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1118,
+  "module_count": 1119,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -7536,6 +7536,58 @@
     },
     {
       "dst": "quant_fund.config.models",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.models.calibration",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.models.covariance",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.models.realized_garch",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.models.volatility",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast.history",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.schemas.forecast",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.pipeline.forecast_audit"
+    },
+    {
+      "dst": "quant_fund.config.models",
       "src": "quant_fund.pipeline.kronos"
     },
     {
@@ -12603,6 +12655,7 @@
     "quant_fund.pipeline.forecast.realized",
     "quant_fund.pipeline.forecast.state",
     "quant_fund.pipeline.forecast.wrappee",
+    "quant_fund.pipeline.forecast_audit",
     "quant_fund.pipeline.kronos",
     "quant_fund.pipeline.train",
     "quant_fund.pipeline.train.distribution",
@@ -14285,12 +14338,12 @@
     },
     {
       "dst": "quant_fund.config",
-      "imports": 18,
+      "imports": 19,
       "src": "quant_fund.pipeline"
     },
     {
       "dst": "quant_fund.data",
-      "imports": 9,
+      "imports": 10,
       "src": "quant_fund.pipeline"
     },
     {
@@ -14320,12 +14373,12 @@
     },
     {
       "dst": "quant_fund.models",
-      "imports": 72,
+      "imports": 77,
       "src": "quant_fund.pipeline"
     },
     {
       "dst": "quant_fund.pipeline",
-      "imports": 64,
+      "imports": 66,
       "src": "quant_fund.pipeline"
     },
     {
@@ -14350,12 +14403,12 @@
     },
     {
       "dst": "quant_fund.schemas",
-      "imports": 15,
+      "imports": 17,
       "src": "quant_fund.pipeline"
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 19,
+      "imports": 21,
       "src": "quant_fund.pipeline"
     },
     {
