@@ -218,6 +218,7 @@ _LANE_COVERED_SCHEMAS = frozenset(
         "calibration_eval.v1",
         "cost_calibration.v1",
         "receipt_lattice.v1",
+        "receipt_admission.v1",
         "rough_vol.v1",
         "fbm_circulant.v1",
         "corpus_epoch.v1",

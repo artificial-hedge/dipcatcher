@@ -1,4 +1,4 @@
-.PHONY: help test test-full test-durations coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory
+.PHONY: help test test-full test-durations coverage lint typecheck doctor sync fmt security audit ci examples evidence native audit-obs docs docs-serve formal simtest simtest-large fx1-test fx1-lint fx1-corpus fx1-corpus-full fx1-eval fx1-gate mc-engine-smoke diffbacktest proofcore-test proofcore-coverage proof-integrity proof-verify leakage-scan reality-gate receipts-reverify pretrade-bench stress-smoke market-sim-test parity-smoke demo-data lattice-check perf-record perf-check evidence-audit code-inventory admission-gate
 
 .DEFAULT_GOAL := help
 
@@ -225,6 +225,18 @@ lattice-check: ## CI gate: cross-receipt consistency lattice; fails on 'inconsis
 	uv run dipcatcher lattice --strict \
 		--known-inconsistent quality/lattice_known_inconsistent.json \
 		--out-dir "$${RUNNER_TEMP:-/tmp}/lattice"
+
+ADMISSION_BASE ?= origin/main
+admission-gate: ## CI gate: sequentially admit each diff-changed corpus receipt (BASE vs HEAD)
+	@changed=$$(git diff --name-only --diff-filter=ACMRT $(ADMISSION_BASE) HEAD -- 'receipts' 2>/dev/null \
+		| grep '^receipts/[^/]*\.json$$' || true); \
+	if [ -n "$$changed" ]; then \
+		uv run dipcatcher admit-batch $$changed --corpus-dir receipts --strict \
+			--known-inconsistent quality/lattice_known_inconsistent.json \
+			--out-dir "$${RUNNER_TEMP:-/tmp}/admission"; \
+	else \
+		echo "admission-gate: no corpus receipt changes vs $(ADMISSION_BASE)"; \
+	fi
 
 market-sim-test: ## Matching engine and agent-market tests
 	uv run pytest tests/unit/market_sim tests/property/test_lob_invariants.py -m "not slow"
