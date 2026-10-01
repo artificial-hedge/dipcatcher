@@ -224,6 +224,7 @@ flowchart LR
   quant_fund_cli -->|1| quant_fund_stress
   quant_fund_cli -->|9| quant_fund_utils
   quant_fund_cli -->|1| quant_fund_validation
+  quant_fund_compute -->|2| quant_fund_utils
   quant_fund_config -->|1| quant_fund_models
   quant_fund_config -->|1| quant_fund_utils
   quant_fund_data -->|4| quant_fund_config
@@ -241,7 +242,9 @@ flowchart LR
   quant_fund_features -->|1| quant_fund_schemas
   quant_fund_features -->|1| quant_fund_utils
   quant_fund_formal -->|1| quant_fund_execution
+  quant_fund_formal -->|10| quant_fund_microstructure
   quant_fund_formal -->|1| quant_fund_schemas
+  quant_fund_formal -->|6| quant_fund_utils
   quant_fund_fusion -->|1| quant_fund_config
   quant_fund_hedge_lab -->|1| quant_fund_backtest
   quant_fund_hedge_lab -->|5| quant_fund_config
@@ -259,7 +262,7 @@ flowchart LR
   quant_fund_labels -->|1| quant_fund_config
   quant_fund_labels -->|1| quant_fund_data
   quant_fund_labels -->|1| quant_fund_schemas
-  quant_fund_labels -->|1| quant_fund_utils
+  quant_fund_labels -->|3| quant_fund_utils
   quant_fund_leakage -->|1| quant_fund_config
   quant_fund_leakage -->|1| quant_fund_pit
   quant_fund_leakage -->|3| quant_fund_proofcore
@@ -285,7 +288,7 @@ flowchart LR
   quant_fund_microstructure -->|1| quant_fund_models
   quant_fund_microstructure -->|3| quant_fund_northset
   quant_fund_microstructure -->|3| quant_fund_schemas
-  quant_fund_microstructure -->|1| quant_fund_utils
+  quant_fund_microstructure -->|89| quant_fund_utils
   quant_fund_models -->|1| quant_fund_compute
   quant_fund_models -->|3| quant_fund_config
   quant_fund_models -->|1| quant_fund_mc_engine
@@ -362,7 +365,7 @@ flowchart LR
   quant_fund_reality -->|6| quant_fund_proofcore
   quant_fund_reality -->|1| quant_fund_utils
   quant_fund_registry -->|1| quant_fund_config
-  quant_fund_registry -->|2| quant_fund_utils
+  quant_fund_registry -->|3| quant_fund_utils
   quant_fund_reporting -->|5| quant_fund_metrics
   quant_fund_reporting -->|1| quant_fund_native
   quant_fund_reporting -->|1| quant_fund_portfolio
@@ -392,7 +395,7 @@ flowchart LR
   quant_fund_research -->|11| quant_fund_validation
   quant_fund_risk -->|6| quant_fund_metrics
   quant_fund_risk -->|2| quant_fund_models
-  quant_fund_risk -->|2| quant_fund_utils
+  quant_fund_risk -->|4| quant_fund_utils
   quant_fund_robustness -->|1| quant_fund_leakage
   quant_fund_robustness -->|1| quant_fund_research
   quant_fund_robustness -->|1| quant_fund_utils
@@ -620,23 +623,23 @@ sequenceDiagram
 | `quant_fund.backtest` | 16 |
 | `quant_fund.calendars` | 8 |
 | `quant_fund.cli` | 15 |
-| `quant_fund.compute` | 3 |
+| `quant_fund.compute` | 4 |
 | `quant_fund.config` | 3 |
 | `quant_fund.data` | 42 |
 | `quant_fund.diffbacktest` | 5 |
 | `quant_fund.execution` | 8 |
 | `quant_fund.features` | 9 |
-| `quant_fund.formal` | 4 |
-| `quant_fund.fusion` | 2 |
+| `quant_fund.formal` | 7 |
+| `quant_fund.fusion` | 3 |
 | `quant_fund.hedge_lab` | 16 |
 | `quant_fund.hmm` | 4 |
-| `quant_fund.labels` | 4 |
+| `quant_fund.labels` | 5 |
 | `quant_fund.leakage` | 8 |
 | `quant_fund.lightspeed` | 8 |
 | `quant_fund.market_sim` | 13 |
 | `quant_fund.mc_engine` | 13 |
 | `quant_fund.metrics` | 75 |
-| `quant_fund.microstructure` | 9 |
+| `quant_fund.microstructure` | 54 |
 | `quant_fund.models` | 209 |
 | `quant_fund.monitoring` | 4 |
 | `quant_fund.native` | 2 |
@@ -653,10 +656,10 @@ sequenceDiagram
 | `quant_fund.public` | 1 |
 | `quant_fund.quant_models` | 17 |
 | `quant_fund.reality` | 8 |
-| `quant_fund.registry` | 2 |
+| `quant_fund.registry` | 3 |
 | `quant_fund.reporting` | 4 |
 | `quant_fund.research` | 119 |
-| `quant_fund.risk` | 5 |
+| `quant_fund.risk` | 6 |
 | `quant_fund.robustness` | 13 |
 | `quant_fund.schemas` | 8 |
 | `quant_fund.simtest` | 10 |
@@ -664,9 +667,9 @@ sequenceDiagram
 | `quant_fund.utils` | 9 |
 | `quant_fund.validation` | 13 |
 
-- Modules scanned: **894**
+- Modules scanned: **947**
 - Packages: **65**
-- Cross-package import edges: **276**
+- Cross-package import edges: **279**
 
 <!-- END GENERATED: coverage -->
 
