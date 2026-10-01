@@ -1158,3 +1158,12 @@ wave 39 canon (devin/w39-canon-integration): maximum_score
   quadratic, perm p .008) + panel_unitroot (IPS+LLC reject at
   rho=.85, keep at rho=1.0: p .61/.83)
   → PR stacked on w38 (205→211 families)
+wave 40 canon (devin/w40-canon-integration): mixed_logit (mu
+  .945/1.0, sigma 1.38/1.2, hetero LR 30 vs MNL) + hurdle (gamma
+  .777/.8, beta 1.75/1.5, fit cor .77, pos-only bias .13) +
+  sur_model (beta .78/.8, -.53/-.5, resid corr .711/.7, uncorr
+  .10) + connectedness (TCI 19.4 vs .7 indep, net transmitter
+  +.024) + nonparametric_iv (err .295 vs OLS .473, DWH t 31 vs
+  -1.4 exog) + subsampling (theta .582/.6, CI brackets, MC
+  coverage .76 vs nominal .9)
+  → PR stacked on w39 (211→217 families)
