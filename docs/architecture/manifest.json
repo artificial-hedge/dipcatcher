@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 955,
+  "module_count": 956,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -3925,6 +3925,26 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.hidden_depth"
+    },
+    {
+      "dst": "quant_fund.microstructure.lobster",
+      "src": "quant_fund.microstructure.imbalance_predict"
+    },
+    {
+      "dst": "quant_fund.microstructure.split_flow",
+      "src": "quant_fund.microstructure.imbalance_predict"
+    },
+    {
+      "dst": "quant_fund.microstructure.zi_lob_simulator",
+      "src": "quant_fund.microstructure.imbalance_predict"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.imbalance_predict"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.imbalance_predict"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -10363,6 +10383,7 @@
     "quant_fund.microstructure.glft_closed_form",
     "quant_fund.microstructure.hawkes_real",
     "quant_fund.microstructure.hidden_depth",
+    "quant_fund.microstructure.imbalance_predict",
     "quant_fund.microstructure.impact_instant",
     "quant_fund.microstructure.intraday_exec",
     "quant_fund.microstructure.intraday_shape",
@@ -11841,7 +11862,7 @@
     },
     {
       "dst": "quant_fund.microstructure",
-      "imports": 132,
+      "imports": 135,
       "src": "quant_fund.microstructure"
     },
     {
@@ -11861,7 +11882,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 93,
+      "imports": 95,
       "src": "quant_fund.microstructure"
     },
     {
