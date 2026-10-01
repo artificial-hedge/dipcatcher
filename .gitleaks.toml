@@ -62,3 +62,15 @@ condition = "AND"
 paths = ['''(?:^|/)src/quant_fund/research/replication/strategies\.py$''']
 regexTarget = "line"
 regexes = ['''^\+?\s*(?:key|paper_key|signal_fn)\s*=\s*"[a-z0-9_]+",?\s*$''']
+
+# quality/crown_jewels.json is a manifest of file paths → sha256 content
+# digests. A path containing `key` (key_rotation.py) next to its 64-hex
+# digest matches generic-api-key's shape but is a content pin, not a
+# credential — the same class as the .dsh-24x7 evidence allowlist.
+[[allowlists]]
+description = "Crown-jewels manifest: file paths pinned by sha256 content digest"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)quality/crown_jewels\.json$''']
+regexTarget = "line"
+regexes = ['''^\s*"[^"]{1,300}\.[a-z0-9]{1,8}":\s*"[0-9a-f]{64}",?\s*$''']
