@@ -25,22 +25,21 @@ from quant_fund.utils.reproducibility import git_revision
 
 TOUCH_EMPTY_SCHEMA = "touch_empty.v1"
 
-_FLEE = {
-    "hit_flee_frac": 0.10,
-    "hit_flee_band": 2,
-    "hit_flee_window": 50,
-    "unhit_imp_frac": 0.5,
-    "unhit_imp_window": 200,
-}
-# (label, crown_frac, crown_offset, near_cap, ice, ice_mode, budget)
-_CELLS: tuple[tuple[str, float, int, int, float, str, int], ...] = (
-    ("deep", 0.0, 0, 0, 0.0, "per_unit", 0),
-    ("cr1_f30", 0.30, 1, 0, 0.0, "per_unit", 0),
-    ("cr0_f60", 0.60, 0, 0, 0.0, "per_unit", 0),
-    ("cr0_f60_i30", 0.60, 0, 0, 0.30, "residual", 0),
-    ("cr0_f60_i80b15", 0.60, 0, 0, 0.80, "residual", 15),
-    ("cap2_sp3", 0.30, 1, 2, 0.0, "per_unit", 0),
-    ("ice80_unit", 0.30, 1, 0, 0.80, "per_unit", 0),
+# (label, crown_frac, crown_offset, near_cap, ice, ice_mode, budget,
+#  unhit_imp_frac, hit_flee_frac, refill_cooldown)
+_CELLS: tuple[tuple[str, float, int, int, float, str, int, float, float, int], ...] = (
+    ("deep", 0.0, 0, 0, 0.0, "per_unit", 0, 0.5, 0.10, 300),
+    ("cr1_f30", 0.30, 1, 0, 0.0, "per_unit", 0, 0.5, 0.10, 300),
+    ("cr0_f60", 0.60, 0, 0, 0.0, "per_unit", 0, 0.5, 0.10, 300),
+    ("cr0_f60_i30", 0.60, 0, 0, 0.30, "residual", 0, 0.5, 0.10, 300),
+    ("cap2_sp3", 0.30, 1, 2, 0.0, "per_unit", 0, 0.5, 0.10, 300),
+    ("ice80_unit", 0.30, 1, 0, 0.80, "per_unit", 0, 0.5, 0.10, 300),
+    # imp=0 removes the inside-spread reroute that pinned the spread shut.
+    ("imp0_ff30", 0.60, 0, 0, 0.30, "residual", 0, 0.0, 0.30, 300),
+    ("imp0_ff50", 0.60, 0, 0, 0.30, "residual", 0, 0.0, 0.50, 300),
+    # The joint cell: touch stack + residual ice reserve + cancel retreat
+    # + moderated vacancy memory, no inside-spread reroute.
+    ("joint_cell", 0.60, 0, 0, 0.55, "residual", 15, 0.0, 0.45, 100),
 )
 
 # Tape pins: crown_density.v1 / depth_consumption.v1 / hidden_depth.v1.
@@ -56,7 +55,7 @@ _EMP_LO, _EMP_HI = 0.6 * _TAPE_EMPTY_RATE, 1.4 * _TAPE_EMPTY_RATE
 def touch_empty_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any]:
     """(crown × cap × iceberg) grid under the corrected reveal index."""
     cells = []
-    for i, (label, cf, off, cap, ice, mode, budget) in enumerate(_CELLS):
+    for i, (label, cf, off, cap, ice, mode, budget, imp, flee, cd) in enumerate(_CELLS):
         cell = _sim_crown(
             label,
             dict(
@@ -69,7 +68,12 @@ def touch_empty_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any]:
                 iceberg_reload=ice,
                 iceberg_reload_mode=mode,
                 iceberg_budget=budget,
-                **_FLEE,
+                hit_flee_frac=flee,
+                hit_flee_band=2,
+                hit_flee_window=50,
+                unhit_imp_frac=imp,
+                unhit_imp_window=200,
+                refill_cooldown=cd,
             ),
             horizon=horizon,
             seed=seed + i,
@@ -81,6 +85,9 @@ def touch_empty_bench(*, horizon: int = 20000, seed: int = 7) -> dict[str, Any]:
         cell["iceberg_reload"] = ice
         cell["iceberg_reload_mode"] = mode
         cell["iceberg_budget"] = budget
+        cell["unhit_imp_frac"] = imp
+        cell["hit_flee_frac"] = flee
+        cell["refill_cooldown"] = cd
         cell["empty_share"] = (
             round(cell["n_reveals"] / cell["n_fills"], 4) if cell["n_fills"] else None
         )
