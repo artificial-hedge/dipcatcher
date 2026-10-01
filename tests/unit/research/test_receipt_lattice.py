@@ -404,3 +404,22 @@ def test_lattice_cli_known_inconsistent_flag(tmp_path: Path) -> None:
         ],
     )
     assert bad.exit_code != 0
+
+
+def test_meta_audit_kinds_carry_no_claims(tmp_path: Path) -> None:
+    """corpus/process attestations are not measured claims — their verdict
+    fields (chain position, admit/quarantine, prior audit verdicts) must not
+    form claim groups."""
+    _write(tmp_path, "r1.json", _receipt("in-a", 0.42))
+    for i, kind in enumerate(
+        ["corpus_epoch.v1", "receipt_admission.v1", "receipt_lattice.v1", "receipt_graph.v1"]
+    ):
+        _write(
+            tmp_path,
+            f"meta{i}.json",
+            _receipt("in-a", 0.42, {"kind": kind, "verdict": f"verdict-{i}"}),
+        )
+    out = receipt_lattice(tmp_path)
+    # Only the real member's claims form groups; the four meta receipts add none.
+    assert out["verdict"] == "consistent"
+    assert all(len(g["files"]) == 1 for g in out["groups"])
