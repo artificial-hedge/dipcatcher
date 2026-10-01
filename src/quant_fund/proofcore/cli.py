@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import typer
@@ -36,15 +38,51 @@ _TRIAL_CSV_FIELDS: tuple[str, ...] = (
 )
 
 
+def _fsync_directory(path: Path) -> None:
+    try:
+        fd = os.open(path, os.O_RDONLY)
+    except OSError:
+        return
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """tmp file + fsync + rename — a crash mid-write leaves no truncated artifact.
+
+    Inlined copy of ``utils.atomicio.atomic_write_text``: proofcore-standalone
+    (configs/arch_boundaries.toml) and LH011 (leakage/rules.py) bar EVERY
+    quant_fund edge from proofcore, lazy included, so the CLI glue carries its
+    own crash-safe writer instead of reaching across the boundary.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary_path = Path(temporary)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_path, path)
+        _fsync_directory(path.parent)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
 def write_trial_csv(rows: list[TrialLedgerRow], path: Path) -> None:
     """Write trial rows as CSV. Same columns the JSONL export carries."""
+    import io
+
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=_TRIAL_CSV_FIELDS, lineterminator="\n")
+    writer.writeheader()
+    for row in rows:
+        payload = row.model_dump(mode="json")
+        writer.writerow({name: payload[name] for name in _TRIAL_CSV_FIELDS})
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=_TRIAL_CSV_FIELDS, lineterminator="\n")
-        writer.writeheader()
-        for row in rows:
-            payload = row.model_dump(mode="json")
-            writer.writerow({name: payload[name] for name in _TRIAL_CSV_FIELDS})
+    _atomic_write_text(path, buffer.getvalue())
 
 
 _DB_OPTION = typer.Option(
@@ -119,18 +157,22 @@ def export(
         trials = prov.trials()
         bundles = prov.bundles()
     out.parent.mkdir(parents=True, exist_ok=True)
-    with out.open("w", encoding="utf-8") as fh:
-        for row in trials:
-            fh.write(json.dumps(row.model_dump(mode="json"), sort_keys=True) + "\n")
+    _atomic_write_text(
+        out,
+        "".join(json.dumps(row.model_dump(mode="json"), sort_keys=True) + "\n" for row in trials),
+    )
     typer.echo(f"exported {len(trials)} trial rows -> {out}")
     if csv_out is not None:
         write_trial_csv(trials, csv_out)
         typer.echo(f"exported {len(trials)} trial rows -> {csv_out}")
     if bundles_out is not None:
         bundles_out.parent.mkdir(parents=True, exist_ok=True)
-        with bundles_out.open("w", encoding="utf-8") as fh:
-            for bundle_row in bundles:
-                fh.write(json.dumps(bundle_row, sort_keys=True, default=str) + "\n")
+        _atomic_write_text(
+            bundles_out,
+            "".join(
+                json.dumps(bundle_row, sort_keys=True, default=str) + "\n" for bundle_row in bundles
+            ),
+        )
         typer.echo(f"exported {len(bundles)} bundle rows -> {bundles_out}")
 
 

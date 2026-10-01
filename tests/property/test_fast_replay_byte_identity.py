@@ -263,6 +263,26 @@ def test_interpreted_fallback_byte_identical(seed: int) -> None:
         fast_replay.HAVE_NUMBA = original
 
 
+def test_seeded_sweep_byte_identical_or_same_failure() -> None:
+    """Fixed-seed sweep beyond the hypothesis budget.
+
+    A single drawn example can miss conformance classes — e.g. the
+    pre-update-mark sizing-nav leak only fires when a held name's bar marks
+    but cannot execute. Sweeping a fixed seed range covers the generator's
+    edge space deterministically on every run; seeds whose reference raises
+    must fail identically in the fast path.
+    """
+    for seed in range(100):
+        bars, weights, cfg = _gen_workload(seed)
+        try:
+            ref = _run_backtest_event_loop(bars, weights, cfg)
+        except Exception as e:  # noqa: BLE001 - whatever ref does, fast must do
+            with pytest.raises(type(e)):
+                run_backtest_fast(bars, weights, cfg)
+            continue
+        _assert_byte_identical(ref, run_backtest_fast(bars, weights, cfg))
+
+
 def test_fast_flag_true_refuses_unsupported_workloads() -> None:
     """fast=True must fail closed, not degrade to the event loop."""
     bars, weights, cfg = _gen_workload(4)
@@ -270,7 +290,7 @@ def test_fast_flag_true_refuses_unsupported_workloads() -> None:
     with pytest.raises(ValueError, match="fast replay"):
         run_backtest(mixed, weights, cfg, fast=True)
     dup = pl.concat([bars, bars.head(1)])
-    with pytest.raises(ValueError, match="fast replay"):
+    with pytest.raises(ValueError, match="duplicate bars"):
         run_backtest(dup, weights, cfg, fast=True)
     empty = pl.DataFrame(schema=bars.schema)
     with pytest.raises(ValueError, match="fast replay"):

@@ -12,6 +12,7 @@ import hashlib
 import json
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -31,7 +32,7 @@ class ReceiptRecord(BaseModel):
         "payload's `synthetic` flag). Synthetic evidence is eligible only "
         "when research-scoped and is always labeled as simulated.",
     )
-    payload: dict = Field(default_factory=dict)
+    payload: dict[str, Any] = Field(default_factory=dict)
 
     @property
     def eligible(self) -> bool:
@@ -43,7 +44,7 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _eligibility(payload: dict) -> tuple[bool, bool]:
+def _eligibility(payload: dict[str, Any]) -> tuple[bool, bool]:
     """Resolve (research_only, live_pnl_claim) across receipt schemas.
 
     Two schemas are recognized, both explicit:
@@ -56,7 +57,10 @@ def _eligibility(payload: dict) -> tuple[bool, bool]:
     Anything else fails closed: not research-scoped, live claim assumed.
     """
     claim = payload.get("claim")
-    research_only = bool(payload.get("research_only", False)) or (claim == "research_only")
+    # The boolean contract is literal: "research_only": true. A truthy
+    # non-boolean ("yes", 1, "research") is not a research-scope declaration —
+    # malformed receipts are ineligible, fail-closed.
+    research_only = (payload.get("research_only") is True) or (claim == "research_only")
     if "live_pnl_claim" in payload:
         live_pnl_claim = bool(payload["live_pnl_claim"])
     else:
