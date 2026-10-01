@@ -65,6 +65,7 @@ src/quant_fund/config/impact.py
 src/quant_fund/config/loader.py
 src/quant_fund/config/models.py
 src/quant_fund/config/schema_fingerprint.py
+src/quant_fund/config/validator_fuzz.py
 src/quant_fund/data/__init__.py
 src/quant_fund/data/adapters/__init__.py
 src/quant_fund/data/adapters/hf_ohlcv_1m.py
