@@ -1,0 +1,36 @@
+{
+ "claim": {
+  "flags": {
+   "plural_key_evades": true,
+   "tool_results_unscanned": true
+  },
+  "ok": true,
+  "results": {
+   "admit_clean": true,
+   "admit_unverified_as_negative": true,
+   "admit_violating_refused": true,
+   "broken_skipped": true,
+   "clean_is_positive": true,
+   "digest_bound": true,
+   "falsy_forms_clean": true,
+   "live_in_list_detected": true,
+   "live_is_negative": true,
+   "live_nested_detected": true,
+   "notebook_digest": true,
+   "notebook_sections": true,
+   "plural_evades": true,
+   "three_written": true,
+   "tool_result_not_scanned": true,
+   "trace_digest_bound": true,
+   "unverified_marked_negative": true
+  }
+ },
+ "data_label": "SYNTHETIC",
+ "git_revision": "be4e0cd1e1dfb1254afb0ce192816d8c28c62776",
+ "interpretation": "Non-receipt sources hold: live claims recursively detected \u2192 refusal negatives; trace admission refuses violating assistant content while unverified ones admit as negatives; notebook digest binds whole file. Flags pinned: plural live_pnl_claims key evades the exact-match token scan, and tool-role messages are never honesty-scanned.",
+ "kind": "sources_audit",
+ "live_pnl_claim": false,
+ "receipt_sha256": "a50a1009d98f3ded09009761593fb6e71152391d85c1ad8e13b717fd9ed6467b",
+ "research_only": true,
+ "schema": "sources_audit.v1"
+}
