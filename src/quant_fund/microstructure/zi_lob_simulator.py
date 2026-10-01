@@ -401,6 +401,19 @@ class ZILobConfig:
     # liquidity that was not displayed before execution. 0 is
     # bit-identical to the legacy matcher (zero RNG draws consumed).
     iceberg_reload: float = 0.0
+    # ``iceberg_reload_mode``: ``per_unit`` (default — the draw refills
+    # the level whether or not any visible depth survives) vs
+    # ``residual`` — the refill only fires when the level still holds
+    # visible units after the fill, i.e. hidden persistence *stacks on*
+    # a living level but never resurrects a cleared one. Per-unit reload
+    # makes the touch nearly unkillable under iceberg liquidity (a
+    # mid-burst reload keeps the level alive however deep the burst
+    # cuts), which suppresses the emptied-touch channel; residual mode
+    # is the tape's structure — a level that fully empties stays empty
+    # until visible flow re-sites there. Consumes no extra RNG either
+    # way (the draw precedes the gate), so ``per_unit`` is
+    # bit-identical.
+    iceberg_reload_mode: str = "per_unit"
     # ``lo_offset_gain`` couples the LO anchor offset to MO excitation:
     # the effective offset is ``lo_offset + round(gain * e_MO)`` where
     # ``e_MO`` is the Hawkes excitation state summed over banks — makers
@@ -672,6 +685,11 @@ class ZILobConfig:
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
+        if self.iceberg_reload_mode not in ("per_unit", "residual"):
+            raise ValueError(
+                "iceberg_reload_mode must be 'per_unit' or 'residual', "
+                f"got {self.iceberg_reload_mode!r}"
+            )
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
         _prob(self.lo_improve_frac, "lo_improve_frac")
         _prob(self.place_join_frac, "place_join_frac")
@@ -1792,7 +1810,11 @@ class ZILobSimulator:
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
         p = self._cfg.iceberg_reload
-        if p > 0.0 and float(self._rng.random()) < p:
+        if (
+            p > 0.0
+            and float(self._rng.random()) < p
+            and (self._cfg.iceberg_reload_mode == "per_unit" or bool(book.get(level)))
+        ):
             self._rest(order.side, level, "iceberg")
         # Touch pull: the front order on the hit side is withdrawn with
         # probability ``touch_pull`` — instant quote defense, the kernel's

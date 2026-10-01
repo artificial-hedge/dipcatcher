@@ -467,6 +467,7 @@ _MEASUREMENT_SCHEMAS = (
     "refill_hazard.v1",
     "regime_clock.v1",
     "release_chase.v1",
+    "reload_gate.v1",
     "round_lot.v1",
     "sign_autocorr_real.v1",
     "sign_predict.v1",
