@@ -1,0 +1,40 @@
+# Witness monitor — continuous append-only auditing of the evidence store.
+# Weekly + on any push that touches committed witness proofs, verify that:
+#   1. every committed Rekor proof is intact offline (inclusion + SET + note);
+#   2. each recorded tree is still a PREFIX of Rekor's live signed tree head
+#      (RFC 6962 consistency) — the public log can't silently drop or rewrite
+#      the segment containing our checkpoints without breaking this check.
+# Read-only against rekor.sigstore.dev; needs no secrets.
+name: witness-monitor
+
+on:
+  schedule:
+    - cron: "13 4 * * 1" # weekly, Mondays 04:13 UTC
+  push:
+    branches: [main]
+    paths: ["quality/witness/**", "quality/rekor_pubkey.pem", "quality/witness_signing.pub"]
+  pull_request:
+    branches: [main]
+    paths: ["quality/witness/**", "src/quant_fund/research/integrity_witness.py"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  witness-online:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Sync
+        run: uv sync --frozen --all-groups
+      - name: Offline proof verification
+        run: uv run dipcatcher verify-witness
+      - name: Live consistency against the public log
+        run: uv run dipcatcher verify-witness --online
