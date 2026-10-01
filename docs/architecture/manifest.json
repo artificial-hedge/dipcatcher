@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1142,
+  "module_count": 1143,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -5257,6 +5257,14 @@
     {
       "dst": "quant_fund.utils.reproducibility",
       "src": "quant_fund.microstructure.order_revision"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "quant_fund.microstructure.pin_estimator"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "quant_fund.microstructure.pin_estimator"
     },
     {
       "dst": "quant_fund.microstructure.lobster",
@@ -12604,6 +12612,7 @@
     "quant_fund.microstructure.ofi_forecast",
     "quant_fund.microstructure.order_lifetime",
     "quant_fund.microstructure.order_revision",
+    "quant_fund.microstructure.pin_estimator",
     "quant_fund.microstructure.post_trade_drift",
     "quant_fund.microstructure.price_clustering",
     "quant_fund.microstructure.price_improvement",
@@ -14385,7 +14394,7 @@
     },
     {
       "dst": "quant_fund.utils",
-      "imports": 136,
+      "imports": 138,
       "src": "quant_fund.microstructure"
     },
     {
