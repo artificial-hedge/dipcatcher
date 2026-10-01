@@ -118,3 +118,25 @@ def test_git_revision_present() -> None:
             check=True,
         ).stdout.strip()
     )
+
+
+def test_committed_receipt_dispatches_contract() -> None:
+    from quant_fund.research.lane_contracts import lane_contract_errors
+
+    committed = json.loads(Path("receipts/vine_dominance.json").read_text())
+    assert committed["schema"] == "vine_dominance.v1"
+    assert lane_contract_errors(committed) == []
+
+
+def test_contract_catches_incoherent_claim() -> None:
+    from quant_fund.research.vine_dominance import vine_dominance_contract_errors
+
+    p = json.loads(Path("receipts/vine_dominance.json").read_text())
+    p["claim"]["n_passed"] = 0
+    assert "n_passed_mismatch" in vine_dominance_contract_errors(p)
+    p2 = json.loads(Path("receipts/vine_dominance.json").read_text())
+    p2["claim"]["dominance"]["rvine_vs_cvine"]["verdict"] = "totally_dominates"
+    assert "dominance_rvine_vs_cvine_verdict" in vine_dominance_contract_errors(p2)
+    p3 = json.loads(Path("receipts/vine_dominance.json").read_text())
+    p3["claim"]["tail_model"]["gaussian"]["joint_crash_prob"] = 2.0
+    assert "tail_model_shape" in vine_dominance_contract_errors(p3)

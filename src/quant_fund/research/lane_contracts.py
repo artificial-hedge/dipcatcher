@@ -223,6 +223,10 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.vine_panel import vine_panel_contract_errors
 
         return vine_panel_contract_errors(payload)
+    if payload.get("schema") == "vine_dominance.v1":
+        from quant_fund.research.vine_dominance import vine_dominance_contract_errors
+
+        return vine_dominance_contract_errors(payload)
     if payload.get("kind") in ("xwatch", "xwatch.v1"):
         from quant_fund.research.xwatch import xwatch_contract_errors
 

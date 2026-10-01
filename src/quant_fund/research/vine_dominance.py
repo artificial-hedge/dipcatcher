@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -278,6 +279,72 @@ def _git_revision() -> str:
         return out.stdout.strip()
     except Exception:  # noqa: BLE001 — receipt must not fail on a missing .git
         return "unknown"
+
+
+_VINE_MODELS = ("independent", "gaussian", "cvine", "dvine", "rvine")
+_CS_VERDICTS = ("challenger_wins", "incumbent_wins", "inconclusive")
+
+
+def vine_dominance_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Deep-verify a ``vine_dominance.v1`` receipt's internal coherence."""
+    errors: list[str] = []
+    claim = payload.get("claim")
+    if not isinstance(claim, dict):
+        return ["missing_claim"]
+    results = claim.get("results")
+    if not isinstance(results, dict) or not all(isinstance(v, bool) for v in results.values()):
+        errors.append("results_not_bool_map")
+        results = {}
+    if claim.get("n_probes") != len(results):
+        errors.append("n_probes_mismatch")
+    if claim.get("n_passed") != sum(1 for v in results.values() if v):
+        errors.append("n_passed_mismatch")
+    if claim.get("ok") != all(results.values()):
+        errors.append("ok_mismatch")
+    ll = claim.get("mean_loglik_oos")
+    if not isinstance(ll, dict) or not set(_VINE_MODELS).issubset(ll):
+        errors.append("mean_loglik_oos_models")
+    elif not all(isinstance(v, (int, float)) for v in ll.values()):
+        errors.append("mean_loglik_oos_non_numeric")
+    dom = claim.get("dominance")
+    if not isinstance(dom, dict) or not dom:
+        errors.append("missing_dominance")
+    else:
+        for name, d in dom.items():
+            if not isinstance(d, dict):
+                errors.append(f"dominance_{name}_not_dict")
+                continue
+            if d.get("verdict") not in _CS_VERDICTS:
+                errors.append(f"dominance_{name}_verdict")
+            lo, hi = d.get("cs_lo"), d.get("cs_hi")
+            if not isinstance(lo, (int, float)) or not isinstance(hi, (int, float)) or lo > hi:
+                errors.append(f"dominance_{name}_cs_inverted")
+
+    def _tail_stats(v: Any) -> bool:
+        return (
+            isinstance(v, dict)
+            and isinstance(v.get("joint_crash_prob"), (int, float))
+            and 0.0 <= v["joint_crash_prob"] <= 1.0
+            and isinstance(v.get("tail_mass"), (int, float))
+            and 0.0 <= v["tail_mass"] <= 1.0
+            and isinstance(v.get("n"), (int, float))
+            and v["n"] > 0
+        )
+
+    if not _tail_stats(claim.get("tail_empirical")):
+        errors.append("tail_empirical_shape")
+    tm = claim.get("tail_model")
+    if not isinstance(tm, dict) or not set(_VINE_MODELS).issubset(tm):
+        errors.append("tail_model_models")
+    elif not all(_tail_stats(v) for v in tm.values()):
+        errors.append("tail_model_shape")
+    if payload.get("research_only") is not True:
+        errors.append("research_only")
+    if payload.get("live_pnl_claim") is not False:
+        errors.append("live_pnl_claim")
+    if payload.get("data_label") != "SYNTHETIC":
+        errors.append("data_label")
+    return errors
 
 
 def write_vine_dominance_receipt(
