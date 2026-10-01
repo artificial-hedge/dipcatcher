@@ -404,6 +404,14 @@ from quant_fund.research.benches_w51 import (
     bench_ross_recovery,
     bench_toda_yamamoto,
 )
+from quant_fund.research.benches_w52 import (
+    bench_bandi_russell,
+    bench_beveridge_nelson,
+    bench_growth_at_risk,
+    bench_hong_li,
+    bench_melick_thomas,
+    bench_nardl,
+)
 from quant_fund.research.benches_w53 import (
     bench_christoffersen_pelletier,
     bench_corradi_swanson,
@@ -411,6 +419,15 @@ from quant_fund.research.benches_w53 import (
     bench_heston_qe,
     bench_model_confidence_set,
     bench_sheppard_heavy,
+)
+from quant_fund.research.benches_w55 import (
+    bench_bds,
+    bench_cochrane_piazzesi,
+    bench_diebold_mariano,
+    bench_engle_granger,
+    bench_engle_ng,
+    bench_glosten_milgrom,
+    bench_hasbrouck_is,
 )
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
@@ -2268,6 +2285,19 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ross_recovery": bench_ross_recovery(),
         "ait_sahalia": bench_ait_sahalia(),
         "toda_yamamoto": bench_toda_yamamoto(),
+        "diebold_mariano": bench_diebold_mariano(),
+        "engle_granger": bench_engle_granger(),
+        "glosten_milgrom": bench_glosten_milgrom(),
+        "hasbrouck_is": bench_hasbrouck_is(),
+        "bds": bench_bds(),
+        "cochrane_piazzesi": bench_cochrane_piazzesi(),
+        "engle_ng": bench_engle_ng(),
+        "nardl": bench_nardl(),
+        "growth_at_risk": bench_growth_at_risk(),
+        "melick_thomas": bench_melick_thomas(),
+        "bandi_russell": bench_bandi_russell(),
+        "hong_li": bench_hong_li(),
+        "beveridge_nelson": bench_beveridge_nelson(),
         "corradi_swanson": bench_corradi_swanson(),
         "engle_kroner_bekk": bench_engle_kroner_bekk(),
         "heston_qe": bench_heston_qe(),
