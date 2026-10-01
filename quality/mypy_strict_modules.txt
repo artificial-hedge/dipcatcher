@@ -322,6 +322,7 @@ src/quant_fund/microstructure/propagator_real.py
 src/quant_fund/microstructure/queue_fate.py
 src/quant_fund/microstructure/queue_jump.py
 src/quant_fund/microstructure/queue_occupancy.py
+src/quant_fund/microstructure/queue_priority.py
 src/quant_fund/microstructure/quote_place.py
 src/quant_fund/microstructure/rl_market_maker.py
 src/quant_fund/microstructure/round_lot.py
