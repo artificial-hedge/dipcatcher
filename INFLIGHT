@@ -1216,3 +1216,14 @@ wave 45 canon (devin/w45-canon-integration): conley_se
   barrett_donald (dominance p .99 vs reverse 0, crossing
   p .03)
   → PR stacked on w44 (241→247 families)
+wave 46 canon (devin/w46-canon-integration): blp_demand
+  (Newton+BFGS contraction, rival-x instruments: alpha
+  1.01, sigma .9 vs true 1; naive logit alpha .5) +
+  olley_pakes (investment-proxy phi inversion, eta-perp-k
+  moment: beta_k .49, beta_l .39 vs OLS l .84) +
+  rust_ddc (logsumexp contraction + NFXP: theta .106/0.1,
+  RC 8.41/8) + oaxaca_blinder (two-fold gap .688 exact,
+  comp .714) + binscatter (kink CEF reject p~1e-137,
+  clean accept .43/.20) + dfl_decomp (IRLS logit
+  reweighting: comp 1.12, struct .54, sum=gap 1.66)
+  → PR stacked on w45 (247→253 families)

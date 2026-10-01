@@ -599,6 +599,17 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wald_sprt",
         "lee_bounds",
         "barrett_donald",
+        # wave 46 — BLP random-coefficients demand, Olley-Pakes
+        # production proxy, Rust dynamic discrete choice,
+        # Oaxaca-Blinder wage decomposition, binscatter CEF +
+        # spec test, DFL reweighting decomposition. Same
+        # SYNTHETIC diagnostic contract.
+        "blp_demand",
+        "olley_pakes",
+        "rust_ddc",
+        "oaxaca_blinder",
+        "binscatter",
+        "dfl_decomp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
