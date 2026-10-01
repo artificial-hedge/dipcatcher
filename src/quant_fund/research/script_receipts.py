@@ -408,6 +408,7 @@ _MEASUREMENT_SCHEMAS = (
     "anchor_scan.v1",
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",
+    "closure_fit.v1",
     "deep_book_bench.v1",
     "deep_microprice.v1",
     "depth_consumption.v1",
