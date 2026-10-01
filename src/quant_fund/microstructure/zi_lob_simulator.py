@@ -283,6 +283,20 @@ class MarkovRegimeFlow:
         return float(total / self.n_mo)
 
 
+class MOFlow(Protocol):
+    """Market-order flow interface accepted by ``ZILobSimulator``.
+
+    ``current()`` supplies the MO intensity multiplier and buy probability
+    for the next MO event; ``advance()`` is called once per MO event (the MO
+    clock). ``MarkovRegimeFlow`` satisfies it, as do episodic flows like
+    ``markout.SplitFlow``.
+    """
+
+    def current(self) -> RegimeState: ...
+
+    def advance(self) -> None: ...
+
+
 # ---------------------------------------------------------------------------
 # Events / records
 # ---------------------------------------------------------------------------
