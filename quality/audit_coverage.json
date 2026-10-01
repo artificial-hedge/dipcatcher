@@ -237,6 +237,9 @@
     "backtest/event_sim/simulator.py": {
       "status": "audited"
     },
+    "parity_leak_audit.py": {
+      "status": "audited"
+    },
     "public.py": {
       "reason": "package surface only",
       "status": "waived"
