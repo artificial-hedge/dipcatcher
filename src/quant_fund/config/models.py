@@ -797,6 +797,8 @@ class PromotionConfig(StrictConfigModel):
                 raise ValueError(f"{name} must be finite")
         if self.max_turnover < 0:
             raise ValueError("max_turnover must be non-negative")
+        if self.min_cost_adjusted_spread < 0:
+            raise ValueError("min_cost_adjusted_spread must be non-negative")
         if self.min_folds < 1:
             raise ValueError("min_folds must be positive")
         if not np.isfinite(self.min_fold_ic_stability) or not 0 <= self.min_fold_ic_stability <= 1:
@@ -1025,8 +1027,10 @@ class NorthsetConfig(StrictConfigModel):
             raise ValueError("sweep_min_events must be >= 10")
         if self.sweep_min_dates < 5:
             raise ValueError("sweep_min_dates must be >= 5")
-        if not 0.0 <= self.sweep_min_fold_positive_fraction <= 1.0:
-            raise ValueError("sweep_min_fold_positive_fraction must be in [0, 1]")
+        if not np.isfinite(self.sweep_min_fold_positive_fraction) or not (
+            0.0 <= self.sweep_min_fold_positive_fraction <= 1.0
+        ):
+            raise ValueError("sweep_min_fold_positive_fraction must be finite in [0, 1]")
         if self.sweep_cooldown_bars < 0:
             raise ValueError("sweep_cooldown_bars must be non-negative")
         if any(int(v) < 2 for v in self.sweep_sensitivity_lookbacks):
@@ -1047,6 +1051,18 @@ class NorthsetConfig(StrictConfigModel):
             floor = float(self.concentration_top_finite_floor)
             if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
                 raise ValueError("concentration_top_finite_floor must be in [0, 1] or None")
+        if self.queue_priority_finite_floor is not None:
+            floor = float(self.queue_priority_finite_floor)
+            if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
+                raise ValueError("queue_priority_finite_floor must be in [0, 1] or None")
+        if self.side_notional_finite_floor is not None:
+            floor = float(self.side_notional_finite_floor)
+            if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
+                raise ValueError("side_notional_finite_floor must be in [0, 1] or None")
+        if self.tob_size_share_finite_floor is not None:
+            floor = float(self.tob_size_share_finite_floor)
+            if not np.isfinite(floor) or not (0.0 <= floor <= 1.0):
+                raise ValueError("tob_size_share_finite_floor must be in [0, 1] or None")
         return self
 
 
