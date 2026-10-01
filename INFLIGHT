@@ -1061,3 +1061,18 @@ wave 30 (2026-09-30): 6 lanes merged into w30-canon —
   .032, regime accuracy .959) — optimal_transport lane superseded:
   w31-canon already carries a same-named module from a parallel
   session → PR stacked on w31 (163→169 families)
+- wave 33 canon (devin/w33-canon off w32-canon tip): causal_impact
+  (BSTS local-level + ridge regression, ML innovation-likelihood
+  variance split — MoM collapsed q to 0 and faked detections;
+  cum_effect z 2.9, posterior tail .001 vs null .054) + weak_iv
+  (AR exact-pivot size ok strong AND weak, CLR chi2 power,
+  first-stage F 330 vs 4.6 flags weak, AR-inverted CI covers)
+  + synth_did (simplex-QP unit+time weights, placebo p .028 vs
+  null .44; factor-selection DGP: SDID err .10 vs DiD 6.31)
+  + permutation_inference (Fisher sharp-null exact, Westfall-
+  Young max-T stepdown, Pitman CI covers, null reject rate .04)
+  + propensity_score (IRLS PS, caliper match ATT err .066, IPW/
+  overlap err <.01 vs raw bias .398, max|SMD| .66→~0)
+  + cluster_robust (CR1/CR2 sandwich, wild cluster bootstrap
+  Rademacher/Webb-6pt, size ok at 30 and 8 clusters, power 1)
+  → PR stacked on w32 (169→175 families)

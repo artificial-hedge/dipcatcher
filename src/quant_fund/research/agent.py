@@ -248,6 +248,14 @@ from quant_fund.research.benches_w32 import (
     bench_gaussian_process,
     bench_markov_switching,
 )
+from quant_fund.research.benches_w33 import (
+    bench_causal_impact,
+    bench_cluster_robust,
+    bench_permutation_inference,
+    bench_propensity_score,
+    bench_synth_did,
+    bench_weak_iv,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -1986,6 +1994,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "causal_forest": bench_causal_forest(),
         "gaussian_process": bench_gaussian_process(),
         "markov_switching": bench_markov_switching(),
+        "causal_impact": bench_causal_impact(),
+        "weak_iv": bench_weak_iv(),
+        "synth_did": bench_synth_did(),
+        "permutation_inference": bench_permutation_inference(),
+        "propensity_score": bench_propensity_score(),
+        "cluster_robust": bench_cluster_robust(),
     }
 
     hyps = _build_hypotheses(families, rankers)

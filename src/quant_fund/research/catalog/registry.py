@@ -395,6 +395,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "causal_forest",
         "gaussian_process",
         "markov_switching",
+        # SOTA canon wave 33 batteries (see research/benches_w33.py):
+        # BSTS causal impact (local-level + spike-slab regression,
+        # simulation counterfactual, posterior tail prob), weak-IV
+        # robust inference (Anderson-Rubin, Moreira CLR, first-stage
+        # F + partial R2, AR-inverted confidence sets), synthetic
+        # DiD (unit + time simplex weights, placebo inference),
+        # Fisher/Pitman randomization inference (sharp-null
+        # permutation, Westfall-Young max-T, Pitman CI inversion),
+        # propensity-score pipeline (IRLS PS, caliper matching, IPW
+        # + overlap weights, SMD balance), cluster-robust inference
+        # (CR1/CR2 sandwich, CGM/Webb wild cluster bootstrap).
+        # Same SYNTHETIC diagnostic contract.
+        "causal_impact",
+        "weak_iv",
+        "synth_did",
+        "permutation_inference",
+        "propensity_score",
+        "cluster_robust",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
