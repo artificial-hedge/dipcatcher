@@ -672,6 +672,16 @@ jobs:
         run: uv sync --frozen --all-groups
       - name: Re-verify every committed receipt (strict)
         run: make evidence-audit
+      - name: Evidence bundle round-trip — export, then audit with the standalone script
+        run: |
+          make evidence-bundle BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+          make bundle-verify BUNDLE_DIR="$RUNNER_TEMP/evidence-bundle"
+      - name: Fetch PR base for chain-extension proofs
+        if: github.event_name == 'pull_request'
+        run: git fetch --depth=1 origin "$GITHUB_BASE_REF"
+      - name: Chain-consistency proofs — a PR may extend, never rewrite
+        if: github.event_name == 'pull_request'
+        run: EPOCH_BASE=FETCH_HEAD make epoch-consistency
       - name: Cross-receipt consistency lattice
         run: make lattice-check
       - name: Fetch PR base for the admission diff
