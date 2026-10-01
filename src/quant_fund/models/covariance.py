@@ -6,6 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 from sklearn.covariance import OAS, LedoitWolf
 
+from quant_fund.models.quest import quest_covariance
 from quant_fund.utils.logging import get_logger
 
 Array = NDArray[np.float64]
@@ -395,6 +396,73 @@ def ledoit_wolf_nonlinear(returns: Array) -> tuple[Array, dict[str, float | str]
     }
 
 
+def ledoit_wolf_quest_cov(returns: Array) -> Array:
+    """Numerical QuEST (Ledoit–Wolf 2015/2017) nonlinear shrinkage matrix.
+
+    Catalog ``ledoit_wolf_quest`` / named
+    ``optimizer.covariance=ledoit_wolf_quest`` use this matrix. The helper
+    returns the repaired trailing matrix; ``ledoit_wolf_quest`` adds the
+    family/spec stamp. This is numerical QuEST inversion (2017), not the
+    analytical 2020 closed-form and not 2004 linear shrinkage.
+    """
+    sigma, _params = ledoit_wolf_quest(returns)
+    return sigma
+
+
+def ledoit_wolf_quest(returns: Array) -> tuple[Array, dict[str, float | str]]:
+    r"""Numerical QuEST nonlinear Ledoit–Wolf. Returns trailing \(\Sigma\).
+
+    Ledoit–Wolf (2015) spectrum estimation via numerical inversion of the
+    QuEST function (Ledoit–Wolf 2017), applied to the listwise-complete
+    trailing window. The population eigenvalue spectrum is estimated by
+    nonlinear least-squares inversion of the discretized
+    Marcenko–Pastur equation (warm-started from 2004 linear shrinkage,
+    analytic Jacobian, bounded L-BFGS-B), then the oracle shrinkage map
+    \(x / |1 - c\,\breve m(x)|^2\) is integrated over the implied sample
+    law. This is the numerical QuEST estimator, not the LW-2020
+    analytical map (``ledoit_wolf_nonlinear``) and not 2004 linear
+    shrinkage (``ledoit_wolf``); ``ledoit_wolf_quest`` does not call
+    those fitters, OAS, sample, EWMA, or DCC. When \(T\le N\) the
+    singular-case null-space adjustment stays active rather than
+    switching estimators. Interior holes are dropped; an incomplete asof
+    row is omitted rather than fail-closed. Effective sample size after
+    demeaning must be at least 12. ``optimize_asof`` /
+    ``/risk/portfolio`` use this matrix when
+    ``optimizer.covariance=ledoit_wolf_quest`` (or the ``quest`` /
+    ``ledoit_wolf_2017`` aliases) and apply the GARCH/RGARCH overlay —
+    trailing shrinkage has no \(D_{t+1}\). Params stamp
+    ``family=ledoit_wolf_quest``, ``spec=ledoit_wolf_2017_quest``,
+    ``covariance_object=trailing``, ``sample=listwise_complete``, and the
+    inversion diagnostics. This does not invent HF RV or wire factor
+    covariance.
+    """
+    x = _clean_returns(returns, min_rows=NLSHRINK_MIN_OBS)
+    centered = x - x.mean(axis=0)
+    n_eff = int(x.shape[0] - 1)
+    if n_eff < NLSHRINK_MIN_EFF_OBS:
+        raise ValueError(
+            f"quest nonlinear shrinkage requires effective sample size >= {NLSHRINK_MIN_EFF_OBS}"
+        )
+    sigma, info = quest_covariance(centered, n_eff)
+    repaired, _ = repair_psd(sigma)
+    t, n = x.shape
+    params: dict[str, float | str] = {
+        "family": OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
+        "spec": OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST,
+        "covariance_object": OPTIMIZER_COVARIANCE_OBJECT_TRAILING,
+        "sample": OAS_SAMPLE_LISTWISE,
+        "demean": "true",
+        "n_obs": float(t),
+        "n_eff": float(n_eff),
+        "n_assets": float(n),
+        "concentration": float(n) / float(n_eff),
+        "quest_numint": str(info["quest_numint"]),
+        "quest_objective": float(info["quest_objective"]),
+        "quest_iterations": float(info["quest_iterations"]),
+    }
+    return np.asarray(repaired, dtype=float), params
+
+
 def factor_cov(betas: Array, factor_cov: Array, idio_var: Array) -> Array:
     b = np.asarray(betas, dtype=float)
     f = np.asarray(factor_cov, dtype=float)
@@ -438,6 +506,7 @@ IMPLEMENTED_COVARIANCE_SPECS = (
     "ledoit_wolf",
     "oas",
     "ledoit_wolf_nonlinear",
+    "ledoit_wolf_quest",
     "factor",
     DCC_FAMILY_GAUSSIAN,
     DCC_FAMILY_STUDENT_T,
@@ -452,11 +521,13 @@ OPTIMIZER_COVARIANCE_SAMPLE = "sample"
 OPTIMIZER_COVARIANCE_EWMA = "ewma"
 OPTIMIZER_COVARIANCE_OAS = "oas"
 OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR = "ledoit_wolf_nonlinear"
+OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST = "ledoit_wolf_quest"
 OPTIMIZER_COVARIANCE_HOMOSKEDASTIC_PROXY = "homoskedastic_proxy"
 OPTIMIZER_COVARIANCE_OBJECT_TRAILING = "trailing"
 OPTIMIZER_COVARIANCE_OBJECT_DIAGONAL_PROXY = "diagonal_proxy"
 OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF = "ledoit_wolf_2004_linear"
 OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_NONLINEAR = "ledoit_wolf_2020_analytical"
+OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST = "ledoit_wolf_2017_quest"
 SAMPLE_SPEC_UNBIASED = "unbiased_sample"
 OPTIMIZER_COVARIANCE_SPEC_SAMPLE = SAMPLE_SPEC_UNBIASED
 OPTIMIZER_COVARIANCE_SPEC_DIAGONAL_PROXY = "diagonal_2pct"
@@ -478,6 +549,7 @@ IMPLEMENTED_OPTIMIZER_COVARIANCE_SPECS = (
     OPTIMIZER_COVARIANCE_EWMA,
     OPTIMIZER_COVARIANCE_OAS,
     OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR,
+    OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
     OPTIMIZER_COVARIANCE_SAMPLE,
 )
 IMPLEMENTED_OPTIMIZER_DCC_FAMILIES = (
@@ -601,11 +673,15 @@ _OPTIMIZER_LEDOIT_WOLF_NONLINEAR_ALIASES = frozenset(
 )
 _QUEST_OPTIMIZER_ALIASES = frozenset(
     {
+        OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST,
         "ledoit_wolf_2017",
         "ledoitwolf_2017",
         "lw_2017",
         "quest",
         "nonlinear_shrinkage_2017",
+        OPTIMIZER_COVARIANCE_SPEC_LEDOIT_WOLF_QUEST,
+        "numerical_quest",
+        "quest_2017",
     }
 )
 _OPTIMIZER_ADCC_ALIASES = frozenset(
@@ -699,8 +775,9 @@ def require_implemented_optimizer_covariance(name: str) -> str:
     families, CCC, diagonal AG-DCC, or unrestricted AG-DCC. Generic
     ``shrinkage`` stays unknown so it cannot be read as OAS, 2004 linear
     Ledoit–Wolf, or 2020 analytical nonlinear shrinkage. Named
-    ``ledoit_wolf_2017`` / ``quest`` stay unknown so analytical 2020
-    cannot masquerade as numerical QuEST. Named ``agdcc`` is diagonal CES
+    ``ledoit_wolf_2017`` / ``quest`` resolve to the real numerical QuEST
+    inversion estimator, which must not masquerade as the analytical 2020
+    shrinker or vice versa. Named ``agdcc`` is diagonal CES
     AG-DCC; named ``agdcc_full`` is unrestricted CES AG-DCC and must not
     silently size as diagonal AG-DCC. Scalar CES ADCC is not diagonal
     AG-DCC.
@@ -711,7 +788,8 @@ def require_implemented_optimizer_covariance(name: str) -> str:
         f"{DCC_FAMILY_AGDCC}, {DCC_FAMILY_AGDCC_FULL}, "
         f"{OPTIMIZER_COVARIANCE_EWMA}, "
         f"{OPTIMIZER_COVARIANCE_OAS}, "
-        f"{OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR}, or "
+        f"{OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR}, "
+        f"{OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST}, or "
         f"{OPTIMIZER_COVARIANCE_SAMPLE}"
     )
     if not isinstance(name, str) or isinstance(name, bool) or not name.strip():
@@ -755,11 +833,7 @@ def require_implemented_optimizer_covariance(name: str) -> str:
     if key in _OPTIMIZER_LEDOIT_WOLF_NONLINEAR_ALIASES:
         return OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR
     if key in _QUEST_OPTIMIZER_ALIASES:
-        raise ValueError(
-            f"unknown_optimizer_covariance:{name.strip()}; "
-            f"name {OPTIMIZER_COVARIANCE_LEDOIT_WOLF_NONLINEAR} explicitly "
-            "(analytical 2020, not QuEST 2017)"
-        )
+        return OPTIMIZER_COVARIANCE_LEDOIT_WOLF_QUEST
     if key in _OPTIMIZER_SAMPLE_ALIASES:
         return OPTIMIZER_COVARIANCE_SAMPLE
     resolved = require_implemented_dcc_spec(name)
