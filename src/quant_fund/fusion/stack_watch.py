@@ -25,7 +25,7 @@ import numpy as np
 import numpy.typing as npt
 
 from quant_fund.fusion.quantile_stack import QuantileStackResult, _pinball
-from quant_fund.research.evalues import LossEProcess, promotion_report
+from quant_fund.metrics.loss_eprocess import LossEProcess, promotion_report
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 

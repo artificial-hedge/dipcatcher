@@ -9,6 +9,8 @@
 # stable public surface and is deliberately imported by everything for
 # `__version__` / `__firm__`.
 #
+# An exact modules assignment takes precedence over a package assignment on
+# both ends of an import edge; it does not waive layer order or hard rules.
 # A package under quant_fund that no layer claims is itself a violation
 # (rule "unclassified-package") — keep this list complete when adding a
 # top-level package.
@@ -85,6 +87,13 @@ packages = [
     "stress",      # stress harness over research+data
     "proof",       # proof bundles over proofcore
     "reality",     # reality checks (SPA/CSCV/DSR) over proofcore+metrics
+    "parity_leak_audit", # synthetic audit orchestration over parity+leakage
+]
+modules = [
+    # Forge/reseal coverage harness over research receipts, not a registry
+    # primitive. Other registry modules remain in foundation and cannot
+    # import this research-layer harness at module scope.
+    "quant_fund.registry.contract_probe",
 ]
 
 [[layers]]
