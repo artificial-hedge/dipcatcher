@@ -2427,6 +2427,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ngu_explore",
         "ride_explore",
         "go_explore",
+        # Wave-192 info-theory canon: MMD, HSIC, MINE, NWJ,
+        # copula MI, LSD.
+        "mmd_two_sample",
+        "hsic_independence",
+        "mine_mi",
+        "nwj_mi",
+        "copula_mi",
+        "lsd_deptest",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

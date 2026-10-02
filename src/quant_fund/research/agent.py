@@ -1525,6 +1525,14 @@ from quant_fund.research.benches_w191 import (
     bench_ride_explore_family,
     bench_rnd_explore_family,
 )
+from quant_fund.research.benches_w192 import (
+    bench_copula_mi_family,
+    bench_hsic_independence_family,
+    bench_lsd_deptest_family,
+    bench_mine_mi_family,
+    bench_mmd_two_sample_family,
+    bench_nwj_mi_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4222,6 +4230,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ngu_explore": bench_ngu_explore_family(),
         "ride_explore": bench_ride_explore_family(),
         "go_explore": bench_go_explore_family(),
+        "mmd_two_sample": bench_mmd_two_sample_family(),
+        "hsic_independence": bench_hsic_independence_family(),
+        "mine_mi": bench_mine_mi_family(),
+        "nwj_mi": bench_nwj_mi_family(),
+        "copula_mi": bench_copula_mi_family(),
+        "lsd_deptest": bench_lsd_deptest_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
