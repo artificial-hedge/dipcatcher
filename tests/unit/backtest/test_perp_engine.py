@@ -252,3 +252,28 @@ def test_perp_backtest_is_invariant_to_bar_input_order(tmp_path, order) -> None:
     assert_frame_equal(actual.fills, expected.fills)
     assert_frame_equal(actual.equity, expected.equity)
     assert actual.metrics == expected.metrics
+
+
+@pytest.mark.parametrize("second_rate", [0.01, 0.02, -0.01])
+def test_duplicate_funding_events_fail_closed(tmp_path, second_rate: float) -> None:
+    """SYNTHETIC: one settlement must not be counted twice or netted away."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = True
+    funding = pl.concat([_funding(0.01, at=5), _funding(second_rate, at=5)])
+    with pytest.raises(ValueError, match="duplicate funding event"):
+        run_perp_backtest(_bars([100.0] * 10), funding, _weights(0.5), cfg, initial_nav=1e5)
+
+
+def test_unique_funding_keys_preserve_events_and_order_independence(tmp_path) -> None:
+    """SYNTHETIC: equal times across symbols and successive settlements are valid."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = True
+    bars = pl.concat([_bars([100.0] * 10, sid=sid) for sid in ["A", "B"]])
+    weights = pl.concat([_weights(0.25, sid=sid) for sid in ["A", "B"]])
+    funding = pl.concat(
+        [_funding(0.01, at=5, sid="A"), _funding(0.02, at=5, sid="B"), _funding(0.03, at=6)]
+    )
+    for events in [funding, funding.reverse()]:
+        result = run_perp_backtest(bars, events, weights, cfg, initial_nav=1e5)
+        assert result.metrics["funding_events_applied"] == 3
+        assert result.metrics["funding_paid_total"] == pytest.approx(1500.0)

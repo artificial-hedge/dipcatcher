@@ -120,7 +120,12 @@ def _funding_by_time(
     *,
     multiplier: float = 1.0,
 ) -> dict[datetime, list[tuple[str, float]]]:
-    """Group funding events by timestamp; ``multiplier`` stress-scales rates."""
+    """Group unique funding settlements; ``multiplier`` stress-scales rates.
+
+    Each (security_id, event_time) identifies one settlement. Repeated rows,
+    including conflicting rates or revisions, are ambiguous and fail closed
+    rather than charging twice or choosing a rate by input order.
+    """
     out: dict[datetime, list[tuple[str, float]]] = {}
     if funding is None or funding.height == 0:
         return out
@@ -128,11 +133,17 @@ def _funding_by_time(
     missing = required - set(funding.columns)
     if missing:
         raise ValueError(f"funding frame missing columns: {sorted(missing)}")
+    seen: set[tuple[str, datetime]] = set()
     for row in funding.iter_rows(named=True):
+        sid, event_time = str(row["security_id"]), row["event_time"]
+        key = (sid, event_time)
+        if key in seen:
+            raise ValueError(f"duplicate funding event for {sid} at {event_time}")
+        seen.add(key)
         rate = float(row["value"]) * multiplier
         if not np.isfinite(rate):
             raise ValueError("funding rate must be finite")
-        out.setdefault(row["event_time"], []).append((str(row["security_id"]), rate))
+        out.setdefault(event_time, []).append((sid, rate))
     return out
 
 
