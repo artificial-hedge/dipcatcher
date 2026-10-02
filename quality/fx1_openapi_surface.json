@@ -68,6 +68,15 @@
         ]
       }
     },
+    "/metrics": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/receipts/verify": {
       "post": {
         "params": [],
@@ -79,5 +88,5 @@
       }
     }
   },
-  "schema_sha256": "07c8264a202f40eafb32e202241ae07f7e638772899e7c4d4f37e277c0329a80"
+  "schema_sha256": "652db5bd313dfde90a4c883170262955208b3d7c7468273e19688a956a585261"
 }

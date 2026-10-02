@@ -622,6 +622,33 @@ def api_audit() -> dict[str, Any]:
         and "elapsed_ms=" in line
     )
 
+    # /metrics: ops snapshot — counters from the requests above (this very
+    # request is recorded too, so totals are strictly increasing)
+    m_before = client.get("/metrics")
+    out["metrics_200"] = m_before.status_code == 200
+    m = m_before.json()
+    out["metrics_shape"] = all(
+        k in m
+        for k in (
+            "uptime_s",
+            "requests_total",
+            "errors_total",
+            "by_status",
+            "inflight",
+            "inflight_watermark",
+            "max_inflight",
+        )
+    )
+    out["metrics_counts_requests"] = m["requests_total"] >= 10 and "200" in m["by_status"]
+    out["metrics_counts_errors"] = (
+        m["errors_total"] >= 2 and "413" in m["by_status"] and "400" in m["by_status"]
+    )
+    out["metrics_inflight_idle"] = m["inflight"] == 0 and m["inflight_watermark"] >= 1
+    out["metrics_config"] = m["max_inflight"] == 16 and m["uptime_s"] >= 0.0
+    m2 = client.get("/metrics").json()
+    out["metrics_monotone"] = m2["requests_total"] > m["requests_total"]
+    out["metrics_secured_401"] = secured.get("/metrics").status_code == 401
+
     return out
 
 

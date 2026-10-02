@@ -169,6 +169,60 @@ class ReceiptVerifyResponse(_Model):
     warnings: list[str]
 
 
+class MetricsResponse(_Model):
+    """Point-in-time ops snapshot: totals since process start."""
+
+    uptime_s: float
+    requests_total: int
+    errors_total: int
+    by_status: dict[str, int]
+    inflight: int
+    inflight_watermark: int
+    max_inflight: int
+
+
+class _Metrics:
+    """Request counters + inflight gauge, shared via app.state."""
+
+    def __init__(self, max_inflight: int) -> None:
+        self.started = time.monotonic()
+        self.max_inflight = max_inflight
+        self._lock = threading.Lock()
+        self._requests_total = 0
+        self._errors_total = 0
+        self._by_status: dict[int, int] = {}
+        self._inflight = 0
+        self._watermark = 0
+
+    def record(self, status: int) -> None:
+        with self._lock:
+            self._requests_total += 1
+            self._by_status[status] = self._by_status.get(status, 0) + 1
+            if status >= 400:
+                self._errors_total += 1
+
+    def acquire(self) -> None:
+        with self._lock:
+            self._inflight += 1
+            self._watermark = max(self._watermark, self._inflight)
+
+    def release(self) -> None:
+        with self._lock:
+            self._inflight -= 1
+
+    def snapshot(self) -> MetricsResponse:
+        with self._lock:
+            return MetricsResponse(
+                uptime_s=round(time.monotonic() - self.started, 3),
+                requests_total=self._requests_total,
+                errors_total=self._errors_total,
+                by_status={str(k): v for k, v in sorted(self._by_status.items())},
+                inflight=self._inflight,
+                inflight_watermark=self._watermark,
+                max_inflight=self.max_inflight,
+            )
+
+
 def _backend_configured() -> dict[str, bool]:
     """Presence-of-credentials flags only — values never leave the process."""
     checkpoint_env = os.environ.get("FX1_CHECKPOINT_DIR", "")
@@ -209,6 +263,7 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
+    request.app.state.metrics.record(response.status_code)
     logger.info(
         "request method=%s path=%s status=%d elapsed_ms=%.1f rid=%s",
         request.method,
@@ -238,6 +293,7 @@ def create_app(
     # unboundedly or crash mid-request. Cheap routes (commands, verify,
     # health) stay uncapped so liveness answers under load.
     inflight = threading.BoundedSemaphore(max_inflight)
+    metrics = _Metrics(max_inflight)
 
     def _slot() -> Iterator[None]:
         if not inflight.acquire(blocking=False):
@@ -246,9 +302,11 @@ def create_app(
                 f"harness at max_inflight={max_inflight} — retry later",
                 headers={"Retry-After": "1"},
             )
+        metrics.acquire()
         try:
             yield
         finally:
+            metrics.release()
             inflight.release()
 
     app = FastAPI(
@@ -261,6 +319,7 @@ def create_app(
         ),
     )
     app.state.inflight_slots = inflight
+    app.state.metrics = metrics
 
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
@@ -309,6 +368,10 @@ def create_app(
             else:
                 response = await call_next(request)
         return _finish(request, request_id, response, started)
+
+    @app.get("/metrics", response_model=MetricsResponse)
+    def metrics_route() -> MetricsResponse:
+        return metrics.snapshot()
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
