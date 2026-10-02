@@ -1373,6 +1373,14 @@ from quant_fund.research.benches_w172 import (
     bench_psrl_family,
     bench_whittle_restless_family,
 )
+from quant_fund.research.benches_w173 import (
+    bench_cold_diffusion_family,
+    bench_ddim_ode_family,
+    bench_diff_distill_family,
+    bench_edm_karras_family,
+    bench_rectified_flow_family,
+    bench_stoch_interp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3956,6 +3964,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "cucb": bench_cucb_family(),
         "corrupt_bandit": bench_corrupt_bandit_family(),
         "neural_ucb": bench_neural_ucb_family(),
+        "edm_karras": bench_edm_karras_family(),
+        "rectified_flow": bench_rectified_flow_family(),
+        "stoch_interp": bench_stoch_interp_family(),
+        "ddim_ode": bench_ddim_ode_family(),
+        "cold_diffusion": bench_cold_diffusion_family(),
+        "diff_distill": bench_diff_distill_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

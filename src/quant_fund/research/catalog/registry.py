@@ -2260,6 +2260,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cucb",
         "corrupt_bandit",
         "neural_ucb",
+        # Wave-173 diffusion-exotics canon:
+        # EDM, rectified flow, stoch interp,
+        # DDIM-ODE, cold diffusion, distill.
+        "edm_karras",
+        "rectified_flow",
+        "stoch_interp",
+        "ddim_ode",
+        "cold_diffusion",
+        "diff_distill",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
