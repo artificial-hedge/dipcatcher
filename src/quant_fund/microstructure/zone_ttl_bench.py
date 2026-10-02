@@ -137,8 +137,13 @@ def _cell(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    uniform_flow: bool = False,
 ) -> dict[str, Any]:
-    """Card + pins + kernel on one (zone, ttl, flow) draw."""
+    """Card + pins + kernel for a configuration.
+
+    ``uniform_flow=True`` honors iid on every surface. The default retains
+    the historical split@3 crown for legacy v1 benchmark callers.
+    """
     extra = _extra(zone, ttl, requote, fr_frac, fr_delay)
     card = _card(
         zone,
@@ -156,7 +161,7 @@ def _cell(
         horizon=horizon,
         seed=seed,
         collect_counts=True,
-        flow_intensity=inten if inten is not None else 3.0,
+        flow_intensity=inten if uniform_flow or inten is not None else 3.0,
     )
     reseed = sim_reseed("joint", extra, horizon=horizon, seed=seed, flow_intensity=inten)
     pin_cell = dict(crown)

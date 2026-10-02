@@ -8,6 +8,7 @@ import numpy as np
 import polars as pl
 import pytest
 
+from quant_fund.backtest import sleeves
 from quant_fund.backtest.sleeves import residual_mr_weights
 
 N_BARS = 260
@@ -102,3 +103,86 @@ def test_validation() -> None:
         residual_mr_weights(bars, z_clip=0.0)
     with pytest.raises(ValueError, match="missing columns"):
         residual_mr_weights(bars.drop("close"))
+
+
+@pytest.fixture
+def residual_frame(monkeypatch: pytest.MonkeyPatch):
+    """Inspect the actual estimator before clipping can hide beta errors."""
+    monkeypatch.setattr(sleeves, "_cap_and_emit", lambda frame, *args, **kwargs: frame)
+    return residual_mr_weights
+
+
+@pytest.mark.parametrize("window", [2, 5, 16])
+def test_beta_recovers_exact_synthetic_factor(residual_frame, window: int) -> None:
+    """SYNTHETIC oracle: r_i = beta_i * m, with mean(beta_i) = 1."""
+    start = datetime(2025, 1, 1, tzinfo=UTC)
+    # Alternating signs keep even the two-observation variance well conditioned.
+    factor = np.random.default_rng(81).uniform(0.005, 0.02, 64)
+    factor[::2] *= -1
+    betas = [-0.5, 0.5, 1.0, 1.5, 2.5]
+    rows = []
+    for sid, beta in zip(NAMES, betas, strict=True):
+        for t, close in enumerate(100.0 * np.exp(np.cumsum(beta * factor))):
+            rows.append((start + timedelta(hours=t), sid, close))
+    bars = pl.DataFrame(rows, schema=["event_time", "security_id", "close"], orient="row")
+    frame = residual_frame(bars, factor_window=window)
+    for sid, beta in zip(NAMES, betas, strict=True):
+        group = frame.filter(pl.col("security_id") == sid)
+        # Initial log-diff is null; the full window and one-bar lag are required.
+        assert group["_beta"][: window + 1].null_count() == window + 1
+        np.testing.assert_allclose(group["_beta"][window + 1 :], beta, atol=1e-10)
+        np.testing.assert_allclose(group["_resid_now"][window + 1 :], 0.0, atol=1e-12)
+
+
+@pytest.mark.parametrize("window", [2, 5, 16])
+def test_beta_matches_trailing_ols_with_nulls_and_staggered_names(
+    residual_frame, window: int
+) -> None:
+    """SYNTHETIC rolling OLS oracle, including full-window null propagation."""
+    start = datetime(2025, 1, 1, tzinfo=UTC)
+    bars = (
+        _bars(seed=13)
+        .filter(
+            (pl.col("security_id") != "EEE") | (pl.col("event_time") >= start + timedelta(hours=10))
+        )
+        .with_columns(
+            pl.when(
+                (pl.col("security_id") == "BBB")
+                & (pl.col("event_time") == start + timedelta(hours=30))
+            )
+            .then(None)
+            .otherwise(pl.col("close"))
+            .alias("close")
+        )
+    )
+    frame = residual_frame(bars.sample(fraction=1.0, shuffle=True, seed=4), factor_window=window)
+    for group in frame.partition_by("security_id"):
+        returns = group["_r"].to_numpy()
+        factor = group["_mkt"].to_numpy()
+        expected = np.full(group.height, np.nan)
+        for t in range(window, group.height):
+            x, y = factor[t - window : t], returns[t - window : t]
+            if np.isfinite(x).all() and np.isfinite(y).all():
+                # An intercept gives the centered covariance/variance slope.
+                expected[t] = np.linalg.lstsq(np.column_stack([np.ones(window), x]), y, rcond=None)[
+                    0
+                ][1]
+        actual = group["_beta"].to_numpy()
+        np.testing.assert_array_equal(group["_beta"].is_null(), np.isnan(expected))
+        np.testing.assert_allclose(actual, expected, rtol=1e-9, atol=1e-10)
+
+
+def test_current_bar_mutation_cannot_change_its_weight() -> None:
+    """The beta fix must preserve the strictly-prior-bar signal contract."""
+    bars = _bars(seed=23)
+    cut = datetime(2025, 1, 1, tzinfo=UTC) + timedelta(hours=180)
+    mutated = bars.with_columns(
+        pl.when((pl.col("event_time") >= cut) & (pl.col("security_id") == "AAA"))
+        .then(pl.col("close") * 1.5)
+        .otherwise(pl.col("close"))
+        .alias("close")
+    )
+    before = residual_mr_weights(bars).filter(pl.col("event_time") <= cut)
+    after = residual_mr_weights(mutated).filter(pl.col("event_time") <= cut)
+    assert before.filter(pl.col("event_time") == cut).height > 0
+    assert before.equals(after)

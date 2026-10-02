@@ -16,6 +16,27 @@ Every stored observation includes:
 
 `available_time <= decision_time` is mandatory for every feature. For daily bars, default `available_time = event_time` (close). Ingestion lag is recorded but does not relax availability.
 
+### Funding signal sleeves
+
+`funding_carry_weights`, `funding_spike_fade_weights`, `basis_carry_weights`,
+and `basis_carry_hysteresis_weights` use realized funding observations only
+when both `event_time <= decision_time` and `available_time <= decision_time`
+(inclusive). At each decision, the trailing window contains the last
+`lookback_events` eligible observations ordered by economic event time,
+not publication order. A delayed newer event does not suppress an older
+available observation; a late old event does not replace a newer event unless
+it belongs in that event-ordered window. Simultaneous releases are evaluated
+together. Spike-fade compares the newest eligible event against that window.
+
+For backwards compatibility, event-only input frames without an
+`available_time` column assume availability at `event_time`. This convention
+is not evidence of historical publication timing. If the column is supplied,
+null/non-datetime availability fails closed, as do missing event timestamps,
+non-finite rates, and duplicate `(security_id, event_time)` observations.
+These sleeves accept one observation per realized event, not multiple revision
+vintages; callers must resolve revisions using point-in-time rules upstream.
+Bar availability and engine settlement timing are separate contracts.
+
 ### Public file tape (Stooq)
 
 `quant_fund.data.adapters.stooq` writes a PIT-shaped lake from Stooq daily CSVs.
@@ -80,6 +101,29 @@ lineage, and as-of queries over these files are in [`DATA_LAKE.md`](DATA_LAKE.md
 
 ## Bars (bronze)
 
+### Binance REST history clocks
+
+`BinancePublicDataSource.fetch` and the REST-history path of
+`BinanceMarketSource` retain the vendor kline open in `event_time` and the
+vendor close in `available_time`. They also retain explicit `bar_open_time`
+and `bar_close_time` provenance. The close is Binance's supplied final
+millisecond, not a computed next-session boundary or fixed interval duration.
+
+For `data.source=binance_public_data` or `binance_market_websocket`, `ingest`
+writes these open-labeled bars unchanged to bronze, then uses `bar_close_time`
+as silver `event_time` before price adjustment and universe construction.
+Features, labels, and universe membership therefore share the completed-bar
+decision clock. Source, revision, open/close provenance, and availability are
+preserved; delayed availability is never changed to make validation succeed.
+Feature PIT guards still reject publication after the decision close.
+
+This normalization is specific to the REST market-ingest boundary. Direct
+adapter consumers, WebSocket trade messages, file/parquet ingest, and
+perpetual/funding settlement grids are not relabeled. Existing open-labeled
+silver/gold artifacts are not silently migrated: explicitly re-ingest and
+rebuild with `build_gold(config, refresh=True)` to adopt this contract. Review
+downstream consumers of those artifacts before replacing an existing dataset.
+
 Columns: `security_id`, `symbol`, `event_time`, `available_time`, `ingested_time`, `source`, `revision_id`, `open`, `high`, `low`, `close`, `volume`, `currency`, `session`.
 
 OHLC are **raw** (unadjusted). Volume is share volume. Every accepted bar must
@@ -87,6 +131,55 @@ also satisfy the candle envelope `low <= open <= high` and
 `low <= close <= high`, in addition to positive finite prices and `high >= low`.
 The file adapter rejects envelope violations with `PointInTimeError`; impossible
 candles must not be persisted into downstream feature, label, or backtest inputs.
+
+## Perpetual and paired-carry funding settlement
+
+`run_perp_backtest` and `run_carry_backtest` normally match funding
+`event_time` to bar `event_time` by exact equality. By default an 08:00
+settlement uses the bar labeled 08:00, not 07:00. Neither engine implicitly
+derives `(open, close]` windows, resamples funding, or interpolates the price
+at the actual settlement instant. This is the existing research simulation
+convention, not exchange-level intra-bar settlement fidelity.
+
+Input timestamp conventions matter: `BinanceUsdtmPerpSource` preserves the
+vendor kline **open** in `event_time` and its close in `available_time`,
+whereas close-labeled sources use the completed bar close.
+`BinanceFundingRateSource` stamps both fields at the realized `fundingTime`.
+Callers must check the source labels and funding grid before interpreting a
+result; bar labels must not be shifted merely to make a funding join succeed.
+Any coarser-grain settlement mapping requires an explicit caller-level
+approximation. An optional `application_time` names the bar label to use
+instead of the original `event_time`; when funding is enabled, it must be a
+comparable datetime equal to the latest execution-grid label at or before the
+source event (the paired grid for carry). Invalid explicit mappings fail
+closed, rather than silently falling back to the source timestamp or being
+counted as dropped. The original `event_time` remains the settlement identity,
+so distinct events mapped to one bar retain their individual signed cashflows
+and applied counts. This mapping does not change feature availability or
+supply an intra-bar position/price path.
+
+On a matched bar, funding uses the position **after open fills**, marked at
+that bar's close (or a carried close allowed by the existing staleness gate),
+and is processed **before liquidation**. Thus a new position filled on the
+matched bar participates; one fully closed at its open does not. Positive
+rates debit long perps and credit short perps, including the short leg of a
+carry pair. A supplied funding `mark_price` is not used by these engines.
+
+When funding is enabled, each `(security_id, event_time)` must be unique:
+duplicate settlements, including revisions or differing rates, fail closed.
+The engines do not choose a revision or sum conflicting rows.
+
+`funding_events_dropped` counts unmapped input rows whose event timestamp is
+absent from the entire execution grid (the paired grid for carry), including
+rows outside the bar range. It is **not** a per-symbol completeness check: a
+timestamp present only for another symbol is still on-grid.
+`funding_events_applied` counts rows that actually reach a held, markable
+position; flat/unmarkable positions are skipped, as are later on-grid events
+when ruin stops the loop early. Applied plus dropped therefore need not equal
+input rows. When reported with funding disabled, input funding is ignored and
+both counts are zero. The carry engine's short-result branch (fewer than two
+equity rows) does not report `funding_events_dropped`. These diagnostics do
+not establish complete funding coverage or make a live performance claim.
 
 ## Corporate actions (bronze)
 

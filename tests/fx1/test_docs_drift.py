@@ -18,9 +18,25 @@ _DOC_PATHS = sorted(
     [_REPO_ROOT / "README.md", *_REPO_ROOT.glob("docs/FX1*.md")],
 )
 
-# `fx1 ...` / `make ...` inside inline code or fenced blocks.
-_INLINE = re.compile(r"`([^`\n]+)`")
-_FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
+# `fx1 ...` / `make ...` inside inline code or command-example fences.
+_INLINE = re.compile(r"(?<!`)(`+)(?!`)(.+?)(?<!`)\1(?!`)")
+_FENCE_OPEN = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+_COMMAND_FENCE_LANGUAGES = {
+    "",
+    "bash",
+    "bat",
+    "cmd",
+    "console",
+    "fish",
+    "plaintext",
+    "powershell",
+    "ps1",
+    "sh",
+    "shell",
+    "shell-session",
+    "text",
+    "zsh",
+}
 _FX1_CMD = re.compile(r"(?<![/\w])fx1 ([a-z][a-z0-9-]*)(?: ([a-z][a-z0-9-]*))?\b")
 _MAKE_TARGET = re.compile(r"\bmake ([a-z0-9][a-z0-9_-]*)")
 _IMPORT_FROM = re.compile(r"from (fx1(?:\.[a-z_]+)+) import ([a-z_][a-zA-Z0-9_]*)")
@@ -28,9 +44,30 @@ _MODULE_REF = re.compile(r"`(fx1(?:\.[a-z_]+)+)`")
 
 
 def _code_spans(text: str) -> list[str]:
-    spans = _INLINE.findall(text)
-    for block in _FENCE.findall(text):
-        spans.extend(block.splitlines())
+    """Extract examples without treating diagram labels as shell commands.
+
+    Consume every fence before looking for inline code: backticks in a Mermaid
+    label or Python string are literal content, not Markdown code spans. Plain
+    text and unlabeled fences remain covered for terminal-output examples.
+    """
+    spans: list[str] = []
+    fence = ""
+    command_block = False
+    for line in text.splitlines():
+        if fence:
+            # Markdown permits a closing fence longer than its opening fence,
+            # but not a shorter fence or one using the other marker character.
+            if re.fullmatch(rf" {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}[ \t]*", line):
+                fence = ""
+            elif command_block:
+                spans.append(line)
+            continue
+        if match := _FENCE_OPEN.fullmatch(line):
+            fence, info = match.groups()
+            language = info.strip().split(maxsplit=1)[0] if info.strip() else ""
+            command_block = language.lower() in _COMMAND_FENCE_LANGUAGES
+        else:
+            spans.extend(match.group(2) for match in _INLINE.finditer(line))
     return spans
 
 
@@ -72,6 +109,71 @@ def test_documented_make_targets_exist(doc: Path):
             if match.group(1) not in targets:
                 unknown.append(f"make {match.group(1)}")
     assert not unknown, f"{doc.name}: unknown make targets {unknown}"
+
+
+@pytest.mark.parametrize("language", ["mermaid", "python", "json"])
+def test_non_command_fences_do_not_leak_inline_code(language: str):
+    text = (
+        "Run `fx1 doctor`.\n"
+        f"```{language}\n"
+        'label = "`fx1 positive` and `make targets`"\n'
+        "```\n"
+        "Then run `make lint`.\n"
+    )
+    assert _code_spans(text) == ["fx1 doctor", "make lint"]
+
+
+def test_documented_prose_is_not_a_command(tmp_path: Path):
+    doc = tmp_path / "prose.md"
+    doc.write_text(
+        "fx1 positive examples, fx1 negative examples, fx1 modules, and make targets.\n"
+        "`fx1` positive examples, `fx1` negative examples, `fx1` modules, `make` targets.\n"
+        "```mermaid\n"
+        '  Rel(researcher, harness, "make targets, dipcatcher CLI")\n'
+        "  verified --> corpus: eligible receipt -> fx1 positive example\n"
+        "  blocked --> corpus: ineligible receipt -> fx1 negative example\n"
+        '  x-axis ["quant_fund modules", "fx1 modules", "test files"]\n'
+        "```\n",
+        encoding="utf-8",
+    )
+    test_documented_fx1_commands_exist(doc)
+    test_documented_make_targets_exist(doc)
+
+
+@pytest.mark.parametrize(
+    "template",
+    [
+        "Run `{command}` next.",
+        "Run ``{command}`` next.",
+        "```bash\n{command}\n```",
+        "```sh\n{command}\n```",
+        "```console\n$ {command}\n```",
+        "```text\n{command}\n```",
+        "```\n{command}\n```",
+        "~~~shell\n{command}\n~~~",
+        "  ````bash\n{command}\n  `````",
+    ],
+)
+@pytest.mark.parametrize(
+    "command", ["fx1 not-a-command", "fx1 corpus not-a-command", "make not-a-target"]
+)
+def test_unknown_documented_commands_are_still_rejected(
+    tmp_path: Path, template: str, command: str
+):
+    doc = tmp_path / "commands.md"
+    doc.write_text(template.format(command=command), encoding="utf-8")
+    check = (
+        test_documented_make_targets_exist
+        if command.startswith("make ")
+        else test_documented_fx1_commands_exist
+    )
+    with pytest.raises(AssertionError, match=re.escape(command)):
+        check(doc)
+
+
+def test_fence_closers_must_match_marker_and_length():
+    text = "````mermaid\n```\n`fx1 positive`\n~~~~\n`make targets`\n`````\nRun `fx1 doctor`.\n"
+    assert _code_spans(text) == ["fx1 doctor"]
 
 
 @pytest.mark.parametrize("doc", _DOC_PATHS, ids=lambda p: p.name)
