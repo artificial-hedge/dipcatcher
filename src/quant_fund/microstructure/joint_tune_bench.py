@@ -29,7 +29,7 @@ from quant_fund.microstructure.zone_ttl_bench import _cell
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
 
-JOINT_TUNE_SCHEMA = "joint_tune.v1"
+JOINT_TUNE_SCHEMA = "joint_tune.v2"
 
 # (label, zone, ttl, requote, fill_repost_delay) — iid flow throughout;
 # split flow broke the emptied-touch pin rate on every prior cell.
@@ -88,6 +88,7 @@ def joint_tune_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
                 seed=seed * 1000 + s,
                 requote=rq,
                 fr_delay=fd,
+                uniform_flow=True,
             )
             for s in _SEEDS
         ]
@@ -206,8 +207,9 @@ def joint_tune_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
         "cells": cells,
         "claims": claims,
         "claim_semantics": {
-            "joint_closure_found": "all_draws.v1: all seven pins plus life, instant, and k200 "
-            "within tolerance on every draw of at least one cell; uses unrounded values",
+            "joint_closure_found": "all_draws_iid.v2: all seven pins plus life, instant, and k200 "
+            "within tolerance on every draw of at least one cell; every surface uses iid "
+            "flow with the same configuration and seed; uses unrounded values",
             "grammar_keeps_pins": "aggregate: mean life <= 2x tape and mean pin count >= 6",
             "kernel_carried": "aggregate: mean instant and k200 in tolerance on best-pins cell",
             "aggregate_closure": "legacy diagnostic: mean pins >= 6.5 plus mean life, instant, "

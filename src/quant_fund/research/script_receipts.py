@@ -400,6 +400,51 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
     return errors
 
 
+def joint_tune_v2_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Re-derive v2 per-draw closure; retain the legacy v1 envelope contract."""
+    from quant_fund.microstructure.joint_tune_bench import _draw_closed
+
+    errors = measurement_receipt_contract_errors(payload)
+    if payload.get("config", {}).get("flow") != "iid":
+        errors.append("joint_tune_flow_not_iid")
+    seeds = payload.get("config", {}).get("seeds")
+    if not isinstance(seeds, list) or not seeds or any(type(s) is not int for s in seeds):
+        return errors + ["joint_tune_seeds_missing"]
+    cells = payload.get("cells")
+    if not isinstance(cells, list) or not cells:
+        return errors + ["joint_tune_cells_missing"]
+    closures: list[bool] = []
+    for i, cell in enumerate(cells):
+        draws = cell.get("draws")
+        if not isinstance(draws, list) or not draws:
+            errors.append(f"cell_{i}:draws_missing")
+            continue
+        if len(draws) != len(seeds):
+            errors.append(f"cell_{i}:draw_count_mismatch")
+        flags = [_draw_closed(draw) for draw in draws]
+        recorded = cell.get("joint_closure_by_draw")
+        if (
+            not isinstance(recorded, list)
+            or any(type(flag) is not bool for flag in recorded)
+            or recorded != flags
+        ):
+            errors.append(f"cell_{i}:joint_closure_by_draw_mismatch")
+        if type(cell.get("n_draws")) is not int or cell["n_draws"] != len(draws):
+            errors.append(f"cell_{i}:n_draws_mismatch")
+        rate = cell.get("joint_closure_rate")
+        if type(rate) not in (int, float) or rate != sum(flags) / len(draws):
+            errors.append(f"cell_{i}:joint_closure_rate_mismatch")
+        closures.append(all(flags))
+    measured = all(
+        isinstance(cell.get("draws"), list) and len(cell["draws"]) == len(seeds) for cell in cells
+    )
+    if payload.get("claims", {}).get("cells_measured") is not measured:
+        errors.append("cells_measured_mismatch")
+    if payload.get("claims", {}).get("joint_closure_found") is not any(closures):
+        errors.append("joint_closure_found_mismatch")
+    return errors
+
+
 #: The wave-21b tape/sim measurement lanes emit ``schema``-tagged receipts
 #: with a shared envelope; each registers the measurement contract so no
 #: committed receipt verifies on its seal alone.
@@ -533,6 +578,7 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "incumbent_bench.v1": incumbent_bench_contract_errors,
     "fx1.dip_bench/v1": dip_bench_contract_errors,
     "deps_hygiene.v1": deps_hygiene_contract_errors,
+    "joint_tune.v2": joint_tune_v2_contract_errors,
     **{s: measurement_receipt_contract_errors for s in _MEASUREMENT_SCHEMAS},
 }
 
