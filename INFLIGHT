@@ -2588,3 +2588,4 @@ wave 187 (2026-10-02): scientific-ML/PDE canon — deepritz_pinn, weak_form_pinn
 wave 188 (2026-10-02): active-learning canon — entropy_query, margin_sampling, qbc_committee, coreset_kcenter, badge_embed, egl_change; 1100→1106 families.
 wave 189 (2026-10-02): self-play/game-AI canon — alphazero_lite, expert_iteration, nfsp, psro, deep_cfr, mccfr_outcome; 1106→1112 families.
 wave 190 (2026-10-02): causal-discovery classical canon — ges_search, fci_alg, ica_lingam, direct_lingam, var_lingam, mmmb_select; 1112→1118 families.
+wave 191 (2026-10-02): RL-exploration canon — count_bonus, rnd_explore, icm_explore, ngu_explore, ride_explore, go_explore; 1118→1124 families.

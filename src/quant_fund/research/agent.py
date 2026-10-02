@@ -1517,6 +1517,14 @@ from quant_fund.research.benches_w190 import (
     bench_mmmb_select_family,
     bench_var_lingam_family,
 )
+from quant_fund.research.benches_w191 import (
+    bench_count_bonus_family,
+    bench_go_explore_family,
+    bench_icm_explore_family,
+    bench_ngu_explore_family,
+    bench_ride_explore_family,
+    bench_rnd_explore_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4208,6 +4216,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "direct_lingam": bench_direct_lingam_family(),
         "var_lingam": bench_var_lingam_family(),
         "mmmb_select": bench_mmmb_select_family(),
+        "count_bonus": bench_count_bonus_family(),
+        "rnd_explore": bench_rnd_explore_family(),
+        "icm_explore": bench_icm_explore_family(),
+        "ngu_explore": bench_ngu_explore_family(),
+        "ride_explore": bench_ride_explore_family(),
+        "go_explore": bench_go_explore_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
