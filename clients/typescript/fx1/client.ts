@@ -576,12 +576,21 @@ export class HarnessApiClient {
   async chatCompletion(
     request: OpenAIChatRequest,
     headers?: Record<string, string>,
+    idempotencyKey?: string,
   ): Promise<{ response: OpenAIChatResponse; completionId: string | null }> {
     const res = await this.send({
       method: "POST",
       path: "/v1/chat/completions",
       body: { ...request, stream: false },
-      headers: { "Content-Type": "application/json", ...headers },
+      // A keyed call dedupes server-side — safe for the retry policy.
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return {
@@ -600,15 +609,21 @@ export class HarnessApiClient {
     request: OpenAIChatRequest,
     onChunk: (chunk: Record<string, unknown>) => void,
     headers?: Record<string, string>,
+    idempotencyKey?: string,
   ): Promise<string | null> {
     const res = await this.send({
       method: "POST",
       path: "/v1/chat/completions",
       body: { ...request, stream: true },
+      // Keyed streams replay byte-identically — safe to retry.
+      idempotent: idempotencyKey !== undefined,
       headers: {
         "Content-Type": "application/json",
         Accept: "text/event-stream",
         ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
       },
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());

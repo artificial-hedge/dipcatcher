@@ -3807,6 +3807,90 @@ def _probe_backend_probes(
         r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
     )
 
+    # Idempotency-Key on the OpenAI surface: a keyed retry replays the
+    # stored response byte-identically (no re-spend), flagged via
+    # X-Fx1-Idempotent-Replay with the original completion id. A key
+    # reused under a different body fails closed 409; an over-long key
+    # 400s; a refusal is never pinned (the key stays unbound).
+    _oi_idem = {"model": "fx1", "messages": [{"role": "user", "content": "idem"}]}
+    _oi_key = {"Idempotency-Key": "oi-k1"}
+    r1 = oi_clean.post("/v1/chat/completions", json=_oi_idem, headers=_oi_key)
+    r2 = oi_clean.post("/v1/chat/completions", json=_oi_idem, headers=_oi_key)
+    out["openai_idem_replay_byte_identical"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r1.content == r2.content
+        and r2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and r1.headers.get("X-Fx1-Completion-Id") == r2.headers.get("X-Fx1-Completion-Id")
+    )
+    out["openai_idem_first_not_flagged"] = "X-Fx1-Idempotent-Replay" not in r1.headers
+    # a replay is a cache hit, not a fresh call — the backend counter
+    # and completion log each gain exactly one record for the two posts
+    _log_page = oi_clean.get("/harness/completions").json()
+    out["openai_idem_replay_no_respend"] = (
+        sum(
+            1
+            for c in _log_page.get("items", [])
+            if c.get("completion_id") == r1.headers.get("X-Fx1-Completion-Id")
+        )
+        == 1
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "different"}]},
+        headers=_oi_key,
+    )
+    out["openai_idem_conflict_409"] = (
+        r.status_code == 409 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem,
+        headers={"Idempotency-Key": "x" * 257},
+    )
+    out["openai_idem_key_bound_400"] = (
+        r.status_code == 400 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    # keyed stores are per-route — the same key on /harness/complete is
+    # an independent dedup slot, not a cross-surface collision
+    r = oi_clean.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "idem"}]},
+        headers=_oi_key,
+    )
+    out["openai_idem_scope_isolated"] = r.status_code == 200
+    # stream replay regenerates the identical SSE byte sequence
+    _oi_idem_s = {**_oi_idem, "stream": True}
+    s1 = oi_clean.post(
+        "/v1/chat/completions", json=_oi_idem_s, headers={"Idempotency-Key": "oi-k2"}
+    )
+    s2 = oi_clean.post(
+        "/v1/chat/completions", json=_oi_idem_s, headers={"Idempotency-Key": "oi-k2"}
+    )
+    out["openai_idem_stream_replay"] = (
+        s1.status_code == 200
+        and s2.status_code == 200
+        and s1.content == s2.content
+        and s1.content.endswith(b"data: [DONE]\n\n")
+        and s2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    # stream=true vs stream=false under one key is a different request
+    s3 = oi_clean.post("/v1/chat/completions", json=_oi_idem_s, headers=_oi_key)
+    out["openai_idem_stream_mismatch_409"] = s3.status_code == 409
+    # a gate refusal never pins the key — a retry re-executes (another
+    # 502, not a replayed error, and the key stays free for other bodies)
+    d1 = oi_dirty.post(
+        "/v1/chat/completions",
+        json=_oi_idem,
+        headers={"Idempotency-Key": "oi-k3"},
+    )
+    d2 = oi_dirty.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "other"}]},
+        headers={"Idempotency-Key": "oi-k3"},
+    )
+    out["openai_idem_refusal_not_pinned"] = d1.status_code == 502 and d2.status_code == 502
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

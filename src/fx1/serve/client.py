@@ -987,6 +987,7 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
         """``POST /v1/chat/completions`` — the OpenAI surface over the
@@ -994,6 +995,11 @@ class HarnessClient:
         ``backend`` maps to ``X-Fx1-Backend`` and wins over ``model``, and
         the remaining knobs ride the ``fx1`` extension object (BYOK callers
         may instead pass ``X-Fx1-Byok-*`` via ``extra_headers``).
+
+        ``idempotency_key`` rides the ``Idempotency-Key`` header — a
+        retried call (same key + same body) replays the stored response
+        byte-identically instead of re-spending the model, and marks the
+        call retryable for the transport policy.
 
         Returns ``(chat_completion_envelope, completion_id)`` — the id
         links the call to ``completion()``/``completion_receipt()``. Call
@@ -1022,8 +1028,14 @@ class HarnessClient:
         }
         if fx1:
             payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
         _status, headers, body = self._request(
-            "POST", "/v1/chat/completions", payload, extra_headers=extra_headers
+            "POST",
+            "/v1/chat/completions",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
         )
         envelope = json.loads(body)
         return envelope, headers.get("X-Fx1-Completion-Id")
@@ -1044,6 +1056,7 @@ class HarnessClient:
         max_tokens: int | None = None,
         seed: int | None = None,
         include_usage: bool = False,
+        idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[list[dict[str, Any]], str | None]:
         """Streaming counterpart of :meth:`chat_completion` — returns
@@ -1076,8 +1089,14 @@ class HarnessClient:
         }
         if fx1:
             payload["fx1"] = fx1
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
         _status, headers, body = self._request(
-            "POST", "/v1/chat/completions", payload, extra_headers=extra_headers
+            "POST",
+            "/v1/chat/completions",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
         )
         chunks: list[dict[str, Any]] = []
         saw_done = False

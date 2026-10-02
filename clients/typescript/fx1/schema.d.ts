@@ -671,6 +671,11 @@ export interface paths {
          *     BYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the
          *     `fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/
          *     `X-Fx1-Checkpoint-Dir` select the chain without body extensions.
+         *     `Idempotency-Key` makes the call retry-safe: a retry with the
+         *     same key and body replays the stored response byte-identically
+         *     (JSON or SSE) instead of re-spending the model — flagged via
+         *     `X-Fx1-Idempotent-Replay`; a key reused with a different body
+         *     fails closed 409.
          */
         post: operations["openai_chat_completions"];
         delete?: never;
@@ -3358,7 +3363,9 @@ export interface operations {
     openai_chat_completions: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };

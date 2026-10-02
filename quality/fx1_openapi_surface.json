@@ -483,7 +483,13 @@
     },
     "/v1/chat/completions": {
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "200",
@@ -501,5 +507,5 @@
       }
     }
   },
-  "schema_sha256": "50cc2b551bb725c605791cfb0f063d51ed27c06edd5a9fcb51795fde6d1908d0"
+  "schema_sha256": "9f30ff05e35846455009fd0c03d695fbeeb5c53ce9f824d5515db9d42c88cf15"
 }

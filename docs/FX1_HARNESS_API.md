@@ -262,14 +262,24 @@ to `GET /harness/completions/{id}` and its sealed
   `{error: {message, type, param, code}}` shape with OpenAI's type names
   (`invalid_request_error`, `authentication_error`,
   `rate_limit_error`, `server_error`, `service_unavailable`).
+- **Retry-safe:** `Idempotency-Key` dedupes retries — the same key +
+  body replays the stored response byte-identically (JSON envelope or
+  the SSE chunk sequence, `created` pinned) with
+  `X-Fx1-Idempotent-Replay: true` and the original
+  `X-Fx1-Completion-Id`; a key reused under a different body fails
+  closed 409; keys are bounded (≤256 chars, over → 400) and only
+  successful completions are pinned — a gate refusal re-executes on
+  retry instead of replaying a cached error.
 - **Auth:** when `FX1_API_KEY` is set, `/v1` also accepts the OpenAI
   `Authorization: Bearer` header in place of `X-API-Key`.
 
 Client-side: `HarnessClient.chat_completion` /
 `chat_completion_stream` / `list_models` in Python;
 `HarnessApiClient.chatCompletion` / `chatCompletionStream` /
-`listModels` in TS. Any OpenAI SDK works directly — point it at the
-harness `base_url` and use `model: "fx1"`.
+`listModels` in TS — all four accept `idempotency_key` /
+`idempotencyKey` and mark the call retryable for the built-in retry
+policy. Any OpenAI SDK works directly — point it at the harness
+`base_url` and use `model: "fx1"`.
 
 The same surface exists in-process: `Fx1Harness.openai_chat(request)`
 accepts the same request body dict (or a parsed

@@ -6249,8 +6249,26 @@
     },
     "/v1/chat/completions": {
       "post": {
-        "description": "OpenAI-compatible chat completion over the gated pipeline.\n\nThe `X-Fx1-Completion-Id` header links the response to the\ncompletion-log record (GET /harness/completions/{id}) and its\nsealed receipt. `model` selects a backend when it names one\n(hosted_k3/local_fx1/byok); anything else is the default link.\nBYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the\n`fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/\n`X-Fx1-Checkpoint-Dir` select the chain without body extensions.",
+        "description": "OpenAI-compatible chat completion over the gated pipeline.\n\nThe `X-Fx1-Completion-Id` header links the response to the\ncompletion-log record (GET /harness/completions/{id}) and its\nsealed receipt. `model` selects a backend when it names one\n(hosted_k3/local_fx1/byok); anything else is the default link.\nBYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the\n`fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/\n`X-Fx1-Checkpoint-Dir` select the chain without body extensions.\n`Idempotency-Key` makes the call retry-safe: a retry with the\nsame key and body replays the stored response byte-identically\n(JSON or SSE) instead of re-spending the model \u2014 flagged via\n`X-Fx1-Idempotent-Replay`; a key reused with a different body\nfails closed 409.",
         "operationId": "openai_chat_completions",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
