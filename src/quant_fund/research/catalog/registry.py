@@ -1768,6 +1768,63 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "maddpg",
         "mappo",
         "mf_q",
+        # Wave-120 canon: cooperative games —
+        # nucleolus, Banzhaf, Owen, Myerson
+        # auction, Groves, envy-free.
+        "nucleolus",
+        "banzhaf",
+        "owen",
+        "myerson_auction",
+        "groves",
+        "envy_free",
+        # Wave-121 canon: best-arm
+        # identification — LUCB,
+        # sequential halving, median
+        # elim, UGapE, TTTS, TnS.
+        "lil_ucb",
+        "sequential_halving",
+        "median_elim",
+        "ugape",
+        "ttts",
+        "track_stop",
+        # Wave-122 exec-summary SOTA:
+        # RL execution, ML SOR,
+        # OFI, PG market maker,
+        # options flow, dark pool.
+        "exec_rl",
+        "smart_router",
+        "order_flow_imbalance",
+        "pg_mm",
+        "options_flow",
+        "dark_pool",
+        # Wave-123 exec-summary NLP/gen:
+        # say-echo-do, multimodal,
+        # ts diffusion, ts GAN,
+        # econ calendar, quantcode.
+        "say_echo_do",
+        "multimodal_fusion",
+        "ts_diffusion",
+        "synthetic_gan",
+        "econ_calendar",
+        "quantcode_bench",
+        # Wave-124 exec-summary graph/meta:
+        # asset + counterparty GNNs,
+        # MAML, EWC, FedAvg, insider.
+        "asset_gnn",
+        "counterparty_gnn",
+        "maml_portfolio",
+        "continual_learning",
+        "fed_avg",
+        "insider_anomaly",
+        # Wave-125 exec-summary pricing/XAI:
+        # PINN, QUBO, SHAP, adv-robust,
+        # risk flow, PCMCI miner.
+        "pinn_pricing",
+        "qubo_portfolio",
+        "xai_shap",
+        "adversarial_robust",
+        "risk_flow",
+        "causal_miner",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

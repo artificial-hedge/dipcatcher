@@ -949,6 +949,54 @@ from quant_fund.research.benches_w119 import (
     bench_qmix_family,
     bench_vdn_family,
 )
+from quant_fund.research.benches_w120 import (
+    bench_banzhaf_family,
+    bench_envy_free_family,
+    bench_groves_family,
+    bench_myerson_auction_family,
+    bench_nucleolus_family,
+    bench_owen_family,
+)
+from quant_fund.research.benches_w121 import (
+    bench_lil_ucb_family,
+    bench_median_elim_family,
+    bench_sequential_halving_family,
+    bench_track_stop_family,
+    bench_ttts_family,
+    bench_ugape_family,
+)
+from quant_fund.research.benches_w122 import (
+    bench_dark_pool_family,
+    bench_exec_rl_family,
+    bench_options_flow_family,
+    bench_order_flow_imbalance_family,
+    bench_pg_mm_family,
+    bench_smart_router_family,
+)
+from quant_fund.research.benches_w123 import (
+    bench_econ_calendar_family,
+    bench_multimodal_fusion_family,
+    bench_quantcode_bench_family,
+    bench_say_echo_do_family,
+    bench_synthetic_gan_family,
+    bench_ts_diffusion_family,
+)
+from quant_fund.research.benches_w124 import (
+    bench_asset_gnn_family,
+    bench_continual_learning_family,
+    bench_counterparty_gnn_family,
+    bench_fed_avg_family,
+    bench_insider_anomaly_family,
+    bench_maml_portfolio_family,
+)
+from quant_fund.research.benches_w125 import (
+    bench_adversarial_robust_family,
+    bench_causal_miner_family,
+    bench_pinn_pricing_family,
+    bench_qubo_portfolio_family,
+    bench_risk_flow_family,
+    bench_xai_shap_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3214,6 +3262,42 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "maddpg": bench_maddpg_family(),
         "mappo": bench_mappo_family(),
         "mf_q": bench_mf_q_family(),
+        "nucleolus": bench_nucleolus_family(),
+        "banzhaf": bench_banzhaf_family(),
+        "owen": bench_owen_family(),
+        "myerson_auction": bench_myerson_auction_family(),
+        "groves": bench_groves_family(),
+        "envy_free": bench_envy_free_family(),
+        "lil_ucb": bench_lil_ucb_family(),
+        "sequential_halving": bench_sequential_halving_family(),
+        "median_elim": bench_median_elim_family(),
+        "ugape": bench_ugape_family(),
+        "ttts": bench_ttts_family(),
+        "track_stop": bench_track_stop_family(),
+        "exec_rl": bench_exec_rl_family(),
+        "smart_router": bench_smart_router_family(),
+        "order_flow_imbalance": bench_order_flow_imbalance_family(),
+        "pg_mm": bench_pg_mm_family(),
+        "options_flow": bench_options_flow_family(),
+        "dark_pool": bench_dark_pool_family(),
+        "say_echo_do": bench_say_echo_do_family(),
+        "multimodal_fusion": bench_multimodal_fusion_family(),
+        "ts_diffusion": bench_ts_diffusion_family(),
+        "synthetic_gan": bench_synthetic_gan_family(),
+        "econ_calendar": bench_econ_calendar_family(),
+        "quantcode_bench": bench_quantcode_bench_family(),
+        "asset_gnn": bench_asset_gnn_family(),
+        "counterparty_gnn": bench_counterparty_gnn_family(),
+        "maml_portfolio": bench_maml_portfolio_family(),
+        "continual_learning": bench_continual_learning_family(),
+        "fed_avg": bench_fed_avg_family(),
+        "insider_anomaly": bench_insider_anomaly_family(),
+        "pinn_pricing": bench_pinn_pricing_family(),
+        "qubo_portfolio": bench_qubo_portfolio_family(),
+        "xai_shap": bench_xai_shap_family(),
+        "adversarial_robust": bench_adversarial_robust_family(),
+        "risk_flow": bench_risk_flow_family(),
+        "causal_miner": bench_causal_miner_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
