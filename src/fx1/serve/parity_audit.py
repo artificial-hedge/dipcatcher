@@ -735,6 +735,49 @@ def parity_audit() -> dict[str, bool]:
         and calls6b["n"] == 2
     )
 
+    # A keyed complete dedupes server-side — retries without the opt-in flag.
+    tr6c, calls6c = _scripted(["RAISE", (200, {}, complete_body)])
+    resilient6c = HarnessClient(
+        "http://h.test",
+        transport=tr6c,
+        max_retries=1,
+        sleep=lambda s: None,
+    )
+    out["keyed_complete_retries"] = (
+        resilient6c.complete(
+            [{"role": "user", "content": "hi"}],
+            idempotency_key="k1",
+        ).content
+        == "c"
+        and calls6c["n"] == 2
+    )
+    tr6d, calls6d = _scripted(
+        [
+            "RAISE",
+            (
+                200,
+                {},
+                _json_mod.dumps(
+                    {"results": [], "backend": "byok", "model": "m", "receipt_hashes": []}
+                ).encode(),
+            ),
+        ]
+    )
+    resilient6d = HarnessClient(
+        "http://h.test",
+        transport=tr6d,
+        max_retries=1,
+        sleep=lambda s: None,
+    )
+    out["keyed_batch_retries"] = (
+        resilient6d.complete_many(
+            [[{"role": "user", "content": "hi"}]],
+            idempotency_key="k2",
+        )
+        == []
+        and calls6d["n"] == 2
+    )
+
     tr7, calls7 = _scripted(
         [(503, {}, _json_mod.dumps({"detail": "backend not configured"}).encode())]
     )

@@ -76,3 +76,17 @@ await fx1.streamComplete(
   machine-readable `code` (`over_capacity`, `draining`, `honesty_gate`, …).
 - `HarnessApiClient.verifyWebhook` verifies `callback_secret`-signed webhook
   deliveries (`X-Fx1-Webhook-Signature`/`Timestamp`, HMAC-SHA256, 300s window).
+
+## Resilience (same policy as the Python `HarnessClient`)
+
+- Off by default — pass `maxRetries` to enable. Idempotent calls (GETs,
+  keyed submits/completes, drain, receipt verifies) retry; unkeyed writes
+  only retry under `retryWrites`.
+- Retries honor `Retry-After` (429 always retries; 503 only when it carries
+  the header — the in-flight cap does, backend-misconfig 503s don't) and
+  never sleep past `maxRetryWaitMs`.
+- `circuitBreakerThreshold` + `circuitResetMs` fail fast with
+  `HarnessTransportError` after N consecutive transport faults, then probe
+  half-open. `sleep`/`now` are injectable for tests.
+- `client.lastApiVersion` reports the `X-Fx1-Api-Version` stamped by the
+  most recent response.

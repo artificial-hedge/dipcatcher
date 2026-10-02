@@ -67,6 +67,33 @@ export interface HarnessApiClientOptions {
    * `/harness/version` `api_version` against it. Bump with the server.
    */
   expectedApiVersion?: string;
+  /**
+   * Retried attempts after the first (default `0` — retries off).
+   * Idempotent calls — GETs, keyed submissions, drain, receipt verifies —
+   * retry by default; unkeyed writes only retry under `retryWrites`.
+   */
+  maxRetries?: number;
+  /** Initial backoff in ms, doubling per attempt (default `100`). */
+  retryBackoffMs?: number;
+  /** Also retry unkeyed writes (default `false`). */
+  retryWrites?: boolean;
+  /**
+   * Cap on one retry wait in ms (default `5000`). A server `Retry-After`
+   * beyond the budget ends the loop instead of sleeping past it.
+   */
+  maxRetryWaitMs?: number;
+  /**
+   * Consecutive transport faults that open the circuit (default `0` —
+   * off). While open, calls fail fast with `HarnessTransportError` until
+   * `circuitResetMs` elapses and a half-open probe closes or re-opens it.
+   */
+  circuitBreakerThreshold?: number;
+  /** Circuit-open window in ms (default `30000`). */
+  circuitResetMs?: number;
+  /** Injectable async sleep — tests pass a recorder (default: timer). */
+  sleep?: (ms: number) => Promise<void>;
+  /** Injectable clock in ms for the breaker (default `Date.now`). */
+  now?: () => number;
 }
 
 /** Error raised for any non-2xx harness response. */
@@ -89,6 +116,18 @@ export class HarnessApiError extends Error {
       typeof detail === "object" && detail !== null && "code" in detail
         ? String((detail as { code: unknown }).code)
         : null;
+  }
+}
+
+/**
+ * Raised when the harness is unreachable, retries are exhausted, or the
+ * circuit breaker is open — the request never produced an HTTP response
+ * (or never will, for a fail-fast open circuit).
+ */
+export class HarnessTransportError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HarnessTransportError";
   }
 }
 
@@ -122,11 +161,26 @@ export interface SseEvent {
 
 const DEFAULT_API_VERSION = "1";
 
+const defaultSleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 export class HarnessApiClient {
   private readonly baseUrl: string;
   private readonly apiKey?: string;
   private readonly fetchImpl: typeof fetch;
   private readonly expectedApiVersion: string;
+  private readonly maxRetries: number;
+  private readonly retryBackoffMs: number;
+  private readonly retryWrites: boolean;
+  private readonly maxRetryWaitMs: number;
+  private readonly cbThreshold: number;
+  private readonly cbResetMs: number;
+  private readonly sleep: (ms: number) => Promise<void>;
+  private readonly now: () => number;
+  private cbFailures = 0;
+  private cbOpenUntil = 0;
+  /** `X-Fx1-Api-Version` stamped by the most recent response. */
+  lastApiVersion: string | null = null;
 
   constructor(options: HarnessApiClientOptions = {}) {
     this.baseUrl = (options.baseUrl ?? "http://127.0.0.1:8011").replace(
@@ -136,6 +190,24 @@ export class HarnessApiClient {
     this.apiKey = options.apiKey;
     this.fetchImpl = options.fetch ?? fetch;
     this.expectedApiVersion = options.expectedApiVersion ?? DEFAULT_API_VERSION;
+    this.maxRetries = options.maxRetries ?? 0;
+    this.retryBackoffMs = options.retryBackoffMs ?? 100;
+    this.retryWrites = options.retryWrites ?? false;
+    this.maxRetryWaitMs = options.maxRetryWaitMs ?? 5000;
+    this.cbThreshold = options.circuitBreakerThreshold ?? 0;
+    this.cbResetMs = options.circuitResetMs ?? 30000;
+    this.sleep = options.sleep ?? defaultSleep;
+    this.now = options.now ?? (() => Date.now());
+    for (const [name, v] of Object.entries({
+      maxRetries: this.maxRetries,
+      retryBackoffMs: this.retryBackoffMs,
+      maxRetryWaitMs: this.maxRetryWaitMs,
+      circuitBreakerThreshold: this.cbThreshold,
+      circuitResetMs: this.cbResetMs,
+    })) {
+      if (v < 0 || (name !== "maxRetries" && name !== "circuitBreakerThreshold" && v <= 0))
+        throw new RangeError(`${name} out of range: ${v}`);
+    }
   }
 
   private headers(extra?: Record<string, string>): Record<string, string> {
@@ -144,7 +216,13 @@ export class HarnessApiClient {
     return h;
   }
 
+  private stampVersion(res: Response): void {
+    const v = res.headers.get("x-fx1-api-version");
+    if (v !== null) this.lastApiVersion = v;
+  }
+
   private async parse(res: Response): Promise<unknown> {
+    this.stampVersion(res);
     const text = await res.text();
     if (!res.ok) {
       let detail: unknown = text;
@@ -159,12 +237,101 @@ export class HarnessApiClient {
     return JSON.parse(text);
   }
 
+  private static retryAfterMs(res: Response): number | null {
+    const raw = res.headers.get("retry-after");
+    if (raw === null) return null;
+    const secs = Number(raw);
+    return Number.isFinite(secs) && secs >= 0 ? secs * 1000 : null;
+  }
+
+  /** 429 always retries; 503 only when it carries Retry-After (the
+   * in-flight cap — a backend-misconfig 503 never will). */
+  private static retryable(res: Response): boolean {
+    return (
+      res.status === 429 ||
+      (res.status === 503 && HarnessApiClient.retryAfterMs(res) !== null)
+    );
+  }
+
+  private cbTrip(): void {
+    if (this.cbThreshold === 0) return;
+    this.cbFailures += 1;
+    if (this.cbFailures >= this.cbThreshold) {
+      this.cbOpenUntil = this.now() + this.cbResetMs;
+      this.cbFailures = 0;
+    }
+  }
+
+  private cbReset(): void {
+    this.cbFailures = 0;
+    this.cbOpenUntil = 0;
+  }
+
+  /**
+   * Send one request with the retry/circuit policy. `idempotent` marks
+   * calls the server can safely see twice (GETs, keyed deduped POSTs,
+   * drain, receipt verifies); unkeyed writes retry only under
+   * `retryWrites`.
+   */
+  private async send(init: {
+    method: string;
+    path: string;
+    body?: unknown;
+    idempotent?: boolean;
+    headers?: Record<string, string>;
+  }): Promise<Response> {
+    if (this.cbThreshold > 0 && this.now() < this.cbOpenUntil)
+      throw new HarnessTransportError(
+        `circuit open for ${this.baseUrl} — fail fast`,
+      );
+    const retries =
+      init.idempotent === true || this.retryWrites ? this.maxRetries : 0;
+    let backoff = this.retryBackoffMs;
+    try {
+      for (let attempt = 0; ; attempt++) {
+        let res: Response;
+        try {
+          res = await this.fetchImpl(this.baseUrl + init.path, {
+            method: init.method,
+            headers: this.headers(init.headers),
+            ...(init.body !== undefined
+              ? { body: JSON.stringify(init.body) }
+              : {}),
+          });
+          this.stampVersion(res);
+        } catch (exc) {
+          if (attempt >= retries) {
+            throw new HarnessTransportError(
+              `harness unreachable at ${init.path}: ${String(exc)}`,
+            );
+          }
+          await this.sleep(backoff);
+          backoff *= 2;
+          continue;
+        }
+        if (HarnessApiClient.retryable(res) && attempt < retries) {
+          const wait = HarnessApiClient.retryAfterMs(res);
+          if (wait !== null && wait > this.maxRetryWaitMs) break;
+          await this.sleep(Math.min(wait ?? backoff, this.maxRetryWaitMs));
+          backoff *= 2;
+          continue;
+        }
+        this.cbReset();
+        return res;
+      }
+    } catch (exc) {
+      if (exc instanceof HarnessTransportError) this.cbTrip();
+      throw exc;
+    }
+    throw new HarnessTransportError(
+      `harness ${init.method} ${init.path} exhausted ${retries} retries`,
+    );
+  }
+
   private async get<P extends keyof paths>(
     path: string,
   ): Promise<GetJson<P>> {
-    const res = await this.fetchImpl(this.baseUrl + path, {
-      headers: this.headers(),
-    });
+    const res = await this.send({ method: "GET", path, idempotent: true });
     return (await this.parse(res)) as GetJson<P>;
   }
 
@@ -172,13 +339,19 @@ export class HarnessApiClient {
     path: string,
     body: unknown,
     idempotencyKey?: string,
+    opts?: { idempotent?: boolean },
   ): Promise<unknown> {
-    const headers = this.headers({ "Content-Type": "application/json" });
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
     if (idempotencyKey !== undefined) headers["Idempotency-Key"] = idempotencyKey;
-    const res = await this.fetchImpl(this.baseUrl + path, {
+    const res = await this.send({
       method: "POST",
+      path,
+      body: body ?? {},
+      // A keyed POST dedupes server-side — safe to retry by construction.
+      idempotent: opts?.idempotent ?? idempotencyKey !== undefined,
       headers,
-      body: JSON.stringify(body ?? {}),
     });
     return this.parse(res);
   }
@@ -196,14 +369,16 @@ export class HarnessApiClient {
   }
 
   /** GET /metrics — JSON ops counters, or Prometheus text when asked. */
-  metrics(format?: "json" | "prom"): Promise<MetricsResponse | string> {
+  async metrics(format?: "json" | "prom"): Promise<MetricsResponse | string> {
     if (format === "prom") {
-      return this.fetchImpl(this.baseUrl + "/metrics?format=prom", {
-        headers: this.headers({ Accept: "text/plain" }),
-      }).then(async (res) => {
-        if (!res.ok) throw new HarnessApiError(res.status, await res.text());
-        return res.text();
+      const res = await this.send({
+        method: "GET",
+        path: "/metrics?format=prom",
+        idempotent: true,
+        headers: { Accept: "text/plain" },
       });
+      if (!res.ok) throw new HarnessApiError(res.status, await res.text());
+      return res.text();
     }
     return this.get("/metrics");
   }
@@ -318,10 +493,11 @@ export class HarnessApiClient {
 
   /** DELETE /harness/jobs/{id} — cancel a queued job. */
   async cancelJob(jobId: string): Promise<JobStatusResponse> {
-    const res = await this.fetchImpl(
-      `${this.baseUrl}/harness/jobs/${encodeURIComponent(jobId)}`,
-      { method: "DELETE", headers: this.headers() },
-    );
+    const res = await this.send({
+      method: "DELETE",
+      path: `/harness/jobs/${encodeURIComponent(jobId)}`,
+      idempotent: true,
+    });
     return (await this.parse(res)) as JobStatusResponse;
   }
 
@@ -356,18 +532,28 @@ export class HarnessApiClient {
 
   /** POST /receipts/verify — verify one receipt payload. */
   verifyReceipt(receipt: Record<string, unknown>): Promise<ReceiptVerifyResponse> {
-    return this.post("/receipts/verify", {
-      receipt,
-    } satisfies ReceiptVerifyRequest) as Promise<ReceiptVerifyResponse>;
+    return this.post(
+      "/receipts/verify",
+      {
+        receipt,
+      } satisfies ReceiptVerifyRequest,
+      undefined,
+      { idempotent: true },
+    ) as Promise<ReceiptVerifyResponse>;
   }
 
   /** POST /receipts/verify/batch — up to 64, order-preserved. */
   verifyReceipts(
     receipts: Record<string, unknown>[],
   ): Promise<ReceiptVerifyBatchResponse> {
-    return this.post("/receipts/verify/batch", {
-      receipts,
-    } satisfies ReceiptVerifyBatchRequest) as Promise<ReceiptVerifyBatchResponse>;
+    return this.post(
+      "/receipts/verify/batch",
+      {
+        receipts,
+      } satisfies ReceiptVerifyBatchRequest,
+      undefined,
+      { idempotent: true },
+    ) as Promise<ReceiptVerifyBatchResponse>;
   }
 
   // ---- ops ---------------------------------------------------------------
@@ -378,7 +564,9 @@ export class HarnessApiClient {
    */
   drain(waitS?: number): Promise<DrainResponse> {
     const suffix = waitS !== undefined ? `?wait_s=${waitS}` : "";
-    return this.post(`/harness/drain${suffix}`, {}) as Promise<DrainResponse>;
+    return this.post(`/harness/drain${suffix}`, {}, undefined, {
+      idempotent: true,
+    }) as Promise<DrainResponse>;
   }
 
   // ---- streaming ----------------------------------------------------------
@@ -392,13 +580,14 @@ export class HarnessApiClient {
     request: CompleteRequest,
     onEvent: (event: SseEvent) => void,
   ): Promise<CompleteResponse | null> {
-    const res = await this.fetchImpl(this.baseUrl + "/harness/complete/stream", {
+    const res = await this.send({
       method: "POST",
-      headers: this.headers({
+      path: "/harness/complete/stream",
+      body: request,
+      headers: {
         "Content-Type": "application/json",
         Accept: "text/event-stream",
-      }),
-      body: JSON.stringify(request),
+      },
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     let final: CompleteResponse | null = null;
@@ -419,10 +608,12 @@ export class HarnessApiClient {
     timeoutS?: number,
   ): Promise<JobStatusResponse | null> {
     const suffix = timeoutS !== undefined ? `?timeout_s=${timeoutS}` : "";
-    const res = await this.fetchImpl(
-      `${this.baseUrl}/harness/jobs/${encodeURIComponent(jobId)}/events${suffix}`,
-      { headers: this.headers({ Accept: "text/event-stream" }) },
-    );
+    const res = await this.send({
+      method: "GET",
+      path: `/harness/jobs/${encodeURIComponent(jobId)}/events${suffix}`,
+      idempotent: true,
+      headers: { Accept: "text/event-stream" },
+    });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     let last: JobStatusResponse | null = null;
     for await (const ev of readSse(res)) {

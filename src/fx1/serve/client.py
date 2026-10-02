@@ -554,6 +554,9 @@ class HarnessClient:
                 "checkpoint_dir": (str(checkpoint_dir) if checkpoint_dir is not None else None),
                 "receipt_hashes": receipt_hashes,
             },
+            # A keyed complete dedupes server-side — safe to retry by
+            # construction, so it marks idempotent for the retry policy.
+            idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
         )
         return CompletionResult(
@@ -595,6 +598,7 @@ class HarnessClient:
                 "receipt_hashes": receipt_hashes,
                 "max_workers": max_workers,
             },
+            idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
         )
         results: list[CompletionResult] = []
