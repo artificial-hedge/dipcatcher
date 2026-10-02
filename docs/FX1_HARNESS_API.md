@@ -65,6 +65,29 @@ values are model-level 422s. SDK/`HarnessClient` take `timeout_s=`; the
 CLI takes `--backend-timeout` (distinct from `--timeout`, the HTTP
 transport deadline).
 
+**Fallback chains:** `fallbacks` (≤2, distinct, never repeating the
+primary) orders alternate backends after `backend` on every completion
+route — `["local_fx1"]` with `fallbacks=["hosted_k3","byok"]` tries the
+local engine, then hosted, then BYOK. The chain advances only on
+availability faults: a link that fails to resolve (unconfigured,
+spawn refused, endpoint down) or faults at the call
+(`BackendNotConfiguredError`/`RuntimeError`, wire `backend_unavailable`
+503 / `backend_failure` 502) or sits behind an open circuit is skipped;
+a gate refusal (502 `honesty_gate`), a capability gap (501
+`not_supported`), or any client error aborts the request — a refusal is
+a verdict, not a reason to spend another backend's capacity. An
+exhausted chain re-raises the last retriable verdict. Per-link kwargs:
+`byok` binds only a `byok` link and `checkpoint_dir` only a `local_fx1`
+link — bound to an absent link they are request-level 422/ValueError.
+Batch and stream apply the chain at resolve level (one link serves the
+whole batch; restarting a committed stream would be dishonest).
+Every link tried lands in `attempts` on the response
+(`{backend, ok, error_class, latency_ms}`, omitted for single-link
+requests) and on the completion record — the failover trace is part of
+the sealed evidence. SDK takes `fallbacks=[...]`,
+`HarnessClient`/`complete_many`/`stream_complete` the same; the CLI
+takes repeatable `--fallback`.
+
 **Usage accounting:** when the backend reports a usage block
 (`prompt_tokens`/`completion_tokens`/`total_tokens` for
 OpenAI-compatible endpoints), `POST /harness/complete` returns it as

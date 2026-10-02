@@ -1,6 +1,48 @@
 {
   "components": {
     "schemas": {
+      "BackendAttempt": {
+        "additionalProperties": false,
+        "description": "One link of a backend fallback chain: which name was tried and how\nit ended (``error_class`` carries the verdict on a failed link).",
+        "properties": {
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "backend",
+          "ok"
+        ],
+        "title": "BackendAttempt",
+        "type": "object"
+      },
       "BackendCompletionStats": {
         "additionalProperties": false,
         "description": "Per-backend completion accounting: outcome counts, a cumulative\nlatency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and\nbackend-reported token sums. ``usage_calls`` counts calls that carried\na usage dict \u2014 a silent provider shows zero tokens AND zero calls.",
@@ -450,6 +492,19 @@
             ],
             "title": "Checkpoint Dir"
           },
+          "fallbacks": {
+            "items": {
+              "enum": [
+                "hosted_k3",
+                "local_fx1",
+                "byok"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Fallbacks",
+            "type": "array"
+          },
           "max_workers": {
             "default": 4,
             "maximum": 16.0,
@@ -495,6 +550,14 @@
       "CompleteBatchResponse": {
         "additionalProperties": false,
         "properties": {
+          "attempts": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/BackendAttempt"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
           "backend": {
             "title": "Backend",
             "type": "string"
@@ -586,6 +649,19 @@
             ],
             "title": "Checkpoint Dir"
           },
+          "fallbacks": {
+            "items": {
+              "enum": [
+                "hosted_k3",
+                "local_fx1",
+                "byok"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Fallbacks",
+            "type": "array"
+          },
           "messages": {
             "items": {
               "$ref": "#/components/schemas/ChatMessage"
@@ -633,6 +709,14 @@
       "CompleteResponse": {
         "additionalProperties": false,
         "properties": {
+          "attempts": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/BackendAttempt"
+            },
+            "title": "Attempts",
+            "type": "array"
+          },
           "backend": {
             "title": "Backend",
             "type": "string"
@@ -733,6 +817,20 @@
           "at": {
             "title": "At",
             "type": "number"
+          },
+          "attempts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BackendAttempt"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
           },
           "backend": {
             "title": "Backend",

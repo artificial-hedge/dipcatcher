@@ -395,6 +395,40 @@ def cli_audit() -> dict[str, Any]:
         out["complete_backend_timeout_forwards"] = (
             rt.exit_code == 0 and fake.complete_calls[-1].get("timeout_s") == 7.5
         )
+        # --fallback is repeatable and packs into the chain on both surfaces.
+        rfb = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--backend",
+                "hosted_k3",
+                "--fallback",
+                "byok",
+            ],
+        )
+        out["complete_fallback_flags_forward"] = rfb.exit_code == 0 and fake.complete_calls[-1].get(
+            "fallbacks"
+        ) == ["byok"]
+        rfb_s = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--stream",
+                "--backend",
+                "hosted_k3",
+                "--fallback",
+                "local_fx1",
+                "--fallback",
+                "byok",
+            ],
+        )
+        out["stream_fallback_flags_forward"] = rfb_s.exit_code == 0 and fake.stream_calls[-1].get(
+            "fallbacks"
+        ) == ["local_fx1", "byok"]
         # `harness batch` — JSONL/JSON prompts -> complete_many -> JSON out
         import tempfile  # noqa: PLC0415
         from pathlib import Path  # noqa: PLC0415
@@ -420,6 +454,21 @@ def cli_audit() -> dict[str, Any]:
             out["batch_backend_timeout_forwards"] = (
                 rb_t.exit_code == 0 and fake.batch_calls[-1].get("timeout_s") == 5.0
             )
+            rb_f = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch",
+                    str(pf),
+                    "--backend",
+                    "hosted_k3",
+                    "--fallback",
+                    "byok",
+                ],
+            )
+            out["batch_fallback_flags_forward"] = rb_f.exit_code == 0 and fake.batch_calls[-1].get(
+                "fallbacks"
+            ) == ["byok"]
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:

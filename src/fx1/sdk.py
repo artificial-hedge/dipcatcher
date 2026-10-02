@@ -90,6 +90,9 @@ class CompletionResult:
     # Handle into the surface's completion log — minted server-side on the
     # wire, by the SDK in-process. Every gated call is fetchable evidence.
     completion_id: str | None = None
+    # Ordered fallback-chain trace — one entry per link tried (the last
+    # is the serving link); empty when the primary served unchallenged.
+    attempts: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -111,6 +114,7 @@ class CompletionRecord:
     error: str | None = None
     error_class: str | None = None
     output_sha256: str | None = None
+    attempts: tuple[dict[str, Any], ...] | None = None
 
 
 class _CompletionLog:
@@ -138,6 +142,34 @@ class _CompletionLog:
         if backend is not None:
             items = [r for r in items if r.backend == backend]
         return items[:limit]
+
+
+_BACKEND_NAMES = ("hosted_k3", "local_fx1", "byok")
+
+
+def _fallback_chain(backend: str, fallbacks: list[str] | None) -> list[str]:
+    """Validated ordered chain: primary first, then distinct alternates —
+    the same contract the API enforces on ``fallbacks``."""
+    links = [backend, *(fallbacks or ())]
+    if len(set(links)) != len(links) or len(links) > 3:
+        raise ValueError("fallbacks must be distinct, at most two, and not repeat the primary")
+    bad = [n for n in fallbacks or () if n not in _BACKEND_NAMES]
+    if bad:
+        raise ValueError(f"unknown fallback backends: {bad}")
+    return links
+
+
+def _check_link_kwargs(
+    chain: list[str],
+    checkpoint_dir: str | Path | None,
+    byok: dict[str, str] | None,
+) -> None:
+    """Per-link kwargs must bind a chain link — the request-level twin of
+    the API's ``_chain_valid`` (wire 422 ↔ sdk ValueError)."""
+    if byok is not None and "byok" not in chain:
+        raise ValueError("a byok override applies only to a 'byok' chain link")
+    if checkpoint_dir is not None and "local_fx1" not in chain:
+        raise ValueError("checkpoint_dir applies only to the local_fx1 backend")
 
 
 def _messages_sha256(messages: list[dict[str, str]]) -> str:
@@ -257,6 +289,7 @@ class Fx1Harness:
         error_class: str | None,
         prompt_sha256: str,
         output_sha256: str | None,
+        attempts: tuple[dict[str, Any], ...] | None = None,
     ) -> str:
         """Append one call to the completion log; returns its id."""
         cid = uuid.uuid4().hex
@@ -273,6 +306,7 @@ class Fx1Harness:
                 error_class=error_class,
                 prompt_sha256=prompt_sha256,
                 output_sha256=output_sha256,
+                attempts=attempts,
             )
         )
         return cid
@@ -409,6 +443,7 @@ class Fx1Harness:
         backend_kwargs: dict[str, Any] | None = None,
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
+        fallbacks: list[str] | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -417,56 +452,157 @@ class Fx1Harness:
         ``FX1_CHECKPOINT_DIR`` in the environment; it may only be passed for
         ``local_fx1``. The backend is always closed afterwards — engines
         spawned by ``LocalFx1Backend`` never leak.
+
+        ``fallbacks`` is an ordered chain of alternate backends tried after
+        the primary — only on availability faults (unconfigured /
+        transport). A gate refusal or a client error aborts the request;
+        a refusal is a verdict, not a reason to spend another backend's
+        capacity. Per-link kwargs: ``byok`` binds only a ``'byok'`` link,
+        ``checkpoint_dir`` only a ``'local_fx1'`` link.
         """
-        backend_obj = self._resolve_completion_backend(
-            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
-        )
-        t0 = time.monotonic()
+        chain = _fallback_chain(backend, fallbacks)
+        _check_link_kwargs(chain, checkpoint_dir, byok)
         prompt_sha256 = _messages_sha256(messages)
-        try:
-            content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
-        except Exception as exc:
-            self._record_call(
-                backend,
-                getattr(backend_obj, "_model", None)
-                if isinstance(getattr(backend_obj, "_model", None), str)
-                else None,
-                False,
-                (time.monotonic() - t0) * 1000.0,
-                getattr(backend_obj, "last_usage", None)
-                if isinstance(getattr(backend_obj, "last_usage", None), dict)
-                else None,
-                str(exc),
-                type(exc).__name__,
-                prompt_sha256,
-                None,
+        attempts: list[dict[str, Any]] = []
+        last_exc: Exception | None = None
+        for cand in chain:
+            t0 = time.monotonic()
+            try:
+                backend_obj = self._resolve_link(
+                    cand, checkpoint_dir, backend_kwargs, byok, timeout_s
+                )
+            except (BackendNotConfiguredError, RuntimeError, ValueError) as exc:
+                # resolve-level availability fault — same retriable class
+                # the wire treats as backend_unavailable (503).
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                last_exc = exc
+                continue
+            except Exception as exc:
+                # client errors abort — an unknown name, a bad receipt is
+                # the request's fault, not the backend's.
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                self._record_call(
+                    cand,
+                    None,
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    None,
+                    str(exc),
+                    type(exc).__name__,
+                    prompt_sha256,
+                    None,
+                    tuple(attempts),
+                )
+                raise
+            t0 = time.monotonic()
+            try:
+                content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
+            except (BackendNotConfiguredError, RuntimeError) as exc:
+                # availability fault — record the link, try the next.
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                last_exc = exc
+                closer = getattr(backend_obj, "close", None)
+                if callable(closer):
+                    closer()
+                continue
+            except Exception as exc:
+                # refusals / capability gaps / client errors abort the chain.
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                self._record_call(
+                    cand,
+                    getattr(backend_obj, "_model", None)
+                    if isinstance(getattr(backend_obj, "_model", None), str)
+                    else None,
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    getattr(backend_obj, "last_usage", None)
+                    if isinstance(getattr(backend_obj, "last_usage", None), dict)
+                    else None,
+                    str(exc),
+                    type(exc).__name__,
+                    prompt_sha256,
+                    None,
+                    tuple(attempts),
+                )
+                closer = getattr(backend_obj, "close", None)
+                if callable(closer):
+                    closer()
+                raise
+            model_name = getattr(backend_obj, "_model", None)
+            usage = getattr(backend_obj, "last_usage", None)
+            attempts.append(
+                {
+                    "backend": cand,
+                    "ok": True,
+                    "latency_ms": (time.monotonic() - t0) * 1000.0,
+                }
             )
-            raise
-        finally:
+            cid = self._record_call(
+                cand,
+                model_name if isinstance(model_name, str) else None,
+                True,
+                (time.monotonic() - t0) * 1000.0,
+                usage if isinstance(usage, dict) else None,
+                None,
+                None,
+                prompt_sha256,
+                hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                tuple(attempts) if len(attempts) > 1 else None,
+            )
             closer = getattr(backend_obj, "close", None)
             if callable(closer):
                 closer()
-        model_name = getattr(backend_obj, "_model", None)
-        usage = getattr(backend_obj, "last_usage", None)
-        cid = self._record_call(
+            return CompletionResult(
+                backend=cand,
+                model=model_name if isinstance(model_name, str) else None,
+                content=content,
+                usage=usage if isinstance(usage, dict) else None,
+                receipt_hashes=tuple(receipt_hashes or ()),
+                completion_id=cid,
+                attempts=tuple(attempts) if len(attempts) > 1 else (),
+            )
+        assert last_exc is not None  # every link failed retriably
+        self._record_call(
             backend,
-            model_name if isinstance(model_name, str) else None,
-            True,
-            (time.monotonic() - t0) * 1000.0,
-            usage if isinstance(usage, dict) else None,
             None,
+            False,
+            0.0,
             None,
+            str(last_exc),
+            type(last_exc).__name__,
             prompt_sha256,
-            hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            None,
+            tuple(attempts) if len(attempts) > 1 else None,
         )
-        return CompletionResult(
-            backend=backend,
-            model=model_name if isinstance(model_name, str) else None,
-            content=content,
-            usage=usage if isinstance(usage, dict) else None,
-            receipt_hashes=tuple(receipt_hashes or ()),
-            completion_id=cid,
-        )
+        raise last_exc
 
     def complete_many(
         self,
@@ -479,6 +615,7 @@ class Fx1Harness:
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
         max_workers: int = 4,
+        fallbacks: list[str] | None = None,
     ) -> list[CompletionResult]:
         """Many gated completions over ONE shared backend instance.
 
@@ -492,8 +629,8 @@ class Fx1Harness:
             raise ValueError(f"max_workers must be >= 1, got {max_workers}")
         if not batch:
             return []
-        backend_obj = self._resolve_completion_backend(
-            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
+        serving, backend_obj = self._resolve_chain(
+            backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
         model_name = getattr(backend_obj, "_model", None)
         model_str = model_name if isinstance(model_name, str) else None
@@ -505,7 +642,7 @@ class Fx1Harness:
                 content = cited_complete(backend_obj, msgs, receipt_hashes=receipt_hashes)
             except Exception as exc:
                 self._record_call(
-                    backend,
+                    serving,
                     model_str,
                     False,
                     (time.monotonic() - t0) * 1000.0,
@@ -517,7 +654,7 @@ class Fx1Harness:
                 )
                 raise
             cid = self._record_call(
-                backend,
+                serving,
                 model_str,
                 True,
                 (time.monotonic() - t0) * 1000.0,
@@ -540,7 +677,7 @@ class Fx1Harness:
                 closer()
         return [
             CompletionResult(
-                backend=backend,
+                backend=serving,
                 model=model_str,
                 content=content,
                 receipt_hashes=tuple(receipt_hashes or ()),
@@ -561,6 +698,7 @@ class Fx1Harness:
         backend_kwargs: dict[str, Any] | None = None,
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
+        fallbacks: list[str] | None = None,
     ) -> list[str]:
         """Token-delta chunks of one gated completion.
 
@@ -571,15 +709,17 @@ class Fx1Harness:
         the contract — an in-process consumer never holds ungated bytes
         either. A backend without ``stream`` raises ``NotImplementedError``
         (501-class); the backend is always closed afterwards.
+        ``fallbacks`` applies at resolve level only — once a link is
+        streaming there is no honest restart point.
         """
-        backend_obj = self._resolve_completion_backend(
-            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
+        serving, backend_obj = self._resolve_chain(
+            backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
         t0 = time.monotonic()
         prompt_sha256 = _messages_sha256(messages)
         try:
             if not isinstance(backend_obj, StreamingBackend):
-                raise NotImplementedError(f"backend {backend!r} does not support streaming")
+                raise NotImplementedError(f"backend {serving!r} does not support streaming")
             chunks = list(backend_obj.stream(messages))
             joined = "".join(chunks)
             validate_fx1_output(joined)
@@ -591,7 +731,7 @@ class Fx1Harness:
                 )
         except Exception as exc:
             self._record_call(
-                backend,
+                serving,
                 getattr(backend_obj, "_model", None)
                 if isinstance(getattr(backend_obj, "_model", None), str)
                 else None,
@@ -613,7 +753,7 @@ class Fx1Harness:
         model_name = getattr(backend_obj, "_model", None)
         usage = getattr(backend_obj, "last_usage", None)
         self._record_call(
-            backend,
+            serving,
             model_name if isinstance(model_name, str) else None,
             True,
             (time.monotonic() - t0) * 1000.0,
@@ -624,6 +764,48 @@ class Fx1Harness:
             hashlib.sha256(joined.encode("utf-8")).hexdigest(),
         )
         return chunks
+
+    def _resolve_chain(
+        self,
+        backend: str,
+        fallbacks: list[str] | None,
+        checkpoint_dir: str | Path | None,
+        backend_kwargs: dict[str, Any] | None,
+        byok: dict[str, str] | None,
+        timeout_s: float | None,
+    ) -> tuple[str, Any]:
+        """First resolvable link serves — resolve-level fallback for the
+        shared-backend calls (batch / stream), same contract as the wire."""
+        chain = _fallback_chain(backend, fallbacks)
+        _check_link_kwargs(chain, checkpoint_dir, byok)
+        last: Exception | None = None
+        for cand in chain:
+            try:
+                return cand, self._resolve_link(
+                    cand, checkpoint_dir, backend_kwargs, byok, timeout_s
+                )
+            except (BackendNotConfiguredError, RuntimeError) as exc:
+                last = exc
+        assert last is not None  # every link failed retriably
+        raise last
+
+    def _resolve_link(
+        self,
+        link: str,
+        checkpoint_dir: str | Path | None,
+        backend_kwargs: dict[str, Any] | None,
+        byok: dict[str, str] | None,
+        timeout_s: float | None,
+    ) -> Any:
+        """Resolve one fallback-chain link — per-link kwargs: ``byok``
+        binds only a ``'byok'`` link, ``checkpoint_dir`` only ``'local_fx1'``."""
+        return self._resolve_completion_backend(
+            link,
+            checkpoint_dir if link == "local_fx1" else None,
+            backend_kwargs,
+            byok if link == "byok" else None,
+            timeout_s,
+        )
 
     def _resolve_completion_backend(
         self,

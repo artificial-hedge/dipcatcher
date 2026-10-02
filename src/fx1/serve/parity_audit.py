@@ -45,7 +45,7 @@ import dataclasses
 import json
 import os
 import urllib.parse
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from typing import TYPE_CHECKING, Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
@@ -104,6 +104,17 @@ class _NonStreamingBackend:
 
     def close(self) -> None:
         return None
+
+
+class _CallFailBackend(_ParityBackend):
+    """Availability fault on every call — the retriable link."""
+
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        raise RuntimeError("backend exploded")
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        raise RuntimeError("backend exploded")
+        yield
 
 
 class _FlakyBackend(_ParityBackend):
@@ -594,6 +605,51 @@ def parity_audit() -> dict[str, bool]:
             == {k: doc_r["record"][k] for k in shared_keys}
             and _vrp(doc_j)["valid"] is True
             and _vrp(doc_r)["valid"] is True
+        )
+        # fallback chain parity: the same ordered failover contract runs
+        # in-process — primary faults, the next link serves, and both
+        # surfaces record the same attempt trace.
+        import fx1.serve.api as api_mod2  # noqa: PLC0415
+        from fx1 import sdk as sdk_mod  # noqa: PLC0415
+
+        _boom = _CallFailBackend()
+
+        def _chain_resolver(name: str, **kw: Any) -> Any:
+            if name == "hosted_k3":
+                return _boom
+            if name == "byok":
+                return _ParityBackend()
+            raise KeyError(name)
+
+        sdk_chain = sdk_mod.Fx1Harness(
+            harness=_Hb(runner=_fake_run), backend_resolver=_chain_resolver
+        )
+        app_chain = api_mod2.create_app(
+            harness=_Hb(runner=_fake_run), backend_resolver=_chain_resolver
+        )
+        client_chain = _TCb(app_chain)
+        remote_chain = HarnessClient("http://harness.test", transport=_tc_transport(client_chain))
+        s_fb = sdk_chain.complete(msg, backend="hosted_k3", fallbacks=["byok"])
+        w_fb = remote_chain.complete(msg, backend="hosted_k3", fallbacks=["byok"])
+
+        def _norm(atts: Iterable[dict[str, Any]]) -> list[tuple[Any, ...]]:
+            return [(a["backend"], a["ok"], a.get("error_class")) for a in atts]
+
+        out["fallback_chain_parity"] = (
+            s_fb.backend == w_fb.backend == "byok"
+            and s_fb.content == w_fb.content
+            and _norm(s_fb.attempts)
+            == _norm(w_fb.attempts)
+            == [("hosted_k3", False, "RuntimeError"), ("byok", True, None)]
+        )
+        out["fallback_exhaust_parity"] = (
+            _raises(
+                lambda: sdk_mod.Fx1Harness(
+                    harness=_Hb(runner=_fake_run),
+                    backend_resolver=lambda *a, **k: _boom,
+                ).complete(msg, backend="hosted_k3", fallbacks=["byok"])
+            )[0]
+            == "RuntimeError"
         )
         out["client_stream_identical"] = (
             remote.stream_complete(msg, backend="byok", receipt_hashes=[receipt]) == sdk_chunks

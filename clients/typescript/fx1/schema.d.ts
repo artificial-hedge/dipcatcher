@@ -582,6 +582,21 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * BackendAttempt
+         * @description One link of a backend fallback chain: which name was tried and how
+         *     it ended (``error_class`` carries the verdict on a failed link).
+         */
+        BackendAttempt: {
+            /** Backend */
+            backend: string;
+            /** Error Class */
+            error_class?: string | null;
+            /** Latency Ms */
+            latency_ms?: number | null;
+            /** Ok */
+            ok: boolean;
+        };
+        /**
          * BackendCompletionStats
          * @description Per-backend completion accounting: outcome counts, a cumulative
          *     latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
@@ -782,6 +797,8 @@ export interface components {
             byok?: components["schemas"]["ByokOverride"] | null;
             /** Checkpoint Dir */
             checkpoint_dir?: string | null;
+            /** Fallbacks */
+            fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
             /**
              * Max Workers
              * @default 4
@@ -794,6 +811,11 @@ export interface components {
         };
         /** CompleteBatchResponse */
         CompleteBatchResponse: {
+            /**
+             * Attempts
+             * @default []
+             */
+            attempts: components["schemas"]["BackendAttempt"][];
             /** Backend */
             backend: string;
             /** Model */
@@ -822,6 +844,8 @@ export interface components {
             byok?: components["schemas"]["ByokOverride"] | null;
             /** Checkpoint Dir */
             checkpoint_dir?: string | null;
+            /** Fallbacks */
+            fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
             /** Receipt Hashes */
@@ -831,6 +855,11 @@ export interface components {
         };
         /** CompleteResponse */
         CompleteResponse: {
+            /**
+             * Attempts
+             * @default []
+             */
+            attempts: components["schemas"]["BackendAttempt"][];
             /** Backend */
             backend: string;
             /** Completion Id */
@@ -870,6 +899,8 @@ export interface components {
         CompletionRecord: {
             /** At */
             at: number;
+            /** Attempts */
+            attempts?: components["schemas"]["BackendAttempt"][] | null;
             /** Backend */
             backend: string;
             /** Completion Id */

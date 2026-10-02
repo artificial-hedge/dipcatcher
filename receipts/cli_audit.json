@@ -5,6 +5,7 @@
       "bare_exits_clean": true,
       "batch_backend_timeout_forwards": true,
       "batch_empty_fails_clean": true,
+      "batch_fallback_flags_forward": true,
       "batch_jsonl_two_items": true,
       "cancel_local_refused": true,
       "capabilities_local_refused": true,
@@ -23,6 +24,7 @@
       "complete_block_echoes_content": true,
       "complete_byok_flags_forward": true,
       "complete_byok_partial_exits_2": true,
+      "complete_fallback_flags_forward": true,
       "complete_stream_concatenates_chunks": true,
       "complete_stream_forwards_receipts": true,
       "describe_unknown_fails": true,
@@ -79,17 +81,18 @@
       "remote_version_json": true,
       "serve_bad_knob_exit2": true,
       "serve_flags_reach_app": true,
+      "stream_fallback_flags_forward": true,
       "submit_local_refused": true,
       "unknown_command_fails": true,
       "version_local_json": true
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "3f615c8105798dbe30c1c23a3c4c757aff3de3d0",
+  "git_revision": "c3498143a57b0d1defabc06f4493c3933cac7547",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "79a01dc0b2364feb59a932d254fda88e97224f72ce2e268d31f2fd8f5ded49c1",
+  "receipt_sha256": "afd0912583e107c68a3b36c77536088f0b8386b9f8c8dd641c4a42d8a137792c",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

@@ -390,6 +390,11 @@ def harness_complete(
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [],
+        "--fallback",
+        help="Alternate backend to try on availability faults (repeatable, max 2).",
+    ),
 ) -> None:
     """One gated completion — the honesty gate runs before output."""
     surface = _surface(remote, api_key, timeout_s)
@@ -403,6 +408,7 @@ def harness_complete(
                 receipt_hashes=receipt or None,
                 byok=byok,
                 timeout_s=backend_timeout,
+                fallbacks=fallbacks or None,
             )
         )
         for chunk in chunks:
@@ -417,6 +423,7 @@ def harness_complete(
             receipt_hashes=receipt or None,
             byok=byok,
             timeout_s=backend_timeout,
+            fallbacks=fallbacks or None,
         )
     )
     typer.echo(out.content)
@@ -442,6 +449,11 @@ def harness_batch(
     backend_timeout: float | None = typer.Option(
         None, "--backend-timeout", help="Per-call backend deadline in seconds."
     ),
+    fallbacks: list[str] = typer.Option(
+        [],
+        "--fallback",
+        help="Alternate backend to try on availability faults (repeatable, max 2).",
+    ),
 ) -> None:
     """Gated batch completion — per-item failures surface as exit 2."""
     surface = _surface(remote, api_key, timeout_s)
@@ -455,6 +467,7 @@ def harness_batch(
             byok=byok,
             timeout_s=backend_timeout,
             max_workers=workers,
+            fallbacks=fallbacks or None,
         )
     )
     payload = json.dumps(

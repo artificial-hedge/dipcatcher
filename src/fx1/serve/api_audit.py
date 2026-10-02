@@ -88,7 +88,7 @@ def _client(
                 os.environ[k] = v
 
 
-def api_audit() -> dict[str, Any]:
+def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out: dict[str, Any] = {}
 
     client, api_mod = _client()
@@ -1483,6 +1483,229 @@ def api_audit() -> dict[str, Any]:
     out["breaker_ignores_honesty_gate"] = (
         gate_fails == [502, 502, 502]
         and dc.get("/harness/backends").json()["byok"]["circuit_open"] is False
+    )
+
+    # Backend fallback chain: `fallbacks` advances only on availability
+    # faults — unconfigured (503 resolve), call faults (502/503), or an
+    # open circuit. A gate refusal or client error is a verdict, not a
+    # retry signal, and never reaches the next link. Every tried link is
+    # sealed in `attempts` on the response AND the completion record.
+    class _BoomBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            raise RuntimeError("backend exploded")
+
+    _boom = _BoomBackend()
+    chain_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: _boom if name == "hosted_k3" else _CleanBackend()
+        )
+    )
+    r_chain = chain_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    chain_body = r_chain.json()
+    out["fallback_serves_next_link"] = (
+        r_chain.status_code == 200
+        and chain_body["backend"] == "byok"
+        and chain_body["content"] == "clean:hi"
+        and [(a["backend"], a["ok"]) for a in chain_body["attempts"]]
+        == [("hosted_k3", False), ("byok", True)]
+        and chain_body["attempts"][0]["error_class"] == "RuntimeError"
+    )
+    # the sealed completion record carries the same chain evidence and is
+    # filed under the serving backend.
+    rec_chain = chain_app.get("/harness/completions?limit=1").json()["items"][0]
+    out["fallback_record_carries_attempts"] = (
+        rec_chain["backend"] == "byok"
+        and [a["backend"] for a in rec_chain["attempts"]] == ["hosted_k3", "byok"]
+        and chain_body["completion_id"] == rec_chain["completion_id"]
+    )
+
+    # resolve-level fallback: a 503 from resolution (unconfigured primary)
+    # advances the chain before any model call.
+    def _resolve_dies(name: str, *a: Any, **k: Any) -> Any:
+        if name == "byok":
+            return _CleanBackend()
+        raise RuntimeError("primary unconfigured")
+
+    res_app = _TC2(api_mod.create_app(backend_resolver=_resolve_dies))
+    r_res = res_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    res_body = r_res.json()
+    out["fallback_resolve_503_advances"] = (
+        r_res.status_code == 200
+        and res_body["backend"] == "byok"
+        and res_body["attempts"][0]["backend"] == "hosted_k3"
+        and res_body["attempts"][0]["error_class"] == "backend_unavailable"
+    )
+    # a gate refusal is a verdict — the request aborts, the fallback is
+    # never spent.
+    _clean_spy = _CleanBackend()
+    ref_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: (
+                _DirtyBackend() if name == "hosted_k3" else _clean_spy
+            )
+        )
+    )
+    r_ref = ref_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    out["fallback_no_retry_on_honesty_gate"] = (
+        r_ref.status_code == 502
+        and r_ref.json()["code"] == "honesty_gate"
+        and _clean_spy.calls == 0
+    )
+    # a client error (bad citation) likewise aborts before any backend.
+    r_bad = chain_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+            "receipt_hashes": ["0" * 64],
+        },
+    )
+    out["fallback_client_error_aborts"] = r_bad.status_code == 422
+    # every link dead → the last retriable verdict surfaces, with the full
+    # chain sealed on the record.
+    dead_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _BoomBackend()))
+    r_dead = dead_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["local_fx1", "byok"],
+            # lets the local_fx1 link resolve (resolver ignores kwargs —
+            # every link faults at the call itself)
+            "checkpoint_dir": "/nonexistent/fx1-cp",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    dead_rec = dead_app.get("/harness/completions?limit=1").json()["items"][0]
+    out["fallback_exhausted_502"] = (
+        r_dead.status_code == 502
+        and r_dead.json()["code"] == "backend_failure"
+        and [a["backend"] for a in dead_rec["attempts"]] == ["hosted_k3", "local_fx1", "byok"]
+        and all(a["ok"] is False for a in dead_rec["attempts"])
+    )
+    # an open primary circuit advances the chain — a downed backend's
+    # breaker never blocks a healthy fallback.
+    open_app = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda name, *a, **k: (
+                _boom if name == "hosted_k3" else _CleanBackend()
+            ),
+            breaker_threshold=1,
+            breaker_cooldown_s=60.0,
+        )
+    )
+    open_app.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "x"}]},
+    )
+    r_open_fb = open_app.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    fb_body = r_open_fb.json()
+    out["fallback_skips_open_circuit"] = (
+        r_open_fb.status_code == 200
+        and fb_body["backend"] == "byok"
+        and fb_body["attempts"][0]["error_class"] == "backend_unavailable"
+    )
+    # chain validation: repeats, self-reference, over-cap, and kwargs
+    # bound to a link absent from the chain all fail closed at 422.
+    _msgs = [{"role": "user", "content": "x"}]
+    bad_chains: list[dict[str, Any]] = [
+        {"backend": "byok", "fallbacks": ["byok"], "messages": _msgs},
+        {"backend": "byok", "fallbacks": ["hosted_k3", "hosted_k3"], "messages": _msgs},
+        {
+            "backend": "byok",
+            "fallbacks": ["hosted_k3", "local_fx1", "byok"],
+            "messages": _msgs,
+        },
+        {
+            "backend": "hosted_k3",
+            "messages": _msgs,
+            "byok": {"base_url": "https://x.example.com", "api_key": "k", "model": "m"},
+        },
+        {"backend": "hosted_k3", "messages": _msgs, "checkpoint_dir": "/x"},
+        {
+            "backend": "hosted_k3",
+            "fallbacks": ["hosted_k3"],
+            "messages": _msgs,
+        },
+    ]
+    out["fallback_validation_422"] = all(
+        chain_app.post("/harness/complete", json=b).status_code == 422 for b in bad_chains
+    ) and all(
+        res_app.post(
+            "/harness/complete/batch",
+            json={k: v for k, v in b.items() if k != "messages"} | {"batch": [_msgs]},
+        ).status_code
+        == 422
+        for b in bad_chains
+    )
+    # batch applies the chain at resolve level — one link serves the whole
+    # batch, per-item usage attribution stays honest.
+    r_batch_fb = res_app.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "batch": [[{"role": "user", "content": "a"}]],
+        },
+    )
+    batch_fb = r_batch_fb.json()
+    out["fallback_batch_resolve_level"] = (
+        r_batch_fb.status_code == 200
+        and batch_fb["backend"] == "byok"
+        and batch_fb["results"][0]["ok"] is True
+        and [a["backend"] for a in batch_fb["attempts"]] == ["hosted_k3", "byok"]
+    )
+
+    # streaming resolves through the same chain before any byte commits.
+    def _resolve_dies_stream(name: str, *a: Any, **k: Any) -> Any:
+        if name == "byok":
+            return _StreamBackend()
+        raise RuntimeError("primary unconfigured")
+
+    stream_app = _TC2(api_mod.create_app(backend_resolver=_resolve_dies_stream))
+    r_stream_fb = stream_app.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "hosted_k3",
+            "fallbacks": ["byok"],
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    stream_lines = [ln for ln in r_stream_fb.text.splitlines() if ln.startswith("data: ")]
+    out["fallback_stream_resolves"] = r_stream_fb.status_code == 200 and any(
+        '"type": "final"' in ln for ln in stream_lines
     )
 
     # Per-request BYOK: the caller's {base_url, api_key, model} rides the

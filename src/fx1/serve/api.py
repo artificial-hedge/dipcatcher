@@ -48,7 +48,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from collections import OrderedDict
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import (
     AbstractAsyncContextManager,
@@ -359,6 +359,32 @@ class ByokOverride(_Model):
         return v
 
 
+class BackendAttempt(_Model):
+    """One link of a backend fallback chain: which name was tried and how
+    it ended (``error_class`` carries the verdict on a failed link)."""
+
+    backend: str
+    ok: bool
+    error_class: str | None = None
+    latency_ms: float | None = None
+
+
+def _fallback_chain_valid(
+    backend: str,
+    fallbacks: Sequence[str],
+    checkpoint_dir: str | None,
+    byok: ByokOverride | None,
+) -> None:
+    """Chain validation shared by the sync and batch request models."""
+    if len(set(fallbacks)) != len(fallbacks) or backend in fallbacks:
+        raise ValueError("fallbacks must be distinct and not repeat the primary backend")
+    chain = {backend, *fallbacks}
+    if byok is not None and "byok" not in chain:
+        raise ValueError("a byok override applies only to a 'byok' link in the chain")
+    if checkpoint_dir is not None and "local_fx1" not in chain:
+        raise ValueError("checkpoint_dir applies only to a 'local_fx1' link in the chain")
+
+
 class CompleteRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
     messages: list[ChatMessage] = Field(min_length=1, max_length=512)
@@ -368,6 +394,18 @@ class CompleteRequest(_Model):
     byok: ByokOverride | None = None
     # Per-call backend deadline; beats each backend's env/config default.
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
+    # Ordered alternates tried after the primary — only on availability
+    # faults (unconfigured / transport / circuit open). A gate refusal or
+    # a client error aborts the request; a refusal is a verdict, not a
+    # reason to spend another backend's capacity.
+    fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
+        default_factory=list, max_length=2
+    )
+
+    @model_validator(mode="after")
+    def _chain_valid(self) -> CompleteRequest:
+        _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
+        return self
 
 
 class CompleteResponse(_Model):
@@ -389,6 +427,9 @@ class CompleteResponse(_Model):
     # Server-minted handle into the completion log
     # (``GET /harness/completions/{id}``) — replays keep the original id.
     completion_id: str | None = None
+    # Ordered chain trace — every link tried (last is the serving link),
+    # empty when the primary served unchallenged.
+    attempts: list[BackendAttempt] = []
 
 
 class CompleteBatchRequest(_Model):
@@ -399,6 +440,16 @@ class CompleteBatchRequest(_Model):
     byok: ByokOverride | None = None
     timeout_s: float | None = Field(default=None, gt=0, le=3600)
     max_workers: int = Field(default=4, ge=1, le=16)
+    # Resolve-level chain: first resolvable link serves the whole batch
+    # (one backend per batch — per-item failover can't attribute usage).
+    fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
+        default_factory=list, max_length=2
+    )
+
+    @model_validator(mode="after")
+    def _chain_valid(self) -> CompleteBatchRequest:
+        _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
+        return self
 
 
 class BackendProbeRequest(_Model):
@@ -459,6 +510,8 @@ class CompleteBatchResponse(_Model):
     # silent on usage.
     usage_total: dict[str, int] | None = None
     replayed: bool = False
+    # Resolve-level chain trace — the link that served the batch.
+    attempts: list[BackendAttempt] = []
 
 
 class CompletionRecord(_Model):
@@ -478,6 +531,8 @@ class CompletionRecord(_Model):
     error_class: str | None = None
     prompt_sha256: str
     output_sha256: str | None = None
+    # Chain trace when a fallback chain ran — sealed evidence of failover.
+    attempts: list[BackendAttempt] | None = None
 
 
 class CompletionListResponse(_Model):
@@ -811,13 +866,19 @@ def _body_fp(body: BaseModel, *, exclude: set[str] | None = None) -> str:
     return hashlib.sha256(body.model_dump_json(exclude=exclude).encode()).hexdigest()
 
 
+def _breaker_key_name(name: str, byok: ByokOverride | None) -> str:
+    """Backend key for one chain link — a BYOK endpoint gets its own
+    circuit keyed by endpoint hash wherever it sits in the chain."""
+    if byok is None or name != "byok":
+        return name
+    return f"{name}:{hashlib.sha256(byok.base_url.encode()).hexdigest()[:16]}"
+
+
 def _breaker_key(body: CompleteRequest | CompleteBatchRequest) -> str:
     """Backend key for the circuit breaker. A per-request BYOK override gets
     its own circuit keyed by endpoint hash — one caller's dead endpoint must
     never fast-fail another caller's BYOK or the env-configured default."""
-    if body.byok is None:
-        return body.backend
-    return f"{body.backend}:{hashlib.sha256(body.byok.base_url.encode()).hexdigest()[:16]}"
+    return _breaker_key_name(body.backend, body.byok)
 
 
 def _idem_lookup[IdemT: BaseModel](
@@ -1788,6 +1849,44 @@ def _mount_complete_routes(
                 code="receipt_not_found",
             )
 
+    def _resolve_candidate(name: str, body: CompleteRequest | CompleteBatchRequest) -> Any:
+        """Resolve one chain link — per-link kwargs: the byok override binds
+        only a 'byok' link, checkpoint_dir only a 'local_fx1' link."""
+        return resolve_backend(
+            name,
+            body.checkpoint_dir if name == "local_fx1" else None,
+            body.byok.model_dump() if name == "byok" and body.byok is not None else None,
+            body.timeout_s,
+        )
+
+    def _resolve_chain(
+        body: CompleteRequest | CompleteBatchRequest,
+    ) -> tuple[str, Any, list[BackendAttempt]]:
+        """First chain link that admits + resolves serves; a 503
+        (unconfigured / unavailable / circuit open) records the attempt and
+        moves on. Any other error is a request fault and aborts."""
+        attempts: list[BackendAttempt] = []
+        last: ApiError | None = None
+        for cand in [body.backend, *body.fallbacks]:
+            key = _breaker_key_name(cand, body.byok)
+            try:
+                _breaker_admit(key)
+                backend = _resolve_candidate(cand, body)
+            except ApiError as exc:
+                if exc.status_code == 503:
+                    attempts.append(
+                        BackendAttempt(backend=cand, ok=False, error_class="backend_unavailable")
+                    )
+                    if breaker is not None:
+                        breaker.report(key, False)
+                    last = exc
+                    continue
+                raise
+            attempts.append(BackendAttempt(backend=cand, ok=True))
+            return cand, backend, attempts
+        assert last is not None  # noqa: S101 — every link failed retriably
+        raise last
+
     @app.post(
         "/harness/complete",
         response_model=CompleteResponse,
@@ -1809,24 +1908,7 @@ def _mount_complete_routes(
                 response.headers["X-Fx1-Completion-Id"] = replay.completion_id
             return replay
         _check_citations(body.receipt_hashes)
-        _breaker_admit(_breaker_key(body))
-        try:
-            backend = resolve_backend(
-                body.backend,
-                body.checkpoint_dir,
-                body.byok.model_dump() if body.byok is not None else None,
-                body.timeout_s,
-            )
-        except ApiError as exc:
-            # only backend-unavailable counts — client errors (404 unknown
-            # backend, 422 bad args) must never trip the circuit, or a caller
-            # could deny the backend for everyone by spamming bad requests.
-            if breaker is not None and exc.status_code == 503:
-                breaker.report(_breaker_key(body), False)
-            raise
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
-        t0 = time.monotonic()
-        call_ok = False
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
             json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -1834,67 +1916,137 @@ def _mount_complete_routes(
         rec_err: str | None = None
         rec_cls: str | None = None
         content = ""
+        serving: str | None = None
+        usage_snap: Any = None
+        model_snap: Any = None
+        call_latency_ms = 0.0
+        attempts: list[BackendAttempt] = []
+        last_exc: ApiError | None = None
+        # Ordered fallback chain: each link gets its own admit + resolve +
+        # call. Only availability faults advance the chain — a gate
+        # refusal, a capability gap (501), or a client error aborts.
         try:
-            content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
-            call_ok = True
-        except NotImplementedError as exc:
-            rec_cls = "not_supported"
-            rec_err = str(exc)
-            raise ApiError(501, str(exc)) from exc
-        except Fx1HonestyError as exc:
-            rec_cls = "honesty_refusal"
-            rec_err = str(exc)
-            # The model produced a contract-violating headline; the gate
-            # caught it before the bytes left — surface as 502, not success.
-            raise ApiError(
-                502, f"honesty gate refused model output: {exc}", code="honesty_gate"
-            ) from exc
-        except (BackendNotConfiguredError, RuntimeError) as exc:
-            rec_cls = type(exc).__name__
-            rec_err = str(exc)
-            if breaker is not None:
-                breaker.report(_breaker_key(body), False)
-            if isinstance(exc, BackendNotConfiguredError):
-                raise ApiError(503, str(exc), code="backend_unavailable") from exc
-            raise ApiError(502, str(exc), code="backend_failure") from exc
-        else:
-            if breaker is not None:
-                breaker.report(_breaker_key(body), True)
+            for cand in [body.backend, *body.fallbacks]:
+                cand_key = _breaker_key_name(cand, body.byok)
+                backend: Any = None
+                try:
+                    _breaker_admit(cand_key)
+                    backend = _resolve_candidate(cand, body)
+                except ApiError as exc:
+                    # only backend-unavailable counts — client errors (404
+                    # unknown backend, 422 bad args) must never trip the
+                    # circuit, or a caller could deny the backend for
+                    # everyone by spamming bad requests.
+                    if exc.status_code == 503:
+                        rec_cls = "backend_unavailable"
+                        rec_err = str(exc)
+                        attempts.append(
+                            BackendAttempt(
+                                backend=cand, ok=False, error_class="backend_unavailable"
+                            )
+                        )
+                        if breaker is not None:
+                            breaker.report(cand_key, False)
+                        last_exc = exc
+                        continue
+                    raise
+                t0 = time.monotonic()
+                try:
+                    content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
+                except NotImplementedError as exc:
+                    rec_cls = "not_supported"
+                    rec_err = str(exc)
+                    attempts.append(
+                        BackendAttempt(backend=cand, ok=False, error_class="not_supported")
+                    )
+                    raise ApiError(501, str(exc)) from exc
+                except Fx1HonestyError as exc:
+                    rec_cls = "honesty_refusal"
+                    rec_err = str(exc)
+                    attempts.append(
+                        BackendAttempt(backend=cand, ok=False, error_class="honesty_refusal")
+                    )
+                    # The model produced a contract-violating headline; the
+                    # gate caught it before the bytes left — surface as 502,
+                    # not success. Never falls back: a refusal is a verdict.
+                    raise ApiError(
+                        502,
+                        f"honesty gate refused model output: {exc}",
+                        code="honesty_gate",
+                    ) from exc
+                except (BackendNotConfiguredError, RuntimeError) as exc:
+                    rec_cls = type(exc).__name__
+                    rec_err = str(exc)
+                    call_latency_ms = (time.monotonic() - t0) * 1000.0
+                    attempts.append(
+                        BackendAttempt(
+                            backend=cand,
+                            ok=False,
+                            error_class=rec_cls,
+                            latency_ms=call_latency_ms,
+                        )
+                    )
+                    if breaker is not None:
+                        breaker.report(cand_key, False)
+                    last_exc = (
+                        ApiError(503, str(exc), code="backend_unavailable")
+                        if isinstance(exc, BackendNotConfiguredError)
+                        else ApiError(502, str(exc), code="backend_failure")
+                    )
+                    continue
+                finally:
+                    _close_backend(backend)
+                call_latency_ms = (time.monotonic() - t0) * 1000.0
+                if breaker is not None:
+                    breaker.report(cand_key, True)
+                usage_snap = getattr(backend, "last_usage", None)
+                model_snap = getattr(backend, "_model", None)
+                serving = cand
+                attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
+                break
+            if serving is None:
+                raise (
+                    last_exc
+                    if last_exc is not None
+                    else ApiError(503, "no backend in the chain served")
+                )
         finally:
-            usage_snap = getattr(backend, "last_usage", None)
-            model_snap = getattr(backend, "_model", None)
             metrics.record_complete(
-                body.backend,
-                call_ok,
-                (time.monotonic() - t0) * 1000.0,
+                serving or body.backend,
+                serving is not None,
+                call_latency_ms,
                 usage=usage_snap if isinstance(usage_snap, dict) else None,
             )
             completion_log.append(
                 CompletionRecord(
                     completion_id=cid,
-                    backend=body.backend,
+                    backend=serving or body.backend,
                     model=model_snap if isinstance(model_snap, str) else None,
-                    ok=call_ok,
-                    latency_ms=(time.monotonic() - t0) * 1000.0,
+                    ok=serving is not None,
+                    latency_ms=call_latency_ms,
                     at=time.time(),
                     usage=usage_snap if isinstance(usage_snap, dict) else None,
-                    error=rec_err,
-                    error_class=rec_cls,
+                    error=rec_err if serving is None else None,
+                    error_class=rec_cls if serving is None else None,
                     prompt_sha256=prompt_sha256,
                     output_sha256=(
-                        hashlib.sha256(content.encode("utf-8")).hexdigest() if call_ok else None
+                        hashlib.sha256(content.encode("utf-8")).hexdigest()
+                        if serving is not None
+                        else None
                     ),
+                    attempts=attempts if len(attempts) > 1 else None,
                 )
             )
-            _close_backend(backend)
+        assert serving is not None  # noqa: S101 — None already raised above
         resp = CompleteResponse(
-            backend=body.backend,
+            backend=serving,
             model=model_snap if isinstance(model_snap, str) else None,
             content=content,
             receipt_hashes=body.receipt_hashes or [],
-            latency_ms=(time.monotonic() - t0) * 1000.0,
+            latency_ms=call_latency_ms,
             usage=usage_snap if isinstance(usage_snap, dict) else None,
             completion_id=cid,
+            attempts=attempts if len(attempts) > 1 else [],
         )
         response.headers["X-Fx1-Completion-Id"] = cid
         if key is not None:
@@ -1934,19 +2086,11 @@ def _mount_complete_routes(
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
 
         def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None, str]:
-            """Buffer + gate the backend stream; raises the mapped errors."""
-            _breaker_admit(_breaker_key(body))
-            try:
-                backend = resolve_backend(
-                    body.backend,
-                    body.checkpoint_dir,
-                    body.byok.model_dump() if body.byok is not None else None,
-                    body.timeout_s,
-                )
-            except ApiError as exc:
-                if breaker is not None and exc.status_code == 503:
-                    breaker.report(_breaker_key(body), False)
-                raise
+            """Buffer + gate the backend stream; raises the mapped errors.
+
+            The fallback chain applies at resolve level only — once a link
+            is streaming there is no honest restart point."""
+            serving, backend, chain_attempts = _resolve_chain(body)
             t0 = time.monotonic()
             call_ok = False
             cid = uuid.uuid4().hex
@@ -1978,20 +2122,20 @@ def _mount_complete_routes(
                 rec_cls = type(exc).__name__
                 rec_err = str(exc)
                 if breaker is not None:
-                    breaker.report(_breaker_key(body), False)
+                    breaker.report(_breaker_key_name(serving, body.byok), False)
                 if isinstance(exc, BackendNotConfiguredError):
                     raise ApiError(503, str(exc), code="backend_unavailable") from exc
                 raise ApiError(502, str(exc), code="backend_failure") from exc
             else:
                 call_ok = True
                 if breaker is not None:
-                    breaker.report(_breaker_key(body), True)
+                    breaker.report(_breaker_key_name(serving, body.byok), True)
             finally:
                 usage_snap = getattr(backend, "last_usage", None)
                 model_snap = getattr(backend, "_model", None)
                 joined_snap = "".join(chunks) if call_ok else ""
                 metrics.record_complete(
-                    body.backend,
+                    serving,
                     call_ok,
                     (time.monotonic() - t0) * 1000.0,
                     usage=usage_snap if isinstance(usage_snap, dict) else None,
@@ -1999,7 +2143,8 @@ def _mount_complete_routes(
                 completion_log.append(
                     CompletionRecord(
                         completion_id=cid,
-                        backend=body.backend,
+                        backend=serving,
+                        attempts=chain_attempts if len(chain_attempts) > 1 else None,
                         model=model_snap if isinstance(model_snap, str) else None,
                         ok=call_ok,
                         latency_ms=(time.monotonic() - t0) * 1000.0,
@@ -2136,21 +2281,10 @@ def _mount_complete_routes(
         if replay is not None:
             return replay
         _check_citations(body.receipt_hashes)
-        _breaker_admit(_breaker_key(body))
-        try:
-            backend = resolve_backend(
-                body.backend,
-                body.checkpoint_dir,
-                body.byok.model_dump() if body.byok is not None else None,
-                body.timeout_s,
-            )
-        except ApiError as exc:
-            # only backend-unavailable counts — client errors (404 unknown
-            # backend, 422 bad args) must never trip the circuit, or a caller
-            # could deny the backend for everyone by spamming bad requests.
-            if breaker is not None and exc.status_code == 503:
-                breaker.report(_breaker_key(body), False)
-            raise
+        # Resolve-level fallback: first resolvable link serves the whole
+        # batch — a shared backend can't attribute per-item usage, so
+        # per-item failover is intentionally not offered.
+        serving, backend, batch_attempts = _resolve_chain(body)
         usage_pre = getattr(backend, "total_usage", None)
         usage_pre = dict(usage_pre) if isinstance(usage_pre, dict) else None
         # One backend serves the whole batch — a spawned local engine is
@@ -2178,7 +2312,7 @@ def _mount_complete_routes(
                         completion_log.append(
                             CompletionRecord(
                                 completion_id=cid,
-                                backend=body.backend,
+                                backend=serving,
                                 model=model_snap if isinstance(model_snap, str) else None,
                                 ok=ok,
                                 latency_ms=(time.monotonic() - t0) * 1000.0,
@@ -2196,7 +2330,8 @@ def _mount_complete_routes(
                             )
                         )
 
-                    if breaker is not None and breaker.check(_breaker_key(body)) > 0:
+                    serving_key = _breaker_key_name(serving, body.byok)
+                    if breaker is not None and breaker.check(serving_key) > 0:
                         _log_item(False, None, "backend circuit open", "backend_unavailable")
                         return CompleteBatchItem(
                             ok=False,
@@ -2226,7 +2361,7 @@ def _mount_complete_routes(
                         ValueError,
                     ) as exc:
                         if breaker is not None and not isinstance(exc, NotImplementedError):
-                            breaker.report(_breaker_key(body), False)
+                            breaker.report(serving_key, False)
                         _log_item(False, None, str(exc), type(exc).__name__)
                         return CompleteBatchItem(
                             ok=False,
@@ -2237,7 +2372,7 @@ def _mount_complete_routes(
                         )
                     finally:
                         metrics.record_complete(
-                            body.backend,
+                            serving,
                             item_ok,
                             (time.monotonic() - t0) * 1000.0,
                             usage=getattr(backend, "last_usage", None)
@@ -2246,7 +2381,7 @@ def _mount_complete_routes(
                         )
                     _log_item(True, content, None, None)
                     if breaker is not None:
-                        breaker.report(_breaker_key(body), True)
+                        breaker.report(serving_key, True)
                     return CompleteBatchItem(
                         ok=True,
                         latency_ms=(time.monotonic() - t0) * 1000.0,
@@ -2274,11 +2409,12 @@ def _mount_complete_routes(
         else:
             usage_total = None
         resp = CompleteBatchResponse(
-            backend=body.backend,
+            backend=serving,
             model=model_name if isinstance(model_name, str) else None,
             receipt_hashes=body.receipt_hashes or [],
             results=results,
             usage_total=usage_total,
+            attempts=batch_attempts if len(batch_attempts) > 1 else [],
         )
         if key is not None:
             complete_batch_idem_store.put(key, body_fp, resp)

@@ -566,6 +566,7 @@ class HarnessClient:
         idempotency_key: str | None = None,
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
+        fallbacks: list[str] | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -578,6 +579,7 @@ class HarnessClient:
                 "receipt_hashes": receipt_hashes,
                 "timeout_s": timeout_s,
                 "byok": byok,
+                "fallbacks": fallbacks or [],
             },
             # A keyed complete dedupes server-side — safe to retry by
             # construction, so it marks idempotent for the retry policy.
@@ -592,6 +594,9 @@ class HarnessClient:
             replayed=out.get("replayed", False),
             usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
             completion_id=out.get("completion_id"),
+            attempts=tuple(dict(a) for a in out["attempts"] if isinstance(a, dict))
+            if isinstance(out.get("attempts"), list)
+            else (),
         )
 
     def completion(self, completion_id: str) -> CompletionRecord:
@@ -610,6 +615,9 @@ class HarnessClient:
             error_class=out.get("error_class"),
             prompt_sha256=out["prompt_sha256"],
             output_sha256=out.get("output_sha256"),
+            attempts=tuple(dict(a) for a in out["attempts"] if isinstance(a, dict))
+            if isinstance(out.get("attempts"), list)
+            else None,
         )
 
     def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
@@ -636,6 +644,9 @@ class HarnessClient:
                 error_class=r.get("error_class"),
                 prompt_sha256=r["prompt_sha256"],
                 output_sha256=r.get("output_sha256"),
+                attempts=tuple(dict(a) for a in r["attempts"] if isinstance(a, dict))
+                if isinstance(r.get("attempts"), list)
+                else None,
             )
             for r in out["items"]
         ]
@@ -700,6 +711,7 @@ class HarnessClient:
         idempotency_key: str | None = None,
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
+        fallbacks: list[str] | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -723,6 +735,7 @@ class HarnessClient:
                 "timeout_s": timeout_s,
                 "byok": byok,
                 "max_workers": max_workers,
+                "fallbacks": fallbacks or [],
             },
             idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
@@ -754,6 +767,7 @@ class HarnessClient:
         receipt_hashes: list[str] | None = None,
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
+        fallbacks: list[str] | None = None,
     ) -> list[str]:
         """Remote counterpart of ``Fx1Harness.stream_complete``.
 
@@ -771,6 +785,7 @@ class HarnessClient:
                 "receipt_hashes": receipt_hashes,
                 "timeout_s": timeout_s,
                 "byok": byok,
+                "fallbacks": fallbacks or [],
             },
         )
         chunks: list[str] = []
