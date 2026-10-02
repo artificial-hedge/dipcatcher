@@ -2251,6 +2251,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ltt_cp",
         "full_cp",
         "risk_cp",
+        # Wave-172 bandit-exotics canon:
+        # PSRL, Gittins, Whittle,
+        # CUCB, corruption-robust, NeuralUCB.
+        "psrl",
+        "gittins_index",
+        "whittle_restless",
+        "cucb",
+        "corrupt_bandit",
+        "neural_ucb",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

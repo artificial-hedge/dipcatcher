@@ -1365,6 +1365,14 @@ from quant_fund.research.benches_w171 import (
     bench_risk_cp_family,
     bench_survival_cp_family,
 )
+from quant_fund.research.benches_w172 import (
+    bench_corrupt_bandit_family,
+    bench_cucb_family,
+    bench_gittins_index_family,
+    bench_neural_ucb_family,
+    bench_psrl_family,
+    bench_whittle_restless_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3942,6 +3950,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ltt_cp": bench_ltt_cp_family(),
         "full_cp": bench_full_cp_family(),
         "risk_cp": bench_risk_cp_family(),
+        "psrl": bench_psrl_family(),
+        "gittins_index": bench_gittins_index_family(),
+        "whittle_restless": bench_whittle_restless_family(),
+        "cucb": bench_cucb_family(),
+        "corrupt_bandit": bench_corrupt_bandit_family(),
+        "neural_ucb": bench_neural_ucb_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
