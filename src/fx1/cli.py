@@ -8,6 +8,7 @@ manifests, and harness inspection.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -121,6 +122,25 @@ def harness_run(
     if result.stderr:
         typer.echo(result.stderr, err=True)
     raise typer.Exit(code=result.exit_code)
+
+
+@harness_app.command("serve")
+def harness_serve(
+    host: str = typer.Option("127.0.0.1", help="Bind host."),
+    port: int = typer.Option(8011, help="Bind port."),
+) -> None:
+    """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
+    import uvicorn
+
+    from fx1.serve.api import app as harness_api
+
+    if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
+        typer.echo(
+            "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    uvicorn.run(harness_api, host=host, port=port, reload=False)
 
 
 _BACKEND_HELP = (

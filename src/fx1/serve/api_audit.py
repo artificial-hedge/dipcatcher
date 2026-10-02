@@ -1,0 +1,312 @@
+"""api_audit — adversarial probes on the fx-1 harness HTTP surface.
+
+The harness API (``fx1.serve.api``) is the network half of the harness
+contract: anything reachable over the socket must be exactly what the
+in-process ``Harness`` allows — no more. These probes pin that parity:
+
+- *Registry parity* — every command in ``HARNESS_REGISTRY`` is listed and
+  executable; unregistered names 404 over the wire exactly as ``Harness.get``
+  raises in-process.
+- *Containment parity* — ``config`` / ``extra_args=--config`` escapes hit
+  the same ``configs/`` allowlist and 422; a config keyword on a non-local
+  backend is refused.
+- *Fail-closed shape* — wrong field types, unknown keys, empty message
+  lists, oversized bodies, and bad methods all 4xx uniformly; nothing
+  reaches a route handler malformed.
+- *Completion gate* — completions run through ``cited_complete``, so a
+  backend that emits a forbidden headline is cut off at the gate (502)
+  rather than served; unconfigured BYOK/hosted creds surface as 503, a
+  backend that doesn't exist as 422.
+- *Verification surface* — ``POST /receipts/verify`` verifies arbitrary
+  payloads through the same ``verify_receipt_payload`` the CLI uses;
+  malformed receipts fail closed, never crash.
+- *Auth posture* — ``/health`` is the only public route; ``FX1_API_KEY``
+  set → every other route requires ``X-API-Key`` (compare_digest); unset →
+  non-loopback clients 403. Security headers on every response.
+
+Sealed ``api_audit.v1`` (fx1-side receipt).
+"""
+
+from __future__ import annotations
+
+import os
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+    from fastapi.testclient import TestClient
+
+__all__ = ["api_audit", "api_audit_bench"]
+
+_API_KEY_ENV = "FX1_API_KEY"
+_BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+
+
+def _client(
+    api_key: str | None = None,
+) -> tuple[TestClient, ModuleType]:
+    """(TestClient, api_module) — isolated env per construction."""
+    from fastapi.testclient import TestClient
+
+    import fx1.serve.api as api_mod
+    from fx1.harness import Harness
+
+    # An injected runner keeps the audit hermetic — probes never spawn real
+    # lab processes, exactly like harness_audit's in-process probes.
+    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
+        return 0, f"ran:{' '.join(argv)}", ""
+
+    saved = {k: os.environ.get(k) for k in (_API_KEY_ENV, *(_BYOK_ENVS), "MOONSHOT_API_KEY")}
+    try:
+        if api_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = api_key
+        app = api_mod.create_app(harness=Harness(runner=fake_runner))
+        return TestClient(app, raise_server_exceptions=False), api_mod
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def api_audit() -> dict[str, Any]:
+    out: dict[str, Any] = {}
+
+    client, api_mod = _client()
+    from fx1.harness import HARNESS_REGISTRY
+
+    # --- registry parity ---------------------------------------------------
+    resp = client.get("/harness/commands")
+    names = {c["name"] for c in resp.json()["items"]}
+    out["commands_all_listed"] = resp.status_code == 200 and names == {
+        c.name for c in HARNESS_REGISTRY
+    }
+    resp = client.get("/harness/commands", params={"role": "verification"})
+    out["commands_role_filter"] = resp.status_code == 200 and all(
+        c["role"] == "verification" for c in resp.json()["items"]
+    )
+    out["commands_role_bad_422"] = (
+        client.get("/harness/commands", params={"role": "bogus"}).status_code == 422
+    )
+
+    # --- execution surface ---------------------------------------------------
+    resp = client.post("/harness/runs", json={"command": "doctor"})
+    body = resp.json()
+    out["run_executes"] = (
+        resp.status_code == 200
+        and body["ok"] is True
+        and body["exit_code"] == 0
+        and "doctor" in body["stdout"]
+    )
+    out["run_unknown_404"] = (
+        client.post("/harness/runs", json={"command": "pwn"}).status_code == 404
+    )
+    out["run_extra_key_422"] = (
+        client.post("/harness/runs", json={"command": "doctor", "evil": True}).status_code == 422
+    )
+    out["run_args_wrongtype_422"] = (
+        client.post(
+            "/harness/runs", json={"command": "doctor", "extra_args": "rm -rf /"}
+        ).status_code
+        == 422
+    )
+    out["run_method_shape"] = client.get("/harness/runs").status_code == 405
+    out["run_timeout_pinned"] = resp.json()["timeout_s"] > 0 if resp.status_code == 200 else False
+
+    # --- containment parity ------------------------------------------------
+    out["config_escape_422"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "config": "/etc/passwd"},
+        ).status_code
+        == 422
+    )
+    out["extra_args_config_escape_422"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "extra_args": ["--config", "/etc/passwd"]},
+        ).status_code
+        == 422
+    )
+    out["extra_args_config_eq_escape_422"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "extra_args": ["--config=/etc/passwd"]},
+        ).status_code
+        == 422
+    )
+
+    # --- completion surface --------------------------------------------------
+    for name in _BYOK_ENVS:
+        os.environ.pop(name, None)
+    os.environ.pop("MOONSHOT_API_KEY", None)
+    out["complete_byok_unconfigured_503"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 503
+    )
+    out["complete_hosted_unconfigured_503"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 503
+    )
+    out["complete_unknown_backend_422"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "bogus",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 422
+    )
+    out["complete_empty_messages_422"] = (
+        client.post("/harness/complete", json={"backend": "byok", "messages": []}).status_code
+        == 422
+    )
+    out["complete_checkpoint_misplaced_422"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "ping"}],
+                "checkpoint_dir": "./no-such-dir",
+            },
+        ).status_code
+        == 422
+    )
+    out["complete_local_no_checkpoint_422"] = (
+        client.post(
+            "/harness/complete",
+            json={
+                "backend": "local_fx1",
+                "messages": [{"role": "user", "content": "ping"}],
+            },
+        ).status_code
+        == 422
+    )
+
+    # honesty gate fires over the wire: a backend emitting a forbidden
+    # headline must not serve it.
+    class _DirtyBackend:
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            return "The strategy achieved a sharpe of 2.1 on the tape."
+
+    # Injected resolver — the honesty gate must hold even when the model
+    # behind the socket is adversarial.
+    from fastapi.testclient import TestClient as _TC2
+
+    dirty = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyBackend()))
+    out["complete_honesty_gate_502"] = (
+        dirty.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "report"}],
+            },
+        ).status_code
+        == 502
+    )
+
+    # --- receipt verification -------------------------------------------------
+    from fx1.serve.byok_audit import byok_audit_bench
+
+    good = byok_audit_bench()
+    resp = client.post("/receipts/verify", json={"receipt": good})
+    out["receipt_valid_payload"] = resp.status_code == 200 and resp.json()["valid"] is True
+    tampered = dict(good)
+    tampered["receipt_sha256"] = "0" * 64
+    resp = client.post("/receipts/verify", json={"receipt": tampered})
+    out["receipt_tamper_detected"] = resp.status_code == 200 and resp.json()["valid"] is False
+    resp = client.post("/receipts/verify", json={"receipt": {"not": "a receipt"}})
+    out["receipt_malformed_fails_closed"] = (
+        resp.status_code == 200 and resp.json()["valid"] is False
+    )
+    out["receipt_non_object_422"] = (
+        client.post("/receipts/verify", json={"receipt": [1, 2]}).status_code == 422
+    )
+    out["receipt_verify_never_5xx"] = client.post(
+        "/receipts/verify",
+        json={"receipt": {"nested": {"deep": [[{"x": None}]]}}},
+    ).status_code in (200, 422)
+
+    # --- auth + headers ---------------------------------------------------------
+    health_resp = client.get("/health")
+    out["health_public"] = health_resp.status_code == 200
+    health = health_resp.json()
+    out["health_no_secrets"] = all(isinstance(v, bool) for v in health["backends"].values()) and (
+        os.environ.get("MOONSHOT_API_KEY", "\x00") not in health_resp.text
+    )
+
+    secured, _ = _client(api_key="k3y-material")
+    out["auth_required_401"] = secured.get("/harness/commands").status_code == 401
+    out["auth_wrong_key_401"] = (
+        secured.get("/harness/commands", headers={"X-API-Key": "wrong"}).status_code == 401
+    )
+    out["auth_accepts_key"] = (
+        secured.get("/harness/commands", headers={"X-API-Key": "k3y-material"}).status_code == 200
+    )
+    out["auth_health_still_public"] = secured.get("/health").status_code == 200
+
+    out["loopback_served"] = client.get("/harness/commands").status_code == 200
+    from fastapi.testclient import TestClient as _TC
+
+    # A non-loopback client with no key configured is refused outright.
+    remote_client = _TC(client.app, client=("203.0.113.7", 9))
+    out["remote_refused_403"] = remote_client.get("/harness/commands").status_code == 403
+
+    out["security_headers"] = all(
+        h in client.get("/health").headers and h in client.get("/harness/commands").headers
+        for h in ("x-content-type-options", "cache-control", "referrer-policy")
+    )
+    big = client.post(
+        "/receipts/verify",
+        content=b" " * ((1 << 20) + 1),
+        headers={"content-type": "application/json"},
+    )
+    out["body_cap_413"] = big.status_code == 413
+
+    return out
+
+
+def api_audit_bench() -> dict[str, Any]:
+    """Sealed receipt: every probe True under api_audit.v1."""
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+    from quant_fund.utils.reproducibility import git_revision
+
+    r = api_audit()
+    ok = all(v is True for v in r.values())
+    out: dict[str, Any] = {
+        "kind": "api_audit",
+        "schema": "api_audit.v1",
+        "git_revision": git_revision(),
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "claim": {"results": r, "ok": ok},
+        "interpretation": (
+            "Harness API holds: registry parity with the in-process Harness, "
+            "configs/ containment over the wire, uniform 4xx fail-closed shape, "
+            "the honesty gate fires on model output (502), credential-less "
+            "backends 503, arbitrary receipts verify through the posted "
+            "payload, and auth is X-API-Key or loopback-only."
+            if ok
+            else f"HARNESS API AUDIT DEFECT: {r}"
+        ),
+    }
+    out["receipt_sha256"] = hash_bytes(canonical_json_bytes(out))
+    return out
