@@ -2614,3 +2614,4 @@ wave 213 (2026-10-02): SDP/relaxation canon — sdp_maxcut, eigenvalue_opt, sos_
 wave 214 (2026-10-02): online-algorithms canon — ski_rental, marking_paging, work_function_kserver, ranking_matching, secretary_prophet, online_gradient; 1256→1262 families.
 wave 215 (2026-10-02): stochastic-programming canon — two_stage_lshaped, scenario_tree, saa_consistency, chance_scenario, dro_wasserstein, robust_budget; 1262→1268 families.
 wave 216 (2026-10-02): advanced-MC-sampling canon — parallel_tempering, wang_landau, umbrella_sampling, metadynamics, wham, thermo_integration; 1268→1274 families.
+wave 217 (2026-10-02): estimation/filtering canon — hinf_filter, cubature_kalman, mhe, variational_bayes, huber_filter, particle_smoother; 1274→1280 families.
