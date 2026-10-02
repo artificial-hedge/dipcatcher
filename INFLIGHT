@@ -2567,3 +2567,4 @@ wave 166 (2026-10-02): meta-learning canon — reptile, protonet, matching_net, 
 wave 167 (2026-10-02): graph-exotics canon — algo_reasoning, pna_agg, virtual_node, gps_transformer, oversmooth_metric, dgn_directional; 974→980 families.
 wave 168 (2026-10-02): RL-exotics canon — awac, redq, td7_lite, crossq, dr3_reg, ob2i; 980→986 families.
 wave 169 (2026-10-02): amortized-inference canon — advi_bbvi, iwae_bound, nf_vi, sparse_gp_sv, structured_vi, vrnn_seq; 986→992 families.
+wave 170 (2026-10-02): causal-DL-2 canon — xlearner, rlearner, slearner_tlearner, causal_rep_bal, cate_distill, net_drlearner; 992→998 families.
