@@ -1200,6 +1200,85 @@ def api_audit() -> dict[str, Any]:
     ]
     out["job_events_keepalive_frames"] = ": keepalive" in blk_resp.text
 
+    # --- batch submit: per-item outcomes, per-item idempotency ---------------
+    b_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=4,
+    )
+    bc = _TC2(b_app)
+    b_resp = bc.post(
+        "/harness/jobs/batch",
+        json={
+            "jobs": [
+                {"command": "doctor", "idempotency_key": "bk1"},
+                {"command": "doctor"},
+                {"command": "no-such-command"},
+            ]
+        },
+    )
+    b_out = b_resp.json()
+    out["jobs_batch_per_item"] = (
+        b_resp.status_code == 202
+        and b_out["submitted"] == 2
+        and b_out["failed"] == 1
+        and bool(b_out["jobs"][0].get("job_id"))
+        and b_out["jobs"][2]["code"] == "not_found"
+    )
+    b_replay = bc.post(
+        "/harness/jobs/batch",
+        json={"jobs": [{"command": "doctor", "idempotency_key": "bk1"}]},
+    ).json()
+    out["jobs_batch_idem_replay"] = (
+        b_replay["submitted"] == 1
+        and b_replay["jobs"][0]["replayed"] is True
+        and b_replay["jobs"][0]["job_id"] == b_out["jobs"][0]["job_id"]
+    )
+    b_conflict = bc.post(
+        "/harness/jobs/batch",
+        json={"jobs": [{"command": "operations", "idempotency_key": "bk1"}]},
+    ).json()
+    out["jobs_batch_idem_conflict"] = (
+        b_conflict["failed"] == 1
+        and b_conflict["jobs"][0]["code"] == "conflict"
+        and b_conflict["jobs"][0]["job_id"] is None
+    )
+    out["jobs_batch_empty_422"] = (
+        bc.post("/harness/jobs/batch", json={"jobs": []}).status_code == 422
+    )
+    out["jobs_batch_over_cap_422"] = (
+        bc.post("/harness/jobs/batch", json={"jobs": [{"command": "doctor"}] * 65}).status_code
+        == 422
+    )
+    # single-submit idempotency via the body field (header still wins)
+    body_key = bc.post(
+        "/harness/jobs", json={"command": "doctor", "idempotency_key": "hdr-body"}
+    ).json()
+    body_key2 = bc.post(
+        "/harness/jobs",
+        json={"command": "doctor", "idempotency_key": "hdr-body"},
+        headers={"Idempotency-Key": "hdr-body"},
+    ).json()
+    out["jobs_body_idem_replays"] = (
+        body_key2["replayed"] is True and body_key2["job_id"] == body_key["job_id"]
+    )
+    cap_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=1,
+    )
+    cap_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    cc2 = _TC2(cap_app)
+    cap_out = cc2.post(
+        "/harness/jobs/batch",
+        json={"jobs": [{"command": "doctor"}, {"command": "doctor"}]},
+    ).json()
+    out["jobs_batch_capacity_partial"] = (
+        cap_out["submitted"] == 1
+        and cap_out["failed"] == 1
+        and cap_out["jobs"][1]["code"] == "over_capacity"
+    )
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 

@@ -1218,6 +1218,31 @@ def parity_audit() -> dict[str, bool]:
         out["client_stream_job_empty_raises"] = False
     except HarnessTransportError:
         out["client_stream_job_empty_raises"] = True
+
+    # --- batch submit: one POST carrying the item list -----------------------
+    def _batch_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        cb_seen.append({"_url": url, "_payload": payload})
+        return (
+            202,
+            {},
+            b'{"jobs": [{"index": 0, "job_id": "jb0", "status": "queued",'
+            b' "replayed": false}], "submitted": 1, "failed": 0}',
+        )
+
+    c_batch = HarnessClient("http://harness.test", transport=_batch_transport)
+    bout = c_batch.submit_batch([{"command": "doctor", "idempotency_key": "b1"}])
+    out["client_submit_batch"] = (
+        bout["submitted"] == 1
+        and bout["jobs"][0]["job_id"] == "jb0"
+        and cb_seen[-1]["_url"].endswith("/harness/jobs/batch")
+        and cb_seen[-1]["_payload"]["jobs"][0]["idempotency_key"] == "b1"
+    )
     return out
 
 

@@ -547,6 +547,12 @@ def e2e_audit() -> dict[str, bool]:
                 and frames[-1]["status"] == "succeeded"
             )
             out["e2e_wait_run_stream"] = hc.wait_run_stream(jid).command == "doctor"
+            bout = hc.submit_batch([{"command": "doctor"}, {"command": "doctor"}])
+            out["e2e_jobs_batch"] = (
+                bout["submitted"] == 2
+                and bout["failed"] == 0
+                and all(item.get("job_id") for item in bout["jobs"])
+            )
         finally:
             server7.should_exit = True
             server7_thread.join(timeout=15)

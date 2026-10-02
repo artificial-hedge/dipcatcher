@@ -105,6 +105,16 @@
         ]
       }
     },
+    "/harness/jobs/batch": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "202",
+          "422"
+        ]
+      }
+    },
     "/harness/jobs/{job_id}": {
       "delete": {
         "params": [
@@ -226,5 +236,5 @@
       }
     }
   },
-  "schema_sha256": "274185ab6f50ea4d16f2a65be470a64ae79b95f56eec3fef5e8c10db201ad9bd"
+  "schema_sha256": "77f316777d946246f6a9b90ceb37c9e29e23d74692a49c5ea681e7f718fd66c7"
 }

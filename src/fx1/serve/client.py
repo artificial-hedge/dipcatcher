@@ -377,6 +377,20 @@ class HarnessClient:
         )
         return str(out["job_id"])
 
+    def submit_batch(
+        self,
+        jobs: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """POST /harness/jobs/batch — fan-out submit, one request.
+
+        Each item is a run-request dict (``command``, ``extra_args``,
+        ``config``, ``callback_url``, ``callback_secret``); a per-item
+        ``idempotency_key`` dedups retries (headers carry no per-item
+        keys). Per-item failures land in ``jobs[i].error``/``code`` —
+        the response carries ``submitted``/``failed`` counts."""
+        out = self._json("POST", "/harness/jobs/batch", {"jobs": jobs})
+        return dict(out)
+
     def job_status(self, job_id: str) -> dict[str, Any]:
         """Live job record: ``status`` in queued/running/succeeded/
         failed/cancelled; ``result`` (the HarnessRunResponse fields)

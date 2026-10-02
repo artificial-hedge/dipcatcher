@@ -185,6 +185,11 @@ class HarnessRunRequest(_Model):
     # HMAC signing secret for the callback delivery — never echoed on the
     # job record (stored as a PrivateAttr, excluded from serialization).
     callback_secret: str | None = None
+    # In-body dedup key: on the single-submit route the Idempotency-Key
+    # header wins when both are present; on batch submit this is the only
+    # channel. Excluded from the idempotency fingerprint (it's transport,
+    # not payload semantics).
+    idempotency_key: str | None = Field(default=None, max_length=_IDEM_KEY_MAX)
 
     @field_validator("callback_url")
     @classmethod
@@ -481,7 +486,7 @@ def _submit_job(
     key = (idempotency_key or "").strip() or None
     if key is not None and len(key) > _IDEM_KEY_MAX:
         raise ApiError(400, "Idempotency-Key must be <= 256 chars")
-    body_fp = body.model_dump_json()
+    body_fp = body.model_dump_json(exclude={"idempotency_key"})
     if key is not None:
         entry = job_store.get_key(key)
         if entry is not None:
@@ -580,7 +585,50 @@ def _mount_job_routes(
         """Async run submission: work starts in the background, the caller
         polls ``GET /harness/jobs/{job_id}`` for the terminal record.
         Same drain/cap/idempotency contract as the sync route."""
-        return _submit_job(body, idempotency_key, lab, job_store, metrics, inflight, jobs_executor)
+        return _submit_job(
+            body,
+            idempotency_key or body.idempotency_key,
+            lab,
+            job_store,
+            metrics,
+            inflight,
+            jobs_executor,
+        )
+
+    @app.post("/harness/jobs/batch", response_model=JobBatchResponse, status_code=202)
+    def submit_jobs_batch(body: JobBatchRequest) -> JobBatchResponse:
+        """Fan-out submit: each item takes the same path as the single
+        route — command validation, drain latch, inflight cap, and
+        per-item ``idempotency_key`` dedup (headers carry no per-item
+        keys, so the body field is the channel here). An item that fails
+        lands in its own ``jobs[i]`` slot as ``{error, code}`` — the
+        batch reports honest ``submitted``/``failed`` counts rather than
+        turning one bad item into a whole-batch failure."""
+        items: list[JobBatchItemResponse] = []
+        submitted = 0
+        for i, req in enumerate(body.jobs):
+            try:
+                resp = _submit_job(
+                    req,
+                    req.idempotency_key,
+                    lab,
+                    job_store,
+                    metrics,
+                    inflight,
+                    jobs_executor,
+                )
+                items.append(
+                    JobBatchItemResponse(
+                        index=i,
+                        job_id=resp.job_id,
+                        status=resp.status,
+                        replayed=resp.replayed,
+                    )
+                )
+                submitted += 1
+            except ApiError as exc:
+                items.append(JobBatchItemResponse(index=i, error=str(exc.detail), code=exc.code))
+        return JobBatchResponse(jobs=items, submitted=submitted, failed=len(body.jobs) - submitted)
 
     @app.get("/harness/jobs", response_model=JobListResponse)
     def list_jobs(
@@ -693,6 +741,34 @@ class JobListResponse(_Model):
 
     jobs: list[JobStatusResponse]
     total: int
+
+
+_JOB_BATCH_MAX = 64
+
+
+class JobBatchRequest(_Model):
+    """Batch submit envelope — ``min_length``/``max_length`` fail closed:
+    an empty batch and an over-cap batch are both 422s."""
+
+    jobs: list[HarnessRunRequest] = Field(min_length=1, max_length=_JOB_BATCH_MAX)
+
+
+class JobBatchItemResponse(_Model):
+    """Per-item outcome — either the submit tuple or the ApiError the
+    item failed with (``code`` carries the machine-stable class)."""
+
+    index: int
+    job_id: str | None = None
+    status: _JobStatus | None = None
+    replayed: bool | None = None
+    error: str | None = None
+    code: str | None = None
+
+
+class JobBatchResponse(_Model):
+    jobs: list[JobBatchItemResponse]
+    submitted: int
+    failed: int
 
 
 class _JobStore:
@@ -1133,8 +1209,8 @@ def create_app(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
-        body_fp = body.model_dump_json()
-        key, replay = _idem_lookup(idempotency_key, idem_store, body_fp)
+        body_fp = body.model_dump_json(exclude={"idempotency_key"})
+        key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
         if replay is not None:
             return replay
         with _work_gate():

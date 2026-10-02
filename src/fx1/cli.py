@@ -648,6 +648,29 @@ def harness_submit(
     typer.echo(job_id)
 
 
+@harness_app.command("submit-batch")
+def harness_submit_batch(
+    spec: Path = typer.Argument(
+        ..., help="JSON file: a list of run-request objects (command, extra_args, …)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Submit a batch of jobs in one request; prints the per-item outcome JSON."""
+    _need_remote(remote)
+    try:
+        jobs = json.loads(spec.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        typer.echo(f"cannot read batch spec {spec}: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    if not isinstance(jobs, list):
+        typer.echo("batch spec must be a JSON list of run-request objects", err=True)
+        raise typer.Exit(code=2)
+    out = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).submit_batch(jobs))
+    typer.echo(json.dumps(out, indent=2))
+
+
 @harness_app.command("job")
 def harness_job(
     job_id: str = typer.Argument(..., help="Job id returned by harness submit."),

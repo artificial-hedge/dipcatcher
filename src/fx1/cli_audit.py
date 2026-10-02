@@ -371,6 +371,17 @@ def cli_audit() -> dict[str, Any]:
             self.last_wait = kw.get("timeout_s")
             return HarnessResult(command="doctor", exit_code=0, stdout="ran", stderr="")
 
+        def submit_batch(self, jobs: list[dict[str, Any]]) -> dict[str, Any]:
+            self.last_batch = list(jobs)
+            return {
+                "jobs": [
+                    {"index": i, "job_id": f"jb{i}", "status": "queued", "replayed": False}
+                    for i in range(len(jobs))
+                ],
+                "submitted": len(jobs),
+                "failed": 0,
+            }
+
         def stream_job(self, job_id: str, **kw: Any) -> list[dict[str, Any]]:
             self.last_job = job_id
             self.last_stream_timeout = kw.get("timeout_s")
@@ -588,6 +599,37 @@ def cli_audit() -> dict[str, Any]:
             and "ran" in rww.stdout
             and remotes[-1].last_job == "j-7"
         )
+        import tempfile  # noqa: PLC0415
+        from pathlib import Path as _Path  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as btd:
+            spec = _Path(btd) / "batch.json"
+            spec.write_text(
+                json.dumps(
+                    [
+                        {"command": "doctor", "idempotency_key": "b1"},
+                        {"command": "operations"},
+                    ]
+                )
+            )
+            rbs = runner.invoke(
+                app,
+                ["harness", "submit-batch", str(spec), "--remote", "http://h.test"],
+            )
+            out["cli_submit_batch"] = (
+                rbs.exit_code == 0
+                and json.loads(rbs.stdout)["submitted"] == 2
+                and remotes[-1].last_batch[0]["idempotency_key"] == "b1"
+            )
+            bad_spec = _Path(btd) / "notalist.json"
+            bad_spec.write_text(json.dumps({"command": "doctor"}))
+            out["cli_submit_batch_not_list_2"] = (
+                runner.invoke(
+                    app,
+                    ["harness", "submit-batch", str(bad_spec), "--remote", "http://h.test"],
+                ).exit_code
+                == 2
+            )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:
