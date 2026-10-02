@@ -2531,3 +2531,4 @@ wave 130 (2026-10-02): offline-RL sequence decision — decision_transformer, cq
 wave 131 (2026-10-02): generative sequence — vq_vae_ts, flow_matching_ts, score_sde_ts, consistency_ts, energy_ts, perceiver_ts; 758→764 families.
 wave 132 (2026-10-02): OOD-detection canon — mahalanobis_ood, max_softmax_ood, gradient_norm_ood, energy_ood, knn_ood, vim_ood; 764→770 families.
 wave 133 (2026-10-02): neural-process + amortized-UQ canon — neural_process, attentive_np, deep_kernel_gp, convnp, meta_uq, llaplace_gp; 770→776 families.
+wave 134 (2026-10-02): differentiable-optimization canon — optnet_qp, cvxpy_layer, input_convex, deep_declarative, spd_net, diff_mpc; 776→782 families.

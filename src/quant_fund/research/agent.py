@@ -1061,6 +1061,14 @@ from quant_fund.research.benches_w133 import (
     bench_meta_uq_family,
     bench_neural_process_family,
 )
+from quant_fund.research.benches_w134 import (
+    bench_cvxpy_layer_family,
+    bench_deep_declarative_family,
+    bench_diff_mpc_family,
+    bench_input_convex_family,
+    bench_optnet_qp_family,
+    bench_spd_net_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3410,6 +3418,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "convnp": bench_convnp_family(),
         "meta_uq": bench_meta_uq_family(),
         "llaplace_gp": bench_llaplace_gp_family(),
+        "optnet_qp": bench_optnet_qp_family(),
+        "cvxpy_layer": bench_cvxpy_layer_family(),
+        "input_convex": bench_input_convex_family(),
+        "deep_declarative": bench_deep_declarative_family(),
+        "spd_net": bench_spd_net_family(),
+        "diff_mpc": bench_diff_mpc_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
