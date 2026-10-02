@@ -2564,3 +2564,4 @@ wave 163 (2026-10-02): lifelong-CL canon — packnet_cl, lwf_cl, der_cl, agem_cl
 wave 164 (2026-10-02): Bayesian-DL canon — swag_diag, mc_dropout, bbb_vi, snapshot_ens, concrete_dropout, vcl_online; 956→962 families.
 wave 165 (2026-10-02): conditional-density canon — mdn_cond, flow_regression, diffusion_regressor, het_gp, crps_net, kernel_mixture; 962→968 families.
 wave 166 (2026-10-02): meta-learning canon — reptile, protonet, matching_net, anil_meta, meta_sgd, r2d2_meta; 968→974 families.
+wave 167 (2026-10-02): graph-exotics canon — algo_reasoning, pna_agg, virtual_node, gps_transformer, oversmooth_metric, dgn_directional; 974→980 families.

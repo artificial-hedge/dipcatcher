@@ -2206,6 +2206,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "anil_meta",
         "meta_sgd",
         "r2d2_meta",
+        # Wave-167 graph-exotics canon:
+        # algo reasoning, PNA, virtual
+        # node, GPS, oversmooth, DGN.
+        "algo_reasoning",
+        "pna_agg",
+        "virtual_node",
+        "gps_transformer",
+        "oversmooth_metric",
+        "dgn_directional",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
