@@ -917,6 +917,14 @@ from quant_fund.research.benches_w115 import (
     bench_pce_family,
     bench_smolyak_family,
 )
+from quant_fund.research.benches_w116 import (
+    bench_cfr_family,
+    bench_lemke_howson_family,
+    bench_nash_bargain_family,
+    bench_replicator_family,
+    bench_vcg_family,
+    bench_wardrop_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3158,6 +3166,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "kl_expand": bench_kl_expand_family(),
         "active_subspace": bench_active_subspace_family(),
         "mimc": bench_mimc_family(),
+        "cfr": bench_cfr_family(),
+        "lemke_howson": bench_lemke_howson_family(),
+        "replicator": bench_replicator_family(),
+        "wardrop": bench_wardrop_family(),
+        "vcg": bench_vcg_family(),
+        "nash_bargain": bench_nash_bargain_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

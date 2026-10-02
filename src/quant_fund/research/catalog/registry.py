@@ -1731,6 +1731,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kl_expand",
         "active_subspace",
         "mimc",
+        # Wave-116 canon: game theory —
+        # CFR, Lemke–Howson,
+        # replicator, Wardrop, VCG,
+        # Nash bargaining.
+        "cfr",
+        "lemke_howson",
+        "replicator",
+        "wardrop",
+        "vcg",
+        "nash_bargain",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
