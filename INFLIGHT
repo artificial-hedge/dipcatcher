@@ -2258,4 +2258,11 @@ note: canon PR to follow.
     (518->524); agent.py wiring; tests: 6 module
     files + test_benches_w91 (43 tests).
   - Canon staged on top of w90-canon.
+  wave92:
+  - "metaheuristic_optimizers","bayesian_optimization",
+    "fuzzy_clustering","self_organizing_maps",
+    "pagerank_topology","hyperband_search"
+    (524->530); agent.py wiring; tests: 6 module
+    files + test_benches_w92 (30 tests).
+  - Canon staged on top of w91-canon.
 note: canon PR to follow.

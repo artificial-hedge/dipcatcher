@@ -725,6 +725,14 @@ from quant_fund.research.benches_w91 import (
     bench_robust_regression,
     bench_unconstrained_optimizers,
 )
+from quant_fund.research.benches_w92 import (
+    bench_bayesian_optimization,
+    bench_fuzzy_clustering,
+    bench_hyperband_search,
+    bench_metaheuristic_optimizers,
+    bench_pagerank_topology,
+    bench_self_organizing_maps,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2822,6 +2830,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "robust_regression": bench_robust_regression(),
         "empirical_bayes": bench_empirical_bayes(),
         "design_experiments": bench_design_experiments(),
+        "metaheuristic_optimizers": bench_metaheuristic_optimizers(),
+        "bayesian_optimization": bench_bayesian_optimization(),
+        "fuzzy_clustering": bench_fuzzy_clustering(),
+        "self_organizing_maps": bench_self_organizing_maps(),
+        "pagerank_topology": bench_pagerank_topology(),
+        "hyperband_search": bench_hyperband_search(),
     }
 
     hyps = _build_hypotheses(families, rankers)

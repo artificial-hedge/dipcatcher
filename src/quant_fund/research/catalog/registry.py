@@ -1418,6 +1418,25 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "robust_regression",
         "empirical_bayes",
         "design_experiments",
+        # Wave-92 canon: simulated
+        # annealing/DE/PSO/GA +
+        # NSGA-II metaheuristics,
+        # GP-EI/UCB/PI Bayesian
+        # optimization, fuzzy
+        # c-means + PC/PE/Xie-Beni,
+        # Kohonen SOM + LVQ1,
+        # PageRank/HITS/conductance
+        # link topology, and
+        # successive-halving/
+        # Hyperband search. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "metaheuristic_optimizers",
+        "bayesian_optimization",
+        "fuzzy_clustering",
+        "self_organizing_maps",
+        "pagerank_topology",
+        "hyperband_search",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
