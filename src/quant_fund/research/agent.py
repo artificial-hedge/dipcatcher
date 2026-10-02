@@ -789,6 +789,14 @@ from quant_fund.research.benches_w99 import (
     bench_multi_task_family,
     bench_tensor_power_family,
 )
+from quant_fund.research.benches_w100 import (
+    bench_anderson_accel_family,
+    bench_homotopy_continuation_family,
+    bench_iterative_ls_family,
+    bench_qmc_sequences_family,
+    bench_sequence_accel_family,
+    bench_symplectic_ode_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2934,6 +2942,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "tensor_power": bench_tensor_power_family(),
         "evidential": bench_evidential_family(),
         "multi_task": bench_multi_task_family(),
+        "homotopy_continuation": bench_homotopy_continuation_family(),
+        "anderson_accel": bench_anderson_accel_family(),
+        "sequence_accel": bench_sequence_accel_family(),
+        "iterative_ls": bench_iterative_ls_family(),
+        "qmc_sequences": bench_qmc_sequences_family(),
+        "symplectic_ode": bench_symplectic_ode_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

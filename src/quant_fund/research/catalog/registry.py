@@ -1550,6 +1550,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tensor_power",
         "evidential",
         "multi_task",
+        # Wave-100 canon: homotopy
+        # continuation, Anderson
+        # acceleration, sequence
+        # accel, LSQR/CGLS, low-
+        # discrepancy QMC, and
+        # symplectic integrators.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "homotopy_continuation",
+        "anderson_accel",
+        "sequence_accel",
+        "iterative_ls",
+        "qmc_sequences",
+        "symplectic_ode",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

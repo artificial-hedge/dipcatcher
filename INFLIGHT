@@ -2314,4 +2314,11 @@ note: canon PR to follow.
     (566->572); agent.py wiring; tests: 6 module
     files + test_benches_w99.
   - Canon staged on top of w98-canon.
+  wave100:
+  - "homotopy_continuation","anderson_accel",
+    "sequence_accel","iterative_ls",
+    "qmc_sequences","symplectic_ode"
+    (572->578); agent.py wiring; tests: 6 module
+    files + test_benches_w100.
+  - Canon staged on top of w99-canon.
 note: canon PR to follow.
