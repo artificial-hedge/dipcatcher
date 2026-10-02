@@ -368,12 +368,42 @@ class HarnessClient:
         return str(out["job_id"])
 
     def job_status(self, job_id: str) -> dict[str, Any]:
-        """Live job record: ``status`` in queued/running/succeeded/failed;
-        ``result`` (the HarnessRunResponse fields) appears once terminal."""
+        """Live job record: ``status`` in queued/running/succeeded/
+        failed/cancelled; ``result`` (the HarnessRunResponse fields)
+        appears once terminal."""
         out = self._json(
             "GET",
             f"/harness/jobs/{urllib.parse.quote(job_id)}",
             idempotent=True,
+        )
+        return dict(out)
+
+    def list_jobs(
+        self,
+        *,
+        status: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        """GET /harness/jobs — inventory page, newest first; ``total`` is
+        the filtered count so callers can page until offset >= total."""
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if status is not None:
+            params["status"] = status
+        out = self._json(
+            "GET",
+            "/harness/jobs?" + urllib.parse.urlencode(params),
+            idempotent=True,
+        )
+        return dict(out)
+
+    def cancel_job(self, job_id: str) -> dict[str, Any]:
+        """DELETE /harness/jobs/{job_id} — cooperative cancel: a queued
+        job lands 'cancelled' and its slot frees on dequeue; a running
+        or terminal job maps the 409 through the error table."""
+        out = self._json(
+            "DELETE",
+            f"/harness/jobs/{urllib.parse.quote(job_id)}",
         )
         return dict(out)
 
@@ -404,6 +434,8 @@ class HarnessClient:
                 )
             if st["status"] == "failed":
                 raise HarnessJobError(f"job {job_id} failed: {st.get('error')}")
+            if st["status"] == "cancelled":
+                raise HarnessJobError(f"job {job_id} cancelled")
             remaining = None if deadline is None else deadline - self._clock()
             if remaining is not None and remaining <= 0:
                 raise HarnessTransportError(f"job {job_id} did not finish within {timeout_s}s")

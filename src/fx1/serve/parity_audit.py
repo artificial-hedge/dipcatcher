@@ -1027,6 +1027,7 @@ def parity_audit() -> dict[str, bool]:
         )
 
     from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
+    from fx1.serve.client import HarnessJobError  # noqa: PLC0415
 
     coded = HarnessClient("http://harness.test", transport=_coded_transport)
     try:
@@ -1034,6 +1035,54 @@ def parity_audit() -> dict[str, bool]:
         out["client_error_code_carried"] = False
     except BackendNotConfiguredError as exc:
         out["client_error_code_carried"] = exc.code == "draining"
+
+    # ---- job lifecycle: list / cancel / wait-on-cancelled ------------------
+    lifecycle_calls: list[tuple[str, str]] = []
+
+    def _jobs_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        lifecycle_calls.append((method, url))
+        if method == "DELETE":
+            return (
+                200,
+                {},
+                b'{"job_id": "j1", "status": "cancelled", "created_at": 1.0,'
+                b' "finished_at": 2.0, "result": null, "error": null}',
+            )
+        if url.startswith("http://harness.test/harness/jobs?"):
+            return (
+                200,
+                {},
+                b'{"jobs": [{"job_id": "j1", "status": "queued", "created_at": 1.0,'
+                b' "finished_at": null, "result": null, "error": null}], "total": 1}',
+            )
+        return (
+            200,
+            {},
+            b'{"job_id": "j1", "status": "cancelled", "created_at": 1.0,'
+            b' "finished_at": 2.0, "result": null, "error": null}',
+        )
+
+    cj = HarnessClient("http://harness.test", transport=_jobs_transport)
+    page = cj.list_jobs(status="queued", limit=5, offset=10)
+    out["client_list_jobs"] = page["total"] == 1 and any(
+        "status=queued" in u and "limit=5" in u and "offset=10" in u for _m, u in lifecycle_calls
+    )
+    out["client_cancel_job"] = (
+        cj.cancel_job("j1")["status"] == "cancelled"
+        and lifecycle_calls[-1][0] == "DELETE"
+        and "/harness/jobs/j1" in lifecycle_calls[-1][1]
+    )
+    try:
+        cj.wait_run("j1", poll_s=0.01, timeout_s=5.0)
+        out["client_wait_cancelled_raises"] = False
+    except HarnessJobError:
+        out["client_wait_cancelled_raises"] = True
     return out
 
 

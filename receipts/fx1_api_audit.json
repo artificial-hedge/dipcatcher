@@ -1,7 +1,7 @@
 {
   "kind": "api_audit",
   "schema": "api_audit.v1",
-  "git_revision": "58896a600535059fb13e1631731d1e5057431530",
+  "git_revision": "0519c40effc913aebe2e470157eeccd323e90dd3",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -84,12 +84,23 @@
       "job_status_unknown_404": true,
       "job_idem_replay": true,
       "job_idem_conflict_409": true,
-      "job_method_shape": true,
+      "job_list_200": true,
+      "job_list_status_filter": true,
+      "job_list_paging": true,
+      "job_list_bad_status_422": true,
       "job_drain_refuses_submit": true,
       "job_status_under_drain": true,
       "job_replay_under_drain": true,
       "job_bound_evicts": true,
       "job_max_validated": true,
+      "job_queues_when_workers_busy": true,
+      "job_cancel_queued_200": true,
+      "job_cancel_idempotent_200": true,
+      "job_cancel_unknown_404": true,
+      "job_cancelled_never_runs": true,
+      "job_cancel_active_409": true,
+      "job_cancel_succeeded_409": true,
+      "job_cancel_slot_recovered": true,
       "receipt_valid_payload": true,
       "receipt_tamper_detected": true,
       "receipt_malformed_fails_closed": true,
@@ -138,5 +149,5 @@
     "ok": true
   },
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
-  "receipt_sha256": "cf578082291cfb393cd291d9cc7c483b807cdd196cc1c11c0451b4ade409a686"
+  "receipt_sha256": "0fe6af19854f2159990ce96bc3bb0e21ba9d178e80898239886d0d7ed498f7b0"
 }

@@ -614,6 +614,40 @@ def harness_job(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("jobs")
+def harness_jobs(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    status: str | None = typer.Option(
+        None, "--status", help="Filter: queued|running|succeeded|failed|cancelled."
+    ),
+    limit: int = typer.Option(100, "--limit", help="Page size (max 500)."),
+    offset: int = typer.Option(0, "--offset", help="Skip the newest N jobs."),
+) -> None:
+    """List the job inventory (newest first) with total for paging."""
+    _need_remote(remote)
+    page = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).list_jobs(
+            status=status, limit=limit, offset=offset
+        )
+    )
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("cancel")
+def harness_cancel(
+    job_id: str = typer.Argument(..., help="Job id returned by harness submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a queued job; running/terminal jobs report a 409 conflict."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).cancel_job(job_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
 @harness_app.command("wait")
 def harness_wait(
     job_id: str = typer.Argument(..., help="Job id returned by harness submit."),

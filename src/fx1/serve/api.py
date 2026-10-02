@@ -267,9 +267,13 @@ class VersionResponse(_Model):
     fx1_version: str
 
 
+_JOB_STATUSES = ("queued", "running", "succeeded", "failed", "cancelled")
+_JobStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
+
+
 class JobSubmitResponse(_Model):
     job_id: str
-    status: Literal["queued", "running", "succeeded", "failed"]
+    status: _JobStatus
     replayed: bool = False
 
 
@@ -277,7 +281,7 @@ class JobStatusResponse(_Model):
     """Live job record; ``result`` appears only once status is terminal."""
 
     job_id: str
-    status: Literal["queued", "running", "succeeded", "failed"]
+    status: _JobStatus
     created_at: float
     finished_at: float | None
     result: HarnessRunResponse | None
@@ -425,6 +429,10 @@ def _submit_job(
     )
 
     def _exec() -> None:
+        if job.status == "cancelled":
+            metrics.release()
+            inflight.release()
+            return
         job.status = "running"
         try:
             result = lab.run(
@@ -459,6 +467,59 @@ def _submit_job(
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
 
+def _mount_job_routes(
+    app: FastAPI,
+    lab: Harness,
+    job_store: _JobStore,
+    metrics: _Metrics,
+    inflight: threading.BoundedSemaphore,
+    jobs_executor: ThreadPoolExecutor,
+) -> None:
+    """Async job lifecycle routes: submit (202) / status / list / cancel.
+    Submit is gated by drain + max_inflight; reads and cancel are
+    control-plane and stay open under drain."""
+
+    @app.post("/harness/jobs", response_model=JobSubmitResponse, status_code=202)
+    def submit_job(
+        body: HarnessRunRequest,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JobSubmitResponse:
+        """Async run submission: work starts in the background, the caller
+        polls ``GET /harness/jobs/{job_id}`` for the terminal record.
+        Same drain/cap/idempotency contract as the sync route."""
+        return _submit_job(body, idempotency_key, lab, job_store, metrics, inflight, jobs_executor)
+
+    @app.get("/harness/jobs", response_model=JobListResponse)
+    def list_jobs(
+        status: _JobStatus | None = Query(default=None),
+        limit: int = Query(default=100, ge=1, le=500),
+        offset: int = Query(default=0, ge=0),
+    ) -> JobListResponse:
+        """Job inventory, newest first: ``status`` filter + offset/limit
+        paging; ``total`` is the filtered count before the page is cut."""
+        jobs = job_store.list(status=status)
+        return JobListResponse(jobs=jobs[offset : offset + limit], total=len(jobs))
+
+    @app.get("/harness/jobs/{job_id}", response_model=JobStatusResponse)
+    def job_status(job_id: str) -> JobStatusResponse:
+        job = job_store.get(job_id)
+        if job is None:
+            raise ApiError(404, f"unknown job_id {job_id!r}")
+        return job
+
+    @app.delete("/harness/jobs/{job_id}", response_model=JobStatusResponse)
+    def cancel_job(job_id: str) -> JobStatusResponse:
+        """Cooperative cancel: a queued job flips to 'cancelled' and its
+        executor slot frees on dequeue. Running and terminal jobs 409 —
+        the subprocess runner has no mid-run kill handle."""
+        job, outcome = job_store.cancel(job_id)
+        if job is None:
+            raise ApiError(404, f"unknown job_id {job_id!r}")
+        if outcome != "cancelled":
+            raise ApiError(409, f"job {job_id!r} is {outcome}")
+        return job
+
+
 class _IdemStore:
     """Bounded LRU of ``Idempotency-Key`` -> run response.
 
@@ -488,6 +549,13 @@ class _IdemStore:
                 self._map.popitem(last=False)
 
 
+class JobListResponse(_Model):
+    """Job inventory page: ``total`` is the filtered count before paging."""
+
+    jobs: list[JobStatusResponse]
+    total: int
+
+
 class _JobStore:
     """Bounded store of async run jobs + their Idempotency-Key index.
 
@@ -507,6 +575,29 @@ class _JobStore:
     def get(self, job_id: str) -> JobStatusResponse | None:
         with self._lock:
             return self._jobs.get(job_id)
+
+    def list(self, status: str | None = None) -> list[JobStatusResponse]:
+        """Newest-first snapshot, optionally filtered by status."""
+        with self._lock:
+            jobs = list(self._jobs.values())
+        jobs.reverse()
+        if status is not None:
+            jobs = [j for j in jobs if j.status == status]
+        return jobs
+
+    def cancel(self, job_id: str) -> tuple[JobStatusResponse | None, str]:
+        """Cooperative cancel: a 'queued' job flips to 'cancelled' (the
+        worker frees its slot on dequeue without running). Running and
+        terminal jobs report their status so the route can 409."""
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return None, "missing"
+            if job.status == "queued":
+                job.status = "cancelled"
+                job.finished_at = time.time()
+                return job, "cancelled"
+            return job, job.status
 
     def get_key(self, key: str) -> tuple[str, str] | None:
         with self._lock:
@@ -822,22 +913,7 @@ def create_app(
             idem_store.put(key, body_fp, resp)
         return resp
 
-    @app.post("/harness/jobs", response_model=JobSubmitResponse, status_code=202)
-    def submit_job(
-        body: HarnessRunRequest,
-        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
-    ) -> JobSubmitResponse:
-        """Async run submission: work starts in the background, the caller
-        polls ``GET /harness/jobs/{job_id}`` for the terminal record.
-        Same drain/cap/idempotency contract as the sync route."""
-        return _submit_job(body, idempotency_key, lab, job_store, metrics, inflight, jobs_executor)
-
-    @app.get("/harness/jobs/{job_id}", response_model=JobStatusResponse)
-    def job_status(job_id: str) -> JobStatusResponse:
-        job = job_store.get(job_id)
-        if job is None:
-            raise ApiError(404, f"unknown job_id {job_id!r}")
-        return job
+    _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
 
     def _resolve_request_backend(backend_name: str, checkpoint_dir: str | None) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""

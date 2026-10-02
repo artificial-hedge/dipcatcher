@@ -815,7 +815,23 @@ def api_audit() -> dict[str, Any]:
         ).status_code
         == 409
     )
-    out["job_method_shape"] = jclient.get("/harness/jobs").status_code == 405
+    # inventory: newest-first listing with status filter + offset/limit paging
+    lst = jclient.get("/harness/jobs").json()
+    out["job_list_200"] = "jobs" in lst and isinstance(lst["total"], int) and lst["total"] >= 1
+    out["job_list_status_filter"] = all(
+        j["status"] == "succeeded"
+        for j in jclient.get("/harness/jobs", params={"status": "succeeded"}).json()["jobs"]
+    )
+    page1 = jclient.get("/harness/jobs", params={"limit": 1}).json()
+    page2 = jclient.get("/harness/jobs", params={"limit": 1, "offset": 1}).json()
+    out["job_list_paging"] = (
+        len(page1["jobs"]) == 1
+        and page2["jobs"]
+        and page1["jobs"][0]["job_id"] != page2["jobs"][0]["job_id"]
+    )
+    out["job_list_bad_status_422"] = (
+        jclient.get("/harness/jobs", params={"status": "bogus"}).status_code == 422
+    )
     # drain: new submissions refused; existing records still readable
     jclient.post("/harness/drain")
     out["job_drain_refuses_submit"] = (
@@ -847,6 +863,51 @@ def api_audit() -> dict[str, Any]:
         out["job_max_validated"] = False
     except ValueError:
         out["job_max_validated"] = True
+
+    # cooperative cancel: occupy both executor workers without slots
+    # (slots == workers, so jobs only stay queued when a worker is busy
+    # without holding one) -> both jobs queue deterministically.
+    qapp = api_mod.create_app(
+        harness=_Harness(runner=_slow_runner),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=2,
+    )
+    qc = _TC2(qapp)
+    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
+    qapp.state.jobs_executor.submit(lambda: time.sleep(2.5))
+    j1 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    j2 = qc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    out["job_queues_when_workers_busy"] = (
+        qc.get(f"/harness/jobs/{j2}").json()["status"] == "queued"
+        and qc.get(f"/harness/jobs/{j1}").json()["status"] == "queued"
+    )
+    cancelled = qc.delete(f"/harness/jobs/{j2}")
+    out["job_cancel_queued_200"] = (
+        cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
+    )
+    # DELETE is idempotent: re-cancelling the cancelled job re-reads 200
+    out["job_cancel_idempotent_200"] = qc.delete(f"/harness/jobs/{j2}").status_code == 200
+    out["job_cancel_unknown_404"] = qc.delete("/harness/jobs/nope").status_code == 404
+    out["job_cancelled_never_runs"] = (
+        qc.get(f"/harness/jobs/{j2}").json()["result"] is None
+        and qc.get(f"/harness/jobs/{j2}").json()["finished_at"] is not None
+    )
+    # once a worker frees, j1 dequeues; deleting a live or finished job is 409
+    dl = time.monotonic() + 10.0
+    while qc.get(f"/harness/jobs/{j1}").json()["status"] == "queued" and time.monotonic() < dl:
+        time.sleep(0.05)
+    out["job_cancel_active_409"] = qc.delete(f"/harness/jobs/{j1}").status_code == 409
+    dl = time.monotonic() + 10.0
+    while qc.get(f"/harness/jobs/{j1}").json()["status"] not in ("succeeded", "failed") and (
+        time.monotonic() < dl
+    ):
+        time.sleep(0.05)
+    out["job_cancel_succeeded_409"] = qc.delete(f"/harness/jobs/{j1}").status_code == 409
+    # the cancelled job's slot frees once its executor task dequeues
+    dl = time.monotonic() + 10.0
+    while qc.get("/metrics").json()["inflight"] != 0 and time.monotonic() < dl:
+        time.sleep(0.1)
+    out["job_cancel_slot_recovered"] = qc.get("/metrics").json()["inflight"] == 0
 
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench

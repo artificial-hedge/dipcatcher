@@ -371,6 +371,16 @@ def e2e_audit() -> dict[str, bool]:
                 st["status"] == "succeeded" and st["result"]["command"] == "doctor"
             )
             out["e2e_job_unknown_404"] = _raises(lambda: jremote.job_status("nope")) == "KeyError"
+            page = jremote.list_jobs()
+            out["e2e_job_list"] = page["total"] >= 1 and any(
+                j["job_id"] == j1 for j in page["jobs"]
+            )
+            out["e2e_job_list_filter"] = (
+                jremote.list_jobs(status="succeeded")["jobs"][0]["status"] == "succeeded"
+            )
+            out["e2e_job_cancel_terminal_409"] = (
+                _raises(lambda: jremote.cancel_job(j1)) == "HarnessTransportError"
+            )
             rdy = jremote.ready()
             out["e2e_ready_200"] = rdy["ready"] is True and isinstance(rdy["inflight"], int)
             ver = jremote.server_version()
@@ -413,6 +423,37 @@ def e2e_audit() -> dict[str, bool]:
             out["e2e_drain_wait_blocks"] = d1["drained"] is True and d1["inflight"] == 0
         finally:
             server4.should_exit = True
+            server4_thread.join(timeout=15)
+
+        # cooperative cancel over the real wire: occupy both executor
+        # workers without slots (slots == workers) so jobs stay queued.
+        server5_app = api_mod.create_app(harness=Harness(runner=_slow_runner), max_inflight=2)
+        server5, server5_thread, port5 = _serve_uvicorn(server5_app)
+        try:
+            cremote = HarnessClient(f"http://127.0.0.1:{port5}", api_key=_API_KEY, timeout_s=15.0)
+            server5_app.state.jobs_executor.submit(lambda: time.sleep(4.0))
+            server5_app.state.jobs_executor.submit(lambda: time.sleep(4.0))
+            c1 = cremote.submit_run("doctor")
+            c2 = cremote.submit_run("doctor")
+            out["e2e_job_queued_while_workers_busy"] = (
+                cremote.job_status(c2)["status"] == "queued"
+                and cremote.job_status(c1)["status"] == "queued"
+            )
+            out["e2e_job_cancel_queued"] = cremote.cancel_job(c2)["status"] == "cancelled"
+            out["e2e_job_wait_cancelled_raises"] = (
+                _raises(lambda: cremote.wait_run(c2, poll_s=0.05, timeout_s=15.0))
+                == "HarnessJobError"
+            )
+            # the surviving queued job runs once a worker frees
+            dl = time.monotonic() + 15.0
+            st = cremote.job_status(c1)
+            while st["status"] == "queued" and time.monotonic() < dl:
+                time.sleep(0.1)
+                st = cremote.job_status(c1)
+            out["e2e_job_survivor_runs"] = st["status"] in ("running", "succeeded")
+        finally:
+            server5.should_exit = True
+            server5_thread.join(timeout=15)
             server4_thread.join(timeout=15)
     finally:
         if server is not None:

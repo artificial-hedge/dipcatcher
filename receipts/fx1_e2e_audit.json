@@ -1,7 +1,7 @@
 {
   "kind": "e2e_audit",
   "schema": "e2e_audit.v1",
-  "git_revision": "58896a600535059fb13e1631731d1e5057431530",
+  "git_revision": "0519c40effc913aebe2e470157eeccd323e90dd3",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -37,6 +37,9 @@
       "e2e_job_roundtrip": true,
       "e2e_job_status_fields": true,
       "e2e_job_unknown_404": true,
+      "e2e_job_list": true,
+      "e2e_job_list_filter": true,
+      "e2e_job_cancel_terminal_409": true,
       "e2e_ready_200": true,
       "e2e_version_route": true,
       "e2e_api_version_header": true,
@@ -45,10 +48,14 @@
       "e2e_job_replay_under_drain": true,
       "e2e_job_submit_under_drain": true,
       "e2e_drain_wait_timeout": true,
-      "e2e_drain_wait_blocks": true
+      "e2e_drain_wait_blocks": true,
+      "e2e_job_queued_while_workers_busy": true,
+      "e2e_job_cancel_queued": true,
+      "e2e_job_wait_cancelled_raises": true,
+      "e2e_job_survivor_runs": true
     },
     "ok": true
   },
   "interpretation": "end-to-end verified over real loopback sockets: HarnessClient drove health/registry/run/gated-complete/SSE-stream/batch/receipt-verify against uvicorn + the production middleware, with BYOK resolving to a real stub OpenAI engine \u2014 auth faults, gate refusals, size caps, and error classes all survive the wire. No Server header leaks the stack.",
-  "receipt_sha256": "303a79165f1f6502beae19ca714a8218fb39fdb1d525beaa3c91b8a2516b8417"
+  "receipt_sha256": "d92303b03872f650e8007fb84698e586942fe01af9b12e9e84dfca3a10d2e72e"
 }

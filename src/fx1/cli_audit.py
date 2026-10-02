@@ -295,6 +295,7 @@ def cli_audit() -> dict[str, Any]:
             self.last_job: str | None = None
             self.last_wait: float | None = None
             self.last_drain_wait: float | None = None
+            self.last_jobs_query: dict[str, Any] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -343,6 +344,17 @@ def cli_audit() -> dict[str, Any]:
         def job_status(self, job_id: str) -> dict[str, Any]:
             self.last_job = job_id
             return {"job_id": job_id, "status": "succeeded", "result": None}
+
+        def list_jobs(self, **kw: Any) -> dict[str, Any]:
+            self.last_jobs_query = dict(kw)
+            return {
+                "jobs": [{"job_id": "job-xyz", "status": "succeeded", "result": None}],
+                "total": 1,
+            }
+
+        def cancel_job(self, job_id: str) -> dict[str, Any]:
+            self.last_job = job_id
+            return {"job_id": job_id, "status": "cancelled", "result": None}
 
         def wait_run(self, job_id: str, **kw: Any) -> Any:
             from fx1.harness import HarnessResult
@@ -398,6 +410,32 @@ def cli_audit() -> dict[str, Any]:
         out["remote_version_json"] = (
             rv.exit_code == 0 and json.loads(rv.stdout)["api_version"] == "1"
         )
+        rj = runner.invoke(
+            app,
+            [
+                "harness",
+                "jobs",
+                "--remote",
+                "http://h.test",
+                "--status",
+                "succeeded",
+                "--limit",
+                "5",
+                "--offset",
+                "2",
+            ],
+        )
+        out["remote_jobs_json"] = (
+            rj.exit_code == 0
+            and json.loads(rj.stdout)["total"] == 1
+            and remotes[-1].last_jobs_query == {"status": "succeeded", "limit": 5, "offset": 2}
+        )
+        rcx = runner.invoke(app, ["harness", "cancel", "job-xyz", "--remote", "http://h.test"])
+        out["remote_cancel_json"] = (
+            rcx.exit_code == 0
+            and json.loads(rcx.stdout)["status"] == "cancelled"
+            and remotes[-1].last_job == "job-xyz"
+        )
 
     # ready under drain: client raises the mapped 503, CLI exits 1
     from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
@@ -426,6 +464,10 @@ def cli_audit() -> dict[str, Any]:
     out["drain_local_refused"] = rd_local.exit_code == 2 and "--remote" in rd_local.output
     rs_local = runner.invoke(app, ["harness", "submit", "doctor"])
     out["submit_local_refused"] = rs_local.exit_code == 2 and "--remote" in rs_local.output
+    rj_local = runner.invoke(app, ["harness", "jobs"])
+    out["jobs_local_refused"] = rj_local.exit_code == 2 and "--remote" in rj_local.output
+    rc_local = runner.invoke(app, ["harness", "cancel", "job-xyz"])
+    out["cancel_local_refused"] = rc_local.exit_code == 2 and "--remote" in rc_local.output
 
     # --idempotency-key reaches the remote client verbatim
     with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
