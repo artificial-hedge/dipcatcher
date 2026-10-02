@@ -378,6 +378,10 @@ class CompleteResponse(_Model):
     # timing middleware overhead; idempotent replays report the original call's
     # latency alongside ``replayed``.
     latency_ms: float
+    # Token counts reported by the endpoint for THIS call (prompt_tokens /
+    # completion_tokens / total_tokens where the provider supplies them);
+    # None when the backend has no usage channel — never fabricated.
+    usage: dict[str, int] | None = None
     # True when the response came from the Idempotency-Key cache — lets
     # fx-1 audit retried calls without paying for them twice.
     replayed: bool = False
@@ -406,6 +410,11 @@ class CompleteBatchResponse(_Model):
     model: str | None
     receipt_hashes: list[str]
     results: list[CompleteBatchItem]
+    # Sum of the backend's reported usage across this batch (a shared
+    # endpoint can't attribute counts per item under worker threads —
+    # only the batch-level delta is honest). None when the backend is
+    # silent on usage.
+    usage_total: dict[str, int] | None = None
     replayed: bool = False
 
 
@@ -1582,12 +1591,14 @@ def _mount_complete_routes(
         finally:
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
+        usage = getattr(backend, "last_usage", None)
         resp = CompleteResponse(
             backend=body.backend,
             model=model_name if isinstance(model_name, str) else None,
             content=content,
             receipt_hashes=body.receipt_hashes or [],
             latency_ms=(time.monotonic() - t0) * 1000.0,
+            usage=usage if isinstance(usage, dict) else None,
         )
         if key is not None:
             complete_idem_store.put(key, body_fp, resp)
@@ -1790,6 +1801,8 @@ def _mount_complete_routes(
             if breaker is not None and exc.status_code == 503:
                 breaker.report(_breaker_key(body), False)
             raise
+        usage_pre = getattr(backend, "total_usage", None)
+        usage_pre = dict(usage_pre) if isinstance(usage_pre, dict) else None
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
         # are per-slot verdicts: a gate refusal on one prompt does not lose
@@ -1854,11 +1867,19 @@ def _mount_complete_routes(
         finally:
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
+        usage_post = getattr(backend, "total_usage", None)
+        if isinstance(usage_post, dict) and usage_post:
+            usage_total = {
+                k: v - (usage_pre.get(k, 0) if usage_pre else 0) for k, v in usage_post.items()
+            }
+        else:
+            usage_total = None
         resp = CompleteBatchResponse(
             backend=body.backend,
             model=model_name if isinstance(model_name, str) else None,
             receipt_hashes=body.receipt_hashes or [],
             results=results,
+            usage_total=usage_total,
         )
         if key is not None:
             complete_batch_idem_store.put(key, body_fp, resp)

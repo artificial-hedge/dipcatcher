@@ -76,6 +76,10 @@ class CompletionResult:
     # Wire-only flag: True when the API replayed an idempotency-cached
     # response instead of re-running the model.
     replayed: bool = False
+    # Endpoint-reported token counts for this call (None when the backend
+    # has no usage channel). Never populated on ``complete_many`` items —
+    # a shared backend can't attribute counts per prompt.
+    usage: dict[str, int] | None = None
 
 
 @dataclass(frozen=True)
@@ -210,10 +214,12 @@ class Fx1Harness:
             if callable(closer):
                 closer()
         model_name = getattr(backend_obj, "_model", None)
+        usage = getattr(backend_obj, "last_usage", None)
         return CompletionResult(
             backend=backend,
             model=model_name if isinstance(model_name, str) else None,
             content=content,
+            usage=usage if isinstance(usage, dict) else None,
             receipt_hashes=tuple(receipt_hashes or ()),
         )
 

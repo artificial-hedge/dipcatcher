@@ -564,6 +564,10 @@ export interface components {
             replayed: boolean;
             /** Results */
             results: components["schemas"]["CompleteBatchItem"][];
+            /** Usage Total */
+            usage_total?: {
+                [key: string]: number;
+            } | null;
         };
         /** CompleteRequest */
         CompleteRequest: {
@@ -599,6 +603,10 @@ export interface components {
              * @default false
              */
             replayed: boolean;
+            /** Usage */
+            usage?: {
+                [key: string]: number;
+            } | null;
         };
         /**
          * DrainResponse

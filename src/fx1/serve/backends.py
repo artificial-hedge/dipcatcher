@@ -25,7 +25,7 @@ import urllib.parse
 import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Protocol, cast, runtime_checkable
+from typing import Any, Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
 
@@ -74,6 +74,45 @@ def _env_float(name: str, override: float | None, default: float) -> float:
     return val
 
 
+def _extract_usage(payload: Any) -> dict[str, int] | None:
+    """Pull the ``usage`` dict off an OpenAI-compatible response.
+
+    Returns only int-valued keys (``prompt_tokens``/``completion_tokens``/
+    ``total_tokens`` and friends); a missing or malformed block is ``None``
+    — the caller reports no usage rather than fabricating counts."""
+    usage = payload.get("usage") if isinstance(payload, dict) else None
+    if not isinstance(usage, dict):
+        return None
+    ints = {
+        str(k): int(v)
+        for k, v in usage.items()
+        if isinstance(v, (int, float)) and not isinstance(v, bool)
+    }
+    return ints or None
+
+
+class _UsageTracker:
+    """Per-call + cumulative token accounting, shared by the three backends.
+
+    ``last_usage`` is the most recent call's counts; ``total_usage``
+    accumulates under a lock so a backend shared across a batch's worker
+    threads reports correct totals. Backends whose endpoint omits usage
+    keep ``last_usage=None`` and an empty ``total_usage`` forever."""
+
+    def __init__(self) -> None:
+        self.last_usage: dict[str, int] | None = None
+        self.total_usage: dict[str, int] = {}
+        self._usage_lock = threading.Lock()
+
+    def _record_usage(self, usage: dict[str, int] | None) -> None:
+        self.last_usage = usage
+        if not usage:
+            return
+        with self._usage_lock:
+            for k, v in usage.items():
+                self.total_usage[k] = self.total_usage.get(k, 0) + v
+
+
 def _openai_chat_complete(
     url: str,
     *,
@@ -82,8 +121,11 @@ def _openai_chat_complete(
     timeout_s: float,
     api_key: str | None,
     label: str,
-) -> str:
-    """POST one OpenAI-compatible chat completion; map errors to RuntimeError."""
+) -> tuple[str, dict[str, int] | None]:
+    """POST one OpenAI-compatible chat completion; map errors to RuntimeError.
+
+    Returns ``(content, usage)`` — usage is ``None`` when the endpoint
+    omits the block (older servers, local engines)."""
     # temperature pinned to 0 — eval/teacher runs must be deterministic;
     # unpinned sampling makes eval results unreproducible across replays.
     body = json.dumps({"model": model, "messages": messages, "temperature": 0.0}).encode()
@@ -106,7 +148,7 @@ def _openai_chat_complete(
         raise RuntimeError(
             f"malformed {label} completion payload: content is {type(content).__name__}, not str"
         )
-    return content
+    return content, _extract_usage(payload)
 
 
 def _openai_chat_stream(
@@ -190,7 +232,7 @@ class StreamingBackend(Protocol):
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]: ...
 
 
-class HostedK3Backend:
+class HostedK3Backend(_UsageTracker):
     """Hosted Kimi K3 via the Moonshot API (stdlib HTTP; no new deps)."""
 
     def __init__(
@@ -205,6 +247,7 @@ class HostedK3Backend:
             raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        super().__init__()
         self._model = model
         self._api_url = api_url
         self._timeout_s = timeout_s
@@ -229,6 +272,7 @@ class HostedK3Backend:
             raise RuntimeError(
                 f"malformed completion payload: content is {type(content).__name__}, not str"
             )
+        self._record_usage(_extract_usage(payload))
         return content
 
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
@@ -243,7 +287,7 @@ class HostedK3Backend:
         )
 
 
-class OpenAICompatBackend:
+class OpenAICompatBackend(_UsageTracker):
     """BYOK — any OpenAI-compatible chat-completions endpoint.
 
     Lets the whole fx-1 eval/bench fleet run against user-supplied
@@ -290,13 +334,14 @@ class OpenAICompatBackend:
             raise RuntimeError(f"{BYOK_BASE_URL_ENV} must be an http(s) URL, got {url!r}")
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
+        super().__init__()
         self._url = _chat_completions_url(url)
         self._api_key = key
         self._model = mdl
         self._timeout_s = timeout_s
 
     def complete(self, messages: list[dict[str, str]]) -> str:
-        return _openai_chat_complete(
+        content, usage = _openai_chat_complete(
             self._url,
             model=self._model,
             messages=messages,
@@ -304,6 +349,8 @@ class OpenAICompatBackend:
             api_key=self._api_key,
             label="BYOK",
         )
+        self._record_usage(usage)
+        return content
 
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
         """Stream token deltas from the caller-declared endpoint."""
@@ -317,7 +364,7 @@ class OpenAICompatBackend:
         )
 
 
-class LocalFx1Backend:
+class LocalFx1Backend(_UsageTracker):
     """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
 
     fx-1 ships no in-process inference stack — the checkpoint is weights +
@@ -392,6 +439,7 @@ class LocalFx1Backend:
             model if model is not None else (os.environ.get(LOCAL_MODEL_ENV) or self.card.version)
         )
         self._api_key = api_key if api_key is not None else os.environ.get(LOCAL_API_KEY_ENV, "")
+        super().__init__()
         self._timeout_s = _env_float(LOCAL_TIMEOUT_S_ENV, timeout_s, 120.0)
         self._start_timeout_s = _env_float(LOCAL_START_TIMEOUT_S_ENV, start_timeout_s, 60.0)
         self._proc: subprocess.Popen[bytes] | None = None
@@ -455,7 +503,7 @@ class LocalFx1Backend:
                 "hardcodes endpoints); FX1_LOCAL_SERVE_CMD may spawn one"
             )
         self._ensure_engine()
-        return _openai_chat_complete(
+        content, usage = _openai_chat_complete(
             self._url,
             model=self._model,
             messages=messages,
@@ -463,6 +511,8 @@ class LocalFx1Backend:
             api_key=self._api_key or None,
             label="local_fx1",
         )
+        self._record_usage(usage)
+        return content
 
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
         """Stream token deltas; the engine is ensured before subscribing."""

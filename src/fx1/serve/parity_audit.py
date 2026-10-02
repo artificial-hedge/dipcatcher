@@ -586,6 +586,34 @@ def parity_audit() -> dict[str, bool]:
         out["client_role_filter"] = 0 < len(filtered) <= len(remote.commands()) and set(
             filtered
         ) <= set(remote.commands())
+
+        # usage accounting: the same endpoint counts surface identically on
+        # the in-process SDK, the wire JSON, and the remote client.
+        class _UsageBackend(_ParityBackend):
+            def __init__(self) -> None:
+                super().__init__()
+                self.last_usage: dict[str, int] | None = None
+                self.total_usage: dict[str, int] = {}
+
+            def complete(self, messages: list[dict[str, str]]) -> str:
+                u = {"prompt_tokens": 2, "total_tokens": 5}
+                self.last_usage = u
+                for k, v in u.items():
+                    self.total_usage[k] = self.total_usage.get(k, 0) + v
+                return super().complete(messages)
+
+        sdk_u, uclient = _surfaces(_UsageBackend)
+        sdk_usage = sdk_u.complete(msg, backend="byok").usage
+        wire_usage = uclient.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": msg},
+        ).json()["usage"]
+        remote_u = HarnessClient("http://harness.test", transport=_tc_transport(uclient))
+        out["usage_identical"] = (
+            sdk_usage == {"prompt_tokens": 2, "total_tokens": 5}
+            and wire_usage == sdk_usage
+            and remote_u.complete(msg, backend="byok").usage == sdk_usage
+        )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (

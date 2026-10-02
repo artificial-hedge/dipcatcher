@@ -308,6 +308,20 @@
             },
             "title": "Results",
             "type": "array"
+          },
+          "usage_total": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage Total"
           }
         },
         "required": [
@@ -433,6 +447,20 @@
             "default": false,
             "title": "Replayed",
             "type": "boolean"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
           }
         },
         "required": [

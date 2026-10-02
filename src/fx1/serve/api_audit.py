@@ -2336,6 +2336,63 @@ def api_audit() -> dict[str, Any]:
         "content-type"
     ].startswith("application/json")
 
+    # --- usage accounting -------------------------------------------------
+    # Token counts the endpoint reports ride the response — per-call on
+    # sync complete, batch-level delta on batch, absent (not fabricated)
+    # when the backend is silent.
+    class _UsageBackend(_CleanBackend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.last_usage: dict[str, int] | None = None
+            self.total_usage: dict[str, int] = {}
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
+            self.last_usage = usage
+            for k, v in usage.items():
+                self.total_usage[k] = self.total_usage.get(k, 0) + v
+            return super().complete(messages)
+
+    ube = _UsageBackend()
+    uapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: ube))
+    u_ok = uapp.post(
+        "/harness/complete", json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]}
+    )
+    out["usage_reported_on_sync"] = u_ok.status_code == 200 and u_ok.json()["usage"] == {
+        "prompt_tokens": 3,
+        "completion_tokens": 5,
+        "total_tokens": 8,
+    }
+    u_batch = uapp.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [
+                [{"role": "u", "content": "a"}],
+                [{"role": "u", "content": "b"}],
+            ],
+        },
+    )
+    out["usage_batch_total_is_delta"] = u_batch.status_code == 200 and u_batch.json()[
+        "usage_total"
+    ] == {"prompt_tokens": 6, "completion_tokens": 10, "total_tokens": 16}
+    silent = batch_client.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["usage_absent_when_backend_silent"] = (
+        silent.status_code == 200 and silent.json()["usage"] is None
+    )
+    # The pure extractor: non-int values drop, missing/malformed → None.
+    import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
+    out["usage_extract_filters"] = (
+        _be_mod._extract_usage({"usage": {"prompt_tokens": 3.0, "weird": "no", "neg": -1}})
+        == {"prompt_tokens": 3, "neg": -1}
+        and _be_mod._extract_usage({}) is None
+        and _be_mod._extract_usage({"usage": "broken"}) is None
+    )
+
     return out
 
 

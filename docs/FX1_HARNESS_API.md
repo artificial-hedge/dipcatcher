@@ -65,6 +65,17 @@ values are model-level 422s. SDK/`HarnessClient` take `timeout_s=`; the
 CLI takes `--backend-timeout` (distinct from `--timeout`, the HTTP
 transport deadline).
 
+**Usage accounting:** when the backend reports a usage block
+(`prompt_tokens`/`completion_tokens`/`total_tokens` for
+OpenAI-compatible endpoints), `POST /harness/complete` returns it as
+`usage` and `POST /harness/complete/batch` returns the batch's sum as
+`usage_total`. Counts are never synthesized: an endpoint that stays
+silent yields `usage: null`, and because one backend instance serves a
+whole batch under worker threads, the batch level is a before/after
+delta — per-item attribution would be a lie. Streaming leaves `usage`
+null (chunk deltas carry no reliable counts). The same values land on
+`CompletionResult.usage` in the SDK and `HarnessClient`.
+
 ## Routes
 
 | Route | Purpose |

@@ -576,6 +576,7 @@ class HarnessClient:
             content=out["content"],
             receipt_hashes=tuple(out["receipt_hashes"]),
             replayed=out.get("replayed", False),
+            usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
         )
 
     def complete_many(
