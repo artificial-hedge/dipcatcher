@@ -2583,3 +2583,4 @@ wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_sp
 wave 183 (2026-10-02): causal-structure-DL canon — notears, dagma_lin, golem_ev, notears_mlp, dag_gnn, cam_prune; 1070→1076 families.
 wave 184 (2026-10-02): training-dynamics canon — hessian_eig, ntk_kernel, edge_stability, mode_connectivity, catapult_phase, neural_grok; 1076→1082 families.
 wave 185 (2026-10-02): differentiable-algorithm canon — st_estimator, gumbel_relax, perturb_map, implicit_diff, ode_adjoint, smooth_argmax; 1082→1088 families.
+wave 186 (2026-10-02): energy-based-model canon — score_matching, denoising_sm, noise_contrastive, contrastive_divergence, persistent_cd, adversarial_ebm; 1088→1094 families.

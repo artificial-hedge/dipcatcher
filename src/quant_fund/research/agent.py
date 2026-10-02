@@ -1477,6 +1477,14 @@ from quant_fund.research.benches_w185 import (
     bench_smooth_argmax_family,
     bench_st_estimator_family,
 )
+from quant_fund.research.benches_w186 import (
+    bench_adversarial_ebm_family,
+    bench_contrastive_divergence_family,
+    bench_denoising_sm_family,
+    bench_noise_contrastive_family,
+    bench_persistent_cd_family,
+    bench_score_matching_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4138,6 +4146,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "implicit_diff": bench_implicit_diff_family(),
         "ode_adjoint": bench_ode_adjoint_family(),
         "smooth_argmax": bench_smooth_argmax_family(),
+        "score_matching": bench_score_matching_family(),
+        "denoising_sm": bench_denoising_sm_family(),
+        "noise_contrastive": bench_noise_contrastive_family(),
+        "contrastive_divergence": bench_contrastive_divergence_family(),
+        "persistent_cd": bench_persistent_cd_family(),
+        "adversarial_ebm": bench_adversarial_ebm_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

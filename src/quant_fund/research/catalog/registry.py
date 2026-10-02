@@ -2376,6 +2376,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "implicit_diff",
         "ode_adjoint",
         "smooth_argmax",
+        # Wave-186 energy-based-model canon:
+        # ISM, DSM, NCE, CD, PCD, adversarial.
+        "score_matching",
+        "denoising_sm",
+        "noise_contrastive",
+        "contrastive_divergence",
+        "persistent_cd",
+        "adversarial_ebm",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
