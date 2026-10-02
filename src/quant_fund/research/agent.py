@@ -1935,6 +1935,14 @@ from quant_fund.research.benches_w242 import (
     bench_viewstamped_family,
     bench_zab_protocol_family,
 )
+from quant_fund.research.benches_w243 import (
+    bench_bignum_family,
+    bench_fft_radix2_family,
+    bench_int_sqrt_family,
+    bench_karatsuba_family,
+    bench_ntt_family,
+    bench_strassen_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2074,6 +2082,12 @@ def _provenance(
         "columns": columns,
         "label": label,
         "source": str(config.data.source),
+        "bignum": bench_bignum_family,
+        "fft_radix2": bench_fft_radix2_family,
+        "int_sqrt": bench_int_sqrt_family,
+        "karatsuba": bench_karatsuba_family,
+        "ntt": bench_ntt_family,
+        "strassen": bench_strassen_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

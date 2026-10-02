@@ -2829,6 +2829,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "zab_protocol",
         "swim_gossip",
         "two_three_pc",
+        # Wave-243 numeric-2 canon.
+        "bignum",
+        "fft_radix2",
+        "int_sqrt",
+        "karatsuba",
+        "ntt",
+        "strassen",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
