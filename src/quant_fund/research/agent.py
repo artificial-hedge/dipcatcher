@@ -2071,6 +2071,14 @@ from quant_fund.research.benches_w259 import (
     bench_eth_switch_family,
     bench_nat_traversal_family,
 )
+from quant_fund.research.benches_w260 import (
+    bench_gale_chu_family,
+    bench_gale_shapley_family,
+    bench_hopcroft_karp_family,
+    bench_konig_cover_family,
+    bench_kuhn_munkres_family,
+    bench_topo_layers_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2312,6 +2320,12 @@ def _provenance(
         "arp_table": bench_arp_table_family,
         "dhcp_lease": bench_dhcp_lease_family,
         "eth_switch": bench_eth_switch_family,
+        "gale_shapley": bench_gale_shapley_family,
+        "hopcroft_karp": bench_hopcroft_karp_family,
+        "kuhn_munkres": bench_kuhn_munkres_family,
+        "konig_cover": bench_konig_cover_family,
+        "gale_chu": bench_gale_chu_family,
+        "topo_layers": bench_topo_layers_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

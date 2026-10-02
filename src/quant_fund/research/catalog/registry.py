@@ -2930,6 +2930,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "arp_table",
         "dhcp_lease",
         "eth_switch",
+        # Wave-260 matching canon.
+        "gale_shapley",
+        "hopcroft_karp",
+        "kuhn_munkres",
+        "konig_cover",
+        "gale_chu",
+        "topo_layers",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
