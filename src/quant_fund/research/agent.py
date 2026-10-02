@@ -1717,6 +1717,14 @@ from quant_fund.research.benches_w215 import (
     bench_scenario_tree_family,
     bench_two_stage_lshaped_family,
 )
+from quant_fund.research.benches_w216 import (
+    bench_metadynamics_family,
+    bench_parallel_tempering_family,
+    bench_thermo_integration_family,
+    bench_umbrella_sampling_family,
+    bench_wang_landau_family,
+    bench_wham_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4558,6 +4566,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "chance_scenario": bench_chance_scenario_family(),
         "dro_wasserstein": bench_dro_wasserstein_family(),
         "robust_budget": bench_robust_budget_family(),
+        "parallel_tempering": bench_parallel_tempering_family(),
+        "wang_landau": bench_wang_landau_family(),
+        "umbrella_sampling": bench_umbrella_sampling_family(),
+        "metadynamics": bench_metadynamics_family(),
+        "wham": bench_wham_family(),
+        "thermo_integration": bench_thermo_integration_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

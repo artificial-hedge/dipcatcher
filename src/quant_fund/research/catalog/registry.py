@@ -2619,6 +2619,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "chance_scenario",
         "dro_wasserstein",
         "robust_budget",
+        # Wave-216 advanced-MC-sampling canon: parallel tempering,
+        # Wang-Landau, umbrella, metadynamics, WHAM, thermo-integration.
+        "parallel_tempering",
+        "wang_landau",
+        "umbrella_sampling",
+        "metadynamics",
+        "wham",
+        "thermo_integration",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
