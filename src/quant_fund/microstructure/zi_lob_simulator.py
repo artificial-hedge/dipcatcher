@@ -52,6 +52,7 @@ References:
 
 from __future__ import annotations
 
+import heapq
 import math
 from collections import deque
 from collections.abc import Callable, Sequence
@@ -393,6 +394,39 @@ class ZILobConfig:
     # adverse-selection-aware quoting (makers refuse the touch). 0 is
     # bit-identical to the legacy placement.
     lo_offset: int = 0
+    # ``min_quote_dist`` >= 0: ambient density draws never land closer
+    # than this to the anchor — ``dist`` is floored at ``min_quote_dist``
+    # right after the CDF draw, piling all sub-floor mass at exactly the
+    # floor. The behavioral channel the tape's standing 9-21-tick spread
+    # needs (band_shape.v1 falsified every mechanical family): makers
+    # simply do not quote inside a minimum depth band. Only the ambient
+    # density path is floored — chase/crown/repost/join/improve classes
+    # and the post-fill narrowing marker still reach the touch. 0 is
+    # bit-identical (max(dist, 0) == dist, no extra draws).
+    min_quote_dist: int = 0
+    # ``zone_embargo`` >= 0: NO visible placement class lands strictly
+    # inside ``|level - ref| < zone_embargo`` — join/crown/improve/
+    # chase/repost/ambient levels are clamped to the embargo edge
+    # (ref - z for buys, ref + z for sells) after their class choice.
+    # The no-quote zone the tape's standing spread needs — a market
+    # maker's entire class set respects the zone, not only ambient
+    # draws (band_occupancy.v1 falsified the ambient-only floor).
+    # Applies only under ``anchor="ref"``. 0 is bit-identical (the
+    # clamp is gated on ``zone_embargo > 0``, no extra draws).
+    zone_embargo: int = 0
+    # ``maker_ttl`` >= 0: resting visible orders expire — auto-deleted
+    # ``maker_ttl`` events after submission (the tape's re-quote churn:
+    # deleted p50 is ~9 events). Expiry runs through the normal cancel
+    # path, so expiries count as deletes in event_counts, trigger
+    # ``_level_vacated`` reposts, and shorten maker age at fill. 0 is
+    # bit-identical (the expiry heap is never populated, no sweep).
+    maker_ttl: int = 0
+    # ``maker_requote`` ∈ [0, 1]: on ttl expiry, the maker re-rests at the
+    # SAME level with probability ``maker_requote`` (fresh order id, fresh
+    # ttl) — the tape's cancel-into-repost churn: depth stays constant
+    # while maker age keeps resetting. Active only with maker_ttl > 0;
+    # ttl 0 never reaches the expiry path regardless.
+    maker_requote: float = 0.0
     # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
     # order of a level immediately re-rests one unit at the SAME level
     # tagged ``iceberg`` — hidden reserve liquidity that refills after
@@ -756,6 +790,13 @@ class ZILobConfig:
         _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
+        if isinstance(self.min_quote_dist, bool) or int(self.min_quote_dist) < 0:
+            raise ValueError(f"min_quote_dist must be an int >= 0, got {self.min_quote_dist!r}")
+        if isinstance(self.zone_embargo, bool) or int(self.zone_embargo) < 0:
+            raise ValueError(f"zone_embargo must be an int >= 0, got {self.zone_embargo!r}")
+        if isinstance(self.maker_ttl, bool) or int(self.maker_ttl) < 0:
+            raise ValueError(f"maker_ttl must be an int >= 0, got {self.maker_ttl!r}")
+        _prob(self.maker_requote, "maker_requote")
         _prob(self.iceberg_reload, "iceberg_reload")
         if self.iceberg_reload_mode not in ("per_unit", "residual"):
             raise ValueError(
@@ -1283,6 +1324,8 @@ class ZILobSimulator:
         self._bids: dict[int, deque[int]] = {}
         self._asks: dict[int, deque[int]] = {}
         self._orders: dict[int, _Order] = {}
+        # (expiry event, order id); only populated when maker_ttl > 0.
+        self._ttl_pending: list[tuple[int, int]] = []
         self._next_id = 0
         self.trades: list[TradeEvent] = []
         self.n_events = 0
@@ -1302,6 +1345,14 @@ class ZILobSimulator:
         self.n_lo_capped = 0
         self.n_lo_reposts = 0
         self.n_requotes = 0
+        # Fill-repost fates: a due repost either rests or drops with a
+        # reason (the maker floor veto, natural refill, or the grid
+        # walked past). Only incremented while the queue drains.
+        self.n_repost_due = 0
+        self.n_repost_drop_floor = 0
+        self.n_repost_drop_refill = 0
+        self.n_repost_drop_walked = 0
+        self.n_repost_rested = 0
         # Cancel-distance histogram: bucket d counts cancels d ticks
         # from that side's touch; index 20 collects the tail.
         self.cxl_dist = [0] * 21
@@ -1618,6 +1669,8 @@ class ZILobSimulator:
         )
         dq.append(oid)
         self._orders[oid] = order
+        if self._cfg.maker_ttl > 0:
+            heapq.heappush(self._ttl_pending, (self.n_events + self._cfg.maker_ttl, oid))
         if tag == "chase":
             self._chase_oids.add(oid)
         self._n_orders_created += 1
@@ -1774,17 +1827,26 @@ class ZILobSimulator:
         marketable) — a refilled or walked-past vacancy is dropped.
         """
         keep: list[tuple[int, Side, int]] = []
+        floor = self._cfg.min_quote_dist if self._cfg.anchor == "ref" else 0
+        ref = int(round(self._ref_ema)) if floor > 0 else 0
         for due, side, level in self._fill_repost_q:
             if due > self.n_events:
                 keep.append((due, side, level))
                 continue
+            self.n_repost_due += 1
+            if floor > 0 and abs(level - ref) < floor:
+                self.n_repost_drop_floor += 1
+                continue  # the maker floor never re-seeds inside the band
             book = self._bids if side == "buy" else self._asks
             opp = self.best_ask_level if side == "buy" else self.best_bid_level
             if level in book:
+                self.n_repost_drop_refill += 1
                 continue  # natural refill already reseeded it
             if opp is not None and (level >= opp if side == "buy" else level <= opp):
+                self.n_repost_drop_walked += 1
                 continue  # the price grid walked past the vacancy
             self.n_lo_reposts += 1
+            self.n_repost_rested += 1
             for _ in range(self._cfg.repost_depth):
                 self._rest(side, level, "repost")
         self._fill_repost_q = keep
@@ -1813,10 +1875,17 @@ class ZILobSimulator:
         own = self.best_bid_level if side == "buy" else self.best_ask_level
         band = self._cfg.repost_band
         cause_filter = self._cfg.repost_cause
+        floor = self._cfg.min_quote_dist if self._cfg.anchor == "ref" else 0
+        ref = int(round(self._ref_ema)) if floor > 0 else 0
         for cand_l, (ev0, cause) in sorted(vacs.items(), key=lambda kv: kv[1][0], reverse=True):
             if now - ev0 > self._cfg.repost_window:
                 break  # sorted freshest-first; rest are staler
             if cause_filter == "fill" and cause != "fill":
+                continue
+            if floor > 0 and abs(cand_l - ref) < floor:
+                # The maker floor binds reposts too: a vacancy inside the
+                # no-quote band stays dead — its refill mass lands at the
+                # floor via the floored density draw instead.
                 continue
             if cand_l in book:
                 continue
@@ -2147,6 +2216,8 @@ class ZILobSimulator:
         dist = int(np.searchsorted(self._dist_cdf, float(self._rng.random()), side="left")) + 1
         if dist > band:
             dist = band
+        if self._cfg.min_quote_dist > 0 and dist < self._cfg.min_quote_dist:
+            dist = self._cfg.min_quote_dist
         ba, bb = self.best_ask_level, self.best_bid_level
         want_buy = u < bid_rate * (1.0 + self._tilt) if self._tilt != 0.0 else u < bid_rate
         # Post-fill narrowing: while the marker is live, placements on the
@@ -2258,6 +2329,9 @@ class ZILobSimulator:
                     level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
                 else:
                     level = ref - dist
+                zone_b = self._cfg.zone_embargo
+                if zone_b > 0 and level > ref - zone_b:
+                    level = ref - zone_b
                 if repost_l is None:
                     level = self._step_unhit("buy", level)
                 if repost_l is None and self._is_cooled("buy", level):
@@ -2311,6 +2385,9 @@ class ZILobSimulator:
                 level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
             else:
                 level = ref + dist
+            zone_s = self._cfg.zone_embargo
+            if zone_s > 0 and level < ref + zone_s:
+                level = ref + zone_s
             if repost_l is None:
                 level = self._step_unhit("sell", level)
             if repost_l is None and self._is_cooled("sell", level):
@@ -2617,6 +2694,24 @@ class ZILobSimulator:
         if dist == 0:
             self.n_cxl_touch += 1
 
+    def _expire_makers(self) -> None:
+        """Auto-delete resting orders older than ``maker_ttl`` events.
+
+        Runs through ``cancel_order`` so expiries count as deletes in
+        the event card and trigger the vacancy/repost machinery. Stale
+        heap entries (orders already filled or cancelled) are just
+        dropped. Bit-identical when ``maker_ttl == 0``.
+        """
+        while self._ttl_pending and self._ttl_pending[0][0] <= self.n_events:
+            _, oid = heapq.heappop(self._ttl_pending)
+            order = self._orders.get(oid)
+            if order is None:
+                continue
+            side, level = order.side, order.level
+            self.cancel_order(oid)
+            if self._rng.random() < self._cfg.maker_requote:
+                self._rest(side, level, "churn")
+
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""
         mu_eff, p_buy_eff = self._flow_params()
@@ -2654,6 +2749,8 @@ class ZILobSimulator:
         if self._fill_repost_q:
             self._drain_fill_reposts()
         self._hit_flee()
+        if self._cfg.maker_ttl > 0:
+            self._expire_makers()
         if kind == 0:
             self._limit_order_event()
             return "limit"
