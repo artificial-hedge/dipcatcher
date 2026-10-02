@@ -925,6 +925,14 @@ from quant_fund.research.benches_w116 import (
     bench_vcg_family,
     bench_wardrop_family,
 )
+from quant_fund.research.benches_w117 import (
+    bench_ddpg_family,
+    bench_gae_family,
+    bench_ppo_family,
+    bench_td3_family,
+    bench_trpo_family,
+    bench_vtrace_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3172,6 +3180,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "wardrop": bench_wardrop_family(),
         "vcg": bench_vcg_family(),
         "nash_bargain": bench_nash_bargain_family(),
+        "gae": bench_gae_family(),
+        "vtrace": bench_vtrace_family(),
+        "trpo": bench_trpo_family(),
+        "ppo": bench_ppo_family(),
+        "ddpg": bench_ddpg_family(),
+        "td3": bench_td3_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

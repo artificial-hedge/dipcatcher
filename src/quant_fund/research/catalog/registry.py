@@ -1741,6 +1741,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "wardrop",
         "vcg",
         "nash_bargain",
+        # Wave-117 canon: reinforcement
+        # learning — GAE, V-trace, TRPO,
+        # PPO, DDPG, TD3.
+        "gae",
+        "vtrace",
+        "trpo",
+        "ppo",
+        "ddpg",
+        "td3",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

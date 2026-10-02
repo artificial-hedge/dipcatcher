@@ -2513,4 +2513,5 @@ wave 113 (2026-09-30): multi-target tracking canon — jonker_volgenant, jpda, p
 wave 114 (2026-09-30): GNSS canon — gold_code, klobuchar, allan_variance, strapdown, lambda_method, rtk; 656→662 families.
 wave 115 (2026-09-30): UQ canon — smolyak, pce, bayesian_quadrature, kl_expand, active_subspace, mimc; 662→668 families.
 wave 116 (2026-09-30): game-theory canon — cfr, lemke_howson, replicator, wardrop, vcg, nash_bargain; 668→674 families.
+wave 117 (2026-09-30): RL canon — gae, vtrace, trpo, ppo, ddpg, td3; 674→680 families.
 note: canon PR to follow.
