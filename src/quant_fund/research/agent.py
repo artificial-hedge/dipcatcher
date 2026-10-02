@@ -1493,6 +1493,14 @@ from quant_fund.research.benches_w187 import (
     bench_spectral_pde_family,
     bench_weak_form_pinn_family,
 )
+from quant_fund.research.benches_w188 import (
+    bench_badge_embed_family,
+    bench_coreset_kcenter_family,
+    bench_egl_change_family,
+    bench_entropy_query_family,
+    bench_margin_sampling_family,
+    bench_qbc_committee_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4166,6 +4174,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "spectral_pde": bench_spectral_pde_family(),
         "moc_lines": bench_moc_lines_family(),
         "feynman_kac_mc": bench_feynman_kac_mc_family(),
+        "entropy_query": bench_entropy_query_family(),
+        "margin_sampling": bench_margin_sampling_family(),
+        "qbc_committee": bench_qbc_committee_family(),
+        "coreset_kcenter": bench_coreset_kcenter_family(),
+        "badge_embed": bench_badge_embed_family(),
+        "egl_change": bench_egl_change_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

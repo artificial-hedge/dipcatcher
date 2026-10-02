@@ -2393,6 +2393,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "spectral_pde",
         "moc_lines",
         "feynman_kac_mc",
+        # Wave-188 active-learning canon:
+        # entropy, margin, QBC, k-center,
+        # BADGE, EGL.
+        "entropy_query",
+        "margin_sampling",
+        "qbc_committee",
+        "coreset_kcenter",
+        "badge_embed",
+        "egl_change",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
