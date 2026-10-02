@@ -1325,6 +1325,14 @@ from quant_fund.research.benches_w166 import (
     bench_r2d2_meta_family,
     bench_reptile_family,
 )
+from quant_fund.research.benches_w167 import (
+    bench_algo_reasoning_family,
+    bench_dgn_directional_family,
+    bench_gps_transformer_family,
+    bench_oversmooth_metric_family,
+    bench_pna_agg_family,
+    bench_virtual_node_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3872,6 +3880,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "anil_meta": bench_anil_meta_family(),
         "meta_sgd": bench_meta_sgd_family(),
         "r2d2_meta": bench_r2d2_meta_family(),
+        "algo_reasoning": bench_algo_reasoning_family(),
+        "pna_agg": bench_pna_agg_family(),
+        "virtual_node": bench_virtual_node_family(),
+        "gps_transformer": bench_gps_transformer_family(),
+        "oversmooth_metric": bench_oversmooth_metric_family(),
+        "dgn_directional": bench_dgn_directional_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
