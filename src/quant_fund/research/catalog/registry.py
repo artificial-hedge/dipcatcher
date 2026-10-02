@@ -2078,6 +2078,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pate_teacher",
         "gradient_leakage",
         "canary_exposure",
+        # Wave-153 NAS canon:
+        # random, evolution, DARTS,
+        # ENAS-RL, one-shot, surrogate.
+        "random_search_nas",
+        "evolution_nas",
+        "darts_nas",
+        "enas_controller",
+        "one_shot_nas",
+        "arch_predictor",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
