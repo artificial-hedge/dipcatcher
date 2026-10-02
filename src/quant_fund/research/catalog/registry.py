@@ -2451,6 +2451,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hawkes_thinning",
         "levy_jump",
         "gp_bridge",
+        # Wave-195 ensemble/adaptive-MCMC canon: emcee stretch,
+        # DE-MCMC, DRAM, RJMCMC, pCN, independence MH.
+        "emcee_stretch",
+        "de_mcmc",
+        "dram",
+        "rjmcmc",
+        "pcn_sampler",
+        "indep_mh",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
