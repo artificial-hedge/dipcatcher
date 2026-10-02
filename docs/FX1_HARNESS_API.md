@@ -271,6 +271,18 @@ Client-side: `HarnessClient.chat_completion` /
 `listModels` in TS. Any OpenAI SDK works directly — point it at the
 harness `base_url` and use `model: "fx1"`.
 
+The same surface exists in-process: `Fx1Harness.openai_chat(request)`
+accepts the same request body dict (or a parsed
+`OpenAIChatRequest`) and optional `X-Fx1-*` header kwargs, and returns
+the `chat.completion` envelope plus the completion-log id;
+`openai_chat_stream(request)` returns the identical
+`chat.completion.chunk` payload sequence (minus SSE framing);
+`openai_models()` is the `/v1/models` inventory. Both surfaces
+translate through `fx1.serve.openai_compat` — one validation object,
+one backend-precedence order, one error taxonomy — and the parity
+audit pins envelope, chunk stream, rejection classes, and
+completion-log linkage identical across them.
+
 ## Auth & safety
 
 - `fx1 harness serve` binds **loopback-only** unless `FX1_API_KEY` is

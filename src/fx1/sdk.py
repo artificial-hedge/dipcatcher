@@ -37,7 +37,7 @@ import threading
 import time
 import urllib.parse
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,6 +55,17 @@ from fx1.serve.backends import (
 )
 from fx1.serve.chat import cited_complete
 from fx1.serve.evals import EvalRecord, EvalStore
+from fx1.serve.openai_compat import (
+    OpenAIChatRequest,
+    OpenAIChatResponse,
+    OpenAIModelList,
+    openai_chunks,
+    openai_envelope,
+    openai_to_kwargs,
+)
+from fx1.serve.openai_compat import (
+    openai_models as _openai_models,
+)
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
@@ -65,6 +76,9 @@ __all__ = [
     "GateCheckResult",
     "ProbeResult",
     "Fx1Harness",
+    "OpenAIChatRequest",
+    "OpenAIChatResponse",
+    "OpenAIModelList",
     "OpsMetrics",
     "ReceiptRef",
     "ReceiptVerdict",
@@ -1082,6 +1096,90 @@ class Fx1Harness:
             sampling_fields,
         )
         return chunks
+
+    def openai_models(self) -> OpenAIModelList:
+        """The ``GET /v1/models`` inventory in-process — `fx1` plus the
+        backend names an OpenAI ``model`` field may carry."""
+        return _openai_models()
+
+    def openai_chat(
+        self,
+        request: OpenAIChatRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[OpenAIChatResponse, str | None]:
+        """One OpenAI-surface chat completion, weights-direct.
+
+        ``request`` is the same body ``POST /v1/chat/completions`` takes —
+        a dict or a parsed :class:`OpenAIChatRequest`. ``headers`` accepts
+        the wire's ``X-Fx1-*`` knobs (backend/byok/checkpoint/fallbacks)
+        for callers porting a header-based integration; the ``fx1``
+        extension object covers the same ground in the body. Validation
+        and backend precedence come from ``fx1.serve.openai_compat`` —
+        the wire's own translation layer — so this path cannot drift from
+        ``/v1``: same fail-closed surface, same gate, same metering and
+        completion log.
+
+        Returns the ``chat.completion`` envelope (``id`` mints the
+        ``chatcmpl-`` handle; ``system_fingerprint`` is the serving
+        backend) plus the completion-log id for receipt lookup — ``None``
+        when the log dropped it.
+        """
+        body = (
+            request
+            if isinstance(request, OpenAIChatRequest)
+            else OpenAIChatRequest.model_validate(request)
+        )
+        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        result = self.complete(**kwargs)
+        cid = result.completion_id or uuid.uuid4().hex
+        envelope = openai_envelope(
+            cid=cid,
+            content=result.content,
+            backend=result.backend,
+            model=result.model,
+            usage=result.usage,
+        )
+        return OpenAIChatResponse.model_validate(envelope), result.completion_id
+
+    def openai_chat_stream(
+        self,
+        request: OpenAIChatRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """The ``stream: true`` surface in-process — chunk payloads.
+
+        Buffer-then-gate like ``stream_complete``: the completion runs
+        the gated pipeline, then the joined text chunks through the same
+        ``openai_chunks`` generator the wire serializes — a caller gets
+        the identical ``chat.completion.chunk`` sequence (role delta,
+        ~64-char whitespace deltas, ``finish_reason`` ``stop``, optional
+        ``choices: []``+``usage`` when ``stream_options.include_usage``),
+        minus the ``data:``/``[DONE]`` framing.
+
+        Returns ``(chunks, completion_id)`` — the id links to the
+        completion log and its sealed receipt.
+        """
+        body = (
+            request
+            if isinstance(request, OpenAIChatRequest)
+            else OpenAIChatRequest.model_validate(request)
+        )
+        kwargs = openai_to_kwargs(body, dict(headers or {}))
+        result = self.complete(**kwargs)
+        cid = result.completion_id or uuid.uuid4().hex
+        chunks = list(
+            openai_chunks(
+                text=result.content,
+                backend=result.backend,
+                model=result.model,
+                cid=cid,
+                include_usage=bool((body.stream_options or {}).get("include_usage")),
+                usage=result.usage,
+            )
+        )
+        return chunks, result.completion_id
 
     def _resolve_chain(
         self,

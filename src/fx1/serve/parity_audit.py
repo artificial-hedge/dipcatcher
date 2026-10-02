@@ -26,6 +26,12 @@ product defect, not a transport detail.
   digest, and a non-receipt dict.
 - *Registry/health parity* — command list and backend presence booleans
   are identical over both surfaces.
+- *OpenAI ingress parity* — ``/v1/chat/completions`` and
+  ``Fx1Harness.openai_chat`` translate through the same module
+  (``fx1.serve.openai_compat``): identical envelopes, identical chunk
+  sequences on the streaming surface, identical rejections under each
+  surface's own exception class, identical model inventory and
+  completion-log linkage.
 - *Remote-client parity* — ``HarnessClient`` (urllib transport injectable)
   returns the SDK's own result types; wire status codes map back to the
   SDK's exception classes (KeyError/ValueError/BackendNotConfiguredError/
@@ -361,6 +367,101 @@ def parity_audit() -> dict[str, bool]:
                 json={"backend": "byok", "batch": []},
             ).status_code
             == 422
+        )
+
+        # --- OpenAI ingress parity ----------------------------------------------
+        # One translation module (fx1.serve.openai_compat) serves both surfaces:
+        # the same request body over the wire and in-process must produce the
+        # same envelope, the same chunk stream, and the same rejections.
+        oai_body = {
+            "model": "hosted_k3",
+            "messages": msg,
+            "fx1": {"backend": "byok"},
+        }
+        oai_wire = client.post("/v1/chat/completions", json=oai_body)
+        oai_sdk, oai_cid = sdk.openai_chat(oai_body)
+        oai_json = oai_wire.json()
+        out["openai_envelope_parity"] = (
+            oai_wire.status_code == 200
+            and oai_json["object"] == "chat.completion" == oai_sdk.object
+            and oai_json["choices"][0]["message"]["content"]
+            == oai_sdk.choices[0].message["content"]
+            and oai_json["model"] == oai_sdk.model
+            and oai_json["system_fingerprint"] == oai_sdk.system_fingerprint
+            and oai_json["usage"] == oai_sdk.usage
+        )
+        oai_wire_cid = oai_wire.headers.get("X-Fx1-Completion-Id")
+        out["openai_completion_log_parity"] = bool(
+            oai_cid
+            and oai_wire_cid
+            and sdk.completion(oai_cid).backend == "byok"
+            and client.get(f"/harness/completions/{oai_wire_cid}").status_code == 200
+        )
+        # stream parity: identical chunk-payload sequences (sans id/created)
+        oai_stream_req = {**oai_body, "stream": True, "stream_options": {"include_usage": True}}
+        oai_stream_wire = client.post("/v1/chat/completions", json=oai_stream_req)
+        wire_frames = [
+            json.loads(ln[len("data: ") :])
+            for ln in oai_stream_wire.text.splitlines()
+            if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+        ]
+        sdk_frames, _ = sdk.openai_chat_stream(
+            {**oai_body, "stream_options": {"include_usage": True}}
+        )
+
+        def _strip_meta(payload: dict[str, Any]) -> dict[str, Any]:
+            return {k: v for k, v in payload.items() if k not in ("id", "created")}
+
+        out["openai_stream_parity"] = [_strip_meta(f) for f in wire_frames] == [
+            _strip_meta(f) for f in sdk_frames
+        ]
+        out["openai_stream_done_terminal"] = oai_stream_wire.text.rstrip().endswith("data: [DONE]")
+        out["openai_stream_usage_chunk"] = (
+            bool(wire_frames)
+            and wire_frames[-1]["choices"] == []
+            and sdk_frames[-1]["choices"] == []
+        )
+        # models parity
+        wire_models = client.get("/v1/models")
+        sdk_models = sdk.openai_models()
+        out["openai_models_parity"] = (
+            wire_models.status_code == 200
+            and wire_models.json()["object"] == "list" == sdk_models.object
+            and [m["id"] for m in wire_models.json()["data"]] == [m.id for m in sdk_models.data]
+        )
+        # rejection parity: same verdict, each surface's own exception class
+        oai_bad_n = {**oai_body, "n": 2}
+        wire_n_err = client.post("/v1/chat/completions", json=oai_bad_n)
+        sdk_n_err = _raises(lambda: sdk.openai_chat(oai_bad_n))[0]
+        out["openai_validation_parity"] = (
+            wire_n_err.status_code == 422
+            and "error" in wire_n_err.json()
+            and sdk_n_err == "ValidationError"
+        )
+        oai_tools = {
+            "model": "hosted_k3",
+            "messages": [{"role": "assistant", "content": None, "tool_calls": [{"id": "c1"}]}],
+        }
+        wire_tool_err = client.post("/v1/chat/completions", json=oai_tools)
+        sdk_tool_err = _raises(lambda: sdk.openai_chat(oai_tools))[0]
+        out["openai_tool_reject_parity"] = (
+            wire_tool_err.status_code == 400
+            and wire_tool_err.json()["error"]["type"] == "invalid_request_error"
+            and sdk_tool_err == "OpenAICompatError"
+        )
+        # header BYOK parity: gpt-4o model + X-Fx1-Byok-* headers bind byok on both
+        byok_headers = {
+            "X-Fx1-Byok-Base-Url": "https://api.invalid.test/v1",
+            "X-Fx1-Byok-Api-Key": "test-key",
+            "X-Fx1-Byok-Model": "gpt-4o",
+        }
+        oai_byok_req = {"model": "gpt-4o", "messages": msg}
+        wire_byok = client.post("/v1/chat/completions", json=oai_byok_req, headers=byok_headers)
+        sdk_byok_env, _ = sdk.openai_chat(oai_byok_req, headers=byok_headers)
+        out["openai_byok_header_parity"] = (
+            wire_byok.status_code == 200
+            and wire_byok.json()["system_fingerprint"] == "byok"
+            and sdk_byok_env.system_fingerprint == "byok"
         )
 
         # --- verifier parity ----------------------------------------------------
