@@ -1169,9 +1169,13 @@ def parity_audit() -> dict[str, bool]:
         return (202, {}, b'{"job_id": "cb1", "status": "queued", "replayed": false}')
 
     c_cb = HarnessClient("http://harness.test", transport=_cb_transport)
-    jid_cb = c_cb.submit_run("doctor", callback_url="https://hooks.test/x")
+    jid_cb = c_cb.submit_run(
+        "doctor", callback_url="https://hooks.test/x", callback_secret="whsec-t"
+    )
     out["client_submit_callback_url"] = (
-        jid_cb == "cb1" and cb_seen[0].get("callback_url") == "https://hooks.test/x"
+        jid_cb == "cb1"
+        and cb_seen[0].get("callback_url") == "https://hooks.test/x"
+        and cb_seen[0].get("callback_secret") == "whsec-t"
     )
     return out
 

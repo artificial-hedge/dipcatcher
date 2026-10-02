@@ -297,6 +297,7 @@ def cli_audit() -> dict[str, Any]:
             self.last_drain_wait: float | None = None
             self.last_jobs_query: dict[str, Any] | None = None
             self.last_callback: str | None = None
+            self.last_cb_secret: str | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -345,6 +346,7 @@ def cli_audit() -> dict[str, Any]:
         def submit_run(self, name: str, **kw: Any) -> str:
             self.last_idem = kw.get("idempotency_key")
             self.last_callback = kw.get("callback_url")
+            self.last_cb_secret = kw.get("callback_secret")
             return "job-xyz"
 
         def job_status(self, job_id: str) -> dict[str, Any]:
@@ -535,6 +537,23 @@ def cli_audit() -> dict[str, Any]:
         )
         out["cli_submit_callback_url"] = (
             rc.exit_code == 0 and remotes[-1].last_callback == "https://hooks.test/x"
+        )
+        rcs = runner.invoke(
+            app,
+            [
+                "harness",
+                "submit",
+                "doctor",
+                "--remote",
+                "http://h.test",
+                "--callback-url",
+                "https://hooks.test/x",
+                "--callback-secret",
+                "whsec-test",
+            ],
+        )
+        out["cli_submit_callback_secret"] = (
+            rcs.exit_code == 0 and remotes[-1].last_cb_secret == "whsec-test"
         )
         rj = runner.invoke(app, ["harness", "job", "j-9", "--remote", "http://h.test"])
         out["cli_job_status_json"] = (

@@ -497,11 +497,16 @@ def e2e_audit() -> dict[str, bool]:
         # job-completion webhook over the real wire: a submitted job POSTs
         # its terminal record to the caller's callback_url.
         hook_hits: list[dict[str, Any]] = []
+        hook_raw: list[bytes] = []
+        hook_hdrs: list[dict[str, str]] = []
 
         class _JobHook(BaseHTTPRequestHandler):
             def do_POST(self) -> None:  # noqa: N802 — stdlib hook name
                 n = int(self.headers.get("Content-Length", "0"))
-                hook_hits.append(json.loads(self.rfile.read(n)))
+                raw = self.rfile.read(n)
+                hook_raw.append(raw)
+                hook_hdrs.append(dict(self.headers.items()))
+                hook_hits.append(json.loads(raw))
                 self.send_response(200)
                 self.end_headers()
 
@@ -516,7 +521,7 @@ def e2e_audit() -> dict[str, bool]:
         server7, server7_thread, port7 = _serve_uvicorn(server7_app)
         try:
             hc = HarnessClient(f"http://127.0.0.1:{port7}", api_key=_API_KEY, timeout_s=15.0)
-            jid = hc.submit_run("doctor", callback_url=hook_url)
+            jid = hc.submit_run("doctor", callback_url=hook_url, callback_secret="whsec-e2e")
             deadline = time.monotonic() + 15.0
             while time.monotonic() < deadline and not hook_hits:
                 time.sleep(0.05)
@@ -526,6 +531,14 @@ def e2e_audit() -> dict[str, bool]:
                 and hook_hits[0]["job_id"] == jid
                 and hook_hits[0]["status"] == "succeeded"
                 and st.get("callback_status") == "delivered"
+            )
+            from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415 — inside the served block
+
+            out["e2e_job_webhook_signed"] = verify_webhook(
+                "whsec-e2e",
+                hook_hdrs[0].get("X-Fx1-Webhook-Timestamp"),
+                hook_hdrs[0].get("X-Fx1-Webhook-Signature"),
+                hook_raw[0],
             )
         finally:
             server7.should_exit = True

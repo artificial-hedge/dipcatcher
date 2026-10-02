@@ -920,11 +920,16 @@ def api_audit() -> dict[str, Any]:
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
 
     _cb_hits: list[dict[str, Any]] = []
+    _cb_raw: list[bytes] = []
+    _cb_hdrs: list[dict[str, str]] = []
 
     class _JobHook(BaseHTTPRequestHandler):
         def do_POST(self) -> None:  # noqa: N802 — http.server handler name
             n = int(self.headers.get("Content-Length", "0"))
-            _cb_hits.append(_json.loads(self.rfile.read(n)))
+            raw = self.rfile.read(n)
+            _cb_raw.append(raw)
+            _cb_hdrs.append(dict(self.headers.items()))
+            _cb_hits.append(_json.loads(raw))
             if self.path == "/fail":
                 self.send_response(500)
             else:
@@ -1037,6 +1042,66 @@ def api_audit() -> dict[str, Any]:
             json={"command": "doctor", "callback_url": "http:///hook"},
         )
         out["callback_bad_url_422"] = bad.status_code == 422 and nohost.status_code == 422
+        # unsigned deliveries carry no signature headers
+        out["callback_unsigned_no_sig"] = (
+            "X-Fx1-Webhook-Signature" not in _cb_hdrs[0]
+            and "X-Fx1-Webhook-Timestamp" not in _cb_hdrs[0]
+        )
+        # callback_secret HMAC-signs the delivery; receivers verify the raw
+        # body — the job record itself never echoes the secret.
+        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+        sig_job = cbc.post(
+            "/harness/jobs",
+            json={
+                "command": "doctor",
+                "callback_url": cb_url,
+                "callback_secret": "whsec-test",
+            },
+        )
+        jid_sig = sig_job.json()["job_id"]
+        deadline = time.monotonic() + 10.0
+        st_sig: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_sig = cbc.get(f"/harness/jobs/{jid_sig}").json()
+            if st_sig["status"] == "succeeded" and st_sig.get("callback_status"):
+                break
+            time.sleep(0.05)
+        sig_hdrs = _cb_hdrs[-1]
+        out["callback_signed_verifies"] = (
+            st_sig.get("callback_status") == "delivered"
+            and sig_hdrs.get("X-Fx1-Webhook-Signature", "").startswith("sha256=")
+            and verify_webhook(
+                "whsec-test",
+                sig_hdrs.get("X-Fx1-Webhook-Timestamp"),
+                sig_hdrs.get("X-Fx1-Webhook-Signature"),
+                _cb_raw[-1],
+            )
+        )
+        out["callback_secret_not_echoed"] = (
+            "callback_secret" not in st_sig
+            and "whsec-test" not in cbc.get(f"/harness/jobs/{jid_sig}").text
+            and b"whsec-test" not in _cb_raw[-1]
+        )
+        good_sig = sig_hdrs.get("X-Fx1-Webhook-Signature")
+        good_ts = sig_hdrs.get("X-Fx1-Webhook-Timestamp")
+        out["webhook_verify_tampered_body"] = not verify_webhook(
+            "whsec-test", good_ts, good_sig, _cb_raw[-1] + b" "
+        )
+        out["webhook_verify_wrong_secret"] = not verify_webhook(
+            "whsec-other", good_ts, good_sig, _cb_raw[-1]
+        )
+        out["webhook_verify_stale_ts"] = not verify_webhook(
+            "whsec-test", "1", good_sig, _cb_raw[-1]
+        )
+        out["webhook_verify_malformed"] = not verify_webhook(
+            "whsec-test", good_ts, "nonsense", _cb_raw[-1]
+        ) and not verify_webhook("whsec-test", good_ts, None, _cb_raw[-1])
+        sec_no_url = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_secret": "whsec-test"},
+        )
+        out["callback_secret_requires_url_422"] = sec_no_url.status_code == 422
     finally:
         cb_srv.shutdown()
         cb_srv.server_close()

@@ -56,7 +56,14 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_validator,
+    model_validator,
+)
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
@@ -72,6 +79,11 @@ from fx1.serve.backends import (
     get_backend,
 )
 from fx1.serve.chat import cited_complete
+from fx1.serve.webhooks import (
+    WEBHOOK_SIGNATURE_HEADER,
+    WEBHOOK_TIMESTAMP_HEADER,
+    sign_webhook,
+)
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
@@ -170,6 +182,9 @@ class HarnessRunRequest(_Model):
     extra_args: list[str] = Field(default_factory=list, max_length=64)
     config: str | None = None
     callback_url: str | None = None
+    # HMAC signing secret for the callback delivery — never echoed on the
+    # job record (stored as a PrivateAttr, excluded from serialization).
+    callback_secret: str | None = None
 
     @field_validator("callback_url")
     @classmethod
@@ -182,6 +197,12 @@ class HarnessRunRequest(_Model):
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
         return v
+
+    @model_validator(mode="after")
+    def _callback_secret_needs_url(self) -> HarnessRunRequest:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
 
 
 class HarnessRunResponse(_Model):
@@ -307,6 +328,7 @@ class JobStatusResponse(_Model):
     error: str | None
     callback_url: str | None = None
     callback_status: Literal["delivered", "failed"] | None = None
+    _callback_secret: str | None = PrivateAttr(default=None)
     callback_error: str | None = None
 
 
@@ -421,10 +443,16 @@ def _deliver_job_callback(job: JobStatusResponse) -> None:
     if not url:
         return
     try:
+        payload = job.model_dump_json().encode()
+        headers = {"Content-Type": "application/json"}
+        if job._callback_secret:
+            ts = str(int(time.time()))
+            headers[WEBHOOK_TIMESTAMP_HEADER] = ts
+            headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(job._callback_secret, ts, payload)
         req = urllib.request.Request(
             url,
-            data=job.model_dump_json().encode(),
-            headers={"Content-Type": "application/json"},
+            data=payload,
+            headers=headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
@@ -488,6 +516,7 @@ def _submit_job(
         error=None,
         callback_url=body.callback_url,
     )
+    job._callback_secret = body.callback_secret
 
     def _exec() -> None:
         if job.status == "cancelled":

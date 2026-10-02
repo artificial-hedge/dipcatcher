@@ -346,6 +346,7 @@ class HarnessClient:
         config: str | Path | None = None,
         idempotency_key: str | None = None,
         callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> str:
         """Submit a run as a background job; returns the job id.
 
@@ -355,6 +356,10 @@ class HarnessClient:
         the original job id instead of spawning a second execution.
         ``callback_url`` (http(s)) gets the full job record POSTed on
         every terminal transition — succeeded, failed, or cancelled.
+        ``callback_secret`` signs the delivery: the POST carries
+        ``X-Fx1-Webhook-Timestamp`` + ``X-Fx1-Webhook-Signature``
+        (``sha256=<hmac-sha256>`` over ``<ts>.<body>``); verify with
+        ``fx1.serve.webhooks.verify_webhook``.
         """
         key = idempotency_key or uuid.uuid4().hex
         out = self._json(
@@ -365,6 +370,7 @@ class HarnessClient:
                 "extra_args": extra_args or [],
                 "config": str(config) if config is not None else None,
                 "callback_url": callback_url,
+                "callback_secret": callback_secret,
             },
             idempotent=True,
             extra_headers={"Idempotency-Key": key},

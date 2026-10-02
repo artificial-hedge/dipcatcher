@@ -629,12 +629,20 @@ def harness_submit(
         "--callback-url",
         help="http(s) webhook; the full job record is POSTed on terminal status.",
     ),
+    callback_secret: str | None = typer.Option(
+        None,
+        "--callback-secret",
+        help="HMAC secret signing the webhook (X-Fx1-Webhook-Signature).",
+    ),
 ) -> None:
     """Submit a run as a background job; prints the job id."""
     _need_remote(remote)
     job_id = _or_exit(
         lambda: _remote_client(remote or "", api_key, timeout_s).submit_run(
-            name, idempotency_key=idempotency_key, callback_url=callback_url
+            name,
+            idempotency_key=idempotency_key,
+            callback_url=callback_url,
+            callback_secret=callback_secret,
         )
     )
     typer.echo(job_id)
