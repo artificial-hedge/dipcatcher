@@ -215,6 +215,52 @@ def api_audit() -> dict[str, Any]:
         == 422
     )
 
+    # --- complete idempotency: retried submits must not re-bill the model ---
+    from fastapi.testclient import TestClient as _IdemTC  # noqa: PLC0415
+
+    class _IdemBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            return f"clean:{messages[-1]['content']}"
+
+    _idem_backend = _IdemBackend()
+    idem_resolves = {"n": 0}
+
+    def _counting_resolver(*a: Any, **k: Any) -> Any:
+        idem_resolves["n"] += 1
+        return _idem_backend
+
+    idem_api = api_mod.create_app(backend_resolver=_counting_resolver)
+    ic = _IdemTC(idem_api)
+    cbody = {"backend": "byok", "messages": [{"role": "user", "content": "ping"}]}
+    c1 = ic.post("/harness/complete", json=cbody, headers={"Idempotency-Key": "ck1"})
+    c2 = ic.post("/harness/complete", json=cbody, headers={"Idempotency-Key": "ck1"})
+    out["complete_idem_replay"] = (
+        idem_resolves["n"] == 1
+        and _idem_backend.calls == 1
+        and c2.json()["replayed"] is True
+        and c2.json()["content"] == c1.json()["content"]
+    )
+    out["complete_idem_conflict_409"] = (
+        ic.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": [{"role": "user", "content": "other"}]},
+            headers={"Idempotency-Key": "ck1"},
+        ).status_code
+        == 409
+    )
+    before = idem_resolves["n"]
+    ic.post("/harness/complete", json=cbody)
+    ic.post("/harness/complete", json=cbody)
+    out["complete_no_key_reexecutes"] = idem_resolves["n"] == before + 2
+    bbody = {"backend": "byok", "batch": [[{"role": "user", "content": "p"}]]}
+    ic.post("/harness/complete/batch", json=bbody, headers={"Idempotency-Key": "bk1"})
+    cb2 = ic.post("/harness/complete/batch", json=bbody, headers={"Idempotency-Key": "bk1"}).json()
+    out["complete_batch_idem_replay"] = cb2["replayed"] is True
+
     # --- local weights surface: card'd checkpoint + engine attach ----------
     import json as _json
     import tempfile

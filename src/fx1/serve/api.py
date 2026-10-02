@@ -260,6 +260,9 @@ class CompleteResponse(_Model):
     model: str | None
     content: str
     receipt_hashes: list[str]
+    # True when the response came from the Idempotency-Key cache — lets
+    # fx-1 audit retried calls without paying for them twice.
+    replayed: bool = False
 
 
 class CompleteBatchRequest(_Model):
@@ -282,6 +285,7 @@ class CompleteBatchResponse(_Model):
     model: str | None
     receipt_hashes: list[str]
     results: list[CompleteBatchItem]
+    replayed: bool = False
 
 
 class ReceiptVerifyRequest(_Model):
@@ -465,11 +469,11 @@ def _env_float_floor(name: str, default: float, given: float | None) -> float:
     return v
 
 
-def _idem_lookup(
+def _idem_lookup[IdemT: BaseModel](
     idempotency_key: str | None,
-    store: _IdemStore,
+    store: _IdemStore[IdemT],
     body_fp: str,
-) -> tuple[str | None, HarnessRunResponse | None]:
+) -> tuple[str | None, IdemT | None]:
     """Shared Idempotency-Key preamble: normalize + bound the key, then
     look up a stored replay. Returns ``(key, cached)`` — a cached hit
     is the response to return verbatim plus ``replayed: True``; a key
@@ -879,28 +883,28 @@ def _mount_job_routes(
         )
 
 
-class _IdemStore:
-    """Bounded LRU of ``Idempotency-Key`` -> run response.
+class _IdemStore[IdemT: BaseModel]:
+    """Bounded LRU of ``Idempotency-Key`` -> stored response.
 
     Lets a client (or the HarnessClient, which mints a key per ``run``)
     retry a submission after a transport blip without double-executing
-    the command. Read-only replays bypass the drain latch and the
+    the work. Read-only replays bypass the drain latch and the
     concurrency cap: the work already happened.
     """
 
     def __init__(self, max_entries: int) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
-        self._map: OrderedDict[str, tuple[str, HarnessRunResponse]] = OrderedDict()
+        self._map: OrderedDict[str, tuple[str, IdemT]] = OrderedDict()
 
-    def get(self, key: str) -> tuple[str, HarnessRunResponse] | None:
+    def get(self, key: str) -> tuple[str, IdemT] | None:
         with self._lock:
             hit = self._map.get(key)
             if hit is not None:
                 self._map.move_to_end(key)
             return hit
 
-    def put(self, key: str, fingerprint: str, resp: HarnessRunResponse) -> None:
+    def put(self, key: str, fingerprint: str, resp: IdemT) -> None:
         with self._lock:
             self._map[key] = (fingerprint, resp)
             self._map.move_to_end(key)
@@ -1153,6 +1157,280 @@ def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str
     return "\n".join(lines) + "\n"
 
 
+def _close_backend(backend: Any) -> None:
+    closer = getattr(backend, "close", None)
+    if callable(closer):
+        closer()
+
+
+def _mount_complete_routes(
+    app: FastAPI,
+    *,
+    slot: Callable[[], Iterator[None]],
+    resolve_backend: Callable[[str, str | None], Any],
+    sse_keepalive_s: float,
+    complete_idem_store: _IdemStore[CompleteResponse],
+    complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
+) -> None:
+    """Complete routes (sync / SSE stream / batch) — extracted from
+    ``create_app`` to keep its branch complexity under the ruff cap."""
+
+    @app.post(
+        "/harness/complete",
+        response_model=CompleteResponse,
+        tags=["complete"],
+        operation_id="complete",
+    )
+    def complete(
+        body: CompleteRequest,
+        _slot_held: None = Depends(slot),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> CompleteResponse:
+        # Same Idempotency-Key contract as the runs route: retried
+        # completions replay from the cache instead of re-billing the model.
+        body_fp = body.model_dump_json()
+        key, replay = _idem_lookup(idempotency_key, complete_idem_store, body_fp)
+        if replay is not None:
+            return replay
+        backend = resolve_backend(body.backend, body.checkpoint_dir)
+        messages = [{"role": m.role, "content": m.content} for m in body.messages]
+        try:
+            content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
+        except BackendNotConfiguredError as exc:
+            raise ApiError(503, str(exc), code="backend_unavailable") from exc
+        except NotImplementedError as exc:
+            raise ApiError(501, str(exc)) from exc
+        except Fx1HonestyError as exc:
+            # The model produced a contract-violating headline; the gate
+            # caught it before the bytes left — surface as 502, not success.
+            raise ApiError(
+                502, f"honesty gate refused model output: {exc}", code="honesty_gate"
+            ) from exc
+        except RuntimeError as exc:
+            raise ApiError(502, str(exc), code="backend_failure") from exc
+        finally:
+            _close_backend(backend)
+        model_name = getattr(backend, "_model", None)
+        resp = CompleteResponse(
+            backend=body.backend,
+            model=model_name if isinstance(model_name, str) else None,
+            content=content,
+            receipt_hashes=body.receipt_hashes or [],
+        )
+        if key is not None:
+            complete_idem_store.put(key, body_fp, resp)
+        return resp
+
+    @app.post(
+        "/harness/complete/stream",
+        tags=["complete"],
+        operation_id="complete_stream",
+    )
+    def complete_stream(
+        body: CompleteRequest, _slot_held: None = Depends(slot)
+    ) -> StreamingResponse:
+        """Server-sent-event stream of one gated completion.
+
+        The backend's token deltas are buffered, the joined text passes the
+        honesty gate, and only then are chunks emitted as ``token`` events
+        plus a ``final`` envelope — no ungated model bytes ever reach a
+        ``data:`` frame. A backend without ``stream`` fails 501 rather than
+        faking chunking.
+
+        With ``sse_keepalive_s`` > 0 (default 15) the buffer+gate phase runs
+        on a worker thread under a one-interval grace period: outcomes that
+        resolve within the interval keep today's wire contract exactly —
+        completions stream as usual, failures stay ordinary JSON error
+        responses. Only a generation still running past the interval
+        commits to SSE: ``: keepalive`` comment frames (no payload —
+        parsers ignore them) hold the connection open against proxy/LB
+        idle timeouts, and a failure after that point arrives as a terminal
+        ``{"type": "error", "status", "detail"}`` data frame followed by
+        ``[DONE]`` (the HTTP status is committed once a byte is on the
+        wire). ``sse_keepalive_s`` = 0 disables the worker entirely — the
+        fully synchronous path.
+        """
+        messages = [{"role": m.role, "content": m.content} for m in body.messages]
+
+        def _gather() -> tuple[list[str], str | None]:
+            """Buffer + gate the backend stream; raises the mapped errors."""
+            backend = resolve_backend(body.backend, body.checkpoint_dir)
+            try:
+                if not isinstance(backend, StreamingBackend):
+                    raise NotImplementedError(
+                        f"backend {body.backend!r} does not support streaming"
+                    )
+                chunks = list(backend.stream(messages))
+                joined = "".join(chunks)
+                try:
+                    validate_fx1_output(joined)
+                except Fx1HonestyError as exc:
+                    raise ApiError(
+                        502, f"honesty gate refused model output: {exc}", code="honesty_gate"
+                    ) from exc
+            except BackendNotConfiguredError as exc:
+                raise ApiError(503, str(exc), code="backend_unavailable") from exc
+            except NotImplementedError as exc:
+                raise ApiError(501, str(exc)) from exc
+            except RuntimeError as exc:
+                raise ApiError(502, str(exc), code="backend_failure") from exc
+            finally:
+                _close_backend(backend)
+            model_name = getattr(backend, "_model", None)
+            if body.receipt_hashes:
+                chunks.append(
+                    "\n\nEvidence: "
+                    + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
+                    + " — verify with `dipcatcher verify-research`."
+                )
+            return chunks, model_name if isinstance(model_name, str) else None
+
+        def _events(chunks: list[str], model_name: str | None) -> Iterator[str]:
+            for chunk in chunks:
+                yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+            yield (
+                "data: "
+                + json.dumps(
+                    {
+                        "type": "final",
+                        "model": model_name,
+                        "receipt_hashes": body.receipt_hashes or [],
+                    }
+                )
+                + "\n\n"
+            )
+            yield "data: [DONE]\n\n"
+
+        if sse_keepalive_s <= 0:
+            chunks, model_name = _gather()
+            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
+
+        pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
+
+        def _produce() -> None:
+            try:
+                pipe.put(("ok", _gather()))
+            except HTTPException as exc:
+                pipe.put(("error", exc))
+            except Exception as exc:  # noqa: BLE001 — dead pipe, honest frame
+                pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
+
+        threading.Thread(target=_produce, daemon=True).start()
+
+        # Grace window: an outcome inside one keepalive interval keeps the
+        # synchronous contract (SSE stream / JSON error); only a generation
+        # still running past it commits to the keepalived stream.
+        grace: tuple[str, Any] | None
+        try:
+            grace = pipe.get(timeout=sse_keepalive_s)
+        except queue.Empty:
+            grace = None
+        if grace is not None:
+            tag, payload = grace
+            if tag == "error":
+                raise payload
+            chunks, model_name = payload
+            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
+
+        def _events_keepalived() -> Iterator[str]:
+            while True:
+                try:
+                    tag, payload = pipe.get(timeout=sse_keepalive_s)
+                except queue.Empty:
+                    yield ": keepalive\n\n"
+                    continue
+                if tag == "error":
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            {
+                                "type": "error",
+                                "status": payload.status_code,
+                                "detail": payload.detail,
+                                "code": _err_code(payload),
+                            }
+                        )
+                        + "\n\n"
+                    )
+                    yield "data: [DONE]\n\n"
+                    return
+                chunks, model_name = payload
+                yield from _events(chunks, model_name)
+                return
+
+        return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
+
+    @app.post(
+        "/harness/complete/batch",
+        response_model=CompleteBatchResponse,
+        tags=["complete"],
+        operation_id="complete_batch",
+    )
+    def complete_batch(
+        body: CompleteBatchRequest,
+        _slot_held: None = Depends(slot),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> CompleteBatchResponse:
+        body_fp = body.model_dump_json()
+        key, replay = _idem_lookup(idempotency_key, complete_batch_idem_store, body_fp)
+        if replay is not None:
+            return replay
+        backend = resolve_backend(body.backend, body.checkpoint_dir)
+        # One backend serves the whole batch — a spawned local engine is
+        # shared across workers (spawn path is lock-guarded). Item failures
+        # are per-slot verdicts: a gate refusal on one prompt does not lose
+        # the rest of the batch.
+        try:
+            with ThreadPoolExecutor(
+                max_workers=min(body.max_workers, len(body.batch)),
+                thread_name_prefix="fx1-complete",
+            ) as pool:
+
+                def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
+                    try:
+                        return CompleteBatchItem(
+                            ok=True,
+                            content=cited_complete(
+                                backend, messages, receipt_hashes=body.receipt_hashes
+                            ),
+                        )
+                    except Fx1HonestyError as exc:
+                        return CompleteBatchItem(
+                            ok=False, error=str(exc), error_class="honesty_refusal"
+                        )
+                    except (
+                        BackendNotConfiguredError,
+                        NotImplementedError,
+                        RuntimeError,
+                        ValueError,
+                    ) as exc:
+                        return CompleteBatchItem(
+                            ok=False, error=str(exc), error_class=type(exc).__name__
+                        )
+
+                results = list(
+                    pool.map(
+                        _one,
+                        [
+                            [{"role": m.role, "content": m.content} for m in msgs]
+                            for msgs in body.batch
+                        ],
+                    )
+                )
+        finally:
+            _close_backend(backend)
+        model_name = getattr(backend, "_model", None)
+        resp = CompleteBatchResponse(
+            backend=body.backend,
+            model=model_name if isinstance(model_name, str) else None,
+            receipt_hashes=body.receipt_hashes or [],
+            results=results,
+        )
+        if key is not None:
+            complete_batch_idem_store.put(key, body_fp, resp)
+        return resp
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -1180,7 +1458,9 @@ def create_app(
     # health) stay uncapped so liveness answers under load.
     inflight = threading.BoundedSemaphore(max_inflight)
     metrics = _Metrics(max_inflight)
-    idem_store = _IdemStore(idem_max)
+    idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(idem_max)
+    complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
+    complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
     job_store = _JobStore(job_max)
     jobs_executor = ThreadPoolExecutor(max_workers=max_inflight, thread_name_prefix="fx1-job")
 
@@ -1483,245 +1763,14 @@ def create_app(
             # server-side configuration faults, not client input errors.
             raise ApiError(503, str(exc), code="backend_unavailable") from exc
 
-    def _close_backend(backend: Any) -> None:
-        closer = getattr(backend, "close", None)
-        if callable(closer):
-            closer()
-
-    @app.post(
-        "/harness/complete",
-        response_model=CompleteResponse,
-        tags=["complete"],
-        operation_id="complete",
+    _mount_complete_routes(
+        app,
+        slot=_slot,
+        resolve_backend=_resolve_request_backend,
+        sse_keepalive_s=sse_keepalive_s,
+        complete_idem_store=complete_idem_store,
+        complete_batch_idem_store=complete_batch_idem_store,
     )
-    def complete(body: CompleteRequest, _slot_held: None = Depends(_slot)) -> CompleteResponse:
-        backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
-        messages = [{"role": m.role, "content": m.content} for m in body.messages]
-        try:
-            content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
-        except BackendNotConfiguredError as exc:
-            raise ApiError(503, str(exc), code="backend_unavailable") from exc
-        except NotImplementedError as exc:
-            raise ApiError(501, str(exc)) from exc
-        except Fx1HonestyError as exc:
-            # The model produced a contract-violating headline; the gate
-            # caught it before the bytes left — surface as 502, not success.
-            raise ApiError(
-                502, f"honesty gate refused model output: {exc}", code="honesty_gate"
-            ) from exc
-        except RuntimeError as exc:
-            raise ApiError(502, str(exc), code="backend_failure") from exc
-        finally:
-            _close_backend(backend)
-        model_name = getattr(backend, "_model", None)
-        return CompleteResponse(
-            backend=body.backend,
-            model=model_name if isinstance(model_name, str) else None,
-            content=content,
-            receipt_hashes=body.receipt_hashes or [],
-        )
-
-    @app.post(
-        "/harness/complete/stream",
-        tags=["complete"],
-        operation_id="complete_stream",
-    )
-    def complete_stream(
-        body: CompleteRequest, _slot_held: None = Depends(_slot)
-    ) -> StreamingResponse:
-        """Server-sent-event stream of one gated completion.
-
-        The backend's token deltas are buffered, the joined text passes the
-        honesty gate, and only then are chunks emitted as ``token`` events
-        plus a ``final`` envelope — no ungated model bytes ever reach a
-        ``data:`` frame. A backend without ``stream`` fails 501 rather than
-        faking chunking.
-
-        With ``sse_keepalive_s`` > 0 (default 15) the buffer+gate phase runs
-        on a worker thread under a one-interval grace period: outcomes that
-        resolve within the interval keep today's wire contract exactly —
-        completions stream as usual, failures stay ordinary JSON error
-        responses. Only a generation still running past the interval
-        commits to SSE: ``: keepalive`` comment frames (no payload —
-        parsers ignore them) hold the connection open against proxy/LB
-        idle timeouts, and a failure after that point arrives as a terminal
-        ``{"type": "error", "status", "detail"}`` data frame followed by
-        ``[DONE]`` (the HTTP status is committed once a byte is on the
-        wire). ``sse_keepalive_s`` = 0 disables the worker entirely — the
-        fully synchronous path.
-        """
-        messages = [{"role": m.role, "content": m.content} for m in body.messages]
-
-        def _gather() -> tuple[list[str], str | None]:
-            """Buffer + gate the backend stream; raises the mapped errors."""
-            backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
-            try:
-                if not isinstance(backend, StreamingBackend):
-                    raise NotImplementedError(
-                        f"backend {body.backend!r} does not support streaming"
-                    )
-                chunks = list(backend.stream(messages))
-                joined = "".join(chunks)
-                try:
-                    validate_fx1_output(joined)
-                except Fx1HonestyError as exc:
-                    raise ApiError(
-                        502, f"honesty gate refused model output: {exc}", code="honesty_gate"
-                    ) from exc
-            except BackendNotConfiguredError as exc:
-                raise ApiError(503, str(exc), code="backend_unavailable") from exc
-            except NotImplementedError as exc:
-                raise ApiError(501, str(exc)) from exc
-            except RuntimeError as exc:
-                raise ApiError(502, str(exc), code="backend_failure") from exc
-            finally:
-                _close_backend(backend)
-            model_name = getattr(backend, "_model", None)
-            if body.receipt_hashes:
-                chunks.append(
-                    "\n\nEvidence: "
-                    + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
-                    + " — verify with `dipcatcher verify-research`."
-                )
-            return chunks, model_name if isinstance(model_name, str) else None
-
-        def _events(chunks: list[str], model_name: str | None) -> Iterator[str]:
-            for chunk in chunks:
-                yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
-            yield (
-                "data: "
-                + json.dumps(
-                    {
-                        "type": "final",
-                        "model": model_name,
-                        "receipt_hashes": body.receipt_hashes or [],
-                    }
-                )
-                + "\n\n"
-            )
-            yield "data: [DONE]\n\n"
-
-        if sse_keepalive_s <= 0:
-            chunks, model_name = _gather()
-            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
-
-        pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
-
-        def _produce() -> None:
-            try:
-                pipe.put(("ok", _gather()))
-            except HTTPException as exc:
-                pipe.put(("error", exc))
-            except Exception as exc:  # noqa: BLE001 — dead pipe, honest frame
-                pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
-
-        threading.Thread(target=_produce, daemon=True).start()
-
-        # Grace window: an outcome inside one keepalive interval keeps the
-        # synchronous contract (SSE stream / JSON error); only a generation
-        # still running past it commits to the keepalived stream.
-        grace: tuple[str, Any] | None
-        try:
-            grace = pipe.get(timeout=sse_keepalive_s)
-        except queue.Empty:
-            grace = None
-        if grace is not None:
-            tag, payload = grace
-            if tag == "error":
-                raise payload
-            chunks, model_name = payload
-            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
-
-        def _events_keepalived() -> Iterator[str]:
-            while True:
-                try:
-                    tag, payload = pipe.get(timeout=sse_keepalive_s)
-                except queue.Empty:
-                    yield ": keepalive\n\n"
-                    continue
-                if tag == "error":
-                    yield (
-                        "data: "
-                        + json.dumps(
-                            {
-                                "type": "error",
-                                "status": payload.status_code,
-                                "detail": payload.detail,
-                                "code": _err_code(payload),
-                            }
-                        )
-                        + "\n\n"
-                    )
-                    yield "data: [DONE]\n\n"
-                    return
-                chunks, model_name = payload
-                yield from _events(chunks, model_name)
-                return
-
-        return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
-
-    @app.post(
-        "/harness/complete/batch",
-        response_model=CompleteBatchResponse,
-        tags=["complete"],
-        operation_id="complete_batch",
-    )
-    def complete_batch(
-        body: CompleteBatchRequest, _slot_held: None = Depends(_slot)
-    ) -> CompleteBatchResponse:
-        backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
-        # One backend serves the whole batch — a spawned local engine is
-        # shared across workers (spawn path is lock-guarded). Item failures
-        # are per-slot verdicts: a gate refusal on one prompt does not lose
-        # the rest of the batch.
-        try:
-            with ThreadPoolExecutor(
-                max_workers=min(body.max_workers, len(body.batch)),
-                thread_name_prefix="fx1-complete",
-            ) as pool:
-
-                def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
-                    try:
-                        return CompleteBatchItem(
-                            ok=True,
-                            content=cited_complete(
-                                backend, messages, receipt_hashes=body.receipt_hashes
-                            ),
-                        )
-                    except Fx1HonestyError as exc:
-                        return CompleteBatchItem(
-                            ok=False, error=str(exc), error_class="honesty_refusal"
-                        )
-                    except (
-                        BackendNotConfiguredError,
-                        NotImplementedError,
-                        RuntimeError,
-                        ValueError,
-                    ) as exc:
-                        return CompleteBatchItem(
-                            ok=False, error=str(exc), error_class=type(exc).__name__
-                        )
-
-                results = list(
-                    pool.map(
-                        _one,
-                        [
-                            [{"role": m.role, "content": m.content} for m in msgs]
-                            for msgs in body.batch
-                        ],
-                    )
-                )
-        finally:
-            closer = getattr(backend, "close", None)
-            if callable(closer):
-                closer()
-        model_name = getattr(backend, "_model", None)
-        return CompleteBatchResponse(
-            backend=body.backend,
-            model=model_name if isinstance(model_name, str) else None,
-            receipt_hashes=body.receipt_hashes or [],
-            results=results,
-        )
 
     _mount_receipt_routes(app)
 

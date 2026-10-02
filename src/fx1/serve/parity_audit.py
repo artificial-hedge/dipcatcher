@@ -410,6 +410,12 @@ def parity_audit() -> dict[str, bool]:
         out["client_verify_tamper_parity"] = (
             rem_tv.valid is False and rem_tv.errors == sdk_tv.errors
         )
+        # wire-only flag: a keyed retry replays instead of re-billing
+        remote.complete(msg, backend="byok", receipt_hashes=[receipt], idempotency_key="pk1")
+        replayed = remote.complete(
+            msg, backend="byok", receipt_hashes=[receipt], idempotency_key="pk1"
+        )
+        out["client_complete_idem_replay"] = replayed.replayed is True
         rem_batch = remote.verify_receipts([good, tampered])
         sdk_batch = sdk.verify_receipts([good, tampered])
         out["client_verify_batch_parity"] = (

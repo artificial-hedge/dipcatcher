@@ -528,6 +528,7 @@ class HarnessClient:
         backend: str = "local_fx1",
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
+        idempotency_key: str | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -539,12 +540,14 @@ class HarnessClient:
                 "checkpoint_dir": (str(checkpoint_dir) if checkpoint_dir is not None else None),
                 "receipt_hashes": receipt_hashes,
             },
+            extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
         )
         return CompletionResult(
             backend=out["backend"],
             model=out["model"],
             content=out["content"],
             receipt_hashes=tuple(out["receipt_hashes"]),
+            replayed=out.get("replayed", False),
         )
 
     def complete_many(
@@ -555,6 +558,7 @@ class HarnessClient:
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
         max_workers: int = 4,
+        idempotency_key: str | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -577,6 +581,7 @@ class HarnessClient:
                 "receipt_hashes": receipt_hashes,
                 "max_workers": max_workers,
             },
+            extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
         )
         results: list[CompletionResult] = []
         for item in out["results"]:

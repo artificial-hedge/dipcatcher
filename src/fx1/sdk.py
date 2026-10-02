@@ -68,6 +68,9 @@ class CompletionResult:
     model: str | None
     content: str
     receipt_hashes: tuple[str, ...] = ()
+    # Wire-only flag: True when the API replayed an idempotency-cached
+    # response instead of re-running the model.
+    replayed: bool = False
 
 
 @dataclass(frozen=True)
