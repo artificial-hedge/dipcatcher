@@ -733,6 +733,14 @@ from quant_fund.research.benches_w92 import (
     bench_pagerank_topology,
     bench_self_organizing_maps,
 )
+from quant_fund.research.benches_w93 import (
+    bench_factorization_machine,
+    bench_gp_classification,
+    bench_metric_learning,
+    bench_one_class_classification,
+    bench_phase_retrieval,
+    bench_tree_ensembles,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2836,6 +2844,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "self_organizing_maps": bench_self_organizing_maps(),
         "pagerank_topology": bench_pagerank_topology(),
         "hyperband_search": bench_hyperband_search(),
+        "tree_ensembles": bench_tree_ensembles(),
+        "metric_learning": bench_metric_learning(),
+        "one_class_classification": bench_one_class_classification(),
+        "gp_classification": bench_gp_classification(),
+        "phase_retrieval": bench_phase_retrieval(),
+        "factorization_machine": bench_factorization_machine(),
     }
 
     hyps = _build_hypotheses(families, rankers)

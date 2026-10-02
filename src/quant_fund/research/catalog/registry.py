@@ -1437,6 +1437,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "self_organizing_maps",
         "pagerank_topology",
         "hyperband_search",
+        # Wave-93 canon: CART/random
+        # forest/GBM tree ensembles,
+        # NCA/LMNN metric learning,
+        # SVDD/Mahalanobis/LOF
+        # one-class classification,
+        # Laplace GP classification,
+        # Gerchberg-Saxton HIO +
+        # Wirtinger-flow phase
+        # retrieval, and Rendle
+        # factorization machines.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "tree_ensembles",
+        "metric_learning",
+        "one_class_classification",
+        "gp_classification",
+        "phase_retrieval",
+        "factorization_machine",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
