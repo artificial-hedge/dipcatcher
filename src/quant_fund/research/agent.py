@@ -1389,6 +1389,14 @@ from quant_fund.research.benches_w174 import (
     bench_mtgnn_lite_family,
     bench_stgcn_lite_family,
 )
+from quant_fund.research.benches_w175 import (
+    bench_alibi_attn_family,
+    bench_moe_router_family,
+    bench_mup_init_family,
+    bench_rmsnorm_block_family,
+    bench_rope_attn_family,
+    bench_swiglu_ffn_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3984,6 +3992,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "astgcn": bench_astgcn_family(),
         "mtgnn_lite": bench_mtgnn_lite_family(),
         "agcrn": bench_agcrn_family(),
+        "rope_attn": bench_rope_attn_family(),
+        "alibi_attn": bench_alibi_attn_family(),
+        "swiglu_ffn": bench_swiglu_ffn_family(),
+        "rmsnorm_block": bench_rmsnorm_block_family(),
+        "moe_router": bench_moe_router_family(),
+        "mup_init": bench_mup_init_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
