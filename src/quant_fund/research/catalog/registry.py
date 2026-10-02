@@ -2087,6 +2087,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "enas_controller",
         "one_shot_nas",
         "arch_predictor",
+        # Wave-154 vision canon:
+        # CNN, ViT, CLIP, SimCLR,
+        # DDIM, rollout.
+        "convnet_baseline",
+        "vit_classifier",
+        "clip_align",
+        "simclr_views",
+        "diffusion_ddim",
+        "attention_rollout",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
