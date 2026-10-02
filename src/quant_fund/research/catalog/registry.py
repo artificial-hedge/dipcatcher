@@ -2159,6 +2159,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pino_residual",
         "gno_lite",
         "cno_lite",
+        # Wave-162 TS-foundation canon:
+        # Chronos, TimesFM, Moirai,
+        # Lag-Llama, Timer, MOMENT.
+        "chronos_lite",
+        "timesfm_lite",
+        "moirai_lite",
+        "lagllama_lite",
+        "timer_lite",
+        "moment_lite",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

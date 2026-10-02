@@ -1285,6 +1285,14 @@ from quant_fund.research.benches_w161 import (
     bench_lowrank_op_family,
     bench_pino_residual_family,
 )
+from quant_fund.research.benches_w162 import (
+    bench_chronos_lite_family,
+    bench_lagllama_lite_family,
+    bench_moirai_lite_family,
+    bench_moment_lite_family,
+    bench_timer_lite_family,
+    bench_timesfm_lite_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3802,6 +3810,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pino_residual": bench_pino_residual_family(),
         "gno_lite": bench_gno_lite_family(),
         "cno_lite": bench_cno_lite_family(),
+        "chronos_lite": bench_chronos_lite_family(),
+        "timesfm_lite": bench_timesfm_lite_family(),
+        "moirai_lite": bench_moirai_lite_family(),
+        "lagllama_lite": bench_lagllama_lite_family(),
+        "timer_lite": bench_timer_lite_family(),
+        "moment_lite": bench_moment_lite_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
