@@ -1021,6 +1021,14 @@ from quant_fund.research.benches_w128 import (
     bench_mask_autoencoder_family,
     bench_ts_mixer_family,
 )
+from quant_fund.research.benches_w129 import (
+    bench_crossformer_family,
+    bench_ft_transformer_family,
+    bench_itransformer_family,
+    bench_mambats_family,
+    bench_nbeats_deep_family,
+    bench_tcn_forecaster_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3340,6 +3348,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "cnn_alpha": bench_cnn_alpha_family(),
         "mask_autoencoder": bench_mask_autoencoder_family(),
         "graph_temporal": bench_graph_temporal_family(),
+        "itransformer": bench_itransformer_family(),
+        "tcn_forecaster": bench_tcn_forecaster_family(),
+        "ft_transformer": bench_ft_transformer_family(),
+        "nbeats_deep": bench_nbeats_deep_family(),
+        "mambats": bench_mambats_family(),
+        "crossformer": bench_crossformer_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
