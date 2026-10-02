@@ -1133,6 +1133,14 @@ from quant_fund.research.benches_w142 import (
     bench_rwkv_wkv_family,
     bench_s4_ssm_family,
 )
+from quant_fund.research.benches_w143 import (
+    bench_dora_weight_family,
+    bench_lora_ft_family,
+    bench_prefix_tuning_family,
+    bench_prompt_tuning_family,
+    bench_qlora_nf4_family,
+    bench_task_vector_merge_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3536,6 +3544,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "retnet_decay": bench_retnet_decay_family(),
         "delta_net": bench_delta_net_family(),
         "mixture_of_depths": bench_mixture_of_depths_family(),
+        "lora_ft": bench_lora_ft_family(),
+        "qlora_nf4": bench_qlora_nf4_family(),
+        "dora_weight": bench_dora_weight_family(),
+        "prompt_tuning": bench_prompt_tuning_family(),
+        "prefix_tuning": bench_prefix_tuning_family(),
+        "task_vector_merge": bench_task_vector_merge_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

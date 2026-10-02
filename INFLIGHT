@@ -2540,3 +2540,4 @@ wave 139 (2026-10-02): self-supervised + TTA canon — byol, barlow_twins, vicre
 wave 140 (2026-10-02): geometric + structured nets — hyperbolic_nn, capsule_dynamic, siren_inr, equivar_gnn, monotonic_net, sort_net; 812→818 families.
 wave 141 (2026-10-02): certified robustness — randomized_smoothing, ibp_bounds, crown_bound, lipschitz_net, vector_neurons, gumbel_topk; 818→824 families.
 wave 142 (2026-10-02): sequence exotics — s4_ssm, rwkv_wkv, hyena_conv, retnet_decay, delta_net, mixture_of_depths; 824→830 families.
+wave 143 (2026-10-02): PEFT canon — lora_ft, qlora_nf4, dora_weight, prompt_tuning, prefix_tuning, task_vector_merge; 830→836 families.
