@@ -1542,6 +1542,12 @@ def api_audit() -> dict[str, Any]:
         and v.json()["api_version"] == api_mod.API_VERSION
         and bool(v.json()["fx1_version"])
     )
+    from fx1.serve.client import EXPECTED_API_VERSION  # noqa: PLC0415
+    from fx1.serve.contract import API_VERSION as _WIRE_VERSION  # noqa: PLC0415
+
+    out["contract_single_source"] = (
+        api_mod.API_VERSION == _WIRE_VERSION == EXPECTED_API_VERSION == "1"
+    )
     out["api_version_header_on_every_response"] = (
         client.get("/health").headers.get("x-fx1-api-version") == api_mod.API_VERSION
         and big.headers.get("x-fx1-api-version") == api_mod.API_VERSION

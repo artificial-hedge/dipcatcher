@@ -384,6 +384,7 @@ def parity_audit() -> dict[str, bool]:
         from fx1.serve.client import (
             HarnessAuthError,
             HarnessClient,
+            HarnessCompatError,
             HarnessJobError,
             HarnessTransportError,
         )
@@ -1047,6 +1048,48 @@ def parity_audit() -> dict[str, bool]:
         "fx1_version": "0.4.0",
     }
     out["client_last_api_version"] = c_ops.last_api_version == "1"
+
+    # ---- wire-contract negotiation --------------------------------------
+    compat = c_ops.check_compat()
+    out["client_check_compat_ok"] = (
+        compat["compatible"] is True
+        and compat["server_api_version"] == "1"
+        and compat["server_fx1_version"] == "0.4.0"
+        and compat["client_api_version"] == compat["server_api_version"]
+    )
+
+    def _stale_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return 200, {"X-Fx1-Api-Version": "99"}, b'{"api_version": "99", "fx1_version": "9.9"}'
+
+    c_stale = HarnessClient("http://harness.test", transport=_stale_transport)
+    try:
+        c_stale.check_compat()
+        out["client_check_compat_mismatch_raises"] = False
+    except HarnessCompatError as exc:
+        out["client_check_compat_mismatch_raises"] = exc.code == "incompatible_contract"
+    rep_stale = c_stale.check_compat(strict=False)
+    out["client_check_compat_mismatch_report"] = (
+        rep_stale["compatible"] is False and rep_stale["server_api_version"] == "99"
+    )
+    c_old = HarnessClient(
+        "http://harness.test",
+        transport=lambda *a, **k: (404, {}, b'{"detail": "Not Found"}'),
+    )
+    rep_old = c_old.check_compat(strict=False)
+    out["client_check_compat_unversioned"] = (
+        rep_old["compatible"] is False and rep_old["server_api_version"] is None
+    )
+    try:
+        c_old.check_compat()
+        out["client_check_compat_unversioned_strict"] = False
+    except HarnessCompatError:
+        out["client_check_compat_unversioned_strict"] = True
 
     def _metrics_transport(
         method: str,

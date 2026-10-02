@@ -298,6 +298,7 @@ def cli_audit() -> dict[str, Any]:
             self.last_jobs_query: dict[str, Any] | None = None
             self.last_callback: str | None = None
             self.last_cb_secret: str | None = None
+            self.last_compat_strict: bool | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -336,6 +337,16 @@ def cli_audit() -> dict[str, Any]:
 
         def server_version(self) -> dict[str, Any]:
             return {"api_version": "1", "fx1_version": "0.4.0"}
+
+        def check_compat(self, strict: bool = True) -> dict[str, Any]:
+            self.last_compat_strict = strict
+            return {
+                "compatible": True,
+                "client_api_version": "1",
+                "server_api_version": "1",
+                "server_fx1_version": "0.4.0",
+                "client_fx1_version": "0.4.0",
+            }
 
         def run(self, name: str, **kw: Any) -> Any:
             from fx1.harness import HarnessResult
@@ -457,6 +468,12 @@ def cli_audit() -> dict[str, Any]:
         out["remote_version_json"] = (
             rv.exit_code == 0 and json.loads(rv.stdout)["api_version"] == "1"
         )
+        rcp = runner.invoke(app, ["harness", "compat", "--remote", "http://h.test"])
+        out["remote_compat_ok_exit0"] = (
+            rcp.exit_code == 0
+            and json.loads(rcp.stdout)["compatible"] is True
+            and remotes[-1].last_compat_strict is False
+        )
         rj = runner.invoke(
             app,
             [
@@ -503,6 +520,25 @@ def cli_audit() -> dict[str, Any]:
         and json.loads(rv_local.stdout)["api_version"] == "1"
         and json.loads(rv_local.stdout)["local"] is True
     )
+
+    # compat on a wire-contract mismatch exits 1 but still prints the report
+    with patch("fx1.serve.client.HarnessClient") as mc2:
+        inst2 = mc2.return_value
+        inst2.check_compat.return_value = {
+            "compatible": False,
+            "client_api_version": "1",
+            "server_api_version": "99",
+            "server_fx1_version": "9.9",
+            "client_fx1_version": "0.4.0",
+        }
+        rcp_bad = runner.invoke(app, ["harness", "compat", "--remote", "http://h.test"])
+        out["remote_compat_mismatch_exit1"] = (
+            rcp_bad.exit_code == 1
+            and json.loads(rcp_bad.stdout)["compatible"] is False
+            and json.loads(rcp_bad.stdout)["server_api_version"] == "99"
+        )
+    rcp_local = runner.invoke(app, ["harness", "compat"])
+    out["compat_local_refused"] = rcp_local.exit_code == 2 and "--remote" in rcp_local.output
 
     # metrics + drain + jobs are wire-ops surfaces — without --remote they fail clean
     rm_local = runner.invoke(app, ["harness", "metrics"])

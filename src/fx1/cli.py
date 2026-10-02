@@ -591,9 +591,31 @@ def harness_version(
         typer.echo(json.dumps(_or_exit(lambda: client.server_version())))
         return
     from fx1 import __version__
-    from fx1.serve.api import API_VERSION
+    from fx1.serve.contract import API_VERSION
 
     typer.echo(json.dumps({"api_version": API_VERSION, "fx1_version": __version__, "local": True}))
+
+
+@harness_app.command("compat")
+def harness_compat(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Wire-contract negotiation: prints the compat report and exits 0 when
+    the remote speaks this client's api_version, 1 on any mismatch (incl.
+    a peer too old to have a version route)."""
+    if remote is None:
+        typer.echo(
+            "error: harness compat is a wire-ops surface; pass --remote",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    client = _remote_client(remote, api_key, timeout_s)
+    report = _or_exit(lambda: client.check_compat(strict=False))
+    typer.echo(json.dumps(report))
+    if not report["compatible"]:
+        raise typer.Exit(code=1)
 
 
 @harness_app.command("ready")

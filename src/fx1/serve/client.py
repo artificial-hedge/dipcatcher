@@ -36,14 +36,18 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
+from fx1 import __version__
 from fx1.harness import HarnessResult
 from fx1.honesty import Fx1HonestyError
 from fx1.sdk import CompletionResult, HarnessHealth, OpsMetrics, ReceiptVerdict
 from fx1.serve.backends import BackendNotConfiguredError
+from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 
 __all__ = [
+    "EXPECTED_API_VERSION",
     "HarnessAuthError",
     "HarnessClient",
+    "HarnessCompatError",
     "HarnessJobError",
     "HarnessTransportError",
 ]
@@ -73,6 +77,16 @@ class HarnessAuthError(PermissionError):
 class HarnessJobError(RuntimeError):
     """An async run job reached its terminal state without a result —
     the worker captured an exception (``status == 'failed'``)."""
+
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class HarnessCompatError(RuntimeError):
+    """The remote harness speaks a wire contract this client can't parse —
+    raised by ``check_compat`` when the server's ``api_version`` differs
+    from ``EXPECTED_API_VERSION`` (or the peer predates versioning)."""
 
     def __init__(self, message: str = "", *, code: str | None = None) -> None:
         super().__init__(message)
@@ -755,6 +769,38 @@ class HarnessClient:
         "fx1_version"}`` for version negotiation before sending work."""
         out = self._json("GET", "/harness/version", idempotent=True)
         return dict(out)
+
+    def check_compat(self, *, strict: bool = True) -> dict[str, Any]:
+        """Wire-contract negotiation: fetch ``/harness/version`` and compare
+        the server's ``api_version`` against ``EXPECTED_API_VERSION`` — the
+        contract this client was built to speak. Returns the report dict
+        (``compatible``, both api/fx1 versions); ``strict`` (the default)
+        raises ``HarnessCompatError`` on any mismatch, including a peer old
+        enough to have no version route at all."""
+        try:
+            out = self.server_version()
+            raw = out.get("api_version")
+            remote: str | None = str(raw) if raw is not None else None
+            fx1_version = out.get("fx1_version")
+        except KeyError:
+            remote = None  # peer predates the version route entirely
+            fx1_version = None
+        compatible = remote == EXPECTED_API_VERSION
+        report = {
+            "compatible": compatible,
+            "client_api_version": EXPECTED_API_VERSION,
+            "server_api_version": remote,
+            "server_fx1_version": fx1_version,
+            "client_fx1_version": __version__,
+        }
+        if strict and not compatible:
+            raise HarnessCompatError(
+                f"harness wire contract mismatch: server api_version={remote!r}, "
+                f"client expects {EXPECTED_API_VERSION!r} — upgrade the server "
+                f"or pin the client",
+                code="incompatible_contract",
+            )
+        return report
 
     def ready(self) -> dict[str, Any]:
         """Readiness probe: returns the payload while the server accepts new

@@ -85,6 +85,7 @@ from fx1.serve.backends import (
     get_backend,
 )
 from fx1.serve.chat import cited_complete
+from fx1.serve.contract import API_VERSION
 from fx1.serve.webhooks import (
     WEBHOOK_SIGNATURE_HEADER,
     WEBHOOK_TIMESTAMP_HEADER,
@@ -104,10 +105,6 @@ _JOB_MAX_ENV = "FX1_API_JOB_MAX"
 _RATE_LIMIT_ENV = "FX1_API_RATE_LIMIT_RPS"
 _GZIP_MIN_ENV = "FX1_API_GZIP_MIN_BYTES"
 _RATE_LIMIT_KEYS_MAX = 4096
-# Wire-contract version — bumped on breaking changes to the pinned OpenAPI
-# surface; stamped on every response as X-Fx1-Api-Version and reported by
-# GET /harness/version so clients negotiate before sending work.
-API_VERSION = "1"
 
 
 def _version_info() -> VersionResponse:
