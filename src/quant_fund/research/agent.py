@@ -901,6 +901,14 @@ from quant_fund.research.benches_w113 import (
     bench_phd_family,
     bench_tdoa_family,
 )
+from quant_fund.research.benches_w114 import (
+    bench_allan_variance_family,
+    bench_gold_code_family,
+    bench_klobuchar_family,
+    bench_lambda_method_family,
+    bench_rtk_family,
+    bench_strapdown_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3130,6 +3138,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "mht": bench_mht_family(),
         "cov_int": bench_cov_int_family(),
         "tdoa": bench_tdoa_family(),
+        "gold_code": bench_gold_code_family(),
+        "klobuchar": bench_klobuchar_family(),
+        "allan_variance": bench_allan_variance_family(),
+        "strapdown": bench_strapdown_family(),
+        "lambda_method": bench_lambda_method_family(),
+        "rtk": bench_rtk_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

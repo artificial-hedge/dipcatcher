@@ -2510,4 +2510,5 @@ wave 110 (2026-09-30): digital-comms canon — viterbi_decode, gf256, reed_solom
 wave 111 (2026-09-30): computational-geometry canon — kabsch, icp, frechet, hausdorff, convex_hull, delaunay; 638→644 families.
 wave 112 (2026-09-30): DSP filter canon — remez, iir_design, biquad, filtfilt, resample_poly, farrow; 644→650 families.
 wave 113 (2026-09-30): multi-target tracking canon — jonker_volgenant, jpda, phd, mht, cov_int, tdoa; 650→656 families.
+wave 114 (2026-09-30): GNSS canon — gold_code, klobuchar, allan_variance, strapdown, lambda_method, rtk; 656→662 families.
 note: canon PR to follow.

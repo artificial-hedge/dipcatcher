@@ -1712,6 +1712,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mht",
         "cov_int",
         "tdoa",
+        # Wave-114 canon: GNSS — Gold
+        # codes, Klobuchar, Allan
+        # variance, strapdown, LAMBDA,
+        # RTK.
+        "gold_code",
+        "klobuchar",
+        "allan_variance",
+        "strapdown",
+        "lambda_method",
+        "rtk",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
