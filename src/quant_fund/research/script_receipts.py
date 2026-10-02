@@ -432,6 +432,7 @@ _MEASUREMENT_SCHEMAS = (
     "exec_cost_split.v1",
     "flee_wide.v1",
     "floor_compose.v1",
+    "floor_reseed.v1",
     "flow_couple.v1",
     "full_impact.v1",
     "full_stack.v1",
