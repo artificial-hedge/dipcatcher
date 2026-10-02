@@ -113,6 +113,15 @@
         ]
       }
     },
+    "/harness/version": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "params": [],
@@ -151,5 +160,5 @@
       }
     }
   },
-  "schema_sha256": "006952a0d5e4919adb6ed02487a8d0f58aadc7f95ab98c596266e7bc8fbdecc7"
+  "schema_sha256": "92755cfee117a7f725a2ffe52b8b7d38c9c4df82af40f41bc53881108e87d1df"
 }

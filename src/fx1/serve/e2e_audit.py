@@ -373,10 +373,18 @@ def e2e_audit() -> dict[str, bool]:
             out["e2e_job_unknown_404"] = _raises(lambda: jremote.job_status("nope")) == "KeyError"
             rdy = jremote.ready()
             out["e2e_ready_200"] = rdy["ready"] is True and isinstance(rdy["inflight"], int)
+            ver = jremote.server_version()
+            out["e2e_version_route"] = ver["api_version"] == "1" and bool(ver["fx1_version"])
+            out["e2e_api_version_header"] = jremote.last_api_version == "1"
             jremote.drain()
             out["e2e_ready_under_drain"] = (
                 _raises(lambda: jremote.ready()) == "BackendNotConfiguredError"
             )
+            try:
+                jremote.submit_run("doctor")
+                out["e2e_error_code_draining"] = False
+            except Exception as exc:
+                out["e2e_error_code_draining"] = getattr(exc, "code", None) == "draining"
             out["e2e_job_replay_under_drain"] = (
                 jremote.submit_run("doctor", idempotency_key="e2e-job-key") == j1
             )

@@ -161,6 +161,10 @@ _BRIDGE = (
 class Fx1HonestyError(ValueError):
     """Raised when an fx-1 output violates the lab honesty contract."""
 
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+
 
 def _contains_forbidden_headline(text: str) -> str | None:
     """Return the offending token if *text* headlines a forbidden metric.

@@ -987,6 +987,12 @@ def parity_audit() -> dict[str, bool]:
         timeout_s: float,
     ) -> tuple[int, Mapping[str, str], bytes]:
         ops_calls.append((method, url))
+        if "/harness/version" in url:
+            return (
+                200,
+                {"X-Fx1-Api-Version": "1"},
+                b'{"api_version": "1", "fx1_version": "0.4.0"}',
+            )
         if "/ready" in url:
             return 200, {}, b'{"ready": true, "inflight": 2}'
         return (
@@ -1001,6 +1007,33 @@ def parity_audit() -> dict[str, bool]:
     dr = c_ops.drain(wait_s=12.5)
     out["client_drain_wait_s_sent"] = any("wait_s=12.5" in u for _m, u in ops_calls)
     out["client_drain_reports_drained"] = dr["drained"] is True
+    out["client_server_version"] = c_ops.server_version() == {
+        "api_version": "1",
+        "fx1_version": "0.4.0",
+    }
+    out["client_last_api_version"] = c_ops.last_api_version == "1"
+
+    def _coded_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return (
+            503,
+            {},
+            b'{"detail": "harness is draining - no new work", "code": "draining"}',
+        )
+
+    from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
+
+    coded = HarnessClient("http://harness.test", transport=_coded_transport)
+    try:
+        coded.ready()
+        out["client_error_code_carried"] = False
+    except BackendNotConfiguredError as exc:
+        out["client_error_code_carried"] = exc.code == "draining"
     return out
 
 

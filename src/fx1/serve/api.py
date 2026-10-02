@@ -50,6 +50,8 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -75,7 +77,59 @@ _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
 _IDEM_KEY_MAX = 256
 _JOB_MAX_ENV = "FX1_API_JOB_MAX"
+# Wire-contract version — bumped on breaking changes to the pinned OpenAPI
+# surface; stamped on every response as X-Fx1-Api-Version and reported by
+# GET /harness/version so clients negotiate before sending work.
+API_VERSION = "1"
+
+
+def _version_info() -> VersionResponse:
+    """Version negotiation: the wire contract + package release."""
+    return VersionResponse(api_version=API_VERSION, fx1_version=__version__)
+
+
 _PUBLIC_PATHS = frozenset({"/health"})
+
+# Canonical machine code for unambiguous statuses; ambiguous statuses
+# (three different 503s, two 502s) carry an explicit ApiError code.
+_STATUS_CODES = {
+    400: "bad_request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not_found",
+    405: "method_not_allowed",
+    409: "conflict",
+    413: "too_large",
+    422: "validation",
+    429: "too_many_requests",
+    500: "internal",
+    501: "not_implemented",
+    503: "unavailable",
+}
+
+
+class ApiError(HTTPException):
+    """HTTPException carrying a stable machine ``code``, surfaced in the
+    ``{"detail", "code"}`` error envelope so clients switch on it instead
+    of matching detail text."""
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: Any,
+        code: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(status_code, detail, headers=headers)
+        self.code = code or _STATUS_CODES.get(status_code, "internal")
+
+
+def _err_code(exc: HTTPException) -> str:
+    if isinstance(exc, ApiError):
+        return exc.code
+    return _STATUS_CODES.get(exc.status_code, "internal")
+
+
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
 
@@ -206,6 +260,13 @@ class ReadyResponse(_Model):
     inflight: int
 
 
+class VersionResponse(_Model):
+    """Wire-contract + package versions — the client's negotiation payload."""
+
+    api_version: str
+    fx1_version: str
+
+
 class JobSubmitResponse(_Model):
     job_id: str
     status: Literal["queued", "running", "succeeded", "failed"]
@@ -301,13 +362,13 @@ def _idem_lookup(
     if key is None:
         return None, None
     if len(key) > _IDEM_KEY_MAX:
-        raise HTTPException(400, "Idempotency-Key must be <= 256 chars")
+        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
     entry = store.get(key)
     if entry is None:
         return key, None
     fp, cached = entry
     if fp != body_fp:
-        raise HTTPException(409, "Idempotency-Key reuse with a different request body")
+        raise ApiError(409, "Idempotency-Key reuse with a different request body")
     return key, cached.model_copy(update={"replayed": True})
 
 
@@ -326,14 +387,14 @@ def _submit_job(
     grow past ``max_inflight`` (no unbounded buffering)."""
     key = (idempotency_key or "").strip() or None
     if key is not None and len(key) > _IDEM_KEY_MAX:
-        raise HTTPException(400, "Idempotency-Key must be <= 256 chars")
+        raise ApiError(400, "Idempotency-Key must be <= 256 chars")
     body_fp = body.model_dump_json()
     if key is not None:
         entry = job_store.get_key(key)
         if entry is not None:
             fp, job_id = entry
             if fp != body_fp:
-                raise HTTPException(
+                raise ApiError(
                     409,
                     "Idempotency-Key reuse with a different request body",
                 )
@@ -343,13 +404,14 @@ def _submit_job(
     try:
         lab.get(body.command)  # fail closed at submit, not in the worker
     except KeyError as exc:
-        raise HTTPException(404, str(exc)) from exc
+        raise ApiError(404, str(exc)) from exc
     if metrics.draining.is_set():
-        raise HTTPException(503, "harness is draining — no new work accepted")
+        raise ApiError(503, "harness is draining — no new work accepted", code="draining")
     if not inflight.acquire(blocking=False):
-        raise HTTPException(
+        raise ApiError(
             503,
             f"harness at max_inflight={metrics.max_inflight} — retry later",
+            code="over_capacity",
             headers={"Retry-After": "1"},
         )
     metrics.acquire()
@@ -392,7 +454,7 @@ def _submit_job(
     except RuntimeError as exc:  # executor gone (shutdown race)
         metrics.release()
         inflight.release()
-        raise HTTPException(503, "job executor unavailable") from exc
+        raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
     job_store.put(job, key, body_fp)
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
 
@@ -513,6 +575,7 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
+    response.headers["X-Fx1-Api-Version"] = API_VERSION
     request.app.state.metrics.record(response.status_code)
     logger.info(
         "request method=%s path=%s status=%d elapsed_ms=%.1f rid=%s",
@@ -557,14 +620,16 @@ def create_app(
     @contextmanager
     def _work_gate() -> Iterator[None]:
         if metrics.draining.is_set():
-            raise HTTPException(
+            raise ApiError(
                 503,
                 "harness is draining — no new work accepted",
+                code="draining",
             )
         if not inflight.acquire(blocking=False):
-            raise HTTPException(
+            raise ApiError(
                 503,
                 f"harness at max_inflight={max_inflight} — retry later",
+                code="over_capacity",
                 headers={"Retry-After": "1"},
             )
         metrics.acquire()
@@ -594,6 +659,21 @@ def create_app(
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
 
+    @app.exception_handler(HTTPException)
+    async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail, "code": _err_code(exc)},
+            headers=exc.headers,
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content=jsonable_encoder({"detail": exc.errors(), "code": "validation"}),
+        )
+
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
         request_id = _request_id(request.headers.get("x-request-id"))
@@ -606,13 +686,17 @@ def create_app(
                     length = int(declared)
                 except ValueError:
                     response = JSONResponse(
-                        status_code=400, content={"detail": "invalid content-length"}
+                        status_code=400,
+                        content={"detail": "invalid content-length", "code": "bad_request"},
                     )
                     return _finish(request, request_id, response, started)
                 if length > _MAX_BODY_BYTES:
                     response = JSONResponse(
                         status_code=413,
-                        content={"detail": f"body exceeds {_MAX_BODY_BYTES}-byte cap"},
+                        content={
+                            "detail": f"body exceeds {_MAX_BODY_BYTES}-byte cap",
+                            "code": "too_large",
+                        },
                     )
                     return _finish(request, request_id, response, started)
         if request.url.path in _PUBLIC_PATHS:
@@ -621,7 +705,8 @@ def create_app(
             provided = request.headers.get("X-API-Key")
             if not provided or not hmac.compare_digest(provided, api_key):
                 response = JSONResponse(
-                    status_code=401, content={"detail": "invalid or missing X-API-Key"}
+                    status_code=401,
+                    content={"detail": "invalid or missing X-API-Key", "code": "unauthorized"},
                 )
             else:
                 response = await call_next(request)
@@ -635,7 +720,8 @@ def create_app(
                             "FX1_API_KEY is unset; non-localhost clients are "
                             "refused. Set FX1_API_KEY and send X-API-Key, or "
                             "bind to 127.0.0.1 only."
-                        )
+                        ),
+                        "code": "forbidden",
                     },
                 )
             else:
@@ -660,8 +746,15 @@ def create_app(
         drain is latched — the load balancer's signal to deregister the
         pod before gated routes start refusing."""
         if metrics.draining.is_set():
-            raise HTTPException(503, "harness is draining")
+            raise ApiError(503, "harness is draining", code="draining")
         return ReadyResponse(inflight=metrics.snapshot().inflight)
+
+    app.add_api_route(
+        "/harness/version",
+        _version_info,
+        methods=["GET"],
+        response_model=VersionResponse,
+    )
 
     @app.post("/harness/drain", response_model=DrainResponse)
     def drain(
@@ -713,9 +806,9 @@ def create_app(
                     config=Path(body.config) if body.config else None,
                 )
             except KeyError as exc:
-                raise HTTPException(404, str(exc)) from exc
+                raise ApiError(404, str(exc)) from exc
             except ValueError as exc:
-                raise HTTPException(422, str(exc)) from exc
+                raise ApiError(422, str(exc)) from exc
             command = lab.get(body.command)
             resp = HarnessRunResponse(
                 command=result.command,
@@ -743,7 +836,7 @@ def create_app(
     def job_status(job_id: str) -> JobStatusResponse:
         job = job_store.get(job_id)
         if job is None:
-            raise HTTPException(404, f"unknown job_id {job_id!r}")
+            raise ApiError(404, f"unknown job_id {job_id!r}")
         return job
 
     def _resolve_request_backend(backend_name: str, checkpoint_dir: str | None) -> Any:
@@ -752,24 +845,24 @@ def create_app(
         if backend_name == "local_fx1":
             checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
             if not checkpoint:
-                raise HTTPException(
+                raise ApiError(
                     422,
                     "local_fx1 needs a checkpoint_dir in the request or "
                     "FX1_CHECKPOINT_DIR on the server",
                 )
             kwargs["checkpoint_dir"] = checkpoint
         elif checkpoint_dir is not None:
-            raise HTTPException(422, "checkpoint_dir applies only to the local_fx1 backend")
+            raise ApiError(422, "checkpoint_dir applies only to the local_fx1 backend")
         try:
             return resolve_backend(backend_name, **kwargs)
         except KeyError as exc:
-            raise HTTPException(404, str(exc)) from exc
+            raise ApiError(404, str(exc)) from exc
         except FileNotFoundError as exc:
-            raise HTTPException(422, str(exc)) from exc
+            raise ApiError(422, str(exc)) from exc
         except (RuntimeError, ValueError) as exc:
             # Missing credentials / unsigned release / failed ship gate are
             # server-side configuration faults, not client input errors.
-            raise HTTPException(503, str(exc)) from exc
+            raise ApiError(503, str(exc), code="backend_unavailable") from exc
 
     def _close_backend(backend: Any) -> None:
         closer = getattr(backend, "close", None)
@@ -783,15 +876,17 @@ def create_app(
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
         except BackendNotConfiguredError as exc:
-            raise HTTPException(503, str(exc)) from exc
+            raise ApiError(503, str(exc), code="backend_unavailable") from exc
         except NotImplementedError as exc:
-            raise HTTPException(501, str(exc)) from exc
+            raise ApiError(501, str(exc)) from exc
         except Fx1HonestyError as exc:
             # The model produced a contract-violating headline; the gate
             # caught it before the bytes left — surface as 502, not success.
-            raise HTTPException(502, f"honesty gate refused model output: {exc}") from exc
+            raise ApiError(
+                502, f"honesty gate refused model output: {exc}", code="honesty_gate"
+            ) from exc
         except RuntimeError as exc:
-            raise HTTPException(502, str(exc)) from exc
+            raise ApiError(502, str(exc), code="backend_failure") from exc
         finally:
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
@@ -842,13 +937,15 @@ def create_app(
                 try:
                     validate_fx1_output(joined)
                 except Fx1HonestyError as exc:
-                    raise HTTPException(502, f"honesty gate refused model output: {exc}") from exc
+                    raise ApiError(
+                        502, f"honesty gate refused model output: {exc}", code="honesty_gate"
+                    ) from exc
             except BackendNotConfiguredError as exc:
-                raise HTTPException(503, str(exc)) from exc
+                raise ApiError(503, str(exc), code="backend_unavailable") from exc
             except NotImplementedError as exc:
-                raise HTTPException(501, str(exc)) from exc
+                raise ApiError(501, str(exc)) from exc
             except RuntimeError as exc:
-                raise HTTPException(502, str(exc)) from exc
+                raise ApiError(502, str(exc), code="backend_failure") from exc
             finally:
                 _close_backend(backend)
             model_name = getattr(backend, "_model", None)
@@ -922,6 +1019,7 @@ def create_app(
                                 "type": "error",
                                 "status": payload.status_code,
                                 "detail": payload.detail,
+                                "code": _err_code(payload),
                             }
                         )
                         + "\n\n"

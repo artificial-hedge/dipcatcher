@@ -46,6 +46,10 @@ LOCAL_START_TIMEOUT_S_ENV = "FX1_LOCAL_START_TIMEOUT_S"
 class BackendNotConfiguredError(RuntimeError):
     """A backend whose required configuration is absent — a 503-class fault."""
 
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+
 
 def _chat_completions_url(base_url: str) -> str:
     """Normalize a BYOK base to the chat-completions route.

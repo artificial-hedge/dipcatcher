@@ -451,6 +451,24 @@ def harness_drain(
     typer.echo(json.dumps(_or_exit(lambda: client.drain(wait_s=wait_s)), indent=2))
 
 
+@harness_app.command("version")
+def harness_version(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Wire-contract + package versions — remote mode asks the server's
+    /harness/version, local mode prints this install's own pair."""
+    if remote is not None:
+        client = _remote_client(remote, api_key, timeout_s)
+        typer.echo(json.dumps(_or_exit(lambda: client.server_version())))
+        return
+    from fx1 import __version__
+    from fx1.serve.api import API_VERSION
+
+    typer.echo(json.dumps({"api_version": API_VERSION, "fx1_version": __version__, "local": True}))
+
+
 @harness_app.command("ready")
 def harness_ready(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),

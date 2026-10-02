@@ -1,7 +1,7 @@
 {
   "kind": "api_audit",
   "schema": "api_audit.v1",
-  "git_revision": "d7feb34ccfb093d8a9776d1a47f89f65a9e7afee",
+  "git_revision": "58896a600535059fb13e1631731d1e5057431530",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -64,6 +64,7 @@
       "drain_metrics_reports": true,
       "drain_idempotent": true,
       "ready_under_drain_503": true,
+      "error_code_draining": true,
       "drain_replay_served": true,
       "drain_wait_s_timeout_reports_not_drained": true,
       "drain_wait_s_blocks_until_empty": true,
@@ -112,6 +113,18 @@
       "bad_content_length_400": true,
       "error_tail_cap_413": true,
       "error_tail_bad_len": true,
+      "version_route_200": true,
+      "api_version_header_on_every_response": true,
+      "error_code_not_found": true,
+      "error_code_validation": true,
+      "error_code_unauthorized": true,
+      "error_code_forbidden": true,
+      "error_code_too_large": true,
+      "error_code_bad_request": true,
+      "error_code_conflict": true,
+      "error_code_honesty_gate": true,
+      "stream_error_code_inband": true,
+      "error_code_over_capacity": true,
       "access_log_emitted": true,
       "metrics_200": true,
       "metrics_shape": true,
@@ -125,5 +138,5 @@
     "ok": true
   },
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
-  "receipt_sha256": "f19fb7b20865b93e50792103eac69d7104da72aee54c1ee8e49664b1c6aadd8c"
+  "receipt_sha256": "cf578082291cfb393cd291d9cc7c483b807cdd196cc1c11c0451b4ade409a686"
 }

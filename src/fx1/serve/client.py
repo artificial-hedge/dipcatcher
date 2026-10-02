@@ -57,14 +57,26 @@ Transport = Callable[
 class HarnessTransportError(RuntimeError):
     """Network-level failure talking to the harness API."""
 
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+
 
 class HarnessAuthError(PermissionError):
     """401/403 from the harness API — key missing or wrong."""
+
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 class HarnessJobError(RuntimeError):
     """An async run job reached its terminal state without a result —
     the worker captured an exception (``status == 'failed'``)."""
+
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 def _urllib_transport(
@@ -149,6 +161,7 @@ class HarnessClient:
         self._cb_threshold = circuit_breaker_threshold
         self._cb_reset_s = circuit_reset_s
         self._clock = clock
+        self._last_api_version: str | None = None
         self._cb_failures = 0
         self._cb_open_until = 0.0
 
@@ -180,6 +193,9 @@ class HarnessClient:
                         {**self._headers, **(extra_headers or {})},
                         self._timeout_s,
                     )
+                    for hk, hv in headers.items():
+                        if hk.lower() == "x-fx1-api-version":
+                            self._last_api_version = hv
                 except HarnessTransportError:
                     if attempt >= retries:
                         raise
@@ -219,8 +235,13 @@ class HarnessClient:
 
     @staticmethod
     def _map_error(status: int, body: bytes) -> Exception:
+        code: str | None = None
         try:
-            detail = json.loads(body).get("detail", body.decode(errors="replace"))
+            parsed = json.loads(body)
+            detail = parsed.get("detail", body.decode(errors="replace"))
+            raw_code = parsed.get("code")
+            if isinstance(raw_code, str):
+                code = raw_code
             if isinstance(detail, list):  # pydantic validation errors
                 detail = "; ".join(
                     d.get("msg", str(d)) for d in detail if isinstance(d, dict)
@@ -228,7 +249,7 @@ class HarnessClient:
         except (json.JSONDecodeError, AttributeError, UnicodeDecodeError):
             detail = body.decode(errors="replace")[:500]
         if status in (401, 403):
-            return HarnessAuthError(f"harness auth refused ({status}): {detail}")
+            return HarnessAuthError(f"harness auth refused ({status}): {detail}", code=code)
         if status == 404:
             return KeyError(str(detail))
         if status == 422:
@@ -236,13 +257,16 @@ class HarnessClient:
         if status == 501:
             return NotImplementedError(str(detail))
         if status == 503:
-            return BackendNotConfiguredError(str(detail))
+            return BackendNotConfiguredError(str(detail), code=code)
         if status == 502:
             text = str(detail)
             if "honesty gate" in text:
-                return Fx1HonestyError(text.split("honesty gate refused model output: ")[-1])
+                return Fx1HonestyError(
+                    text.split("honesty gate refused model output: ")[-1],
+                    code=code,
+                )
             return RuntimeError(text)
-        return HarnessTransportError(f"harness API returned {status}: {detail}")
+        return HarnessTransportError(f"harness API returned {status}: {detail}", code=code)
 
     @staticmethod
     def _retryable_status(status: int, headers: Mapping[str, str]) -> bool:
@@ -571,6 +595,19 @@ class HarnessClient:
             "inflight": int(out["inflight"]),
             "drained": bool(out.get("drained", out["inflight"] == 0)),
         }
+
+    @property
+    def last_api_version(self) -> str | None:
+        """Wire-contract version stamped on the last response
+        (``X-Fx1-Api-Version``); ``None`` before the first call or when
+        talking to a pre-versioning server."""
+        return self._last_api_version
+
+    def server_version(self) -> dict[str, Any]:
+        """GET /harness/version — the server's ``{"api_version",
+        "fx1_version"}`` for version negotiation before sending work."""
+        out = self._json("GET", "/harness/version", idempotent=True)
+        return dict(out)
 
     def ready(self) -> dict[str, Any]:
         """Readiness probe: returns the payload while the server accepts new

@@ -327,6 +327,9 @@ def cli_audit() -> dict[str, Any]:
         def ready(self) -> dict[str, Any]:
             return {"ready": True, "inflight": 2}
 
+        def server_version(self) -> dict[str, Any]:
+            return {"api_version": "1", "fx1_version": "0.4.0"}
+
         def run(self, name: str, **kw: Any) -> Any:
             from fx1.harness import HarnessResult
 
@@ -391,6 +394,10 @@ def cli_audit() -> dict[str, Any]:
         out["remote_ready_json"] = (
             rready.exit_code == 0 and json.loads(rready.stdout)["ready"] is True
         )
+        rv = runner.invoke(app, ["harness", "version", "--remote", "http://h.test"])
+        out["remote_version_json"] = (
+            rv.exit_code == 0 and json.loads(rv.stdout)["api_version"] == "1"
+        )
 
     # ready under drain: client raises the mapped 503, CLI exits 1
     from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
@@ -405,6 +412,12 @@ def cli_audit() -> dict[str, Any]:
 
     ry_local = runner.invoke(app, ["harness", "ready"])
     out["ready_local_refused"] = ry_local.exit_code == 2 and "--remote" in ry_local.output
+    rv_local = runner.invoke(app, ["harness", "version"])
+    out["version_local_json"] = (
+        rv_local.exit_code == 0
+        and json.loads(rv_local.stdout)["api_version"] == "1"
+        and json.loads(rv_local.stdout)["local"] is True
+    )
 
     # metrics + drain + jobs are wire-ops surfaces — without --remote they fail clean
     rm_local = runner.invoke(app, ["harness", "metrics"])

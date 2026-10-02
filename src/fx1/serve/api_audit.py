@@ -662,6 +662,9 @@ def api_audit() -> dict[str, Any]:
         out["drain_metrics_reports"] = dclient.get("/metrics").json()["draining"] is True
         out["drain_idempotent"] = dclient.post("/harness/drain").json()["draining"] is True
         out["ready_under_drain_503"] = dclient.get("/ready").status_code == 503
+        out["error_code_draining"] = (
+            dclient.post("/harness/runs", json={"command": "x"}).json()["code"] == "draining"
+        )
         replayed = dclient.post(
             "/harness/runs",
             json={"command": "doctor"},
@@ -942,6 +945,58 @@ def api_audit() -> dict[str, Any]:
                 "referrer-policy",
             )
         )
+
+    # --- error envelope: stable machine codes + API version negotiation ----
+    v = client.get("/harness/version")
+    out["version_route_200"] = (
+        v.status_code == 200
+        and v.json()["api_version"] == api_mod.API_VERSION
+        and bool(v.json()["fx1_version"])
+    )
+    out["api_version_header_on_every_response"] = (
+        client.get("/health").headers.get("x-fx1-api-version") == api_mod.API_VERSION
+        and big.headers.get("x-fx1-api-version") == api_mod.API_VERSION
+        and bad_len.headers.get("x-fx1-api-version") == api_mod.API_VERSION
+    )
+    out["error_code_not_found"] = (
+        client.post("/harness/runs", json={"command": "pwn"}).json()["code"] == "not_found"
+    )
+    out["error_code_validation"] = (
+        client.post("/harness/runs", json={"command": 1}).json()["code"] == "validation"
+    )
+    out["error_code_unauthorized"] = (
+        secured.get("/harness/commands").json()["code"] == "unauthorized"
+    )
+    out["error_code_forbidden"] = (
+        remote_client.get("/harness/commands").json()["code"] == "forbidden"
+    )
+    out["error_code_too_large"] = big.json()["code"] == "too_large"
+    out["error_code_bad_request"] = bad_len.json()["code"] == "bad_request"
+    client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "ec-conflict"},
+    )
+    out["error_code_conflict"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor", "extra_args": ["--x"]},
+            headers={"Idempotency-Key": "ec-conflict"},
+        ).json()["code"]
+        == "conflict"
+    )
+    out["error_code_honesty_gate"] = rd.json()["code"] == "honesty_gate"
+    out["stream_error_code_inband"] = err_frames[0]["code"] == "backend_failure"
+    cap_app = api_mod.create_app(max_inflight=1)
+    cap_client = _TC2(cap_app)
+    cap_app.state.inflight_slots.acquire()
+    try:
+        capped = cap_client.post("/harness/runs", json={"command": "doctor"})
+        out["error_code_over_capacity"] = (
+            capped.status_code == 503 and capped.json()["code"] == "over_capacity"
+        )
+    finally:
+        cap_app.state.inflight_slots.release()
 
     # one structured access line per request, keyed by the request id
     import logging  # noqa: PLC0415
