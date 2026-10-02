@@ -475,6 +475,7 @@ _MEASUREMENT_SCHEMAS = (
     "mid_jump.v1",
     "order_lifetime.v1",
     "order_revision.v1",
+    "mortal_repost.v1",
     "pin_stability.v1",
     "place_law.v1",
     "place_mix.v1",
