@@ -1429,6 +1429,14 @@ from quant_fund.research.benches_w179 import (
     bench_nnet_surv_family,
     bench_pchazard_family,
 )
+from quant_fund.research.benches_w180 import (
+    bench_boomerang_sampler_family,
+    bench_bouncy_particle_family,
+    bench_elliptical_slice_family,
+    bench_kinetic_langevin_family,
+    bench_riemannian_mala_family,
+    bench_zigzag_sampler_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4054,6 +4062,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "nnet_surv": bench_nnet_surv_family(),
         "drsa_surv": bench_drsa_surv_family(),
         "pchazard": bench_pchazard_family(),
+        "bouncy_particle": bench_bouncy_particle_family(),
+        "zigzag_sampler": bench_zigzag_sampler_family(),
+        "boomerang_sampler": bench_boomerang_sampler_family(),
+        "kinetic_langevin": bench_kinetic_langevin_family(),
+        "elliptical_slice": bench_elliptical_slice_family(),
+        "riemannian_mala": bench_riemannian_mala_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

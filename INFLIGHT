@@ -2577,3 +2577,4 @@ wave 176 (2026-10-02): data-centric canon — active_bald, data_cartography, el2
 wave 177 (2026-10-02): neuromorphic canon — lif_neuron, stdp_learn, surrogate_snn, izhikevich, lsm_reservoir, temporal_code; 1034→1040 families.
 wave 178 (2026-10-02): multi-task-gradient canon — pcgrad, mgda_mtl, cagrad_mtl, gradnorm_bal, nash_mtl, imtl_g; 1040→1046 families.
 wave 179 (2026-10-02): survival-DL canon — deepsurv, deephit, cox_time, nnet_surv, drsa_surv, pchazard; 1046→1052 families.
+wave 180 (2026-10-02): PDMP exotic-sampling canon — bouncy_particle, zigzag_sampler, boomerang_sampler, kinetic_langevin, elliptical_slice, riemannian_mala; 1052→1058 families.
