@@ -2499,6 +2499,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tebd_quench",
         "mps_fidelity",
         "tt_round",
+        # Wave-201 stochastic-control canon: PSOR, CRR, Kushner MCA,
+        # HJB penalty, AB dual, exercise boundary.
+        "psor_american",
+        "crr_tree",
+        "kushner_mca",
+        "hjb_penalty",
+        "dual_american",
+        "exercise_boundary",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
