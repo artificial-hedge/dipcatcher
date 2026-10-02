@@ -421,6 +421,12 @@ class ZILobConfig:
     # ``_level_vacated`` reposts, and shorten maker age at fill. 0 is
     # bit-identical (the expiry heap is never populated, no sweep).
     maker_ttl: int = 0
+    # ``maker_requote`` ∈ [0, 1]: on ttl expiry, the maker re-rests at the
+    # SAME level with probability ``maker_requote`` (fresh order id, fresh
+    # ttl) — the tape's cancel-into-repost churn: depth stays constant
+    # while maker age keeps resetting. Active only with maker_ttl > 0;
+    # ttl 0 never reaches the expiry path regardless.
+    maker_requote: float = 0.0
     # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
     # order of a level immediately re-rests one unit at the SAME level
     # tagged ``iceberg`` — hidden reserve liquidity that refills after
@@ -790,6 +796,7 @@ class ZILobConfig:
             raise ValueError(f"zone_embargo must be an int >= 0, got {self.zone_embargo!r}")
         if isinstance(self.maker_ttl, bool) or int(self.maker_ttl) < 0:
             raise ValueError(f"maker_ttl must be an int >= 0, got {self.maker_ttl!r}")
+        _prob(self.maker_requote, "maker_requote")
         _prob(self.iceberg_reload, "iceberg_reload")
         if self.iceberg_reload_mode not in ("per_unit", "residual"):
             raise ValueError(
@@ -2684,8 +2691,13 @@ class ZILobSimulator:
         """
         while self._ttl_pending and self._ttl_pending[0][0] <= self.n_events:
             _, oid = heapq.heappop(self._ttl_pending)
-            if oid in self._orders:
-                self.cancel_order(oid)
+            order = self._orders.get(oid)
+            if order is None:
+                continue
+            side, level = order.side, order.level
+            self.cancel_order(oid)
+            if self._rng.random() < self._cfg.maker_requote:
+                self._rest(side, level, "churn")
 
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""

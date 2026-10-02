@@ -515,6 +515,7 @@ _MEASUREMENT_SCHEMAS = (
     "zone_embargo.v1",
     "zone_card.v1",
     "zone_map.v1",
+    "zone_churn.v1",
     "zone_ttl.v1",
     "zone_stability.v1",
 )

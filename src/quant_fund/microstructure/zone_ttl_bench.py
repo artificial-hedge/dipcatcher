@@ -61,11 +61,12 @@ _CELLS: tuple[tuple[str, int, int, float | None], ...] = (
 _SEEDS = (7, 11)
 
 
-def _extra(zone: int, ttl: int) -> dict[str, Any]:
+def _extra(zone: int, ttl: int, requote: float = 0.0) -> dict[str, Any]:
     return dict(
         _FULL,
         zone_embargo=zone,
         maker_ttl=ttl,
+        maker_requote=requote,
         fill_repost_frac=0.8,
         fill_repost_delay=280,
         repost_frac=0.6,
@@ -74,11 +75,19 @@ def _extra(zone: int, ttl: int) -> dict[str, Any]:
     )
 
 
-def _card(zone: int, ttl: int, inten: float | None, *, horizon: int, seed: int) -> dict[str, Any]:
+def _card(
+    zone: int,
+    ttl: int,
+    inten: float | None,
+    *,
+    horizon: int,
+    seed: int,
+    requote: float = 0.0,
+) -> dict[str, Any]:
     """Mix shares + executed-maker lifetime on one draw (zone_card.v1's
     measure: ages on the sim clock converted to event units by the
     draw's realized rate)."""
-    cfg = _calibrated(seed, _extra(zone, ttl))
+    cfg = _calibrated(seed, _extra(zone, ttl, requote))
     flow = _split(inten, seed + 1) if inten is not None else None
     sim = ZILobSimulator(cfg, flow)
     ages: list[float] = []
@@ -110,10 +119,18 @@ def _card(zone: int, ttl: int, inten: float | None, *, horizon: int, seed: int) 
     }
 
 
-def _cell(zone: int, ttl: int, inten: float | None, *, horizon: int, seed: int) -> dict[str, Any]:
+def _cell(
+    zone: int,
+    ttl: int,
+    inten: float | None,
+    *,
+    horizon: int,
+    seed: int,
+    requote: float = 0.0,
+) -> dict[str, Any]:
     """Card + pins + kernel on one (zone, ttl, flow) draw."""
-    extra = _extra(zone, ttl)
-    card = _card(zone, ttl, inten, horizon=horizon, seed=seed)
+    extra = _extra(zone, ttl, requote)
+    card = _card(zone, ttl, inten, horizon=horizon, seed=seed, requote=requote)
     crown = _sim_crown(
         "joint",
         extra,
@@ -182,7 +199,17 @@ def zone_ttl_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
                 "tape_mix_gap": tape_gap,
                 "life_ev_p50_mean": (round(sum(lifes) / len(lifes), 2) if lifes else None),
                 "n_pins_mean": sum(d["n_pins"] for d in draws) / len(draws),
-                "instant_mean": sum(d["instant_signed_ticks"] for d in draws) / len(draws),
+                "instant_mean": (
+                    sum(
+                        d["instant_signed_ticks"]
+                        for d in draws
+                        if d["instant_signed_ticks"] is not None
+                    )
+                    / max(
+                        1,
+                        sum(1 for d in draws if d["instant_signed_ticks"] is not None),
+                    )
+                ),
                 "k200_mean": (
                     sum(d["k200"] for d in draws if d["k200"] is not None)
                     / max(1, sum(1 for d in draws if d["k200"] is not None))
