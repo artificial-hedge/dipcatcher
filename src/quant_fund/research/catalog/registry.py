@@ -1322,6 +1322,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "corwin_schultz",
         "gwr_spatial",
         "pareto_nbd",
+        # wave 88 — Tauchen (1986),
+        # Tauchen-Hussey (1991) and
+        # Rouwenhorst (1995) AR(1)
+        # discretization, Lomb (1976)/
+        # Scargle (1982)/Press-Rybicki
+        # (1989) irregular periodogram,
+        # Broomhead-King (1986)/
+        # Golyandina (2001) SSA,
+        # Beck-Katz (1995) PCSE +
+        # Parks (1967) FGLS, Quandt
+        # (1960)/Andrews (1993)/
+        # Andrews-Ploberger (1994)/
+        # Nyblom (1989) stability, and
+        # Friedman (1984) supersmoother
+        # with Cleveland (1979) LOWESS.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "markov_discretization",
+        "lomb_scargle",
+        "singular_spectrum",
+        "beck_katz",
+        "quandt_andrews",
+        "friedman_supersmoother",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

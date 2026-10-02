@@ -2231,3 +2231,10 @@ note: canon PR to follow.
     files + test_benches_w87 (32 tests).
   - Canon staged on top of w86-canon.
 note: canon PR to follow.
+  wave88:
+  - "markov_discretization","lomb_scargle","singular_spectrum",
+    "beck_katz","quandt_andrews","friedman_supersmoother"
+    (482->488); agent.py wiring; tests: 6 module
+    files + test_benches_w88 (34 tests).
+  - Canon staged on top of w87-canon.
+note: canon PR to follow.

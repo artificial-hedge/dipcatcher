@@ -693,6 +693,14 @@ from quant_fund.research.benches_w87 import (
     bench_hamilton_filter,
     bench_pareto_nbd,
 )
+from quant_fund.research.benches_w88 import (
+    bench_beck_katz,
+    bench_friedman_supersmoother,
+    bench_lomb_scargle,
+    bench_markov_discretization,
+    bench_quandt_andrews,
+    bench_singular_spectrum,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2766,6 +2774,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "corwin_schultz": bench_corwin_schultz(),
         "gwr_spatial": bench_gwr_spatial(),
         "pareto_nbd": bench_pareto_nbd(),
+        "markov_discretization": bench_markov_discretization(),
+        "lomb_scargle": bench_lomb_scargle(),
+        "singular_spectrum": bench_singular_spectrum(),
+        "beck_katz": bench_beck_katz(),
+        "quandt_andrews": bench_quandt_andrews(),
+        "friedman_supersmoother": bench_friedman_supersmoother(),
     }
 
     hyps = _build_hypotheses(families, rankers)
