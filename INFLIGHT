@@ -1289,6 +1289,7 @@ detail: |
     the chain stays clean as #691/#695/#698 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1320,6 +1321,7 @@ detail: |
     as #691/#695/#698/#702 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 
@@ -1351,6 +1353,7 @@ detail: |
     as #695/#698/#702/#704 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1383,6 +1386,7 @@ detail: |
     as #695/#698/#702/#704/#706 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1414,6 +1418,7 @@ detail: |
     as #695/#698/#702/#704/#706/#709 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1451,6 +1456,7 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1490,6 +1496,7 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1530,6 +1537,7 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 64 canon)
@@ -1568,6 +1576,7 @@ detail: |
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1612,6 +1621,7 @@ detail: |
     land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1658,6 +1668,7 @@ detail: |
     #717/#720 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 67 canon)
@@ -1705,6 +1716,7 @@ detail: |
     #717/#720/#723 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 68 canon)
@@ -1749,6 +1761,7 @@ detail: |
     #717/#720/#723/#725 land.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 --- owner: devin (wave 69 canon)
@@ -1781,6 +1794,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1816,6 +1830,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1846,6 +1861,7 @@ detail: |
     the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -1875,6 +1891,7 @@ detail: |
     the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 73 canon)
@@ -1902,6 +1919,7 @@ detail: |
     the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 74 canon)
@@ -1929,6 +1947,7 @@ detail: |
     the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 75 canon)
@@ -1956,6 +1975,7 @@ detail: |
     the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 76 canon)
@@ -1986,6 +2006,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 77 canon)
@@ -2016,6 +2037,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 78 canon)
@@ -2049,6 +2071,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2081,6 +2104,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2111,6 +2135,7 @@ detail: |
     as the open stack lands.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2138,6 +2163,7 @@ detail: |
   - Canon staged on top of w80-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2164,6 +2190,7 @@ detail: |
   - Canon staged on top of w81-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2193,6 +2220,7 @@ detail: |
   - Canon staged on top of w82-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2223,6 +2251,7 @@ detail: |
   - Canon staged on top of w83-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2254,6 +2283,7 @@ detail: |
   - Canon staged on top of w84-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
 
 ---
@@ -2285,6 +2315,7 @@ detail: |
   - Canon staged on top of w85-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
   wave87:
   - "avellaneda_stoikov","gillespie_ssa","hamilton_filter",
@@ -2294,6 +2325,7 @@ note: canon PR to follow.
   - Canon staged on top of w86-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
   wave88:
   - "markov_discretization","lomb_scargle","singular_spectrum",
@@ -2303,6 +2335,7 @@ note: canon PR to follow.
   - Canon staged on top of w87-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
   wave89:
   - "edf_tests","normality_tests","scale_homogeneity",
@@ -2312,6 +2345,7 @@ note: canon PR to follow.
   - Canon staged on top of w88-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.
   wave90:
   - "mars_regression","ace_avas","projection_pursuit",
@@ -2398,4 +2432,5 @@ note: canon PR to follow.
   - Canon staged on top of w100-canon.
 wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 note: canon PR to follow.

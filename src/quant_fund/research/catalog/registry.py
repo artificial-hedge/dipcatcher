@@ -1606,6 +1606,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nystrom",
         "cur_decomp",
         "interpolative_decomp",
+        # Wave-104 canon: OT II —
+        # Sinkhorn + transport LP,
+        # EMD 1-D/LP + Bures,
+        # Gromov-Wasserstein,
+        # unbalanced KL-UOT,
+        # fixed-support barycenter,
+        # fused GW. Same SYNTHETIC
+        # diagnostic contract.
+        "sinkhorn",
+        "emd_lp",
+        "gromov_wasserstein",
+        "unbalanced_ot",
+        "wasserstein_barycenter",
+        "fused_gromov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

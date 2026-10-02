@@ -821,6 +821,14 @@ from quant_fund.research.benches_w103 import (
     bench_nystrom_family,
     bench_randomized_svd_family,
 )
+from quant_fund.research.benches_w104 import (
+    bench_emd_lp_family,
+    bench_fused_gromov_family,
+    bench_gromov_wasserstein_family,
+    bench_sinkhorn_family,
+    bench_unbalanced_ot_family,
+    bench_wasserstein_barycenter_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2990,6 +2998,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "nystrom": bench_nystrom_family(),
         "cur_decomp": bench_cur_decomp_family(),
         "interpolative_decomp": bench_interpolative_decomp_family(),
+        "sinkhorn": bench_sinkhorn_family(),
+        "emd_lp": bench_emd_lp_family(),
+        "gromov_wasserstein": bench_gromov_wasserstein_family(),
+        "unbalanced_ot": bench_unbalanced_ot_family(),
+        "wasserstein_barycenter": bench_wasserstein_barycenter_family(),
+        "fused_gromov": bench_fused_gromov_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
