@@ -1822,6 +1822,14 @@ from quant_fund.research.benches_w228 import (
     bench_rga_sequence_family,
     bench_twopset_family,
 )
+from quant_fund.research.benches_w229 import (
+    bench_bloom_filter_family,
+    bench_cuckoo_filter_family,
+    bench_minhash_lsh_family,
+    bench_quotient_filter_family,
+    bench_simhash_family,
+    bench_xor_filter_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4742,6 +4750,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "lww_map": bench_lww_map_family(),
         "twopset": bench_twopset_family(),
         "rga_sequence": bench_rga_sequence_family(),
+        "bloom_filter": bench_bloom_filter_family(),
+        "cuckoo_filter": bench_cuckoo_filter_family(),
+        "xor_filter": bench_xor_filter_family(),
+        "quotient_filter": bench_quotient_filter_family(),
+        "minhash_lsh": bench_minhash_lsh_family(),
+        "simhash": bench_simhash_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
