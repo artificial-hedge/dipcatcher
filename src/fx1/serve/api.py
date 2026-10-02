@@ -308,6 +308,7 @@ class VersionResponse(_Model):
 
 
 _JOB_STATUSES = ("queued", "running", "succeeded", "failed", "cancelled")
+_TERMINAL_JOB_STATUS = frozenset({"succeeded", "failed", "cancelled"})
 _JobStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
 
 
@@ -611,6 +612,51 @@ def _mount_job_routes(
             raise ApiError(409, f"job {job_id!r} is {outcome}")
         _deliver_job_callback(job)  # cancelled is terminal — fire the webhook
         return job
+
+    @app.get("/harness/jobs/{job_id}/events")
+    def job_events(
+        job_id: str,
+        timeout_s: float = Query(default=600.0, ge=1.0, le=3600.0),
+    ) -> StreamingResponse:
+        """SSE job-status stream: the job record arrives as an
+        ``event: job`` frame on every change until a terminal status,
+        then the stream closes. ``: keepalive`` comment frames fire every
+        ``sse_keepalive_s`` while the job is quiet; ``timeout_s`` bounds
+        the stream — reconnect (and resume from the last frame) to keep
+        watching. Same read path as ``GET /harness/jobs/{job_id}`` — a
+        snapshot before the stream opens, so an unknown id 404s rather
+        than hanging."""
+        job = job_store.get(job_id)
+        if job is None:
+            raise ApiError(404, f"unknown job_id {job_id!r}")
+        keepalive_s = float(getattr(app.state, "sse_keepalive_s", 15.0))
+
+        def _frames() -> Iterator[str]:
+            deadline = time.monotonic() + timeout_s
+            last = ""
+            next_keep = time.monotonic() + keepalive_s if keepalive_s > 0 else math.inf
+            poll_s = 0.25 if keepalive_s <= 0 else min(0.25, keepalive_s)
+            while True:
+                cur = job_store.get(job_id)
+                if cur is None:
+                    return  # evicted from the bounded store mid-stream
+                snap = cur.model_dump_json()
+                if snap != last:
+                    last = snap
+                    yield f"event: job\ndata: {snap}\n\n"
+                now = time.monotonic()
+                if cur.status in _TERMINAL_JOB_STATUS or now >= deadline:
+                    return
+                if now >= next_keep:
+                    yield ": keepalive\n\n"
+                    next_keep = now + keepalive_s
+                time.sleep(poll_s)
+
+        return StreamingResponse(
+            _frames(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
 
 class _IdemStore:

@@ -451,6 +451,60 @@ class HarnessClient:
                 raise HarnessTransportError(f"job {job_id} did not finish within {timeout_s}s")
             self._sleep(poll_s if remaining is None else min(poll_s, remaining))
 
+    def stream_job(
+        self,
+        job_id: str,
+        *,
+        timeout_s: float = 600.0,
+    ) -> list[dict[str, Any]]:
+        """Follow a job over SSE — ``GET /harness/jobs/{job_id}/events``
+        returns the job record as an ``event: job`` frame on every status
+        change until the job goes terminal, then closes. Returns every
+        distinct record snapshot in order; the last frame is terminal
+        unless the server-side ``timeout_s`` elapses first (reconnect to
+        resume — frames carry the full record, not diffs)."""
+        _, _, body = self._request(
+            "GET",
+            f"/harness/jobs/{urllib.parse.quote(job_id)}/events"
+            f"?timeout_s={urllib.parse.quote(str(timeout_s))}",
+            idempotent=True,
+        )
+        frames: list[dict[str, Any]] = []
+        for line in body.decode().splitlines():
+            if not line.startswith("data: "):
+                continue
+            frames.append(json.loads(line[len("data: ") :]))
+        if not frames:
+            raise HarnessTransportError("job stream ended without a status frame")
+        return frames
+
+    def wait_run_stream(
+        self,
+        job_id: str,
+        *,
+        timeout_s: float = 600.0,
+    ) -> HarnessResult:
+        """``wait_run`` without polling: follows the SSE job stream, then
+        maps the terminal record through the same outcome table. A stream
+        that ends before a terminal status raises HarnessTransportError
+        (the job may still be running server-side — reconnect or poll)."""
+        st = self.stream_job(job_id, timeout_s=timeout_s)[-1]
+        if st["status"] == "succeeded":
+            r = st["result"]
+            return HarnessResult(
+                command=r["command"],
+                exit_code=r["exit_code"],
+                stdout=r["stdout"],
+                stderr=r["stderr"],
+            )
+        if st["status"] == "failed":
+            raise HarnessJobError(f"job {job_id} failed: {st.get('error')}")
+        if st["status"] == "cancelled":
+            raise HarnessJobError(f"job {job_id} cancelled")
+        raise HarnessTransportError(
+            f"job {job_id} stream ended at {st['status']!r} before terminal"
+        )
+
     # ---- gated completion ------------------------------------------------
 
     def complete(

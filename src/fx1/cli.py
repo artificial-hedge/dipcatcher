@@ -719,6 +719,42 @@ def harness_wait(
     raise typer.Exit(code=result.exit_code)
 
 
+@harness_app.command("watch")
+def harness_watch(
+    job_id: str = typer.Argument(..., help="Job id returned by harness submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    stream_timeout_s: float = typer.Option(
+        600.0, "--stream-timeout", help="Server-side SSE stream bound, seconds."
+    ),
+) -> None:
+    """Follow a job over the SSE event stream — one connection, no polling."""
+    _need_remote(remote)
+    frames = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).stream_job(
+            job_id, timeout_s=stream_timeout_s
+        )
+    )
+    for st in frames:
+        typer.echo(f"{st['status']}\t{job_id}")
+    last = frames[-1]
+    if last["status"] == "succeeded":
+        result = last["result"]
+        typer.echo(result["stdout"])
+        if result["stderr"]:
+            typer.echo(result["stderr"], err=True)
+        raise typer.Exit(code=result["exit_code"])
+    if last["status"] == "failed":
+        typer.echo(f"job failed: {last.get('error')}", err=True)
+        raise typer.Exit(code=1)
+    if last["status"] == "cancelled":
+        typer.echo("job cancelled", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"stream ended before terminal state (last status {last['status']!r})", err=True)
+    raise typer.Exit(code=1)
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

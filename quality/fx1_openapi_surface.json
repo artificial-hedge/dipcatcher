@@ -135,6 +135,27 @@
         ]
       }
     },
+    "/harness/jobs/{job_id}/events": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "timeout_s",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "params": [
@@ -205,5 +226,5 @@
       }
     }
   },
-  "schema_sha256": "708a815d887a6966d5846f705f0e7e219054e8e3a1fb6076e7579afa498f4da7"
+  "schema_sha256": "274185ab6f50ea4d16f2a65be470a64ae79b95f56eec3fef5e8c10db201ad9bd"
 }

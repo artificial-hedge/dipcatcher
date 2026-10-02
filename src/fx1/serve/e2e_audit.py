@@ -540,6 +540,13 @@ def e2e_audit() -> dict[str, bool]:
                 hook_hdrs[0].get("X-Fx1-Webhook-Signature"),
                 hook_raw[0],
             )
+            frames = hc.stream_job(jid)
+            out["e2e_job_events_terminal"] = (
+                len(frames) >= 1
+                and frames[-1]["job_id"] == jid
+                and frames[-1]["status"] == "succeeded"
+            )
+            out["e2e_wait_run_stream"] = hc.wait_run_stream(jid).command == "doctor"
         finally:
             server7.should_exit = True
             server7_thread.join(timeout=15)

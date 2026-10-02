@@ -371,6 +371,23 @@ def cli_audit() -> dict[str, Any]:
             self.last_wait = kw.get("timeout_s")
             return HarnessResult(command="doctor", exit_code=0, stdout="ran", stderr="")
 
+        def stream_job(self, job_id: str, **kw: Any) -> list[dict[str, Any]]:
+            self.last_job = job_id
+            self.last_stream_timeout = kw.get("timeout_s")
+            return [
+                {"job_id": job_id, "status": "queued"},
+                {
+                    "job_id": job_id,
+                    "status": "succeeded",
+                    "result": {
+                        "command": "doctor",
+                        "exit_code": 0,
+                        "stdout": "ran",
+                        "stderr": "",
+                    },
+                },
+            ]
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -563,6 +580,14 @@ def cli_audit() -> dict[str, Any]:
         )
         rw = runner.invoke(app, ["harness", "wait", "j-9", "--remote", "http://h.test"])
         out["cli_wait_prints_result"] = rw.exit_code == 0 and rw.stdout.strip() == "ran"
+        rww = runner.invoke(app, ["harness", "watch", "j-7", "--remote", "http://h.test"])
+        out["cli_watch_streams"] = (
+            rww.exit_code == 0
+            and "queued\tj-7" in rww.stdout
+            and "succeeded\tj-7" in rww.stdout
+            and "ran" in rww.stdout
+            and remotes[-1].last_job == "j-7"
+        )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

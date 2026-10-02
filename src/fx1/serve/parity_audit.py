@@ -1177,6 +1177,47 @@ def parity_audit() -> dict[str, bool]:
         and cb_seen[0].get("callback_url") == "https://hooks.test/x"
         and cb_seen[0].get("callback_secret") == "whsec-t"
     )
+
+    # --- job SSE stream: client parses event frames --------------------------
+    sse_body = (
+        b"event: job\n"
+        b'data: {"job_id": "j1", "status": "queued"}\n\n'
+        b": keepalive\n\n"
+        b"event: job\n"
+        b'data: {"job_id": "j1", "status": "succeeded", "result": '
+        b'{"command": "doctor", "exit_code": 0, "stdout": "ok", "stderr": ""}}\n\n'
+    )
+
+    def _sse_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        cb_seen.append({"_url": url, "_method": method})
+        return (200, {"Content-Type": "text/event-stream"}, sse_body)
+
+    c_sse = HarnessClient("http://harness.test", transport=_sse_transport)
+    frames = c_sse.stream_job("j1", timeout_s=42.0)
+    out["client_stream_job_frames"] = (
+        len(frames) == 2
+        and frames[0]["status"] == "queued"
+        and frames[-1]["status"] == "succeeded"
+        and "/harness/jobs/j1/events?timeout_s=42.0" in str(cb_seen[-1].get("_url"))
+    )
+    out["client_wait_run_stream_result"] = (
+        c_sse.wait_run_stream("j1", timeout_s=42.0).stdout == "ok"
+    )
+    empty_sse = HarnessClient(
+        "http://harness.test",
+        transport=lambda m, u, p, h, t: (200, {}, b": keepalive\n\n"),
+    )
+    try:
+        empty_sse.stream_job("j1")
+        out["client_stream_job_empty_raises"] = False
+    except HarnessTransportError:
+        out["client_stream_job_empty_raises"] = True
     return out
 
 

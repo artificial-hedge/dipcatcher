@@ -1158,6 +1158,48 @@ def api_audit() -> dict[str, Any]:
     finally:
         os.environ.pop("FX1_API_RATE_LIMIT_RPS", None)
 
+    # --- job event stream: SSE status feed until terminal -------------------
+    ev_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=1,
+        sse_keepalive_s=0.05,
+    )
+    evc = _TC2(ev_app)
+    ev_jid = evc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    ev_resp = evc.get(f"/harness/jobs/{ev_jid}/events")
+    ev_frames = [
+        _json.loads(ln[len("data: ") :])
+        for ln in ev_resp.text.splitlines()
+        if ln.startswith("data: ")
+    ]
+    out["job_events_stream_terminal"] = (
+        ev_resp.status_code == 200
+        and "text/event-stream" in ev_resp.headers.get("content-type", "")
+        and ev_resp.headers.get("cache-control", "") in ("no-cache", "no-store")
+        and len(ev_frames) >= 1
+        and ev_frames[-1]["status"] == "succeeded"
+        and ev_frames[-1]["job_id"] == ev_jid
+    )
+    out["job_events_unknown_404"] = evc.get("/harness/jobs/nope/events").status_code == 404
+    out["job_events_timeout_422"] = (
+        evc.get(f"/harness/jobs/{ev_jid}/events?timeout_s=0.5").status_code == 422
+    )
+    # a blocked worker keeps the next job queued: the stream emits the
+    # queued frame, keeps alive on the quiet job, then closes at timeout_s
+    ev_app.state.jobs_executor.submit(lambda: time.sleep(3))
+    blk_jid = evc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    blk_resp = evc.get(f"/harness/jobs/{blk_jid}/events?timeout_s=1")
+    blk_statuses = [
+        _json.loads(ln[len("data: ") :])["status"]
+        for ln in blk_resp.text.splitlines()
+        if ln.startswith("data: ")
+    ]
+    out["job_events_queued_frame_then_close"] = blk_resp.status_code == 200 and blk_statuses == [
+        "queued"
+    ]
+    out["job_events_keepalive_frames"] = ": keepalive" in blk_resp.text
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 
