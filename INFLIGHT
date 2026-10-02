@@ -2544,3 +2544,4 @@ wave 143 (2026-10-02): PEFT canon — lora_ft, qlora_nf4, dora_weight, prompt_tu
 wave 144 (2026-10-02): inference-engine canon — speculative_decoding, paged_kv_cache, flash_attn, gqa_attn, sliding_window_cache, ring_attn; 836→842 families.
 wave 145 (2026-10-02): retrieval canon — bm25_retriever, dpr_retriever, colbert_late, hyde_retrieval, reranker_crossenc, rrf_fusion; 842→848 families.
 wave 146 (2026-10-02): test-time-compute + multi-agent canon — consistency_vote, verifier_prm, mcts_reason, debate_multiagent, unlearn_ga, knowledge_graph_embed; 848→854 families.
+wave 147 (2026-10-02): alignment canon — reward_model, dpo_train, ipo_train, kto_train, grpo_train, rlhf_ppo; 854→860 families.
