@@ -1067,6 +1067,17 @@ export interface components {
             }[] | null;
             /** Backend */
             backend: string;
+            /**
+             * Callback Attempts
+             * @default 0
+             */
+            callback_attempts: number;
+            /** Callback Error */
+            callback_error?: string | null;
+            /** Callback Status */
+            callback_status?: ("delivered" | "failed") | null;
+            /** Callback Url */
+            callback_url?: string | null;
             /** Created At */
             created_at: number;
             /** Error */
@@ -1111,6 +1122,10 @@ export interface components {
              */
             backend: "hosted_k3" | "local_fx1" | "byok";
             byok?: components["schemas"]["ByokOverride"] | null;
+            /** Callback Secret */
+            callback_secret?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
             /** Checkpoint Dir */
             checkpoint_dir?: string | null;
             /** Fallbacks */

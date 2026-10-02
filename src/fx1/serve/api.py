@@ -558,6 +558,21 @@ class EvalSubmitRequest(_Model):
     # 'byok' judge.
     judge_backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None
     judge_byok: ByokOverride | None = None
+    # Terminal-state webhook (the job contract): the finished record is
+    # POSTed to ``callback_url`` on every terminal transition;
+    # ``callback_secret`` HMAC-signs the delivery and is never echoed.
+    callback_url: str | None = None
+    callback_secret: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def _eval_callback_url_http(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        parsed = urllib.parse.urlparse(v)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
+        return v
 
     @model_validator(mode="after")
     def _eval_valid(self) -> EvalSubmitRequest:
@@ -566,6 +581,8 @@ class EvalSubmitRequest(_Model):
             raise ValueError("judge_byok applies only to judge_backend='byok'")
         if self.judge_backend is not None and not suite_accepts_judge(self.suite):
             raise ValueError(f"suite '{self.suite}' takes no judge")
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
         return self
 
 
@@ -1008,27 +1025,29 @@ _WEBHOOK_MAX_ATTEMPTS = 3
 _WEBHOOK_BACKOFF_S = 0.5
 
 
-def _deliver_job_callback(job: JobStatusResponse) -> None:
-    """Terminal-state webhook: POST the full job record to the caller's
-    ``callback_url``. Best-effort — a dead or slow endpoint records
-    ``callback_status='failed'`` on the job, never raises into the worker
-    and never changes the job's own status. Transient faults (network
-    errors, 5xx) retry ``_WEBHOOK_MAX_ATTEMPTS`` times with capped backoff;
-    a 4xx is a definitive rejection and is never retried."""
-    url = job.callback_url
+def _deliver_callback(rec: JobStatusResponse | EvalRecord) -> None:
+    """Terminal-state webhook: POST the full record to the caller's
+    ``callback_url`` — the shared contract for jobs and evals.
+    Best-effort — a dead or slow endpoint records
+    ``callback_status='failed'`` on the record, never raises into the
+    worker and never changes the record's own status. Transient faults
+    (network errors, 5xx) retry ``_WEBHOOK_MAX_ATTEMPTS`` times with
+    capped backoff; a 4xx is a definitive rejection and is never
+    retried."""
+    url = rec.callback_url
     if not url:
         return
     for attempt in range(_WEBHOOK_MAX_ATTEMPTS):
         if attempt:
             time.sleep(_WEBHOOK_BACKOFF_S * (1 << (attempt - 1)))
-        job.callback_attempts = attempt + 1
+        rec.callback_attempts = attempt + 1
         try:
-            payload = job.model_dump_json().encode()
+            payload = rec.model_dump_json().encode()
             headers = {"Content-Type": "application/json"}
-            if job._callback_secret:
+            if rec._callback_secret:
                 ts = str(int(time.time()))
                 headers[WEBHOOK_TIMESTAMP_HEADER] = ts
-                headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(job._callback_secret, ts, payload)
+                headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(rec._callback_secret, ts, payload)
             req = urllib.request.Request(
                 url,
                 data=payload,
@@ -1037,16 +1056,16 @@ def _deliver_job_callback(job: JobStatusResponse) -> None:
             )
             with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
                 if resp.status < 400:
-                    job.callback_status = "delivered"
-                    job.callback_error = None
+                    rec.callback_status = "delivered"
+                    rec.callback_error = None
                     return
-                job.callback_status = "failed"
-                job.callback_error = f"callback endpoint returned {resp.status}"
+                rec.callback_status = "failed"
+                rec.callback_error = f"callback endpoint returned {resp.status}"
                 if 400 <= resp.status < 500:
                     return  # definitive rejection — never retried
         except Exception as exc:  # noqa: BLE001 — delivery faults land on the record, not the worker
-            job.callback_status = "failed"
-            job.callback_error = f"{type(exc).__name__}: {exc}"
+            rec.callback_status = "failed"
+            rec.callback_error = f"{type(exc).__name__}: {exc}"
 
 
 def _submit_job(
@@ -1133,7 +1152,7 @@ def _submit_job(
             job.error = f"{type(exc).__name__}: {exc}"
             job.status = "failed"
         finally:
-            _deliver_job_callback(job)
+            _deliver_callback(job)
         job.finished_at = time.time()
         metrics.release()
         inflight.release()
@@ -1165,8 +1184,9 @@ def _make_lifespan(
         yield
         metrics.draining.set()
         for pending in job_store.cancel_pending():
-            _deliver_job_callback(pending)
-        eval_store.cancel_pending()
+            _deliver_callback(pending)
+        for pending_eval in eval_store.cancel_pending():
+            _deliver_callback(pending_eval)
         jobs_executor.shutdown(wait=False, cancel_futures=True)
 
     return _lifespan
@@ -1439,7 +1459,7 @@ def _mount_job_routes(
             raise ApiError(404, f"unknown job_id {job_id!r}")
         if outcome != "cancelled":
             raise ApiError(409, f"job {job_id!r} is {outcome}")
-        _deliver_job_callback(job)  # cancelled is terminal — fire the webhook
+        _deliver_callback(job)  # cancelled is terminal — fire the webhook
         return job
 
     @app.get(
@@ -2039,7 +2059,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             status="queued",
             created_at=time.time(),
             sampling=EVAL_SAMPLING.body_fields(),
+            callback_url=body.callback_url,
         )
+        record._callback_secret = body.callback_secret
 
         def _exec() -> None:
             if record.status == "cancelled":
@@ -2084,6 +2106,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 record.error = f"{type(exc).__name__}: {exc}"
                 record.status = "failed"
                 record.finished_at = time.time()
+            finally:
+                _deliver_callback(record)
             metrics.release()
             inflight.release()
 
@@ -2180,6 +2204,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(404, f"unknown eval_id {eval_id!r}")
         if outcome != "cancelled":
             raise ApiError(409, f"eval {eval_id!r} is {outcome}")
+        _deliver_callback(rec)  # cancelled is terminal — fire the webhook
         return rec
 
     @app.post(

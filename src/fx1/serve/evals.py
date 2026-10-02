@@ -34,7 +34,7 @@ from collections.abc import Callable
 from dataclasses import asdict, is_dataclass
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from fx1.eval.suite import ModelFn
 from fx1.serve.backends import SamplingParams
@@ -164,6 +164,14 @@ class EvalRecord(BaseModel):
     attempts: list[dict[str, Any]] | None = None
     # The decode pin the eval ran under (always the 0.0 default today).
     sampling: dict[str, Any] | None = None
+    # Terminal-state webhook (the job contract): on every terminal
+    # transition the record is POSTed to ``callback_url`` — never the
+    # secret, which lives only as a signing key.
+    callback_url: str | None = None
+    callback_status: Literal["delivered", "failed"] | None = None
+    callback_error: str | None = None
+    callback_attempts: int = 0
+    _callback_secret: str | None = PrivateAttr(default=None)
 
 
 class EvalStore:

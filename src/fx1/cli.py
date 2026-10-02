@@ -1166,6 +1166,16 @@ def harness_eval(
     no_wait: bool = typer.Option(
         False, "--no-wait", help="Remote only: submit and return immediately."
     ),
+    callback_url: str | None = typer.Option(
+        None,
+        "--callback-url",
+        help="Remote only: http(s) URL the finished eval record is POSTed to.",
+    ),
+    callback_secret: str | None = typer.Option(
+        None,
+        "--callback-secret",
+        help="Remote only: HMAC secret signing the callback delivery.",
+    ),
 ) -> None:
     """Run a seeded eval suite against a backend — in-process by default
     (SDK twin), or ``--remote`` submits to POST /harness/evals and waits
@@ -1190,6 +1200,8 @@ def harness_eval(
                 timeout_s=backend_timeout,
                 fallbacks=fallbacks or None,
                 judge_backend=judge_backend,
+                callback_url=callback_url,
+                callback_secret=callback_secret,
             )
         )
         if no_wait:
@@ -1203,6 +1215,12 @@ def harness_eval(
         return
     from fx1.sdk import Fx1Harness
 
+    if callback_url is not None or callback_secret is not None:
+        typer.echo(
+            "--callback-url/--callback-secret are remote-only (webhooks need the server)",
+            err=True,
+        )
+        raise typer.Exit(code=2)
     harness = Fx1Harness()
     ev_rec = _or_exit(
         lambda: harness.run_eval(

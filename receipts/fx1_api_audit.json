@@ -124,6 +124,13 @@
       "error_tail_bad_len": true,
       "error_tail_cap_413": true,
       "eval_backend_recorded": true,
+      "eval_callback_bad_url_422": true,
+      "eval_callback_dead_recorded": true,
+      "eval_callback_delivered": true,
+      "eval_callback_fires_on_cancel": true,
+      "eval_callback_secret_no_url_422": true,
+      "eval_callback_secret_not_echoed": true,
+      "eval_callback_signed_verifies": true,
       "eval_cancel_queued_200": true,
       "eval_cancel_running_409": true,
       "eval_cancelled_never_runs": true,
@@ -342,11 +349,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "77eb3009f8f42948e62ca4dc37fb7bd610eb88bc",
+  "git_revision": "10fd154e71ac7cdd278325ecf2edeb730be5645c",
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it.",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "357414202d36a6033f9cee013f3390d9875b44951c5aadc4ed2f56160c3ed583",
+  "receipt_sha256": "8b0e9760dab6f01ee0b4be01edb0395ea4a9779d97821e01e618d1af9e2065ee",
   "research_only": true,
   "schema": "api_audit.v1"
 }

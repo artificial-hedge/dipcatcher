@@ -480,6 +480,8 @@ class HarnessClient:
         fallbacks: list[str] | None = None,
         judge_backend: str | None = None,
         judge_byok: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
         idempotency_key: str | None = None,
     ) -> dict[str, Any]:
         """POST /harness/evals — submit a seeded eval suite against a
@@ -499,6 +501,10 @@ class HarnessClient:
             body["judge_backend"] = judge_backend
         if judge_byok is not None:
             body["judge_byok"] = judge_byok
+        if callback_url is not None:
+            body["callback_url"] = callback_url
+        if callback_secret is not None:
+            body["callback_secret"] = callback_secret
         out = self._json(
             "POST",
             "/harness/evals",

@@ -3386,6 +3386,151 @@ def _probe_backend_probes(
         "tooluse" in eval_app.get("/harness/capabilities").json()["eval_suites"]
     )
 
+    # --- eval callbacks: the job webhook contract on the eval surface -----
+    # A terminal eval POSTs its record to callback_url (HMAC-signed when a
+    # secret is given); delivery is best-effort and lands on the record.
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    _ev_hits: list[dict[str, Any]] = []
+    _ev_raw: list[bytes] = []
+    _ev_hdrs: list[dict[str, str]] = []
+
+    class _EvalHook(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            n = int(self.headers.get("Content-Length", "0"))
+            raw = self.rfile.read(n)
+            _ev_raw.append(raw)
+            _ev_hdrs.append(dict(self.headers.items()))
+            _ev_hits.append(_json.loads(raw))
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    ev_srv = ThreadingHTTPServer(("127.0.0.1", 0), _EvalHook)
+    ev_thread = _threading.Thread(target=ev_srv.serve_forever, daemon=True)
+    ev_thread.start()
+    ev_cb_url = f"http://127.0.0.1:{ev_srv.server_address[1]}/evalhook"
+    import socket as _socket2  # noqa: PLC0415
+
+    _dsock = _socket2.socket()
+    _dsock.bind(("127.0.0.1", 0))
+    _ev_dead_port = _dsock.getsockname()[1]
+    _dsock.close()
+    try:
+        sub_cb = eval_app.post(
+            "/harness/evals",
+            json={
+                "suite": "tooluse",
+                "backend": "byok",
+                "callback_url": ev_cb_url,
+                "callback_secret": "ev-whsec",
+            },
+        )
+        ev_cb_id = sub_cb.json()["eval_id"]
+        deadline = time.monotonic() + 10.0
+        st_ev: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_ev = eval_app.get(f"/harness/evals/{ev_cb_id}").json()
+            if st_ev["status"] == "succeeded" and st_ev.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["eval_callback_delivered"] = (
+            sub_cb.status_code == 202
+            and st_ev.get("callback_status") == "delivered"
+            and st_ev.get("callback_url") == ev_cb_url
+            and len(_ev_hits) >= 1
+            and _ev_hits[-1]["eval_id"] == ev_cb_id
+            and _ev_hits[-1]["status"] == "succeeded"
+            and _ev_hits[-1]["suite"] == "tooluse"
+        )
+        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+        sig_h = _ev_hdrs[-1]
+        out["eval_callback_signed_verifies"] = verify_webhook(
+            "ev-whsec",
+            sig_h.get("X-Fx1-Webhook-Timestamp"),
+            sig_h.get("X-Fx1-Webhook-Signature"),
+            _ev_raw[-1],
+        )
+        out["eval_callback_secret_not_echoed"] = (
+            "callback_secret" not in st_ev and b"ev-whsec" not in _ev_raw[-1]
+        )
+        # dead endpoint -> recorded failure on the record, eval unaffected
+        sub_dead = eval_app.post(
+            "/harness/evals",
+            json={
+                "suite": "tooluse",
+                "backend": "byok",
+                "callback_url": f"http://127.0.0.1:{_ev_dead_port}/hook",
+            },
+        )
+        ev_dead_id = sub_dead.json()["eval_id"]
+        deadline = time.monotonic() + 20.0
+        st_dead: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_dead = eval_app.get(f"/harness/evals/{ev_dead_id}").json()
+            if (
+                st_dead["status"] == "succeeded"
+                and st_dead.get("callback_status")
+                and st_dead.get("callback_attempts") == 3
+            ):
+                break
+            time.sleep(0.05)
+        out["eval_callback_dead_recorded"] = (
+            st_dead["status"] == "succeeded"
+            and st_dead.get("callback_status") == "failed"
+            and st_dead.get("callback_attempts") == 3
+            and bool(st_dead.get("callback_error"))
+        )
+        # cancelling a queued eval is a terminal transition — it fires too
+        hold_ev2 = _threading.Event()
+        capp = api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend, max_inflight=1)
+        qc3 = _TC2(capp)
+        capp.state.jobs_executor.submit(lambda: hold_ev2.wait(timeout=20))
+        q_cb = qc3.post(
+            "/harness/evals",
+            json={"suite": "tooluse", "backend": "byok", "callback_url": ev_cb_url},
+        ).json()["eval_id"]
+        cx = qc3.delete(f"/harness/evals/{q_cb}")
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline and (not _ev_hits or _ev_hits[-1].get("eval_id") != q_cb):
+            time.sleep(0.05)
+        out["eval_callback_fires_on_cancel"] = (
+            cx.status_code == 200
+            and cx.json()["status"] == "cancelled"
+            and cx.json().get("callback_status") == "delivered"
+            and _ev_hits[-1]["eval_id"] == q_cb
+            and _ev_hits[-1]["status"] == "cancelled"
+        )
+        hold_ev2.set()
+        out["eval_callback_bad_url_422"] = (
+            eval_app.post(
+                "/harness/evals",
+                json={
+                    "suite": "tooluse",
+                    "backend": "byok",
+                    "callback_url": "ftp://x/h",
+                },
+            ).status_code
+            == 422
+        )
+        out["eval_callback_secret_no_url_422"] = (
+            eval_app.post(
+                "/harness/evals",
+                json={
+                    "suite": "tooluse",
+                    "backend": "byok",
+                    "callback_secret": "s",
+                },
+            ).status_code
+            == 422
+        )
+    finally:
+        ev_srv.shutdown()
+        ev_srv.server_close()
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

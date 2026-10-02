@@ -1139,6 +1139,48 @@
             "title": "Backend",
             "type": "string"
           },
+          "callback_attempts": {
+            "default": 0,
+            "title": "Callback Attempts",
+            "type": "integer"
+          },
+          "callback_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Error"
+          },
+          "callback_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "delivered",
+                  "failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Status"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
           "created_at": {
             "title": "Created At",
             "type": "number"
@@ -1246,6 +1288,28 @@
                 "type": "null"
               }
             ]
+          },
+          "callback_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Secret"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
           },
           "checkpoint_dir": {
             "anyOf": [

@@ -344,8 +344,13 @@ conflated with user traffic.
   `Fx1Harness.evals`/`eval_record`/`eval_receipt` mirror the wire reads;
   the TS client exposes `submitEval`/`eval`/`evals`/`evalReceipt`/
   `cancelEval`/`waitEval`.
-- **No webhooks/SSE** — evals share the job machinery minus the
-  notification plumbing; poll or `wait_eval`.
+- **Webhooks** — evals carry the same `callback_url`/`callback_secret`
+  contract as jobs: the terminal record is POSTed on every terminal
+  transition (succeeded/failed from the worker, cancelled from DELETE or
+  lifespan drain), `callback_secret` HMAC-signs it
+  (`X-Fx1-Webhook-Signature`, verified with
+  `fx1.serve.webhooks.verify_webhook`), and delivery state lands on the
+  record (`callback_status`/`callback_attempts`/`callback_error`).
 
 ## Ops knobs
 
