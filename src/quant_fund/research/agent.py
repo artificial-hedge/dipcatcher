@@ -1069,6 +1069,14 @@ from quant_fund.research.benches_w134 import (
     bench_optnet_qp_family,
     bench_spd_net_family,
 )
+from quant_fund.research.benches_w135 import (
+    bench_apnp_prop_family,
+    bench_chebnet_family,
+    bench_gin_gnn_family,
+    bench_graph_unet_family,
+    bench_graphsage_family,
+    bench_jk_net_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3424,6 +3432,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "deep_declarative": bench_deep_declarative_family(),
         "spd_net": bench_spd_net_family(),
         "diff_mpc": bench_diff_mpc_family(),
+        "chebnet": bench_chebnet_family(),
+        "graphsage": bench_graphsage_family(),
+        "gin_gnn": bench_gin_gnn_family(),
+        "graph_unet": bench_graph_unet_family(),
+        "apnp_prop": bench_apnp_prop_family(),
+        "jk_net": bench_jk_net_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

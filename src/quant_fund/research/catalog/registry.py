@@ -1915,6 +1915,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "deep_declarative",
         "spd_net",
         "diff_mpc",
+        # Wave-135 GNN canon:
+        # ChebNet, SAGE, GIN,
+        # U-Net, APPNP, JK.
+        "chebnet",
+        "graphsage",
+        "gin_gnn",
+        "graph_unet",
+        "apnp_prop",
+        "jk_net",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
