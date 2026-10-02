@@ -1345,6 +1345,35 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "beck_katz",
         "quandt_andrews",
         "friedman_supersmoother",
+        # Wave-89: classical hypothesis-
+        # testing canon — KS/Cramer-von
+        # Mises/Anderson-Darling (1952/
+        # 1954) EDF tests, Shapiro-Wilk
+        # (1965)/Jarque-Bera (1980)/
+        # D'Agostino-Pearson (1973)
+        # normality, Levene (1960)/
+        # Brown-Forsythe (1974)/
+        # Fligner-Killeen (1976)/
+        # O'Brien (1979) scale
+        # homogeneity, Ansari-Bradley
+        # (1960)/Mood (1954)/Klotz
+        # (1962)/Conover (1980)/
+        # Gastwirth (1965) rank scale,
+        # Goldfeld-Quandt (1965)/Park
+        # (1966)/Glejser (1969)/
+        # Breusch-Pagan (1979)/White
+        # (1980) heteroskedasticity, and
+        # Durbin-Watson (1950)/Durbin-h
+        # (1970)/Breusch-Godfrey (1978)/
+        # Ljung-Box (1978) serial
+        # diagnostics. Same SYNTHETIC
+        # diagnostic contract.
+        "edf_tests",
+        "normality_tests",
+        "scale_homogeneity",
+        "score_scale",
+        "het_regressions",
+        "serial_diagnostics",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

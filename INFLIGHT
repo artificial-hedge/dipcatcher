@@ -2238,3 +2238,10 @@ note: canon PR to follow.
     files + test_benches_w88 (34 tests).
   - Canon staged on top of w87-canon.
 note: canon PR to follow.
+  wave89:
+  - "edf_tests","normality_tests","scale_homogeneity",
+    "score_scale","het_regressions","serial_diagnostics"
+    (506->512); agent.py wiring; tests: 6 module
+    files + test_benches_w89 (41 tests).
+  - Canon staged on top of w88-canon.
+note: canon PR to follow.

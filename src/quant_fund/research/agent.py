@@ -701,6 +701,14 @@ from quant_fund.research.benches_w88 import (
     bench_quandt_andrews,
     bench_singular_spectrum,
 )
+from quant_fund.research.benches_w89 import (
+    bench_edf_tests,
+    bench_het_regressions,
+    bench_normality_tests,
+    bench_scale_homogeneity,
+    bench_score_scale,
+    bench_serial_diagnostics,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2780,6 +2788,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "beck_katz": bench_beck_katz(),
         "quandt_andrews": bench_quandt_andrews(),
         "friedman_supersmoother": bench_friedman_supersmoother(),
+        "edf_tests": bench_edf_tests(),
+        "normality_tests": bench_normality_tests(),
+        "scale_homogeneity": bench_scale_homogeneity(),
+        "score_scale": bench_score_scale(),
+        "het_regressions": bench_het_regressions(),
+        "serial_diagnostics": bench_serial_diagnostics(),
     }
 
     hyps = _build_hypotheses(families, rankers)
