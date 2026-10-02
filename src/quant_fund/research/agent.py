@@ -1045,6 +1045,14 @@ from quant_fund.research.benches_w131 import (
     bench_score_sde_ts_family,
     bench_vq_vae_ts_family,
 )
+from quant_fund.research.benches_w132 import (
+    bench_energy_ood_family,
+    bench_gradient_norm_ood_family,
+    bench_knn_ood_family,
+    bench_mahalanobis_ood_family,
+    bench_max_softmax_ood_family,
+    bench_vim_ood_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3382,6 +3390,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "consistency_ts": bench_consistency_ts_family(),
         "energy_ts": bench_energy_ts_family(),
         "perceiver_ts": bench_perceiver_ts_family(),
+        "mahalanobis_ood": bench_mahalanobis_ood_family(),
+        "max_softmax_ood": bench_max_softmax_ood_family(),
+        "gradient_norm_ood": bench_gradient_norm_ood_family(),
+        "energy_ood": bench_energy_ood_family(),
+        "knn_ood": bench_knn_ood_family(),
+        "vim_ood": bench_vim_ood_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
