@@ -101,6 +101,29 @@ lineage, and as-of queries over these files are in [`DATA_LAKE.md`](DATA_LAKE.md
 
 ## Bars (bronze)
 
+### Binance REST history clocks
+
+`BinancePublicDataSource.fetch` and the REST-history path of
+`BinanceMarketSource` retain the vendor kline open in `event_time` and the
+vendor close in `available_time`. They also retain explicit `bar_open_time`
+and `bar_close_time` provenance. The close is Binance's supplied final
+millisecond, not a computed next-session boundary or fixed interval duration.
+
+For `data.source=binance_public_data` or `binance_market_websocket`, `ingest`
+writes these open-labeled bars unchanged to bronze, then uses `bar_close_time`
+as silver `event_time` before price adjustment and universe construction.
+Features, labels, and universe membership therefore share the completed-bar
+decision clock. Source, revision, open/close provenance, and availability are
+preserved; delayed availability is never changed to make validation succeed.
+Feature PIT guards still reject publication after the decision close.
+
+This normalization is specific to the REST market-ingest boundary. Direct
+adapter consumers, WebSocket trade messages, file/parquet ingest, and
+perpetual/funding settlement grids are not relabeled. Existing open-labeled
+silver/gold artifacts are not silently migrated: explicitly re-ingest and
+rebuild with `build_gold(config, refresh=True)` to adopt this contract. Review
+downstream consumers of those artifacts before replacing an existing dataset.
+
 Columns: `security_id`, `symbol`, `event_time`, `available_time`, `ingested_time`, `source`, `revision_id`, `open`, `high`, `low`, `close`, `volume`, `currency`, `session`.
 
 OHLC are **raw** (unadjusted). Volume is share volume. Every accepted bar must
