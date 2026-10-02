@@ -2323,6 +2323,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nnet_surv",
         "drsa_surv",
         "pchazard",
+        # Wave-180 PDMP / exotic-sampling canon:
+        # BPS, Zig-Zag, Boomerang, kinetic
+        # Langevin, elliptical slice, RMALA.
+        "bouncy_particle",
+        "zigzag_sampler",
+        "boomerang_sampler",
+        "kinetic_langevin",
+        "elliptical_slice",
+        "riemannian_mala",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
