@@ -2419,6 +2419,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "direct_lingam",
         "var_lingam",
         "mmmb_select",
+        # Wave-191 exploration canon: count bonus, RND, ICM, NGU,
+        # RIDE, Go-Explore.
+        "count_bonus",
+        "rnd_explore",
+        "icm_explore",
+        "ngu_explore",
+        "ride_explore",
+        "go_explore",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
