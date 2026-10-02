@@ -46,14 +46,14 @@ _SYNTHETIC_LABEL = re.compile(r"\bSYNTHETIC\b")
 
 # Invisible/zero-width characters a writer can hide inside a token. Escaped
 # so the source carries no raw bidi/format control characters (B613):
-# \u200b-\u200f zero-width + bidi marks, \u2060 word joiner, \ufeff BOM,
-# \u00ad soft hyphen.
-_FORMAT_CHAR_CLASS = "\u200b-\u200f\u2060\ufeff\u00ad"
+# Zero-width marks, bidi controls, invisible mathematical operators, BOM,
+# and soft hyphen. Include directional embeddings/isolates as well as marks.
+_FORMAT_CHAR_CLASS = "\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff"
 _FORMAT_CHARS = re.compile(f"[{_FORMAT_CHAR_CLASS}]")
-# A format char sitting between a letter and a digit must become a space, not
-# vanish — else "sharpe\u20602.1" fuses to "sharpe2.1" and loses its boundary.
+# A run of format chars between a letter and a digit must become a space,
+# not vanish — else "sharpe\u20602.1" fuses to "sharpe2.1" and loses its boundary.
 _FUSION_BREAK = re.compile(
-    rf"(?<=[A-Za-z])[{_FORMAT_CHAR_CLASS}](?=\d)|(?<=\d)[{_FORMAT_CHAR_CLASS}](?=[A-Za-z])"
+    rf"(?<=[A-Za-z])[{_FORMAT_CHAR_CLASS}]+(?=\d)|(?<=\d)[{_FORMAT_CHAR_CLASS}]+(?=[A-Za-z])"
 )
 # Collapse spaces between a word-initial letter and a one-letter word:
 # "s h a r p e" → "sharpe", "N A V" → "NAV". Letters only — a trailing
@@ -120,9 +120,11 @@ def _normalize(text: str) -> str:
     """Fold a text for gate matching: NFKC compatibility fold (fullwidth,
     mathematical alphanumerics, ligatures), strip invisible formatting chars,
     map Cyrillic/Greek homoglyphs, collapse spaced letters."""
-    folded = unicodedata.normalize("NFKC", text)
+    # Fold lookalikes before ASCII-only boundary and spaced-letter handling:
+    # a Cyrillic final e must preserve the same boundary as a Latin e.
+    folded = unicodedata.normalize("NFKC", text).translate(_HOMOGLYPHS)
     folded = _FUSION_BREAK.sub(" ", folded)
-    return _SPACED_LETTERS.sub("", _FORMAT_CHARS.sub("", folded)).translate(_HOMOGLYPHS)
+    return _SPACED_LETTERS.sub("", _FORMAT_CHARS.sub("", folded))
 
 
 # Token spellings beyond the literal token. "pnl" admits the spelled forms
@@ -130,19 +132,6 @@ def _normalize(text: str) -> str:
 _TOKEN_SPELLINGS: dict[str, str] = {
     "pnl": r"p\s*(?:n|&|\+|and)\s*l",
 }
-
-# Connective phrasing allowed between the token and the numeric claim —
-# the vocabulary a headline uses. Words outside this set end the adjacency
-# (bare discussion of the metric is not a claim).
-_CONNECTOR = (
-    r"(?:of|=|:|is|was|were|at|to|reads?|hits?|reached?|posts?|posted|"
-    r"lands?|landed|clocks?|clocked|prints?|printed|records?|recorded|"
-    r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+(?:in|out)\s+at|"
-    r"[\"'«»“”‘’]|[^\w\s]+)"
-)
-
-# Words that may sit between the token and the connector ("Sharpe ratio of").
-_BRIDGE = r"(?:ratio|score|value|reading|measure|number)\b"
 
 
 class Fx1HonestyError(ValueError):
@@ -159,7 +148,7 @@ def _contains_forbidden_headline(text: str) -> str | None:
     allowed. Callers pass normalized text.
     """
     bridge = (
-        r"(?:ratio|score|value|reading|level|figure|number|metric|multiple|"
+        r"(?:ratio|score|value|reading|measure|level|figure|number|metric|multiple|"
         r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
         r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
         r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
@@ -168,7 +157,9 @@ def _contains_forbidden_headline(text: str) -> str | None:
         r"(?:of|=|:|is|was|were|are|at|to|for|per|the|a|an|this|that|its|our|"
         r"your|their|my|about|roughly|approximately|around|over|under|above|"
         r"below|current(?:ly)?|latest|reported|expected|projected|stood|stands|"
-        r"sits|sat|hits?|reached|reaches|posted|came|rose|fell|grew|implied|"
+        r"sits?|sat|hits?|reached|reaches|posts?|posted|lands?|landed|"
+        r"clocks?|clocked|prints?|printed|records?|recorded|logs?|logged|"
+        r"runs?|ran|came\s+(?:in|out)\s+at|came|rose|fell|grew|implied|"
         r"delivered|generated|produced|whole|all|entire|same|given|first|last|"
         r"single|rolling|trailing|net|gross|calendar|fiscal|respective|"
         r"corresponding|reads?|[\"']|[^\w\s]+)"
