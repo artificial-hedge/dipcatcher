@@ -2580,3 +2580,4 @@ wave 179 (2026-10-02): survival-DL canon — deepsurv, deephit, cox_time, nnet_s
 wave 180 (2026-10-02): PDMP exotic-sampling canon — bouncy_particle, zigzag_sampler, boomerang_sampler, kinetic_langevin, elliptical_slice, riemannian_mala; 1052→1058 families.
 wave 181 (2026-10-02): LM-arch-2 canon — mamba2_ssd, xlstm_mlstm, rwkv7, titans_memory, gated_deltanet, longhorn_ssm; 1058→1064 families.
 wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_spline_flow, maf_flow, planar_flow, iaf_flow; 1064→1070 families.
+wave 183 (2026-10-02): causal-structure-DL canon — notears, dagma_lin, golem_ev, notears_mlp, dag_gnn, cam_prune; 1070→1076 families.

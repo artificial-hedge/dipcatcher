@@ -2349,6 +2349,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "maf_flow",
         "planar_flow",
         "iaf_flow",
+        # Wave-183 causal-structure-DL canon:
+        # NOTEARS, DAGMA, GOLEM, NOTEARS-MLP,
+        # DAG-GNN, CAM-prune.
+        "notears",
+        "dagma_lin",
+        "golem_ev",
+        "notears_mlp",
+        "dag_gnn",
+        "cam_prune",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

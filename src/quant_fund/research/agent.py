@@ -1453,6 +1453,14 @@ from quant_fund.research.benches_w182 import (
     bench_planar_flow_family,
     bench_real_nvp_family,
 )
+from quant_fund.research.benches_w183 import (
+    bench_cam_prune_family,
+    bench_dag_gnn_family,
+    bench_dagma_lin_family,
+    bench_golem_ev_family,
+    bench_notears_family,
+    bench_notears_mlp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4096,6 +4104,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "maf_flow": bench_maf_flow_family(),
         "planar_flow": bench_planar_flow_family(),
         "iaf_flow": bench_iaf_flow_family(),
+        "notears": bench_notears_family(),
+        "dagma_lin": bench_dagma_lin_family(),
+        "golem_ev": bench_golem_ev_family(),
+        "notears_mlp": bench_notears_mlp_family(),
+        "dag_gnn": bench_dag_gnn_family(),
+        "cam_prune": bench_cam_prune_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
