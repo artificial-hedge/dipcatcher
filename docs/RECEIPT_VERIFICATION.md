@@ -116,8 +116,29 @@ run directory.
 New `joint_tune.v2` outputs require all seven pins and the unrounded maker-life,
 instant-impact, and k200 bands to close on every sampled draw of at least one
 configuration. All measurement surfaces now use iid flow with the same
-configuration and seed. The script contract re-derives per-draw closure flags,
-counts, rates, and the overall closure claim from the embedded draws.
+configuration and seed. The frozen v2 specification binds the exact ordered
+seed offsets `[7, 11]`, all eight configurations, and each surface's effective
+input arguments (including seed, horizon, flow intensity and configuration).
+Absent per-surface records cannot qualify as uniform-iid evidence. The records
+are declarations of actual call inputs, not cryptographic authentication or a
+replay proof of simulator execution.
+
+The contract re-derives per-draw closure flags, counts, pin rates, rounded cell
+means, reseed summaries, the aggregate diagnostic and all four claims from the
+embedded draws. `kernel_carried` selects the greatest mean pin count, then the
+life mean nearest the frozen tape scale, then the first cell in configuration
+order; v2's original missing/zero-life fallback of 999 is retained. Missing
+observations are excluded from aggregate means, as before, but cannot close a
+per-draw channel.
+
+Tape values and bands are frozen in the schema specification, including the
+unrounded life reference `2.213 * 11.528` (~25.511464 events), its displayed
+25.5-event value, the 0.887 instant reference and the [3, 6] k200 band. Both
+forms and source identifiers are checked exactly. Per-draw bounds are inclusive;
+rounded aggregate instant checks retain the original absolute-difference
+arithmetic. Future changes to the experimental design or numerical meanings
+require a new schema. Incomplete earlier v2 bodies now fail the strengthened
+contract rather than acquiring missing provenance from a top-level label.
 
 Historical `joint_tune.v1` artifacts retain their original verification contract
 and are not rewritten. That schema covered older aggregate claims and later
