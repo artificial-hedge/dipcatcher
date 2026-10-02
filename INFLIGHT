@@ -2559,3 +2559,4 @@ wave 158 (2026-10-02): LTR canon — ranknet_ltr, listnet_ltr, listmle_ltr, lamb
 wave 159 (2026-10-02): optimizer canon — muon_opt, lion_opt, sophia_opt, lookahead_opt, lamb_opt, adafactor_opt; 926→932 families.
 wave 160 (2026-10-02): FL canon — scaffold_fl, fednova_fl, ditto_fl, moon_fl, fedopt_adam, mime_lite; 932→938 families.
 wave 161 (2026-10-02): neural-operator canon — fno_1d, deeponet, lowrank_op, pino_residual, gno_lite, cno_lite; 938→944 families.
+wave 162 (2026-10-02): TS-foundation canon — chronos_lite, timesfm_lite, moirai_lite, lagllama_lite, timer_lite, moment_lite; 944→950 families.
