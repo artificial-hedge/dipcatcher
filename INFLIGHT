@@ -1287,6 +1287,12 @@ detail: |
     import+dict wiring; tests: 6 module files + test_benches_w56.
   - Canon staged on top of w54-canon (carries w52/w53 merges) so
     the chain stays clean as #691/#695/#698 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
+wave 107 (2026-09-30): transport/HJB PDE canon — adi, lax_wendroff, weno, level_set, fast_marching, godunov; 614→620 families.
 note: canon PR to follow.
 
 ---
@@ -1316,6 +1322,11 @@ detail: |
     import+dict wiring; tests: 6 module files + test_benches_w57.
   - Canon staged on top of w56-canon so the chain stays clean
     as #691/#695/#698/#702 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 
@@ -1345,6 +1356,11 @@ detail: |
     wiring; tests: 6 module files + test_benches_w58.
   - Canon staged on top of w57-canon so the chain stays clean
     as #695/#698/#702/#704 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1375,6 +1391,11 @@ detail: |
     test_benches_w59.
   - Canon staged on top of w58-canon so the chain stays clean
     as #695/#698/#702/#704/#706 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1404,6 +1425,11 @@ detail: |
     test_benches_w60.
   - Canon staged on top of w59-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1439,6 +1465,11 @@ detail: |
     test_benches_w61.
   - Canon staged on top of w60-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1476,6 +1507,11 @@ detail: |
     test_benches_w62.
   - Canon staged on top of w61-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1514,6 +1550,11 @@ detail: |
     test_benches_w63.
   - Canon staged on top of w62-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 64 canon)
@@ -1550,6 +1591,11 @@ detail: |
     6 module files + test_benches_w64.
   - Canon staged on top of w63-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1592,6 +1638,11 @@ detail: |
   - Canon staged on top of w64-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/#717
     land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1636,6 +1687,11 @@ detail: |
   - Canon staged on top of w65-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
     #717/#720 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 67 canon)
@@ -1681,6 +1737,11 @@ detail: |
   - Canon staged on top of w66-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
     #717/#720/#723 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 68 canon)
@@ -1723,6 +1784,11 @@ detail: |
   - Canon staged on top of w67-canon so the chain stays clean
     as #695/#698/#702/#704/#706/#709/#710/#711/#713/#715/
     #717/#720/#723/#725 land.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 --- owner: devin (wave 69 canon)
@@ -1753,6 +1819,11 @@ detail: |
     tests: 6 module files + test_benches_w69.
   - Canon staged on top of w68-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1786,6 +1857,11 @@ detail: |
     tests: 6 module files + test_benches_w70.
   - Canon staged on top of w69-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1814,6 +1890,11 @@ detail: |
     wiring; tests: 6 module files + test_benches_w71.
   - Canon staged on top of w70-canon so the chain stays clean as
     the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1841,6 +1922,11 @@ detail: |
     import+dict wiring; tests: 6 module files + test_benches_w72.
   - Canon staged on top of w71-canon so the chain stays clean as
     the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 73 canon)
@@ -1866,6 +1952,11 @@ detail: |
     import+dict wiring; tests: 6 module files + test_benches_w73.
   - Canon staged on top of w72-canon so the chain stays clean as
     the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 74 canon)
@@ -1891,6 +1982,11 @@ detail: |
     import+dict wiring; tests: 6 module files + test_benches_w74.
   - Canon staged on top of w73-canon so the chain stays clean as
     the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 75 canon)
@@ -1916,6 +2012,11 @@ detail: |
     6 module files + test_benches_w75.
   - Canon staged on top of w74-canon so the chain stays clean as
     the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 76 canon)
@@ -1944,6 +2045,11 @@ detail: |
     tests: 6 module files + test_benches_w76.
   - Canon staged on top of w75-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 77 canon)
@@ -1972,6 +2078,11 @@ detail: |
     tests: 6 module files + test_benches_w77.
   - Canon staged on top of w76-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 78 canon)
@@ -2003,6 +2114,11 @@ detail: |
     files + test_benches_w78.
   - Canon staged on top of w77-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2033,6 +2149,11 @@ detail: |
     test_benches_w79.
   - Canon staged on top of w78-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2061,6 +2182,11 @@ detail: |
     test_benches_w80.
   - Canon staged on top of w79-canon so the chain stays clean
     as the open stack lands.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2086,6 +2212,11 @@ detail: |
     "pocs" (440->446); agent.py wiring; tests: 6 module
     files + test_benches_w81 (42 tests total).
   - Canon staged on top of w80-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2110,6 +2241,11 @@ detail: |
     "welch_anova" (446->452); agent.py wiring; tests: 6
     module files + test_benches_w82 (40+ tests).
   - Canon staged on top of w81-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2137,6 +2273,11 @@ detail: |
     (452->458); agent.py wiring; tests: 6 module files +
     test_benches_w83 (39+ tests).
   - Canon staged on top of w82-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2165,6 +2306,11 @@ detail: |
     wiring; tests: 6 module files + test_benches_w84
     (36+ tests).
   - Canon staged on top of w83-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2194,6 +2340,11 @@ detail: |
     indices" (464->470); agent.py wiring; tests: 6
     module files + test_benches_w85 (44+ tests).
   - Canon staged on top of w84-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2223,6 +2374,11 @@ detail: |
     (470->476); agent.py wiring; tests: 6 module
     files + test_benches_w86 (40+ tests).
   - Canon staged on top of w85-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave87:
   - "avellaneda_stoikov","gillespie_ssa","hamilton_filter",
@@ -2230,6 +2386,11 @@ note: canon PR to follow.
     (476->482); agent.py wiring; tests: 6 module
     files + test_benches_w87 (32 tests).
   - Canon staged on top of w86-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave88:
   - "markov_discretization","lomb_scargle","singular_spectrum",
@@ -2237,6 +2398,11 @@ note: canon PR to follow.
     (482->488); agent.py wiring; tests: 6 module
     files + test_benches_w88 (34 tests).
   - Canon staged on top of w87-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave89:
   - "edf_tests","normality_tests","scale_homogeneity",
@@ -2244,6 +2410,11 @@ note: canon PR to follow.
     (506->512); agent.py wiring; tests: 6 module
     files + test_benches_w89 (41 tests).
   - Canon staged on top of w88-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave90:
   - "mars_regression","ace_avas","projection_pursuit",
@@ -2300,4 +2471,37 @@ note: canon PR to follow.
     (554->560); agent.py wiring; tests: 6 module
     files + test_benches_w97.
   - Canon staged on top of w96-canon.
+  wave98:
+  - "mdp_solvers","td_learning",
+    "belief_propagation","extreme_learning",
+    "nearest_centroid","cross_entropy_method"
+    (560->566); agent.py wiring; tests: 6 module
+    files + test_benches_w98.
+  - Canon staged on top of w97-canon.
+  wave99:
+  - "gibbs_sampler","laplace_approx",
+    "kde","tensor_power","evidential",
+    "multi_task"
+    (566->572); agent.py wiring; tests: 6 module
+    files + test_benches_w99.
+  - Canon staged on top of w98-canon.
+  wave100:
+  - "homotopy_continuation","anderson_accel",
+    "sequence_accel","iterative_ls",
+    "qmc_sequences","symplectic_ode"
+    (572->578); agent.py wiring; tests: 6 module
+    files + test_benches_w100.
+  - Canon staged on top of w99-canon.
+  wave101:
+  - "graph_traversal","shortest_paths",
+    "network_flow","assignment",
+    "graph_components","exact_cover"
+    (578->584); agent.py wiring; tests: 6 module
+    files + test_benches_w101.
+  - Canon staged on top of w100-canon.
+wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps-greedy/ETC), kl_bandits (Bernoulli KL-UCB), contextual_bandits (LinUCB + linear TS), adversarial_bandits (EXP3 + Hedge), best_arm (SE + LUCB-1), nonstationary_bandits (SW-UCB + D-UCB); 584→590 families.
+wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
+wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
+wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
