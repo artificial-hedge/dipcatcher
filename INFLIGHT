@@ -2542,3 +2542,4 @@ wave 141 (2026-10-02): certified robustness — randomized_smoothing, ibp_bounds
 wave 142 (2026-10-02): sequence exotics — s4_ssm, rwkv_wkv, hyena_conv, retnet_decay, delta_net, mixture_of_depths; 824→830 families.
 wave 143 (2026-10-02): PEFT canon — lora_ft, qlora_nf4, dora_weight, prompt_tuning, prefix_tuning, task_vector_merge; 830→836 families.
 wave 144 (2026-10-02): inference-engine canon — speculative_decoding, paged_kv_cache, flash_attn, gqa_attn, sliding_window_cache, ring_attn; 836→842 families.
+wave 145 (2026-10-02): retrieval canon — bm25_retriever, dpr_retriever, colbert_late, hyde_retrieval, reranker_crossenc, rrf_fusion; 842→848 families.
