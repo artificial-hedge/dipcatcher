@@ -484,6 +484,7 @@ _MEASUREMENT_SCHEMAS = (
     "split_flow.v1",
     "spread_dynamics.v1",
     "spread_floor.v1",
+    "spread_reopen.v1",
     "spread_response.v1",
     "spread_response_bench.v1",
     "stale_quote.v1",
