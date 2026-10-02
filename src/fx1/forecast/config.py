@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import json
 import math
+from numbers import Integral
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StrictInt, model_validator
 
 
 class _Strict(BaseModel):
@@ -40,10 +41,20 @@ class DataSection(_Strict):
         return self
 
 
+def _normalize_integral_count(value: object) -> object:
+    """Normalize integral scalars only; strict validation rejects everything else."""
+    if isinstance(value, Integral) and not isinstance(value, bool):
+        return int(value)
+    return value
+
+
+_IntegerCount = Annotated[StrictInt, BeforeValidator(_normalize_integral_count)]
+
+
 class FeatureSection(_Strict):
     # Preserve the pipeline integer contract before Pydantic can coerce input.
-    lookbacks: list[StrictInt] = Field(default_factory=lambda: [1, 5, 20])
-    vol_window: StrictInt = 20
+    lookbacks: list[_IntegerCount] = Field(default_factory=lambda: [1, 5, 20])
+    vol_window: _IntegerCount = 20
     horizon_bars: int = 1
     entrypoint: str | None = None
 
