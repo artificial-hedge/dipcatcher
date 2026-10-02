@@ -37,6 +37,7 @@ import hmac
 import json
 import logging
 import os
+import queue
 import re
 import threading
 import time
@@ -68,6 +69,7 @@ from quant_fund.research.receipt_v2 import verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
 _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
+_SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _PUBLIC_PATHS = frozenset({"/health"})
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
@@ -279,6 +281,7 @@ def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
     max_inflight: int | None = None,
+    sse_keepalive_s: float | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -287,6 +290,10 @@ def create_app(
         max_inflight = int(os.environ.get(_MAX_INFLIGHT_ENV, "16"))
     if max_inflight < 1:
         raise ValueError(f"max_inflight must be >= 1, got {max_inflight}")
+    if sse_keepalive_s is None:
+        sse_keepalive_s = float(os.environ.get(_SSE_KEEPALIVE_ENV, "15"))
+    if sse_keepalive_s < 0:
+        raise ValueError(f"sse_keepalive_s must be >= 0, got {sse_keepalive_s}")
     # Bounded in-flight work: the harness executes lab commands and model
     # calls on shared resources (a spawned local engine, GPU memory, the
     # box itself) — saturation must fail honestly as 503, never queue
@@ -320,6 +327,7 @@ def create_app(
     )
     app.state.inflight_slots = inflight
     app.state.metrics = metrics
+    app.state.sse_keepalive_s = sse_keepalive_s
 
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
@@ -484,39 +492,57 @@ def create_app(
 
         The backend's token deltas are buffered, the joined text passes the
         honesty gate, and only then are chunks emitted as ``token`` events
-        plus a ``final`` envelope — the contract "no ungated bytes on the
-        wire" holds; gate refusals and backend failures surface as ordinary
-        JSON error responses, never mid-stream truncations. A backend
-        without ``stream`` fails 501 rather than faking chunking.
-        """
-        backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
-        messages = [{"role": m.role, "content": m.content} for m in body.messages]
-        try:
-            if not isinstance(backend, StreamingBackend):
-                raise NotImplementedError(f"backend {body.backend!r} does not support streaming")
-            chunks = list(backend.stream(messages))
-            joined = "".join(chunks)
-            try:
-                validate_fx1_output(joined)
-            except Fx1HonestyError as exc:
-                raise HTTPException(502, f"honesty gate refused model output: {exc}") from exc
-        except BackendNotConfiguredError as exc:
-            raise HTTPException(503, str(exc)) from exc
-        except NotImplementedError as exc:
-            raise HTTPException(501, str(exc)) from exc
-        except RuntimeError as exc:
-            raise HTTPException(502, str(exc)) from exc
-        finally:
-            _close_backend(backend)
-        model_name = getattr(backend, "_model", None)
-        if body.receipt_hashes:
-            chunks.append(
-                "\n\nEvidence: "
-                + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
-                + " — verify with `dipcatcher verify-research`."
-            )
+        plus a ``final`` envelope — no ungated model bytes ever reach a
+        ``data:`` frame. A backend without ``stream`` fails 501 rather than
+        faking chunking.
 
-        def _events() -> Iterator[str]:
+        With ``sse_keepalive_s`` > 0 (default 15) the buffer+gate phase runs
+        on a worker thread under a one-interval grace period: outcomes that
+        resolve within the interval keep today's wire contract exactly —
+        completions stream as usual, failures stay ordinary JSON error
+        responses. Only a generation still running past the interval
+        commits to SSE: ``: keepalive`` comment frames (no payload —
+        parsers ignore them) hold the connection open against proxy/LB
+        idle timeouts, and a failure after that point arrives as a terminal
+        ``{"type": "error", "status", "detail"}`` data frame followed by
+        ``[DONE]`` (the HTTP status is committed once a byte is on the
+        wire). ``sse_keepalive_s`` = 0 disables the worker entirely — the
+        fully synchronous path.
+        """
+        messages = [{"role": m.role, "content": m.content} for m in body.messages]
+
+        def _gather() -> tuple[list[str], str | None]:
+            """Buffer + gate the backend stream; raises the mapped errors."""
+            backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
+            try:
+                if not isinstance(backend, StreamingBackend):
+                    raise NotImplementedError(
+                        f"backend {body.backend!r} does not support streaming"
+                    )
+                chunks = list(backend.stream(messages))
+                joined = "".join(chunks)
+                try:
+                    validate_fx1_output(joined)
+                except Fx1HonestyError as exc:
+                    raise HTTPException(502, f"honesty gate refused model output: {exc}") from exc
+            except BackendNotConfiguredError as exc:
+                raise HTTPException(503, str(exc)) from exc
+            except NotImplementedError as exc:
+                raise HTTPException(501, str(exc)) from exc
+            except RuntimeError as exc:
+                raise HTTPException(502, str(exc)) from exc
+            finally:
+                _close_backend(backend)
+            model_name = getattr(backend, "_model", None)
+            if body.receipt_hashes:
+                chunks.append(
+                    "\n\nEvidence: "
+                    + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
+                    + " — verify with `dipcatcher verify-research`."
+                )
+            return chunks, model_name if isinstance(model_name, str) else None
+
+        def _events(chunks: list[str], model_name: str | None) -> Iterator[str]:
             for chunk in chunks:
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
             yield (
@@ -524,7 +550,7 @@ def create_app(
                 + json.dumps(
                     {
                         "type": "final",
-                        "model": model_name if isinstance(model_name, str) else None,
+                        "model": model_name,
                         "receipt_hashes": body.receipt_hashes or [],
                     }
                 )
@@ -532,7 +558,63 @@ def create_app(
             )
             yield "data: [DONE]\n\n"
 
-        return StreamingResponse(_events(), media_type="text/event-stream")
+        if sse_keepalive_s <= 0:
+            chunks, model_name = _gather()
+            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
+
+        pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
+
+        def _produce() -> None:
+            try:
+                pipe.put(("ok", _gather()))
+            except HTTPException as exc:
+                pipe.put(("error", exc))
+            except Exception as exc:  # noqa: BLE001 — dead pipe, honest frame
+                pipe.put(("error", HTTPException(502, f"backend failed: {exc}")))
+
+        threading.Thread(target=_produce, daemon=True).start()
+
+        # Grace window: an outcome inside one keepalive interval keeps the
+        # synchronous contract (SSE stream / JSON error); only a generation
+        # still running past it commits to the keepalived stream.
+        grace: tuple[str, Any] | None
+        try:
+            grace = pipe.get(timeout=sse_keepalive_s)
+        except queue.Empty:
+            grace = None
+        if grace is not None:
+            tag, payload = grace
+            if tag == "error":
+                raise payload
+            chunks, model_name = payload
+            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
+
+        def _events_keepalived() -> Iterator[str]:
+            while True:
+                try:
+                    tag, payload = pipe.get(timeout=sse_keepalive_s)
+                except queue.Empty:
+                    yield ": keepalive\n\n"
+                    continue
+                if tag == "error":
+                    yield (
+                        "data: "
+                        + json.dumps(
+                            {
+                                "type": "error",
+                                "status": payload.status_code,
+                                "detail": payload.detail,
+                            }
+                        )
+                        + "\n\n"
+                    )
+                    yield "data: [DONE]\n\n"
+                    return
+                chunks, model_name = payload
+                yield from _events(chunks, model_name)
+                return
+
+        return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
 
     @app.post("/harness/complete/batch", response_model=CompleteBatchResponse)
     def complete_batch(

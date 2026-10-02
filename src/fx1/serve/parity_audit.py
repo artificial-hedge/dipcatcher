@@ -774,6 +774,47 @@ def parity_audit() -> dict[str, bool]:
     for _ in range(4):
         _raises(lambda: cb11.health())
     out["circuit_disabled_by_default"] = calls11["n"] == 4
+
+    # keepalive comments are skipped; in-band error frames map through the
+    # same exception table as HTTP errors (keepalive-mode wire contract)
+    ka_body = (
+        b": keepalive\n\n"
+        b'data: {"type":"token","content":"ka-tok"}\n\n'
+        b'data: {"type":"final","model":null,"receipt_hashes":[]}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    trka, _ = _scripted([(200, {}, ka_body)])
+    out["client_stream_skips_comments"] = HarnessClient(
+        "http://harness.test", transport=trka
+    ).stream_complete(msg, backend="byok") == ["ka-tok"]
+    inband_body = (
+        b": keepalive\n\n"
+        b'data: {"type":"error","status":503,"detail":"no backend"}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    trin, _ = _scripted([(200, {}, inband_body)])
+    out["client_stream_inband_error_maps"] = (
+        _raises(
+            lambda: HarnessClient("http://harness.test", transport=trin).stream_complete(
+                msg, backend="byok"
+            )
+        )[0]
+        == "BackendNotConfiguredError"
+    )
+    honesty_body = (
+        b'data: {"type":"error","status":502,'
+        b'"detail":"honesty gate refused model output: sharpe"}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    trhon, _ = _scripted([(200, {}, honesty_body)])
+    out["client_stream_inband_honesty_maps"] = (
+        _raises(
+            lambda: HarnessClient("http://harness.test", transport=trhon).stream_complete(
+                msg, backend="byok"
+            )
+        )[0]
+        == "Fx1HonestyError"
+    )
     return out
 
 

@@ -401,6 +401,14 @@ class HarnessClient:
             payload = json.loads(frame)
             if payload.get("type") == "token":
                 chunks.append(payload["content"])
+            elif payload.get("type") == "error":
+                # Terminal in-band error (keepalive mode committed the 200
+                # before the gate/backend resolved) — map it through the
+                # same table as HTTP error responses.
+                raise self._map_error(
+                    int(payload.get("status", 502)),
+                    json.dumps({"detail": payload.get("detail", "")}).encode(),
+                )
         if not saw_done:
             raise HarnessTransportError("stream ended without [DONE]")
         return chunks

@@ -35,6 +35,7 @@ Sealed ``api_audit.v1`` (fx1-side receipt).
 from __future__ import annotations
 
 import os
+import time
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -495,6 +496,121 @@ def api_audit() -> dict[str, Any]:
         ).status_code
         == 501
     )
+
+    # --- SSE keepalive (grace window → comment frames → in-band errors) ----
+    class _SlowStreamBackend(_CleanBackend):
+        def stream(self, messages: list[dict[str, str]]) -> Any:
+            time.sleep(0.3)
+            yield "slow-tok"
+
+    ka_client = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _SlowStreamBackend(),
+            sse_keepalive_s=0.05,
+        )
+    )
+    rk = ka_client.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    ka_frames = [ln for ln in rk.text.split("\n\n") if ln.strip()]
+    out["stream_keepalive_comments"] = (
+        rk.status_code == 200
+        and rk.headers.get("content-type", "").startswith("text/event-stream")
+        and any(ln.strip() == ": keepalive" for ln in ka_frames)
+        and '"type": "final"' in rk.text
+        and ka_frames[-1].strip() == "data: [DONE]"
+    )
+
+    class _SlowFailBackend(_CleanBackend):
+        def stream(self, messages: list[dict[str, str]]) -> Any:
+            time.sleep(0.3)
+            raise RuntimeError("engine died mid-generation")
+
+    ka_fail = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _SlowFailBackend(),
+            sse_keepalive_s=0.05,
+        )
+    )
+    rf = ka_fail.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    err_frames = [
+        _json.loads(ln[len("data: ") :])
+        for ln in rf.text.split("\n\n")
+        if ln.startswith("data: ") and '"type": "error"' in ln
+    ]
+    out["stream_keepalive_error_inband"] = (
+        rf.status_code == 200
+        and len(err_frames) == 1
+        and err_frames[0]["status"] == 502
+        and "engine died" in err_frames[0]["detail"]
+        and rf.text.rstrip().endswith("data: [DONE]")
+    )
+
+    # Resolved inside the grace window → the synchronous contract holds:
+    # refusals are still JSON errors, completions still plain SSE.
+    ka_dirty = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _DirtyStreamBackend(),
+            sse_keepalive_s=5.0,
+        )
+    )
+    rg = ka_dirty.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["stream_keepalive_grace_json_error"] = (
+        rg.status_code == 502
+        and not rg.headers.get("content-type", "").startswith("text/event-stream")
+        and "total Sharpe" not in rg.text
+    )
+    ka_fast = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _StreamBackend(),
+            sse_keepalive_s=5.0,
+        )
+    )
+    rfast = ka_fast.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["stream_keepalive_grace_sse"] = (
+        rfast.status_code == 200
+        and ": keepalive" not in rfast.text
+        and rfast.text.rstrip().endswith("data: [DONE]")
+    )
+
+    # Disabled → fully synchronous; misconfig fails closed.
+    off_client = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _DirtyStreamBackend(),
+            sse_keepalive_s=0,
+        )
+    )
+    out["stream_keepalive_off_json_error"] = (
+        off_client.post(
+            "/harness/complete/stream",
+            json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        ).status_code
+        == 502
+    )
+    try:
+        api_mod.create_app(sse_keepalive_s=-1.0)
+        out["stream_keepalive_negative_rejected"] = False
+    except ValueError:
+        out["stream_keepalive_negative_rejected"] = True
+    keep_env = os.environ.get("FX1_API_SSE_KEEPALIVE_S")
+    os.environ["FX1_API_SSE_KEEPALIVE_S"] = "7.5"
+    try:
+        out["stream_keepalive_env_config"] = api_mod.create_app().state.sse_keepalive_s == 7.5
+    finally:
+        if keep_env is None:
+            os.environ.pop("FX1_API_SSE_KEEPALIVE_S", None)
+        else:
+            os.environ["FX1_API_SSE_KEEPALIVE_S"] = keep_env
 
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
