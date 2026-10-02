@@ -2663,3 +2663,4 @@ wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munk
 - w262 HPC canon (stencil_halo, mesi_cache, ring_allreduce, simd_lanes, task_dag, numa_alloc) 1545->1551
 - w263 real-time canon (edf_scheduler, rms_scheduler, wcet_est, debounce_fsm, watchdog_task, ring_buffer) 1551->1557
 - w264 numerical-linalg-3 canon (divide_conquer_eig, dqds, block_lanczos, randomized_qb, sparse_cholesky, fgmres) 1557->1563
+- w265 program-analysis canon (fuzzer_mutate, taint_track, asan_shadow, symbolic_exec, contract_check, grammar_fuzz) 1563->1569
