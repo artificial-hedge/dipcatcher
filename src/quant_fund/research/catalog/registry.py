@@ -1653,6 +1653,17 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "level_set",
         "fast_marching",
         "godunov",
+        # Wave-108 canon: matrix
+        # functions & equations —
+        # expm Padé, sqrtm,
+        # Sylvester, CARE,
+        # matrix sign, Toeplitz.
+        "expm_pade",
+        "matrix_sqrt",
+        "sylvester",
+        "riccati_care",
+        "matrix_sign",
+        "toeplitz_solve",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

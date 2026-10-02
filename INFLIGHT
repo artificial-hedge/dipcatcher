@@ -1293,6 +1293,7 @@ wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_w
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
 wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 wave 107 (2026-09-30): transport/HJB PDE canon — adi, lax_wendroff, weno, level_set, fast_marching, godunov; 614→620 families.
+wave 108 (2026-09-30): matrix functions & equations — expm_pade, matrix_sqrt, sylvester, riccati_care, matrix_sign, toeplitz_solve; 620→626 families.
 note: canon PR to follow.
 
 ---
