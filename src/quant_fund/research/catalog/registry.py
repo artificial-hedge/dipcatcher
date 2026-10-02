@@ -1722,6 +1722,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "strapdown",
         "lambda_method",
         "rtk",
+        # Wave-115 canon: UQ — Smolyak,
+        # PCE, BQ, KL, active
+        # subspace, MIMC.
+        "smolyak",
+        "pce",
+        "bayesian_quadrature",
+        "kl_expand",
+        "active_subspace",
+        "mimc",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -909,6 +909,14 @@ from quant_fund.research.benches_w114 import (
     bench_rtk_family,
     bench_strapdown_family,
 )
+from quant_fund.research.benches_w115 import (
+    bench_active_subspace_family,
+    bench_bayesian_quadrature_family,
+    bench_kl_expand_family,
+    bench_mimc_family,
+    bench_pce_family,
+    bench_smolyak_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3144,6 +3152,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "strapdown": bench_strapdown_family(),
         "lambda_method": bench_lambda_method_family(),
         "rtk": bench_rtk_family(),
+        "smolyak": bench_smolyak_family(),
+        "pce": bench_pce_family(),
+        "bayesian_quadrature": bench_bayesian_quadrature_family(),
+        "kl_expand": bench_kl_expand_family(),
+        "active_subspace": bench_active_subspace_family(),
+        "mimc": bench_mimc_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
