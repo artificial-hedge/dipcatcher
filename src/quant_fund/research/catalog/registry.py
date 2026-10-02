@@ -1943,6 +1943,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "noisy_net",
         "prioritized_replay",
         "bootstrapped_dqn",
+        # Wave-138 memory + world
+        # model: LSH, mem-kNN, NTM,
+        # DNC, RSSM, MPC.
+        "reformer_lsh",
+        "memorizing_transformer",
+        "ntm_memory",
+        "dnc_memory",
+        "rssm_world",
+        "mpc_planning",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

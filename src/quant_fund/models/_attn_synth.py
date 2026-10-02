@@ -57,4 +57,9 @@ def attn_dot_cost(n_tokens: int, method: str, param: int) -> float:
         n_blocks = param
         blk = n_tokens // n_blocks
         return float(n_blocks * blk * blk * 2) / full
+    if method == "lsh":
+        blk = n_tokens // param
+        return float(param * blk * blk) / full
+    if method == "memknn":
+        return float(n_tokens * param) / full
     return 1.0
