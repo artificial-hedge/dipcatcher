@@ -2875,6 +2875,12 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lu_pivots",
         "orth_iter",
         "sturm_eig",
+        # Wave-252 interpreters-3 canon.
+        "gen_gc",
+        "compacting_gc",
+        "dispatch_table",
+        "anf_cps",
+        "trampoline_tc",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
