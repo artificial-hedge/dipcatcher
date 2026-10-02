@@ -144,7 +144,14 @@ with `get_bars`, then be named from `data.entrypoint`.
 (a polars duration such as `1d` or `1h`) aggregates adapter bars inside the
 harness. Each bucket is labeled at its **last** print, with open = first,
 high = max, low = min, close = last, volume = sum, and `available_time` = max
-availability in the bucket. Mixed sources in one bucket are rejected.
+availability in the bucket. Mixed sources or revision IDs in one bucket are
+rejected. Duplicate `(security_id, event_time)` input bars are rejected before
+aggregation, including identical duplicates, so volume cannot be double-counted
+or conflicting closes selected by row order.
+
+The direct `OhlcvFeaturePipeline` constructor requires positive integer
+lookbacks and an integer volatility window of at least two bars. Booleans,
+strings, and floats are rejected instead of being coerced or truncated.
 
 ## Walk-forward evaluation
 
