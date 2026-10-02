@@ -1741,6 +1741,14 @@ from quant_fund.research.benches_w218 import (
     bench_heston_calib_family,
     bench_sabr_calib_family,
 )
+from quant_fund.research.benches_w219 import (
+    bench_bdd_ops_family,
+    bench_cdcl_solver_family,
+    bench_ltl_mc_family,
+    bench_twosat_scc_family,
+    bench_unit_propagation_family,
+    bench_walksat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4600,6 +4608,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "heston_calib": bench_heston_calib_family(),
         "barrier_adjoint": bench_barrier_adjoint_family(),
         "andreasen_huge": bench_andreasen_huge_family(),
+        "cdcl_solver": bench_cdcl_solver_family(),
+        "walksat": bench_walksat_family(),
+        "unit_propagation": bench_unit_propagation_family(),
+        "twosat_scc": bench_twosat_scc_family(),
+        "bdd_ops": bench_bdd_ops_family(),
+        "ltl_mc": bench_ltl_mc_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

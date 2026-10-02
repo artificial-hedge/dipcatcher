@@ -2643,6 +2643,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "heston_calib",
         "barrier_adjoint",
         "andreasen_huge",
+        # Wave-219 SAT/symbolic canon: CDCL, WalkSAT, unit prop,
+        # 2-SAT SCC, BDD, LTL model check.
+        "cdcl_solver",
+        "walksat",
+        "unit_propagation",
+        "twosat_scc",
+        "bdd_ops",
+        "ltl_mc",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
