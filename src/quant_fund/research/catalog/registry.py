@@ -2932,6 +2932,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "eth_switch",
         # Wave-260 matching canon.
         # Wave-261 robotics-2 canon.
+        # Wave-262 HPC canon.
+        "stencil_halo",
+        "mesi_cache",
+        "ring_allreduce",
+        "simd_lanes",
+        "task_dag",
+        "numa_alloc",
         "ekf_slam",
         "occupancy_grid",
         "pure_pursuit",

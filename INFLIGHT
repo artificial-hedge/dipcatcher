@@ -2660,3 +2660,4 @@ wave 259 (2026-10-02): networking-2 canon — bgp_pathvec, dns_resolver, nat_tra
 wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munkres, konig_cover, gale_chu, topo_layers; 1533→1539 families.
 wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munkres, konig_cover, gale_chu, topo_layers; 1533→1539 families.
 - w261 robotics-2 canon (ekf_slam, occupancy_grid, pure_pursuit, stanley, particle_slam, frontier_explore) 1539->1545
+- w262 HPC canon (stencil_halo, mesi_cache, ring_allreduce, simd_lanes, task_dag, numa_alloc) 1545->1551
