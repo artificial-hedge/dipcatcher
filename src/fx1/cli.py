@@ -168,10 +168,22 @@ def harness_run(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    idempotency_key: str | None = typer.Option(
+        None,
+        "--idempotency-key",
+        help="Dedup key for the remote submission; a retried call returns the stored result. Auto-minted per invocation.",
+    ),
 ) -> None:
     """Run a registered dipcatcher harness command (fail-closed registry)."""
     if remote is not None:
-        result = _or_exit(lambda: _surface(remote, api_key, timeout_s).run(name))
+        from fx1.serve.client import HarnessClient
+
+        client = HarnessClient(
+            remote,
+            api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+            timeout_s=timeout_s,
+        )
+        result = _or_exit(lambda: client.run(name, idempotency_key=idempotency_key))
     else:
         from fx1.harness import Harness
 

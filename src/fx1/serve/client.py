@@ -31,6 +31,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
@@ -154,6 +155,7 @@ class HarnessClient:
         payload: dict[str, Any] | None = None,
         *,
         idempotent: bool = False,
+        extra_headers: dict[str, str] | None = None,
     ) -> tuple[int, Mapping[str, str], bytes]:
         if self._cb_threshold and self._clock() < self._cb_open_until:
             raise HarnessTransportError(
@@ -169,7 +171,7 @@ class HarnessClient:
                         method,
                         self._base + path,
                         payload,
-                        dict(self._headers),
+                        {**self._headers, **(extra_headers or {})},
                         self._timeout_s,
                     )
                 except HarnessTransportError:
@@ -249,8 +251,15 @@ class HarnessClient:
         payload: dict[str, Any] | None = None,
         *,
         idempotent: bool = False,
+        extra_headers: dict[str, str] | None = None,
     ) -> Any:
-        _, _, body = self._request(method, path, payload, idempotent=idempotent)
+        _, _, body = self._request(
+            method,
+            path,
+            payload,
+            idempotent=idempotent,
+            extra_headers=extra_headers,
+        )
         return json.loads(body)
 
     # ---- registry -----------------------------------------------------
@@ -271,8 +280,16 @@ class HarnessClient:
         extra_args: list[str] | None = None,
         *,
         config: str | Path | None = None,
+        idempotency_key: str | None = None,
     ) -> HarnessResult:
-        """Remote counterpart of ``Fx1Harness.run``."""
+        """Remote counterpart of ``Fx1Harness.run``.
+
+        Carries an ``Idempotency-Key`` (auto-minted unless the caller
+        supplies one for cross-process dedup), so a transport-level
+        retry returns the stored result instead of re-executing the
+        command — ``max_retries``/``retry_writes`` is safe here.
+        """
+        key = idempotency_key or uuid.uuid4().hex
         out = self._json(
             "POST",
             "/harness/runs",
@@ -281,6 +298,8 @@ class HarnessClient:
                 "extra_args": extra_args or [],
                 "config": str(config) if config is not None else None,
             },
+            idempotent=True,
+            extra_headers={"Idempotency-Key": key},
         )
         return HarnessResult(
             command=out["command"],

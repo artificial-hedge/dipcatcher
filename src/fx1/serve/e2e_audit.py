@@ -335,16 +335,24 @@ def e2e_audit() -> dict[str, bool]:
         m2 = resilient.metrics()
         out["e2e_metrics_capped_server"] = m2.max_inflight == 1 and m2.requests_total >= 1
 
-        # drain over the real wire: latch -> gated routes refuse, ops stays up
+        # idempotency over the real wire: same key -> the command runs once
+        # and replays are served from the store even while draining.
+        k = "e2e-idem-key"
+        first = resilient.run("doctor", idempotency_key=k)
         d = resilient.drain()
         out["e2e_drain_response"] = d["draining"] is True and isinstance(d["inflight"], int)
         try:
-            resilient.complete(msg, backend="byok")
+            resilient.run("doctor")  # no key -> fresh work -> refused
             out["e2e_drain_blocks_new_work"] = False
         except Exception as exc:  # noqa: BLE001 — probe records the class
             out["e2e_drain_blocks_new_work"] = type(
                 exc
             ).__name__ == "BackendNotConfiguredError" and "draining" in str(exc)
+        # keyed retry of an already-executed submission is served, not refused
+        second = resilient.run("doctor", idempotency_key=k)
+        out["e2e_idem_replay_under_drain"] = (
+            second.command == first.command and second.exit_code == first.exit_code
+        )
         out["e2e_drain_metrics_flag"] = resilient.metrics().draining is True
         out["e2e_drain_health_still_up"] = resilient.health().status == "ok"
     finally:

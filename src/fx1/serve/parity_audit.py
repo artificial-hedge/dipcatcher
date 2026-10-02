@@ -815,6 +815,49 @@ def parity_audit() -> dict[str, bool]:
         )[0]
         == "Fx1HonestyError"
     )
+
+    # idempotency: run() sends Idempotency-Key, stable across retries;
+    # caller-supplied keys pass through verbatim.
+    sent_headers: list[dict[str, str]] = []
+    run_body = _json_mod.dumps(
+        {
+            "command": "doctor",
+            "exit_code": 0,
+            "stdout": "s",
+            "stderr": "",
+            "ok": True,
+            "timeout_s": 1,
+            "replayed": True,
+        }
+    ).encode()
+
+    def _cap_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        sent_headers.append(dict(headers))
+        if len(sent_headers) == 1:
+            raise HarnessTransportError("boom")
+        return 200, {}, run_body
+
+    c_idem = HarnessClient(
+        "http://harness.test",
+        transport=_cap_transport,
+        max_retries=1,
+        sleep=lambda _s: None,
+    )
+    c_idem.run("doctor")
+    out["client_run_idem_stable_across_retry"] = (
+        len(sent_headers) == 2
+        and bool(sent_headers[0].get("Idempotency-Key"))
+        and sent_headers[0]["Idempotency-Key"] == sent_headers[1]["Idempotency-Key"]
+    )
+    sent_headers.clear()
+    c_idem.run("doctor", idempotency_key="explicit-k")
+    out["client_run_idem_explicit_key"] = sent_headers[0].get("Idempotency-Key") == "explicit-k"
     return out
 
 

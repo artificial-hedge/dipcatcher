@@ -1,7 +1,7 @@
 {
   "kind": "e2e_audit",
   "schema": "e2e_audit.v1",
-  "git_revision": "814ff4129b065411034ff8d0a84a0de4c8f35550",
+  "git_revision": "d1f6a2a22199cdd3e83cfe9b10c5500ed0527e0b",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -31,11 +31,12 @@
       "e2e_metrics_capped_server": true,
       "e2e_drain_response": true,
       "e2e_drain_blocks_new_work": true,
+      "e2e_idem_replay_under_drain": true,
       "e2e_drain_metrics_flag": true,
       "e2e_drain_health_still_up": true
     },
     "ok": true
   },
   "interpretation": "end-to-end verified over real loopback sockets: HarnessClient drove health/registry/run/gated-complete/SSE-stream/batch/receipt-verify against uvicorn + the production middleware, with BYOK resolving to a real stub OpenAI engine \u2014 auth faults, gate refusals, size caps, and error classes all survive the wire. No Server header leaks the stack.",
-  "receipt_sha256": "97238319d34042207fed2c1e0269e1cbcfecffa909fa1af3ca54285024d48a12"
+  "receipt_sha256": "11cd49a6bd4c48da597ffe41f1c408c2c90665ab6d9996a65223a78c48263448"
 }

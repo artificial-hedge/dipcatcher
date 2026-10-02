@@ -291,6 +291,7 @@ def cli_audit() -> dict[str, Any]:
         def __init__(self, base_url: str, **kw: Any) -> None:
             self.base_url = base_url
             self.api_key = kw.get("api_key")
+            self.last_idem: str | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -318,6 +319,12 @@ def cli_audit() -> dict[str, Any]:
 
         def drain(self) -> dict[str, Any]:
             return {"draining": True, "inflight": 2}
+
+        def run(self, name: str, **kw: Any) -> Any:
+            from fx1.harness import HarnessResult
+
+            self.last_idem = kw.get("idempotency_key")
+            return HarnessResult(command=name, exit_code=0, stdout="ran", stderr="")
 
     remotes: list[_FakeRemote] = []
 
@@ -358,6 +365,24 @@ def cli_audit() -> dict[str, Any]:
     out["metrics_local_refused"] = rm_local.exit_code == 2 and "--remote" in rm_local.output
     rd_local = runner.invoke(app, ["harness", "drain"])
     out["drain_local_refused"] = rd_local.exit_code == 2 and "--remote" in rd_local.output
+
+    # --idempotency-key reaches the remote client verbatim
+    with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
+        rr_key = runner.invoke(
+            app,
+            [
+                "harness",
+                "run",
+                "doctor",
+                "--remote",
+                "http://h.test",
+                "--idempotency-key",
+                "cli-key-1",
+            ],
+        )
+        out["cli_run_idem_key_passed"] = (
+            rr_key.exit_code == 0 and remotes[-1].last_idem == "cli-key-1"
+        )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

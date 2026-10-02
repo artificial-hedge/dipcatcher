@@ -613,9 +613,20 @@ def api_audit() -> dict[str, Any]:
             os.environ["FX1_API_SSE_KEEPALIVE_S"] = keep_env
 
     # --- drain: one-way latch, gated routes refuse, ops routes stay up ----
-    drain_app = api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend())
+    from fx1.harness import Harness as _Harness  # noqa: PLC0415
+
+    drain_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
     dclient = _TC2(drain_app)
     drain_app.state.metrics.acquire()  # pretend one request is in-flight
+    # a stored key must still serve its replay while draining
+    dclient.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "pre-drain-key"},
+    )
     try:
         d0 = dclient.post("/harness/drain")
         out["drain_response_shape"] = (
@@ -644,8 +655,77 @@ def api_audit() -> dict[str, Any]:
         )
         out["drain_metrics_reports"] = dclient.get("/metrics").json()["draining"] is True
         out["drain_idempotent"] = dclient.post("/harness/drain").json()["draining"] is True
+        replayed = dclient.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "pre-drain-key"},
+        )
+        out["drain_replay_served"] = (
+            replayed.status_code == 200 and replayed.json()["replayed"] is True
+        )
     finally:
         drain_app.state.metrics.release()
+
+    # --- idempotency keys: dedup retries of a submitted run ------------------
+    r1 = client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "audit-key-1"},
+    )
+    r2 = client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "audit-key-1"},
+    )
+    out["idem_same_key_replays"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r1.json()["replayed"] is False
+        and r2.json()["replayed"] is True
+        and r2.json()["stdout"] == r1.json()["stdout"]
+    )
+    r3 = client.post(
+        "/harness/runs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "audit-key-2"},
+    )
+    out["idem_distinct_keys_fresh"] = r3.json()["replayed"] is False
+    out["idem_absent_ok"] = (
+        client.post("/harness/runs", json={"command": "doctor"}).json()["replayed"] is False
+    )
+    out["idem_oversized_400"] = (
+        client.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "k" * 300},
+        ).status_code
+        == 400
+    )
+    tiny_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        idem_max=2,
+    )
+    tc = _TC2(tiny_app)
+    for k_ in ("tk1", "tk2", "tk3"):
+        tc.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": k_},
+        )
+    out["idem_bound_evicts_oldest"] = (
+        tc.post(
+            "/harness/runs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "tk1"},
+        ).json()["replayed"]
+        is False
+    )
+    try:
+        api_mod.create_app(idem_max=0)
+        out["idem_max_validated"] = False
+    except ValueError:
+        out["idem_max_validated"] = True
 
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench

@@ -1,7 +1,7 @@
 {
   "kind": "api_audit",
   "schema": "api_audit.v1",
-  "git_revision": "814ff4129b065411034ff8d0a84a0de4c8f35550",
+  "git_revision": "d1f6a2a22199cdd3e83cfe9b10c5500ed0527e0b",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -62,6 +62,13 @@
       "drain_health_reports": true,
       "drain_metrics_reports": true,
       "drain_idempotent": true,
+      "drain_replay_served": true,
+      "idem_same_key_replays": true,
+      "idem_distinct_keys_fresh": true,
+      "idem_absent_ok": true,
+      "idem_oversized_400": true,
+      "idem_bound_evicts_oldest": true,
+      "idem_max_validated": true,
       "receipt_valid_payload": true,
       "receipt_tamper_detected": true,
       "receipt_malformed_fails_closed": true,
@@ -98,5 +105,5 @@
     "ok": true
   },
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
-  "receipt_sha256": "72bdd7be44550c587a81b65dfedae7631624d96f687dbbd6ac7e2e7dcc53c43d"
+  "receipt_sha256": "22f20849fa12672f2348a90b7b90e5c6e6f6f1722f9ebaae4c463d2c154d2cae"
 }

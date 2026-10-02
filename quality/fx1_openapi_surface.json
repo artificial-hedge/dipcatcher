@@ -60,7 +60,13 @@
     },
     "/harness/runs": {
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "200",
@@ -97,5 +103,5 @@
       }
     }
   },
-  "schema_sha256": "6ea0f036968c520d876e99dc604412d8b6941250fb0ad36fae0afe77e1d09828"
+  "schema_sha256": "dae91b6a76b52ed67f808192857c69f6aecca600414d6df7c7b759a1fa7bdd1f"
 }

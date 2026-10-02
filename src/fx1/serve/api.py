@@ -42,12 +42,14 @@ import re
 import threading
 import time
 import uuid
+from collections import OrderedDict
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -70,6 +72,8 @@ from quant_fund.research.receipt_v2 import verify_receipt_payload
 _API_KEY_ENV = "FX1_API_KEY"
 _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
 _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
+_IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
+_IDEM_KEY_MAX = 256
 _PUBLIC_PATHS = frozenset({"/health"})
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
@@ -114,6 +118,7 @@ class HarnessRunResponse(_Model):
     stderr: str
     ok: bool
     timeout_s: int
+    replayed: bool = False
 
 
 class ChatMessage(_Model):
@@ -236,6 +241,35 @@ class _Metrics:
             )
 
 
+class _IdemStore:
+    """Bounded LRU of ``Idempotency-Key`` -> run response.
+
+    Lets a client (or the HarnessClient, which mints a key per ``run``)
+    retry a submission after a transport blip without double-executing
+    the command. Read-only replays bypass the drain latch and the
+    concurrency cap: the work already happened.
+    """
+
+    def __init__(self, max_entries: int) -> None:
+        self._lock = threading.Lock()
+        self._max = max_entries
+        self._map: OrderedDict[str, tuple[str, HarnessRunResponse]] = OrderedDict()
+
+    def get(self, key: str) -> tuple[str, HarnessRunResponse] | None:
+        with self._lock:
+            hit = self._map.get(key)
+            if hit is not None:
+                self._map.move_to_end(key)
+            return hit
+
+    def put(self, key: str, fingerprint: str, resp: HarnessRunResponse) -> None:
+        with self._lock:
+            self._map[key] = (fingerprint, resp)
+            self._map.move_to_end(key)
+            while len(self._map) > self._max:
+                self._map.popitem(last=False)
+
+
 def _backend_configured() -> dict[str, bool]:
     """Presence-of-credentials flags only — values never leave the process."""
     checkpoint_env = os.environ.get("FX1_CHECKPOINT_DIR", "")
@@ -293,6 +327,7 @@ def create_app(
     backend_resolver: Any | None = None,
     max_inflight: int | None = None,
     sse_keepalive_s: float | None = None,
+    idem_max: int | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -301,6 +336,10 @@ def create_app(
         max_inflight = int(os.environ.get(_MAX_INFLIGHT_ENV, "16"))
     if max_inflight < 1:
         raise ValueError(f"max_inflight must be >= 1, got {max_inflight}")
+    if idem_max is None:
+        idem_max = int(os.environ.get(_IDEM_MAX_ENV, "1024"))
+    if idem_max < 1:
+        raise ValueError(f"idem_max must be >= 1, got {idem_max}")
     if sse_keepalive_s is None:
         sse_keepalive_s = float(os.environ.get(_SSE_KEEPALIVE_ENV, "15"))
     if sse_keepalive_s < 0:
@@ -312,8 +351,10 @@ def create_app(
     # health) stay uncapped so liveness answers under load.
     inflight = threading.BoundedSemaphore(max_inflight)
     metrics = _Metrics(max_inflight)
+    idem_store = _IdemStore(idem_max)
 
-    def _slot() -> Iterator[None]:
+    @contextmanager
+    def _work_gate() -> Iterator[None]:
         if metrics.draining.is_set():
             raise HTTPException(
                 503,
@@ -332,6 +373,10 @@ def create_app(
             metrics.release()
             inflight.release()
 
+    def _slot() -> Iterator[None]:
+        with _work_gate():
+            yield
+
     app = FastAPI(
         title="fx-1 harness API",
         version=__version__,
@@ -343,6 +388,7 @@ def create_app(
     )
     app.state.inflight_slots = inflight
     app.state.metrics = metrics
+    app.state.idem_store = idem_store
     app.state.sse_keepalive_s = sse_keepalive_s
 
     @app.middleware("http")
@@ -433,27 +479,46 @@ def create_app(
 
     @app.post("/harness/runs", response_model=HarnessRunResponse)
     def run_command(
-        body: HarnessRunRequest, _slot_held: None = Depends(_slot)
+        body: HarnessRunRequest,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
-        try:
-            result = lab.run(
-                body.command,
-                body.extra_args or None,
-                config=Path(body.config) if body.config else None,
+        key = (idempotency_key or "").strip() or None
+        if key is not None and len(key) > _IDEM_KEY_MAX:
+            raise HTTPException(400, "Idempotency-Key must be <= 256 chars")
+        body_fp = body.model_dump_json()
+        if key is not None:
+            entry = idem_store.get(key)
+            if entry is not None:
+                fp, cached = entry
+                if fp != body_fp:
+                    raise HTTPException(
+                        409,
+                        "Idempotency-Key reuse with a different request body",
+                    )
+                return cached.model_copy(update={"replayed": True})
+        with _work_gate():
+            try:
+                result = lab.run(
+                    body.command,
+                    body.extra_args or None,
+                    config=Path(body.config) if body.config else None,
+                )
+            except KeyError as exc:
+                raise HTTPException(404, str(exc)) from exc
+            except ValueError as exc:
+                raise HTTPException(422, str(exc)) from exc
+            command = lab.get(body.command)
+            resp = HarnessRunResponse(
+                command=result.command,
+                exit_code=result.exit_code,
+                stdout=result.stdout,
+                stderr=result.stderr,
+                ok=result.ok,
+                timeout_s=command.timeout_s,
             )
-        except KeyError as exc:
-            raise HTTPException(404, str(exc)) from exc
-        except ValueError as exc:
-            raise HTTPException(422, str(exc)) from exc
-        command = lab.get(body.command)
-        return HarnessRunResponse(
-            command=result.command,
-            exit_code=result.exit_code,
-            stdout=result.stdout,
-            stderr=result.stderr,
-            ok=result.ok,
-            timeout_s=command.timeout_s,
-        )
+        if key is not None:
+            idem_store.put(key, body_fp, resp)
+        return resp
 
     def _resolve_request_backend(backend_name: str, checkpoint_dir: str | None) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""
