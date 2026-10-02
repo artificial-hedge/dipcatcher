@@ -2015,6 +2015,14 @@ from quant_fund.research.benches_w252 import (
     bench_poly_inline_cache_family,
     bench_trampoline_tc_family,
 )
+from quant_fund.research.benches_w253 import (
+    bench_buchi_automata_family,
+    bench_cfg_pda_equiv_family,
+    bench_register_automata_family,
+    bench_tree_automata_family,
+    bench_two_way_dfa_family,
+    bench_weighted_fst_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2214,6 +2222,12 @@ def _provenance(
         "poly_inline_cache": bench_poly_inline_cache_family,
         "anf_cps": bench_anf_cps_family,
         "trampoline_tc": bench_trampoline_tc_family,
+        "tree_automata": bench_tree_automata_family,
+        "buchi_automata": bench_buchi_automata_family,
+        "weighted_fst": bench_weighted_fst_family,
+        "cfg_pda_equiv": bench_cfg_pda_equiv_family,
+        "two_way_dfa": bench_two_way_dfa_family,
+        "register_automata": bench_register_automata_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

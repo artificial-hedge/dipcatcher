@@ -2881,6 +2881,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dispatch_table",
         "anf_cps",
         "trampoline_tc",
+        # Wave-253 automata-3 canon.
+        "tree_automata",
+        "buchi_automata",
+        "weighted_fst",
+        "cfg_pda_equiv",
+        "two_way_dfa",
+        "register_automata",
         "critical_path",
         "dinic_flow",
         "mincost_flow",

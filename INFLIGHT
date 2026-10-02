@@ -2650,3 +2650,4 @@ wave 249 (2026-10-02): bioinformatics canon — smith_waterman, needleman_wunsch
 wave 250 (2026-10-02): graph-3 canon — dinic_flow, mincost_flow, astar_search, bidirectional_dijkstra, critical_path, bron_kerbosch; 1473→1479 families.
 wave 251 (2026-10-02): numerical-linalg-2 canon — ldlt_solve, givens_qr, jacobi_svd, orth_iter, lu_pivots, sturm_eig; 1479→1485 families.
 wave 252 (2026-10-02): interpreters-3 canon — gen_gc, compacting_gc, dispatch_table, poly_inline_cache, anf_cps, trampoline_tc; 1485→1491 families.
+wave 253 (2026-10-02): automata-3 canon — tree_automata, buchi_automata, weighted_fst, cfg_pda_equiv, two_way_dfa, register_automata; 1491→1497 families.
