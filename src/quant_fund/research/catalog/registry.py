@@ -2467,6 +2467,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "qr_eig",
         "hessenberg_red",
         "bidiag_svd",
+        # Wave-197 inventory canon: EOQ, newsvendor, (s,S), Wagner-Whitin,
+        # base stock, Clark-Scarf echelon.
+        "eoq_model",
+        "newsvendor",
+        "ss_policy",
+        "wagner_whitin",
+        "base_stock",
+        "clark_scarf",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
