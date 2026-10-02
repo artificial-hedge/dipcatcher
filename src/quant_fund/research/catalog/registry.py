@@ -1488,6 +1488,171 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "frank_wolfe",
         "sparse_coding",
         "evolution_strategies",
+        # Wave-96 canon: Gaussian /
+        # multinomial / Bernoulli NB,
+        # AdaBoost.M1 + LogitBoost
+        # stumps, EP Bayesian probit,
+        # item-kNN + ALS-WR + bias-MF
+        # collaborative filtering,
+        # Apriori association rules,
+        # and fictitious play /
+        # support enumeration /
+        # regret matching.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "naive_bayes",
+        "adaboost",
+        "expectation_propagation",
+        "collaborative_filtering",
+        "association_rules",
+        "nash_equilibrium",
+        # Wave-97 canon: ISTA /
+        # FISTA prox-gradient,
+        # Gauss/CC/Simpson
+        # quadrature, RK45 +
+        # EM/Milstein solvers,
+        # label-prop + self-train,
+        # OvR / softmax / ECOC,
+        # and sparse PCA. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "proximal_gradient",
+        "quadrature",
+        "ode_solvers",
+        "semisupervised",
+        "multiclass",
+        "sparse_pca",
+        # Wave-98 canon: value /
+        # policy iteration, TD(0) /
+        # SARSA / Q-learning,
+        # sum-product + loopy BP,
+        # ELM, nearest shrunken
+        # centroids, CEM. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "mdp_solvers",
+        "td_learning",
+        "belief_propagation",
+        "extreme_learning",
+        "nearest_centroid",
+        "cross_entropy_method",
+        # Wave-99 canon: conjugate
+        # Gibbs, Laplace approx,
+        # Gaussian KDE + LOO-CV,
+        # whitened tensor power,
+        # Dirichlet evidential,
+        # and mean-shrinkage MTL.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "gibbs_sampler",
+        "laplace_approx",
+        "kde",
+        "tensor_power",
+        "evidential",
+        "multi_task",
+        # Wave-100 canon: homotopy
+        # continuation, Anderson
+        # acceleration, sequence
+        # accel, LSQR/CGLS, low-
+        # discrepancy QMC, and
+        # symplectic integrators.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "homotopy_continuation",
+        "anderson_accel",
+        "sequence_accel",
+        "iterative_ls",
+        "qmc_sequences",
+        "symplectic_ode",
+        # Wave-101 canon: graph
+        # traversal/topo/bipartite,
+        # shortest paths, Dinic
+        # max-flow + min-cut,
+        # Hungarian + Hopcroft-Karp,
+        # Tarjan SCC + bridges/
+        # articulation, Algorithm X.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "graph_traversal",
+        "shortest_paths",
+        "network_flow",
+        "assignment",
+        "graph_components",
+        "exact_cover",
+        # Wave-102 canon: multi-
+        # armed bandits — UCB1/
+        # eps-greedy/ETC, KL-UCB,
+        # LinUCB + linear TS,
+        # EXP3 + Hedge, SE + LUCB
+        # best arm, SW-/D-UCB.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "stochastic_bandits",
+        "kl_bandits",
+        "contextual_bandits",
+        "adversarial_bandits",
+        "best_arm",
+        "nonstationary_bandits",
+        # Wave-103 canon: Krylov +
+        # randomized NLA — Lanczos,
+        # Arnoldi/GMRES, HMT rSVD,
+        # Nystrom, CUR leverage,
+        # interpolative decomp.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lanczos",
+        "arnoldi_gmres",
+        "randomized_svd",
+        "nystrom",
+        "cur_decomp",
+        "interpolative_decomp",
+        # Wave-104 canon: OT II —
+        # Sinkhorn + transport LP,
+        # EMD 1-D/LP + Bures,
+        # Gromov-Wasserstein,
+        # unbalanced KL-UOT,
+        # fixed-support barycenter,
+        # fused GW. Same SYNTHETIC
+        # diagnostic contract.
+        "sinkhorn",
+        "emd_lp",
+        "gromov_wasserstein",
+        "unbalanced_ot",
+        "wasserstein_barycenter",
+        "fused_gromov",
+        # Wave-105 canon: game-tree
+        # search on a subtraction-race
+        # DAG — alpha-beta + TT, UCT,
+        # PUCT, NegaScout, PN, df-pn.
+        "alpha_beta",
+        "mcts",
+        "puct",
+        "negascout",
+        "proof_number",
+        "dfpn",
+        # Wave-106 canon: stiff
+        # time integration — BDF,
+        # Adams PECE, Radau IIA,
+        # Strang split, ETDRK4,
+        # Crank–Nicolson. Orders
+        # measured vs exact.
+        "bdf",
+        "adams",
+        "radau",
+        "strang",
+        "etdrk4",
+        "crank_nicolson",
+        # Wave-107 canon: transport
+        # & HJB PDE — ADI,
+        # Lax–Wendroff, WENO5,
+        # level set, fast
+        # marching, Godunov.
+        "adi",
+        "lax_wendroff",
+        "weno",
+        "level_set",
+        "fast_marching",
+        "godunov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
