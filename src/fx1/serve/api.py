@@ -2746,6 +2746,23 @@ def create_app(
             raise ApiError(404, f"completion {completion_id!r} not in the log", code="not_found")
         return rec
 
+    @app.get(
+        "/harness/completions/{completion_id}/receipt",
+        tags=["ops"],
+        operation_id="completion_receipt",
+    )
+    def completion_receipt(completion_id: str) -> dict[str, Any]:
+        """Export one logged call as a sealed ``fx1_completion_record.v1``
+        document — verify with ``POST /receipts/verify`` or the SDK."""
+        from fx1.serve.completion_receipt import (  # noqa: PLC0415
+            completion_record_receipt,
+        )
+
+        rec = completion_log.get(completion_id)
+        if rec is None:
+            raise ApiError(404, f"completion {completion_id!r} not in the log", code="not_found")
+        return completion_record_receipt(rec.model_dump(mode="json"))
+
     @app.post(
         "/harness/drain",
         response_model=DrainResponse,

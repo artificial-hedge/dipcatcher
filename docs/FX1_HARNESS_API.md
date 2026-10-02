@@ -102,6 +102,17 @@ per-item on batch results, on the stream's `final` frame, and as the
 original id). Probes never log. In-process, `Fx1Harness.completions()`
 / `.completion(id)` return the same records.
 
+**Sealed exports:** `GET /harness/completions/{id}/receipt` returns the
+record wrapped as a `fx1_completion_record.v1` sealed document —
+`{kind, schema, git_revision, data_label:"OPS", research_only,
+live_pnl_claim:false, record, receipt_sha256}`. Exports are
+deterministic per record and verify through `POST /receipts/verify` or
+`verify-research` like any other receipt; tampering with the record
+breaks the seal. The claim is "these bytes were the recorded call" —
+prompt/output are sha256 evidence handles, never content. In-process,
+`Fx1Harness.completion_receipt(id)` mints the twin document (each
+surface seals its own record; the sha256s are the cross-surface claim).
+
 ## Routes
 
 | Route | Purpose |
@@ -116,6 +127,7 @@ original id). Probes never log. In-process, `Fx1Harness.completions()`
 | `POST /harness/gate/check` | pre-flight text through the honesty gate → `{ok, error}`; a refusal is a verdict, not a wire fault. Advisory: not slot-gated, stays up during drain, never metered — also `Fx1Harness.check_text` / `HarnessClient.check_text` / `fx1 harness check-text` |
 | `GET /harness/completions` | newest-first window on the per-call completion log (`?limit≤256`, `?backend=`); `Fx1Harness.completions` / `HarnessClient.completions` / `fx1 harness completions` |
 | `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
+| `GET /harness/completions/{id}/receipt` | the logged call sealed as a `fx1_completion_record.v1` document → verify via `POST /receipts/verify`; `Fx1Harness.completion_receipt` / `HarnessClient.completion_receipt` / `fx1 harness completion --receipt` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) — carries `completion_id`, `latency_ms` (per-call wall clock; replays report the original) |

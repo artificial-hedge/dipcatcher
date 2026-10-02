@@ -200,6 +200,7 @@ def cli_audit() -> dict[str, Any]:
     )
     out["harness_completion_missing"] = (
         runner.invoke(app, ["harness", "completion", "0" * 32]).exit_code == 2
+        and runner.invoke(app, ["harness", "completion", "0" * 32, "--receipt"]).exit_code == 2
     )
 
     import tempfile  # noqa: PLC0415
@@ -898,7 +899,8 @@ def cli_audit_bench() -> dict[str, Any]:
             "non-zero, judge resolution fails closed, dipbench smoke is "
             "SYNTHETIC-labeled, doctor emits presence-only JSON, and the "
             "completion log reads cleanly (empty window + missing-id exit "
-            "2). Flagged wart: the command is registered as 'maskedaEval'."
+            "2 on both the record and its --receipt export). Flagged wart: "
+            "the command is registered as 'maskedaEval'."
             if ok
             else f"CLI AUDIT DEFECT: {r}"
         ),

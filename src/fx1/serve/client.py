@@ -629,6 +629,17 @@ class HarnessClient:
             for r in out["items"]
         ]
 
+    def completion_receipt(self, completion_id: str) -> dict[str, Any]:
+        """Export one logged call's sealed ``fx1_completion_record.v1``
+        document — ``GET /harness/completions/{id}/receipt``; 404 maps to
+        KeyError. Feed it to :meth:`verify_receipt` to check the seal."""
+        out = self._json(
+            "GET",
+            f"/harness/completions/{completion_id}/receipt",
+            idempotent=True,
+        )
+        return dict(out)
+
     def check_text(self, text: str) -> GateCheckResult:
         """Pre-flight text through the remote honesty gate — POSTs
         ``/harness/gate/check``; a refusal rides ``ok=False``, it never

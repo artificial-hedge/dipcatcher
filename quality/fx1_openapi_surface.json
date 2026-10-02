@@ -132,6 +132,22 @@
         ]
       }
     },
+    "/harness/completions/{completion_id}/receipt": {
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/drain": {
       "post": {
         "params": [
@@ -364,5 +380,5 @@
       }
     }
   },
-  "schema_sha256": "1791eb7ac09f3f1224b1e20bd19c33276551157162f368cf50bb8945292a7ac7"
+  "schema_sha256": "747d4b686d2af3d3d1829bd75e5d7266fced3892ee468526cc471ccbd051cebf"
 }

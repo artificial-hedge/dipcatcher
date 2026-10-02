@@ -290,6 +290,20 @@ class Fx1Harness:
             raise KeyError(completion_id)
         return rec
 
+    def completion_receipt(self, completion_id: str) -> dict[str, Any]:
+        """Export one logged call as a sealed ``fx1_completion_record.v1``
+        document — pass it to :meth:`verify_receipt` to check the seal."""
+        from dataclasses import asdict  # noqa: PLC0415
+
+        from fx1.serve.completion_receipt import (  # noqa: PLC0415
+            completion_record_receipt,
+        )
+
+        rec = self._log.get(completion_id)
+        if rec is None:
+            raise KeyError(completion_id)
+        return completion_record_receipt(asdict(rec))
+
     # ---- registry ------------------------------------------------------
 
     def commands(self, role: HarnessRole | None = None) -> list[str]:

@@ -684,12 +684,21 @@ def harness_completions(
 @harness_app.command("completion")
 def harness_completion(
     completion_id: str = typer.Argument(..., help="Completion record id (hex)."),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_completion_record.v1 doc instead."
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Fetch one recorded call by id — the audit handle minted per call."""
+    """Fetch one recorded call by id — the audit handle minted per call.
+    ``--receipt`` prints the sealed export instead (verify with
+    ``verify-research`` or ``POST /receipts/verify``)."""
     surface = _surface(remote, api_key, timeout_s)
+    if receipt:
+        doc = _or_exit(lambda: surface.completion_receipt(completion_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
     rec = _or_exit(lambda: surface.completion(completion_id))
     typer.echo(json.dumps(_record_json(rec), indent=2))
 

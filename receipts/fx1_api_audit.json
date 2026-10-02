@@ -76,6 +76,12 @@
       "complete_replay_reuses_latency_ms": true,
       "complete_reports_latency_ms": true,
       "complete_unknown_backend_422": true,
+      "completion_receipt_404": true,
+      "completion_receipt_deterministic": true,
+      "completion_receipt_export": true,
+      "completion_receipt_tamper": true,
+      "completion_receipt_verifies": true,
+      "completion_receipt_verify_route": true,
       "completions_get_404": true,
       "completions_list_filter": true,
       "completions_logged_batch": true,
@@ -291,11 +297,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "42d5bc06fc61e72caf4b3f55fd4989343858da9b",
-  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}].",
+  "git_revision": "97d4c235e1e78065bf83df1702133fb3a2f6e9e6",
+  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering.",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "2e3fc29a947a50be94e4ced0651b3235049dbfe75448dc1e3d91bd5e889dd0d9",
+  "receipt_sha256": "bf384c85fe044d2aa7ac3bc36fc0415a55955ee23893b8a9f1bcae0fb9f6d668",
   "research_only": true,
   "schema": "api_audit.v1"
 }

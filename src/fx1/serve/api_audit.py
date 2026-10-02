@@ -2667,6 +2667,44 @@ def _probe_backend_probes(
         and [r.completion_id for r in cap3.latest(10, None)] == ["c4", "c3", "c2"]
     )
 
+    # --- sealed per-call receipt export -------------------------------------
+    # one logged call exports as a sealed fx1_completion_record.v1 doc:
+    # seal re-derives, verify_receipt accepts it, tampering the record's
+    # output hash breaks the seal, and exports are byte-deterministic.
+    from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+        verify_receipt_payload as _vrp,
+    )
+    from quant_fund.utils.hashing import (  # noqa: PLC0415
+        canonical_json_bytes as _cjb,
+    )
+    from quant_fund.utils.hashing import (
+        hash_bytes as _hb,
+    )
+
+    rc = uapp.get(f"/harness/completions/{c_id}/receipt")
+    rc_doc = rc.json()
+    out["completion_receipt_export"] = (
+        rc.status_code == 200
+        and rc_doc["kind"] == "fx1_completion_record"
+        and rc_doc["schema"] == "fx1_completion_record.v1"
+        and rc_doc["record"]["completion_id"] == c_id
+        and rc_doc["receipt_sha256"]
+        == _hb(_cjb({k: v for k, v in rc_doc.items() if k != "receipt_sha256"}))
+    )
+    out["completion_receipt_verifies"] = _vrp(rc_doc)["valid"] is True
+    out["completion_receipt_verify_route"] = (
+        uapp.post("/receipts/verify", json={"receipt": rc_doc}).json().get("valid") is True
+    )
+    out["completion_receipt_deterministic"] = (
+        uapp.get(f"/harness/completions/{c_id}/receipt").json() == rc_doc
+    )
+    tampered_rec = _json.loads(_json.dumps(rc_doc))
+    tampered_rec["record"]["output_sha256"] = "0" * 64
+    out["completion_receipt_tamper"] = _vrp(tampered_rec)["valid"] is False
+    out["completion_receipt_404"] = (
+        uapp.get("/harness/completions/00000000000000000000000000000000/receipt").status_code == 404
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""
@@ -2691,7 +2729,11 @@ def api_audit_bench() -> dict[str, Any]:
             "payload, auth is X-API-Key or loopback-only, and every gated "
             "call lands in the bounded completion log (X-Fx1-Completion-Id "
             "handle; hashes, usage, verdict — never content) fetchable via "
-            "GET /harness/completions[/{id}]."
+            "GET /harness/completions[/{id}], and each logged call exports "
+            "as a sealed fx1_completion_record.v1 document "
+            "(GET …/{id}/receipt) — deterministic, verifiable through "
+            "verify_receipt / POST /receipts/verify, and broken by any "
+            "byte of record tampering."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

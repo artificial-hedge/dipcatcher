@@ -553,6 +553,23 @@ def parity_audit() -> dict[str, bool]:
         out["completion_log_list_parity"] = (
             len(remote.completions(limit=1)) == 1 and len(sdk.completions(limit=1)) == 1
         )
+        # each surface seals its own record — the docs verify on their own
+        # surface's verifier and carry the same cross-surface hashes.
+        from quant_fund.research.receipt_v2 import (  # noqa: PLC0415
+            verify_receipt_payload as _vrp,
+        )
+
+        doc_wire = remote.completion_receipt(rem_out.completion_id or "")
+        doc_sdk = sdk.completion_receipt(sdk_out.completion_id or "")
+        out["completion_receipt_parity"] = (
+            doc_wire["schema"] == doc_sdk["schema"] == "fx1_completion_record.v1"
+            and doc_wire["record"]["prompt_sha256"] == doc_sdk["record"]["prompt_sha256"]
+            and doc_wire["record"]["output_sha256"] == doc_sdk["record"]["output_sha256"]
+            and _vrp(doc_wire)["valid"] is True
+            and _vrp(doc_sdk)["valid"] is True
+            and remote.verify_receipt(doc_wire).valid is True
+            and sdk.verify_receipt(doc_sdk).valid is True
+        )
         out["client_stream_identical"] = (
             remote.stream_complete(msg, backend="byok", receipt_hashes=[receipt]) == sdk_chunks
         )
@@ -1594,7 +1611,10 @@ def parity_audit_bench() -> dict[str, Any]:
             "503+Retry-After while cheap routes respond, and releases "
             "cleanly. Both surfaces keep a per-call completion log whose "
             "records share prompt/output sha256s (the completion_id itself "
-            "is a per-surface mint — not part of the parity claim). Flags: "
+            "is a per-surface mint — not part of the parity claim). Each "
+            "surface also exports its own logged call as a sealed "
+            "fx1_completion_record.v1 receipt — same record hashes, each "
+            "doc verifiable through either surface's verifier. Flags: "
             "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "

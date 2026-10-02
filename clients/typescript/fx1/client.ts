@@ -512,6 +512,18 @@ export class HarnessApiClient {
   }
 
   /**
+   * GET /harness/completions/{id}/receipt — the logged call as a sealed
+   * `fx1_completion_record.v1` document (POST it to /receipts/verify).
+   */
+  completionReceipt(
+    completionId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/harness/completions/${encodeURIComponent(completionId)}/receipt`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
    * GET /harness/completions — newest-first window on the completion log.
    */
   completions(filter?: {
