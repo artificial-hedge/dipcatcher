@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, model_validator
 
 
 class _Strict(BaseModel):
@@ -41,14 +41,15 @@ class DataSection(_Strict):
 
 
 class FeatureSection(_Strict):
-    lookbacks: list[int] = Field(default_factory=lambda: [1, 5, 20])
-    vol_window: int = 20
+    # Preserve the pipeline integer contract before Pydantic can coerce input.
+    lookbacks: list[StrictInt] = Field(default_factory=lambda: [1, 5, 20])
+    vol_window: StrictInt = 20
     horizon_bars: int = 1
     entrypoint: str | None = None
 
     @model_validator(mode="after")
     def _windows(self) -> FeatureSection:
-        if not self.lookbacks or any(int(k) < 1 for k in self.lookbacks):
+        if not self.lookbacks or any(k < 1 for k in self.lookbacks):
             raise ValueError("features.lookbacks must be positive")
         if len(set(self.lookbacks)) != len(self.lookbacks):
             raise ValueError("features.lookbacks must be unique")
