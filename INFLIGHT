@@ -2307,4 +2307,11 @@ note: canon PR to follow.
     (560->566); agent.py wiring; tests: 6 module
     files + test_benches_w98.
   - Canon staged on top of w97-canon.
+  wave99:
+  - "gibbs_sampler","laplace_approx",
+    "kde","tensor_power","evidential",
+    "multi_task"
+    (566->572); agent.py wiring; tests: 6 module
+    files + test_benches_w99.
+  - Canon staged on top of w98-canon.
 note: canon PR to follow.

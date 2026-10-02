@@ -1536,6 +1536,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "extreme_learning",
         "nearest_centroid",
         "cross_entropy_method",
+        # Wave-99 canon: conjugate
+        # Gibbs, Laplace approx,
+        # Gaussian KDE + LOO-CV,
+        # whitened tensor power,
+        # Dirichlet evidential,
+        # and mean-shrinkage MTL.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "gibbs_sampler",
+        "laplace_approx",
+        "kde",
+        "tensor_power",
+        "evidential",
+        "multi_task",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
