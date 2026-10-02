@@ -1257,3 +1257,13 @@ wave 55 (devin/w55-canon-integration): Diebold-Mariano + HLN
   research 184->196 — merged-tree drift incl. w51 pending);
   arch diagrams regen. 46 module tests + 6 wiring tests green;
   mypy --strict clean; PR pending (w51 #690 still open).
+
+
+w53 canon (2026-09-30): 6 lanes — corradi_swanson (OOS MSPE MBB test),
+engle_kroner_bekk (variance-targeted diagonal BEKK), heston_qe (Andersen
+QE discretization), model_confidence_set (HLN step-down block-boot),
+christoffersen_pelletier (Weibull-duration VaR clustering backtest),
+sheppard_heavy (two-equation realized-measure vol). benches_w53 seeds
++305..310; registry +6; audit re-pinned (metrics 98->107, models
+309->369, research 184->196).
+

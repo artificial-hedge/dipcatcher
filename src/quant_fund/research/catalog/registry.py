@@ -620,6 +620,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bandi_russell",
         "hong_li",
         "beveridge_nelson",
+        # wave 53 — Corradi-Swanson out-of-sample predictive-
+        # accuracy test (moving-block bootstrap), Engle-Kroner
+        # variance-targeted diagonal BEKK(1,1) multivariate
+        # GARCH, Andersen quadratic-exponential Heston
+        # discretization (positive under Feller violation),
+        # Hansen-Lunde-Nason model confidence set (block-boot
+        # T_max step-down), Christoffersen-Pelletier Weibull-
+        # duration VaR clustering backtest, Shephard-Sheppard
+        # HEAVY(P) two-equation realized-measure volatility.
+        # Same SYNTHETIC diagnostic contract.
+        "corradi_swanson",
+        "engle_kroner_bekk",
+        "heston_qe",
+        "model_confidence_set",
+        "christoffersen_pelletier",
+        "sheppard_heavy",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
