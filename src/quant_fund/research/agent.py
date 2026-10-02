@@ -1927,6 +1927,14 @@ from quant_fund.research.benches_w241 import (
     bench_selinger_join_family,
     bench_two_phase_lock_family,
 )
+from quant_fund.research.benches_w242 import (
+    bench_epaxos_family,
+    bench_multi_paxos_family,
+    bench_swim_gossip_family,
+    bench_two_three_pc_family,
+    bench_viewstamped_family,
+    bench_zab_protocol_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4926,6 +4934,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "mvcc_gc": bench_mvcc_gc_family(),
         "buffer_pool": bench_buffer_pool_family(),
         "blink_tree": bench_blink_tree_family(),
+        "multi_paxos": bench_multi_paxos_family(),
+        "epaxos": bench_epaxos_family(),
+        "viewstamped": bench_viewstamped_family(),
+        "zab_protocol": bench_zab_protocol_family(),
+        "swim_gossip": bench_swim_gossip_family(),
+        "two_three_pc": bench_two_three_pc_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
