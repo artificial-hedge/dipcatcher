@@ -2532,3 +2532,4 @@ wave 131 (2026-10-02): generative sequence — vq_vae_ts, flow_matching_ts, scor
 wave 132 (2026-10-02): OOD-detection canon — mahalanobis_ood, max_softmax_ood, gradient_norm_ood, energy_ood, knn_ood, vim_ood; 764→770 families.
 wave 133 (2026-10-02): neural-process + amortized-UQ canon — neural_process, attentive_np, deep_kernel_gp, convnp, meta_uq, llaplace_gp; 770→776 families.
 wave 134 (2026-10-02): differentiable-optimization canon — optnet_qp, cvxpy_layer, input_convex, deep_declarative, spd_net, diff_mpc; 776→782 families.
+wave 135 (2026-10-02): graph-neural-net canon — chebnet, graphsage, gin_gnn, graph_unet, apnp_prop, jk_net; 782→788 families.
