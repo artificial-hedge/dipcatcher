@@ -611,6 +611,17 @@ class HarnessClient:
             rate_limited_total=int(out.get("rate_limited_total", 0)),
         )
 
+    def metrics_text(self) -> str:
+        """Prometheus text exposition of the remote harness — same
+        ``/metrics`` route, content-negotiated to ``text/plain``."""
+        _, _, body = self._request(
+            "GET",
+            "/metrics",
+            idempotent=True,
+            extra_headers={"Accept": "text/plain"},
+        )
+        return body.decode("utf-8")
+
     def drain(self, wait_s: float = 0.0) -> dict[str, Any]:
         """Latch the remote harness into drain mode — one-way: gated routes
         refuse new work (503), in-flight requests finish, ``/metrics`` keeps

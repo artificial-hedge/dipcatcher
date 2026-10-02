@@ -473,6 +473,23 @@ def e2e_audit() -> dict[str, bool]:
             out["e2e_rate_limit_retries_succeed"] = (
                 results == ["ok"] * 6 and m.rate_limited_total >= 1
             )
+            # Prometheus scrape over the real socket — content-negotiated
+            # exposition, parseable lines, live counters.
+            prom_text = rl.metrics_text()
+            prom_series = {
+                ln.split()[0].split("{")[0]
+                for ln in prom_text.splitlines()
+                if ln and not ln.startswith("#")
+            }
+            out["e2e_metrics_prometheus"] = (
+                prom_text.startswith("# HELP")
+                and "# TYPE fx1_requests_total counter" in prom_text
+                and {"fx1_requests_total", "fx1_inflight", "fx1_rate_limited_total"} <= prom_series
+                and any(
+                    ln.startswith("fx1_rate_limited_total ") and float(ln.split()[-1]) >= 1
+                    for ln in prom_text.splitlines()
+                )
+            )
         finally:
             server6.should_exit = True
             server6_thread.join(timeout=15)

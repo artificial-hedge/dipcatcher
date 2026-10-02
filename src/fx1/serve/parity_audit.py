@@ -1065,6 +1065,25 @@ def parity_audit() -> dict[str, bool]:
         "429": 1,
     }
 
+    # metrics_text negotiates the Prometheus view: the client must send
+    # Accept: text/plain and return the raw exposition verbatim.
+    seen_accept: list[str] = []
+
+    def _prom_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        seen_accept.append(str(headers.get("Accept", "")))
+        return (200, {}, b"fx1_requests_total 7\n")
+
+    c_p = HarnessClient("http://harness.test", transport=_prom_transport)
+    out["client_metrics_text"] = c_p.metrics_text() == "fx1_requests_total 7\n" and seen_accept == [
+        "text/plain"
+    ]
+
     def _coded_transport(
         method: str,
         url: str,

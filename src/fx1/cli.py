@@ -445,6 +445,9 @@ def harness_metrics(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    format: str = typer.Option(
+        "json", "--format", help="Output format: 'json' or 'prom' (Prometheus text)"
+    ),
 ) -> None:
     """Remote ops counters — requires --remote (nothing meters in-process)."""
     if remote is None:
@@ -453,6 +456,9 @@ def harness_metrics(
             err=True,
         )
         raise typer.Exit(code=2)
+    if format not in ("json", "prom"):
+        typer.echo(f"error: --format must be 'json' or 'prom', got {format!r}", err=True)
+        raise typer.Exit(code=2)
     from fx1.serve.client import HarnessClient
 
     client = HarnessClient(
@@ -460,6 +466,9 @@ def harness_metrics(
         api_key=api_key or os.environ.get("FX1_API_KEY") or None,
         timeout_s=timeout_s,
     )
+    if format == "prom":
+        typer.echo(_or_exit(client.metrics_text))
+        return
     m = _or_exit(client.metrics)
     typer.echo(
         json.dumps(

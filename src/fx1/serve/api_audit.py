@@ -1166,6 +1166,36 @@ def api_audit() -> dict[str, Any]:
     out["metrics_monotone"] = m2["requests_total"] > m["requests_total"]
     out["metrics_secured_401"] = secured.get("/metrics").status_code == 401
 
+    # Prometheus text exposition: content-negotiated /metrics for a
+    # scrape endpoint — Accept: text/plain (or ?format=prom) renders the
+    # 0.0.4 text format; unknown formats are a clean 422; the secured
+    # surface keeps requiring auth.
+    prom = client.get("/metrics", headers={"Accept": "text/plain"})
+    body_text = prom.text
+    out["prom_accept_negotiated"] = prom.status_code == 200 and prom.headers[
+        "content-type"
+    ].startswith("text/plain")
+    out["prom_requests_series"] = (
+        "# TYPE fx1_requests_total counter" in body_text
+        and 'fx1_requests_total{status="200"}' in body_text
+    )
+    out["prom_gauges"] = (
+        "# TYPE fx1_inflight gauge" in body_text
+        and "fx1_draining 0" in body_text
+        and "# TYPE fx1_rate_limited_total counter" in body_text
+        and 'fx1_jobs{status="succeeded"}' in body_text
+    )
+    prom_q = client.get("/metrics?format=prometheus")
+    out["prom_query_param"] = prom_q.status_code == 200 and "fx1_uptime_seconds" in prom_q.text
+    out["prom_format_422"] = client.get("/metrics?format=xml").status_code == 422
+    out["prom_secured_401"] = (
+        secured.get("/metrics", headers={"Accept": "text/plain"}).status_code == 401
+    )
+    prom_json = client.get("/metrics", headers={"Accept": "application/json"})
+    out["prom_json_default"] = prom_json.status_code == 200 and prom_json.headers[
+        "content-type"
+    ].startswith("application/json")
+
     return out
 
 

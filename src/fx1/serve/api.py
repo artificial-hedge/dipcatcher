@@ -53,7 +53,7 @@ from typing import Any, Literal
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from fx1 import __version__
@@ -726,6 +726,52 @@ class _RateLimiter:
             return wait
 
 
+def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
+    """Render the ops snapshot as Prometheus text exposition (format
+    0.0.4) — ``GET /metrics`` stays JSON by default; ``?format=prom``
+    or an ``Accept: text/plain``/OpenMetrics header selects this view.
+    Label values come from integer status codes and the fixed
+    ``_JOB_STATUSES`` set, so quoting is mechanical, not user data."""
+
+    def _label(v: str) -> str:
+        return v.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+
+    lines = [
+        "# HELP fx1_uptime_seconds Seconds since the harness API process started.",
+        "# TYPE fx1_uptime_seconds gauge",
+        f"fx1_uptime_seconds {snap.uptime_s:.6f}",
+        "# HELP fx1_requests_total Harness API requests by response status code.",
+        "# TYPE fx1_requests_total counter",
+    ]
+    for status in sorted(snap.by_status):
+        lines.append(f'fx1_requests_total{{status="{_label(status)}"}} {snap.by_status[status]}')
+    lines += [
+        "# HELP fx1_errors_total Harness API responses with status >= 400.",
+        "# TYPE fx1_errors_total counter",
+        f"fx1_errors_total {snap.errors_total}",
+        "# HELP fx1_rate_limited_total Requests denied by the rate limiter.",
+        "# TYPE fx1_rate_limited_total counter",
+        f"fx1_rate_limited_total {snap.rate_limited_total}",
+        "# HELP fx1_inflight Requests currently executing.",
+        "# TYPE fx1_inflight gauge",
+        f"fx1_inflight {snap.inflight}",
+        "# HELP fx1_inflight_watermark High-water mark of concurrent requests.",
+        "# TYPE fx1_inflight_watermark gauge",
+        f"fx1_inflight_watermark {snap.inflight_watermark}",
+        "# HELP fx1_max_inflight Configured concurrency bound.",
+        "# TYPE fx1_max_inflight gauge",
+        f"fx1_max_inflight {snap.max_inflight}",
+        "# HELP fx1_draining 1 while the drain latch is set.",
+        "# TYPE fx1_draining gauge",
+        f"fx1_draining {1 if snap.draining else 0}",
+        "# HELP fx1_jobs Harness jobs by lifecycle status.",
+        "# TYPE fx1_jobs gauge",
+    ]
+    for status in _JOB_STATUSES:
+        lines.append(f'fx1_jobs{{status="{status}"}} {job_counts.get(status, 0)}')
+    return "\n".join(lines) + "\n"
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -883,7 +929,25 @@ def create_app(
         return _finish(request, request_id, response, started)
 
     @app.get("/metrics", response_model=MetricsResponse)
-    def metrics_route() -> MetricsResponse:
+    def metrics_route(
+        request: Request,
+        format: Literal["json", "prom", "prometheus"] | None = None,
+    ) -> MetricsResponse | PlainTextResponse:
+        """Ops snapshot — JSON by default; Prometheus text exposition via
+        ``?format=prom`` or an ``Accept: text/plain``/OpenMetrics header."""
+        accept = request.headers.get("accept", "")
+        wants_text = format in ("prom", "prometheus") or (
+            format is None and ("text/plain" in accept or "openmetrics" in accept)
+        )
+        if wants_text:
+            snap = metrics.snapshot()
+            counts: dict[str, int] = {}
+            for job in job_store.list():
+                counts[job.status] = counts.get(job.status, 0) + 1
+            return PlainTextResponse(
+                _render_prometheus(snap, counts),
+                media_type="text/plain; version=0.0.4",
+            )
         return metrics.snapshot()
 
     @app.get("/health", response_model=HealthResponse)

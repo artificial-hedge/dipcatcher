@@ -322,6 +322,9 @@ def cli_audit() -> dict[str, Any]:
                 rate_limited_total=3,
             )
 
+        def metrics_text(self) -> str:
+            return "fx1_requests_total 7\n"
+
         def drain(self, wait_s: float = 0.0) -> dict[str, Any]:
             self.last_drain_wait = wait_s
             return {"draining": True, "inflight": 2, "drained": False}
@@ -393,6 +396,16 @@ def cli_audit() -> dict[str, Any]:
             and json.loads(rm.stdout)["by_status"] == {"200": 7}
             and json.loads(rm.stdout)["rate_limited_total"] == 3
         )
+        rp = runner.invoke(
+            app, ["harness", "metrics", "--remote", "http://h.test", "--format", "prom"]
+        )
+        out["remote_metrics_prom"] = (
+            rp.exit_code == 0 and rp.stdout.strip() == "fx1_requests_total 7"
+        )
+        rb = runner.invoke(
+            app, ["harness", "metrics", "--remote", "http://h.test", "--format", "xml"]
+        )
+        out["remote_metrics_bad_format"] = rb.exit_code == 2
         rd = runner.invoke(app, ["harness", "drain", "--remote", "http://h.test"])
         out["remote_drain_json"] = rd.exit_code == 0 and json.loads(rd.stdout) == {
             "draining": True,
