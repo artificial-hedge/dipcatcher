@@ -773,6 +773,14 @@ from quant_fund.research.benches_w97 import (
     bench_semisupervised_family,
     bench_sparse_pca_family,
 )
+from quant_fund.research.benches_w98 import (
+    bench_belief_propagation_family,
+    bench_cross_entropy_method_family,
+    bench_extreme_learning_family,
+    bench_mdp_solvers_family,
+    bench_nearest_centroid_family,
+    bench_td_learning_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2906,6 +2914,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "semisupervised": bench_semisupervised_family(),
         "multiclass": bench_multiclass_family(),
         "sparse_pca": bench_sparse_pca_family(),
+        "mdp_solvers": bench_mdp_solvers_family(),
+        "td_learning": bench_td_learning_family(),
+        "belief_propagation": bench_belief_propagation_family(),
+        "extreme_learning": bench_extreme_learning_family(),
+        "nearest_centroid": bench_nearest_centroid_family(),
+        "cross_entropy_method": bench_cross_entropy_method_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

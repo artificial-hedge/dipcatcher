@@ -1522,6 +1522,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "semisupervised",
         "multiclass",
         "sparse_pca",
+        # Wave-98 canon: value /
+        # policy iteration, TD(0) /
+        # SARSA / Q-learning,
+        # sum-product + loopy BP,
+        # ELM, nearest shrunken
+        # centroids, CEM. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "mdp_solvers",
+        "td_learning",
+        "belief_propagation",
+        "extreme_learning",
+        "nearest_centroid",
+        "cross_entropy_method",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

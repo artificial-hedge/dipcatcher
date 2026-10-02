@@ -2300,4 +2300,11 @@ note: canon PR to follow.
     (554->560); agent.py wiring; tests: 6 module
     files + test_benches_w97.
   - Canon staged on top of w96-canon.
+  wave98:
+  - "mdp_solvers","td_learning",
+    "belief_propagation","extreme_learning",
+    "nearest_centroid","cross_entropy_method"
+    (560->566); agent.py wiring; tests: 6 module
+    files + test_benches_w98.
+  - Canon staged on top of w97-canon.
 note: canon PR to follow.
