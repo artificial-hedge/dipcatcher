@@ -440,6 +440,68 @@ def parity_audit() -> dict[str, bool]:
             and api_health["registered_commands"] == sdk_health.registered_commands
         )
 
+        # --- per-request BYOK parity --------------------------------------------------
+        # SDK ``byok=`` and wire ``byok`` must hand the backend factory the
+        # identical kwargs — and a wrong-backend override must fail with the
+        # same class on both surfaces.
+        cap_kwargs: list[dict[str, Any]] = []
+
+        def _cap_res(name: str, **kw: Any) -> Any:
+            cap_kwargs.append(kw)
+            return _ParityBackend()
+
+        from fastapi.testclient import TestClient as _TCb  # noqa: PLC0415
+
+        import fx1.serve.api as api_mod2  # noqa: PLC0415
+        from fx1.harness import Harness as _Hb  # noqa: PLC0415
+        from fx1.sdk import Fx1Harness as _FHb  # noqa: PLC0415
+
+        def _fake_run(argv: list[str], t: int) -> tuple[int, str, str]:
+            return 0, "ran", ""
+
+        sdk_byok = _FHb(harness=_Hb(runner=_fake_run), backend_resolver=_cap_res)
+        app_byok = _TCb(
+            api_mod2.create_app(harness=_Hb(runner=_fake_run), backend_resolver=_cap_res)
+        )
+        ovr = {
+            "base_url": "https://llm.example.com/v1",
+            "api_key": "sk-x",
+            "model": "m1",
+        }
+        sdk_byok.complete(msg, backend="byok", byok=ovr)
+        sdk_wire_kwargs = dict(cap_kwargs[-1])
+        cap_kwargs.clear()
+        r_byok = app_byok.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "byok": ovr,
+            },
+        )
+        out["byok_override_kwargs_identical"] = (
+            r_byok.status_code == 200 and cap_kwargs[-1] == sdk_wire_kwargs
+        )
+        sdk_err, _ = _raises(lambda: sdk_byok.complete(msg, backend="hosted_k3", byok=ovr))
+        api_code = app_byok.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": msg,
+                "byok": ovr,
+            },
+        ).status_code
+        out["byok_override_error_parity"] = sdk_err == "ValueError" and api_code == 422
+        out["byok_override_bad_url_parity"] = (
+            _raises(
+                lambda: sdk_byok.complete(msg, backend="byok", byok={**ovr, "base_url": "ftp://x"})
+            )[0]
+            == "ValueError"
+        )
+        # the typed ``byok`` param is exactly the ``backend_kwargs`` merge
+        sdk_byok.complete(msg, backend="byok", backend_kwargs=ovr)
+        out["byok_backend_kwargs_equivalent"] = cap_kwargs[-1] == sdk_wire_kwargs
+
         # --- HarnessClient: the remote-caller surface --------------------------------
         from fx1.serve.client import (
             HarnessAuthError,

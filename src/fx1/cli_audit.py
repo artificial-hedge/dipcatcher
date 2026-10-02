@@ -223,8 +223,10 @@ def cli_audit() -> dict[str, Any]:
     class _FakeSDK:
         def __init__(self) -> None:
             self.stream_calls: list[dict[str, Any]] = []
+            self.complete_calls: list[dict[str, Any]] = []
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
+            self.complete_calls.append(dict(kw))
             return CompletionResult(
                 backend=str(kw.get("backend")), model="fake-v0", content="block-text"
             )
@@ -296,6 +298,36 @@ def cli_audit() -> dict[str, Any]:
         )
         out["complete_stream_forwards_receipts"] = bool(fake.stream_calls) and (
             fake.stream_calls[0].get("receipt_hashes") == ["a" * 64]
+        )
+        # per-request BYOK flags pack into the byok override (all-or-none)
+        rb2 = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--backend",
+                "byok",
+                "--byok-base-url",
+                "https://e.com",
+                "--byok-api-key",
+                "sk-x",
+                "--byok-model",
+                "m1",
+            ],
+        )
+        out["complete_byok_flags_forward"] = rb2.exit_code == 0 and fake.complete_calls[-1].get(
+            "byok"
+        ) == {
+            "base_url": "https://e.com",
+            "api_key": "sk-x",
+            "model": "m1",
+        }
+        out["complete_byok_partial_exits_2"] = (
+            runner.invoke(
+                app, ["harness", "complete", "hi", "--backend", "byok", "--byok-api-key", "sk-x"]
+            ).exit_code
+            == 2
         )
         # `harness batch` — JSONL/JSON prompts -> complete_many -> JSON out
         import tempfile  # noqa: PLC0415

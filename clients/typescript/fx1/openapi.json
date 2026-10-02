@@ -31,6 +31,37 @@
         "title": "BackendStatusEntry",
         "type": "object"
       },
+      "ByokOverride": {
+        "additionalProperties": false,
+        "description": "Per-request BYOK credentials \u2014 the caller's own OpenAI-compatible\nendpoint. ``api_key`` is used for the upstream call only; it is never\nlogged and never echoed into error text. The idempotency fingerprint\nis hashed, so the stored dedupe record carries no secret bytes.",
+        "properties": {
+          "api_key": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Api Key",
+            "type": "string"
+          },
+          "base_url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Base Url",
+            "type": "string"
+          },
+          "model": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          }
+        },
+        "required": [
+          "base_url",
+          "api_key",
+          "model"
+        ],
+        "title": "ByokOverride",
+        "type": "object"
+      },
       "CapabilitiesResponse": {
         "additionalProperties": false,
         "description": "Self-describing discovery payload: which wire features this build\nserves and the operational limits in effect \u2014 clients self-configure\n(batch sizes, retry budgets, stream use) from one call instead of\nhardcoding server internals.",
@@ -178,6 +209,16 @@
             "title": "Batch",
             "type": "array"
           },
+          "byok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ByokOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "checkpoint_dir": {
             "anyOf": [
               {
@@ -276,6 +317,16 @@
             ],
             "title": "Backend",
             "type": "string"
+          },
+          "byok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ByokOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "checkpoint_dir": {
             "anyOf": [

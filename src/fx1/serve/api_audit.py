@@ -1475,6 +1475,127 @@ def api_audit() -> dict[str, Any]:
         gate_fails == [502, 502, 502]
         and dc.get("/harness/backends").json()["byok"]["circuit_open"] is False
     )
+
+    # Per-request BYOK: the caller's {base_url, api_key, model} rides the
+    # request body and reaches the backend factory; overrides are validated
+    # (422, never breaker-counted), gated by a server flag, and breaker-
+    # isolated per endpoint so one tenant's dead endpoint can't fast-fail
+    # another's.
+    _cap: list[dict[str, str] | None] = []
+    _flaky2 = _FlakyBackend()
+    _flaky2.calls = 0
+
+    def _cap_resolver(name: str, cp: str | None = None, **kw: Any) -> Any:
+        _cap.append(kw)
+        if name == "byok" and "dead" in kw.get("base_url", ""):
+            return _flaky2
+        return _CleanBackend()
+
+    bapp = _TC2(api_mod.create_app(backend_resolver=_cap_resolver))
+    ovr = {"base_url": "https://llm.example.com/v1", "api_key": "sk-live-x", "model": "m1"}
+    ok = bapp.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_reaches_backend"] = ok.status_code == 200 and _cap[-1] == ovr
+    wrong_be = bapp.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_non_byok_422"] = wrong_be.status_code == 422
+    out["byok_override_bad_url_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "byok": {**ovr, "base_url": "ftp://x"},
+            },
+        ).status_code
+        == 422
+    )
+    out["byok_override_partial_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "byok": {"base_url": "https://e.com", "api_key": "k"},
+            },
+        ).status_code
+        == 422
+    )
+    disabled = _TC2(api_mod.create_app(backend_resolver=_cap_resolver, byok_override=False))
+    dresp = disabled.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_disabled_422"] = (
+        dresp.status_code == 422 and dresp.json().get("code") == "byok_override_disabled"
+    )
+    caps_byok = bapp.get("/harness/capabilities").json()["features"]
+    out["capabilities_reports_byok_override"] = (
+        caps_byok["byok_override"] is True
+        and _TC2(api_mod.create_app(backend_resolver=_cap_resolver, byok_override=False))
+        .get("/harness/capabilities")
+        .json()["features"]["byok_override"]
+        is False
+    )
+    # Isolated circuits per endpoint: the dead override opens its own
+    # breaker key while the healthy override (and the env default) pass.
+    bapp_brk = _TC2(
+        api_mod.create_app(
+            backend_resolver=_cap_resolver,
+            breaker_threshold=2,
+            breaker_cooldown_s=60.0,
+        )
+    )
+    dead = {"base_url": "https://dead.example.com/v1", "api_key": "k", "model": "m"}
+    dead_body = {"backend": "byok", "messages": [{"role": "user", "content": "x"}], "byok": dead}
+    bapp_brk.post("/harness/complete", json=dead_body)
+    bapp_brk.post("/harness/complete", json=dead_body)
+    open_dead = bapp_brk.post("/harness/complete", json=dead_body)
+    ok_live = bapp_brk.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+        },
+    )
+    out["byok_override_breaker_isolated"] = (
+        open_dead.status_code == 503 and ok_live.status_code == 200
+    )
+    # Idempotency still works with an override on the body — same body
+    # replays, a different key inside byok gets the 409.
+    idem_byok = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend()))
+    k_body = {
+        "backend": "byok",
+        "messages": [{"role": "user", "content": "x"}],
+        "byok": ovr,
+    }
+    i1 = idem_byok.post("/harness/complete", json=k_body, headers={"Idempotency-Key": "bk1"})
+    i2 = idem_byok.post("/harness/complete", json=k_body, headers={"Idempotency-Key": "bk1"})
+    i3 = idem_byok.post(
+        "/harness/complete",
+        json={**k_body, "byok": {**ovr, "api_key": "sk-different"}},
+        headers={"Idempotency-Key": "bk1"},
+    )
+    out["byok_override_idem_contract"] = (
+        i1.status_code == 200 and i2.json().get("replayed") is True and i3.status_code == 409
+    )
     # limiter counts denials; a public-path request also draws a token
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),

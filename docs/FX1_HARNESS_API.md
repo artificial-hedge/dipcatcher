@@ -41,6 +41,22 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
   a netloc. Wire shape pinned: `{model, messages, temperature: 0.0}`,
   Bearer auth.
 
+  **Per-request override:** `complete`, `complete/batch`, and
+  `complete/stream` accept a `byok` object
+  (`{base_url, api_key, model}` — all three required, `base_url` must be
+  http(s)) so each caller can route to its own endpoint instead of the
+  server's env config. Overrides on a non-`byok` backend are 422; a
+  deployment can refuse them entirely with `create_app(byok_override=False)`
+  or `FX1_API_BYOK_OVERRIDE=0` (then `byok` → 422
+  `byok_override_disabled`). Each override gets its own breaker circuit
+  (`byok:<sha256(base_url)[:16]>`) so one tenant's dead endpoint never
+  fast-fails another's; the idempotency fingerprint is the request body's
+  sha256, so stored dedupe records carry no key material. `GET
+  /harness/capabilities` reports `features.byok_override`. On the SDK and
+  `HarnessClient`, pass the same dict as `byok=` on
+  `complete`/`complete_many`/`stream_complete`; the CLI takes
+  `--byok-base-url --byok-api-key --byok-model` (all-or-none).
+
 ## Routes
 
 | Route | Purpose |

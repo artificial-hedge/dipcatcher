@@ -466,6 +466,21 @@ export interface components {
             cooldown_remaining_s: number;
         };
         /**
+         * ByokOverride
+         * @description Per-request BYOK credentials — the caller's own OpenAI-compatible
+         *     endpoint. ``api_key`` is used for the upstream call only; it is never
+         *     logged and never echoed into error text. The idempotency fingerprint
+         *     is hashed, so the stored dedupe record carries no secret bytes.
+         */
+        ByokOverride: {
+            /** Api Key */
+            api_key: string;
+            /** Base Url */
+            base_url: string;
+            /** Model */
+            model: string;
+        };
+        /**
          * CapabilitiesResponse
          * @description Self-describing discovery payload: which wire features this build
          *     serves and the operational limits in effect — clients self-configure
@@ -521,6 +536,7 @@ export interface components {
             backend: "hosted_k3" | "local_fx1" | "byok";
             /** Batch */
             batch: components["schemas"]["ChatMessage"][][];
+            byok?: components["schemas"]["ByokOverride"] | null;
             /** Checkpoint Dir */
             checkpoint_dir?: string | null;
             /**
@@ -554,6 +570,7 @@ export interface components {
              * @enum {string}
              */
             backend: "hosted_k3" | "local_fx1" | "byok";
+            byok?: components["schemas"]["ByokOverride"] | null;
             /** Checkpoint Dir */
             checkpoint_dir?: string | null;
             /** Messages */

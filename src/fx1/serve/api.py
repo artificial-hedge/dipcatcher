@@ -34,6 +34,7 @@ requires ``X-API-Key``; unset, only loopback clients are served.
 from __future__ import annotations
 
 import builtins
+import hashlib
 import hmac
 import json
 import logging
@@ -110,6 +111,7 @@ _CORS_ORIGINS_ENV = "FX1_API_CORS_ORIGINS"
 _BREAKER_THRESHOLD_ENV = "FX1_API_BREAKER_THRESHOLD"
 _BREAKER_COOLDOWN_ENV = "FX1_API_BREAKER_COOLDOWN_S"
 _RECEIPTS_DIR_ENV = "FX1_API_RECEIPTS_DIR"
+_BYOK_OVERRIDE_ENV = "FX1_API_BYOK_OVERRIDE"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -337,11 +339,32 @@ class ChatMessage(_Model):
     content: str
 
 
+class ByokOverride(_Model):
+    """Per-request BYOK credentials — the caller's own OpenAI-compatible
+    endpoint. ``api_key`` is used for the upstream call only; it is never
+    logged and never echoed into error text. The idempotency fingerprint
+    is hashed, so the stored dedupe record carries no secret bytes."""
+
+    base_url: str = Field(min_length=1, max_length=2048)
+    api_key: str = Field(min_length=1, max_length=4096)
+    model: str = Field(min_length=1, max_length=512)
+
+    @field_validator("base_url")
+    @classmethod
+    def _http_url(cls, v: str) -> str:
+        parsed = urllib.parse.urlparse(v)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(f"byok.base_url must be an http(s) URL, got {v!r}")
+        return v
+
+
 class CompleteRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
     messages: list[ChatMessage] = Field(min_length=1, max_length=512)
     checkpoint_dir: str | None = None
     receipt_hashes: list[str] | None = None
+    # Per-call credentials; only meaningful with backend="byok".
+    byok: ByokOverride | None = None
 
 
 class CompleteResponse(_Model):
@@ -363,6 +386,7 @@ class CompleteBatchRequest(_Model):
     batch: list[list[ChatMessage]] = Field(min_length=1, max_length=64)
     checkpoint_dir: str | None = None
     receipt_hashes: list[str] | None = None
+    byok: ByokOverride | None = None
     max_workers: int = Field(default=4, ge=1, le=16)
 
 
@@ -598,6 +622,21 @@ def _env_float_floor(name: str, default: float, given: float | None) -> float:
     return v
 
 
+def _body_fp(body: BaseModel, *, exclude: set[str] | None = None) -> str:
+    """Fingerprint for the idempotency contract — hashed so a stored
+    dedupe record can never carry a secret (per-request BYOK keys)."""
+    return hashlib.sha256(body.model_dump_json(exclude=exclude).encode()).hexdigest()
+
+
+def _breaker_key(body: CompleteRequest | CompleteBatchRequest) -> str:
+    """Backend key for the circuit breaker. A per-request BYOK override gets
+    its own circuit keyed by endpoint hash — one caller's dead endpoint must
+    never fast-fail another caller's BYOK or the env-configured default."""
+    if body.byok is None:
+        return body.backend
+    return f"{body.backend}:{hashlib.sha256(body.byok.base_url.encode()).hexdigest()[:16]}"
+
+
 def _idem_lookup[IdemT: BaseModel](
     idempotency_key: str | None,
     store: _IdemStore[IdemT],
@@ -682,7 +721,7 @@ def _submit_job(
     key = (idempotency_key or "").strip() or None
     if key is not None and len(key) > _IDEM_KEY_MAX:
         raise ApiError(400, "Idempotency-Key must be <= 256 chars")
-    body_fp = body.model_dump_json(exclude={"idempotency_key"})
+    body_fp = _body_fp(body, exclude={"idempotency_key"})
     if key is not None:
         entry = job_store.get_key(key)
         if entry is not None:
@@ -1441,7 +1480,7 @@ def _mount_complete_routes(
     app: FastAPI,
     *,
     slot: Callable[[], Iterator[None]],
-    resolve_backend: Callable[[str, str | None], Any],
+    resolve_backend: Callable[[str, str | None, dict[str, str] | None], Any],
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
@@ -1477,19 +1516,23 @@ def _mount_complete_routes(
     ) -> CompleteResponse:
         # Same Idempotency-Key contract as the runs route: retried
         # completions replay from the cache instead of re-billing the model.
-        body_fp = body.model_dump_json()
+        body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, complete_idem_store, body_fp)
         if replay is not None:
             return replay
-        _breaker_admit(body.backend)
+        _breaker_admit(_breaker_key(body))
         try:
-            backend = resolve_backend(body.backend, body.checkpoint_dir)
+            backend = resolve_backend(
+                body.backend,
+                body.checkpoint_dir,
+                body.byok.model_dump() if body.byok is not None else None,
+            )
         except ApiError as exc:
             # only backend-unavailable counts — client errors (404 unknown
             # backend, 422 bad args) must never trip the circuit, or a caller
             # could deny the backend for everyone by spamming bad requests.
             if breaker is not None and exc.status_code == 503:
-                breaker.report(body.backend, False)
+                breaker.report(_breaker_key(body), False)
             raise
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         t0 = time.monotonic()
@@ -1505,13 +1548,13 @@ def _mount_complete_routes(
             ) from exc
         except (BackendNotConfiguredError, RuntimeError) as exc:
             if breaker is not None:
-                breaker.report(body.backend, False)
+                breaker.report(_breaker_key(body), False)
             if isinstance(exc, BackendNotConfiguredError):
                 raise ApiError(503, str(exc), code="backend_unavailable") from exc
             raise ApiError(502, str(exc), code="backend_failure") from exc
         else:
             if breaker is not None:
-                breaker.report(body.backend, True)
+                breaker.report(_breaker_key(body), True)
         finally:
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
@@ -1559,12 +1602,16 @@ def _mount_complete_routes(
 
         def _gather() -> tuple[list[str], str | None, float]:
             """Buffer + gate the backend stream; raises the mapped errors."""
-            _breaker_admit(body.backend)
+            _breaker_admit(_breaker_key(body))
             try:
-                backend = resolve_backend(body.backend, body.checkpoint_dir)
+                backend = resolve_backend(
+                    body.backend,
+                    body.checkpoint_dir,
+                    body.byok.model_dump() if body.byok is not None else None,
+                )
             except ApiError as exc:
                 if breaker is not None and exc.status_code == 503:
-                    breaker.report(body.backend, False)
+                    breaker.report(_breaker_key(body), False)
                 raise
             t0 = time.monotonic()
             try:
@@ -1584,13 +1631,13 @@ def _mount_complete_routes(
                 raise ApiError(501, str(exc)) from exc
             except (BackendNotConfiguredError, RuntimeError) as exc:
                 if breaker is not None:
-                    breaker.report(body.backend, False)
+                    breaker.report(_breaker_key(body), False)
                 if isinstance(exc, BackendNotConfiguredError):
                     raise ApiError(503, str(exc), code="backend_unavailable") from exc
                 raise ApiError(502, str(exc), code="backend_failure") from exc
             else:
                 if breaker is not None:
-                    breaker.report(body.backend, True)
+                    breaker.report(_breaker_key(body), True)
             finally:
                 _close_backend(backend)
             model_name = getattr(backend, "_model", None)
@@ -1697,19 +1744,23 @@ def _mount_complete_routes(
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> CompleteBatchResponse:
-        body_fp = body.model_dump_json()
+        body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, complete_batch_idem_store, body_fp)
         if replay is not None:
             return replay
-        _breaker_admit(body.backend)
+        _breaker_admit(_breaker_key(body))
         try:
-            backend = resolve_backend(body.backend, body.checkpoint_dir)
+            backend = resolve_backend(
+                body.backend,
+                body.checkpoint_dir,
+                body.byok.model_dump() if body.byok is not None else None,
+            )
         except ApiError as exc:
             # only backend-unavailable counts — client errors (404 unknown
             # backend, 422 bad args) must never trip the circuit, or a caller
             # could deny the backend for everyone by spamming bad requests.
             if breaker is not None and exc.status_code == 503:
-                breaker.report(body.backend, False)
+                breaker.report(_breaker_key(body), False)
             raise
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
@@ -1724,7 +1775,7 @@ def _mount_complete_routes(
 
                 def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
                     t0 = time.monotonic()
-                    if breaker is not None and breaker.check(body.backend) > 0:
+                    if breaker is not None and breaker.check(_breaker_key(body)) > 0:
                         return CompleteBatchItem(
                             ok=False,
                             latency_ms=0.0,
@@ -1752,7 +1803,7 @@ def _mount_complete_routes(
                         ValueError,
                     ) as exc:
                         if breaker is not None and not isinstance(exc, NotImplementedError):
-                            breaker.report(body.backend, False)
+                            breaker.report(_breaker_key(body), False)
                         return CompleteBatchItem(
                             ok=False,
                             latency_ms=(time.monotonic() - t0) * 1000.0,
@@ -1760,7 +1811,7 @@ def _mount_complete_routes(
                             error_class=type(exc).__name__,
                         )
                     if breaker is not None:
-                        breaker.report(body.backend, True)
+                        breaker.report(_breaker_key(body), True)
                     return out
 
                 results = list(
@@ -1799,6 +1850,7 @@ def create_app(
     breaker_threshold: int | None = None,
     breaker_cooldown_s: float | None = None,
     receipts_dir: str | os.PathLike[str] | None = None,
+    byok_override: bool | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -1808,6 +1860,11 @@ def create_app(
     job_max = _env_int_bound(_JOB_MAX_ENV, 1024, job_max)
     sse_keepalive_s = _env_float_floor(_SSE_KEEPALIVE_ENV, 15.0, sse_keepalive_s)
     rate_limit_rps = _env_float_floor(_RATE_LIMIT_ENV, 0.0, rate_limit_rps)
+    byok_override_enabled = (
+        os.environ.get(_BYOK_OVERRIDE_ENV, "1").strip().lower() in ("1", "true", "yes", "on")
+        if byok_override is None
+        else byok_override
+    )
     gzip_min_bytes = _env_int_floor(_GZIP_MIN_ENV, 1024, gzip_min_bytes)
     breaker_threshold = _env_int_floor(_BREAKER_THRESHOLD_ENV, 5, breaker_threshold)
     breaker_cooldown_s = _env_float_floor(_BREAKER_COOLDOWN_ENV, 30.0, breaker_cooldown_s)
@@ -2070,6 +2127,7 @@ def create_app(
                 "cors": bool(cors_list),
                 "breaker": breaker is not None,
                 "receipts_store": receipt_index.available(),
+                "byok_override": byok_override_enabled,
             },
             limits={
                 "max_inflight": float(metrics.max_inflight),
@@ -2167,7 +2225,7 @@ def create_app(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
-        body_fp = body.model_dump_json(exclude={"idempotency_key"})
+        body_fp = _body_fp(body, exclude={"idempotency_key"})
         key, replay = _idem_lookup(idempotency_key or body.idempotency_key, idem_store, body_fp)
         if replay is not None:
             return replay
@@ -2197,9 +2255,24 @@ def create_app(
 
     _mount_job_routes(app, lab, job_store, metrics, inflight, jobs_executor)
 
-    def _resolve_request_backend(backend_name: str, checkpoint_dir: str | None) -> Any:
+    def _resolve_request_backend(
+        backend_name: str,
+        checkpoint_dir: str | None,
+        byok: dict[str, str] | None = None,
+    ) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""
         kwargs: dict[str, Any] = {}
+        if byok is not None:
+            if backend_name != "byok":
+                raise ApiError(422, "a byok override applies only to backend='byok'")
+            if not byok_override_enabled:
+                raise ApiError(
+                    422,
+                    "per-request BYOK credentials are disabled on this server "
+                    f"({_BYOK_OVERRIDE_ENV}=0 / byok_override=False)",
+                    code="byok_override_disabled",
+                )
+            kwargs.update(byok)
         if backend_name == "local_fx1":
             checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
             if not checkpoint:

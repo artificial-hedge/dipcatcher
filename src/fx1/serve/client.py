@@ -550,6 +550,7 @@ class HarnessClient:
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
         idempotency_key: str | None = None,
+        byok: dict[str, str] | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -560,6 +561,7 @@ class HarnessClient:
                 "messages": messages,
                 "checkpoint_dir": (str(checkpoint_dir) if checkpoint_dir is not None else None),
                 "receipt_hashes": receipt_hashes,
+                "byok": byok,
             },
             # A keyed complete dedupes server-side — safe to retry by
             # construction, so it marks idempotent for the retry policy.
@@ -583,6 +585,7 @@ class HarnessClient:
         receipt_hashes: list[str] | None = None,
         max_workers: int = 4,
         idempotency_key: str | None = None,
+        byok: dict[str, str] | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -603,6 +606,7 @@ class HarnessClient:
                 "batch": batch,
                 "checkpoint_dir": (str(checkpoint_dir) if checkpoint_dir is not None else None),
                 "receipt_hashes": receipt_hashes,
+                "byok": byok,
                 "max_workers": max_workers,
             },
             idempotent=idempotency_key is not None,
@@ -632,6 +636,7 @@ class HarnessClient:
         backend: str = "local_fx1",
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
+        byok: dict[str, str] | None = None,
     ) -> list[str]:
         """Remote counterpart of ``Fx1Harness.stream_complete``.
 
@@ -647,6 +652,7 @@ class HarnessClient:
                 "messages": messages,
                 "checkpoint_dir": (str(checkpoint_dir) if checkpoint_dir is not None else None),
                 "receipt_hashes": receipt_hashes,
+                "byok": byok,
             },
         )
         chunks: list[str] = []

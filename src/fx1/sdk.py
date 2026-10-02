@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import os
+import urllib.parse
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -188,6 +189,7 @@ class Fx1Harness:
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
         backend_kwargs: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -197,7 +199,9 @@ class Fx1Harness:
         ``local_fx1``. The backend is always closed afterwards — engines
         spawned by ``LocalFx1Backend`` never leak.
         """
-        backend_obj = self._resolve_completion_backend(backend, checkpoint_dir, backend_kwargs)
+        backend_obj = self._resolve_completion_backend(
+            backend, checkpoint_dir, backend_kwargs, byok
+        )
         try:
             content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
         finally:
@@ -220,6 +224,7 @@ class Fx1Harness:
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
         backend_kwargs: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
         max_workers: int = 4,
     ) -> list[CompletionResult]:
         """Many gated completions over ONE shared backend instance.
@@ -234,7 +239,9 @@ class Fx1Harness:
             raise ValueError(f"max_workers must be >= 1, got {max_workers}")
         if not batch:
             return []
-        backend_obj = self._resolve_completion_backend(backend, checkpoint_dir, backend_kwargs)
+        backend_obj = self._resolve_completion_backend(
+            backend, checkpoint_dir, backend_kwargs, byok
+        )
         try:
             with ThreadPoolExecutor(
                 max_workers=min(max_workers, len(batch)), thread_name_prefix="fx1-complete"
@@ -272,6 +279,7 @@ class Fx1Harness:
         checkpoint_dir: str | Path | None = None,
         receipt_hashes: list[str] | None = None,
         backend_kwargs: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
     ) -> list[str]:
         """Token-delta chunks of one gated completion.
 
@@ -283,7 +291,9 @@ class Fx1Harness:
         either. A backend without ``stream`` raises ``NotImplementedError``
         (501-class); the backend is always closed afterwards.
         """
-        backend_obj = self._resolve_completion_backend(backend, checkpoint_dir, backend_kwargs)
+        backend_obj = self._resolve_completion_backend(
+            backend, checkpoint_dir, backend_kwargs, byok
+        )
         try:
             if not isinstance(backend_obj, StreamingBackend):
                 raise NotImplementedError(f"backend {backend!r} does not support streaming")
@@ -307,9 +317,20 @@ class Fx1Harness:
         backend: str,
         checkpoint_dir: str | Path | None,
         backend_kwargs: dict[str, Any] | None,
+        byok: dict[str, str] | None,
     ) -> Any:
         """Checkpoint contract + backend resolution shared by completes."""
         kwargs: dict[str, Any] = dict(backend_kwargs or {})
+        if byok is not None:
+            if backend != "byok":
+                raise ValueError("a byok override applies only to backend='byok'")
+            required = {"base_url", "api_key", "model"}
+            if set(byok) != required:
+                raise ValueError(f"byok needs exactly {sorted(required)}, got {sorted(byok)}")
+            parsed = urllib.parse.urlparse(byok["base_url"])
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise ValueError(f"byok.base_url must be an http(s) URL, got {byok['base_url']!r}")
+            kwargs.update(byok)
         if backend == "local_fx1":
             checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
             if not checkpoint:

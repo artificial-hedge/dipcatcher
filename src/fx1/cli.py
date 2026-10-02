@@ -25,6 +25,22 @@ _REMOTE_HELP = (
 )
 _API_KEY_HELP = "X-API-Key for the remote harness; falls back to FX1_API_KEY."
 _TIMEOUT_HELP = "Remote request timeout in seconds."
+_BYOK_URL_HELP = "Per-request BYOK endpoint (OpenAI-compatible base URL)."
+_BYOK_KEY_HELP = "Per-request BYOK API key."
+_BYOK_MODEL_HELP = "Per-request BYOK model name."
+
+
+def _byok_opts(
+    base_url: str | None, api_key: str | None, model: str | None
+) -> dict[str, str] | None:
+    """Pack the three --byok-* flags into the wire override; all-or-none."""
+    parts = {"base_url": base_url, "api_key": api_key, "model": model}
+    if all(v is None for v in parts.values()):
+        return None
+    if any(v is None for v in parts.values()):
+        typer.echo("--byok-base-url, --byok-api-key and --byok-model go together", err=True)
+        raise typer.Exit(2)
+    return {k: str(v) for k, v in parts.items()}
 
 
 def _surface(
@@ -368,9 +384,13 @@ def harness_complete(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
 ) -> None:
     """One gated completion — the honesty gate runs before output."""
     surface = _surface(remote, api_key, timeout_s)
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
     if stream:
         chunks = _or_exit(
             lambda: surface.stream_complete(
@@ -378,6 +398,7 @@ def harness_complete(
                 backend=backend,
                 checkpoint_dir=checkpoint_dir,
                 receipt_hashes=receipt or None,
+                byok=byok,
             )
         )
         for chunk in chunks:
@@ -390,6 +411,7 @@ def harness_complete(
             backend=backend,
             checkpoint_dir=checkpoint_dir,
             receipt_hashes=receipt or None,
+            byok=byok,
         )
     )
     typer.echo(out.content)
@@ -409,15 +431,20 @@ def harness_batch(
     out_file: Path | None = typer.Option(
         None, "--out", help="Write the JSON results here (default: stdout)."
     ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
 ) -> None:
     """Gated batch completion — per-item failures surface as exit 2."""
     surface = _surface(remote, api_key, timeout_s)
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
     prompts = _or_exit(lambda: _load_prompts(prompts_file))
     results = _or_exit(
         lambda: surface.complete_many(
             [[{"role": "user", "content": p}] for p in prompts],
             backend=backend,
             receipt_hashes=receipt or None,
+            byok=byok,
             max_workers=workers,
         )
     )
