@@ -2150,6 +2150,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "moon_fl",
         "fedopt_adam",
         "mime_lite",
+        # Wave-161 neural-operator canon:
+        # FNO, DeepONet, low-rank,
+        # PINO, GNO, CNO.
+        "fno_1d",
+        "deeponet",
+        "lowrank_op",
+        "pino_residual",
+        "gno_lite",
+        "cno_lite",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
