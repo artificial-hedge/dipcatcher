@@ -11,6 +11,7 @@ live in the engines, not here.
 
 from __future__ import annotations
 
+from bisect import insort
 from datetime import datetime
 
 import numpy as np
@@ -79,6 +80,84 @@ def _per_symbol_vol(bars: pl.DataFrame, window: int) -> pl.DataFrame:
     )
 
 
+def _join_available_funding(
+    grid: pl.DataFrame,
+    funding: pl.DataFrame,
+    lookback_events: int,
+    *,
+    min_samples: int = 1,
+) -> pl.DataFrame:
+    """Join trailing event-ordered statistics of observations known at each bar.
+
+    Availability order may differ from event order. Insert newly eligible
+    events into a bounded event-ordered window rather than delaying a window
+    containing unknown events, or treating a late old print as the latest one.
+    Event-only inputs retain the legacy event-time availability convention.
+    Explicit availability is mandatory when the column is supplied.
+    """
+    required = {"security_id", "event_time", "value"}
+    missing = required - set(funding.columns)
+    if missing:
+        raise ValueError(f"funding missing columns: {sorted(missing)}")
+    if lookback_events < min_samples:
+        raise ValueError("lookback_events must be >= min_samples")
+    available = "available_time" if "available_time" in funding.columns else "event_time"
+    for column in {"event_time", available}:
+        if not isinstance(funding.schema[column], pl.Datetime) or funding[column].null_count():
+            raise ValueError(f"funding {column} must contain non-null datetimes")
+    if funding["security_id"].null_count():
+        raise ValueError("funding security_id must be non-null")
+    if funding["value"].null_count() or not funding["value"].is_finite().all():
+        raise ValueError("funding value must be finite and non-null")
+    if funding.select("security_id", "event_time").is_duplicated().any():
+        raise ValueError("funding has duplicate (security_id, event_time) observations")
+    events = funding.select(
+        "security_id",
+        pl.col("event_time").dt.cast_time_unit("ns").cast(pl.Int64).alias("_event"),
+        pl.col(available).dt.cast_time_unit("ns").cast(pl.Int64).alias("_available"),
+        "value",
+    ).with_columns(pl.max_horizontal("_event", "_available").alias("_funding_time"))
+    snapshots = []
+    for group in events.partition_by("security_id", maintain_order=True):
+        window: list[tuple[int, float]] = []
+        for sid, event, _, value, eligible in group.sort(["_funding_time", "_event"]).iter_rows():
+            insort(window, (event, value))
+            if len(window) > lookback_events:
+                window.pop(0)
+            values = np.asarray([rate for _, rate in window], dtype=float)
+            mean = float(values.mean()) if len(window) >= min_samples else None
+            std = float(values.std(ddof=1)) if len(window) >= max(2, min_samples) else None
+            z = (
+                (window[-1][1] - mean) / (std + 1e-8)
+                if mean is not None and std is not None
+                else None
+            )
+            snapshots.append((sid, eligible, mean, z))
+    history = (
+        pl.DataFrame(
+            snapshots,
+            schema={
+                "security_id": funding.schema["security_id"],
+                "_funding_time": pl.Int64,
+                "rate_ma": pl.Float64,
+                "_z": pl.Float64,
+            },
+            orient="row",
+        )
+        .unique(subset=["security_id", "_funding_time"], keep="last")
+        .sort("_funding_time")
+    )
+    return (
+        grid.with_columns(
+            pl.col("event_time").dt.cast_time_unit("ns").cast(pl.Int64).alias("_funding_time")
+        )
+        .sort("_funding_time")
+        .join_asof(history, on="_funding_time", by="security_id", strategy="backward")
+        .drop("_funding_time")
+        .sort(["security_id", "event_time"])
+    )
+
+
 def funding_carry_weights(
     bars: pl.DataFrame,
     funding: pl.DataFrame,
@@ -91,8 +170,8 @@ def funding_carry_weights(
     """Carry sleeve: long symbols whose funding is negative (shorts pay you),
     short symbols with positive funding — sized by rate z-score, inverse-vol.
 
-    Uses only funding events strictly before the decision bar (``join_asof``
-    backward on event_time < t). ``lookback_events`` averages the last N
+    Uses only funding events realized and available by the decision bar
+    (event_time <= t and available_time <= t, inclusive). ``lookback_events`` averages the last N
     realized rates (~N×8h of history on Binance's standard grid).
     """
     _validate_bars(bars)
@@ -100,28 +179,10 @@ def funding_carry_weights(
         raise ValueError("funding frame must be non-empty")
     if "value" not in funding.columns:
         raise ValueError("funding frame needs a 'value' column (rate)")
-    # Rolling mean of the last N realized rates per symbol, stamped at each
-    # funding event; as-of join projects it forward to bar times.
-    froll = (
-        funding.sort(["security_id", "event_time"])
-        .with_columns(
-            pl.col("value")
-            .rolling_mean(lookback_events, min_samples=1)
-            .over("security_id")
-            .alias("rate_ma")
-        )
-        .select("security_id", "event_time", "rate_ma")
-        .sort(["security_id", "event_time"])
-    )
     grid = bars.select("security_id", "event_time", "close").sort(["security_id", "event_time"])
     vols = _per_symbol_vol(bars, vol_window)
     joined = (
-        grid.join_asof(
-            froll,
-            on="event_time",
-            by="security_id",
-            strategy="backward",
-        )
+        _join_available_funding(grid, funding, lookback_events)
         .join(vols, on=["security_id", "event_time"], how="left")
         .with_columns(
             pl.when(pl.col("_vol").is_not_null() & (pl.col("_vol") > 0))
@@ -148,32 +209,14 @@ def funding_spike_fade_weights(
     outlier vs their own history are over-levered on one side — fade them
     (short extreme-positive funding, long extreme-negative). Only acts beyond
     ``z_threshold``; between events the last extreme print's weight is carried
-    flat by the backward as-of join until the next funding event re-evaluates."""
+    flat until another realized funding observation becomes available."""
     _validate_bars(bars)
     if funding.height == 0:
         raise ValueError("funding frame must be non-empty")
-    fz = (
-        funding.sort(["security_id", "event_time"])
-        .with_columns(
-            (
-                (
-                    pl.col("value")
-                    - pl.col("value")
-                    .rolling_mean(lookback_events, min_samples=10)
-                    .over("security_id")
-                )
-                / (
-                    pl.col("value").rolling_std(lookback_events, min_samples=10).over("security_id")
-                    + 1e-8
-                )
-            ).alias("_z")
-        )
-        .select("security_id", "event_time", "_z")
-    )
     grid = bars.select("security_id", "event_time", "close").sort(["security_id", "event_time"])
     vols = _per_symbol_vol(bars, vol_window)
     joined = (
-        grid.join_asof(fz, on="event_time", by="security_id", strategy="backward")
+        _join_available_funding(grid, funding, lookback_events, min_samples=10)
         .join(vols, on=["security_id", "event_time"], how="left")
         .with_columns(
             pl.when(pl.col("_z").abs() >= z_threshold)
@@ -345,6 +388,7 @@ def basis_carry_weights(
 
     Weight ``w_i ∝ max(rate_ma_i − min_rate, 0)`` normalized to sum≈1 across
     qualifying names per timestamp, then per-name capped and gross-scaled.
+    Trailing windows include only events realized and available by the bar.
     Only positive rates are eligible — negative-funding harvest needs spot
     borrow, which the carry book does not model.
     """
@@ -353,20 +397,9 @@ def basis_carry_weights(
         raise ValueError("funding frame must be non-empty")
     if "value" not in funding.columns:
         raise ValueError("funding frame needs a 'value' column (rate)")
-    froll = (
-        funding.sort(["security_id", "event_time"])
-        .with_columns(
-            pl.col("value")
-            .rolling_mean(lookback_events, min_samples=1)
-            .over("security_id")
-            .alias("rate_ma")
-        )
-        .select("security_id", "event_time", "rate_ma")
-        .sort(["security_id", "event_time"])
-    )
     grid = bars.select("security_id", "event_time").sort(["security_id", "event_time"])
     joined = (
-        grid.join_asof(froll, on="event_time", by="security_id", strategy="backward")
+        _join_available_funding(grid, funding, lookback_events)
         .with_columns(
             pl.when(pl.col("rate_ma") > min_rate)
             .then(pl.col("rate_ma") - min_rate)
@@ -407,7 +440,9 @@ def basis_carry_hysteresis_weights(
     and exits when it falls below ``exit_rate``; between membership changes no
     weight rows are emitted, so the engine holds the pair untouched (no daily
     rebalancing churn). Slots are capped at ``max_names``; contested slots go
-    to the highest realized rates at each decision timestamp.
+    to the highest realized rates at each decision timestamp. Funding enters
+    trailing windows only once both event and availability times have passed
+    (equality is eligible).
 
     ``rebalance_band`` bounds notional drift: a held pair's weight grows with
     price (fixed units), so when its mark drifts outside
@@ -445,21 +480,8 @@ def basis_carry_hysteresis_weights(
         raise ValueError("funding frame must be non-empty")
     if rebalance_band is not None and not (np.isfinite(rebalance_band) and rebalance_band > 1.0):
         raise ValueError("rebalance_band must be > 1 or None")
-    froll = (
-        funding.sort(["security_id", "event_time"])
-        .with_columns(
-            pl.col("value")
-            .rolling_mean(lookback_events, min_samples=1)
-            .over("security_id")
-            .alias("rate_ma")
-        )
-        .select("security_id", "event_time", "rate_ma")
-        .sort(["security_id", "event_time"])
-    )
-    grid = (
-        bars.select("security_id", "event_time", "close")
-        .sort(["security_id", "event_time"])
-        .join_asof(froll, on="event_time", by="security_id", strategy="backward")
+    grid = _join_available_funding(
+        bars.select("security_id", "event_time", "close"), funding, lookback_events
     )
     rates_by_time: dict[datetime, dict[str, float]] = {}
     px_by_time: dict[datetime, dict[str, float]] = {}

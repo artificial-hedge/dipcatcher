@@ -16,6 +16,27 @@ Every stored observation includes:
 
 `available_time <= decision_time` is mandatory for every feature. For daily bars, default `available_time = event_time` (close). Ingestion lag is recorded but does not relax availability.
 
+### Funding signal sleeves
+
+`funding_carry_weights`, `funding_spike_fade_weights`, `basis_carry_weights`,
+and `basis_carry_hysteresis_weights` use realized funding observations only
+when both `event_time <= decision_time` and `available_time <= decision_time`
+(inclusive). At each decision, the trailing window contains the last
+`lookback_events` eligible observations ordered by economic event time,
+not publication order. A delayed newer event does not suppress an older
+available observation; a late old event does not replace a newer event unless
+it belongs in that event-ordered window. Simultaneous releases are evaluated
+together. Spike-fade compares the newest eligible event against that window.
+
+For backwards compatibility, event-only input frames without an
+`available_time` column assume availability at `event_time`. This convention
+is not evidence of historical publication timing. If the column is supplied,
+null/non-datetime availability fails closed, as do missing event timestamps,
+non-finite rates, and duplicate `(security_id, event_time)` observations.
+These sleeves accept one observation per realized event, not multiple revision
+vintages; callers must resolve revisions using point-in-time rules upstream.
+Bar availability and engine settlement timing are separate contracts.
+
 ### Public file tape (Stooq)
 
 `quant_fund.data.adapters.stooq` writes a PIT-shaped lake from Stooq daily CSVs.
