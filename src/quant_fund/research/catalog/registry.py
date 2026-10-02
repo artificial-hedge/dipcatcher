@@ -2815,6 +2815,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "blind_sig",
         "zkp_schnorr",
         "commit_reveal",
+        # Wave-241 databases-2 canon.
+        "aries_recovery",
+        "two_phase_lock",
+        "selinger_join",
+        "mvcc_gc",
+        "buffer_pool",
+        "blink_tree",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
