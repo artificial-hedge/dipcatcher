@@ -1101,6 +1101,14 @@ from quant_fund.research.benches_w138 import (
     bench_reformer_lsh_family,
     bench_rssm_world_family,
 )
+from quant_fund.research.benches_w139 import (
+    bench_barlow_twins_family,
+    bench_byol_family,
+    bench_shot_tta_family,
+    bench_tent_tta_family,
+    bench_ttt_layer_family,
+    bench_vicreg_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3480,6 +3488,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "dnc_memory": bench_dnc_memory_family(),
         "rssm_world": bench_rssm_world_family(),
         "mpc_planning": bench_mpc_planning_family(),
+        "byol": bench_byol_family(),
+        "barlow_twins": bench_barlow_twins_family(),
+        "vicreg": bench_vicreg_family(),
+        "tent_tta": bench_tent_tta_family(),
+        "shot_tta": bench_shot_tta_family(),
+        "ttt_layer": bench_ttt_layer_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
