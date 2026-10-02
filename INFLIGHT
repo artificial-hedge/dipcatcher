@@ -2508,4 +2508,5 @@ wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang
 wave 109 (2026-09-30): motion-planning canon — dubins, rrt, prm, dwa, min_snap, frenet; 626→632 families.
 wave 110 (2026-09-30): digital-comms canon — viterbi_decode, gf256, reed_solomon, costas, gardner, rrc_filter; 632→638 families.
 wave 111 (2026-09-30): computational-geometry canon — kabsch, icp, frechet, hausdorff, convex_hull, delaunay; 638→644 families.
+wave 112 (2026-09-30): DSP filter canon — remez, iir_design, biquad, filtfilt, resample_poly, farrow; 644→650 families.
 note: canon PR to follow.

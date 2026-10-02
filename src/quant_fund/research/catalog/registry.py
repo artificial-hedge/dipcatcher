@@ -1694,6 +1694,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hausdorff",
         "convex_hull",
         "delaunay",
+        # Wave-112 canon: DSP filters —
+        # remez, IIR design, biquad,
+        # filtfilt, resample, Farrow.
+        "remez",
+        "iir_design",
+        "biquad",
+        "filtfilt",
+        "resample_poly",
+        "farrow",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

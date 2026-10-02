@@ -885,6 +885,14 @@ from quant_fund.research.benches_w111 import (
     bench_icp_family,
     bench_kabsch_family,
 )
+from quant_fund.research.benches_w112 import (
+    bench_biquad_family,
+    bench_farrow_family,
+    bench_filtfilt_family,
+    bench_iir_design_family,
+    bench_remez_family,
+    bench_resample_poly_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3102,6 +3110,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hausdorff": bench_hausdorff_family(),
         "convex_hull": bench_convex_hull_family(),
         "delaunay": bench_delaunay_family(),
+        "remez": bench_remez_family(),
+        "iir_design": bench_iir_design_family(),
+        "biquad": bench_biquad_family(),
+        "filtfilt": bench_filtfilt_family(),
+        "resample_poly": bench_resample_poly_family(),
+        "farrow": bench_farrow_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
