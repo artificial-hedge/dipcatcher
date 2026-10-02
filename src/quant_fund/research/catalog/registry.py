@@ -2909,6 +2909,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "epoch_reclaim",
         "flat_combining",
         "rcu_lock",
+        # Wave-257 lattice-crypto canon.
+        "lwe_kex",
+        "ntru_toy",
+        "bfv_fhe",
+        "sis_hash",
+        "sigma_or_proof",
+        "chaum_pedersen",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
