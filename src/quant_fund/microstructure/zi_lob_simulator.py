@@ -357,6 +357,34 @@ class ZILobConfig:
     # re-occupied within 400 on AMZN). 0 = disabled (bit-identical: no
     # extra RNG draws or bookkeeping).
     refill_cooldown: int = 0
+    # ``lo_tilt_gain`` >= 0: post-fill LO side bias (accommodation) — each
+    # fill adds its aggressor sign times this gain to a tilt state in
+    # [-1, 1], and the LO side draw becomes P(buy) = (1 + tilt) / 2. On
+    # the tape the book leans *into* the flow direction for ~100 events
+    # after a fill (depth_tilt.v1: signed tilt +0.16 -> +0.07); flat
+    # flow cannot express that. ``lo_tilt_decay`` in [0, 1] is the
+    # per-event geometric decay of the tilt state. gain == 0 disables
+    # the mechanism bit-identically (tilt pinned at 0; the side draw
+    # consumes the same RNG).
+    lo_tilt_gain: float = 0.0
+    lo_tilt_decay: float = 0.0
+    # ``hit_narrow_dist`` >= 0: for ``hit_narrow_window`` events after a
+    # fill, LO placements on the *unhit* side clamp their placement
+    # distance to ``<= hit_narrow_dist`` — the tape's accommodation
+    # (depth_tilt.v1: after a buy fill the bid stays heavier ~100
+    # events) is the unhit side stacking near-touch, not a side-rate
+    # shift: global side bias lands mostly deep under the band law and
+    # barely registers at the touch. 0 disables bit-identically.
+    hit_narrow_dist: int = 0
+    hit_narrow_window: int = 0
+    # ``place_mode_frac`` in [0, 1]: when > 0 the LO placement distance
+    # law switches from the monotone P(d) ~ d**density_exponent family
+    # to a shifted Binomial, ``d ~ 1 + Bin(band - 1, place_mode_frac)``
+    # — a hump-shaped law with mode at ``1 + frac * (band - 1)`` ticks.
+    # The tape's placement law peaks at 8-13 ticks with thin mass below
+    # 5 (place_law.v1); monotone families cannot express that shape. 0
+    # keeps the legacy law bit-identically (same weights, same draws).
+    place_mode_frac: float = 0.0
     seed: int = 0
     # ``lo_offset`` shifts the touch-anchored LO anchor back by this many
     # ticks: a buy deposits at ``best_ask - lo_offset - dist`` instead of
@@ -373,6 +401,24 @@ class ZILobConfig:
     # liquidity that was not displayed before execution. 0 is
     # bit-identical to the legacy matcher (zero RNG draws consumed).
     iceberg_reload: float = 0.0
+    # ``iceberg_reload_mode``: ``per_unit`` (default — the draw refills
+    # the level whether or not any visible depth survives) vs
+    # ``residual`` — the refill only fires when the level still holds
+    # visible units after the fill, i.e. hidden persistence *stacks on*
+    # a living level but never resurrects a cleared one. Per-unit reload
+    # makes the touch nearly unkillable under iceberg liquidity (a
+    # mid-burst reload keeps the level alive however deep the burst
+    # cuts), which suppresses the emptied-touch channel; residual mode
+    # is the tape's structure — a level that fully empties stays empty
+    # until visible flow re-sites there. Consumes no extra RNG either
+    # way (the draw precedes the gate), so ``per_unit`` is
+    # bit-identical.
+    iceberg_reload_mode: str = "per_unit"
+    # ``iceberg_budget``: maximum number of hidden refills each
+    # (side, level) may spend over the whole run — the real iceberg is
+    # a finite reserve consumed once and gone. 0 (default) is
+    # unlimited, i.e. bit-identical to the legacy mechanism.
+    iceberg_budget: int = 0
     # ``lo_offset_gain`` couples the LO anchor offset to MO excitation:
     # the effective offset is ``lo_offset + round(gain * e_MO)`` where
     # ``e_MO`` is the Hawkes excitation state summed over banks — makers
@@ -387,8 +433,74 @@ class ZILobConfig:
     # can never emit inside-spread flow (``off + dist < spread`` is
     # unreachable once the spread floors near ``lo_offset + 1``); the
     # tape's 10.3% inside-spread share and join flow need this second
-    # placement component. 0 is bit-identical to the legacy placement.
+    # placement component. Under ``anchor="ref"`` the same share of flow
+    # lands strictly inside the spread (uniform on (own_touch,
+    # opp_touch)) when ``place_join_frac``/``lo_improve_frac`` are on.
+    # 0 is bit-identical to the legacy placement.
     lo_improve_frac: float = 0.0
+    # ``place_join_frac`` ∈ [0, 1]: under ``anchor="ref"``, probability an
+    # LO joins the own-side touch (level = own best) instead of drawing
+    # from the distance law. With ``lo_improve_frac`` it forms the
+    # join/improve/stack mixture the tape shows (place_law.v1: ~12% of
+    # submissions at the touch, ~10% inside the spread). When either
+    # knob is on the ref path consumes ONE extra uniform for the mixture
+    # pick; both at 0 stays bit-identical (no extra draw).
+    place_join_frac: float = 0.0
+    # ``crown_stack_frac`` ∈ [0, 1]: probability an LO arrival stacks
+    # into the near-touch crown — buys land on ``[bb - crown_stack_span,
+    # bb]``, sells on ``[ba, ba + crown_stack_span]`` — instead of the
+    # default anchor draw. The tape carries ~21% of visible top-10
+    # depth within 3 ticks of each touch (crown_density.v1); the sim's
+    # arms reach only 3-11%, and the wide book's emptied-touch reveal
+    # overshoots (6.9 vs 3.8 ticks) because nothing rests in the crown.
+    # 0 is bit-identical (no extra draws). On the ``anchor="ref"`` path
+    # the crown slice joins the ``u_mix`` partition; on the touch-anchor
+    # path it is drawn (one extra uniform) only when nonzero, between
+    # the chase marker and the improve slice.
+    crown_stack_frac: float = 0.0
+    # ``crown_stack_span`` >= 0: depth (ticks behind the own touch) of
+    # the crown band. Level is uniform on the closed span, so span 0
+    # degenerates to join-the-touch.
+    crown_stack_span: int = 3
+    # ``crown_offset`` >= 0: distance (ticks) the crown band starts
+    # behind the own touch — buys land on ``[bb - crown_offset -
+    # crown_stack_span, bb - crown_offset]``. The tape's crown is dense
+    # *behind* a thin touch (depth_consumption.v1: median fill eats 90%
+    # of the touch, 47% full sweeps), so offset > 0 keeps the touch
+    # empty-able while the band stacks. 0 preserves the original band
+    # (touch included); only live when ``crown_stack_frac`` is nonzero.
+    crown_offset: int = 0
+    # ``crown_cap`` >= 0: maximum resting depth (orders) at a level for a
+    # new crown stack to land there; a capped-out draw falls through to
+    # the default anchor placement. The tape's crown is dense but
+    # bounded (levels 1-3 sweepable — 47% of fills empty the touch);
+    # an unbounded crown accumulates until nothing can empty it. 0 is
+    # unbounded (original semantics); only live when ``crown_stack_frac``
+    # is nonzero.
+    crown_cap: int = 0
+    # ``crown_size_pmf``: optional ``((size, weight), ...)`` table drawn
+    # per crown placement instead of ``lo_size_pmf``. The tape's crown
+    # is a few LARGE orders (60-200 shares each), not many unit orders
+    # — a voluminous-but-shallow band that stays sweepable. ``None``
+    # means crown placements use the shared LO size draw bit-identically.
+    crown_size_pmf: tuple[tuple[int, float], ...] | None = None
+    # ``near_level_cap`` >= 0: maximum resting units at any level within
+    # ``near_level_span`` ticks behind a side's own touch — an LO arrival
+    # landing in that band on a full level is refused (makers decline to
+    # join a full queue: queue_fate.v1 shows join fill rate collapsing
+    # with queue depth). The cap is on the BAND, not just the touch —
+    # deep queues that promote to touch must arrive already thin;
+    # ice_budget.v1 diagnosed bounded total depth at the touch as the
+    # missing ingredient for the tape's 47% emptied-touch share. 0 is
+    # unbounded and bit-identical (pure gate, no extra draws). Requotes
+    # and chase re-sites respect the cap (they are visible flow); only
+    # iceberg re-rests bypass it — the hidden reserve is not part of the
+    # visible queue the cap bounds.
+    near_level_cap: int = 0
+    # ``near_level_span`` >= 0: how far behind the own touch (in ticks)
+    # the ``near_level_cap`` band reaches. Levels beyond the band are
+    # uncapped; span 0 caps the touch only.
+    near_level_span: int = 3
     # ``touch_pull`` ∈ [0, 1]: after a fill, probability the NEW front
     # order on the hit side is pulled — the tape's instant re-quote
     # retreat (spread widens the moment liquidity is consumed, before
@@ -416,6 +528,165 @@ class ZILobConfig:
     # real ~0.8s deleted median. Applies only inside the biased
     # branches; 0 keeps every path bit-identical.
     cxl_requote: float = 0.0
+    # ``cxl_unhit_relief`` ∈ [0, 1]: for ``cxl_unhit_window`` events
+    # after a fill, a canceled event on the UNHIT side is rerouted to
+    # the hit side with this probability — the sampled order is drawn
+    # uniformly from the hit side's resting depth. The tape's post-fill
+    # accommodation is add-driven, not cancel-driven: unhit cancels per
+    # fill stay ~equal to hit-side ones (aftermath_flow.v1) while the
+    # sim's depth-proportional kernel over-cancels the side that just
+    # stacked. Both knobs at 0 keep every path bit-identical.
+    cxl_unhit_relief: float = 0.0
+    # ``cxl_unhit_damp`` ∈ [0, 1]: for ``cxl_unhit_window`` events after
+    # a fill, a cancel event whose depth-proportional pick lands on the
+    # UNHIT side is suppressed with this probability — the sampled order
+    # survives. On the tape the unhit side's *count* of cancels stays
+    # equal to the hit side's despite holding ~1.6x the adds — a lower
+    # per-depth cancel hazard, i.e. protection, not relocation. Unlike
+    # ``cxl_unhit_relief`` (which reroutes the mass onto the hit side),
+    # damping removes it. Marker shared with the relief/narrow channels;
+    # 0 keeps every path bit-identical.
+    cxl_unhit_damp: float = 0.0
+    # ``cxl_unhit_damp_decay`` > 0: the suppression probability decays
+    # exponentially with events-since-fill, ``damp * exp(-elapsed/decay)``.
+    # The tape's unhit-side protection is heavy in the first ~10 events and
+    # gone by ~50 (unhit cxl/add 0.61 -> 0.90 -> 0.93 across the bench
+    # windows), so a flat window over-shields late. 0 keeps the flat kernel
+    # bit-identical; the marker's fill time is already carried in
+    # ``_hit_retreat``.
+    cxl_unhit_damp_decay: float = 0.0
+    cxl_unhit_window: int = 0
+    # ``hit_refill_damp`` > 0: while the marker's starve window is live, an
+    # LO arrival landing on the HIT side within ``hit_refill_band`` ticks
+    # of that side's touch is dropped. The tape's fill-channel continuation
+    # (+2.5 ticks of the k200 drift) needs the consumed side to stay thin
+    # so the next aggressor walks a level; refilling the touch before the
+    # child fires is exactly what the calibrated sim does. Window is
+    # independent of the unhit-side relief window. 0 defaults keep every
+    # path bit-identical; the marker gains a ``starve_until`` field.
+    hit_refill_damp: float = 0.0
+    hit_refill_band: int = 0
+    hit_refill_window: int = 0
+    # ``hit_flee_frac`` ∈ [0, 1]: for ``hit_flee_window`` events after a
+    # fill, EVERY event fires one extra cancel with this probability on a
+    # resting HIT-side order within ``hit_flee_band`` levels of that
+    # side's touch. The tape's post-exec retreat is a real cancel surge —
+    # 5-7x baseline for ~0.5s (cancel_cluster.v1) — and it is what lets
+    # an emptied touch reveal a multi-tick gap (touch_follow.v1): when
+    # the crown behind the touch stays put the reveal is capped at one
+    # tick (sim instant_given_empty 1.03 vs tape 1.88). 0 keeps every
+    # path bit-identical; the marker gains a ``flee_until`` field.
+    hit_flee_frac: float = 0.0
+    hit_flee_band: int = 0
+    hit_flee_window: int = 0
+    # ``repost_frac`` in [0, 1]: an LO arrival on a side lands at the
+    # freshest still-vacant level emptied within ``repost_window``
+    # events — the tape's per-price re-post memory (reseed_hazard.v1:
+    # 54% of emptied levels re-seed within 500 events, ~75% back at
+    # the touch). A bounded per-side vacancy ledger (256 entries)
+    # records every vacated level; candidates are scanned
+    # freshest-first and skipped when stale, refilled, or illegal
+    # (crossing). A reposted arrival bypasses the cooldown/starve
+    # suppression gates — it IS the refill those knobs suppress. 0
+    # keeps every path bit-identical.
+    repost_frac: float = 0.0
+    repost_window: int = 0
+    # ``repost_band`` > 0 restricts repost candidates to vacancies within this
+    # many ticks of the same-side best (the tape's re-seeds concentrate at the
+    # touch); 0 = any vacated level.
+    repost_band: int = 0
+    # ``repost_cause`` selects which vacancies the ledger offers for
+    # re-posting: "any" pools every emptied level; "fill" restricts to
+    # levels emptied by a fill — the tape's reseed stat counts only
+    # fill-emptied levels, and hit-side cancel surges (hit_flee) flood
+    # the ledger with vacancies the measure never sees.
+    repost_cause: str = "any"
+    # ``repost_depth`` > 1: a repost restores ``repost_depth`` units at the
+    # vacancy, not one — the tape's re-seeds bring real size back (median
+    # ~90 shares vs ~60-share MO prints), while a unit re-post dies to the
+    # very next MO and re-empties, so unit reposts can't lift the measured
+    # reseed rate. Rests carry no extra RNG draws. 1 = baseline.
+    repost_depth: int = 1
+    # ``fill_repost_frac`` in [0, 1]: when a fill empties a level, schedule
+    # a re-post of ``repost_depth`` units at that level, due after a
+    # geometric-ish delay with mean ``fill_repost_delay`` events — the
+    # tape's maker re-quote after being lifted (reseed_hazard.v1: reseed
+    # latency p50 ~110 events). Arrival-driven reposts (``repost_frac``)
+    # cannot reproduce this — the fill-vacancy pool is nearly empty at
+    # arrival times and cancel-vacancies dominate the ledger. A delayed
+    # post preserves the emptied-touch reading (the level is empty at
+    # the next snapshot) while restoring it within the measure window.
+    # 0 disables; no RNG draws while off.
+    fill_repost_frac: float = 0.0
+    fill_repost_delay: int = 0
+    # ``paired_pull_frac`` in [0, 1]: when a fill empties a level, each
+    # resting unit on the UNHIT side within ``paired_pull_band`` ticks of
+    # its own touch is canceled with that probability — the tape's paired
+    # retreat (the counter side re-quotes away while the emptied level
+    # re-seeds), which is what keeps the spread open around a re-seeded
+    # touch. Measured need: fill-triggered reposts alone press the spread
+    # shut (full_stack.v1: joint 14.7 -> 5.9 ticks). 0 disables; no RNG
+    # draws while off.
+    paired_pull_frac: float = 0.0
+    paired_pull_band: int = 0
+    # ``unhit_step_ticks`` > 0: while the marker's step window is live, an
+    # LO arrival landing on the UNHIT side is shifted toward the touch by
+    # up to ``unhit_step_ticks`` ticks, capped one tick inside the
+    # opposite quote (never marketable). This is the repricing channel the
+    # tape's post-fill LO flow carries (+2.81 ticks of k200): the unhit
+    # side steps up after a fill instead of sitting at its pre-fill
+    # distance. Deterministic reroute — no extra RNG draws; 0 defaults
+    # keep every path bit-identical; the marker gains a ``step_until``
+    # field.
+    unhit_step_ticks: int = 0
+    unhit_step_window: int = 0
+    # ``unhit_imp_frac`` > 0: while the marker's improve window is live, an
+    # LO arrival on the UNHIT side is rerouted with probability
+    # ``unhit_imp_frac`` to one tick inside the spread (bb+1 / ba-1,
+    # falling back to the touch when the spread is one tick). This is the
+    # tape's post-fill chase: the unhit side keeps repricing the touch
+    # WITH the drift for ~200 events (continuation_attr windows show
+    # unhit-lo +8.0 ticks in (50,200] alone). The reroute draws one extra
+    # uniform per live unhit-side arrival only when the knob is on; 0
+    # keeps every path bit-identical; the marker gains an ``imp_until``
+    # field.
+    unhit_imp_frac: float = 0.0
+    unhit_imp_window: int = 0
+    # ``vac_chase_frac`` > 0: the vacancy-COUPLED chase — an LO arrival on
+    # the side opposite a recently-emptied level is rerouted with
+    # probability ``vac_chase_frac`` to one tick inside the spread, but
+    # ONLY while that emptied level stays vacant and within
+    # ``vac_chase_window`` events of its vacancy. Unlike ``unhit_imp``
+    # (fixed post-fill window) the chase dies the moment the hit side
+    # repairs — it cannot fight the refill mechanism. Draws one uniform
+    # per eligible arrival only when the knob is on; 0 keeps every path
+    # bit-identical.
+    vac_chase_frac: float = 0.0
+    vac_chase_window: int = 0
+    # ``chase_release`` ∈ [0, 1]: a cancel event picks a chase-tagged
+    # order (one rerouted by ``_unhit_chase``/``_vac_chase``) with this
+    # probability — the re-quote churn that RELEASES the touch press so
+    # the chase reprices without pinning the spread. Draws one uniform
+    # per cancel event only when the knob is on and chase orders exist;
+    # 0 keeps every path bit-identical.
+    chase_release: float = 0.0
+    # ``chase_reprice`` ∈ [0, 1]: the share of release picks that RE-SITE
+    # the chase order at the current chase level (one tick inside the
+    # spread, or the touch when spread == 1) instead of deleting it —
+    # the re-quote cycle: chased depth follows the recovering spread
+    # instead of pinning the touch or exiting. Draws one extra uniform
+    # per release pick only when nonzero; 0 = pure delete.
+    chase_reprice: float = 0.0
+    # ``mid_dark_frac`` ∈ [0, 1]: share of LO events that rest at the
+    # midpoint as HIDDEN pegged depth — dark orders absorb marketable
+    # flow at mid without entering the visible book, so they carry flow
+    # without pressing the touch. The placement class the wave-23
+    # mechanism map diagnosed as missing (iceberg/hidden share ~21% on
+    # the tape). A dark peg lapses when the visible mid moves or after
+    # ``mid_dark_ttl`` events (re-quoting, not resting). Draws one extra
+    # uniform per LO event only when the knob is on; 0 bit-identical.
+    mid_dark_frac: float = 0.0
+    mid_dark_ttl: int = 0
     # Optional event-size tables ``((size, weight), ...)``. When set, each
     # market-order event consumes ``size`` resting units in one burst
     # (sweeping levels when the touch is thin, so multi-level sweeps
@@ -460,6 +731,15 @@ class ZILobConfig:
             raise ValueError(
                 f"refill_cooldown must be a non-negative int, got {self.refill_cooldown!r}"
             )
+        _nonneg_finite(self.lo_tilt_gain, "lo_tilt_gain")
+        d = self.lo_tilt_decay
+        if isinstance(d, bool) or not math.isfinite(d) or d < 0.0 or d > 1.0:
+            raise ValueError(f"lo_tilt_decay must be in [0, 1], got {d!r}")
+        for _name in ("hit_narrow_dist", "hit_narrow_window"):
+            _v = getattr(self, _name)
+            if isinstance(_v, bool) or int(_v) < 0:
+                raise ValueError(f"{_name} must be a non-negative int, got {_v!r}")
+        _prob(self.place_mode_frac, "place_mode_frac")
         if self.anchor not in ("touch", "ref"):
             raise ValueError(f"anchor must be 'touch' or 'ref', got {self.anchor!r}")
         if isinstance(self.band, bool) or int(self.band) < 1:
@@ -477,12 +757,78 @@ class ZILobConfig:
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
+        if self.iceberg_reload_mode not in ("per_unit", "residual"):
+            raise ValueError(
+                "iceberg_reload_mode must be 'per_unit' or 'residual', "
+                f"got {self.iceberg_reload_mode!r}"
+            )
+        if isinstance(self.iceberg_budget, bool) or int(self.iceberg_budget) < 0:
+            raise ValueError(f"iceberg_budget must be an int >= 0, got {self.iceberg_budget!r}")
         _nonneg_finite(self.lo_offset_gain, "lo_offset_gain")
         _prob(self.lo_improve_frac, "lo_improve_frac")
+        _prob(self.place_join_frac, "place_join_frac")
+        _prob(self.crown_stack_frac, "crown_stack_frac")
+        if isinstance(self.crown_stack_span, bool) or int(self.crown_stack_span) < 0:
+            raise ValueError(f"crown_stack_span must be an int >= 0, got {self.crown_stack_span!r}")
+        if isinstance(self.crown_offset, bool) or int(self.crown_offset) < 0:
+            raise ValueError(f"crown_offset must be an int >= 0, got {self.crown_offset!r}")
+        if isinstance(self.crown_cap, bool) or int(self.crown_cap) < 0:
+            raise ValueError(f"crown_cap must be an int >= 0, got {self.crown_cap!r}")
+        if isinstance(self.near_level_cap, bool) or int(self.near_level_cap) < 0:
+            raise ValueError(f"near_level_cap must be an int >= 0, got {self.near_level_cap!r}")
+        if isinstance(self.near_level_span, bool) or int(self.near_level_span) < 0:
+            raise ValueError(f"near_level_span must be an int >= 0, got {self.near_level_span!r}")
+        _check_size_pmf(self.crown_size_pmf, "crown_size_pmf")
         _prob(self.touch_pull, "touch_pull")
         _prob(self.cxl_touch_bias, "cxl_touch_bias")
         _nonneg_finite(self.cxl_dist_decay, "cxl_dist_decay")
         _prob(self.cxl_requote, "cxl_requote")
+        _prob(self.cxl_unhit_relief, "cxl_unhit_relief")
+        _prob(self.cxl_unhit_damp, "cxl_unhit_damp")
+        if isinstance(self.cxl_unhit_damp_decay, bool) or self.cxl_unhit_damp_decay < 0.0:
+            raise ValueError(
+                f"cxl_unhit_damp_decay must be >= 0, got {self.cxl_unhit_damp_decay!r}"
+            )
+        if isinstance(self.cxl_unhit_window, bool) or int(self.cxl_unhit_window) < 0:
+            raise ValueError(f"cxl_unhit_window must be an int >= 0, got {self.cxl_unhit_window!r}")
+        _prob(self.hit_refill_damp, "hit_refill_damp")
+        _prob(self.hit_flee_frac, "hit_flee_frac")
+        _prob(self.unhit_imp_frac, "unhit_imp_frac")
+        _prob(self.repost_frac, "repost_frac")
+        if isinstance(self.repost_window, bool) or int(self.repost_window) < 0:
+            raise ValueError(f"repost_window must be an int >= 0, got {self.repost_window!r}")
+        if isinstance(self.repost_band, bool) or int(self.repost_band) < 0:
+            raise ValueError(f"repost_band must be an int >= 0, got {self.repost_band!r}")
+        if self.repost_cause not in ("any", "fill"):
+            raise ValueError(f"repost_cause must be 'any' or 'fill', got {self.repost_cause!r}")
+        if isinstance(self.repost_depth, bool) or int(self.repost_depth) < 1:
+            raise ValueError(f"repost_depth must be an int >= 1, got {self.repost_depth!r}")
+        _prob(self.fill_repost_frac, "fill_repost_frac")
+        if isinstance(self.fill_repost_delay, bool) or int(self.fill_repost_delay) < 0:
+            raise ValueError(
+                f"fill_repost_delay must be an int >= 0, got {self.fill_repost_delay!r}"
+            )
+        _prob(self.paired_pull_frac, "paired_pull_frac")
+        if isinstance(self.paired_pull_band, bool) or int(self.paired_pull_band) < 0:
+            raise ValueError(f"paired_pull_band must be an int >= 0, got {self.paired_pull_band!r}")
+        _prob(self.vac_chase_frac, "vac_chase_frac")
+        _prob(self.chase_release, "chase_release")
+        _prob(self.chase_reprice, "chase_reprice")
+        _prob(self.mid_dark_frac, "mid_dark_frac")
+        for _name in (
+            "hit_refill_band",
+            "hit_refill_window",
+            "hit_flee_band",
+            "hit_flee_window",
+            "unhit_step_ticks",
+            "unhit_step_window",
+            "unhit_imp_window",
+            "vac_chase_window",
+            "mid_dark_ttl",
+        ):
+            _v = getattr(self, _name)
+            if isinstance(_v, bool) or int(_v) < 0:
+                raise ValueError(f"{_name} must be a non-negative int, got {_v!r}")
         if self.lo_offset_gain > 0.0 and self.hawkes is None:
             raise ValueError("lo_offset_gain requires a HawkesClockSpec (hawkes=)")
         if self.hawkes is not None and not isinstance(self.hawkes, HawkesClockSpec):
@@ -949,8 +1295,12 @@ class ZILobSimulator:
         self.n_lo_improve = 0
         self.n_lo_join = 0
         self.n_hidden_fills = 0
+        self.n_lo_crown = 0
         self.n_touch_pulls = 0
+        self.n_hit_flees = 0
         self.n_cxl_touch = 0
+        self.n_lo_capped = 0
+        self.n_lo_reposts = 0
         self.n_requotes = 0
         # Cancel-distance histogram: bucket d counts cancels d ticks
         # from that side's touch; index 20 collects the tail.
@@ -974,14 +1324,29 @@ class ZILobSimulator:
         # Slow absolute-price reference (EMA of the mid level) for anchor="ref".
         # Frozen at the seed mid (level 0) when ref_halflife == 0.
         self._ref_ema = 0.0
-        # Limit-order placement distance law P(d) ∝ d**density_exponent, d ∈ [1, band].
+        # Limit-order placement distance law over d ∈ [1, band]: the
+        # monotone P(d) ∝ d**density_exponent family, or — when
+        # place_mode_frac > 0 — a shifted Binomial hump d ~ 1 +
+        # Bin(band - 1, frac) built by the p_{k+1} recurrence.
         band = int(config.band)
-        weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
+        if config.place_mode_frac > 0.0:
+            frac = float(config.place_mode_frac)
+            n_bin = band - 1
+            weights = np.zeros(band, dtype=np.float64)
+            if frac >= 1.0:
+                weights[-1] = 1.0
+            else:
+                weights[0] = (1.0 - frac) ** n_bin
+                for k in range(n_bin):
+                    weights[k + 1] = weights[k] * (n_bin - k) / (k + 1) * frac / (1.0 - frac)
+        else:
+            weights = np.arange(1, band + 1, dtype=np.float64) ** float(config.density_exponent)
         self._dist_cdf = np.cumsum(weights / weights.sum())
         self._dist_cdf[-1] = 1.0
         # Event-size tables (None → unit-size, zero extra RNG draws).
         self._mo_size_cdf = self._size_cdf(config.mo_size_pmf)
         self._lo_size_cdf = self._size_cdf(config.lo_size_pmf)
+        self._crown_size_cdf = self._size_cdf(config.crown_size_pmf)
         self._hawkes = HawkesClock(config.hawkes, self._rng) if config.hawkes is not None else None
         self._rate_flow = (
             RateRegimeFlow(config.rate_regimes, self._rng)
@@ -990,9 +1355,36 @@ class ZILobSimulator:
         )
         self.n_mo_units = 0
         self.n_lo_units = 0
+        self.n_dark_placed = 0
+        self.n_dark_fills = 0
+        self.n_dark_lapses = 0
         # Vacancy memory: (side, level) -> event index the level emptied.
-        # Populated only when ``refill_cooldown`` > 0.
+        # Populated only when ``refill_cooldown`` or ``vac_chase_window`` > 0.
         self._vacancy: dict[tuple[str, int], int] = {}
+        # Most recently emptied (side -> (level, event)) — the re-post
+        # memory consumed by repost_frac.
+        self._last_empty: dict[str, dict[int, tuple[int, str]]] = {"buy": {}, "sell": {}}
+        # Scheduled fill-triggered re-posts: (due_event, side, level).
+        self._fill_repost_q: list[tuple[int, Side, int]] = []
+        self.n_paired_pulls = 0
+        # Remaining hidden refills per (side, level); used only when
+        # ``iceberg_budget`` > 0.
+        self._ice_budget: dict[tuple[Side, int], int] = {}
+        self._chase_oids: set[int] = set()
+        # Hidden midpoint-pegged depth: side -> deque of (order, expiry
+        # event index). Never enters the visible book; pegs lapse when
+        # the visible mid moves or TTL passes (re-quote, not rest).
+        self._dark: dict[Side, deque[tuple[_Order, int]]] = {
+            "buy": deque(),
+            "sell": deque(),
+        }
+        # Post-fill accommodation state; pinned at 0 when lo_tilt_gain == 0.
+        self._tilt = 0.0
+        # Post-fill marker: (hit_side, narrow_deadline, relief_deadline)
+        # of the last fill; a deadline of n_events means that channel off.
+        # (hit_side, narrow_until, relief_until, fill_event) — the fill's
+        # n_events lets damp_decay compute elapsed time.
+        self._hit_retreat: tuple[str, int, int, int, int, int, int, int] | None = None
         self.n_lo_suppressed = 0
         for k in range(1, config.init_levels + 1):
             for _ in range(config.init_depth):
@@ -1149,10 +1541,27 @@ class ZILobSimulator:
             ),
             "n_lo_improve": self.n_lo_improve,
             "n_lo_join": self.n_lo_join,
+            "n_lo_crown": self.n_lo_crown,
             "n_hidden_fills": self.n_hidden_fills,
             "n_touch_pulls": self.n_touch_pulls,
+            "n_hit_flees": self.n_hit_flees,
             "n_cxl_touch": self.n_cxl_touch,
+            "n_lo_capped": self.n_lo_capped,
+            "n_lo_reposts": self.n_lo_reposts,
+            "n_paired_pulls": self.n_paired_pulls,
+            "placed_join": self._fate_placed["join"],
+            "placed_improve": self._fate_placed["improve"],
+            "placed_deep": self._fate_placed["deep"],
+            "fills_join": self._fate_fills["join"],
+            "fills_improve": self._fate_fills["improve"],
+            "fills_deep": self._fate_fills["deep"],
+            "cancels_join": self._fate_cancels["join"],
+            "cancels_improve": self._fate_cancels["improve"],
+            "cancels_deep": self._fate_cancels["deep"],
             "n_requotes": self.n_requotes,
+            "n_dark_placed": self.n_dark_placed,
+            "n_dark_fills": self.n_dark_fills,
+            "n_dark_lapses": self.n_dark_lapses,
         }
 
     def fate_by_class(self) -> dict[PlacementClass, dict[str, int]]:
@@ -1209,6 +1618,8 @@ class ZILobSimulator:
         )
         dq.append(oid)
         self._orders[oid] = order
+        if tag == "chase":
+            self._chase_oids.add(oid)
         self._n_orders_created += 1
         self._fate_placed[order.placement_class] += 1
         return oid
@@ -1257,38 +1668,403 @@ class ZILobSimulator:
         """Cancel+replace half of the biased path: re-rest the removed
         order at the same level with a fresh submit time (back of the
         level's queue). Only active when ``cxl_requote > 0``."""
-        if self._cfg.cxl_requote > 0.0 and self._rng.random() < self._cfg.cxl_requote:
+        if (
+            self._cfg.cxl_requote > 0.0
+            and self._rng.random() < self._cfg.cxl_requote
+            and not self._touch_capped(order.side, order.level)
+        ):
             self._rest(order.side, order.level, "requote")
             self.n_requotes += 1
 
-    def _level_vacated(self, side: Side, level: int) -> None:
-        """Record that ``level`` on ``side`` just emptied (sticky vacancy)."""
-        if self._cfg.refill_cooldown > 0:
-            self._vacancy[(side, int(level))] = self.n_events
+    def _level_vacated(self, side: Side, level: int, cause: str = "cancel") -> None:
+        """Record that ``level`` on ``side`` just emptied (sticky vacancy).
+
+        ``cause`` is "fill" when a market order emptied the level, else
+        "cancel" — ``repost_cause`` filters the re-post pool on it.
+        """
+        if self._cfg.repost_frac > 0.0:
+            vacs = self._last_empty[side]
+            vacs[int(level)] = (self.n_events, cause)
+            if len(vacs) > 256:
+                cutoff = self.n_events - max(self._cfg.repost_window, 1)
+                old_lv = [lv for lv, ev0 in vacs.items() if ev0[0] < cutoff]
+                for lv in old_lv:
+                    del vacs[lv]
+                if len(vacs) > 256:
+                    oldest = min(vacs, key=lambda lv: vacs[lv][0])
+                    del vacs[oldest]
+        if (
+            cause == "fill"
+            and self._cfg.fill_repost_frac > 0.0
+            and (self._rng.random() < self._cfg.fill_repost_frac)
+        ):
+            mean = max(self._cfg.fill_repost_delay, 1)
+            due = self.n_events + max(1, int(round(float(self._rng.exponential(mean)))))
+            self._fill_repost_q.append((due, side, int(level)))
+        if cause == "fill" and self._cfg.paired_pull_frac > 0.0 and self._cfg.paired_pull_band > 0:
+            self._paired_pull(side)
+        horizon = max(self._cfg.refill_cooldown, self._cfg.vac_chase_window)
+        if horizon <= 0:
+            return
+        self._vacancy[(side, int(level))] = self.n_events
+        stale = [k for k, t0 in self._vacancy.items() if self.n_events - t0 > horizon]
+        for k in stale:
+            del self._vacancy[k]
 
     def _is_cooled(self, side: Side, level: int) -> bool:
         """True when (side, level) emptied within ``refill_cooldown`` events."""
         t0 = self._vacancy.get((side, int(level)))
         return t0 is not None and self.n_events - t0 < self._cfg.refill_cooldown
 
-    def _remove_resting_at(self, book: dict[int, deque[int]], level: int, idx: int) -> _Order:
+    def _hit_starved(self, side: Side, level: int) -> bool:
+        """True when a hit-side arrival inside the starve window is dropped.
+
+        Draws the survival uniform only when the damp knob is on, the
+        marker's starve window is live, and the placement lands on the
+        hit side within ``hit_refill_band`` ticks of that side's touch —
+        at damp 0 (or an inactive marker) the RNG stream is untouched.
+        """
+        damp = self._cfg.hit_refill_damp
+        if damp <= 0.0 or self._hit_retreat is None:
+            return False
+        hit_side, _n_u, _r_u, _fe, s_until, _t_u, _i_u, _f_u = self._hit_retreat
+        if side != hit_side or self.n_events >= s_until:
+            return False
+        book = self._asks if side == "sell" else self._bids
+        if not book:
+            return False
+        touch = min(book) if side == "sell" else max(book)
+        if abs(int(level) - touch) > self._cfg.hit_refill_band:
+            return False
+        return float(self._rng.random()) < damp
+
+    def _paired_pull(self, hit_side: Side) -> None:
+        """Counter-side retreat on a fill-emptied level (``paired_pull_*``).
+
+        Each resting unit on the side opposite ``hit_side`` within
+        ``paired_pull_band`` ticks of its own touch is canceled with
+        probability ``paired_pull_frac`` — the paired re-quote that lets
+        the spread re-open around a re-seeded level. Draws happen only
+        under ``paired_pull_frac > 0``; the pulls are ordinary cancels
+        (they feed the vacancy ledger with ``cause="cancel"``).
+        """
+        opp_side: Side = "sell" if hit_side == "buy" else "buy"
+        book = self._asks if opp_side == "sell" else self._bids
+        if not book:
+            return
+        touch = min(book) if opp_side == "sell" else max(book)
+        band = int(self._cfg.paired_pull_band)
+        marks: list[tuple[int, int]] = []
+        for lv in sorted(book):
+            if (lv - touch if opp_side == "sell" else touch - lv) > band:
+                continue
+            dq = book[lv]
+            marks.extend(
+                (lv, i) for i in range(len(dq)) if self._rng.random() < self._cfg.paired_pull_frac
+            )
+        for lv, i in reversed(marks):
+            self._remove_resting_at(book, lv, i, "cancel")
+            self.n_paired_pulls += 1
+
+    def _drain_fill_reposts(self) -> None:
+        """Fire due fill-triggered re-posts (``fill_repost_frac``).
+
+        A due repost rests ``repost_depth`` units at the emptied level
+        only while the level is still absent and still legal (not
+        marketable) — a refilled or walked-past vacancy is dropped.
+        """
+        keep: list[tuple[int, Side, int]] = []
+        for due, side, level in self._fill_repost_q:
+            if due > self.n_events:
+                keep.append((due, side, level))
+                continue
+            book = self._bids if side == "buy" else self._asks
+            opp = self.best_ask_level if side == "buy" else self.best_bid_level
+            if level in book:
+                continue  # natural refill already reseeded it
+            if opp is not None and (level >= opp if side == "buy" else level <= opp):
+                continue  # the price grid walked past the vacancy
+            self.n_lo_reposts += 1
+            for _ in range(self._cfg.repost_depth):
+                self._rest(side, level, "repost")
+        self._fill_repost_q = keep
+
+    def _repost_level(self, side: Side) -> int | None:
+        """Price-level re-posting memory (``repost_frac``).
+
+        With probability ``repost_frac`` the arriving LO is sited at the
+        freshest still-vacant level emptied on ``side`` within
+        ``repost_window`` events, preferring vacancies within
+        ``repost_band`` ticks of the same-side best when set. Legal
+        candidates only — a reposted bid must sit below the current ask
+        (and vice versa). The draw consumes RNG only when the knob is on,
+        so ``repost_frac == 0`` is bit-identical to the baseline path.
+        """
+        if self._cfg.repost_frac <= 0.0:
+            return None
+        if self._rng.random() >= self._cfg.repost_frac:
+            return None
+        vacs = self._last_empty[side]
+        if not vacs:
+            return None
+        book = self._bids if side == "buy" else self._asks
+        opp = self.best_ask_level if side == "buy" else self.best_bid_level
+        now = self.n_events
+        own = self.best_bid_level if side == "buy" else self.best_ask_level
+        band = self._cfg.repost_band
+        cause_filter = self._cfg.repost_cause
+        for cand_l, (ev0, cause) in sorted(vacs.items(), key=lambda kv: kv[1][0], reverse=True):
+            if now - ev0 > self._cfg.repost_window:
+                break  # sorted freshest-first; rest are staler
+            if cause_filter == "fill" and cause != "fill":
+                continue
+            if cand_l in book:
+                continue
+            if opp is not None and (cand_l >= opp if side == "buy" else cand_l <= opp):
+                continue
+            if (
+                band > 0
+                and own is not None
+                and (cand_l < own - band if side == "buy" else cand_l > own + band)
+            ):
+                continue
+            self.n_lo_reposts += 1
+            for _ in range(self._cfg.repost_depth - 1):
+                self._rest(side, cand_l, "repost")
+            return cand_l
+        return None
+
+    def _step_unhit(self, side: Side, level: int) -> int:
+        """Shift an unhit-side arrival toward the touch while the marker's
+        step window is live. Buys move up toward (at most) one tick below
+        the ask; sells move down toward one tick above the bid — never
+        marketable, so the shifted order still rests. No RNG draws."""
+        step = self._cfg.unhit_step_ticks
+        if step <= 0 or self._hit_retreat is None:
+            return level
+        hit_side, _n_u, _r_u, _fe, _s_u, t_until, _i_u, _f_u = self._hit_retreat
+        if side == hit_side or self.n_events >= t_until:
+            return level
+        if side == "buy":
+            ba = self.best_ask_level
+            return level if ba is None else min(level + step, ba - 1)
+        bb = self.best_bid_level
+        return level if bb is None else max(level - step, bb + 1)
+
+    def _hit_flee(self) -> None:
+        """Post-fill cancel surge on the HIT side's near-touch depth.
+
+        While the marker's flee window is live, each event fires one
+        extra cancel with probability ``hit_flee_frac`` on a resting
+        hit-side order within ``hit_flee_band`` levels of that side's
+        touch — the tape's measured post-exec retreat (5-7x baseline
+        cancel rate for ~0.5s). Fleeing near-touch depth is what leaves
+        an emptied touch revealing a multi-tick gap instead of an
+        adjacent successor. Draws its trigger uniform only when the knob
+        is on and the window is live; the pick uniform only when the
+        band is non-empty — at 0 the RNG stream is untouched."""
+        frac = self._cfg.hit_flee_frac
+        if frac <= 0.0 or self._hit_retreat is None:
+            return
+        hit_side, _n_u, _r_u, _fe, _s_u, _t_u, _i_u, f_until = self._hit_retreat
+        if self.n_events >= f_until:
+            return
+        book = self._asks if hit_side == "sell" else self._bids
+        if not book:
+            return
+        if float(self._rng.random()) >= frac:
+            return
+        touch = min(book) if book is self._asks else max(book)
+        band = self._cfg.hit_flee_band
+        cands: list[tuple[int, int]] = []
+        for lvl, dq in book.items():
+            if abs(lvl - touch) <= band:
+                for idx in range(len(dq)):
+                    cands.append((lvl, idx))
+        if not cands:  # pragma: no cover - banded zone nonempty when book nonempty
+            return
+        lvl, idx = cands[int(self._rng.integers(len(cands)))]
+        order = self._remove_resting_at(book, lvl, idx)
+        self.cxl_ages.append(self.t - order.t_submit)
+        self.n_cancellations += 1
+        self._fate_cancels[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
+        self.n_hit_flees += 1
+        d_hit = abs(lvl - touch)
+        self.cxl_dist[min(d_hit, 20)] += 1
+        if d_hit == 0:
+            self.n_cxl_touch += 1
+
+    def _unhit_chase(self, side: Side) -> int | None:
+        """Reroute an unhit-side arrival to the chase level (one tick
+        inside the spread, touch when spread is 1) with probability
+        ``unhit_imp_frac`` while the marker's improve window is live.
+        Draws its uniform only for in-window unhit-side arrivals with the
+        knob on — at 0 the RNG stream is untouched."""
+        frac = self._cfg.unhit_imp_frac
+        if frac <= 0.0 or self._hit_retreat is None:
+            return None
+        hit_side, _n_u, _r_u, _fe, _s_u, _t_u, i_until, _f_u = self._hit_retreat
+        if side == hit_side or self.n_events >= i_until:
+            return None
+        if float(self._rng.random()) >= frac:
+            return None
+        ba, bb = self.best_ask_level, self.best_bid_level
+        if ba is None or bb is None:
+            return None
+        if ba - bb <= 1:
+            return bb if side == "buy" else ba
+        return bb + 1 if side == "buy" else ba - 1
+
+    def _vac_chase(self, side: Side) -> int | None:
+        """Vacancy-coupled chase: reroute ``side``'s arrival to the chase
+        level (one tick inside the spread, touch when the spread is 1)
+        with probability ``vac_chase_frac`` while a level emptied on the
+        OPPOSITE side is still vacant within ``vac_chase_window`` events.
+        Unlike ``_unhit_chase`` the trigger is the vacancy itself — the
+        chase expires the moment the hit side repairs. Draws its uniform
+        only for eligible arrivals with the knob on — at 0 the RNG
+        stream is untouched."""
+        frac = self._cfg.vac_chase_frac
+        window = self._cfg.vac_chase_window
+        if frac <= 0.0 or window <= 0:
+            return None
+        opp = "sell" if side == "buy" else "buy"
+        book = self._asks if opp == "sell" else self._bids
+        now = self.n_events
+        for (vac_side, vac_level), t0 in self._vacancy.items():
+            if vac_side == opp and now - t0 < window and vac_level not in book:
+                break
+        else:
+            return None
+        if float(self._rng.random()) >= frac:
+            return None
+        ba, bb = self.best_ask_level, self.best_bid_level
+        if ba is None or bb is None:
+            return None
+        if ba - bb <= 1:
+            return bb if side == "buy" else ba
+        return bb + 1 if side == "buy" else ba - 1
+
+    def _remove_resting_at(
+        self, book: dict[int, deque[int]], level: int, idx: int, cause: str = "cancel"
+    ) -> _Order:
         dq = book[level]
         oid = dq[idx]
         del dq[idx]
         if not dq:
             del book[level]
-            self._level_vacated("buy" if book is self._bids else "sell", level)
+            self._level_vacated("buy" if book is self._bids else "sell", level, cause)
         order = self._orders.pop(oid)
+        self._chase_oids.discard(oid)
         return order
+
+    def _post_fill_markers(self, aggressor: Side) -> None:
+        """Arm the post-fill state shared by visible and dark fills."""
+        gain = self._cfg.ref_fill_gain
+        if gain > 0.0:
+            self._ref_ema += (1.0 if aggressor == "buy" else -1.0) * gain
+        tg = self._cfg.lo_tilt_gain
+        if tg > 0.0:
+            sign = 1.0 if aggressor == "buy" else -1.0
+            self._tilt = max(-1.0, min(1.0, self._tilt + sign * tg))
+        nw = self._cfg.hit_narrow_window if self._cfg.hit_narrow_dist > 0 else 0
+        rw = (
+            self._cfg.cxl_unhit_window
+            if (self._cfg.cxl_unhit_relief > 0.0 or self._cfg.cxl_unhit_damp > 0.0)
+            else 0
+        )
+        sw = self._cfg.hit_refill_window if self._cfg.hit_refill_damp > 0.0 else 0
+        tw = self._cfg.unhit_step_window if self._cfg.unhit_step_ticks > 0 else 0
+        iw = self._cfg.unhit_imp_window if self._cfg.unhit_imp_frac > 0.0 else 0
+        fw = self._cfg.hit_flee_window if self._cfg.hit_flee_frac > 0.0 else 0
+        if nw or rw or sw or tw or iw or fw:
+            # Hit side = the side the aggressor consumed (resting side).
+            hit = "sell" if aggressor == "buy" else "buy"
+            self._hit_retreat = (
+                hit,
+                self.n_events + nw,
+                self.n_events + rw,
+                self.n_events,
+                self.n_events + sw,
+                self.n_events + tw,
+                self.n_events + iw,
+                self.n_events + fw,
+            )
+
+    def _touch_capped(self, side: Side, level: int) -> bool:
+        """True when an LO arrival is refused: the near-touch band level
+        it lands on is already at ``near_level_cap`` units."""
+        cap = self._cfg.near_level_cap
+        if cap <= 0:
+            return False
+        book = self._bids if side == "buy" else self._asks
+        if not book:
+            return False
+        best = max(book) if side == "buy" else min(book)
+        span = self._cfg.near_level_span
+        if side == "buy":
+            in_band = best - span <= level <= best
+        else:
+            in_band = best <= level <= best + span
+        dq = book.get(level)
+        return in_band and dq is not None and len(dq) >= cap
+
+    def _spend_ice(self, side: Side, level: int) -> bool:
+        """Spend one unit of the level's hidden-refill budget."""
+        b = self._cfg.iceberg_budget
+        if b <= 0:
+            return True
+        key = (side, level)
+        left = self._ice_budget.get(key, b)
+        if left <= 0:
+            return False
+        self._ice_budget[key] = left - 1
+        return True
 
     def _consume_best(self, aggressor: Side) -> TradeEvent | None:
         """Match one unit MO against the opposite best (price-time priority)."""
+        # Midpoint dark liquidity matches first: a resting dark peg fills
+        # the aggressor at mid before the visible touch is consumed.
+        dark_side: Side = "sell" if aggressor == "buy" else "buy"
+        dark_dq = self._dark[dark_side]
+        while dark_dq:
+            order, exp = dark_dq[0]
+            bb_d, ba_d = self.best_bid_level, self.best_ask_level
+            if (
+                bb_d is None
+                or ba_d is None
+                or order.level != bb_d + ba_d
+                or (exp > 0 and self.n_events > exp)
+            ):
+                dark_dq.popleft()
+                self.n_dark_lapses += 1
+                continue
+            dark_dq.popleft()
+            trade = TradeEvent(
+                t=self._t,
+                aggressor=aggressor,
+                price=0.5 * (self.level_to_price(bb_d) + self.level_to_price(ba_d)),
+                level=order.level,
+                qty=1,
+                maker_order_id=order.order_id,
+                maker_side=order.side,
+                maker_tag=order.tag,
+                maker_t_submit=order.t_submit,
+                maker_queue_ahead_at_submit=order.queue_ahead,
+                maker_placement_class=order.placement_class,
+            )
+            self.trades.append(trade)
+            self.n_fills += 1
+            self.n_dark_fills += 1
+            self._post_fill_markers(aggressor)
+            return trade
         book = self._asks if aggressor == "buy" else self._bids
         if not book:
             self.n_mo_noop += 1
             return None
         level = min(book) if aggressor == "buy" else max(book)
-        order = self._remove_resting_at(book, level, 0)
+        order = self._remove_resting_at(book, level, 0, "fill")
         if order.tag == "iceberg":
             self.n_hidden_fills += 1
         trade = TradeEvent(
@@ -1306,22 +2082,30 @@ class ZILobSimulator:
         )
         self.trades.append(trade)
         self.n_fills += 1
-        gain = self._cfg.ref_fill_gain
-        if gain > 0.0:
-            self._ref_ema += (1.0 if aggressor == "buy" else -1.0) * gain
+        self._fate_fills[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "fill"))
+        self._post_fill_markers(aggressor)
         # Iceberg reload: the consumed level immediately re-rests one
         # hidden unit with probability ``iceberg_reload`` — the display
         # refill that makes a level absorb more than its visible depth.
         p = self._cfg.iceberg_reload
-        if p > 0.0 and float(self._rng.random()) < p:
+        if (
+            p > 0.0
+            and float(self._rng.random()) < p
+            and (self._cfg.iceberg_reload_mode == "per_unit" or bool(book.get(level)))
+            and self._spend_ice(order.side, level)
+        ):
             self._rest(order.side, level, "iceberg")
         # Touch pull: the front order on the hit side is withdrawn with
         # probability ``touch_pull`` — instant quote defense, the kernel's
         # t~0 component.
         if self._cfg.touch_pull > 0.0 and book and float(self._rng.random()) < self._cfg.touch_pull:
             next_level = min(book) if aggressor == "buy" else max(book)
-            self._remove_resting_at(book, next_level, 0)
+            pulled = self._remove_resting_at(book, next_level, 0)
             self.n_touch_pulls += 1
+            self.n_cancellations += 1
+            self._fate_cancels[pulled.placement_class] += 1
+            self.fate_log.append((pulled.placement_class, pulled.queue_ahead, "cancel"))
         return trade
 
     def inject_market_order(self, side: Side, qty: int = 1) -> list[TradeEvent]:
@@ -1364,7 +2148,57 @@ class ZILobSimulator:
         if dist > band:
             dist = band
         ba, bb = self.best_ask_level, self.best_bid_level
-        want_buy = u < bid_rate
+        want_buy = u < bid_rate * (1.0 + self._tilt) if self._tilt != 0.0 else u < bid_rate
+        # Post-fill narrowing: while the marker is live, placements on the
+        # unhit side clamp to near-touch distance (accommodation channel).
+        if self._hit_retreat is not None:
+            (
+                hit_side,
+                n_until,
+                r_until,
+                _fill_ev,
+                s_until,
+                t_until,
+                i_until,
+                f_until,
+            ) = self._hit_retreat
+            if self.n_events >= max(n_until, r_until, s_until, t_until, i_until, f_until):
+                self._hit_retreat = None
+            elif self.n_events < n_until and (
+                (want_buy and hit_side == "sell") or (not want_buy and hit_side == "buy")
+            ):
+                dist = min(dist, self._cfg.hit_narrow_dist)
+        # Midpoint dark peg: the event's units rest hidden at the mid
+        # instead of entering the visible book (only when a mid exists —
+        # spread >= 2 ticks). Consumes one extra uniform only when on.
+        md = self._cfg.mid_dark_frac
+        if (
+            md > 0.0
+            and ba is not None
+            and bb is not None
+            and ba - bb >= 2
+            and float(self._rng.random()) < md
+        ):
+            k = self._draw_size(self._lo_size_cdf)
+            dark_side: Side = "buy" if want_buy else "sell"
+            ttl = self._cfg.mid_dark_ttl
+            exp = self.n_events + ttl if ttl > 0 else 0
+            for _ in range(k):
+                order = _Order(
+                    order_id=self._new_id(),
+                    side=dark_side,
+                    level=bb + ba,  # doubled-lattice index of the pegged mid
+                    tag="mid_dark",
+                    t_submit=self._t,
+                    queue_ahead=0,
+                    placement_class="improve",
+                )
+                self._dark[dark_side].append((order, exp))
+                self._n_orders_created += 1
+                self.n_dark_placed += 1
+            self.n_lo_arrivals += 1
+            self.n_lo_units += k
+            return
         if self._cfg.anchor == "ref":
             # Absolute-space anchoring: LOs deposit around a slow reference level
             # so cumulative liquidity grows with distance from the reference and
@@ -1373,24 +2207,132 @@ class ZILobSimulator:
             # dropped — that aggressiveness is already in the market-order flow.
             ref = int(round(self._ref_ema))
             k = self._draw_size(self._lo_size_cdf)
+            # Mixture head (join/improve/stack): the pick consumes ONE
+            # extra uniform and only when a mixture knob is on — both at
+            # 0 keeps the ref path bit-identical.
+            mix_on = (
+                self._cfg.place_join_frac > 0.0
+                or self._cfg.lo_improve_frac > 0.0
+                or self._cfg.crown_stack_frac > 0.0
+            )
+            u_mix = self._rng.random() if mix_on else 1.0
+            want_join = u_mix < self._cfg.place_join_frac
+            want_imp = (
+                not want_join and u_mix < self._cfg.place_join_frac + self._cfg.lo_improve_frac
+            )
+            want_crown = (
+                not want_join
+                and not want_imp
+                and u_mix
+                < self._cfg.place_join_frac + self._cfg.lo_improve_frac + self._cfg.crown_stack_frac
+            )
             if want_buy:
-                level = ref - dist
-                if self._is_cooled("buy", level):
+                chase = self._unhit_chase("buy")
+                if chase is None:
+                    chase = self._vac_chase("buy")
+                chased = chase is not None
+                repost_l = self._repost_level("buy")
+                if repost_l is not None:
+                    level = repost_l
+                elif chase is not None:
+                    level = chase
+                elif want_join and bb is not None:
+                    level = bb
+                elif want_crown and bb is not None:
+                    cand = (
+                        bb
+                        - self._cfg.crown_offset
+                        - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                    )
+                    if (
+                        self._cfg.crown_cap <= 0
+                        or len(self._bids.get(cand, ())) < self._cfg.crown_cap
+                    ):
+                        level = cand
+                        if self._cfg.crown_size_pmf is not None:
+                            k = self._draw_size(self._crown_size_cdf)
+                        self.n_lo_crown += 1
+                    else:
+                        level = ref - dist
+                elif want_imp and ba is not None and bb is not None and ba - bb > 1:
+                    level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
+                else:
+                    level = ref - dist
+                if repost_l is None:
+                    level = self._step_unhit("buy", level)
+                if repost_l is None and self._is_cooled("buy", level):
+                    self.n_lo_suppressed += 1
+                    return
+                if repost_l is None and self._hit_starved("buy", level):
                     self.n_lo_suppressed += 1
                     return
                 if ba is None or level < ba:
+                    if bb is not None and level == bb:
+                        self.n_lo_join += 1
+                    elif bb is not None and level > bb:
+                        self.n_lo_improve += 1
                     for _ in range(k):
-                        self._rest("buy", level, "zi")
+                        if self._touch_capped("buy", level):
+                            self.n_lo_capped += 1
+                            break
+                        self._rest(
+                            "buy",
+                            level,
+                            "repost" if repost_l is not None else ("chase" if chased else "zi"),
+                        )
                     self.n_lo_arrivals += 1
                     self.n_lo_units += k
                 return
-            level = ref + dist
-            if self._is_cooled("sell", level):
+            chase = self._unhit_chase("sell")
+            if chase is None:
+                chase = self._vac_chase("sell")
+            chased = chase is not None
+            repost_l = self._repost_level("sell")
+            if repost_l is not None:
+                level = repost_l
+            elif chase is not None:
+                level = chase
+            elif want_join and ba is not None:
+                level = ba
+            elif want_crown and ba is not None:
+                cand = (
+                    ba
+                    + self._cfg.crown_offset
+                    + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                )
+                if self._cfg.crown_cap <= 0 or len(self._asks.get(cand, ())) < self._cfg.crown_cap:
+                    level = cand
+                    if self._cfg.crown_size_pmf is not None:
+                        k = self._draw_size(self._crown_size_cdf)
+                    self.n_lo_crown += 1
+                else:
+                    level = ref + dist
+            elif want_imp and ba is not None and bb is not None and ba - bb > 1:
+                level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
+            else:
+                level = ref + dist
+            if repost_l is None:
+                level = self._step_unhit("sell", level)
+            if repost_l is None and self._is_cooled("sell", level):
+                self.n_lo_suppressed += 1
+                return
+            if repost_l is None and self._hit_starved("sell", level):
                 self.n_lo_suppressed += 1
                 return
             if bb is None or level > bb:
+                if ba is not None and level == ba:
+                    self.n_lo_join += 1
+                elif ba is not None and level < ba:
+                    self.n_lo_improve += 1
                 for _ in range(k):
-                    self._rest("sell", level, "zi")
+                    if self._touch_capped("sell", level):
+                        self.n_lo_capped += 1
+                        break
+                    self._rest(
+                        "sell",
+                        level,
+                        "repost" if repost_l is not None else ("chase" if chased else "zi"),
+                    )
                 self.n_lo_arrivals += 1
                 self.n_lo_units += k
             return
@@ -1402,13 +2344,45 @@ class ZILobSimulator:
         if self._hawkes is not None and self._cfg.lo_offset_gain > 0.0:
             off += int(round(self._cfg.lo_offset_gain * self._hawkes.excitation(1)))
         imp = self._cfg.lo_improve_frac > 0.0 and self._rng.random() < self._cfg.lo_improve_frac
+        want_crown = (
+            self._cfg.crown_stack_frac > 0.0 and self._rng.random() < self._cfg.crown_stack_frac
+        )
         if want_buy:
-            if imp and ba is not None and bb is not None and ba > bb:
+            chase = self._unhit_chase("buy")
+            if chase is None:
+                chase = self._vac_chase("buy")
+            chased = chase is not None
+            repost_l = self._repost_level("buy")
+            if repost_l is not None:
+                level = repost_l
+            elif chase is not None:
+                level = chase
+            elif want_crown and bb is not None:
+                cand = (
+                    bb
+                    - self._cfg.crown_offset
+                    - int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                )
+                if self._cfg.crown_cap <= 0 or len(self._bids.get(cand, ())) < self._cfg.crown_cap:
+                    level = cand
+                    if self._cfg.crown_size_pmf is not None:
+                        k = self._draw_size(self._crown_size_cdf)
+                    self.n_lo_crown += 1
+                else:
+                    anchor = (ba if ba is not None else self._ref_level + 1) - off
+                    level = anchor - dist
+            elif imp and ba is not None and bb is not None and ba > bb:
                 level = bb + int(self._rng.random() * (ba - bb))
             else:
                 anchor = (ba if ba is not None else self._ref_level + 1) - off
                 level = anchor - dist
-            if self._is_cooled("buy", level):
+            if repost_l is None:
+                level = self._step_unhit("buy", level)
+            if repost_l is None and self._is_cooled("buy", level):
+                self.n_lo_suppressed += 1
+                self.n_lo_arrivals += 1
+                return
+            if repost_l is None and self._hit_starved("buy", level):
                 self.n_lo_suppressed += 1
                 self.n_lo_arrivals += 1
                 return
@@ -1417,14 +2391,50 @@ class ZILobSimulator:
             elif bb is not None and level == bb:
                 self.n_lo_join += 1
             for _ in range(k):
-                self._rest("buy", level, "zi")
+                if self._touch_capped("buy", level):
+                    self.n_lo_capped += 1
+                    break
+                self._rest(
+                    "buy",
+                    level,
+                    "repost" if repost_l is not None else ("chase" if chased else "zi"),
+                )
         else:
-            if imp and ba is not None and bb is not None and ba > bb:
+            chase = self._unhit_chase("sell")
+            if chase is None:
+                chase = self._vac_chase("sell")
+            chased = chase is not None
+            repost_l = self._repost_level("sell")
+            if repost_l is not None:
+                level = repost_l
+            elif chase is not None:
+                level = chase
+            elif want_crown and ba is not None:
+                cand = (
+                    ba
+                    + self._cfg.crown_offset
+                    + int(self._rng.random() * (self._cfg.crown_stack_span + 1))
+                )
+                if self._cfg.crown_cap <= 0 or len(self._asks.get(cand, ())) < self._cfg.crown_cap:
+                    level = cand
+                    if self._cfg.crown_size_pmf is not None:
+                        k = self._draw_size(self._crown_size_cdf)
+                    self.n_lo_crown += 1
+                else:
+                    anchor = (bb if bb is not None else self._ref_level - 1) + off
+                    level = anchor + dist
+            elif imp and ba is not None and bb is not None and ba > bb:
                 level = ba - int(self._rng.random() * (ba - bb))
             else:
                 anchor = (bb if bb is not None else self._ref_level - 1) + off
                 level = anchor + dist
-            if self._is_cooled("sell", level):
+            if repost_l is None:
+                level = self._step_unhit("sell", level)
+            if repost_l is None and self._is_cooled("sell", level):
+                self.n_lo_suppressed += 1
+                self.n_lo_arrivals += 1
+                return
+            if repost_l is None and self._hit_starved("sell", level):
                 self.n_lo_suppressed += 1
                 self.n_lo_arrivals += 1
                 return
@@ -1433,7 +2443,14 @@ class ZILobSimulator:
             elif ba is not None and level == ba:
                 self.n_lo_join += 1
             for _ in range(k):
-                self._rest("sell", level, "zi")
+                if self._touch_capped("sell", level):
+                    self.n_lo_capped += 1
+                    break
+                self._rest(
+                    "sell",
+                    level,
+                    "repost" if repost_l is not None else ("chase" if chased else "zi"),
+                )
         self.n_lo_arrivals += 1
         self.n_lo_units += k
 
@@ -1442,6 +2459,73 @@ class ZILobSimulator:
         total = bid_d + ask_d
         if total == 0:
             return
+        release = self._cfg.chase_release
+        if release > 0.0 and self._chase_oids and float(self._rng.random()) < release:
+            oid = int(self._rng.choice(tuple(self._chase_oids)))
+            chase_order = self._orders.get(oid)
+            if chase_order is None:  # pragma: no cover - set/registry invariant
+                self._chase_oids.discard(oid)
+                return
+            chase_book = self._asks if chase_order.side == "sell" else self._bids
+            chase_touch = min(chase_book) if chase_book is self._asks else max(chase_book)
+            reprice = self._cfg.chase_reprice
+            reprice_tgt: int | None = None
+            if reprice > 0.0 and float(self._rng.random()) < reprice:
+                bb_r, ba_r = self.best_bid_level, self.best_ask_level
+                if chase_order.side == "buy":
+                    if ba_r is not None and ba_r - 1 > chase_order.level:
+                        reprice_tgt = ba_r - 1
+                elif bb_r is not None and bb_r + 1 < chase_order.level:
+                    reprice_tgt = bb_r + 1
+            chase_dq = chase_book[chase_order.level]
+            self._remove_resting_at(chase_book, chase_order.level, chase_dq.index(oid))
+            self.cxl_ages.append(self.t - chase_order.t_submit)
+            self.n_cancellations += 1
+            self._fate_cancels[chase_order.placement_class] += 1
+            self.fate_log.append((chase_order.placement_class, chase_order.queue_ahead, "cancel"))
+            d_hit = abs(chase_order.level - chase_touch)
+            self.cxl_dist[min(d_hit, 20)] += 1
+            if d_hit == 0:
+                self.n_cxl_touch += 1
+            if reprice_tgt is not None and not self._touch_capped(chase_order.side, reprice_tgt):
+                self._rest(chase_order.side, reprice_tgt, "chase")
+            else:
+                self._maybe_requote(chase_order)
+            return
+        relief = self._cfg.cxl_unhit_relief
+        if relief > 0.0 and self._hit_retreat is not None:
+            hit_side, _n_until, r_until, _fill_ev, _s_u, _t_u, _i_u, _f_u = self._hit_retreat
+            if self.n_events >= r_until:
+                pass  # marker stays for hit_narrow; relief expired
+            elif float(self._rng.random()) < relief:
+                # Post-fill cancel relief: route this cancel to the
+                # HIT side, uniform over its resting depth.
+                book = self._asks if hit_side == "sell" else self._bids
+                n = len(book) and sum(len(dq) for dq in book.values())
+                if n:
+                    touch = min(book) if book is self._asks else max(book)
+                    k = int(self._rng.integers(n))
+                    rel_lvl = 0
+                    rel_idx = 0
+                    for lvl in sorted(book):
+                        cnt = len(book[lvl])
+                        if k < cnt:
+                            rel_lvl, rel_idx = lvl, k
+                            break
+                        k -= cnt
+                    rel_order = self._remove_resting_at(book, rel_lvl, rel_idx)
+                    self.cxl_ages.append(self.t - rel_order.t_submit)
+                    self.n_cancellations += 1
+                    self._fate_cancels[rel_order.placement_class] += 1
+                    self.fate_log.append(
+                        (rel_order.placement_class, rel_order.queue_ahead, "cancel")
+                    )
+                    d_hit = abs(rel_lvl - touch)
+                    self.cxl_dist[min(d_hit, 20)] += 1
+                    if d_hit == 0:
+                        self.n_cxl_touch += 1
+                    self._maybe_requote(rel_order)
+                    return
         bias = self._cfg.cxl_touch_bias
         if bias > 0.0 and float(self._rng.random()) < bias:
             bb, ba = self.best_bid_level, self.best_ask_level
@@ -1474,6 +2558,8 @@ class ZILobSimulator:
                     raise RuntimeError("weighted cancel missed the book")
                 self.cxl_ages.append(self.t - order.t_submit)
                 self.n_cancellations += 1
+                self._fate_cancels[order.placement_class] += 1
+                self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
                 d_hit = abs(lvl_hit - touch_lvl)
                 self.cxl_dist[min(d_hit, 20)] += 1
                 if d_hit == 0:
@@ -1491,6 +2577,8 @@ class ZILobSimulator:
                 raise RuntimeError("touch cancel on an empty book")
             self.cxl_ages.append(self.t - order.t_submit)
             self.n_cancellations += 1
+            self._fate_cancels[order.placement_class] += 1
+            self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
             self.n_cxl_touch += 1
             self.cxl_dist[0] += 1
             self._maybe_requote(order)
@@ -1500,6 +2588,15 @@ class ZILobSimulator:
             book, idx = self._bids, k
         else:
             book, idx = self._asks, k - bid_d
+        damp = self._cfg.cxl_unhit_damp
+        if damp > 0.0 and self._hit_retreat is not None:
+            hit_side, _n_u, r_until, fill_ev, _s_u, _t_u, _i_u, _f_u = self._hit_retreat
+            unhit_book = self._bids if hit_side == "sell" else self._asks
+            if self.n_events < r_until and book is unhit_book:
+                decay = self._cfg.cxl_unhit_damp_decay
+                eff = damp * math.exp(-(self.n_events - fill_ev) / decay) if decay > 0.0 else damp
+                if float(self._rng.random()) < eff:
+                    return  # protected: the unhit-side order survives
         level = None
         for lvl in sorted(book):
             n = len(book[lvl])
@@ -1513,6 +2610,8 @@ class ZILobSimulator:
         order = self._remove_resting_at(book, level, idx)
         self.cxl_ages.append(self.t - order.t_submit)
         self.n_cancellations += 1
+        self._fate_cancels[order.placement_class] += 1
+        self.fate_log.append((order.placement_class, order.queue_ahead, "cancel"))
         dist = abs(level - touch)
         self.cxl_dist[min(dist, 20)] += 1
         if dist == 0:
@@ -1541,6 +2640,8 @@ class ZILobSimulator:
             kind = 0 if u < lo_rate else (1 if u < lo_rate + mo_rate else 2)
         self._t += dt
         self.n_events += 1
+        if self._cfg.lo_tilt_decay > 0.0:
+            self._tilt *= 1.0 - self._cfg.lo_tilt_decay
         bb, ba = self.best_bid_level, self.best_ask_level
         if bb is not None and ba is not None:
             mid_level = 0.5 * (bb + ba)
@@ -1550,6 +2651,9 @@ class ZILobSimulator:
                 # EMA of the mid level; frozen (hl == 0) keeps the seed mid.
                 alpha = min(1.0, dt / hl)
                 self._ref_ema += alpha * (mid_level - self._ref_ema)
+        if self._fill_repost_q:
+            self._drain_fill_reposts()
+        self._hit_flee()
         if kind == 0:
             self._limit_order_event()
             return "limit"
