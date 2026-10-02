@@ -165,6 +165,25 @@ def cli_audit() -> dict[str, Any]:
         out["harness_verify_tampered_fails"] = (
             runner.invoke(app, ["harness", "verify", str(bad)]).exit_code != 0
         )
+        # dir mode: every *.json under the dir verified, exit reflects all
+        okdir = Path(td) / "okdir"
+        okdir.mkdir()
+        (okdir / "a.json").write_text(good.read_text())
+        (okdir / "b.json").write_text(good.read_text())
+        rd = runner.invoke(app, ["harness", "verify", str(okdir)])
+        rdj = json.loads(rd.stdout) if rd.exit_code == 0 else {}
+        out["harness_verify_dir_all_valid"] = rdj.get("files") == 2 and rdj.get("valid") == 2
+        (okdir / "bad.json").write_text(bad.read_text())
+        rd2 = runner.invoke(app, ["harness", "verify", str(okdir)])
+        rd2j = json.loads(rd2.stdout) if rd2.stdout else {}
+        out["harness_verify_dir_mixed_fails"] = (
+            rd2.exit_code == 1 and rd2j.get("valid") == 2 and rd2j.get("files") == 3
+        )
+        empty = Path(td) / "empty"
+        empty.mkdir()
+        out["harness_verify_dir_empty_2"] = (
+            runner.invoke(app, ["harness", "verify", str(empty)]).exit_code == 2
+        )
 
     # `harness complete` gated surfaces — stream vs block over an injected SDK
     from unittest.mock import patch  # noqa: PLC0415

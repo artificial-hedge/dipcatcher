@@ -11,7 +11,7 @@ import json
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import typer
 
@@ -299,13 +299,37 @@ def _load_prompts(path: Path) -> list[str]:
 
 @harness_app.command("verify")
 def harness_verify(
-    receipt_path: Path = typer.Argument(..., help="Receipt JSON file to verify."),
+    receipt_path: Path = typer.Argument(
+        ..., help="Receipt JSON file — or a directory of them — to verify."
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Deep-verify a receipt file through the verifier surface."""
+    """Deep-verify receipt file(s) through the verifier surface."""
     surface = _surface(remote, api_key, timeout_s)
+    if receipt_path.is_dir():
+        files = sorted(receipt_path.glob("*.json"))
+        if not files:
+            typer.echo(f"error: no *.json receipts under {receipt_path}", err=True)
+            raise typer.Exit(code=2)
+
+        def _verify_one(f: Path) -> dict[str, Any]:
+            v = _or_exit(lambda: surface.verify_receipt(json.loads(f.read_text())))
+            return {"file": f.name, "valid": v.valid}
+
+        results = [_verify_one(f) for f in files]
+        typer.echo(
+            json.dumps(
+                {
+                    "files": len(results),
+                    "valid": sum(1 for r in results if r["valid"]),
+                    "results": results,
+                },
+                indent=2,
+            )
+        )
+        raise typer.Exit(code=0 if all(r["valid"] for r in results) else 1)
     verdict = _or_exit(lambda: surface.verify_receipt(json.loads(receipt_path.read_text())))
     typer.echo(
         json.dumps(
