@@ -114,6 +114,73 @@ def _version_info() -> VersionResponse:
 
 _PUBLIC_PATHS = frozenset({"/health"})
 
+# Response headers the middleware stamps on every response — declared on the
+# OpenAPI spec so generated clients see them typed instead of having to know.
+_DECLARED_COMMON_HEADERS: dict[str, dict[str, Any]] = {
+    "X-Request-ID": {
+        "schema": {"type": "string"},
+        "description": "Request id — echoed from the inbound X-Request-ID or minted.",
+    },
+    "X-Fx1-Api-Version": {
+        "schema": {"type": "string"},
+        "description": "Wire-contract version; clients gate on it via /harness/version.",
+    },
+    "X-Content-Type-Options": {
+        "schema": {"type": "string"},
+        "description": "Always `nosniff`.",
+    },
+    "Cache-Control": {"schema": {"type": "string"}, "description": "Always `no-store`."},
+    "Referrer-Policy": {
+        "schema": {"type": "string"},
+        "description": "Always `no-referrer`.",
+    },
+}
+_DECLARED_RATELIMIT_HEADERS: dict[str, dict[str, Any]] = {
+    "X-RateLimit-Limit": {
+        "schema": {"type": "integer"},
+        "description": "Configured request budget per second (present only when the "
+        "rate limiter is enabled).",
+    },
+    "X-RateLimit-Remaining": {
+        "schema": {"type": "integer"},
+        "description": "Tokens left in this client's bucket after this response.",
+    },
+    "X-RateLimit-Reset": {
+        "schema": {"type": "integer"},
+        "description": "Seconds until the bucket refills.",
+    },
+}
+_DECLARED_RETRY_AFTER: dict[str, Any] = {
+    "schema": {"type": "integer"},
+    "description": "Seconds to wait before retrying (429 rate-limit and 503 capacity responses).",
+}
+_DECLARED_LOCATION: dict[str, Any] = {
+    "schema": {"type": "string"},
+    "description": "URL of the created job's status endpoint.",
+}
+
+
+def _declare_response_headers(app: FastAPI, rate_limited: bool) -> None:
+    """Materialize the cached spec once and stamp the headers the middleware
+    actually sets — generated clients inherit the contract instead of guessing."""
+    spec = app.openapi()
+    for item in spec.get("paths", {}).values():
+        for op in item.values():
+            if not isinstance(op, dict):
+                continue
+            for code, resp in op.get("responses", {}).items():
+                if not isinstance(resp, dict):
+                    continue
+                hdrs = resp.setdefault("headers", {})
+                hdrs.update(_DECLARED_COMMON_HEADERS)
+                if rate_limited:
+                    hdrs.update(_DECLARED_RATELIMIT_HEADERS)
+                if code in ("429", "503"):
+                    hdrs.setdefault("Retry-After", _DECLARED_RETRY_AFTER)
+            if op.get("operationId") == "submit_job":
+                op["responses"]["202"].setdefault("headers", {})["Location"] = _DECLARED_LOCATION
+
+
 # Canonical machine code for unambiguous statuses; ambiguous statuses
 # (three different 503s, two 502s) carry an explicit ApiError code.
 _STATUS_CODES = {
@@ -1856,6 +1923,8 @@ def create_app(
     )
 
     _mount_receipt_routes(app)
+
+    _declare_response_headers(app, rate_limited=limiter is not None)
 
     return app
 

@@ -80,6 +80,13 @@ surface — `paths` + `schema_sha256`).
 - The honesty gate runs before output bytes reach the caller — a
   refusal is a structured `502`, not a truncated stream. Cited receipts
   arrive as a provenance footer.
+- Every response carries `X-Request-ID`, `X-Fx1-Api-Version`,
+  `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`,
+  `Referrer-Policy: no-referrer`; `Retry-After` is declared on 429/503
+  and `Location` on the job-submit 202 — all of these are declared on
+  the OpenAPI spec itself, so generated clients see them typed.
+  `X-RateLimit-*` declarations appear only on builds where the limiter
+  is enabled.
 - `circuit_breaker_threshold` + `circuit_reset_s` on `HarnessClient`
   fast-fail a dead peer (`HarnessTransportError`) and half-open after
   the reset window.

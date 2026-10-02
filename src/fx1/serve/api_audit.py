@@ -1235,14 +1235,15 @@ def api_audit() -> dict[str, Any]:
         rate_limit_rps=10.0,
     )
     lc3 = _TC2(limited3)
+    spec_limited = lc3.get("/openapi.json").json()
     first = lc3.get("/health")
     second = lc3.get("/health")
     out["rate_limit_headers_on_success"] = (
         first.status_code == 200
         and first.headers.get("x-ratelimit-limit") == "10"
-        and first.headers.get("x-ratelimit-remaining") == "9"
+        and first.headers.get("x-ratelimit-remaining") == "8"
         and int(first.headers["x-ratelimit-reset"]) >= 0
-        and int(second.headers["x-ratelimit-remaining"]) == 8
+        and int(second.headers["x-ratelimit-remaining"]) == 7
     )
     while lc3.get("/health").status_code == 200:
         pass
@@ -1255,6 +1256,50 @@ def api_audit() -> dict[str, Any]:
     )
     out["rate_limit_headers_absent_when_off"] = (
         "x-ratelimit-limit" not in client.get("/health").headers
+    )
+    # the spec declares the headers the middleware sets — generated clients
+    # see them typed instead of having to know
+    spec_main = client.get("/openapi.json").json()
+    common = {
+        "X-Request-ID",
+        "X-Fx1-Api-Version",
+        "X-Content-Type-Options",
+        "Cache-Control",
+        "Referrer-Policy",
+    }
+    spec_ops = [
+        op
+        for item in spec_main.get("paths", {}).values()
+        for op in item.values()
+        if isinstance(op, dict)
+    ]
+    out["openapi_declares_common_headers"] = bool(spec_ops) and all(
+        common <= set(resp.get("headers", {}))
+        for op in spec_ops
+        for resp in op.get("responses", {}).values()
+    )
+    submit_op = spec_main["paths"]["/harness/jobs"]["post"]
+    out["openapi_declares_location_202"] = "Location" in submit_op["responses"]["202"].get(
+        "headers", {}
+    )
+    out["openapi_declares_retry_after_503"] = all(
+        "Retry-After" in resp.get("headers", {})
+        for op in spec_ops
+        for code, resp in op.get("responses", {}).items()
+        if code in ("429", "503")
+    )
+    out["openapi_ratelimit_absent_when_off"] = all(
+        "X-RateLimit-Limit" not in resp.get("headers", {})
+        for op in spec_ops
+        for resp in op.get("responses", {}).values()
+    )
+    out["openapi_ratelimit_present_when_on"] = all(
+        {"X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"}
+        <= set(resp.get("headers", {}))
+        for item in spec_limited.get("paths", {}).values()
+        for op in item.values()
+        if isinstance(op, dict)
+        for resp in op.get("responses", {}).values()
     )
     # limiter counts denials; a public-path request also draws a token
     limited2 = api_mod.create_app(
