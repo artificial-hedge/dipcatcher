@@ -2571,6 +2571,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fmea_rpn",
         "life_stress",
         "redundancy_block",
+        # Wave-210 coding canon: LDPC BP, turbo BCJR, polar SC, BCH,
+        # CRC, block interleaver.
+        "ldpc_decoder",
+        "turbo_decoder",
+        "polar_code",
+        "bch_code",
+        "crc_check",
+        "conv_interleaver",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
