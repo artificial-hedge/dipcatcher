@@ -1068,6 +1068,591 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "fay_herriot",
         "cluster_sampling",
         "design_effects",
+        # Wave-77 families — Liang-Zeger
+        # (1986) GEE marginal models,
+        # Laird-Ware (1982) LMM via EM
+        # ML + BLUPs, Cohen (1960) /
+        # Fleiss (1971) / Krippendorff
+        # (1970) inter-rater agreement +
+        # Lin (1989) CCC + Bland-Altman
+        # (1986) LoA, Liu-Ting-Zhou
+        # (2008) isolation forest +
+        # Hariri (2019) extended variant,
+        # HEGY (1990) seasonal unit
+        # roots + Canova-Hansen (1995)
+        # seasonal stability, and van
+        # Buuren (2011) MICE PMM +
+        # Rubin (1987) pooling. Same
+        # SYNTHETIC diagnostic contract.
+        "gee",
+        "lmm",
+        "interrater",
+        "isolation_forest",
+        "hegy",
+        "mice",
+        # Wave-78 families — Tukey (1949)
+        # HSD / Dunnett (1955) many-to-
+        # one / Games-Howell (1976) /
+        # Scheffe (1953) S-method post-
+        # hoc comparisons, Plackett
+        # (1975)-Luce (1959) MM + Borda
+        # + Condorcet-Copeland + MC3
+        # rank aggregation, Montgomery
+        # / Roberts (1959) / Page (1954)
+        # SPC (xbar-R, EWMA, CUSUM,
+        # Kane capability), Roncalli
+        # (2013)/Maillard (2010) ERC
+        # risk parity, Mantegna (1999)
+        # MST + Tumminello (2005) PMFG
+        # topology, and Matteson-James
+        # (2014) E-divisive energy
+        # changepoints. Same SYNTHETIC
+        # diagnostic contract.
+        "multiple_comparisons",
+        "rank_aggregation",
+        "spc",
+        "risk_parity",
+        "mst_topology",
+        "e_divisive",
+        # wave 79 — Hyvarinen (1999)
+        # FastICA deflationary ICA,
+        # Reiner-Rubinstein (1991)
+        # closed-form barrier options,
+        # Schuirmann (1987) TOST
+        # equivalence testing, Robins
+        # (2000) marginal structural
+        # models via stabilized IPTW,
+        # Lee-Seung (1999/2001)
+        # multiplicative-update NMF
+        # with cophenetic consensus,
+        # and Pitt-Shephard (1999)
+        # auxiliary particle filter.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "fastica",
+        "barrier_options",
+        "tost",
+        "msm_causal",
+        "nmf",
+        "auxiliary_pf",
+        # wave 80 — Royston-Parmar
+        # (2011/2013) RMST + Uno (2004)
+        # variance, Hull (2018) OIS
+        # zero-curve bootstrap with
+        # fixed-point tenor stripping,
+        # Henze-Zirkler (1990) BHEP
+        # MVN test, Epps-Singleton
+        # (1985) ECF normality,
+        # Watson (1961) U^2 circular
+        # uniformity + Stephens (1970)
+        # table, and Szekely-Rizzo
+        # (2005) energy-distance MVN.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "rmst",
+        "ois_curve",
+        "henze_zirkler",
+        "epps_singleton",
+        "watson",
+        "energy_test",
+        # wave 81 — Mosimann (1962) /
+        # Minka (2000) Dirichlet-
+        # multinomial, Banerjee (2005)
+        # vMF mixture EM, Freimer-
+        # Mudholkar-Kollia-Lin (1988)
+        # GLD + King-MacGillivray
+        # (1999) starship, Tukey (1977)
+        # g-and-h letter values,
+        # Robbins-Monro (1951) /
+        # Kiefer-Wolfowitz (1952) /
+        # Spall (1992) stochastic
+        # approximation, and von
+        # Neumann (1949) / Dykstra
+        # (1983) / Douglas-Rachford
+        # (1956) convex projections.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "dirichlet_multinomial",
+        "vonmises_fisher",
+        "fkml",
+        "gandh",
+        "robbins_monro",
+        "pocs",
+        # wave 82 — DeLong (1988)
+        # correlated-AUC variance +
+        # pairwise comparison, Passing-
+        # Bablok (1983) robust method
+        # comparison + Deming (1943)
+        # orthogonal fit, McNemar
+        # (1947) / Bowker (1948) /
+        # Stuart (1955) / Bhapkar
+        # (1979) marginal homogeneity,
+        # Mardia-Watson-Wheeler (1972)
+        # + Rao (1976) spacing +
+        # Watson-Beran runs circular
+        # tests, Samejima (1969) GRM +
+        # Masters (1982) PCM IRT, and
+        # Welch (1951) heteroscedastic
+        # ANOVA + Games-Howell (1976).
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "delong_auc",
+        "passing_bablok",
+        "marginal_homogeneity",
+        "circular_tests",
+        "graded_irt",
+        "welch_anova",
+        # wave 83 — Lin (1989)
+        # concordance correlation +
+        # Bland-Altman (1986) limits
+        # of agreement, Belsley-Kuh-
+        # Welsch (1980) influence
+        # diagnostics, Lan-DeMets
+        # (1983) alpha-spending group
+        # sequential (O'Brien-Fleming
+        # 1979 / Pocock 1977) +
+        # conditional power, Torgerson
+        # (1958) classical MDS +
+        # SMACOF (de Leeuw 1977),
+        # Benzécri (1973) correspon-
+        # dence analysis, and Mardia
+        # (1976) / Fisher-Lee (1983) /
+        # Jammalamadaka-Sarma (1988)
+        # circular correlation.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lin_ccc",
+        "influence",
+        "group_sequential",
+        "mds",
+        "correspondence_analysis",
+        "circular_correlation",
+        # wave 84 — Hosking (1990)
+        # L-moments + regional
+        # frequency (GEV/GLO/GPA,
+        # discordancy/heterogeneity),
+        # Saltelli (2010) Sobol
+        # indices + Morris (1991)
+        # elementary effects,
+        # Andersen-Gill (1982)
+        # recurrent events (MCF,
+        # PWP, WLW + cluster
+        # sandwich), Dawid-Skene
+        # (1979) EM + GLAD (2009)
+        # annotation models,
+        # Keogh (2007) matrix
+        # profile + SAX (Lin 2007),
+        # and Hyndman (2011) MinT
+        # reconciliation (OLS/WLS/
+        # shrunk). Same SYNTHETIC
+        # diagnostic contract.
+        "lmoments",
+        "sobol_sensitivity",
+        "recurrent_events",
+        "dawid_skene",
+        "matrix_profile",
+        "hierarchical_reconciliation",
+        # wave 85 — Hansen (2006)
+        # CMA-ES + CSA, Dunning-Ertl
+        # (2019) t-digest + Flajolet
+        # (2007) HLL + Cormode-
+        # Muthukrishnan (2005) CMS +
+        # GK (2001) sketches, Schmidt
+        # (1986) MUSIC + Roy-Kailath
+        # (1989) ESPRIT, Mack (1993)
+        # chain-ladder + BF (1972) +
+        # ODP bootstrap (1999), Erlang
+        # (1917) B/C/A + PK + Whitt
+        # G/G/c + Jackson (1957),
+        # and Atkinson (1970) /
+        # Shorrocks (1980) / FGT
+        # (1984) inequality indices.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "cma_es",
+        "sketches",
+        "music_esprit",
+        "chain_ladder",
+        "erlang_queueing",
+        "inequality_indices",
+        # wave 86 — ASTM E1049-85
+        # rainflow + Miner damage +
+        # Goodman/Gerber/SWT
+        # corrections, Blom &
+        # Bar-Shalom (1988) IMM +
+        # Bar-Shalom & Tse (1975)
+        # PDA, Karrer-Newman (2011)
+        # DC-SBM + Amini (2013)
+        # spectral + Danon (2005)
+        # NMI, Elkan-Noto (2008) +
+        # du Plessis (2014) + Kiryo
+        # (2017) nnPU, Perrin (2003)
+        # GR4J + McCarthy (1938)
+        # Muskingum + NSE/KGE, and
+        # Brinson-Hood-Beebower
+        # (1986) + Carino (1999)
+        # attribution. Same SYNTHETIC
+        # diagnostic contract.
+        "rainflow_fatigue",
+        "bayesian_tracking",
+        "sbm_inference",
+        "pu_learning",
+        "gr4j_hydrology",
+        "brinson_attribution",
+        # wave 87 — Avellaneda-Stoikov
+        # (2008) optimal market making
+        # (reservation price + GLFT
+        # intensity), Gillespie (1977)
+        # direct SSA + tau-leaping with
+        # SIR/Schlogl networks, Hamilton
+        # (2018) + HP + Baxter-King/
+        # Christiano-Fitzgerald cycle
+        # filters, Corwin-Schultz (2012)
+        # high-low spread + Roll (1984)
+        # + Amihud (2002), Fotheringham-
+        # Brunsdon-Charlton (2002) GWR
+        # adaptive bandwidth, and
+        # Schmittlein (1987)/Fader-
+        # Hardie-Lee (2005) Pareto/BG-NBD
+        # CLV. Same SYNTHETIC diagnostic
+        # contract.
+        "avellaneda_stoikov",
+        "gillespie_ssa",
+        "hamilton_filter",
+        "corwin_schultz",
+        "gwr_spatial",
+        "pareto_nbd",
+        # wave 88 — Tauchen (1986),
+        # Tauchen-Hussey (1991) and
+        # Rouwenhorst (1995) AR(1)
+        # discretization, Lomb (1976)/
+        # Scargle (1982)/Press-Rybicki
+        # (1989) irregular periodogram,
+        # Broomhead-King (1986)/
+        # Golyandina (2001) SSA,
+        # Beck-Katz (1995) PCSE +
+        # Parks (1967) FGLS, Quandt
+        # (1960)/Andrews (1993)/
+        # Andrews-Ploberger (1994)/
+        # Nyblom (1989) stability, and
+        # Friedman (1984) supersmoother
+        # with Cleveland (1979) LOWESS.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "markov_discretization",
+        "lomb_scargle",
+        "singular_spectrum",
+        "beck_katz",
+        "quandt_andrews",
+        "friedman_supersmoother",
+        # Wave-89: classical hypothesis-
+        # testing canon — KS/Cramer-von
+        # Mises/Anderson-Darling (1952/
+        # 1954) EDF tests, Shapiro-Wilk
+        # (1965)/Jarque-Bera (1980)/
+        # D'Agostino-Pearson (1973)
+        # normality, Levene (1960)/
+        # Brown-Forsythe (1974)/
+        # Fligner-Killeen (1976)/
+        # O'Brien (1979) scale
+        # homogeneity, Ansari-Bradley
+        # (1960)/Mood (1954)/Klotz
+        # (1962)/Conover (1980)/
+        # Gastwirth (1965) rank scale,
+        # Goldfeld-Quandt (1965)/Park
+        # (1966)/Glejser (1969)/
+        # Breusch-Pagan (1979)/White
+        # (1980) heteroskedasticity, and
+        # Durbin-Watson (1950)/Durbin-h
+        # (1970)/Breusch-Godfrey (1978)/
+        # Ljung-Box (1978) serial
+        # diagnostics. Same SYNTHETIC
+        # diagnostic contract.
+        "edf_tests",
+        "normality_tests",
+        "scale_homogeneity",
+        "score_scale",
+        "het_regressions",
+        "serial_diagnostics",
+        # Wave-90: Friedman (1991)
+        # MARS hinge splines,
+        # Breiman-Friedman (1985) ACE /
+        # Tibshirani (1988) AVAS,
+        # Friedman-Stuetzle (1981)
+        # projection pursuit,
+        # Newton-Raftery (1994)/
+        # Gelfand-Dey (1994)/Chib
+        # (1995)/Savage-Dickey/Ogata
+        # (1989) marginal likelihoods,
+        # Brent (1973)/Ridders (1979)/
+        # Illinois root finders, and
+        # SOBI (1997)/JADE (1993)/FOBI
+        # (1989) blind source
+        # separation. Same SYNTHETIC
+        # diagnostic contract.
+        "mars_regression",
+        "ace_avas",
+        "projection_pursuit",
+        "marginal_likelihood",
+        "root_finders",
+        "blind_sources",
+        # Wave-91:
+        # Nelder-Mead (1965)/Powell
+        # (1964)/nonlinear-CG/BFGS +
+        # Levenberg-Marquardt,
+        # k-means++/PAM/DBSCAN/OPTICS
+        # clustering, LLE/Laplacian
+        # eigenmaps/diffusion map/
+        # t-SNE manifold learning,
+        # Huber/S/LTS/MM robust
+        # regression, Robbins/
+        # Tweedie/Kiefer-Wolfowitz
+        # empirical Bayes, and
+        # 2^k/PB/CCD/Box-Behnken/
+        # LHS/Fedorov-Dopt design.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "unconstrained_optimizers",
+        "clustering_methods",
+        "manifold_learning",
+        "robust_regression",
+        "empirical_bayes",
+        "design_experiments",
+        # Wave-92 canon: simulated
+        # annealing/DE/PSO/GA +
+        # NSGA-II metaheuristics,
+        # GP-EI/UCB/PI Bayesian
+        # optimization, fuzzy
+        # c-means + PC/PE/Xie-Beni,
+        # Kohonen SOM + LVQ1,
+        # PageRank/HITS/conductance
+        # link topology, and
+        # successive-halving/
+        # Hyperband search. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "metaheuristic_optimizers",
+        "bayesian_optimization",
+        "fuzzy_clustering",
+        "self_organizing_maps",
+        "pagerank_topology",
+        "hyperband_search",
+        # Wave-93 canon: CART/random
+        # forest/GBM tree ensembles,
+        # NCA/LMNN metric learning,
+        # SVDD/Mahalanobis/LOF
+        # one-class classification,
+        # Laplace GP classification,
+        # Gerchberg-Saxton HIO +
+        # Wirtinger-flow phase
+        # retrieval, and Rendle
+        # factorization machines.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "tree_ensembles",
+        "metric_learning",
+        "one_class_classification",
+        "gp_classification",
+        "phase_retrieval",
+        "factorization_machine",
+        # Wave-94 canon: Pegasos +
+        # kernel SVMs, Fisher LDA/QDA
+        # + regularized DA, coordinate
+        # -descent elastic-net paths,
+        # KRR/RFF/Nyström kernel
+        # methods, collapsed-Gibbs
+        # LDA topics, and
+        # perceptron/PA/OGD/FTRL
+        # online convex learners.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "svm_classifiers",
+        "discriminant_analysis",
+        "coordinate_descent_enet",
+        "kernel_methods",
+        "lda_topics",
+        "online_convex",
+        # Wave-95 canon: Bayesian
+        # linear + ARD evidence,
+        # Bayes-net structure +
+        # exact marginals, linear
+        # + Polak-Ribière CG,
+        # FW / pairwise FW over
+        # Δ and ℓ1, OMP + K-SVD,
+        # and (μ/μ,λ)/(1+1) ES.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "bayesian_linear",
+        "graphical_models",
+        "conjugate_gradient",
+        "frank_wolfe",
+        "sparse_coding",
+        "evolution_strategies",
+        # Wave-96 canon: Gaussian /
+        # multinomial / Bernoulli NB,
+        # AdaBoost.M1 + LogitBoost
+        # stumps, EP Bayesian probit,
+        # item-kNN + ALS-WR + bias-MF
+        # collaborative filtering,
+        # Apriori association rules,
+        # and fictitious play /
+        # support enumeration /
+        # regret matching.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "naive_bayes",
+        "adaboost",
+        "expectation_propagation",
+        "collaborative_filtering",
+        "association_rules",
+        "nash_equilibrium",
+        # Wave-97 canon: ISTA /
+        # FISTA prox-gradient,
+        # Gauss/CC/Simpson
+        # quadrature, RK45 +
+        # EM/Milstein solvers,
+        # label-prop + self-train,
+        # OvR / softmax / ECOC,
+        # and sparse PCA. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "proximal_gradient",
+        "quadrature",
+        "ode_solvers",
+        "semisupervised",
+        "multiclass",
+        "sparse_pca",
+        # Wave-98 canon: value /
+        # policy iteration, TD(0) /
+        # SARSA / Q-learning,
+        # sum-product + loopy BP,
+        # ELM, nearest shrunken
+        # centroids, CEM. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "mdp_solvers",
+        "td_learning",
+        "belief_propagation",
+        "extreme_learning",
+        "nearest_centroid",
+        "cross_entropy_method",
+        # Wave-99 canon: conjugate
+        # Gibbs, Laplace approx,
+        # Gaussian KDE + LOO-CV,
+        # whitened tensor power,
+        # Dirichlet evidential,
+        # and mean-shrinkage MTL.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "gibbs_sampler",
+        "laplace_approx",
+        "kde",
+        "tensor_power",
+        "evidential",
+        "multi_task",
+        # Wave-100 canon: homotopy
+        # continuation, Anderson
+        # acceleration, sequence
+        # accel, LSQR/CGLS, low-
+        # discrepancy QMC, and
+        # symplectic integrators.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "homotopy_continuation",
+        "anderson_accel",
+        "sequence_accel",
+        "iterative_ls",
+        "qmc_sequences",
+        "symplectic_ode",
+        # Wave-101 canon: graph
+        # traversal/topo/bipartite,
+        # shortest paths, Dinic
+        # max-flow + min-cut,
+        # Hungarian + Hopcroft-Karp,
+        # Tarjan SCC + bridges/
+        # articulation, Algorithm X.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "graph_traversal",
+        "shortest_paths",
+        "network_flow",
+        "assignment",
+        "graph_components",
+        "exact_cover",
+        # Wave-102 canon: multi-
+        # armed bandits — UCB1/
+        # eps-greedy/ETC, KL-UCB,
+        # LinUCB + linear TS,
+        # EXP3 + Hedge, SE + LUCB
+        # best arm, SW-/D-UCB.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "stochastic_bandits",
+        "kl_bandits",
+        "contextual_bandits",
+        "adversarial_bandits",
+        "best_arm",
+        "nonstationary_bandits",
+        # Wave-103 canon: Krylov +
+        # randomized NLA — Lanczos,
+        # Arnoldi/GMRES, HMT rSVD,
+        # Nystrom, CUR leverage,
+        # interpolative decomp.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lanczos",
+        "arnoldi_gmres",
+        "randomized_svd",
+        "nystrom",
+        "cur_decomp",
+        "interpolative_decomp",
+        # Wave-104 canon: OT II —
+        # Sinkhorn + transport LP,
+        # EMD 1-D/LP + Bures,
+        # Gromov-Wasserstein,
+        # unbalanced KL-UOT,
+        # fixed-support barycenter,
+        # fused GW. Same SYNTHETIC
+        # diagnostic contract.
+        "sinkhorn",
+        "emd_lp",
+        "gromov_wasserstein",
+        "unbalanced_ot",
+        "wasserstein_barycenter",
+        "fused_gromov",
+        # Wave-105 canon: game-tree
+        # search on a subtraction-race
+        # DAG — alpha-beta + TT, UCT,
+        # PUCT, NegaScout, PN, df-pn.
+        "alpha_beta",
+        "mcts",
+        "puct",
+        "negascout",
+        "proof_number",
+        "dfpn",
+        # Wave-106 canon: stiff
+        # time integration — BDF,
+        # Adams PECE, Radau IIA,
+        # Strang split, ETDRK4,
+        # Crank–Nicolson. Orders
+        # measured vs exact.
+        "bdf",
+        "adams",
+        "radau",
+        "strang",
+        "etdrk4",
+        "crank_nicolson",
+        # Wave-107 canon: transport
+        # & HJB PDE — ADI,
+        # Lax–Wendroff, WENO5,
+        # level set, fast
+        # marching, Godunov.
+        "adi",
+        "lax_wendroff",
+        "weno",
+        "level_set",
+        "fast_marching",
+        "godunov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
