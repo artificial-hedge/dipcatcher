@@ -161,10 +161,16 @@ def _sim_crown(
     horizon: int,
     seed: int,
     collect_counts: bool = False,
+    flow_intensity: float | None = 3.0,
 ) -> dict[str, Any]:
-    """Crown depth + emptied-touch reveal gap on one sim arm."""
+    """Crown depth + emptied-touch reveal gap on one sim arm.
+
+    ``flow_intensity`` selects the SplitFlow intensity (None = default
+    iid flow); 3.0 preserves every historical cell bit-identically.
+    """
     cfg = _calibrated(seed, extra)
-    sim = ZILobSimulator(cfg, _split(3.0, seed + 1))
+    flow = _split(flow_intensity, seed + 1) if flow_intensity is not None else None
+    sim = ZILobSimulator(cfg, flow)
     bb: list[int] = []
     ba: list[int] = []
     crown: list[int] = []

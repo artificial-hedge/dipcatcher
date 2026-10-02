@@ -42,7 +42,7 @@ from quant_fund.microstructure.lobster import (
     parse_messages,
     parse_orderbook_row,
 )
-from quant_fund.microstructure.place_law_bench import _calibrated
+from quant_fund.microstructure.place_law_bench import _calibrated, _split
 from quant_fund.microstructure.zi_lob_simulator import ZILobSimulator
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
@@ -138,7 +138,14 @@ def lobster_reseed(msg_path: Path, ob_path: Path) -> dict[str, Any]:
     return out
 
 
-def sim_reseed(regime: str, extra: dict[str, Any], *, horizon: int, seed: int) -> dict[str, Any]:
+def sim_reseed(
+    regime: str,
+    extra: dict[str, Any],
+    *,
+    horizon: int,
+    seed: int,
+    flow_intensity: float | None = None,
+) -> dict[str, Any]:
     """Sim analog: emptied fill levels re-seeded within _WINDOW events.
 
     The tape measure counts an emptied level once per transition to
@@ -147,8 +154,13 @@ def sim_reseed(regime: str, extra: dict[str, Any], *, horizon: int, seed: int) -
     vacancy episode — counting every fill at a level that reads empty at
     step end would inflate ``n_emp`` per level depth and cap the
     measured rate near 1/depth in deep regimes.
+
+    ``flow_intensity`` selects an optional SplitFlow intensity; None
+    (default) is the iid flow every committed receipt was measured
+    under.
     """
-    sim = ZILobSimulator(_calibrated(seed, extra))
+    flow = _split(flow_intensity, seed) if flow_intensity is not None else None
+    sim = ZILobSimulator(_calibrated(seed, extra), flow)
     seen = 0
     pending: dict[tuple[int, str], int] = {}
     lat: list[int] = []
