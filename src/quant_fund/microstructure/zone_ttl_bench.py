@@ -137,9 +137,20 @@ def _cell(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    uniform_flow: bool = False,
 ) -> dict[str, Any]:
-    """Card + pins + kernel on one (zone, ttl, flow) draw."""
+    """Card + pins + kernel for a configuration.
+
+    ``uniform_flow=True`` honors iid on every surface. The default retains
+    the historical split@3 crown for legacy v1 benchmark callers.
+    """
+    from quant_fund.microstructure.joint_tune_contract import surface_inputs
+
     extra = _extra(zone, ttl, requote, fr_frac, fr_delay)
+    crown_intensity = inten if uniform_flow or inten is not None else 3.0
+    inputs = surface_inputs(
+        zone, ttl, requote, fr_delay, horizon=horizon, seed=seed, intensity=inten, fr_frac=fr_frac
+    )
     card = _card(
         zone,
         ttl,
@@ -156,7 +167,7 @@ def _cell(
         horizon=horizon,
         seed=seed,
         collect_counts=True,
-        flow_intensity=inten if inten is not None else 3.0,
+        flow_intensity=crown_intensity,
     )
     reseed = sim_reseed("joint", extra, horizon=horizon, seed=seed, flow_intensity=inten)
     pin_cell = dict(crown)
@@ -168,13 +179,20 @@ def _cell(
         _split(inten, seed) if inten is not None else None,
         horizon,
     )
-    return {
+    result = {
         "card": card,
         "pins": pins,
         "n_pins": sum(pins.values()),
         "instant_signed_ticks": kernel["instant_signed_ticks"],
         "k200": kernel["kernel_mean_ticks"].get("200"),
     }
+
+    if uniform_flow:
+        result["surface_inputs"] = {
+            k: dict(inputs, flow_intensity=crown_intensity if k == "crown" else inten)
+            for k in ("card", "crown", "reseed", "kernel")
+        }
+    return result
 
 
 def zone_ttl_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:

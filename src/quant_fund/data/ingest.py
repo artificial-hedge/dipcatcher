@@ -21,6 +21,7 @@ from quant_fund.data.lake import Lake
 from quant_fund.data.security_master import attach_master_attributes
 from quant_fund.data.sources import SourceAdapter, get_source
 from quant_fund.data.universe import build_membership_panel
+from quant_fund.schemas.errors import PointInTimeError
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
 
@@ -131,6 +132,31 @@ def make_provider(
     )
 
 
+def _close_label_binance_klines(bars: pl.DataFrame) -> pl.DataFrame:
+    """Adapt REST kline clocks for silver, never infer closes from availability.
+
+    Bronze and direct source consumers retain vendor open labels. Publication
+    can be later than the close and must still fail the downstream PIT guard.
+    This boundary does not apply to trade messages or perpetual/funding tapes.
+    """
+    clocks = ("event_time", "bar_open_time", "bar_close_time")
+    if any(name not in bars.columns for name in clocks):
+        raise PointInTimeError("Binance REST bars require explicit open/close provenance")
+    if any(not isinstance(bars.schema[name], pl.Datetime) for name in clocks):
+        raise PointInTimeError("Binance REST open/close clocks must be datetimes")
+    if bars.select(pl.any_horizontal(pl.col(name).is_null() for name in clocks).any()).item():
+        raise PointInTimeError("Binance REST open/close clocks must be non-null")
+    if bars.filter(
+        (pl.col("event_time") != pl.col("bar_open_time"))
+        | (pl.col("bar_close_time") <= pl.col("bar_open_time"))
+    ).height:
+        raise PointInTimeError("Binance REST bars have inconsistent open/close provenance")
+    closed = bars.with_columns(pl.col("bar_close_time").alias("event_time"))
+    if closed.select("security_id", "event_time").is_duplicated().any():
+        raise PointInTimeError("Binance REST bars have duplicate close labels")
+    return closed
+
+
 def ingest(config: AppConfig) -> dict[str, Path]:
     lake = Lake(Path(config.data.root))
     provider = make_provider(config)
@@ -142,10 +168,16 @@ def ingest(config: AppConfig) -> dict[str, Path]:
         "actions": lake.write_parquet(actions, "bronze/corporate_actions.parquet"),
         "master": lake.write_parquet(master, "bronze/security_master.parquet"),
     }
+    decision_bars = (
+        _close_label_binance_klines(bars)
+        if isinstance(provider, PublicMarketProvider)
+        and config.data.source in {"binance_public_data", "binance_market_websocket"}
+        else bars
+    )
     silver = (
-        adjust_prices(bars, actions)
+        adjust_prices(decision_bars, actions)
         if not actions.is_empty()
-        else adjust_prices(bars, pl.DataFrame())
+        else adjust_prices(decision_bars, pl.DataFrame())
     )
     silver = apply_listing_actions(
         silver, actions, include_delisted=config.universe.include_delisted

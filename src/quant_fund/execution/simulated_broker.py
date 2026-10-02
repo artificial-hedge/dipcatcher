@@ -111,7 +111,10 @@ class SimulatedBroker:
     _prior_fill_count: int = field(default=0, repr=False)
 
     def __post_init__(self) -> None:
-        self.cash = float(self.initial_cash) if self.allow_capital else 0.0
+        initial_cash = float(self.initial_cash)
+        if not np.isfinite(initial_cash) or initial_cash < 0.0:
+            raise ValueError("initial cash must be finite and non-negative")
+        self.cash = initial_cash if self.allow_capital else 0.0
         self.kill = KillSwitch(self.config.kill_switch)
         if not self.allow_capital:
             self.slot = self.slot or "shadow"
@@ -426,6 +429,8 @@ class SimulatedBroker:
         ``keep_residual`` re-rests the unfilled remainder of a working
         (limit) order as PARTIAL; one-shot marketable orders leave it off.
         """
+        if not np.isfinite(self.cash):
+            raise ValueError("broker cash must be finite")
         price = exec_price
         requested_signed = float(order.quantity)
         if order.side is OrderSide.SELL:
@@ -486,9 +491,15 @@ class SimulatedBroker:
             return rec
 
         costs = total_cost(exec_qty, price, adv_dollars, sigma, self.config.costs)
+        total = float(costs["total"])
+        if not np.isfinite(total) or total < 0.0:
+            raise ValueError("execution costs must be finite and non-negative")
         notional = exec_qty * price
+        cash_after = self.cash - (notional + total)
+        if not np.isfinite(cash_after):
+            raise ValueError("post-fill cash must be finite")
         # Cash check for buys
-        if exec_qty > 0 and self.cash < notional + float(costs["total"]):
+        if exec_qty > 0 and self.cash < notional + total:
             self.reject_count += 1
             rec = OrderRecord(
                 order=order.model_copy(update={"status": OrderStatus.REJECTED}),
@@ -506,8 +517,6 @@ class SimulatedBroker:
             if not np.isfinite(dec) or dec <= 0:
                 raise ValueError("decision_price must be finite and strictly positive")
 
-        self.cash -= notional + float(costs["total"])
-        self.shares[order.security_id] = current_shares + exec_qty
         drift_slippage = 0.0
         if dec is not None:
             # Adverse component only (schema is non-negative); the signed
@@ -529,6 +538,10 @@ class SimulatedBroker:
             is_partial=abs(exec_qty) + 1e-12 < abs(requested_signed),
             decision_price=decision_price,
         )
+        # Construct and validate the entire fill before committing the book.
+        # Finite inputs can still overflow costs or adverse-drift diagnostics.
+        self.cash = cash_after
+        self.shares[order.security_id] = current_shares + exec_qty
         filled = order.model_copy(update={"status": OrderStatus.FILLED, "quantity": abs(exec_qty)})
         self.fills.append(fill)
         if fill.is_partial and keep_residual:

@@ -400,6 +400,13 @@ def measurement_receipt_contract_errors(payload: Mapping[str, Any]) -> list[str]
     return errors
 
 
+def joint_tune_v2_contract_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Check the frozen v2 numerical/provenance contract; v1 is unchanged."""
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    return measurement_receipt_contract_errors(payload) + contract_errors(payload)
+
+
 #: The wave-21b tape/sim measurement lanes emit ``schema``-tagged receipts
 #: with a shared envelope; each registers the measurement contract so no
 #: committed receipt verifies on its seal alone.
@@ -533,6 +540,7 @@ SCRIPT_RECEIPT_CONTRACTS: dict[str, Any] = {
     "incumbent_bench.v1": incumbent_bench_contract_errors,
     "fx1.dip_bench/v1": dip_bench_contract_errors,
     "deps_hygiene.v1": deps_hygiene_contract_errors,
+    "joint_tune.v2": joint_tune_v2_contract_errors,
     **{s: measurement_receipt_contract_errors for s in _MEASUREMENT_SCHEMAS},
 }
 

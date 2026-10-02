@@ -10,8 +10,11 @@ or bench utilities.
 | `merge_gmm.py` | Merge GMM score outputs |
 | `new3_smoke.py` | NEW3 release smoke run |
 | `qar_smoke.py` | QAR estimator smoke run |
-| `run_gmm_pass.py` / `run_rest_pass.py` / `run_skt_pass.py` | Full bench passes |
+| `run_gmm_pass.py` / `run_rest_pass.py` / `run_skt_pass.py` | Remote fleet bench-pass launchers (Windows host only) |
 | `skt_smoke.py` | SKT estimator smoke run |
 | `secret_scan.py` | Pre-commit hook: rejects staged secrets |
 
-Run any of them with `uv run python scripts/<name>.py` inside the synced env.
+Run the smoke/utility scripts with `uv run python scripts/<name>.py` inside the
+synced env. The `run_*_pass.py` drivers spawn `D:\evalenv\Scripts\python.exe`
+against hard-coded `D:\dipcatcher` shard paths, so they are only runnable on
+the remote Windows fleet host.
