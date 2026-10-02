@@ -1967,6 +1967,14 @@ from quant_fund.research.benches_w246 import (
     bench_tail_call_tramp_family,
     bench_threaded_interp_family,
 )
+from quant_fund.research.benches_w247 import (
+    bench_atomics_tas_family,
+    bench_bakery_lock_family,
+    bench_channel_select_family,
+    bench_peterson_lock_family,
+    bench_rw_lock_family,
+    bench_work_stealing_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2130,6 +2138,12 @@ def _provenance(
         "nan_tagging": bench_nan_tagging_family,
         "tail_call_tramp": bench_tail_call_tramp_family,
         "threaded_interp": bench_threaded_interp_family,
+        "atomics_tas": bench_atomics_tas_family,
+        "bakery_lock": bench_bakery_lock_family,
+        "channel_select": bench_channel_select_family,
+        "peterson_lock": bench_peterson_lock_family,
+        "rw_lock": bench_rw_lock_family,
+        "work_stealing": bench_work_stealing_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
