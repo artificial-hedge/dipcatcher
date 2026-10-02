@@ -52,6 +52,7 @@ References:
 
 from __future__ import annotations
 
+import heapq
 import math
 from collections import deque
 from collections.abc import Callable, Sequence
@@ -413,6 +414,13 @@ class ZILobConfig:
     # Applies only under ``anchor="ref"``. 0 is bit-identical (the
     # clamp is gated on ``zone_embargo > 0``, no extra draws).
     zone_embargo: int = 0
+    # ``maker_ttl`` >= 0: resting visible orders expire — auto-deleted
+    # ``maker_ttl`` events after submission (the tape's re-quote churn:
+    # deleted p50 is ~9 events). Expiry runs through the normal cancel
+    # path, so expiries count as deletes in event_counts, trigger
+    # ``_level_vacated`` reposts, and shorten maker age at fill. 0 is
+    # bit-identical (the expiry heap is never populated, no sweep).
+    maker_ttl: int = 0
     # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
     # order of a level immediately re-rests one unit at the SAME level
     # tagged ``iceberg`` — hidden reserve liquidity that refills after
@@ -780,6 +788,8 @@ class ZILobConfig:
             raise ValueError(f"min_quote_dist must be an int >= 0, got {self.min_quote_dist!r}")
         if isinstance(self.zone_embargo, bool) or int(self.zone_embargo) < 0:
             raise ValueError(f"zone_embargo must be an int >= 0, got {self.zone_embargo!r}")
+        if isinstance(self.maker_ttl, bool) or int(self.maker_ttl) < 0:
+            raise ValueError(f"maker_ttl must be an int >= 0, got {self.maker_ttl!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
         if self.iceberg_reload_mode not in ("per_unit", "residual"):
             raise ValueError(
@@ -1307,6 +1317,8 @@ class ZILobSimulator:
         self._bids: dict[int, deque[int]] = {}
         self._asks: dict[int, deque[int]] = {}
         self._orders: dict[int, _Order] = {}
+        # (expiry event, order id); only populated when maker_ttl > 0.
+        self._ttl_pending: list[tuple[int, int]] = []
         self._next_id = 0
         self.trades: list[TradeEvent] = []
         self.n_events = 0
@@ -1642,6 +1654,8 @@ class ZILobSimulator:
         )
         dq.append(oid)
         self._orders[oid] = order
+        if self._cfg.maker_ttl > 0:
+            heapq.heappush(self._ttl_pending, (self.n_events + self._cfg.maker_ttl, oid))
         if tag == "chase":
             self._chase_oids.add(oid)
         self._n_orders_created += 1
@@ -2660,6 +2674,19 @@ class ZILobSimulator:
         if dist == 0:
             self.n_cxl_touch += 1
 
+    def _expire_makers(self) -> None:
+        """Auto-delete resting orders older than ``maker_ttl`` events.
+
+        Runs through ``cancel_order`` so expiries count as deletes in
+        the event card and trigger the vacancy/repost machinery. Stale
+        heap entries (orders already filled or cancelled) are just
+        dropped. Bit-identical when ``maker_ttl == 0``.
+        """
+        while self._ttl_pending and self._ttl_pending[0][0] <= self.n_events:
+            _, oid = heapq.heappop(self._ttl_pending)
+            if oid in self._orders:
+                self.cancel_order(oid)
+
     def step(self) -> str:
         """Advance to the next event; returns the event type drawn."""
         mu_eff, p_buy_eff = self._flow_params()
@@ -2697,6 +2724,8 @@ class ZILobSimulator:
         if self._fill_repost_q:
             self._drain_fill_reposts()
         self._hit_flee()
+        if self._cfg.maker_ttl > 0:
+            self._expire_makers()
         if kind == 0:
             self._limit_order_event()
             return "limit"
