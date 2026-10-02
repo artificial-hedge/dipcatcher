@@ -2660,6 +2660,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hoare_logic",
         "ranking_function",
         "cegar_loop",
+        # Wave-221 algebra canon: Groebner, resultant,
+        # poly GCD, GF(2) factor, LLL, Newton interp.
+        "buchberger",
+        "resultant",
+        "poly_gcd",
+        "gf2_factor",
+        "lll_reduce",
+        "newton_interp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
