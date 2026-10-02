@@ -109,6 +109,55 @@ also satisfy the candle envelope `low <= open <= high` and
 The file adapter rejects envelope violations with `PointInTimeError`; impossible
 candles must not be persisted into downstream feature, label, or backtest inputs.
 
+## Perpetual and paired-carry funding settlement
+
+`run_perp_backtest` and `run_carry_backtest` normally match funding
+`event_time` to bar `event_time` by exact equality. By default an 08:00
+settlement uses the bar labeled 08:00, not 07:00. Neither engine implicitly
+derives `(open, close]` windows, resamples funding, or interpolates the price
+at the actual settlement instant. This is the existing research simulation
+convention, not exchange-level intra-bar settlement fidelity.
+
+Input timestamp conventions matter: `BinanceUsdtmPerpSource` preserves the
+vendor kline **open** in `event_time` and its close in `available_time`,
+whereas close-labeled sources use the completed bar close.
+`BinanceFundingRateSource` stamps both fields at the realized `fundingTime`.
+Callers must check the source labels and funding grid before interpreting a
+result; bar labels must not be shifted merely to make a funding join succeed.
+Any coarser-grain settlement mapping requires an explicit caller-level
+approximation. An optional `application_time` names the bar label to use
+instead of the original `event_time`; when funding is enabled, it must be a
+comparable datetime equal to the latest execution-grid label at or before the
+source event (the paired grid for carry). Invalid explicit mappings fail
+closed, rather than silently falling back to the source timestamp or being
+counted as dropped. The original `event_time` remains the settlement identity,
+so distinct events mapped to one bar retain their individual signed cashflows
+and applied counts. This mapping does not change feature availability or
+supply an intra-bar position/price path.
+
+On a matched bar, funding uses the position **after open fills**, marked at
+that bar's close (or a carried close allowed by the existing staleness gate),
+and is processed **before liquidation**. Thus a new position filled on the
+matched bar participates; one fully closed at its open does not. Positive
+rates debit long perps and credit short perps, including the short leg of a
+carry pair. A supplied funding `mark_price` is not used by these engines.
+
+When funding is enabled, each `(security_id, event_time)` must be unique:
+duplicate settlements, including revisions or differing rates, fail closed.
+The engines do not choose a revision or sum conflicting rows.
+
+`funding_events_dropped` counts unmapped input rows whose event timestamp is
+absent from the entire execution grid (the paired grid for carry), including
+rows outside the bar range. It is **not** a per-symbol completeness check: a
+timestamp present only for another symbol is still on-grid.
+`funding_events_applied` counts rows that actually reach a held, markable
+position; flat/unmarkable positions are skipped, as are later on-grid events
+when ruin stops the loop early. Applied plus dropped therefore need not equal
+input rows. When reported with funding disabled, input funding is ignored and
+both counts are zero. The carry engine's short-result branch (fewer than two
+equity rows) does not report `funding_events_dropped`. These diagnostics do
+not establish complete funding coverage or make a live performance claim.
+
 ## Corporate actions (bronze)
 
 `action_type` in `{split, cash_dividend, special_dividend, delist, ticker_change}`. Splits store `factor` (e.g. 2.0 for 2-for-1). Dividends store `amount` in the listing currency and `ex_date` as `event_time`. `available_time` is the announcement time when known; otherwise ex-date (conservative: do not assume earlier knowledge).

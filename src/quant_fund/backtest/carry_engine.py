@@ -138,6 +138,12 @@ def run_carry_backtest(
 
     Negative weights are rejected — negative-funding harvest would need spot
     borrow this book does not model.
+    Funding follows ``run_perp_backtest``: exact application bar-label matches,
+    applied after open fills and before liquidation using the perp close
+    mark (or a permitted carried mark). Unmapped off-grid events are skipped and
+    counted in ``funding_events_dropped`` when reported. By default the funding
+    ``event_time`` supplies the label; explicit ``application_time`` mapping
+    does not imply automatic interval bucketing.
     """
     if weights.height:
         _ = _target_weight_map(weights)

@@ -211,9 +211,15 @@ def run_perp_backtest(
     Input bars may arrive in any row order; enrichment and execution are
     chronological per symbol. Targets decided on bar t's close execute at
     bar t+1+fill_delay_bars open.
-    A funding event at timestamp f is applied to the bar whose window
-    ``(open, close]`` contains f (funding at 08:00 lands on the 07:00 bar for
-    1h data), marked at that bar's close.
+    Funding normally uses exact ``event_time`` equality with a bar label: an 08:00
+    event is processed on the 08:00 bar, not implicitly shifted to 07:00. It is
+    applied after that bar's open fills and before its liquidation check, using the
+    current close mark (or a permitted carried mark). No implicit interval
+    bucketing or settlement-time price interpolation is performed. An explicit
+    ``application_time`` can select a bar label while preserving the original
+    ``event_time`` settlement identity. Unmapped off-grid events are skipped
+    and counted in ``funding_events_dropped``; see DATA_CONTRACTS.md
+    for the scope of that diagnostic and input timestamp conventions.
     """
     if weights.height:
         _ = _target_weight_map(weights)
@@ -423,7 +429,7 @@ def run_perp_backtest(
                 }
             )
 
-        # --- funding events inside this bar window (prev_close, this_close] ---
+        # --- funding events assigned exactly to this bar label ---
         for sid, rate in fund_map.get(dt, []):
             q = book.qty.get(sid, 0.0)
             if abs(q) < 1e-12:
