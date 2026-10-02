@@ -1961,6 +1961,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tent_tta",
         "shot_tta",
         "ttt_layer",
+        # Wave-140 geometric canon:
+        # hyperbolic, capsule, SIREN,
+        # E(n)-GNN, monotone, soft-sort.
+        "hyperbolic_nn",
+        "capsule_dynamic",
+        "siren_inr",
+        "equivar_gnn",
+        "monotonic_net",
+        "sort_net",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
