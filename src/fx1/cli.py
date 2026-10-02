@@ -315,6 +315,10 @@ def harness_serve(
         None,
         help="Seconds an open circuit fast-fails before a probe (env FX1_API_BREAKER_COOLDOWN_S).",
     ),
+    receipts_dir: str | None = typer.Option(
+        None,
+        help="Sealed-receipts directory for GET /receipts fetch (env FX1_API_RECEIPTS_DIR).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
@@ -338,6 +342,7 @@ def harness_serve(
             cors_origins=cors_origins,
             breaker_threshold=breaker_threshold,
             breaker_cooldown_s=breaker_cooldown_s,
+            receipts_dir=receipts_dir,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)

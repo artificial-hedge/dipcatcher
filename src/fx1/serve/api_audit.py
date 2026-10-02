@@ -1758,6 +1758,49 @@ def api_audit() -> dict[str, Any]:
         json={"receipt": {"nested": {"deep": [[{"x": None}]]}}},
     ).status_code in (200, 422)
 
+    # --- content-addressed receipt fetch --------------------------------------
+    # A caller cites sha256 in a completion; these routes serve the sealed
+    # bytes back by that hash — ETag is the hash itself.
+    import tempfile as _tf  # noqa: PLC0415
+    from pathlib import Path as _Pt  # noqa: PLC0415
+
+    with _tf.TemporaryDirectory() as td:
+        rdir = _Pt(td)
+        sha = good["receipt_sha256"]
+        (rdir / "probe_receipt.json").write_text(_json.dumps(good))
+        rclient = _TC2(api_mod.create_app(receipts_dir=rdir))
+        lst = rclient.get("/receipts")
+        out["receipts_index_lists"] = (
+            lst.status_code == 200
+            and lst.json()["count"] == 1
+            and lst.json()["items"][0]["sha256"] == sha
+            and lst.json()["items"][0]["name"] == "probe_receipt.json"
+        )
+        got = rclient.get(f"/receipts/{sha}")
+        raw = (rdir / "probe_receipt.json").read_bytes()
+        out["receipt_fetch_verbatim"] = (
+            got.status_code == 200
+            and got.content == raw
+            and got.json()["receipt_sha256"] == sha
+            and got.headers.get("etag") == f'"{sha}"'
+            and "immutable" in (got.headers.get("cache-control") or "")
+            and got.headers.get("x-fx1-receipt-valid") == "true"
+        )
+        miss = rclient.get("/receipts/" + "f" * 64)
+        out["receipt_fetch_404"] = (
+            miss.status_code == 404 and miss.json().get("code") == "receipt_not_found"
+        )
+        out["receipt_fetch_422_malformed"] = rclient.get("/receipts/zzz").status_code == 422
+        # staleness key: a receipt written after the first scan is indexed
+        (rdir / "second.json").write_text(_json.dumps({**good, "receipt_sha256": "b" * 64}))
+        out["receipts_index_refreshes"] = rclient.get("/receipts").json()["count"] == 2
+    gone = _TC2(api_mod.create_app(receipts_dir="/nonexistent-receipts-dir-zzz"))
+    out["receipt_fetch_store_unavailable"] = (
+        gone.get("/receipts/" + "a" * 64).status_code == 503
+        and gone.get("/receipts").status_code == 503
+        and gone.get("/receipts/" + "a" * 64).json().get("code") == "receipts_unavailable"
+    )
+
     # --- auth + headers ---------------------------------------------------------
     health_resp = client.get("/health")
     out["health_public"] = health_resp.status_code == 200

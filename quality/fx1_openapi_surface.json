@@ -255,6 +255,15 @@
         ]
       }
     },
+    "/receipts": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/receipts/verify": {
       "post": {
         "params": [],
@@ -274,7 +283,23 @@
           "422"
         ]
       }
+    },
+    "/receipts/{sha256}": {
+      "get": {
+        "params": [
+          {
+            "name": "sha256",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "8feac778605a1beaae8ff3fa4a7f93761032100b28f8abcd24fe7318fc747ce6"
+  "schema_sha256": "5c8188e03b62e18b867a180134a2fa6c00e0ccde3fee99d57b88f84d9f8544f5"
 }

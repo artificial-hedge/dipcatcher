@@ -366,6 +366,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receipts Index
+         * @description List the store's sealed receipts: sha256 → filename, sorted.
+         */
+        get: operations["receipts_index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/receipts/verify": {
         parameters: {
             query?: never;
@@ -394,6 +414,32 @@ export interface paths {
         put?: never;
         /** Verify Receipts Batch */
         post: operations["verify_receipts_batch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/receipts/{sha256}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receipt Fetch
+         * @description Serve the sealed receipt addressed by its content hash.
+         *
+         *     The body is the receipt's committed bytes verbatim, and receipts are
+         *     content-addressed by their seal — so ``ETag`` is the hash itself and
+         *     the response is ``Cache-Control: immutable``. Validity under the live
+         *     verifier is reported on ``X-Fx1-Receipt-Valid`` so a caller learns
+         *     the receipt it fetched still verifies without a second round trip.
+         */
+        get: operations["receipt_fetch"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -788,6 +834,20 @@ export interface components {
              * @constant
              */
             ready: true;
+        };
+        /** ReceiptIndexItem */
+        ReceiptIndexItem: {
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256: string;
+        };
+        /** ReceiptIndexResponse */
+        ReceiptIndexResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["ReceiptIndexItem"][];
         };
         /**
          * ReceiptVerifyBatchItem
@@ -1729,6 +1789,36 @@ export interface operations {
             };
         };
     };
+    receipts_index: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptIndexResponse"];
+                };
+            };
+        };
+    };
     verify_receipt: {
         parameters: {
             query?: never;
@@ -1813,6 +1903,55 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ReceiptVerifyBatchResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    receipt_fetch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sha256: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

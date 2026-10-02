@@ -65,6 +65,8 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
+| `GET /receipts` | index the store: `sha256` → filename |
+| `GET /receipts/{sha256}` | fetch the sealed receipt by content hash — verbatim bytes, `ETag` = the hash, `Cache-Control: public, immutable`, `X-Fx1-Receipt-Valid` from live re-verify |
 
 `GET /openapi.json` is codegen-grade: every operation carries a stable
 `operation_id` + tag (`quality/fx1_openapi_surface.json` pins the
@@ -82,7 +84,9 @@ surface — `paths` + `schema_sha256`).
   refusal is a structured `502`, not a truncated stream. Cited receipts
   arrive as a provenance footer.
 - Every response carries `X-Request-ID`, `X-Fx1-Api-Version`,
-  `X-Content-Type-Options: nosniff`, `Cache-Control: no-store`,
+  `X-Content-Type-Options: nosniff`, `Cache-Control: no-store` (a
+  route's own deliberate caching policy — e.g. immutable receipts —
+  wins over the default),
   `Referrer-Policy: no-referrer`; `Retry-After` is declared on 429/503
   and `Location` on the job-submit 202 — all of these are declared on
   the OpenAPI spec itself, so generated clients see them typed.
@@ -182,6 +186,7 @@ out-of-range values:
 | `--gzip-min-bytes` | `FX1_API_GZIP_MIN_BYTES` | 1024 | gzip only when the client advertises it; 0 disables |
 | `--cors-origins` | `FX1_API_CORS_ORIGINS` | (off) | comma-separated browser origins for CORS; each must be a scheme+host URL, `*` and non-http(s) refused; preflights bypass the API-key gate (they carry no credentials), every preflight reflects the `expose` list of stamped headers |
 | `--breaker-threshold` | `FX1_API_BREAKER_THRESHOLD` | 5 | consecutive call faults that open a backend's circuit; 0 disables. While open, calls fast-fail `503 backend_unavailable` + `Retry-After` without burning an inflight slot; a single half-open probe is admitted after cooldown and closes the circuit on success. Resolution faults that surface as 503 count; client errors (404/422), capability gaps (501), and honesty-gate refusals never do |
+| `--receipts-dir` | `FX1_API_RECEIPTS_DIR` | `receipts` | sealed-receipt store backing `GET /receipts*` — `503 receipts_unavailable` when absent |
 | `--breaker-cooldown-s` | `FX1_API_BREAKER_COOLDOWN_S` | 30 | seconds an open circuit fast-fails before admitting a probe |
 
 `POST /harness/drain` is the one-way graceful-exit latch: work routes

@@ -91,7 +91,7 @@ from fx1.serve.webhooks import (
     WEBHOOK_TIMESTAMP_HEADER,
     sign_webhook,
 )
-from quant_fund.research.receipt_v2 import verify_receipt_payload
+from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
 _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
@@ -107,12 +107,15 @@ _GZIP_MIN_ENV = "FX1_API_GZIP_MIN_BYTES"
 _CORS_ORIGINS_ENV = "FX1_API_CORS_ORIGINS"
 _BREAKER_THRESHOLD_ENV = "FX1_API_BREAKER_THRESHOLD"
 _BREAKER_COOLDOWN_ENV = "FX1_API_BREAKER_COOLDOWN_S"
+_RECEIPTS_DIR_ENV = "FX1_API_RECEIPTS_DIR"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
+    "ETag",
     "Location",
     "Retry-After",
     "X-Fx1-Api-Version",
+    "X-Fx1-Receipt-Valid",
     "X-RateLimit-Limit",
     "X-RateLimit-Remaining",
     "X-RateLimit-Reset",
@@ -375,6 +378,16 @@ class CompleteBatchResponse(_Model):
     receipt_hashes: list[str]
     results: list[CompleteBatchItem]
     replayed: bool = False
+
+
+class ReceiptIndexItem(_Model):
+    sha256: str
+    name: str
+
+
+class ReceiptIndexResponse(_Model):
+    items: list[ReceiptIndexItem]
+    count: int
 
 
 class ReceiptVerifyRequest(_Model):
@@ -772,9 +785,9 @@ def _make_lifespan(
     return _lifespan
 
 
-def _mount_receipt_routes(app: FastAPI) -> None:
-    """Receipt-verify routes: single + batch, kept out of ``create_app``
-    to keep its branch complexity under the repo's ruff cap."""
+def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
+    """Receipt-verify + content-addressed fetch routes, kept out of
+    ``create_app`` to keep its branch complexity under the repo's ruff cap."""
 
     @app.post(
         "/receipts/verify",
@@ -839,6 +852,59 @@ def _mount_receipt_routes(app: FastAPI) -> None:
             verified=verified,
             failed=len(items) - verified,
             results=items,
+        )
+
+    @app.get(
+        "/receipts",
+        response_model=ReceiptIndexResponse,
+        tags=["receipts"],
+        operation_id="receipts_index",
+    )
+    def receipts_index() -> ReceiptIndexResponse:
+        """List the store's sealed receipts: sha256 → filename, sorted."""
+        if not receipt_index.available():
+            raise ApiError(503, "receipts store unavailable", code="receipts_unavailable")
+        items = receipt_index.items()
+        return ReceiptIndexResponse(
+            items=[ReceiptIndexItem(sha256=sha, name=path.name) for sha, path in items],
+            count=len(items),
+        )
+
+    @app.get(
+        "/receipts/{sha256}",
+        tags=["receipts"],
+        operation_id="receipt_fetch",
+        response_class=Response,
+    )
+    def receipt_fetch(sha256: str) -> Response:
+        """Serve the sealed receipt addressed by its content hash.
+
+        The body is the receipt's committed bytes verbatim, and receipts are
+        content-addressed by their seal — so ``ETag`` is the hash itself and
+        the response is ``Cache-Control: immutable``. Validity under the live
+        verifier is reported on ``X-Fx1-Receipt-Valid`` so a caller learns
+        the receipt it fetched still verifies without a second round trip.
+        """
+        if not _SHA256_HEX.fullmatch(sha256):
+            raise ApiError(422, "sha256 must be 64 lowercase hex", code="invalid_sha256")
+        if not receipt_index.available():
+            raise ApiError(503, "receipts store unavailable", code="receipts_unavailable")
+        path = receipt_index.lookup(sha256)
+        if path is None:
+            raise ApiError(404, "receipt not found", code="receipt_not_found")
+        try:
+            body = path.read_bytes()
+        except OSError as exc:
+            raise ApiError(503, "receipts store read failed", code="receipts_unavailable") from exc
+        valid = bool(verify_receipt_file(path)["valid"])
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={
+                "ETag": f'"{sha256}"',
+                "Cache-Control": "public, immutable",
+                "X-Fx1-Receipt-Valid": "true" if valid else "false",
+            },
         )
 
 
@@ -1199,7 +1265,10 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     """Single post-processing tail for every response — security headers,
     request-id echo, and one structured access line."""
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Cache-Control"] = "no-store"
+    # no-store is the default posture; a route that deliberately declares a
+    # caching policy (immutable content-addressed bytes) wins over it.
+    if "cache-control" not in response.headers:
+        response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Request-ID"] = request_id
     response.headers["X-Fx1-Api-Version"] = API_VERSION
@@ -1306,6 +1375,70 @@ class _BackendBreaker:
                 else 0.0
             )
             return opened is not None and remaining > 0.0, remaining, self._fails.get(backend, 0)
+
+
+_SHA256_HEX = re.compile(r"[0-9a-f]{64}")
+
+
+class _ReceiptIndex:
+    """Lazy sha256 → file index over the receipts store.
+
+    Receipts are append-only immutable blobs, so ``(file count, max mtime)``
+    is a sufficient staleness key — the index rebuilds only when the store
+    changes, and a missing/removed store reports itself unavailable rather
+    than serving stale lookups.
+    """
+
+    def __init__(self, root: Path) -> None:
+        self._root = root
+        self._lock = threading.Lock()
+        self._key: tuple[int, float] | None = None
+        self._by_sha: dict[str, Path] = {}
+        self._available = False
+
+    def _scan(self) -> None:
+        if not self._root.is_dir():
+            self._available = False
+            self._by_sha = {}
+            self._key = None
+            return
+        try:
+            files = list(self._root.glob("*.json"))
+            key = (len(files), max((f.stat().st_mtime for f in files), default=0.0))
+        except OSError:
+            self._available = False
+            self._by_sha = {}
+            self._key = None
+            return
+        if key == self._key:
+            return
+        by_sha: dict[str, Path] = {}
+        for f in files:
+            try:
+                doc = json.loads(f.read_bytes())
+            except (OSError, ValueError):
+                continue
+            sha = doc.get("receipt_sha256") if isinstance(doc, dict) else None
+            if isinstance(sha, str) and _SHA256_HEX.fullmatch(sha):
+                by_sha[sha] = f
+        self._by_sha = by_sha
+        self._key = key
+        self._available = True
+
+    def available(self) -> bool:
+        with self._lock:
+            self._scan()
+            return self._available
+
+    def lookup(self, sha256: str) -> Path | None:
+        with self._lock:
+            self._scan()
+            return self._by_sha.get(sha256)
+
+    def items(self) -> list[tuple[str, Path]]:
+        with self._lock:
+            self._scan()
+            return sorted(self._by_sha.items(), key=lambda kv: kv[1].name)
 
 
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
@@ -1721,6 +1854,7 @@ def create_app(
     cors_origins: str | None = None,
     breaker_threshold: int | None = None,
     breaker_cooldown_s: float | None = None,
+    receipts_dir: str | os.PathLike[str] | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -1746,6 +1880,10 @@ def create_app(
     breaker = (
         _BackendBreaker(breaker_threshold, breaker_cooldown_s) if breaker_threshold > 0 else None
     )
+    receipts_root = Path(
+        receipts_dir if receipts_dir is not None else os.environ.get(_RECEIPTS_DIR_ENV, "receipts")
+    )
+    receipt_index = _ReceiptIndex(receipts_root)
     # Bounded in-flight work: the harness executes lab commands and model
     # calls on shared resources (a spawned local engine, GPU memory, the
     # box itself) — saturation must fail honestly as 503, never queue
@@ -1987,6 +2125,7 @@ def create_app(
                 "streaming": True,
                 "cors": bool(cors_list),
                 "breaker": breaker is not None,
+                "receipts_store": receipt_index.available(),
             },
             limits={
                 "max_inflight": float(metrics.max_inflight),
@@ -2149,7 +2288,7 @@ def create_app(
         breaker=breaker,
     )
 
-    _mount_receipt_routes(app)
+    _mount_receipt_routes(app, receipt_index)
 
     # Opt-in CORS for browser consumers: off by default (closed), explicit
     # origins only — the wildcard and credentials are refused. Registered
