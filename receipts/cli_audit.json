@@ -81,11 +81,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "adc9b1e24a2da13e50d7934b2ff91b40f3cd6fce",
+  "git_revision": "344ab82c03e8f710fe72b7d77b8d09600f511cc5",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON. Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "2b8d31890b2e256db477509c2603b9b8b18aee7d868b6d2eac05231ba763b6cc",
+  "receipt_sha256": "3b3f22f4670095f51d5661e6048c39678b365d223d32d93637cff40a3ac3218a",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

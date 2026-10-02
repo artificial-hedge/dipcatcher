@@ -56,7 +56,7 @@ from contextlib import (
     contextmanager,
 )
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.encoders import jsonable_encoder
@@ -499,14 +499,20 @@ class ReceiptVerifyBatchResponse(_Model):
 
 
 class BackendCompletionStats(_Model):
-    """Per-backend completion accounting: outcome counts + a cumulative
-    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``)."""
+    """Per-backend completion accounting: outcome counts, a cumulative
+    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
+    backend-reported token sums. ``usage_calls`` counts calls that carried
+    a usage dict — a silent provider shows zero tokens AND zero calls."""
 
     ok: int = 0
     error: int = 0
     latency_count: int = 0
     latency_sum_ms: float = 0.0
     latency_buckets: dict[str, int] = {}
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    usage_calls: int = 0
 
 
 class MetricsResponse(_Model):
@@ -615,14 +621,24 @@ class _Metrics:
         self._inflight = 0
         self._watermark = 0
         self._rate_limited_total = 0
-        # backend -> {"ok","error","count","sum","buckets" (cumulative)}
+        # backend -> {"ok","error","count","sum","buckets" (cumulative),
+        #              "*_tokens","usage_calls"}
         self._complete: dict[str, dict[str, Any]] = {}
         self.draining = threading.Event()
 
-    def record_complete(self, backend: str, ok: bool, latency_ms: float) -> None:
+    def record_complete(
+        self,
+        backend: str,
+        ok: bool,
+        latency_ms: float,
+        usage: dict[str, int] | None = None,
+    ) -> None:
         """One attempted model call: outcome + latency into the backend's
-        cumulative histogram. Called only when the backend was invoked —
-        breaker rejections and pre-call validation aren't model work."""
+        cumulative histogram, plus backend-reported token sums when the
+        endpoint supplies them. Called only when the backend was invoked —
+        breaker rejections and pre-call validation aren't model work.
+        ``usage_calls`` counts calls that reported usage at all, so a
+        silent provider is distinguishable from a zero bill."""
         with self._cond:
             st = self._complete.setdefault(
                 backend,
@@ -633,6 +649,10 @@ class _Metrics:
                     "sum": 0.0,
                     # one entry per edge + a final +Inf slot
                     "buckets": [0] * (len(_LAT_BUCKETS_MS) + 1),
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0,
+                    "usage_calls": 0,
                 },
             )
             st["ok" if ok else "error"] += 1
@@ -642,6 +662,12 @@ class _Metrics:
                 if latency_ms <= edge:
                     st["buckets"][i] += 1
             st["buckets"][-1] += 1
+            if usage:
+                st["usage_calls"] += 1
+                for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
+                    v = usage.get(k)
+                    if isinstance(v, int) and not isinstance(v, bool):
+                        st[k] += v
 
     def record_rate_limited(self) -> None:
         with self._cond:
@@ -697,6 +723,10 @@ class _Metrics:
                         latency_buckets={
                             **_lat_bucket_labels(st["buckets"]),
                         },
+                        prompt_tokens=st["prompt_tokens"],
+                        completion_tokens=st["completion_tokens"],
+                        total_tokens=st["total_tokens"],
+                        usage_calls=st["usage_calls"],
                     )
                     for b, st in sorted(self._complete.items())
                 },
@@ -1594,6 +1624,21 @@ def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str
             lines.append(f'fx1_complete_latency_ms_bucket{{backend="{lb}",le="{le}"}} {n}')
         lines.append(f'fx1_complete_latency_ms_sum{{backend="{lb}"}} {c.latency_sum_ms}')
         lines.append(f'fx1_complete_latency_ms_count{{backend="{lb}"}} {c.latency_count}')
+    lines += [
+        "# HELP fx1_complete_tokens_total Backend-reported token sums, per backend and kind.",
+        "# TYPE fx1_complete_tokens_total counter",
+        "# HELP fx1_complete_usage_calls_total Model calls that carried a usage report.",
+        "# TYPE fx1_complete_usage_calls_total counter",
+    ]
+    for b in sorted(snap.complete):
+        c = snap.complete[b]
+        lb = _label(b)
+        lines.append(f'fx1_complete_tokens_total{{backend="{lb}",kind="prompt"}} {c.prompt_tokens}')
+        lines.append(
+            f'fx1_complete_tokens_total{{backend="{lb}",kind="completion"}} {c.completion_tokens}'
+        )
+        lines.append(f'fx1_complete_tokens_total{{backend="{lb}",kind="total"}} {c.total_tokens}')
+        lines.append(f'fx1_complete_usage_calls_total{{backend="{lb}"}} {c.usage_calls}')
     return "\n".join(lines) + "\n"
 
 
@@ -1707,7 +1752,14 @@ def _mount_complete_routes(
             if breaker is not None:
                 breaker.report(_breaker_key(body), True)
         finally:
-            metrics.record_complete(body.backend, call_ok, (time.monotonic() - t0) * 1000.0)
+            metrics.record_complete(
+                body.backend,
+                call_ok,
+                (time.monotonic() - t0) * 1000.0,
+                usage=getattr(backend, "last_usage", None)
+                if isinstance(getattr(backend, "last_usage", None), dict)
+                else None,
+            )
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
         usage = getattr(backend, "last_usage", None)
@@ -1755,7 +1807,7 @@ def _mount_complete_routes(
         _check_citations(body.receipt_hashes)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
 
-        def _gather() -> tuple[list[str], str | None, float]:
+        def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None]:
             """Buffer + gate the backend stream; raises the mapped errors."""
             _breaker_admit(_breaker_key(body))
             try:
@@ -1797,7 +1849,14 @@ def _mount_complete_routes(
                 if breaker is not None:
                     breaker.report(_breaker_key(body), True)
             finally:
-                metrics.record_complete(body.backend, call_ok, (time.monotonic() - t0) * 1000.0)
+                metrics.record_complete(
+                    body.backend,
+                    call_ok,
+                    (time.monotonic() - t0) * 1000.0,
+                    usage=getattr(backend, "last_usage", None)
+                    if isinstance(getattr(backend, "last_usage", None), dict)
+                    else None,
+                )
                 _close_backend(backend)
             model_name = getattr(backend, "_model", None)
             if body.receipt_hashes:
@@ -1806,13 +1865,22 @@ def _mount_complete_routes(
                     + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
                     + " — verify with `dipcatcher verify-research`."
                 )
+            stream_usage = getattr(backend, "last_usage", None)
             return (
                 chunks,
                 model_name if isinstance(model_name, str) else None,
                 (time.monotonic() - t0) * 1000.0,
+                cast("dict[str, int]", dict(stream_usage))
+                if isinstance(stream_usage, dict)
+                else None,
             )
 
-        def _events(chunks: list[str], model_name: str | None, latency_ms: float) -> Iterator[str]:
+        def _events(
+            chunks: list[str],
+            model_name: str | None,
+            latency_ms: float,
+            usage: dict[str, int] | None = None,
+        ) -> Iterator[str]:
             for chunk in chunks:
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
             yield (
@@ -1823,6 +1891,7 @@ def _mount_complete_routes(
                         "model": model_name,
                         "receipt_hashes": body.receipt_hashes or [],
                         "latency_ms": latency_ms,
+                        "usage": usage,
                     }
                 )
                 + "\n\n"
@@ -1830,9 +1899,9 @@ def _mount_complete_routes(
             yield "data: [DONE]\n\n"
 
         if sse_keepalive_s <= 0:
-            chunks, model_name, latency_ms = _gather()
+            chunks, model_name, latency_ms, usage = _gather()
             return StreamingResponse(
-                _events(chunks, model_name, latency_ms), media_type="text/event-stream"
+                _events(chunks, model_name, latency_ms, usage), media_type="text/event-stream"
             )
 
         pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
@@ -1859,9 +1928,9 @@ def _mount_complete_routes(
             tag, payload = grace
             if tag == "error":
                 raise payload
-            chunks, model_name, latency_ms = payload
+            chunks, model_name, latency_ms, usage = payload
             return StreamingResponse(
-                _events(chunks, model_name, latency_ms), media_type="text/event-stream"
+                _events(chunks, model_name, latency_ms, usage), media_type="text/event-stream"
             )
 
         def _events_keepalived() -> Iterator[str]:
@@ -1886,8 +1955,8 @@ def _mount_complete_routes(
                     )
                     yield "data: [DONE]\n\n"
                     return
-                chunks, model_name, latency_ms = payload
-                yield from _events(chunks, model_name, latency_ms)
+                chunks, model_name, latency_ms, usage = payload
+                yield from _events(chunks, model_name, latency_ms, usage)
                 return
 
         return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
@@ -1977,7 +2046,12 @@ def _mount_complete_routes(
                         )
                     finally:
                         metrics.record_complete(
-                            body.backend, item_ok, (time.monotonic() - t0) * 1000.0
+                            body.backend,
+                            item_ok,
+                            (time.monotonic() - t0) * 1000.0,
+                            usage=getattr(backend, "last_usage", None)
+                            if isinstance(getattr(backend, "last_usage", None), dict)
+                            else None,
                         )
                     if breaker is not None:
                         breaker.report(_breaker_key(body), True)
@@ -2069,7 +2143,14 @@ def _mount_complete_routes(
         except (BackendNotConfiguredError, RuntimeError, ValueError) as exc:
             error, error_class = str(exc), type(exc).__name__
         finally:
-            metrics.record_complete(f"probe:{name}", ok, (time.monotonic() - t0) * 1000.0)
+            metrics.record_complete(
+                f"probe:{name}",
+                ok,
+                (time.monotonic() - t0) * 1000.0,
+                usage=getattr(backend, "last_usage", None)
+                if isinstance(getattr(backend, "last_usage", None), dict)
+                else None,
+            )
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
         return BackendProbeResponse(

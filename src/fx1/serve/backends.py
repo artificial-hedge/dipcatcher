@@ -159,6 +159,7 @@ def _openai_chat_stream(
     timeout_s: float,
     api_key: str | None,
     label: str,
+    usage_out: list[dict[str, int]] | None = None,
 ) -> Iterator[str]:
     """POST one streaming OpenAI-compatible chat completion.
 
@@ -167,6 +168,12 @@ def _openai_chat_stream(
     (role/handshake chunks) and ``data: [DONE]`` terminate the stream.
     Malformed frames fail closed as ``RuntimeError`` — a stream is never
     silently truncated.
+
+    ``usage_out`` is an out-box: when any chunk carries an OpenAI-style
+    ``usage`` dict (e.g. providers that attach per-chunk or final-frame
+    usage), the last one lands in ``usage_out``. Never requested via
+    ``stream_options`` — strict providers may reject unknown fields, so
+    capture stays opportunistic.
     """
     body = json.dumps(
         {"model": model, "messages": messages, "temperature": 0.0, "stream": True}
@@ -190,8 +197,14 @@ def _openai_chat_stream(
                     raise RuntimeError(
                         f"malformed {label} stream chunk: not JSON ({data[:48]!r})"
                     ) from exc
+                u = _extract_usage(chunk)
+                if u is not None and usage_out is not None:
+                    usage_out.clear()
+                    usage_out.append(u)
                 choices = chunk.get("choices") if isinstance(chunk, dict) else None
                 if choices is None:
+                    if u is not None:
+                        continue
                     raise RuntimeError(f"malformed {label} stream chunk: missing choices")
                 if not choices:
                     continue
@@ -277,14 +290,19 @@ class HostedK3Backend(_UsageTracker):
 
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
         """Stream token deltas; Moonshot's API is OpenAI-SSE-compatible."""
-        return _openai_chat_stream(
+        box: list[dict[str, int]] = []
+        for tok in _openai_chat_stream(  # noqa: UP028 — trailer needs the box after exhaustion
             self._api_url,
             model=self._model,
             messages=messages,
             timeout_s=self._timeout_s,
             api_key=self._api_key,
             label="hosted_k3",
-        )
+            usage_out=box,
+        ):
+            yield tok
+        if box:
+            self._record_usage(box[-1])
 
 
 class OpenAICompatBackend(_UsageTracker):
@@ -354,14 +372,19 @@ class OpenAICompatBackend(_UsageTracker):
 
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
         """Stream token deltas from the caller-declared endpoint."""
-        return _openai_chat_stream(
+        box: list[dict[str, int]] = []
+        for tok in _openai_chat_stream(  # noqa: UP028 — trailer needs the box after exhaustion
             self._url,
             model=self._model,
             messages=messages,
             timeout_s=self._timeout_s,
             api_key=self._api_key,
             label="BYOK",
-        )
+            usage_out=box,
+        ):
+            yield tok
+        if box:
+            self._record_usage(box[-1])
 
 
 class LocalFx1Backend(_UsageTracker):
@@ -517,14 +540,19 @@ class LocalFx1Backend(_UsageTracker):
     def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
         """Stream token deltas; the engine is ensured before subscribing."""
         self._ensure_engine()
-        return _openai_chat_stream(
+        box: list[dict[str, int]] = []
+        for tok in _openai_chat_stream(  # noqa: UP028 — trailer needs the box after exhaustion
             self._url,
             model=self._model,
             messages=messages,
             timeout_s=self._timeout_s,
             api_key=self._api_key or None,
             label="local_fx1",
-        )
+            usage_out=box,
+        ):
+            yield tok
+        if box:
+            self._record_usage(box[-1])
 
     def close(self) -> None:
         """Terminate a spawned engine; a no-op when only attaching."""

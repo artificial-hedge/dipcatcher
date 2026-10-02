@@ -2418,6 +2418,8 @@ def api_audit() -> dict[str, Any]:
 def _probe_backend_probes(
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
+    import json as _json  # noqa: PLC0415
+
     from fastapi.testclient import TestClient as _TC2  # noqa: PLC0415
 
     # Deep health through the real resolver: a live call, not config flags.
@@ -2470,6 +2472,102 @@ def _probe_backend_probes(
     out["gate_check_oversize_422"] = (
         client.post("/harness/gate/check", json={"text": "x" * 262145}).status_code == 422
     )
+
+    # usage ledger: backend-reported tokens accumulate per series; the
+    # usage_calls counter separates "silent provider" from "zero bill".
+    m2 = uapp.get("/metrics").json()["complete"]
+    out["usage_metrics_tokens"] = (
+        m2["byok"]["total_tokens"] >= 24
+        and m2["byok"]["usage_calls"] >= 3
+        and m2["byok"]["prompt_tokens"] >= 9
+        and m2["probe:byok"]["total_tokens"] >= 8
+        and m2["probe:byok"]["usage_calls"] == 1
+    )
+    prom = uapp.get("/metrics", params={"format": "prom"}).text
+    out["usage_prom_lines"] = (
+        'fx1_complete_tokens_total{backend="byok",kind="total"}' in prom
+        and 'fx1_complete_usage_calls_total{backend="byok"}' in prom
+    )
+
+    # streaming usage: a backend that reports usage at stream end lands it
+    # on the final SSE frame AND the metrics ledger.
+    class _StreamUsage:
+        def __init__(self) -> None:
+            self.last_usage: dict[str, int] | None = None
+            self._model = "stream-usage-0"
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            return "hello"
+
+        def stream(self, messages: list[dict[str, str]]) -> Any:
+            yield "he"
+            yield "llo"
+            self.last_usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
+
+    sapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _StreamUsage()))
+    s_ok = sapp.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    frames = [
+        _json.loads(ln[len("data: ") :])
+        for ln in s_ok.text.splitlines()
+        if ln.startswith("data: ") and ln[len("data: ") :] != "[DONE]"
+    ]
+    s_final = next(f for f in frames if f.get("type") == "final")
+    s_m = sapp.get("/metrics").json()["complete"]["byok"]
+    out["stream_usage_final_frame"] = s_final.get("usage") == {
+        "prompt_tokens": 3,
+        "completion_tokens": 5,
+        "total_tokens": 8,
+    }
+    out["stream_usage_metrics"] = s_m["total_tokens"] == 8 and s_m["usage_calls"] == 1
+
+    # wire parser: a provider chunk carrying ``usage`` (incl. one with no
+    # ``choices`` at all) lands in the out-box; malformed stays fatal.
+    class _FakeResp:
+        def __init__(self, lines: list[bytes]) -> None:
+            self._lines = lines
+
+        def __enter__(self) -> Any:
+            return self
+
+        def __exit__(self, *a: Any) -> None:
+            return None
+
+        def __iter__(self) -> Any:
+            return iter(self._lines)
+
+    import fx1.serve.backends as _be_mod  # noqa: PLC0415
+
+    wire_frames = [
+        b'data: {"choices":[{"delta":{"content":"he"}}]}\n',
+        b'data: {"usage":{"prompt_tokens":7,"completion_tokens":1,"total_tokens":8}}\n',
+        b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9}}\n',
+        b"data: [DONE]\n",
+    ]
+    import urllib.request as _urlreq  # noqa: PLC0415
+
+    orig_urlopen = _urlreq.urlopen
+    _urlreq.urlopen = lambda req, timeout=None: _FakeResp(wire_frames)  # type: ignore[assignment]
+    try:
+        box: list[dict[str, int]] = []
+        toks = list(
+            _be_mod._openai_chat_stream(
+                "http://wire.test",
+                model="m",
+                messages=[],
+                timeout_s=1.0,
+                api_key=None,
+                label="t",
+                usage_out=box,
+            )
+        )
+    finally:
+        _urlreq.urlopen = orig_urlopen
+    out["stream_usage_parser"] = toks == ["he"] and box == [
+        {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
+    ]
 
 
 def api_audit_bench() -> dict[str, Any]:

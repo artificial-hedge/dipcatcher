@@ -72,16 +72,24 @@ OpenAI-compatible endpoints), `POST /harness/complete` returns it as
 `usage_total`. Counts are never synthesized: an endpoint that stays
 silent yields `usage: null`, and because one backend instance serves a
 whole batch under worker threads, the batch level is a before/after
-delta — per-item attribution would be a lie. Streaming leaves `usage`
-null (chunk deltas carry no reliable counts). The same values land on
+delta — per-item attribution would be a lie. On streaming, a provider
+that emits a `usage` chunk (the OpenAI `stream_options` convention —
+BYOK only ever captures it opportunistically; the request never asks
+for it, so strict providers that would 400 on unknown fields stay
+compatible) lands it on the SSE `final` frame's `usage` field — null
+when the provider stays silent. The same values land on
 `CompletionResult.usage` in the SDK and `HarnessClient`.
 
 **Completion observability:** `GET /metrics` carries per-backend outcome
-counters (`fx1_complete_total{backend,outcome}`) and a cumulative
+counters (`fx1_complete_total{backend,outcome}`), a cumulative
 latency histogram (`fx1_complete_latency_ms_bucket{le=…}`, `_sum`,
-`_count`) over attempted model calls — breaker rejections and pre-call
-validation never land in it. The JSON view exposes the same data under
-`complete.<backend>`.
+`_count`), and a usage ledger
+(`fx1_complete_tokens_total{backend,kind="prompt|completion|total"}`
++ `fx1_complete_usage_calls_total{backend}`) over attempted model
+calls — breaker rejections and pre-call validation never land in it.
+`usage_calls` counts calls that reported usage at all, so a silent
+provider reads as 0 tokens and 0 calls, distinct from a zero bill.
+The JSON view exposes the same data under `complete.<backend>`.
 
 ## Routes
 
@@ -99,7 +107,7 @@ validation never land in it. The JSON view exposes the same data under
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) — response carries `latency_ms` (per-call wall clock; replays report the original) |
 | `POST /harness/complete/batch` | up to 64 conversations over one shared backend; per-item `latency_ms` |
-| `POST /harness/complete/stream` | SSE `token` frames + `final` (with `latency_ms`) + `[DONE]` — the gate runs before any frame leaves |
+| `POST /harness/complete/stream` | SSE `token` frames + `final` (with `latency_ms` and `usage` when the provider reports it) + `[DONE]` — the gate runs before any frame leaves |
 | `POST /harness/jobs` | async run → `202 {job_id}` |
 | `POST /harness/jobs/batch` | up to 64 submissions, per-item `{error, code}` outcomes |
 | `GET /harness/jobs` | list/filter (`?status=`, `?limit=`, `?offset=`) |
