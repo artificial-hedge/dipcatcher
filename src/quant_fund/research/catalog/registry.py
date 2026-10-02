@@ -2332,6 +2332,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kinetic_langevin",
         "elliptical_slice",
         "riemannian_mala",
+        # Wave-181 LM-arch-2 canon:
+        # Mamba-2 SSD, xLSTM mLSTM, RWKV-7,
+        # Titans memory, Gated DeltaNet, Longhorn.
+        "mamba2_ssd",
+        "xlstm_mlstm",
+        "rwkv7",
+        "titans_memory",
+        "gated_deltanet",
+        "longhorn_ssm",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
