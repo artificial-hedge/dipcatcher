@@ -18,9 +18,12 @@ _DOC_PATHS = sorted(
     [_REPO_ROOT / "README.md", *_REPO_ROOT.glob("docs/FX1*.md")],
 )
 
-# `fx1 ...` / `make ...` inside inline code or fenced blocks.
+# `fx1 ...` / `make ...` inside inline code or fenced blocks. Fences tagged
+# with a non-shell language (mermaid diagrams etc.) carry diagram/prose
+# labels, not runnable commands — only shell/plain fences are checked.
 _INLINE = re.compile(r"`([^`\n]+)`")
-_FENCE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
+_FENCE = re.compile(r"```([a-zA-Z]*)[^\n]*\n(.*?)```", re.DOTALL)
+_NON_SHELL_FENCES = {"mermaid"}
 _FX1_CMD = re.compile(r"(?<![/\w])fx1 ([a-z][a-z0-9-]*)(?: ([a-z][a-z0-9-]*))?\b")
 _MAKE_TARGET = re.compile(r"\bmake ([a-z0-9][a-z0-9_-]*)")
 _IMPORT_FROM = re.compile(r"from (fx1(?:\.[a-z_]+)+) import ([a-z_][a-zA-Z0-9_]*)")
@@ -29,8 +32,9 @@ _MODULE_REF = re.compile(r"`(fx1(?:\.[a-z_]+)+)`")
 
 def _code_spans(text: str) -> list[str]:
     spans = _INLINE.findall(text)
-    for block in _FENCE.findall(text):
-        spans.extend(block.splitlines())
+    for lang, block in _FENCE.findall(text):
+        if lang.lower() not in _NON_SHELL_FENCES:
+            spans.extend(block.splitlines())
     return spans
 
 

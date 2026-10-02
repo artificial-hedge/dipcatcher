@@ -43,6 +43,14 @@ def generate_sbom(lockfile: str | Path = "uv.lock") -> SBOM:
         if not name_m and not ver_m:
             continue
         if not name_m or not ver_m:
+            # Workspace members with `dynamic = ["version"]` (this repo's
+            # root) or editable/virtual/directory sources carry no locked
+            # version — they are the project itself, not a dependency.
+            # Registry-sourced blocks without a version stay malformed.
+            if name_m and re.search(
+                r"^source = \{ (editable|virtual|directory) = ", block, re.MULTILINE
+            ):
+                continue
             raise ValueError(
                 "malformed [[package]] block in lockfile: name without version "
                 "or vice versa — refusing to emit an incomplete SBOM"

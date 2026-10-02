@@ -138,11 +138,22 @@ _CONNECTOR = (
     r"(?:of|=|:|is|was|were|at|to|reads?|hits?|reached?|posts?|posted|"
     r"lands?|landed|clocks?|clocked|prints?|printed|records?|recorded|"
     r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+(?:in|out)\s+at|"
+    r"the|a|an|this|that|its|our|your|their|my|about|roughly|approximately|"
+    r"around|over|under|above|below|current(?:ly)?|latest|reported|expected|"
+    r"projected|implied|delivered|generated|produced|whole|all|entire|same|"
+    r"given|first|last|single|rolling|trailing|net|gross|calendar|fiscal|"
+    r"respective|corresponding|for|per|rose|fell|grew|"
     r"[\"'«»“”‘’]|[^\w\s]+)"
 )
 
-# Words that may sit between the token and the connector ("Sharpe ratio of").
-_BRIDGE = r"(?:ratio|score|value|reading|measure|number)\b"
+# Words that may sit between the token and the connector ("Sharpe ratio of",
+# "pnl for the quarter", "the strategy's sharpe stood at").
+_BRIDGE = (
+    r"(?:ratio|score|value|reading|level|figure|number|metric|multiple|"
+    r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
+    r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
+    r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
+)
 
 
 class Fx1HonestyError(ValueError):
@@ -158,25 +169,10 @@ def _contains_forbidden_headline(text: str) -> str | None:
     "p&l: $4,200"). Bare discussion of why these metrics are forbidden is
     allowed. Callers pass normalized text.
     """
-    bridge = (
-        r"(?:ratio|score|value|reading|level|figure|number|metric|multiple|"
-        r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
-        r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
-        r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
-    )
-    connector = (
-        r"(?:of|=|:|is|was|were|are|at|to|for|per|the|a|an|this|that|its|our|"
-        r"your|their|my|about|roughly|approximately|around|over|under|above|"
-        r"below|current(?:ly)?|latest|reported|expected|projected|stood|stands|"
-        r"sits|sat|hits?|reached|reaches|posted|came|rose|fell|grew|implied|"
-        r"delivered|generated|produced|whole|all|entire|same|given|first|last|"
-        r"single|rolling|trailing|net|gross|calendar|fiscal|respective|"
-        r"corresponding|reads?|[\"']|[^\w\s]+)"
-    )
     for token in FORBIDDEN_HEADLINE_TOKENS:
         spelling = _TOKEN_SPELLINGS.get(token, re.escape(token))
         pattern = re.compile(
-            rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{bridge}|{connector})\s*){{0,6}}"
+            rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{_BRIDGE}|{_CONNECTOR})\s*){{0,6}}"
             rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )

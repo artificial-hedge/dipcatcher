@@ -1,44 +1,44 @@
 {
- "claim": {
-  "ok": true,
-  "results": {
-   "allowed_accept": true,
-   "decided_admissible": true,
-   "evasion_rejected": "raise:ValueError",
-   "forbidden_cases": [
-    {
-     "name": "sharpe",
-     "outcome": "raise:ValueError"
+  "kind": "hypotheses_audit",
+  "schema": "hypotheses_audit.v1",
+  "git_revision": "72e7fa9ff6fe1efce2c972bda3648d99dc19c3b0",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "results": {
+      "forbidden_cases": [
+        {
+          "name": "sharpe",
+          "outcome": "raise:ValueError"
+        },
+        {
+          "name": "sortino",
+          "outcome": "raise:ValueError"
+        },
+        {
+          "name": "unrealized_pnl",
+          "outcome": "raise:ValueError"
+        },
+        {
+          "name": "nav_curve",
+          "outcome": "raise:ValueError"
+        }
+      ],
+      "evasion_rejected": "raise:ValueError",
+      "unknown_rejected": "raise:ValueError",
+      "allowed_accept": true,
+      "nonfinite_rejected": "raise:ValueError/raise:ValueError",
+      "pending_inadmissible": true,
+      "decided_admissible": true,
+      "verdict_changes_id": true,
+      "sft_shape": true,
+      "sft_has_verdict": true,
+      "sft_receipt_bound": true,
+      "pending_renders_pending": true
     },
-    {
-     "name": "sortino",
-     "outcome": "raise:ValueError"
-    },
-    {
-     "name": "unrealized_pnl",
-     "outcome": "raise:ValueError"
-    },
-    {
-     "name": "nav_curve",
-     "outcome": "raise:ValueError"
-    }
-   ],
-   "nonfinite_rejected": "raise:ValueError/raise:ValueError",
-   "pending_inadmissible": true,
-   "pending_renders_pending": true,
-   "sft_has_verdict": true,
-   "sft_receipt_bound": true,
-   "sft_shape": true,
-   "unknown_rejected": "raise:ValueError",
-   "verdict_changes_id": true
-  }
- },
- "data_label": "SYNTHETIC",
- "git_revision": "233a42e7d8ac451203223c731e895dc645c65b7e",
- "interpretation": "Trace contract holds: allowlist-only scores, forbidden and unrecognized keys fail closed, non-finite values rejected, admissibility requires a verdict, SFT render binds the receipt.",
- "kind": "hypotheses_audit",
- "live_pnl_claim": false,
- "receipt_sha256": "9f76ca378bce6bcaffa5ded376d0fdd08add5cd0ba475e5d7e584dab0b3f4b76",
- "research_only": true,
- "schema": "hypotheses_audit.v1"
+    "ok": true
+  },
+  "interpretation": "Trace contract holds: allowlist-only scores, forbidden and unrecognized keys fail closed, non-finite values rejected, admissibility requires a verdict, SFT render binds the receipt.",
+  "receipt_sha256": "1ad94aac30e1226fe24d415af96ad8be241a0b08893787df77c82e330569c587"
 }
