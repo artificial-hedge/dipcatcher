@@ -1924,6 +1924,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "graph_unet",
         "apnp_prop",
         "jk_net",
+        # Wave-136 attention canon:
+        # Linformer, Performer,
+        # linear, sliding, Sinkhorn,
+        # Nyström.
+        "linformer_attn",
+        "performer_attn",
+        "linear_attn",
+        "sliding_attn",
+        "sinkhorn_attn",
+        "nystrom_attn",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

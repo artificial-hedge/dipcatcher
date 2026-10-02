@@ -1077,6 +1077,14 @@ from quant_fund.research.benches_w135 import (
     bench_graphsage_family,
     bench_jk_net_family,
 )
+from quant_fund.research.benches_w136 import (
+    bench_linear_attn_family,
+    bench_linformer_attn_family,
+    bench_nystrom_attn_family,
+    bench_performer_attn_family,
+    bench_sinkhorn_attn_family,
+    bench_sliding_attn_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3438,6 +3446,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "graph_unet": bench_graph_unet_family(),
         "apnp_prop": bench_apnp_prop_family(),
         "jk_net": bench_jk_net_family(),
+        "linformer_attn": bench_linformer_attn_family(),
+        "performer_attn": bench_performer_attn_family(),
+        "linear_attn": bench_linear_attn_family(),
+        "sliding_attn": bench_sliding_attn_family(),
+        "sinkhorn_attn": bench_sinkhorn_attn_family(),
+        "nystrom_attn": bench_nystrom_attn_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
