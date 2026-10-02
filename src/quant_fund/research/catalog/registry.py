@@ -2787,6 +2787,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quaternion_slerp",
         "bsp_tree",
         "mvp_transform",
+        # Wave-237 parser canon.
+        "recursive_descent",
+        "pratt_parser",
+        "earley_parser",
+        "slr_parser",
+        "peg_packrat",
+        "ll1_table",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
