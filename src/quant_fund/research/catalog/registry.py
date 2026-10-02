@@ -1593,6 +1593,19 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "adversarial_bandits",
         "best_arm",
         "nonstationary_bandits",
+        # Wave-103 canon: Krylov +
+        # randomized NLA — Lanczos,
+        # Arnoldi/GMRES, HMT rSVD,
+        # Nystrom, CUR leverage,
+        # interpolative decomp.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lanczos",
+        "arnoldi_gmres",
+        "randomized_svd",
+        "nystrom",
+        "cur_decomp",
+        "interpolative_decomp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

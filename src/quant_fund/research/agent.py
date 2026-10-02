@@ -813,6 +813,14 @@ from quant_fund.research.benches_w102 import (
     bench_nonstationary_bandits_family,
     bench_stochastic_bandits_family,
 )
+from quant_fund.research.benches_w103 import (
+    bench_arnoldi_gmres_family,
+    bench_cur_decomp_family,
+    bench_interpolative_decomp_family,
+    bench_lanczos_family,
+    bench_nystrom_family,
+    bench_randomized_svd_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2976,6 +2984,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "adversarial_bandits": bench_adversarial_bandits_family(),
         "best_arm": bench_best_arm_family(),
         "nonstationary_bandits": bench_nonstationary_bandits_family(),
+        "lanczos": bench_lanczos_family(),
+        "arnoldi_gmres": bench_arnoldi_gmres_family(),
+        "randomized_svd": bench_randomized_svd_family(),
+        "nystrom": bench_nystrom_family(),
+        "cur_decomp": bench_cur_decomp_family(),
+        "interpolative_decomp": bench_interpolative_decomp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
