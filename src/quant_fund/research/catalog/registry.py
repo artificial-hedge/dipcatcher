@@ -1564,6 +1564,21 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "iterative_ls",
         "qmc_sequences",
         "symplectic_ode",
+        # Wave-101 canon: graph
+        # traversal/topo/bipartite,
+        # shortest paths, Dinic
+        # max-flow + min-cut,
+        # Hungarian + Hopcroft-Karp,
+        # Tarjan SCC + bridges/
+        # articulation, Algorithm X.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "graph_traversal",
+        "shortest_paths",
+        "network_flow",
+        "assignment",
+        "graph_components",
+        "exact_cover",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -797,6 +797,14 @@ from quant_fund.research.benches_w100 import (
     bench_sequence_accel_family,
     bench_symplectic_ode_family,
 )
+from quant_fund.research.benches_w101 import (
+    bench_assignment_family,
+    bench_exact_cover_family,
+    bench_graph_components_family,
+    bench_graph_traversal_family,
+    bench_network_flow_family,
+    bench_shortest_paths_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2948,6 +2956,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "iterative_ls": bench_iterative_ls_family(),
         "qmc_sequences": bench_qmc_sequences_family(),
         "symplectic_ode": bench_symplectic_ode_family(),
+        "graph_traversal": bench_graph_traversal_family(),
+        "shortest_paths": bench_shortest_paths_family(),
+        "network_flow": bench_network_flow_family(),
+        "assignment": bench_assignment_family(),
+        "graph_components": bench_graph_components_family(),
+        "exact_cover": bench_exact_cover_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
