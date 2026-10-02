@@ -2546,3 +2546,15 @@ wave 145 (2026-10-02): retrieval canon — bm25_retriever, dpr_retriever, colber
 wave 146 (2026-10-02): test-time-compute + multi-agent canon — consistency_vote, verifier_prm, mcts_reason, debate_multiagent, unlearn_ga, knowledge_graph_embed; 848→854 families.
 wave 147 (2026-10-02): alignment canon — reward_model, dpo_train, ipo_train, kto_train, grpo_train, rlhf_ppo; 854→860 families.
 wave 148 (2026-10-02): interpretability canon — sae_feature, activation_steering, probe_linear, logit_lens, patch_activation, circuit_ablation; 860→866 families.
+wave 149 (2026-10-02): data-dynamics canon — dataset_distillation, coreset_herding, curriculum_magnitude, label_smoothing, mixup_cutmix, sharpness_sam; 866→872 families.
+wave 150 (2026-10-02): compression canon — magnitude_pruning, lottery_ticket, quant_int8, kd_distill, lowrank_factor, fisher_prune; 872→878 families.
+wave 151 (2026-10-02): agentic canon — react_loop, toolformer_call, plan_search, reflexion_retry, multi_agent_pipeline, judge_pairwise; 878→884 families.
+wave 152 (2026-10-02): privacy canon — dp_sgd, secure_agg, fedavg_hetero, pate_teacher, gradient_leakage, canary_exposure; 884→890 families.
+wave 153 (2026-10-02): NAS canon — random_search_nas, evolution_nas, darts_nas, enas_controller, one_shot_nas, arch_predictor; 890→896 families.
+wave 154 (2026-10-02): vision canon — convnet_baseline, vit_classifier, clip_align, simclr_views, diffusion_ddim, attention_rollout; 896→902 families.
+wave 155 (2026-10-02): causal-DL canon — tarnet_ite, dragonnet_dr, deep_iv, cevae_latent, causal_rep, policy_value; 902→908 families.
+wave 156 (2026-10-02): tabular-DL canon — tokenizer_bpe, tabular_resnet, node_net, grownet_boost, soft_tree, tabm_mini; 908→914 families.
+wave 157 (2026-10-02): anomaly-detection canon — deep_svdd, dagmm, usad, anom_transformer, rrcf, tranad; 914→920 families.
+wave 158 (2026-10-02): LTR canon — ranknet_ltr, listnet_ltr, listmle_ltr, lambdarank_ltr, approx_ndcg_ltr, neural_sort_ltr; 920→926 families.
+wave 159 (2026-10-02): optimizer canon — muon_opt, lion_opt, sophia_opt, lookahead_opt, lamb_opt, adafactor_opt; 926→932 families.
+wave 160 (2026-10-02): FL canon — scaffold_fl, fednova_fl, ditto_fl, moon_fl, fedopt_adam, mime_lite; 932→938 families.

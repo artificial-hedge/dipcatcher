@@ -2042,6 +2042,114 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "logit_lens",
         "patch_activation",
         "circuit_ablation",
+        # Wave-149 data-dynamics canon:
+        # distill, herding, curriculum,
+        # smoothing, mixup, SAM.
+        "dataset_distillation",
+        "coreset_herding",
+        "curriculum_magnitude",
+        "label_smoothing",
+        "mixup_cutmix",
+        "sharpness_sam",
+        # Wave-150 compression canon:
+        # mag-prune, LTH, int8,
+        # KD, low-rank, Fisher.
+        "magnitude_pruning",
+        "lottery_ticket",
+        "quant_int8",
+        "kd_distill",
+        "lowrank_factor",
+        "fisher_prune",
+        # Wave-151 agentic canon:
+        # ReAct, Toolformer, ToT,
+        # Reflexion, multi-agent, judge.
+        "react_loop",
+        "toolformer_call",
+        "plan_search",
+        "reflexion_retry",
+        "multi_agent_pipeline",
+        "judge_pairwise",
+        # Wave-152 privacy canon:
+        # DP-SGD, sec-agg, FedAvg,
+        # PATE, DLG, canary.
+        "dp_sgd",
+        "secure_agg",
+        "fedavg_hetero",
+        "pate_teacher",
+        "gradient_leakage",
+        "canary_exposure",
+        # Wave-153 NAS canon:
+        # random, evolution, DARTS,
+        # ENAS-RL, one-shot, surrogate.
+        "random_search_nas",
+        "evolution_nas",
+        "darts_nas",
+        "enas_controller",
+        "one_shot_nas",
+        "arch_predictor",
+        # Wave-154 vision canon:
+        # CNN, ViT, CLIP, SimCLR,
+        # DDIM, rollout.
+        "convnet_baseline",
+        "vit_classifier",
+        "clip_align",
+        "simclr_views",
+        "diffusion_ddim",
+        "attention_rollout",
+        # Wave-155 causal-DL canon:
+        # TARNet, Dragonnet, DeepIV,
+        # CEVAE, CFRNet, DR-value.
+        "tarnet_ite",
+        "dragonnet_dr",
+        "deep_iv",
+        "cevae_latent",
+        "causal_rep",
+        "policy_value",
+        # Wave-156 tabular canon:
+        # BPE, tab-ResNet, NODE,
+        # GrowNet, soft tree, TabM.
+        "tokenizer_bpe",
+        "tabular_resnet",
+        "node_net",
+        "grownet_boost",
+        "soft_tree",
+        "tabm_mini",
+        # Wave-157 anomaly canon:
+        # SVDD, DAGMM, USAD,
+        # anom-Transformer, RRCF, TranAD.
+        "deep_svdd",
+        "dagmm",
+        "usad",
+        "anom_transformer",
+        "rrcf",
+        "tranad",
+        # Wave-158 LTR canon:
+        # RankNet, ListNet, ListMLE,
+        # LambdaRank, ApproxNDCG, NeuralSort.
+        "ranknet_ltr",
+        "listnet_ltr",
+        "listmle_ltr",
+        "lambdarank_ltr",
+        "approx_ndcg_ltr",
+        "neural_sort_ltr",
+        # Wave-159 optimizer canon:
+        # Muon, Lion, Sophia,
+        # Lookahead, LAMB, Adafactor.
+        "muon_opt",
+        "lion_opt",
+        "sophia_opt",
+        "lookahead_opt",
+        "lamb_opt",
+        "adafactor_opt",
+        # Wave-160 FL canon:
+        # SCAFFOLD, FedNova, Ditto,
+        # MOON, FedOpt-Adam, MimeLite.
+        "scaffold_fl",
+        "fednova_fl",
+        "ditto_fl",
+        "moon_fl",
+        "fedopt_adam",
+        "mime_lite",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
