@@ -2549,3 +2549,4 @@ wave 148 (2026-10-02): interpretability canon — sae_feature, activation_steeri
 wave 149 (2026-10-02): data-dynamics canon — dataset_distillation, coreset_herding, curriculum_magnitude, label_smoothing, mixup_cutmix, sharpness_sam; 866→872 families.
 wave 150 (2026-10-02): compression canon — magnitude_pruning, lottery_ticket, quant_int8, kd_distill, lowrank_factor, fisher_prune; 872→878 families.
 wave 151 (2026-10-02): agentic canon — react_loop, toolformer_call, plan_search, reflexion_retry, multi_agent_pipeline, judge_pairwise; 878→884 families.
+wave 152 (2026-10-02): privacy canon — dp_sgd, secure_agg, fedavg_hetero, pate_teacher, gradient_leakage, canary_exposure; 884→890 families.
