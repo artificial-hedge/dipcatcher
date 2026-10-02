@@ -1155,6 +1155,7 @@ class Fx1Harness:
         request: OpenAIChatRequest | dict[str, Any],
         *,
         headers: Mapping[str, str] | None = None,
+        last_event_id: int | None = None,
     ) -> tuple[list[dict[str, Any]], str | None]:
         """The ``stream: true`` surface in-process — chunk payloads.
 
@@ -1166,9 +1167,17 @@ class Fx1Harness:
         ``choices: []``+``usage`` when ``stream_options.include_usage``),
         minus the ``data:``/``[DONE]`` framing.
 
+        ``last_event_id`` applies the same sequence filter the wire's
+        ``Last-Event-ID`` resume uses — only chunks above that index are
+        returned (the wire adds SSE ``id:`` fields equal to the chunk
+        index; in-process there is no transport to resume, this is the
+        replay/filter parity surface).
+
         Returns ``(chunks, completion_id)`` — the id links to the
         completion log and its sealed receipt.
         """
+        if last_event_id is not None and last_event_id < 0:
+            raise ValueError(f"last_event_id must be >= 0, got {last_event_id}")
         body = (
             request
             if isinstance(request, OpenAIChatRequest)
@@ -1188,6 +1197,8 @@ class Fx1Harness:
                 usage=result.usage,
             )
         )
+        if last_event_id is not None:
+            chunks = chunks[last_event_id + 1 :]
         return chunks, result.completion_id
 
     def _resolve_chain(

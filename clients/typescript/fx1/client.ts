@@ -184,10 +184,13 @@ export interface CompatReport {
   serverFx1Version: string | null;
 }
 
-/** One parsed SSE frame. */
+/** One parsed SSE frame. `id` is the frame's `id:` field — the
+ * completion stream numbers frames by chunk index, so a dropped keyed
+ * stream resumes via `chatCompletionStream`'s `lastEventId`. */
 export interface SseEvent {
   event: string;
   data: string;
+  id?: string;
 }
 
 const DEFAULT_API_VERSION = "1";
@@ -620,12 +623,20 @@ export class HarnessApiClient {
    * `chat.completion.chunk` frames. `onChunk` receives each parsed chunk
    * (an `include_usage` terminal chunk carries `choices: []` + `usage`);
    * the promise resolves with the `X-Fx1-Completion-Id` handle.
+   *
+   * Frames carry SSE `id:` equal to the chunk index — `lastEventId`
+   * resumes a dropped keyed stream: resend the same request with the
+   * same `idempotencyKey` and the last received index; the pinned
+   * response regenerates byte-identically and already-delivered frames
+   * are dropped. Resume without the key fails closed (400); a key with
+   * no pinned stream gets 409.
    */
   async chatCompletionStream(
     request: OpenAIChatRequest,
     onChunk: (chunk: Record<string, unknown>) => void,
     headers?: Record<string, string>,
     idempotencyKey?: string,
+    lastEventId?: number,
   ): Promise<string | null> {
     const res = await this.send({
       method: "POST",
@@ -639,6 +650,9 @@ export class HarnessApiClient {
         ...headers,
         ...(idempotencyKey !== undefined
           ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+        ...(lastEventId !== undefined
+          ? { "Last-Event-ID": String(lastEventId) }
           : {}),
       },
     });
@@ -980,14 +994,18 @@ async function* readSse(res: Response): AsyncGenerator<SseEvent> {
   const decoder = new TextDecoder();
   let buf = "";
   let event = "message";
+  let id: string | undefined;
   let dataLines: string[] = [];
   const flush = (): SseEvent | null => {
     if (dataLines.length === 0) {
       event = "message";
+      id = undefined;
       return null;
     }
     const out: SseEvent = { event, data: dataLines.join("\n") };
+    if (id !== undefined) out.id = id;
     event = "message";
+    id = undefined;
     dataLines = [];
     return out;
   };
@@ -1008,6 +1026,8 @@ async function* readSse(res: Response): AsyncGenerator<SseEvent> {
           continue; // keepalive comment
         } else if (line.startsWith("event:")) {
           event = line.slice(6).trim();
+        } else if (line.startsWith("id:")) {
+          id = line.slice(3).trim();
         } else if (line.startsWith("data:")) {
           dataLines.push(line.slice(5).replace(/^ /, ""));
         }

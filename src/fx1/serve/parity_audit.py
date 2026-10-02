@@ -490,6 +490,43 @@ def parity_audit() -> dict[str, bool]:
         out["openai_format_violation_stream_parity"] = (
             bsw.status_code == 502 and bst_err == "OpenAICompatError"
         )
+        # Last-Event-ID resume parity: the wire drops frames <= the given
+        # index when replaying a keyed stream; the SDK's last_event_id
+        # filter returns the identical chunk suffix.
+        _rs_body = {**_req, "stream": True}
+        rs1 = j_wire.post(
+            "/v1/chat/completions",
+            json=_rs_body,
+            headers={"Idempotency-Key": "pa-rs1"},
+        )
+        rs2 = j_wire.post(
+            "/v1/chat/completions",
+            json=_rs_body,
+            headers={"Idempotency-Key": "pa-rs1", "Last-Event-ID": "1"},
+        )
+        wire_resume = [
+            json.loads(ln[len("data: ") :])
+            for ln in rs2.text.splitlines()
+            if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+        ]
+        sdk_resume, _ = j_sdk.openai_chat_stream(_req, last_event_id=1)
+        out["openai_resume_parity"] = (
+            rs1.status_code == 200
+            and [_strip_meta(f) for f in wire_resume] == [_strip_meta(f) for f in sdk_resume]
+            and rs2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+            and "id: 0" not in rs2.text
+        )
+        # a bad resume cursor fails closed on both surfaces — 400 on the
+        # wire, ValueError in-process
+        rs_wire_bad = j_wire.post(
+            "/v1/chat/completions",
+            json=_rs_body,
+            headers={"Idempotency-Key": "pa-rs1", "Last-Event-ID": "-1"},
+        )
+        rs_sdk_bad = _raises(lambda: j_sdk.openai_chat_stream(_req, last_event_id=-1))[0]
+        out["openai_resume_bad_id_parity"] = (
+            rs_wire_bad.status_code == 400 and rs_sdk_bad == "ValueError"
+        )
         # rejection parity: same verdict, each surface's own exception class
         oai_bad_n = {**oai_body, "n": 2}
         wire_n_err = client.post("/v1/chat/completions", json=oai_bad_n)

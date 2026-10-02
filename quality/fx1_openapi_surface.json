@@ -488,6 +488,11 @@
             "name": "Idempotency-Key",
             "in": "header",
             "required": false
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false
           }
         ],
         "request_body_required": true,
@@ -523,5 +528,5 @@
       }
     }
   },
-  "schema_sha256": "aee6360cac38a937c2edebe299dd5007ab7343ad57a0f8ebe70c105aa041321e"
+  "schema_sha256": "454eef3b0f863dd2d8a4ae1bad87fb0a9ff63720ff6a7c12497286a741b01498"
 }

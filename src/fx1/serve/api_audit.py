@@ -3609,9 +3609,10 @@ def _probe_backend_probes(
     )
     sframes = [ln for ln in r.text.split("\n\n") if ln.strip()]
     schunks = [
-        _json3.loads(ln[len("data: ") :])
+        _json3.loads(dln[len("data: ") :])
         for ln in sframes
-        if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+        for dln in ln.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
     ]
     deltas = [
         c["choices"][0]["delta"].get("content", "")
@@ -3627,7 +3628,7 @@ def _probe_backend_probes(
         and schunks[-1]["choices"] == []
         and "usage" in schunks[-1]
         and schunks[-2]["choices"][0]["finish_reason"] == "stop"
-        and sframes[-1].strip() == "data: [DONE]"
+        and sframes[-1].strip().endswith("data: [DONE]")
     )
 
     # backend selection: X-Fx1-Backend header names the link
@@ -3890,6 +3891,85 @@ def _probe_backend_probes(
         headers={"Idempotency-Key": "oi-k3"},
     )
     out["openai_idem_refusal_not_pinned"] = d1.status_code == 502 and d2.status_code == 502
+
+    # Last-Event-ID resume: every SSE frame carries `id:` equal to its
+    # sequence index ([DONE] takes the index past the last chunk); a
+    # keyed replay with Last-Event-ID=k replays the pinned response
+    # minus frames <= k — byte-identical suffix, no re-spend. Fail
+    # closed: resume needs stream:true (400), an integer >= 0 (400),
+    # the original Idempotency-Key (400 resume_needs_key), and a stored
+    # record under it (409 resume_miss — executing fresh and skipping
+    # would graft a different completion onto the client's earlier
+    # frames).
+    _oi_rkey = {"Idempotency-Key": "oi-rs1"}
+    v1s = oi_clean.post("/v1/chat/completions", json=_oi_idem_s, headers=_oi_rkey)
+    _events = v1s.text.split("\n\n")
+    _ids = [ln for ln in v1s.text.splitlines() if ln.startswith("id: ")]
+    out["openai_sse_frame_ids"] = (
+        v1s.status_code == 200
+        and _ids == [f"id: {i}" for i in range(len(_ids))]
+        and _events[-2].startswith(f"id: {len(_ids) - 1}\ndata: [DONE]")
+    )
+    resumed = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={**_oi_rkey, "Last-Event-ID": "1"},
+    )
+    out["openai_resume_suffix"] = (
+        resumed.status_code == 200
+        and resumed.text == "\n\n".join(_events[2:])
+        and resumed.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    tail = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={**_oi_rkey, "Last-Event-ID": str(len(_ids) - 1)},
+    )
+    out["openai_resume_done_only"] = (
+        tail.status_code == 200 and tail.text == f"id: {len(_ids) - 1}\ndata: [DONE]\n\n"
+    )
+    past = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={**_oi_rkey, "Last-Event-ID": "9999"},
+    )
+    out["openai_resume_past_end_done"] = past.text.endswith("data: [DONE]\n\n")
+    out["openai_resume_needs_key_400"] = (
+        oi_clean.post(
+            "/v1/chat/completions", json=_oi_idem_s, headers={"Last-Event-ID": "0"}
+        ).status_code
+        == 400
+    )
+    miss = oi_clean.post(
+        "/v1/chat/completions",
+        json=_oi_idem_s,
+        headers={"Idempotency-Key": "oi-rs-fresh", "Last-Event-ID": "0"},
+    )
+    out["openai_resume_unknown_key_409"] = (
+        miss.status_code == 409 and miss.json()["error"]["code"] == "resume_miss"
+    )
+    out["openai_resume_nonstream_400"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json=_oi_idem,
+            headers={**_oi_rkey, "Last-Event-ID": "0"},
+        ).status_code
+        == 400
+    )
+    out["openai_resume_bad_id_400"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json=_oi_idem_s,
+            headers={**_oi_rkey, "Last-Event-ID": "notanint"},
+        ).status_code
+        == 400
+        and oi_clean.post(
+            "/v1/chat/completions",
+            json=_oi_idem_s,
+            headers={**_oi_rkey, "Last-Event-ID": "-1"},
+        ).status_code
+        == 400
+    )
 
     # GET /v1/models/{id} — OpenAI's models.retrieve: every listed id
     # returns its card; unknown ids fail closed 404 in the OpenAI error

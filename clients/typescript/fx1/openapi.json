@@ -6249,7 +6249,7 @@
     },
     "/v1/chat/completions": {
       "post": {
-        "description": "OpenAI-compatible chat completion over the gated pipeline.\n\nThe `X-Fx1-Completion-Id` header links the response to the\ncompletion-log record (GET /harness/completions/{id}) and its\nsealed receipt. `model` selects a backend when it names one\n(hosted_k3/local_fx1/byok); anything else is the default link.\nBYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the\n`fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/\n`X-Fx1-Checkpoint-Dir` select the chain without body extensions.\n`Idempotency-Key` makes the call retry-safe: a retry with the\nsame key and body replays the stored response byte-identically\n(JSON or SSE) instead of re-spending the model \u2014 flagged via\n`X-Fx1-Idempotent-Replay`; a key reused with a different body\nfails closed 409.",
+        "description": "OpenAI-compatible chat completion over the gated pipeline.\n\nThe `X-Fx1-Completion-Id` header links the response to the\ncompletion-log record (GET /harness/completions/{id}) and its\nsealed receipt. `model` selects a backend when it names one\n(hosted_k3/local_fx1/byok); anything else is the default link.\nBYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the\n`fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/\n`X-Fx1-Checkpoint-Dir` select the chain without body extensions.\n`Idempotency-Key` makes the call retry-safe: a retry with the\nsame key and body replays the stored response byte-identically\n(JSON or SSE) instead of re-spending the model \u2014 flagged via\n`X-Fx1-Idempotent-Replay`; a key reused with a different body\nfails closed 409.\n\nStreams are resumable: every SSE frame carries `id: <index>`\nand a client that records `Last-Event-ID` can replay the keyed\ncall with that header \u2014 the stored response regenerates\nbyte-identically and frames at or below the delivered index are\ndropped. Resume fails closed: it needs the original\n`Idempotency-Key` (an unpinned stream has nothing to resume)\nand a stored record for that key (otherwise 409 \u2014 executing\nfresh and skipping would graft a different completion onto the\nclient's earlier frames).",
         "operationId": "openai_chat_completions",
         "parameters": [
           {
@@ -6266,6 +6266,22 @@
                 }
               ],
               "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
             }
           }
         ],

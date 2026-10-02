@@ -1065,13 +1065,21 @@ class HarnessClient:
         seed: int | None = None,
         include_usage: bool = False,
         idempotency_key: str | None = None,
+        last_event_id: int | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[list[dict[str, Any]], str | None]:
         """Streaming counterpart of :meth:`chat_completion` — returns
         ``(chunks, completion_id)`` where chunks are the parsed
         ``chat.completion.chunk`` frames (the terminal ``include_usage``
         chunk carries ``choices: []`` + ``usage``). The text is already
-        past the honesty gate before the first delta ships."""
+        past the honesty gate before the first delta ships.
+
+        ``last_event_id`` resumes a dropped keyed stream: the wire's SSE
+        frames carry ``id:`` equal to their chunk index, so a caller that
+        received k chunks resends the call with the same
+        ``idempotency_key`` + ``last_event_id=k - 1`` and gets the
+        byte-identical suffix. Resume without a key fails closed 400; a
+        key with no pinned stream 409s."""
         fx1: dict[str, Any] = {}
         if byok is not None:
             fx1["byok"] = byok
@@ -1099,6 +1107,11 @@ class HarnessClient:
             payload["fx1"] = fx1
         if idempotency_key is not None:
             extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        if last_event_id is not None:
+            extra_headers = {
+                **(extra_headers or {}),
+                "Last-Event-ID": str(last_event_id),
+            }
         _status, headers, body = self._request(
             "POST",
             "/v1/chat/completions",

@@ -676,6 +676,16 @@ export interface paths {
          *     (JSON or SSE) instead of re-spending the model — flagged via
          *     `X-Fx1-Idempotent-Replay`; a key reused with a different body
          *     fails closed 409.
+         *
+         *     Streams are resumable: every SSE frame carries `id: <index>`
+         *     and a client that records `Last-Event-ID` can replay the keyed
+         *     call with that header — the stored response regenerates
+         *     byte-identically and frames at or below the delivered index are
+         *     dropped. Resume fails closed: it needs the original
+         *     `Idempotency-Key` (an unpinned stream has nothing to resume)
+         *     and a stored record for that key (otherwise 409 — executing
+         *     fresh and skipping would graft a different completion onto the
+         *     client's earlier frames).
          */
         post: operations["openai_chat_completions"];
         delete?: never;
@@ -3387,6 +3397,7 @@ export interface operations {
             query?: never;
             header?: {
                 "Idempotency-Key"?: string | null;
+                "Last-Event-ID"?: string | null;
             };
             path?: never;
             cookie?: never;
