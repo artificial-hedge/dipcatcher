@@ -1895,6 +1895,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "energy_ood",
         "knn_ood",
         "vim_ood",
+        # Wave-133 amortized-UQ
+        # canon: CNP, ANP, deep
+        # kernel GP, ConvNP,
+        # meta-UQ, LL-GP.
+        "neural_process",
+        "attentive_np",
+        "deep_kernel_gp",
+        "convnp",
+        "meta_uq",
+        "llaplace_gp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
