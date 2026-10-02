@@ -627,6 +627,17 @@ def parity_audit() -> dict[str, bool]:
             and wire_pr.error is None
             and sdk_pr.error is None
         )
+
+        # gate pre-flight: one in-process check and the wire endpoint agree
+        gc_clean_s = sdk_u.check_text("bootstrap intervals were used")
+        gc_bad_s = sdk_u.check_text("we report Sharpe 2.1")
+        gc_bad_w = remote_u.check_text("we report Sharpe 2.1")
+        out["gate_check_parity"] = (
+            gc_clean_s.ok is True
+            and gc_bad_s.ok is False
+            and gc_bad_w.ok is False
+            and gc_bad_w.error == gc_bad_s.error
+        )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (

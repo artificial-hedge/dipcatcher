@@ -713,6 +713,9 @@ def api_audit() -> dict[str, Any]:
         out["drain_runs_refused_503"] = (
             dclient.post("/harness/runs", json={"command": "x"}).status_code == 503
         )
+        out["drain_gate_check_up"] = (
+            dclient.post("/harness/gate/check", json={"text": "ok"}).status_code == 200
+        )
         out["drain_uncapped_routes_up"] = (
             dclient.get("/harness/commands").status_code == 200
             and dclient.post("/receipts/verify", json={"receipt": {"x": 1}}).status_code == 200
@@ -2452,6 +2455,20 @@ def _probe_backend_probes(
     pm = uapp.get("/metrics").json()
     out["probe_own_series"] = pm["complete"]["probe:byok"]["ok"] >= 1 and (
         "byok" in pm["complete"] and pm["complete"]["byok"]["ok"] == 3
+    )
+
+    # gate pre-flight: the honesty gate callable over the wire — a verdict,
+    # not a model call. Stays up during drain, never metered.
+    g_ok = client.post("/harness/gate/check", json={"text": "the result used bootstrap intervals"})
+    g_bad = client.post("/harness/gate/check", json={"text": "we report Sharpe 2.1 out of sample"})
+    out["gate_check_clean"] = g_ok.status_code == 200 and g_ok.json()["ok"] is True
+    out["gate_check_refusal"] = (
+        g_bad.status_code == 200
+        and g_bad.json()["ok"] is False
+        and "forbidden" in (g_bad.json()["error"] or "")
+    )
+    out["gate_check_oversize_422"] = (
+        client.post("/harness/gate/check", json={"text": "x" * 262145}).status_code == 422
     )
 
 

@@ -144,6 +144,7 @@ def cli_audit() -> dict[str, Any]:
         "verify",
         "health",
         "probe",
+        "check-text",
     } <= hnames
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -169,6 +170,15 @@ def cli_audit() -> dict[str, Any]:
     out["harness_probe_unhealthy_exit"] = p_dead.exit_code == 1 and pblob.get("ok") is False
     out["harness_probe_unknown_fails"] = (
         runner.invoke(app, ["harness", "probe", "--backend", "bogus"]).exit_code != 0
+    )
+
+    # gate check-text: exit 0 clean / 1 refusal; in-process needs no backend
+    c_ok = runner.invoke(app, ["harness", "check-text", "bootstrap intervals"])
+    c_bad = runner.invoke(app, ["harness", "check-text", "we report Sharpe 2.1"])
+    cblob = json.loads(c_bad.stdout) if c_bad.stdout.strip().startswith("{") else {}
+    out["harness_check_clean"] = c_ok.exit_code == 0 and json.loads(c_ok.stdout).get("ok") is True
+    out["harness_check_refusal"] = (
+        c_bad.exit_code == 1 and cblob.get("ok") is False and isinstance(cblob.get("error"), str)
     )
 
     h = runner.invoke(app, ["harness", "health"])

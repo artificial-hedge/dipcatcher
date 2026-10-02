@@ -41,6 +41,7 @@ from fx1.harness import HarnessResult
 from fx1.honesty import Fx1HonestyError
 from fx1.sdk import (
     CompletionResult,
+    GateCheckResult,
     HarnessHealth,
     OpsMetrics,
     ProbeResult,
@@ -579,6 +580,13 @@ class HarnessClient:
             replayed=out.get("replayed", False),
             usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
         )
+
+    def check_text(self, text: str) -> GateCheckResult:
+        """Pre-flight text through the remote honesty gate — POSTs
+        ``/harness/gate/check``; a refusal rides ``ok=False``, it never
+        raises ``Fx1HonestyError``."""
+        out = self._json("POST", "/harness/gate/check", {"text": text})
+        return GateCheckResult(ok=out["ok"], error=out.get("error"))
 
     def probe_backend(
         self,

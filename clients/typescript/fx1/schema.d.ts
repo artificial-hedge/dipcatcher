@@ -190,6 +190,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/gate/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Gate Check
+         * @description Pre-flight the honesty gate without spending model tokens —
+         *     writers (fx-1 or BYOK callers) can validate text before or after
+         *     generation. Advisory: not slot-gated, stays up during drain, and
+         *     never touches a backend or the metrics series.
+         */
+        post: operations["gate_check"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/jobs": {
         parameters: {
             query?: never;
@@ -718,6 +741,26 @@ export interface components {
             draining: boolean;
             /** Inflight */
             inflight: number;
+        };
+        /**
+         * GateCheckRequest
+         * @description Text to run through the honesty gate — pre-flight for writers
+         *     before they spend model tokens (or for validators on the way out).
+         */
+        GateCheckRequest: {
+            /** Text */
+            text: string;
+        };
+        /**
+         * GateCheckResponse
+         * @description Gate verdict — ``ok`` mirrors whether the text would pass the gate;
+         *     ``error`` carries the refusal reason when it wouldn't.
+         */
+        GateCheckResponse: {
+            /** Error */
+            error?: string | null;
+            /** Ok */
+            ok: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1439,6 +1482,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DrainResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gate_check: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GateCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateCheckResponse"];
                 };
             };
             /** @description Validation Error */

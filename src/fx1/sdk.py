@@ -56,6 +56,7 @@ from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_p
 __all__ = [
     "BackendNotConfiguredError",
     "CompletionResult",
+    "GateCheckResult",
     "ProbeResult",
     "Fx1Harness",
     "OpsMetrics",
@@ -82,6 +83,14 @@ class CompletionResult:
     # has no usage channel). Never populated on ``complete_many`` items —
     # a shared backend can't attribute counts per prompt.
     usage: dict[str, int] | None = None
+
+
+@dataclass(frozen=True)
+class GateCheckResult:
+    """Honesty-gate verdict — mirrors ``GateCheckResponse`` on the API."""
+
+    ok: bool
+    error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -202,6 +211,16 @@ class Fx1Harness:
         )
 
     # ---- gated completion ----------------------------------------------
+
+    def check_text(self, text: str) -> GateCheckResult:
+        """Pre-flight text through the honesty gate in-process — never
+        raises ``Fx1HonestyError``; the refusal rides ``ok=False, error``.
+        Argument faults (non-str) propagate."""
+        try:
+            validate_fx1_output(text)
+        except Fx1HonestyError as exc:
+            return GateCheckResult(ok=False, error=str(exc))
+        return GateCheckResult(ok=True)
 
     def probe_backend(
         self,

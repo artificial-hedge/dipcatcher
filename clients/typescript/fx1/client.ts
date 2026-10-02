@@ -17,6 +17,11 @@ export type Backend = components["schemas"]["CompleteRequest"]["backend"];
 export type CapabilitiesResponse =
   components["schemas"]["CapabilitiesResponse"];
 export type ChatMessage = components["schemas"]["ChatMessage"];
+export type BackendProbeRequest = components["schemas"]["BackendProbeRequest"];
+export type BackendProbeResponse =
+  components["schemas"]["BackendProbeResponse"];
+export type GateCheckRequest = components["schemas"]["GateCheckRequest"];
+export type GateCheckResponse = components["schemas"]["GateCheckResponse"];
 export type CompleteRequest = components["schemas"]["CompleteRequest"];
 export type CompleteResponse = components["schemas"]["CompleteResponse"];
 export type CompleteBatchRequest =
@@ -466,6 +471,31 @@ export class HarnessApiClient {
     idempotencyKey?: string,
   ): Promise<CompleteBatchResponse> {
     return this.post("/harness/complete/batch", request, idempotencyKey) as Promise<CompleteBatchResponse>;
+  }
+
+  /**
+   * POST /harness/backends/{name}/probe — one live gated completion;
+   * the verdict (`ok:false` for an unconfigured/unreachable backend) is a
+   * payload, not a wire fault. Bypasses and never feeds the circuit.
+   */
+  probeBackend(
+    name: "hosted_k3" | "local_fx1" | "byok",
+    request?: BackendProbeRequest | null,
+  ): Promise<BackendProbeResponse> {
+    return this.post(
+      `/harness/backends/${encodeURIComponent(name)}/probe`,
+      request ?? null,
+    ) as Promise<BackendProbeResponse>;
+  }
+
+  /**
+   * POST /harness/gate/check — pre-flight text through the honesty gate
+   * without spending model tokens; a refusal rides `ok:false`.
+   */
+  checkText(text: string): Promise<GateCheckResponse> {
+    return this.post("/harness/gate/check", {
+      text,
+    } satisfies GateCheckRequest) as Promise<GateCheckResponse>;
   }
 
   // ---- async jobs --------------------------------------------------------

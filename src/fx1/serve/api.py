@@ -420,6 +420,21 @@ class BackendProbeResponse(_Model):
     error_class: str | None = None
 
 
+class GateCheckRequest(_Model):
+    """Text to run through the honesty gate — pre-flight for writers
+    before they spend model tokens (or for validators on the way out)."""
+
+    text: str = Field(min_length=0, max_length=262144)
+
+
+class GateCheckResponse(_Model):
+    """Gate verdict — ``ok`` mirrors whether the text would pass the gate;
+    ``error`` carries the refusal reason when it wouldn't."""
+
+    ok: bool
+    error: str | None = None
+
+
 class CompleteBatchItem(_Model):
     ok: bool
     latency_ms: float
@@ -2065,6 +2080,23 @@ def _mount_complete_routes(
             error=error,
             error_class=error_class,
         )
+
+    @app.post(
+        "/harness/gate/check",
+        response_model=GateCheckResponse,
+        tags=["ops"],
+        operation_id="gate_check",
+    )
+    async def gate_check(body: GateCheckRequest) -> GateCheckResponse:
+        """Pre-flight the honesty gate without spending model tokens —
+        writers (fx-1 or BYOK callers) can validate text before or after
+        generation. Advisory: not slot-gated, stays up during drain, and
+        never touches a backend or the metrics series."""
+        try:
+            validate_fx1_output(body.text)
+        except Fx1HonestyError as exc:
+            return GateCheckResponse(ok=False, error=str(exc))
+        return GateCheckResponse(ok=True)
 
 
 def create_app(

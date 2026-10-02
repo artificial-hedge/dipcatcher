@@ -631,6 +631,23 @@ def harness_probe(
         raise typer.Exit(code=1)
 
 
+@harness_app.command("check-text")
+def harness_check_text(
+    text: str = typer.Argument(..., help="Text to run through the honesty gate."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Pre-flight text through the honesty gate — prints the verdict JSON
+    and exits 0 when clean / 1 on refusal. In-process (no backend needed);
+    ``--remote`` checks via the wire route."""
+    surface = _surface(remote, api_key, timeout_s)
+    out = _or_exit(lambda: surface.check_text(text))
+    typer.echo(json.dumps({"ok": out.ok, "error": out.error}, indent=2))
+    if not out.ok:
+        raise typer.Exit(code=1)
+
+
 @harness_app.command("health")
 def harness_health(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),

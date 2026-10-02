@@ -111,6 +111,16 @@
         ]
       }
     },
+    "/harness/gate/check": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/jobs": {
       "get": {
         "params": [
@@ -317,5 +327,5 @@
       }
     }
   },
-  "schema_sha256": "e374f4cab005b775bdfc344ee913ee38da0a45996295a38539968d634764c535"
+  "schema_sha256": "2c502f3664d291c2a110c07357605ce173b67cee956821ff8596948d5a07ef63"
 }
