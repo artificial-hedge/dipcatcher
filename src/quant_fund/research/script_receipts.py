@@ -433,6 +433,7 @@ _MEASUREMENT_SCHEMAS = (
     "flee_wide.v1",
     "floor_compose.v1",
     "floor_reseed.v1",
+    "floor_stability.v1",
     "flow_couple.v1",
     "full_impact.v1",
     "full_stack.v1",
