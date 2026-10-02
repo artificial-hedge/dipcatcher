@@ -1709,6 +1709,14 @@ from quant_fund.research.benches_w214 import (
     bench_ski_rental_family,
     bench_work_function_kserver_family,
 )
+from quant_fund.research.benches_w215 import (
+    bench_chance_scenario_family,
+    bench_dro_wasserstein_family,
+    bench_robust_budget_family,
+    bench_saa_consistency_family,
+    bench_scenario_tree_family,
+    bench_two_stage_lshaped_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4544,6 +4552,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ranking_matching": bench_ranking_matching_family(),
         "secretary_prophet": bench_secretary_prophet_family(),
         "online_gradient": bench_online_gradient_family(),
+        "two_stage_lshaped": bench_two_stage_lshaped_family(),
+        "scenario_tree": bench_scenario_tree_family(),
+        "saa_consistency": bench_saa_consistency_family(),
+        "chance_scenario": bench_chance_scenario_family(),
+        "dro_wasserstein": bench_dro_wasserstein_family(),
+        "robust_budget": bench_robust_budget_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
