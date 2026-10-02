@@ -67,12 +67,16 @@ def _extra(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    repost_requote: float | None = None,
+    repost_ttl_immune: bool = False,
 ) -> dict[str, Any]:
     return dict(
         _FULL,
         zone_embargo=zone,
         maker_ttl=ttl,
         maker_requote=requote,
+        repost_requote=repost_requote,
+        repost_ttl_immune=repost_ttl_immune,
         fill_repost_frac=fr_frac,
         fill_repost_delay=fr_delay,
         repost_frac=0.6,
@@ -91,11 +95,16 @@ def _card(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    repost_requote: float | None = None,
+    repost_ttl_immune: bool = False,
 ) -> dict[str, Any]:
     """Mix shares + executed-maker lifetime on one draw (zone_card.v1's
     measure: ages on the sim clock converted to event units by the
     draw's realized rate)."""
-    cfg = _calibrated(seed, _extra(zone, ttl, requote, fr_frac, fr_delay))
+    cfg = _calibrated(
+        seed,
+        _extra(zone, ttl, requote, fr_frac, fr_delay, repost_requote, repost_ttl_immune),
+    )
     flow = _split(inten, seed + 1) if inten is not None else None
     sim = ZILobSimulator(cfg, flow)
     ages: list[float] = []
@@ -137,9 +146,11 @@ def _cell(
     requote: float = 0.0,
     fr_frac: float = 0.8,
     fr_delay: int = 280,
+    repost_requote: float | None = None,
+    repost_ttl_immune: bool = False,
 ) -> dict[str, Any]:
     """Card + pins + kernel on one (zone, ttl, flow) draw."""
-    extra = _extra(zone, ttl, requote, fr_frac, fr_delay)
+    extra = _extra(zone, ttl, requote, fr_frac, fr_delay, repost_requote, repost_ttl_immune)
     card = _card(
         zone,
         ttl,
@@ -149,6 +160,8 @@ def _cell(
         requote=requote,
         fr_frac=fr_frac,
         fr_delay=fr_delay,
+        repost_requote=repost_requote,
+        repost_ttl_immune=repost_ttl_immune,
     )
     crown = _sim_crown(
         "joint",

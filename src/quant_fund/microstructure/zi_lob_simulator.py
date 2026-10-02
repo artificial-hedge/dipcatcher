@@ -427,6 +427,18 @@ class ZILobConfig:
     # while maker age keeps resetting. Active only with maker_ttl > 0;
     # ttl 0 never reaches the expiry path regardless.
     maker_requote: float = 0.0
+    # ``repost_requote`` ∈ [0, 1] or None: requote probability for orders
+    # tagged ``repost`` (fill-triggered vacancy reseeds) when they hit
+    # ttl expiry. None falls back to ``maker_requote`` (bit-identical);
+    # 0.0 makes reposts one-shot — a reseeded level can re-empty at
+    # expiry instead of churning forever at the same level.
+    repost_requote: float | None = None
+    # ``repost_ttl_immune``: when True, ``repost``-tagged units never
+    # enter the ttl-expiry heap — a reseeded level persists until it is
+    # filled or cancelled like normal depth (sticky reseed: the tape's
+    # reposted liquidity returns once and stays). False is
+    # bit-identical.
+    repost_ttl_immune: bool = False
     # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
     # order of a level immediately re-rests one unit at the SAME level
     # tagged ``iceberg`` — hidden reserve liquidity that refills after
@@ -797,6 +809,8 @@ class ZILobConfig:
         if isinstance(self.maker_ttl, bool) or int(self.maker_ttl) < 0:
             raise ValueError(f"maker_ttl must be an int >= 0, got {self.maker_ttl!r}")
         _prob(self.maker_requote, "maker_requote")
+        if self.repost_requote is not None:
+            _prob(self.repost_requote, "repost_requote")
         _prob(self.iceberg_reload, "iceberg_reload")
         if self.iceberg_reload_mode not in ("per_unit", "residual"):
             raise ValueError(
@@ -1669,7 +1683,7 @@ class ZILobSimulator:
         )
         dq.append(oid)
         self._orders[oid] = order
-        if self._cfg.maker_ttl > 0:
+        if self._cfg.maker_ttl > 0 and not (tag == "repost" and self._cfg.repost_ttl_immune):
             heapq.heappush(self._ttl_pending, (self.n_events + self._cfg.maker_ttl, oid))
         if tag == "chase":
             self._chase_oids.add(oid)
@@ -2708,8 +2722,11 @@ class ZILobSimulator:
             if order is None:
                 continue
             side, level = order.side, order.level
+            rq = self._cfg.maker_requote
+            if order.tag == "repost" and self._cfg.repost_requote is not None:
+                rq = self._cfg.repost_requote
             self.cancel_order(oid)
-            if self._rng.random() < self._cfg.maker_requote:
+            if self._rng.random() < rq:
                 self._rest(side, level, "churn")
 
     def step(self) -> str:
