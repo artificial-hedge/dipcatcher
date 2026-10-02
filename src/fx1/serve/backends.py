@@ -24,6 +24,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, cast, runtime_checkable
 
@@ -41,6 +42,36 @@ LOCAL_MODEL_ENV = "FX1_LOCAL_MODEL"
 LOCAL_API_KEY_ENV = "FX1_LOCAL_API_KEY"
 LOCAL_TIMEOUT_S_ENV = "FX1_LOCAL_TIMEOUT_S"
 LOCAL_START_TIMEOUT_S_ENV = "FX1_LOCAL_START_TIMEOUT_S"
+
+
+@dataclass(frozen=True)
+class SamplingParams:
+    """Declared decode parameters for one call.
+
+    Only declared fields reach the wire beyond ``temperature`` — a
+    provider that doesn't know ``seed`` never sees it. ``temperature``
+    defaults to 0.0: eval/teacher runs stay deterministic unless the
+    caller explicitly opts out, and the *resolved* set is what lands in
+    the completion record as evidence of what was sampled.
+    """
+
+    temperature: float | None = None
+    top_p: float | None = None
+    max_tokens: int | None = None
+    seed: int | None = None
+
+    def body_fields(self) -> dict[str, Any]:
+        """The exact fields merged into the request body."""
+        fields: dict[str, Any] = {
+            "temperature": 0.0 if self.temperature is None else self.temperature
+        }
+        if self.top_p is not None:
+            fields["top_p"] = self.top_p
+        if self.max_tokens is not None:
+            fields["max_tokens"] = self.max_tokens
+        if self.seed is not None:
+            fields["seed"] = self.seed
+        return fields
 
 
 class BackendNotConfiguredError(RuntimeError):
@@ -121,6 +152,7 @@ def _openai_chat_complete(
     timeout_s: float,
     api_key: str | None,
     label: str,
+    sampling: SamplingParams | None = None,
 ) -> tuple[str, dict[str, int] | None]:
     """POST one OpenAI-compatible chat completion; map errors to RuntimeError.
 
@@ -128,7 +160,15 @@ def _openai_chat_complete(
     omits the block (older servers, local engines)."""
     # temperature pinned to 0 — eval/teacher runs must be deterministic;
     # unpinned sampling makes eval results unreproducible across replays.
-    body = json.dumps({"model": model, "messages": messages, "temperature": 0.0}).encode()
+    # temperature defaults to 0 — eval/teacher runs must be deterministic;
+    # unpinned sampling makes eval results unreproducible across replays.
+    body = json.dumps(
+        {
+            "model": model,
+            "messages": messages,
+            **(sampling or SamplingParams()).body_fields(),
+        }
+    ).encode()
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -160,6 +200,7 @@ def _openai_chat_stream(
     api_key: str | None,
     label: str,
     usage_out: list[dict[str, int]] | None = None,
+    sampling: SamplingParams | None = None,
 ) -> Iterator[str]:
     """POST one streaming OpenAI-compatible chat completion.
 
@@ -176,7 +217,12 @@ def _openai_chat_stream(
     capture stays opportunistic.
     """
     body = json.dumps(
-        {"model": model, "messages": messages, "temperature": 0.0, "stream": True}
+        {
+            "model": model,
+            "messages": messages,
+            "stream": True,
+            **(sampling or SamplingParams()).body_fields(),
+        }
     ).encode()
     headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
     if api_key:
@@ -227,7 +273,12 @@ def _openai_chat_stream(
 class InferenceBackend(Protocol):
     """Chat-completion interface shared by all fx-1 backends."""
 
-    def complete(self, messages: list[dict[str, str]]) -> str: ...
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str: ...
 
 
 @runtime_checkable
@@ -240,9 +291,19 @@ class StreamingBackend(Protocol):
     faking chunking.
     """
 
-    def complete(self, messages: list[dict[str, str]]) -> str: ...
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str: ...
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]: ...
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> Iterator[str]: ...
 
 
 class HostedK3Backend(_UsageTracker):
@@ -265,10 +326,22 @@ class HostedK3Backend(_UsageTracker):
         self._api_url = api_url
         self._timeout_s = timeout_s
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
-        # temperature pinned to 0 — eval/teacher runs must be deterministic;
-        # unpinned sampling makes eval results unreproducible across replays.
-        body = json.dumps({"model": self._model, "messages": messages, "temperature": 0.0}).encode()
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str:
+        # temperature defaults to 0 — eval/teacher runs must be
+        # deterministic; unpinned sampling makes eval results
+        # unreproducible across replays.
+        body = json.dumps(
+            {
+                "model": self._model,
+                "messages": messages,
+                **(sampling or SamplingParams()).body_fields(),
+            }
+        ).encode()
         request = urllib.request.Request(
             self._api_url,
             data=body,
@@ -288,7 +361,12 @@ class HostedK3Backend(_UsageTracker):
         self._record_usage(_extract_usage(payload))
         return content
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> Iterator[str]:
         """Stream token deltas; Moonshot's API is OpenAI-SSE-compatible."""
         box: list[dict[str, int]] = []
         for tok in _openai_chat_stream(  # noqa: UP028 — trailer needs the box after exhaustion
@@ -299,6 +377,7 @@ class HostedK3Backend(_UsageTracker):
             api_key=self._api_key,
             label="hosted_k3",
             usage_out=box,
+            sampling=sampling,
         ):
             yield tok
         if box:
@@ -358,7 +437,12 @@ class OpenAICompatBackend(_UsageTracker):
         self._model = mdl
         self._timeout_s = timeout_s
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str:
         content, usage = _openai_chat_complete(
             self._url,
             model=self._model,
@@ -366,11 +450,17 @@ class OpenAICompatBackend(_UsageTracker):
             timeout_s=self._timeout_s,
             api_key=self._api_key,
             label="BYOK",
+            sampling=sampling,
         )
         self._record_usage(usage)
         return content
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> Iterator[str]:
         """Stream token deltas from the caller-declared endpoint."""
         box: list[dict[str, int]] = []
         for tok in _openai_chat_stream(  # noqa: UP028 — trailer needs the box after exhaustion
@@ -381,6 +471,7 @@ class OpenAICompatBackend(_UsageTracker):
             api_key=self._api_key,
             label="BYOK",
             usage_out=box,
+            sampling=sampling,
         ):
             yield tok
         if box:
@@ -518,7 +609,12 @@ class LocalFx1Backend(_UsageTracker):
             f"{self._start_timeout_s:g}s: {self._serve_cmd!r}"
         )
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str:
         if not self._url:
             raise BackendNotConfiguredError(
                 "local_fx1 is not configured: set FX1_LOCAL_SERVE_URL to an "
@@ -533,11 +629,17 @@ class LocalFx1Backend(_UsageTracker):
             timeout_s=self._timeout_s,
             api_key=self._api_key or None,
             label="local_fx1",
+            sampling=sampling,
         )
         self._record_usage(usage)
         return content
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+    def stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> Iterator[str]:
         """Stream token deltas; the engine is ensured before subscribing."""
         self._ensure_engine()
         box: list[dict[str, int]] = []
@@ -549,6 +651,7 @@ class LocalFx1Backend(_UsageTracker):
             api_key=self._api_key or None,
             label="local_fx1",
             usage_out=box,
+            sampling=sampling,
         ):
             yield tok
         if box:

@@ -35,10 +35,13 @@ from __future__ import annotations
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 from quant_fund.utils.reproducibility import git_revision
+
+if TYPE_CHECKING:
+    from fx1.serve.backends import SamplingParams
 
 __all__ = ["sdk_audit", "sdk_audit_bench"]
 
@@ -53,12 +56,16 @@ class _FakeBackend:
         self._content = content
         self.seen_messages: list[dict[str, str]] = []
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         self.calls += 1
         self.seen_messages = list(messages)
         return self._content
 
-    def stream(self, messages: list[dict[str, str]]) -> Any:
+    def stream(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> Any:
         yield self._content[: len(self._content) // 2]
         yield self._content[len(self._content) // 2 :]
 
@@ -72,7 +79,9 @@ class _NonStreamingBackend:
     def __init__(self) -> None:
         self.closed = 0
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         return "clean answer"
 
     def close(self) -> None:

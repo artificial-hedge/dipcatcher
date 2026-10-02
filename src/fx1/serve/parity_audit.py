@@ -54,6 +54,8 @@ from quant_fund.utils.reproducibility import git_revision
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
+    from fx1.serve.backends import SamplingParams
+
 __all__ = ["parity_audit", "parity_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
@@ -75,10 +77,14 @@ class _ParityBackend:
     def __init__(self) -> None:
         self._model = "parity-v0"
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         return f"echo:{messages[-1]['content']}"
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+    def stream(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> Iterator[str]:
         text = self.complete(messages)
         yield text[:3]
         yield text[3:]
@@ -88,10 +94,14 @@ class _ParityBackend:
 
 
 class _DirtyBackend(_ParityBackend):
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         return "total Sharpe 4.2 on NAV"  # forbidden headline
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+    def stream(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> Iterator[str]:
         yield "total Sharpe 4.2 on NAV"
 
 
@@ -99,7 +109,9 @@ class _NonStreamingBackend:
     def __init__(self) -> None:
         self._model = "ns-v0"
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         return "ans"
 
     def close(self) -> None:
@@ -109,10 +121,14 @@ class _NonStreamingBackend:
 class _CallFailBackend(_ParityBackend):
     """Availability fault on every call — the retriable link."""
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         raise RuntimeError("backend exploded")
 
-    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+    def stream(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> Iterator[str]:
         raise RuntimeError("backend exploded")
         yield
 
@@ -120,7 +136,9 @@ class _CallFailBackend(_ParityBackend):
 class _FlakyBackend(_ParityBackend):
     """Refuses (gate-tripping output) only on prompts containing 'bad'."""
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(
+        self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+    ) -> str:
         if "bad" in messages[-1]["content"]:
             return "total Sharpe 4.2 on NAV"
         return super().complete(messages)
@@ -709,12 +727,17 @@ def parity_audit() -> dict[str, bool]:
                 self.last_usage: dict[str, int] | None = None
                 self.total_usage: dict[str, int] = {}
 
-            def complete(self, messages: list[dict[str, str]]) -> str:
+            def complete(
+                self,
+                messages: list[dict[str, str]],
+                *,
+                sampling: SamplingParams | None = None,
+            ) -> str:
                 u = {"prompt_tokens": 2, "total_tokens": 5}
                 self.last_usage = u
                 for k, v in u.items():
                     self.total_usage[k] = self.total_usage.get(k, 0) + v
-                return super().complete(messages)
+                return super().complete(messages, sampling=sampling)
 
         sdk_u, uclient = _surfaces(_UsageBackend)
         sdk_usage = sdk_u.complete(msg, backend="byok").usage
@@ -727,6 +750,35 @@ def parity_audit() -> dict[str, bool]:
             sdk_usage == {"prompt_tokens": 2, "total_tokens": 5}
             and wire_usage == sdk_usage
             and remote_u.complete(msg, backend="byok").usage == sdk_usage
+        )
+
+        # sampling controls: identical resolved set on all three surfaces —
+        # SDK kwargs, wire JSON fields, and the remote client all land the
+        # same body_fields dict, and the default stays temperature-pinned.
+        want_s = {"temperature": 0.7, "top_p": 0.9, "max_tokens": 16, "seed": 7}
+        sdk_s = sdk_u.complete(
+            msg, backend="byok", temperature=0.7, top_p=0.9, max_tokens=16, seed=7
+        ).sampling
+        wire_s = uclient.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "max_tokens": 16,
+                "seed": 7,
+            },
+        ).json()["sampling"]
+        remote_s = remote_u.complete(
+            msg, backend="byok", temperature=0.7, top_p=0.9, max_tokens=16, seed=7
+        ).sampling
+        out["sampling_parity"] = (
+            sdk_s == want_s
+            and wire_s == want_s
+            and remote_s == want_s
+            and sdk_u.complete(msg, backend="byok").sampling == {"temperature": 0.0}
+            and remote_u.complete(msg, backend="byok").sampling == {"temperature": 0.0}
         )
 
         # deep-health probe: in-process verdict mirrors the wire verdict —

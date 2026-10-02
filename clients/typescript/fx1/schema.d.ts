@@ -799,6 +799,8 @@ export interface components {
             checkpoint_dir?: string | null;
             /** Fallbacks */
             fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Max Tokens */
+            max_tokens?: number | null;
             /**
              * Max Workers
              * @default 4
@@ -806,8 +808,14 @@ export interface components {
             max_workers: number;
             /** Receipt Hashes */
             receipt_hashes?: string[] | null;
+            /** Seed */
+            seed?: number | null;
+            /** Temperature */
+            temperature?: number | null;
             /** Timeout S */
             timeout_s?: number | null;
+            /** Top P */
+            top_p?: number | null;
         };
         /** CompleteBatchResponse */
         CompleteBatchResponse: {
@@ -829,6 +837,10 @@ export interface components {
             replayed: boolean;
             /** Results */
             results: components["schemas"]["CompleteBatchItem"][];
+            /** Sampling */
+            sampling?: {
+                [key: string]: unknown;
+            } | null;
             /** Usage Total */
             usage_total?: {
                 [key: string]: number;
@@ -846,12 +858,20 @@ export interface components {
             checkpoint_dir?: string | null;
             /** Fallbacks */
             fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Max Tokens */
+            max_tokens?: number | null;
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
             /** Receipt Hashes */
             receipt_hashes?: string[] | null;
+            /** Seed */
+            seed?: number | null;
+            /** Temperature */
+            temperature?: number | null;
             /** Timeout S */
             timeout_s?: number | null;
+            /** Top P */
+            top_p?: number | null;
         };
         /** CompleteResponse */
         CompleteResponse: {
@@ -877,6 +897,10 @@ export interface components {
              * @default false
              */
             replayed: boolean;
+            /** Sampling */
+            sampling?: {
+                [key: string]: unknown;
+            } | null;
             /** Usage */
             usage?: {
                 [key: string]: number;
@@ -919,6 +943,10 @@ export interface components {
             output_sha256?: string | null;
             /** Prompt Sha256 */
             prompt_sha256: string;
+            /** Sampling */
+            sampling?: {
+                [key: string]: unknown;
+            } | null;
             /** Usage */
             usage?: {
                 [key: string]: number;

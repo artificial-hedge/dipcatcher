@@ -103,6 +103,20 @@ compatible) lands it on the SSE `final` frame's `usage` field — null
 when the provider stays silent. The same values land on
 `CompletionResult.usage` in the SDK and `HarnessClient`.
 
+**Sampling controls:** `complete`, `complete/batch`, and
+`complete/stream` accept flat decode fields `temperature` (0–2),
+`top_p` (0,1], `max_tokens` (1–262144), and `seed` (≥0) — model-level
+422s on range violations. They resolve into a `SamplingParams` value
+whose `body_fields()` is the wire dict: `temperature` always ships
+(default `0.0` — eval/teacher runs stay deterministic and replayable),
+while `top_p`/`max_tokens`/`seed` ship only when declared, so providers
+that don't know a field never see it. The resolved set is echoed on the
+response (`sampling`), the SSE `final` frame, and the `CompletionRecord`
+— the decode configuration is part of the sealed evidence. SDK
+`complete`/`complete_many`/`stream_complete` and `HarnessClient` take
+the same names as flat kwargs; the CLI takes
+`--temperature --top-p --max-tokens --seed`.
+
 **Completion observability:** `GET /metrics` carries per-backend outcome
 counters (`fx1_complete_total{backend,outcome}`), a cumulative
 latency histogram (`fx1_complete_latency_ms_bucket{le=…}`, `_sum`,

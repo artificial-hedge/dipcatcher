@@ -567,6 +567,10 @@ class HarnessClient:
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
         fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -580,6 +584,10 @@ class HarnessClient:
                 "timeout_s": timeout_s,
                 "byok": byok,
                 "fallbacks": fallbacks or [],
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": seed,
             },
             # A keyed complete dedupes server-side — safe to retry by
             # construction, so it marks idempotent for the retry policy.
@@ -597,6 +605,7 @@ class HarnessClient:
             attempts=tuple(dict(a) for a in out["attempts"] if isinstance(a, dict))
             if isinstance(out.get("attempts"), list)
             else (),
+            sampling=out.get("sampling") if isinstance(out.get("sampling"), dict) else None,
         )
 
     def completion(self, completion_id: str) -> CompletionRecord:
@@ -618,6 +627,7 @@ class HarnessClient:
             attempts=tuple(dict(a) for a in out["attempts"] if isinstance(a, dict))
             if isinstance(out.get("attempts"), list)
             else None,
+            sampling=out.get("sampling") if isinstance(out.get("sampling"), dict) else None,
         )
 
     def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
@@ -647,6 +657,7 @@ class HarnessClient:
                 attempts=tuple(dict(a) for a in r["attempts"] if isinstance(a, dict))
                 if isinstance(r.get("attempts"), list)
                 else None,
+                sampling=r.get("sampling") if isinstance(r.get("sampling"), dict) else None,
             )
             for r in out["items"]
         ]
@@ -712,6 +723,10 @@ class HarnessClient:
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
         fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -736,6 +751,10 @@ class HarnessClient:
                 "byok": byok,
                 "max_workers": max_workers,
                 "fallbacks": fallbacks or [],
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": seed,
             },
             idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
@@ -754,6 +773,7 @@ class HarnessClient:
                     content=item["content"],
                     receipt_hashes=tuple(out["receipt_hashes"]),
                     completion_id=item.get("completion_id"),
+                    sampling=out.get("sampling") if isinstance(out.get("sampling"), dict) else None,
                 )
             )
         return results
@@ -768,6 +788,10 @@ class HarnessClient:
         timeout_s: float | None = None,
         byok: dict[str, str] | None = None,
         fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> list[str]:
         """Remote counterpart of ``Fx1Harness.stream_complete``.
 
@@ -786,6 +810,10 @@ class HarnessClient:
                 "timeout_s": timeout_s,
                 "byok": byok,
                 "fallbacks": fallbacks or [],
+                "temperature": temperature,
+                "top_p": top_p,
+                "max_tokens": max_tokens,
+                "seed": seed,
             },
         )
         chunks: list[str] = []

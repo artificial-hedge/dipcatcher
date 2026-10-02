@@ -49,6 +49,7 @@ from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.serve.backends import (
     BackendNotConfiguredError,
     InferenceBackend,
+    SamplingParams,
     StreamingBackend,
     get_backend,
 )
@@ -93,6 +94,8 @@ class CompletionResult:
     # Ordered fallback-chain trace — one entry per link tried (the last
     # is the serving link); empty when the primary served unchallenged.
     attempts: tuple[dict[str, Any], ...] = ()
+    # The resolved decode params sent to the provider.
+    sampling: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -115,6 +118,7 @@ class CompletionRecord:
     error_class: str | None = None
     output_sha256: str | None = None
     attempts: tuple[dict[str, Any], ...] | None = None
+    sampling: dict[str, Any] | None = None
 
 
 class _CompletionLog:
@@ -290,6 +294,7 @@ class Fx1Harness:
         prompt_sha256: str,
         output_sha256: str | None,
         attempts: tuple[dict[str, Any], ...] | None = None,
+        sampling: dict[str, Any] | None = None,
     ) -> str:
         """Append one call to the completion log; returns its id."""
         cid = uuid.uuid4().hex
@@ -307,6 +312,7 @@ class Fx1Harness:
                 prompt_sha256=prompt_sha256,
                 output_sha256=output_sha256,
                 attempts=attempts,
+                sampling=sampling,
             )
         )
         return cid
@@ -444,6 +450,10 @@ class Fx1Harness:
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
         fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -459,9 +469,18 @@ class Fx1Harness:
         a refusal is a verdict, not a reason to spend another backend's
         capacity. Per-link kwargs: ``byok`` binds only a ``'byok'`` link,
         ``checkpoint_dir`` only a ``'local_fx1'`` link.
+
+        ``temperature``/``top_p``/``max_tokens``/``seed`` are declared
+        decode params — only set fields reach the wire beyond temperature
+        (default 0.0 keeps eval runs deterministic); the resolved set is
+        recorded on the completion record.
         """
         chain = _fallback_chain(backend, fallbacks)
         _check_link_kwargs(chain, checkpoint_dir, byok)
+        sampling = SamplingParams(
+            temperature=temperature, top_p=top_p, max_tokens=max_tokens, seed=seed
+        )
+        sampling_fields = sampling.body_fields()
         prompt_sha256 = _messages_sha256(messages)
         attempts: list[dict[str, Any]] = []
         last_exc: Exception | None = None
@@ -506,11 +525,14 @@ class Fx1Harness:
                     prompt_sha256,
                     None,
                     tuple(attempts),
+                    sampling_fields,
                 )
                 raise
             t0 = time.monotonic()
             try:
-                content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
+                content = cited_complete(
+                    backend_obj, messages, receipt_hashes=receipt_hashes, sampling=sampling
+                )
             except (BackendNotConfiguredError, RuntimeError) as exc:
                 # availability fault — record the link, try the next.
                 attempts.append(
@@ -551,6 +573,7 @@ class Fx1Harness:
                     prompt_sha256,
                     None,
                     tuple(attempts),
+                    sampling_fields,
                 )
                 closer = getattr(backend_obj, "close", None)
                 if callable(closer):
@@ -576,6 +599,7 @@ class Fx1Harness:
                 prompt_sha256,
                 hashlib.sha256(content.encode("utf-8")).hexdigest(),
                 tuple(attempts) if len(attempts) > 1 else None,
+                sampling_fields,
             )
             closer = getattr(backend_obj, "close", None)
             if callable(closer):
@@ -588,6 +612,7 @@ class Fx1Harness:
                 receipt_hashes=tuple(receipt_hashes or ()),
                 completion_id=cid,
                 attempts=tuple(attempts) if len(attempts) > 1 else (),
+                sampling=sampling_fields,
             )
         assert last_exc is not None  # every link failed retriably
         self._record_call(
@@ -601,6 +626,7 @@ class Fx1Harness:
             prompt_sha256,
             None,
             tuple(attempts) if len(attempts) > 1 else None,
+            sampling_fields,
         )
         raise last_exc
 
@@ -616,6 +642,10 @@ class Fx1Harness:
         timeout_s: float | None = None,
         max_workers: int = 4,
         fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> list[CompletionResult]:
         """Many gated completions over ONE shared backend instance.
 
@@ -632,6 +662,10 @@ class Fx1Harness:
         serving, backend_obj = self._resolve_chain(
             backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
+        sampling = SamplingParams(
+            temperature=temperature, top_p=top_p, max_tokens=max_tokens, seed=seed
+        )
+        sampling_fields = sampling.body_fields()
         model_name = getattr(backend_obj, "_model", None)
         model_str = model_name if isinstance(model_name, str) else None
 
@@ -639,7 +673,9 @@ class Fx1Harness:
             t0 = time.monotonic()
             p_sha = _messages_sha256(msgs)
             try:
-                content = cited_complete(backend_obj, msgs, receipt_hashes=receipt_hashes)
+                content = cited_complete(
+                    backend_obj, msgs, receipt_hashes=receipt_hashes, sampling=sampling
+                )
             except Exception as exc:
                 self._record_call(
                     serving,
@@ -651,6 +687,8 @@ class Fx1Harness:
                     type(exc).__name__,
                     p_sha,
                     None,
+                    None,
+                    sampling_fields,
                 )
                 raise
             cid = self._record_call(
@@ -663,6 +701,8 @@ class Fx1Harness:
                 None,
                 p_sha,
                 hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                None,
+                sampling_fields,
             )
             return content, cid
 
@@ -682,6 +722,7 @@ class Fx1Harness:
                 content=content,
                 receipt_hashes=tuple(receipt_hashes or ()),
                 completion_id=cid,
+                sampling=sampling_fields,
             )
             for content, cid in done
         ]
@@ -699,6 +740,10 @@ class Fx1Harness:
         byok: dict[str, str] | None = None,
         timeout_s: float | None = None,
         fallbacks: list[str] | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
     ) -> list[str]:
         """Token-delta chunks of one gated completion.
 
@@ -715,12 +760,16 @@ class Fx1Harness:
         serving, backend_obj = self._resolve_chain(
             backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
+        sampling = SamplingParams(
+            temperature=temperature, top_p=top_p, max_tokens=max_tokens, seed=seed
+        )
+        sampling_fields = sampling.body_fields()
         t0 = time.monotonic()
         prompt_sha256 = _messages_sha256(messages)
         try:
             if not isinstance(backend_obj, StreamingBackend):
                 raise NotImplementedError(f"backend {serving!r} does not support streaming")
-            chunks = list(backend_obj.stream(messages))
+            chunks = list(backend_obj.stream(messages, sampling=sampling))
             joined = "".join(chunks)
             validate_fx1_output(joined)
             if receipt_hashes:
@@ -744,6 +793,8 @@ class Fx1Harness:
                 type(exc).__name__,
                 prompt_sha256,
                 None,
+                None,
+                sampling_fields,
             )
             raise
         finally:
@@ -762,6 +813,8 @@ class Fx1Harness:
             None,
             prompt_sha256,
             hashlib.sha256(joined.encode("utf-8")).hexdigest(),
+            None,
+            sampling_fields,
         )
         return chunks
 

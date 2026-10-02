@@ -505,6 +505,19 @@
             "title": "Fallbacks",
             "type": "array"
           },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 262144.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
           "max_workers": {
             "default": 4,
             "maximum": 16.0,
@@ -526,6 +539,31 @@
             ],
             "title": "Receipt Hashes"
           },
+          "seed": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
           "timeout_s": {
             "anyOf": [
               {
@@ -538,6 +576,19 @@
               }
             ],
             "title": "Timeout S"
+          },
+          "top_p": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top P"
           }
         },
         "required": [
@@ -591,6 +642,18 @@
             },
             "title": "Results",
             "type": "array"
+          },
+          "sampling": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling"
           },
           "usage_total": {
             "anyOf": [
@@ -662,6 +725,19 @@
             "title": "Fallbacks",
             "type": "array"
           },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 262144.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
           "messages": {
             "items": {
               "$ref": "#/components/schemas/ChatMessage"
@@ -685,6 +761,31 @@
             ],
             "title": "Receipt Hashes"
           },
+          "seed": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
           "timeout_s": {
             "anyOf": [
               {
@@ -697,6 +798,19 @@
               }
             ],
             "title": "Timeout S"
+          },
+          "top_p": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top P"
           }
         },
         "required": [
@@ -762,6 +876,18 @@
             "default": false,
             "title": "Replayed",
             "type": "boolean"
+          },
+          "sampling": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling"
           },
           "usage": {
             "anyOf": [
@@ -895,6 +1021,18 @@
           "prompt_sha256": {
             "title": "Prompt Sha256",
             "type": "string"
+          },
+          "sampling": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling"
           },
           "usage": {
             "anyOf": [

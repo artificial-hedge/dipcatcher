@@ -395,6 +395,16 @@ def harness_complete(
         "--fallback",
         help="Alternate backend to try on availability faults (repeatable, max 2).",
     ),
+    temperature: float | None = typer.Option(
+        None, "--temperature", help="Decode temperature (default 0.0 — deterministic)."
+    ),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass (0,1]."),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", help="Completion token cap sent to the provider."
+    ),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Decode seed passed to providers that support it."
+    ),
 ) -> None:
     """One gated completion — the honesty gate runs before output."""
     surface = _surface(remote, api_key, timeout_s)
@@ -409,6 +419,10 @@ def harness_complete(
                 byok=byok,
                 timeout_s=backend_timeout,
                 fallbacks=fallbacks or None,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=max_tokens,
+                seed=seed,
             )
         )
         for chunk in chunks:
@@ -424,6 +438,10 @@ def harness_complete(
             byok=byok,
             timeout_s=backend_timeout,
             fallbacks=fallbacks or None,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
         )
     )
     typer.echo(out.content)
@@ -454,6 +472,16 @@ def harness_batch(
         "--fallback",
         help="Alternate backend to try on availability faults (repeatable, max 2).",
     ),
+    temperature: float | None = typer.Option(
+        None, "--temperature", help="Decode temperature (default 0.0 — deterministic)."
+    ),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass (0,1]."),
+    max_tokens: int | None = typer.Option(
+        None, "--max-tokens", help="Completion token cap sent to the provider."
+    ),
+    seed: int | None = typer.Option(
+        None, "--seed", help="Decode seed passed to providers that support it."
+    ),
 ) -> None:
     """Gated batch completion — per-item failures surface as exit 2."""
     surface = _surface(remote, api_key, timeout_s)
@@ -468,6 +496,10 @@ def harness_batch(
             timeout_s=backend_timeout,
             max_workers=workers,
             fallbacks=fallbacks or None,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
         )
     )
     payload = json.dumps(

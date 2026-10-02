@@ -43,6 +43,8 @@ if TYPE_CHECKING:
 
     from fastapi.testclient import TestClient
 
+    from fx1.serve.backends import SamplingParams
+
 __all__ = ["api_audit", "api_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
@@ -222,7 +224,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def __init__(self) -> None:
             self.calls = 0
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             self.calls += 1
             return f"clean:{messages[-1]['content']}"
 
@@ -368,7 +372,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     # honesty gate fires over the wire: a backend emitting a forbidden
     # headline must not serve it.
     class _DirtyBackend:
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             return "The strategy achieved a sharpe of 2.1 on the tape."
 
     # Injected resolver — the honesty gate must hold even when the model
@@ -395,7 +401,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.calls = 0
             self.closed = 0
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             self.calls += 1
             return f"clean:{messages[-1]['content']}"
 
@@ -457,7 +465,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     # Per-slot verdicts: a refusal on one item doesn't lose the batch.
     class _PartialBackend(_CleanBackend):
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             if messages[-1]["content"] == "bad":
                 return "total Sharpe 4.2 on NAV"  # forbidden headline
             return super().complete(messages)
@@ -485,7 +495,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     # --- SSE streaming ---------------------------------------------------------
     class _StreamBackend(_CleanBackend):
-        def stream(self, messages: list[dict[str, str]]) -> Any:
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
             yield "tok-a"
             yield "tok-b"
 
@@ -529,7 +541,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
 
     class _DirtyStreamBackend(_DirtyBackend):
-        def stream(self, messages: list[dict[str, str]]) -> Any:
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
             yield "total Sharpe 4.2 on NAV"
 
     dirty_stream = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyStreamBackend()))
@@ -561,7 +575,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
 
     # --- SSE keepalive (grace window → comment frames → in-band errors) ----
     class _SlowStreamBackend(_CleanBackend):
-        def stream(self, messages: list[dict[str, str]]) -> Any:
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
             time.sleep(0.3)
             yield "slow-tok"
 
@@ -585,7 +601,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
 
     class _SlowFailBackend(_CleanBackend):
-        def stream(self, messages: list[dict[str, str]]) -> Any:
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
             time.sleep(0.3)
             raise RuntimeError("engine died mid-generation")
 
@@ -1399,7 +1417,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def __init__(self) -> None:
             self.calls = 0
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             self.calls += 1
             if self.calls <= 2:
                 raise RuntimeError("backend exploded")
@@ -1494,7 +1514,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def __init__(self) -> None:
             self.calls = 0
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             self.calls += 1
             raise RuntimeError("backend exploded")
 
@@ -2572,7 +2594,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.last_usage: dict[str, int] | None = None
             self.total_usage: dict[str, int] = {}
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
             self.last_usage = usage
             for k, v in usage.items():
@@ -2719,10 +2743,14 @@ def _probe_backend_probes(
             self.last_usage: dict[str, int] | None = None
             self._model = "stream-usage-0"
 
-        def complete(self, messages: list[dict[str, str]]) -> str:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
             return "hello"
 
-        def stream(self, messages: list[dict[str, str]]) -> Any:
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
             yield "he"
             yield "llo"
             self.last_usage = {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
@@ -2970,6 +2998,174 @@ def _probe_backend_probes(
     tampered_job["record"]["status"] = "failed"
     out["job_receipt_tamper"] = _vrp(tampered_job)["valid"] is False
     out["job_receipt_404"] = jr.get("/harness/jobs/nope/receipt").status_code == 404
+
+    # --- sampling controls --------------------------------------------------
+    # declared decode fields resolve server-side into one wire dict: the
+    # backend receives a SamplingParams carrying exactly what was declared,
+    # the response/record echo the resolved set, and the unpinned default
+    # stays temperature-pinned at 0.0 (eval determinism).
+    from fx1.serve.backends import SamplingParams as _SP  # noqa: PLC0415
+
+    class _SamplingSpy:
+        def __init__(self) -> None:
+            self.seen: _SP | None = None
+            self._model = "sampling-spy-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.seen = sampling
+            return "clean:x"
+
+        def stream(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> Any:
+            self.seen = sampling
+            yield "clean:x"
+
+    spy = _SamplingSpy()
+    sp_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: spy))
+    sp_res = sp_app.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "u", "content": "x"}],
+            "temperature": 0.7,
+            "top_p": 0.9,
+            "max_tokens": 64,
+            "seed": 17,
+        },
+    )
+    want_fields = {"temperature": 0.7, "top_p": 0.9, "max_tokens": 64, "seed": 17}
+    sp_rec = sp_app.get(f"/harness/completions/{sp_res.json()['completion_id']}")
+    out["sampling_sync_resolved"] = (
+        sp_res.status_code == 200
+        and sp_res.json()["sampling"] == want_fields
+        and isinstance(spy.seen, _SP)
+        and spy.seen.body_fields() == want_fields
+        and sp_rec.json()["sampling"] == want_fields
+    )
+    spy.seen = None
+    d_res = sp_app.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    out["sampling_default_pin"] = (
+        d_res.status_code == 200
+        and d_res.json()["sampling"] == {"temperature": 0.0}
+        and spy.seen is not None
+        and spy.seen.body_fields() == {"temperature": 0.0}
+    )
+    out["sampling_field_422"] = all(
+        sp_app.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "u", "content": "x"}],
+                k: v,
+            },
+        ).status_code
+        == 422
+        for k, v in (
+            ("temperature", 2.5),
+            ("top_p", 0.0),
+            ("max_tokens", 0),
+            ("seed", -1),
+        )
+    )
+    spy.seen = None
+    sb_res = sp_app.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [[{"role": "u", "content": "q"}]],
+            "temperature": 0.3,
+            "seed": 7,
+        },
+    )
+    out["sampling_batch_resolved"] = (
+        sb_res.status_code == 200
+        and sb_res.json()["sampling"] == {"temperature": 0.3, "seed": 7}
+        and sb_res.json()["results"][0]["ok"] is True
+        and spy.seen is not None
+        and spy.seen.body_fields() == {"temperature": 0.3, "seed": 7}
+    )
+    spy.seen = None
+    ss_res = sp_app.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "u", "content": "x"}],
+            "temperature": 0.2,
+            "max_tokens": 8,
+        },
+    )
+    ss_final = next(
+        _json.loads(ln[len("data: ") :])
+        for ln in ss_res.text.splitlines()
+        if ln.startswith("data: ") and _json.loads(ln[len("data: ") :]).get("type") == "final"
+    )
+    out["sampling_stream_final_frame"] = (
+        ss_res.status_code == 200
+        and ss_final.get("sampling") == {"temperature": 0.2, "max_tokens": 8}
+        and spy.seen is not None
+        and spy.seen.body_fields() == {"temperature": 0.2, "max_tokens": 8}
+    )
+
+    # wire level: declared fields reach the provider body; undeclared knobs
+    # (seed/top_p/max_tokens) are never sent to a backend that got no request
+    # for them — and the temperature pin still ships at 0.0.
+    captured_wire: dict[str, Any] = {}
+
+    class _WireResp:
+        def read(self) -> bytes:
+            return _json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+
+        def __enter__(self) -> Any:
+            return self
+
+        def __exit__(self, *a: Any) -> None:
+            return None
+
+    def _wire_urlopen(req: Any, **kw: Any) -> Any:
+        captured_wire["body"] = _json.loads(req.data.decode())
+        return _WireResp()
+
+    _urlreq.urlopen = _wire_urlopen  # type: ignore[assignment]
+    try:
+        _be_mod._openai_chat_complete(
+            "http://wire.test",
+            model="m",
+            messages=[{"role": "user", "content": "q"}],
+            timeout_s=1.0,
+            api_key=None,
+            label="t",
+            sampling=_SP(temperature=0.5, top_p=0.95, max_tokens=32, seed=42),
+        )
+        full_body = dict(captured_wire["body"])
+        _be_mod._openai_chat_complete(
+            "http://wire.test",
+            model="m",
+            messages=[{"role": "user", "content": "q"}],
+            timeout_s=1.0,
+            api_key=None,
+            label="t",
+        )
+        default_body = dict(captured_wire["body"])
+    finally:
+        _urlreq.urlopen = orig_urlopen
+    out["sampling_wire_declared"] = (
+        full_body.get("temperature") == 0.5
+        and full_body.get("top_p") == 0.95
+        and full_body.get("max_tokens") == 32
+        and full_body.get("seed") == 42
+        and default_body
+        == {
+            "model": "m",
+            "messages": [{"role": "user", "content": "q"}],
+            "temperature": 0.0,
+        }
+    )
 
 
 def api_audit_bench() -> dict[str, Any]:

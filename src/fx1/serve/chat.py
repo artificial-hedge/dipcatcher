@@ -9,7 +9,7 @@ training teaches.
 from __future__ import annotations
 
 from fx1.honesty import validate_fx1_output
-from fx1.serve.backends import InferenceBackend
+from fx1.serve.backends import InferenceBackend, SamplingParams
 
 
 def cited_complete(
@@ -17,9 +17,10 @@ def cited_complete(
     messages: list[dict[str, str]],
     *,
     receipt_hashes: list[str] | None = None,
+    sampling: SamplingParams | None = None,
 ) -> str:
     """Complete with honesty validation and provenance footer."""
-    response = backend.complete(messages)
+    response = backend.complete(messages, sampling=sampling)
     validate_fx1_output(response)  # fail-closed on contract violations
     if receipt_hashes:
         footer = (

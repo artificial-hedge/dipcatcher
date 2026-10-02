@@ -469,6 +469,74 @@ def cli_audit() -> dict[str, Any]:
             out["batch_fallback_flags_forward"] = rb_f.exit_code == 0 and fake.batch_calls[-1].get(
                 "fallbacks"
             ) == ["byok"]
+            rb_s = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch",
+                    str(pf),
+                    "--backend",
+                    "byok",
+                    "--temperature",
+                    "0.4",
+                    "--seed",
+                    "11",
+                ],
+            )
+            out["batch_sampling_flags_forward"] = (
+                rb_s.exit_code == 0
+                and fake.batch_calls[-1].get("temperature") == 0.4
+                and fake.batch_calls[-1].get("seed") == 11
+            )
+
+        # decode flags forward through both complete surfaces; unpinned calls
+        # send nothing (the surface resolves the temperature=0.0 default).
+        rsp = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--backend",
+                "byok",
+                "--temperature",
+                "0.6",
+                "--top-p",
+                "0.8",
+                "--max-tokens",
+                "33",
+                "--seed",
+                "9",
+            ],
+        )
+        rsp_last = fake.complete_calls[-1]
+        out["complete_sampling_flags_forward"] = (
+            rsp.exit_code == 0
+            and rsp_last.get("temperature") == 0.6
+            and rsp_last.get("top_p") == 0.8
+            and rsp_last.get("max_tokens") == 33
+            and rsp_last.get("seed") == 9
+        )
+        rsp_s = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--stream",
+                "--backend",
+                "byok",
+                "--temperature",
+                "0.6",
+                "--seed",
+                "9",
+            ],
+        )
+        out["stream_sampling_flags_forward"] = (
+            rsp_s.exit_code == 0
+            and fake.stream_calls[-1].get("temperature") == 0.6
+            and fake.stream_calls[-1].get("seed") == 9
+        )
 
     # --remote routes the same commands through HarnessClient --------------
     class _FakeRemote:

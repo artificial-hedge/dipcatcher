@@ -82,6 +82,7 @@ from fx1.serve.backends import (
     LOCAL_SERVE_CMD_ENV,
     LOCAL_SERVE_URL_ENV,
     BackendNotConfiguredError,
+    SamplingParams,
     StreamingBackend,
     get_backend,
 )
@@ -385,6 +386,18 @@ def _fallback_chain_valid(
         raise ValueError("checkpoint_dir applies only to a 'local_fx1' link in the chain")
 
 
+def _sampling_of(body: CompleteRequest | CompleteBatchRequest) -> SamplingParams:
+    """Decode params declared on the request → the dataclass the backends
+    take. The wire-facing flat fields are validated by pydantic; the
+    resolved set is what the completion record seals."""
+    return SamplingParams(
+        temperature=body.temperature,
+        top_p=body.top_p,
+        max_tokens=body.max_tokens,
+        seed=body.seed,
+    )
+
+
 class CompleteRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
     messages: list[ChatMessage] = Field(min_length=1, max_length=512)
@@ -401,6 +414,15 @@ class CompleteRequest(_Model):
     fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
         default_factory=list, max_length=2
     )
+    # Declared decode params — only fields set here reach the wire beyond
+    # temperature (a provider that doesn't know ``seed`` never sees it);
+    # the resolved set lands in the completion record as evidence of what
+    # was sampled. Unset temperature defaults to 0 (eval runs stay
+    # deterministic unless the caller opts out).
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, gt=0.0, le=1.0)
+    max_tokens: int | None = Field(default=None, gt=0, le=262144)
+    seed: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _chain_valid(self) -> CompleteRequest:
@@ -430,6 +452,8 @@ class CompleteResponse(_Model):
     # Ordered chain trace — every link tried (last is the serving link),
     # empty when the primary served unchallenged.
     attempts: list[BackendAttempt] = []
+    # The resolved decode params actually sent to the provider.
+    sampling: dict[str, Any] | None = None
 
 
 class CompleteBatchRequest(_Model):
@@ -445,6 +469,14 @@ class CompleteBatchRequest(_Model):
     fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
         default_factory=list, max_length=2
     )
+
+    # Declared decode params applied to every item — same semantics as
+    # ``CompleteRequest``; the resolved set is echoed on the response and
+    # on each item's completion record.
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, gt=0.0, le=1.0)
+    max_tokens: int | None = Field(default=None, gt=0, le=262144)
+    seed: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _chain_valid(self) -> CompleteBatchRequest:
@@ -504,6 +536,8 @@ class CompleteBatchResponse(_Model):
     model: str | None
     receipt_hashes: list[str]
     results: list[CompleteBatchItem]
+    # The resolved decode params sent for every item in the batch.
+    sampling: dict[str, Any] | None = None
     # Sum of the backend's reported usage across this batch (a shared
     # endpoint can't attribute counts per item under worker threads —
     # only the batch-level delta is honest). None when the backend is
@@ -533,6 +567,8 @@ class CompletionRecord(_Model):
     output_sha256: str | None = None
     # Chain trace when a fallback chain ran — sealed evidence of failover.
     attempts: list[BackendAttempt] | None = None
+    # The resolved decode params sent to the provider.
+    sampling: dict[str, Any] | None = None
 
 
 class CompletionListResponse(_Model):
@@ -1922,6 +1958,8 @@ def _mount_complete_routes(
         call_latency_ms = 0.0
         attempts: list[BackendAttempt] = []
         last_exc: ApiError | None = None
+        sampling_params = _sampling_of(body)
+        sampling_fields = sampling_params.body_fields()
         # Ordered fallback chain: each link gets its own admit + resolve +
         # call. Only availability faults advance the chain — a gate
         # refusal, a capability gap (501), or a client error aborts.
@@ -1952,7 +1990,12 @@ def _mount_complete_routes(
                     raise
                 t0 = time.monotonic()
                 try:
-                    content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
+                    content = cited_complete(
+                        backend,
+                        messages,
+                        receipt_hashes=body.receipt_hashes,
+                        sampling=sampling_params,
+                    )
                 except NotImplementedError as exc:
                     rec_cls = "not_supported"
                     rec_err = str(exc)
@@ -2035,6 +2078,7 @@ def _mount_complete_routes(
                         else None
                     ),
                     attempts=attempts if len(attempts) > 1 else None,
+                    sampling=sampling_fields,
                 )
             )
         assert serving is not None  # noqa: S101 — None already raised above
@@ -2047,6 +2091,7 @@ def _mount_complete_routes(
             usage=usage_snap if isinstance(usage_snap, dict) else None,
             completion_id=cid,
             attempts=attempts if len(attempts) > 1 else [],
+            sampling=sampling_fields,
         )
         response.headers["X-Fx1-Completion-Id"] = cid
         if key is not None:
@@ -2084,6 +2129,8 @@ def _mount_complete_routes(
         """
         _check_citations(body.receipt_hashes)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
+        sampling_params = _sampling_of(body)
+        sampling_fields = sampling_params.body_fields()
 
         def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None, str]:
             """Buffer + gate the backend stream; raises the mapped errors.
@@ -2104,7 +2151,7 @@ def _mount_complete_routes(
                     raise NotImplementedError(
                         f"backend {body.backend!r} does not support streaming"
                     )
-                chunks = list(backend.stream(messages))
+                chunks = list(backend.stream(messages, sampling=sampling_params))
                 joined = "".join(chunks)
                 try:
                     validate_fx1_output(joined)
@@ -2153,6 +2200,7 @@ def _mount_complete_routes(
                         error=rec_err,
                         error_class=rec_cls,
                         prompt_sha256=prompt_sha256,
+                        sampling=sampling_fields,
                         output_sha256=(
                             hashlib.sha256(joined_snap.encode("utf-8")).hexdigest()
                             if call_ok
@@ -2194,6 +2242,7 @@ def _mount_complete_routes(
                         "latency_ms": latency_ms,
                         "usage": usage,
                         "completion_id": completion_id,
+                        "sampling": sampling_fields,
                     }
                 )
                 + "\n\n"
@@ -2285,6 +2334,8 @@ def _mount_complete_routes(
         # batch — a shared backend can't attribute per-item usage, so
         # per-item failover is intentionally not offered.
         serving, backend, batch_attempts = _resolve_chain(body)
+        sampling_params = _sampling_of(body)
+        sampling_fields = sampling_params.body_fields()
         usage_pre = getattr(backend, "total_usage", None)
         usage_pre = dict(usage_pre) if isinstance(usage_pre, dict) else None
         # One backend serves the whole batch — a spawned local engine is
@@ -2322,6 +2373,7 @@ def _mount_complete_routes(
                                 error=err,
                                 error_class=cls,
                                 prompt_sha256=prompt_sha256,
+                                sampling=sampling_fields,
                                 output_sha256=(
                                     hashlib.sha256(content.encode("utf-8")).hexdigest()
                                     if content is not None
@@ -2343,7 +2395,10 @@ def _mount_complete_routes(
                     item_ok = False
                     try:
                         content = cited_complete(
-                            backend, messages, receipt_hashes=body.receipt_hashes
+                            backend,
+                            messages,
+                            receipt_hashes=body.receipt_hashes,
+                            sampling=sampling_params,
                         )
                         item_ok = True
                     except Fx1HonestyError as exc:
@@ -2413,6 +2468,7 @@ def _mount_complete_routes(
             model=model_name if isinstance(model_name, str) else None,
             receipt_hashes=body.receipt_hashes or [],
             results=results,
+            sampling=sampling_fields,
             usage_total=usage_total,
             attempts=batch_attempts if len(batch_attempts) > 1 else [],
         )
