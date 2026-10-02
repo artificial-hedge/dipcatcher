@@ -1341,6 +1341,14 @@ from quant_fund.research.benches_w168 import (
     bench_redq_family,
     bench_td7_lite_family,
 )
+from quant_fund.research.benches_w169 import (
+    bench_advi_bbvi_family,
+    bench_iwae_bound_family,
+    bench_nf_vi_family,
+    bench_sparse_gp_sv_family,
+    bench_structured_vi_family,
+    bench_vrnn_seq_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3900,6 +3908,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "crossq": bench_crossq_family(),
         "dr3_reg": bench_dr3_reg_family(),
         "ob2i": bench_ob2i_family(),
+        "advi_bbvi": bench_advi_bbvi_family(),
+        "iwae_bound": bench_iwae_bound_family(),
+        "nf_vi": bench_nf_vi_family(),
+        "sparse_gp_sv": bench_sparse_gp_sv_family(),
+        "structured_vi": bench_structured_vi_family(),
+        "vrnn_seq": bench_vrnn_seq_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

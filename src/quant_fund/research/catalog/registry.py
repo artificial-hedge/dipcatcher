@@ -2224,6 +2224,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "crossq",
         "dr3_reg",
         "ob2i",
+        # Wave-169 amortized-inference canon:
+        # ADVI, IWAE, NF-VI, SVGP,
+        # structured VI, VRNN.
+        "advi_bbvi",
+        "iwae_bound",
+        "nf_vi",
+        "sparse_gp_sv",
+        "structured_vi",
+        "vrnn_seq",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
