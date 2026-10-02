@@ -968,6 +968,7 @@ def api_audit() -> dict[str, Any]:
     _cb_hits: list[dict[str, Any]] = []
     _cb_raw: list[bytes] = []
     _cb_hdrs: list[dict[str, str]] = []
+    _cb_path_n: dict[str, int] = {}
 
     class _JobHook(BaseHTTPRequestHandler):
         def do_POST(self) -> None:  # noqa: N802 — http.server handler name
@@ -976,8 +977,13 @@ def api_audit() -> dict[str, Any]:
             _cb_raw.append(raw)
             _cb_hdrs.append(dict(self.headers.items()))
             _cb_hits.append(_json.loads(raw))
+            _cb_path_n[self.path] = _cb_path_n.get(self.path, 0) + 1
             if self.path == "/fail":
                 self.send_response(500)
+            elif self.path == "/flaky":
+                self.send_response(500 if _cb_path_n[self.path] < 3 else 200)
+            elif self.path == "/reject":
+                self.send_response(404)
             else:
                 self.send_response(200)
             self.end_headers()
@@ -1011,6 +1017,7 @@ def api_audit() -> dict[str, Any]:
             time.sleep(0.05)
         out["callback_delivered_on_success"] = (
             ok_job.status_code == 202
+            and ok_job.headers.get("location") == f"/harness/jobs/{jid_cb}"
             and st_cb.get("callback_status") == "delivered"
             and st_cb.get("callback_url") == cb_url
             and len(_cb_hits) == 1
@@ -1028,7 +1035,7 @@ def api_audit() -> dict[str, Any]:
         st_err: dict[str, Any] = {}
         while time.monotonic() < deadline:
             st_err = cbc.get(f"/harness/jobs/{jid_err}").json()
-            if st_err.get("callback_status"):
+            if st_err.get("callback_status") and st_err.get("callback_attempts") == 3:
                 break
             time.sleep(0.05)
         out["callback_http_error_recorded"] = (
@@ -1036,20 +1043,67 @@ def api_audit() -> dict[str, Any]:
             and st_err.get("callback_status") == "failed"
             and "500" in (st_err.get("callback_error") or "")
         )
-        # dead endpoint -> connection error recorded, job unaffected
-        dead_job = cbc.post(
-            "/harness/jobs",
-            json={
-                "command": "doctor",
-                "callback_url": f"http://127.0.0.1:{_dead_port}/hook",
-            },
+        out["callback_5xx_retried_3x"] = (
+            _cb_path_n.get("/fail") == 3 and st_err.get("callback_attempts") == 3
         )
-        jid_dead = dead_job.json()["job_id"]
+
+        # transient 5xx sequence eventually delivers; 4xx never retries.
+        # Delivery retries hold a worker briefly — a submit can race a
+        # saturated inflight cap, so re-submit until a slot frees.
+        def _submit_cb(url: str) -> str:
+            end = time.monotonic() + 10.0
+            while True:
+                r = cbc.post(
+                    "/harness/jobs",
+                    json={"command": "doctor", "callback_url": url},
+                )
+                if r.status_code == 202:
+                    return str(r.json()["job_id"])
+                if r.status_code != 503 or time.monotonic() > end:
+                    raise AssertionError(f"callback submit failed: {r.status_code} {r.text}")
+                time.sleep(0.1)
+
+        jid_fk = _submit_cb(cb_url.replace("/hook", "/flaky"))
+        deadline = time.monotonic() + 10.0
+        st_fk: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_fk = cbc.get(f"/harness/jobs/{jid_fk}").json()
+            if (
+                st_fk["status"] == "succeeded"
+                and st_fk.get("callback_status")
+                and st_fk.get("callback_attempts") == 3
+            ):
+                break
+            time.sleep(0.05)
+        out["callback_flaky_delivers"] = (
+            st_fk.get("callback_status") == "delivered"
+            and st_fk.get("callback_attempts") == 3
+            and _cb_path_n.get("/flaky") == 3
+        )
+        jid_rj = _submit_cb(cb_url.replace("/hook", "/reject"))
+        deadline = time.monotonic() + 10.0
+        st_rj: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_rj = cbc.get(f"/harness/jobs/{jid_rj}").json()
+            if st_rj["status"] == "succeeded" and st_rj.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["callback_4xx_never_retried"] = (
+            st_rj.get("callback_status") == "failed"
+            and st_rj.get("callback_attempts") == 1
+            and _cb_path_n.get("/reject") == 1
+        )
+        # dead endpoint -> connection error recorded, job unaffected
+        jid_dead = _submit_cb(f"http://127.0.0.1:{_dead_port}/hook")
         deadline = time.monotonic() + 15.0
         st_dead: dict[str, Any] = {}
         while time.monotonic() < deadline:
             st_dead = cbc.get(f"/harness/jobs/{jid_dead}").json()
-            if st_dead["status"] == "succeeded" and st_dead.get("callback_status"):
+            if (
+                st_dead["status"] == "succeeded"
+                and st_dead.get("callback_status")
+                and st_dead.get("callback_attempts") == 3
+            ):
                 break
             time.sleep(0.05)
         out["callback_dead_endpoint_recorded"] = (
@@ -1060,8 +1114,7 @@ def api_audit() -> dict[str, Any]:
         # cancelling a queued job is a terminal transition — it fires too
         cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
         cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
-        qjob = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
-        qid = qjob.json()["job_id"]
+        qid = _submit_cb(cb_url)
         cxl = cbc.delete(f"/harness/jobs/{qid}")
         deadline = time.monotonic() + 10.0
         while time.monotonic() < deadline and (
@@ -1069,8 +1122,7 @@ def api_audit() -> dict[str, Any]:
         ):
             time.sleep(0.05)
         out["callback_fires_on_cancel"] = (
-            qjob.status_code == 202
-            and cxl.status_code == 200
+            cxl.status_code == 200
             and cxl.json()["status"] == "cancelled"
             and cxl.json().get("callback_status") == "delivered"
             and _cb_hits[-1]["job_id"] == qid

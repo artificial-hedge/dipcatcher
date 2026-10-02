@@ -57,7 +57,7 @@ from contextlib import (
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
@@ -391,6 +391,7 @@ class JobStatusResponse(_Model):
     callback_status: Literal["delivered", "failed"] | None = None
     _callback_secret: str | None = PrivateAttr(default=None)
     callback_error: str | None = None
+    callback_attempts: int = 0
 
 
 class _Metrics:
@@ -503,34 +504,49 @@ def _idem_lookup[IdemT: BaseModel](
     return key, cached.model_copy(update={"replayed": True})
 
 
+_WEBHOOK_MAX_ATTEMPTS = 3
+_WEBHOOK_BACKOFF_S = 0.5
+
+
 def _deliver_job_callback(job: JobStatusResponse) -> None:
     """Terminal-state webhook: POST the full job record to the caller's
     ``callback_url``. Best-effort — a dead or slow endpoint records
     ``callback_status='failed'`` on the job, never raises into the worker
-    and never changes the job's own status."""
+    and never changes the job's own status. Transient faults (network
+    errors, 5xx) retry ``_WEBHOOK_MAX_ATTEMPTS`` times with capped backoff;
+    a 4xx is a definitive rejection and is never retried."""
     url = job.callback_url
     if not url:
         return
-    try:
-        payload = job.model_dump_json().encode()
-        headers = {"Content-Type": "application/json"}
-        if job._callback_secret:
-            ts = str(int(time.time()))
-            headers[WEBHOOK_TIMESTAMP_HEADER] = ts
-            headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(job._callback_secret, ts, payload)
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers=headers,
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
-            job.callback_status = "delivered" if resp.status < 400 else "failed"
-            if resp.status >= 400:
+    for attempt in range(_WEBHOOK_MAX_ATTEMPTS):
+        if attempt:
+            time.sleep(_WEBHOOK_BACKOFF_S * (1 << (attempt - 1)))
+        job.callback_attempts = attempt + 1
+        try:
+            payload = job.model_dump_json().encode()
+            headers = {"Content-Type": "application/json"}
+            if job._callback_secret:
+                ts = str(int(time.time()))
+                headers[WEBHOOK_TIMESTAMP_HEADER] = ts
+                headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(job._callback_secret, ts, payload)
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers=headers,
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
+                if resp.status < 400:
+                    job.callback_status = "delivered"
+                    job.callback_error = None
+                    return
+                job.callback_status = "failed"
                 job.callback_error = f"callback endpoint returned {resp.status}"
-    except Exception as exc:  # noqa: BLE001 — delivery faults land on the record, not the worker
-        job.callback_status = "failed"
-        job.callback_error = f"{type(exc).__name__}: {exc}"
+                if 400 <= resp.status < 500:
+                    return  # definitive rejection — never retried
+        except Exception as exc:  # noqa: BLE001 — delivery faults land on the record, not the worker
+            job.callback_status = "failed"
+            job.callback_error = f"{type(exc).__name__}: {exc}"
 
 
 def _submit_job(
@@ -745,12 +761,14 @@ def _mount_job_routes(
     )
     def submit_job(
         body: HarnessRunRequest,
+        response: Response,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> JobSubmitResponse:
         """Async run submission: work starts in the background, the caller
-        polls ``GET /harness/jobs/{job_id}`` for the terminal record.
-        Same drain/cap/idempotency contract as the sync route."""
-        return _submit_job(
+        polls ``GET /harness/jobs/{job_id}`` for the terminal record (also
+        echoed as the ``Location`` header). Same drain/cap/idempotency
+        contract as the sync route."""
+        out = _submit_job(
             body,
             idempotency_key or body.idempotency_key,
             lab,
@@ -759,6 +777,8 @@ def _mount_job_routes(
             inflight,
             jobs_executor,
         )
+        response.headers["Location"] = f"/harness/jobs/{out.job_id}"
+        return out
 
     @app.post(
         "/harness/jobs/batch",

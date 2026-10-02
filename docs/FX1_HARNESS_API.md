@@ -140,6 +140,12 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
 
 - **`callback_url`** — POSTs the full job record on every terminal
   transition (succeeded/failed from the worker, cancelled from DELETE).
+  Transient faults (network errors, 5xx) retry up to 3 times with
+  capped backoff; a 4xx is a definitive rejection and never retried.
+  The job record exposes `callback_status` (`delivered`/`failed`),
+  `callback_attempts` (deliveries tried), and `callback_error`.
+- The 202 response carries `Location: /harness/jobs/{job_id}` so the
+  status endpoint is discoverable without composing the path client-side.
 - **`callback_secret`** — HMAC-SHA256 signs the payload:
   `X-Fx1-Webhook-Timestamp` + `X-Fx1-Webhook-Signature` over
   `<ts>.<body>`; receivers verify with

@@ -750,6 +750,11 @@
         "additionalProperties": false,
         "description": "Live job record; ``result`` appears only once status is terminal.",
         "properties": {
+          "callback_attempts": {
+            "default": 0,
+            "title": "Callback Attempts",
+            "type": "integer"
+          },
           "callback_error": {
             "anyOf": [
               {
@@ -1604,7 +1609,7 @@
         ]
       },
       "post": {
-        "description": "Async run submission: work starts in the background, the caller\npolls ``GET /harness/jobs/{job_id}`` for the terminal record.\nSame drain/cap/idempotency contract as the sync route.",
+        "description": "Async run submission: work starts in the background, the caller\npolls ``GET /harness/jobs/{job_id}`` for the terminal record (also\nechoed as the ``Location`` header). Same drain/cap/idempotency\ncontract as the sync route.",
         "operationId": "submit_job",
         "parameters": [
           {

@@ -160,8 +160,9 @@ export interface paths {
         /**
          * Submit Job
          * @description Async run submission: work starts in the background, the caller
-         *     polls ``GET /harness/jobs/{job_id}`` for the terminal record.
-         *     Same drain/cap/idempotency contract as the sync route.
+         *     polls ``GET /harness/jobs/{job_id}`` for the terminal record (also
+         *     echoed as the ``Location`` header). Same drain/cap/idempotency
+         *     contract as the sync route.
          */
         post: operations["submit_job"];
         delete?: never;
@@ -663,6 +664,11 @@ export interface components {
          * @description Live job record; ``result`` appears only once status is terminal.
          */
         JobStatusResponse: {
+            /**
+             * Callback Attempts
+             * @default 0
+             */
+            callback_attempts: number;
             /** Callback Error */
             callback_error?: string | null;
             /** Callback Status */
