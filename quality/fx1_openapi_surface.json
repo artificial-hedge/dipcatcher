@@ -12,6 +12,22 @@
         ]
       }
     },
+    "/harness/backends/{name}/probe": {
+      "post": {
+        "params": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": false,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/capabilities": {
       "get": {
         "params": [],
@@ -301,5 +317,5 @@
       }
     }
   },
-  "schema_sha256": "5c8188e03b62e18b867a180134a2fa6c00e0ccde3fee99d57b88f84d9f8544f5"
+  "schema_sha256": "e374f4cab005b775bdfc344ee913ee38da0a45996295a38539968d634764c535"
 }

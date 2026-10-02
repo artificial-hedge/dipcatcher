@@ -43,6 +43,7 @@ from fx1.sdk import (
     CompletionResult,
     HarnessHealth,
     OpsMetrics,
+    ProbeResult,
     ReceiptRef,
     ReceiptVerdict,
     StoredReceipt,
@@ -577,6 +578,37 @@ class HarnessClient:
             receipt_hashes=tuple(out["receipt_hashes"]),
             replayed=out.get("replayed", False),
             usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
+        )
+
+    def probe_backend(
+        self,
+        backend: str,
+        *,
+        checkpoint_dir: str | Path | None = None,
+        byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
+        prompt: str = "ping",
+    ) -> ProbeResult:
+        """Remote deep-health probe — POSTs ``/harness/backends/{name}/probe``
+        so a BYOK probe tests the caller's own endpoint through the same
+        credential plumbing as a completion."""
+        out = self._json(
+            "POST",
+            f"/harness/backends/{backend}/probe",
+            {
+                "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir is not None else None,
+                "byok": byok,
+                "timeout_s": timeout_s,
+                "prompt": prompt,
+            },
+        )
+        return ProbeResult(
+            backend=out["backend"],
+            ok=out["ok"],
+            model=out.get("model"),
+            latency_ms=out["latency_ms"],
+            error=out.get("error"),
+            error_class=out.get("error_class"),
         )
 
     def complete_many(

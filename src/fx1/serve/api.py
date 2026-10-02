@@ -397,6 +397,29 @@ class CompleteBatchRequest(_Model):
     max_workers: int = Field(default=4, ge=1, le=16)
 
 
+class BackendProbeRequest(_Model):
+    """Optional controls for a backend liveness probe — same credential
+    plumbing as a completion, so a BYOK probe tests the caller's real
+    endpoint. ``prompt`` defaults to a one-token ping."""
+
+    checkpoint_dir: str | None = None
+    byok: ByokOverride | None = None
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
+    prompt: str = Field(default="ping", min_length=1, max_length=256)
+
+
+class BackendProbeResponse(_Model):
+    """Deep-health verdict for one backend — whether a real minimal
+    completion succeeded, how long it took, and why not when it didn't."""
+
+    backend: str
+    ok: bool
+    model: str | None = None
+    latency_ms: float
+    error: str | None = None
+    error_class: str | None = None
+
+
 class CompleteBatchItem(_Model):
     ok: bool
     latency_ms: float
@@ -1974,6 +1997,74 @@ def _mount_complete_routes(
         if key is not None:
             complete_batch_idem_store.put(key, body_fp, resp)
         return resp
+
+    @app.post(
+        "/harness/backends/{name}/probe",
+        response_model=BackendProbeResponse,
+        tags=["ops"],
+        operation_id="backend_probe",
+    )
+    def backend_probe(
+        name: Literal["hosted_k3", "local_fx1", "byok"],
+        body: BackendProbeRequest | None = None,
+        _slot_held: None = Depends(slot),
+    ) -> BackendProbeResponse:
+        """Deep health: run one minimal gated completion through the real
+        resolver. Unlike ``GET /harness/backends`` (config + circuit state),
+        this answers "can this backend serve right now" — including a BYOK
+        endpoint supplied inline. Deliberately bypasses the breaker admit
+        and never reports to it, so a monitoring scrape can't trip or heal
+        the circuit; the verdict series lands under ``probe:<name>``."""
+        req = body or BackendProbeRequest()
+        t0 = time.monotonic()
+        try:
+            backend = resolve_backend(
+                name,
+                req.checkpoint_dir,
+                req.byok.model_dump() if req.byok is not None else None,
+                req.timeout_s if req.timeout_s is not None else 30.0,
+            )
+        except ApiError as exc:
+            # An unconfigured/unreachable backend is a verdict, not an
+            # HTTP fault — report it as ok:false. Client-side arg errors
+            # (404/422) still propagate as request errors.
+            if exc.status_code == 503:
+                return BackendProbeResponse(
+                    backend=name,
+                    ok=False,
+                    model=None,
+                    latency_ms=(time.monotonic() - t0) * 1000.0,
+                    error=str(exc.detail),
+                    error_class="backend_unavailable",
+                )
+            raise
+        ok = False
+        error: str | None = None
+        error_class: str | None = None
+        try:
+            content = backend.complete([{"role": "user", "content": req.prompt}])
+            try:
+                validate_fx1_output(content)
+            except Fx1HonestyError as exc:
+                error, error_class = str(exc), "honesty_refusal"
+            else:
+                ok = True
+        except NotImplementedError as exc:
+            error, error_class = str(exc), "NotImplementedError"
+        except (BackendNotConfiguredError, RuntimeError, ValueError) as exc:
+            error, error_class = str(exc), type(exc).__name__
+        finally:
+            metrics.record_complete(f"probe:{name}", ok, (time.monotonic() - t0) * 1000.0)
+            _close_backend(backend)
+        model_name = getattr(backend, "_model", None)
+        return BackendProbeResponse(
+            backend=name,
+            ok=ok,
+            model=model_name if isinstance(model_name, str) else None,
+            latency_ms=(time.monotonic() - t0) * 1000.0,
+            error=error,
+            error_class=error_class,
+        )
 
 
 def create_app(

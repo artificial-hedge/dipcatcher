@@ -2408,7 +2408,51 @@ def api_audit() -> dict[str, Any]:
     dm = dirty.get("/metrics").json()
     out["metrics_complete_error_outcome"] = dm["complete"]["byok"]["error"] >= 1
 
+    _probe_backend_probes(client, uapp, dirty, api_mod, out)
     return out
+
+
+def _probe_backend_probes(
+    client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
+) -> None:
+    from fastapi.testclient import TestClient as _TC2  # noqa: PLC0415
+
+    # Deep health through the real resolver: a live call, not config flags.
+    # Bypasses the breaker, never feeds it; verdicts land under
+    # ``probe:<name>`` so monitoring never pollutes completion SLOs.
+    p_ok = uapp.post("/harness/backends/byok/probe", json={})
+    pj = p_ok.json()
+    out["probe_ok"] = (
+        p_ok.status_code == 200
+        and pj["ok"] is True
+        and pj["model"] == "fake-0"
+        and pj["latency_ms"] >= 0
+    )
+    p_dirty = dirty.post("/harness/backends/byok/probe", json={})
+    out["probe_honesty_refusal"] = (
+        p_dirty.status_code == 200
+        and p_dirty.json()["ok"] is False
+        and p_dirty.json()["error_class"] == "honesty_refusal"
+    )
+
+    # unconfigured backend is a verdict, not a wire fault
+    def _unconfigured(*a: Any, **k: Any) -> Any:
+        raise RuntimeError("BYOK backend is not configured")
+
+    unconf = _TC2(api_mod.create_app(backend_resolver=_unconfigured))
+    p_none = unconf.post("/harness/backends/byok/probe", json={})
+    out["probe_unconfigured_verdict"] = (
+        p_none.status_code == 200
+        and p_none.json()["ok"] is False
+        and p_none.json()["error_class"] == "backend_unavailable"
+    )
+    out["probe_unknown_422"] = (
+        client.post("/harness/backends/bogus/probe", json={}).status_code == 422
+    )
+    pm = uapp.get("/metrics").json()
+    out["probe_own_series"] = pm["complete"]["probe:byok"]["ok"] >= 1 and (
+        "byok" in pm["complete"] and pm["complete"]["byok"]["ok"] == 3
+    )
 
 
 def api_audit_bench() -> dict[str, Any]:

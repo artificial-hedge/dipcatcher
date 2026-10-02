@@ -37,6 +37,113 @@
         "title": "BackendCompletionStats",
         "type": "object"
       },
+      "BackendProbeRequest": {
+        "additionalProperties": false,
+        "description": "Optional controls for a backend liveness probe \u2014 same credential\nplumbing as a completion, so a BYOK probe tests the caller's real\nendpoint. ``prompt`` defaults to a one-token ping.",
+        "properties": {
+          "byok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ByokOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checkpoint_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Dir"
+          },
+          "prompt": {
+            "default": "ping",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "timeout_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 3600.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout S"
+          }
+        },
+        "title": "BackendProbeRequest",
+        "type": "object"
+      },
+      "BackendProbeResponse": {
+        "additionalProperties": false,
+        "description": "Deep-health verdict for one backend \u2014 whether a real minimal\ncompletion succeeded, how long it took, and why not when it didn't.",
+        "properties": {
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "number"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "backend",
+          "ok",
+          "latency_ms"
+        ],
+        "title": "BackendProbeResponse",
+        "type": "object"
+      },
       "BackendStatusEntry": {
         "additionalProperties": false,
         "description": "One backend's liveness surface: whether it is configured and, when\nthe circuit breaker is enabled, whether it is currently fast-failing.",
@@ -1537,6 +1644,135 @@
           }
         },
         "summary": "Backends Status",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/harness/backends/{name}/probe": {
+      "post": {
+        "description": "Deep health: run one minimal gated completion through the real\nresolver. Unlike ``GET /harness/backends`` (config + circuit state),\nthis answers \"can this backend serve right now\" \u2014 including a BYOK\nendpoint supplied inline. Deliberately bypasses the breaker admit\nand never reports to it, so a monitoring scrape can't trip or heal\nthe circuit; the verdict series lands under ``probe:<name>``.",
+        "operationId": "backend_probe",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "enum": [
+                "hosted_k3",
+                "local_fx1",
+                "byok"
+              ],
+              "title": "Name",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/BackendProbeRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackendProbeResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Backend Probe",
         "tags": [
           "ops"
         ]

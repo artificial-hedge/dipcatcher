@@ -614,6 +614,19 @@ def parity_audit() -> dict[str, bool]:
             and wire_usage == sdk_usage
             and remote_u.complete(msg, backend="byok").usage == sdk_usage
         )
+
+        # deep-health probe: in-process verdict mirrors the wire verdict —
+        # latency differs per call so only the semantic fields are pinned.
+        sdk_pr = sdk_u.probe_backend("byok")
+        wire_pr = remote_u.probe_backend("byok")
+        out["probe_parity"] = (
+            sdk_pr.ok is True
+            and wire_pr.ok is True
+            and wire_pr.backend == sdk_pr.backend == "byok"
+            and wire_pr.model == sdk_pr.model == "parity-v0"
+            and wire_pr.error is None
+            and sdk_pr.error is None
+        )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (

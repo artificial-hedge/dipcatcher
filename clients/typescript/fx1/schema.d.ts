@@ -26,6 +26,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/backends/{name}/probe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Backend Probe
+         * @description Deep health: run one minimal gated completion through the real
+         *     resolver. Unlike ``GET /harness/backends`` (config + circuit state),
+         *     this answers "can this backend serve right now" — including a BYOK
+         *     endpoint supplied inline. Deliberately bypasses the breaker admit
+         *     and never reports to it, so a monitoring scrape can't trip or heal
+         *     the circuit; the verdict series lands under ``probe:<name>``.
+         */
+        post: operations["backend_probe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/capabilities": {
         parameters: {
             query?: never;
@@ -483,6 +508,43 @@ export interface components {
              * @default 0
              */
             ok: number;
+        };
+        /**
+         * BackendProbeRequest
+         * @description Optional controls for a backend liveness probe — same credential
+         *     plumbing as a completion, so a BYOK probe tests the caller's real
+         *     endpoint. ``prompt`` defaults to a one-token ping.
+         */
+        BackendProbeRequest: {
+            byok?: components["schemas"]["ByokOverride"] | null;
+            /** Checkpoint Dir */
+            checkpoint_dir?: string | null;
+            /**
+             * Prompt
+             * @default ping
+             */
+            prompt: string;
+            /** Timeout S */
+            timeout_s?: number | null;
+        };
+        /**
+         * BackendProbeResponse
+         * @description Deep-health verdict for one backend — whether a real minimal
+         *     completion succeeded, how long it took, and why not when it didn't.
+         */
+        BackendProbeResponse: {
+            /** Backend */
+            backend: string;
+            /** Error */
+            error?: string | null;
+            /** Error Class */
+            error_class?: string | null;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Model */
+            model?: string | null;
+            /** Ok */
+            ok: boolean;
         };
         /**
          * BackendStatusEntry
@@ -1046,6 +1108,61 @@ export interface operations {
                     "application/json": {
                         [key: string]: components["schemas"]["BackendStatusEntry"];
                     };
+                };
+            };
+        };
+    };
+    backend_probe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: "hosted_k3" | "local_fx1" | "byok";
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BackendProbeRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackendProbeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

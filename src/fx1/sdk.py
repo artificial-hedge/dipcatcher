@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.parse
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -41,7 +42,7 @@ from typing import Any
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
-from fx1.honesty import validate_fx1_output
+from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.serve.backends import (
     BackendNotConfiguredError,
     InferenceBackend,
@@ -55,6 +56,7 @@ from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_p
 __all__ = [
     "BackendNotConfiguredError",
     "CompletionResult",
+    "ProbeResult",
     "Fx1Harness",
     "OpsMetrics",
     "ReceiptRef",
@@ -80,6 +82,19 @@ class CompletionResult:
     # has no usage channel). Never populated on ``complete_many`` items —
     # a shared backend can't attribute counts per prompt.
     usage: dict[str, int] | None = None
+
+
+@dataclass(frozen=True)
+class ProbeResult:
+    """Deep-health verdict for one backend — mirrors
+    ``BackendProbeResponse`` on the API."""
+
+    backend: str
+    ok: bool
+    model: str | None
+    latency_ms: float
+    error: str | None = None
+    error_class: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +199,54 @@ class Fx1Harness:
         )
 
     # ---- gated completion ----------------------------------------------
+
+    def probe_backend(
+        self,
+        backend: str,
+        *,
+        checkpoint_dir: str | Path | None = None,
+        backend_kwargs: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
+        prompt: str = "ping",
+    ) -> ProbeResult:
+        """Deep health: run one minimal gated completion through the real
+        resolver — same checkpoint/BYOK plumbing as ``complete``, so a
+        BYOK probe tests the caller's own endpoint. Never raises for
+        backend-side faults (that IS the verdict); argument faults raise
+        as usual."""
+        backend_obj = self._resolve_completion_backend(
+            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
+        )
+        t0 = time.monotonic()
+        ok = False
+        error: str | None = None
+        error_class: str | None = None
+        try:
+            content = backend_obj.complete([{"role": "user", "content": prompt}])
+            try:
+                validate_fx1_output(content)
+            except Fx1HonestyError as exc:
+                error, error_class = str(exc), "honesty_refusal"
+            else:
+                ok = True
+        except NotImplementedError as exc:
+            error, error_class = str(exc), "NotImplementedError"
+        except (BackendNotConfiguredError, RuntimeError, ValueError) as exc:
+            error, error_class = str(exc), type(exc).__name__
+        finally:
+            closer = getattr(backend_obj, "close", None)
+            if callable(closer):
+                closer()
+        model_name = getattr(backend_obj, "_model", None)
+        return ProbeResult(
+            backend=backend,
+            ok=ok,
+            model=model_name if isinstance(model_name, str) else None,
+            latency_ms=(time.monotonic() - t0) * 1000.0,
+            error=error,
+            error_class=error_class,
+        )
 
     def complete(
         self,
