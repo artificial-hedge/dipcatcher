@@ -1134,6 +1134,151 @@ def harness_watch(
     raise typer.Exit(code=1)
 
 
+@harness_app.command("eval")
+def harness_eval(
+    suite: str = typer.Argument(
+        ...,
+        help="Eval suite: capability|calibration|tooluse|retrieval|ts_reasoning|ext_bench|options_reasoning.",
+    ),
+    backend: str = typer.Option("local_fx1", help=_BACKEND_HELP),
+    seed: int = typer.Option(0, "--seed", help="Eval seed (the banks are seeded)."),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [],
+        "--fallback",
+        help="Alternate backend on availability faults (repeatable, max 2).",
+    ),
+    judge_backend: str | None = typer.Option(
+        None, "--judge-backend", help="Grader link for judge suites (capability, ext_bench)."
+    ),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_eval_record.v1 doc after the run."
+    ),
+    no_wait: bool = typer.Option(
+        False, "--no-wait", help="Remote only: submit and return immediately."
+    ),
+) -> None:
+    """Run a seeded eval suite against a backend — in-process by default
+    (SDK twin), or ``--remote`` submits to POST /harness/evals and waits
+    for the terminal record. Every eval runs under the temperature=0
+    pin and lands as metered evidence on the eval/completion logs."""
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    if remote is not None:
+        from fx1.serve.client import HarnessClient
+
+        client = HarnessClient(
+            remote,
+            api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+            timeout_s=timeout_s,
+        )
+        sub = _or_exit(
+            lambda: client.submit_eval(
+                suite,
+                backend=backend,
+                seed=seed,
+                checkpoint_dir=str(checkpoint_dir) if checkpoint_dir else None,
+                byok=byok,
+                timeout_s=backend_timeout,
+                fallbacks=fallbacks or None,
+                judge_backend=judge_backend,
+            )
+        )
+        if no_wait:
+            typer.echo(json.dumps(sub, indent=2))
+            return
+        rec = _or_exit(lambda: client.wait_eval(sub["eval_id"], timeout_s=None))
+        typer.echo(json.dumps(rec, indent=2))
+        if receipt:
+            doc = _or_exit(lambda: client.eval_receipt(sub["eval_id"]))
+            typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
+    from fx1.sdk import Fx1Harness
+
+    harness = Fx1Harness()
+    ev_rec = _or_exit(
+        lambda: harness.run_eval(
+            suite,
+            backend=backend,
+            checkpoint_dir=checkpoint_dir,
+            byok=byok,
+            timeout_s=backend_timeout,
+            fallbacks=fallbacks or None,
+            judge_backend=judge_backend,
+            seed=seed,
+        )
+    )
+    typer.echo(ev_rec.model_dump_json(indent=2))
+    if receipt:
+        doc = _or_exit(lambda: harness.eval_receipt(ev_rec.eval_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+
+
+@harness_app.command("evals")
+def harness_evals(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    status: str | None = typer.Option(
+        None, "--status", help="Filter: queued|running|succeeded|failed|cancelled."
+    ),
+    suite: str | None = typer.Option(None, "--suite", help="Filter by suite name."),
+    limit: int = typer.Option(100, "--limit", help="Page size (max 256)."),
+) -> None:
+    """List the remote eval inventory (newest first)."""
+    _need_remote(remote)
+    page = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).list_evals(
+            status=status, suite=suite, limit=limit
+        )
+    )
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("eval-status")
+def harness_eval_status(
+    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_eval_record.v1 doc instead."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print an eval's live record; ``--receipt`` prints the sealed
+    export (409 while the eval is non-terminal)."""
+    _need_remote(remote)
+    if receipt:
+        doc = _or_exit(
+            lambda: _remote_client(remote or "", api_key, timeout_s).eval_receipt(eval_id)
+        )
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).eval_status(eval_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("eval-cancel")
+def harness_eval_cancel(
+    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cancel a queued eval; running/terminal evals report a 409 conflict."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).cancel_eval(eval_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

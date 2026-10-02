@@ -182,6 +182,11 @@ same digested shape the job record embeds.
 | `GET /harness/jobs/{id}/receipt` | terminal job sealed as `fx1_job_record.v1` (streams digested, callback URL hashed) → verify via `POST /receipts/verify`; `HarnessClient.job_receipt` / `fx1 harness job --receipt`; in-process runs seal via `Fx1Harness.run_receipt` |
 | `GET /harness/jobs/{id}/events` | SSE frame per state change until terminal |
 | `DELETE /harness/jobs/{id}` | cancel (queued → cancelled fires the webhook) |
+| `POST /harness/evals` | submit a seeded eval suite against a backend chain → `202 {eval_id}` (`Location` header, `Idempotency-Key` dedupe); `HarnessClient.submit_eval` / `fx1 harness eval --remote` |
+| `GET /harness/evals` | newest-first eval inventory (`?status=`, `?suite=`, `?limit≤256`); `HarnessClient.list_evals` / `fx1 harness evals` |
+| `GET /harness/evals/{id}` | poll the live record (status/report/attempts/sampling pin); `HarnessClient.eval_status` |
+| `GET /harness/evals/{id}/receipt` | terminal record sealed as `fx1_eval_record.v1` → `POST /receipts/verify` (`409 eval_not_terminal` until terminal); `HarnessClient.eval_receipt` / `fx1 harness eval-status --receipt` |
+| `DELETE /harness/evals/{id}` | cooperative cancel of a queued eval (running/terminal → 409); `HarnessClient.cancel_eval` / `fx1 harness eval-cancel` |
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
@@ -310,6 +315,37 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
 Poll with `GET /harness/jobs/{id}`, or stream
 `/harness/jobs/{id}/events` (`HarnessClient.stream_job`,
 `wait_run_stream`, `fx1 harness watch`).
+
+## Eval submissions
+
+`POST /harness/evals` runs the seeded eval banks (capability,
+calibration, tooluse, retrieval, ts_reasoning, ext_bench,
+options_reasoning — `GET /harness/capabilities` lists them) against any
+backend chain as an async job: same drain + `max_inflight` admission,
+same bounded executor, same terminal-receipt contract — but the payload
+is the eval suite, not a lab command. The model under test is the
+resolved chain (`backend` + `fallbacks`, `byok`/`checkpoint_dir` bind
+per-link exactly like completions); every suite call is metered under
+`eval:{suite}:{backend}` (judged suites meter the grader separately as
+`eval:{suite}:judge:{backend}`) so eval spend is visible, never
+conflated with user traffic.
+
+- **Decode pin** — evals run under `{"temperature": 0.0}`; the record's
+  `sampling` field states it so the sealed receipt carries the decode
+  config.
+- **Validation** — unknown suite → 422; `judge_backend`/`judge_byok` on
+  a non-judge suite → 422; `judge_byok` bound to anything but
+  `judge_backend="byok"` → 422.
+- **Record** — `report` is the suite's serialized report (pydantic or
+  dataclass — a runner returning anything else fails closed as
+  `failed`), `attempts` is the chain trace, `seed` is the bank seed.
+- **CLI/SDK twins** — `fx1 harness eval <suite>` runs in-process through
+  `Fx1Harness.run_eval` (or `--remote` submits + waits);
+  `Fx1Harness.evals`/`eval_record`/`eval_receipt` mirror the wire reads;
+  the TS client exposes `submitEval`/`eval`/`evals`/`evalReceipt`/
+  `cancelEval`/`waitEval`.
+- **No webhooks/SSE** — evals share the job machinery minus the
+  notification plumbing; poll or `wait_eval`.
 
 ## Ops knobs
 

@@ -54,6 +54,7 @@ from fx1.serve.backends import (
     get_backend,
 )
 from fx1.serve.chat import cited_complete
+from fx1.serve.evals import EvalRecord, EvalStore
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
@@ -281,6 +282,7 @@ class Fx1Harness:
         self._resolve_backend = backend_resolver or get_backend
         self._receipts = ReceiptIndex(Path(receipts_dir))
         self._log = _CompletionLog()
+        self._eval_store = EvalStore(256)
 
     def _record_call(
         self,
@@ -343,6 +345,269 @@ class Fx1Harness:
         if rec is None:
             raise KeyError(completion_id)
         return completion_record_receipt(asdict(rec))
+
+    # ---- evals -----------------------------------------------------------
+
+    def run_eval(
+        self,
+        suite: str,
+        *,
+        model_fn: Callable[[list[dict[str, str]]], str] | None = None,
+        backend: str = "local_fx1",
+        checkpoint_dir: str | Path | None = None,
+        backend_kwargs: dict[str, Any] | None = None,
+        byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
+        fallbacks: list[str] | None = None,
+        judge_backend: str | None = None,
+        judge_byok: dict[str, str] | None = None,
+        seed: int = 0,
+    ) -> EvalRecord:
+        """Run one seeded eval suite in-process — the API's
+        ``POST /harness/evals`` twin. ``suite`` is one of the registry
+        names (``capability``/``calibration``/``tooluse``/``retrieval``/
+        ``ts_reasoning``/``ext_bench``/``options_reasoning``).
+
+        The model is either ``model_fn`` (a raw callable — the
+        weights-direct lane: any in-process model, no backend machinery)
+        or a resolved backend chain (``backend`` + ``fallbacks`` +
+        ``byok``/``checkpoint_dir`` — same per-link kwarg binding as
+        ``complete``). ``judge_backend``/``judge_byok`` feed the suites
+        that grade with a second model (capability, ext_bench).
+
+        Every model call lands on the completion log under
+        ``eval:{suite}:{backend}`` — eval work is metered evidence, never
+        silent. Evals run under the decode pin ``{"temperature": 0.0}``;
+        the record carries it so the sealed receipt states the decode
+        config. The terminal record is stored — :meth:`evals`,
+        :meth:`eval_record`, :meth:`eval_receipt` read it back."""
+        from fx1.serve.evals import (  # noqa: PLC0415
+            EVAL_SAMPLING,
+            EVAL_SUITES,
+            EvalRecord,
+            run_eval_record,
+            suite_accepts_judge,
+        )
+
+        if suite not in EVAL_SUITES:
+            raise KeyError(f"unknown eval suite {suite!r} — registered: {sorted(EVAL_SUITES)}")
+        if judge_backend is not None and not suite_accepts_judge(suite):
+            raise ValueError(f"suite {suite!r} takes no judge")
+        if judge_byok is not None and judge_backend != "byok":
+            raise ValueError("judge_byok applies only to judge_backend='byok'")
+        record = EvalRecord(
+            eval_id=uuid.uuid4().hex,
+            suite=suite,
+            backend=backend if model_fn is None else "model_fn",
+            seed=seed,
+            status="running",
+            created_at=time.time(),
+            sampling=EVAL_SAMPLING.body_fields(),
+        )
+        try:
+            if model_fn is not None:
+                metric_key = f"eval:{suite}:model_fn"
+                name = "model_fn"
+
+                def _fn(messages: list[dict[str, str]]) -> str:
+                    p_sha = _messages_sha256(messages)
+                    t0 = time.monotonic()
+                    try:
+                        out = model_fn(messages)
+                    except Exception as exc:
+                        self._record_call(
+                            metric_key,
+                            None,
+                            False,
+                            (time.monotonic() - t0) * 1000.0,
+                            None,
+                            str(exc),
+                            type(exc).__name__,
+                            p_sha,
+                            None,
+                            None,
+                            EVAL_SAMPLING.body_fields(),
+                        )
+                        raise
+                    o_sha = hashlib.sha256(out.encode("utf-8")).hexdigest()
+                    self._record_call(
+                        metric_key,
+                        None,
+                        True,
+                        (time.monotonic() - t0) * 1000.0,
+                        None,
+                        None,
+                        None,
+                        p_sha,
+                        o_sha,
+                        None,
+                        EVAL_SAMPLING.body_fields(),
+                    )
+                    return out
+
+            else:
+                chain = _fallback_chain(backend, fallbacks)
+                _check_link_kwargs(chain, checkpoint_dir, byok)
+                attempts: list[dict[str, Any]] = []
+                last_exc: Exception | None = None
+                name = ""
+                backend_obj: Any = None
+                for cand in chain:
+                    t0 = time.monotonic()
+                    try:
+                        backend_obj = self._resolve_link(
+                            cand, checkpoint_dir, backend_kwargs, byok, timeout_s
+                        )
+                    except (BackendNotConfiguredError, RuntimeError, ValueError) as exc:
+                        attempts.append(
+                            {
+                                "backend": cand,
+                                "ok": False,
+                                "error_class": type(exc).__name__,
+                                "latency_ms": (time.monotonic() - t0) * 1000.0,
+                            }
+                        )
+                        last_exc = exc
+                        continue
+                    attempts.append({"backend": cand, "ok": True})
+                    name = cand
+                    break
+                if backend_obj is None:
+                    assert last_exc is not None  # noqa: S101 — chain exhausted
+                    raise last_exc
+                record.backend = name
+                record.attempts = attempts
+                metric_key = f"eval:{suite}:{name}"
+
+                def _fn(messages: list[dict[str, str]]) -> str:
+                    p_sha = _messages_sha256(messages)
+                    t0 = time.monotonic()
+                    try:
+                        out: str = backend_obj.complete(messages, sampling=EVAL_SAMPLING)
+                    except Exception as exc:
+                        self._record_call(
+                            metric_key,
+                            getattr(backend_obj, "_model", None)
+                            if isinstance(getattr(backend_obj, "_model", None), str)
+                            else None,
+                            False,
+                            (time.monotonic() - t0) * 1000.0,
+                            None,
+                            str(exc),
+                            type(exc).__name__,
+                            p_sha,
+                            None,
+                            None,
+                            EVAL_SAMPLING.body_fields(),
+                        )
+                        raise
+                    o_sha = hashlib.sha256(out.encode("utf-8")).hexdigest()
+                    self._record_call(
+                        metric_key,
+                        getattr(backend_obj, "_model", None)
+                        if isinstance(getattr(backend_obj, "_model", None), str)
+                        else None,
+                        True,
+                        (time.monotonic() - t0) * 1000.0,
+                        getattr(backend_obj, "last_usage", None),
+                        None,
+                        None,
+                        p_sha,
+                        o_sha,
+                        None,
+                        EVAL_SAMPLING.body_fields(),
+                    )
+                    return out
+
+            judge_fn: Callable[[list[dict[str, str]]], str] | None = None
+            if judge_backend is not None:
+                judge_obj = self._resolve_completion_backend(
+                    judge_backend,
+                    None,
+                    backend_kwargs,
+                    judge_byok if judge_backend == "byok" else None,
+                    timeout_s,
+                )
+                judge_key = f"eval:{suite}:judge:{judge_backend}"
+
+                def judge_fn(messages: list[dict[str, str]]) -> str:
+                    p_sha = _messages_sha256(messages)
+                    t0 = time.monotonic()
+                    try:
+                        out: str = judge_obj.complete(messages, sampling=EVAL_SAMPLING)
+                    except Exception as exc:
+                        self._record_call(
+                            judge_key,
+                            None,
+                            False,
+                            (time.monotonic() - t0) * 1000.0,
+                            None,
+                            str(exc),
+                            type(exc).__name__,
+                            p_sha,
+                            None,
+                            None,
+                            EVAL_SAMPLING.body_fields(),
+                        )
+                        raise
+                    o_sha = hashlib.sha256(out.encode("utf-8")).hexdigest()
+                    self._record_call(
+                        judge_key,
+                        None,
+                        True,
+                        (time.monotonic() - t0) * 1000.0,
+                        getattr(judge_obj, "last_usage", None),
+                        None,
+                        None,
+                        p_sha,
+                        o_sha,
+                        None,
+                        EVAL_SAMPLING.body_fields(),
+                    )
+                    return out
+
+            run_eval_record(record, model=_fn, judge=judge_fn)
+        except Exception as exc:
+            record.error = f"{type(exc).__name__}: {exc}"
+            record.status = "failed"
+            record.finished_at = time.time()
+        self._eval_store.put(record, None, None)
+        return record
+
+    def evals(
+        self,
+        *,
+        status: str | None = None,
+        suite: str | None = None,
+        limit: int | None = None,
+    ) -> list[EvalRecord]:
+        """Newest-first in-process eval records — the wire twin is
+        ``GET /harness/evals``."""
+        records, _total = self._eval_store.list_records(status=status, suite=suite, limit=limit)
+        return records
+
+    def eval_record(self, eval_id: str) -> EvalRecord:
+        """One stored eval record — KeyError on unknown/evicted ids (the
+        wire's 404)."""
+        rec = self._eval_store.get(eval_id)
+        if rec is None:
+            raise KeyError(eval_id)
+        return rec
+
+    def eval_receipt(self, eval_id: str) -> dict[str, Any]:
+        """Export a terminal eval record as sealed ``fx1_eval_record.v1``
+        — mirrors ``GET /harness/evals/{id}/receipt``; non-terminal
+        records refuse (a sealed receipt must be immutable evidence)."""
+        from fx1.serve.evals import eval_record_receipt  # noqa: PLC0415
+
+        rec = self._eval_store.get(eval_id)
+        if rec is None:
+            raise KeyError(eval_id)
+        if rec.status in ("queued", "running"):
+            raise RuntimeError(
+                f"eval {eval_id} is {rec.status} — receipts export on terminal records only"
+            )
+        return eval_record_receipt(rec.model_dump(mode="json"))
 
     # ---- registry ------------------------------------------------------
 

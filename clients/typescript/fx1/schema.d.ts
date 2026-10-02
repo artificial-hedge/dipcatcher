@@ -250,6 +250,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/evals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Evals
+         * @description Newest-first eval inventory, filterable by status and suite.
+         */
+        get: operations["list_evals"];
+        put?: never;
+        /**
+         * Submit Eval
+         * @description Submit an eval suite against a backend chain — same
+         *     drain/cap/Idempotency-Key contract as job submission. The record
+         *     carries the suite, seed, serving backend, chain attempts, decode
+         *     pin, and the serialized report once terminal; export it sealed at
+         *     ``GET /harness/evals/{eval_id}/receipt``.
+         */
+        post: operations["submit_eval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/evals/{eval_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Eval */
+        get: operations["get_eval"];
+        put?: never;
+        post?: never;
+        /**
+         * Cancel Eval
+         * @description Cooperative cancel: a queued eval flips to 'cancelled' and its
+         *     executor slot frees on dequeue. Running and terminal evals 409 —
+         *     suite runners have no mid-run kill handle.
+         */
+        delete: operations["cancel_eval"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/evals/{eval_id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Eval Receipt
+         * @description Export the eval record as a sealed ``fx1_eval_record.v1``
+         *     document — terminal records only: a still-running eval's receipt
+         *     would seal a mutable report. Verify with ``POST /receipts/verify``
+         *     or the SDK.
+         */
+        get: operations["eval_receipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/gate/check": {
         parameters: {
             query?: never;
@@ -750,6 +824,8 @@ export interface components {
             backends: {
                 [key: string]: boolean;
             };
+            /** Eval Suites */
+            eval_suites: string[];
             /** Features */
             features: {
                 [key: string]: boolean;
@@ -966,6 +1042,110 @@ export interface components {
             draining: boolean;
             /** Inflight */
             inflight: number;
+        };
+        /**
+         * EvalListResponse
+         * @description Eval inventory page: ``total`` is the filtered count before paging.
+         */
+        EvalListResponse: {
+            /** Records */
+            records: components["schemas"]["EvalRecord"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * EvalRecord
+         * @description One submitted eval's durable record — sealed on receipt export.
+         *
+         *     Never carries request-side credentials (``byok``/keys): the record is
+         *     evidence, and evidence must be safe to export.
+         */
+        EvalRecord: {
+            /** Attempts */
+            attempts?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Backend */
+            backend: string;
+            /** Created At */
+            created_at: number;
+            /** Error */
+            error?: string | null;
+            /** Eval Id */
+            eval_id: string;
+            /** Finished At */
+            finished_at?: number | null;
+            /** Report */
+            report?: {
+                [key: string]: unknown;
+            } | null;
+            /** Sampling */
+            sampling?: {
+                [key: string]: unknown;
+            } | null;
+            /** Seed */
+            seed: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            /** Suite */
+            suite: string;
+        };
+        /**
+         * EvalSubmitRequest
+         * @description Async eval submission: one seeded suite against a backend chain.
+         *
+         *     The suite runs on the shared jobs executor under the same drain/cap
+         *     contract as run jobs; poll ``GET /harness/evals/{eval_id}`` and export
+         *     the sealed ``fx1_eval_record.v1`` doc at ``/receipt`` once terminal.
+         *     Evals always run under the decode pin ``{"temperature": 0.0}`` — eval
+         *     evidence is deterministic evidence; the pin is recorded on the
+         *     record.
+         */
+        EvalSubmitRequest: {
+            /**
+             * Backend
+             * @enum {string}
+             */
+            backend: "hosted_k3" | "local_fx1" | "byok";
+            byok?: components["schemas"]["ByokOverride"] | null;
+            /** Checkpoint Dir */
+            checkpoint_dir?: string | null;
+            /** Fallbacks */
+            fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Judge Backend */
+            judge_backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+            judge_byok?: components["schemas"]["ByokOverride"] | null;
+            /**
+             * Seed
+             * @default 0
+             */
+            seed: number;
+            /**
+             * Suite
+             * @enum {string}
+             */
+            suite: "capability" | "calibration" | "tooluse" | "retrieval" | "ts_reasoning" | "ext_bench" | "options_reasoning";
+            /** Timeout S */
+            timeout_s?: number | null;
+        };
+        /**
+         * EvalSubmitResponse
+         * @description Submission ack — ``replayed`` marks an Idempotency-Key hit (the
+         *     eval ran once already; no second execution).
+         */
+        EvalSubmitResponse: {
+            /** Eval Id */
+            eval_id: string;
+            /**
+             * Replayed
+             * @default false
+             */
+            replayed: boolean;
+            /** Status */
+            status: string;
         };
         /**
          * GateCheckRequest
@@ -1863,6 +2043,269 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DrainResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_evals: {
+        parameters: {
+            query?: {
+                status?: ("queued" | "running" | "succeeded" | "failed" | "cancelled") | null;
+                suite?: ("capability" | "calibration" | "tooluse" | "retrieval" | "ts_reasoning" | "ext_bench" | "options_reasoning") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_eval: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvalSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalSubmitResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_eval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_eval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvalRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    eval_receipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eval_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

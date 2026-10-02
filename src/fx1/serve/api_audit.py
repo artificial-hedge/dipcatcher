@@ -3167,6 +3167,225 @@ def _probe_backend_probes(
         }
     )
 
+    # --- eval submissions ---------------------------------------------------
+    # Evals are jobs: submit → poll → terminal record → sealed receipt.
+    # The model under test is the resolved backend chain, metered under
+    # ``eval:{suite}:{backend}``; the decode pin ({"temperature": 0.0}) is
+    # stamped on the record.
+    import threading as _threading  # noqa: PLC0415
+
+    class _EvalBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+            self.calls = 0
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.calls += 1
+            return "clean:yes"
+
+    eval_backend = _EvalBackend()
+    eval_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend))
+    ev_sub = eval_app.post(
+        "/harness/evals", json={"suite": "tooluse", "backend": "byok", "seed": 0}
+    )
+    ev_j = ev_sub.json()
+    ev_id = ev_j.get("eval_id", "")
+    out["eval_submit_202"] = (
+        ev_sub.status_code == 202
+        and ev_j.get("status") in ("queued", "running")
+        and ev_j.get("replayed") is False
+        and bool(ev_id)
+        and ev_sub.headers.get("location") == f"/harness/evals/{ev_id}"
+    )
+
+    def _wait_eval(c: Any, eid: str, tries: int = 200) -> dict[str, Any]:
+        st: dict[str, Any] = {}
+        for _i in range(tries):
+            st = c.get(f"/harness/evals/{eid}").json()
+            if st.get("status") in ("succeeded", "failed", "cancelled"):
+                break
+            time.sleep(0.02)
+        return st
+
+    ev_rec = _wait_eval(eval_app, ev_id)
+    out["eval_terminal_succeeded"] = (
+        ev_rec.get("status") == "succeeded" and ev_rec.get("error") is None
+    )
+    out["eval_report_serialized"] = isinstance(ev_rec.get("report"), dict) and bool(
+        ev_rec["report"]
+    )
+    out["eval_sampling_pin"] = ev_rec.get("sampling") == {"temperature": 0.0}
+    out["eval_backend_recorded"] = ev_rec.get("backend") == "byok" and isinstance(
+        ev_rec.get("attempts"), list
+    )
+    out["eval_model_metered"] = eval_backend.calls > 0
+    pm_eval = eval_app.get("/metrics").json()
+    out["eval_metric_key"] = (
+        pm_eval["complete"].get("eval:tooluse:byok", {}).get("latency_count", 0) > 0
+    )
+    ev_receipt = eval_app.get(f"/harness/evals/{ev_id}/receipt")
+    ev_rcpt = ev_receipt.json() if ev_receipt.status_code == 200 else {}
+    out["eval_receipt_200"] = (
+        ev_receipt.status_code == 200
+        and ev_rcpt.get("kind") == "fx1_eval_record"
+        and ev_rcpt.get("schema") == "fx1_eval_record.v1"
+        and ev_rcpt.get("record", {}).get("eval_id") == ev_id
+        and ev_rcpt["record"].get("status") == "succeeded"
+        and ev_rcpt.get("receipt_sha256")
+        == _hb(_cjb({k: v for k, v in ev_rcpt.items() if k != "receipt_sha256"}))
+    )
+    out["eval_receipt_verifies"] = (
+        bool(ev_rcpt)
+        and _vrp(ev_rcpt)["valid"] is True
+        and eval_app.post("/receipts/verify", json={"receipt": ev_rcpt}).json().get("valid") is True
+    )
+    tampered_ev = _json.loads(_json.dumps(ev_rcpt))
+    tampered_ev["record"]["status"] = "cancelled"
+    out["eval_receipt_tamper_breaks"] = _vrp(tampered_ev)["valid"] is False
+    ev_list = eval_app.get("/harness/evals?suite=tooluse&status=succeeded")
+    ev_list_j = ev_list.json()
+    out["eval_list_filters"] = (
+        ev_list.status_code == 200
+        and ev_list_j["total"] >= 1
+        and all(
+            r["suite"] == "tooluse" and r["status"] == "succeeded" for r in ev_list_j["records"]
+        )
+    )
+    ev_list_all = eval_app.get("/harness/evals")
+    out["eval_list_all"] = ev_list_all.json()["total"] >= 1
+
+    # Idempotency: same key+body replays, same key+different body 409s.
+    key = "eval-idem-probe"
+    hdrs = {"Idempotency-Key": key}
+    body = {"suite": "retrieval", "backend": "byok", "seed": 1}
+    idem1 = eval_app.post("/harness/evals", json=body, headers=hdrs)
+    idem2 = eval_app.post("/harness/evals", json=body, headers=hdrs)
+    idem3 = eval_app.post(
+        "/harness/evals",
+        json={**body, "seed": 2},
+        headers=hdrs,
+    )
+    out["eval_idem_replay"] = (
+        idem1.status_code == 202
+        and idem2.status_code == 202
+        and idem2.json()["eval_id"] == idem1.json()["eval_id"]
+        and idem2.json()["replayed"] is True
+        and idem3.status_code == 409
+    )
+    _wait_eval(eval_app, idem1.json()["eval_id"])
+
+    # Contract guards: unknown suite 422, judge on a non-judge suite 422,
+    # judge_byok without judge_backend='byok' 422, unknown eval id 404,
+    # receipt on a non-terminal record 409, cancel on queued 200.
+    out["eval_unknown_suite_422"] = (
+        eval_app.post("/harness/evals", json={"suite": "bogus", "backend": "byok"}).status_code
+        == 422
+    )
+    out["eval_judge_on_nonjudge_422"] = (
+        eval_app.post(
+            "/harness/evals",
+            json={"suite": "tooluse", "backend": "byok", "judge_backend": "hosted_k3"},
+        ).status_code
+        == 422
+    )
+    out["eval_judge_byok_misbind_422"] = (
+        eval_app.post(
+            "/harness/evals",
+            json={
+                "suite": "capability",
+                "backend": "byok",
+                "judge_backend": "hosted_k3",
+                "judge_byok": {"base_url": "http://x", "api_key": "k", "model": "m"},
+            },
+        ).status_code
+        == 422
+    )
+    out["eval_unknown_404"] = eval_app.get("/harness/evals/nope").status_code == 404
+
+    # Cooperative cancel of a queued eval + non-terminal receipt 409:
+    # occupy the single executor worker without holding an inflight slot
+    # (slots == workers) — a slot-free sleeper leaves the submission's
+    # semaphore acquire free while its _exec sits queued behind the sleeper.
+    hold_ev = _threading.Event()
+    qapp_ev = api_mod.create_app(backend_resolver=lambda *a, **k: eval_backend, max_inflight=1)
+    qc2 = _TC2(qapp_ev)
+    qapp_ev.state.jobs_executor.submit(lambda: hold_ev.wait(timeout=20))
+    be_id = qc2.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
+        "eval_id"
+    ]
+    out["eval_queues_when_workers_busy"] = (
+        qc2.get(f"/harness/evals/{be_id}").json()["status"] == "queued"
+    )
+    out["eval_receipt_nonterminal_409"] = (
+        qc2.get(f"/harness/evals/{be_id}/receipt").status_code == 409
+    )
+    canc = qc2.delete(f"/harness/evals/{be_id}")
+    out["eval_cancel_queued_200"] = canc.status_code == 200 and canc.json()["status"] == "cancelled"
+    hold_ev.set()
+    out["eval_cancelled_never_runs"] = qc2.get(f"/harness/evals/{be_id}").json()["report"] is None
+
+    # Cancel on a running eval is 409 — suite runners have no kill handle.
+    # The gate event is set before wait expires so the suite completes.
+    gate_ev = _threading.Event()
+
+    class _BlockEvalBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            gate_ev.wait(timeout=30)
+            return "clean:yes"
+
+    gate_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _BlockEvalBackend()))
+    g1 = gate_app.post("/harness/evals", json={"suite": "tooluse", "backend": "byok"}).json()[
+        "eval_id"
+    ]
+    for _i in range(200):
+        if gate_app.get(f"/harness/evals/{g1}").json()["status"] == "running":
+            break
+        time.sleep(0.02)
+    out["eval_cancel_running_409"] = gate_app.delete(f"/harness/evals/{g1}").status_code == 409
+    gate_ev.set()
+    _wait_eval(gate_app, g1)
+
+    # Judge suites meter the grader under its own key.
+    class _JudgeEvalBackend:
+        def __init__(self) -> None:
+            self._model = "judge-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return "A"
+
+    def _judge_resolver(name: str, *a: Any, **k: Any) -> Any:
+        return _JudgeEvalBackend() if name == "hosted_k3" else eval_backend
+
+    judge_app = _TC2(api_mod.create_app(backend_resolver=_judge_resolver))
+    jsub = judge_app.post(
+        "/harness/evals",
+        json={
+            "suite": "capability",
+            "backend": "byok",
+            "seed": 0,
+            "judge_backend": "hosted_k3",
+        },
+    )
+    jrec = _wait_eval(judge_app, jsub.json()["eval_id"])
+    pm_judge = judge_app.get("/metrics").json()
+    out["eval_judge_metered"] = (
+        jrec.get("status") == "succeeded"
+        and pm_judge["complete"].get("eval:capability:judge:hosted_k3", {}).get("latency_count", 0)
+        > 0
+    )
+    out["eval_capabilities_lists_suites"] = (
+        "tooluse" in eval_app.get("/harness/capabilities").json()["eval_suites"]
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

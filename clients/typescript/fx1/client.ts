@@ -32,6 +32,13 @@ export type CompletionRecord = components["schemas"]["CompletionRecord"];
 export type CompletionListResponse =
   components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
+export type EvalListResponse = components["schemas"]["EvalListResponse"];
+export type EvalRecord = components["schemas"]["EvalRecord"];
+export type EvalSubmitRequest =
+  components["schemas"]["EvalSubmitRequest"];
+export type EvalSubmitResponse =
+  components["schemas"]["EvalSubmitResponse"];
+export type EvalSuiteName = EvalSubmitRequest["suite"];
 export type HarnessCommandItem =
   components["schemas"]["HarnessCommandItem"];
 export type HarnessCommandListResponse =
@@ -614,6 +621,89 @@ export class HarnessApiClient {
         return j;
       }
       if (Date.now() >= deadline) return j;
+      await new Promise((r) => setTimeout(r, pollMs));
+    }
+  }
+
+  // ---- eval submissions ------------------------------------------------------
+
+  /**
+   * POST /harness/evals — submit a seeded eval suite against a backend
+   * chain (202). `idempotencyKey` dedupes retries (same body replays the
+   * stored eval_id). Evals run under the temperature=0 decode pin and
+   * meter under `eval:{suite}:{backend}`.
+   */
+  submitEval(
+    request: EvalSubmitRequest,
+    idempotencyKey?: string,
+  ): Promise<EvalSubmitResponse> {
+    return this.post("/harness/evals", request, idempotencyKey) as Promise<EvalSubmitResponse>;
+  }
+
+  /** GET /harness/evals/{id} — the live eval record. */
+  eval(evalId: string): Promise<EvalRecord> {
+    return this.get(`/harness/evals/${encodeURIComponent(evalId)}`) as Promise<EvalRecord>;
+  }
+
+  /** GET /harness/evals — list/filter (status, suite). */
+  evals(filter?: {
+    status?: string;
+    suite?: EvalSuiteName;
+    limit?: number;
+  }): Promise<EvalListResponse> {
+    const q = new URLSearchParams();
+    if (filter?.status) q.set("status", filter.status);
+    if (filter?.suite) q.set("suite", filter.suite);
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/harness/evals${suffix}`) as Promise<EvalListResponse>;
+  }
+
+  /**
+   * GET /harness/evals/{id}/receipt — the terminal record as a sealed
+   * `fx1_eval_record.v1` document (409 while non-terminal; POST the doc
+   * to /receipts/verify).
+   */
+  evalReceipt(evalId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/harness/evals/${encodeURIComponent(evalId)}/receipt`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /** DELETE /harness/evals/{id} — cooperative cancel of a queued eval. */
+  async cancelEval(evalId: string): Promise<EvalRecord> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/harness/evals/${encodeURIComponent(evalId)}`,
+      idempotent: true,
+    });
+    return (await this.parse(res)) as EvalRecord;
+  }
+
+  /**
+   * Poll an eval until terminal. `pollMs` defaults to 500ms; `timeoutS`
+   * bounds the wait (0 = forever). Terminal records are returned, not
+   * thrown — `status` + `error` carry the verdict.
+   */
+  async waitEval(
+    evalId: string,
+    opts: { pollMs?: number; timeoutS?: number } = {},
+  ): Promise<EvalRecord> {
+    const pollMs = opts.pollMs ?? 500;
+    const deadline =
+      opts.timeoutS === undefined || opts.timeoutS === 0
+        ? Infinity
+        : Date.now() + opts.timeoutS * 1000;
+    for (;;) {
+      const e = await this.eval(evalId);
+      if (
+        e.status === "succeeded" ||
+        e.status === "failed" ||
+        e.status === "cancelled"
+      ) {
+        return e;
+      }
+      if (Date.now() >= deadline) return e;
       await new Promise((r) => setTimeout(r, pollMs));
     }
   }

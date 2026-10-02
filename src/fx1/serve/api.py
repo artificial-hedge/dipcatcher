@@ -88,6 +88,17 @@ from fx1.serve.backends import (
 )
 from fx1.serve.chat import cited_complete
 from fx1.serve.contract import API_VERSION
+from fx1.serve.evals import (
+    EVAL_SAMPLING,
+    EVAL_SUITES,
+    EvalRecord,
+    EvalStore,
+    EvalSuiteName,
+    eval_record_receipt,
+    metered_model,
+    run_eval_record,
+    suite_accepts_judge,
+)
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.webhooks import (
@@ -522,6 +533,58 @@ class GateCheckResponse(_Model):
     error: str | None = None
 
 
+class EvalSubmitRequest(_Model):
+    """Async eval submission: one seeded suite against a backend chain.
+
+    The suite runs on the shared jobs executor under the same drain/cap
+    contract as run jobs; poll ``GET /harness/evals/{eval_id}`` and export
+    the sealed ``fx1_eval_record.v1`` doc at ``/receipt`` once terminal.
+    Evals always run under the decode pin ``{"temperature": 0.0}`` — eval
+    evidence is deterministic evidence; the pin is recorded on the
+    record.
+    """
+
+    suite: EvalSuiteName
+    backend: Literal["hosted_k3", "local_fx1", "byok"]
+    seed: int = Field(default=0, ge=0)
+    checkpoint_dir: str | None = None
+    byok: ByokOverride | None = None
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
+    fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
+        default_factory=list, max_length=2
+    )
+    # Optional grader link — only the judge suites (capability, ext_bench)
+    # consume it. Resolved once, unchained; ``judge_byok`` binds only a
+    # 'byok' judge.
+    judge_backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None
+    judge_byok: ByokOverride | None = None
+
+    @model_validator(mode="after")
+    def _eval_valid(self) -> EvalSubmitRequest:
+        _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
+        if self.judge_byok is not None and self.judge_backend != "byok":
+            raise ValueError("judge_byok applies only to judge_backend='byok'")
+        if self.judge_backend is not None and not suite_accepts_judge(self.suite):
+            raise ValueError(f"suite '{self.suite}' takes no judge")
+        return self
+
+
+class EvalSubmitResponse(_Model):
+    """Submission ack — ``replayed`` marks an Idempotency-Key hit (the
+    eval ran once already; no second execution)."""
+
+    eval_id: str
+    status: str
+    replayed: bool = False
+
+
+class EvalListResponse(_Model):
+    """Eval inventory page: ``total`` is the filtered count before paging."""
+
+    records: list[EvalRecord]
+    total: int
+
+
 class CompleteBatchItem(_Model):
     ok: bool
     latency_ms: float
@@ -682,6 +745,7 @@ class CapabilitiesResponse(_Model):
     api_version: str
     fx1_version: str
     features: dict[str, bool]
+    eval_suites: list[str]
     limits: dict[str, float]
     backends: dict[str, bool]
     roles: list[str]
@@ -1087,13 +1151,14 @@ def _submit_job(
 def _make_lifespan(
     metrics: _Metrics,
     job_store: _JobStore,
+    eval_store: EvalStore,
     jobs_executor: ThreadPoolExecutor,
 ) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
     """Graceful-exit contract: on shutdown the gate drains (new work gets
     503), every still-queued job flips to 'cancelled' and fires its
-    signed webhook, and the executor releases pending futures. Running
-    jobs aren't interrupted — they finish bounded by their command
-    timeout or die with the process."""
+    signed webhook, queued evals flip to 'cancelled', and the executor
+    releases pending futures. Running work isn't interrupted — it
+    finishes bounded by its command timeout or dies with the process."""
 
     @asynccontextmanager
     async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
@@ -1101,6 +1166,7 @@ def _make_lifespan(
         metrics.draining.set()
         for pending in job_store.cancel_pending():
             _deliver_job_callback(pending)
+        eval_store.cancel_pending()
         jobs_executor.shutdown(wait=False, cancel_futures=True)
 
     return _lifespan
@@ -1835,7 +1901,7 @@ def _close_backend(backend: Any) -> None:
         closer()
 
 
-def _mount_complete_routes(
+def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/job surface
     app: FastAPI,
     *,
     slot: Callable[[], Iterator[None]],
@@ -1849,9 +1915,14 @@ def _mount_complete_routes(
     probe_cache: dict[str, BackendProbeVerdict],
     probe_lock: threading.Lock,
     completion_log: _CompletionLog,
+    eval_store: EvalStore,
+    inflight: threading.BoundedSemaphore,
+    jobs_executor: ThreadPoolExecutor,
 ) -> None:
-    """Complete routes (sync / SSE stream / batch) — extracted from
-    ``create_app`` to keep its branch complexity under the ruff cap."""
+    """Complete routes (sync / SSE stream / batch) + eval submissions —
+    extracted from ``create_app`` to keep its branch complexity under the
+    ruff cap. Evals share the complete chain resolution and the jobs
+    executor's slot contract."""
 
     def _breaker_admit(name: str) -> None:
         """Fast-fail while the backend's circuit is open — the call never
@@ -1885,7 +1956,9 @@ def _mount_complete_routes(
                 code="receipt_not_found",
             )
 
-    def _resolve_candidate(name: str, body: CompleteRequest | CompleteBatchRequest) -> Any:
+    def _resolve_candidate(
+        name: str, body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest
+    ) -> Any:
         """Resolve one chain link — per-link kwargs: the byok override binds
         only a 'byok' link, checkpoint_dir only a 'local_fx1' link."""
         return resolve_backend(
@@ -1896,7 +1969,7 @@ def _mount_complete_routes(
         )
 
     def _resolve_chain(
-        body: CompleteRequest | CompleteBatchRequest,
+        body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest,
     ) -> tuple[str, Any, list[BackendAttempt]]:
         """First chain link that admits + resolves serves; a 503
         (unconfigured / unavailable / circuit open) records the attempt and
@@ -1922,6 +1995,192 @@ def _mount_complete_routes(
             return cand, backend, attempts
         assert last is not None  # noqa: S101 — every link failed retriably
         raise last
+
+    def _submit_eval(
+        body: EvalSubmitRequest,
+        idempotency_key: str | None,
+    ) -> EvalSubmitResponse:
+        """Eval submission core — the job contract (idempotency lookup ->
+        drain check -> slot admission -> background execution) applied to
+        the eval suites. The slot is held for the eval's lifetime and
+        released by the worker, so evals queue no deeper than
+        ``max_inflight``."""
+        key = (idempotency_key or "").strip() or None
+        if key is not None and len(key) > _IDEM_KEY_MAX:
+            raise ApiError(400, "Idempotency-Key must be <= 256 chars")
+        body_fp = _body_fp(body)
+        if key is not None:
+            entry = eval_store.get_key(key)
+            if entry is not None:
+                fp, eval_id = entry
+                if fp != body_fp:
+                    raise ApiError(
+                        409,
+                        "Idempotency-Key reuse with a different request body",
+                    )
+                rec = eval_store.get(eval_id)
+                if rec is not None:
+                    return EvalSubmitResponse(eval_id=eval_id, status=rec.status, replayed=True)
+        if metrics.draining.is_set():
+            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        if not inflight.acquire(blocking=False):
+            raise ApiError(
+                503,
+                f"harness at max_inflight={metrics.max_inflight} — retry later",
+                code="over_capacity",
+                headers={"Retry-After": "1"},
+            )
+        metrics.acquire()
+        record = EvalRecord(
+            eval_id=uuid.uuid4().hex,
+            suite=body.suite,
+            backend=body.backend,
+            seed=body.seed,
+            status="queued",
+            created_at=time.time(),
+            sampling=EVAL_SAMPLING.body_fields(),
+        )
+
+        def _exec() -> None:
+            if record.status == "cancelled":
+                metrics.release()
+                inflight.release()
+                return
+            record.status = "running"
+            try:
+                name, backend, attempts = _resolve_chain(body)
+                record.backend = name
+                record.attempts = [a.model_dump(mode="json") for a in attempts]
+                model = metered_model(
+                    backend,
+                    metric_key=f"eval:{body.suite}:{name}",
+                    record=metrics.record_complete,
+                )
+                judge = None
+                if body.judge_backend is not None:
+                    judge_key = _breaker_key_name(body.judge_backend, body.judge_byok)
+                    _breaker_admit(judge_key)
+                    judge_obj = resolve_backend(
+                        body.judge_backend,
+                        None,
+                        (
+                            body.judge_byok.model_dump()
+                            if body.judge_backend == "byok" and body.judge_byok is not None
+                            else None
+                        ),
+                        body.timeout_s,
+                    )
+                    judge = metered_model(
+                        judge_obj,
+                        metric_key=f"eval:{body.suite}:judge:{body.judge_backend}",
+                        record=metrics.record_complete,
+                    )
+                run_eval_record(record, model=model, judge=judge)
+            except ApiError as exc:
+                record.error = f"{exc.status_code}: {exc.detail}"
+                record.status = "failed"
+                record.finished_at = time.time()
+            except Exception as exc:  # noqa: BLE001 — worker faults land in the record
+                record.error = f"{type(exc).__name__}: {exc}"
+                record.status = "failed"
+                record.finished_at = time.time()
+            metrics.release()
+            inflight.release()
+
+        try:
+            jobs_executor.submit(_exec)
+        except RuntimeError as exc:  # executor gone (shutdown race)
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        eval_store.put(record, key, body_fp)
+        return EvalSubmitResponse(eval_id=record.eval_id, status=record.status, replayed=False)
+
+    @app.post(
+        "/harness/evals",
+        response_model=EvalSubmitResponse,
+        status_code=202,
+        tags=["evals"],
+        operation_id="submit_eval",
+    )
+    def submit_eval(
+        body: EvalSubmitRequest,
+        response: Response,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> EvalSubmitResponse:
+        """Submit an eval suite against a backend chain — same
+        drain/cap/Idempotency-Key contract as job submission. The record
+        carries the suite, seed, serving backend, chain attempts, decode
+        pin, and the serialized report once terminal; export it sealed at
+        ``GET /harness/evals/{eval_id}/receipt``."""
+        out = _submit_eval(body, idempotency_key)
+        response.headers["Location"] = f"/harness/evals/{out.eval_id}"
+        return out
+
+    @app.get(
+        "/harness/evals",
+        response_model=EvalListResponse,
+        tags=["evals"],
+        operation_id="list_evals",
+    )
+    def list_evals(
+        status: Literal["queued", "running", "succeeded", "failed", "cancelled"] | None = None,
+        suite: EvalSuiteName | None = None,
+        limit: int = Query(default=100, ge=1, le=256),
+    ) -> EvalListResponse:
+        """Newest-first eval inventory, filterable by status and suite."""
+        records, total = eval_store.list_records(status=status, suite=suite, limit=limit)
+        return EvalListResponse(records=records, total=total)
+
+    @app.get(
+        "/harness/evals/{eval_id}",
+        response_model=EvalRecord,
+        tags=["evals"],
+        operation_id="get_eval",
+    )
+    def get_eval(eval_id: str) -> EvalRecord:
+        rec = eval_store.get(eval_id)
+        if rec is None:
+            raise ApiError(404, f"unknown eval_id {eval_id!r}")
+        return rec
+
+    @app.get(
+        "/harness/evals/{eval_id}/receipt",
+        tags=["evals"],
+        operation_id="eval_receipt",
+    )
+    def eval_receipt(eval_id: str) -> dict[str, Any]:
+        """Export the eval record as a sealed ``fx1_eval_record.v1``
+        document — terminal records only: a still-running eval's receipt
+        would seal a mutable report. Verify with ``POST /receipts/verify``
+        or the SDK."""
+        rec = eval_store.get(eval_id)
+        if rec is None:
+            raise ApiError(404, f"unknown eval_id {eval_id!r}")
+        if rec.status not in _TERMINAL_JOB_STATUS:
+            raise ApiError(
+                409,
+                f"eval {eval_id!r} is {rec.status} — receipts export on terminal records only",
+                code="eval_not_terminal",
+            )
+        return eval_record_receipt(rec.model_dump(mode="json"))
+
+    @app.delete(
+        "/harness/evals/{eval_id}",
+        response_model=EvalRecord,
+        tags=["evals"],
+        operation_id="cancel_eval",
+    )
+    def cancel_eval(eval_id: str) -> EvalRecord:
+        """Cooperative cancel: a queued eval flips to 'cancelled' and its
+        executor slot frees on dequeue. Running and terminal evals 409 —
+        suite runners have no mid-run kill handle."""
+        rec, outcome = eval_store.cancel(eval_id)
+        if rec is None:
+            raise ApiError(404, f"unknown eval_id {eval_id!r}")
+        if outcome != "cancelled":
+            raise ApiError(409, f"eval {eval_id!r} is {outcome}")
+        return rec
 
     @app.post(
         "/harness/complete",
@@ -2648,6 +2907,7 @@ def create_app(
     complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
     job_store = _JobStore(job_max)
+    eval_store = EvalStore(job_max)
     jobs_executor = ThreadPoolExecutor(max_workers=max_inflight, thread_name_prefix="fx1-job")
 
     @contextmanager
@@ -2684,13 +2944,17 @@ def create_app(
             "commands, sealed-receipt verification, and gated model "
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
-        lifespan=_make_lifespan(metrics, job_store, jobs_executor),
+        lifespan=_make_lifespan(metrics, job_store, eval_store, jobs_executor),
         openapi_tags=[
             {"name": "runs", "description": "Synchronous lab-command execution."},
             {"name": "jobs", "description": "Async run jobs: submit, poll, SSE, cancel, batch."},
             {
                 "name": "complete",
                 "description": "Gated model completion (sync, batch, SSE stream).",
+            },
+            {
+                "name": "evals",
+                "description": "Async eval-suite submissions against any backend.",
             },
             {"name": "receipts", "description": "Sealed-receipt verification."},
             {"name": "ops", "description": "Liveness, readiness, metrics, drain, version."},
@@ -2706,6 +2970,7 @@ def create_app(
     app.state.metrics = metrics
     app.state.idem_store = idem_store
     app.state.job_store = job_store
+    app.state.eval_store = eval_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
@@ -2880,10 +3145,13 @@ def create_app(
                 "breaker": breaker is not None,
                 "receipts_store": receipt_index.available(),
                 "byok_override": byok_override_enabled,
+                "evals": True,
             },
+            eval_suites=list(EVAL_SUITES),
             limits={
                 "max_inflight": float(metrics.max_inflight),
                 "job_max": float(job_store._max),
+                "eval_max": float(eval_store.capacity),
                 "idem_max": float(idem_store._max),
                 "job_batch_max": float(_JOB_BATCH_MAX),
                 "verify_batch_max": float(_VERIFY_BATCH_MAX),
@@ -3111,6 +3379,9 @@ def create_app(
         probe_cache=probe_cache,
         probe_lock=probe_lock,
         completion_log=completion_log,
+        eval_store=eval_store,
+        inflight=inflight,
+        jobs_executor=jobs_executor,
     )
 
     _mount_receipt_routes(app, receipt_index)

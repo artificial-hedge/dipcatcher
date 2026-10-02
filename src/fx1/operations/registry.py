@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from pydantic import Field
 
@@ -70,7 +70,7 @@ def get_operation(operation_id: str) -> Operation[Any, Any]:
         raise TypeError(f"{module_path} must export an Operation named OPERATION")
     if operation.id != operation_id or operation.handler.__module__ != module_path:
         raise ValueError(f"{module_path} does not implement its registered operation identity")
-    return cast(Operation[Any, Any], operation)
+    return operation
 
 
 def list_operations(

@@ -466,6 +466,124 @@ class HarnessClient:
         )
         return dict(out)
 
+    # ---- evals ----------------------------------------------------------
+
+    def submit_eval(
+        self,
+        suite: str,
+        *,
+        backend: str = "hosted_k3",
+        seed: int = 0,
+        checkpoint_dir: str | None = None,
+        byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
+        fallbacks: list[str] | None = None,
+        judge_backend: str | None = None,
+        judge_byok: dict[str, str] | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """POST /harness/evals — submit a seeded eval suite against a
+        backend chain (202). Returns ``{eval_id, status, replayed}``;
+        poll :meth:`eval_status` or :meth:`wait_eval` for the terminal
+        record, then export it sealed via :meth:`eval_receipt`."""
+        body: dict[str, Any] = {"suite": suite, "backend": backend, "seed": seed}
+        if checkpoint_dir is not None:
+            body["checkpoint_dir"] = checkpoint_dir
+        if byok is not None:
+            body["byok"] = byok
+        if timeout_s is not None:
+            body["timeout_s"] = timeout_s
+        if fallbacks is not None:
+            body["fallbacks"] = fallbacks
+        if judge_backend is not None:
+            body["judge_backend"] = judge_backend
+        if judge_byok is not None:
+            body["judge_byok"] = judge_byok
+        out = self._json(
+            "POST",
+            "/harness/evals",
+            body,
+            extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
+        )
+        return dict(out)
+
+    def eval_status(self, eval_id: str) -> dict[str, Any]:
+        """GET /harness/evals/{eval_id} — the live EvalRecord:
+        status/report/attempts/sampling pin."""
+        out = self._json(
+            "GET",
+            f"/harness/evals/{urllib.parse.quote(eval_id)}",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def list_evals(
+        self,
+        *,
+        status: str | None = None,
+        suite: str | None = None,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """GET /harness/evals — inventory page, newest first; ``total`` is
+        the filtered count before paging."""
+        params: dict[str, Any] = {"limit": limit}
+        if status is not None:
+            params["status"] = status
+        if suite is not None:
+            params["suite"] = suite
+        out = self._json(
+            "GET",
+            "/harness/evals?" + urllib.parse.urlencode(params),
+            idempotent=True,
+        )
+        return dict(out)
+
+    def eval_receipt(self, eval_id: str) -> dict[str, Any]:
+        """GET /harness/evals/{eval_id}/receipt — the sealed
+        ``fx1_eval_record.v1`` doc (409 while the eval is non-terminal;
+        feed it to :meth:`verify_receipt`)."""
+        out = self._json(
+            "GET",
+            f"/harness/evals/{urllib.parse.quote(eval_id)}/receipt",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def cancel_eval(self, eval_id: str) -> dict[str, Any]:
+        """DELETE /harness/evals/{eval_id} — cooperative cancel of a
+        queued eval; running/terminal map the 409 through the error
+        table."""
+        out = self._json(
+            "DELETE",
+            f"/harness/evals/{urllib.parse.quote(eval_id)}",
+        )
+        return dict(out)
+
+    def wait_eval(
+        self,
+        eval_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Poll ``eval_status`` until terminal; returns the record —
+        ``report`` carries the suite output. Raises ``HarnessJobError``
+        on 'failed'/'cancelled' and ``HarnessTransportError`` on
+        ``timeout_s`` (the eval keeps running server-side)."""
+        deadline = None if timeout_s is None else self._clock() + timeout_s
+        while True:
+            st = self.eval_status(eval_id)
+            if st["status"] == "succeeded":
+                return st
+            if st["status"] == "failed":
+                raise HarnessJobError(f"eval {eval_id} failed: {st.get('error')}")
+            if st["status"] == "cancelled":
+                raise HarnessJobError(f"eval {eval_id} cancelled")
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
+                raise HarnessTransportError(f"eval {eval_id} did not finish within {timeout_s}s")
+            self._sleep(poll_s if remaining is None else min(poll_s, remaining))
+
     def wait_run(
         self,
         job_id: str,

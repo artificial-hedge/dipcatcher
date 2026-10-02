@@ -164,6 +164,92 @@
         ]
       }
     },
+    "/harness/evals": {
+      "get": {
+        "params": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "suite",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "202",
+          "422"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}/receipt": {
+      "get": {
+        "params": [
+          {
+            "name": "eval_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/gate/check": {
       "post": {
         "params": [],
@@ -396,5 +482,5 @@
       }
     }
   },
-  "schema_sha256": "82d0f8b8a178f52dfa2762308b111e246a1ebabf4e7d360bddfe7b507fc8f421"
+  "schema_sha256": "f0ddc4855689bb28d7f6a27c6e9fe67de7c2c9756f80351fb5848d2d90a645c4"
 }

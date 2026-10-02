@@ -328,6 +328,13 @@
             "title": "Backends",
             "type": "object"
           },
+          "eval_suites": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Eval Suites",
+            "type": "array"
+          },
           "features": {
             "additionalProperties": {
               "type": "boolean"
@@ -358,6 +365,7 @@
           "api_version",
           "fx1_version",
           "features",
+          "eval_suites",
           "limits",
           "backends",
           "roles"
@@ -1083,6 +1091,275 @@
           "inflight"
         ],
         "title": "DrainResponse",
+        "type": "object"
+      },
+      "EvalListResponse": {
+        "additionalProperties": false,
+        "description": "Eval inventory page: ``total`` is the filtered count before paging.",
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/EvalRecord"
+            },
+            "title": "Records",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "records",
+          "total"
+        ],
+        "title": "EvalListResponse",
+        "type": "object"
+      },
+      "EvalRecord": {
+        "additionalProperties": false,
+        "description": "One submitted eval's durable record \u2014 sealed on receipt export.\n\nNever carries request-side credentials (``byok``/keys): the record is\nevidence, and evidence must be safe to export.",
+        "properties": {
+          "attempts": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          },
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "eval_id": {
+            "title": "Eval Id",
+            "type": "string"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report"
+          },
+          "sampling": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "suite": {
+            "title": "Suite",
+            "type": "string"
+          }
+        },
+        "required": [
+          "eval_id",
+          "suite",
+          "backend",
+          "seed",
+          "status",
+          "created_at"
+        ],
+        "title": "EvalRecord",
+        "type": "object"
+      },
+      "EvalSubmitRequest": {
+        "additionalProperties": false,
+        "description": "Async eval submission: one seeded suite against a backend chain.\n\nThe suite runs on the shared jobs executor under the same drain/cap\ncontract as run jobs; poll ``GET /harness/evals/{eval_id}`` and export\nthe sealed ``fx1_eval_record.v1`` doc at ``/receipt`` once terminal.\nEvals always run under the decode pin ``{\"temperature\": 0.0}`` \u2014 eval\nevidence is deterministic evidence; the pin is recorded on the\nrecord.",
+        "properties": {
+          "backend": {
+            "enum": [
+              "hosted_k3",
+              "local_fx1",
+              "byok"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
+          "byok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ByokOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checkpoint_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Dir"
+          },
+          "fallbacks": {
+            "items": {
+              "enum": [
+                "hosted_k3",
+                "local_fx1",
+                "byok"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Fallbacks",
+            "type": "array"
+          },
+          "judge_backend": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hosted_k3",
+                  "local_fx1",
+                  "byok"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Backend"
+          },
+          "judge_byok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ByokOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "seed": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Seed",
+            "type": "integer"
+          },
+          "suite": {
+            "enum": [
+              "capability",
+              "calibration",
+              "tooluse",
+              "retrieval",
+              "ts_reasoning",
+              "ext_bench",
+              "options_reasoning"
+            ],
+            "title": "Suite",
+            "type": "string"
+          },
+          "timeout_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 3600.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout S"
+          }
+        },
+        "required": [
+          "suite",
+          "backend"
+        ],
+        "title": "EvalSubmitRequest",
+        "type": "object"
+      },
+      "EvalSubmitResponse": {
+        "additionalProperties": false,
+        "description": "Submission ack \u2014 ``replayed`` marks an Idempotency-Key hit (the\neval ran once already; no second execution).",
+        "properties": {
+          "eval_id": {
+            "title": "Eval Id",
+            "type": "string"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "eval_id",
+          "status"
+        ],
+        "title": "EvalSubmitResponse",
         "type": "object"
       },
       "GateCheckRequest": {
@@ -3238,6 +3515,606 @@
         ]
       }
     },
+    "/harness/evals": {
+      "get": {
+        "description": "Newest-first eval inventory, filterable by status and suite.",
+        "operationId": "list_evals",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "queued",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "suite",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "capability",
+                    "calibration",
+                    "tooluse",
+                    "retrieval",
+                    "ts_reasoning",
+                    "ext_bench",
+                    "options_reasoning"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Suite"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 256,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalListResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Evals",
+        "tags": [
+          "evals"
+        ]
+      },
+      "post": {
+        "description": "Submit an eval suite against a backend chain \u2014 same\ndrain/cap/Idempotency-Key contract as job submission. The record\ncarries the suite, seed, serving backend, chain attempts, decode\npin, and the serialized report once terminal; export it sealed at\n``GET /harness/evals/{eval_id}/receipt``.",
+        "operationId": "submit_eval",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalSubmitResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Submit Eval",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}": {
+      "delete": {
+        "description": "Cooperative cancel: a queued eval flips to 'cancelled' and its\nexecutor slot frees on dequeue. Running and terminal evals 409 \u2014\nsuite runners have no mid-run kill handle.",
+        "operationId": "cancel_eval",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eval_id",
+            "required": true,
+            "schema": {
+              "title": "Eval Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Eval",
+        "tags": [
+          "evals"
+        ]
+      },
+      "get": {
+        "operationId": "get_eval",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eval_id",
+            "required": true,
+            "schema": {
+              "title": "Eval Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Eval",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/harness/evals/{eval_id}/receipt": {
+      "get": {
+        "description": "Export the eval record as a sealed ``fx1_eval_record.v1``\ndocument \u2014 terminal records only: a still-running eval's receipt\nwould seal a mutable report. Verify with ``POST /receipts/verify``\nor the SDK.",
+        "operationId": "eval_receipt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "eval_id",
+            "required": true,
+            "schema": {
+              "title": "Eval Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Eval Receipt",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Eval Receipt",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
     "/harness/gate/check": {
       "post": {
         "description": "Pre-flight the honesty gate without spending model tokens \u2014\nwriters (fx-1 or BYOK callers) can validate text before or after\ngeneration. Advisory: not slot-gated, stays up during drain, and\nnever touches a backend or the metrics series.",
@@ -4939,6 +5816,10 @@
     {
       "description": "Gated model completion (sync, batch, SSE stream).",
       "name": "complete"
+    },
+    {
+      "description": "Async eval-suite submissions against any backend.",
+      "name": "evals"
     },
     {
       "description": "Sealed-receipt verification.",
