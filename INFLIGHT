@@ -2552,3 +2552,4 @@ wave 151 (2026-10-02): agentic canon — react_loop, toolformer_call, plan_searc
 wave 152 (2026-10-02): privacy canon — dp_sgd, secure_agg, fedavg_hetero, pate_teacher, gradient_leakage, canary_exposure; 884→890 families.
 wave 153 (2026-10-02): NAS canon — random_search_nas, evolution_nas, darts_nas, enas_controller, one_shot_nas, arch_predictor; 890→896 families.
 wave 154 (2026-10-02): vision canon — convnet_baseline, vit_classifier, clip_align, simclr_views, diffusion_ddim, attention_rollout; 896→902 families.
+wave 155 (2026-10-02): causal-DL canon — tarnet_ite, dragonnet_dr, deep_iv, cevae_latent, causal_rep, policy_value; 902→908 families.

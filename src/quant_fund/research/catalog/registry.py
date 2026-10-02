@@ -2096,6 +2096,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "simclr_views",
         "diffusion_ddim",
         "attention_rollout",
+        # Wave-155 causal-DL canon:
+        # TARNet, Dragonnet, DeepIV,
+        # CEVAE, CFRNet, DR-value.
+        "tarnet_ite",
+        "dragonnet_dr",
+        "deep_iv",
+        "cevae_latent",
+        "causal_rep",
+        "policy_value",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

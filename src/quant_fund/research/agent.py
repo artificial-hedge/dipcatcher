@@ -1229,6 +1229,14 @@ from quant_fund.research.benches_w154 import (
     bench_simclr_views_family,
     bench_vit_classifier_family,
 )
+from quant_fund.research.benches_w155 import (
+    bench_causal_rep_family,
+    bench_cevae_latent_family,
+    bench_deep_iv_family,
+    bench_dragonnet_dr_family,
+    bench_policy_value_family,
+    bench_tarnet_ite_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3704,6 +3712,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "simclr_views": bench_simclr_views_family(),
         "diffusion_ddim": bench_diffusion_ddim_family(),
         "attention_rollout": bench_attention_rollout_family(),
+        "tarnet_ite": bench_tarnet_ite_family(),
+        "dragonnet_dr": bench_dragonnet_dr_family(),
+        "deep_iv": bench_deep_iv_family(),
+        "cevae_latent": bench_cevae_latent_family(),
+        "causal_rep": bench_causal_rep_family(),
+        "policy_value": bench_policy_value_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
