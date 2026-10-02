@@ -2585,3 +2585,4 @@ wave 184 (2026-10-02): training-dynamics canon — hessian_eig, ntk_kernel, edge
 wave 185 (2026-10-02): differentiable-algorithm canon — st_estimator, gumbel_relax, perturb_map, implicit_diff, ode_adjoint, smooth_argmax; 1082→1088 families.
 wave 186 (2026-10-02): energy-based-model canon — score_matching, denoising_sm, noise_contrastive, contrastive_divergence, persistent_cd, adversarial_ebm; 1088→1094 families.
 wave 187 (2026-10-02): scientific-ML/PDE canon — deepritz_pinn, weak_form_pinn, fbsde_solver, spectral_pde, moc_lines, feynman_kac_mc; 1094→1100 families.
+wave 188 (2026-10-02): active-learning canon — entropy_query, margin_sampling, qbc_committee, coreset_kcenter, badge_embed, egl_change; 1100→1106 families.
