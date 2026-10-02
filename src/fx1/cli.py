@@ -283,11 +283,31 @@ def harness_run(
 def harness_serve(
     host: str = typer.Option("127.0.0.1", help="Bind host."),
     port: int = typer.Option(8011, help="Bind port."),
+    max_inflight: int | None = typer.Option(
+        None, help="Concurrent heavy requests (env FX1_API_MAX_INFLIGHT, default 16)."
+    ),
+    job_max: int | None = typer.Option(
+        None, help="Job-store capacity (env FX1_API_JOB_MAX, default 1024)."
+    ),
+    idem_max: int | None = typer.Option(
+        None, help="Idempotency-store capacity (env FX1_API_IDEM_MAX, default 1024)."
+    ),
+    sse_keepalive_s: float | None = typer.Option(
+        None,
+        help="SSE keepalive interval seconds (env FX1_API_SSE_KEEPALIVE_S, default 15).",
+    ),
+    rate_limit_rps: float | None = typer.Option(
+        None, help="Per-client req/s cap (env FX1_API_RATE_LIMIT_RPS, 0 = off)."
+    ),
+    gzip_min_bytes: int | None = typer.Option(
+        None,
+        help="Response compression floor bytes (env FX1_API_GZIP_MIN_BYTES, 0 = off).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
 
-    from fx1.serve.api import app as harness_api
+    from fx1.serve.api import create_app
 
     if host not in {"127.0.0.1", "::1", "localhost"} and not os.environ.get("FX1_API_KEY"):
         typer.echo(
@@ -295,6 +315,18 @@ def harness_serve(
             err=True,
         )
         raise typer.Exit(code=2)
+    try:
+        harness_api = create_app(
+            max_inflight=max_inflight,
+            sse_keepalive_s=sse_keepalive_s,
+            idem_max=idem_max,
+            job_max=job_max,
+            rate_limit_rps=rate_limit_rps,
+            gzip_min_bytes=gzip_min_bytes,
+        )
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=2) from exc
     uvicorn.run(harness_api, host=host, port=port, reload=False, server_header=False)
 
 

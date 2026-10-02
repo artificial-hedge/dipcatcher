@@ -643,6 +643,42 @@ def cli_audit() -> dict[str, Any]:
     with patch("fx1.serve.client.HarnessClient", _FailingRemote):
         rf = runner.invoke(app, ["harness", "health", "--remote", "http://dead"])
         out["remote_fault_clean_exit2"] = rf.exit_code == 2 and "HarnessTransportError" in rf.output
+
+    # --- harness serve: tuning knobs reach the app ------------------------------
+    served: list[Any] = []
+
+    with patch("uvicorn.run", lambda a, **kw: served.append((a, kw))):
+        rs = runner.invoke(
+            app,
+            [
+                "harness",
+                "serve",
+                "--max-inflight",
+                "3",
+                "--job-max",
+                "7",
+                "--idem-max",
+                "9",
+                "--sse-keepalive-s",
+                "2.5",
+                "--rate-limit-rps",
+                "4.5",
+                "--gzip-min-bytes",
+                "5",
+            ],
+        )
+        out["serve_flags_reach_app"] = (
+            rs.exit_code == 0
+            and len(served) == 1
+            and served[0][1]["host"] == "127.0.0.1"
+            and served[0][0].state.metrics.max_inflight == 3
+            and served[0][0].state.sse_keepalive_s == 2.5
+            and served[0][0].state.rate_limiter.rps == 4.5
+            and served[0][0].state.gzip_min_bytes == 5
+        )
+        served.clear()
+        rs2 = runner.invoke(app, ["harness", "serve", "--max-inflight", "0"])
+        out["serve_bad_knob_exit2"] = rs2.exit_code == 2 and not served
     return out
 
 

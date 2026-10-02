@@ -64,6 +64,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from starlette.middleware.gzip import GZipMiddleware
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
@@ -93,6 +94,7 @@ _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
 _IDEM_KEY_MAX = 256
 _JOB_MAX_ENV = "FX1_API_JOB_MAX"
 _RATE_LIMIT_ENV = "FX1_API_RATE_LIMIT_RPS"
+_GZIP_MIN_ENV = "FX1_API_GZIP_MIN_BYTES"
 _RATE_LIMIT_KEYS_MAX = 4096
 # Wire-contract version — bumped on breaking changes to the pinned OpenAPI
 # surface; stamped on every response as X-Fx1-Api-Version and reported by
@@ -406,6 +408,14 @@ def _env_int_bound(name: str, default: int, given: int | None) -> int:
     v = int(os.environ.get(name, str(default))) if given is None else given
     if v < 1:
         raise ValueError(f"{name} bound must be >= 1, got {v}")
+    return v
+
+
+def _env_int_floor(name: str, default: int, given: int | None) -> int:
+    """Non-negative-int tunable from arg or env; 0 disables the feature."""
+    v = int(os.environ.get(name, str(default))) if given is None else given
+    if v < 0:
+        raise ValueError(f"{name} bound must be >= 0, got {v}")
     return v
 
 
@@ -977,6 +987,7 @@ def create_app(
     idem_max: int | None = None,
     job_max: int | None = None,
     rate_limit_rps: float | None = None,
+    gzip_min_bytes: int | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -986,6 +997,7 @@ def create_app(
     job_max = _env_int_bound(_JOB_MAX_ENV, 1024, job_max)
     sse_keepalive_s = _env_float_floor(_SSE_KEEPALIVE_ENV, 15.0, sse_keepalive_s)
     rate_limit_rps = _env_float_floor(_RATE_LIMIT_ENV, 0.0, rate_limit_rps)
+    gzip_min_bytes = _env_int_floor(_GZIP_MIN_ENV, 1024, gzip_min_bytes)
     limiter = _RateLimiter(rate_limit_rps) if rate_limit_rps > 0 else None
     # Bounded in-flight work: the harness executes lab commands and model
     # calls on shared resources (a spawned local engine, GPU memory, the
@@ -1033,6 +1045,11 @@ def create_app(
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
     )
+    # Large responses (job listings, receipt payloads, openapi) compress well;
+    # urllib-based clients send no Accept-Encoding so SSE stays uncompressed.
+    if gzip_min_bytes > 0:
+        app.add_middleware(GZipMiddleware, minimum_size=gzip_min_bytes)
+    app.state.gzip_min_bytes = gzip_min_bytes
     app.state.inflight_slots = inflight
     app.state.metrics = metrics
     app.state.idem_store = idem_store

@@ -56,6 +56,28 @@ completions as a provenance footer.
 which case every route requires `X-API-Key` (constant-time compare);
 `/health` leaks presence booleans only — never env values.
 
+Long-running commands go through the async job surface:
+`POST /harness/jobs` (submit) → `GET /harness/jobs/{id}` (poll),
+`/harness/jobs/{id}/events` (SSE frame per state change — SDK twin
+`stream_job`/`wait_run_stream`, CLI `harness watch`), or a signed
+`callback_url` webhook (`callback_secret` → HMAC-SHA256 over
+`<timestamp>.<body>`; receivers verify with
+`fx1.serve.webhooks.verify_webhook`). `POST /harness/jobs/batch` submits
+up to 64 runs in one call with per-item `{error, code}` outcomes;
+dedup is `Idempotency-Key` (header) or `idempotency_key` (body), and
+replays return the original job.
+
+Ops knobs — CLI flags or env, fail-closed on out-of-range values:
+`--max-inflight`/`FX1_API_MAX_INFLIGHT` (16, concurrent heavy
+requests), `--job-max`/`FX1_API_JOB_MAX` and `--idem-max`/
+`FX1_API_IDEM_MAX` (1024 store capacities), `--sse-keepalive-s`/
+`FX1_API_SSE_KEEPALIVE_S` (15s), `--rate-limit-rps`/
+`FX1_API_RATE_LIMIT_RPS` (0 = off; per-client token bucket, 429 +
+`Retry-After`), and `--gzip-min-bytes`/`FX1_API_GZIP_MIN_BYTES` (1024;
+response compression only when the client advertises
+`Accept-Encoding: gzip` — 0 disables). Bodies over 1 MiB are refused
+(413); job stores evict oldest on capacity.
+
 The CLI fronts either surface: every `fx1 harness` subcommand takes
 `--remote URL` (drives the API through `HarnessClient` — the same wire
 client fx-1 uses) plus `--api-key`/`--timeout`, falling back to

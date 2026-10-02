@@ -553,6 +553,22 @@ def e2e_audit() -> dict[str, bool]:
                 and bout["failed"] == 0
                 and all(item.get("job_id") for item in bout["jobs"])
             )
+            import gzip as _gz  # noqa: PLC0415
+            import urllib.request  # noqa: PLC0415
+
+            gz_req = urllib.request.Request(  # noqa: S310 — loopback test server
+                f"http://127.0.0.1:{port7}/openapi.json",
+                headers={
+                    "Accept-Encoding": "gzip",
+                    "X-API-Key": _API_KEY,
+                },
+            )
+            with urllib.request.urlopen(gz_req, timeout=10) as resp:  # nosec B310
+                gz_raw = resp.read()
+                gz_enc = resp.headers.get("Content-Encoding")
+            out["e2e_gzip_wire"] = gz_enc == "gzip" and json.loads(_gz.decompress(gz_raw))["info"][
+                "title"
+            ].startswith("fx-1 harness API")
         finally:
             server7.should_exit = True
             server7_thread.join(timeout=15)

@@ -1279,6 +1279,45 @@ def api_audit() -> dict[str, Any]:
         and cap_out["jobs"][1]["code"] == "over_capacity"
     )
 
+    # --- gzip response compression --------------------------------------------
+    g_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    gc = _TC2(g_app)
+    g_resp = gc.get("/openapi.json", headers={"Accept-Encoding": "gzip"})
+    out["gzip_compresses_large_response"] = (
+        g_resp.status_code == 200
+        and g_resp.headers.get("content-encoding") == "gzip"
+        and len(g_resp.content) > 4096
+    )
+    g_small = gc.get("/health", headers={"Accept-Encoding": "gzip"})
+    out["gzip_small_response_untouched"] = (
+        g_small.status_code == 200 and "content-encoding" not in g_small.headers
+    )
+    g_plain = gc.get("/openapi.json", headers={"Accept-Encoding": "identity"})
+    out["gzip_requires_accept_encoding"] = (
+        g_plain.status_code == 200
+        and "content-encoding" not in g_plain.headers
+        and len(g_plain.content) > 4096
+    )
+    g_off_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        gzip_min_bytes=0,
+    )
+    g_off = _TC2(g_off_app).get("/openapi.json", headers={"Accept-Encoding": "gzip"})
+    out["gzip_zero_disables"] = "content-encoding" not in g_off.headers
+    try:
+        api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+            gzip_min_bytes=-1,
+        )
+        out["gzip_negative_rejected"] = False
+    except ValueError:
+        out["gzip_negative_rejected"] = True
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 
