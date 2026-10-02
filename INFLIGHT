@@ -2293,4 +2293,11 @@ note: canon PR to follow.
     (548->554); agent.py wiring; tests: 6 module
     files + test_benches_w96 (23 tests).
   - Canon staged on top of w95-canon.
+  wave97:
+  - "proximal_gradient","quadrature",
+    "ode_solvers","semisupervised",
+    "multiclass","sparse_pca"
+    (554->560); agent.py wiring; tests: 6 module
+    files + test_benches_w97.
+  - Canon staged on top of w96-canon.
 note: canon PR to follow.

@@ -1506,6 +1506,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "collaborative_filtering",
         "association_rules",
         "nash_equilibrium",
+        # Wave-97 canon: ISTA /
+        # FISTA prox-gradient,
+        # Gauss/CC/Simpson
+        # quadrature, RK45 +
+        # EM/Milstein solvers,
+        # label-prop + self-train,
+        # OvR / softmax / ECOC,
+        # and sparse PCA. Same
+        # SYNTHETIC diagnostic
+        # contract.
+        "proximal_gradient",
+        "quadrature",
+        "ode_solvers",
+        "semisupervised",
+        "multiclass",
+        "sparse_pca",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

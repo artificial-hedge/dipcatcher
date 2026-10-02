@@ -765,6 +765,14 @@ from quant_fund.research.benches_w96 import (
     bench_naive_bayes_family,
     bench_nash_equilibrium_family,
 )
+from quant_fund.research.benches_w97 import (
+    bench_multiclass_family,
+    bench_ode_solvers_family,
+    bench_proximal_gradient_family,
+    bench_quadrature_family,
+    bench_semisupervised_family,
+    bench_sparse_pca_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2892,6 +2900,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "collaborative_filtering": bench_collaborative_filtering_family(),
         "association_rules": bench_association_rules_family(),
         "nash_equilibrium": bench_nash_equilibrium_family(),
+        "proximal_gradient": bench_proximal_gradient_family(),
+        "quadrature": bench_quadrature_family(),
+        "ode_solvers": bench_ode_solvers_family(),
+        "semisupervised": bench_semisupervised_family(),
+        "multiclass": bench_multiclass_family(),
+        "sparse_pca": bench_sparse_pca_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
