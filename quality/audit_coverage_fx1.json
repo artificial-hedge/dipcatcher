@@ -22,7 +22,7 @@
     },
     "serve": {
       "doc": "docs/AUDIT_LEDGER.md",
-      "n_modules": 7,
+      "n_modules": 10,
       "status": "audited"
     },
     "train": {
@@ -106,6 +106,13 @@
       "status": "audited"
     },
     "sbom_audit.py": {
+      "status": "audited"
+    },
+    "sdk.py": {
+      "doc": "docs/AUDIT_LEDGER.md",
+      "status": "audited"
+    },
+    "sdk_audit.py": {
       "status": "audited"
     },
     "tail_audit.py": {
