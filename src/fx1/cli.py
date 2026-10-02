@@ -140,7 +140,7 @@ def harness_serve(
             err=True,
         )
         raise typer.Exit(code=2)
-    uvicorn.run(harness_api, host=host, port=port, reload=False)
+    uvicorn.run(harness_api, host=host, port=port, reload=False, server_header=False)
 
 
 _BACKEND_HELP = (

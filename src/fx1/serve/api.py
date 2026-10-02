@@ -516,4 +516,4 @@ if __name__ == "__main__":
         raise SystemExit(
             "non-loopback binding requires FX1_API_KEY; refusing unauthenticated exposure"
         )
-    uvicorn.run(app, host=host, port=port, reload=False)
+    uvicorn.run(app, host=host, port=port, reload=False, server_header=False)
