@@ -1685,6 +1685,14 @@ from quant_fund.research.benches_w211 import (
     bench_held_karp_family,
     bench_lagrangian_relax_family,
 )
+from quant_fund.research.benches_w212 import (
+    bench_christofides_tsp_family,
+    bench_fptas_knapsack_family,
+    bench_greedy_set_cover_family,
+    bench_local_search_maxcut_family,
+    bench_lp_rounding_sc_family,
+    bench_primal_dual_vc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4502,6 +4510,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "lagrangian_relax": bench_lagrangian_relax_family(),
         "branch_and_cut": bench_branch_and_cut_family(),
         "held_karp": bench_held_karp_family(),
+        "greedy_set_cover": bench_greedy_set_cover_family(),
+        "primal_dual_vc": bench_primal_dual_vc_family(),
+        "lp_rounding_sc": bench_lp_rounding_sc_family(),
+        "fptas_knapsack": bench_fptas_knapsack_family(),
+        "local_search_maxcut": bench_local_search_maxcut_family(),
+        "christofides_tsp": bench_christofides_tsp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
