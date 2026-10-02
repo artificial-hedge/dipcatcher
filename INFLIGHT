@@ -2279,4 +2279,11 @@ note: canon PR to follow.
     (536->542); agent.py wiring; tests: 6 module
     files + test_benches_w94 (21 tests).
   - Canon staged on top of w93-canon.
+  wave95:
+  - "bayesian_linear","graphical_models",
+    "conjugate_gradient","frank_wolfe",
+    "sparse_coding","evolution_strategies"
+    (542->548); agent.py wiring; tests: 6 module
+    files + test_benches_w95 (19 tests).
+  - Canon staged on top of w94-canon.
 note: canon PR to follow.

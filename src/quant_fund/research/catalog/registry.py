@@ -1472,6 +1472,22 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kernel_methods",
         "lda_topics",
         "online_convex",
+        # Wave-95 canon: Bayesian
+        # linear + ARD evidence,
+        # Bayes-net structure +
+        # exact marginals, linear
+        # + Polak-Ribière CG,
+        # FW / pairwise FW over
+        # Δ and ℓ1, OMP + K-SVD,
+        # and (μ/μ,λ)/(1+1) ES.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "bayesian_linear",
+        "graphical_models",
+        "conjugate_gradient",
+        "frank_wolfe",
+        "sparse_coding",
+        "evolution_strategies",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

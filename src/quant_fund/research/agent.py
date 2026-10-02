@@ -749,6 +749,14 @@ from quant_fund.research.benches_w94 import (
     bench_online_convex_family,
     bench_svm_classifiers,
 )
+from quant_fund.research.benches_w95 import (
+    bench_bayesian_linear_family,
+    bench_conjugate_gradient_family,
+    bench_evolution_strategies_family,
+    bench_frank_wolfe_family,
+    bench_graphical_models_family,
+    bench_sparse_coding_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2864,6 +2872,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "kernel_methods": bench_kernel_methods_family(),
         "lda_topics": bench_lda_topics_family(),
         "online_convex": bench_online_convex_family(),
+        "bayesian_linear": bench_bayesian_linear_family(),
+        "graphical_models": bench_graphical_models_family(),
+        "conjugate_gradient": bench_conjugate_gradient_family(),
+        "frank_wolfe": bench_frank_wolfe_family(),
+        "sparse_coding": bench_sparse_coding_family(),
+        "evolution_strategies": bench_evolution_strategies_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
