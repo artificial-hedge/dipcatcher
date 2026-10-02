@@ -1301,6 +1301,14 @@ from quant_fund.research.benches_w163 import (
     bench_packnet_cl_family,
     bench_piggyback_cl_family,
 )
+from quant_fund.research.benches_w164 import (
+    bench_bbb_vi_family,
+    bench_concrete_dropout_family,
+    bench_mc_dropout_family,
+    bench_snapshot_ens_family,
+    bench_swag_diag_family,
+    bench_vcl_online_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3830,6 +3838,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "agem_cl": bench_agem_cl_family(),
         "piggyback_cl": bench_piggyback_cl_family(),
         "hat_cl": bench_hat_cl_family(),
+        "swag_diag": bench_swag_diag_family(),
+        "mc_dropout": bench_mc_dropout_family(),
+        "bbb_vi": bench_bbb_vi_family(),
+        "snapshot_ens": bench_snapshot_ens_family(),
+        "concrete_dropout": bench_concrete_dropout_family(),
+        "vcl_online": bench_vcl_online_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
