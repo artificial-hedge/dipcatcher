@@ -1005,6 +1005,14 @@ from quant_fund.research.benches_w126 import (
     bench_tft_forecaster_family,
     bench_world_model_family,
 )
+from quant_fund.research.benches_w127 import (
+    bench_bnn_ensemble_family,
+    bench_contrastive_repr_family,
+    bench_diff_policy_family,
+    bench_hypernetwork_alloc_family,
+    bench_neural_thompson_family,
+    bench_option_vae_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3312,6 +3320,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "set_transformer": bench_set_transformer_family(),
         "neural_ode": bench_neural_ode_family(),
         "world_model": bench_world_model_family(),
+        "contrastive_repr": bench_contrastive_repr_family(),
+        "hypernetwork_alloc": bench_hypernetwork_alloc_family(),
+        "neural_thompson": bench_neural_thompson_family(),
+        "bnn_ensemble": bench_bnn_ensemble_family(),
+        "option_vae": bench_option_vae_family(),
+        "diff_policy": bench_diff_policy_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

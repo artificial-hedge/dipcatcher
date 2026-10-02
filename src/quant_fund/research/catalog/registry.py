@@ -1834,6 +1834,17 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "set_transformer",
         "neural_ode",
         "world_model",
+        # Wave-127 exec-summary DL-2:
+        # contrastive repr, hypernet
+        # alloc, neural Thompson, BNN
+        # ensemble, option VAE, diff
+        # policy.
+        "contrastive_repr",
+        "hypernetwork_alloc",
+        "neural_thompson",
+        "bnn_ensemble",
+        "option_vae",
+        "diff_policy",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
