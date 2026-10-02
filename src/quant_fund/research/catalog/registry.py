@@ -1905,6 +1905,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "convnp",
         "meta_uq",
         "llaplace_gp",
+        # Wave-134 differentiable
+        # optimization: OptNet QP,
+        # cvx layer, ICNN,
+        # declarative, SPD, MPC.
+        "optnet_qp",
+        "cvxpy_layer",
+        "input_convex",
+        "deep_declarative",
+        "spd_net",
+        "diff_mpc",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
