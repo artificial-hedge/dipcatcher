@@ -574,6 +574,54 @@ def api_audit() -> dict[str, Any]:
         != client.get("/health").headers["x-request-id"]
     )
 
+    # the response tail is single: body-cap / bad-length errors carry the
+    # same security headers + request id as every other path
+    bad_len = client.post(
+        "/receipts/verify",
+        content=b"{}",
+        headers={"content-length": "abc"},
+    )
+    out["bad_content_length_400"] = bad_len.status_code == 400
+    for label, err in (("cap_413", big), ("bad_len", bad_len)):
+        hdrs = {k.lower(): v for k, v in err.headers.items()}
+        out[f"error_tail_{label}"] = all(
+            hdrs.get(k) is not None
+            for k in (
+                "x-request-id",
+                "x-content-type-options",
+                "cache-control",
+                "referrer-policy",
+            )
+        )
+
+    # one structured access line per request, keyed by the request id
+    import logging  # noqa: PLC0415
+
+    from fx1.serve.api import logger as api_logger  # noqa: PLC0415
+
+    class _Capture(logging.Handler):
+        def __init__(self) -> None:
+            super().__init__()
+            self.lines: list[str] = []
+
+        def emit(self, record: logging.LogRecord) -> None:
+            self.lines.append(record.getMessage())
+
+    cap = _Capture()
+    api_logger.addHandler(cap)
+    try:
+        client.get("/health", headers={"X-Request-ID": "rid-probe-1"})
+    finally:
+        api_logger.removeHandler(cap)
+    line = next((ln for ln in cap.lines if "rid-probe-1" in ln), "")
+    out["access_log_emitted"] = (
+        "method=GET" in line
+        and "path=/health" in line
+        and "status=200" in line
+        and "rid=rid-probe-1" in line
+        and "elapsed_ms=" in line
+    )
+
     return out
 
 

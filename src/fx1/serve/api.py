@@ -35,9 +35,11 @@ from __future__ import annotations
 
 import hmac
 import json
+import logging
 import os
 import re
 import threading
+import time
 import uuid
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -192,6 +194,32 @@ def _request_id(raw: str | None) -> str:
     return uuid.uuid4().hex
 
 
+logger = logging.getLogger("fx1.serve.api")
+if not logger.handlers:  # embedders may still attach their own handlers
+    _log_handler = logging.StreamHandler()
+    _log_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s fx1-api %(message)s"))
+    logger.addHandler(_log_handler)
+    logger.setLevel(logging.INFO)
+
+
+def _finish(request: Request, request_id: str, response: Any, started: float) -> Any:
+    """Single post-processing tail for every response — security headers,
+    request-id echo, and one structured access line."""
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Request-ID"] = request_id
+    logger.info(
+        "request method=%s path=%s status=%d elapsed_ms=%.1f rid=%s",
+        request.method,
+        request.url.path,
+        response.status_code,
+        (time.monotonic() - started) * 1000,
+        request_id,
+    )
+    return response
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -237,20 +265,24 @@ def create_app(
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
         request_id = _request_id(request.headers.get("x-request-id"))
+        request.state.request_id = request_id
+        started = time.monotonic()
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
             declared = request.headers.get("content-length")
             if declared is not None:
                 try:
                     length = int(declared)
                 except ValueError:
-                    return JSONResponse(
+                    response = JSONResponse(
                         status_code=400, content={"detail": "invalid content-length"}
                     )
+                    return _finish(request, request_id, response, started)
                 if length > _MAX_BODY_BYTES:
-                    return JSONResponse(
+                    response = JSONResponse(
                         status_code=413,
                         content={"detail": f"body exceeds {_MAX_BODY_BYTES}-byte cap"},
                     )
+                    return _finish(request, request_id, response, started)
         if request.url.path in _PUBLIC_PATHS:
             response = await call_next(request)
         elif api_key:
@@ -276,11 +308,7 @@ def create_app(
                 )
             else:
                 response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Cache-Control"] = "no-store"
-        response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["X-Request-ID"] = request_id
-        return response
+        return _finish(request, request_id, response, started)
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
