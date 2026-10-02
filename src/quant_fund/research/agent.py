@@ -965,6 +965,14 @@ from quant_fund.research.benches_w121 import (
     bench_ttts_family,
     bench_ugape_family,
 )
+from quant_fund.research.benches_w122 import (
+    bench_dark_pool_family,
+    bench_exec_rl_family,
+    bench_options_flow_family,
+    bench_order_flow_imbalance_family,
+    bench_pg_mm_family,
+    bench_smart_router_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3242,6 +3250,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ugape": bench_ugape_family(),
         "ttts": bench_ttts_family(),
         "track_stop": bench_track_stop_family(),
+        "exec_rl": bench_exec_rl_family(),
+        "smart_router": bench_smart_router_family(),
+        "order_flow_imbalance": bench_order_flow_imbalance_family(),
+        "pg_mm": bench_pg_mm_family(),
+        "options_flow": bench_options_flow_family(),
+        "dark_pool": bench_dark_pool_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

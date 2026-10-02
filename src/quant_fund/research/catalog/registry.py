@@ -1787,6 +1787,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ugape",
         "ttts",
         "track_stop",
+        # Wave-122 exec-summary SOTA:
+        # RL execution, ML SOR,
+        # OFI, PG market maker,
+        # options flow, dark pool.
+        "exec_rl",
+        "smart_router",
+        "order_flow_imbalance",
+        "pg_mm",
+        "options_flow",
+        "dark_pool",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
