@@ -198,12 +198,16 @@ class HostedK3Backend:
         api_key: str | None = None,
         model: str = "kimi-k3",
         api_url: str = MOONSHOT_API_URL,
+        timeout_s: float = 120.0,
     ) -> None:
         self._api_key = api_key or os.environ.get("MOONSHOT_API_KEY", "")
         if not self._api_key:
             raise RuntimeError("MOONSHOT_API_KEY is not set; fx-1 never hardcodes credentials")
+        if timeout_s <= 0:
+            raise ValueError(f"timeout_s must be positive, got {timeout_s!r}")
         self._model = model
         self._api_url = api_url
+        self._timeout_s = timeout_s
 
     def complete(self, messages: list[dict[str, str]]) -> str:
         # temperature pinned to 0 — eval/teacher runs must be deterministic;
@@ -218,7 +222,7 @@ class HostedK3Backend:
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=120) as response:  # noqa: S310 — pinned Moonshot API URL  # nosec B310
+        with urllib.request.urlopen(request, timeout=self._timeout_s) as response:  # noqa: S310 — pinned Moonshot API URL  # nosec B310
             payload = json.loads(response.read().decode())
         content = payload["choices"][0]["message"]["content"]
         if not isinstance(content, str):
@@ -233,7 +237,7 @@ class HostedK3Backend:
             self._api_url,
             model=self._model,
             messages=messages,
-            timeout_s=120,
+            timeout_s=self._timeout_s,
             api_key=self._api_key,
             label="hosted_k3",
         )

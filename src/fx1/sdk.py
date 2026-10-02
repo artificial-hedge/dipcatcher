@@ -190,6 +190,7 @@ class Fx1Harness:
         receipt_hashes: list[str] | None = None,
         backend_kwargs: dict[str, Any] | None = None,
         byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -200,7 +201,7 @@ class Fx1Harness:
         spawned by ``LocalFx1Backend`` never leak.
         """
         backend_obj = self._resolve_completion_backend(
-            backend, checkpoint_dir, backend_kwargs, byok
+            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
         try:
             content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
@@ -225,6 +226,7 @@ class Fx1Harness:
         receipt_hashes: list[str] | None = None,
         backend_kwargs: dict[str, Any] | None = None,
         byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
         max_workers: int = 4,
     ) -> list[CompletionResult]:
         """Many gated completions over ONE shared backend instance.
@@ -240,7 +242,7 @@ class Fx1Harness:
         if not batch:
             return []
         backend_obj = self._resolve_completion_backend(
-            backend, checkpoint_dir, backend_kwargs, byok
+            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
         try:
             with ThreadPoolExecutor(
@@ -280,6 +282,7 @@ class Fx1Harness:
         receipt_hashes: list[str] | None = None,
         backend_kwargs: dict[str, Any] | None = None,
         byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
     ) -> list[str]:
         """Token-delta chunks of one gated completion.
 
@@ -292,7 +295,7 @@ class Fx1Harness:
         (501-class); the backend is always closed afterwards.
         """
         backend_obj = self._resolve_completion_backend(
-            backend, checkpoint_dir, backend_kwargs, byok
+            backend, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
         try:
             if not isinstance(backend_obj, StreamingBackend):
@@ -318,9 +321,12 @@ class Fx1Harness:
         checkpoint_dir: str | Path | None,
         backend_kwargs: dict[str, Any] | None,
         byok: dict[str, str] | None,
+        timeout_s: float | None,
     ) -> Any:
         """Checkpoint contract + backend resolution shared by completes."""
         kwargs: dict[str, Any] = dict(backend_kwargs or {})
+        if timeout_s is not None:
+            kwargs["timeout_s"] = timeout_s
         if byok is not None:
             if backend != "byok":
                 raise ValueError("a byok override applies only to backend='byok'")

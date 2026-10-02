@@ -546,6 +546,8 @@ export interface components {
             max_workers: number;
             /** Receipt Hashes */
             receipt_hashes?: string[] | null;
+            /** Timeout S */
+            timeout_s?: number | null;
         };
         /** CompleteBatchResponse */
         CompleteBatchResponse: {
@@ -577,6 +579,8 @@ export interface components {
             messages: components["schemas"]["ChatMessage"][];
             /** Receipt Hashes */
             receipt_hashes?: string[] | null;
+            /** Timeout S */
+            timeout_s?: number | null;
         };
         /** CompleteResponse */
         CompleteResponse: {

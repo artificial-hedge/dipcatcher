@@ -57,6 +57,14 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
   `complete`/`complete_many`/`stream_complete`; the CLI takes
   `--byok-base-url --byok-api-key --byok-model` (all-or-none).
 
+**Per-request backend deadline:** `timeout_s` (0, 3600] on
+`complete`/`complete/batch`/`complete/stream` is handed to the backend
+constructor as `timeout_s`, overriding each backend's env/config default
+— including `hosted_k3`, which previously hardcoded 120s. Out-of-range
+values are model-level 422s. SDK/`HarnessClient` take `timeout_s=`; the
+CLI takes `--backend-timeout` (distinct from `--timeout`, the HTTP
+transport deadline).
+
 ## Routes
 
 | Route | Purpose |

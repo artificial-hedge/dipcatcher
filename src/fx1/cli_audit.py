@@ -224,6 +224,7 @@ def cli_audit() -> dict[str, Any]:
         def __init__(self) -> None:
             self.stream_calls: list[dict[str, Any]] = []
             self.complete_calls: list[dict[str, Any]] = []
+            self.batch_calls: list[dict[str, Any]] = []
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             self.complete_calls.append(dict(kw))
@@ -236,6 +237,7 @@ def cli_audit() -> dict[str, Any]:
             return ["chunk-a", "chunk-b"]
 
         def complete_many(self, batch: Any, **kw: Any) -> list[CompletionResult]:
+            self.batch_calls.append(dict(kw))
             return [
                 CompletionResult(
                     backend="byok",
@@ -329,6 +331,14 @@ def cli_audit() -> dict[str, Any]:
             ).exit_code
             == 2
         )
+        # --backend-timeout packs into the wire timeout_s on both surfaces.
+        rt = runner.invoke(
+            app,
+            ["harness", "complete", "hi", "--backend", "byok", "--backend-timeout", "7.5"],
+        )
+        out["complete_backend_timeout_forwards"] = (
+            rt.exit_code == 0 and fake.complete_calls[-1].get("timeout_s") == 7.5
+        )
         # `harness batch` — JSONL/JSON prompts -> complete_many -> JSON out
         import tempfile  # noqa: PLC0415
         from pathlib import Path  # noqa: PLC0415
@@ -346,6 +356,13 @@ def cli_audit() -> dict[str, Any]:
             bad.write_text("")
             out["batch_empty_fails_clean"] = (
                 runner.invoke(app, ["harness", "batch", str(bad)]).exit_code == 2
+            )
+            rb_t = runner.invoke(
+                app,
+                ["harness", "batch", str(pf), "--backend", "byok", "--backend-timeout", "5"],
+            )
+            out["batch_backend_timeout_forwards"] = (
+                rb_t.exit_code == 0 and fake.batch_calls[-1].get("timeout_s") == 5.0
             )
 
     # --remote routes the same commands through HarnessClient --------------

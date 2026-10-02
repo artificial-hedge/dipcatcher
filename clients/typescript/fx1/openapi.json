@@ -250,6 +250,19 @@
               }
             ],
             "title": "Receipt Hashes"
+          },
+          "timeout_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 3600.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout S"
           }
         },
         "required": [
@@ -361,6 +374,19 @@
               }
             ],
             "title": "Receipt Hashes"
+          },
+          "timeout_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 3600.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout S"
           }
         },
         "required": [

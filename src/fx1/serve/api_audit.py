@@ -1487,7 +1487,7 @@ def api_audit() -> dict[str, Any]:
     # (422, never breaker-counted), gated by a server flag, and breaker-
     # isolated per endpoint so one tenant's dead endpoint can't fast-fail
     # another's.
-    _cap: list[dict[str, str] | None] = []
+    _cap: list[dict[str, Any]] = []
     _flaky2 = _FlakyBackend()
     _flaky2.calls = 0
 
@@ -1558,6 +1558,71 @@ def api_audit() -> dict[str, Any]:
         .get("/harness/capabilities")
         .json()["features"]["byok_override"]
         is False
+    )
+    # Per-request backend deadline — flows into resolver kwargs on every
+    # surface; out-of-range values are model-level 422s.
+    _cap.clear()
+    t_ok = bapp.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+            "timeout_s": 2.5,
+        },
+    )
+    out["timeout_s_reaches_backend"] = t_ok.status_code == 200 and _cap[-1].get("timeout_s") == 2.5
+    out["timeout_s_nonpositive_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "timeout_s": 0,
+            },
+        ).status_code
+        == 422
+    )
+    out["timeout_s_over_cap_422"] = (
+        bapp.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "x"}],
+                "timeout_s": 99999,
+            },
+        ).status_code
+        == 422
+    )
+    _cap.clear()
+    bapp.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [[{"role": "user", "content": "x"}]],
+            "byok": ovr,
+            "timeout_s": 7.0,
+        },
+    )
+    out["timeout_s_batch_reaches_backend"] = _cap[-1].get("timeout_s") == 7.0
+    _cap.clear()
+    bapp.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "x"}],
+            "byok": ovr,
+            "timeout_s": 3.0,
+        },
+    )
+    # _CleanBackend lacks stream() — the resolver still saw the deadline
+    # before the 501.
+    out["timeout_s_stream_reaches_backend"] = _cap[-1].get("timeout_s") == 3.0
+    # The hosted backend honors the knob it previously hardcoded.
+    import fx1.serve.backends as be_mod  # noqa: PLC0415
+
+    out["timeout_s_hosted_backend"] = (
+        be_mod.HostedK3Backend(api_key="k", timeout_s=9.0)._timeout_s == 9.0
     )
     # Isolated circuits per endpoint: the dead override opens its own
     # breaker key while the healthy override (and the env default) pass.

@@ -488,6 +488,23 @@ def parity_audit() -> dict[str, bool]:
         out["byok_override_kwargs_identical"] = (
             r_byok.status_code == 200 and cap_kwargs[-1] == sdk_wire_kwargs
         )
+        # Per-request backend deadline: SDK ``timeout_s=`` and the wire
+        # ``timeout_s`` must reach the resolver as the same kwarg.
+        sdk_byok.complete(msg, backend="byok", byok=ovr, timeout_s=2.5)
+        sdk_to_kwargs = dict(cap_kwargs[-1])
+        cap_kwargs.clear()
+        r_to = app_byok.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "byok": ovr,
+                "timeout_s": 2.5,
+            },
+        )
+        out["timeout_s_kwargs_identical"] = (
+            r_to.status_code == 200 and cap_kwargs[-1] == sdk_to_kwargs
+        )
         sdk_err, _ = _raises(lambda: sdk_byok.complete(msg, backend="hosted_k3", byok=ovr))
         api_code = app_byok.post(
             "/harness/complete",

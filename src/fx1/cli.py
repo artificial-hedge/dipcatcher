@@ -384,6 +384,9 @@ def harness_complete(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
@@ -399,6 +402,7 @@ def harness_complete(
                 checkpoint_dir=checkpoint_dir,
                 receipt_hashes=receipt or None,
                 byok=byok,
+                timeout_s=backend_timeout,
             )
         )
         for chunk in chunks:
@@ -412,6 +416,7 @@ def harness_complete(
             checkpoint_dir=checkpoint_dir,
             receipt_hashes=receipt or None,
             byok=byok,
+            timeout_s=backend_timeout,
         )
     )
     typer.echo(out.content)
@@ -434,6 +439,9 @@ def harness_batch(
     byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
     byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
     byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
 ) -> None:
     """Gated batch completion — per-item failures surface as exit 2."""
     surface = _surface(remote, api_key, timeout_s)
@@ -445,6 +453,7 @@ def harness_batch(
             backend=backend,
             receipt_hashes=receipt or None,
             byok=byok,
+            timeout_s=backend_timeout,
             max_workers=workers,
         )
     )

@@ -365,6 +365,8 @@ class CompleteRequest(_Model):
     receipt_hashes: list[str] | None = None
     # Per-call credentials; only meaningful with backend="byok".
     byok: ByokOverride | None = None
+    # Per-call backend deadline; beats each backend's env/config default.
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
 
 
 class CompleteResponse(_Model):
@@ -387,6 +389,7 @@ class CompleteBatchRequest(_Model):
     checkpoint_dir: str | None = None
     receipt_hashes: list[str] | None = None
     byok: ByokOverride | None = None
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
     max_workers: int = Field(default=4, ge=1, le=16)
 
 
@@ -1480,7 +1483,7 @@ def _mount_complete_routes(
     app: FastAPI,
     *,
     slot: Callable[[], Iterator[None]],
-    resolve_backend: Callable[[str, str | None, dict[str, str] | None], Any],
+    resolve_backend: Callable[[str, str | None, dict[str, str] | None, float | None], Any],
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
@@ -1546,6 +1549,7 @@ def _mount_complete_routes(
                 body.backend,
                 body.checkpoint_dir,
                 body.byok.model_dump() if body.byok is not None else None,
+                body.timeout_s,
             )
         except ApiError as exc:
             # only backend-unavailable counts — client errors (404 unknown
@@ -1629,6 +1633,7 @@ def _mount_complete_routes(
                     body.backend,
                     body.checkpoint_dir,
                     body.byok.model_dump() if body.byok is not None else None,
+                    body.timeout_s,
                 )
             except ApiError as exc:
                 if breaker is not None and exc.status_code == 503:
@@ -1776,6 +1781,7 @@ def _mount_complete_routes(
                 body.backend,
                 body.checkpoint_dir,
                 body.byok.model_dump() if body.byok is not None else None,
+                body.timeout_s,
             )
         except ApiError as exc:
             # only backend-unavailable counts — client errors (404 unknown
@@ -2281,9 +2287,12 @@ def create_app(
         backend_name: str,
         checkpoint_dir: str | None,
         byok: dict[str, str] | None = None,
+        timeout_s: float | None = None,
     ) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""
         kwargs: dict[str, Any] = {}
+        if timeout_s is not None:
+            kwargs["timeout_s"] = timeout_s
         if byok is not None:
             if backend_name != "byok":
                 raise ApiError(422, "a byok override applies only to backend='byok'")
