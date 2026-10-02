@@ -1703,6 +1703,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "filtfilt",
         "resample_poly",
         "farrow",
+        # Wave-113 canon: multi-target
+        # tracking — JV, JPDA, PHD,
+        # MHT, CI, TDOA.
+        "jonker_volgenant",
+        "jpda",
+        "phd",
+        "mht",
+        "cov_int",
+        "tdoa",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

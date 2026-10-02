@@ -893,6 +893,14 @@ from quant_fund.research.benches_w112 import (
     bench_remez_family,
     bench_resample_poly_family,
 )
+from quant_fund.research.benches_w113 import (
+    bench_cov_int_family,
+    bench_jonker_volgenant_family,
+    bench_jpda_family,
+    bench_mht_family,
+    bench_phd_family,
+    bench_tdoa_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3116,6 +3124,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "filtfilt": bench_filtfilt_family(),
         "resample_poly": bench_resample_poly_family(),
         "farrow": bench_farrow_family(),
+        "jonker_volgenant": bench_jonker_volgenant_family(),
+        "jpda": bench_jpda_family(),
+        "phd": bench_phd_family(),
+        "mht": bench_mht_family(),
+        "cov_int": bench_cov_int_family(),
+        "tdoa": bench_tdoa_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
