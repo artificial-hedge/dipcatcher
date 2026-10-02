@@ -2628,3 +2628,4 @@ wave 227 (2026-10-02): compression canon — huffman_codes, arithmetic_coding, l
 wave 228 (2026-10-02): CRDT canon — gcounter, pncounter, orset, lww_map, twopset, rga_sequence; 1341→1347 families.
 wave 229 (2026-10-02): probabilistic-membership canon — bloom_filter, cuckoo_filter, xor_filter, quotient_filter, minhash_lsh, simhash; 1347→1353 families.
 wave 230 (2026-10-02): computational-geometry canon — ear_clipping, sutherland_hodgman, segment_intersection, point_in_polygon, closest_pair, rotating_calipers; 1353→1359 families.
+wave 231 (2026-10-02): architecture canon — cpu_pipeline, cache_sim, branch_predictor, tomasulo_sim, paging_sim, roofline_model; 1359→1365 families.

@@ -1838,6 +1838,14 @@ from quant_fund.research.benches_w230 import (
     bench_segment_intersection_family,
     bench_sutherland_hodgman_family,
 )
+from quant_fund.research.benches_w231 import (
+    bench_branch_predictor_family,
+    bench_cache_sim_family,
+    bench_cpu_pipeline_family,
+    bench_paging_sim_family,
+    bench_roofline_model_family,
+    bench_tomasulo_sim_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4770,6 +4778,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "point_in_polygon": bench_point_in_polygon_family(),
         "closest_pair": bench_closest_pair_family(),
         "rotating_calipers": bench_rotating_calipers_family(),
+        "cpu_pipeline": bench_cpu_pipeline_family(),
+        "cache_sim": bench_cache_sim_family(),
+        "branch_predictor": bench_branch_predictor_family(),
+        "tomasulo_sim": bench_tomasulo_sim_family(),
+        "paging_sim": bench_paging_sim_family(),
+        "roofline_model": bench_roofline_model_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
