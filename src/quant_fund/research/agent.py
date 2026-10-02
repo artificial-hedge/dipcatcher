@@ -1357,6 +1357,14 @@ from quant_fund.research.benches_w170 import (
     bench_slearner_tlearner_family,
     bench_xlearner_family,
 )
+from quant_fund.research.benches_w171 import (
+    bench_aps_cp_family,
+    bench_cqr_pred_family,
+    bench_full_cp_family,
+    bench_ltt_cp_family,
+    bench_risk_cp_family,
+    bench_survival_cp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3928,6 +3936,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "causal_rep_bal": bench_causal_rep_bal_family(),
         "cate_distill": bench_cate_distill_family(),
         "net_drlearner": bench_net_drlearner_family(),
+        "cqr_pred": bench_cqr_pred_family(),
+        "survival_cp": bench_survival_cp_family(),
+        "aps_cp": bench_aps_cp_family(),
+        "ltt_cp": bench_ltt_cp_family(),
+        "full_cp": bench_full_cp_family(),
+        "risk_cp": bench_risk_cp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
