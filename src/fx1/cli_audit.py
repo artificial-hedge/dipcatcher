@@ -184,6 +184,45 @@ def cli_audit() -> dict[str, Any]:
             self.stream_calls.append(dict(kw))
             return ["chunk-a", "chunk-b"]
 
+        def complete_many(self, batch: Any, **kw: Any) -> list[CompletionResult]:
+            return [
+                CompletionResult(
+                    backend="byok",
+                    model="fake-v0",
+                    content=f"b:{m[-1]['content']}",
+                )
+                for m in batch
+            ]
+
+        def run(self, name: str, **kw: Any) -> Any:
+            from fx1.harness import HarnessResult
+
+            return HarnessResult(command=name, exit_code=0, stdout="ran", stderr="")
+
+        def verify_receipt(self, receipt: dict[str, Any]) -> Any:
+            from fx1.sdk import ReceiptVerdict
+
+            return ReceiptVerdict(
+                valid=True,
+                path="<cli>",
+                errors=(),
+                warnings=(),
+                schema_tag="x",
+                kind="k",
+                verdict="ok",
+                digest_convention=None,
+            )
+
+        def health(self) -> Any:
+            from fx1.sdk import HarnessHealth
+
+            return HarnessHealth(
+                status="ok", version="v", registered_commands=1, backends={"byok": True}
+            )
+
+        def commands(self, role: Any = None) -> list[str]:
+            return ["cmd-a", "cmd-b"]
+
     fake = _FakeSDK()
     with patch("fx1.sdk.Fx1Harness", return_value=fake):
         out["complete_block_echoes_content"] = (
@@ -209,6 +248,77 @@ def cli_audit() -> dict[str, Any]:
         out["complete_stream_forwards_receipts"] = bool(fake.stream_calls) and (
             fake.stream_calls[0].get("receipt_hashes") == ["a" * 64]
         )
+        # `harness batch` — JSONL/JSON prompts -> complete_many -> JSON out
+        import tempfile  # noqa: PLC0415
+        from pathlib import Path  # noqa: PLC0415
+
+        with tempfile.TemporaryDirectory() as td:
+            pf = Path(td) / "prompts.jsonl"
+            pf.write_text('"one"\n{"prompt": "two"}\n')
+            rb = runner.invoke(app, ["harness", "batch", str(pf), "--backend", "byok"])
+            payload = json.loads(rb.stdout) if rb.exit_code == 0 else []
+            out["batch_jsonl_two_items"] = [p["content"] for p in payload] == [
+                "b:one",
+                "b:two",
+            ]
+            bad = Path(td) / "bad.jsonl"
+            bad.write_text("")
+            out["batch_empty_fails_clean"] = (
+                runner.invoke(app, ["harness", "batch", str(bad)]).exit_code == 2
+            )
+
+    # --remote routes the same commands through HarnessClient --------------
+    class _FakeRemote:
+        def __init__(self, base_url: str, **kw: Any) -> None:
+            self.base_url = base_url
+            self.api_key = kw.get("api_key")
+
+        def complete(self, messages: Any, **kw: Any) -> CompletionResult:
+            return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
+
+        def commands(self, role: Any = None) -> list[str]:
+            return ["cmd-a"]
+
+        def health(self) -> Any:
+            from fx1.sdk import HarnessHealth
+
+            return HarnessHealth(status="ok", version="v", registered_commands=1, backends={})
+
+    remotes: list[_FakeRemote] = []
+
+    def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
+        r = _FakeRemote(url, **kw)
+        remotes.append(r)
+        return r
+
+    with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
+        rr = runner.invoke(
+            app,
+            ["harness", "complete", "hi", "--remote", "http://h.test", "--api-key", "k"],
+        )
+        out["remote_complete_uses_client"] = (
+            rr.exit_code == 0
+            and rr.stdout.strip() == "remote-text"
+            and remotes[0].base_url == "http://h.test"
+            and remotes[0].api_key == "k"
+        )
+        out["remote_list_names"] = (
+            runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
+            == "cmd-a"
+        )
+
+    class _FailingRemote:
+        def __init__(self, *a: Any, **kw: Any) -> None:
+            pass
+
+        def health(self) -> Any:
+            from fx1.serve.client import HarnessTransportError
+
+            raise HarnessTransportError("connection refused")
+
+    with patch("fx1.serve.client.HarnessClient", _FailingRemote):
+        rf = runner.invoke(app, ["harness", "health", "--remote", "http://dead"])
+        out["remote_fault_clean_exit2"] = rf.exit_code == 2 and "HarnessTransportError" in rf.output
     return out
 
 

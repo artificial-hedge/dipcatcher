@@ -271,6 +271,21 @@ def e2e_audit() -> dict[str, bool]:
             and "server" not in headers
             and headers.get("x-content-type-options") == "nosniff"
         )
+
+        # the CLI front door over the real wire — `fx1 harness --remote`
+        from typer.testing import CliRunner
+
+        from fx1.cli import app as cli_app
+
+        cr = CliRunner().invoke(
+            cli_app,
+            ["harness", "health", "--remote", base, "--api-key", _API_KEY],
+        )
+        out["e2e_cli_remote_health"] = cr.exit_code == 0 and '"byok": true' in cr.output
+        cr2 = CliRunner().invoke(
+            cli_app, ["harness", "list", "--remote", base, "--api-key", _API_KEY]
+        )
+        out["e2e_cli_remote_list"] = cr2.exit_code == 0 and sorted(cmds)[0] in cr2.output
     finally:
         if server is not None:
             server.should_exit = True

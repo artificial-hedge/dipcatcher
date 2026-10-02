@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,43 @@ import typer
 
 if TYPE_CHECKING:
     from fx1.eval.suite import ModelFn
+    from fx1.sdk import Fx1Harness
+    from fx1.serve.client import HarnessClient
+
+_REMOTE_HELP = (
+    "Drive a remote harness API at this base URL (HarnessClient) instead of the in-process SDK."
+)
+_API_KEY_HELP = "X-API-Key for the remote harness; falls back to FX1_API_KEY."
+_TIMEOUT_HELP = "Remote request timeout in seconds."
+
+
+def _surface(
+    remote: str | None, api_key: str | None, timeout_s: float
+) -> Fx1Harness | HarnessClient:
+    """In-process SDK by default; HarnessClient when ``--remote`` is given."""
+    if remote is None:
+        from fx1.sdk import Fx1Harness
+
+        return Fx1Harness()
+    from fx1.serve.client import HarnessClient
+
+    return HarnessClient(
+        remote,
+        api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+        timeout_s=timeout_s,
+    )
+
+
+def _or_exit[T](fn: Callable[[], T]) -> T:
+    """Run a surface call; faults print one clean line and exit 2."""
+    try:
+        return fn()
+    except typer.Exit:
+        raise
+    except Exception as exc:  # noqa: BLE001 — CLI reports the class+message, not a traceback
+        typer.echo(f"error: {type(exc).__name__}: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
 
 app = typer.Typer(
     name="fx1",
@@ -101,8 +139,22 @@ def harness_list(
     role: str | None = typer.Option(
         None, help="Filter: data_engine | evaluation | verification | model_training"
     ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
     """List the lab commands fx-1 may invoke through the harness."""
+    if remote is not None:
+        from fx1.serve.client import HarnessClient
+
+        surface = HarnessClient(
+            remote,
+            api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+            timeout_s=timeout_s,
+        )
+        for name in _or_exit(lambda: surface.commands(role=role)):
+            typer.echo(name)
+        return
     from fx1.harness import Harness, HarnessRole
 
     role_filter = HarnessRole(role) if role else None
@@ -113,11 +165,17 @@ def harness_list(
 @harness_app.command("run")
 def harness_run(
     name: str = typer.Argument(..., help="Registered harness command name."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
     """Run a registered dipcatcher harness command (fail-closed registry)."""
-    from fx1.harness import Harness
+    if remote is not None:
+        result = _or_exit(lambda: _surface(remote, api_key, timeout_s).run(name))
+    else:
+        from fx1.harness import Harness
 
-    result = Harness().run(name)
+        result = Harness().run(name)
     typer.echo(result.stdout)
     if result.stderr:
         typer.echo(result.stderr, err=True)
@@ -158,38 +216,97 @@ def harness_complete(
     stream: bool = typer.Option(
         False, "--stream", help="Emit gated token deltas instead of one block."
     ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """One gated completion through the SDK — the honesty gate runs before output."""
-    from fx1.sdk import Fx1Harness
-
-    sdk = Fx1Harness()
+    """One gated completion — the honesty gate runs before output."""
+    surface = _surface(remote, api_key, timeout_s)
     if stream:
-        for chunk in sdk.stream_complete(
+        chunks = _or_exit(
+            lambda: surface.stream_complete(
+                [{"role": "user", "content": prompt}],
+                backend=backend,
+                checkpoint_dir=checkpoint_dir,
+                receipt_hashes=receipt or None,
+            )
+        )
+        for chunk in chunks:
+            typer.echo(chunk, nl=False)
+        typer.echo()
+        return
+    out = _or_exit(
+        lambda: surface.complete(
             [{"role": "user", "content": prompt}],
             backend=backend,
             checkpoint_dir=checkpoint_dir,
             receipt_hashes=receipt or None,
-        ):
-            typer.echo(chunk, nl=False)
-        typer.echo()
-        return
-    out = sdk.complete(
-        [{"role": "user", "content": prompt}],
-        backend=backend,
-        checkpoint_dir=checkpoint_dir,
-        receipt_hashes=receipt or None,
+        )
     )
     typer.echo(out.content)
+
+
+@harness_app.command("batch")
+def harness_batch(
+    prompts_file: Path = typer.Argument(
+        ..., help="JSON array or JSONL of prompt strings to complete."
+    ),
+    backend: str = typer.Option("local_fx1", help=_BACKEND_HELP),
+    workers: int = typer.Option(4, "--workers", help="Concurrent slots (1-16)."),
+    receipt: list[str] = typer.Option([], "--receipt", help="Receipt sha256 to cite (repeatable)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    out_file: Path | None = typer.Option(
+        None, "--out", help="Write the JSON results here (default: stdout)."
+    ),
+) -> None:
+    """Gated batch completion — per-item failures surface as exit 2."""
+    surface = _surface(remote, api_key, timeout_s)
+    prompts = _or_exit(lambda: _load_prompts(prompts_file))
+    results = _or_exit(
+        lambda: surface.complete_many(
+            [[{"role": "user", "content": p}] for p in prompts],
+            backend=backend,
+            receipt_hashes=receipt or None,
+            max_workers=workers,
+        )
+    )
+    payload = json.dumps(
+        [{"prompt": p, "content": r.content} for p, r in zip(prompts, results, strict=True)],
+        indent=2,
+    )
+    if out_file is not None:
+        out_file.write_text(payload + "\n", encoding="utf-8")
+    else:
+        typer.echo(payload)
+
+
+def _load_prompts(path: Path) -> list[str]:
+    """JSON array of strings or JSONL of str / ``{\"prompt\": ...}`` lines."""
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        raise ValueError(f"{path}: empty prompts file")
+    if text.startswith("["):
+        items = json.loads(text)
+    else:
+        items = [json.loads(line) for line in text.splitlines() if line.strip()]
+    prompts = [it["prompt"] if isinstance(it, dict) else it for it in items]
+    if not all(isinstance(p, str) and p for p in prompts):
+        raise ValueError(f"{path}: every prompt must be a non-empty string")
+    return prompts
 
 
 @harness_app.command("verify")
 def harness_verify(
     receipt_path: Path = typer.Argument(..., help="Receipt JSON file to verify."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Deep-verify a receipt file through the SDK verifier surface."""
-    from fx1.sdk import Fx1Harness
-
-    verdict = Fx1Harness().verify_receipt(json.loads(receipt_path.read_text()))
+    """Deep-verify a receipt file through the verifier surface."""
+    surface = _surface(remote, api_key, timeout_s)
+    verdict = _or_exit(lambda: surface.verify_receipt(json.loads(receipt_path.read_text())))
     typer.echo(
         json.dumps(
             {
@@ -205,11 +322,14 @@ def harness_verify(
 
 
 @harness_app.command("health")
-def harness_health() -> None:
+def harness_health(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
     """Configured-backend presence booleans — never secret values."""
-    from fx1.sdk import Fx1Harness
-
-    h = Fx1Harness().health()
+    surface = _surface(remote, api_key, timeout_s)
+    h = _or_exit(surface.health)
     typer.echo(
         json.dumps(
             {

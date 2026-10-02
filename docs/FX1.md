@@ -19,7 +19,7 @@ is exposed four ways, all implemented over one code path:
 |---|---|---|
 | HTTP API | `fx1 harness serve` → `src/fx1/serve/api.py` | fx-1 (or any service) calls over the network |
 | Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
-| CLI | `fx1 harness {list,run,complete,verify,health}` | shell/CI |
+| CLI | `fx1 harness {list,run,complete,batch,verify,health}` | shell/CI |
 | Direct | `Harness().run(...)` / `get_backend(name)` | library composition |
 
 Completion routes beyond `POST /harness/complete`:
@@ -55,6 +55,18 @@ completions as a provenance footer.
 `fx1 harness serve` binds loopback-only unless `FX1_API_KEY` is set, in
 which case every route requires `X-API-Key` (constant-time compare);
 `/health` leaks presence booleans only — never env values.
+
+The CLI fronts either surface: every `fx1 harness` subcommand takes
+`--remote URL` (drives the API through `HarnessClient` — the same wire
+client fx-1 uses) plus `--api-key`/`--timeout`, falling back to
+`FX1_API_KEY`; without it they run the in-process SDK. `fx1 harness
+batch prompts.jsonl` reads a JSON array or JSONL of strings/`{"prompt":
+...}` records and writes the gated completions as JSON (stdout or
+`--out`). Faults are one clean stderr line plus exit 2 — never a
+traceback. Parity of all three surfaces (SDK / API / remote client,
+byte-identical payloads and error classes) is sealed by
+`receipts/fx1_parity_audit.json`; the real-socket lifecycle is sealed by
+`receipts/fx1_e2e_audit.json`.
 
 ## What the plumbing enforces
 
