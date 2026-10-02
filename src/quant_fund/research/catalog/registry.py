@@ -2459,6 +2459,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rjmcmc",
         "pcn_sampler",
         "indep_mh",
+        # Wave-196 eigen canon: power+deflation, inverse iteration,
+        # Jacobi, shifted QR, Hessenberg, bidiagonalization.
+        "power_iter",
+        "inverse_iter",
+        "jacobi_eig",
+        "qr_eig",
+        "hessenberg_red",
+        "bidiag_svd",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
