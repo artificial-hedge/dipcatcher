@@ -1814,6 +1814,14 @@ from quant_fund.research.benches_w227 import (
     bench_lzw_compress_family,
     bench_rans_coder_family,
 )
+from quant_fund.research.benches_w228 import (
+    bench_gcounter_family,
+    bench_lww_map_family,
+    bench_orset_family,
+    bench_pncounter_family,
+    bench_rga_sequence_family,
+    bench_twopset_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4728,6 +4736,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "golomb_rice": bench_golomb_rice_family(),
         "rans_coder": bench_rans_coder_family(),
         "lz78_dict": bench_lz78_dict_family(),
+        "gcounter": bench_gcounter_family(),
+        "pncounter": bench_pncounter_family(),
+        "orset": bench_orset_family(),
+        "lww_map": bench_lww_map_family(),
+        "twopset": bench_twopset_family(),
+        "rga_sequence": bench_rga_sequence_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -2716,6 +2716,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "golomb_rice",
         "rans_coder",
         "lz78_dict",
+        # Wave-228 CRDT canon: counters, sets, registers, sequences.
+        "gcounter",
+        "pncounter",
+        "orset",
+        "lww_map",
+        "twopset",
+        "rga_sequence",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
