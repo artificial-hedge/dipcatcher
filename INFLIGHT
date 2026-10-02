@@ -2642,3 +2642,4 @@ wave 241 (2026-10-02): databases-2 canon — aries_recovery, two_phase_lock, sel
 wave 242 (2026-10-02): consensus-2 canon — multi_paxos, epaxos, viewstamped, zab_protocol, swim_gossip, two_three_pc; 1425→1431 families.
 wave 243 (2026-10-02): numeric-2 canon — fft_radix2, ntt, karatsuba, strassen, int_sqrt, bignum; 1431→1437 families.
 wave 244 (2026-10-02): IR canon — inverted_index, posting_merge, wand_bmw, lsh_dedup, ngram_spell, positional_index; 1437→1443 families.
+wave 245 (2026-10-02): OS-2 canon — elf_loader, malloc_freelist, mmap_pager, mlfq_sched, semaphore_monitor, syscall_layer; 1443→1449 families.

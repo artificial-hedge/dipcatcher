@@ -1951,6 +1951,14 @@ from quant_fund.research.benches_w244 import (
     bench_posting_merge_family,
     bench_wand_bmw_family,
 )
+from quant_fund.research.benches_w245 import (
+    bench_elf_loader_family,
+    bench_malloc_freelist_family,
+    bench_mlfq_sched_family,
+    bench_mmap_pager_family,
+    bench_semaphore_monitor_family,
+    bench_syscall_layer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2102,6 +2110,12 @@ def _provenance(
         "positional_index": bench_positional_index_family,
         "posting_merge": bench_posting_merge_family,
         "wand_bmw": bench_wand_bmw_family,
+        "elf_loader": bench_elf_loader_family,
+        "malloc_freelist": bench_malloc_freelist_family,
+        "mlfq_sched": bench_mlfq_sched_family,
+        "mmap_pager": bench_mmap_pager_family,
+        "semaphore_monitor": bench_semaphore_monitor_family,
+        "syscall_layer": bench_syscall_layer_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

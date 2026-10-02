@@ -2841,6 +2841,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lsh_dedup",
         "ngram_spell",
         "positional_index",
+        # Wave-245 OS-2 canon.
+        "elf_loader",
+        "malloc_freelist",
+        "mlfq_sched",
+        "mmap_pager",
+        "semaphore_monitor",
+        "syscall_layer",
         "posting_merge",
         "wand_bmw",
     }
