@@ -2515,4 +2515,5 @@ wave 115 (2026-09-30): UQ canon — smolyak, pce, bayesian_quadrature, kl_expand
 wave 116 (2026-09-30): game-theory canon — cfr, lemke_howson, replicator, wardrop, vcg, nash_bargain; 668→674 families.
 wave 117 (2026-09-30): RL canon — gae, vtrace, trpo, ppo, ddpg, td3; 674→680 families.
 wave 118 (2026-09-30): POMDP canon — qmdp, grid_pomdp, pbvi, perseus, hsvi, pomcp; 680→686 families.
+wave 119 (2026-09-30): MARL canon — vdn, qmix, coma, maddpg, mappo, mf_q; 686→692 families.
 note: canon PR to follow.

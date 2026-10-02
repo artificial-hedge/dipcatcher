@@ -1759,6 +1759,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "perseus",
         "hsvi",
         "pomcp",
+        # Wave-119 canon: multi-agent RL —
+        # VDN, QMIX, COMA, MADDPG,
+        # MAPPO, mean-field Q.
+        "vdn",
+        "qmix",
+        "coma",
+        "maddpg",
+        "mappo",
+        "mf_q",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
