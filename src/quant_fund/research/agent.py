@@ -709,6 +709,14 @@ from quant_fund.research.benches_w89 import (
     bench_score_scale,
     bench_serial_diagnostics,
 )
+from quant_fund.research.benches_w90 import (
+    bench_ace_avas,
+    bench_blind_sources,
+    bench_marginal_likelihood,
+    bench_mars_regression,
+    bench_projection_pursuit,
+    bench_root_finders,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2794,6 +2802,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "score_scale": bench_score_scale(),
         "het_regressions": bench_het_regressions(),
         "serial_diagnostics": bench_serial_diagnostics(),
+        "mars_regression": bench_mars_regression(),
+        "ace_avas": bench_ace_avas(),
+        "projection_pursuit": bench_projection_pursuit(),
+        "marginal_likelihood": bench_marginal_likelihood(),
+        "root_finders": bench_root_finders(),
+        "blind_sources": bench_blind_sources(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -2245,3 +2245,10 @@ note: canon PR to follow.
     files + test_benches_w89 (41 tests).
   - Canon staged on top of w88-canon.
 note: canon PR to follow.
+  wave90:
+  - "mars_regression","ace_avas","projection_pursuit",
+    "marginal_likelihood","root_finders","blind_sources"
+    (512->518); agent.py wiring; tests: 6 module
+    files + test_benches_w90 (41 tests).
+  - Canon staged on top of w89-canon.
+note: canon PR to follow.

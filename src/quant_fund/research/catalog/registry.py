@@ -1374,6 +1374,28 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "score_scale",
         "het_regressions",
         "serial_diagnostics",
+        # Wave-90: Friedman (1991)
+        # MARS hinge splines,
+        # Breiman-Friedman (1985) ACE /
+        # Tibshirani (1988) AVAS,
+        # Friedman-Stuetzle (1981)
+        # projection pursuit,
+        # Newton-Raftery (1994)/
+        # Gelfand-Dey (1994)/Chib
+        # (1995)/Savage-Dickey/Ogata
+        # (1989) marginal likelihoods,
+        # Brent (1973)/Ridders (1979)/
+        # Illinois root finders, and
+        # SOBI (1997)/JADE (1993)/FOBI
+        # (1989) blind source
+        # separation. Same SYNTHETIC
+        # diagnostic contract.
+        "mars_regression",
+        "ace_avas",
+        "projection_pursuit",
+        "marginal_likelihood",
+        "root_finders",
+        "blind_sources",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
