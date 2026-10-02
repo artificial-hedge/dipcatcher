@@ -7,6 +7,15 @@ before t's close, so fills at t+1 open are causally sound.
 
 These produce *weight proposals* — leverage, margin and risk-gate enforcement
 live in the engines, not here.
+
+Window/holding-period arguments require Python integers, not booleans or floats.
+Volatility windows require >=2 observations. Funding lookbacks require >=1
+(>=10 for spike-fade's fixed warmup). Hysteresis ``vol_lookback`` requires >=5
+or None, preserving its five-return warmup. Momentum permits ``skip_bars=0``
+(current-close momentum); lookback must be positive and exceed the skip.
+Trend means accept ``1 <= fast_bars < slow_bars``. Sweep lookback requires >=2
+and hold length >=1. Residual windows require >=2; sigma warmup is the smaller
+of the z window and max(4, z_window // 4), so short windows use all observations.
 """
 
 from __future__ import annotations
@@ -20,6 +29,12 @@ import polars as pl
 from quant_fund.northset.sweeps import liquidity_sweep_frame
 
 _WCOLS = ("event_time", "security_id", "target_weight")
+
+
+def _validate_window(value: int, label: str, minimum: int) -> None:
+    """Reject coercion and boolean counts before rolling/shift operations."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < minimum:
+        raise ValueError(f"{label} must be an int >= {minimum}")
 
 
 def _validate_bars(bars: pl.DataFrame) -> None:
@@ -64,6 +79,7 @@ def _cap_and_emit(
 def _per_symbol_vol(bars: pl.DataFrame, window: int) -> pl.DataFrame:
     """Causal per-bar volatility estimate: rolling std of log returns, shifted."""
     _validate_bars(bars)
+    _validate_window(window, "vol_window", 2)
     return (
         bars.sort(["security_id", "event_time"])
         .with_columns(
@@ -99,8 +115,7 @@ def _join_available_funding(
     missing = required - set(funding.columns)
     if missing:
         raise ValueError(f"funding missing columns: {sorted(missing)}")
-    if lookback_events < min_samples:
-        raise ValueError("lookback_events must be >= min_samples")
+    _validate_window(lookback_events, "lookback_events", min_samples)
     available = "available_time" if "available_time" in funding.columns else "event_time"
     for column in {"event_time", available}:
         if not isinstance(funding.schema[column], pl.Datetime) or funding[column].null_count():
@@ -244,6 +259,8 @@ def cross_sectional_momentum_weights(
     ``[t-lookback, t-skip]`` (skip the freshest bars to blunt reversal),
     demeaned across the universe each bar, inverse-vol sized."""
     _validate_bars(bars)
+    _validate_window(lookback_bars, "lookback_bars", 1)
+    _validate_window(skip_bars, "skip_bars", 0)
     if lookback_bars <= skip_bars:
         raise ValueError("lookback_bars must exceed skip_bars")
     base = (
@@ -288,8 +305,8 @@ def sweep_reclaim_weights(
     exhaustion — long after low-sweep reclaims, short after high-sweep
     reclaims. The pulse decays geometrically over ``hold_bars``."""
     _validate_bars(bars)
-    if hold_bars < 1:
-        raise ValueError("hold_bars must be >= 1")
+    _validate_window(lookback, "lookback", 2)
+    _validate_window(hold_bars, "hold_bars", 1)
     if not 0 < decay <= 1.0:
         raise ValueError("decay must be in (0, 1]")
     sweeps = liquidity_sweep_frame(bars, lookback=lookback).select(
@@ -342,6 +359,8 @@ def slow_trend_weights(
     """Slow trend sleeve: sign(fast mean − slow mean) × inverse-vol,
     demeaned cross-sectionally so the book is roughly dollar-neutral."""
     _validate_bars(bars)
+    _validate_window(fast_bars, "fast_bars", 1)
+    _validate_window(slow_bars, "slow_bars", 2)
     if fast_bars >= slow_bars:
         raise ValueError("fast_bars must be < slow_bars")
     base = (
@@ -478,6 +497,8 @@ def basis_carry_hysteresis_weights(
     _validate_bars(bars)
     if funding.height == 0:
         raise ValueError("funding frame must be non-empty")
+    if vol_lookback is not None:
+        _validate_window(vol_lookback, "vol_lookback", 5)
     if rebalance_band is not None and not (np.isfinite(rebalance_band) and rebalance_band > 1.0):
         raise ValueError("rebalance_band must be > 1 or None")
     grid = _join_available_funding(
@@ -627,8 +648,7 @@ def residual_mr_weights(
         ("z_window", z_window),
         ("reversal_window", reversal_window),
     ):
-        if not isinstance(v, int) or v < 2:
-            raise ValueError(f"{label} must be an int >= 2")
+        _validate_window(v, label, 2)
     if z_clip <= 0.0 or not np.isfinite(z_clip):
         raise ValueError("z_clip must be positive and finite")
 
@@ -661,7 +681,7 @@ def residual_mr_weights(
         pl.col("_resid_now").shift(1).over("security_id").alias("_resid"),
         pl.col("_resid_now")
         .shift(2)
-        .rolling_std(z_window, min_samples=max(4, z_window // 4))
+        .rolling_std(z_window, min_samples=min(z_window, max(4, z_window // 4)))
         .over("security_id")
         .alias("_resid_sigma"),
     )
