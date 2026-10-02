@@ -1141,6 +1141,14 @@ from quant_fund.research.benches_w143 import (
     bench_qlora_nf4_family,
     bench_task_vector_merge_family,
 )
+from quant_fund.research.benches_w144 import (
+    bench_flash_attn_family,
+    bench_gqa_attn_family,
+    bench_paged_kv_cache_family,
+    bench_ring_attn_family,
+    bench_sliding_window_cache_family,
+    bench_speculative_decoding_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3550,6 +3558,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "prompt_tuning": bench_prompt_tuning_family(),
         "prefix_tuning": bench_prefix_tuning_family(),
         "task_vector_merge": bench_task_vector_merge_family(),
+        "speculative_decoding": bench_speculative_decoding_family(),
+        "paged_kv_cache": bench_paged_kv_cache_family(),
+        "flash_attn": bench_flash_attn_family(),
+        "gqa_attn": bench_gqa_attn_family(),
+        "sliding_window_cache": bench_sliding_window_cache_family(),
+        "ring_attn": bench_ring_attn_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

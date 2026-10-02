@@ -1997,6 +1997,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "prompt_tuning",
         "prefix_tuning",
         "task_vector_merge",
+        # Wave-144 inference canon:
+        # spec decode, paged KV, flash,
+        # GQA, sliding window, ring.
+        "speculative_decoding",
+        "paged_kv_cache",
+        "flash_attn",
+        "gqa_attn",
+        "sliding_window_cache",
+        "ring_attn",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
