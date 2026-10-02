@@ -513,6 +513,7 @@ _MEASUREMENT_SCHEMAS = (
     "wave23_map.v1",
     "wave24_map.v1",
     "zone_embargo.v1",
+    "zone_card.v1",
     "zone_map.v1",
     "zone_stability.v1",
 )

@@ -1,0 +1,369 @@
+{
+ "schema": "zone_card.v1",
+ "kind": "microstructure_bench",
+ "research_only": true,
+ "data_label": "MIXED",
+ "git_revision": "76b67ed64e8f0b253b21936b4dae3b4c6ba19423",
+ "horizon": 15000,
+ "seed": 7,
+ "config": {
+  "seeds_per_cell": [
+   7,
+   11
+  ],
+  "cells": [
+   {
+    "label": "z0_iid",
+    "zone_embargo": 0,
+    "flow_intensity": null
+   },
+   {
+    "label": "z0_split",
+    "zone_embargo": 0,
+    "flow_intensity": 2.0
+   },
+   {
+    "label": "z10_iid",
+    "zone_embargo": 10,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_iid",
+    "zone_embargo": 12,
+    "flow_intensity": null
+   },
+   {
+    "label": "z12_split",
+    "zone_embargo": 12,
+    "flow_intensity": 2.0
+   },
+   {
+    "label": "z14_iid",
+    "zone_embargo": 14,
+    "flow_intensity": null
+   }
+  ]
+ },
+ "tape_reference": {
+  "mix_share": {
+   "sub": 0.4892,
+   "delete": 0.4577,
+   "exec": 0.0333
+  },
+  "events_per_s": 11.528,
+  "life_seconds": {
+   "executed_p50": 2.213,
+   "deleted_p50": 0.8,
+   "p90_all": 13.671
+  },
+  "executed_p50_events": 25.5,
+  "sources": [
+   "event_matrix.v1",
+   "order_lifetime.v1"
+  ]
+ },
+ "cells": [
+  {
+   "regime": "z0_iid",
+   "zone_embargo": 0,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4899,
+    "delete": 0.4753,
+    "exec": 0.0349
+   },
+   "life_ev_p50_mean": 6932.0,
+   "draws": [
+    {
+     "n_events": 15000,
+     "n_fills": 643,
+     "mix_share": {
+      "sub": 0.4973,
+      "delete": 0.4633,
+      "exec": 0.0394
+     },
+     "life_events_p50_executed": 7110.0,
+     "life_events_p90_all": 13746.0,
+     "life_tape_seconds_p50_executed": 616.759,
+     "counts": {
+      "n_lo_arrivals": 8122,
+      "n_mo_arrivals": 73,
+      "n_cancellations": 7566
+     }
+    },
+    {
+     "n_events": 15000,
+     "n_fills": 499,
+     "mix_share": {
+      "sub": 0.4824,
+      "delete": 0.4872,
+      "exec": 0.0305
+     },
+     "life_events_p50_executed": 6754.0,
+     "life_events_p90_all": 14228.0,
+     "life_tape_seconds_p50_executed": 585.878,
+     "counts": {
+      "n_lo_arrivals": 7904,
+      "n_mo_arrivals": 67,
+      "n_cancellations": 7983
+     }
+    }
+   ],
+   "tape_mix_gap": 0.0066
+  },
+  {
+   "regime": "z0_split",
+   "zone_embargo": 0,
+   "flow": "split",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5,
+    "delete": 0.4514,
+    "exec": 0.0486
+   },
+   "life_ev_p50_mean": 9376.25,
+   "draws": [
+    {
+     "n_events": 15000,
+     "n_fills": 980,
+     "mix_share": {
+      "sub": 0.5014,
+      "delete": 0.4404,
+      "exec": 0.0582
+     },
+     "life_events_p50_executed": 10058.0,
+     "life_events_p90_all": 14319.0,
+     "life_tape_seconds_p50_executed": 872.484,
+     "counts": {
+      "n_lo_arrivals": 8450,
+      "n_mo_arrivals": 108,
+      "n_cancellations": 7422
+     }
+    },
+    {
+     "n_events": 15000,
+     "n_fills": 656,
+     "mix_share": {
+      "sub": 0.4985,
+      "delete": 0.4624,
+      "exec": 0.0391
+     },
+     "life_events_p50_executed": 8694.5,
+     "life_events_p90_all": 13253.0,
+     "life_tape_seconds_p50_executed": 754.207,
+     "counts": {
+      "n_lo_arrivals": 8362,
+      "n_mo_arrivals": 95,
+      "n_cancellations": 7755
+     }
+    }
+   ],
+   "tape_mix_gap": 0.0108
+  },
+  {
+   "regime": "z10_iid",
+   "zone_embargo": 10,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.4922,
+    "delete": 0.4813,
+    "exec": 0.0265
+   },
+   "life_ev_p50_mean": 7241.5,
+   "draws": [
+    {
+     "n_events": 15000,
+     "n_fills": 465,
+     "mix_share": {
+      "sub": 0.4974,
+      "delete": 0.4747,
+      "exec": 0.0278
+     },
+     "life_events_p50_executed": 6871.0,
+     "life_events_p90_all": 13416.0,
+     "life_tape_seconds_p50_executed": 596.027,
+     "counts": {
+      "n_lo_arrivals": 8312,
+      "n_mo_arrivals": 62,
+      "n_cancellations": 7933
+     }
+    },
+    {
+     "n_events": 15000,
+     "n_fills": 421,
+     "mix_share": {
+      "sub": 0.4871,
+      "delete": 0.4878,
+      "exec": 0.0251
+     },
+     "life_events_p50_executed": 7612.0,
+     "life_events_p90_all": 14176.0,
+     "life_tape_seconds_p50_executed": 660.305,
+     "counts": {
+      "n_lo_arrivals": 8161,
+      "n_mo_arrivals": 68,
+      "n_cancellations": 8173
+     }
+    }
+   ],
+   "tape_mix_gap": 0.0111
+  },
+  {
+   "regime": "z12_iid",
+   "zone_embargo": 12,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5018,
+    "delete": 0.4656,
+    "exec": 0.0326
+   },
+   "life_ev_p50_mean": 6939.0,
+   "draws": [
+    {
+     "n_events": 15000,
+     "n_fills": 617,
+     "mix_share": {
+      "sub": 0.4947,
+      "delete": 0.4692,
+      "exec": 0.0361
+     },
+     "life_events_p50_executed": 5926.0,
+     "life_events_p90_all": 10317.399999999998,
+     "life_tape_seconds_p50_executed": 514.053,
+     "counts": {
+      "n_lo_arrivals": 8466,
+      "n_mo_arrivals": 79,
+      "n_cancellations": 8029
+     }
+    },
+    {
+     "n_events": 15000,
+     "n_fills": 483,
+     "mix_share": {
+      "sub": 0.5089,
+      "delete": 0.462,
+      "exec": 0.0291
+     },
+     "life_events_p50_executed": 7952.0,
+     "life_events_p90_all": 10269.800000000012,
+     "life_tape_seconds_p50_executed": 689.799,
+     "counts": {
+      "n_lo_arrivals": 8435,
+      "n_mo_arrivals": 59,
+      "n_cancellations": 7657
+     }
+    }
+   ],
+   "tape_mix_gap": 0.0071
+  },
+  {
+   "regime": "z12_split",
+   "zone_embargo": 12,
+   "flow": "split",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5164,
+    "delete": 0.4443,
+    "exec": 0.0393
+   },
+   "life_ev_p50_mean": 6637.5,
+   "draws": [
+    {
+     "n_events": 15000,
+     "n_fills": 784,
+     "mix_share": {
+      "sub": 0.5184,
+      "delete": 0.4366,
+      "exec": 0.045
+     },
+     "life_events_p50_executed": 5226.0,
+     "life_events_p90_all": 12492.0,
+     "life_tape_seconds_p50_executed": 453.331,
+     "counts": {
+      "n_lo_arrivals": 9038,
+      "n_mo_arrivals": 135,
+      "n_cancellations": 7611
+     }
+    },
+    {
+     "n_events": 15000,
+     "n_fills": 562,
+     "mix_share": {
+      "sub": 0.5144,
+      "delete": 0.4519,
+      "exec": 0.0336
+     },
+     "life_events_p50_executed": 8049.0,
+     "life_events_p90_all": 11326.0,
+     "life_tape_seconds_p50_executed": 698.213,
+     "counts": {
+      "n_lo_arrivals": 8601,
+      "n_mo_arrivals": 83,
+      "n_cancellations": 7556
+     }
+    }
+   ],
+   "tape_mix_gap": 0.0155
+  },
+  {
+   "regime": "z14_iid",
+   "zone_embargo": 14,
+   "flow": "iid",
+   "n_draws": 2,
+   "mix_mean": {
+    "sub": 0.5062,
+    "delete": 0.4647,
+    "exec": 0.0292
+   },
+   "life_ev_p50_mean": 5905.0,
+   "draws": [
+    {
+     "n_events": 15000,
+     "n_fills": 303,
+     "mix_share": {
+      "sub": 0.5016,
+      "delete": 0.4796,
+      "exec": 0.0188
+     },
+     "life_events_p50_executed": 5977.0,
+     "life_events_p90_all": 14168.0,
+     "life_tape_seconds_p50_executed": 518.477,
+     "counts": {
+      "n_lo_arrivals": 8078,
+      "n_mo_arrivals": 41,
+      "n_cancellations": 7724
+     }
+    },
+    {
+     "n_events": 15000,
+     "n_fills": 676,
+     "mix_share": {
+      "sub": 0.5107,
+      "delete": 0.4497,
+      "exec": 0.0397
+     },
+     "life_events_p50_executed": 5833.0,
+     "life_events_p90_all": 13753.0,
+     "life_tape_seconds_p50_executed": 505.985,
+     "counts": {
+      "n_lo_arrivals": 8701,
+      "n_mo_arrivals": 76,
+      "n_cancellations": 7662
+     }
+    }
+   ],
+   "tape_mix_gap": 0.0094
+  }
+ ],
+ "claims": {
+  "cells_measured": true,
+  "zone_improves_card": false,
+  "life_on_tape_scale": false,
+  "exec_share_on_card": true
+ },
+ "notes": "Event grammar on the closed cells: mix shares over (submissions, deletes, execs) from sim.event_counts and per-fill maker age in events (tr.maker_t_submit), converted to tape-equivalent seconds at the tape's own 11.528 ev/s. The zone closes geometry (spread/occupancy/kernel); this measures whether the closed cell's event card and order lifetime also sit on the tape's values \u2014 48.9%/45.8%/3.3% mix, 25.5-event executed p50. Measured at 3k preview + 15k: geometry closes but grammar does not \u2014 executed-maker p50 sits ~1300-1500 events vs the tape's ~25.5 (50x), and the zone cells' mix gap is slightly WORSE than baseline (0.047-0.056 vs 0.041): the no-quote zone adds depth at the edge, inflating sub share. The residual is now cleanly an event-rate channel: the tape churns ~14 deletes per fill at ~26-event maker horizons; the sim's maker book is too deep relative to its flow.",
+ "receipt_sha256": "c7ca4bb78bf37e0db13024509c18c178b2c72495ec46821e5fd0365b9dbc3606"
+}
