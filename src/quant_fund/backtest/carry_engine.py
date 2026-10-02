@@ -159,7 +159,9 @@ def run_carry_backtest(
         else infer_periods_per_year(times, perp_cfg.bar_seconds_hint)
     )
     fund_map = (
-        _funding_by_time(funding, multiplier=perp_cfg.funding_spike_multiplier)
+        _funding_by_time(
+            funding, multiplier=perp_cfg.funding_spike_multiplier, bar_times=set(times)
+        )
         if perp_cfg.funding_enabled
         else {}
     )

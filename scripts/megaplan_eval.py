@@ -126,21 +126,25 @@ class Evaluator:
         self.stale_bound = int(cfg.risk_gate.stale_price_bars) + 1
 
     def _funding_on_bars(self, f: pl.DataFrame) -> pl.DataFrame:
-        """Assign each funding event to the latest bar at-or-before it.
+        """Attach the containing bar label without erasing settlement identity.
 
-        The perp engine applies funding only on exact bar-timestamp matches
-        (`fund_map.get(dt)`); on a coarser grain (e.g. 8h events on daily
-        bars) the intraday events would be dropped, losing 2/3 of carry
-        income. Backward-asof lands every event on its containing bar."""
+        This retains the existing daily proxy: all settlements in a bar use
+        its post-fill quantity and close mark. It is not intraday execution.
+        Keep separate rates (including opposite signs) so gross cashflows
+        and event counts survive; raw duplicate settlements still fail closed.
+        """
         if f.height == 0:
             return f
-        grid = pl.DataFrame({"bar_time": self.bar_times})
+        grid = pl.DataFrame({"application_time": self.bar_times})
         return (
             f.sort("event_time")
-            .join_asof(grid, left_on="event_time", right_on="bar_time", strategy="backward")
-            .drop_nulls("bar_time")
-            .drop("event_time")
-            .rename({"bar_time": "event_time"})
+            .join_asof(
+                grid,
+                left_on="event_time",
+                right_on="application_time",
+                strategy="backward",
+            )
+            .drop_nulls("application_time")
         )
 
     def eligible(self, lo: datetime, hi: datetime) -> set[str]:
