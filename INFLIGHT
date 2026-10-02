@@ -2537,3 +2537,4 @@ wave 136 (2026-10-02): attention-efficiency canon — linformer_attn, performer_
 wave 137 (2026-10-02): distributional-RL canon — c51_dqn, qr_dqn, iqn_dqn, noisy_net, prioritized_replay, bootstrapped_dqn; 794→800 families.
 wave 138 (2026-10-02): memory + world-model canon — reformer_lsh, memorizing_transformer, ntm_memory, dnc_memory, rssm_world, mpc_planning; 800→806 families.
 wave 139 (2026-10-02): self-supervised + TTA canon — byol, barlow_twins, vicreg, tent_tta, shot_tta, ttt_layer; 806→812 families.
+wave 140 (2026-10-02): geometric + structured nets — hyperbolic_nn, capsule_dynamic, siren_inr, equivar_gnn, monotonic_net, sort_net; 812→818 families.

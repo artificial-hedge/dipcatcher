@@ -1109,6 +1109,14 @@ from quant_fund.research.benches_w139 import (
     bench_ttt_layer_family,
     bench_vicreg_family,
 )
+from quant_fund.research.benches_w140 import (
+    bench_capsule_dynamic_family,
+    bench_equivar_gnn_family,
+    bench_hyperbolic_nn_family,
+    bench_monotonic_net_family,
+    bench_siren_inr_family,
+    bench_sort_net_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3494,6 +3502,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "tent_tta": bench_tent_tta_family(),
         "shot_tta": bench_shot_tta_family(),
         "ttt_layer": bench_ttt_layer_family(),
+        "hyperbolic_nn": bench_hyperbolic_nn_family(),
+        "capsule_dynamic": bench_capsule_dynamic_family(),
+        "siren_inr": bench_siren_inr_family(),
+        "equivar_gnn": bench_equivar_gnn_family(),
+        "monotonic_net": bench_monotonic_net_family(),
+        "sort_net": bench_sort_net_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
