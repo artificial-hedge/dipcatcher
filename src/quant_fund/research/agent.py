@@ -1661,6 +1661,14 @@ from quant_fund.research.benches_w208 import (
     bench_lpc_formant_family,
     bench_mvdr_beamformer_family,
 )
+from quant_fund.research.benches_w209 import (
+    bench_fault_tree_family,
+    bench_fmea_rpn_family,
+    bench_life_stress_family,
+    bench_ram_markov_family,
+    bench_redundancy_block_family,
+    bench_weibull_life_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4460,6 +4468,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hilbert_instant": bench_hilbert_instant_family(),
         "lpc_formant": bench_lpc_formant_family(),
         "goertzel_detect": bench_goertzel_detect_family(),
+        "weibull_life": bench_weibull_life_family(),
+        "fault_tree": bench_fault_tree_family(),
+        "ram_markov": bench_ram_markov_family(),
+        "fmea_rpn": bench_fmea_rpn_family(),
+        "life_stress": bench_life_stress_family(),
+        "redundancy_block": bench_redundancy_block_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
