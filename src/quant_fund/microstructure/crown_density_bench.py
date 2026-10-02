@@ -161,10 +161,16 @@ def _sim_crown(
     horizon: int,
     seed: int,
     collect_counts: bool = False,
+    flow_intensity: float | None = 3.0,
 ) -> dict[str, Any]:
-    """Crown depth + emptied-touch reveal gap on one sim arm."""
+    """Crown depth + emptied-touch reveal gap on one sim arm.
+
+    ``flow_intensity`` selects the SplitFlow intensity (None = default
+    iid flow); 3.0 preserves every historical cell bit-identically.
+    """
     cfg = _calibrated(seed, extra)
-    sim = ZILobSimulator(cfg, _split(3.0, seed + 1))
+    flow = _split(flow_intensity, seed + 1) if flow_intensity is not None else None
+    sim = ZILobSimulator(cfg, flow)
     bb: list[int] = []
     ba: list[int] = []
     crown: list[int] = []
@@ -193,7 +199,12 @@ def _sim_crown(
         tot.append(sum(len(d) for d in bids.values()) + sum(len(d) for d in asks.values()))
         while seen < len(sim.trades):
             tr = sim.trades[seen]
-            fills.append(sim.n_events)
+            # sim.n_events is the just-completed 1-indexed step; the
+            # per-step snapshots below are 0-indexed, so the fill's own
+            # row is n_events - 1. Recording n_events would compare the
+            # book one event *after* the fill — an emptied touch that
+            # re-seeds next event never counts as a reveal.
+            fills.append(sim.n_events - 1)
             signs.append(1 if tr.aggressor == "buy" else -1)
             levels.append(tr.level)
             seen += 1
@@ -216,6 +227,7 @@ def _sim_crown(
         out_extra["hidden_fill_share"] = round(counts["n_hidden_fills"] / n_f, 4) if n_f else None
         out_extra["n_mo_units"] = counts["n_mo_units"]
         out_extra["n_mo_arrivals"] = counts["n_mo_arrivals"]
+        out_extra["n_lo_capped"] = counts["n_lo_capped"]
         # Sweep footprint: distinct levels consumed by the trades of one
         # event index (a size-k MO burst prints all its levels under one
         # event). sweep_width.v1 tape pin: p_ge2 = 0.045, max = 8.

@@ -115,7 +115,7 @@ def test_hit_retreat_marker_carries_both_deadlines() -> None:
     sim = ZILobSimulator(cfg)
     _drive(sim, 20000)
     if sim._hit_retreat is not None:  # noqa: SLF001
-        assert len(sim._hit_retreat) == 7  # noqa: SLF001
+        assert len(sim._hit_retreat) == 8  # noqa: SLF001
 
 
 def test_lobster_aftermath_shape(tmp_path: Path) -> None:
