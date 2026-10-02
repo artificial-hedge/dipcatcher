@@ -1085,6 +1085,14 @@ from quant_fund.research.benches_w136 import (
     bench_sinkhorn_attn_family,
     bench_sliding_attn_family,
 )
+from quant_fund.research.benches_w137 import (
+    bench_bootstrapped_dqn_family,
+    bench_c51_dqn_family,
+    bench_iqn_dqn_family,
+    bench_noisy_net_family,
+    bench_prioritized_replay_family,
+    bench_qr_dqn_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3452,6 +3460,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "sliding_attn": bench_sliding_attn_family(),
         "sinkhorn_attn": bench_sinkhorn_attn_family(),
         "nystrom_attn": bench_nystrom_attn_family(),
+        "c51_dqn": bench_c51_dqn_family(),
+        "qr_dqn": bench_qr_dqn_family(),
+        "iqn_dqn": bench_iqn_dqn_family(),
+        "noisy_net": bench_noisy_net_family(),
+        "prioritized_replay": bench_prioritized_replay_family(),
+        "bootstrapped_dqn": bench_bootstrapped_dqn_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
