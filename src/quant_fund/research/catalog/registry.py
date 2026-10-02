@@ -2033,6 +2033,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kto_train",
         "grpo_train",
         "rlhf_ppo",
+        # Wave-148 interpretability canon:
+        # SAE, steering, probes,
+        # lens, patching, ablation.
+        "sae_feature",
+        "activation_steering",
+        "probe_linear",
+        "logit_lens",
+        "patch_activation",
+        "circuit_ablation",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
