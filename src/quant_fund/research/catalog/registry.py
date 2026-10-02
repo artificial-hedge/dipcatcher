@@ -2902,6 +2902,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "admm_lasso",
         "coord_descent",
         "proj_gradient",
+        # Wave-256 memory-models canon.
+        "hazard_pointer",
+        "seqlock",
+        "ms_queue",
+        "epoch_reclaim",
+        "flat_combining",
+        "rcu_lock",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
