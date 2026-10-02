@@ -1221,6 +1221,14 @@ from quant_fund.research.benches_w153 import (
     bench_one_shot_nas_family,
     bench_random_search_nas_family,
 )
+from quant_fund.research.benches_w154 import (
+    bench_attention_rollout_family,
+    bench_clip_align_family,
+    bench_convnet_baseline_family,
+    bench_diffusion_ddim_family,
+    bench_simclr_views_family,
+    bench_vit_classifier_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3690,6 +3698,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "enas_controller": bench_enas_controller_family(),
         "one_shot_nas": bench_one_shot_nas_family(),
         "arch_predictor": bench_arch_predictor_family(),
+        "convnet_baseline": bench_convnet_baseline_family(),
+        "vit_classifier": bench_vit_classifier_family(),
+        "clip_align": bench_clip_align_family(),
+        "simclr_views": bench_simclr_views_family(),
+        "diffusion_ddim": bench_diffusion_ddim_family(),
+        "attention_rollout": bench_attention_rollout_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
