@@ -2603,6 +2603,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "qcqp_relax",
         "spectral_bisection",
         "hoffman_bound",
+        # Wave-214 online-algorithms canon: ski rental, marking paging,
+        # work-function k-server, RANKING, secretary/prophet, OGD.
+        "ski_rental",
+        "marking_paging",
+        "work_function_kserver",
+        "ranking_matching",
+        "secretary_prophet",
+        "online_gradient",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1701,6 +1701,14 @@ from quant_fund.research.benches_w213 import (
     bench_sos_certificate_family,
     bench_spectral_bisection_family,
 )
+from quant_fund.research.benches_w214 import (
+    bench_marking_paging_family,
+    bench_online_gradient_family,
+    bench_ranking_matching_family,
+    bench_secretary_prophet_family,
+    bench_ski_rental_family,
+    bench_work_function_kserver_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4530,6 +4538,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "qcqp_relax": bench_qcqp_relax_family(),
         "spectral_bisection": bench_spectral_bisection_family(),
         "hoffman_bound": bench_hoffman_bound_family(),
+        "ski_rental": bench_ski_rental_family(),
+        "marking_paging": bench_marking_paging_family(),
+        "work_function_kserver": bench_work_function_kserver_family(),
+        "ranking_matching": bench_ranking_matching_family(),
+        "secretary_prophet": bench_secretary_prophet_family(),
+        "online_gradient": bench_online_gradient_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
