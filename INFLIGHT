@@ -2561,3 +2561,4 @@ wave 160 (2026-10-02): FL canon — scaffold_fl, fednova_fl, ditto_fl, moon_fl, 
 wave 161 (2026-10-02): neural-operator canon — fno_1d, deeponet, lowrank_op, pino_residual, gno_lite, cno_lite; 938→944 families.
 wave 162 (2026-10-02): TS-foundation canon — chronos_lite, timesfm_lite, moirai_lite, lagllama_lite, timer_lite, moment_lite; 944→950 families.
 wave 163 (2026-10-02): lifelong-CL canon — packnet_cl, lwf_cl, der_cl, agem_cl, piggyback_cl, hat_cl; 950→956 families.
+wave 164 (2026-10-02): Bayesian-DL canon — swag_diag, mc_dropout, bbb_vi, snapshot_ens, concrete_dropout, vcl_online; 956→962 families.

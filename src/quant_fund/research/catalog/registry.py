@@ -2177,6 +2177,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "agem_cl",
         "piggyback_cl",
         "hat_cl",
+        # Wave-164 Bayesian-DL canon:
+        # SWA-Gaussian, MC-dropout,
+        # BBB, snapshot ens, concrete
+        # dropout, VCL.
+        "swag_diag",
+        "mc_dropout",
+        "bbb_vi",
+        "snapshot_ens",
+        "concrete_dropout",
+        "vcl_online",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
