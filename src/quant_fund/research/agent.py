@@ -837,6 +837,22 @@ from quant_fund.research.benches_w105 import (
     bench_proof_number_family,
     bench_puct_family,
 )
+from quant_fund.research.benches_w106 import (
+    bench_adams_family,
+    bench_bdf_family,
+    bench_crank_nicolson_family,
+    bench_etdrk4_family,
+    bench_radau_family,
+    bench_strang_family,
+)
+from quant_fund.research.benches_w107 import (
+    bench_adi_family,
+    bench_fast_marching_family,
+    bench_godunov_family,
+    bench_lax_wendroff_family,
+    bench_level_set_family,
+    bench_weno_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3018,6 +3034,18 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "negascout": bench_negascout_family(),
         "proof_number": bench_proof_number_family(),
         "dfpn": bench_dfpn_family(),
+        "bdf": bench_bdf_family(),
+        "adams": bench_adams_family(),
+        "radau": bench_radau_family(),
+        "strang": bench_strang_family(),
+        "etdrk4": bench_etdrk4_family(),
+        "crank_nicolson": bench_crank_nicolson_family(),
+        "adi": bench_adi_family(),
+        "lax_wendroff": bench_lax_wendroff_family(),
+        "weno": bench_weno_family(),
+        "level_set": bench_level_set_family(),
+        "fast_marching": bench_fast_marching_family(),
+        "godunov": bench_godunov_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

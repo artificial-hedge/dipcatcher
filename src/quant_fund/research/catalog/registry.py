@@ -1630,6 +1630,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "negascout",
         "proof_number",
         "dfpn",
+        # Wave-106 canon: stiff
+        # time integration — BDF,
+        # Adams PECE, Radau IIA,
+        # Strang split, ETDRK4,
+        # Crank–Nicolson. Orders
+        # measured vs exact.
+        "bdf",
+        "adams",
+        "radau",
+        "strang",
+        "etdrk4",
+        "crank_nicolson",
+        # Wave-107 canon: transport
+        # & HJB PDE — ADI,
+        # Lax–Wendroff, WENO5,
+        # level set, fast
+        # marching, Godunov.
+        "adi",
+        "lax_wendroff",
+        "weno",
+        "level_set",
+        "fast_marching",
+        "godunov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
