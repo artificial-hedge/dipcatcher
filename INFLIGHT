@@ -2525,3 +2525,4 @@ wave 124 (2026-10-02): exec-summary graph/meta/continual — asset_gnn, counterp
 wave 125 (2026-10-02): exec-summary pricing/quantum/XAI — pinn_pricing, qubo_portfolio, xai_shap, adversarial_robust, risk_flow, causal_miner; 722→728 families.
 wave 126 (2026-10-02): exec-summary deep-DL — tft_forecaster, patchtst, lob_transformer, set_transformer, neural_ode, world_model; 728→734 families.
 wave 127 (2026-10-02): exec-summary DL-2 — contrastive_repr, hypernetwork_alloc, neural_thompson, bnn_ensemble, option_vae, diff_policy; 734→740 families.
+wave 128 (2026-10-02): exec-summary DL-3 — kan_forecaster, ts_mixer, informer_attn, cnn_alpha, mask_autoencoder, graph_temporal; 740→746 families.
