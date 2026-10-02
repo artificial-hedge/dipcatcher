@@ -1253,6 +1253,14 @@ from quant_fund.research.benches_w157 import (
     bench_tranad_family,
     bench_usad_family,
 )
+from quant_fund.research.benches_w158 import (
+    bench_approx_ndcg_ltr_family,
+    bench_lambdarank_ltr_family,
+    bench_listmle_ltr_family,
+    bench_listnet_ltr_family,
+    bench_neural_sort_ltr_family,
+    bench_ranknet_ltr_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3746,6 +3754,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "anom_transformer": bench_anom_transformer_family(),
         "rrcf": bench_rrcf_family(),
         "tranad": bench_tranad_family(),
+        "ranknet_ltr": bench_ranknet_ltr_family(),
+        "listnet_ltr": bench_listnet_ltr_family(),
+        "listmle_ltr": bench_listmle_ltr_family(),
+        "lambdarank_ltr": bench_lambdarank_ltr_family(),
+        "approx_ndcg_ltr": bench_approx_ndcg_ltr_family(),
+        "neural_sort_ltr": bench_neural_sort_ltr_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
