@@ -1693,6 +1693,14 @@ from quant_fund.research.benches_w212 import (
     bench_lp_rounding_sc_family,
     bench_primal_dual_vc_family,
 )
+from quant_fund.research.benches_w213 import (
+    bench_eigenvalue_opt_family,
+    bench_hoffman_bound_family,
+    bench_qcqp_relax_family,
+    bench_sdp_maxcut_family,
+    bench_sos_certificate_family,
+    bench_spectral_bisection_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4516,6 +4524,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "fptas_knapsack": bench_fptas_knapsack_family(),
         "local_search_maxcut": bench_local_search_maxcut_family(),
         "christofides_tsp": bench_christofides_tsp_family(),
+        "sdp_maxcut": bench_sdp_maxcut_family(),
+        "eigenvalue_opt": bench_eigenvalue_opt_family(),
+        "sos_certificate": bench_sos_certificate_family(),
+        "qcqp_relax": bench_qcqp_relax_family(),
+        "spectral_bisection": bench_spectral_bisection_family(),
+        "hoffman_bound": bench_hoffman_bound_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
