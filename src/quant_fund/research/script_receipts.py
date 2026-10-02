@@ -440,6 +440,7 @@ _MEASUREMENT_SCHEMAS = (
     "full_impact.v1",
     "full_stack.v1",
     "gap_close.v1",
+    "iid_floor.v1",
     "glft_bench.v1",
     "hawkes_mv.v1",
     "hawkes_real.v1",
