@@ -175,7 +175,13 @@ class BinancePublicDataSource(SourceAdapter):
         ]
         if not rows:
             raise SourceError("Binance returned only an in-progress kline")
-        return normalize_ohlcv(rows, source=self.name, revision_id=interval)
+        # Preserve explicit vendor clocks independently of publication timing.
+        # Direct adapters/bronze retain the vendor open label; the market ingest
+        # boundary uses these fields to build a close-labeled silver panel.
+        return normalize_ohlcv(rows, source=self.name, revision_id=interval).with_columns(
+            pl.col("event_time").alias("bar_open_time"),
+            pl.col("available_time").alias("bar_close_time"),
+        )
 
 
 class BinanceMarketSource(BinancePublicDataSource):
