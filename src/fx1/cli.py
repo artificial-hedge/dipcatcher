@@ -303,6 +303,10 @@ def harness_serve(
         None,
         help="Response compression floor bytes (env FX1_API_GZIP_MIN_BYTES, 0 = off).",
     ),
+    cors_origins: str | None = typer.Option(
+        None,
+        help="Comma-separated allowed browser origins (env FX1_API_CORS_ORIGINS, empty = off).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
@@ -323,6 +327,7 @@ def harness_serve(
             job_max=job_max,
             rate_limit_rps=rate_limit_rps,
             gzip_min_bytes=gzip_min_bytes,
+            cors_origins=cors_origins,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)

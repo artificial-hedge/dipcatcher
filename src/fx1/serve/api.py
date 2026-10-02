@@ -104,6 +104,24 @@ _VERIFY_BATCH_MAX = 64
 _JOB_MAX_ENV = "FX1_API_JOB_MAX"
 _RATE_LIMIT_ENV = "FX1_API_RATE_LIMIT_RPS"
 _GZIP_MIN_ENV = "FX1_API_GZIP_MIN_BYTES"
+_CORS_ORIGINS_ENV = "FX1_API_CORS_ORIGINS"
+
+# Headers browser clients can read off responses when CORS is enabled.
+_CORS_EXPOSE_HEADERS = [
+    "Location",
+    "Retry-After",
+    "X-Fx1-Api-Version",
+    "X-RateLimit-Limit",
+    "X-RateLimit-Remaining",
+    "X-RateLimit-Reset",
+    "X-Request-ID",
+]
+_CORS_ALLOW_HEADERS = [
+    "Content-Type",
+    "Idempotency-Key",
+    "X-API-Key",
+    "X-Request-ID",
+]
 _RATE_LIMIT_KEYS_MAX = 4096
 
 
@@ -1541,6 +1559,7 @@ def create_app(
     job_max: int | None = None,
     rate_limit_rps: float | None = None,
     gzip_min_bytes: int | None = None,
+    cors_origins: str | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -1551,6 +1570,15 @@ def create_app(
     sse_keepalive_s = _env_float_floor(_SSE_KEEPALIVE_ENV, 15.0, sse_keepalive_s)
     rate_limit_rps = _env_float_floor(_RATE_LIMIT_ENV, 0.0, rate_limit_rps)
     gzip_min_bytes = _env_int_floor(_GZIP_MIN_ENV, 1024, gzip_min_bytes)
+    cors_raw = cors_origins if cors_origins is not None else os.environ.get(_CORS_ORIGINS_ENV, "")
+    cors_list = [o.strip() for o in cors_raw.split(",") if o.strip()]
+    for origin in cors_list:
+        parsed = urllib.parse.urlparse(origin)
+        if origin == "*" or parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(
+                f"invalid CORS origin {origin!r} — expected explicit scheme://host, "
+                "never the wildcard"
+            )
     limiter = _RateLimiter(rate_limit_rps) if rate_limit_rps > 0 else None
     # Bounded in-flight work: the harness executes lab commands and model
     # calls on shared resources (a spawned local engine, GPU memory, the
@@ -1615,6 +1643,7 @@ def create_app(
     # urllib-based clients send no Accept-Encoding so SSE stays uncompressed.
     if gzip_min_bytes > 0:
         app.add_middleware(GZipMiddleware, minimum_size=gzip_min_bytes)
+    app.state.cors_origins = cors_list
     app.state.gzip_min_bytes = gzip_min_bytes
     app.state.inflight_slots = inflight
     app.state.metrics = metrics
@@ -1787,6 +1816,7 @@ def create_app(
                 "jobs": True,
                 "drain": True,
                 "streaming": True,
+                "cors": bool(cors_list),
             },
             limits={
                 "max_inflight": float(metrics.max_inflight),
@@ -1923,6 +1953,23 @@ def create_app(
     )
 
     _mount_receipt_routes(app)
+
+    # Opt-in CORS for browser consumers: off by default (closed), explicit
+    # origins only — the wildcard and credentials are refused. Registered
+    # last so it wraps the auth middleware — preflight OPTIONS reach CORS
+    # before the API-key check (preflights carry no credentials).
+    if cors_list:
+        from fastapi.middleware.cors import CORSMiddleware
+
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_list,
+            allow_methods=["GET", "POST", "DELETE"],
+            allow_headers=_CORS_ALLOW_HEADERS,
+            expose_headers=_CORS_EXPOSE_HEADERS,
+            allow_credentials=False,
+            max_age=600,
+        )
 
     _declare_response_headers(app, rate_limited=limiter is not None)
 

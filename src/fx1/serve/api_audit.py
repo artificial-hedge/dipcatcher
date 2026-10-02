@@ -1301,6 +1301,60 @@ def api_audit() -> dict[str, Any]:
         if isinstance(op, dict)
         for resp in op.get("responses", {}).values()
     )
+    # CORS: closed by default; explicit origins only; preflight handled
+    # before the auth layer (preflights carry no credentials)
+    pre_off = client.options(
+        "/health",
+        headers={
+            "Origin": "https://fx1.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    out["cors_off_by_default"] = "access-control-allow-origin" not in pre_off.headers
+    cors_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        cors_origins="https://fx1.example.com, https://ops.internal:8443",
+    )
+    cc = _TC2(cors_app)
+    pre_on = cc.options(
+        "/health",
+        headers={
+            "Origin": "https://fx1.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    out["cors_preflight_ok"] = (
+        pre_on.status_code == 200
+        and pre_on.headers.get("access-control-allow-origin") == "https://fx1.example.com"
+        and "POST" in pre_on.headers.get("access-control-allow-methods", "")
+    )
+    actual_resp = cc.get("/health", headers={"Origin": "https://fx1.example.com"})
+    out["cors_exposes_stamped_headers"] = (
+        "x-fx1-api-version" in actual_resp.headers.get("access-control-expose-headers", "").lower()
+    )
+    out["cors_wrong_origin_refused"] = (
+        "access-control-allow-origin"
+        not in cc.options(
+            "/health",
+            headers={
+                "Origin": "https://evil.example",
+                "Access-Control-Request-Method": "GET",
+            },
+        ).headers
+    )
+    out["cors_actual_response_marked"] = (
+        actual_resp.headers.get("access-control-allow-origin") == "https://fx1.example.com"
+    )
+    try:
+        api_mod.create_app(cors_origins="*")
+        out["cors_wildcard_refused"] = False
+    except ValueError:
+        out["cors_wildcard_refused"] = True
+    out["capabilities_reports_cors"] = (
+        client.get("/harness/capabilities").json()["features"]["cors"] is False
+        and cc.get("/harness/capabilities").json()["features"]["cors"] is True
+    )
     # limiter counts denials; a public-path request also draws a token
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
