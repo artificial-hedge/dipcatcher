@@ -1885,6 +1885,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "consistency_ts",
         "energy_ts",
         "perceiver_ts",
+        # Wave-132 OOD canon:
+        # Mahalanobis, MSP+ODIN,
+        # GradNorm, energy, kNN,
+        # ViM.
+        "mahalanobis_ood",
+        "max_softmax_ood",
+        "gradient_norm_ood",
+        "energy_ood",
+        "knn_ood",
+        "vim_ood",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
