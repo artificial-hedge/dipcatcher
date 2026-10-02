@@ -976,12 +976,21 @@ def harness_submit_batch(
 @harness_app.command("job")
 def harness_job(
     job_id: str = typer.Argument(..., help="Job id returned by harness submit."),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_job_record.v1 doc instead."
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
-    """Print a job's live status record."""
+    """Print a job's live status record. ``--receipt`` prints the sealed
+    export instead (verify with ``verify-research`` /
+    ``POST /receipts/verify``)."""
     _need_remote(remote)
+    if receipt:
+        doc = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).job_receipt(job_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+        return
     st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).job_status(job_id))
     typer.echo(json.dumps(st, indent=2))
 

@@ -8,6 +8,7 @@
       "batch_jsonl_two_items": true,
       "cancel_local_refused": true,
       "capabilities_local_refused": true,
+      "cli_job_receipt_json": true,
       "cli_job_status_json": true,
       "cli_run_idem_key_passed": true,
       "cli_submit_batch": true,
@@ -53,6 +54,7 @@
       "harness_verify_tampered_fails": true,
       "harness_verify_valid_exits_0": true,
       "help_lists": true,
+      "job_receipt_local_refused": true,
       "jobs_local_refused": true,
       "judge_bogus_code2": true,
       "judge_bogus_exits2": true,
@@ -83,11 +85,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "97d4c235e1e78065bf83df1702133fb3a2f6e9e6",
-  "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export). Flagged wart: the command is registered as 'maskedaEval'.",
+  "git_revision": "3f615c8105798dbe30c1c23a3c4c757aff3de3d0",
+  "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "e2ecee67121278790ea026465282fe1457d4a624b613144b6177e73a89b5a41d",
+  "receipt_sha256": "79a01dc0b2364feb59a932d254fda88e97224f72ce2e268d31f2fd8f5ded49c1",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

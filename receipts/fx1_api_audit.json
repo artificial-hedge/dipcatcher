@@ -167,6 +167,11 @@
       "job_list_status_filter": true,
       "job_max_validated": true,
       "job_queues_when_workers_busy": true,
+      "job_receipt_404": true,
+      "job_receipt_deterministic": true,
+      "job_receipt_export": true,
+      "job_receipt_tamper": true,
+      "job_receipt_verifies": true,
       "job_replay_under_drain": true,
       "job_result_capped": true,
       "job_result_fields": true,
@@ -297,11 +302,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "97d4c235e1e78065bf83df1702133fb3a2f6e9e6",
-  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering.",
+  "git_revision": "3f615c8105798dbe30c1c23a3c4c757aff3de3d0",
+  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it.",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "bf384c85fe044d2aa7ac3bc36fc0415a55955ee23893b8a9f1bcae0fb9f6d668",
+  "receipt_sha256": "ec0304df259fb9c64613c16efd758eb969eb26467e7714fb5ba7259ee28ebf00",
   "research_only": true,
   "schema": "api_audit.v1"
 }

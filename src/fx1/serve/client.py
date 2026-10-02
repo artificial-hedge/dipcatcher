@@ -426,6 +426,17 @@ class HarnessClient:
         )
         return dict(out)
 
+    def job_receipt(self, job_id: str) -> dict[str, Any]:
+        """Export the job's ledger record as a sealed
+        ``fx1_job_record.v1`` document — ``GET /harness/jobs/{id}/receipt``;
+        404 maps to KeyError. Feed it to :meth:`verify_receipt`."""
+        out = self._json(
+            "GET",
+            f"/harness/jobs/{urllib.parse.quote(job_id)}/receipt",
+            idempotent=True,
+        )
+        return dict(out)
+
     def list_jobs(
         self,
         *,

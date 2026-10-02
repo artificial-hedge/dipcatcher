@@ -295,7 +295,7 @@ class Fx1Harness:
         document — pass it to :meth:`verify_receipt` to check the seal."""
         from dataclasses import asdict  # noqa: PLC0415
 
-        from fx1.serve.completion_receipt import (  # noqa: PLC0415
+        from fx1.serve.ops_receipt import (  # noqa: PLC0415
             completion_record_receipt,
         )
 
@@ -329,6 +329,15 @@ class Fx1Harness:
             extra_args,
             config=Path(config) if config is not None else None,
         )
+
+    def run_receipt(self, result: HarnessResult) -> dict[str, Any]:
+        """Seal an in-process run's outcome as ``fx1_run_result.v1`` —
+        stdout/stderr digested, never content. The wire twin lives under
+        ``GET /harness/jobs/{id}/receipt`` where the digested run record
+        embeds in the job record."""
+        from fx1.serve.ops_receipt import run_result_receipt  # noqa: PLC0415
+
+        return run_result_receipt(result.model_dump())
 
     # ---- gated completion ----------------------------------------------
 

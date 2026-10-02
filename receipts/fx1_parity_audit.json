@@ -91,6 +91,7 @@
       "gate_error_text_shared": true,
       "gate_sdk_raises_api_502": true,
       "health_parity": true,
+      "job_receipt_parity": true,
       "keyed_batch_retries": true,
       "keyed_complete_retries": true,
       "no_retry_on_auth": true,
@@ -127,11 +128,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "97d4c235e1e78065bf83df1702133fb3a2f6e9e6",
-  "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
+  "git_revision": "3f615c8105798dbe30c1c23a3c4c757aff3de3d0",
+  "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. A terminal wire job's fx1_job_record.v1 embeds the same digested run result that Fx1Harness.run_receipt seals in-process as fx1_run_result.v1 \u2014 identical on the shared fields. Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "9d941aa8236260c5d8b0650815d692925f763c224aed6c70226260b97c85aba1",
+  "receipt_sha256": "cc86bb6301c854b464838cab70123d4a8530a28ffcf57193397eb0f4a1ba7ea1",
   "research_only": true,
   "schema": "parity_audit.v1"
 }

@@ -570,6 +570,31 @@ def parity_audit() -> dict[str, bool]:
             and remote.verify_receipt(doc_wire).valid is True
             and sdk.verify_receipt(doc_sdk).valid is True
         )
+        # async jobs seal the same way: the wire's fx1_job_record.v1 export
+        # embeds the digested run result, which must equal the SDK's own
+        # run_result seal on the shared fields.
+        import time as _time  # noqa: PLC0415
+
+        j_id = client.post("/harness/jobs", json={"command": name}).json()["job_id"]
+        for _ in range(500):
+            if client.get(f"/harness/jobs/{j_id}").json()["status"] in (
+                "succeeded",
+                "failed",
+                "cancelled",
+            ):
+                break
+            _time.sleep(0.01)
+        doc_j = remote.job_receipt(j_id)
+        doc_r = sdk.run_receipt(sdk_run)
+        shared_keys = ("command", "exit_code", "ok", "stdout_sha256", "stderr_sha256")
+        out["job_receipt_parity"] = (
+            doc_j["schema"] == "fx1_job_record.v1"
+            and doc_r["schema"] == "fx1_run_result.v1"
+            and {k: doc_j["record"]["result"][k] for k in shared_keys}
+            == {k: doc_r["record"][k] for k in shared_keys}
+            and _vrp(doc_j)["valid"] is True
+            and _vrp(doc_r)["valid"] is True
+        )
         out["client_stream_identical"] = (
             remote.stream_complete(msg, backend="byok", receipt_hashes=[receipt]) == sdk_chunks
         )
@@ -1614,7 +1639,10 @@ def parity_audit_bench() -> dict[str, Any]:
             "is a per-surface mint — not part of the parity claim). Each "
             "surface also exports its own logged call as a sealed "
             "fx1_completion_record.v1 receipt — same record hashes, each "
-            "doc verifiable through either surface's verifier. Flags: "
+            "doc verifiable through either surface's verifier. A terminal "
+            "wire job's fx1_job_record.v1 embeds the same digested run "
+            "result that Fx1Harness.run_receipt seals in-process as "
+            "fx1_run_result.v1 — identical on the shared fields. Flags: "
             "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "

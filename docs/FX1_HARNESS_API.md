@@ -112,6 +112,11 @@ breaks the seal. The claim is "these bytes were the recorded call" —
 prompt/output are sha256 evidence handles, never content. In-process,
 `Fx1Harness.completion_receipt(id)` mints the twin document (each
 surface seals its own record; the sha256s are the cross-surface claim).
+Async jobs seal the same way: `GET /harness/jobs/{id}/receipt` returns a
+`fx1_job_record.v1` document whose `record.result` carries the run with
+stdout/stderr digested (never content); in-process runs seal standalone
+through `Fx1Harness.run_receipt(result)` as `fx1_run_result.v1` — the
+same digested shape the job record embeds.
 
 ## Routes
 
@@ -137,6 +142,7 @@ surface seals its own record; the sha256s are the cross-surface claim).
 | `POST /harness/jobs/batch` | up to 64 submissions, per-item `{error, code}` outcomes |
 | `GET /harness/jobs` | list/filter (`?status=`, `?limit=`, `?offset=`) |
 | `GET /harness/jobs/{id}` | poll status/result/error |
+| `GET /harness/jobs/{id}/receipt` | terminal job sealed as `fx1_job_record.v1` (streams digested, callback URL hashed) → verify via `POST /receipts/verify`; `HarnessClient.job_receipt` / `fx1 harness job --receipt`; in-process runs seal via `Fx1Harness.run_receipt` |
 | `GET /harness/jobs/{id}/events` | SSE frame per state change until terminal |
 | `DELETE /harness/jobs/{id}` | cancel (queued → cancelled fires the webhook) |
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |

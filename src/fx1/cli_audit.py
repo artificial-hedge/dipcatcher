@@ -509,6 +509,15 @@ def cli_audit() -> dict[str, Any]:
             self.last_job = job_id
             return {"job_id": job_id, "status": "succeeded", "result": None}
 
+        def job_receipt(self, job_id: str) -> dict[str, Any]:
+            self.last_job = job_id
+            return {
+                "kind": "fx1_job_record",
+                "schema": "fx1_job_record.v1",
+                "record": {"job_id": job_id, "status": "succeeded"},
+                "receipt_sha256": "0" * 64,
+            }
+
         def list_jobs(self, **kw: Any) -> dict[str, Any]:
             self.last_jobs_query = dict(kw)
             return {
@@ -715,6 +724,8 @@ def cli_audit() -> dict[str, Any]:
     out["jobs_local_refused"] = rj_local.exit_code == 2 and "--remote" in rj_local.output
     rc_local = runner.invoke(app, ["harness", "cancel", "job-xyz"])
     out["cancel_local_refused"] = rc_local.exit_code == 2 and "--remote" in rc_local.output
+    rjr_local = runner.invoke(app, ["harness", "job", "j-9", "--receipt"])
+    out["job_receipt_local_refused"] = rjr_local.exit_code == 2 and "--remote" in rjr_local.output
 
     # --idempotency-key reaches the remote client verbatim
     with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
@@ -787,6 +798,16 @@ def cli_audit() -> dict[str, Any]:
         out["cli_job_status_json"] = (
             rj.exit_code == 0
             and json.loads(rj.stdout)["status"] == "succeeded"
+            and remotes[-1].last_job == "j-9"
+        )
+        rjr = runner.invoke(
+            app,
+            ["harness", "job", "j-9", "--remote", "http://h.test", "--receipt"],
+        )
+        out["cli_job_receipt_json"] = (
+            rjr.exit_code == 0
+            and json.loads(rjr.stdout)["record"]["job_id"] == "j-9"
+            and json.loads(rjr.stdout)["schema"] == "fx1_job_record.v1"
             and remotes[-1].last_job == "j-9"
         )
         rw = runner.invoke(app, ["harness", "wait", "j-9", "--remote", "http://h.test"])
@@ -899,7 +920,9 @@ def cli_audit_bench() -> dict[str, Any]:
             "non-zero, judge resolution fails closed, dipbench smoke is "
             "SYNTHETIC-labeled, doctor emits presence-only JSON, and the "
             "completion log reads cleanly (empty window + missing-id exit "
-            "2 on both the record and its --receipt export). Flagged wart: "
+            "2 on both the record and its --receipt export); harness job "
+            "--receipt prints the sealed fx1_job_record.v1 doc remote-side "
+            "and refuses without --remote (exit 2). Flagged wart: "
             "the command is registered as 'maskedaEval'."
             if ok
             else f"CLI AUDIT DEFECT: {r}"

@@ -2705,6 +2705,49 @@ def _probe_backend_probes(
         uapp.get("/harness/completions/00000000000000000000000000000000/receipt").status_code == 404
     )
 
+    # --- sealed job receipt -------------------------------------------------
+    # a terminal job exports as fx1_job_record.v1: streams digested (never
+    # content), seal re-derives, verify route accepts, tampering breaks.
+    from fx1.harness import Harness as _Harness  # noqa: PLC0415
+
+    jr = _TC2(
+        api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), ""))
+        )
+    )
+    j_id = jr.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    for _ in range(500):
+        if jr.get(f"/harness/jobs/{j_id}").json()["status"] in (
+            "succeeded",
+            "failed",
+            "cancelled",
+        ):
+            break
+        time.sleep(0.01)
+    jr_res = jr.get(f"/harness/jobs/{j_id}/receipt")
+    jr_doc = jr_res.json()
+    want_stdout = _hl.sha256(b"ran:doctor").hexdigest()
+    out["job_receipt_export"] = (
+        jr_res.status_code == 200
+        and jr_doc["kind"] == "fx1_job_record"
+        and jr_doc["schema"] == "fx1_job_record.v1"
+        and jr_doc["record"]["job_id"] == j_id
+        and jr_doc["record"]["status"] == "succeeded"
+        and jr_doc["record"]["result"]["stdout_sha256"] == want_stdout
+        and "stdout" not in jr_doc["record"]["result"]
+        and jr_doc["receipt_sha256"]
+        == _hb(_cjb({k: v for k, v in jr_doc.items() if k != "receipt_sha256"}))
+    )
+    out["job_receipt_verifies"] = (
+        _vrp(jr_doc)["valid"] is True
+        and jr.post("/receipts/verify", json={"receipt": jr_doc}).json().get("valid") is True
+    )
+    out["job_receipt_deterministic"] = jr.get(f"/harness/jobs/{j_id}/receipt").json() == jr_doc
+    tampered_job = _json.loads(_json.dumps(jr_doc))
+    tampered_job["record"]["status"] = "failed"
+    out["job_receipt_tamper"] = _vrp(tampered_job)["valid"] is False
+    out["job_receipt_404"] = jr.get("/harness/jobs/nope/receipt").status_code == 404
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""
@@ -2733,7 +2776,10 @@ def api_audit_bench() -> dict[str, Any]:
             "as a sealed fx1_completion_record.v1 document "
             "(GET …/{id}/receipt) — deterministic, verifiable through "
             "verify_receipt / POST /receipts/verify, and broken by any "
-            "byte of record tampering."
+            "byte of record tampering. Terminal jobs export the same way "
+            "as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): "
+            "stdout/stderr digested inside record.result, callback URL "
+            "hashed, seal re-derives and verifies, tampering breaks it."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

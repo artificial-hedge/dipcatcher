@@ -275,6 +275,22 @@
         ]
       }
     },
+    "/harness/jobs/{job_id}/receipt": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "params": [
@@ -380,5 +396,5 @@
       }
     }
   },
-  "schema_sha256": "747d4b686d2af3d3d1829bd75e5d7266fced3892ee468526cc471ccbd051cebf"
+  "schema_sha256": "82d0f8b8a178f52dfa2762308b111e246a1ebabf4e7d360bddfe7b507fc8f421"
 }

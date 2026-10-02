@@ -557,6 +557,16 @@ export class HarnessApiClient {
     return this.get(`/harness/jobs/${encodeURIComponent(jobId)}`);
   }
 
+  /**
+   * GET /harness/jobs/{id}/receipt — the job's ledger record as a sealed
+   * `fx1_job_record.v1` document (POST it to /receipts/verify).
+   */
+  jobReceipt(jobId: string): Promise<Record<string, unknown>> {
+    return this.get(
+      `/harness/jobs/${encodeURIComponent(jobId)}/receipt`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
   /** GET /harness/jobs — list/filter. */
   jobs(filter?: {
     status?: string;

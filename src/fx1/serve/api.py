@@ -1244,6 +1244,23 @@ def _mount_job_routes(
             raise ApiError(404, f"unknown job_id {job_id!r}")
         return job
 
+    @app.get(
+        "/harness/jobs/{job_id}/receipt",
+        tags=["jobs"],
+        operation_id="job_receipt",
+    )
+    def job_receipt(job_id: str) -> dict[str, Any]:
+        """Export the job's ledger record as a sealed
+        ``fx1_job_record.v1`` document — the terminal ``result`` embeds
+        with its streams digested (stdout/stderr sha256, never content).
+        Verify with ``POST /receipts/verify`` or the SDK."""
+        from fx1.serve.ops_receipt import job_record_receipt  # noqa: PLC0415
+
+        job = job_store.get(job_id)
+        if job is None:
+            raise ApiError(404, f"unknown job_id {job_id!r}")
+        return job_record_receipt(job.model_dump(mode="json"))
+
     @app.delete(
         "/harness/jobs/{job_id}",
         response_model=JobStatusResponse,
@@ -2754,7 +2771,7 @@ def create_app(
     def completion_receipt(completion_id: str) -> dict[str, Any]:
         """Export one logged call as a sealed ``fx1_completion_record.v1``
         document — verify with ``POST /receipts/verify`` or the SDK."""
-        from fx1.serve.completion_receipt import (  # noqa: PLC0415
+        from fx1.serve.ops_receipt import (  # noqa: PLC0415
             completion_record_receipt,
         )
 
