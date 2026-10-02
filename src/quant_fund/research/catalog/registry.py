@@ -2411,6 +2411,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "psro",
         "deep_cfr",
         "mccfr_outcome",
+        # Wave-190 classical causal-discovery canon:
+        # GES, FCI, ICA/Direct/VAR-LiNGAM, MMPC.
+        "ges_search",
+        "fci_alg",
+        "ica_lingam",
+        "direct_lingam",
+        "var_lingam",
+        "mmmb_select",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
