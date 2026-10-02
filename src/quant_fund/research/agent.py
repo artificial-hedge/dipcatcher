@@ -1309,6 +1309,14 @@ from quant_fund.research.benches_w164 import (
     bench_swag_diag_family,
     bench_vcl_online_family,
 )
+from quant_fund.research.benches_w165 import (
+    bench_crps_net_family,
+    bench_diffusion_regressor_family,
+    bench_flow_regression_family,
+    bench_het_gp_family,
+    bench_kernel_mixture_family,
+    bench_mdn_cond_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3844,6 +3852,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "snapshot_ens": bench_snapshot_ens_family(),
         "concrete_dropout": bench_concrete_dropout_family(),
         "vcl_online": bench_vcl_online_family(),
+        "mdn_cond": bench_mdn_cond_family(),
+        "flow_regression": bench_flow_regression_family(),
+        "diffusion_regressor": bench_diffusion_regressor_family(),
+        "het_gp": bench_het_gp_family(),
+        "crps_net": bench_crps_net_family(),
+        "kernel_mixture": bench_kernel_mixture_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
