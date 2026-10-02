@@ -1970,6 +1970,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "equivar_gnn",
         "monotonic_net",
         "sort_net",
+        # Wave-141 certified robustness:
+        # smoothing, IBP, CROWN,
+        # Lipschitz, vector neurons, Gumbel-top-k.
+        "randomized_smoothing",
+        "ibp_bounds",
+        "crown_bound",
+        "lipschitz_net",
+        "vector_neurons",
+        "gumbel_topk",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1117,6 +1117,14 @@ from quant_fund.research.benches_w140 import (
     bench_siren_inr_family,
     bench_sort_net_family,
 )
+from quant_fund.research.benches_w141 import (
+    bench_crown_bound_family,
+    bench_gumbel_topk_family,
+    bench_ibp_bounds_family,
+    bench_lipschitz_net_family,
+    bench_randomized_smoothing_family,
+    bench_vector_neurons_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3508,6 +3516,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "equivar_gnn": bench_equivar_gnn_family(),
         "monotonic_net": bench_monotonic_net_family(),
         "sort_net": bench_sort_net_family(),
+        "randomized_smoothing": bench_randomized_smoothing_family(),
+        "ibp_bounds": bench_ibp_bounds_family(),
+        "crown_bound": bench_crown_bound_family(),
+        "lipschitz_net": bench_lipschitz_net_family(),
+        "vector_neurons": bench_vector_neurons_family(),
+        "gumbel_topk": bench_gumbel_topk_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
