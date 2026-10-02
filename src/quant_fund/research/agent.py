@@ -1733,6 +1733,14 @@ from quant_fund.research.benches_w217 import (
     bench_particle_smoother_family,
     bench_variational_bayes_family,
 )
+from quant_fund.research.benches_w218 import (
+    bench_andreasen_huge_family,
+    bench_barrier_adjoint_family,
+    bench_deep_hedge_family,
+    bench_dupire_localvol_family,
+    bench_heston_calib_family,
+    bench_sabr_calib_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4586,6 +4594,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "variational_bayes": bench_variational_bayes_family(),
         "huber_filter": bench_huber_filter_family(),
         "particle_smoother": bench_particle_smoother_family(),
+        "dupire_localvol": bench_dupire_localvol_family(),
+        "sabr_calib": bench_sabr_calib_family(),
+        "deep_hedge": bench_deep_hedge_family(),
+        "heston_calib": bench_heston_calib_family(),
+        "barrier_adjoint": bench_barrier_adjoint_family(),
+        "andreasen_huge": bench_andreasen_huge_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
