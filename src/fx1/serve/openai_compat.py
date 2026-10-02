@@ -91,6 +91,8 @@ OPENAI_MODEL_IDS = ("fx1", "hosted_k3", "local_fx1", "byok")
 
 # Fields a caller may send that the gated pipeline cannot honor. Naming the
 # field beats silently dropping it — honest compat over fake compat.
+# ``store`` stays refused: the audit ledger already records every call and
+# there is no retrieval surface for the flag to honor against.
 OPENAI_UNSUPPORTED = (
     "tools",
     "tool_choice",
@@ -99,17 +101,14 @@ OPENAI_UNSUPPORTED = (
     "parallel_tool_calls",
     "logprobs",
     "top_logprobs",
-    "logit_bias",
-    "stop",
-    "presence_penalty",
-    "frequency_penalty",
     "modalities",
     "audio",
     "prediction",
-    "reasoning_effort",
-    "service_tier",
+    "web_search_options",
+    "suffix",
+    "echo",
+    "best_of",
     "store",
-    "metadata",
 )
 
 # OpenAI's `type` names per status — the error envelope stays SDK-faithful.
@@ -206,17 +205,55 @@ class OpenAIChatRequest(_Model):
     temperature: float | None = Field(default=None, ge=0.0, le=2.0)
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
     max_tokens: int | None = Field(default=None, gt=0, le=262144)
+    max_completion_tokens: int | None = Field(default=None, gt=0, le=262144)
     seed: int | None = Field(default=None, ge=0)
     stream: bool = False
     stream_options: dict[str, Any] | None = None
-    n: int = 1
+    n: int = Field(default=1, ge=1, le=8)
+    stop: str | list[str] | None = None
+    presence_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    frequency_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    logit_bias: dict[str, int] | None = None
+    user: str | None = Field(default=None, max_length=512)
+    metadata: dict[str, str] | None = None
+    service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
+    reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+    prompt_cache_key: str | None = Field(default=None, max_length=128)
     response_format: dict[str, Any] | None = None
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
     def _openai_valid(self) -> OpenAIChatRequest:
-        if self.n != 1:
-            raise ValueError("n must be 1 — the gated pipeline serves one completion")
+        if isinstance(self.stop, list):
+            if len(self.stop) > 4:
+                raise ValueError("stop accepts at most 4 sequences")
+            if any(not isinstance(s, str) or not 1 <= len(s) <= 512 for s in self.stop):
+                raise ValueError("stop sequences must be 1–512 char strings")
+        elif isinstance(self.stop, str) and not 1 <= len(self.stop) <= 512:
+            raise ValueError("stop sequences must be 1–512 char strings")
+        if self.logit_bias is not None:
+            for key, bias in self.logit_bias.items():
+                try:
+                    int(key)
+                except (TypeError, ValueError) as exc:
+                    raise ValueError(f"logit_bias keys must be token ids, got {key!r}") from exc
+                if not -100 <= bias <= 100:
+                    raise ValueError(f"logit_bias[{key!r}]={bias} outside [-100, 100]")
+        if (
+            self.max_completion_tokens is not None
+            and self.max_tokens is not None
+            and self.max_completion_tokens != self.max_tokens
+        ):
+            raise ValueError(
+                "max_tokens and max_completion_tokens disagree "
+                f"({self.max_tokens} vs {self.max_completion_tokens})"
+            )
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
         rf = self.response_format
         if rf is not None:
             rtype = rf.get("type", "text")
@@ -395,8 +432,27 @@ def openai_to_kwargs(
         "byok": byok.model_dump() if byok is not None else None,
         "temperature": body.temperature,
         "top_p": body.top_p,
-        "max_tokens": body.max_tokens,
+        "max_tokens": (
+            body.max_completion_tokens
+            if body.max_completion_tokens is not None
+            else body.max_tokens
+        ),
         "seed": body.seed,
+        "stop": (
+            [body.stop]
+            if isinstance(body.stop, str)
+            else (list(body.stop) or None)
+            if body.stop is not None
+            else None
+        ),
+        "presence_penalty": body.presence_penalty,
+        "frequency_penalty": body.frequency_penalty,
+        "logit_bias": body.logit_bias,
+        "user": body.user,
+        "metadata": body.metadata,
+        "service_tier": body.service_tier,
+        "reasoning_effort": body.reasoning_effort,
+        "prompt_cache_key": body.prompt_cache_key,
     }
 
 
@@ -454,7 +510,7 @@ def openai_usage(usage: dict[str, int] | None) -> dict[str, int] | None:
 def openai_envelope(
     *,
     cid: str,
-    content: str,
+    content: str | list[str],
     backend: str,
     model: str | None = None,
     usage: dict[str, int] | None = None,
@@ -462,7 +518,9 @@ def openai_envelope(
 ) -> dict[str, Any]:
     """A gated result → the `chat.completion` envelope. `model` reports
     the serving link's own model id (or the backend name); the completion
-    id mints the `chatcmpl-` handle."""
+    id mints the `chatcmpl-` handle. ``content`` accepts the ``n>1``
+    choice list — one entry per completion, index-ordered."""
+    contents = [content] if isinstance(content, str) else list(content)
     return {
         "id": f"chatcmpl-{cid}",
         "object": "chat.completion",
@@ -471,10 +529,11 @@ def openai_envelope(
         "system_fingerprint": backend,
         "choices": [
             {
-                "index": 0,
-                "message": {"role": "assistant", "content": content},
+                "index": i,
+                "message": {"role": "assistant", "content": text},
                 "finish_reason": "stop",
             }
+            for i, text in enumerate(contents)
         ],
         "usage": openai_usage(usage),
     }
@@ -482,7 +541,7 @@ def openai_envelope(
 
 def openai_chunks(
     *,
-    text: str,
+    text: str | list[str],
     backend: str,
     model: str | None = None,
     cid: str,
@@ -498,7 +557,12 @@ def openai_chunks(
     incrementally. ``include_usage`` adds the OpenAI usage chunk
     (``choices=[]``, usage set) before the wire's ``[DONE]`` marker —
     which is emitted by the serializer, not this generator.
+
+    ``text`` accepts the ``n>1`` choice list: each index emits its own
+    role delta, content deltas, and ``finish_reason`` frame — grouped
+    per index (spec-legal; ``choices[].index`` disambiguates).
     """
+    texts = [text] if isinstance(text, str) else list(text)
     base: dict[str, Any] = {
         "id": f"chatcmpl-{cid}",
         "object": "chat.completion.chunk",
@@ -506,26 +570,27 @@ def openai_chunks(
         "model": model or backend,
         "system_fingerprint": backend,
     }
-    first = dict(base)
-    first["choices"] = [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}]
-    yield first
+    for i, choice_text in enumerate(texts):
+        first = dict(base)
+        first["choices"] = [{"index": i, "delta": {"role": "assistant"}, "finish_reason": None}]
+        yield first
 
-    pos = 0
-    while pos < len(text):
-        end = min(pos + 64, len(text))
-        if end < len(text):
-            sp = text.rfind(" ", pos, end)
-            if sp > pos:
-                end = sp + 1
-        piece = text[pos:end]
-        pos = end
-        frame = dict(base)
-        frame["choices"] = [{"index": 0, "delta": {"content": piece}, "finish_reason": None}]
-        yield frame
+        pos = 0
+        while pos < len(choice_text):
+            end = min(pos + 64, len(choice_text))
+            if end < len(choice_text):
+                sp = choice_text.rfind(" ", pos, end)
+                if sp > pos:
+                    end = sp + 1
+            piece = choice_text[pos:end]
+            pos = end
+            frame = dict(base)
+            frame["choices"] = [{"index": i, "delta": {"content": piece}, "finish_reason": None}]
+            yield frame
 
-    last = dict(base)
-    last["choices"] = [{"index": 0, "delta": {}, "finish_reason": "stop"}]
-    yield last
+        last = dict(base)
+        last["choices"] = [{"index": i, "delta": {}, "finish_reason": "stop"}]
+        yield last
 
     if include_usage:
         usage_frame = dict(base)

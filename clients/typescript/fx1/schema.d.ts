@@ -961,6 +961,12 @@ export interface components {
             checkpoint_dir?: string | null;
             /** Fallbacks */
             fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Frequency Penalty */
+            frequency_penalty?: number | null;
+            /** Logit Bias */
+            logit_bias?: {
+                [key: string]: number;
+            } | null;
             /** Max Tokens */
             max_tokens?: number | null;
             /**
@@ -968,16 +974,32 @@ export interface components {
              * @default 4
              */
             max_workers: number;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Presence Penalty */
+            presence_penalty?: number | null;
+            /** Prompt Cache Key */
+            prompt_cache_key?: string | null;
+            /** Reasoning Effort */
+            reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Receipt Hashes */
             receipt_hashes?: string[] | null;
             /** Seed */
             seed?: number | null;
+            /** Service Tier */
+            service_tier?: ("auto" | "default" | "flex" | "priority" | "scale") | null;
+            /** Stop */
+            stop?: string[] | null;
             /** Temperature */
             temperature?: number | null;
             /** Timeout S */
             timeout_s?: number | null;
             /** Top P */
             top_p?: number | null;
+            /** User */
+            user?: string | null;
         };
         /** CompleteBatchResponse */
         CompleteBatchResponse: {
@@ -1020,20 +1042,42 @@ export interface components {
             checkpoint_dir?: string | null;
             /** Fallbacks */
             fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Frequency Penalty */
+            frequency_penalty?: number | null;
+            /** Logit Bias */
+            logit_bias?: {
+                [key: string]: number;
+            } | null;
             /** Max Tokens */
             max_tokens?: number | null;
             /** Messages */
             messages: components["schemas"]["ChatMessage"][];
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Presence Penalty */
+            presence_penalty?: number | null;
+            /** Prompt Cache Key */
+            prompt_cache_key?: string | null;
+            /** Reasoning Effort */
+            reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Receipt Hashes */
             receipt_hashes?: string[] | null;
             /** Seed */
             seed?: number | null;
+            /** Service Tier */
+            service_tier?: ("auto" | "default" | "flex" | "priority" | "scale") | null;
+            /** Stop */
+            stop?: string[] | null;
             /** Temperature */
             temperature?: number | null;
             /** Timeout S */
             timeout_s?: number | null;
             /** Top P */
             top_p?: number | null;
+            /** User */
+            user?: string | null;
         };
         /** CompleteResponse */
         CompleteResponse: {
@@ -1097,6 +1141,10 @@ export interface components {
             error_class?: string | null;
             /** Latency Ms */
             latency_ms: number;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
             /** Model */
             model?: string | null;
             /** Ok */
@@ -1113,6 +1161,8 @@ export interface components {
             usage?: {
                 [key: string]: number;
             } | null;
+            /** User */
+            user?: string | null;
         };
         /**
          * DrainResponse
@@ -1540,11 +1590,23 @@ export interface components {
          *     tolerated (SDKs send bookkeeping keys like ``user``).
          */
         OpenAIChatRequest: {
+            /** Frequency Penalty */
+            frequency_penalty?: number | null;
             fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Logit Bias */
+            logit_bias?: {
+                [key: string]: number;
+            } | null;
+            /** Max Completion Tokens */
+            max_completion_tokens?: number | null;
             /** Max Tokens */
             max_tokens?: number | null;
             /** Messages */
             messages: components["schemas"]["OpenAIChatMessage"][];
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
             /**
              * Model
              * @default fx1
@@ -1555,12 +1617,22 @@ export interface components {
              * @default 1
              */
             n: number;
+            /** Presence Penalty */
+            presence_penalty?: number | null;
+            /** Prompt Cache Key */
+            prompt_cache_key?: string | null;
+            /** Reasoning Effort */
+            reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Response Format */
             response_format?: {
                 [key: string]: unknown;
             } | null;
             /** Seed */
             seed?: number | null;
+            /** Service Tier */
+            service_tier?: ("auto" | "default" | "flex" | "priority" | "scale") | null;
+            /** Stop */
+            stop?: string | string[] | null;
             /**
              * Stream
              * @default false
@@ -1574,6 +1646,8 @@ export interface components {
             temperature?: number | null;
             /** Top P */
             top_p?: number | null;
+            /** User */
+            user?: string | null;
         } & {
             [key: string]: unknown;
         };

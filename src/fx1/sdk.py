@@ -52,6 +52,7 @@ from fx1.serve.backends import (
     SamplingParams,
     StreamingBackend,
     get_backend,
+    truncate_chunks,
 )
 from fx1.serve.chat import cited_complete
 from fx1.serve.evals import EvalRecord, EvalStore
@@ -135,6 +136,10 @@ class CompletionRecord:
     output_sha256: str | None = None
     attempts: tuple[dict[str, Any], ...] | None = None
     sampling: dict[str, Any] | None = None
+    # Caller-side attribution — mirrors the wire record's ``user`` /
+    # ``metadata`` evidence fields.
+    user: str | None = None
+    metadata: dict[str, str] | None = None
 
 
 class _CompletionLog:
@@ -196,6 +201,80 @@ def _messages_sha256(messages: list[dict[str, str]]) -> str:
     return hashlib.sha256(
         json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+
+
+def _sampling_params(
+    *,
+    temperature: float | None = None,
+    top_p: float | None = None,
+    max_tokens: int | None = None,
+    seed: int | None = None,
+    stop: list[str] | str | None = None,
+    presence_penalty: float | None = None,
+    frequency_penalty: float | None = None,
+    logit_bias: dict[str, int] | None = None,
+    reasoning_effort: str | None = None,
+    service_tier: str | None = None,
+    prompt_cache_key: str | None = None,
+    user: str | None = None,
+) -> SamplingParams:
+    """Build the declared-params dataclass — the SDK twin of the wire's
+    request-model validation (same caps, fail-closed ``ValueError``)."""
+    stops = [stop] if isinstance(stop, str) else (list(stop) if stop is not None else None)
+    if stops is not None and (len(stops) > 4 or any(not 1 <= len(s) <= 512 for s in stops)):
+        raise ValueError("stop accepts ≤4 sequences of 1–512 chars")
+    if logit_bias is not None:
+        for k, v in logit_bias.items():
+            try:
+                int(k)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"logit_bias keys must be token ids, got {k!r}") from exc
+            if not -100 <= v <= 100:
+                raise ValueError(f"logit_bias[{k!r}]={v} outside [-100, 100]")
+    for name, val in (
+        ("presence_penalty", presence_penalty),
+        ("frequency_penalty", frequency_penalty),
+    ):
+        if val is not None and not -2.0 <= val <= 2.0:
+            raise ValueError(f"{name} must be in [-2, 2], got {val}")
+    if temperature is not None and not 0.0 <= temperature <= 2.0:
+        raise ValueError(f"temperature must be in [0, 2], got {temperature}")
+    if top_p is not None and not 0.0 < top_p <= 1.0:
+        raise ValueError(f"top_p must be in (0, 1], got {top_p}")
+    if max_tokens is not None and not 0 < max_tokens <= 262144:
+        raise ValueError(f"max_tokens must be in (0, 262144], got {max_tokens}")
+    if seed is not None and seed < 0:
+        raise ValueError(f"seed must be >= 0, got {seed}")
+    if reasoning_effort is not None and reasoning_effort not in (
+        "none",
+        "minimal",
+        "low",
+        "medium",
+        "high",
+    ):
+        raise ValueError("reasoning_effort must be none|minimal|low|medium|high")
+    if service_tier is not None and service_tier not in (
+        "auto",
+        "default",
+        "flex",
+        "priority",
+        "scale",
+    ):
+        raise ValueError("service_tier must be auto|default|flex|priority|scale")
+    return SamplingParams(
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        seed=seed,
+        stop=tuple(stops) if stops else None,
+        presence_penalty=presence_penalty,
+        frequency_penalty=frequency_penalty,
+        logit_bias=logit_bias,
+        reasoning_effort=reasoning_effort,
+        service_tier=service_tier,
+        prompt_cache_key=prompt_cache_key,
+        user=user,
+    )
 
 
 @dataclass(frozen=True)
@@ -312,6 +391,8 @@ class Fx1Harness:
         output_sha256: str | None,
         attempts: tuple[dict[str, Any], ...] | None = None,
         sampling: dict[str, Any] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> str:
         """Append one call to the completion log; returns its id."""
         cid = uuid.uuid4().hex
@@ -330,6 +411,8 @@ class Fx1Harness:
                 output_sha256=output_sha256,
                 attempts=attempts,
                 sampling=sampling,
+                user=user,
+                metadata=metadata,
             )
         )
         return cid
@@ -734,6 +817,15 @@ class Fx1Harness:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        stop: list[str] | str | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        prompt_cache_key: str | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -753,12 +845,27 @@ class Fx1Harness:
         ``temperature``/``top_p``/``max_tokens``/``seed`` are declared
         decode params — only set fields reach the wire beyond temperature
         (default 0.0 keeps eval runs deterministic); the resolved set is
-        recorded on the completion record.
+        recorded on the completion record. ``stop`` truncates the output
+        at the earliest match (harness-enforced — providers that ignore
+        it still ship the cut text); the penalty pair, ``logit_bias``,
+        and the provider hints pass through verbatim. ``user`` and
+        ``metadata`` stamp the completion record for attribution.
         """
         chain = _fallback_chain(backend, fallbacks)
         _check_link_kwargs(chain, checkpoint_dir, byok)
-        sampling = SamplingParams(
-            temperature=temperature, top_p=top_p, max_tokens=max_tokens, seed=seed
+        sampling = _sampling_params(
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
+            stop=stop,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            reasoning_effort=reasoning_effort,
+            service_tier=service_tier,
+            prompt_cache_key=prompt_cache_key,
+            user=user,
         )
         sampling_fields = sampling.body_fields()
         prompt_sha256 = _messages_sha256(messages)
@@ -806,6 +913,8 @@ class Fx1Harness:
                     None,
                     tuple(attempts),
                     sampling_fields,
+                    user,
+                    metadata,
                 )
                 raise
             t0 = time.monotonic()
@@ -854,6 +963,8 @@ class Fx1Harness:
                     None,
                     tuple(attempts),
                     sampling_fields,
+                    user,
+                    metadata,
                 )
                 closer = getattr(backend_obj, "close", None)
                 if callable(closer):
@@ -880,6 +991,8 @@ class Fx1Harness:
                 hashlib.sha256(content.encode("utf-8")).hexdigest(),
                 tuple(attempts) if len(attempts) > 1 else None,
                 sampling_fields,
+                user,
+                metadata,
             )
             closer = getattr(backend_obj, "close", None)
             if callable(closer):
@@ -907,6 +1020,8 @@ class Fx1Harness:
             None,
             tuple(attempts) if len(attempts) > 1 else None,
             sampling_fields,
+            user,
+            metadata,
         )
         raise last_exc
 
@@ -926,6 +1041,15 @@ class Fx1Harness:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        stop: list[str] | str | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        prompt_cache_key: str | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> list[CompletionResult]:
         """Many gated completions over ONE shared backend instance.
 
@@ -942,8 +1066,19 @@ class Fx1Harness:
         serving, backend_obj = self._resolve_chain(
             backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
-        sampling = SamplingParams(
-            temperature=temperature, top_p=top_p, max_tokens=max_tokens, seed=seed
+        sampling = _sampling_params(
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
+            stop=stop,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            reasoning_effort=reasoning_effort,
+            service_tier=service_tier,
+            prompt_cache_key=prompt_cache_key,
+            user=user,
         )
         sampling_fields = sampling.body_fields()
         model_name = getattr(backend_obj, "_model", None)
@@ -969,6 +1104,8 @@ class Fx1Harness:
                     None,
                     None,
                     sampling_fields,
+                    user,
+                    metadata,
                 )
                 raise
             cid = self._record_call(
@@ -983,6 +1120,8 @@ class Fx1Harness:
                 hashlib.sha256(content.encode("utf-8")).hexdigest(),
                 None,
                 sampling_fields,
+                user,
+                metadata,
             )
             return content, cid
 
@@ -1024,6 +1163,15 @@ class Fx1Harness:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        stop: list[str] | str | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        prompt_cache_key: str | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
     ) -> list[str]:
         """Token-delta chunks of one gated completion.
 
@@ -1040,8 +1188,19 @@ class Fx1Harness:
         serving, backend_obj = self._resolve_chain(
             backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
-        sampling = SamplingParams(
-            temperature=temperature, top_p=top_p, max_tokens=max_tokens, seed=seed
+        sampling = _sampling_params(
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+            seed=seed,
+            stop=stop,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            logit_bias=logit_bias,
+            reasoning_effort=reasoning_effort,
+            service_tier=service_tier,
+            prompt_cache_key=prompt_cache_key,
+            user=user,
         )
         sampling_fields = sampling.body_fields()
         t0 = time.monotonic()
@@ -1052,6 +1211,9 @@ class Fx1Harness:
             chunks = list(backend_obj.stream(messages, sampling=sampling))
             joined = "".join(chunks)
             validate_fx1_output(joined)
+            # stop-sequence cut after the gate — a gated prefix stays gated
+            chunks = truncate_chunks(chunks, sampling.stop)
+            joined = "".join(chunks)
             if receipt_hashes:
                 chunks.append(
                     "\n\nEvidence: "
@@ -1075,6 +1237,8 @@ class Fx1Harness:
                 None,
                 None,
                 sampling_fields,
+                user,
+                metadata,
             )
             raise
         finally:
@@ -1095,6 +1259,8 @@ class Fx1Harness:
             hashlib.sha256(joined.encode("utf-8")).hexdigest(),
             None,
             sampling_fields,
+            user,
+            metadata,
         )
         return chunks
 
@@ -1138,17 +1304,30 @@ class Fx1Harness:
             else OpenAIChatRequest.model_validate(request)
         )
         kwargs = openai_to_kwargs(body, dict(headers or {}))
-        result = self.complete(**kwargs)
-        validate_openai_output(body, result.content)
-        cid = result.completion_id or uuid.uuid4().hex
+        # n>1 fans out into n gated calls — each choice gets its own
+        # honesty-gate pass, format check, and completion-log record.
+        results = [self.complete(**kwargs) for _ in range(body.n)]
+        contents: list[str] = []
+        usage_sum: dict[str, int] = {}
+        usage_seen = False
+        for result in results:
+            validate_openai_output(body, result.content)
+            contents.append(result.content)
+            if isinstance(result.usage, dict):
+                usage_seen = True
+                for uk, uv in result.usage.items():
+                    if isinstance(uv, int):
+                        usage_sum[uk] = usage_sum.get(uk, 0) + uv
+        first = results[0]
+        cid = first.completion_id or uuid.uuid4().hex
         envelope = openai_envelope(
             cid=cid,
-            content=result.content,
-            backend=result.backend,
-            model=result.model,
-            usage=result.usage,
+            content=contents if body.n > 1 else contents[0],
+            backend="+".join(dict.fromkeys(r.backend for r in results)),
+            model=first.model,
+            usage=usage_sum if usage_seen else None,
         )
-        return OpenAIChatResponse.model_validate(envelope), result.completion_id
+        return OpenAIChatResponse.model_validate(envelope), first.completion_id
 
     def openai_chat_stream(
         self,
@@ -1184,22 +1363,33 @@ class Fx1Harness:
             else OpenAIChatRequest.model_validate(request)
         )
         kwargs = openai_to_kwargs(body, dict(headers or {}))
-        result = self.complete(**kwargs)
-        validate_openai_output(body, result.content)
-        cid = result.completion_id or uuid.uuid4().hex
+        results = [self.complete(**kwargs) for _ in range(body.n)]
+        contents: list[str] = []
+        usage_sum: dict[str, int] = {}
+        usage_seen = False
+        for result in results:
+            validate_openai_output(body, result.content)
+            contents.append(result.content)
+            if isinstance(result.usage, dict):
+                usage_seen = True
+                for uk, uv in result.usage.items():
+                    if isinstance(uv, int):
+                        usage_sum[uk] = usage_sum.get(uk, 0) + uv
+        first = results[0]
+        cid = first.completion_id or uuid.uuid4().hex
         chunks = list(
             openai_chunks(
-                text=result.content,
-                backend=result.backend,
-                model=result.model,
+                text=contents,
+                backend="+".join(dict.fromkeys(r.backend for r in results)),
+                model=first.model,
                 cid=cid,
                 include_usage=bool((body.stream_options or {}).get("include_usage")),
-                usage=result.usage,
+                usage=usage_sum if usage_seen else None,
             )
         )
         if last_event_id is not None:
             chunks = chunks[last_event_id + 1 :]
-        return chunks, result.completion_id
+        return chunks, first.completion_id
 
     def _resolve_chain(
         self,

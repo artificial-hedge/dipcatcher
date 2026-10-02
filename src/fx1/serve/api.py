@@ -85,6 +85,7 @@ from fx1.serve.backends import (
     SamplingParams,
     StreamingBackend,
     get_backend,
+    truncate_chunks,
 )
 from fx1.serve.chat import cited_complete
 from fx1.serve.contract import API_VERSION
@@ -394,6 +395,29 @@ def _fallback_chain_valid(
         raise ValueError("checkpoint_dir applies only to a 'local_fx1' link in the chain")
 
 
+def _sampling_extras_valid(
+    stop: list[str] | None,
+    logit_bias: dict[str, int] | None,
+    metadata: dict[str, str] | None,
+) -> None:
+    """Caps shared by the sync/batch request models — pydantic can't
+    range-check dict values, so stop/logit_bias/metadata limits live here."""
+    if stop is not None and (len(stop) > 4 or any(not 1 <= len(s) <= 512 for s in stop)):
+        raise ValueError("stop accepts ≤4 sequences of 1–512 chars")
+    if logit_bias is not None:
+        for k, v in logit_bias.items():
+            try:
+                int(k)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"logit_bias keys must be token ids, got {k!r}") from exc
+            if not -100 <= v <= 100:
+                raise ValueError(f"logit_bias[{k!r}]={v} outside [-100, 100]")
+    if metadata is not None and (
+        len(metadata) > 16 or any(len(k) > 64 or len(v) > 512 for k, v in metadata.items())
+    ):
+        raise ValueError("metadata accepts ≤16 pairs, keys ≤64 chars, values ≤512")
+
+
 def _sampling_of(body: CompleteRequest | CompleteBatchRequest) -> SamplingParams:
     """Decode params declared on the request → the dataclass the backends
     take. The wire-facing flat fields are validated by pydantic; the
@@ -403,6 +427,14 @@ def _sampling_of(body: CompleteRequest | CompleteBatchRequest) -> SamplingParams
         top_p=body.top_p,
         max_tokens=body.max_tokens,
         seed=body.seed,
+        stop=tuple(body.stop) if body.stop else None,
+        presence_penalty=body.presence_penalty,
+        frequency_penalty=body.frequency_penalty,
+        logit_bias=body.logit_bias,
+        reasoning_effort=body.reasoning_effort,
+        service_tier=body.service_tier,
+        prompt_cache_key=body.prompt_cache_key,
+        user=body.user,
     )
 
 
@@ -431,10 +463,25 @@ class CompleteRequest(_Model):
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
     max_tokens: int | None = Field(default=None, gt=0, le=262144)
     seed: int | None = Field(default=None, ge=0)
+    # OpenAI-parity decode contract — ``stop`` truncates the completion at
+    # the earliest match (harness-enforced, so stub/local backends honor it
+    # too); penalties/logit_bias and the provider hints pass through
+    # verbatim. ``user``/``metadata`` stamp the completion record for
+    # caller-side attribution in the audit ledger.
+    stop: list[str] | None = None
+    presence_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    frequency_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    logit_bias: dict[str, int] | None = None
+    reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+    service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
+    prompt_cache_key: str | None = Field(default=None, max_length=128)
+    user: str | None = Field(default=None, max_length=512)
+    metadata: dict[str, str] | None = None
 
     @model_validator(mode="after")
     def _chain_valid(self) -> CompleteRequest:
         _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
+        _sampling_extras_valid(self.stop, self.logit_bias, self.metadata)
         return self
 
 
@@ -485,10 +532,20 @@ class CompleteBatchRequest(_Model):
     top_p: float | None = Field(default=None, gt=0.0, le=1.0)
     max_tokens: int | None = Field(default=None, gt=0, le=262144)
     seed: int | None = Field(default=None, ge=0)
+    stop: list[str] | None = None
+    presence_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    frequency_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
+    logit_bias: dict[str, int] | None = None
+    reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+    service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
+    prompt_cache_key: str | None = Field(default=None, max_length=128)
+    user: str | None = Field(default=None, max_length=512)
+    metadata: dict[str, str] | None = None
 
     @model_validator(mode="after")
     def _chain_valid(self) -> CompleteBatchRequest:
         _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
+        _sampling_extras_valid(self.stop, self.logit_bias, self.metadata)
         return self
 
 
@@ -646,6 +703,10 @@ class CompletionRecord(_Model):
     attempts: list[BackendAttempt] | None = None
     # The resolved decode params sent to the provider.
     sampling: dict[str, Any] | None = None
+    # Caller-side attribution — the request's ``user`` tag / ``metadata``
+    # pairs, when declared. Evidence fields, never returned to the model.
+    user: str | None = None
+    metadata: dict[str, str] | None = None
 
 
 class CompletionListResponse(_Model):
@@ -983,7 +1044,7 @@ def _body_fp(body: BaseModel, *, exclude: set[str] | None = None) -> str:
 def _openai_sse(
     body: OpenAIChatRequest,
     *,
-    content: str,
+    content: str | list[str],
     backend: str,
     model: str | None,
     usage: dict[str, int] | None,
@@ -2395,6 +2456,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     else ApiError(503, "no backend in the chain served")
                 )
         finally:
+            # (content was already stop-truncated inside cited_complete —
+            # the record's output_sha256 covers the shipped bytes.)
             metrics.record_complete(
                 serving or body.backend,
                 serving is not None,
@@ -2420,6 +2483,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     ),
                     attempts=attempts if len(attempts) > 1 else None,
                     sampling=sampling_fields,
+                    user=body.user,
+                    metadata=body.metadata,
                 )
             )
         assert serving is not None  # noqa: S101 — None already raised above
@@ -2496,6 +2561,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 joined = "".join(chunks)
                 try:
                     validate_fx1_output(joined)
+                    # stop-sequence cut after the gate: a gated prefix is
+                    # still gated — shipped deltas keep provider chunk
+                    # boundaries up to the cut.
+                    chunks = truncate_chunks(chunks, sampling_params.stop)
                 except Fx1HonestyError as exc:
                     rec_cls = "honesty_refusal"
                     rec_err = str(exc)
@@ -2542,6 +2611,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         error_class=rec_cls,
                         prompt_sha256=prompt_sha256,
                         sampling=sampling_fields,
+                        user=body.user,
+                        metadata=body.metadata,
                         output_sha256=(
                             hashlib.sha256(joined_snap.encode("utf-8")).hexdigest()
                             if call_ok
@@ -2779,7 +2850,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 return StreamingResponse(
                     _openai_sse(
                         body,
-                        content=env["choices"][0]["message"]["content"],
+                        content=[c["message"]["content"] for c in env["choices"]],
                         backend=env["system_fingerprint"],
                         model=env["model"],
                         usage=env["usage"],
@@ -2795,26 +2866,38 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             creq = CompleteRequest(**openai_to_kwargs(body, request.headers))
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        out = complete(
-            body=creq,
-            response=Response(),
-            _slot_held=None,
-            idempotency_key=None,
-        )
-        # response_format post-validation: the provider can't be
-        # constrain-decoded, so a format violation is its failure (502),
-        # never shipped, never pinned into the idempotency record.
-        try:
-            validate_openai_output(body, out.content)
-        except OpenAICompatError as exc:
-            raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        cid = out.completion_id or uuid.uuid4().hex
+        # n>1 fans out into n gated calls — each completion gets its own
+        # honesty-gate pass, format check, and completion-log record; usage
+        # sums what was actually spent (n calls × provider-reported counts).
+        outs = [
+            complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
+            for _ in range(body.n)
+        ]
+        contents: list[str] = []
+        usage_sum: dict[str, int] = {}
+        usage_seen = False
+        for out in outs:
+            # response_format post-validation: the provider can't be
+            # constrain-decoded, so a format violation is its failure (502),
+            # never shipped, never pinned into the idempotency record.
+            try:
+                validate_openai_output(body, out.content)
+            except OpenAICompatError as exc:
+                raise ApiError(exc.status, str(exc), code=exc.code) from exc
+            contents.append(out.content)
+            if isinstance(out.usage, dict):
+                usage_seen = True
+                for uk, uv in out.usage.items():
+                    if isinstance(uv, int):
+                        usage_sum[uk] = usage_sum.get(uk, 0) + uv
+        cid = outs[0].completion_id or uuid.uuid4().hex
+        served_by = dict.fromkeys(o.backend for o in outs)
         envelope = openai_envelope(
             cid=cid,
-            content=out.content,
-            backend=out.backend,
-            model=out.model,
-            usage=out.usage,
+            content=contents if body.n > 1 else contents[0],
+            backend="+".join(served_by),
+            model=outs[0].model,
+            usage=usage_sum if usage_seen else None,
         )
         if key is not None:
             openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=envelope))
@@ -2823,10 +2906,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return StreamingResponse(
                 _openai_sse(
                     body,
-                    content=out.content,
-                    backend=out.backend,
-                    model=out.model,
-                    usage=out.usage,
+                    content=contents,
+                    backend="+".join(served_by),
+                    model=outs[0].model,
+                    usage=usage_sum if usage_seen else None,
                     cid=cid,
                 ),
                 media_type="text/event-stream",
@@ -2894,6 +2977,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                                 error_class=cls,
                                 prompt_sha256=prompt_sha256,
                                 sampling=sampling_fields,
+                                user=body.user,
+                                metadata=body.metadata,
                                 output_sha256=(
                                     hashlib.sha256(content.encode("utf-8")).hexdigest()
                                     if content is not None

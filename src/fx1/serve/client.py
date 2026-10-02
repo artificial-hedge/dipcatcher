@@ -995,6 +995,18 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        n: int = 1,
+        stop: str | list[str] | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        reasoning_effort: str | None = None,
+        prompt_cache_key: str | None = None,
+        max_completion_tokens: int | None = None,
+        response_format: dict[str, Any] | None = None,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
@@ -1008,6 +1020,11 @@ class HarnessClient:
         retried call (same key + same body) replays the stored response
         byte-identically instead of re-spending the model, and marks the
         call retryable for the transport policy.
+
+        ``n>1`` runs n gated calls server-side — each ``choices[i]`` got
+        its own honesty-gate pass; ``stop`` cuts at the earliest match
+        (harness-enforced, so stub/local backends honor it too);
+        ``user``/``metadata`` stamp the audit record.
 
         Returns ``(chat_completion_envelope, completion_id)`` — the id
         links the call to ``completion()``/``completion_receipt()``. Call
@@ -1031,7 +1048,19 @@ class HarnessClient:
             "temperature": temperature,
             "top_p": top_p,
             "max_tokens": max_tokens,
+            "max_completion_tokens": max_completion_tokens,
             "seed": seed,
+            "n": n,
+            "stop": stop,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias,
+            "user": user,
+            "metadata": metadata,
+            "service_tier": service_tier,
+            "reasoning_effort": reasoning_effort,
+            "prompt_cache_key": prompt_cache_key,
+            "response_format": response_format,
             "stream": False,
         }
         if fx1:
@@ -1063,6 +1092,18 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        n: int = 1,
+        stop: str | list[str] | None = None,
+        presence_penalty: float | None = None,
+        frequency_penalty: float | None = None,
+        logit_bias: dict[str, int] | None = None,
+        user: str | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        reasoning_effort: str | None = None,
+        prompt_cache_key: str | None = None,
+        max_completion_tokens: int | None = None,
+        response_format: dict[str, Any] | None = None,
         include_usage: bool = False,
         idempotency_key: str | None = None,
         last_event_id: int | None = None,
@@ -1099,7 +1140,19 @@ class HarnessClient:
             "temperature": temperature,
             "top_p": top_p,
             "max_tokens": max_tokens,
+            "max_completion_tokens": max_completion_tokens,
             "seed": seed,
+            "n": n,
+            "stop": stop,
+            "presence_penalty": presence_penalty,
+            "frequency_penalty": frequency_penalty,
+            "logit_bias": logit_bias,
+            "user": user,
+            "metadata": metadata,
+            "service_tier": service_tier,
+            "reasoning_effort": reasoning_effort,
+            "prompt_cache_key": prompt_cache_key,
+            "response_format": response_format,
             "stream": True,
             "stream_options": {"include_usage": True} if include_usage else None,
         }

@@ -528,13 +528,61 @@ def parity_audit() -> dict[str, bool]:
             rs_wire_bad.status_code == 400 and rs_sdk_bad == "ValueError"
         )
         # rejection parity: same verdict, each surface's own exception class
-        oai_bad_n = {**oai_body, "n": 2}
+        oai_bad_n = {**oai_body, "n": 9}
         wire_n_err = client.post("/v1/chat/completions", json=oai_bad_n)
         sdk_n_err = _raises(lambda: sdk.openai_chat(oai_bad_n))[0]
         out["openai_validation_parity"] = (
             wire_n_err.status_code == 422
             and "error" in wire_n_err.json()
             and sdk_n_err == "ValidationError"
+        )
+        # decode-contract parity: stop / n / declared params behave the
+        # same over the wire and in-process
+        oai_stop = {**oai_body, "stop": "pi", "user": "u-p", "metadata": {"t": "p"}}
+        wire_stop = client.post("/v1/chat/completions", json=oai_stop)
+        sdk_stop_env, sdk_stop_cid = sdk.openai_chat(oai_stop)
+        out["openai_stop_parity"] = (
+            wire_stop.status_code == 200
+            and wire_stop.json()["choices"][0]["message"]["content"]
+            == sdk_stop_env.choices[0].message["content"]
+            == "echo:"
+            and bool(sdk_stop_cid)
+            and sdk.completion(sdk_stop_cid or "").user == "u-p"
+            and sdk.completion(sdk_stop_cid or "").metadata == {"t": "p"}
+            and client.get(
+                f"/harness/completions/{wire_stop.headers['X-Fx1-Completion-Id']}"
+            ).json()["user"]
+            == "u-p"
+        )
+        oai_n2 = {**oai_body, "n": 2}
+        wire_n2 = client.post("/v1/chat/completions", json=oai_n2)
+        sdk_n2_env, _ = sdk.openai_chat(oai_n2)
+        out["openai_n_parity"] = (
+            wire_n2.status_code == 200
+            and [c["index"] for c in wire_n2.json()["choices"]] == [0, 1]
+            and [c.index for c in sdk_n2_env.choices] == [0, 1]
+            and wire_n2.json()["choices"][1]["message"]["content"]
+            == sdk_n2_env.choices[1].message["content"]
+        )
+        oai_pen = {**oai_body, "presence_penalty": 3.0}
+        wire_pen_err = client.post("/v1/chat/completions", json=oai_pen)
+        sdk_pen_err = _raises(lambda: sdk.openai_chat(oai_pen))[0]
+        out["openai_penalty_range_parity"] = (
+            wire_pen_err.status_code == 422 and sdk_pen_err == "ValidationError"
+        )
+        # n>1 stream parity — identical per-index frame sequences
+        oai_n2s = {**oai_body, "n": 2, "stream": True}
+        wire_n2s = client.post("/v1/chat/completions", json=oai_n2s)
+        wire_n2f = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_n2s.text.splitlines()
+            if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+        ]
+        sdk_n2f, _ = sdk.openai_chat_stream({**oai_body, "n": 2})
+        out["openai_n_stream_parity"] = (
+            wire_n2s.status_code == 200
+            and [_strip_meta(f) for f in wire_n2f] == [_strip_meta(f) for f in sdk_n2f]
+            and {f["choices"][0]["index"] for f in wire_n2f if f.get("choices")} == {0, 1}
         )
         oai_tools = {
             "model": "hosted_k3",

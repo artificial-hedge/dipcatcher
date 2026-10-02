@@ -9,7 +9,7 @@ training teaches.
 from __future__ import annotations
 
 from fx1.honesty import validate_fx1_output
-from fx1.serve.backends import InferenceBackend, SamplingParams
+from fx1.serve.backends import InferenceBackend, SamplingParams, truncate_at_stops
 
 
 def cited_complete(
@@ -19,8 +19,15 @@ def cited_complete(
     receipt_hashes: list[str] | None = None,
     sampling: SamplingParams | None = None,
 ) -> str:
-    """Complete with honesty validation and provenance footer."""
+    """Complete with honesty validation and provenance footer.
+
+    ``sampling.stop`` truncates the model's text before the gate — the
+    shipped bytes are what gets validated — and the provider receives the
+    stop list too (backends that honor it save the tokens; the harness
+    truncation is the belt that makes the contract hold regardless)."""
     response = backend.complete(messages, sampling=sampling)
+    if sampling is not None:
+        response = truncate_at_stops(response, sampling.stop)
     validate_fx1_output(response)  # fail-closed on contract violations
     if receipt_hashes:
         footer = (

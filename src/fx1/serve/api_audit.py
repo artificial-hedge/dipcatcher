@@ -3553,6 +3553,19 @@ def _probe_backend_probes(
         ) -> str:
             return "The strategy achieved a sharpe of 2.1 on the tape."
 
+    class _OiUsage(_OiBackend):
+        """Same echo backend with a usage channel + param capture — the
+        wire probe for declared params reaching the provider verbatim."""
+
+        last_usage = {"prompt_tokens": 5, "completion_tokens": 4, "total_tokens": 9}
+        seen: SamplingParams | None = None
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            self.seen = sampling
+            return super().complete(messages, sampling=sampling)
+
     oi_clean = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
     r = oi_clean.get("/v1/models")
     out["openai_models_200"] = (
@@ -3690,6 +3703,8 @@ def _probe_backend_probes(
     out["openai_unsupported_tools_422"] = (
         r.status_code == 422 and r.json()["error"]["type"] == "invalid_request_error"
     )
+    # — decode contract: n / stop / penalties / bias / hints / attribution —
+    # n fans out into n independent gated calls (each its own gate pass).
     r = oi_clean.post(
         "/v1/chat/completions",
         json={
@@ -3698,7 +3713,302 @@ def _probe_backend_probes(
             "n": 2,
         },
     )
-    out["openai_n_gt_1_422"] = r.status_code == 422
+    out["openai_n_choices"] = (
+        r.status_code == 200
+        and [c["index"] for c in r.json()["choices"]] == [0, 1]
+        and all(
+            c["message"]["content"] == "clean:h" and c["finish_reason"] == "stop"
+            for c in r.json()["choices"]
+        )
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 9},
+    )
+    out["openai_n_over_max_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 0},
+    )
+    out["openai_n_zero_422"] = r.status_code == 422
+
+    # stop: earliest match wins; harness-enforced (stub honors it too)
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}], "stop": ":x"},
+    )
+    out["openai_stop_truncates"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "clean"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "ab cd"}],
+            "stop": ["zz", "b"],
+        },
+    )
+    out["openai_stop_list_earliest"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "clean:a"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "stop": ["a", "b", "c", "d", "e"],
+        },
+    )
+    out["openai_stop_over4_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "stop": ""},
+    )
+    out["openai_stop_empty_422"] = r.status_code == 422
+
+    # stop on the stream — deltas end at the cut, [DONE] still ships
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "ab cd"}],
+            "stop": "ab",
+            "stream": True,
+        },
+    )
+    _stop_frames = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_stream_stop_cut"] = (
+        r.status_code == 200
+        and "".join(
+            f["choices"][0]["delta"].get("content", "") for f in _stop_frames if f.get("choices")
+        )
+        == "clean:"
+        and r.text.endswith("data: [DONE]\n\n")
+    )
+
+    # declared params reach the provider + stamp the audit record;
+    # usage on n>1 is the honest sum of n actual calls.
+    usage_be = _OiUsage()
+    oi_usage = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: usage_be))
+    r = oi_usage.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 3,
+            "presence_penalty": 0.5,
+            "frequency_penalty": -0.5,
+            "logit_bias": {"42": -10},
+            "reasoning_effort": "low",
+            "service_tier": "flex",
+            "prompt_cache_key": "pck",
+            "user": "u-1",
+            "metadata": {"team": "risk"},
+        },
+    )
+    seen = usage_be.seen
+    out["openai_decode_params_forwarded"] = (
+        r.status_code == 200
+        and len(r.json()["choices"]) == 3
+        and r.json()["usage"]["total_tokens"] == 27
+        and seen is not None
+        and seen.presence_penalty == 0.5
+        and seen.frequency_penalty == -0.5
+        and seen.logit_bias == {"42": -10}
+        and seen.reasoning_effort == "low"
+        and seen.service_tier == "flex"
+        and seen.prompt_cache_key == "pck"
+        and seen.user == "u-1"
+    )
+    cid_dec = r.headers.get("X-Fx1-Completion-Id", "")
+    if cid_dec:
+        rl = oi_usage.get(f"/harness/completions/{cid_dec}")
+        out["openai_user_metadata_recorded"] = (
+            rl.status_code == 200
+            and rl.json().get("user") == "u-1"
+            and rl.json().get("metadata") == {"team": "risk"}
+        )
+        out["openai_sampling_record_seals_declared"] = (
+            rl.status_code == 200
+            and rl.json().get("sampling", {}).get("logit_bias") == {"42": -10}
+            and rl.json().get("sampling", {}).get("presence_penalty") == 0.5
+        )
+
+    # max_completion_tokens alias + disagreeing pair fails closed
+    r = oi_usage.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "max_completion_tokens": 33,
+        },
+    )
+    out["openai_mct_alias"] = (
+        r.status_code == 200 and usage_be.seen is not None and usage_be.seen.max_tokens == 33
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "max_tokens": 5,
+            "max_completion_tokens": 9,
+        },
+    )
+    out["openai_mct_conflict_422"] = r.status_code == 422
+
+    # bias/penalty/metadata bounds are range-checked at the model
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "logit_bias": {"not-a-token": 1},
+        },
+    )
+    out["openai_logit_bias_badkey_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "logit_bias": {"1": 200},
+        },
+    )
+    out["openai_logit_bias_range_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "presence_penalty": 2.5,
+        },
+    )
+    out["openai_penalty_range_422"] = r.status_code == 422
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "metadata": {f"k{i}": "v" for i in range(17)},
+        },
+    )
+    out["openai_metadata_over16_422"] = r.status_code == 422
+
+    # newly fail-closed fields that extra="allow" used to drop silently
+    out["openai_newly_closed_422"] = all(
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                field: value,
+            },
+        ).status_code
+        == 422
+        for field, value in (
+            ("web_search_options", {}),
+            ("suffix", "x"),
+            ("echo", True),
+            ("best_of", 2),
+            ("store", True),
+        )
+    )
+
+    # n>1 streams emit per-index frame groups; keyed replay reproduces them
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+            "stream": True,
+        },
+    )
+    _nframes = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_n_stream_indexes"] = (
+        r.status_code == 200
+        and {f["choices"][0]["index"] for f in _nframes if f.get("choices")} == {0, 1}
+        and all(
+            f["choices"][0].get("finish_reason") is not None or f["choices"][0]["delta"]
+            for f in _nframes
+            if f.get("choices")
+        )
+    )
+    _nkey = {"Idempotency-Key": "n-idem-77"}
+    r1 = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 2},
+        headers=_nkey,
+    )
+    r2 = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}], "n": 2},
+        headers=_nkey,
+    )
+    out["openai_n_idem_replay"] = (
+        r1.status_code == 200
+        and r2.status_code == 200
+        and r1.json() == r2.json()
+        and r2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and len(r2.json()["choices"]) == 2
+    )
+    # resume a dropped keyed n=2 stream — the suffix still carries both indexes
+    r3 = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "n-resume-77"},
+    )
+    r4 = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+            "stream": True,
+        },
+        headers={"Idempotency-Key": "n-resume-77", "Last-Event-ID": "2"},
+    )
+    _resumed = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r4.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_n_resume_suffix"] = (
+        r3.status_code == 200
+        and r4.status_code == 200
+        and len(_resumed) == len(_nframes) - 3
+        and {f["choices"][0]["index"] for f in _resumed if f.get("choices")} <= {0, 1}
+        and r4.text.endswith("data: [DONE]\n\n")
+    )
+
+    # native surface honors the same stop contract (CompleteRequest twin)
+    r = oi_clean.post(
+        "/harness/complete",
+        json={
+            "backend": "hosted_k3",
+            "messages": [{"role": "user", "content": "x"}],
+            "stop": [":x"],
+        },
+    )
+    out["native_stop_truncates"] = (
+        r.status_code == 200
+        and r.json()["content"] == "clean"
+        and r.json()["sampling"]["stop"] == [":x"]
+    )
     r = oi_clean.post("/v1/chat/completions", json={"model": "fx1"})
     out["openai_missing_messages_422_openai_shape"] = (
         r.status_code == 422

@@ -91,11 +91,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "e25bca373fdb181aeb40aa8367b5593741756c0f",
+  "git_revision": "aa8cf9f9c85bd0f24ff43b6b84b8a8cde785671e",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "d2bd4681c0edbafb1da1f4c15fe3d74c1ebad8bf1c35b139dc367e4ca4e08040",
+  "receipt_sha256": "5ac8dbdadb10b41b5f4968336cb6d3d1f0cf09a43206c35285c71cb58b611d50",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

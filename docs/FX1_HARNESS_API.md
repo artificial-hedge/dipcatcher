@@ -250,13 +250,28 @@ to `GET /harness/completions/{id}` and its sealed
   `data: [DONE]`. The gate runs before the first delta — no ungated
   bytes ever ship; a refusal is an OpenAI-shaped 502, not a truncated
   stream.
+- **Decode contract:** `stop` (string or ≤4 sequences, ≤512 chars each)
+  truncates the completion at the earliest match — enforced harness-side
+  after the gate, so stub/local backends honor it too, while providers
+  that support `stop` also get it verbatim; `n` (1–8) fans out into n
+  independent gated calls — each `choices[i]` is a separate
+  honesty-gate pass with its own completion-log record, usage is the
+  sum of actual spend, and streams emit per-index frame groups;
+  `presence_penalty`/`frequency_penalty` (±2) and `logit_bias`
+  (token-id keys, ±100) are range-checked and forwarded verbatim;
+  `reasoning_effort`, `service_tier`, `prompt_cache_key`, and `user`
+  pass through as provider hints, and `user`/`metadata` (≤16 pairs)
+  also stamp the call's audit-ledger record;
+  `max_completion_tokens` is the OpenAI alias for `max_tokens` — a
+  disagreeing pair is a 422, never a silent pick.
 - **Fail-closed surface:** tool calls (`tools`, `functions`,
-  `tool_calls`, `tool_call_id`), `n != 1`, `response_format` types
-  outside `text`/`json_object`/`json_schema`, `logprobs`, `logit_bias`,
-  `stop`, penalties, `modalities`, `audio`, `prediction`,
-  `reasoning_effort`, `service_tier`, `store`, `metadata`, and
-  `None`/non-text-part content are all rejected — nothing is silently
-  dropped.
+  `tool_calls`, `tool_call_id`), `response_format` types
+  outside `text`/`json_object`/`json_schema`, `logprobs`,
+  `top_logprobs`, `modalities`, `audio`, `prediction`,
+  `web_search_options`, `suffix`, `echo`, `best_of`, `store` (the audit
+  ledger already records every call; there is no retrieval surface for
+  the flag to honor), and `None`/non-text-part content are all
+  rejected — nothing is silently dropped.
 - **Structured output:** `response_format` `json_object` and
   `json_schema` are honored by post-validation — the harness can't
   constrain-decode an arbitrary provider, so the gate's second pass

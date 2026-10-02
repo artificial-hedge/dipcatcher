@@ -46,19 +46,36 @@ LOCAL_START_TIMEOUT_S_ENV = "FX1_LOCAL_START_TIMEOUT_S"
 
 @dataclass(frozen=True)
 class SamplingParams:
-    """Declared decode parameters for one call.
+    """Declared per-call parameters for one completion.
 
     Only declared fields reach the wire beyond ``temperature`` — a
     provider that doesn't know ``seed`` never sees it. ``temperature``
     defaults to 0.0: eval/teacher runs stay deterministic unless the
     caller explicitly opts out, and the *resolved* set is what lands in
     the completion record as evidence of what was sampled.
+
+    Decode knobs (``temperature``/``top_p``/``max_tokens``/``seed``/
+    ``stop``/the penalty pair/``logit_bias``) shape generation; provider
+    hints (``reasoning_effort``/``service_tier``/``prompt_cache_key``/
+    ``user``) pass through verbatim — the upstream decides whether each
+    is meaningful; the harness records that they were requested.
+    ``stop`` is additionally enforced harness-side
+    (:func:`truncate_at_stops`) so providers that ignore it still ship
+    the cut text.
     """
 
     temperature: float | None = None
     top_p: float | None = None
     max_tokens: int | None = None
     seed: int | None = None
+    stop: tuple[str, ...] | None = None
+    presence_penalty: float | None = None
+    frequency_penalty: float | None = None
+    logit_bias: dict[str, int] | None = None
+    reasoning_effort: str | None = None
+    service_tier: str | None = None
+    prompt_cache_key: str | None = None
+    user: str | None = None
 
     def body_fields(self) -> dict[str, Any]:
         """The exact fields merged into the request body."""
@@ -71,7 +88,61 @@ class SamplingParams:
             fields["max_tokens"] = self.max_tokens
         if self.seed is not None:
             fields["seed"] = self.seed
+        if self.stop is not None:
+            fields["stop"] = list(self.stop)
+        if self.presence_penalty is not None:
+            fields["presence_penalty"] = self.presence_penalty
+        if self.frequency_penalty is not None:
+            fields["frequency_penalty"] = self.frequency_penalty
+        if self.logit_bias is not None:
+            fields["logit_bias"] = dict(self.logit_bias)
+        if self.reasoning_effort is not None:
+            fields["reasoning_effort"] = self.reasoning_effort
+        if self.service_tier is not None:
+            fields["service_tier"] = self.service_tier
+        if self.prompt_cache_key is not None:
+            fields["prompt_cache_key"] = self.prompt_cache_key
+        if self.user is not None:
+            fields["user"] = self.user
         return fields
+
+
+def _stop_cut(text: str, stops: tuple[str, ...] | list[str] | None) -> int:
+    """Index of the earliest stop-sequence occurrence, or len(text)."""
+    cut = len(text)
+    for s in stops or ():
+        i = text.find(s)
+        if i >= 0:
+            cut = min(cut, i)
+    return cut
+
+
+def truncate_at_stops(text: str, stops: tuple[str, ...] | list[str] | None) -> str:
+    """Cut ``text`` before the earliest stop sequence — OpenAI ``stop``
+    semantics, applied harness-side so every backend honors the contract
+    even when the upstream doesn't (the matched sequence itself is
+    excluded, per spec)."""
+    return text[: _stop_cut(text, stops)]
+
+
+def truncate_chunks(chunks: list[str], stops: tuple[str, ...] | list[str] | None) -> list[str]:
+    """``truncate_at_stops`` over a delta stream — preserves the
+    provider's chunk boundaries, emitting each chunk up to the cut and a
+    slice of the straddling chunk (a stop that lands mid-delta truncates
+    that delta rather than dropping whole chunks early)."""
+    if not stops:
+        return chunks
+    cut = _stop_cut("".join(chunks), stops)
+    out: list[str] = []
+    pos = 0
+    for chunk in chunks:
+        if pos >= cut:
+            break
+        piece = chunk[: cut - pos]
+        if piece:
+            out.append(piece)
+        pos += len(chunk)
+    return out
 
 
 class BackendNotConfiguredError(RuntimeError):
