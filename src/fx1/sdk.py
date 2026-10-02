@@ -157,6 +157,9 @@ class OpsMetrics:
     max_inflight: int = 0
     draining: bool = False
     rate_limited_total: int = 0
+    # per-backend outcome counters + cumulative latency buckets, keyed by
+    # backend name (probe verdicts live under ``probe:<name>`` entries)
+    complete: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 
 class Fx1Harness:

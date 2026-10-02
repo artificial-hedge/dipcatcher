@@ -804,6 +804,7 @@ class HarnessClient:
             max_inflight=out["max_inflight"],
             draining=bool(out.get("draining", False)),
             rate_limited_total=int(out.get("rate_limited_total", 0)),
+            complete={k: dict(v) for k, v in dict(out.get("complete", {})).items()},
         )
 
     def metrics_text(self) -> str:

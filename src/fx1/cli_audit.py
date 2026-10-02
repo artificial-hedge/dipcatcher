@@ -136,7 +136,40 @@ def cli_audit() -> dict[str, Any]:
     # harness group — the SDK's shell surface
     harness = top.commands.get("harness")
     hnames = set(harness.commands) if isinstance(harness, TyperGroup) else set()
-    out["harness_surface"] = {"list", "run", "serve", "complete", "verify", "health"} <= hnames
+    out["harness_surface"] = {
+        "list",
+        "run",
+        "serve",
+        "complete",
+        "verify",
+        "health",
+        "probe",
+    } <= hnames
+
+    # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
+    # a dead BYOK endpoint is a verdict, not a crash.
+    p_dead = runner.invoke(
+        app,
+        [
+            "harness",
+            "probe",
+            "--backend",
+            "byok",
+            "--byok-base-url",
+            "http://127.0.0.1:9",
+            "--byok-api-key",
+            "k",
+            "--byok-model",
+            "m",
+            "--backend-timeout",
+            "2",
+        ],
+    )
+    pblob = json.loads(p_dead.stdout) if p_dead.stdout.strip().startswith("{") else {}
+    out["harness_probe_unhealthy_exit"] = p_dead.exit_code == 1 and pblob.get("ok") is False
+    out["harness_probe_unknown_fails"] = (
+        runner.invoke(app, ["harness", "probe", "--backend", "bogus"]).exit_code != 0
+    )
 
     h = runner.invoke(app, ["harness", "health"])
     hblob = json.loads(h.stdout) if h.exit_code == 0 else {}

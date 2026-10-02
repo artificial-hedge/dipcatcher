@@ -583,6 +583,54 @@ def harness_receipt(
     typer.echo(json.dumps({"sha256": r.sha256, "valid": r.valid, "receipt": r.document}, indent=2))
 
 
+@harness_app.command("probe")
+def harness_probe(
+    backend: str = typer.Option("byok", help=_BACKEND_HELP),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    prompt: str = typer.Option("ping", "--prompt", help="Probe prompt."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds (route default: 30)."
+    ),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+) -> None:
+    """Deep health: one live gated completion per call — prints the
+    verdict JSON and exits 0 when ok, 1 when the backend is unhealthy.
+    ``--remote`` probes via the wire route (probe verdicts never feed
+    the remote's circuit breaker); in-process probes run the same
+    resolver the SDK uses, so a BYOK probe tests your own endpoint."""
+    surface = _surface(remote, api_key, timeout_s)
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    out = _or_exit(
+        lambda: surface.probe_backend(
+            backend,
+            checkpoint_dir=checkpoint_dir,
+            byok=byok,
+            timeout_s=backend_timeout,
+            prompt=prompt,
+        )
+    )
+    typer.echo(
+        json.dumps(
+            {
+                "backend": out.backend,
+                "ok": out.ok,
+                "model": out.model,
+                "latency_ms": round(out.latency_ms, 1),
+                "error": out.error,
+                "error_class": out.error_class,
+            },
+            indent=2,
+        )
+    )
+    if not out.ok:
+        raise typer.Exit(code=1)
+
+
 @harness_app.command("health")
 def harness_health(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
@@ -647,6 +695,7 @@ def harness_metrics(
                 "max_inflight": m.max_inflight,
                 "draining": m.draining,
                 "rate_limited_total": m.rate_limited_total,
+                "complete": m.complete,
             },
             indent=2,
         )
