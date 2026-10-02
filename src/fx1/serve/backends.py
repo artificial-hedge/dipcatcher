@@ -219,7 +219,7 @@ def _openai_chat_complete(
     url: str,
     *,
     model: str,
-    messages: list[dict[str, str]],
+    messages: list[dict[str, Any]],
     timeout_s: float,
     api_key: str | None,
     label: str,
@@ -262,11 +262,114 @@ def _openai_chat_complete(
     return content, _extract_usage(payload)
 
 
+def _tool_call_shape(raw: Any, label: str, i: int) -> dict[str, Any]:
+    """Validate one ``tool_calls[]`` entry — fail closed on a malformed
+    upstream frame rather than shipping a call fx-1 can't replay."""
+    if not isinstance(raw, dict):
+        raise RuntimeError(f"malformed {label} tool_calls[{i}]: not an object")
+    fn = raw.get("function")
+    args = fn.get("arguments") if isinstance(fn, dict) else None
+    if (
+        not isinstance(raw.get("id"), str)
+        or raw.get("type") != "function"
+        or not isinstance(fn, dict)
+        or not isinstance(fn.get("name"), str)
+        or not isinstance(args, str)
+    ):
+        raise RuntimeError(
+            f"malformed {label} tool_calls[{i}]: needs "
+            "{id, type: 'function', function: {name, arguments}}"
+        )
+    return raw
+
+
+def _openai_chat_complete_tools(
+    url: str,
+    *,
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None,
+    tool_choice: str | dict[str, Any] | None,
+    parallel_tool_calls: bool | None,
+    timeout_s: float,
+    api_key: str | None,
+    label: str,
+    sampling: SamplingParams | None = None,
+) -> tuple[ToolCompletion, dict[str, int] | None]:
+    """POST one OpenAI-compatible chat completion carrying ``tools``.
+
+    ``tools``/``tool_choice``/``parallel_tool_calls`` pass through
+    verbatim — the provider decides what each means. The response's
+    ``choices[0]`` is validated fail-closed: ``content`` may be ``null``
+    (pure tool call), ``tool_calls`` entries must carry the OpenAI
+    function-call shape, and a non-string ``content`` or malformed call
+    raises ``RuntimeError`` — never a synthesized message.
+
+    Returns ``(ToolCompletion, usage)`` — usage ``None`` when the
+    endpoint omits the block."""
+    body_map: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        **(sampling or SamplingParams()).body_fields(),
+    }
+    if tools is not None:
+        body_map["tools"] = tools
+    if tool_choice is not None:
+        body_map["tool_choice"] = tool_choice
+    if parallel_tool_calls is not None:
+        body_map["parallel_tool_calls"] = parallel_tool_calls
+    body = json.dumps(body_map).encode()
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+            payload = json.loads(response.read().decode())
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+    try:
+        choice = payload["choices"][0]
+        message = choice["message"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise RuntimeError(
+            f"malformed {label} completion payload: missing choices[0].message"
+        ) from exc
+    if not isinstance(message, dict):
+        raise RuntimeError(
+            f"malformed {label} completion payload: message is {type(message).__name__}, not object"
+        )
+    content = message.get("content")
+    if content is not None and not isinstance(content, str):
+        raise RuntimeError(
+            f"malformed {label} completion payload: content is "
+            f"{type(content).__name__}, not str|null"
+        )
+    raw_calls = message.get("tool_calls")
+    tool_calls: tuple[dict[str, Any], ...] | None = None
+    if raw_calls is not None:
+        if not isinstance(raw_calls, list):
+            raise RuntimeError(
+                f"malformed {label} completion payload: tool_calls is "
+                f"{type(raw_calls).__name__}, not list"
+            )
+        tool_calls = tuple(_tool_call_shape(raw, label, i) for i, raw in enumerate(raw_calls))
+    finish = choice.get("finish_reason")
+    return (
+        ToolCompletion(
+            content=content,
+            tool_calls=tool_calls,
+            finish_reason=finish if isinstance(finish, str) else None,
+        ),
+        _extract_usage(payload),
+    )
+
+
 def _openai_chat_stream(
     url: str,
     *,
     model: str,
-    messages: list[dict[str, str]],
+    messages: list[dict[str, Any]],
     timeout_s: float,
     api_key: str | None,
     label: str,
@@ -341,15 +444,62 @@ def _openai_chat_stream(
         raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
 
 
+@dataclass(frozen=True)
+class ToolCompletion:
+    """A provider's structured answer when the request carried ``tools``.
+
+    ``content`` is the assistant's text (``None`` when the model went
+    straight to a call — OpenAI emits ``content: null`` there);
+    ``tool_calls`` is the verbatim ``choices[].message.tool_calls`` list
+    (each ``{id, type: \"function\", function: {name, arguments}}``);
+    ``finish_reason`` is the upstream's own reason (``tool_calls`` /
+    ``stop`` / ``length`` / ...). All three are provider-reported —
+    nothing is synthesized harness-side.
+    """
+
+    content: str | None
+    tool_calls: tuple[dict[str, Any], ...] | None
+    finish_reason: str | None
+
+
 class InferenceBackend(Protocol):
     """Chat-completion interface shared by all fx-1 backends."""
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> str: ...
+
+
+@runtime_checkable
+class ToolBackend(Protocol):
+    """Backends with a tool-calling channel.
+
+    ``complete_with_tools`` is the optional second half of the contract:
+    consumers capability-check via ``isinstance(b, ToolBackend)`` before
+    routing a ``tools`` request, so a resolver-supplied backend without
+    the channel fails closed (501) rather than silently dropping the
+    caller's tool intent.
+    """
+
+    def complete(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+    ) -> str: ...
+
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+    ) -> ToolCompletion: ...
 
 
 @runtime_checkable
@@ -364,14 +514,14 @@ class StreamingBackend(Protocol):
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> str: ...
 
     def stream(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> Iterator[str]: ...
@@ -399,7 +549,7 @@ class HostedK3Backend(_UsageTracker):
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> str:
@@ -432,9 +582,35 @@ class HostedK3Backend(_UsageTracker):
         self._record_usage(_extract_usage(payload))
         return content
 
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+    ) -> ToolCompletion:
+        """Tool-calling completion — Moonshot's wire accepts the OpenAI
+        ``tools`` fields; they pass through verbatim."""
+        result, usage = _openai_chat_complete_tools(
+            self._api_url,
+            model=self._model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="hosted_k3",
+            sampling=sampling,
+        )
+        self._record_usage(usage)
+        return result
+
     def stream(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> Iterator[str]:
@@ -510,7 +686,7 @@ class OpenAICompatBackend(_UsageTracker):
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> str:
@@ -526,9 +702,37 @@ class OpenAICompatBackend(_UsageTracker):
         self._record_usage(usage)
         return content
 
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+    ) -> ToolCompletion:
+        """Tool-calling completion against the caller-declared endpoint —
+        ``tools``/``tool_choice``/``parallel_tool_calls`` pass through
+        verbatim; a provider that doesn't know them answers honestly
+        (its own 4xx surfaces as ``RuntimeError``)."""
+        result, usage = _openai_chat_complete_tools(
+            self._url,
+            model=self._model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="BYOK",
+            sampling=sampling,
+        )
+        self._record_usage(usage)
+        return result
+
     def stream(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> Iterator[str]:
@@ -682,7 +886,7 @@ class LocalFx1Backend(_UsageTracker):
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> str:
@@ -705,9 +909,43 @@ class LocalFx1Backend(_UsageTracker):
         self._record_usage(usage)
         return content
 
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
+    ) -> ToolCompletion:
+        """Tool-calling completion — delegated to the serving engine. An
+        engine/chat-template without tool support answers its own error
+        (honest 4xx → RuntimeError); nothing is faked harness-side."""
+        if not self._url:
+            raise BackendNotConfiguredError(
+                "local_fx1 is not configured: set FX1_LOCAL_SERVE_URL to an "
+                "OpenAI-compatible engine serving the checkpoint (fx-1 never "
+                "hardcodes endpoints); FX1_LOCAL_SERVE_CMD may spawn one"
+            )
+        self._ensure_engine()
+        result, usage = _openai_chat_complete_tools(
+            self._url,
+            model=self._model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+            parallel_tool_calls=parallel_tool_calls,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key or None,
+            label="local_fx1",
+            sampling=sampling,
+        )
+        self._record_usage(usage)
+        return result
+
     def stream(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         sampling: SamplingParams | None = None,
     ) -> Iterator[str]:

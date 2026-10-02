@@ -29,7 +29,7 @@ import json
 import threading
 import time
 import urllib.parse
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Literal
 
 import jsonschema
@@ -54,6 +54,8 @@ __all__ = [
     "OpenAIModel",
     "OpenAIModelList",
     "OpenAIResponseRequest",
+    "OpenAITool",
+    "OpenAIToolFunction",
     "OPENAI_BATCH_ENDPOINTS",
     "OPENAI_BATCH_LINE_MAX",
     "OPENAI_FILE_BYTES_MAX",
@@ -121,11 +123,10 @@ OPENAI_MODEL_IDS = ("fx1", "hosted_k3", "local_fx1", "byok")
 # ``GET /v1/chat/completions/{id}`` (the audit ledger records every call
 # regardless — retrieval is a convenience surface, not the evidence).
 OPENAI_UNSUPPORTED = (
-    "tools",
-    "tool_choice",
+    # legacy function-calling fields — superseded by ``tools`` /
+    # ``tool_choice`` (which the pipeline honors; see OpenAITool)
     "functions",
     "function_call",
-    "parallel_tool_calls",
     "logprobs",
     "top_logprobs",
     "modalities",
@@ -195,12 +196,35 @@ class ByokOverride(_Model):
 
 class OpenAIChatMessage(_Model):
     """One chat message — content may be a string or an OpenAI
-    content-part list; non-text parts are rejected at translation."""
+    content-part list; non-text parts are rejected at translation.
+    ``tool_calls`` (assistant) and ``tool_call_id`` (role ``tool``) pass
+    through to tool-capable links — agent loops need both halves."""
 
     model_config = ConfigDict(extra="allow")
 
     role: str
     content: str | list[dict[str, Any]] | None = None
+
+
+class OpenAIToolFunction(_Model):
+    """One ``tools[].function`` — the callable spec an agent advertises."""
+
+    model_config = ConfigDict(extra="allow")
+
+    name: str = Field(min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
+    description: str | None = Field(default=None, max_length=8192)
+    parameters: dict[str, Any] | None = None
+    strict: bool | None = None
+
+
+class OpenAITool(_Model):
+    """One ``tools[]`` entry — only ``type: \"function\"`` exists on the
+    OpenAI surface today; anything else fails closed at validation."""
+
+    model_config = ConfigDict(extra="allow")
+
+    type: Literal["function"] = "function"
+    function: OpenAIToolFunction
 
 
 class OpenAIFx1(_Model):
@@ -247,6 +271,9 @@ class OpenAIChatRequest(_Model):
     prompt_cache_key: str | None = Field(default=None, max_length=128)
     response_format: dict[str, Any] | None = None
     store: bool | None = None
+    tools: list[OpenAITool] | None = None
+    tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
+    parallel_tool_calls: bool | None = None
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -303,6 +330,25 @@ class OpenAIChatRequest(_Model):
                     raise ValueError(
                         f"response_format json_schema is not a valid schema: {exc.message}"
                     ) from exc
+        if self.tools is not None and len(self.tools) > 128:
+            raise ValueError("tools accepts at most 128 entries")
+        if isinstance(self.tool_choice, dict):
+            fn = self.tool_choice.get("function")
+            name = fn.get("name") if isinstance(fn, dict) else None
+            if (
+                self.tool_choice.get("type") != "function"
+                or not isinstance(fn, dict)
+                or not isinstance(name, str)
+                or not name
+            ):
+                raise ValueError(
+                    "tool_choice must be 'none'|'auto'|'required' or "
+                    "{type: 'function', function: {name}}"
+                )
+        if not self.tools and (
+            self.tool_choice is not None or self.parallel_tool_calls is not None
+        ):
+            raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
         present = [f for f in OPENAI_UNSUPPORTED if getattr(self, f, None) is not None]
         # extras (extra="allow") that are also unsupported features
         extra_bad = sorted(f for f in OPENAI_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
@@ -329,11 +375,13 @@ class OpenAIModelList(_Model):
 
 
 class OpenAIChatChoice(_Model):
-    """One choice of a `chat.completion` — the gated text lands here."""
+    """One choice of a `chat.completion` — the gated text lands here.
+    ``message`` may carry ``tool_calls`` (content then null);
+    ``finish_reason`` is the upstream's own verdict."""
 
     index: int
-    message: dict[str, str]
-    finish_reason: Literal["stop"]
+    message: dict[str, Any]
+    finish_reason: str
 
 
 class OpenAIChatResponse(_Model):
@@ -372,22 +420,48 @@ def openai_model(model_id: str, *, created: int | None = None) -> OpenAIModel:
     return OpenAIModel(id=model_id, created=ts)
 
 
-def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, str]]:
-    """Flatten OpenAI messages to harness {role, content} pairs.
+def _history_tool_call_shape(raw: Any, i: int, j: int) -> dict[str, Any]:
+    """One entry of an assistant message's ``tool_calls`` history —
+    validated before it rides the wire so a malformed replay is a 400,
+    not upstream confusion."""
+    fn = raw.get("function") if isinstance(raw, dict) else None
+    args = fn.get("arguments") if isinstance(fn, dict) else None
+    if (
+        not isinstance(raw, dict)
+        or not isinstance(raw.get("id"), str)
+        or raw.get("type") != "function"
+        or not isinstance(fn, dict)
+        or not isinstance(fn.get("name"), str)
+        or not isinstance(args, str)
+    ):
+        raise OpenAICompatError(
+            f"messages[{i}].tool_calls[{j}]: needs "
+            "{id, type: 'function', function: {name, arguments}}"
+        )
+    return raw
+
+
+def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, Any]]:
+    """Flatten OpenAI messages to harness message dicts.
 
     Content-part lists keep only ``{"type": "text"}`` entries; any other
-    part type or a tool-bearing message fails closed — the gated pipeline
-    has no tool channel and silently dropping caller content is a lie.
+    part type fails closed — silently dropping caller content is a lie.
+    Tool context passes through verbatim: an assistant turn's
+    ``tool_calls`` and a ``tool`` role's ``tool_call_id``/``name`` are
+    required for agent loops — the backend-level capability check
+    (``ToolBackend``) decides whether the link can honor them.
     """
-    out: list[dict[str, str]] = []
+    out: list[dict[str, Any]] = []
     for i, m in enumerate(msgs):
-        if (
-            getattr(m, "tool_calls", None) is not None
-            or getattr(m, "tool_call_id", None) is not None
-        ):
-            raise OpenAICompatError(f"messages[{i}]: tool calls are not supported")
+        tool_calls = getattr(m, "tool_calls", None)
+        tool_call_id = getattr(m, "tool_call_id", None)
+        name = getattr(m, "name", None)
+        if tool_call_id is not None and m.role != "tool":
+            raise OpenAICompatError(f"messages[{i}]: tool_call_id belongs on role 'tool'")
+        if tool_calls is not None and m.role != "assistant":
+            raise OpenAICompatError(f"messages[{i}]: tool_calls belongs on role 'assistant'")
         content = m.content
-        if content is None:
+        if content is None and tool_calls is None and m.role != "tool":
             raise OpenAICompatError(f"messages[{i}]: content is required")
         if isinstance(content, list):
             parts: list[str] = []
@@ -398,7 +472,26 @@ def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, str]]:
                     )
                 parts.append(str(part.get("text", "")))
             content = "".join(parts)
-        out.append({"role": m.role, "content": content})
+        flat: dict[str, Any] = {"role": m.role, "content": content}
+        if tool_calls is not None:
+            if not isinstance(tool_calls, list) or not tool_calls:
+                raise OpenAICompatError(f"messages[{i}]: tool_calls must be a non-empty list")
+            flat["tool_calls"] = [
+                _history_tool_call_shape(raw, i, j) for j, raw in enumerate(tool_calls)
+            ]
+        if m.role == "tool":
+            if not isinstance(tool_call_id, str) or not tool_call_id:
+                raise OpenAICompatError(
+                    f"messages[{i}]: role 'tool' requires a non-empty tool_call_id"
+                )
+            flat["tool_call_id"] = tool_call_id
+            if content is None:
+                raise OpenAICompatError(f"messages[{i}]: tool output is required")
+        if name is not None:
+            if not isinstance(name, str) or not name:
+                raise OpenAICompatError(f"messages[{i}]: name must be a non-empty string")
+            flat["name"] = name
+        out.append(flat)
     return out
 
 
@@ -491,6 +584,9 @@ def openai_to_kwargs(
         "service_tier": body.service_tier,
         "reasoning_effort": body.reasoning_effort,
         "prompt_cache_key": body.prompt_cache_key,
+        "tools": ([t.model_dump(exclude_none=True) for t in body.tools] if body.tools else None),
+        "tool_choice": body.tool_choice,
+        "parallel_tool_calls": body.parallel_tool_calls,
     }
 
 
@@ -557,27 +653,45 @@ def openai_envelope(
     backend: str,
     model: str | None = None,
     usage: dict[str, int] | None = None,
+    tool_calls: Sequence[Sequence[dict[str, Any]] | None] | None = None,
+    finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
 ) -> dict[str, Any]:
     """A gated result → the `chat.completion` envelope. `model` reports
     the serving link's own model id (or the backend name); the completion
     id mints the `chatcmpl-` handle. ``content`` accepts the ``n>1``
-    choice list — one entry per completion, index-ordered."""
+    choice list — one entry per completion, index-ordered.
+
+    ``tool_calls``/``finish_reasons`` are per-choice upstream-verbatim
+    lists (index-ordered like ``content``). A choice carrying tool calls
+    with no assistant text emits ``content: null`` — OpenAI's own
+    encoding for a pure tool-call turn."""
     contents = [content] if isinstance(content, str) else list(content)
+    calls = list(tool_calls or [])
+    reasons = list(finish_reasons or [])
+    choices: list[dict[str, Any]] = []
+    for i, text in enumerate(contents):
+        tc = calls[i] if i < len(calls) else None
+        message: dict[str, Any] = {
+            "role": "assistant",
+            "content": None if (tc and not text) else text,
+        }
+        if tc:
+            message["tool_calls"] = list(tc)
+        choices.append(
+            {
+                "index": i,
+                "message": message,
+                "finish_reason": reasons[i] if i < len(reasons) else "stop",
+            }
+        )
     return {
         "id": f"chatcmpl-{cid}",
         "object": "chat.completion",
         "created": int(time.time()) if created is None else created,
         "model": model or backend,
         "system_fingerprint": backend,
-        "choices": [
-            {
-                "index": i,
-                "message": {"role": "assistant", "content": text},
-                "finish_reason": "stop",
-            }
-            for i, text in enumerate(contents)
-        ],
+        "choices": choices,
         "usage": openai_usage(usage),
     }
 
@@ -605,6 +719,8 @@ def openai_chunks(
     cid: str,
     include_usage: bool = False,
     usage: dict[str, int] | None = None,
+    tool_calls: Sequence[Sequence[dict[str, Any]] | None] | None = None,
+    finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
 ) -> Iterator[dict[str, Any]]:
     """`chat.completion.chunk` payloads over gated text.
@@ -619,8 +735,13 @@ def openai_chunks(
     ``text`` accepts the ``n>1`` choice list: each index emits its own
     role delta, content deltas, and ``finish_reason`` frame — grouped
     per index (spec-legal; ``choices[].index`` disambiguates).
+    ``tool_calls`` per choice ride one ``delta.tool_calls`` frame
+    carrying the complete call list (spec-legal single-shot deltas);
+    ``finish_reasons`` override the ``stop`` default.
     """
     texts = [text] if isinstance(text, str) else list(text)
+    calls = list(tool_calls or [])
+    reasons = list(finish_reasons or [])
     base: dict[str, Any] = {
         "id": f"chatcmpl-{cid}",
         "object": "chat.completion.chunk",
@@ -629,9 +750,18 @@ def openai_chunks(
         "system_fingerprint": backend,
     }
     for i, choice_text in enumerate(texts):
+        tc = calls[i] if i < len(calls) else None
+        finish = reasons[i] if i < len(reasons) else "stop"
         first = dict(base)
         first["choices"] = [{"index": i, "delta": {"role": "assistant"}, "finish_reason": None}]
         yield first
+
+        if tc:
+            tc_frame = dict(base)
+            tc_frame["choices"] = [
+                {"index": i, "delta": {"tool_calls": list(tc)}, "finish_reason": None}
+            ]
+            yield tc_frame
 
         for piece in _text_pieces(choice_text):
             frame = dict(base)
@@ -639,7 +769,7 @@ def openai_chunks(
             yield frame
 
         last = dict(base)
-        last["choices"] = [{"index": i, "delta": {}, "finish_reason": "stop"}]
+        last["choices"] = [{"index": i, "delta": {}, "finish_reason": finish}]
         yield last
 
     if include_usage:

@@ -3700,8 +3700,324 @@ def _probe_backend_probes(
             "tools": [{"type": "function"}],
         },
     )
-    out["openai_unsupported_tools_422"] = (
+    out["openai_tool_shape_422"] = (
         r.status_code == 422 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+
+    # ---- lane 81: the tools channel ----
+    # A tool-capable link receives the spec verbatim and the envelope
+    # carries the machine call — finish_reason 'tool_calls', content
+    # null (OpenAI's encoding for a call-only turn). A link without
+    # complete_with_tools answers 501, never a silently dropped spec.
+    from fx1.serve.backends import ToolCompletion as _ToolCompletion  # noqa: PLC0415
+
+    class _OiToolBackend:
+        """Tool-capable stub: records the forwarded spec, answers a call."""
+
+        def __init__(self) -> None:
+            self._model = "tool-0"
+            self.calls = 0
+            self.seen_tools: list[dict[str, Any]] | None = None
+            self.seen_choice: Any = None
+            self.seen_parallel: bool | None = None
+            self.seen_messages: list[dict[str, Any]] | None = None
+
+        def complete(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            return "clean:text"
+
+        def complete_with_tools(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+            tools: list[dict[str, Any]] | None = None,
+            tool_choice: Any = None,
+            parallel_tool_calls: bool | None = None,
+        ) -> _ToolCompletion:
+            self.calls += 1
+            self.seen_tools = tools
+            self.seen_choice = tool_choice
+            self.seen_parallel = parallel_tool_calls
+            self.seen_messages = [dict(m) for m in messages]
+            return _ToolCompletion(
+                content=None,
+                tool_calls=(
+                    {
+                        "id": "call_0",
+                        "type": "function",
+                        "function": {"name": "calc", "arguments": '{"x": 1}'},
+                    },
+                ),
+                finish_reason="tool_calls",
+            )
+
+    oi_tool = _OiToolBackend()
+    oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
+    tool_spec = {
+        "type": "function",
+        "function": {
+            "name": "calc",
+            "description": "arithmetic",
+            "parameters": {"type": "object", "properties": {"x": {"type": "number"}}},
+        },
+    }
+    r = oi_tools.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "calc one"}],
+            "tools": [tool_spec],
+            "tool_choice": "auto",
+            "parallel_tool_calls": False,
+        },
+    )
+    tmsg = (r.json().get("choices") or [{}])[0].get("message", {})
+    out["openai_tools_call_envelope"] = (
+        r.status_code == 200
+        and tmsg.get("content") is None
+        and (tmsg.get("tool_calls") or [{}])[0].get("function", {}).get("name") == "calc"
+        and r.json()["choices"][0].get("finish_reason") == "tool_calls"
+    )
+    out["openai_tools_forwarded_verbatim"] = (
+        oi_tool.seen_tools == [tool_spec]
+        and oi_tool.seen_choice == "auto"
+        and oi_tool.seen_parallel is False
+    )
+    # agent history passes through verbatim — assistant tool_calls and a
+    # role:'tool' output reach the backend's message list unedited
+    tool_hist = [
+        {"role": "user", "content": "q"},
+        {
+            "role": "assistant",
+            "tool_calls": [
+                {
+                    "id": "call_9",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": "{}"},
+                }
+            ],
+        },
+        {"role": "tool", "content": "2", "tool_call_id": "call_9"},
+        {"role": "user", "content": "and?"},
+    ]
+    r = oi_tools.post("/v1/chat/completions", json={"model": "fx1", "messages": tool_hist})
+    out["openai_tool_history_passed_verbatim"] = (
+        r.status_code == 200 and oi_tool.seen_messages == tool_hist
+    )
+    out["openai_tool_needs_channel_501"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "tools": [tool_spec],
+            },
+        ).status_code
+        == 501
+    )
+    out["openai_tool_role_needs_call_id_400"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": [{"role": "tool", "content": "2"}]},
+        ).status_code
+        == 400
+    )
+    out["openai_tool_calls_wrong_role_400"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "x",
+                        "tool_calls": [
+                            {
+                                "id": "c",
+                                "type": "function",
+                                "function": {"name": "f", "arguments": "{}"},
+                            }
+                        ],
+                    }
+                ],
+            },
+        ).status_code
+        == 400
+    )
+    out["openai_tool_choice_needs_tools_422"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "tool_choice": "auto",
+            },
+        ).status_code
+        == 422
+    )
+    out["openai_tools_over_128_422"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "tools": [tool_spec] * 129,
+            },
+        ).status_code
+        == 422
+    )
+    # legacy function_calling fields stay refused — tools is the only
+    # function-calling grammar the surface honors
+    out["openai_functions_still_refused_422"] = all(
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                field: value,
+            },
+        ).status_code
+        == 422
+        for field, value in (
+            ("functions", [{"name": "f"}]),
+            ("function_call", {"name": "f"}),
+        )
+    )
+    # keyed replay re-emits the same tool_calls envelope byte-identically
+    tk = {"Idempotency-Key": "tool-idem-81"}
+    tbody = {
+        "model": "fx1",
+        "messages": [{"role": "user", "content": "calc"}],
+        "tools": [tool_spec],
+    }
+    tr1 = oi_tools.post("/v1/chat/completions", json=tbody, headers=tk)
+    tr2 = oi_tools.post("/v1/chat/completions", json=tbody, headers=tk)
+    out["openai_tool_idem_replay"] = (
+        tr1.status_code == 200
+        and tr2.status_code == 200
+        and tr1.json() == tr2.json()
+        and tr2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and (tr2.json()["choices"][0]["message"].get("tool_calls") or [{}])[0].get("id") == "call_0"
+    )
+    # the seal binds what shipped — the record's output digest covers
+    # text + the verbatim call list, so a stripped tool_calls can't
+    # pass under the same receipt
+    import hashlib as _hl_t  # noqa: PLC0415
+
+    tc_cid = tr1.headers.get("X-Fx1-Completion-Id", "")
+    if tc_cid:
+        trec = oi_tools.get(f"/harness/completions/{tc_cid}")
+        shipped_calls = [
+            {
+                "id": "call_0",
+                "type": "function",
+                "function": {"name": "calc", "arguments": '{"x": 1}'},
+            }
+        ]
+        expect = _hl_t.sha256(
+            ("" + "\n" + _json3.dumps(shipped_calls, sort_keys=True)).encode("utf-8")
+        ).hexdigest()
+        out["openai_tool_digest_binds_calls"] = (
+            trec.status_code == 200 and trec.json().get("output_sha256") == expect
+        )
+    else:
+        out["openai_tool_digest_binds_calls"] = False
+    # the retrieval index carries tool_calls too — a stored call
+    # round-trips the full envelope
+    tstore_id = tr1.json().get("id", "")
+    rget = oi_tools.get(f"/v1/chat/completions/{tstore_id}")
+    out["openai_tool_store_retrieve"] = (
+        rget.status_code == 200
+        and (rget.json()["choices"][0]["message"].get("tool_calls") or [{}])[0]
+        .get("function", {})
+        .get("name")
+        == "calc"
+    )
+    rdel = oi_tools.delete(f"/v1/chat/completions/{tstore_id}")
+    out["openai_tool_store_delete"] = (
+        rdel.status_code == 200
+        and oi_tools.get(f"/v1/chat/completions/{tstore_id}").status_code == 404
+    )
+    # SSE emits the delta.tool_calls frame + the real finish_reason
+    r = oi_tools.post(
+        "/v1/chat/completions",
+        json={**tbody, "stream": True},
+    )
+    tchunks = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["openai_tool_stream_delta"] = (
+        r.status_code == 200
+        and any(
+            (c["choices"][0]["delta"].get("tool_calls") or [{}])[0].get("id") == "call_0"
+            for c in tchunks
+            if c.get("choices")
+        )
+        and any(
+            c["choices"][0].get("finish_reason") == "tool_calls"
+            for c in tchunks
+            if c.get("choices")
+        )
+    )
+    # the native /harness surface carries the channel too
+    r = oi_tools.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "calc"}],
+            "tools": [tool_spec],
+            "tool_choice": "required",
+        },
+    )
+    out["complete_tools_200"] = (
+        r.status_code == 200
+        and (r.json().get("tool_calls") or [{}])[0].get("function", {}).get("name") == "calc"
+        and r.json().get("finish_reason") == "tool_calls"
+    )
+    out["complete_tools_no_channel_501"] = (
+        oi_clean.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "calc"}],
+                "tools": [tool_spec],
+            },
+        ).status_code
+        == 501
+    )
+    out["complete_stream_tools_501"] = (
+        oi_tools.post(
+            "/harness/complete/stream",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "calc"}],
+                "tools": [tool_spec],
+            },
+        ).status_code
+        == 501
+    )
+    out["batch_tool_context_422"] = (
+        oi_tools.post(
+            "/harness/complete/batch",
+            json={
+                "backend": "byok",
+                "batch": [
+                    [{"role": "user", "content": "ok"}],
+                    [{"role": "tool", "content": "2", "tool_call_id": "c"}],
+                ],
+            },
+        ).status_code
+        == 422
+    )
+    out["capabilities_reports_openai_tools"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_tools") is True
     )
     # — decode contract: n / stop / penalties / bias / hints / attribution —
     # n fans out into n independent gated calls (each its own gate pass).

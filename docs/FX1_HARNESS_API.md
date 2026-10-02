@@ -275,14 +275,30 @@ to `GET /harness/completions/{id}` and its sealed
   also stamp the call's audit-ledger record;
   `max_completion_tokens` is the OpenAI alias for `max_tokens` — a
   disagreeing pair is a 422, never a silent pick.
-- **Fail-closed surface:** tool calls (`tools`, `functions`,
-  `tool_calls`, `tool_call_id`), `response_format` types
+- **Tool calls:** `tools` (≤128 `{type: "function"}` specs),
+  `tool_choice` (`none`/`auto`/`required` or a named-function dict),
+  `parallel_tool_calls`, assistant `tool_calls` history, and
+  `role: "tool"` outputs are first-class — they forward verbatim to a
+  tool-capable link (any backend implementing `complete_with_tools`:
+  `hosted_k3`, `byok`, `local_fx1`), the answer's `tool_calls` ride
+  `choices[i].message` with `finish_reason: "tool_calls"`, and the
+  streamed form emits a `delta.tool_calls` frame. The completion
+  record's `output_sha256` binds text + the verbatim call list.
+  A link without the channel answers 501 (`not_implemented`) — never
+  a silently dropped spec. The honesty gate reads the assistant
+  *text* only: `tool_calls[].function.arguments` are machine-bound
+  JSON, not claims. Legacy `functions`/`function_call` stay refused —
+  `tools` is the only function-calling grammar.
+- **Fail-closed surface:** `response_format` types
   outside `text`/`json_object`/`json_schema`, `logprobs`,
   `top_logprobs`, `modalities`, `audio`, `prediction`,
   `web_search_options`, `suffix`, `echo`, `best_of`, and
   `None`/non-text-part content are all rejected — nothing is silently
   dropped. `store` is honored, not refused: it governs the retrieval
-  index (below).
+  index (below). The native `/harness/complete` route takes the same
+  `tools` fields; `/harness/complete/stream` and
+  `/harness/complete/batch` are text surfaces — tool context there is
+  a refusal (501 / 422), not a dropped field.
 - **Structured output:** `response_format` `json_object` and
   `json_schema` are honored by post-validation — the harness can't
   constrain-decode an arbitrary provider, so the gate's second pass

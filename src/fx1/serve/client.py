@@ -996,7 +996,7 @@ class HarnessClient:
 
     def chat_completion(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         model: str = "fx1",
         backend: str | None = None,
@@ -1021,6 +1021,9 @@ class HarnessClient:
         prompt_cache_key: str | None = None,
         max_completion_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
@@ -1039,6 +1042,10 @@ class HarnessClient:
         its own honesty-gate pass; ``stop`` cuts at the earliest match
         (harness-enforced, so stub/local backends honor it too);
         ``user``/``metadata`` stamp the audit record.
+        ``tools``/``tool_choice``/``parallel_tool_calls`` carry the
+        function-calling surface verbatim — agent ``tool_calls`` history
+        and ``role: 'tool'`` results ride ``messages`` itself; a link
+        without the tool channel answers 501, never a dropped tool spec.
 
         Returns ``(chat_completion_envelope, completion_id)`` — the id
         links the call to ``completion()``/``completion_receipt()``. Call
@@ -1075,6 +1082,9 @@ class HarnessClient:
             "reasoning_effort": reasoning_effort,
             "prompt_cache_key": prompt_cache_key,
             "response_format": response_format,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "parallel_tool_calls": parallel_tool_calls,
             "stream": False,
         }
         if fx1:
@@ -1093,7 +1103,7 @@ class HarnessClient:
 
     def chat_completion_stream(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         model: str = "fx1",
         backend: str | None = None,
@@ -1118,6 +1128,9 @@ class HarnessClient:
         prompt_cache_key: str | None = None,
         max_completion_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
         include_usage: bool = False,
         idempotency_key: str | None = None,
         last_event_id: int | None = None,
@@ -1167,6 +1180,9 @@ class HarnessClient:
             "reasoning_effort": reasoning_effort,
             "prompt_cache_key": prompt_cache_key,
             "response_format": response_format,
+            "tools": tools,
+            "tool_choice": tool_choice,
+            "parallel_tool_calls": parallel_tool_calls,
             "stream": True,
             "stream_options": {"include_usage": True} if include_usage else None,
         }

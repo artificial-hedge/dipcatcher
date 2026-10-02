@@ -98,7 +98,7 @@ from fx1.serve.backends import (
     get_backend,
     truncate_chunks,
 )
-from fx1.serve.chat import cited_complete
+from fx1.serve.chat import cited_complete, cited_complete_tools
 from fx1.serve.contract import API_VERSION
 from fx1.serve.evals import (
     EVAL_SAMPLING,
@@ -396,8 +396,45 @@ class HarnessRunResponse(_Model):
 
 
 class ChatMessage(_Model):
+    """One harness message — plain turns carry role+content; agent turns
+    may carry ``tool_calls`` (assistant) or answer a call as ``role: tool``
+    with ``tool_call_id``. The shapes are fail-closed: a tool_call_id on
+    a non-tool role, or tool_calls on a non-assistant turn, is a 422."""
+
     role: str
-    content: str
+    content: str | None = None
+    tool_calls: list[dict[str, Any]] | None = None
+    tool_call_id: str | None = None
+    name: str | None = None
+
+    @model_validator(mode="after")
+    def _tool_context_valid(self) -> ChatMessage:
+        if self.content is None and self.tool_calls is None and self.role != "tool":
+            raise ValueError("content is required")
+        if self.role == "tool":
+            if not self.tool_call_id or self.content is None:
+                raise ValueError("role 'tool' requires content + tool_call_id")
+        elif self.tool_call_id is not None:
+            raise ValueError("tool_call_id belongs on role 'tool'")
+        if self.tool_calls is not None:
+            if self.role != "assistant":
+                raise ValueError("tool_calls belongs on role 'assistant'")
+            for j, call in enumerate(self.tool_calls):
+                fn = call.get("function") if isinstance(call, dict) else None
+                args = fn.get("arguments") if isinstance(fn, dict) else None
+                if (
+                    not isinstance(call, dict)
+                    or not isinstance(call.get("id"), str)
+                    or call.get("type") != "function"
+                    or not isinstance(fn, dict)
+                    or not isinstance(fn.get("name"), str)
+                    or not isinstance(args, str)
+                ):
+                    raise ValueError(
+                        f"messages[].tool_calls[{j}]: needs "
+                        "{id, type: 'function', function: {name, arguments}}"
+                    )
+        return self
 
 
 class BackendAttempt(_Model):
@@ -508,11 +545,53 @@ class CompleteRequest(_Model):
     prompt_cache_key: str | None = Field(default=None, max_length=128)
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
+    # Agent-loop tool context — the OpenAI tool-calling surface on the
+    # harness route: function specs the model may call (verbatim
+    # OpenAI-shaped dicts), the provider's call policy, and the
+    # parallel-call flag. ``tool_choice`` accepts the three OpenAI
+    # literals or {"type": "function", "function": {"name": ...}}; any
+    # other shape is a 422. All three pass through to tool-capable
+    # links; a link without the channel answers 501.
+    tools: list[dict[str, Any]] | None = Field(default=None, max_length=128)
+    tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
+    parallel_tool_calls: bool | None = None
 
     @model_validator(mode="after")
     def _chain_valid(self) -> CompleteRequest:
         _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
         _sampling_extras_valid(self.stop, self.logit_bias, self.metadata)
+        if self.tools is not None:
+            if not self.tools:
+                raise ValueError("tools must be a non-empty list when present")
+            for k, tool in enumerate(self.tools):
+                fn = tool.get("function") if isinstance(tool, dict) else None
+                name = fn.get("name") if isinstance(fn, dict) else None
+                if (
+                    not isinstance(tool, dict)
+                    or tool.get("type") != "function"
+                    or not isinstance(fn, dict)
+                    or not isinstance(name, str)
+                    or not name
+                    or len(name) > 64
+                ):
+                    raise ValueError(f"tools[{k}]: needs {{type: 'function', function: {{name}}}}")
+        if isinstance(self.tool_choice, dict):
+            fn = self.tool_choice.get("function")
+            name = fn.get("name") if isinstance(fn, dict) else None
+            if (
+                self.tool_choice.get("type") != "function"
+                or not isinstance(fn, dict)
+                or not isinstance(name, str)
+                or not name
+            ):
+                raise ValueError(
+                    "tool_choice must be 'none'|'auto'|'required' or "
+                    "{type: 'function', function: {name}}"
+                )
+        if not self.tools and (
+            self.tool_choice is not None or self.parallel_tool_calls is not None
+        ):
+            raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
         return self
 
 
@@ -532,6 +611,11 @@ class CompleteResponse(_Model):
     # True when the response came from the Idempotency-Key cache — lets
     # fx-1 audit retried calls without paying for them twice.
     replayed: bool = False
+    # Upstream-reported tool calls (None when the model answered with
+    # text) and the provider's own finish_reason — verbatim fields on
+    # tool-capable links; None/omit on plain-text turns.
+    tool_calls: list[dict[str, Any]] | None = None
+    finish_reason: str | None = None
     # Server-minted handle into the completion log
     # (``GET /harness/completions/{id}``) — replays keep the original id.
     completion_id: str | None = None
@@ -1115,6 +1199,8 @@ def _openai_sse(
     model: str | None,
     usage: dict[str, int] | None,
     cid: str,
+    tool_calls: Sequence[Sequence[dict[str, Any]] | None] | None = None,
+    finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
     skip: int = 0,
 ) -> Iterator[str]:
@@ -1142,6 +1228,8 @@ def _openai_sse(
         cid=cid,
         include_usage=bool((body.stream_options or {}).get("include_usage")),
         usage=usage,
+        tool_calls=tool_calls,
+        finish_reasons=finish_reasons,
         created=created,
     ):
         if seq >= skip:
@@ -2546,7 +2634,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 response.headers["X-Fx1-Completion-Id"] = replay.completion_id
             return replay
         _check_citations(body.receipt_hashes)
-        messages = [{"role": m.role, "content": m.content} for m in body.messages]
+        messages = [m.model_dump(exclude_none=True) for m in body.messages]
+        wants_tools = body.tools is not None or any(
+            m.role == "tool" or m.tool_calls for m in body.messages
+        )
+        # plain-path messages are str-typed — the tool-context branch is
+        # the only place a dict carries tool_calls/tool_call_id values
+        plain_messages: list[dict[str, str]] = [
+            {"role": m.role, "content": cast(str, m.content)} for m in body.messages
+        ]
         cid = uuid.uuid4().hex
         prompt_sha256 = hashlib.sha256(
             json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -2554,6 +2650,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         rec_err: str | None = None
         rec_cls: str | None = None
         content = ""
+        tool_calls_out: list[dict[str, Any]] | None = None
+        finish_out: str | None = None
         serving: str | None = None
         usage_snap: Any = None
         model_snap: Any = None
@@ -2592,12 +2690,30 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     raise
                 t0 = time.monotonic()
                 try:
-                    content = cited_complete(
-                        backend,
-                        messages,
-                        receipt_hashes=body.receipt_hashes,
-                        sampling=sampling_params,
-                    )
+                    if wants_tools:
+                        tool_result = cited_complete_tools(
+                            backend,
+                            messages,
+                            receipt_hashes=body.receipt_hashes,
+                            sampling=sampling_params,
+                            tools=body.tools,
+                            tool_choice=body.tool_choice,
+                            parallel_tool_calls=body.parallel_tool_calls,
+                        )
+                        content = tool_result.content or ""
+                        tool_calls_out = (
+                            list(tool_result.tool_calls)
+                            if tool_result.tool_calls is not None
+                            else None
+                        )
+                        finish_out = tool_result.finish_reason
+                    else:
+                        content = cited_complete(
+                            backend,
+                            plain_messages,
+                            receipt_hashes=body.receipt_hashes,
+                            sampling=sampling_params,
+                        )
                 except NotImplementedError as exc:
                     rec_cls = "not_supported"
                     rec_err = str(exc)
@@ -2676,8 +2792,18 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     error=rec_err if serving is None else None,
                     error_class=rec_cls if serving is None else None,
                     prompt_sha256=prompt_sha256,
+                    # the digest binds what shipped — text alone for a
+                    # plain turn; text + the verbatim call list when the
+                    # answer is a tool call (content "" would digest an
+                    # empty answer and let the payload slip the seal)
                     output_sha256=(
-                        hashlib.sha256(content.encode("utf-8")).hexdigest()
+                        hashlib.sha256(
+                            (
+                                content + "\n" + json.dumps(tool_calls_out, sort_keys=True)
+                                if tool_calls_out
+                                else content
+                            ).encode("utf-8")
+                        ).hexdigest()
                         if serving is not None
                         else None
                     ),
@@ -2698,6 +2824,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             completion_id=cid,
             attempts=attempts if len(attempts) > 1 else [],
             sampling=sampling_fields,
+            tool_calls=tool_calls_out,
+            finish_reason=finish_out,
         )
         response.headers["X-Fx1-Completion-Id"] = cid
         if key is not None:
@@ -2734,7 +2862,16 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         fully synchronous path.
         """
         _check_citations(body.receipt_hashes)
-        messages = [{"role": m.role, "content": m.content} for m in body.messages]
+        if body.tools is not None or any(m.role == "tool" or m.tool_calls for m in body.messages):
+            # native-SSE tool streaming is not the wire — tool calls ride
+            # /v1/chat/completions' delta.tool_calls frames instead
+            raise ApiError(
+                501,
+                "tool calls are not streamable on /harness/complete/stream; "
+                "use /v1/chat/completions?stream=true",
+                code="not_supported",
+            )
+        messages = [{"role": m.role, "content": cast(str, m.content)} for m in body.messages]
         sampling_params = _sampling_of(body)
         sampling_fields = sampling_params.body_fields()
 
@@ -2955,6 +3092,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             for _ in range(body.n)
         ]
         contents: list[str] = []
+        choice_calls: list[list[dict[str, Any]] | None] = []
+        choice_reasons: list[str] = []
         usage_sum: dict[str, int] = {}
         usage_seen = False
         for out in outs:
@@ -2963,6 +3102,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             # never shipped, never pinned into the idempotency record.
             validate_openai_output(body, out.content)
             contents.append(out.content)
+            choice_calls.append(out.tool_calls)
+            choice_reasons.append(out.finish_reason or "stop")
             if isinstance(out.usage, dict):
                 usage_seen = True
                 for uk, uv in out.usage.items():
@@ -2976,6 +3117,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             backend="+".join(served_by),
             model=outs[0].model,
             usage=usage_sum if usage_seen else None,
+            tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
+            finish_reasons=choice_reasons,
         )
         if body.store is not False:
             envelope_store.put(envelope)
@@ -3121,7 +3264,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 return StreamingResponse(
                     _openai_sse(
                         body,
-                        content=[c["message"]["content"] for c in env["choices"]],
+                        content=[c["message"]["content"] or "" for c in env["choices"]],
+                        tool_calls=[c["message"].get("tool_calls") for c in env["choices"]],
+                        finish_reasons=[c["finish_reason"] for c in env["choices"]],
                         backend=env["system_fingerprint"],
                         model=env["model"],
                         usage=env["usage"],
@@ -3144,7 +3289,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return StreamingResponse(
                 _openai_sse(
                     body,
-                    content=[c["message"]["content"] for c in env_chat["choices"]],
+                    content=[c["message"]["content"] or "" for c in env_chat["choices"]],
+                    tool_calls=[c["message"].get("tool_calls") for c in env_chat["choices"]],
+                    finish_reasons=[c["finish_reason"] for c in env_chat["choices"]],
                     backend=env_chat["system_fingerprint"],
                     model=env_chat["model"],
                     usage=env_chat["usage"],
@@ -3724,6 +3871,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if replay is not None:
             return replay
         _check_citations(body.receipt_hashes)
+        if any(
+            m.role == "tool" or m.tool_calls is not None or m.tool_call_id is not None
+            for msgs in body.batch
+            for m in msgs
+        ):
+            # text-only surface — tool turns take the richer /v1 wire
+            raise ApiError(
+                422,
+                "tool-call context isn't a batch surface — run agent turns "
+                "through /v1/chat/completions or /harness/complete",
+            )
         # Resolve-level fallback: first resolvable link serves the whole
         # batch — a shared backend can't attribute per-item usage, so
         # per-item failover is intentionally not offered.
@@ -3844,7 +4002,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     pool.map(
                         _one,
                         [
-                            [{"role": m.role, "content": m.content} for m in msgs]
+                            [{"role": m.role, "content": cast(str, m.content)} for m in msgs]
                             for msgs in body.batch
                         ],
                     )
@@ -4335,6 +4493,7 @@ def create_app(
                 "byok_override": byok_override_enabled,
                 "openai_compat": True,
                 "openai_retrieval": True,
+                "openai_tools": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),

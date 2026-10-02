@@ -1151,12 +1151,26 @@ export interface components {
             /** Roles */
             roles: string[];
         };
-        /** ChatMessage */
+        /**
+         * ChatMessage
+         * @description One harness message — plain turns carry role+content; agent turns
+         *     may carry ``tool_calls`` (assistant) or answer a call as ``role: tool``
+         *     with ``tool_call_id``. The shapes are fail-closed: a tool_call_id on
+         *     a non-tool role, or tool_calls on a non-assistant turn, is a 422.
+         */
         ChatMessage: {
             /** Content */
-            content: string;
+            content?: string | null;
+            /** Name */
+            name?: string | null;
             /** Role */
             role: string;
+            /** Tool Call Id */
+            tool_call_id?: string | null;
+            /** Tool Calls */
+            tool_calls?: {
+                [key: string]: unknown;
+            }[] | null;
         };
         /** CompleteBatchItem */
         CompleteBatchItem: {
@@ -1282,6 +1296,8 @@ export interface components {
             metadata?: {
                 [key: string]: string;
             } | null;
+            /** Parallel Tool Calls */
+            parallel_tool_calls?: boolean | null;
             /** Presence Penalty */
             presence_penalty?: number | null;
             /** Prompt Cache Key */
@@ -1300,6 +1316,14 @@ export interface components {
             temperature?: number | null;
             /** Timeout S */
             timeout_s?: number | null;
+            /** Tool Choice */
+            tool_choice?: ("none" | "auto" | "required") | {
+                [key: string]: unknown;
+            } | null;
+            /** Tools */
+            tools?: {
+                [key: string]: unknown;
+            }[] | null;
             /** Top P */
             top_p?: number | null;
             /** User */
@@ -1318,6 +1342,8 @@ export interface components {
             completion_id?: string | null;
             /** Content */
             content: string;
+            /** Finish Reason */
+            finish_reason?: string | null;
             /** Latency Ms */
             latency_ms: number;
             /** Model */
@@ -1333,6 +1359,10 @@ export interface components {
             sampling?: {
                 [key: string]: unknown;
             } | null;
+            /** Tool Calls */
+            tool_calls?: {
+                [key: string]: unknown;
+            }[] | null;
             /** Usage */
             usage?: {
                 [key: string]: number;
@@ -1806,24 +1836,25 @@ export interface components {
         /**
          * OpenAIChatChoice
          * @description One choice of a `chat.completion` — the gated text lands here.
+         *     ``message`` may carry ``tool_calls`` (content then null);
+         *     ``finish_reason`` is the upstream's own verdict.
          */
         OpenAIChatChoice: {
-            /**
-             * Finish Reason
-             * @constant
-             */
-            finish_reason: "stop";
+            /** Finish Reason */
+            finish_reason: string;
             /** Index */
             index: number;
             /** Message */
             message: {
-                [key: string]: string;
+                [key: string]: unknown;
             };
         };
         /**
          * OpenAIChatMessage
          * @description One chat message — content may be a string or an OpenAI
          *     content-part list; non-text parts are rejected at translation.
+         *     ``tool_calls`` (assistant) and ``tool_call_id`` (role ``tool``) pass
+         *     through to tool-capable links — agent loops need both halves.
          */
         OpenAIChatMessage: {
             /** Content */
@@ -1868,6 +1899,8 @@ export interface components {
              * @default 1
              */
             n: number;
+            /** Parallel Tool Calls */
+            parallel_tool_calls?: boolean | null;
             /** Presence Penalty */
             presence_penalty?: number | null;
             /** Prompt Cache Key */
@@ -1897,6 +1930,12 @@ export interface components {
             } | null;
             /** Temperature */
             temperature?: number | null;
+            /** Tool Choice */
+            tool_choice?: ("none" | "auto" | "required") | {
+                [key: string]: unknown;
+            } | null;
+            /** Tools */
+            tools?: components["schemas"]["OpenAITool"][] | null;
             /** Top P */
             top_p?: number | null;
             /** User */
@@ -2039,6 +2078,40 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAITool
+         * @description One ``tools[]`` entry — only ``type: "function"`` exists on the
+         *     OpenAI surface today; anything else fails closed at validation.
+         */
+        OpenAITool: {
+            function: components["schemas"]["OpenAIToolFunction"];
+            /**
+             * Type
+             * @default function
+             * @constant
+             */
+            type: "function";
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIToolFunction
+         * @description One ``tools[].function`` — the callable spec an agent advertises.
+         */
+        OpenAIToolFunction: {
+            /** Description */
+            description?: string | null;
+            /** Name */
+            name: string;
+            /** Parameters */
+            parameters?: {
+                [key: string]: unknown;
+            } | null;
+            /** Strict */
+            strict?: boolean | null;
         } & {
             [key: string]: unknown;
         };

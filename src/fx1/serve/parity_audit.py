@@ -60,7 +60,7 @@ from quant_fund.utils.reproducibility import git_revision
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
-    from fx1.serve.backends import SamplingParams
+    from fx1.serve.backends import SamplingParams, ToolCompletion
 
 __all__ = ["parity_audit", "parity_audit_bench"]
 
@@ -122,6 +122,33 @@ class _NonStreamingBackend:
 
     def close(self) -> None:
         return None
+
+
+class _ParityToolBackend(_ParityBackend):
+    """Tool-capable parity backend — answers one canned function call."""
+
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: Any = None,
+        parallel_tool_calls: bool | None = None,
+    ) -> ToolCompletion:
+        from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
+
+        return ToolCompletion(
+            content=None,
+            tool_calls=(
+                {
+                    "id": "call_p",
+                    "type": "function",
+                    "function": {"name": "calc", "arguments": '{"x": 1}'},
+                },
+            ),
+            finish_reason="tool_calls",
+        )
 
 
 class _CallFailBackend(_ParityBackend):
@@ -598,6 +625,76 @@ def parity_audit() -> dict[str, bool]:
             and wire_tool_err.json()["error"]["type"] == "invalid_request_error"
             and sdk_tool_err == "OpenAICompatError"
         )
+
+        # tools channel parity — a capable link carries the same
+        # tool_calls envelope, finish_reason, and null content on both
+        # surfaces; a link without the channel is 501 / NotImplementedError
+        sdk_t, client_t = _surfaces(_ParityToolBackend)
+        tool_body = {
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "calc"}],
+            "tools": [
+                {
+                    "type": "function",
+                    "function": {"name": "calc", "parameters": {"type": "object"}},
+                }
+            ],
+            "tool_choice": "auto",
+        }
+        wire_te = client_t.post("/v1/chat/completions", json=tool_body)
+        sdk_te, _te_cid = sdk_t.openai_chat(tool_body)
+        wire_tm = wire_te.json()["choices"][0]["message"]
+        sdk_tm = sdk_te.choices[0].message
+        out["openai_tools_parity"] = (
+            wire_te.status_code == 200
+            and wire_tm.get("tool_calls") == sdk_tm.get("tool_calls")
+            and wire_tm.get("content") is None
+            and sdk_tm.get("content") is None
+            and wire_te.json()["choices"][0]["finish_reason"]
+            == sdk_te.choices[0].finish_reason
+            == "tool_calls"
+        )
+        wire_tstream = client_t.post("/v1/chat/completions", json={**tool_body, "stream": True})
+        wire_tframes = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_tstream.text.splitlines()
+            if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+        ]
+        sdk_tframes, _ = sdk_t.openai_chat_stream(tool_body)
+        out["openai_tools_stream_parity"] = [_strip_meta(f) for f in wire_tframes] == [
+            _strip_meta(f) for f in sdk_tframes
+        ] and any(
+            f["choices"][0]["delta"].get("tool_calls") for f in sdk_tframes if f.get("choices")
+        )
+        wire_nc = client.post("/v1/chat/completions", json=tool_body)
+        sdk_nc = _raises(lambda: sdk.openai_chat(tool_body))[0]
+        out["openai_tools_501_parity"] = (
+            wire_nc.status_code == 501
+            and wire_nc.json()["error"]["type"] == "server_error"
+            and sdk_nc == "NotImplementedError"
+        )
+        # agent history passes through verbatim on both surfaces
+        tool_hist = [
+            {"role": "user", "content": "q"},
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_9",
+                        "type": "function",
+                        "function": {"name": "calc", "arguments": "{}"},
+                    }
+                ],
+            },
+            {"role": "tool", "content": "2", "tool_call_id": "call_9"},
+        ]
+        wire_th = client_t.post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": tool_hist},
+        )
+        sdk_th = _raises(lambda: sdk_t.openai_chat({"model": "fx1", "messages": tool_hist}))
+        out["openai_tool_history_parity"] = wire_th.status_code == 200 and sdk_th[0] == ""
         # header BYOK parity: gpt-4o model + X-Fx1-Byok-* headers bind byok on both
         byok_headers = {
             "X-Fx1-Byok-Base-Url": "https://api.invalid.test/v1",

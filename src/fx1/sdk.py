@@ -54,7 +54,7 @@ from fx1.serve.backends import (
     get_backend,
     truncate_chunks,
 )
-from fx1.serve.chat import cited_complete
+from fx1.serve.chat import cited_complete, cited_complete_tools
 from fx1.serve.evals import EvalRecord, EvalStore
 from fx1.serve.openai_compat import (
     OPENAI_BATCH_ENDPOINTS,
@@ -127,6 +127,11 @@ class CompletionResult:
     attempts: tuple[dict[str, Any], ...] = ()
     # The resolved decode params sent to the provider.
     sampling: dict[str, Any] | None = None
+    # Upstream-reported tool calls and the provider's own finish_reason —
+    # verbatim on tool-capable links; None on plain-text turns. Mirrors
+    # the wire's ``tool_calls``/``finish_reason`` response fields.
+    tool_calls: tuple[dict[str, Any], ...] | None = None
+    finish_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -211,7 +216,7 @@ def _check_link_kwargs(
         raise ValueError("checkpoint_dir applies only to the local_fx1 backend")
 
 
-def _messages_sha256(messages: list[dict[str, str]]) -> str:
+def _messages_sha256(messages: list[dict[str, Any]]) -> str:
     return hashlib.sha256(
         json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -821,7 +826,7 @@ class Fx1Harness:
 
     def complete(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         backend: str = "local_fx1",
         checkpoint_dir: str | Path | None = None,
@@ -843,6 +848,9 @@ class Fx1Harness:
         prompt_cache_key: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
+        parallel_tool_calls: bool | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -867,6 +875,16 @@ class Fx1Harness:
         it still ship the cut text); the penalty pair, ``logit_bias``,
         and the provider hints pass through verbatim. ``user`` and
         ``metadata`` stamp the completion record for attribution.
+
+        ``tools``/``tool_choice``/``parallel_tool_calls`` carry the
+        OpenAI function-calling surface — function specs, the call
+        policy, the parallel flag — verbatim to tool-capable links.
+        A link without ``complete_with_tools`` answers
+        ``NotImplementedError``, never a silently dropped tool intent.
+        Tool-call *history* (assistant ``tool_calls`` entries, ``role:
+        'tool'`` results) passes through the message list itself. The
+        honesty gate reads the assistant's text only — tool arguments
+        are machine-bound JSON, not claims.
         """
         chain = _fallback_chain(backend, fallbacks)
         _check_link_kwargs(chain, checkpoint_dir, byok)
@@ -935,10 +953,32 @@ class Fx1Harness:
                 )
                 raise
             t0 = time.monotonic()
+            tool_calls_out: tuple[dict[str, Any], ...] | None = None
+            finish_out: str | None = None
             try:
-                content = cited_complete(
-                    backend_obj, messages, receipt_hashes=receipt_hashes, sampling=sampling
+                wants_tools = tools is not None or any(
+                    m.get("role") == "tool" or m.get("tool_calls") for m in messages
                 )
+                if wants_tools:
+                    tool_result = cited_complete_tools(
+                        backend_obj,
+                        messages,
+                        receipt_hashes=receipt_hashes,
+                        sampling=sampling,
+                        tools=tools,
+                        tool_choice=tool_choice,
+                        parallel_tool_calls=parallel_tool_calls,
+                    )
+                    content = tool_result.content or ""
+                    tool_calls_out = tool_result.tool_calls
+                    finish_out = tool_result.finish_reason
+                else:
+                    content = cited_complete(
+                        backend_obj,
+                        messages,
+                        receipt_hashes=receipt_hashes,
+                        sampling=sampling,
+                    )
             except (BackendNotConfiguredError, RuntimeError) as exc:
                 # availability fault — record the link, try the next.
                 attempts.append(
@@ -1005,7 +1045,13 @@ class Fx1Harness:
                 None,
                 None,
                 prompt_sha256,
-                hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                hashlib.sha256(
+                    (
+                        content + "\n" + json.dumps(list(tool_calls_out), sort_keys=True)
+                        if tool_calls_out
+                        else content
+                    ).encode("utf-8")
+                ).hexdigest(),
                 tuple(attempts) if len(attempts) > 1 else None,
                 sampling_fields,
                 user,
@@ -1023,6 +1069,8 @@ class Fx1Harness:
                 completion_id=cid,
                 attempts=tuple(attempts) if len(attempts) > 1 else (),
                 sampling=sampling_fields,
+                tool_calls=tool_calls_out,
+                finish_reason=finish_out,
             )
         assert last_exc is not None  # every link failed retriably
         self._record_call(
@@ -1080,6 +1128,15 @@ class Fx1Harness:
             raise ValueError(f"max_workers must be >= 1, got {max_workers}")
         if not batch:
             return []
+        # the batch surface is text-only like the wire's /v1/batches —
+        # a tool-context line fails the request, never silently degrades
+        for i, msgs in enumerate(batch):
+            for j, msg in enumerate(msgs):
+                if msg.get("role") == "tool" or "tool_calls" in msg:
+                    raise ValueError(
+                        f"batch[{i}][{j}] carries tool context — the batch "
+                        "surface is text-only; call complete() per turn instead"
+                    )
         serving, backend_obj = self._resolve_chain(
             backend, fallbacks, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
@@ -1325,11 +1382,15 @@ class Fx1Harness:
         # honesty-gate pass, format check, and completion-log record.
         results = [self.complete(**kwargs) for _ in range(body.n)]
         contents: list[str] = []
+        choice_calls: list[list[dict[str, Any]] | None] = []
+        choice_reasons: list[str] = []
         usage_sum: dict[str, int] = {}
         usage_seen = False
         for result in results:
             validate_openai_output(body, result.content)
             contents.append(result.content)
+            choice_calls.append(list(result.tool_calls) if result.tool_calls is not None else None)
+            choice_reasons.append(result.finish_reason or "stop")
             if isinstance(result.usage, dict):
                 usage_seen = True
                 for uk, uv in result.usage.items():
@@ -1343,6 +1404,8 @@ class Fx1Harness:
             backend="+".join(dict.fromkeys(r.backend for r in results)),
             model=first.model,
             usage=usage_sum if usage_seen else None,
+            tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
+            finish_reasons=choice_reasons,
         )
         if body.store is not False:
             self._openai_store.put(envelope)
@@ -1384,11 +1447,15 @@ class Fx1Harness:
         kwargs = openai_to_kwargs(body, dict(headers or {}))
         results = [self.complete(**kwargs) for _ in range(body.n)]
         contents: list[str] = []
+        choice_calls: list[list[dict[str, Any]] | None] = []
+        choice_reasons: list[str] = []
         usage_sum: dict[str, int] = {}
         usage_seen = False
         for result in results:
             validate_openai_output(body, result.content)
             contents.append(result.content)
+            choice_calls.append(list(result.tool_calls) if result.tool_calls is not None else None)
+            choice_reasons.append(result.finish_reason or "stop")
             if isinstance(result.usage, dict):
                 usage_seen = True
                 for uk, uv in result.usage.items():
@@ -1404,6 +1471,8 @@ class Fx1Harness:
                     backend="+".join(dict.fromkeys(r.backend for r in results)),
                     model=first.model,
                     usage=usage_sum if usage_seen else None,
+                    tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
+                    finish_reasons=choice_reasons,
                 )
             )
         chunks = list(
@@ -1414,6 +1483,8 @@ class Fx1Harness:
                 cid=cid,
                 include_usage=bool((body.stream_options or {}).get("include_usage")),
                 usage=usage_sum if usage_seen else None,
+                tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
+                finish_reasons=choice_reasons,
             )
         )
         if last_event_id is not None:

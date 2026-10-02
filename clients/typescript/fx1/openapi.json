@@ -398,19 +398,63 @@
       },
       "ChatMessage": {
         "additionalProperties": false,
+        "description": "One harness message \u2014 plain turns carry role+content; agent turns\nmay carry ``tool_calls`` (assistant) or answer a call as ``role: tool``\nwith ``tool_call_id``. The shapes are fail-closed: a tool_call_id on\na non-tool role, or tool_calls on a non-assistant turn, is a 422.",
         "properties": {
           "content": {
-            "title": "Content",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
           "role": {
             "title": "Role",
             "type": "string"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
           }
         },
         "required": [
-          "role",
-          "content"
+          "role"
         ],
         "title": "ChatMessage",
         "type": "object"
@@ -947,6 +991,17 @@
             ],
             "title": "Metadata"
           },
+          "parallel_tool_calls": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parallel Tool Calls"
+          },
           "presence_penalty": {
             "anyOf": [
               {
@@ -1074,6 +1129,42 @@
             ],
             "title": "Timeout S"
           },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "auto",
+                  "required"
+                ],
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Choice"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "maxItems": 128,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
+          },
           "top_p": {
             "anyOf": [
               {
@@ -1137,6 +1228,17 @@
             "title": "Content",
             "type": "string"
           },
+          "finish_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Reason"
+          },
           "latency_ms": {
             "title": "Latency Ms",
             "type": "number"
@@ -1175,6 +1277,21 @@
               }
             ],
             "title": "Sampling"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
           },
           "usage": {
             "anyOf": [
@@ -2420,10 +2537,9 @@
       },
       "OpenAIChatChoice": {
         "additionalProperties": false,
-        "description": "One choice of a `chat.completion` \u2014 the gated text lands here.",
+        "description": "One choice of a `chat.completion` \u2014 the gated text lands here.\n``message`` may carry ``tool_calls`` (content then null);\n``finish_reason`` is the upstream's own verdict.",
         "properties": {
           "finish_reason": {
-            "const": "stop",
             "title": "Finish Reason",
             "type": "string"
           },
@@ -2432,9 +2548,7 @@
             "type": "integer"
           },
           "message": {
-            "additionalProperties": {
-              "type": "string"
-            },
+            "additionalProperties": true,
             "title": "Message",
             "type": "object"
           }
@@ -2449,7 +2563,7 @@
       },
       "OpenAIChatMessage": {
         "additionalProperties": true,
-        "description": "One chat message \u2014 content may be a string or an OpenAI\ncontent-part list; non-text parts are rejected at translation.",
+        "description": "One chat message \u2014 content may be a string or an OpenAI\ncontent-part list; non-text parts are rejected at translation.\n``tool_calls`` (assistant) and ``tool_call_id`` (role ``tool``) pass\nthrough to tool-capable links \u2014 agent loops need both halves.",
         "properties": {
           "content": {
             "anyOf": [
@@ -2581,6 +2695,17 @@
             "minimum": 1.0,
             "title": "N",
             "type": "integer"
+          },
+          "parallel_tool_calls": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parallel Tool Calls"
           },
           "presence_penalty": {
             "anyOf": [
@@ -2724,6 +2849,40 @@
               }
             ],
             "title": "Temperature"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "auto",
+                  "required"
+                ],
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Choice"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OpenAITool"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools"
           },
           "top_p": {
             "anyOf": [
@@ -3141,6 +3300,79 @@
           "input"
         ],
         "title": "OpenAIResponseRequest",
+        "type": "object"
+      },
+      "OpenAITool": {
+        "additionalProperties": true,
+        "description": "One ``tools[]`` entry \u2014 only ``type: \"function\"`` exists on the\nOpenAI surface today; anything else fails closed at validation.",
+        "properties": {
+          "function": {
+            "$ref": "#/components/schemas/OpenAIToolFunction"
+          },
+          "type": {
+            "const": "function",
+            "default": "function",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "function"
+        ],
+        "title": "OpenAITool",
+        "type": "object"
+      },
+      "OpenAIToolFunction": {
+        "additionalProperties": true,
+        "description": "One ``tools[].function`` \u2014 the callable spec an agent advertises.",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 8192,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Name",
+            "type": "string"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "strict": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strict"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "OpenAIToolFunction",
         "type": "object"
       },
       "ReadyResponse": {
