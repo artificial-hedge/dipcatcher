@@ -58,6 +58,38 @@
         ]
       }
     },
+    "/harness/jobs": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "202",
+          "422"
+        ]
+      }
+    },
+    "/harness/jobs/{job_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "params": [
@@ -103,5 +135,5 @@
       }
     }
   },
-  "schema_sha256": "dae91b6a76b52ed67f808192857c69f6aecca600414d6df7c7b759a1fa7bdd1f"
+  "schema_sha256": "049f450730c5e5fdf73ccbfd950e1170b0aee6e93ea48da1738a425cb0be9d76"
 }

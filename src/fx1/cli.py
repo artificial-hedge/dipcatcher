@@ -445,6 +445,84 @@ def harness_drain(
     typer.echo(json.dumps(_or_exit(client.drain), indent=2))
 
 
+def _remote_client(remote: str, api_key: str | None, timeout_s: float) -> HarnessClient:
+    from fx1.serve.client import HarnessClient
+
+    return HarnessClient(
+        remote,
+        api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+        timeout_s=timeout_s,
+    )
+
+
+def _need_remote(remote: str | None) -> None:
+    if remote is None:
+        typer.echo(
+            "error: async jobs are a wire surface; pass --remote",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+
+
+@harness_app.command("submit")
+def harness_submit(
+    name: str = typer.Argument(..., help="Registered harness command name."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    idempotency_key: str | None = typer.Option(
+        None,
+        "--idempotency-key",
+        help="Dedup key for the submission; a retried submit returns the same job id.",
+    ),
+) -> None:
+    """Submit a run as a background job; prints the job id."""
+    _need_remote(remote)
+    job_id = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).submit_run(
+            name, idempotency_key=idempotency_key
+        )
+    )
+    typer.echo(job_id)
+
+
+@harness_app.command("job")
+def harness_job(
+    job_id: str = typer.Argument(..., help="Job id returned by harness submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print a job's live status record."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).job_status(job_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("wait")
+def harness_wait(
+    job_id: str = typer.Argument(..., help="Job id returned by harness submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    wait_timeout_s: float | None = typer.Option(
+        None, "--wait-timeout", help="Give up waiting after N seconds (job keeps running)."
+    ),
+) -> None:
+    """Wait for a job to finish, then print its stdout like harness run."""
+    _need_remote(remote)
+    result = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).wait_run(
+            job_id, poll_s=poll_s, timeout_s=wait_timeout_s
+        )
+    )
+    typer.echo(result.stdout)
+    if result.stderr:
+        typer.echo(result.stderr, err=True)
+    raise typer.Exit(code=result.exit_code)
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

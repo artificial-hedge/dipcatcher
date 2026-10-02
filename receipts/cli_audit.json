@@ -1,7 +1,7 @@
 {
   "kind": "cli_audit",
   "schema": "cli_audit.v1",
-  "git_revision": "d1f6a2a22199cdd3e83cfe9b10c5500ed0527e0b",
+  "git_revision": "c9558b7bdc29862de0d1f807278978acebb34ccb",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -41,11 +41,15 @@
       "remote_drain_json": true,
       "metrics_local_refused": true,
       "drain_local_refused": true,
+      "submit_local_refused": true,
       "cli_run_idem_key_passed": true,
+      "cli_submit_prints_job_id": true,
+      "cli_job_status_json": true,
+      "cli_wait_prints_result": true,
       "remote_fault_clean_exit2": true
     },
     "ok": true
   },
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON. Flagged wart: the command is registered as 'maskedaEval'.",
-  "receipt_sha256": "4a443fdd9bbe649af4fdc743aaf3d0d80069542cbd4b43f83581d52b8544bdfb"
+  "receipt_sha256": "acfac7ba2d7f26ee15a9fe83e94a35464c5a82a1561f07f1082e1068a6be5fbc"
 }

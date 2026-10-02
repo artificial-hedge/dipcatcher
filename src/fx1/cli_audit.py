@@ -292,6 +292,8 @@ def cli_audit() -> dict[str, Any]:
             self.base_url = base_url
             self.api_key = kw.get("api_key")
             self.last_idem: str | None = None
+            self.last_job: str | None = None
+            self.last_wait: float | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -325,6 +327,21 @@ def cli_audit() -> dict[str, Any]:
 
             self.last_idem = kw.get("idempotency_key")
             return HarnessResult(command=name, exit_code=0, stdout="ran", stderr="")
+
+        def submit_run(self, name: str, **kw: Any) -> str:
+            self.last_idem = kw.get("idempotency_key")
+            return "job-xyz"
+
+        def job_status(self, job_id: str) -> dict[str, Any]:
+            self.last_job = job_id
+            return {"job_id": job_id, "status": "succeeded", "result": None}
+
+        def wait_run(self, job_id: str, **kw: Any) -> Any:
+            from fx1.harness import HarnessResult
+
+            self.last_job = job_id
+            self.last_wait = kw.get("timeout_s")
+            return HarnessResult(command="doctor", exit_code=0, stdout="ran", stderr="")
 
     remotes: list[_FakeRemote] = []
 
@@ -360,11 +377,13 @@ def cli_audit() -> dict[str, Any]:
             "inflight": 2,
         }
 
-    # metrics + drain are wire-ops surfaces — without --remote they fail clean
+    # metrics + drain + jobs are wire-ops surfaces — without --remote they fail clean
     rm_local = runner.invoke(app, ["harness", "metrics"])
     out["metrics_local_refused"] = rm_local.exit_code == 2 and "--remote" in rm_local.output
     rd_local = runner.invoke(app, ["harness", "drain"])
     out["drain_local_refused"] = rd_local.exit_code == 2 and "--remote" in rd_local.output
+    rs_local = runner.invoke(app, ["harness", "submit", "doctor"])
+    out["submit_local_refused"] = rs_local.exit_code == 2 and "--remote" in rs_local.output
 
     # --idempotency-key reaches the remote client verbatim
     with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
@@ -383,6 +402,32 @@ def cli_audit() -> dict[str, Any]:
         out["cli_run_idem_key_passed"] = (
             rr_key.exit_code == 0 and remotes[-1].last_idem == "cli-key-1"
         )
+
+        rs = runner.invoke(
+            app,
+            [
+                "harness",
+                "submit",
+                "doctor",
+                "--remote",
+                "http://h.test",
+                "--idempotency-key",
+                "sub-k",
+            ],
+        )
+        out["cli_submit_prints_job_id"] = (
+            rs.exit_code == 0
+            and rs.stdout.strip() == "job-xyz"
+            and remotes[-1].last_idem == "sub-k"
+        )
+        rj = runner.invoke(app, ["harness", "job", "j-9", "--remote", "http://h.test"])
+        out["cli_job_status_json"] = (
+            rj.exit_code == 0
+            and json.loads(rj.stdout)["status"] == "succeeded"
+            and remotes[-1].last_job == "j-9"
+        )
+        rw = runner.invoke(app, ["harness", "wait", "j-9", "--remote", "http://h.test"])
+        out["cli_wait_prints_result"] = rw.exit_code == 0 and rw.stdout.strip() == "ran"
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

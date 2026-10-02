@@ -74,6 +74,7 @@ _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
 _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
 _IDEM_KEY_MAX = 256
+_JOB_MAX_ENV = "FX1_API_JOB_MAX"
 _PUBLIC_PATHS = frozenset({"/health"})
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
@@ -197,6 +198,23 @@ class DrainResponse(_Model):
     inflight: int
 
 
+class JobSubmitResponse(_Model):
+    job_id: str
+    status: Literal["queued", "running", "succeeded", "failed"]
+    replayed: bool = False
+
+
+class JobStatusResponse(_Model):
+    """Live job record; ``result`` appears only once status is terminal."""
+
+    job_id: str
+    status: Literal["queued", "running", "succeeded", "failed"]
+    created_at: float
+    finished_at: float | None
+    result: HarnessRunResponse | None
+    error: str | None
+
+
 class _Metrics:
     """Request counters + inflight gauge, shared via app.state."""
 
@@ -241,6 +259,123 @@ class _Metrics:
             )
 
 
+def _env_int_bound(name: str, default: int, given: int | None) -> int:
+    """Positive-int tunable from arg or env, fail-closed below 1."""
+    v = int(os.environ.get(name, str(default))) if given is None else given
+    if v < 1:
+        raise ValueError(f"{name} bound must be >= 1, got {v}")
+    return v
+
+
+def _idem_lookup(
+    idempotency_key: str | None,
+    store: _IdemStore,
+    body_fp: str,
+) -> tuple[str | None, HarnessRunResponse | None]:
+    """Shared Idempotency-Key preamble: normalize + bound the key, then
+    look up a stored replay. Returns ``(key, cached)`` — a cached hit
+    is the response to return verbatim plus ``replayed: True``; a key
+    reused with a different body fails closed 409."""
+    key = (idempotency_key or "").strip() or None
+    if key is None:
+        return None, None
+    if len(key) > _IDEM_KEY_MAX:
+        raise HTTPException(400, "Idempotency-Key must be <= 256 chars")
+    entry = store.get(key)
+    if entry is None:
+        return key, None
+    fp, cached = entry
+    if fp != body_fp:
+        raise HTTPException(409, "Idempotency-Key reuse with a different request body")
+    return key, cached.model_copy(update={"replayed": True})
+
+
+def _submit_job(
+    body: HarnessRunRequest,
+    idempotency_key: str | None,
+    lab: Harness,
+    job_store: _JobStore,
+    metrics: _Metrics,
+    inflight: threading.BoundedSemaphore,
+    jobs_executor: ThreadPoolExecutor,
+) -> JobSubmitResponse:
+    """Job submission core: idempotency lookup -> command validation ->
+    slot admission -> background execution. The slot is held for the
+    job's lifetime and released by the worker, so the queue can never
+    grow past ``max_inflight`` (no unbounded buffering)."""
+    key = (idempotency_key or "").strip() or None
+    if key is not None and len(key) > _IDEM_KEY_MAX:
+        raise HTTPException(400, "Idempotency-Key must be <= 256 chars")
+    body_fp = body.model_dump_json()
+    if key is not None:
+        entry = job_store.get_key(key)
+        if entry is not None:
+            fp, job_id = entry
+            if fp != body_fp:
+                raise HTTPException(
+                    409,
+                    "Idempotency-Key reuse with a different request body",
+                )
+            job = job_store.get(job_id)
+            if job is not None:
+                return JobSubmitResponse(job_id=job_id, status=job.status, replayed=True)
+    try:
+        lab.get(body.command)  # fail closed at submit, not in the worker
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    if metrics.draining.is_set():
+        raise HTTPException(503, "harness is draining — no new work accepted")
+    if not inflight.acquire(blocking=False):
+        raise HTTPException(
+            503,
+            f"harness at max_inflight={metrics.max_inflight} — retry later",
+            headers={"Retry-After": "1"},
+        )
+    metrics.acquire()
+    job = JobStatusResponse(
+        job_id=uuid.uuid4().hex,
+        status="queued",
+        created_at=time.time(),
+        finished_at=None,
+        result=None,
+        error=None,
+    )
+
+    def _exec() -> None:
+        job.status = "running"
+        try:
+            result = lab.run(
+                body.command,
+                body.extra_args or None,
+                config=Path(body.config) if body.config else None,
+            )
+            command = lab.get(body.command)
+            job.result = HarnessRunResponse(
+                command=result.command,
+                exit_code=result.exit_code,
+                stdout=result.stdout,
+                stderr=result.stderr,
+                ok=result.ok,
+                timeout_s=command.timeout_s,
+            )
+            job.status = "succeeded"
+        except Exception as exc:  # noqa: BLE001 — worker faults land in the record
+            job.error = f"{type(exc).__name__}: {exc}"
+            job.status = "failed"
+        job.finished_at = time.time()
+        metrics.release()
+        inflight.release()
+
+    try:
+        jobs_executor.submit(_exec)
+    except RuntimeError as exc:  # executor gone (shutdown race)
+        metrics.release()
+        inflight.release()
+        raise HTTPException(503, "job executor unavailable") from exc
+    job_store.put(job, key, body_fp)
+    return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
+
+
 class _IdemStore:
     """Bounded LRU of ``Idempotency-Key`` -> run response.
 
@@ -268,6 +403,53 @@ class _IdemStore:
             self._map.move_to_end(key)
             while len(self._map) > self._max:
                 self._map.popitem(last=False)
+
+
+class _JobStore:
+    """Bounded store of async run jobs + their Idempotency-Key index.
+
+    Job submissions take a worker slot at submit time (same drain/cap
+    contract as the sync route) and release it when the job finishes, so
+    the queue can never grow past the declared concurrency bound. The
+    store is an LRU; evicting a job also drops its idempotency mapping.
+    """
+
+    def __init__(self, max_entries: int) -> None:
+        self._lock = threading.Lock()
+        self._max = max_entries
+        self._jobs: OrderedDict[str, JobStatusResponse] = OrderedDict()
+        self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
+        self._job_key: dict[str, str] = {}
+
+    def get(self, job_id: str) -> JobStatusResponse | None:
+        with self._lock:
+            return self._jobs.get(job_id)
+
+    def get_key(self, key: str) -> tuple[str, str] | None:
+        with self._lock:
+            hit = self._keys.get(key)
+            if hit is not None:
+                self._keys.move_to_end(key)
+            return hit
+
+    def put(
+        self,
+        job: JobStatusResponse,
+        key: str | None,
+        fingerprint: str | None,
+    ) -> None:
+        with self._lock:
+            self._jobs[job.job_id] = job
+            self._jobs.move_to_end(job.job_id)
+            if key is not None and fingerprint is not None:
+                self._keys[key] = (fingerprint, job.job_id)
+                self._keys.move_to_end(key)
+                self._job_key[job.job_id] = key
+            while len(self._jobs) > self._max:
+                old_id, _ = self._jobs.popitem(last=False)
+                old_key = self._job_key.pop(old_id, None)
+                if old_key is not None:
+                    self._keys.pop(old_key, None)
 
 
 def _backend_configured() -> dict[str, bool]:
@@ -328,18 +510,14 @@ def create_app(
     max_inflight: int | None = None,
     sse_keepalive_s: float | None = None,
     idem_max: int | None = None,
+    job_max: int | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
     resolve_backend = backend_resolver or get_backend
-    if max_inflight is None:
-        max_inflight = int(os.environ.get(_MAX_INFLIGHT_ENV, "16"))
-    if max_inflight < 1:
-        raise ValueError(f"max_inflight must be >= 1, got {max_inflight}")
-    if idem_max is None:
-        idem_max = int(os.environ.get(_IDEM_MAX_ENV, "1024"))
-    if idem_max < 1:
-        raise ValueError(f"idem_max must be >= 1, got {idem_max}")
+    max_inflight = _env_int_bound(_MAX_INFLIGHT_ENV, 16, max_inflight)
+    idem_max = _env_int_bound(_IDEM_MAX_ENV, 1024, idem_max)
+    job_max = _env_int_bound(_JOB_MAX_ENV, 1024, job_max)
     if sse_keepalive_s is None:
         sse_keepalive_s = float(os.environ.get(_SSE_KEEPALIVE_ENV, "15"))
     if sse_keepalive_s < 0:
@@ -352,6 +530,8 @@ def create_app(
     inflight = threading.BoundedSemaphore(max_inflight)
     metrics = _Metrics(max_inflight)
     idem_store = _IdemStore(idem_max)
+    job_store = _JobStore(job_max)
+    jobs_executor = ThreadPoolExecutor(max_workers=max_inflight, thread_name_prefix="fx1-job")
 
     @contextmanager
     def _work_gate() -> Iterator[None]:
@@ -389,6 +569,8 @@ def create_app(
     app.state.inflight_slots = inflight
     app.state.metrics = metrics
     app.state.idem_store = idem_store
+    app.state.job_store = job_store
+    app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
 
     @app.middleware("http")
@@ -482,20 +664,10 @@ def create_app(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> HarnessRunResponse:
-        key = (idempotency_key or "").strip() or None
-        if key is not None and len(key) > _IDEM_KEY_MAX:
-            raise HTTPException(400, "Idempotency-Key must be <= 256 chars")
         body_fp = body.model_dump_json()
-        if key is not None:
-            entry = idem_store.get(key)
-            if entry is not None:
-                fp, cached = entry
-                if fp != body_fp:
-                    raise HTTPException(
-                        409,
-                        "Idempotency-Key reuse with a different request body",
-                    )
-                return cached.model_copy(update={"replayed": True})
+        key, replay = _idem_lookup(idempotency_key, idem_store, body_fp)
+        if replay is not None:
+            return replay
         with _work_gate():
             try:
                 result = lab.run(
@@ -519,6 +691,23 @@ def create_app(
         if key is not None:
             idem_store.put(key, body_fp, resp)
         return resp
+
+    @app.post("/harness/jobs", response_model=JobSubmitResponse, status_code=202)
+    def submit_job(
+        body: HarnessRunRequest,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JobSubmitResponse:
+        """Async run submission: work starts in the background, the caller
+        polls ``GET /harness/jobs/{job_id}`` for the terminal record.
+        Same drain/cap/idempotency contract as the sync route."""
+        return _submit_job(body, idempotency_key, lab, job_store, metrics, inflight, jobs_executor)
+
+    @app.get("/harness/jobs/{job_id}", response_model=JobStatusResponse)
+    def job_status(job_id: str) -> JobStatusResponse:
+        job = job_store.get(job_id)
+        if job is None:
+            raise HTTPException(404, f"unknown job_id {job_id!r}")
+        return job
 
     def _resolve_request_backend(backend_name: str, checkpoint_dir: str | None) -> Any:
         """Checkpoint validation + backend resolution → HTTP error map."""

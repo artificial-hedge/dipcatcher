@@ -44,6 +44,7 @@ from fx1.serve.backends import BackendNotConfiguredError
 __all__ = [
     "HarnessAuthError",
     "HarnessClient",
+    "HarnessJobError",
     "HarnessTransportError",
 ]
 
@@ -59,6 +60,11 @@ class HarnessTransportError(RuntimeError):
 
 class HarnessAuthError(PermissionError):
     """401/403 from the harness API — key missing or wrong."""
+
+
+class HarnessJobError(RuntimeError):
+    """An async run job reached its terminal state without a result —
+    the worker captured an exception (``status == 'failed'``)."""
 
 
 def _urllib_transport(
@@ -307,6 +313,77 @@ class HarnessClient:
             stdout=out["stdout"],
             stderr=out["stderr"],
         )
+
+    def submit_run(
+        self,
+        command: str,
+        extra_args: list[str] | None = None,
+        *,
+        config: str | Path | None = None,
+        idempotency_key: str | None = None,
+    ) -> str:
+        """Submit a run as a background job; returns the job id.
+
+        Long-running commands shouldn't hold a request open — submit,
+        keep the id, and poll with ``job_status``/``wait_run``. Same
+        ``Idempotency-Key`` dedup as ``run``: a retried submit returns
+        the original job id instead of spawning a second execution.
+        """
+        key = idempotency_key or uuid.uuid4().hex
+        out = self._json(
+            "POST",
+            "/harness/jobs",
+            {
+                "command": command,
+                "extra_args": extra_args or [],
+                "config": str(config) if config is not None else None,
+            },
+            idempotent=True,
+            extra_headers={"Idempotency-Key": key},
+        )
+        return str(out["job_id"])
+
+    def job_status(self, job_id: str) -> dict[str, Any]:
+        """Live job record: ``status`` in queued/running/succeeded/failed;
+        ``result`` (the HarnessRunResponse fields) appears once terminal."""
+        out = self._json(
+            "GET",
+            f"/harness/jobs/{urllib.parse.quote(job_id)}",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def wait_run(
+        self,
+        job_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> HarnessResult:
+        """Poll ``job_status`` until the job finishes; returns its result.
+
+        Raises ``HarnessJobError`` on status 'failed' and
+        ``HarnessTransportError`` when ``timeout_s`` elapses — a timed-out
+        waiter leaves the job running server-side; keep polling or leave
+        it for the record.
+        """
+        deadline = None if timeout_s is None else self._clock() + timeout_s
+        while True:
+            st = self.job_status(job_id)
+            if st["status"] == "succeeded":
+                r = st["result"]
+                return HarnessResult(
+                    command=r["command"],
+                    exit_code=r["exit_code"],
+                    stdout=r["stdout"],
+                    stderr=r["stderr"],
+                )
+            if st["status"] == "failed":
+                raise HarnessJobError(f"job {job_id} failed: {st.get('error')}")
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
+                raise HarnessTransportError(f"job {job_id} did not finish within {timeout_s}s")
+            self._sleep(poll_s if remaining is None else min(poll_s, remaining))
 
     # ---- gated completion ------------------------------------------------
 

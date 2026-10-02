@@ -384,6 +384,7 @@ def parity_audit() -> dict[str, bool]:
         from fx1.serve.client import (
             HarnessAuthError,
             HarnessClient,
+            HarnessJobError,
             HarnessTransportError,
         )
 
@@ -858,6 +859,122 @@ def parity_audit() -> dict[str, bool]:
     sent_headers.clear()
     c_idem.run("doctor", idempotency_key="explicit-k")
     out["client_run_idem_explicit_key"] = sent_headers[0].get("Idempotency-Key") == "explicit-k"
+
+    # ---- async jobs ----------------------------------------------------------
+    submit_body = _json_mod.dumps(
+        {"job_id": "abc123", "status": "queued", "replayed": False}
+    ).encode()
+    status_body = _json_mod.dumps(
+        {
+            "job_id": "abc123",
+            "status": "succeeded",
+            "created_at": 1.0,
+            "finished_at": 2.0,
+            "result": {
+                "command": "doctor",
+                "exit_code": 0,
+                "stdout": "s",
+                "stderr": "",
+                "ok": True,
+                "timeout_s": 1,
+                "replayed": False,
+            },
+            "error": None,
+        }
+    ).encode()
+    failed_body = _json_mod.dumps(
+        {
+            "job_id": "abc123",
+            "status": "failed",
+            "created_at": 1.0,
+            "finished_at": 2.0,
+            "result": None,
+            "error": "RuntimeError: boom",
+        }
+    ).encode()
+    job_calls: list[tuple[str, str, dict[str, str]]] = []
+
+    def _job_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        job_calls.append((method, url, dict(headers)))
+        if url.endswith("/harness/jobs"):
+            return 202, {}, submit_body
+        return 200, {}, status_body
+
+    c_jobs = HarnessClient(
+        "http://harness.test",
+        transport=_job_transport,
+        sleep=lambda _s: None,
+    )
+    jid = c_jobs.submit_run("doctor", idempotency_key="jk")
+    result = c_jobs.wait_run(jid, poll_s=0.01)
+    out["client_submit_returns_job_id"] = jid == "abc123"
+    out["client_wait_run_polls_to_result"] = result.command == "doctor" and result.ok
+    out["client_job_idem_sent"] = job_calls[0][2].get("Idempotency-Key") == "jk"
+    out["client_job_status_get"] = any(
+        m == "GET" and "/harness/jobs/abc123" in u for m, u, _h in job_calls
+    )
+    job_calls.clear()
+
+    def _fail_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return 200, {}, failed_body
+
+    c_fail = HarnessClient(
+        "http://harness.test",
+        transport=_fail_transport,
+        sleep=lambda _s: None,
+    )
+    try:
+        c_fail.wait_run("abc123", poll_s=0.01)
+        out["client_wait_run_failed_raises"] = False
+    except HarnessJobError:
+        out["client_wait_run_failed_raises"] = True
+
+    def _queued_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return (
+            200,
+            {},
+            _json_mod.dumps(
+                {
+                    "job_id": "abc123",
+                    "status": "queued",
+                    "created_at": 1.0,
+                    "finished_at": None,
+                    "result": None,
+                    "error": None,
+                }
+            ).encode(),
+        )
+
+    _ticks = iter([t * 0.03 for t in range(200)])
+    c_wait = HarnessClient(
+        "http://harness.test",
+        transport=_queued_transport,
+        sleep=lambda _s: None,
+        clock=lambda: next(_ticks),
+    )
+    try:
+        c_wait.wait_run("abc123", poll_s=0.01, timeout_s=0.05)
+        out["client_wait_run_timeout_raises"] = False
+    except HarnessTransportError:
+        out["client_wait_run_timeout_raises"] = True
     return out
 
 

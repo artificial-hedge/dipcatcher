@@ -355,6 +355,32 @@ def e2e_audit() -> dict[str, bool]:
         )
         out["e2e_drain_metrics_flag"] = resilient.metrics().draining is True
         out["e2e_drain_health_still_up"] = resilient.health().status == "ok"
+
+        # async jobs over the real wire: submit, poll to terminal, then drain
+        # and verify a keyed resubmit replays instead of refusing.
+        server3, server3_thread, port3 = _serve_uvicorn(
+            api_mod.create_app(harness=Harness(runner=fake_runner))
+        )
+        try:
+            jremote = HarnessClient(f"http://127.0.0.1:{port3}", api_key=_API_KEY, timeout_s=15.0)
+            j1 = jremote.submit_run("doctor", idempotency_key="e2e-job-key")
+            res = jremote.wait_run(j1, poll_s=0.05, timeout_s=15.0)
+            out["e2e_job_roundtrip"] = res.command == "doctor" and res.ok
+            st = jremote.job_status(j1)
+            out["e2e_job_status_fields"] = (
+                st["status"] == "succeeded" and st["result"]["command"] == "doctor"
+            )
+            out["e2e_job_unknown_404"] = _raises(lambda: jremote.job_status("nope")) == "KeyError"
+            jremote.drain()
+            out["e2e_job_replay_under_drain"] = (
+                jremote.submit_run("doctor", idempotency_key="e2e-job-key") == j1
+            )
+            out["e2e_job_submit_under_drain"] = (
+                _raises(lambda: jremote.submit_run("doctor")) == "BackendNotConfiguredError"
+            )
+        finally:
+            server3.should_exit = True
+            server3_thread.join(timeout=15)
     finally:
         if server is not None:
             server.should_exit = True

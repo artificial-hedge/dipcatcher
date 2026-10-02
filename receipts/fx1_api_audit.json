@@ -1,7 +1,7 @@
 {
   "kind": "api_audit",
   "schema": "api_audit.v1",
-  "git_revision": "d1f6a2a22199cdd3e83cfe9b10c5500ed0527e0b",
+  "git_revision": "c9558b7bdc29862de0d1f807278978acebb34ccb",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -69,6 +69,20 @@
       "idem_oversized_400": true,
       "idem_bound_evicts_oldest": true,
       "idem_max_validated": true,
+      "job_submit_202": true,
+      "job_id_shape": true,
+      "job_completes_succeeded": true,
+      "job_result_fields": true,
+      "job_unknown_submit_404": true,
+      "job_status_unknown_404": true,
+      "job_idem_replay": true,
+      "job_idem_conflict_409": true,
+      "job_method_shape": true,
+      "job_drain_refuses_submit": true,
+      "job_status_under_drain": true,
+      "job_replay_under_drain": true,
+      "job_bound_evicts": true,
+      "job_max_validated": true,
       "receipt_valid_payload": true,
       "receipt_tamper_detected": true,
       "receipt_malformed_fails_closed": true,
@@ -105,5 +119,5 @@
     "ok": true
   },
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
-  "receipt_sha256": "22f20849fa12672f2348a90b7b90e5c6e6f6f1722f9ebaae4c463d2c154d2cae"
+  "receipt_sha256": "4a458b521a48285124e9d8d36e5cf02b745f637c627e07b4d2c212f438e99515"
 }

@@ -727,6 +727,91 @@ def api_audit() -> dict[str, Any]:
     except ValueError:
         out["idem_max_validated"] = True
 
+    # --- async jobs ------------------------------------------------------------
+    jobs_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    jclient = _TC2(jobs_app)
+    submit = jclient.post("/harness/jobs", json={"command": "doctor"})
+    out["job_submit_202"] = submit.status_code == 202
+    job_id = submit.json()["job_id"]
+    out["job_id_shape"] = bool(job_id) and len(job_id) == 32
+    job = None
+    deadline = time.monotonic() + 10.0
+    while time.monotonic() < deadline:
+        job = jclient.get(f"/harness/jobs/{job_id}").json()
+        if job["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(0.02)
+    out["job_completes_succeeded"] = job is not None and job["status"] == "succeeded"
+    out["job_result_fields"] = (
+        job is not None
+        and job["result"] is not None
+        and job["result"]["command"] == "doctor"
+        and job["result"]["ok"] is True
+        and job["finished_at"] is not None
+    )
+    out["job_unknown_submit_404"] = (
+        jclient.post("/harness/jobs", json={"command": "nope-nope"}).status_code == 404
+    )
+    out["job_status_unknown_404"] = jclient.get("/harness/jobs/does-not-exist").status_code == 404
+    replay = jclient.post(
+        "/harness/jobs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "job-key-1"},
+    )
+    replay2 = jclient.post(
+        "/harness/jobs",
+        json={"command": "doctor"},
+        headers={"Idempotency-Key": "job-key-1"},
+    )
+    out["job_idem_replay"] = (
+        replay.status_code == 202
+        and replay2.json()["job_id"] == replay.json()["job_id"]
+        and replay2.json()["replayed"] is True
+    )
+    out["job_idem_conflict_409"] = (
+        jclient.post(
+            "/harness/jobs",
+            json={"command": "doctor", "extra_args": ["--x"]},
+            headers={"Idempotency-Key": "job-key-1"},
+        ).status_code
+        == 409
+    )
+    out["job_method_shape"] = jclient.get("/harness/jobs").status_code == 405
+    # drain: new submissions refused; existing records still readable
+    jclient.post("/harness/drain")
+    out["job_drain_refuses_submit"] = (
+        jclient.post("/harness/jobs", json={"command": "doctor"}).status_code == 503
+    )
+    out["job_status_under_drain"] = jclient.get(f"/harness/jobs/{job_id}").status_code == 200
+    out["job_replay_under_drain"] = (
+        jclient.post(
+            "/harness/jobs",
+            json={"command": "doctor"},
+            headers={"Idempotency-Key": "job-key-1"},
+        ).json()["replayed"]
+        is True
+    )
+    # store bound: evicting the oldest job drops its idem mapping
+    tiny_jobs = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        job_max=2,
+    )
+    tc3 = _TC2(tiny_jobs)
+    ids = [tc3.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"] for _ in range(3)]
+    out["job_bound_evicts"] = (
+        tc3.get(f"/harness/jobs/{ids[0]}").status_code == 404
+        and tc3.get(f"/harness/jobs/{ids[2]}").status_code == 200
+    )
+    try:
+        api_mod.create_app(job_max=0)
+        out["job_max_validated"] = False
+    except ValueError:
+        out["job_max_validated"] = True
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 
