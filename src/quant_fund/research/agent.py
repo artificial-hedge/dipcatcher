@@ -957,6 +957,14 @@ from quant_fund.research.benches_w120 import (
     bench_nucleolus_family,
     bench_owen_family,
 )
+from quant_fund.research.benches_w121 import (
+    bench_lil_ucb_family,
+    bench_median_elim_family,
+    bench_sequential_halving_family,
+    bench_track_stop_family,
+    bench_ttts_family,
+    bench_ugape_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3228,6 +3236,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "myerson_auction": bench_myerson_auction_family(),
         "groves": bench_groves_family(),
         "envy_free": bench_envy_free_family(),
+        "lil_ucb": bench_lil_ucb_family(),
+        "sequential_halving": bench_sequential_halving_family(),
+        "median_elim": bench_median_elim_family(),
+        "ugape": bench_ugape_family(),
+        "ttts": bench_ttts_family(),
+        "track_stop": bench_track_stop_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -1777,6 +1777,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "myerson_auction",
         "groves",
         "envy_free",
+        # Wave-121 canon: best-arm
+        # identification — LUCB,
+        # sequential halving, median
+        # elim, UGapE, TTTS, TnS.
+        "lil_ucb",
+        "sequential_halving",
+        "median_elim",
+        "ugape",
+        "ttts",
+        "track_stop",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
