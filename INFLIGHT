@@ -2541,3 +2541,4 @@ wave 140 (2026-10-02): geometric + structured nets — hyperbolic_nn, capsule_dy
 wave 141 (2026-10-02): certified robustness — randomized_smoothing, ibp_bounds, crown_bound, lipschitz_net, vector_neurons, gumbel_topk; 818→824 families.
 wave 142 (2026-10-02): sequence exotics — s4_ssm, rwkv_wkv, hyena_conv, retnet_decay, delta_net, mixture_of_depths; 824→830 families.
 wave 143 (2026-10-02): PEFT canon — lora_ft, qlora_nf4, dora_weight, prompt_tuning, prefix_tuning, task_vector_merge; 830→836 families.
+wave 144 (2026-10-02): inference-engine canon — speculative_decoding, paged_kv_cache, flash_attn, gqa_attn, sliding_window_cache, ring_attn; 836→842 families.
