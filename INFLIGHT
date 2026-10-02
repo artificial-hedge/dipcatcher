@@ -2251,4 +2251,11 @@ note: canon PR to follow.
     (512->518); agent.py wiring; tests: 6 module
     files + test_benches_w90 (41 tests).
   - Canon staged on top of w89-canon.
+  wave91:
+  - "unconstrained_optimizers","clustering_methods",
+    "manifold_learning","robust_regression",
+    "empirical_bayes","design_experiments"
+    (518->524); agent.py wiring; tests: 6 module
+    files + test_benches_w91 (43 tests).
+  - Canon staged on top of w90-canon.
 note: canon PR to follow.

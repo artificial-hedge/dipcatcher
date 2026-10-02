@@ -1396,6 +1396,28 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "marginal_likelihood",
         "root_finders",
         "blind_sources",
+        # Wave-91:
+        # Nelder-Mead (1965)/Powell
+        # (1964)/nonlinear-CG/BFGS +
+        # Levenberg-Marquardt,
+        # k-means++/PAM/DBSCAN/OPTICS
+        # clustering, LLE/Laplacian
+        # eigenmaps/diffusion map/
+        # t-SNE manifold learning,
+        # Huber/S/LTS/MM robust
+        # regression, Robbins/
+        # Tweedie/Kiefer-Wolfowitz
+        # empirical Bayes, and
+        # 2^k/PB/CCD/Box-Behnken/
+        # LHS/Fedorov-Dopt design.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "unconstrained_optimizers",
+        "clustering_methods",
+        "manifold_learning",
+        "robust_regression",
+        "empirical_bayes",
+        "design_experiments",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -717,6 +717,14 @@ from quant_fund.research.benches_w90 import (
     bench_projection_pursuit,
     bench_root_finders,
 )
+from quant_fund.research.benches_w91 import (
+    bench_clustering_methods,
+    bench_design_experiments,
+    bench_empirical_bayes,
+    bench_manifold_learning,
+    bench_robust_regression,
+    bench_unconstrained_optimizers,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2808,6 +2816,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "marginal_likelihood": bench_marginal_likelihood(),
         "root_finders": bench_root_finders(),
         "blind_sources": bench_blind_sources(),
+        "unconstrained_optimizers": bench_unconstrained_optimizers(),
+        "clustering_methods": bench_clustering_methods(),
+        "manifold_learning": bench_manifold_learning(),
+        "robust_regression": bench_robust_regression(),
+        "empirical_bayes": bench_empirical_bayes(),
+        "design_experiments": bench_design_experiments(),
     }
 
     hyps = _build_hypotheses(families, rankers)
