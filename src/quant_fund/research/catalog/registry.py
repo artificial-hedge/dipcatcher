@@ -2748,6 +2748,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "tomasulo_sim",
         "paging_sim",
         "roofline_model",
+        # Wave-232 blockchain canon: Merkle, PoW, UTXO, retarget,
+        # fork choice, block validation.
+        "merkle_tree",
+        "proof_of_work",
+        "utxo_set",
+        "difficulty_retarget",
+        "fork_resolution",
+        "block_validator",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
