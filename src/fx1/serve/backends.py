@@ -23,8 +23,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Protocol, cast, runtime_checkable
 
 from fx1.modelcard import ModelCard
 
@@ -104,10 +105,85 @@ def _openai_chat_complete(
     return content
 
 
+def _openai_chat_stream(
+    url: str,
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    timeout_s: float,
+    api_key: str | None,
+    label: str,
+) -> Iterator[str]:
+    """POST one streaming OpenAI-compatible chat completion.
+
+    Sends ``stream: true`` and yields each ``choices[0].delta.content``
+    string as it arrives over server-sent events. Empty ``delta`` frames
+    (role/handshake chunks) and ``data: [DONE]`` terminate the stream.
+    Malformed frames fail closed as ``RuntimeError`` — a stream is never
+    silently truncated.
+    """
+    body = json.dumps(
+        {"model": model, "messages": messages, "temperature": 0.0, "stream": True}
+    ).encode()
+    headers = {"Content-Type": "application/json", "Accept": "text/event-stream"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+            for raw_line in response:
+                line = raw_line.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                data = line[len("data:") :].strip()
+                if data == "[DONE]":
+                    break
+                try:
+                    chunk = json.loads(data)
+                except json.JSONDecodeError as exc:
+                    raise RuntimeError(
+                        f"malformed {label} stream chunk: not JSON ({data[:48]!r})"
+                    ) from exc
+                choices = chunk.get("choices") if isinstance(chunk, dict) else None
+                if choices is None:
+                    raise RuntimeError(f"malformed {label} stream chunk: missing choices")
+                if not choices:
+                    continue
+                delta = choices[0].get("delta") if isinstance(choices[0], dict) else None
+                if not isinstance(delta, dict):
+                    raise RuntimeError(f"malformed {label} stream chunk: missing delta")
+                content = delta.get("content")
+                if content is None:
+                    continue
+                if not isinstance(content, str):
+                    raise RuntimeError(
+                        f"malformed {label} stream chunk: content is "
+                        f"{type(content).__name__}, not str"
+                    )
+                yield content
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+
+
 class InferenceBackend(Protocol):
     """Chat-completion interface shared by all fx-1 backends."""
 
     def complete(self, messages: list[dict[str, str]]) -> str: ...
+
+
+@runtime_checkable
+class StreamingBackend(Protocol):
+    """Backends that additionally emit token deltas over the SSE wire.
+
+    ``stream`` is the optional second half of the contract: consumers check
+    ``isinstance(b, StreamingBackend)`` before subscribing, so a resolver-
+    supplied backend that can't stream fails closed (501) rather than
+    faking chunking.
+    """
+
+    def complete(self, messages: list[dict[str, str]]) -> str: ...
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]: ...
 
 
 class HostedK3Backend:
@@ -146,6 +222,17 @@ class HostedK3Backend:
                 f"malformed completion payload: content is {type(content).__name__}, not str"
             )
         return content
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        """Stream token deltas; Moonshot's API is OpenAI-SSE-compatible."""
+        return _openai_chat_stream(
+            self._api_url,
+            model=self._model,
+            messages=messages,
+            timeout_s=120,
+            api_key=self._api_key,
+            label="hosted_k3",
+        )
 
 
 class OpenAICompatBackend:
@@ -202,6 +289,17 @@ class OpenAICompatBackend:
 
     def complete(self, messages: list[dict[str, str]]) -> str:
         return _openai_chat_complete(
+            self._url,
+            model=self._model,
+            messages=messages,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="BYOK",
+        )
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        """Stream token deltas from the caller-declared endpoint."""
+        return _openai_chat_stream(
             self._url,
             model=self._model,
             messages=messages,
@@ -350,6 +448,18 @@ class LocalFx1Backend:
             )
         self._ensure_engine()
         return _openai_chat_complete(
+            self._url,
+            model=self._model,
+            messages=messages,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key or None,
+            label="local_fx1",
+        )
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        """Stream token deltas; the engine is ensured before subscribing."""
+        self._ensure_engine()
+        return _openai_chat_stream(
             self._url,
             model=self._model,
             messages=messages,

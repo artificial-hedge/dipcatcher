@@ -429,6 +429,73 @@ def api_audit() -> dict[str, Any]:
         and rj[1]["error_class"] == "honesty_refusal"
     )
 
+    # --- SSE streaming ---------------------------------------------------------
+    class _StreamBackend(_CleanBackend):
+        def stream(self, messages: list[dict[str, str]]) -> Any:
+            yield "tok-a"
+            yield "tok-b"
+
+    stream_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _StreamBackend()))
+    rs = stream_client.post(
+        "/harness/complete/stream",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "hi"}],
+            "receipt_hashes": ["a" * 64],
+        },
+    )
+    body_text = rs.text
+    frames = [ln for ln in body_text.split("\n\n") if ln.strip()]
+    out["stream_200_sse"] = (
+        rs.status_code == 200
+        and rs.headers.get("content-type", "").startswith("text/event-stream")
+        and len(frames) == 5  # 2 tokens + footer + final + [DONE]
+    )
+    payloads = [
+        _json.loads(ln[len("data: ") :])
+        for ln in frames
+        if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+    ]
+    out["stream_token_order"] = [p["content"] for p in payloads if p.get("type") == "token"][
+        :2
+    ] == ["tok-a", "tok-b"]
+    out["stream_final_envelope"] = payloads[-1].get("type") == "final" and payloads[-1].get(
+        "receipt_hashes"
+    ) == ["a" * 64]
+    out["stream_done_terminates"] = frames[-1].strip() == "data: [DONE]"
+    out["stream_footer_cited"] = any("Evidence:" in p.get("content", "") for p in payloads)
+
+    class _DirtyStreamBackend(_DirtyBackend):
+        def stream(self, messages: list[dict[str, str]]) -> Any:
+            yield "total Sharpe 4.2 on NAV"
+
+    dirty_stream = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _DirtyStreamBackend()))
+    rd = dirty_stream.post(
+        "/harness/complete/stream",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    # Gate fires before any SSE frame is emitted — the refusal is a plain
+    # JSON error, never a truncated event stream.
+    out["stream_gate_502_json"] = (
+        rd.status_code == 502
+        and not rd.headers.get("content-type", "").startswith("text/event-stream")
+        and "total Sharpe" not in rd.text
+    )
+    out["stream_local_no_checkpoint_422"] = (
+        stream_client.post(
+            "/harness/complete/stream",
+            json={"backend": "local_fx1", "messages": [{"role": "u", "content": "x"}]},
+        ).status_code
+        == 422
+    )
+    out["stream_unsupported_501"] = (
+        batch_client.post(  # _CleanBackend has no stream()
+            "/harness/complete/stream",
+            json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+        ).status_code
+        == 501
+    )
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 

@@ -22,6 +22,16 @@ is exposed four ways, all implemented over one code path:
 | CLI | `fx1 harness {list,run,complete,verify,health}` | shell/CI |
 | Direct | `Harness().run(...)` / `get_backend(name)` | library composition |
 
+Completion routes beyond `POST /harness/complete`:
+`POST /harness/complete/batch` fans up to 64 conversations over one
+shared backend (per-item `ok`/`error_class` verdicts; a gate refusal
+fails the slot, not the request — SDK twin `complete_many`), and
+`POST /harness/complete/stream` emits SSE `token` events + a `final`
+envelope + `[DONE]` — deltas are buffered and the joined text passes
+the honesty gate before any frame leaves, so gate refusals are plain
+JSON 502s, never truncated streams (SDK twin `stream_complete` returns
+the gated chunk list).
+
 Backends (the model side of `complete`/eval lanes):
 
 - `hosted_k3` — the K3 endpoint (`MOONSHOT_API_KEY`), temperature 0.

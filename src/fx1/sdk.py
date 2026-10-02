@@ -39,9 +39,11 @@ from typing import Any
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
+from fx1.honesty import validate_fx1_output
 from fx1.serve.backends import (
     BackendNotConfiguredError,
     InferenceBackend,
+    StreamingBackend,
     get_backend,
 )
 from fx1.serve.chat import cited_complete
@@ -147,18 +149,7 @@ class Fx1Harness:
         ``local_fx1``. The backend is always closed afterwards — engines
         spawned by ``LocalFx1Backend`` never leak.
         """
-        kwargs: dict[str, Any] = dict(backend_kwargs or {})
-        if backend == "local_fx1":
-            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
-            if not checkpoint:
-                raise ValueError(
-                    "local_fx1 needs a checkpoint_dir argument or "
-                    "FX1_CHECKPOINT_DIR in the environment"
-                )
-            kwargs["checkpoint_dir"] = str(checkpoint)
-        elif checkpoint_dir is not None:
-            raise ValueError("checkpoint_dir applies only to the local_fx1 backend")
-        backend_obj = self._resolve_backend(backend, **kwargs)
+        backend_obj = self._resolve_completion_backend(backend, checkpoint_dir, backend_kwargs)
         try:
             content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
         finally:
@@ -195,18 +186,7 @@ class Fx1Harness:
             raise ValueError(f"max_workers must be >= 1, got {max_workers}")
         if not batch:
             return []
-        kwargs: dict[str, Any] = dict(backend_kwargs or {})
-        if backend == "local_fx1":
-            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
-            if not checkpoint:
-                raise ValueError(
-                    "local_fx1 needs a checkpoint_dir argument or "
-                    "FX1_CHECKPOINT_DIR in the environment"
-                )
-            kwargs["checkpoint_dir"] = str(checkpoint)
-        elif checkpoint_dir is not None:
-            raise ValueError("checkpoint_dir applies only to the local_fx1 backend")
-        backend_obj = self._resolve_backend(backend, **kwargs)
+        backend_obj = self._resolve_completion_backend(backend, checkpoint_dir, backend_kwargs)
         try:
             with ThreadPoolExecutor(
                 max_workers=min(max_workers, len(batch)), thread_name_prefix="fx1-complete"
@@ -235,6 +215,64 @@ class Fx1Harness:
         ]
 
     # ---- receipts --------------------------------------------------------
+
+    def stream_complete(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        backend: str = "local_fx1",
+        checkpoint_dir: str | Path | None = None,
+        receipt_hashes: list[str] | None = None,
+        backend_kwargs: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """Token-delta chunks of one gated completion.
+
+        Mirrors ``POST /harness/complete/stream``: the backend's SSE deltas
+        are buffered, the joined text passes the honesty gate, and the
+        chunk list is returned (with the evidence footer appended as a
+        final chunk when ``receipt_hashes`` is given). Buffer-then-gate is
+        the contract — an in-process consumer never holds ungated bytes
+        either. A backend without ``stream`` raises ``NotImplementedError``
+        (501-class); the backend is always closed afterwards.
+        """
+        backend_obj = self._resolve_completion_backend(backend, checkpoint_dir, backend_kwargs)
+        try:
+            if not isinstance(backend_obj, StreamingBackend):
+                raise NotImplementedError(f"backend {backend!r} does not support streaming")
+            chunks = list(backend_obj.stream(messages))
+            joined = "".join(chunks)
+            validate_fx1_output(joined)
+            if receipt_hashes:
+                chunks.append(
+                    "\n\nEvidence: "
+                    + ", ".join(f"`{h[:16]}…`" for h in receipt_hashes)
+                    + " — verify with `dipcatcher verify-research`."
+                )
+            return chunks
+        finally:
+            closer = getattr(backend_obj, "close", None)
+            if callable(closer):
+                closer()
+
+    def _resolve_completion_backend(
+        self,
+        backend: str,
+        checkpoint_dir: str | Path | None,
+        backend_kwargs: dict[str, Any] | None,
+    ) -> Any:
+        """Checkpoint contract + backend resolution shared by completes."""
+        kwargs: dict[str, Any] = dict(backend_kwargs or {})
+        if backend == "local_fx1":
+            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
+            if not checkpoint:
+                raise ValueError(
+                    "local_fx1 needs a checkpoint_dir argument or "
+                    "FX1_CHECKPOINT_DIR in the environment"
+                )
+            kwargs["checkpoint_dir"] = str(checkpoint)
+        elif checkpoint_dir is not None:
+            raise ValueError("checkpoint_dir applies only to the local_fx1 backend")
+        return self._resolve_backend(backend, **kwargs)
 
     def verify_receipt(self, receipt: dict[str, Any]) -> ReceiptVerdict:
         """Deep-verify a receipt object against the v2 contract."""

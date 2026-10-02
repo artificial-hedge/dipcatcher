@@ -1,7 +1,7 @@
 {
   "kind": "serve_audit",
   "schema": "serve_audit.v1",
-  "git_revision": "aff7c3450e477c5f40974bb51353a34b4ca9875f",
+  "git_revision": "1f1ccec1b29ab66bb4e3b4ed527cf9867000be93",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -23,6 +23,12 @@
       "local_model_defaults_card": true,
       "local_url_normalized": true,
       "local_env_url_honored": true,
+      "local_stream_deltas": true,
+      "local_stream_wire_flag": true,
+      "local_stream_temp_pin": true,
+      "local_stream_accept_sse": true,
+      "local_stream_malformed_fails": true,
+      "local_is_streaming_backend": true,
       "local_spawn_template_ran": true,
       "local_close_terminates": true,
       "local_dead_engine_fails": true,
@@ -40,6 +46,8 @@
       "missing_dir_raises": true,
       "sign_no_key_raises": true,
       "get_backend_unknown": true,
+      "byok_is_streaming_backend": true,
+      "hosted_is_streaming_backend": true,
       "cited_footer": true,
       "cited_no_footer": true,
       "cited_honesty_blocks": true,
@@ -48,5 +56,5 @@
     "ok": true
   },
   "interpretation": "serve layer holds: hosted K3 needs env credentials and pins temperature=0; local checkpoints fail closed without a card, on a failed ship gate, and on missing/invalid signatures when required; the release chain detects tamper and wrong keys. Local weights serve through an OpenAI-compatible engine \u2014 attach or spawn, fail-closed when neither is configured; the spawn template's checkpoint path is the verified root. Flags: unlisted post-sign artifacts pass verification (manifest-scoped, not closed-world); signature gate defaults off without FX1_SIGNING_KEY; citation footer prints unverified hashes.",
-  "receipt_sha256": "97a2443d20d7683063af41894a2d46e7da3c934bdb84db327a96ff798a598db6"
+  "receipt_sha256": "c5c4617428bead2198730de2c67c8c13feec2583fc2a6451562575db7363d4b0"
 }

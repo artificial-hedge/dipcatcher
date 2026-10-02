@@ -63,6 +63,8 @@ def serve_audit() -> dict[str, Any]:
     from fx1.serve.backends import (
         HostedK3Backend,
         LocalFx1Backend,
+        OpenAICompatBackend,
+        StreamingBackend,
         get_backend,
     )
     from fx1.serve.chat import cited_complete
@@ -223,6 +225,51 @@ def serve_audit() -> dict[str, Any]:
             with patch.object(urllib.request, "urlopen", fake_urlopen2):
                 env_be.complete([{"role": "user", "content": "hi"}])
             out["local_env_url_honored"] = any("127.0.0.1:8012" in u for u in captured2["urls"])
+
+            # --- SSE streaming ------------------------------------------------
+            class _StreamResp:
+                def __init__(self, lines: list[bytes]) -> None:
+                    self._lines = lines
+
+                def __iter__(self) -> Any:
+                    return iter(self._lines)
+
+                def __enter__(self) -> _StreamResp:
+                    return self
+
+                def __exit__(self, *a: Any) -> None:
+                    return None
+
+            def fake_stream(req: Any, **kw: Any) -> _StreamResp:
+                captured2["stream_body"] = json.loads(req.data.decode())
+                captured2["accept"] = req.headers.get("Accept")
+                return _StreamResp(
+                    [
+                        b'data: {"choices": [{"delta": {"role": "assistant"}}]}\n\n',
+                        b'data: {"choices": [{"delta": {"content": "hel"}}]}\n\n',
+                        b'data: {"choices": [{"delta": {"content": "lo"}}]}\n\n',
+                        b"data: [DONE]\n\n",
+                        # frames after [DONE] must never reach the consumer
+                        b'data: {"choices": [{"delta": {"content": "NEVER"}}]}\n\n',
+                    ]
+                )
+
+            with patch.object(urllib.request, "urlopen", fake_stream):
+                deltas = list(attached.stream([{"role": "user", "content": "hi"}]))
+            out["local_stream_deltas"] = deltas == ["hel", "lo"]
+            out["local_stream_wire_flag"] = captured2["stream_body"].get("stream") is True
+            out["local_stream_temp_pin"] = captured2["stream_body"].get("temperature") == 0.0
+            out["local_stream_accept_sse"] = captured2["accept"] == "text/event-stream"
+
+            def fake_bad_stream(req: Any, **kw: Any) -> _StreamResp:
+                return _StreamResp([b"data: {not json\n\n"])
+
+            with patch.object(urllib.request, "urlopen", fake_bad_stream):
+                out["local_stream_malformed_fails"] = (
+                    _raises(lambda: list(attached.stream([{"role": "u", "content": "x"}])))
+                    == "RuntimeError"
+                )
+            out["local_is_streaming_backend"] = isinstance(attached, StreamingBackend)
             spawned = LocalFx1Backend(
                 root,
                 require_signature=True,
@@ -353,6 +400,19 @@ def serve_audit() -> dict[str, Any]:
         out["sign_no_key_raises"] = _raises(lambda: sign_release(root)) == "RuntimeError"
 
     out["get_backend_unknown"] = _raises(lambda: get_backend("nope")) == "KeyError"
+    out["byok_is_streaming_backend"] = isinstance(
+        OpenAICompatBackend(base_url="http://127.0.0.1:9/v1", api_key="k", model="m"),
+        StreamingBackend,
+    )
+    saved_k3 = os.environ.get("MOONSHOT_API_KEY")
+    os.environ["MOONSHOT_API_KEY"] = "probe-key"
+    try:
+        out["hosted_is_streaming_backend"] = isinstance(HostedK3Backend(), StreamingBackend)
+    finally:
+        if saved_k3 is None:
+            os.environ.pop("MOONSHOT_API_KEY", None)
+        else:
+            os.environ["MOONSHOT_API_KEY"] = saved_k3
 
     # ---------------- chat.cited_complete ------------------------
     class _Echo:

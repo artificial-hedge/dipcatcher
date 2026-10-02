@@ -34,18 +34,20 @@ requires ``X-API-Key``; unset, only loopback clients are served.
 from __future__ import annotations
 
 import hmac
+import json
 import os
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
-from fx1.honesty import Fx1HonestyError
+from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -53,6 +55,7 @@ from fx1.serve.backends import (
     LOCAL_SERVE_CMD_ENV,
     LOCAL_SERVE_URL_ENV,
     BackendNotConfiguredError,
+    StreamingBackend,
     get_backend,
 )
 from fx1.serve.chat import cited_complete
@@ -283,11 +286,11 @@ def create_app(
             timeout_s=command.timeout_s,
         )
 
-    @app.post("/harness/complete", response_model=CompleteResponse)
-    def complete(body: CompleteRequest) -> CompleteResponse:
+    def _resolve_request_backend(backend_name: str, checkpoint_dir: str | None) -> Any:
+        """Checkpoint validation + backend resolution → HTTP error map."""
         kwargs: dict[str, Any] = {}
-        if body.backend == "local_fx1":
-            checkpoint = body.checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
+        if backend_name == "local_fx1":
+            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
             if not checkpoint:
                 raise HTTPException(
                     422,
@@ -295,10 +298,10 @@ def create_app(
                     "FX1_CHECKPOINT_DIR on the server",
                 )
             kwargs["checkpoint_dir"] = checkpoint
-        elif body.checkpoint_dir is not None:
+        elif checkpoint_dir is not None:
             raise HTTPException(422, "checkpoint_dir applies only to the local_fx1 backend")
         try:
-            backend = resolve_backend(body.backend, **kwargs)
+            return resolve_backend(backend_name, **kwargs)
         except KeyError as exc:
             raise HTTPException(404, str(exc)) from exc
         except FileNotFoundError as exc:
@@ -307,6 +310,15 @@ def create_app(
             # Missing credentials / unsigned release / failed ship gate are
             # server-side configuration faults, not client input errors.
             raise HTTPException(503, str(exc)) from exc
+
+    def _close_backend(backend: Any) -> None:
+        closer = getattr(backend, "close", None)
+        if callable(closer):
+            closer()
+
+    @app.post("/harness/complete", response_model=CompleteResponse)
+    def complete(body: CompleteRequest) -> CompleteResponse:
+        backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
@@ -321,9 +333,7 @@ def create_app(
         except RuntimeError as exc:
             raise HTTPException(502, str(exc)) from exc
         finally:
-            closer = getattr(backend, "close", None)
-            if callable(closer):
-                closer()
+            _close_backend(backend)
         model_name = getattr(backend, "_model", None)
         return CompleteResponse(
             backend=body.backend,
@@ -332,28 +342,65 @@ def create_app(
             receipt_hashes=body.receipt_hashes or [],
         )
 
+    @app.post("/harness/complete/stream")
+    def complete_stream(body: CompleteRequest) -> StreamingResponse:
+        """Server-sent-event stream of one gated completion.
+
+        The backend's token deltas are buffered, the joined text passes the
+        honesty gate, and only then are chunks emitted as ``token`` events
+        plus a ``final`` envelope — the contract "no ungated bytes on the
+        wire" holds; gate refusals and backend failures surface as ordinary
+        JSON error responses, never mid-stream truncations. A backend
+        without ``stream`` fails 501 rather than faking chunking.
+        """
+        backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
+        messages = [{"role": m.role, "content": m.content} for m in body.messages]
+        try:
+            if not isinstance(backend, StreamingBackend):
+                raise NotImplementedError(f"backend {body.backend!r} does not support streaming")
+            chunks = list(backend.stream(messages))
+            joined = "".join(chunks)
+            try:
+                validate_fx1_output(joined)
+            except Fx1HonestyError as exc:
+                raise HTTPException(502, f"honesty gate refused model output: {exc}") from exc
+        except BackendNotConfiguredError as exc:
+            raise HTTPException(503, str(exc)) from exc
+        except NotImplementedError as exc:
+            raise HTTPException(501, str(exc)) from exc
+        except RuntimeError as exc:
+            raise HTTPException(502, str(exc)) from exc
+        finally:
+            _close_backend(backend)
+        model_name = getattr(backend, "_model", None)
+        if body.receipt_hashes:
+            chunks.append(
+                "\n\nEvidence: "
+                + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
+                + " — verify with `dipcatcher verify-research`."
+            )
+
+        def _events() -> Iterator[str]:
+            for chunk in chunks:
+                yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
+            yield (
+                "data: "
+                + json.dumps(
+                    {
+                        "type": "final",
+                        "model": model_name if isinstance(model_name, str) else None,
+                        "receipt_hashes": body.receipt_hashes or [],
+                    }
+                )
+                + "\n\n"
+            )
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(_events(), media_type="text/event-stream")
+
     @app.post("/harness/complete/batch", response_model=CompleteBatchResponse)
     def complete_batch(body: CompleteBatchRequest) -> CompleteBatchResponse:
-        kwargs: dict[str, Any] = {}
-        if body.backend == "local_fx1":
-            checkpoint = body.checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
-            if not checkpoint:
-                raise HTTPException(
-                    422,
-                    "local_fx1 needs a checkpoint_dir in the request or "
-                    "FX1_CHECKPOINT_DIR on the server",
-                )
-            kwargs["checkpoint_dir"] = checkpoint
-        elif body.checkpoint_dir is not None:
-            raise HTTPException(422, "checkpoint_dir applies only to the local_fx1 backend")
-        try:
-            backend = resolve_backend(body.backend, **kwargs)
-        except KeyError as exc:
-            raise HTTPException(404, str(exc)) from exc
-        except FileNotFoundError as exc:
-            raise HTTPException(422, str(exc)) from exc
-        except (RuntimeError, ValueError) as exc:
-            raise HTTPException(503, str(exc)) from exc
+        backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
         # are per-slot verdicts: a gate refusal on one prompt does not lose

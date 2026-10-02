@@ -58,6 +58,23 @@ class _FakeBackend:
         self.seen_messages = list(messages)
         return self._content
 
+    def stream(self, messages: list[dict[str, str]]) -> Any:
+        yield self._content[: len(self._content) // 2]
+        yield self._content[len(self._content) // 2 :]
+
+    def close(self) -> None:
+        self.closed += 1
+
+
+class _NonStreamingBackend:
+    """complete-only backend — the stream contract must fail closed."""
+
+    def __init__(self) -> None:
+        self.closed = 0
+
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        return "clean answer"
+
     def close(self) -> None:
         self.closed += 1
 
@@ -196,6 +213,44 @@ def sdk_audit() -> dict[str, bool]:
         == "Fx1HonestyError"
     )
     out["batch_closed_on_gate_fail"] = dirty_batch.closed == 1
+
+    # stream_complete: buffered deltas, gated before they reach the caller
+    stream_be = _FakeBackend()
+    sdk9 = Fx1Harness(backend_resolver=lambda *a, **k: stream_be)
+    chunks = sdk9.stream_complete([{"role": "user", "content": "hi"}], backend="byok")
+    out["stream_chunks_ordered"] = "".join(chunks) == "clean answer"
+    out["stream_backend_closed"] = stream_be.closed == 1
+    cited_chunks = sdk9.stream_complete(
+        [{"role": "u", "content": "x"}],
+        backend="byok",
+        receipt_hashes=["a" * 64],
+    )
+    out["stream_footer_cited"] = "Evidence:" in cited_chunks[-1]
+    out["stream_closed_on_cited"] = stream_be.closed == 2
+    dirty_stream = _FakeBackend("total Sharpe 9.9 on NAV")
+    sdk10 = Fx1Harness(backend_resolver=lambda *a, **k: dirty_stream)
+    out["stream_gate_propagates"] = (
+        _raises(lambda: sdk10.stream_complete([{"role": "u", "content": "x"}], backend="byok"))
+        == "Fx1HonestyError"
+    )
+    out["stream_closed_on_gate_fail"] = dirty_stream.closed == 1
+    plain = _NonStreamingBackend()
+    sdk11 = Fx1Harness(backend_resolver=lambda *a, **k: plain)
+    out["stream_unsupported_501"] = (
+        _raises(lambda: sdk11.stream_complete([{"role": "u", "content": "x"}], backend="byok"))
+        == "NotImplementedError"
+    )
+    out["stream_unsupported_closed"] = plain.closed == 1
+    out["stream_checkpoint_rejected"] = (
+        _raises(
+            lambda: sdk9.stream_complete(
+                [{"role": "u", "content": "x"}],
+                backend="byok",
+                checkpoint_dir="some-checkpoint",
+            )
+        )
+        == "ValueError"
+    )
 
     out["checkpoint_rejected_nonlocal"] = (
         _raises(
