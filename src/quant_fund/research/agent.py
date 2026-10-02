@@ -805,6 +805,14 @@ from quant_fund.research.benches_w101 import (
     bench_network_flow_family,
     bench_shortest_paths_family,
 )
+from quant_fund.research.benches_w102 import (
+    bench_adversarial_bandits_family,
+    bench_best_arm_family,
+    bench_contextual_bandits_family,
+    bench_kl_bandits_family,
+    bench_nonstationary_bandits_family,
+    bench_stochastic_bandits_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2962,6 +2970,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "assignment": bench_assignment_family(),
         "graph_components": bench_graph_components_family(),
         "exact_cover": bench_exact_cover_family(),
+        "stochastic_bandits": bench_stochastic_bandits_family(),
+        "kl_bandits": bench_kl_bandits_family(),
+        "contextual_bandits": bench_contextual_bandits_family(),
+        "adversarial_bandits": bench_adversarial_bandits_family(),
+        "best_arm": bench_best_arm_family(),
+        "nonstationary_bandits": bench_nonstationary_bandits_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -1579,6 +1579,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "assignment",
         "graph_components",
         "exact_cover",
+        # Wave-102 canon: multi-
+        # armed bandits — UCB1/
+        # eps-greedy/ETC, KL-UCB,
+        # LinUCB + linear TS,
+        # EXP3 + Hedge, SE + LUCB
+        # best arm, SW-/D-UCB.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "stochastic_bandits",
+        "kl_bandits",
+        "contextual_bandits",
+        "adversarial_bandits",
+        "best_arm",
+        "nonstationary_bandits",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
