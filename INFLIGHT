@@ -2619,3 +2619,4 @@ wave 218 (2026-10-02): advanced-derivatives canon — dupire_localvol, sabr_cali
 wave 219 (2026-10-02): SAT/symbolic canon — cdcl_solver, walksat, unit_propagation, twosat_scc, bdd_ops, ltl_mc; 1286→1292 families.
 wave 220 (2026-10-02): program-verification canon — k_induction, ic3_pdr, bmc_unroll, invariant_synth, hoare_logic, ranking_function, cegar_loop; 1292→1299 families.
 wave 221 (2026-10-02): computational-algebra canon — buchberger, resultant, poly_gcd, gf2_factor, lll_reduce, newton_interp; 1299→1305 families.
+wave 222 (2026-10-02): number-theory canon — miller_rabin, pollard_rho, tonelli_shanks, continued_fraction, crt_garner, ec_scalar; 1305→1311 families.
