@@ -21,6 +21,7 @@ Every result carries ``research_only=True`` and ``live_pnl_claim=False``.
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Protocol
@@ -119,12 +120,19 @@ def _funding_by_time(
     funding: pl.DataFrame | None,
     *,
     multiplier: float = 1.0,
+    bar_times: set[datetime] | None = None,
 ) -> dict[datetime, list[tuple[str, float]]]:
     """Group unique funding settlements; ``multiplier`` stress-scales rates.
 
     Each (security_id, event_time) identifies one settlement. Repeated rows,
     including conflicting rates or revisions, are ambiguous and fail closed
     rather than charging twice or choosing a rate by input order.
+
+    Optional ``application_time`` explicitly maps a settlement onto an earlier
+    or equal bar label while retaining the original settlement identity. When
+    ``bar_times`` is supplied, this must be the latest label at-or-before the
+    settlement. Rates are never netted: each cashflow and its sign remain
+    separately observable.
     """
     out: dict[datetime, list[tuple[str, float]]] = {}
     if funding is None or funding.height == 0:
@@ -133,6 +141,7 @@ def _funding_by_time(
     missing = required - set(funding.columns)
     if missing:
         raise ValueError(f"funding frame missing columns: {sorted(missing)}")
+    ordered_bar_times = sorted(bar_times) if bar_times is not None else None
     seen: set[tuple[str, datetime]] = set()
     for row in funding.iter_rows(named=True):
         sid, event_time = str(row["security_id"]), row["event_time"]
@@ -143,7 +152,27 @@ def _funding_by_time(
         rate = float(row["value"]) * multiplier
         if not np.isfinite(rate):
             raise ValueError("funding rate must be finite")
-        out.setdefault(event_time, []).append((sid, rate))
+        application_time = row.get("application_time", event_time)
+        if "application_time" in row:
+            if not isinstance(application_time, datetime) or not isinstance(event_time, datetime):
+                raise ValueError("funding application_time and event_time must be datetimes")
+            try:
+                future = application_time > event_time
+            except TypeError as exc:
+                raise ValueError(
+                    "funding application_time must be comparable to event_time"
+                ) from exc
+            if future:
+                raise ValueError("funding application_time cannot be later than event_time")
+            if bar_times is not None and application_time not in bar_times:
+                raise ValueError("funding application_time must match an input bar label")
+            if ordered_bar_times is not None:
+                index = bisect_right(ordered_bar_times, event_time) - 1
+                if index < 0 or ordered_bar_times[index] != application_time:
+                    raise ValueError(
+                        "funding application_time must be the latest bar at-or-before event_time"
+                    )
+        out.setdefault(application_time, []).append((sid, rate))
     return out
 
 
@@ -205,7 +234,7 @@ def run_perp_backtest(
         else infer_periods_per_year(times, perp.bar_seconds_hint)
     )
     fund_map = (
-        _funding_by_time(funding, multiplier=perp.funding_spike_multiplier)
+        _funding_by_time(funding, multiplier=perp.funding_spike_multiplier, bar_times=set(times))
         if perp.funding_enabled
         else {}
     )
