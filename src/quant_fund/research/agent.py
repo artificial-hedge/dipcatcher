@@ -1037,6 +1037,14 @@ from quant_fund.research.benches_w130 import (
     bench_sac_agent_family,
     bench_trajectory_transformer_family,
 )
+from quant_fund.research.benches_w131 import (
+    bench_consistency_ts_family,
+    bench_energy_ts_family,
+    bench_flow_matching_ts_family,
+    bench_perceiver_ts_family,
+    bench_score_sde_ts_family,
+    bench_vq_vae_ts_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3368,6 +3376,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "trajectory_transformer": bench_trajectory_transformer_family(),
         "sac_agent": bench_sac_agent_family(),
         "gail_imitation": bench_gail_imitation_family(),
+        "vq_vae_ts": bench_vq_vae_ts_family(),
+        "flow_matching_ts": bench_flow_matching_ts_family(),
+        "score_sde_ts": bench_score_sde_ts_family(),
+        "consistency_ts": bench_consistency_ts_family(),
+        "energy_ts": bench_energy_ts_family(),
+        "perceiver_ts": bench_perceiver_ts_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -2528,3 +2528,4 @@ wave 127 (2026-10-02): exec-summary DL-2 — contrastive_repr, hypernetwork_allo
 wave 128 (2026-10-02): exec-summary DL-3 — kan_forecaster, ts_mixer, informer_attn, cnn_alpha, mask_autoencoder, graph_temporal; 740→746 families.
 wave 129 (2026-10-02): exec-summary DL-4 — itransformer, tcn_forecaster, ft_transformer, nbeats_deep, mambats, crossformer; 746→752 families.
 wave 130 (2026-10-02): offline-RL sequence decision — decision_transformer, cql_agent, iql_agent, trajectory_transformer, sac_agent, gail_imitation; 752→758 families.
+wave 131 (2026-10-02): generative sequence — vq_vae_ts, flow_matching_ts, score_sde_ts, consistency_ts, energy_ts, perceiver_ts; 758→764 families.
