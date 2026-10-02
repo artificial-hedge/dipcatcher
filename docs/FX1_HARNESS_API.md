@@ -49,6 +49,7 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
 | `GET /ready` | readiness: `200 {ready, inflight}` until drain latches → `503` |
 | `GET /metrics` | ops counters; `?format=prom` or `Accept: text/plain` renders Prometheus exposition |
 | `GET /harness/version` | `{"api_version", "fx1_version"}` — negotiate before sending work |
+| `GET /harness/capabilities` | `{"features", "limits", "backends", "roles"}` — self-configure batch caps, retry budgets, stream use |
 | `GET /harness/commands` | registered commands, optional `?role=` filter |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) |
@@ -120,6 +121,15 @@ client.last_api_version  # stamped header from the last response
 
 `fx1 harness compat --remote URL` prints the report and exits 1 on
 mismatch — deploy pipelines gate on it before routing traffic.
+
+`fx1 harness capabilities --remote URL` (`client.capabilities()` /
+`HarnessApiClient.capabilities()`) returns the server's declared feature
+set (`features`: idempotency, SSE, webhooks, batch, jobs, drain,
+streaming), its effective limits (`limits`: batch caps, store bounds,
+`rate_limit_rps`, `sse_keepalive_s`, body/job-result byte caps), which
+backends are configured (`backends`, booleans only), and the registered
+command roles (`roles`). Clients self-configure from this instead of
+hardcoding server internals.
 
 ## Async jobs & webhooks
 

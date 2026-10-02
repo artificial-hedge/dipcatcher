@@ -1548,6 +1548,39 @@ def api_audit() -> dict[str, Any]:
     out["contract_single_source"] = (
         api_mod.API_VERSION == _WIRE_VERSION == EXPECTED_API_VERSION == "1"
     )
+    from fastapi.testclient import TestClient as _CapTC  # noqa: PLC0415
+
+    from fx1.harness import HarnessRole as _HarnessRole  # noqa: PLC0415
+
+    # /harness/capabilities — self-describing feature/limit discovery.
+    cap = client.get("/harness/capabilities")
+    out["capabilities_route_200"] = cap.status_code == 200
+    if cap.status_code == 200:
+        capj = cap.json()
+        out["capabilities_shape"] = all(
+            k in capj for k in ("features", "limits", "backends", "roles", "api_version")
+        )
+        out["capabilities_features"] = all(
+            capj["features"].get(f) is True
+            for f in ("idempotency", "sse", "webhooks", "batch", "jobs", "drain")
+        )
+        out["capabilities_roles_cover_registry"] = set(capj["roles"]) == {
+            str(r) for r in _HarnessRole
+        }
+    else:
+        out["capabilities_shape"] = False
+        out["capabilities_features"] = False
+        out["capabilities_roles_cover_registry"] = False
+    cap_app = api_mod.create_app(max_inflight=7, job_max=33, idem_max=17, rate_limit_rps=50.0)
+    cap2 = _CapTC(cap_app).get("/harness/capabilities").json()
+    out["capabilities_limits_reflect_config"] = (
+        cap2["limits"]["max_inflight"] == 7.0
+        and cap2["limits"]["job_max"] == 33.0
+        and cap2["limits"]["idem_max"] == 17.0
+        and cap2["limits"]["rate_limit_rps"] == 50.0
+    )
+    cap3 = _CapTC(api_mod.create_app(rate_limit_rps=0.0)).get("/harness/capabilities").json()
+    out["capabilities_limiter_disabled_reports_zero"] = cap3["limits"]["rate_limit_rps"] == 0.0
     out["api_version_header_on_every_response"] = (
         client.get("/health").headers.get("x-fx1-api-version") == api_mod.API_VERSION
         and big.headers.get("x-fx1-api-version") == api_mod.API_VERSION

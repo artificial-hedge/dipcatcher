@@ -42,6 +42,10 @@ const fx1 = new HarnessApiClient(); // http://127.0.0.1:8011
 // Negotiate the wire contract before sending work
 await fx1.checkCompat(); // throws HarnessCompatError on mismatch
 
+// Self-configure from the server's declared features + effective limits
+const caps = await fx1.capabilities();
+// caps.features.jobs, caps.limits.job_batch_max, caps.backends.byok, ...
+
 // Gated completion (BYOK lane shown; hosted_k3/local_fx1 identical)
 const out = await fx1.complete({
   backend: "byok",

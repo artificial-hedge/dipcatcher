@@ -1029,6 +1029,15 @@ def parity_audit() -> dict[str, bool]:
                 {"X-Fx1-Api-Version": "1"},
                 b'{"api_version": "1", "fx1_version": "0.4.0"}',
             )
+        if "/harness/capabilities" in url:
+            return (
+                200,
+                {},
+                b'{"api_version": "1", "fx1_version": "0.4.0", '
+                b'"features": {"idempotency": true, "sse": true}, '
+                b'"limits": {"max_inflight": 4.0, "job_batch_max": 64.0}, '
+                b'"backends": {"byok": false}, "roles": ["evaluation"]}',
+            )
         if "/ready" in url:
             return 200, {}, b'{"ready": true, "inflight": 2}'
         return (
@@ -1048,6 +1057,12 @@ def parity_audit() -> dict[str, bool]:
         "fx1_version": "0.4.0",
     }
     out["client_last_api_version"] = c_ops.last_api_version == "1"
+    cabcaps = c_ops.capabilities()
+    out["client_capabilities_get"] = (
+        cabcaps["features"]["idempotency"] is True
+        and cabcaps["limits"]["job_batch_max"] == 64.0
+        and cabcaps["roles"] == ["evaluation"]
+    )
 
     # ---- wire-contract negotiation --------------------------------------
     compat = c_ops.check_compat()

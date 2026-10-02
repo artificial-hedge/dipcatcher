@@ -618,6 +618,24 @@ def harness_compat(
         raise typer.Exit(code=1)
 
 
+@harness_app.command("capabilities")
+def harness_capabilities(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Server self-description: wire features + effective limits, so a
+    deploy can sanity-check the remote's config before routing work."""
+    if remote is None:
+        typer.echo(
+            "error: harness capabilities is a wire-ops surface; pass --remote",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    client = _remote_client(remote, api_key, timeout_s)
+    typer.echo(json.dumps(_or_exit(lambda: client.capabilities())))
+
+
 @harness_app.command("ready")
 def harness_ready(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),

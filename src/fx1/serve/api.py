@@ -353,6 +353,20 @@ class VersionResponse(_Model):
     fx1_version: str
 
 
+class CapabilitiesResponse(_Model):
+    """Self-describing discovery payload: which wire features this build
+    serves and the operational limits in effect — clients self-configure
+    (batch sizes, retry budgets, stream use) from one call instead of
+    hardcoding server internals."""
+
+    api_version: str
+    fx1_version: str
+    features: dict[str, bool]
+    limits: dict[str, float]
+    backends: dict[str, bool]
+    roles: list[str]
+
+
 _JOB_STATUSES = ("queued", "running", "succeeded", "failed", "cancelled")
 _TERMINAL_JOB_STATUS = frozenset({"succeeded", "failed", "cancelled"})
 _JobStatus = Literal["queued", "running", "succeeded", "failed", "cancelled"]
@@ -1651,6 +1665,46 @@ def create_app(
         tags=["ops"],
         operation_id="get_version",
     )
+
+    @app.get(
+        "/harness/capabilities",
+        response_model=CapabilitiesResponse,
+        tags=["ops"],
+        operation_id="get_capabilities",
+    )
+    def capabilities() -> CapabilitiesResponse:
+        """Discovery: the wire features this build serves and the
+        operational limits actually in effect. A client learns batch
+        caps, store bounds, rate limits, and feature flags (idempotency,
+        SSE, webhooks, drain) from one call — nothing is hardcoded."""
+        return CapabilitiesResponse(
+            api_version=API_VERSION,
+            fx1_version=__version__,
+            features={
+                "idempotency": True,
+                "sse": True,
+                "webhooks": True,
+                "batch": True,
+                "jobs": True,
+                "drain": True,
+                "streaming": True,
+            },
+            limits={
+                "max_inflight": float(metrics.max_inflight),
+                "job_max": float(job_store._max),
+                "idem_max": float(idem_store._max),
+                "job_batch_max": float(_JOB_BATCH_MAX),
+                "verify_batch_max": float(_VERIFY_BATCH_MAX),
+                "complete_batch_max": 64.0,
+                "body_max_bytes": float(_MAX_BODY_BYTES),
+                "job_result_max_bytes": float(_JOB_RESULT_MAX_BYTES),
+                "rate_limit_rps": limiter.rps if limiter is not None else 0.0,
+                "sse_keepalive_s": float(sse_keepalive_s),
+                "gzip_min_bytes": float(gzip_min_bytes),
+            },
+            backends=_backend_configured(),
+            roles=sorted({str(c.role) for c in lab.list_commands()}),
+        )
 
     @app.post(
         "/harness/drain",

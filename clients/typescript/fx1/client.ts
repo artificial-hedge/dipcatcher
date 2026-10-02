@@ -14,6 +14,8 @@
 import type { components, paths } from "./schema.d.ts";
 
 export type Backend = components["schemas"]["CompleteRequest"]["backend"];
+export type CapabilitiesResponse =
+  components["schemas"]["CapabilitiesResponse"];
 export type ChatMessage = components["schemas"]["ChatMessage"];
 export type CompleteRequest = components["schemas"]["CompleteRequest"];
 export type CompleteResponse = components["schemas"]["CompleteResponse"];
@@ -235,6 +237,15 @@ export class HarnessApiClient {
     };
     if (strict && !report.compatible) throw new HarnessCompatError(report);
     return report;
+  }
+
+  /**
+   * GET /harness/capabilities — the server's self-describing feature
+   * flags and effective limits (batch caps, store bounds, rate limit).
+   * Self-configure from this instead of hardcoding server internals.
+   */
+  capabilities(): Promise<CapabilitiesResponse> {
+    return this.get("/harness/capabilities");
   }
 
   /** GET /harness/commands — registered commands, `role` filters. */

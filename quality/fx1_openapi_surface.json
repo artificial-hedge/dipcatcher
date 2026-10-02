@@ -3,6 +3,15 @@
   "title": "fx-1 harness API",
   "version": "0.4.0",
   "paths": {
+    "/harness/capabilities": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/harness/commands": {
       "get": {
         "params": [
@@ -258,5 +267,5 @@
       }
     }
   },
-  "schema_sha256": "3d97b68c9c26ef4436120e1f0f451469c1be5ecac1926a6dca029a24c602f19c"
+  "schema_sha256": "6f6d1b6ae6707c191a6c7cc8f82a7acbab6697acab60fa0af3599f2802f83967"
 }

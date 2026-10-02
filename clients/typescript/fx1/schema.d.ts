@@ -4,6 +4,29 @@
  */
 
 export interface paths {
+    "/harness/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Capabilities
+         * @description Discovery: the wire features this build serves and the
+         *     operational limits actually in effect. A client learns batch
+         *     caps, store bounds, rate limits, and feature flags (idempotency,
+         *     SSE, webhooks, drain) from one call — nothing is hardcoded.
+         */
+        get: operations["get_capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/commands": {
         parameters: {
             query?: never;
@@ -358,6 +381,33 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * CapabilitiesResponse
+         * @description Self-describing discovery payload: which wire features this build
+         *     serves and the operational limits in effect — clients self-configure
+         *     (batch sizes, retry budgets, stream use) from one call instead of
+         *     hardcoding server internals.
+         */
+        CapabilitiesResponse: {
+            /** Api Version */
+            api_version: string;
+            /** Backends */
+            backends: {
+                [key: string]: boolean;
+            };
+            /** Features */
+            features: {
+                [key: string]: boolean;
+            };
+            /** Fx1 Version */
+            fx1_version: string;
+            /** Limits */
+            limits: {
+                [key: string]: number;
+            };
+            /** Roles */
+            roles: string[];
+        };
         /** ChatMessage */
         ChatMessage: {
             /** Content */
@@ -791,6 +841,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapabilitiesResponse"];
+                };
+            };
+        };
+    };
     list_commands: {
         parameters: {
             query?: {

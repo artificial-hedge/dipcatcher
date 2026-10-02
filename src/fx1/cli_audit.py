@@ -338,6 +338,16 @@ def cli_audit() -> dict[str, Any]:
         def server_version(self) -> dict[str, Any]:
             return {"api_version": "1", "fx1_version": "0.4.0"}
 
+        def capabilities(self) -> dict[str, Any]:
+            return {
+                "api_version": "1",
+                "fx1_version": "0.4.0",
+                "features": {"jobs": True, "sse": True},
+                "limits": {"max_inflight": 4.0, "job_batch_max": 64.0},
+                "backends": {"byok": True},
+                "roles": ["evaluation"],
+            }
+
         def check_compat(self, strict: bool = True) -> dict[str, Any]:
             self.last_compat_strict = strict
             return {
@@ -539,6 +549,25 @@ def cli_audit() -> dict[str, Any]:
         )
     rcp_local = runner.invoke(app, ["harness", "compat"])
     out["compat_local_refused"] = rcp_local.exit_code == 2 and "--remote" in rcp_local.output
+
+    # capabilities is a wire-ops surface: refused locally, JSON remote
+    with patch("fx1.serve.client.HarnessClient") as mc3:
+        inst3 = mc3.return_value
+        inst3.capabilities.return_value = {
+            "api_version": "1",
+            "features": {"jobs": True},
+            "limits": {"job_batch_max": 64.0},
+            "backends": {"byok": True},
+            "roles": ["evaluation"],
+        }
+        rcp_cap = runner.invoke(app, ["harness", "capabilities", "--remote", "http://h.test"])
+        out["remote_capabilities_json"] = (
+            rcp_cap.exit_code == 0 and json.loads(rcp_cap.stdout)["limits"]["job_batch_max"] == 64.0
+        )
+    rcap_local = runner.invoke(app, ["harness", "capabilities"])
+    out["capabilities_local_refused"] = (
+        rcap_local.exit_code == 2 and "--remote" in rcap_local.output
+    )
 
     # metrics + drain + jobs are wire-ops surfaces — without --remote they fail clean
     rm_local = runner.invoke(app, ["harness", "metrics"])

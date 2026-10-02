@@ -802,6 +802,13 @@ class HarnessClient:
             )
         return report
 
+    def capabilities(self) -> dict[str, Any]:
+        """GET /harness/capabilities — the server's self-describing feature
+        flags and effective limits (batch caps, store bounds, rate limit).
+        Clients self-configure from this instead of hardcoding limits."""
+        out = self._json("GET", "/harness/capabilities", idempotent=True)
+        return dict(out)
+
     def ready(self) -> dict[str, Any]:
         """Readiness probe: returns the payload while the server accepts new
         work; raises ``BackendNotConfiguredError`` (503) once drain is
