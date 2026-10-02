@@ -1173,6 +1173,14 @@ from quant_fund.research.benches_w147 import (
     bench_reward_model_family,
     bench_rlhf_ppo_family,
 )
+from quant_fund.research.benches_w148 import (
+    bench_activation_steering_family,
+    bench_circuit_ablation_family,
+    bench_logit_lens_family,
+    bench_patch_activation_family,
+    bench_probe_linear_family,
+    bench_sae_feature_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3606,6 +3614,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "kto_train": bench_kto_train_family(),
         "grpo_train": bench_grpo_train_family(),
         "rlhf_ppo": bench_rlhf_ppo_family(),
+        "sae_feature": bench_sae_feature_family(),
+        "activation_steering": bench_activation_steering_family(),
+        "probe_linear": bench_probe_linear_family(),
+        "logit_lens": bench_logit_lens_family(),
+        "patch_activation": bench_patch_activation_family(),
+        "circuit_ablation": bench_circuit_ablation_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
