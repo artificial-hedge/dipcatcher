@@ -1790,6 +1790,14 @@ from quant_fund.research.benches_w224 import (
     bench_lz77_family,
     bench_suffix_automaton_family,
 )
+from quant_fund.research.benches_w225 import (
+    bench_barnes_hut_family,
+    bench_fem_truss_family,
+    bench_nbody_leapfrog_family,
+    bench_rigid_collision_family,
+    bench_sph_fluid_family,
+    bench_verlet_cloth_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4686,6 +4694,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "edit_distance": bench_edit_distance_family(),
         "lz77": bench_lz77_family(),
         "bwt_transform": bench_bwt_transform_family(),
+        "nbody_leapfrog": bench_nbody_leapfrog_family(),
+        "barnes_hut": bench_barnes_hut_family(),
+        "sph_fluid": bench_sph_fluid_family(),
+        "rigid_collision": bench_rigid_collision_family(),
+        "verlet_cloth": bench_verlet_cloth_family(),
+        "fem_truss": bench_fem_truss_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

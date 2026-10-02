@@ -2692,6 +2692,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "edit_distance",
         "lz77",
         "bwt_transform",
+        # Wave-225 physics simulation: leapfrog N-body,
+        # Barnes-Hut, SPH, rigid impulses, Verlet cloth, FEM truss.
+        "nbody_leapfrog",
+        "barnes_hut",
+        "sph_fluid",
+        "rigid_collision",
+        "verlet_cloth",
+        "fem_truss",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
