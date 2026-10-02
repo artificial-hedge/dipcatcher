@@ -500,10 +500,17 @@ export interface components {
     schemas: {
         /**
          * BackendCompletionStats
-         * @description Per-backend completion accounting: outcome counts + a cumulative
-         *     latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``).
+         * @description Per-backend completion accounting: outcome counts, a cumulative
+         *     latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and
+         *     backend-reported token sums. ``usage_calls`` counts calls that carried
+         *     a usage dict — a silent provider shows zero tokens AND zero calls.
          */
         BackendCompletionStats: {
+            /**
+             * Completion Tokens
+             * @default 0
+             */
+            completion_tokens: number;
             /**
              * Error
              * @default 0
@@ -531,6 +538,21 @@ export interface components {
              * @default 0
              */
             ok: number;
+            /**
+             * Prompt Tokens
+             * @default 0
+             */
+            prompt_tokens: number;
+            /**
+             * Total Tokens
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Usage Calls
+             * @default 0
+             */
+            usage_calls: number;
         };
         /**
          * BackendProbeRequest
@@ -570,6 +592,22 @@ export interface components {
             ok: boolean;
         };
         /**
+         * BackendProbeVerdict
+         * @description The most recent ``/harness/backends/{name}/probe`` outcome — kept
+         *     process-local so a monitoring scrape can read the last deep-health
+         *     verdict without spending another live call.
+         */
+        BackendProbeVerdict: {
+            /** Checked At */
+            checked_at: number;
+            /** Error Class */
+            error_class?: string | null;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Ok */
+            ok: boolean;
+        };
+        /**
          * BackendStatusEntry
          * @description One backend's liveness surface: whether it is configured and, when
          *     the circuit breaker is enabled, whether it is currently fast-failing.
@@ -583,6 +621,7 @@ export interface components {
             consecutive_failures: number;
             /** Cooldown Remaining S */
             cooldown_remaining_s: number;
+            last_probe?: components["schemas"]["BackendProbeVerdict"] | null;
         };
         /**
          * ByokOverride

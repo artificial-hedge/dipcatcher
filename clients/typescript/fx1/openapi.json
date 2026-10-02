@@ -3,8 +3,13 @@
     "schemas": {
       "BackendCompletionStats": {
         "additionalProperties": false,
-        "description": "Per-backend completion accounting: outcome counts + a cumulative\nlatency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``).",
+        "description": "Per-backend completion accounting: outcome counts, a cumulative\nlatency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``), and\nbackend-reported token sums. ``usage_calls`` counts calls that carried\na usage dict \u2014 a silent provider shows zero tokens AND zero calls.",
         "properties": {
+          "completion_tokens": {
+            "default": 0,
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
           "error": {
             "default": 0,
             "title": "Error",
@@ -31,6 +36,21 @@
           "ok": {
             "default": 0,
             "title": "Ok",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "default": 0,
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "default": 0,
+            "title": "Total Tokens",
+            "type": "integer"
+          },
+          "usage_calls": {
+            "default": 0,
+            "title": "Usage Calls",
             "type": "integer"
           }
         },
@@ -144,6 +164,42 @@
         "title": "BackendProbeResponse",
         "type": "object"
       },
+      "BackendProbeVerdict": {
+        "additionalProperties": false,
+        "description": "The most recent ``/harness/backends/{name}/probe`` outcome \u2014 kept\nprocess-local so a monitoring scrape can read the last deep-health\nverdict without spending another live call.",
+        "properties": {
+          "checked_at": {
+            "title": "Checked At",
+            "type": "number"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "number"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "latency_ms",
+          "checked_at"
+        ],
+        "title": "BackendProbeVerdict",
+        "type": "object"
+      },
       "BackendStatusEntry": {
         "additionalProperties": false,
         "description": "One backend's liveness surface: whether it is configured and, when\nthe circuit breaker is enabled, whether it is currently fast-failing.",
@@ -163,6 +219,16 @@
           "cooldown_remaining_s": {
             "title": "Cooldown Remaining S",
             "type": "number"
+          },
+          "last_probe": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BackendProbeVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [

@@ -8,6 +8,7 @@
       "auth_health_still_public": true,
       "auth_required_401": true,
       "auth_wrong_key_401": true,
+      "backends_last_probe": true,
       "backends_route_reports_state": true,
       "bad_content_length_400": true,
       "batch_closed_once": true,
@@ -283,11 +284,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "344ab82c03e8f710fe72b7d77b8d09600f511cc5",
+  "git_revision": "254656bb8c8e08ec4cbc9bcd8634fb68c42a9884",
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "4deeb6342a984b3fe48d90b44104bff55efd6ac621f049fb61a311d0b467494e",
+  "receipt_sha256": "278037385361e2741acdc02963403b10217f64a9771b293c0c793cace27d65bd",
   "research_only": true,
   "schema": "api_audit.v1"
 }

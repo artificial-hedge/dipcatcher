@@ -567,6 +567,17 @@ class CapabilitiesResponse(_Model):
     roles: list[str]
 
 
+class BackendProbeVerdict(_Model):
+    """The most recent ``/harness/backends/{name}/probe`` outcome — kept
+    process-local so a monitoring scrape can read the last deep-health
+    verdict without spending another live call."""
+
+    ok: bool
+    latency_ms: float
+    checked_at: float
+    error_class: str | None = None
+
+
 class BackendStatusEntry(_Model):
     """One backend's liveness surface: whether it is configured and, when
     the circuit breaker is enabled, whether it is currently fast-failing."""
@@ -575,6 +586,7 @@ class BackendStatusEntry(_Model):
     circuit_open: bool
     cooldown_remaining_s: float
     consecutive_failures: int
+    last_probe: BackendProbeVerdict | None = None
 
 
 _JOB_STATUSES = ("queued", "running", "succeeded", "failed", "cancelled")
@@ -1659,6 +1671,8 @@ def _mount_complete_routes(
     breaker: _BackendBreaker | None,
     receipt_index: _ReceiptIndex,
     metrics: _Metrics,
+    probe_cache: dict[str, BackendProbeVerdict],
+    probe_lock: threading.Lock,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) — extracted from
     ``create_app`` to keep its branch complexity under the ruff cap."""
@@ -2106,6 +2120,17 @@ def _mount_complete_routes(
         the circuit; the verdict series lands under ``probe:<name>``."""
         req = body or BackendProbeRequest()
         t0 = time.monotonic()
+
+        def _verdict(resp: BackendProbeResponse) -> BackendProbeResponse:
+            with probe_lock:
+                probe_cache[name] = BackendProbeVerdict(
+                    ok=resp.ok,
+                    latency_ms=resp.latency_ms,
+                    checked_at=time.time(),
+                    error_class=resp.error_class,
+                )
+            return resp
+
         try:
             backend = resolve_backend(
                 name,
@@ -2118,13 +2143,15 @@ def _mount_complete_routes(
             # HTTP fault — report it as ok:false. Client-side arg errors
             # (404/422) still propagate as request errors.
             if exc.status_code == 503:
-                return BackendProbeResponse(
-                    backend=name,
-                    ok=False,
-                    model=None,
-                    latency_ms=(time.monotonic() - t0) * 1000.0,
-                    error=str(exc.detail),
-                    error_class="backend_unavailable",
+                return _verdict(
+                    BackendProbeResponse(
+                        backend=name,
+                        ok=False,
+                        model=None,
+                        latency_ms=(time.monotonic() - t0) * 1000.0,
+                        error=str(exc.detail),
+                        error_class="backend_unavailable",
+                    )
                 )
             raise
         ok = False
@@ -2153,13 +2180,15 @@ def _mount_complete_routes(
             )
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
-        return BackendProbeResponse(
-            backend=name,
-            ok=ok,
-            model=model_name if isinstance(model_name, str) else None,
-            latency_ms=(time.monotonic() - t0) * 1000.0,
-            error=error,
-            error_class=error_class,
+        return _verdict(
+            BackendProbeResponse(
+                backend=name,
+                ok=ok,
+                model=model_name if isinstance(model_name, str) else None,
+                latency_ms=(time.monotonic() - t0) * 1000.0,
+                error=error,
+                error_class=error_class,
+            )
         )
 
     @app.post(
@@ -2235,6 +2264,10 @@ def create_app(
     # health) stay uncapped so liveness answers under load.
     inflight = threading.BoundedSemaphore(max_inflight)
     metrics = _Metrics(max_inflight)
+    # Last deep-health verdict per backend — process-local so monitoring
+    # scrapes read it off ``GET /harness/backends`` without re-probing.
+    probe_cache: dict[str, BackendProbeVerdict] = {}
+    probe_lock = threading.Lock()
     idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(idem_max)
     complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
@@ -2507,11 +2540,14 @@ def create_app(
             circuit_open, remaining, fails = (
                 breaker.state(name) if breaker is not None else (False, 0.0, 0)
             )
+            with probe_lock:
+                last_probe = probe_cache.get(name)
             out[name] = BackendStatusEntry(
                 configured=cfg,
                 circuit_open=circuit_open,
                 cooldown_remaining_s=round(remaining, 3),
                 consecutive_failures=fails,
+                last_probe=last_probe,
             )
         return out
 
@@ -2651,6 +2687,8 @@ def create_app(
         breaker=breaker,
         receipt_index=receipt_index,
         metrics=metrics,
+        probe_cache=probe_cache,
+        probe_lock=probe_lock,
     )
 
     _mount_receipt_routes(app, receipt_index)

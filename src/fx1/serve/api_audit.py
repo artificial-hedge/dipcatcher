@@ -2569,6 +2569,21 @@ def _probe_backend_probes(
         {"prompt_tokens": 7, "completion_tokens": 2, "total_tokens": 9}
     ]
 
+    # last-probe cache: GET /harness/backends surfaces the most recent
+    # verdict so a scrape reads deep health without spending a live call.
+    b_u = uapp.get("/harness/backends").json()["byok"]["last_probe"]
+    b_d = dirty.get("/harness/backends").json()["byok"]["last_probe"]
+    fresh = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: None))
+    out["backends_last_probe"] = (
+        b_u is not None
+        and b_u["ok"] is True
+        and b_u["checked_at"] > 0
+        and b_d is not None
+        and b_d["ok"] is False
+        and b_d["error_class"] == "honesty_refusal"
+        and fresh.get("/harness/backends").json()["byok"]["last_probe"] is None
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""
