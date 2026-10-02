@@ -1865,6 +1865,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nbeats_deep",
         "mambats",
         "crossformer",
+        # Wave-130 offline-RL:
+        # decision trf, CQL, IQL,
+        # trajectory trf, SAC,
+        # GAIL.
+        "decision_transformer",
+        "cql_agent",
+        "iql_agent",
+        "trajectory_transformer",
+        "sac_agent",
+        "gail_imitation",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

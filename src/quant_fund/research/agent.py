@@ -1029,6 +1029,14 @@ from quant_fund.research.benches_w129 import (
     bench_nbeats_deep_family,
     bench_tcn_forecaster_family,
 )
+from quant_fund.research.benches_w130 import (
+    bench_cql_agent_family,
+    bench_decision_transformer_family,
+    bench_gail_imitation_family,
+    bench_iql_agent_family,
+    bench_sac_agent_family,
+    bench_trajectory_transformer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3354,6 +3362,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "nbeats_deep": bench_nbeats_deep_family(),
         "mambats": bench_mambats_family(),
         "crossformer": bench_crossformer_family(),
+        "decision_transformer": bench_decision_transformer_family(),
+        "cql_agent": bench_cql_agent_family(),
+        "iql_agent": bench_iql_agent_family(),
+        "trajectory_transformer": bench_trajectory_transformer_family(),
+        "sac_agent": bench_sac_agent_family(),
+        "gail_imitation": bench_gail_imitation_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
