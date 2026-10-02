@@ -1664,6 +1664,110 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "riccati_care",
         "matrix_sign",
         "toeplitz_solve",
+        # Wave-109 canon: motion
+        # planning — Dubins,
+        # RRT*, PRM, DWA,
+        # min-snap, Frenet.
+        "dubins",
+        "rrt",
+        "prm",
+        "dwa",
+        "min_snap",
+        "frenet",
+        # Wave-110 canon: digital
+        # comms — Viterbi,
+        # GF(256), RS, Costas,
+        # Gardner, RRC.
+        "viterbi_decode",
+        "gf256",
+        "reed_solomon",
+        "costas",
+        "gardner",
+        "rrc_filter",
+        # Wave-111 canon: geometry —
+        # Kabsch, ICP, Fréchet,
+        # Hausdorff, hull,
+        # Delaunay.
+        "kabsch",
+        "icp",
+        "frechet",
+        "hausdorff",
+        "convex_hull",
+        "delaunay",
+        # Wave-112 canon: DSP filters —
+        # remez, IIR design, biquad,
+        # filtfilt, resample, Farrow.
+        "remez",
+        "iir_design",
+        "biquad",
+        "filtfilt",
+        "resample_poly",
+        "farrow",
+        # Wave-113 canon: multi-target
+        # tracking — JV, JPDA, PHD,
+        # MHT, CI, TDOA.
+        "jonker_volgenant",
+        "jpda",
+        "phd",
+        "mht",
+        "cov_int",
+        "tdoa",
+        # Wave-114 canon: GNSS — Gold
+        # codes, Klobuchar, Allan
+        # variance, strapdown, LAMBDA,
+        # RTK.
+        "gold_code",
+        "klobuchar",
+        "allan_variance",
+        "strapdown",
+        "lambda_method",
+        "rtk",
+        # Wave-115 canon: UQ — Smolyak,
+        # PCE, BQ, KL, active
+        # subspace, MIMC.
+        "smolyak",
+        "pce",
+        "bayesian_quadrature",
+        "kl_expand",
+        "active_subspace",
+        "mimc",
+        # Wave-116 canon: game theory —
+        # CFR, Lemke–Howson,
+        # replicator, Wardrop, VCG,
+        # Nash bargaining.
+        "cfr",
+        "lemke_howson",
+        "replicator",
+        "wardrop",
+        "vcg",
+        "nash_bargain",
+        # Wave-117 canon: reinforcement
+        # learning — GAE, V-trace, TRPO,
+        # PPO, DDPG, TD3.
+        "gae",
+        "vtrace",
+        "trpo",
+        "ppo",
+        "ddpg",
+        "td3",
+        # Wave-118 canon: POMDP solvers —
+        # QMDP, grid VI, PBVI, Perseus,
+        # HSVI, POMCP.
+        "qmdp",
+        "grid_pomdp",
+        "pbvi",
+        "perseus",
+        "hsvi",
+        "pomcp",
+        # Wave-119 canon: multi-agent RL —
+        # VDN, QMIX, COMA, MADDPG,
+        # MAPPO, mean-field Q.
+        "vdn",
+        "qmix",
+        "coma",
+        "maddpg",
+        "mappo",
+        "mf_q",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
