@@ -2599,3 +2599,4 @@ wave 198 (2026-10-02): scheduling/combinatorial canon — johnson_flowshop, neh_
 wave 199 (2026-10-02): quantum-computing canon — qaoa_maxcut, vqe_ising, grover_search, qpe_phase, qkernel_svm, quantum_walk; 1166→1172 families.
 wave 200 (2026-10-02): tensor-network canon — tt_svd, dmrg_tfim, tensor_cross, tebd_quench, mps_fidelity, tt_round; 1172→1178 families.
 wave 201 (2026-10-02): stochastic-control canon — psor_american, crr_tree, kushner_mca, hjb_penalty, dual_american, exercise_boundary; 1178→1184 families.
+wave 202 (2026-10-02): game-theory canon — mfg_lq, mfg_flocking, nash_cournot, stackelberg_game, stochastic_game_vi, potential_game; 1184→1190 families.

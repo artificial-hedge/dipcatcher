@@ -1605,6 +1605,14 @@ from quant_fund.research.benches_w201 import (
     bench_kushner_mca_family,
     bench_psor_american_family,
 )
+from quant_fund.research.benches_w202 import (
+    bench_mfg_flocking_family,
+    bench_mfg_lq_family,
+    bench_nash_cournot_family,
+    bench_potential_game_family,
+    bench_stackelberg_game_family,
+    bench_stochastic_game_vi_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4362,6 +4370,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hjb_penalty": bench_hjb_penalty_family(),
         "dual_american": bench_dual_american_family(),
         "exercise_boundary": bench_exercise_boundary_family(),
+        "mfg_lq": bench_mfg_lq_family(),
+        "mfg_flocking": bench_mfg_flocking_family(),
+        "nash_cournot": bench_nash_cournot_family(),
+        "stackelberg_game": bench_stackelberg_game_family(),
+        "stochastic_game_vi": bench_stochastic_game_vi_family(),
+        "potential_game": bench_potential_game_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

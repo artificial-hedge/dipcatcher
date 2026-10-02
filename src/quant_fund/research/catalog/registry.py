@@ -2507,6 +2507,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hjb_penalty",
         "dual_american",
         "exercise_boundary",
+        # Wave-202 game-theory canon: LQ-MFG, flocking, Cournot,
+        # Stackelberg, stochastic-game VI, potential game.
+        "mfg_lq",
+        "mfg_flocking",
+        "nash_cournot",
+        "stackelberg_game",
+        "stochastic_game_vi",
+        "potential_game",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
