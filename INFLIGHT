@@ -2506,4 +2506,5 @@ wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_w
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
 wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 wave 109 (2026-09-30): motion-planning canon — dubins, rrt, prm, dwa, min_snap, frenet; 626→632 families.
+wave 110 (2026-09-30): digital-comms canon — viterbi_decode, gf256, reed_solomon, costas, gardner, rrc_filter; 632→638 families.
 note: canon PR to follow.

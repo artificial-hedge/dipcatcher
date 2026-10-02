@@ -869,6 +869,14 @@ from quant_fund.research.benches_w109 import (
     bench_prm_family,
     bench_rrt_family,
 )
+from quant_fund.research.benches_w110 import (
+    bench_costas_family,
+    bench_gardner_family,
+    bench_gf256_family,
+    bench_reed_solomon_family,
+    bench_rrc_filter_family,
+    bench_viterbi_decode_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3074,6 +3082,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "dwa": bench_dwa_family(),
         "min_snap": bench_min_snap_family(),
         "frenet": bench_frenet_family(),
+        "viterbi_decode": bench_viterbi_decode_family(),
+        "gf256": bench_gf256_family(),
+        "reed_solomon": bench_reed_solomon_family(),
+        "costas": bench_costas_family(),
+        "gardner": bench_gardner_family(),
+        "rrc_filter": bench_rrc_filter_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

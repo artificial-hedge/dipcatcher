@@ -1674,6 +1674,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dwa",
         "min_snap",
         "frenet",
+        # Wave-110 canon: digital
+        # comms — Viterbi,
+        # GF(256), RS, Costas,
+        # Gardner, RRC.
+        "viterbi_decode",
+        "gf256",
+        "reed_solomon",
+        "costas",
+        "gardner",
+        "rrc_filter",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
