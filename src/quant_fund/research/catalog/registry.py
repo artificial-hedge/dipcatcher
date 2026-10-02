@@ -2384,6 +2384,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "contrastive_divergence",
         "persistent_cd",
         "adversarial_ebm",
+        # Wave-187 scientific-ML/PDE canon:
+        # DeepRitz, weak form, BSDE, spectral,
+        # MOL, Feynman-Kac MC.
+        "deepritz_pinn",
+        "weak_form_pinn",
+        "fbsde_solver",
+        "spectral_pde",
+        "moc_lines",
+        "feynman_kac_mc",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
