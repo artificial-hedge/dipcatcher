@@ -2024,6 +2024,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "debate_multiagent",
         "unlearn_ga",
         "knowledge_graph_embed",
+        # Wave-147 alignment canon:
+        # BT reward model, DPO, IPO,
+        # KTO, GRPO, KL-PPO RLHF.
+        "reward_model",
+        "dpo_train",
+        "ipo_train",
+        "kto_train",
+        "grpo_train",
+        "rlhf_ppo",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

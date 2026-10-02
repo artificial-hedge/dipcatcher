@@ -1165,6 +1165,14 @@ from quant_fund.research.benches_w146 import (
     bench_unlearn_ga_family,
     bench_verifier_prm_family,
 )
+from quant_fund.research.benches_w147 import (
+    bench_dpo_train_family,
+    bench_grpo_train_family,
+    bench_ipo_train_family,
+    bench_kto_train_family,
+    bench_reward_model_family,
+    bench_rlhf_ppo_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3592,6 +3600,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "debate_multiagent": bench_debate_multiagent_family(),
         "unlearn_ga": bench_unlearn_ga_family(),
         "knowledge_graph_embed": bench_knowledge_graph_embed_family(),
+        "reward_model": bench_reward_model_family(),
+        "dpo_train": bench_dpo_train_family(),
+        "ipo_train": bench_ipo_train_family(),
+        "kto_train": bench_kto_train_family(),
+        "grpo_train": bench_grpo_train_family(),
+        "rlhf_ppo": bench_rlhf_ppo_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
