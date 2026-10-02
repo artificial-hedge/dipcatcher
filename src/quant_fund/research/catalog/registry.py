@@ -1816,6 +1816,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "continual_learning",
         "fed_avg",
         "insider_anomaly",
+        # Wave-125 exec-summary pricing/XAI:
+        # PINN, QUBO, SHAP, adv-robust,
+        # risk flow, PCMCI miner.
+        "pinn_pricing",
+        "qubo_portfolio",
+        "xai_shap",
+        "adversarial_robust",
+        "risk_flow",
+        "causal_miner",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

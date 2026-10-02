@@ -989,6 +989,14 @@ from quant_fund.research.benches_w124 import (
     bench_insider_anomaly_family,
     bench_maml_portfolio_family,
 )
+from quant_fund.research.benches_w125 import (
+    bench_adversarial_robust_family,
+    bench_causal_miner_family,
+    bench_pinn_pricing_family,
+    bench_qubo_portfolio_family,
+    bench_risk_flow_family,
+    bench_xai_shap_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3284,6 +3292,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "continual_learning": bench_continual_learning_family(),
         "fed_avg": bench_fed_avg_family(),
         "insider_anomaly": bench_insider_anomaly_family(),
+        "pinn_pricing": bench_pinn_pricing_family(),
+        "qubo_portfolio": bench_qubo_portfolio_family(),
+        "xai_shap": bench_xai_shap_family(),
+        "adversarial_robust": bench_adversarial_robust_family(),
+        "risk_flow": bench_risk_flow_family(),
+        "causal_miner": bench_causal_miner_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
