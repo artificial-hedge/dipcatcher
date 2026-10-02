@@ -111,6 +111,7 @@ from fx1.serve.openai_compat import (
     openai_chunks,
     openai_envelope,
     openai_error_body,
+    openai_model,
     openai_to_kwargs,
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
@@ -2667,6 +2668,21 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             data=[OpenAIModel(id=m, created=_openai_created) for m in OPENAI_MODEL_IDS]
         )
 
+    @app.get(
+        "/v1/models/{model}",
+        response_model=OpenAIModel,
+        tags=["openai"],
+        operation_id="openai_retrieve_model",
+    )
+    def openai_retrieve_model(model: str) -> OpenAIModel:
+        """OpenAI's models.retrieve — one card for a listed id; unknown
+        ids fail closed 404 in the OpenAI error shape, never a
+        fabricated card."""
+        try:
+            return openai_model(model, created=_openai_created)
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+
     @app.post(
         "/v1/chat/completions",
         # the JSON path returns OpenAIChatResponse; stream=true returns SSE
@@ -2723,7 +2739,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         try:
             creq = CompleteRequest(**openai_to_kwargs(body, request.headers))
         except OpenAICompatError as exc:
-            raise ApiError(exc.status, str(exc)) from exc
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
         out = complete(
             body=creq,
             response=Response(),

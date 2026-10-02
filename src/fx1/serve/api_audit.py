@@ -3891,6 +3891,36 @@ def _probe_backend_probes(
     )
     out["openai_idem_refusal_not_pinned"] = d1.status_code == 502 and d2.status_code == 502
 
+    # GET /v1/models/{id} — OpenAI's models.retrieve: every listed id
+    # returns its card; unknown ids fail closed 404 in the OpenAI error
+    # shape (code model_not_found), never a fabricated card. Retrieve and
+    # list agree — the same `created` stamp on both.
+    rm = oi_clean.get("/v1/models/fx1")
+    out["openai_retrieve_model_200"] = (
+        rm.status_code == 200
+        and rm.json().get("object") == "model"
+        and rm.json().get("id") == "fx1"
+        and isinstance(rm.json().get("created"), int)
+    )
+    rm_all = [oi_clean.get(f"/v1/models/{m}") for m in ("hosted_k3", "local_fx1", "byok")]
+    out["openai_retrieve_all_listed_ids"] = all(
+        r.status_code == 200 and r.json().get("id") == m
+        for r, m in zip(rm_all, ("hosted_k3", "local_fx1", "byok"), strict=True)
+    )
+    rn = oi_clean.get("/v1/models/not-a-model")
+    out["openai_retrieve_unknown_404_shape"] = (
+        rn.status_code == 404
+        and rn.json()["error"]["code"] == "model_not_found"
+        and rn.json()["error"]["type"] == "invalid_request_error"
+    )
+    _list = oi_clean.get("/v1/models").json()
+    out["openai_retrieve_list_consistent"] = {m["id"] for m in _list["data"]} == {
+        "fx1",
+        "hosted_k3",
+        "local_fx1",
+        "byok",
+    } and _list["data"][0]["created"] == rm.json()["created"]
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

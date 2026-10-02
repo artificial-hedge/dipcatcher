@@ -505,7 +505,23 @@
           "200"
         ]
       }
+    },
+    "/v1/models/{model}": {
+      "get": {
+        "params": [
+          {
+            "name": "model",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "9f30ff05e35846455009fd0c03d695fbeeb5c53ce9f824d5515db9d42c88cf15"
+  "schema_sha256": "aee6360cac38a937c2edebe299dd5007ab7343ad57a0f8ebe70c105aa041321e"
 }

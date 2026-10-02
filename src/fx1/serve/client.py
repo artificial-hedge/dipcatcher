@@ -972,6 +972,14 @@ class HarnessClient:
         carry (``hosted_k3``/``local_fx1``/``byok``)."""
         return dict(self._json("GET", "/v1/models", idempotent=True))
 
+    def retrieve_model(self, model: str) -> dict[str, Any]:
+        """``GET /v1/models/{model}`` — OpenAI's ``models.retrieve``:
+        one card for a listed id; unknown ids raise the 404-class
+        error (``model_not_found``), never a fabricated card."""
+        return dict(
+            self._json("GET", f"/v1/models/{urllib.parse.quote(model, safe='')}", idempotent=True)
+        )
+
     def chat_completion(
         self,
         messages: list[dict[str, str]],

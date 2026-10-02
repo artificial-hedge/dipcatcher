@@ -429,6 +429,24 @@ def parity_audit() -> dict[str, bool]:
             and wire_models.json()["object"] == "list" == sdk_models.object
             and [m["id"] for m in wire_models.json()["data"]] == [m.id for m in sdk_models.data]
         )
+        # models.retrieve parity — one card per surface; unknown id is a
+        # 404 on the wire and an OpenAICompatError in the SDK
+        wire_rm = client.get("/v1/models/fx1")
+        sdk_rm = sdk.openai_model("fx1")
+        out["openai_retrieve_parity"] = (
+            wire_rm.status_code == 200
+            and wire_rm.json()["id"] == sdk_rm.id == "fx1"
+            and wire_rm.json()["object"] == sdk_rm.object == "model"
+            and isinstance(wire_rm.json()["created"], int)
+            and isinstance(sdk_rm.created, int)
+        )
+        wire_rm_404 = client.get("/v1/models/nope")
+        sdk_rm_err = _raises(lambda: sdk.openai_model("nope"))[0]
+        out["openai_retrieve_404_parity"] = (
+            wire_rm_404.status_code == 404
+            and wire_rm_404.json()["error"]["code"] == "model_not_found"
+            and sdk_rm_err == "OpenAICompatError"
+        )
         # rejection parity: same verdict, each surface's own exception class
         oai_bad_n = {**oai_body, "n": 2}
         wire_n_err = client.post("/v1/chat/completions", json=oai_bad_n)

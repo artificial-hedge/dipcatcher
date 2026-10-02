@@ -47,6 +47,7 @@ __all__ = [
     "openai_envelope",
     "openai_error_body",
     "openai_messages",
+    "openai_model",
     "openai_models",
     "openai_to_kwargs",
     "openai_usage",
@@ -260,6 +261,21 @@ def openai_models(*, created: int | None = None) -> OpenAIModelList:
     carry. ``created`` defaults to call time."""
     ts = int(time.time()) if created is None else created
     return OpenAIModelList(data=[OpenAIModel(id=m, created=ts) for m in OPENAI_MODEL_IDS])
+
+
+def openai_model(model_id: str, *, created: int | None = None) -> OpenAIModel:
+    """One model card — ``GET /v1/models/{id}`` retrieve semantics.
+
+    Unknown ids fail closed 404 (OpenAI's ``invalid_request_error`` /
+    ``model_not_found``) — an SDK's ``models.retrieve`` never gets a
+    fabricated card.
+    """
+    if model_id not in OPENAI_MODEL_IDS:
+        raise OpenAICompatError(
+            f"The model '{model_id}' does not exist", status=404, code="model_not_found"
+        )
+    ts = int(time.time()) if created is None else created
+    return OpenAIModel(id=model_id, created=ts)
 
 
 def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, str]]:

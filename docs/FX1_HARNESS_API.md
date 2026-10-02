@@ -262,6 +262,9 @@ to `GET /harness/completions/{id}` and its sealed
   `{error: {message, type, param, code}}` shape with OpenAI's type names
   (`invalid_request_error`, `authentication_error`,
   `rate_limit_error`, `server_error`, `service_unavailable`).
+- **Model ops:** `GET /v1/models` lists `fx1` + the backend ids;
+  `GET /v1/models/{id}` is `models.retrieve` — unknown ids fail closed
+  404 (`model_not_found`), never a fabricated card.
 - **Retry-safe:** `Idempotency-Key` dedupes retries — the same key +
   body replays the stored response byte-identically (JSON envelope or
   the SSE chunk sequence, `created` pinned) with
@@ -274,9 +277,10 @@ to `GET /harness/completions/{id}` and its sealed
   `Authorization: Bearer` header in place of `X-API-Key`.
 
 Client-side: `HarnessClient.chat_completion` /
-`chat_completion_stream` / `list_models` in Python;
+`chat_completion_stream` / `list_models` / `retrieve_model` in Python;
 `HarnessApiClient.chatCompletion` / `chatCompletionStream` /
-`listModels` in TS — all four accept `idempotency_key` /
+`listModels` / `retrieveModel` in TS — the chat calls accept
+`idempotency_key` /
 `idempotencyKey` and mark the call retryable for the built-in retry
 policy. Any OpenAI SDK works directly — point it at the harness
 `base_url` and use `model: "fx1"`.

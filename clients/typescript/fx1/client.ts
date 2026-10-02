@@ -57,6 +57,7 @@ export type OpenAIChatRequest = components["schemas"]["OpenAIChatRequest"];
 export type OpenAIChatResponse =
   components["schemas"]["OpenAIChatResponse"];
 export type OpenAIModelList = components["schemas"]["OpenAIModelList"];
+export type OpenAIModel = components["schemas"]["OpenAIModel"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
 export type ReceiptIndexItem = components["schemas"]["ReceiptIndexItem"];
 export type ReceiptIndexResponse =
@@ -562,6 +563,21 @@ export class HarnessApiClient {
     });
     if (!res.ok) throw new HarnessApiError(res.status, await res.json());
     return (await res.json()) as OpenAIModelList;
+  }
+
+  /**
+   * GET /v1/models/{model} — OpenAI's `models.retrieve`: one card for a
+   * listed id; unknown ids throw the 404-class error (`model_not_found`),
+   * never a fabricated card.
+   */
+  async retrieveModel(model: string): Promise<OpenAIModel> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/models/${encodeURIComponent(model)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIModel;
   }
 
   /**

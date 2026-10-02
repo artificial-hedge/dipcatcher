@@ -58,13 +58,13 @@ from fx1.serve.evals import EvalRecord, EvalStore
 from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
+    OpenAIModel,
     OpenAIModelList,
     openai_chunks,
     openai_envelope,
+    openai_model,
+    openai_models,
     openai_to_kwargs,
-)
-from fx1.serve.openai_compat import (
-    openai_models as _openai_models,
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
@@ -1100,7 +1100,13 @@ class Fx1Harness:
     def openai_models(self) -> OpenAIModelList:
         """The ``GET /v1/models`` inventory in-process — `fx1` plus the
         backend names an OpenAI ``model`` field may carry."""
-        return _openai_models()
+        return openai_models()
+
+    def openai_model(self, model_id: str) -> OpenAIModel:
+        """``GET /v1/models/{id}`` in-process — one card for a listed id;
+        unknown ids raise :class:`OpenAICompatError` (a ``ValueError``),
+        the SDK's request-error class."""
+        return openai_model(model_id)
 
     def openai_chat(
         self,
