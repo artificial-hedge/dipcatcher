@@ -1381,6 +1381,14 @@ from quant_fund.research.benches_w173 import (
     bench_rectified_flow_family,
     bench_stoch_interp_family,
 )
+from quant_fund.research.benches_w174 import (
+    bench_agcrn_family,
+    bench_astgcn_family,
+    bench_dcrnn_lite_family,
+    bench_gwnet_lite_family,
+    bench_mtgnn_lite_family,
+    bench_stgcn_lite_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3970,6 +3978,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ddim_ode": bench_ddim_ode_family(),
         "cold_diffusion": bench_cold_diffusion_family(),
         "diff_distill": bench_diff_distill_family(),
+        "dcrnn_lite": bench_dcrnn_lite_family(),
+        "stgcn_lite": bench_stgcn_lite_family(),
+        "gwnet_lite": bench_gwnet_lite_family(),
+        "astgcn": bench_astgcn_family(),
+        "mtgnn_lite": bench_mtgnn_lite_family(),
+        "agcrn": bench_agcrn_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

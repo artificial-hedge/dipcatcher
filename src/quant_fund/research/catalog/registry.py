@@ -2269,6 +2269,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ddim_ode",
         "cold_diffusion",
         "diff_distill",
+        # Wave-174 graph-temporal canon:
+        # DCRNN, STGCN, Graph WaveNet,
+        # ASTGCN, MTGNN, AGCRN.
+        "dcrnn_lite",
+        "stgcn_lite",
+        "gwnet_lite",
+        "astgcn",
+        "mtgnn_lite",
+        "agcrn",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
