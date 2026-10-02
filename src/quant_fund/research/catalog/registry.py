@@ -2868,6 +2868,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "astar_search",
         "bidirectional_dijkstra",
         "bron_kerbosch",
+        # Wave-251 numerical-linalg-2 canon.
+        "givens_qr",
+        "jacobi_svd",
+        "ldlt_solve",
+        "lu_pivots",
+        "orth_iter",
+        "sturm_eig",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
