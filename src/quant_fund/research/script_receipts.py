@@ -439,6 +439,7 @@ _MEASUREMENT_SCHEMAS = (
     "flow_couple.v1",
     "full_impact.v1",
     "full_stack.v1",
+    "gap_close.v1",
     "glft_bench.v1",
     "hawkes_mv.v1",
     "hawkes_real.v1",
