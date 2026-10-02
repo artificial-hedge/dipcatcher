@@ -2233,6 +2233,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sparse_gp_sv",
         "structured_vi",
         "vrnn_seq",
+        # Wave-170 causal-DL-2 canon:
+        # X/R/S-T learners, CFRNET-balance,
+        # CATE distill, DR-learner.
+        "xlearner",
+        "rlearner",
+        "slearner_tlearner",
+        "causal_rep_bal",
+        "cate_distill",
+        "net_drlearner",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

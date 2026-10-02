@@ -1349,6 +1349,14 @@ from quant_fund.research.benches_w169 import (
     bench_structured_vi_family,
     bench_vrnn_seq_family,
 )
+from quant_fund.research.benches_w170 import (
+    bench_cate_distill_family,
+    bench_causal_rep_bal_family,
+    bench_net_drlearner_family,
+    bench_rlearner_family,
+    bench_slearner_tlearner_family,
+    bench_xlearner_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3914,6 +3922,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "sparse_gp_sv": bench_sparse_gp_sv_family(),
         "structured_vi": bench_structured_vi_family(),
         "vrnn_seq": bench_vrnn_seq_family(),
+        "xlearner": bench_xlearner_family(),
+        "rlearner": bench_rlearner_family(),
+        "slearner_tlearner": bench_slearner_tlearner_family(),
+        "causal_rep_bal": bench_causal_rep_bal_family(),
+        "cate_distill": bench_cate_distill_family(),
+        "net_drlearner": bench_net_drlearner_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
