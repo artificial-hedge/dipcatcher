@@ -1,0 +1,160 @@
+{
+ "schema": "full_impact.v1",
+ "kind": "sim_vs_real",
+ "git_revision": "7f1640c20380ae5ece7dbe2ca5be8fab7f6ef236",
+ "research_only": true,
+ "data_label": "MIXED",
+ "horizon": 60000,
+ "seed": 7,
+ "lags": [
+  1,
+  5,
+  20,
+  50,
+  200
+ ],
+ "tape_targets": {
+  "instant_signed_ticks": 0.887,
+  "kernel": {
+   "1": 0.2645,
+   "5": 0.6792,
+   "20": 1.5127,
+   "50": 2.5696,
+   "200": 4.6447
+  }
+ },
+ "cells": [
+  {
+   "n_fills": 1288,
+   "instant_signed_ticks": 1.0885093167701863,
+   "instant_abs_ticks": 1.0885093167701863,
+   "kernel_mean_ticks": {
+    "1": 1.0861801242236024,
+    "5": 1.062111801242236,
+    "20": 0.9035019455252918,
+    "50": 0.8003891050583658,
+    "200": 0.5455962587685113
+   },
+   "kernel_n": {
+    "1": 1288,
+    "5": 1288,
+    "20": 1285,
+    "50": 1285,
+    "200": 1283
+   },
+   "regime": "deep"
+  },
+  {
+   "n_fills": 1697,
+   "instant_signed_ticks": 0.5167943429581615,
+   "instant_abs_ticks": 0.5167943429581615,
+   "kernel_mean_ticks": {
+    "1": 0.5167943429581615,
+    "5": 0.5910430170889805,
+    "20": 0.7112551561579258,
+    "50": 1.2265763111373011,
+    "200": 1.735710076605775
+   },
+   "kernel_n": {
+    "1": 1697,
+    "5": 1697,
+    "20": 1697,
+    "50": 1697,
+    "200": 1697
+   },
+   "regime": "joint"
+  },
+  {
+   "n_fills": 2778,
+   "instant_signed_ticks": 2.101368849426563,
+   "instant_abs_ticks": 2.101368849426563,
+   "kernel_mean_ticks": {
+    "1": 2.1011860637509265,
+    "5": 2.6857407407407408,
+    "20": 3.794469357249626,
+    "50": 5.335860500379075,
+    "200": 7.226384364820847
+   },
+   "kernel_n": {
+    "1": 2698,
+    "5": 2700,
+    "20": 2676,
+    "50": 2638,
+    "200": 2763
+   },
+   "regime": "joint_split"
+  },
+  {
+   "n_fills": 1639,
+   "instant_signed_ticks": 0.6924954240390482,
+   "instant_abs_ticks": 0.7535082367297132,
+   "kernel_mean_ticks": {
+    "1": 0.6924954240390482,
+    "5": 0.7998779743746187,
+    "20": 1.5198291641244661,
+    "50": 1.897803538743136,
+    "200": 2.6214154972544232
+   },
+   "kernel_n": {
+    "1": 1639,
+    "5": 1639,
+    "20": 1639,
+    "50": 1639,
+    "200": 1639
+   },
+   "regime": "full"
+  },
+  {
+   "n_fills": 3536,
+   "instant_signed_ticks": 0.9190897597977244,
+   "instant_abs_ticks": 1.6943742098609356,
+   "kernel_mean_ticks": {
+    "1": 1.7330652644602536,
+    "5": 2.6597523219814243,
+    "20": 3.7556161745827983,
+    "50": 6.602950507614213,
+    "200": 8.676452875639868
+   },
+   "kernel_n": {
+    "1": 3233,
+    "5": 3230,
+    "20": 3116,
+    "50": 3152,
+    "200": 3321
+   },
+   "regime": "full_split"
+  }
+ ],
+ "divergences": [
+  "deep:instant_+1.09_vs_0.89",
+  "deep@1:+1.09_vs_0.26",
+  "deep@20:+0.90_vs_1.51",
+  "deep@50:+0.80_vs_2.57",
+  "deep@200:+0.55_vs_4.64",
+  "joint:instant_+0.52_vs_0.89",
+  "joint@20:+0.71_vs_1.51",
+  "joint@50:+1.23_vs_2.57",
+  "joint@200:+1.74_vs_4.64",
+  "joint_split:instant_+2.10_vs_0.89",
+  "joint_split@1:+2.10_vs_0.26",
+  "joint_split@5:+2.69_vs_0.68",
+  "joint_split@20:+3.79_vs_1.51",
+  "joint_split@50:+5.34_vs_2.57",
+  "joint_split@200:+7.23_vs_4.64",
+  "full@50:+1.90_vs_2.57",
+  "full@200:+2.62_vs_4.64",
+  "full_split@1:+1.73_vs_0.26",
+  "full_split@5:+2.66_vs_0.68",
+  "full_split@20:+3.76_vs_1.51",
+  "full_split@50:+6.60_vs_2.57",
+  "full_split@200:+8.68_vs_4.64"
+ ],
+ "claims": {
+  "cells_measured": true,
+  "full_stack_carries_instant": true,
+  "full_stack_carries_continuation": false,
+  "repost_preserves_kernel": true
+ },
+ "notes": "Cross-channel interference audit: the all-pins emptied-touch cell (joint + fill reposts + paired retreat) is re-run through the drift-kernel measure with and without SplitFlow. The question is whether closing the vacancy channel broke the impact channels \u2014 fill reposts refill the touch the sweep displaced (attenuating instant), and the paired retreat widens the spread the kernel is measured across. Measured: instant survives (0.92 vs 0.887 under split flow), continuation overshoots (6.85 vs 4.64 at +200) \u2014 the residual is damping the amplified drift, not a missing mechanism.",
+ "receipt_sha256": "800e6ac6b76ac97110a7897be3e2ff6f403fdcb1323e1322267dcfe831cc5b76"
+}

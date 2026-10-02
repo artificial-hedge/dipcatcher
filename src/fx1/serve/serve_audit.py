@@ -207,16 +207,16 @@ def serve_audit() -> dict[str, Any]:
         def complete(self, messages: list[dict[str, str]]) -> str:
             return self._t
 
-    cited = cited_complete(_Echo("fine answer"), [], receipt_hashes=["a" * 64, "b" * 64])  # type: ignore[arg-type]
+    cited = cited_complete(_Echo("fine answer"), [], receipt_hashes=["a" * 64, "b" * 64])
     out["cited_footer"] = "Evidence:" in cited and "aaaaaaaaaaaaaaaa" in cited
-    out["cited_no_footer"] = "Evidence:" not in cited_complete(_Echo("x"), [])  # type: ignore[arg-type]
+    out["cited_no_footer"] = "Evidence:" not in cited_complete(_Echo("x"), [])
     out["cited_honesty_blocks"] = (
-        _raises(lambda: cited_complete(_Echo("Sharpe 9.9"), [])) == "Fx1HonestyError"  # type: ignore[arg-type]
+        _raises(lambda: cited_complete(_Echo("Sharpe 9.9"), [])) == "Fx1HonestyError"
     )
     out["flag_footer_unverified"] = "ffffffff" in cited_complete(
         _Echo("x"),
         [],
-        receipt_hashes=["f" * 64],  # type: ignore[arg-type]
+        receipt_hashes=["f" * 64],
     )
 
     return out

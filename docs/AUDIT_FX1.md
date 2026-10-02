@@ -247,6 +247,13 @@ parametrized per probe plus receipt/tamper contracts).
    pairs are now ordered on every row — a null comparison yields null, never
    a violation (`fixed`: `quantile_ordering_partial_null_row`).
 
+5. **Duplicate input bars could be hidden by resampling** — `features.py`.
+   Duplicate `(security_id, event_time)` keys are now rejected before
+   aggregation, matching the feature builder contract (`fixed`:
+   `duplicate_keys_refused`). The standalone input-contract tests cover
+   identical and conflicting duplicates, valid aggregation, and strict
+   integer feature windows. The historical sealed receipt is unchanged.
+
 ### Findings — reviewed, pinned as flag probes (no change)
 
 - `schema.feature`: narrow numeric dtype allowlist (UInt8/16 rejected —
@@ -262,8 +269,7 @@ parametrized per probe plus receipt/tamper contracts).
 - `features.causality`: a panel shorter than the longest lookback yields an
   empty feature frame without `SchemaError` — the runner tolerates empty
   slices.
-- `features.resample`: duplicate `(security_id, event_time)` bars merge into
-  one bucket silently; `every='bogus'` raises a raw polars error rather than
+- `features.resample`: `every='bogus'` raises a raw polars error rather than
   a typed `PointInTimeError` (loud crash, still fail-closed).
 - `artifacts`: safe formats deserialize before hashing the file — a mid-load
   rewrite could make the stamped digest describe different bytes (the runner

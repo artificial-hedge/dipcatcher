@@ -1,0 +1,271 @@
+{
+  "schema": "wave23_map.v1",
+  "kind": "wave23_map",
+  "asset": "AMZN",
+  "n_lanes": 19,
+  "lanes": [
+    {
+      "receipt": "impact_persist_amzn.json",
+      "mechanism": "measurement: per-fill drift kernel",
+      "sealed": true,
+      "claims": {
+        "deep_impact_decays": true,
+        "lv_needs_persistent_flow": true,
+        "split_continuation_close": true,
+        "sweeps_move_the_touch": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "anchor_scan_amzn.json",
+      "mechanism": "latent-value anchoring (gain \u00d7 halflife)",
+      "sealed": true,
+      "claims": {
+        "best_cell_found": true,
+        "continuation_matchable": true,
+        "instant_gap_persists": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "instant_decomp_amzn.json",
+      "mechanism": "instant decomposition",
+      "sealed": true,
+      "claims": {
+        "identity_respects": true,
+        "sim_instant_gap_is_sparse": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "level_gap_amzn.json",
+      "mechanism": "near-touch vacancy profile",
+      "sealed": true,
+      "claims": {
+        "placement_law_can_match_g1": true,
+        "tape_near_touch_is_sparse": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "joint_fit_amzn.json",
+      "mechanism": "independent-knob joint fit",
+      "sealed": true,
+      "claims": {
+        "best_cell": {
+          "band": 40,
+          "density_exponent": 1.0,
+          "ref_fill_gain": 0.3,
+          "score": 0.5220828222985269
+        },
+        "per_target_match": {
+          "g1": true,
+          "instant": false,
+          "k200": false,
+          "spread": true
+        },
+        "residual_tension": true,
+        "single_law_closes_all": false
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "refill_hazard_amzn.json",
+      "mechanism": "pre-fill vacancy memory (refill_cooldown)",
+      "sealed": true,
+      "claims": {
+        "tape_levels_have_memory": true,
+        "sim_refill_is_fast": true,
+        "cooldown_monotone_in_p_never": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "depth_tilt_amzn.json",
+      "mechanism": "post-fill depth accommodation (lo_tilt)",
+      "sealed": true,
+      "claims": {
+        "tape_accommodates": true,
+        "cooldown_digs_hole": true,
+        "narrow_reproduces_tilt": true,
+        "narrow_trades_instant": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "lo_response_amzn.json",
+      "mechanism": "channel decomposition of accommodation",
+      "sealed": true,
+      "claims": {
+        "tape_rate_channel": true,
+        "tape_no_placement_shift": true,
+        "tilt_matches_rate": true,
+        "placement_density_gap": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "place_law_amzn.json",
+      "mechanism": "placement-law family scan",
+      "sealed": true,
+      "claims": {
+        "tape_place_law_hump": true,
+        "power_family_misspecified": true,
+        "binom_alone_insufficient": true,
+        "residual_is_law_family_gap": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "place_mix_amzn.json",
+      "mechanism": "join/improve/stack placement mixture",
+      "sealed": true,
+      "claims": {
+        "tape_has_three_components": true,
+        "mixture_beats_single_family": true,
+        "placement_fit_leaves_residual": true,
+        "join_mass_lifts_touch_share": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "aftermath_flow_amzn.json",
+      "mechanism": "post-fill channel attribution",
+      "sealed": true,
+      "claims": {
+        "tape_accommodation_is_add_driven": true,
+        "sim_rate_channel_achieved": true,
+        "sim_cancel_leakage": true,
+        "relief_narrows_cancel_gap": true,
+        "iid_add_channel_flat": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "cxl_shield_amzn.json",
+      "mechanism": "unhit-side cancel suppression",
+      "sealed": true,
+      "claims": {
+        "shield_grid_evaluated": true,
+        "channel_fixable": true,
+        "joint_closure_exists": true,
+        "baseline_leakage_present": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "shield_decay_amzn.json",
+      "mechanism": "suppression decay shape",
+      "sealed": true,
+      "claims": {
+        "kernel_grid_evaluated": true,
+        "short_shield_matches": true,
+        "decay_kernel_matches": true,
+        "long_flat_overshields_late": true,
+        "joint_profile_plus_instant": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "continuation_attr_amzn.json",
+      "mechanism": "k200 channel attribution",
+      "sealed": true,
+      "claims": {
+        "drift_attributed": true,
+        "lo_channel_is_the_gap": true,
+        "sim_lo_repricing_against_drift": true,
+        "sim_fill_channel_overshoots": true,
+        "tape_cxl_against_drift": true,
+        "k200_gap_on_tape": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "hit_starve_amzn.json",
+      "mechanism": "hit-side refill starvation",
+      "sealed": true,
+      "claims": {
+        "joint_closure_absent": true,
+        "starve_bites": true,
+        "starve_deepens_lo_gap": true,
+        "starve_grid_evaluated": true,
+        "starve_is_hit_side_specific": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "unhit_chase_amzn.json",
+      "mechanism": "post-fill unhit-side LO chase",
+      "sealed": true,
+      "claims": {
+        "chase_grid_evaluated": true,
+        "lo_channel_lifts": true,
+        "lo_channel_in_tol_exists": true,
+        "joint_closure_exists": false,
+        "fill_channel_not_worsened": true
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "closure_stack_amzn.json",
+      "mechanism": "independent stack of both winners",
+      "sealed": true,
+      "claims": {
+        "stack_grid_evaluated": true,
+        "channels_compose": false,
+        "cooldown_lifts_instant": true,
+        "joint_closure_exists": false
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "vac_chase_amzn.json",
+      "mechanism": "vacancy-coupled chase gate",
+      "sealed": true,
+      "claims": {
+        "grid_evaluated": true,
+        "chase_still_lifts_lo": true,
+        "vacancy_coupling_preserves_instant": false,
+        "joint_closure_exists": false
+      },
+      "n_cells_all_in_tol": 0
+    },
+    {
+      "receipt": "release_chase_amzn.json",
+      "mechanism": "churned / repriced chase",
+      "sealed": true,
+      "claims": {
+        "grid_evaluated": true,
+        "release_preserves_lo": true,
+        "release_recovers_instant": true,
+        "cooldown_lifts_instant": true,
+        "reprice_beats_delete": false,
+        "joint_closure_exists": false
+      },
+      "n_cells_all_in_tol": 0
+    }
+  ],
+  "mechanism_map": {
+    "instant_channel": "refill_cooldown (pre-fill vacancy memory)",
+    "k200_channel": "unhit_imp (post-fill unhit-side LO chase)",
+    "joint": null
+  },
+  "falsified_couplings": [
+    "independent stacking (closure_stack)",
+    "vacancy-coupled chase gate (vac_chase)",
+    "churned chase \u2014 delete (release_chase rp=0)",
+    "churned chase \u2014 re-site at spread (release_chase rp>0)"
+  ],
+  "claims": {
+    "all_member_receipts_sealed": true,
+    "all_lanes_present": true,
+    "instant_channel_located": true,
+    "continuation_channel_located": true,
+    "closure_path_found": false
+  },
+  "interpretation": "Wave-23 verdict: instant (0.887) and continuation (4.64 @200ev) are generated by different, located mechanisms \u2014 pre-fill vacancy memory and post-fill unhit-side chase respectively. Four coupling classes were tried and falsified (independent stack, vacancy gate, delete-churn, reprice-churn): the tape's chase must persist AT the touch AND not press it, which this event grammar cannot express. The residual is closed as a mapping problem, not a knob problem.",
+  "git_revision": "febe7ca577558815c73adc0274644420a694a699",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "receipt_sha256": "5c1d2c4746c2cf6b64b7a545f4829e8270a9730ef929021d154005437ab0e44d"
+}

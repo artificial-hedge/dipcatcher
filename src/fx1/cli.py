@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import typer
 
@@ -48,6 +48,91 @@ app.add_typer(corpus_app, name="corpus")
 app.add_typer(train_app, name="train")
 app.add_typer(harness_app, name="harness")
 app.add_typer(sources_app, name="sources")
+
+
+@harness_app.command("operations")
+def harness_operations(
+    query: str = typer.Argument("", help="Substring filter over operation ids."),
+    kind: str | None = typer.Option(None, help="Restrict to one kind: feature, skill, or plugin."),
+    offset: int = typer.Option(0, min=0, help="Zero-based page offset."),
+    limit: int = typer.Option(20, min=1, max=100, help="Page size (1-100)."),
+) -> None:
+    """List registered dipcatcher capabilities through the explicit registry."""
+    from fx1.operations.base import OperationKind
+    from fx1.operations.registry import list_operations
+
+    if kind is not None and kind not in ("feature", "skill", "plugin"):
+        raise typer.BadParameter("must be feature, skill, or plugin", param_hint="--kind")
+    kind_arg = cast(OperationKind, kind) if kind is not None else None
+    typer.echo(
+        json.dumps(
+            list_operations(query, kind=kind_arg, offset=offset, limit=limit),
+            indent=2,
+        )
+    )
+
+
+@harness_app.command("describe-operation")
+def harness_describe_operation(
+    operation_id: str = typer.Argument(
+        ..., help="Registered operation id, e.g. features.simple_returns."
+    ),
+) -> None:
+    """Print the exact input/output schema of one registered operation."""
+    from fx1.operations.registry import get_operation
+
+    typer.echo(json.dumps(get_operation(operation_id).describe(), indent=2))
+
+
+_OPERATION_ARGUMENT_MAX_BYTES = 2_000_000
+
+
+@harness_app.command("execute-operation")
+def harness_execute_operation(
+    operation_id: str = typer.Argument(..., help="Registered operation id."),
+    arguments: str | None = typer.Option(
+        None, "--arguments", help="JSON object of inputs (at most 2,000,000 UTF-8 bytes)."
+    ),
+    arguments_file: Path | None = typer.Option(
+        None,
+        "--arguments-file",
+        help="Path to a UTF-8 JSON file of inputs (at most 2,000,000 bytes).",
+    ),
+    workspace_root: Path | None = typer.Option(
+        None, "--workspace-root", help="Workspace filesystem boundary."
+    ),
+) -> None:
+    """Execute one registered operation with validated, bounded inputs."""
+    if (arguments is None) == (arguments_file is None):
+        raise typer.BadParameter("Provide exactly one of --arguments or --arguments-file.")
+    try:
+        if arguments is not None:
+            # Check characters first so even encoding a large argv value is bounded.
+            if len(arguments) > _OPERATION_ARGUMENT_MAX_BYTES:
+                raise ValueError(
+                    f"arguments exceed the {_OPERATION_ARGUMENT_MAX_BYTES}-byte budget"
+                )
+            raw = arguments.encode("utf-8")
+        else:
+            assert arguments_file is not None
+            # Read one sentinel byte beyond the budget; never materialize the whole file.
+            with arguments_file.open("rb") as stream:
+                raw = stream.read(_OPERATION_ARGUMENT_MAX_BYTES + 1)
+        if len(raw) > _OPERATION_ARGUMENT_MAX_BYTES:
+            raise ValueError(f"arguments exceed the {_OPERATION_ARGUMENT_MAX_BYTES}-byte budget")
+        payload = json.loads(raw.decode("utf-8"))
+    except (ValueError, OSError, RecursionError) as exc:
+        raise typer.BadParameter(f"cannot read arguments: {exc}") from exc
+    try:
+        resolved_root = workspace_root.resolve() if workspace_root is not None else None
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise typer.BadParameter(
+            f"cannot resolve workspace root: {exc}", param_hint="--workspace-root"
+        ) from exc
+    from fx1.operations.registry import execute_operation
+
+    result = execute_operation(operation_id, payload, workspace_root=resolved_root)
+    typer.echo(json.dumps(result, indent=2))
 
 
 @corpus_app.command("build")

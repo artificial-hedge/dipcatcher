@@ -213,7 +213,7 @@ def ds_audit() -> dict[str, Any]:
             return RunOutcome(returncode=0, stdout="payload-text", stderr="")
 
         def mk(cls: type[DataSourceAdapter], spec: SourceSpec) -> DataSourceAdapter:
-            return cls(spec, runner=cap_runner)  # type: ignore[arg-type]
+            return cls(spec, runner=cap_runner)
 
         req = FetchRequest(api="quote_api", params={"symbol": "600000.SH"}, as_of="2024-01-02")
         res = mk(AgentGwAdapter, spec_ready).fetch(req)
@@ -262,7 +262,7 @@ def ds_audit() -> dict[str, Any]:
                 returncode=0, stdout=json.dumps({"ok": False, "error": "paid"}), stderr=""
             )
 
-        deg = FinanceFetchAdapter(spec_ff, runner=env_runner).fetch(  # type: ignore[arg-type]
+        deg = FinanceFetchAdapter(spec_ff, runner=env_runner).fetch(
             FetchRequest(api="s", params={})
         )
         out["financefetch_degrade"] = not deg.ok and "honest degradation" in (deg.error or "")
@@ -270,7 +270,7 @@ def ds_audit() -> dict[str, Any]:
         def raw_runner(argv: list[str], **_kw: Any) -> RunOutcome:
             return RunOutcome(returncode=0, stdout="not json at all", stderr="")
 
-        raw = FinanceFetchAdapter(spec_ff, runner=raw_runner).fetch(  # type: ignore[arg-type]
+        raw = FinanceFetchAdapter(spec_ff, runner=raw_runner).fetch(
             FetchRequest(api="s", params={})
         )
         out["flag_financefetch_nonjson"] = raw.ok and raw.text == "not json at all"
@@ -278,7 +278,7 @@ def ds_audit() -> dict[str, Any]:
         def mark_runner(argv: list[str], **_kw: Any) -> RunOutcome:
             return RunOutcome(returncode=0, stdout="see [fx1: output truncated] docs", stderr="")
 
-        mark = AgentGwAdapter(spec_ready, runner=mark_runner).fetch(  # type: ignore[arg-type]
+        mark = AgentGwAdapter(spec_ready, runner=mark_runner).fetch(
             FetchRequest(api="x", params={})
         )
         out["flag_truncated_substring"] = mark.ok and mark.truncated
@@ -307,25 +307,19 @@ def ds_audit() -> dict[str, Any]:
         def timeout_runner(argv: list[str], **_kw: Any) -> RunOutcome:
             return RunOutcome(returncode=124, stdout="", stderr="t", timed_out=True)
 
-        to = AgentGwAdapter(spec_ready, runner=timeout_runner).fetch(  # type: ignore[arg-type]
-            FetchRequest(api="x")
-        )
+        to = AgentGwAdapter(spec_ready, runner=timeout_runner).fetch(FetchRequest(api="x"))
         out["run_timeout_failure"] = not to.ok and "timeout" in (to.error or "")
 
         def err_runner(argv: list[str], **_kw: Any) -> RunOutcome:
             return RunOutcome(returncode=1, stdout="", stderr="script blew up")
 
-        err = AgentGwAdapter(spec_ready, runner=err_runner).fetch(  # type: ignore[arg-type]
-            FetchRequest(api="x")
-        )
+        err = AgentGwAdapter(spec_ready, runner=err_runner).fetch(FetchRequest(api="x"))
         out["run_stderr_surfaced"] = not err.ok and "script blew up" in (err.error or "")
 
         def empty_runner(argv: list[str], **_kw: Any) -> RunOutcome:
             return RunOutcome(returncode=0, stdout="   ", stderr="")
 
-        emp = AgentGwAdapter(spec_ready, runner=empty_runner).fetch(  # type: ignore[arg-type]
-            FetchRequest(api="x")
-        )
+        emp = AgentGwAdapter(spec_ready, runner=empty_runner).fetch(FetchRequest(api="x"))
         out["run_empty_refused"] = not emp.ok and "empty" in (emp.error or "")
 
         # _run re-probes: delete the script after preflight is impossible to
