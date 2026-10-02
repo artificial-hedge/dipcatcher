@@ -33,6 +33,7 @@ requires ``X-API-Key``; unset, only loopback clients are served.
 
 from __future__ import annotations
 
+import builtins
 import hmac
 import json
 import logging
@@ -46,9 +47,13 @@ import urllib.parse
 import urllib.request
 import uuid
 from collections import OrderedDict
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import (
+    AbstractAsyncContextManager,
+    asynccontextmanager,
+    contextmanager,
+)
 from pathlib import Path
 from typing import Any, Literal
 
@@ -151,6 +156,17 @@ def _err_code(exc: HTTPException) -> str:
 
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
+# Async job results persist in the store until eviction — stdout/stderr
+# are capped per field so one chatty command can't pin unbounded memory.
+_JOB_RESULT_MAX_BYTES = 1 << 20
+
+
+def _cap_job_text(text: str) -> tuple[str, bool]:
+    """Bound a stored job field; truncate at the byte cap, flag honestly."""
+    raw = text.encode("utf-8", errors="replace")
+    if len(raw) <= _JOB_RESULT_MAX_BYTES:
+        return text, False
+    return raw[:_JOB_RESULT_MAX_BYTES].decode("utf-8", errors="ignore"), True
 
 
 class _Model(BaseModel):
@@ -220,6 +236,8 @@ class HarnessRunResponse(_Model):
     ok: bool
     timeout_s: int
     replayed: bool = False
+    stdout_truncated: bool = False
+    stderr_truncated: bool = False
 
 
 class ChatMessage(_Model):
@@ -547,13 +565,17 @@ def _submit_job(
                 config=Path(body.config) if body.config else None,
             )
             command = lab.get(body.command)
+            stdout, stdout_truncated = _cap_job_text(result.stdout)
+            stderr, stderr_truncated = _cap_job_text(result.stderr)
             job.result = HarnessRunResponse(
                 command=result.command,
                 exit_code=result.exit_code,
-                stdout=result.stdout,
-                stderr=result.stderr,
+                stdout=stdout,
+                stderr=stderr,
                 ok=result.ok,
                 timeout_s=command.timeout_s,
+                stdout_truncated=stdout_truncated,
+                stderr_truncated=stderr_truncated,
             )
             job.status = "succeeded"
         except Exception as exc:  # noqa: BLE001 — worker faults land in the record
@@ -573,6 +595,28 @@ def _submit_job(
         raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
     job_store.put(job, key, body_fp)
     return JobSubmitResponse(job_id=job.job_id, status=job.status, replayed=False)
+
+
+def _make_lifespan(
+    metrics: _Metrics,
+    job_store: _JobStore,
+    jobs_executor: ThreadPoolExecutor,
+) -> Callable[[FastAPI], AbstractAsyncContextManager[None]]:
+    """Graceful-exit contract: on shutdown the gate drains (new work gets
+    503), every still-queued job flips to 'cancelled' and fires its
+    signed webhook, and the executor releases pending futures. Running
+    jobs aren't interrupted — they finish bounded by their command
+    timeout or die with the process."""
+
+    @asynccontextmanager
+    async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        yield
+        metrics.draining.set()
+        for pending in job_store.cancel_pending():
+            _deliver_job_callback(pending)
+        jobs_executor.shutdown(wait=False, cancel_futures=True)
+
+    return _lifespan
 
 
 def _mount_job_routes(
@@ -824,6 +868,18 @@ class _JobStore:
                 return job, "cancelled"
             return job, job.status
 
+    def cancel_pending(self) -> builtins.list[JobStatusResponse]:
+        """Shutdown path: every queued job flips to 'cancelled' — its
+        future never starts, so it holds no slot; running jobs finish or
+        die with the process. Returns the cancelled records so the caller
+        can fire their webhooks."""
+        with self._lock:
+            out = [j for j in self._jobs.values() if j.status == "queued"]
+            for job in out:
+                job.status = "cancelled"
+                job.finished_at = time.time()
+            return out
+
     def get_key(self, key: str) -> tuple[str, str] | None:
         with self._lock:
             hit = self._keys.get(key)
@@ -1044,6 +1100,7 @@ def create_app(
             "commands, sealed-receipt verification, and gated model "
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
+        lifespan=_make_lifespan(metrics, job_store, jobs_executor),
     )
     # Large responses (job listings, receipt payloads, openapi) compress well;
     # urllib-based clients send no Accept-Encoding so SSE stays uncompressed.

@@ -1318,6 +1318,61 @@ def api_audit() -> dict[str, Any]:
     except ValueError:
         out["gzip_negative_rejected"] = True
 
+    # --- job lifecycle hygiene --------------------------------------------------
+    big = "x" * (1 << 21)
+    chatty_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, big, "e" * (1 << 21))),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    cc3 = _TC2(chatty_app)
+    jid_big = cc3.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    deadline = time.time() + 10.0
+    while time.time() < deadline:
+        rec = cc3.get(f"/harness/jobs/{jid_big}").json()
+        if rec["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.05)
+    out["job_result_capped"] = (
+        rec["status"] == "succeeded"
+        and rec["result"]["stdout_truncated"] is True
+        and rec["result"]["stderr_truncated"] is True
+        and len(rec["result"]["stdout"].encode()) <= 1 << 20
+        and len(rec["result"]["stderr"].encode()) <= 1 << 20
+    )
+    small_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "tiny", "warn")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    sc = _TC2(small_app)
+    jid_small = sc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    deadline = time.time() + 10.0
+    while time.time() < deadline:
+        rec2 = sc.get(f"/harness/jobs/{jid_small}").json()
+        if rec2["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.05)
+    out["job_result_small_unflagged"] = (
+        rec2["status"] == "succeeded"
+        and rec2["result"]["stdout_truncated"] is False
+        and rec2["result"]["stdout"] == "tiny"
+    )
+
+    # shutdown: TestClient __exit__ runs the lifespan teardown — queued jobs
+    # must flip to cancelled (never silently die) and the drain latch set.
+    drain_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran", "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=1,
+    )
+    with _TC2(drain_app) as dc:
+        drain_app.state.jobs_executor.submit(lambda: time.sleep(3))
+        jid_q = dc.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    dead = drain_app.state.job_store.get(jid_q)
+    out["shutdown_cancels_queued"] = (
+        dead is not None and dead.status == "cancelled" and dead.finished_at is not None
+    )
+    out["shutdown_sets_drain"] = drain_app.state.metrics.draining.is_set()
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 
