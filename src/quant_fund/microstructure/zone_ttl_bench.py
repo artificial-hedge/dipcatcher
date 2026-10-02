@@ -265,10 +265,12 @@ def zone_ttl_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
             "(ttl200_iid: 6/7 pins, instant 1.099, k200 6.02) — the "
             "two targets bracket the mechanism without coinciding: "
             "tape-speed aging alone starves fills below the pin "
-            "floor (ttl50: 3/7). Honest residual: real makers "
-            "re-quote (the age RESETS on repricing), not die — a "
-            "ttl-on-placement-age with refresh-on-reprice is the "
-            "next class."
+            "floor (ttl50: 3/7). Honest residual: the sim already "
+            "resets age on reprice (every reprice is a fresh order), "
+            "so the residual is not repricing semantics — it is the "
+            "missing class of makers whose fast churn is offset by "
+            "staying visible, i.e. cancel-into-repost loops that "
+            "keep depth constant while aging out."
         ),
     }
     body = dict(out)

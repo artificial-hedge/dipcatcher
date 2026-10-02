@@ -3,7 +3,7 @@
  "kind": "microstructure_bench",
  "research_only": true,
  "data_label": "MIXED",
- "git_revision": "3d9206dbe3476c8169b6a8632908ad051cadfae3",
+ "git_revision": "d8ea848adf459f1b5aab670e785755d69bdb5e5e",
  "horizon": 15000,
  "seed": 7,
  "config": {
@@ -746,6 +746,6 @@
   "ttl_keeps_closure": true,
   "kernel_carried": true
  },
- "notes": "Maker aging on the closed z12 cell. The tape's grammar residual is specifically the maker horizon: at 15k the baseline mix gap is only ~0.007 (the 3k preview's 0.049 was early-run noise \u2014 the mix was never far), while executed-maker p50 sits ~205 events vs the tape's 25.5. ttl sweeps across the tape value (26->10.6, 50->22.1, 75->35.8, 100->40.6, 150->72, 200->89.6 events): grammar wants ttl ~50-100, where p50 lands within 2x of the tape. But the pins/kernel want ttl ~200 (ttl200_iid: 6/7 pins, instant 1.099, k200 6.02) \u2014 the two targets bracket the mechanism without coinciding: tape-speed aging alone starves fills below the pin floor (ttl50: 3/7). Honest residual: real makers re-quote (the age RESETS on repricing), not die \u2014 a ttl-on-placement-age with refresh-on-reprice is the next class.",
- "receipt_sha256": "e7354c1d69fcf2a800c8557729511b898f5c887b9570de0e34fe0356365dc40f"
+ "notes": "Maker aging on the closed z12 cell. The tape's grammar residual is specifically the maker horizon: at 15k the baseline mix gap is only ~0.007 (the 3k preview's 0.049 was early-run noise \u2014 the mix was never far), while executed-maker p50 sits ~205 events vs the tape's 25.5. ttl sweeps across the tape value (26->10.6, 50->22.1, 75->35.8, 100->40.6, 150->72, 200->89.6 events): grammar wants ttl ~50-100, where p50 lands within 2x of the tape. But the pins/kernel want ttl ~200 (ttl200_iid: 6/7 pins, instant 1.099, k200 6.02) \u2014 the two targets bracket the mechanism without coinciding: tape-speed aging alone starves fills below the pin floor (ttl50: 3/7). Honest residual: the sim already resets age on reprice (every reprice is a fresh order), so the residual is not repricing semantics \u2014 it is the missing class of makers whose fast churn is offset by staying visible, i.e. cancel-into-repost loops that keep depth constant while aging out.",
+ "receipt_sha256": "7e8b74461301a71444578b81f92196af5f2f5d0a1d1f48ac4f7444b09fbe8aae"
 }
