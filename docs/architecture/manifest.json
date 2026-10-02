@@ -1,6 +1,6 @@
 {
   "generator": "scripts/gen_arch_diagrams.py",
-  "module_count": 1430,
+  "module_count": 1581,
   "module_edges": [
     {
       "dst": "fx1.bench.dip",
@@ -14545,6 +14545,1570 @@
     {
       "dst": "quant_fund.validation.purging",
       "src": "quant_fund.validation.walk_forward"
+    },
+    {
+      "dst": "quant_fund.api.app",
+      "src": "src.quant_fund.api"
+    },
+    {
+      "dst": "quant_fund",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.backtest.engine",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.config",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.metrics.analytics",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.models.covariance",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.pipeline.doctor",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.portfolio.optimizer",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.research.verify",
+      "src": "src.quant_fund.api.app"
+    },
+    {
+      "dst": "quant_fund.backtest.engine",
+      "src": "src.quant_fund.backtest"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.execution.costs",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.metrics.analytics",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.metrics.returns",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.monitoring.kill_switch",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.portfolio.risk_gate",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.schemas.forecast",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.schemas.orders",
+      "src": "src.quant_fund.backtest.engine"
+    },
+    {
+      "dst": "quant_fund.cli.main",
+      "src": "src.quant_fund.cli"
+    },
+    {
+      "dst": "quant_fund.backtest.engine",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.config",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.data.adapters.order_book",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.data.adapters.synthetic",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.data.ingest",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.features.engine",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.microstructure",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_panel",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.microstructure.synthetic_lob",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.microstructure.vendor_book_map",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.northset.benches",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.northset.identities",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.northset.kyle_ofi",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.paper.ledger",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.paper.loop",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.pipeline.doctor",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.pipeline.train",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.reporting.report",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.research.agent",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.research.verify",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.utils.logging",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.validation.gates",
+      "src": "src.quant_fund.cli.main"
+    },
+    {
+      "dst": "quant_fund.config.loader",
+      "src": "src.quant_fund.config"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.config"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.config.loader"
+    },
+    {
+      "dst": "quant_fund.models.covariance",
+      "src": "src.quant_fund.config.models"
+    },
+    {
+      "dst": "quant_fund.data.adapters",
+      "src": "src.quant_fund.data"
+    },
+    {
+      "dst": "quant_fund.data.ingest",
+      "src": "src.quant_fund.data"
+    },
+    {
+      "dst": "quant_fund.data.lake",
+      "src": "src.quant_fund.data"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "src.quant_fund.data"
+    },
+    {
+      "dst": "quant_fund.data.adapters.order_book",
+      "src": "src.quant_fund.data.adapters"
+    },
+    {
+      "dst": "quant_fund.data.adapters.parquet",
+      "src": "src.quant_fund.data.adapters"
+    },
+    {
+      "dst": "quant_fund.data.adapters.synthetic",
+      "src": "src.quant_fund.data.adapters"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_panel",
+      "src": "src.quant_fund.data.adapters.order_book"
+    },
+    {
+      "dst": "quant_fund.microstructure.synthetic_lob",
+      "src": "src.quant_fund.data.adapters.order_book"
+    },
+    {
+      "dst": "quant_fund.data.corporate_actions",
+      "src": "src.quant_fund.data.adapters.parquet"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "src.quant_fund.data.adapters.parquet"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.data.adapters.parquet"
+    },
+    {
+      "dst": "quant_fund.data.calendars",
+      "src": "src.quant_fund.data.adapters.synthetic"
+    },
+    {
+      "dst": "quant_fund.utils.seeds",
+      "src": "src.quant_fund.data.adapters.synthetic"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.data.corporate_actions"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.data.adapters.parquet",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.data.adapters.synthetic",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.data.corporate_actions",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.data.lake",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.data.security_master",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.data.universe",
+      "src": "src.quant_fund.data.ingest"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.data.lake"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.data.point_in_time"
+    },
+    {
+      "dst": "quant_fund.schemas.pit",
+      "src": "src.quant_fund.data.point_in_time"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.data.security_master"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.data.universe"
+    },
+    {
+      "dst": "quant_fund.data.corporate_actions",
+      "src": "src.quant_fund.data.universe"
+    },
+    {
+      "dst": "quant_fund.data.security_master",
+      "src": "src.quant_fund.data.universe"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.data.universe"
+    },
+    {
+      "dst": "quant_fund.execution.almgren_chriss",
+      "src": "src.quant_fund.execution"
+    },
+    {
+      "dst": "quant_fund.execution.costs",
+      "src": "src.quant_fund.execution"
+    },
+    {
+      "dst": "quant_fund.execution.simulated_broker",
+      "src": "src.quant_fund.execution"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.execution.costs"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.execution.simulated_broker"
+    },
+    {
+      "dst": "quant_fund.execution.costs",
+      "src": "src.quant_fund.execution.simulated_broker"
+    },
+    {
+      "dst": "quant_fund.monitoring.kill_switch",
+      "src": "src.quant_fund.execution.simulated_broker"
+    },
+    {
+      "dst": "quant_fund.portfolio.risk_gate",
+      "src": "src.quant_fund.execution.simulated_broker"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.execution.simulated_broker"
+    },
+    {
+      "dst": "quant_fund.schemas.orders",
+      "src": "src.quant_fund.execution.simulated_broker"
+    },
+    {
+      "dst": "quant_fund.features.engine",
+      "src": "src.quant_fund.features"
+    },
+    {
+      "dst": "quant_fund.features.metadata",
+      "src": "src.quant_fund.features"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.features.engine"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "src.quant_fund.features.engine"
+    },
+    {
+      "dst": "quant_fund.data.universe",
+      "src": "src.quant_fund.features.engine"
+    },
+    {
+      "dst": "quant_fund.features.cross_sectional",
+      "src": "src.quant_fund.features.engine"
+    },
+    {
+      "dst": "quant_fund.features.metadata",
+      "src": "src.quant_fund.features.engine"
+    },
+    {
+      "dst": "quant_fund.fusion.engine",
+      "src": "src.quant_fund.fusion"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.fusion.engine"
+    },
+    {
+      "dst": "quant_fund.labels.engine",
+      "src": "src.quant_fund.labels"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.labels.engine"
+    },
+    {
+      "dst": "quant_fund.data.universe",
+      "src": "src.quant_fund.labels.engine"
+    },
+    {
+      "dst": "quant_fund.metrics.analytics",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.evalues",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.overfitting",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.returns",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.risk",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.snooping",
+      "src": "src.quant_fund.metrics"
+    },
+    {
+      "dst": "quant_fund.metrics.overfitting",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.metrics.returns",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.metrics.risk",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.portfolio.attribution",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.metrics.analytics"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.metrics.cross_section"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.metrics.cross_section"
+    },
+    {
+      "dst": "quant_fund.metrics.evalues",
+      "src": "src.quant_fund.metrics.inference"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.metrics.scoring"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.metrics.snooping"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.microstructure"
+    },
+    {
+      "dst": "quant_fund.microstructure.candle_book_features",
+      "src": "src.quant_fund.microstructure"
+    },
+    {
+      "dst": "quant_fund.microstructure.synthetic_lob",
+      "src": "src.quant_fund.microstructure"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.microstructure.bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.microstructure.bench"
+    },
+    {
+      "dst": "quant_fund.microstructure.candle_book_features",
+      "src": "src.quant_fund.microstructure.bench"
+    },
+    {
+      "dst": "quant_fund.schemas.order_book",
+      "src": "src.quant_fund.microstructure.book_metrics"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.microstructure.book_panel"
+    },
+    {
+      "dst": "quant_fund.schemas.order_book",
+      "src": "src.quant_fund.microstructure.book_panel"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_panel",
+      "src": "src.quant_fund.microstructure.candle_book_features"
+    },
+    {
+      "dst": "quant_fund.microstructure.synthetic_lob",
+      "src": "src.quant_fund.microstructure.candle_book_features"
+    },
+    {
+      "dst": "quant_fund.northset.candles",
+      "src": "src.quant_fund.microstructure.candle_book_features"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.microstructure.synthetic_lob"
+    },
+    {
+      "dst": "quant_fund.northset.estimators",
+      "src": "src.quant_fund.microstructure.synthetic_lob"
+    },
+    {
+      "dst": "quant_fund.schemas.order_book",
+      "src": "src.quant_fund.microstructure.synthetic_lob"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_panel",
+      "src": "src.quant_fund.microstructure.vendor_book_map"
+    },
+    {
+      "dst": "quant_fund.microstructure.synthetic_lob",
+      "src": "src.quant_fund.microstructure.vendor_book_map"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.models"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.alpha"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.models.alpha"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.calibration"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.models.conformal"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.conformal_rank"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.models.conformal_rank"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.models.conformal_rank"
+    },
+    {
+      "dst": "quant_fund.models.volatility",
+      "src": "src.quant_fund.models.covariance"
+    },
+    {
+      "dst": "quant_fund.utils.logging",
+      "src": "src.quant_fund.models.covariance"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.crc"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.models.crc"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.crc"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.cv_plus"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.cv_plus"
+    },
+    {
+      "dst": "quant_fund.models.weighted_conformal",
+      "src": "src.quant_fund.models.cv_plus"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.models.distribution"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.models.distribution"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.distribution"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.models.distribution"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.jackknife_plus"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.jackknife_plus"
+    },
+    {
+      "dst": "quant_fund.schemas.forecast",
+      "src": "src.quant_fund.models.kronos"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.localized_conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.models.localized_conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.models.localized_conformal"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.localized_conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.models.online_crc"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.models.online_crc"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.models.online_crc"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.online_crc"
+    },
+    {
+      "dst": "quant_fund.models.crc",
+      "src": "src.quant_fund.models.online_crc"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.ranking"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.regime"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.models.rl"
+    },
+    {
+      "dst": "quant_fund.metrics.risk",
+      "src": "src.quant_fund.models.tail"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.tail"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.models.tail"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.volatility"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.models.volatility"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.models.weighted_conformal"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.models.weighted_conformal"
+    },
+    {
+      "dst": "quant_fund.monitoring.drift",
+      "src": "src.quant_fund.monitoring"
+    },
+    {
+      "dst": "quant_fund.monitoring.kill_switch",
+      "src": "src.quant_fund.monitoring"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.monitoring.kill_switch"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.monitoring.kill_switch"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_panel",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.microstructure.candle_book_features",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.microstructure.synthetic_lob",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.candles",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.data_view",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.estimators",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.identities",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.kyle_ofi",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.sweep_research",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.sweeps",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "src.quant_fund.northset.benches"
+    },
+    {
+      "dst": "quant_fund.northset.identities",
+      "src": "src.quant_fund.northset.data_view"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.northset.estimators"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.northset.estimators"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.northset.kyle_ofi"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.northset.kyle_ofi"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.northset.sweep_research"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.northset.sweep_research"
+    },
+    {
+      "dst": "quant_fund.northset.sweeps",
+      "src": "src.quant_fund.northset.sweep_research"
+    },
+    {
+      "dst": "quant_fund.northset.identities",
+      "src": "src.quant_fund.northset.sweeps"
+    },
+    {
+      "dst": "quant_fund.execution.simulated_broker",
+      "src": "src.quant_fund.paper.ledger"
+    },
+    {
+      "dst": "quant_fund.metrics.analytics",
+      "src": "src.quant_fund.paper.ledger"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.paper.ledger"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.execution.simulated_broker",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.metrics.analytics",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.monitoring.kill_switch",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.paper.clock",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.paper.ledger",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.portfolio.portfolio_conformal",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.paper.loop"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.pipeline"
+    },
+    {
+      "dst": "quant_fund.pipeline.doctor",
+      "src": "src.quant_fund.pipeline"
+    },
+    {
+      "dst": "quant_fund.pipeline.forecast",
+      "src": "src.quant_fund.pipeline"
+    },
+    {
+      "dst": "quant_fund.pipeline.kronos",
+      "src": "src.quant_fund.pipeline"
+    },
+    {
+      "dst": "quant_fund.pipeline.train",
+      "src": "src.quant_fund.pipeline"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.data.ingest",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.data.lake",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.data.universe",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.features.engine",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.features.metadata",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.labels.engine",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.pipeline.dataset"
+    },
+    {
+      "dst": "quant_fund",
+      "src": "src.quant_fund.pipeline.doctor"
+    },
+    {
+      "dst": "quant_fund.config",
+      "src": "src.quant_fund.pipeline.doctor"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.pipeline.doctor"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "src.quant_fund.pipeline.doctor"
+    },
+    {
+      "dst": "quant_fund.research.verify",
+      "src": "src.quant_fund.pipeline.doctor"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.data.point_in_time",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.data.universe",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.fusion.engine",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.conformal",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.covariance",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.distribution",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.realized_garch",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.robinhood_plus.constants",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.robinhood_plus.engine",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.robinhood_plus.torch_backend",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.models.volatility",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.pipeline.train",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.portfolio.interval_risk",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.portfolio.optimizer",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.schemas.forecast",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.utils.logging",
+      "src": "src.quant_fund.pipeline.forecast"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.pipeline.kronos"
+    },
+    {
+      "dst": "quant_fund.models.kronos",
+      "src": "src.quant_fund.pipeline.kronos"
+    },
+    {
+      "dst": "quant_fund.schemas.forecast",
+      "src": "src.quant_fund.pipeline.kronos"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.metrics.risk",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.alpha",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.distribution",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.realized_garch",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.regime",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.robinhood_plus.bench",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.robinhood_plus.engine",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.tail",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.models.volatility",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.registry.mlflow_store",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.utils.seeds",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.validation.purging",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.validation.walk_forward",
+      "src": "src.quant_fund.pipeline.train"
+    },
+    {
+      "dst": "quant_fund.portfolio.optimizer",
+      "src": "src.quant_fund.portfolio"
+    },
+    {
+      "dst": "quant_fund.portfolio.risk_gate",
+      "src": "src.quant_fund.portfolio"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.portfolio.optimizer"
+    },
+    {
+      "dst": "quant_fund.models.covariance",
+      "src": "src.quant_fund.portfolio.optimizer"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.portfolio.optimizer"
+    },
+    {
+      "dst": "quant_fund.schemas.portfolio",
+      "src": "src.quant_fund.portfolio.optimizer"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.portfolio.portfolio_conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.portfolio.portfolio_conformal"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.portfolio.portfolio_conformal"
+    },
+    {
+      "dst": "quant_fund.models.base",
+      "src": "src.quant_fund.portfolio.portfolio_conformal"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.portfolio.risk_gate"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.portfolio.risk_gate"
+    },
+    {
+      "dst": "quant_fund.schemas.orders",
+      "src": "src.quant_fund.portfolio.risk_gate"
+    },
+    {
+      "dst": "quant_fund.registry.mlflow_store",
+      "src": "src.quant_fund.registry"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.registry.mlflow_store"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.registry.mlflow_store"
+    },
+    {
+      "dst": "quant_fund.reporting.report",
+      "src": "src.quant_fund.reporting"
+    },
+    {
+      "dst": "quant_fund.research.agent",
+      "src": "src.quant_fund.research"
+    },
+    {
+      "dst": "quant_fund",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.metrics.snooping",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.northset.benches",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.reporting.report",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.research.benches",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.utils.seeds",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.validation.walk_forward",
+      "src": "src.quant_fund.research.agent"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.execution.almgren_chriss",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.conformal",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.cross_section",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.evalues",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.probability",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.metrics.scoring",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.alpha",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.conformal",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.conformal_rank",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.crc",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.cv_plus",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.distribution",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.jackknife_plus",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.localized_conformal",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.online_crc",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.quantile_bandit",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.ranking",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.regime",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.rl",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.tail",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.models.weighted_conformal",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.pipeline.dataset",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.pipeline.train",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.portfolio.interval_risk",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.portfolio.portfolio_conformal",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.validation.cpcv",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.validation.walk_forward",
+      "src": "src.quant_fund.research.benches"
+    },
+    {
+      "dst": "quant_fund.data.adapters.binance",
+      "src": "src.quant_fund.research.binance_receipt"
+    },
+    {
+      "dst": "quant_fund.microstructure.bench",
+      "src": "src.quant_fund.research.catalog"
+    },
+    {
+      "dst": "quant_fund.microstructure.book_metrics",
+      "src": "src.quant_fund.research.catalog"
+    },
+    {
+      "dst": "quant_fund.data.adapters.binance",
+      "src": "src.quant_fund.research.crypto_external_benchmark"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.research.crypto_external_benchmark"
+    },
+    {
+      "dst": "quant_fund.metrics.inference",
+      "src": "src.quant_fund.research.garch_benchmark"
+    },
+    {
+      "dst": "quant_fund.northset.benches",
+      "src": "src.quant_fund.research.verify"
+    },
+    {
+      "dst": "quant_fund.research.catalog",
+      "src": "src.quant_fund.research.verify"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.research.verify"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.forecast",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.market",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.order_book",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.orders",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.pit",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.portfolio",
+      "src": "src.quant_fund.schemas"
+    },
+    {
+      "dst": "quant_fund.schemas.errors",
+      "src": "src.quant_fund.schemas.pit"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.utils"
+    },
+    {
+      "dst": "quant_fund.utils.logging",
+      "src": "src.quant_fund.utils"
+    },
+    {
+      "dst": "quant_fund.utils.numeric",
+      "src": "src.quant_fund.utils"
+    },
+    {
+      "dst": "quant_fund.utils.seeds",
+      "src": "src.quant_fund.utils"
+    },
+    {
+      "dst": "quant_fund.utils.hashing",
+      "src": "src.quant_fund.utils.reproducibility"
+    },
+    {
+      "dst": "quant_fund.validation.gates",
+      "src": "src.quant_fund.validation"
+    },
+    {
+      "dst": "quant_fund.validation.walk_forward",
+      "src": "src.quant_fund.validation"
+    },
+    {
+      "dst": "quant_fund.validation.purging",
+      "src": "src.quant_fund.validation.cpcv"
+    },
+    {
+      "dst": "quant_fund.validation.walk_forward",
+      "src": "src.quant_fund.validation.cpcv"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.validation.gates"
+    },
+    {
+      "dst": "quant_fund.registry.mlflow_store",
+      "src": "src.quant_fund.validation.gates"
+    },
+    {
+      "dst": "quant_fund.research.verify",
+      "src": "src.quant_fund.validation.gates"
+    },
+    {
+      "dst": "quant_fund.utils.reproducibility",
+      "src": "src.quant_fund.validation.gates"
+    },
+    {
+      "dst": "quant_fund.metrics.overfitting",
+      "src": "src.quant_fund.validation.multiple_testing"
+    },
+    {
+      "dst": "quant_fund.metrics.returns",
+      "src": "src.quant_fund.validation.multiple_testing"
+    },
+    {
+      "dst": "quant_fund.metrics.snooping",
+      "src": "src.quant_fund.validation.multiple_testing"
+    },
+    {
+      "dst": "quant_fund.config.models",
+      "src": "src.quant_fund.validation.walk_forward"
+    },
+    {
+      "dst": "quant_fund.validation.purging",
+      "src": "src.quant_fund.validation.walk_forward"
     }
   ],
   "modules": [
@@ -15977,7 +17541,158 @@
     "quant_fund.validation.purging",
     "quant_fund.validation.regime_eval",
     "quant_fund.validation.vintage_eval",
-    "quant_fund.validation.walk_forward"
+    "quant_fund.validation.walk_forward",
+    "src.quant_fund",
+    "src.quant_fund.api",
+    "src.quant_fund.api.app",
+    "src.quant_fund.backtest",
+    "src.quant_fund.backtest.engine",
+    "src.quant_fund.cli",
+    "src.quant_fund.cli.main",
+    "src.quant_fund.config",
+    "src.quant_fund.config.loader",
+    "src.quant_fund.config.models",
+    "src.quant_fund.data",
+    "src.quant_fund.data.adapters",
+    "src.quant_fund.data.adapters.binance",
+    "src.quant_fund.data.adapters.order_book",
+    "src.quant_fund.data.adapters.parquet",
+    "src.quant_fund.data.adapters.synthetic",
+    "src.quant_fund.data.calendars",
+    "src.quant_fund.data.corporate_actions",
+    "src.quant_fund.data.ingest",
+    "src.quant_fund.data.lake",
+    "src.quant_fund.data.point_in_time",
+    "src.quant_fund.data.protocols",
+    "src.quant_fund.data.security_master",
+    "src.quant_fund.data.universe",
+    "src.quant_fund.execution",
+    "src.quant_fund.execution.almgren_chriss",
+    "src.quant_fund.execution.costs",
+    "src.quant_fund.execution.simulated_broker",
+    "src.quant_fund.features",
+    "src.quant_fund.features.cross_sectional",
+    "src.quant_fund.features.engine",
+    "src.quant_fund.features.metadata",
+    "src.quant_fund.fusion",
+    "src.quant_fund.fusion.engine",
+    "src.quant_fund.labels",
+    "src.quant_fund.labels.engine",
+    "src.quant_fund.metrics",
+    "src.quant_fund.metrics.analytics",
+    "src.quant_fund.metrics.conformal",
+    "src.quant_fund.metrics.cross_section",
+    "src.quant_fund.metrics.evalues",
+    "src.quant_fund.metrics.inference",
+    "src.quant_fund.metrics.overfitting",
+    "src.quant_fund.metrics.probability",
+    "src.quant_fund.metrics.returns",
+    "src.quant_fund.metrics.risk",
+    "src.quant_fund.metrics.scoring",
+    "src.quant_fund.metrics.snooping",
+    "src.quant_fund.microstructure",
+    "src.quant_fund.microstructure.bench",
+    "src.quant_fund.microstructure.book_metrics",
+    "src.quant_fund.microstructure.book_panel",
+    "src.quant_fund.microstructure.candle_book_features",
+    "src.quant_fund.microstructure.synthetic_lob",
+    "src.quant_fund.microstructure.vendor_book_map",
+    "src.quant_fund.models",
+    "src.quant_fund.models.alpha",
+    "src.quant_fund.models.base",
+    "src.quant_fund.models.calibration",
+    "src.quant_fund.models.conformal",
+    "src.quant_fund.models.conformal_rank",
+    "src.quant_fund.models.covariance",
+    "src.quant_fund.models.crc",
+    "src.quant_fund.models.cv_plus",
+    "src.quant_fund.models.distribution",
+    "src.quant_fund.models.jackknife_plus",
+    "src.quant_fund.models.kronos",
+    "src.quant_fund.models.localized_conformal",
+    "src.quant_fund.models.online_crc",
+    "src.quant_fund.models.quantile_bandit",
+    "src.quant_fund.models.ranking",
+    "src.quant_fund.models.realized_garch",
+    "src.quant_fund.models.regime",
+    "src.quant_fund.models.rl",
+    "src.quant_fund.models.robinhood_plus",
+    "src.quant_fund.models.robinhood_plus.autoregress",
+    "src.quant_fund.models.robinhood_plus.bench",
+    "src.quant_fund.models.robinhood_plus.compare",
+    "src.quant_fund.models.robinhood_plus.constants",
+    "src.quant_fund.models.robinhood_plus.engine",
+    "src.quant_fund.models.robinhood_plus.predictor",
+    "src.quant_fund.models.robinhood_plus.tokenizer",
+    "src.quant_fund.models.robinhood_plus.torch_backend",
+    "src.quant_fund.models.tail",
+    "src.quant_fund.models.volatility",
+    "src.quant_fund.models.weighted_conformal",
+    "src.quant_fund.monitoring",
+    "src.quant_fund.monitoring.drift",
+    "src.quant_fund.monitoring.kill_switch",
+    "src.quant_fund.northset",
+    "src.quant_fund.northset.benches",
+    "src.quant_fund.northset.candles",
+    "src.quant_fund.northset.data_view",
+    "src.quant_fund.northset.estimators",
+    "src.quant_fund.northset.identities",
+    "src.quant_fund.northset.kyle_ofi",
+    "src.quant_fund.northset.sweep_research",
+    "src.quant_fund.northset.sweeps",
+    "src.quant_fund.paper",
+    "src.quant_fund.paper.clock",
+    "src.quant_fund.paper.ledger",
+    "src.quant_fund.paper.loop",
+    "src.quant_fund.pipeline",
+    "src.quant_fund.pipeline.dataset",
+    "src.quant_fund.pipeline.doctor",
+    "src.quant_fund.pipeline.forecast",
+    "src.quant_fund.pipeline.kronos",
+    "src.quant_fund.pipeline.train",
+    "src.quant_fund.portfolio",
+    "src.quant_fund.portfolio.attribution",
+    "src.quant_fund.portfolio.concentration",
+    "src.quant_fund.portfolio.executable_alpha",
+    "src.quant_fund.portfolio.interval_risk",
+    "src.quant_fund.portfolio.optimizer",
+    "src.quant_fund.portfolio.portfolio_conformal",
+    "src.quant_fund.portfolio.risk_gate",
+    "src.quant_fund.registry",
+    "src.quant_fund.registry.mlflow_store",
+    "src.quant_fund.reporting",
+    "src.quant_fund.reporting.report",
+    "src.quant_fund.research",
+    "src.quant_fund.research.agent",
+    "src.quant_fund.research.benches",
+    "src.quant_fund.research.binance_receipt",
+    "src.quant_fund.research.catalog",
+    "src.quant_fund.research.crypto_external_benchmark",
+    "src.quant_fund.research.external_receipt",
+    "src.quant_fund.research.garch_benchmark",
+    "src.quant_fund.research.verify",
+    "src.quant_fund.schemas",
+    "src.quant_fund.schemas.errors",
+    "src.quant_fund.schemas.forecast",
+    "src.quant_fund.schemas.market",
+    "src.quant_fund.schemas.order_book",
+    "src.quant_fund.schemas.orders",
+    "src.quant_fund.schemas.pit",
+    "src.quant_fund.schemas.portfolio",
+    "src.quant_fund.utils",
+    "src.quant_fund.utils.hashing",
+    "src.quant_fund.utils.logging",
+    "src.quant_fund.utils.numeric",
+    "src.quant_fund.utils.reproducibility",
+    "src.quant_fund.utils.seeds",
+    "src.quant_fund.validation",
+    "src.quant_fund.validation.cpcv",
+    "src.quant_fund.validation.embargo",
+    "src.quant_fund.validation.gates",
+    "src.quant_fund.validation.multiple_testing",
+    "src.quant_fund.validation.optuna_guard",
+    "src.quant_fund.validation.purging",
+    "src.quant_fund.validation.walk_forward"
   ],
   "package_edges": [
     {
@@ -17929,6 +19644,126 @@
       "dst": "quant_fund.validation",
       "imports": 5,
       "src": "quant_fund.validation"
+    },
+    {
+      "dst": "quant_fund",
+      "imports": 3,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.api",
+      "imports": 1,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.backtest",
+      "imports": 3,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.cli",
+      "imports": 1,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.config",
+      "imports": 31,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.data",
+      "imports": 33,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.execution",
+      "imports": 8,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.features",
+      "imports": 7,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.fusion",
+      "imports": 2,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.labels",
+      "imports": 2,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.metrics",
+      "imports": 75,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.microstructure",
+      "imports": 24,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.models",
+      "imports": 62,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.monitoring",
+      "imports": 5,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.northset",
+      "imports": 17,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.paper",
+      "imports": 4,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.pipeline",
+      "imports": 20,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.portfolio",
+      "imports": 11,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.registry",
+      "imports": 3,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.reporting",
+      "imports": 3,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.research",
+      "imports": 11,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.schemas",
+      "imports": 33,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.utils",
+      "imports": 21,
+      "src": "src"
+    },
+    {
+      "dst": "quant_fund.validation",
+      "imports": 11,
+      "src": "src"
     }
   ],
   "schema_version": 1,

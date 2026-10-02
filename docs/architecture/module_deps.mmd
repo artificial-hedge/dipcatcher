@@ -421,5 +421,29 @@ flowchart LR
   quant_fund_validation -->|1| quant_fund_registry
   quant_fund_validation -->|1| quant_fund_research
   quant_fund_validation -->|2| quant_fund_utils
+  src -->|3| quant_fund
+  src -->|1| quant_fund_api
+  src -->|3| quant_fund_backtest
+  src -->|1| quant_fund_cli
+  src -->|31| quant_fund_config
+  src -->|33| quant_fund_data
+  src -->|8| quant_fund_execution
+  src -->|7| quant_fund_features
+  src -->|2| quant_fund_fusion
+  src -->|2| quant_fund_labels
+  src -->|75| quant_fund_metrics
+  src -->|24| quant_fund_microstructure
+  src -->|62| quant_fund_models
+  src -->|5| quant_fund_monitoring
+  src -->|17| quant_fund_northset
+  src -->|4| quant_fund_paper
+  src -->|20| quant_fund_pipeline
+  src -->|11| quant_fund_portfolio
+  src -->|3| quant_fund_registry
+  src -->|3| quant_fund_reporting
+  src -->|11| quant_fund_research
+  src -->|33| quant_fund_schemas
+  src -->|21| quant_fund_utils
+  src -->|11| quant_fund_validation
   classDef ghost stroke-dasharray: 5 5,color:#888
   %% ghost nodes are lazily referenced packages absent from this tree
