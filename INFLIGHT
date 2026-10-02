@@ -2631,3 +2631,4 @@ wave 230 (2026-10-02): computational-geometry canon — ear_clipping, sutherland
 wave 231 (2026-10-02): architecture canon — cpu_pipeline, cache_sim, branch_predictor, tomasulo_sim, paging_sim, roofline_model; 1359→1365 families.
 wave 232 (2026-10-02): blockchain canon — merkle_tree, proof_of_work, utxo_set, difficulty_retarget, fork_resolution, block_validator; 1365→1371 families.
 wave 233 (2026-10-02): compiler-2 canon — ssa_construct, sccp_const, gvn_elim, reg_coalesce, instr_sched, licm_hoist; 1371→1377 families.
+wave 234 (2026-10-02): database-internals canon — btree_index, wal_recovery, join_algos, query_planner, mvcc_isolation, lsm_tree; 1377→1383 families.
