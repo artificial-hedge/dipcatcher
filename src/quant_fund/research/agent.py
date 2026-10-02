@@ -1213,6 +1213,14 @@ from quant_fund.research.benches_w152 import (
     bench_pate_teacher_family,
     bench_secure_agg_family,
 )
+from quant_fund.research.benches_w153 import (
+    bench_arch_predictor_family,
+    bench_darts_nas_family,
+    bench_enas_controller_family,
+    bench_evolution_nas_family,
+    bench_one_shot_nas_family,
+    bench_random_search_nas_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3676,6 +3684,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pate_teacher": bench_pate_teacher_family(),
         "gradient_leakage": bench_gradient_leakage_family(),
         "canary_exposure": bench_canary_exposure_family(),
+        "random_search_nas": bench_random_search_nas_family(),
+        "evolution_nas": bench_evolution_nas_family(),
+        "darts_nas": bench_darts_nas_family(),
+        "enas_controller": bench_enas_controller_family(),
+        "one_shot_nas": bench_one_shot_nas_family(),
+        "arch_predictor": bench_arch_predictor_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
