@@ -36,6 +36,7 @@ from __future__ import annotations
 import hmac
 import json
 import logging
+import math
 import os
 import queue
 import re
@@ -77,6 +78,8 @@ _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
 _IDEM_KEY_MAX = 256
 _JOB_MAX_ENV = "FX1_API_JOB_MAX"
+_RATE_LIMIT_ENV = "FX1_API_RATE_LIMIT_RPS"
+_RATE_LIMIT_KEYS_MAX = 4096
 # Wire-contract version — bumped on breaking changes to the pinned OpenAPI
 # surface; stamped on every response as X-Fx1-Api-Version and reported by
 # GET /harness/version so clients negotiate before sending work.
@@ -243,6 +246,7 @@ class MetricsResponse(_Model):
     inflight_watermark: int
     max_inflight: int
     draining: bool
+    rate_limited_total: int = 0
 
 
 class DrainResponse(_Model):
@@ -300,7 +304,12 @@ class _Metrics:
         self._by_status: dict[int, int] = {}
         self._inflight = 0
         self._watermark = 0
+        self._rate_limited_total = 0
         self.draining = threading.Event()
+
+    def record_rate_limited(self) -> None:
+        with self._cond:
+            self._rate_limited_total += 1
 
     def record(self, status: int) -> None:
         with self._cond:
@@ -342,6 +351,7 @@ class _Metrics:
                 inflight_watermark=self._watermark,
                 max_inflight=self.max_inflight,
                 draining=self.draining.is_set(),
+                rate_limited_total=self._rate_limited_total,
             )
 
 
@@ -350,6 +360,14 @@ def _env_int_bound(name: str, default: int, given: int | None) -> int:
     v = int(os.environ.get(name, str(default))) if given is None else given
     if v < 1:
         raise ValueError(f"{name} bound must be >= 1, got {v}")
+    return v
+
+
+def _env_float_floor(name: str, default: float, given: float | None) -> float:
+    """Non-negative float tunable from arg or env, fail-closed below 0."""
+    v = float(os.environ.get(name, str(default))) if given is None else given
+    if v < 0:
+        raise ValueError(f"{name} must be >= 0, got {v}")
     return v
 
 
@@ -679,6 +697,35 @@ def _finish(request: Request, request_id: str, response: Any, started: float) ->
     return response
 
 
+class _RateLimiter:
+    """Per-client-host token bucket: ``rps`` refill with one second of
+    burst capacity, LRU-bounded so a spray of source addresses can't grow
+    the map without limit. `allow` returns 0.0 when the request may
+    proceed, else the seconds until a token refills."""
+
+    def __init__(self, rps: float, max_keys: int = _RATE_LIMIT_KEYS_MAX) -> None:
+        self.rps = rps
+        self.capacity = max(1.0, rps)
+        self.max_keys = max_keys
+        self._lock = threading.Lock()
+        self._buckets: OrderedDict[str, tuple[float, float]] = OrderedDict()
+
+    def allow(self, identity: str) -> float:
+        now = time.monotonic()
+        with self._lock:
+            entry = self._buckets.pop(identity, None)
+            tokens, ts = entry if entry is not None else (self.capacity, now)
+            tokens = min(self.capacity, tokens + self.rps * (now - ts))
+            if tokens >= 1.0:
+                self._buckets[identity] = (tokens - 1.0, now)
+                return 0.0
+            wait = (1.0 - tokens) / self.rps
+            self._buckets[identity] = (tokens, now)
+            while len(self._buckets) > self.max_keys:
+                self._buckets.popitem(last=False)
+            return wait
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -686,6 +733,7 @@ def create_app(
     sse_keepalive_s: float | None = None,
     idem_max: int | None = None,
     job_max: int | None = None,
+    rate_limit_rps: float | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -693,10 +741,9 @@ def create_app(
     max_inflight = _env_int_bound(_MAX_INFLIGHT_ENV, 16, max_inflight)
     idem_max = _env_int_bound(_IDEM_MAX_ENV, 1024, idem_max)
     job_max = _env_int_bound(_JOB_MAX_ENV, 1024, job_max)
-    if sse_keepalive_s is None:
-        sse_keepalive_s = float(os.environ.get(_SSE_KEEPALIVE_ENV, "15"))
-    if sse_keepalive_s < 0:
-        raise ValueError(f"sse_keepalive_s must be >= 0, got {sse_keepalive_s}")
+    sse_keepalive_s = _env_float_floor(_SSE_KEEPALIVE_ENV, 15.0, sse_keepalive_s)
+    rate_limit_rps = _env_float_floor(_RATE_LIMIT_ENV, 0.0, rate_limit_rps)
+    limiter = _RateLimiter(rate_limit_rps) if rate_limit_rps > 0 else None
     # Bounded in-flight work: the harness executes lab commands and model
     # calls on shared resources (a spawned local engine, GPU memory, the
     # box itself) — saturation must fail honestly as 503, never queue
@@ -749,6 +796,7 @@ def create_app(
     app.state.job_store = job_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
+    app.state.rate_limiter = limiter
 
     @app.exception_handler(HTTPException)
     async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
@@ -770,6 +818,21 @@ def create_app(
         request_id = _request_id(request.headers.get("x-request-id"))
         request.state.request_id = request_id
         started = time.monotonic()
+        if limiter is not None:
+            # keyed on client host so a rotating fake API key can't evade it
+            host = (request.client.host if request.client else "") or "unknown"
+            wait = limiter.allow(host)
+            if wait > 0:
+                metrics.record_rate_limited()
+                response = JSONResponse(
+                    status_code=429,
+                    content={
+                        "detail": f"rate limit exceeded; retry in {wait:.1f}s",
+                        "code": "too_many_requests",
+                    },
+                    headers={"Retry-After": str(max(1, math.ceil(wait)))},
+                )
+                return _finish(request, request_id, response, started)
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
             declared = request.headers.get("content-length")
             if declared is not None:

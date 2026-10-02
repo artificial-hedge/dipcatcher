@@ -455,6 +455,27 @@ def e2e_audit() -> dict[str, bool]:
             server5.should_exit = True
             server5_thread.join(timeout=15)
             server4_thread.join(timeout=15)
+
+        # rate limiting over the real wire: the client retries a 429 with
+        # Retry-After transparently, and the denial is metered.
+        server6_app = api_mod.create_app(harness=Harness(runner=fake_runner), rate_limit_rps=3.0)
+        server6, server6_thread, port6 = _serve_uvicorn(server6_app)
+        try:
+            rl = HarnessClient(
+                f"http://127.0.0.1:{port6}",
+                api_key=_API_KEY,
+                timeout_s=15.0,
+                max_retries=4,
+                retry_backoff_s=0.05,
+            )
+            results = [_raises(lambda: rl.health()) or "ok" for _ in range(6)]
+            m = rl.metrics()
+            out["e2e_rate_limit_retries_succeed"] = (
+                results == ["ok"] * 6 and m.rate_limited_total >= 1
+            )
+        finally:
+            server6.should_exit = True
+            server6_thread.join(timeout=15)
     finally:
         if server is not None:
             server.should_exit = True

@@ -110,6 +110,7 @@ class OpsMetrics:
     inflight_watermark: int = 0
     max_inflight: int = 0
     draining: bool = False
+    rate_limited_total: int = 0
 
 
 class Fx1Harness:

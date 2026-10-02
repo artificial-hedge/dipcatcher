@@ -909,6 +909,58 @@ def api_audit() -> dict[str, Any]:
         time.sleep(0.1)
     out["job_cancel_slot_recovered"] = qc.get("/metrics").json()["inflight"] == 0
 
+    # --- rate limiting: per-client-host token bucket ----------------------------
+    out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
+    try:
+        api_mod.create_app(rate_limit_rps=-1)
+        out["rate_limit_negative_rejected"] = False
+    except ValueError:
+        out["rate_limit_negative_rejected"] = True
+    limited = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=5.0,
+    )
+    lc = _TC2(limited)
+    hits = [lc.get("/health").status_code for _ in range(7)]
+    denied = lc.get("/health")
+    out["rate_limit_429"] = hits[:5] == [200] * 5 and 429 in hits[5:] + [denied.status_code]
+    out["rate_limit_envelope"] = (
+        denied.status_code == 429
+        and denied.json()["code"] == "too_many_requests"
+        and denied.headers.get("retry-after") is not None
+        and int(denied.headers["retry-after"]) >= 1
+    )
+    time.sleep(0.3)
+    out["rate_limit_recovers"] = lc.get("/health").status_code == 200
+    # limiter counts denials; a public-path request also draws a token
+    limited2 = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=20.0,
+    )
+    lc2 = _TC2(limited2)
+    statuses = [lc2.get("/health").status_code for _ in range(23)]
+    time.sleep(0.15)
+    m = lc2.get("/metrics")
+    out["rate_limit_metrics_counts"] = (
+        statuses.count(429) >= 2
+        and m.status_code == 200
+        and m.json()["rate_limited_total"] == statuses.count(429)
+    )
+    os.environ["FX1_API_RATE_LIMIT_RPS"] = "3"
+    try:
+        env_app = api_mod.create_app(
+            harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+        )
+        ec = _TC2(env_app)
+        out["rate_limit_env_config"] = [ec.get("/health").status_code for _ in range(5)].count(
+            429
+        ) >= 1
+    finally:
+        os.environ.pop("FX1_API_RATE_LIMIT_RPS", None)
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 

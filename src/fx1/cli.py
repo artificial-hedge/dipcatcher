@@ -472,6 +472,7 @@ def harness_metrics(
                 "inflight_watermark": m.inflight_watermark,
                 "max_inflight": m.max_inflight,
                 "draining": m.draining,
+                "rate_limited_total": m.rate_limited_total,
             },
             indent=2,
         )

@@ -319,6 +319,7 @@ def cli_audit() -> dict[str, Any]:
                 inflight=0,
                 inflight_watermark=1,
                 max_inflight=16,
+                rate_limited_total=3,
             )
 
         def drain(self, wait_s: float = 0.0) -> dict[str, Any]:
@@ -390,6 +391,7 @@ def cli_audit() -> dict[str, Any]:
             rm.exit_code == 0
             and json.loads(rm.stdout)["requests_total"] == 7
             and json.loads(rm.stdout)["by_status"] == {"200": 7}
+            and json.loads(rm.stdout)["rate_limited_total"] == 3
         )
         rd = runner.invoke(app, ["harness", "drain", "--remote", "http://h.test"])
         out["remote_drain_json"] = rd.exit_code == 0 and json.loads(rd.stdout) == {

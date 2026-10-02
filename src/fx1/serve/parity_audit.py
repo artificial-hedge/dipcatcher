@@ -643,6 +643,26 @@ def parity_audit() -> dict[str, bool]:
         resilient2.health().status == "ok" and calls2["n"] == 2 and sleeps[0] == 0.25
     )
 
+    tr429, calls429 = _scripted(
+        [
+            (
+                429,
+                {"Retry-After": "0.2"},
+                _json_mod.dumps(
+                    {"detail": "rate limit exceeded", "code": "too_many_requests"}
+                ).encode(),
+            ),
+            (200, {}, _health_body()),
+        ]
+    )
+    sleeps429: list[float] = []
+    resilient429 = HarnessClient(
+        "http://h.test", transport=tr429, max_retries=2, sleep=sleeps429.append
+    )
+    out["retry_429_rate_limited"] = (
+        resilient429.health().status == "ok" and calls429["n"] == 2 and sleeps429 == [0.2]
+    )
+
     tr3, calls3 = _scripted(
         [(503, {"Retry-After": "999"}, _json_mod.dumps({"detail": "cap"}).encode())]
     )
@@ -1012,6 +1032,38 @@ def parity_audit() -> dict[str, bool]:
         "fx1_version": "0.4.0",
     }
     out["client_last_api_version"] = c_ops.last_api_version == "1"
+
+    def _metrics_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return (
+            200,
+            {},
+            _json_mod.dumps(
+                {
+                    "uptime_s": 3.0,
+                    "requests_total": 9,
+                    "errors_total": 1,
+                    "by_status": {"200": 8, "429": 1},
+                    "inflight": 0,
+                    "inflight_watermark": 2,
+                    "max_inflight": 16,
+                    "draining": False,
+                    "rate_limited_total": 4,
+                }
+            ).encode(),
+        )
+
+    c_m = HarnessClient("http://harness.test", transport=_metrics_transport)
+    om = c_m.metrics()
+    out["client_metrics_rate_limited"] = om.rate_limited_total == 4 and om.by_status == {
+        "200": 8,
+        "429": 1,
+    }
 
     def _coded_transport(
         method: str,

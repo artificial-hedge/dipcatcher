@@ -608,6 +608,7 @@ class HarnessClient:
             inflight_watermark=out["inflight_watermark"],
             max_inflight=out["max_inflight"],
             draining=bool(out.get("draining", False)),
+            rate_limited_total=int(out.get("rate_limited_total", 0)),
         )
 
     def drain(self, wait_s: float = 0.0) -> dict[str, Any]:
