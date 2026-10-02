@@ -1093,6 +1093,14 @@ from quant_fund.research.benches_w137 import (
     bench_prioritized_replay_family,
     bench_qr_dqn_family,
 )
+from quant_fund.research.benches_w138 import (
+    bench_dnc_memory_family,
+    bench_memorizing_transformer_family,
+    bench_mpc_planning_family,
+    bench_ntm_memory_family,
+    bench_reformer_lsh_family,
+    bench_rssm_world_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3466,6 +3474,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "noisy_net": bench_noisy_net_family(),
         "prioritized_replay": bench_prioritized_replay_family(),
         "bootstrapped_dqn": bench_bootstrapped_dqn_family(),
+        "reformer_lsh": bench_reformer_lsh_family(),
+        "memorizing_transformer": bench_memorizing_transformer_family(),
+        "ntm_memory": bench_ntm_memory_family(),
+        "dnc_memory": bench_dnc_memory_family(),
+        "rssm_world": bench_rssm_world_family(),
+        "mpc_planning": bench_mpc_planning_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
