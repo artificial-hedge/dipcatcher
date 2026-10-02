@@ -1291,6 +1291,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1324,6 +1325,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 
@@ -1357,6 +1359,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1391,6 +1394,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1424,6 +1428,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1463,6 +1468,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1504,6 +1510,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1546,6 +1553,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 64 canon)
@@ -1586,6 +1594,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1632,6 +1641,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1680,6 +1690,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 67 canon)
@@ -1729,6 +1740,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 68 canon)
@@ -1775,6 +1787,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 --- owner: devin (wave 69 canon)
@@ -1809,6 +1822,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1846,6 +1860,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1878,6 +1893,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -1909,6 +1925,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 73 canon)
@@ -1938,6 +1955,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 74 canon)
@@ -1967,6 +1985,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 75 canon)
@@ -1996,6 +2015,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 76 canon)
@@ -2028,6 +2048,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 77 canon)
@@ -2060,6 +2081,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 ---
 owner: devin (wave 78 canon)
@@ -2095,6 +2117,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2129,6 +2152,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2161,6 +2185,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2190,6 +2215,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2218,6 +2244,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2249,6 +2276,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2281,6 +2309,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2314,6 +2343,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
 
 ---
@@ -2347,6 +2377,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave87:
   - "avellaneda_stoikov","gillespie_ssa","hamilton_filter",
@@ -2358,6 +2389,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave88:
   - "markov_discretization","lomb_scargle","singular_spectrum",
@@ -2369,6 +2401,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave89:
   - "edf_tests","normality_tests","scale_homogeneity",
@@ -2380,6 +2413,7 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
   wave90:
   - "mars_regression","ace_avas","projection_pursuit",
@@ -2468,4 +2502,5 @@ wave 102 (2026-09-30): multi-armed bandit canon — stochastic_bandits (UCB1/eps
 wave 103 (2026-09-30): Krylov + randomized NLA canon — lanczos, arnoldi_gmres, randomized_svd, nystrom, cur_decomp, interpolative_decomp; 590→596 families.
 wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_wasserstein, unbalanced_ot, wasserstein_barycenter, fused_gromov; 596→602 families.
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
+wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
