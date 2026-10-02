@@ -2051,6 +2051,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "label_smoothing",
         "mixup_cutmix",
         "sharpness_sam",
+        # Wave-150 compression canon:
+        # mag-prune, LTH, int8,
+        # KD, low-rank, Fisher.
+        "magnitude_pruning",
+        "lottery_ticket",
+        "quant_int8",
+        "kd_distill",
+        "lowrank_factor",
+        "fisher_prune",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

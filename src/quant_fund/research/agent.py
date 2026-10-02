@@ -1189,6 +1189,14 @@ from quant_fund.research.benches_w149 import (
     bench_mixup_cutmix_family,
     bench_sharpness_sam_family,
 )
+from quant_fund.research.benches_w150 import (
+    bench_fisher_prune_family,
+    bench_kd_distill_family,
+    bench_lottery_ticket_family,
+    bench_lowrank_factor_family,
+    bench_magnitude_pruning_family,
+    bench_quant_int8_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3634,6 +3642,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "label_smoothing": bench_label_smoothing_family(),
         "mixup_cutmix": bench_mixup_cutmix_family(),
         "sharpness_sam": bench_sharpness_sam_family(),
+        "magnitude_pruning": bench_magnitude_pruning_family(),
+        "lottery_ticket": bench_lottery_ticket_family(),
+        "quant_int8": bench_quant_int8_family(),
+        "kd_distill": bench_kd_distill_family(),
+        "lowrank_factor": bench_lowrank_factor_family(),
+        "fisher_prune": bench_fisher_prune_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
