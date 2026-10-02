@@ -2516,4 +2516,5 @@ wave 116 (2026-09-30): game-theory canon — cfr, lemke_howson, replicator, ward
 wave 117 (2026-09-30): RL canon — gae, vtrace, trpo, ppo, ddpg, td3; 674→680 families.
 wave 118 (2026-09-30): POMDP canon — qmdp, grid_pomdp, pbvi, perseus, hsvi, pomcp; 680→686 families.
 wave 119 (2026-09-30): MARL canon — vdn, qmix, coma, maddpg, mappo, mf_q; 686→692 families.
+wave 120 (2026-09-30): coop-game + mechanism canon — nucleolus, banzhaf, owen, myerson_auction, groves, envy_free; 692→698 families.
 note: canon PR to follow.

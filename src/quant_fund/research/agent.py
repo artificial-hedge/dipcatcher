@@ -949,6 +949,14 @@ from quant_fund.research.benches_w119 import (
     bench_qmix_family,
     bench_vdn_family,
 )
+from quant_fund.research.benches_w120 import (
+    bench_banzhaf_family,
+    bench_envy_free_family,
+    bench_groves_family,
+    bench_myerson_auction_family,
+    bench_nucleolus_family,
+    bench_owen_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3214,6 +3222,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "maddpg": bench_maddpg_family(),
         "mappo": bench_mappo_family(),
         "mf_q": bench_mf_q_family(),
+        "nucleolus": bench_nucleolus_family(),
+        "banzhaf": bench_banzhaf_family(),
+        "owen": bench_owen_family(),
+        "myerson_auction": bench_myerson_auction_family(),
+        "groves": bench_groves_family(),
+        "envy_free": bench_envy_free_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

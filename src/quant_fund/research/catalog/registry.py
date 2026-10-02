@@ -1768,6 +1768,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "maddpg",
         "mappo",
         "mf_q",
+        # Wave-120 canon: cooperative games —
+        # nucleolus, Banzhaf, Owen, Myerson
+        # auction, Groves, envy-free.
+        "nucleolus",
+        "banzhaf",
+        "owen",
+        "myerson_auction",
+        "groves",
+        "envy_free",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
