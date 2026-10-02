@@ -1,0 +1,2053 @@
+{
+  "components": {
+    "schemas": {
+      "ChatMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "ChatMessage",
+        "type": "object"
+      },
+      "CompleteBatchItem": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "CompleteBatchItem",
+        "type": "object"
+      },
+      "CompleteBatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "backend": {
+            "enum": [
+              "hosted_k3",
+              "local_fx1",
+              "byok"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
+          "batch": {
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/ChatMessage"
+              },
+              "type": "array"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Batch",
+            "type": "array"
+          },
+          "checkpoint_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Dir"
+          },
+          "max_workers": {
+            "default": 4,
+            "maximum": 16.0,
+            "minimum": 1.0,
+            "title": "Max Workers",
+            "type": "integer"
+          },
+          "receipt_hashes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Hashes"
+          }
+        },
+        "required": [
+          "backend",
+          "batch"
+        ],
+        "title": "CompleteBatchRequest",
+        "type": "object"
+      },
+      "CompleteBatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "receipt_hashes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Receipt Hashes",
+            "type": "array"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CompleteBatchItem"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "backend",
+          "model",
+          "receipt_hashes",
+          "results"
+        ],
+        "title": "CompleteBatchResponse",
+        "type": "object"
+      },
+      "CompleteRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "backend": {
+            "enum": [
+              "hosted_k3",
+              "local_fx1",
+              "byok"
+            ],
+            "title": "Backend",
+            "type": "string"
+          },
+          "checkpoint_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Dir"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "maxItems": 512,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "receipt_hashes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Hashes"
+          }
+        },
+        "required": [
+          "backend",
+          "messages"
+        ],
+        "title": "CompleteRequest",
+        "type": "object"
+      },
+      "CompleteResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "receipt_hashes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Receipt Hashes",
+            "type": "array"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "backend",
+          "model",
+          "content",
+          "receipt_hashes"
+        ],
+        "title": "CompleteResponse",
+        "type": "object"
+      },
+      "DrainResponse": {
+        "additionalProperties": false,
+        "description": "Result of latching drain mode: state + live in-flight count.",
+        "properties": {
+          "drained": {
+            "default": false,
+            "title": "Drained",
+            "type": "boolean"
+          },
+          "draining": {
+            "title": "Draining",
+            "type": "boolean"
+          },
+          "inflight": {
+            "title": "Inflight",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "draining",
+          "inflight"
+        ],
+        "title": "DrainResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HarnessCommandItem": {
+        "additionalProperties": false,
+        "properties": {
+          "argv": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Argv",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "timeout_s": {
+            "title": "Timeout S",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "argv",
+          "timeout_s",
+          "description"
+        ],
+        "title": "HarnessCommandItem",
+        "type": "object"
+      },
+      "HarnessCommandListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessCommandItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "HarnessCommandListResponse",
+        "type": "object"
+      },
+      "HarnessRole": {
+        "enum": [
+          "data_engine",
+          "evaluation",
+          "verification",
+          "model_training"
+        ],
+        "title": "HarnessRole",
+        "type": "string"
+      },
+      "HarnessRunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "callback_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Secret"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config"
+          },
+          "extra_args": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 64,
+            "title": "Extra Args",
+            "type": "array"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          }
+        },
+        "required": [
+          "command"
+        ],
+        "title": "HarnessRunRequest",
+        "type": "object"
+      },
+      "HarnessRunResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "title": "Command",
+            "type": "string"
+          },
+          "exit_code": {
+            "title": "Exit Code",
+            "type": "integer"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "stderr": {
+            "title": "Stderr",
+            "type": "string"
+          },
+          "stderr_truncated": {
+            "default": false,
+            "title": "Stderr Truncated",
+            "type": "boolean"
+          },
+          "stdout": {
+            "title": "Stdout",
+            "type": "string"
+          },
+          "stdout_truncated": {
+            "default": false,
+            "title": "Stdout Truncated",
+            "type": "boolean"
+          },
+          "timeout_s": {
+            "title": "Timeout S",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "command",
+          "exit_code",
+          "stdout",
+          "stderr",
+          "ok",
+          "timeout_s"
+        ],
+        "title": "HarnessRunResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "backends": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Backends",
+            "type": "object"
+          },
+          "draining": {
+            "default": false,
+            "title": "Draining",
+            "type": "boolean"
+          },
+          "registered_commands": {
+            "title": "Registered Commands",
+            "type": "integer"
+          },
+          "service": {
+            "default": "fx1-harness-api",
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "default": "0.4.0",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "registered_commands",
+          "backends"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "JobBatchItemResponse": {
+        "additionalProperties": false,
+        "description": "Per-item outcome \u2014 either the submit tuple or the ApiError the\nitem failed with (``code`` carries the machine-stable class).",
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "replayed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replayed"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "queued",
+                  "running",
+                  "succeeded",
+                  "failed",
+                  "cancelled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "index"
+        ],
+        "title": "JobBatchItemResponse",
+        "type": "object"
+      },
+      "JobBatchRequest": {
+        "additionalProperties": false,
+        "description": "Batch submit envelope \u2014 ``min_length``/``max_length`` fail closed:\nan empty batch and an over-cap batch are both 422s.",
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessRunRequest"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Jobs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "jobs"
+        ],
+        "title": "JobBatchRequest",
+        "type": "object"
+      },
+      "JobBatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/JobBatchItemResponse"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "submitted": {
+            "title": "Submitted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jobs",
+          "submitted",
+          "failed"
+        ],
+        "title": "JobBatchResponse",
+        "type": "object"
+      },
+      "JobListResponse": {
+        "additionalProperties": false,
+        "description": "Job inventory page: ``total`` is the filtered count before paging.",
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/JobStatusResponse"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jobs",
+          "total"
+        ],
+        "title": "JobListResponse",
+        "type": "object"
+      },
+      "JobStatusResponse": {
+        "additionalProperties": false,
+        "description": "Live job record; ``result`` appears only once status is terminal.",
+        "properties": {
+          "callback_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Error"
+          },
+          "callback_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "delivered",
+                  "failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Status"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "number"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HarnessRunResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "created_at",
+          "finished_at",
+          "result",
+          "error"
+        ],
+        "title": "JobStatusResponse",
+        "type": "object"
+      },
+      "JobSubmitResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "replayed": {
+            "default": false,
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "JobSubmitResponse",
+        "type": "object"
+      },
+      "MetricsResponse": {
+        "additionalProperties": false,
+        "description": "Point-in-time ops snapshot: totals since process start.",
+        "properties": {
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Status",
+            "type": "object"
+          },
+          "draining": {
+            "title": "Draining",
+            "type": "boolean"
+          },
+          "errors_total": {
+            "title": "Errors Total",
+            "type": "integer"
+          },
+          "inflight": {
+            "title": "Inflight",
+            "type": "integer"
+          },
+          "inflight_watermark": {
+            "title": "Inflight Watermark",
+            "type": "integer"
+          },
+          "max_inflight": {
+            "title": "Max Inflight",
+            "type": "integer"
+          },
+          "rate_limited_total": {
+            "default": 0,
+            "title": "Rate Limited Total",
+            "type": "integer"
+          },
+          "requests_total": {
+            "title": "Requests Total",
+            "type": "integer"
+          },
+          "uptime_s": {
+            "title": "Uptime S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "uptime_s",
+          "requests_total",
+          "errors_total",
+          "by_status",
+          "inflight",
+          "inflight_watermark",
+          "max_inflight",
+          "draining"
+        ],
+        "title": "MetricsResponse",
+        "type": "object"
+      },
+      "ReadyResponse": {
+        "additionalProperties": false,
+        "description": "Readiness probe payload \u2014 only emitted while accepting work.",
+        "properties": {
+          "inflight": {
+            "title": "Inflight",
+            "type": "integer"
+          },
+          "ready": {
+            "const": true,
+            "default": true,
+            "title": "Ready",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "inflight"
+        ],
+        "title": "ReadyResponse",
+        "type": "object"
+      },
+      "ReceiptVerifyBatchItem": {
+        "additionalProperties": false,
+        "description": "One per-item verdict: the same payload the single-verify route\nreturns, plus the index so callers can map results back.",
+        "properties": {
+          "digest_convention": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digest Convention"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "schema_tag": {
+            "title": "Schema Tag",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "valid",
+          "path",
+          "schema_tag",
+          "kind",
+          "verdict",
+          "digest_convention",
+          "errors",
+          "warnings",
+          "index"
+        ],
+        "title": "ReceiptVerifyBatchItem",
+        "type": "object"
+      },
+      "ReceiptVerifyBatchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "receipts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 64,
+            "minItems": 1,
+            "title": "Receipts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "receipts"
+        ],
+        "title": "ReceiptVerifyBatchRequest",
+        "type": "object"
+      },
+      "ReceiptVerifyBatchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptVerifyBatchItem"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "verified",
+          "failed",
+          "results"
+        ],
+        "title": "ReceiptVerifyBatchResponse",
+        "type": "object"
+      },
+      "ReceiptVerifyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "receipt": {
+            "additionalProperties": true,
+            "title": "Receipt",
+            "type": "object"
+          }
+        },
+        "required": [
+          "receipt"
+        ],
+        "title": "ReceiptVerifyRequest",
+        "type": "object"
+      },
+      "ReceiptVerifyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "digest_convention": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Digest Convention"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "schema_tag": {
+            "title": "Schema Tag",
+            "type": "string"
+          },
+          "valid": {
+            "title": "Valid",
+            "type": "boolean"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "valid",
+          "path",
+          "schema_tag",
+          "kind",
+          "verdict",
+          "digest_convention",
+          "errors",
+          "warnings"
+        ],
+        "title": "ReceiptVerifyResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VersionResponse": {
+        "additionalProperties": false,
+        "description": "Wire-contract + package versions \u2014 the client's negotiation payload.",
+        "properties": {
+          "api_version": {
+            "title": "Api Version",
+            "type": "string"
+          },
+          "fx1_version": {
+            "title": "Fx1 Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "api_version",
+          "fx1_version"
+        ],
+        "title": "VersionResponse",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Execution surface for the fx-1 harness: the registered lab commands, sealed-receipt verification, and gated model completion over hosted_k3 / local_fx1 / BYOK backends.",
+    "title": "fx-1 harness API",
+    "version": "0.4.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/harness/commands": {
+      "get": {
+        "operationId": "list_commands",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HarnessRole"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessCommandListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Commands",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/harness/complete": {
+      "post": {
+        "operationId": "complete",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete",
+        "tags": [
+          "complete"
+        ]
+      }
+    },
+    "/harness/complete/batch": {
+      "post": {
+        "operationId": "complete_batch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompleteBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Batch",
+        "tags": [
+          "complete"
+        ]
+      }
+    },
+    "/harness/complete/stream": {
+      "post": {
+        "description": "Server-sent-event stream of one gated completion.\n\nThe backend's token deltas are buffered, the joined text passes the\nhonesty gate, and only then are chunks emitted as ``token`` events\nplus a ``final`` envelope \u2014 no ungated model bytes ever reach a\n``data:`` frame. A backend without ``stream`` fails 501 rather than\nfaking chunking.\n\nWith ``sse_keepalive_s`` > 0 (default 15) the buffer+gate phase runs\non a worker thread under a one-interval grace period: outcomes that\nresolve within the interval keep today's wire contract exactly \u2014\ncompletions stream as usual, failures stay ordinary JSON error\nresponses. Only a generation still running past the interval\ncommits to SSE: ``: keepalive`` comment frames (no payload \u2014\nparsers ignore them) hold the connection open against proxy/LB\nidle timeouts, and a failure after that point arrives as a terminal\n``{\"type\": \"error\", \"status\", \"detail\"}`` data frame followed by\n``[DONE]`` (the HTTP status is committed once a byte is on the\nwire). ``sse_keepalive_s`` = 0 disables the worker entirely \u2014 the\nfully synchronous path.",
+        "operationId": "complete_stream",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Complete Stream",
+        "tags": [
+          "complete"
+        ]
+      }
+    },
+    "/harness/drain": {
+      "post": {
+        "description": "Latch drain mode (one-way): gated routes refuse new work with\n503 while in-flight requests finish; ``/health``, ``/metrics``\nand ``/ready`` keep answering so orchestrators can watch\n``inflight`` bleed to zero before stopping the process.\nIdempotent \u2014 re-POSTing just re-reads the latch. ``wait_s>0``\nblocks (server-side) until in-flight work empties or the window\nlapses; ``drained`` reports which happened.",
+        "operationId": "drain",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "wait_s",
+            "required": false,
+            "schema": {
+              "default": 0.0,
+              "maximum": 600.0,
+              "minimum": 0.0,
+              "title": "Wait S",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DrainResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Drain",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/harness/jobs": {
+      "get": {
+        "description": "Job inventory, newest first: ``status`` filter + offset/limit\npaging; ``total`` is the filtered count before the page is cut.",
+        "operationId": "list_jobs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "queued",
+                    "running",
+                    "succeeded",
+                    "failed",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Jobs",
+        "tags": [
+          "jobs"
+        ]
+      },
+      "post": {
+        "description": "Async run submission: work starts in the background, the caller\npolls ``GET /harness/jobs/{job_id}`` for the terminal record.\nSame drain/cap/idempotency contract as the sync route.",
+        "operationId": "submit_job",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobSubmitResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Job",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/harness/jobs/batch": {
+      "post": {
+        "description": "Fan-out submit: each item takes the same path as the single\nroute \u2014 command validation, drain latch, inflight cap, and\nper-item ``idempotency_key`` dedup (headers carry no per-item\nkeys, so the body field is the channel here). An item that fails\nlands in its own ``jobs[i]`` slot as ``{error, code}`` \u2014 the\nbatch reports honest ``submitted``/``failed`` counts rather than\nturning one bad item into a whole-batch failure.",
+        "operationId": "submit_jobs_batch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Jobs Batch",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/harness/jobs/{job_id}": {
+      "delete": {
+        "description": "Cooperative cancel: a queued job flips to 'cancelled' and its\nexecutor slot frees on dequeue. Running and terminal jobs 409 \u2014\nthe subprocess runner has no mid-run kill handle.",
+        "operationId": "cancel_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Job",
+        "tags": [
+          "jobs"
+        ]
+      },
+      "get": {
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Job Status",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/harness/jobs/{job_id}/events": {
+      "get": {
+        "description": "SSE job-status stream: the job record arrives as an\n``event: job`` frame on every change until a terminal status,\nthen the stream closes. ``: keepalive`` comment frames fire every\n``sse_keepalive_s`` while the job is quiet; ``timeout_s`` bounds\nthe stream \u2014 reconnect (and resume from the last frame) to keep\nwatching. Same read path as ``GET /harness/jobs/{job_id}`` \u2014 a\nsnapshot before the stream opens, so an unknown id 404s rather\nthan hanging.",
+        "operationId": "stream_job_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "timeout_s",
+            "required": false,
+            "schema": {
+              "default": 600.0,
+              "maximum": 3600.0,
+              "minimum": 1.0,
+              "title": "Timeout S",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Job Events",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/harness/runs": {
+      "post": {
+        "operationId": "run_command",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessRunResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Run Command",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/harness/version": {
+      "get": {
+        "description": "Version negotiation: the wire contract + package release.",
+        "operationId": "get_version",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": " Version Info",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "description": "Ops snapshot \u2014 JSON by default; Prometheus text exposition via\n``?format=prom`` or an ``Accept: text/plain``/OpenMetrics header.",
+        "operationId": "get_metrics",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "json",
+                    "prom",
+                    "prometheus"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Metrics Route",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Kubernetes-style readiness: 200 while accepting work, 503 once\ndrain is latched \u2014 the load balancer's signal to deregister the\npod before gated routes start refusing.",
+        "operationId": "ready",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/receipts/verify": {
+      "post": {
+        "operationId": "verify_receipt",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptVerifyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Receipt",
+        "tags": [
+          "receipts"
+        ]
+      }
+    },
+    "/receipts/verify/batch": {
+      "post": {
+        "operationId": "verify_receipts_batch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptVerifyBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptVerifyBatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Receipts Batch",
+        "tags": [
+          "receipts"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Synchronous lab-command execution.",
+      "name": "runs"
+    },
+    {
+      "description": "Async run jobs: submit, poll, SSE, cancel, batch.",
+      "name": "jobs"
+    },
+    {
+      "description": "Gated model completion (sync, batch, SSE stream).",
+      "name": "complete"
+    },
+    {
+      "description": "Sealed-receipt verification.",
+      "name": "receipts"
+    },
+    {
+      "description": "Liveness, readiness, metrics, drain, version.",
+      "name": "ops"
+    }
+  ]
+}

@@ -21,7 +21,13 @@
     },
     "/harness/complete": {
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "200",
@@ -31,7 +37,13 @@
     },
     "/harness/complete/batch": {
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
         "request_body_required": true,
         "responses": [
           "200",
@@ -246,5 +258,5 @@
       }
     }
   },
-  "schema_sha256": "462680dc33b7cfef37f47a2beaac59b691d15a4c3f76980dade6f34986157cff"
+  "schema_sha256": "3d97b68c9c26ef4436120e1f0f451469c1be5ecac1926a6dca029a24c602f19c"
 }

@@ -15,15 +15,17 @@
       "params_pinned": true,
       "request_body_pinned": true,
       "responses_pinned": true,
-      "surface_matches_golden": true
+      "surface_matches_golden": true,
+      "ts_client_snapshot_exists": true,
+      "ts_client_snapshot_fresh": true
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "673fffe96a2d3a0cf9a0acfba87619684fb99849",
+  "git_revision": "9a249d3b6fb81fde6b02d9dca37f9e079bdab8ec",
   "interpretation": "the harness API surface is pinned: routes, methods, params, declared response codes, and request bodies match the committed golden; additive or breaking drift fails the seal",
   "kind": "fx1_contract_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "40fda8dd5f86dcc95b9005a9af43a9cea34d08175e4c56d0055d346702bd42f9",
+  "receipt_sha256": "8637585ace5973822562c62c5c5a9622325a374a291971b6b9a9da0318cfe75e",
   "research_only": true,
   "schema": "fx1_contract_audit.v1"
 }

@@ -12,13 +12,16 @@ integrator reference; `docs/FX1.md` has the model overview and
 | HTTP API | `fx1 harness serve` | fx-1 pods / services calling over the network |
 | Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
 | Remote client | `fx1.serve.client.HarnessClient` | Python callers on a remote harness — same result types as the SDK |
+| TS client | `clients/typescript/fx1` (`HarnessApiClient`) | TypeScript/JS callers — generated from the pinned OpenAPI spec |
 | CLI | `fx1 harness …` | shell, CI, ops scripts |
 
-All four share the same error taxonomy (`KeyError` 404 / `ValueError`
-422 / `BackendNotConfiguredError` 503 / `NotImplementedError` 501 /
-`Fx1HonestyError` 502-gate / `HarnessAuthError` 401–403 /
-`HarnessTransportError` for wire faults), so switching surfaces is a
-construction change, never a semantic one. Byte-identical payloads and
+The Python surfaces share one error taxonomy (`KeyError` 404 /
+`ValueError` 422 / `BackendNotConfiguredError` 503 /
+`NotImplementedError` 501 / `Fx1HonestyError` 502-gate /
+`HarnessAuthError` 401–403 / `HarnessTransportError` for wire faults);
+the TS client collapses it into `HarnessApiError` carrying `status` +
+the envelope's `code`. Either way switching surfaces is a construction
+change, never a semantic one. Byte-identical payloads and
 error classes are pinned by `receipts/fx1_parity_audit.json`; the
 real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
 

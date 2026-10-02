@@ -162,6 +162,19 @@ def contract_audit() -> dict[str, bool]:
     out["operation_tags_present"] = bool(ops) and all(
         isinstance(op.get("tags"), list) and op["tags"] for op in ops
     )
+
+    # The generated TypeScript client's committed spec must be exactly the
+    # live surface — a drifted snapshot ships clients a stale contract.
+    snapshot = (
+        Path(__file__).resolve().parents[3] / "clients" / "typescript" / "fx1" / "openapi.json"
+    )
+    try:
+        committed = json.loads(snapshot.read_text())
+        out["ts_client_snapshot_exists"] = isinstance(committed, dict)
+    except (OSError, ValueError):
+        committed = None
+        out["ts_client_snapshot_exists"] = False
+    out["ts_client_snapshot_fresh"] = committed == _create_app().openapi()
     return out
 
 
