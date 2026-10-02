@@ -455,4 +455,14 @@ class HarnessClient:
             inflight=out["inflight"],
             inflight_watermark=out["inflight_watermark"],
             max_inflight=out["max_inflight"],
+            draining=bool(out.get("draining", False)),
         )
+
+    def drain(self) -> dict[str, Any]:
+        """Latch the remote harness into drain mode — one-way: gated routes
+        refuse new work (503), in-flight requests finish, ``/metrics`` keeps
+        reporting ``inflight`` so a deploy can wait for it to hit zero before
+        stopping the process. Idempotent; marks the latch idempotent=True so
+        transport blips retry."""
+        out = self._json("POST", "/harness/drain", {}, idempotent=True)
+        return {"draining": bool(out["draining"]), "inflight": int(out["inflight"])}

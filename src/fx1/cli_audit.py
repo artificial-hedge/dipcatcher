@@ -316,6 +316,9 @@ def cli_audit() -> dict[str, Any]:
                 max_inflight=16,
             )
 
+        def drain(self) -> dict[str, Any]:
+            return {"draining": True, "inflight": 2}
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -344,10 +347,17 @@ def cli_audit() -> dict[str, Any]:
             and json.loads(rm.stdout)["requests_total"] == 7
             and json.loads(rm.stdout)["by_status"] == {"200": 7}
         )
+        rd = runner.invoke(app, ["harness", "drain", "--remote", "http://h.test"])
+        out["remote_drain_json"] = rd.exit_code == 0 and json.loads(rd.stdout) == {
+            "draining": True,
+            "inflight": 2,
+        }
 
-    # metrics is a wire-ops surface — without --remote it fails clean
+    # metrics + drain are wire-ops surfaces — without --remote they fail clean
     rm_local = runner.invoke(app, ["harness", "metrics"])
     out["metrics_local_refused"] = rm_local.exit_code == 2 and "--remote" in rm_local.output
+    rd_local = runner.invoke(app, ["harness", "drain"])
+    out["drain_local_refused"] = rd_local.exit_code == 2 and "--remote" in rd_local.output
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

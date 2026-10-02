@@ -85,6 +85,7 @@ class HealthResponse(_Model):
     version: str = __version__
     registered_commands: int
     backends: dict[str, bool]
+    draining: bool = False
 
 
 class HarnessCommandItem(_Model):
@@ -181,6 +182,14 @@ class MetricsResponse(_Model):
     inflight: int
     inflight_watermark: int
     max_inflight: int
+    draining: bool
+
+
+class DrainResponse(_Model):
+    """Result of latching drain mode: state + live in-flight count."""
+
+    draining: bool
+    inflight: int
 
 
 class _Metrics:
@@ -195,6 +204,7 @@ class _Metrics:
         self._by_status: dict[int, int] = {}
         self._inflight = 0
         self._watermark = 0
+        self.draining = threading.Event()
 
     def record(self, status: int) -> None:
         with self._lock:
@@ -222,6 +232,7 @@ class _Metrics:
                 inflight=self._inflight,
                 inflight_watermark=self._watermark,
                 max_inflight=self.max_inflight,
+                draining=self.draining.is_set(),
             )
 
 
@@ -303,6 +314,11 @@ def create_app(
     metrics = _Metrics(max_inflight)
 
     def _slot() -> Iterator[None]:
+        if metrics.draining.is_set():
+            raise HTTPException(
+                503,
+                "harness is draining — no new work accepted",
+            )
         if not inflight.acquire(blocking=False):
             raise HTTPException(
                 503,
@@ -386,7 +402,18 @@ def create_app(
         return HealthResponse(
             registered_commands=len(lab.list_commands()),
             backends=_backend_configured(),
+            draining=metrics.draining.is_set(),
         )
+
+    @app.post("/harness/drain", response_model=DrainResponse)
+    def drain() -> DrainResponse:
+        """Latch drain mode (one-way): gated routes refuse new work with
+        503 while in-flight requests finish; ``/health`` and ``/metrics``
+        keep answering so orchestrators can watch ``inflight`` bleed to
+        zero before stopping the process. Idempotent — re-POSTing just
+        re-reads the latch."""
+        metrics.draining.set()
+        return DrainResponse(draining=True, inflight=metrics.snapshot().inflight)
 
     @app.get("/harness/commands", response_model=HarnessCommandListResponse)
     def list_commands(

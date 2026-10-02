@@ -334,6 +334,19 @@ def e2e_audit() -> dict[str, bool]:
         )
         m2 = resilient.metrics()
         out["e2e_metrics_capped_server"] = m2.max_inflight == 1 and m2.requests_total >= 1
+
+        # drain over the real wire: latch -> gated routes refuse, ops stays up
+        d = resilient.drain()
+        out["e2e_drain_response"] = d["draining"] is True and isinstance(d["inflight"], int)
+        try:
+            resilient.complete(msg, backend="byok")
+            out["e2e_drain_blocks_new_work"] = False
+        except Exception as exc:  # noqa: BLE001 — probe records the class
+            out["e2e_drain_blocks_new_work"] = type(
+                exc
+            ).__name__ == "BackendNotConfiguredError" and "draining" in str(exc)
+        out["e2e_drain_metrics_flag"] = resilient.metrics().draining is True
+        out["e2e_drain_health_still_up"] = resilient.health().status == "ok"
     finally:
         if server is not None:
             server.should_exit = True

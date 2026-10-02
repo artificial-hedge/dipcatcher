@@ -612,6 +612,41 @@ def api_audit() -> dict[str, Any]:
         else:
             os.environ["FX1_API_SSE_KEEPALIVE_S"] = keep_env
 
+    # --- drain: one-way latch, gated routes refuse, ops routes stay up ----
+    drain_app = api_mod.create_app(backend_resolver=lambda *a, **k: _CleanBackend())
+    dclient = _TC2(drain_app)
+    drain_app.state.metrics.acquire()  # pretend one request is in-flight
+    try:
+        d0 = dclient.post("/harness/drain")
+        out["drain_response_shape"] = (
+            d0.status_code == 200
+            and d0.json()["draining"] is True
+            and isinstance(d0.json()["inflight"], int)
+        )
+        out["drain_reports_inflight"] = d0.json()["inflight"] >= 1
+        out["drain_complete_refused_503"] = (
+            dclient.post(
+                "/harness/complete",
+                json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+            ).status_code
+            == 503
+        )
+        out["drain_runs_refused_503"] = (
+            dclient.post("/harness/runs", json={"command": "x"}).status_code == 503
+        )
+        out["drain_uncapped_routes_up"] = (
+            dclient.get("/harness/commands").status_code == 200
+            and dclient.post("/receipts/verify", json={"receipt": {"x": 1}}).status_code == 200
+        )
+        out["drain_health_reports"] = (
+            dclient.get("/health").status_code == 200
+            and dclient.get("/health").json()["draining"] is True
+        )
+        out["drain_metrics_reports"] = dclient.get("/metrics").json()["draining"] is True
+        out["drain_idempotent"] = dclient.post("/harness/drain").json()["draining"] is True
+    finally:
+        drain_app.state.metrics.release()
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 

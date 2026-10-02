@@ -49,6 +49,15 @@
         ]
       }
     },
+    "/harness/drain": {
+      "post": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/harness/runs": {
       "post": {
         "params": [],
@@ -88,5 +97,5 @@
       }
     }
   },
-  "schema_sha256": "652db5bd313dfde90a4c883170262955208b3d7c7468273e19688a956a585261"
+  "schema_sha256": "6ea0f036968c520d876e99dc604412d8b6941250fb0ad36fae0afe77e1d09828"
 }
