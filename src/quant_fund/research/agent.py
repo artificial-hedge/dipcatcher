@@ -861,6 +861,14 @@ from quant_fund.research.benches_w108 import (
     bench_sylvester_family,
     bench_toeplitz_solve_family,
 )
+from quant_fund.research.benches_w109 import (
+    bench_dubins_family,
+    bench_dwa_family,
+    bench_frenet_family,
+    bench_min_snap_family,
+    bench_prm_family,
+    bench_rrt_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3060,6 +3068,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "riccati_care": bench_riccati_care_family(),
         "matrix_sign": bench_matrix_sign_family(),
         "toeplitz_solve": bench_toeplitz_solve_family(),
+        "dubins": bench_dubins_family(),
+        "rrt": bench_rrt_family(),
+        "prm": bench_prm_family(),
+        "dwa": bench_dwa_family(),
+        "min_snap": bench_min_snap_family(),
+        "frenet": bench_frenet_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -1664,6 +1664,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "riccati_care",
         "matrix_sign",
         "toeplitz_solve",
+        # Wave-109 canon: motion
+        # planning — Dubins,
+        # RRT*, PRM, DWA,
+        # min-snap, Frenet.
+        "dubins",
+        "rrt",
+        "prm",
+        "dwa",
+        "min_snap",
+        "frenet",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
