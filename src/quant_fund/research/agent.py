@@ -1237,6 +1237,14 @@ from quant_fund.research.benches_w155 import (
     bench_policy_value_family,
     bench_tarnet_ite_family,
 )
+from quant_fund.research.benches_w156 import (
+    bench_grownet_boost_family,
+    bench_node_net_family,
+    bench_soft_tree_family,
+    bench_tabm_mini_family,
+    bench_tabular_resnet_family,
+    bench_tokenizer_bpe_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3718,6 +3726,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "cevae_latent": bench_cevae_latent_family(),
         "causal_rep": bench_causal_rep_family(),
         "policy_value": bench_policy_value_family(),
+        "tokenizer_bpe": bench_tokenizer_bpe_family(),
+        "tabular_resnet": bench_tabular_resnet_family(),
+        "node_net": bench_node_net_family(),
+        "grownet_boost": bench_grownet_boost_family(),
+        "soft_tree": bench_soft_tree_family(),
+        "tabm_mini": bench_tabm_mini_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

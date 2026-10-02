@@ -2105,6 +2105,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cevae_latent",
         "causal_rep",
         "policy_value",
+        # Wave-156 tabular canon:
+        # BPE, tab-ResNet, NODE,
+        # GrowNet, soft tree, TabM.
+        "tokenizer_bpe",
+        "tabular_resnet",
+        "node_net",
+        "grownet_boost",
+        "soft_tree",
+        "tabm_mini",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
