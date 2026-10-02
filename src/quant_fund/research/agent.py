@@ -997,6 +997,14 @@ from quant_fund.research.benches_w125 import (
     bench_risk_flow_family,
     bench_xai_shap_family,
 )
+from quant_fund.research.benches_w126 import (
+    bench_lob_transformer_family,
+    bench_neural_ode_family,
+    bench_patchtst_family,
+    bench_set_transformer_family,
+    bench_tft_forecaster_family,
+    bench_world_model_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3298,6 +3306,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "adversarial_robust": bench_adversarial_robust_family(),
         "risk_flow": bench_risk_flow_family(),
         "causal_miner": bench_causal_miner_family(),
+        "tft_forecaster": bench_tft_forecaster_family(),
+        "patchtst": bench_patchtst_family(),
+        "lob_transformer": bench_lob_transformer_family(),
+        "set_transformer": bench_set_transformer_family(),
+        "neural_ode": bench_neural_ode_family(),
+        "world_model": bench_world_model_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
