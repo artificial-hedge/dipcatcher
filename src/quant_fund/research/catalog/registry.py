@@ -2358,6 +2358,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "notears_mlp",
         "dag_gnn",
         "cam_prune",
+        # Wave-184 training-dynamics canon:
+        # Hessian eig, NTK, edge-of-stability,
+        # LMC, catapult, grokking.
+        "hessian_eig",
+        "ntk_kernel",
+        "edge_stability",
+        "mode_connectivity",
+        "catapult_phase",
+        "neural_grok",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1461,6 +1461,14 @@ from quant_fund.research.benches_w183 import (
     bench_notears_family,
     bench_notears_mlp_family,
 )
+from quant_fund.research.benches_w184 import (
+    bench_catapult_phase_family,
+    bench_edge_stability_family,
+    bench_hessian_eig_family,
+    bench_mode_connectivity_family,
+    bench_neural_grok_family,
+    bench_ntk_kernel_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4110,6 +4118,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "notears_mlp": bench_notears_mlp_family(),
         "dag_gnn": bench_dag_gnn_family(),
         "cam_prune": bench_cam_prune_family(),
+        "hessian_eig": bench_hessian_eig_family(),
+        "ntk_kernel": bench_ntk_kernel_family(),
+        "edge_stability": bench_edge_stability_family(),
+        "mode_connectivity": bench_mode_connectivity_family(),
+        "catapult_phase": bench_catapult_phase_family(),
+        "neural_grok": bench_neural_grok_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
