@@ -1397,6 +1397,14 @@ from quant_fund.research.benches_w175 import (
     bench_rope_attn_family,
     bench_swiglu_ffn_family,
 )
+from quant_fund.research.benches_w176 import (
+    bench_active_bald_family,
+    bench_data_cartography_family,
+    bench_el2n_scoring_family,
+    bench_forgetting_events_family,
+    bench_influence_func_family,
+    bench_proto_prune_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3998,6 +4006,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rmsnorm_block": bench_rmsnorm_block_family(),
         "moe_router": bench_moe_router_family(),
         "mup_init": bench_mup_init_family(),
+        "active_bald": bench_active_bald_family(),
+        "data_cartography": bench_data_cartography_family(),
+        "el2n_scoring": bench_el2n_scoring_family(),
+        "forgetting_events": bench_forgetting_events_family(),
+        "influence_func": bench_influence_func_family(),
+        "proto_prune": bench_proto_prune_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -2287,6 +2287,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rmsnorm_block",
         "moe_router",
         "mup_init",
+        # Wave-176 data-centric canon:
+        # BALD, cartography, EL2N,
+        # forgetting, influence, prototypicality.
+        "active_bald",
+        "data_cartography",
+        "el2n_scoring",
+        "forgetting_events",
+        "influence_func",
+        "proto_prune",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
