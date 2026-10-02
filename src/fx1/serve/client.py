@@ -27,6 +27,7 @@ tests route it at a ``fastapi.testclient.TestClient``.
 from __future__ import annotations
 
 import json
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -82,6 +83,17 @@ def _urllib_transport(
         raise HarnessTransportError(f"harness unreachable at {url}: {exc.reason}") from exc
 
 
+def _retry_after_s(headers: Mapping[str, str]) -> float | None:
+    """Parse a Retry-After seconds hint; absent/malformed -> None."""
+    for key, value in headers.items():
+        if key.lower() == "retry-after":
+            try:
+                return max(0.0, float(value))
+            except ValueError:
+                return None
+    return None
+
+
 class HarnessClient:
     """Remote harness client — the SDK contract over HTTP."""
 
@@ -92,16 +104,32 @@ class HarnessClient:
         api_key: str | None = None,
         timeout_s: float = 30.0,
         transport: Transport | None = None,
+        max_retries: int = 0,
+        retry_backoff_s: float = 0.1,
+        retry_writes: bool = False,
+        max_retry_wait_s: float = 5.0,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
             raise ValueError(f"base_url must be http(s)://host[:port], got {base_url!r}")
         if timeout_s <= 0:
             raise ValueError(f"timeout_s must be > 0, got {timeout_s}")
+        if max_retries < 0:
+            raise ValueError(f"max_retries must be >= 0, got {max_retries}")
+        if retry_backoff_s <= 0:
+            raise ValueError(f"retry_backoff_s must be > 0, got {retry_backoff_s}")
+        if max_retry_wait_s <= 0:
+            raise ValueError(f"max_retry_wait_s must be > 0, got {max_retry_wait_s}")
         self._base = f"{parsed.scheme}://{parsed.netloc}{parsed.path.rstrip('/')}"
         self._headers = {"X-API-Key": api_key} if api_key else {}
         self._timeout_s = timeout_s
         self._transport = transport or _urllib_transport
+        self._max_retries = max_retries
+        self._retry_backoff_s = retry_backoff_s
+        self._retry_writes = retry_writes
+        self._max_retry_wait_s = max_retry_wait_s
+        self._sleep = sleep
 
     # ---- transport ----------------------------------------------------
 
@@ -110,13 +138,33 @@ class HarnessClient:
         method: str,
         path: str,
         payload: dict[str, Any] | None = None,
+        *,
+        idempotent: bool = False,
     ) -> tuple[int, Mapping[str, str], bytes]:
-        status, headers, body = self._transport(
-            method, self._base + path, payload, dict(self._headers), self._timeout_s
-        )
-        if status < 200 or status >= 300:
-            raise self._map_error(status, body)
-        return status, headers, body
+        retries = self._max_retries if (idempotent or self._retry_writes) else 0
+        backoff = self._retry_backoff_s
+        for attempt in range(retries + 1):
+            try:
+                status, headers, body = self._transport(
+                    method, self._base + path, payload, dict(self._headers), self._timeout_s
+                )
+            except HarnessTransportError:
+                if attempt >= retries:
+                    raise
+                self._sleep(backoff)
+                backoff *= 2
+                continue
+            if self._retryable_status(status, headers) and attempt < retries:
+                wait = _retry_after_s(headers)
+                if wait is not None and wait > self._max_retry_wait_s:
+                    break  # the server asked for a wait longer than the budget allows
+                self._sleep(min(wait if wait is not None else backoff, self._max_retry_wait_s))
+                backoff *= 2
+                continue
+            if status < 200 or status >= 300:
+                raise self._map_error(status, body)
+            return status, headers, body
+        raise HarnessTransportError(f"harness {method} {path} exhausted {retries} retries")
 
     @staticmethod
     def _map_error(status: int, body: bytes) -> Exception:
@@ -145,8 +193,21 @@ class HarnessClient:
             return RuntimeError(text)
         return HarnessTransportError(f"harness API returned {status}: {detail}")
 
-    def _json(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
-        _, _, body = self._request(method, path, payload)
+    @staticmethod
+    def _retryable_status(status: int, headers: Mapping[str, str]) -> bool:
+        """429 always retries; 503 retries only when it carries Retry-After
+        (the in-flight cap — an unconfigured-backend 503 never will be)."""
+        return status == 429 or (status == 503 and _retry_after_s(headers) is not None)
+
+    def _json(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        *,
+        idempotent: bool = False,
+    ) -> Any:
+        _, _, body = self._request(method, path, payload, idempotent=idempotent)
         return json.loads(body)
 
     # ---- registry -----------------------------------------------------
@@ -156,7 +217,7 @@ class HarnessClient:
         path = "/harness/commands"
         if role is not None:
             path += f"?role={urllib.parse.quote(role)}"
-        out = self._json("GET", path)
+        out = self._json("GET", path, idempotent=True)
         return [item["name"] for item in out["items"]]
 
     # ---- execution ------------------------------------------------------
@@ -305,7 +366,7 @@ class HarnessClient:
 
     def verify_receipt(self, receipt: dict[str, Any]) -> ReceiptVerdict:
         """Remote counterpart of ``Fx1Harness.verify_receipt``."""
-        out = self._json("POST", "/receipts/verify", {"receipt": receipt})
+        out = self._json("POST", "/receipts/verify", {"receipt": receipt}, idempotent=True)
         return ReceiptVerdict(
             valid=out["valid"],
             path=out["path"],
@@ -321,7 +382,7 @@ class HarnessClient:
 
     def health(self) -> HarnessHealth:
         """Remote counterpart of ``Fx1Harness.health``."""
-        out = self._json("GET", "/health")
+        out = self._json("GET", "/health", idempotent=True)
         return HarnessHealth(
             status=out["status"],
             version=out["version"],

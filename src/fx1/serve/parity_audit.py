@@ -586,6 +586,134 @@ def parity_audit() -> dict[str, bool]:
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
+
+    # --- resilience: bounded retries + Retry-After honoring -----------------
+    from fx1.serve.client import HarnessTransportError  # noqa: PLC0415
+
+    def _scripted(
+        seq: list[Any],
+    ) -> tuple[Any, dict[str, int]]:
+        calls = {"n": 0}
+
+        def transport(
+            method: str,
+            url: str,
+            payload: Any,
+            headers: Any,
+            timeout_s: float,
+        ) -> tuple[int, Mapping[str, str], bytes]:
+            item = seq[min(calls["n"], len(seq) - 1)]
+            calls["n"] += 1
+            if item == "RAISE":
+                raise HarnessTransportError("boom")
+            status, hdrs, body = item
+            return status, hdrs, body
+
+        return transport, calls
+
+    import json as _json_mod  # noqa: PLC0415
+
+    def _health_body() -> bytes:
+        return _json_mod.dumps(
+            {"status": "ok", "version": "v", "registered_commands": 1, "backends": {}}
+        ).encode()
+
+    sleeps: list[float] = []
+    tr, calls = _scripted(["RAISE", "RAISE", (200, {}, _health_body())])
+    resilient = HarnessClient(
+        "http://h.test",
+        transport=tr,
+        max_retries=2,
+        sleep=sleeps.append,
+    )
+    out["retry_get_recovers"] = (
+        resilient.health().status == "ok" and calls["n"] == 3 and len(sleeps) == 2
+    )
+
+    sleeps.clear()
+    tr2, calls2 = _scripted(
+        [
+            (503, {"Retry-After": "0.25"}, _json_mod.dumps({"detail": "cap"}).encode()),
+            (200, {}, _health_body()),
+        ]
+    )
+    resilient2 = HarnessClient("http://h.test", transport=tr2, max_retries=2, sleep=sleeps.append)
+    out["retry_after_honored"] = (
+        resilient2.health().status == "ok" and calls2["n"] == 2 and sleeps[0] == 0.25
+    )
+
+    tr3, calls3 = _scripted(
+        [(503, {"Retry-After": "999"}, _json_mod.dumps({"detail": "cap"}).encode())]
+    )
+    resilient3 = HarnessClient("http://h.test", transport=tr3, max_retries=3, sleep=lambda s: None)
+    out["retry_over_budget_fails_fast"] = (
+        _raises(lambda: resilient3.health())[0] == "HarnessTransportError" and calls3["n"] == 1
+    )
+
+    tr4, calls4 = _scripted([(401, {}, _json_mod.dumps({"detail": "bad key"}).encode())])
+    resilient4 = HarnessClient("http://h.test", transport=tr4, max_retries=3, sleep=lambda s: None)
+    out["no_retry_on_auth"] = (
+        _raises(lambda: resilient4.health())[0] == "HarnessAuthError" and calls4["n"] == 1
+    )
+
+    tr5, calls5 = _scripted(["RAISE"])
+    resilient5 = HarnessClient("http://h.test", transport=tr5, max_retries=3, sleep=lambda s: None)
+    out["writes_never_retry_by_default"] = (
+        _raises(lambda: resilient5.complete([{"role": "user", "content": "hi"}]))[0]
+        == "HarnessTransportError"
+        and calls5["n"] == 1
+    )
+
+    verdict_body = _json_mod.dumps(
+        {
+            "valid": True,
+            "path": "<remote>",
+            "schema_tag": "x",
+            "kind": "k",
+            "verdict": "ok",
+            "digest_convention": None,
+            "errors": [],
+            "warnings": [],
+        }
+    ).encode()
+    tr6, calls6 = _scripted(["RAISE", (200, {}, verdict_body)])
+    resilient6 = HarnessClient("http://h.test", transport=tr6, max_retries=1, sleep=lambda s: None)
+    out["verify_is_idempotent_retried"] = (
+        resilient6.verify_receipt({"x": 1}).valid is True and calls6["n"] == 2
+    )
+
+    complete_body = _json_mod.dumps(
+        {"backend": "byok", "model": "m", "content": "c", "receipt_hashes": []}
+    ).encode()
+    tr6b, calls6b = _scripted(["RAISE", (200, {}, complete_body)])
+    resilient6b = HarnessClient(
+        "http://h.test",
+        transport=tr6b,
+        max_retries=1,
+        retry_writes=True,
+        sleep=lambda s: None,
+    )
+    out["writes_retry_when_opted_in"] = (
+        resilient6b.complete([{"role": "user", "content": "hi"}]).content == "c"
+        and calls6b["n"] == 2
+    )
+
+    tr7, calls7 = _scripted(
+        [(503, {}, _json_mod.dumps({"detail": "backend not configured"}).encode())]
+    )
+    resilient7 = HarnessClient("http://h.test", transport=tr7, max_retries=3, sleep=lambda s: None)
+    out["unconfigured_503_not_retried"] = (
+        _raises(lambda: resilient7.health())[0] == "BackendNotConfiguredError" and calls7["n"] == 1
+    )
+
+    out["retry_validation_failclosed"] = all(
+        _raises(lambda kw=kw: HarnessClient("http://h.test", **kw))[0] == "ValueError"
+        for kw in (
+            {"max_retries": -1},
+            {"retry_backoff_s": 0.0},
+            {"max_retry_wait_s": 0.0},
+        )
+    )
     return out
 
 
