@@ -3470,6 +3470,7 @@ def fuzz_receipts_cmd(
     if not result["ok"]:
         raise typer.Exit(code=1)
 
+
 @app.command()
 def admit(
     receipt: Path = typer.Argument(..., help="Candidate receipt JSON to gate."),
@@ -3614,6 +3615,7 @@ def admit_batch_cmd(
     if strict and batch["verdict"] != "admit":
         raise typer.Exit(code=1)
 
+
 @app.command("graph")
 def graph_cmd(
     corpus_dir: Path = typer.Option(
@@ -3657,6 +3659,8 @@ def graph_cmd(
     typer.echo(f"receipt={path}")
     if strict and receipt["verdict"] != "clean":
         raise typer.Exit(code=1)
+
+
 @app.command("basis-carry")
 def basis_carry_cmd(
     config: Path = typer.Option(Path("configs/research.yaml")),

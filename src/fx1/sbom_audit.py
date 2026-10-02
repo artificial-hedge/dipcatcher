@@ -8,8 +8,8 @@ blocks now fail closed with ``ValueError``.
 Pinned edges: missing lockfile raises ``FileNotFoundError``; a lockfile
 with no package blocks raises ``ValueError``; the uv.lock *header* block
 (unquoted ``version = 1``) is correctly skipped rather than crashing the
-new strict path; quoted ``name = "x"; evil`` injections cannot escape
-the regex; entries come out sorted by name; ``lockfile_sha256`` binds
+strict parser; invalid quoted ``name = "x"; evil`` injections fail
+TOML parsing; entries come out sorted by name; ``lockfile_sha256`` binds
 the parsed bytes. Sealed ``sbom_audit.v1`` (fx1-side receipt).
 """
 
@@ -78,10 +78,9 @@ def sbom_audit() -> dict[str, Any]:
             + _PKG.format(name='evil"; version = "9.9', ver="1.0", extra="")
             + _PKG.format(name="real", ver="1.1", extra="")
         )
-        s = generate_sbom(inj)
-        out["inj_names"] = [e.name for e in s.entries]
-        # mid-line injected version text must not override the real version
-        out["injection_contained"] = "9.9" not in [e.version for e in s.entries]
+        # Invalid TOML must fail closed rather than emitting a partial SBOM.
+        out["injection_raises"] = _raises(lambda: generate_sbom(inj))
+        out["injection_contained"] = out["injection_raises"] == "raise:ValueError"
     return out
 
 
