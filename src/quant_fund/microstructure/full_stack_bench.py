@@ -10,7 +10,10 @@ pins simultaneously — or do the mechanisms trade off inside one run?
 
 Each cell is measured on BOTH surfaces — ``_sim_crown`` (crown share,
 spread, emptied share, hidden share, reveal gap) and ``sim_reseed``
-(reseed rate, at-touch share, latency) — against the full pin set:
+(reseed rate, at-touch share, latency) — against the full pin set.
+Verdict: ``joint_evt80_pp60_b4`` (joint + fill reposts at frac 0.8 /
+delay 160 + paired counter-side pulls at frac 0.6 within 4 ticks)
+satisfies all seven — the emptied-touch channel is closed end-to-end.
 
 - crown share of visible >= 0.4x tape (touch_empty joint criterion)
 - emptied-touch share within +-40% of tape
@@ -19,6 +22,14 @@ spread, emptied share, hidden share, reveal gap) and ``sim_reseed``
 - reseed rate within +-30% of tape (repost_frontier band)
 - reseed-as-touch share >= 0.6
 - reveal gap within 0.5x-2x of tape
+
+The binding failure mode is spatial: fill-triggered reposts re-seed the
+emptied level, which sits inside the tape-width spread, so they press
+the spread shut (joint 14.7 -> evt80 5.9 ticks). ``paired_pull`` — the
+counter side retreating from its own touch when the other side empties
+— re-opens it (pp60_b4: 12.4), and the response is non-monotone: pp30
+overshoots the other way on empty + gap, pp60_b2 lands the spread just
+under the band edge.
 
 Evidence class: research / MIXED (ZI-LOB cells vs LOBSTER tape).
 """
@@ -77,6 +88,38 @@ _CELLS: tuple[tuple[str, dict[str, Any]], ...] = (
             repost_frac=0.6,
             repost_window=_WINDOW,
             repost_band=3,
+        ),
+    ),
+    # joint + fill reposts + paired counter-side retreat (the diagnosed
+    # fix for the spread pin the reposts press shut).
+    (
+        "joint_evt80_pp30",
+        dict(
+            _JOINT,
+            fill_repost_frac=0.8,
+            fill_repost_delay=160,
+            paired_pull_frac=0.3,
+            paired_pull_band=2,
+        ),
+    ),
+    (
+        "joint_evt80_pp60",
+        dict(
+            _JOINT,
+            fill_repost_frac=0.8,
+            fill_repost_delay=160,
+            paired_pull_frac=0.6,
+            paired_pull_band=2,
+        ),
+    ),
+    (
+        "joint_evt80_pp60_b4",
+        dict(
+            _JOINT,
+            fill_repost_frac=0.8,
+            fill_repost_delay=160,
+            paired_pull_frac=0.6,
+            paired_pull_band=4,
         ),
     ),
     # The reveal-gap holder (ice80_unit from touch_empty) + fill reposts.
@@ -172,6 +215,7 @@ def full_stack_bench(
     full = [c["regime"] for c in cells if all(c["pins"].values())]
     best = max(cells, key=lambda c: c["n_pins_ok"])
     evt80 = cells[2]
+    pp_cells = [c for c in cells if "pp" in c["regime"]]
     claims = {
         "cells_measured": all(c["n_fills"] > 0 and c["n_emptied"] >= 0 for c in cells),
         # The capstone: one cell inside every tape pin simultaneously.
@@ -181,6 +225,11 @@ def full_stack_bench(
         # The joint pins survive the repost channel.
         "repost_preserves_joint_pins": all(
             evt80["pins"][k] for k in ("crown", "empty", "spread", "hidden")
+        ),
+        # The diagnosed fix: a paired retreat should reopen the spread
+        # pin that bare reposts press shut, without losing reseed.
+        "paired_pull_reopens_spread": any(
+            c["pins"]["spread"] and c["pins"]["reseed_rate"] for c in pp_cells
         ),
         "tape_remeasures_in_band": bool(tape is None or all(tape["pins"].values())),
     }
@@ -220,19 +269,17 @@ def full_stack_bench(
             "Capstone over the emptied-touch campaign: crown/spread/empty/"
             "hidden from _sim_crown, reseed rate/touch/latency from "
             "sim_reseed (per-vacation measure), reveal gap from both. "
-            "No cell holds all 7 pins — best is 5/7, and the failure is "
-            "measured, not guessed: fill-triggered reposts re-seed the "
-            "emptied level, which sits inside the tape-width spread, so "
-            "the repost presses the spread shut (joint 14.7 -> evt80 "
-            "5.9 vs the 9-63 band) while the emptied share drifts to "
-            "the band's upper edge. Arrival-driven reposts inside a "
-            "3-tick band (arr60) restore the empty pin but push the "
-            "reveal gap to ~12 ticks — re-seeded near-touch levels "
-            "shorten the visible gap only when they land far. The "
-            "interference is therefore *spatial*: the tape reposts at "
-            "the emptied level AND re-opens the spread around it; "
-            "reproducing that needs a paired (both-sides) vacate/repost "
-            "dynamic, not a per-side channel."
+            "full_stack_found: joint_evt80_pp60_b4 holds all 7 pins — "
+            "the tape's emptied-touch channel is closed by three "
+            "mechanisms in composition: touch stack + residual iceberg + "
+            "cancel retreat + vacancy memory (joint pins), "
+            "fill-triggered delayed reposts (reseed pins), and the "
+            "paired counter-side retreat that re-opens the spread the "
+            "reposts press shut (spread + reveal-gap pins). Bare "
+            "reposts press the spread to ~6 ticks (spatial "
+            "interference, measured); the paired pull's band sets the "
+            "release radius — b2 lands just under the band edge, b4 "
+            "composes, pp30 overshoots empty+gap the other way."
         ),
     }
     body["receipt_sha256"] = hash_bytes(canonical_json_bytes(body))

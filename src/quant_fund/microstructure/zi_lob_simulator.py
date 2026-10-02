@@ -619,6 +619,16 @@ class ZILobConfig:
     # 0 disables; no RNG draws while off.
     fill_repost_frac: float = 0.0
     fill_repost_delay: int = 0
+    # ``paired_pull_frac`` in [0, 1]: when a fill empties a level, each
+    # resting unit on the UNHIT side within ``paired_pull_band`` ticks of
+    # its own touch is canceled with that probability — the tape's paired
+    # retreat (the counter side re-quotes away while the emptied level
+    # re-seeds), which is what keeps the spread open around a re-seeded
+    # touch. Measured need: fill-triggered reposts alone press the spread
+    # shut (full_stack.v1: joint 14.7 -> 5.9 ticks). 0 disables; no RNG
+    # draws while off.
+    paired_pull_frac: float = 0.0
+    paired_pull_band: int = 0
     # ``unhit_step_ticks`` > 0: while the marker's step window is live, an
     # LO arrival landing on the UNHIT side is shifted toward the touch by
     # up to ``unhit_step_ticks`` ticks, capped one tick inside the
@@ -798,6 +808,9 @@ class ZILobConfig:
             raise ValueError(
                 f"fill_repost_delay must be an int >= 0, got {self.fill_repost_delay!r}"
             )
+        _prob(self.paired_pull_frac, "paired_pull_frac")
+        if isinstance(self.paired_pull_band, bool) or int(self.paired_pull_band) < 0:
+            raise ValueError(f"paired_pull_band must be an int >= 0, got {self.paired_pull_band!r}")
         _prob(self.vac_chase_frac, "vac_chase_frac")
         _prob(self.chase_release, "chase_release")
         _prob(self.chase_reprice, "chase_reprice")
@@ -1353,6 +1366,7 @@ class ZILobSimulator:
         self._last_empty: dict[str, dict[int, tuple[int, str]]] = {"buy": {}, "sell": {}}
         # Scheduled fill-triggered re-posts: (due_event, side, level).
         self._fill_repost_q: list[tuple[int, Side, int]] = []
+        self.n_paired_pulls = 0
         # Remaining hidden refills per (side, level); used only when
         # ``iceberg_budget`` > 0.
         self._ice_budget: dict[tuple[Side, int], int] = {}
@@ -1534,6 +1548,7 @@ class ZILobSimulator:
             "n_cxl_touch": self.n_cxl_touch,
             "n_lo_capped": self.n_lo_capped,
             "n_lo_reposts": self.n_lo_reposts,
+            "n_paired_pulls": self.n_paired_pulls,
             "placed_join": self._fate_placed["join"],
             "placed_improve": self._fate_placed["improve"],
             "placed_deep": self._fate_placed["deep"],
@@ -1686,6 +1701,8 @@ class ZILobSimulator:
             mean = max(self._cfg.fill_repost_delay, 1)
             due = self.n_events + max(1, int(round(float(self._rng.exponential(mean)))))
             self._fill_repost_q.append((due, side, int(level)))
+        if cause == "fill" and self._cfg.paired_pull_frac > 0.0 and self._cfg.paired_pull_band > 0:
+            self._paired_pull(side)
         horizon = max(self._cfg.refill_cooldown, self._cfg.vac_chase_window)
         if horizon <= 0:
             return
@@ -1720,6 +1737,34 @@ class ZILobSimulator:
         if abs(int(level) - touch) > self._cfg.hit_refill_band:
             return False
         return float(self._rng.random()) < damp
+
+    def _paired_pull(self, hit_side: Side) -> None:
+        """Counter-side retreat on a fill-emptied level (``paired_pull_*``).
+
+        Each resting unit on the side opposite ``hit_side`` within
+        ``paired_pull_band`` ticks of its own touch is canceled with
+        probability ``paired_pull_frac`` — the paired re-quote that lets
+        the spread re-open around a re-seeded level. Draws happen only
+        under ``paired_pull_frac > 0``; the pulls are ordinary cancels
+        (they feed the vacancy ledger with ``cause="cancel"``).
+        """
+        opp_side: Side = "sell" if hit_side == "buy" else "buy"
+        book = self._asks if opp_side == "sell" else self._bids
+        if not book:
+            return
+        touch = min(book) if opp_side == "sell" else max(book)
+        band = int(self._cfg.paired_pull_band)
+        marks: list[tuple[int, int]] = []
+        for lv in sorted(book):
+            if (lv - touch if opp_side == "sell" else touch - lv) > band:
+                continue
+            dq = book[lv]
+            marks.extend(
+                (lv, i) for i in range(len(dq)) if self._rng.random() < self._cfg.paired_pull_frac
+            )
+        for lv, i in reversed(marks):
+            self._remove_resting_at(book, lv, i, "cancel")
+            self.n_paired_pulls += 1
 
     def _drain_fill_reposts(self) -> None:
         """Fire due fill-triggered re-posts (``fill_repost_frac``).

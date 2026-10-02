@@ -12,14 +12,15 @@ def test_full_stack_shape() -> None:
     assert out["data_label"] == "MIXED"
     assert out["research_only"] is True
     assert out["tape"] is None
-    assert len(out["cells"]) == 6
     assert set(out["claims"]) == {
         "cells_measured",
         "full_stack_found",
         "joint_cell_reseeds",
         "repost_preserves_joint_pins",
+        "paired_pull_reopens_spread",
         "tape_remeasures_in_band",
     }
+    assert len(out["cells"]) == 9
     for c in out["cells"]:
         assert set(c["pins"]) == {
             "crown",

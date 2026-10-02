@@ -13,8 +13,10 @@ fixtures. Pure numpy.
 
 from __future__ import annotations
 
+import hashlib
 import math
 from dataclasses import replace
+from typing import Any
 
 import numpy as np
 import pytest
@@ -650,3 +652,33 @@ def test_repost_reseeds_emptied_levels() -> None:
     ec = sim.event_counts()
     # n_lo_reposts counts reposted rests, bounded by LO arrivals.
     assert 0 < ec["n_lo_reposts"] <= ec["n_lo_arrivals"]
+
+
+def test_paired_pull_zero_is_bit_identical() -> None:
+    def digest(cfg: Any) -> str:
+        sim = ZILobSimulator(cfg)
+        for _ in range(3000):
+            sim.step()
+        return hashlib.sha256(
+            repr([(t.price, t.level, t.aggressor, t.qty) for t in sim.trades]).encode()
+        ).hexdigest()
+
+    a = digest(santa_fe_config(seed=11))
+    b = digest(replace(santa_fe_config(seed=11), paired_pull_frac=0.0, paired_pull_band=2))
+    assert a == b
+
+
+def test_paired_pull_cancels_unhit_side() -> None:
+    cfg = replace(
+        santa_fe_config(seed=17),
+        fill_repost_frac=0.5,
+        fill_repost_delay=100,
+        paired_pull_frac=0.9,
+        paired_pull_band=4,
+    )
+    sim = ZILobSimulator(cfg)
+    for _ in range(20000):
+        sim.step()
+    ec = sim.event_counts()
+    assert ec["n_paired_pulls"] > 0
+    assert ec["n_fills"] > 0
