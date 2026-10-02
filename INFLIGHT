@@ -2591,3 +2591,4 @@ wave 190 (2026-10-02): causal-discovery classical canon — ges_search, fci_alg,
 wave 191 (2026-10-02): RL-exploration canon — count_bonus, rnd_explore, icm_explore, ngu_explore, ride_explore, go_explore; 1118→1124 families.
 wave 192 (2026-10-02): info-theory canon — mmd_two_sample, hsic_independence, mine_mi, nwj_mi, copula_mi, lsd_deptest; 1124→1130 families.
 wave 193 (2026-10-02): optimal-control canon — lqr_control, ddp_solve, mppi_control, pmp_bangbang, mpc_qp, lqg_control; 1130→1136 families.
+wave 194 (2026-10-02): stochastic-process sim canon — cir_sim, ou_bridge, poisson_thinning, hawkes_thinning, levy_jump, gp_bridge; 1136→1142 families.
