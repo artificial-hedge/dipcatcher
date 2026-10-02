@@ -2224,3 +2224,10 @@ detail: |
     files + test_benches_w86 (40+ tests).
   - Canon staged on top of w85-canon.
 note: canon PR to follow.
+  wave87:
+  - "avellaneda_stoikov","gillespie_ssa","hamilton_filter",
+    "corwin_schultz","gwr_spatial","pareto_nbd"
+    (476->482); agent.py wiring; tests: 6 module
+    files + test_benches_w87 (32 tests).
+  - Canon staged on top of w86-canon.
+note: canon PR to follow.

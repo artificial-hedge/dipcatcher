@@ -1299,6 +1299,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pu_learning",
         "gr4j_hydrology",
         "brinson_attribution",
+        # wave 87 — Avellaneda-Stoikov
+        # (2008) optimal market making
+        # (reservation price + GLFT
+        # intensity), Gillespie (1977)
+        # direct SSA + tau-leaping with
+        # SIR/Schlogl networks, Hamilton
+        # (2018) + HP + Baxter-King/
+        # Christiano-Fitzgerald cycle
+        # filters, Corwin-Schultz (2012)
+        # high-low spread + Roll (1984)
+        # + Amihud (2002), Fotheringham-
+        # Brunsdon-Charlton (2002) GWR
+        # adaptive bandwidth, and
+        # Schmittlein (1987)/Fader-
+        # Hardie-Lee (2005) Pareto/BG-NBD
+        # CLV. Same SYNTHETIC diagnostic
+        # contract.
+        "avellaneda_stoikov",
+        "gillespie_ssa",
+        "hamilton_filter",
+        "corwin_schultz",
+        "gwr_spatial",
+        "pareto_nbd",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

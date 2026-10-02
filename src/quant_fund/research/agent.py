@@ -685,6 +685,14 @@ from quant_fund.research.benches_w86 import (
     bench_rainflow_fatigue,
     bench_sbm_inference,
 )
+from quant_fund.research.benches_w87 import (
+    bench_avellaneda_stoikov,
+    bench_corwin_schultz,
+    bench_gillespie_ssa,
+    bench_gwr_spatial,
+    bench_hamilton_filter,
+    bench_pareto_nbd,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2752,6 +2760,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pu_learning": bench_pu_learning(),
         "gr4j_hydrology": bench_gr4j_hydrology(),
         "brinson_attribution": bench_brinson_attribution(),
+        "avellaneda_stoikov": bench_avellaneda_stoikov(),
+        "gillespie_ssa": bench_gillespie_ssa(),
+        "hamilton_filter": bench_hamilton_filter(),
+        "corwin_schultz": bench_corwin_schultz(),
+        "gwr_spatial": bench_gwr_spatial(),
+        "pareto_nbd": bench_pareto_nbd(),
     }
 
     hyps = _build_hypotheses(families, rankers)
