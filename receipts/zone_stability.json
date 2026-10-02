@@ -1,0 +1,427 @@
+{
+ "schema": "zone_stability.v1",
+ "kind": "microstructure_bench",
+ "research_only": true,
+ "data_label": "MIXED",
+ "git_revision": "2a03fb85713bfe97cca0e7739f0cd18e705d401b",
+ "horizon": 15000,
+ "seed": 7,
+ "config": {
+  "seeds": [
+   7,
+   11,
+   101,
+   211
+  ],
+  "flows": [
+   "iid",
+   "split"
+  ],
+  "configs": [
+   "z12_d280",
+   "z10_d280"
+  ]
+ },
+ "panels": [
+  {
+   "config": "z12_d280",
+   "flow": "iid",
+   "n_draws": 4,
+   "per_pin_rate": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.75
+   },
+   "all_seven_rate": 0.75,
+   "mean_pins_ok": 6.75,
+   "draws": [
+    {
+     "run_seed": 7007,
+     "n_pins_ok": 7,
+     "all_seven": true,
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 18.6856,
+     "empty_share": 0.6337,
+     "n_fills": 617
+    },
+    {
+     "run_seed": 7011,
+     "n_pins_ok": 7,
+     "all_seven": true,
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 19.4275,
+     "empty_share": 0.6418,
+     "n_fills": 483
+    },
+    {
+     "run_seed": 7101,
+     "n_pins_ok": 7,
+     "all_seven": true,
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 18.3058,
+     "empty_share": 0.5578,
+     "n_fills": 389
+    },
+    {
+     "run_seed": 7211,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "spread_mean": 18.2793,
+     "empty_share": 0.6467,
+     "n_fills": 368
+    }
+   ]
+  },
+  {
+   "config": "z12_d280",
+   "flow": "split",
+   "n_draws": 4,
+   "per_pin_rate": {
+    "crown": 1.0,
+    "empty": 0.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.75
+   },
+   "all_seven_rate": 0.0,
+   "mean_pins_ok": 5.75,
+   "draws": [
+    {
+     "run_seed": 7007,
+     "n_pins_ok": 5,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "spread_mean": 22.1862,
+     "empty_share": 0.6773,
+     "n_fills": 784
+    },
+    {
+     "run_seed": 7011,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 20.0104,
+     "empty_share": 0.6762,
+     "n_fills": 562
+    },
+    {
+     "run_seed": 7101,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 15.9771,
+     "empty_share": 0.8384,
+     "n_fills": 755
+    },
+    {
+     "run_seed": 7211,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 17.8196,
+     "empty_share": 0.6916,
+     "n_fills": 869
+    }
+   ]
+  },
+  {
+   "config": "z10_d280",
+   "flow": "iid",
+   "n_draws": 4,
+   "per_pin_rate": {
+    "crown": 1.0,
+    "empty": 0.25,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 1.0
+   },
+   "all_seven_rate": 0.25,
+   "mean_pins_ok": 6.25,
+   "draws": [
+    {
+     "run_seed": 7007,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 15.9139,
+     "empty_share": 0.6882,
+     "n_fills": 465
+    },
+    {
+     "run_seed": 7011,
+     "n_pins_ok": 7,
+     "all_seven": true,
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 15.7581,
+     "empty_share": 0.4537,
+     "n_fills": 421
+    },
+    {
+     "run_seed": 7101,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 15.5505,
+     "empty_share": 0.7974,
+     "n_fills": 385
+    },
+    {
+     "run_seed": 7211,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 14.9937,
+     "empty_share": 0.6778,
+     "n_fills": 450
+    }
+   ]
+  },
+  {
+   "config": "z10_d280",
+   "flow": "split",
+   "n_draws": 4,
+   "per_pin_rate": {
+    "crown": 1.0,
+    "empty": 0.25,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.75
+   },
+   "all_seven_rate": 0.25,
+   "mean_pins_ok": 6.0,
+   "draws": [
+    {
+     "run_seed": 7007,
+     "n_pins_ok": 5,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "spread_mean": 16.1396,
+     "empty_share": 0.6888,
+     "n_fills": 617
+    },
+    {
+     "run_seed": 7011,
+     "n_pins_ok": 7,
+     "all_seven": true,
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 16.1394,
+     "empty_share": 0.6531,
+     "n_fills": 640
+    },
+    {
+     "run_seed": 7101,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 14.5901,
+     "empty_share": 0.8165,
+     "n_fills": 883
+    },
+    {
+     "run_seed": 7211,
+     "n_pins_ok": 6,
+     "all_seven": false,
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "spread_mean": 14.329,
+     "empty_share": 0.7991,
+     "n_fills": 662
+    }
+   ]
+  }
+ ],
+ "impact_kernels": [
+  {
+   "config": "z12_d280",
+   "flow": "iid",
+   "n_fills": 617,
+   "instant_signed_ticks": 1.0478119935170178,
+   "instant_abs_ticks": 1.0559157212317667,
+   "kernel_mean_ticks": {
+    "1": 1.8500810372771475,
+    "5": 2.7520259319286873,
+    "20": 2.9232804232804233,
+    "50": 5.832252836304701,
+    "200": 5.198697068403908
+   },
+   "kernel_n": {
+    "1": 617,
+    "5": 617,
+    "20": 567,
+    "50": 617,
+    "200": 614
+   }
+  },
+  {
+   "config": "z12_d280",
+   "flow": "split",
+   "n_fills": 1049,
+   "instant_signed_ticks": 0.7083753784056509,
+   "instant_abs_ticks": 1.1503531786074672,
+   "kernel_mean_ticks": {
+    "1": 1.2862173038229376,
+    "5": 2.2527527527527527,
+    "20": 3.614052953156823,
+    "50": 6.798885511651469,
+    "200": 7.898887765419616
+   },
+   "kernel_n": {
+    "1": 994,
+    "5": 999,
+    "20": 982,
+    "50": 987,
+    "200": 989
+   }
+  }
+ ],
+ "tape_kernel": {
+  "instant_ticks": 0.887,
+  "k200_ticks": 4.64
+ },
+ "claims": {
+  "cells_measured": true,
+  "zone_closure_structural": false,
+  "zone_closure_majority": true,
+  "zone_carries_instant": true
+ },
+ "notes": "Seed-panel stability of the zone_embargo closure (zone_embargo.v1's z12-iid 7/7@2-seeds): four seeds x two flows x two zone heights, per-pin hold rates plus all-seven rate. Impact kernels on the z12 cell check whether the closed composition also carries the tape's instant (0.887) / continuation (4.64) drift markers. Prior closures were knife-edges (joint_stability 0/4, floor cells ~0.5-0.75 spread rate); this measures whether the zone's class-wide clamp is finally structural.",
+ "receipt_sha256": "36edb920ac7047cf32f1eec410fba5f22a969554900e8940241fde0315f823d3"
+}
