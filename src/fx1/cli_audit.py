@@ -132,6 +132,39 @@ def cli_audit() -> dict[str, Any]:
     } <= names
     out["flag_maskedeval_wart"] = "maskedaEval" in names and "masked-eval" not in names
     out["groups_registered"] = {"corpus", "harness", "sources"} <= groups
+
+    # harness group — the SDK's shell surface
+    harness = top.commands.get("harness")
+    hnames = set(harness.commands) if isinstance(harness, TyperGroup) else set()
+    out["harness_surface"] = {"list", "run", "serve", "complete", "verify", "health"} <= hnames
+
+    h = runner.invoke(app, ["harness", "health"])
+    hblob = json.loads(h.stdout) if h.exit_code == 0 else {}
+    out["harness_health_json"] = hblob.get("status") in {"ok", "degraded"} and all(
+        isinstance(v, bool) for v in hblob.get("backends", {}).values()
+    )
+    sent = "deadbeefsecret-marker-do-not-leak"
+    h2 = runner.invoke(app, ["harness", "health"], env={"FX1_BYOK_API_KEY": sent})
+    out["harness_health_no_secret_leak"] = sent not in h2.stdout
+
+    import tempfile  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    from fx1.bench.dip_audit import dip_audit_bench  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as td:
+        good = Path(td) / "ok.json"
+        good.write_text(json.dumps(dip_audit_bench()))
+        bad = Path(td) / "bad.json"
+        tampered = json.loads(good.read_text())
+        tampered["claim"]["results"]["dip_causality"] = False
+        bad.write_text(json.dumps(tampered))
+        out["harness_verify_valid_exits_0"] = (
+            runner.invoke(app, ["harness", "verify", str(good)]).exit_code == 0
+        )
+        out["harness_verify_tampered_fails"] = (
+            runner.invoke(app, ["harness", "verify", str(bad)]).exit_code != 0
+        )
     return out
 
 

@@ -149,6 +149,66 @@ _BACKEND_HELP = (
 )
 
 
+@harness_app.command("complete")
+def harness_complete(
+    prompt: str = typer.Argument(..., help="User message to complete."),
+    backend: str = typer.Option("local_fx1", help=_BACKEND_HELP),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    receipt: list[str] = typer.Option([], "--receipt", help="Receipt sha256 to cite (repeatable)."),
+) -> None:
+    """One gated completion through the SDK — the honesty gate runs before output."""
+    from fx1.sdk import Fx1Harness
+
+    out = Fx1Harness().complete(
+        [{"role": "user", "content": prompt}],
+        backend=backend,
+        checkpoint_dir=checkpoint_dir,
+        receipt_hashes=receipt or None,
+    )
+    typer.echo(out.content)
+
+
+@harness_app.command("verify")
+def harness_verify(
+    receipt_path: Path = typer.Argument(..., help="Receipt JSON file to verify."),
+) -> None:
+    """Deep-verify a receipt file through the SDK verifier surface."""
+    from fx1.sdk import Fx1Harness
+
+    verdict = Fx1Harness().verify_receipt(json.loads(receipt_path.read_text()))
+    typer.echo(
+        json.dumps(
+            {
+                "valid": verdict.valid,
+                "errors": list(verdict.errors),
+                "warnings": list(verdict.warnings),
+                "schema": verdict.schema_tag,
+            },
+            indent=2,
+        )
+    )
+    raise typer.Exit(code=0 if verdict.valid else 1)
+
+
+@harness_app.command("health")
+def harness_health() -> None:
+    """Configured-backend presence booleans — never secret values."""
+    from fx1.sdk import Fx1Harness
+
+    h = Fx1Harness().health()
+    typer.echo(
+        json.dumps(
+            {
+                "status": h.status,
+                "version": h.version,
+                "registered_commands": h.registered_commands,
+                "backends": h.backends,
+            },
+            indent=2,
+        )
+    )
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
