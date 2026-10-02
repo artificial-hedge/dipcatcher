@@ -2361,12 +2361,12 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         h in client.get("/health").headers and h in client.get("/harness/commands").headers
         for h in ("x-content-type-options", "cache-control", "referrer-policy")
     )
-    big = client.post(
+    big_resp = client.post(
         "/receipts/verify",
         content=b" " * ((1 << 20) + 1),
         headers={"content-type": "application/json"},
     )
-    out["body_cap_413"] = big.status_code == 413
+    out["body_cap_413"] = big_resp.status_code == 413
 
     # request tracing: X-Request-ID echoes when well-formed, mints otherwise
     echoed = client.get("/health", headers={"X-Request-ID": "trace-abc.123"})
@@ -2396,7 +2396,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         headers={"content-length": "abc"},
     )
     out["bad_content_length_400"] = bad_len.status_code == 400
-    for label, err in (("cap_413", big), ("bad_len", bad_len)):
+    for label, err in (("cap_413", big_resp), ("bad_len", bad_len)):
         hdrs = {k.lower(): v for k, v in err.headers.items()}
         out[f"error_tail_{label}"] = all(
             hdrs.get(k) is not None
@@ -2456,7 +2456,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["capabilities_limiter_disabled_reports_zero"] = cap3["limits"]["rate_limit_rps"] == 0.0
     out["api_version_header_on_every_response"] = (
         client.get("/health").headers.get("x-fx1-api-version") == api_mod.API_VERSION
-        and big.headers.get("x-fx1-api-version") == api_mod.API_VERSION
+        and big_resp.headers.get("x-fx1-api-version") == api_mod.API_VERSION
         and bad_len.headers.get("x-fx1-api-version") == api_mod.API_VERSION
     )
     out["error_code_not_found"] = (
@@ -2471,7 +2471,7 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["error_code_forbidden"] = (
         remote_client.get("/harness/commands").json()["code"] == "forbidden"
     )
-    out["error_code_too_large"] = big.json()["code"] == "too_large"
+    out["error_code_too_large"] = big_resp.json()["code"] == "too_large"
     out["error_code_bad_request"] = bad_len.json()["code"] == "bad_request"
     client.post(
         "/harness/runs",
@@ -2512,13 +2512,13 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         def emit(self, record: logging.LogRecord) -> None:
             self.lines.append(record.getMessage())
 
-    cap = _Capture()
-    api_logger.addHandler(cap)
+    cap_log = _Capture()
+    api_logger.addHandler(cap_log)
     try:
         client.get("/health", headers={"X-Request-ID": "rid-probe-1"})
     finally:
-        api_logger.removeHandler(cap)
-    line = next((ln for ln in cap.lines if "rid-probe-1" in ln), "")
+        api_logger.removeHandler(cap_log)
+    line = next((ln for ln in cap_log.lines if "rid-probe-1" in ln), "")
     out["access_log_emitted"] = (
         "method=GET" in line
         and "path=/health" in line
@@ -3920,6 +3920,127 @@ def _probe_backend_probes(
         "local_fx1",
         "byok",
     } and _list["data"][0]["created"] == rm.json()["created"]
+
+    # response_format post-validation — the gate's second pass. The
+    # provider can't be constrain-decoded, so the harness validates the
+    # returned text: conforming output ships (200); a violation is a
+    # provider-side 502 (code format_violation); a malformed schema spec
+    # fails closed at request time, before any spend.
+    class _OiJson:
+        def __init__(self, content: str) -> None:
+            self._content = content
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return self._content
+
+    oi_json = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson('{"score": 0.9}')))
+    _rf_obj = {"type": "json_object"}
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+    )
+    out["openai_json_object_pass"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == '{"score": 0.9}'
+    )
+    oi_broken = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson("oops")))
+    r = oi_broken.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+    )
+    out["openai_json_object_violation_502"] = (
+        r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
+    )
+    # json_object means a JSON object — a bare array is still a violation
+    oi_arr = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson("[1, 2]")))
+    r = oi_arr.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+    )
+    out["openai_json_object_array_502"] = r.status_code == 502
+    # json_schema: schema-conforming ships, violating output 502s, a
+    # malformed schema spec is rejected pre-spend
+    _schema = {
+        "type": "object",
+        "properties": {"score": {"type": "number"}},
+        "required": ["score"],
+    }
+    _rf_schema = {"type": "json_schema", "json_schema": {"name": "s", "schema": _schema}}
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_schema,
+        },
+    )
+    out["openai_json_schema_pass"] = r.status_code == 200
+    oi_bad_schema_out = _TC2(
+        api_mod.create_app(backend_resolver=lambda *a, **k: _OiJson('{"score": "hi"}'))
+    )
+    r = oi_bad_schema_out.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_schema,
+        },
+    )
+    out["openai_json_schema_violation_502"] = (
+        r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
+    )
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": {"type": "json_schema", "json_schema": {"name": "s"}},
+        },
+    )
+    out["openai_json_schema_malformed_rejected"] = r.status_code == 422
+    r = oi_json.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": {"type": "xml"},
+        },
+    )
+    out["openai_response_format_unknown_rejected"] = r.status_code == 422
+    # a format violation never occupies the idempotency key — retry
+    # re-executes (still 502), the key stays unbound for other bodies
+    v1 = oi_broken.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "response_format": _rf_obj,
+        },
+        headers={"Idempotency-Key": "oi-fmt"},
+    )
+    v2 = oi_broken.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "other"}],
+            "response_format": _rf_obj,
+        },
+        headers={"Idempotency-Key": "oi-fmt"},
+    )
+    out["openai_format_violation_not_pinned"] = v1.status_code == 502 and v2.status_code == 502
 
 
 def api_audit_bench() -> dict[str, Any]:

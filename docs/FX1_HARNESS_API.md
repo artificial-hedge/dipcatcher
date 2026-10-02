@@ -251,11 +251,22 @@ to `GET /harness/completions/{id}` and its sealed
   bytes ever ship; a refusal is an OpenAI-shaped 502, not a truncated
   stream.
 - **Fail-closed surface:** tool calls (`tools`, `functions`,
-  `tool_calls`, `tool_call_id`), `n != 1`, non-text `response_format`,
-  `logprobs`, `logit_bias`, `stop`, penalties, `modalities`, `audio`,
-  `prediction`, `reasoning_effort`, `service_tier`, `store`, `metadata`,
-  and `None`/non-text-part content are all rejected — nothing is
-  silently dropped.
+  `tool_calls`, `tool_call_id`), `n != 1`, `response_format` types
+  outside `text`/`json_object`/`json_schema`, `logprobs`, `logit_bias`,
+  `stop`, penalties, `modalities`, `audio`, `prediction`,
+  `reasoning_effort`, `service_tier`, `store`, `metadata`, and
+  `None`/non-text-part content are all rejected — nothing is silently
+  dropped.
+- **Structured output:** `response_format` `json_object` and
+  `json_schema` are honored by post-validation — the harness can't
+  constrain-decode an arbitrary provider, so the gate's second pass
+  validates the returned text instead (parsed JSON object for
+  `json_object`; `jsonschema` validation against the declared schema —
+  which is itself checked at request time — for `json_schema`). A
+  non-conforming output is a provider-side 502
+  (`format_violation`), never shipped and never pinned into an
+  idempotency record; the verdict is identical on the SDK's
+  `openai_chat`/`openai_chat_stream` (an `OpenAICompatError`).
 - **Error envelope:** under `/v1`, every error — validation, auth
   (401/403), rate limit (429), body cap (413), over-capacity (503),
   honesty refusal (502) — returns OpenAI's

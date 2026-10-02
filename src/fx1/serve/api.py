@@ -113,6 +113,7 @@ from fx1.serve.openai_compat import (
     openai_error_body,
     openai_model,
     openai_to_kwargs,
+    validate_openai_output,
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
@@ -2746,6 +2747,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             _slot_held=None,
             idempotency_key=None,
         )
+        # response_format post-validation: the provider can't be
+        # constrain-decoded, so a format violation is its failure (502),
+        # never shipped, never pinned into the idempotency record.
+        try:
+            validate_openai_output(body, out.content)
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
         cid = out.completion_id or uuid.uuid4().hex
         envelope = openai_envelope(
             cid=cid,

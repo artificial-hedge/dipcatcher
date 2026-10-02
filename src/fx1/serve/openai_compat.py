@@ -22,11 +22,13 @@ taxonomy — so the wire and the weights-direct path cannot drift apart.
 
 from __future__ import annotations
 
+import json
 import time
 import urllib.parse
 from collections.abc import Iterator, Mapping
 from typing import Any, Literal
 
+import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 __all__ = [
@@ -34,6 +36,7 @@ __all__ = [
     "OPENAI_ERR_TYPES",
     "OPENAI_UNSUPPORTED",
     "OPENAI_MODEL_IDS",
+    "OPENAI_RESPONSE_FORMATS",
     "ByokOverride",
     "OpenAIChatMessage",
     "OpenAIChatResponse",
@@ -51,6 +54,7 @@ __all__ = [
     "openai_models",
     "openai_to_kwargs",
     "openai_usage",
+    "validate_openai_output",
 ]
 
 
@@ -75,6 +79,12 @@ class OpenAICompatError(ValueError):
 
 # Backend names an OpenAI `model` field or `X-Fx1-Backend` header may carry.
 OPENAI_BACKENDS = frozenset({"hosted_k3", "local_fx1", "byok"})
+
+# response_format types the gated pipeline honors. `text` is freeform;
+# `json_object`/`json_schema` are post-validated against the returned text
+# (the harness can't constrain-decode arbitrary backends — validation is
+# the honest mechanism, and a violation is a provider-side 502).
+OPENAI_RESPONSE_FORMATS = frozenset({"text", "json_object", "json_schema"})
 
 # The GET /v1/models inventory — `fx1` is the alias for the default link.
 OPENAI_MODEL_IDS = ("fx1", "hosted_k3", "local_fx1", "byok")
@@ -207,8 +217,28 @@ class OpenAIChatRequest(_Model):
     def _openai_valid(self) -> OpenAIChatRequest:
         if self.n != 1:
             raise ValueError("n must be 1 — the gated pipeline serves one completion")
-        if self.response_format is not None and self.response_format.get("type", "text") != "text":
-            raise ValueError("response_format other than text is not supported")
+        rf = self.response_format
+        if rf is not None:
+            rtype = rf.get("type", "text")
+            if rtype not in OPENAI_RESPONSE_FORMATS:
+                raise ValueError(
+                    "response_format.type must be one of "
+                    f"{sorted(OPENAI_RESPONSE_FORMATS)}; got {rtype!r}"
+                )
+            if rtype == "json_schema":
+                spec = rf.get("json_schema")
+                schema = spec.get("schema") if isinstance(spec, dict) else None
+                if not isinstance(schema, dict):
+                    raise ValueError(
+                        "response_format json_schema needs "
+                        "{type: 'json_schema', json_schema: {name?, schema: {...}}}"
+                    )
+                try:
+                    jsonschema.validators.validator_for(schema).check_schema(schema)
+                except jsonschema.SchemaError as exc:
+                    raise ValueError(
+                        f"response_format json_schema is not a valid schema: {exc.message}"
+                    ) from exc
         present = [f for f in OPENAI_UNSUPPORTED if getattr(self, f, None) is not None]
         # extras (extra="allow") that are also unsupported features
         extra_bad = sorted(f for f in OPENAI_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
@@ -368,6 +398,48 @@ def openai_to_kwargs(
         "max_tokens": body.max_tokens,
         "seed": body.seed,
     }
+
+
+def validate_openai_output(body: OpenAIChatRequest, content: str) -> None:
+    """Post-validate a gated completion against ``response_format``.
+
+    The harness can't constrain-decode arbitrary providers (BYOK),
+    so the gate's second pass verifies the returned text: a
+    non-conforming output is a provider-side failure — 502 /
+    ``format_violation``, never silently shipped and never pinned
+    into an idempotency record.
+    """
+    rf = body.response_format
+    if not rf:
+        return
+    rtype = rf.get("type", "text")
+    if rtype == "text":
+        return
+    try:
+        parsed: Any = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise OpenAICompatError(
+            f"model output is not valid JSON under response_format {rtype!r}: {exc}",
+            status=502,
+            code="format_violation",
+        ) from exc
+    if rtype == "json_object" and not isinstance(parsed, dict):
+        raise OpenAICompatError(
+            f"model output under json_object must be a JSON object, got {type(parsed).__name__}",
+            status=502,
+            code="format_violation",
+        )
+    if rtype == "json_schema":
+        schema = rf["json_schema"]["schema"]
+        try:
+            jsonschema.validate(parsed, schema)
+        except jsonschema.ValidationError as exc:
+            raise OpenAICompatError(
+                "model output failed the declared json_schema: "
+                f"{exc.message} (at {list(exc.absolute_path)})",
+                status=502,
+                code="format_violation",
+            ) from exc
 
 
 def openai_usage(usage: dict[str, int] | None) -> dict[str, int] | None:

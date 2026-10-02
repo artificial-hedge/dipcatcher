@@ -447,6 +447,49 @@ def parity_audit() -> dict[str, bool]:
             and wire_rm_404.json()["error"]["code"] == "model_not_found"
             and sdk_rm_err == "OpenAICompatError"
         )
+
+        # response_format parity — the post-validation gate runs inside
+        # the shared compat layer, so wire and SDK hand back the same
+        # verdicts: schema-conforming output ships on both; a violation
+        # is 502 format_violation on the wire and OpenAICompatError
+        # in-process.
+        class _JsonB:
+            def __init__(self, text: str) -> None:
+                self._t = text
+
+            def complete(
+                self,
+                messages: list[dict[str, str]],
+                *,
+                sampling: SamplingParams | None = None,
+            ) -> str:
+                return self._t
+
+        _rf = {"type": "json_object"}
+        j_sdk, j_wire = _surfaces(lambda: _JsonB('{"a": 1}'))
+        _req = {**oai_body, "response_format": _rf}
+        jw = j_wire.post("/v1/chat/completions", json=_req)
+        js, _ = j_sdk.openai_chat(_req)
+        out["openai_json_object_parity"] = (
+            jw.status_code == 200
+            and jw.json()["choices"][0]["message"]["content"] == '{"a": 1}'
+            and js.choices[0].message["content"] == '{"a": 1}'
+        )
+        b_sdk, b_wire = _surfaces(lambda: _JsonB("not json"))
+        bw = b_wire.post("/v1/chat/completions", json=_req)
+        bs_err = _raises(lambda: b_sdk.openai_chat(_req))[0]
+        out["openai_format_violation_parity"] = (
+            bw.status_code == 502
+            and bw.json()["error"]["code"] == "format_violation"
+            and bs_err == "OpenAICompatError"
+        )
+        # stream surfaces run the same post-validation — a violation on
+        # stream:true 502s on the wire and raises in the SDK, no chunks.
+        bsw = b_wire.post("/v1/chat/completions", json={**_req, "stream": True})
+        bst_err = _raises(lambda: b_sdk.openai_chat_stream({**_req, "stream_options": {}}))[0]
+        out["openai_format_violation_stream_parity"] = (
+            bsw.status_code == 502 and bst_err == "OpenAICompatError"
+        )
         # rejection parity: same verdict, each surface's own exception class
         oai_bad_n = {**oai_body, "n": 2}
         wire_n_err = client.post("/v1/chat/completions", json=oai_bad_n)
@@ -526,12 +569,12 @@ def parity_audit() -> dict[str, bool]:
             (_rdir / "sealed.json").write_text(json.dumps(good))
             from fastapi.testclient import TestClient as _TCr  # noqa: PLC0415
 
-            import fx1.serve.api as _api_r  # noqa: PLC0415
+            import fx1.serve.api as _api_mod_r  # noqa: PLC0415
             from fx1.sdk import Fx1Harness as _FHr  # noqa: PLC0415
             from fx1.serve.client import HarnessClient as _HCr  # noqa: PLC0415
 
             _sdk_r = _FHr(receipts_dir=_rdir)
-            _api_r = _TCr(_api_r.create_app(receipts_dir=_rdir))
+            _api_r = _TCr(_api_mod_r.create_app(receipts_dir=_rdir))
             _rem_r = _HCr("http://harness.test", transport=_tc_transport(_api_r))
 
             _idx = _api_r.get("/receipts").json()
@@ -1797,11 +1840,11 @@ def parity_audit() -> dict[str, bool]:
         return (200, {"Content-Type": "text/event-stream"}, sse_body)
 
     c_sse = HarnessClient("http://harness.test", transport=_sse_transport)
-    frames = c_sse.stream_job("j1", timeout_s=42.0)
+    job_frames = c_sse.stream_job("j1", timeout_s=42.0)
     out["client_stream_job_frames"] = (
-        len(frames) == 2
-        and frames[0]["status"] == "queued"
-        and frames[-1]["status"] == "succeeded"
+        len(job_frames) == 2
+        and job_frames[0]["status"] == "queued"
+        and job_frames[-1]["status"] == "succeeded"
         and "/harness/jobs/j1/events?timeout_s=42.0" in str(cb_seen[-1].get("_url"))
     )
     out["client_wait_run_stream_result"] = (

@@ -65,6 +65,7 @@ from fx1.serve.openai_compat import (
     openai_model,
     openai_models,
     openai_to_kwargs,
+    validate_openai_output,
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
@@ -1138,6 +1139,7 @@ class Fx1Harness:
         )
         kwargs = openai_to_kwargs(body, dict(headers or {}))
         result = self.complete(**kwargs)
+        validate_openai_output(body, result.content)
         cid = result.completion_id or uuid.uuid4().hex
         envelope = openai_envelope(
             cid=cid,
@@ -1174,6 +1176,7 @@ class Fx1Harness:
         )
         kwargs = openai_to_kwargs(body, dict(headers or {}))
         result = self.complete(**kwargs)
+        validate_openai_output(body, result.content)
         cid = result.completion_id or uuid.uuid4().hex
         chunks = list(
             openai_chunks(

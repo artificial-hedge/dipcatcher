@@ -48,6 +48,10 @@ dependencies = [
     # previously relied on transitive pulls; declared per P6.10 hygiene.
     "cryptography>=44",
     "threadpoolctl>=3.5",
+    # Post-validation for the OpenAI surface's response_format json_schema
+    # mode — the harness can't constrain-decode arbitrary backends, so the
+    # gate validates the returned text against the declared schema.
+    "jsonschema>=4.23",
     "exchange-calendars==4.13.2",
 ]
 
