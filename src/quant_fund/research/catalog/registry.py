@@ -2305,6 +2305,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "izhikevich",
         "lsm_reservoir",
         "temporal_code",
+        # Wave-178 multi-task-gradient canon:
+        # PCGrad, MGDA, CAGrad, GradNorm,
+        # Nash-MTL, IMTL-G.
+        "pcgrad",
+        "mgda_mtl",
+        "cagrad_mtl",
+        "gradnorm_bal",
+        "nash_mtl",
+        "imtl_g",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

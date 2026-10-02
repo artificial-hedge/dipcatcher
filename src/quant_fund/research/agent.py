@@ -1413,6 +1413,14 @@ from quant_fund.research.benches_w177 import (
     bench_surrogate_snn_family,
     bench_temporal_code_family,
 )
+from quant_fund.research.benches_w178 import (
+    bench_cagrad_mtl_family,
+    bench_gradnorm_bal_family,
+    bench_imtl_g_family,
+    bench_mgda_mtl_family,
+    bench_nash_mtl_family,
+    bench_pcgrad_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4026,6 +4034,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "izhikevich": bench_izhikevich_family(),
         "lsm_reservoir": bench_lsm_reservoir_family(),
         "temporal_code": bench_temporal_code_family(),
+        "pcgrad": bench_pcgrad_family(),
+        "mgda_mtl": bench_mgda_mtl_family(),
+        "cagrad_mtl": bench_cagrad_mtl_family(),
+        "gradnorm_bal": bench_gradnorm_bal_family(),
+        "nash_mtl": bench_nash_mtl_family(),
+        "imtl_g": bench_imtl_g_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

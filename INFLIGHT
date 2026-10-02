@@ -2575,3 +2575,4 @@ wave 174 (2026-10-02): graph-temporal canon — dcrnn_lite, stgcn_lite, gwnet_li
 wave 175 (2026-10-02): LM-components canon — rope_attn, alibi_attn, swiglu_ffn, rmsnorm_block, moe_router, mup_init; 1022→1028 families.
 wave 176 (2026-10-02): data-centric canon — active_bald, data_cartography, el2n_scoring, forgetting_events, influence_func, proto_prune; 1028→1034 families.
 wave 177 (2026-10-02): neuromorphic canon — lif_neuron, stdp_learn, surrogate_snn, izhikevich, lsm_reservoir, temporal_code; 1034→1040 families.
+wave 178 (2026-10-02): multi-task-gradient canon — pcgrad, mgda_mtl, cagrad_mtl, gradnorm_bal, nash_mtl, imtl_g; 1040→1046 families.
