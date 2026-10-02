@@ -1269,6 +1269,14 @@ from quant_fund.research.benches_w159 import (
     bench_muon_opt_family,
     bench_sophia_opt_family,
 )
+from quant_fund.research.benches_w160 import (
+    bench_ditto_fl_family,
+    bench_fednova_fl_family,
+    bench_fedopt_adam_family,
+    bench_mime_lite_family,
+    bench_moon_fl_family,
+    bench_scaffold_fl_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3774,6 +3782,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "lookahead_opt": bench_lookahead_opt_family(),
         "lamb_opt": bench_lamb_opt_family(),
         "adafactor_opt": bench_adafactor_opt_family(),
+        "scaffold_fl": bench_scaffold_fl_family(),
+        "fednova_fl": bench_fednova_fl_family(),
+        "ditto_fl": bench_ditto_fl_family(),
+        "moon_fl": bench_moon_fl_family(),
+        "fedopt_adam": bench_fedopt_adam_family(),
+        "mime_lite": bench_mime_lite_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -2141,6 +2141,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lookahead_opt",
         "lamb_opt",
         "adafactor_opt",
+        # Wave-160 FL canon:
+        # SCAFFOLD, FedNova, Ditto,
+        # MOON, FedOpt-Adam, MimeLite.
+        "scaffold_fl",
+        "fednova_fl",
+        "ditto_fl",
+        "moon_fl",
+        "fedopt_adam",
+        "mime_lite",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
