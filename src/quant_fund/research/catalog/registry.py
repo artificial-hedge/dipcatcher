@@ -2132,6 +2132,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lambdarank_ltr",
         "approx_ndcg_ltr",
         "neural_sort_ltr",
+        # Wave-159 optimizer canon:
+        # Muon, Lion, Sophia,
+        # Lookahead, LAMB, Adafactor.
+        "muon_opt",
+        "lion_opt",
+        "sophia_opt",
+        "lookahead_opt",
+        "lamb_opt",
+        "adafactor_opt",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

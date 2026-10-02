@@ -2556,3 +2556,4 @@ wave 155 (2026-10-02): causal-DL canon — tarnet_ite, dragonnet_dr, deep_iv, ce
 wave 156 (2026-10-02): tabular-DL canon — tokenizer_bpe, tabular_resnet, node_net, grownet_boost, soft_tree, tabm_mini; 908→914 families.
 wave 157 (2026-10-02): anomaly-detection canon — deep_svdd, dagmm, usad, anom_transformer, rrcf, tranad; 914→920 families.
 wave 158 (2026-10-02): LTR canon — ranknet_ltr, listnet_ltr, listmle_ltr, lambdarank_ltr, approx_ndcg_ltr, neural_sort_ltr; 920→926 families.
+wave 159 (2026-10-02): optimizer canon — muon_opt, lion_opt, sophia_opt, lookahead_opt, lamb_opt, adafactor_opt; 926→932 families.

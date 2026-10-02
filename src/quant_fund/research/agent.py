@@ -1261,6 +1261,14 @@ from quant_fund.research.benches_w158 import (
     bench_neural_sort_ltr_family,
     bench_ranknet_ltr_family,
 )
+from quant_fund.research.benches_w159 import (
+    bench_adafactor_opt_family,
+    bench_lamb_opt_family,
+    bench_lion_opt_family,
+    bench_lookahead_opt_family,
+    bench_muon_opt_family,
+    bench_sophia_opt_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3760,6 +3768,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "lambdarank_ltr": bench_lambdarank_ltr_family(),
         "approx_ndcg_ltr": bench_approx_ndcg_ltr_family(),
         "neural_sort_ltr": bench_neural_sort_ltr_family(),
+        "muon_opt": bench_muon_opt_family(),
+        "lion_opt": bench_lion_opt_family(),
+        "sophia_opt": bench_sophia_opt_family(),
+        "lookahead_opt": bench_lookahead_opt_family(),
+        "lamb_opt": bench_lamb_opt_family(),
+        "adafactor_opt": bench_adafactor_opt_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
