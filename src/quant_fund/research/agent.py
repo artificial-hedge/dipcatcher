@@ -1293,6 +1293,14 @@ from quant_fund.research.benches_w162 import (
     bench_timer_lite_family,
     bench_timesfm_lite_family,
 )
+from quant_fund.research.benches_w163 import (
+    bench_agem_cl_family,
+    bench_der_cl_family,
+    bench_hat_cl_family,
+    bench_lwf_cl_family,
+    bench_packnet_cl_family,
+    bench_piggyback_cl_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3816,6 +3824,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "lagllama_lite": bench_lagllama_lite_family(),
         "timer_lite": bench_timer_lite_family(),
         "moment_lite": bench_moment_lite_family(),
+        "packnet_cl": bench_packnet_cl_family(),
+        "lwf_cl": bench_lwf_cl_family(),
+        "der_cl": bench_der_cl_family(),
+        "agem_cl": bench_agem_cl_family(),
+        "piggyback_cl": bench_piggyback_cl_family(),
+        "hat_cl": bench_hat_cl_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

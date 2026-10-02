@@ -2168,6 +2168,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lagllama_lite",
         "timer_lite",
         "moment_lite",
+        # Wave-163 lifelong-CL canon:
+        # PackNet, LwF, DER,
+        # A-GEM, Piggyback, HAT.
+        "packnet_cl",
+        "lwf_cl",
+        "der_cl",
+        "agem_cl",
+        "piggyback_cl",
+        "hat_cl",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
