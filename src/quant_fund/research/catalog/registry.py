@@ -2888,6 +2888,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cfg_pda_equiv",
         "two_way_dfa",
         "register_automata",
+        # Wave-254 applied-crypto-2 canon.
+        "tls_handshake",
+        "hmac_construct",
+        "aead_etm",
+        "merkle_damgard",
+        "cbc_padding",
+        "pbkdf2_kdf",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
