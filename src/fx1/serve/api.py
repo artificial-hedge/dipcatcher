@@ -36,12 +36,13 @@ from __future__ import annotations
 import hmac
 import json
 import os
+import threading
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -62,6 +63,7 @@ from fx1.serve.chat import cited_complete
 from quant_fund.research.receipt_v2 import verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
+_MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
 _PUBLIC_PATHS = frozenset({"/health"})
 _LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 _MAX_BODY_BYTES = 1 << 20
@@ -180,10 +182,33 @@ def _backend_configured() -> dict[str, bool]:
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
+    max_inflight: int | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
     resolve_backend = backend_resolver or get_backend
+    if max_inflight is None:
+        max_inflight = int(os.environ.get(_MAX_INFLIGHT_ENV, "16"))
+    if max_inflight < 1:
+        raise ValueError(f"max_inflight must be >= 1, got {max_inflight}")
+    # Bounded in-flight work: the harness executes lab commands and model
+    # calls on shared resources (a spawned local engine, GPU memory, the
+    # box itself) — saturation must fail honestly as 503, never queue
+    # unboundedly or crash mid-request. Cheap routes (commands, verify,
+    # health) stay uncapped so liveness answers under load.
+    inflight = threading.BoundedSemaphore(max_inflight)
+
+    def _slot() -> Iterator[None]:
+        if not inflight.acquire(blocking=False):
+            raise HTTPException(
+                503,
+                f"harness at max_inflight={max_inflight} — retry later",
+                headers={"Retry-After": "1"},
+            )
+        try:
+            yield
+        finally:
+            inflight.release()
 
     app = FastAPI(
         title="fx-1 harness API",
@@ -194,6 +219,7 @@ def create_app(
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
     )
+    app.state.inflight_slots = inflight
 
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
@@ -265,7 +291,9 @@ def create_app(
         return HarnessCommandListResponse(items=items, total=len(items))
 
     @app.post("/harness/runs", response_model=HarnessRunResponse)
-    def run_command(body: HarnessRunRequest) -> HarnessRunResponse:
+    def run_command(
+        body: HarnessRunRequest, _slot_held: None = Depends(_slot)
+    ) -> HarnessRunResponse:
         try:
             result = lab.run(
                 body.command,
@@ -317,7 +345,7 @@ def create_app(
             closer()
 
     @app.post("/harness/complete", response_model=CompleteResponse)
-    def complete(body: CompleteRequest) -> CompleteResponse:
+    def complete(body: CompleteRequest, _slot_held: None = Depends(_slot)) -> CompleteResponse:
         backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         try:
@@ -343,7 +371,9 @@ def create_app(
         )
 
     @app.post("/harness/complete/stream")
-    def complete_stream(body: CompleteRequest) -> StreamingResponse:
+    def complete_stream(
+        body: CompleteRequest, _slot_held: None = Depends(_slot)
+    ) -> StreamingResponse:
         """Server-sent-event stream of one gated completion.
 
         The backend's token deltas are buffered, the joined text passes the
@@ -399,7 +429,9 @@ def create_app(
         return StreamingResponse(_events(), media_type="text/event-stream")
 
     @app.post("/harness/complete/batch", response_model=CompleteBatchResponse)
-    def complete_batch(body: CompleteBatchRequest) -> CompleteBatchResponse:
+    def complete_batch(
+        body: CompleteBatchRequest, _slot_held: None = Depends(_slot)
+    ) -> CompleteBatchResponse:
         backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
