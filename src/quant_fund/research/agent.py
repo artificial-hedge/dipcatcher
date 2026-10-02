@@ -1854,6 +1854,14 @@ from quant_fund.research.benches_w232 import (
     bench_proof_of_work_family,
     bench_utxo_set_family,
 )
+from quant_fund.research.benches_w233 import (
+    bench_gvn_elim_family,
+    bench_instr_sched_family,
+    bench_licm_hoist_family,
+    bench_reg_coalesce_family,
+    bench_sccp_const_family,
+    bench_ssa_construct_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4798,6 +4806,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "difficulty_retarget": bench_difficulty_retarget_family(),
         "fork_resolution": bench_fork_resolution_family(),
         "block_validator": bench_block_validator_family(),
+        "ssa_construct": bench_ssa_construct_family(),
+        "sccp_const": bench_sccp_const_family(),
+        "gvn_elim": bench_gvn_elim_family(),
+        "reg_coalesce": bench_reg_coalesce_family(),
+        "instr_sched": bench_instr_sched_family(),
+        "licm_hoist": bench_licm_hoist_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
