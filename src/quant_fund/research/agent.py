@@ -1149,6 +1149,14 @@ from quant_fund.research.benches_w144 import (
     bench_sliding_window_cache_family,
     bench_speculative_decoding_family,
 )
+from quant_fund.research.benches_w145 import (
+    bench_bm25_retriever_family,
+    bench_colbert_late_family,
+    bench_dpr_retriever_family,
+    bench_hyde_retrieval_family,
+    bench_reranker_crossenc_family,
+    bench_rrf_fusion_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3564,6 +3572,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gqa_attn": bench_gqa_attn_family(),
         "sliding_window_cache": bench_sliding_window_cache_family(),
         "ring_attn": bench_ring_attn_family(),
+        "bm25_retriever": bench_bm25_retriever_family(),
+        "dpr_retriever": bench_dpr_retriever_family(),
+        "colbert_late": bench_colbert_late_family(),
+        "hyde_retrieval": bench_hyde_retrieval_family(),
+        "reranker_crossenc": bench_reranker_crossenc_family(),
+        "rrf_fusion": bench_rrf_fusion_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

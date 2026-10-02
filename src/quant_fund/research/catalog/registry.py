@@ -2006,6 +2006,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gqa_attn",
         "sliding_window_cache",
         "ring_attn",
+        # Wave-145 retrieval canon:
+        # BM25, DPR, ColBERT,
+        # HyDE, cross-encoder, RRF.
+        "bm25_retriever",
+        "dpr_retriever",
+        "colbert_late",
+        "hyde_retrieval",
+        "reranker_crossenc",
+        "rrf_fusion",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
