@@ -2708,6 +2708,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dominance_tree",
         "liveness_dce",
         "linscan_regalloc",
+        # Wave-227 compression canon: Huffman, arithmetic, LZW/LZ78,
+        # Golomb-Rice, rANS.
+        "huffman_codes",
+        "arithmetic_coding",
+        "lzw_compress",
+        "golomb_rice",
+        "rans_coder",
+        "lz78_dict",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

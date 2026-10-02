@@ -1806,6 +1806,14 @@ from quant_fund.research.benches_w226 import (
     bench_liveness_dce_family,
     bench_regex_engine_family,
 )
+from quant_fund.research.benches_w227 import (
+    bench_arithmetic_coding_family,
+    bench_golomb_rice_family,
+    bench_huffman_codes_family,
+    bench_lz78_dict_family,
+    bench_lzw_compress_family,
+    bench_rans_coder_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4714,6 +4722,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "dominance_tree": bench_dominance_tree_family(),
         "liveness_dce": bench_liveness_dce_family(),
         "linscan_regalloc": bench_linscan_regalloc_family(),
+        "huffman_codes": bench_huffman_codes_family(),
+        "arithmetic_coding": bench_arithmetic_coding_family(),
+        "lzw_compress": bench_lzw_compress_family(),
+        "golomb_rice": bench_golomb_rice_family(),
+        "rans_coder": bench_rans_coder_family(),
+        "lz78_dict": bench_lz78_dict_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
