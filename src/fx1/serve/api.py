@@ -631,7 +631,13 @@ def _mount_job_routes(
     Submit is gated by drain + max_inflight; reads and cancel are
     control-plane and stay open under drain."""
 
-    @app.post("/harness/jobs", response_model=JobSubmitResponse, status_code=202)
+    @app.post(
+        "/harness/jobs",
+        response_model=JobSubmitResponse,
+        status_code=202,
+        tags=["jobs"],
+        operation_id="submit_job",
+    )
     def submit_job(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -649,7 +655,13 @@ def _mount_job_routes(
             jobs_executor,
         )
 
-    @app.post("/harness/jobs/batch", response_model=JobBatchResponse, status_code=202)
+    @app.post(
+        "/harness/jobs/batch",
+        response_model=JobBatchResponse,
+        status_code=202,
+        tags=["jobs"],
+        operation_id="submit_jobs_batch",
+    )
     def submit_jobs_batch(body: JobBatchRequest) -> JobBatchResponse:
         """Fan-out submit: each item takes the same path as the single
         route — command validation, drain latch, inflight cap, and
@@ -684,7 +696,9 @@ def _mount_job_routes(
                 items.append(JobBatchItemResponse(index=i, error=str(exc.detail), code=exc.code))
         return JobBatchResponse(jobs=items, submitted=submitted, failed=len(body.jobs) - submitted)
 
-    @app.get("/harness/jobs", response_model=JobListResponse)
+    @app.get(
+        "/harness/jobs", response_model=JobListResponse, tags=["jobs"], operation_id="list_jobs"
+    )
     def list_jobs(
         status: _JobStatus | None = Query(default=None),
         limit: int = Query(default=100, ge=1, le=500),
@@ -695,14 +709,24 @@ def _mount_job_routes(
         jobs = job_store.list(status=status)
         return JobListResponse(jobs=jobs[offset : offset + limit], total=len(jobs))
 
-    @app.get("/harness/jobs/{job_id}", response_model=JobStatusResponse)
+    @app.get(
+        "/harness/jobs/{job_id}",
+        response_model=JobStatusResponse,
+        tags=["jobs"],
+        operation_id="get_job",
+    )
     def job_status(job_id: str) -> JobStatusResponse:
         job = job_store.get(job_id)
         if job is None:
             raise ApiError(404, f"unknown job_id {job_id!r}")
         return job
 
-    @app.delete("/harness/jobs/{job_id}", response_model=JobStatusResponse)
+    @app.delete(
+        "/harness/jobs/{job_id}",
+        response_model=JobStatusResponse,
+        tags=["jobs"],
+        operation_id="cancel_job",
+    )
     def cancel_job(job_id: str) -> JobStatusResponse:
         """Cooperative cancel: a queued job flips to 'cancelled' and its
         executor slot frees on dequeue. Running and terminal jobs 409 —
@@ -715,7 +739,11 @@ def _mount_job_routes(
         _deliver_job_callback(job)  # cancelled is terminal — fire the webhook
         return job
 
-    @app.get("/harness/jobs/{job_id}/events")
+    @app.get(
+        "/harness/jobs/{job_id}/events",
+        tags=["jobs"],
+        operation_id="stream_job_events",
+    )
     def job_events(
         job_id: str,
         timeout_s: float = Query(default=600.0, ge=1.0, le=3600.0),
@@ -1101,6 +1129,16 @@ def create_app(
             "completion over hosted_k3 / local_fx1 / BYOK backends."
         ),
         lifespan=_make_lifespan(metrics, job_store, jobs_executor),
+        openapi_tags=[
+            {"name": "runs", "description": "Synchronous lab-command execution."},
+            {"name": "jobs", "description": "Async run jobs: submit, poll, SSE, cancel, batch."},
+            {
+                "name": "complete",
+                "description": "Gated model completion (sync, batch, SSE stream).",
+            },
+            {"name": "receipts", "description": "Sealed-receipt verification."},
+            {"name": "ops", "description": "Liveness, readiness, metrics, drain, version."},
+        ],
     )
     # Large responses (job listings, receipt payloads, openapi) compress well;
     # urllib-based clients send no Accept-Encoding so SSE stays uncompressed.
@@ -1199,7 +1237,7 @@ def create_app(
                 response = await call_next(request)
         return _finish(request, request_id, response, started)
 
-    @app.get("/metrics", response_model=MetricsResponse)
+    @app.get("/metrics", response_model=MetricsResponse, tags=["ops"], operation_id="get_metrics")
     def metrics_route(
         request: Request,
         format: Literal["json", "prom", "prometheus"] | None = None,
@@ -1221,7 +1259,7 @@ def create_app(
             )
         return metrics.snapshot()
 
-    @app.get("/health", response_model=HealthResponse)
+    @app.get("/health", response_model=HealthResponse, tags=["ops"], operation_id="health")
     def health() -> HealthResponse:
         return HealthResponse(
             registered_commands=len(lab.list_commands()),
@@ -1229,7 +1267,7 @@ def create_app(
             draining=metrics.draining.is_set(),
         )
 
-    @app.get("/ready", response_model=ReadyResponse)
+    @app.get("/ready", response_model=ReadyResponse, tags=["ops"], operation_id="ready")
     def ready() -> ReadyResponse:
         """Kubernetes-style readiness: 200 while accepting work, 503 once
         drain is latched — the load balancer's signal to deregister the
@@ -1243,9 +1281,16 @@ def create_app(
         _version_info,
         methods=["GET"],
         response_model=VersionResponse,
+        tags=["ops"],
+        operation_id="get_version",
     )
 
-    @app.post("/harness/drain", response_model=DrainResponse)
+    @app.post(
+        "/harness/drain",
+        response_model=DrainResponse,
+        tags=["ops"],
+        operation_id="drain",
+    )
     def drain(
         wait_s: float = Query(default=0.0, ge=0.0, le=600.0),
     ) -> DrainResponse:
@@ -1262,7 +1307,12 @@ def create_app(
         snap = metrics.snapshot()
         return DrainResponse(draining=True, inflight=snap.inflight, drained=snap.inflight == 0)
 
-    @app.get("/harness/commands", response_model=HarnessCommandListResponse)
+    @app.get(
+        "/harness/commands",
+        response_model=HarnessCommandListResponse,
+        tags=["runs"],
+        operation_id="list_commands",
+    )
     def list_commands(
         role: HarnessRole | None = Query(default=None),
     ) -> HarnessCommandListResponse:
@@ -1278,7 +1328,12 @@ def create_app(
         ]
         return HarnessCommandListResponse(items=items, total=len(items))
 
-    @app.post("/harness/runs", response_model=HarnessRunResponse)
+    @app.post(
+        "/harness/runs",
+        response_model=HarnessRunResponse,
+        tags=["runs"],
+        operation_id="run_command",
+    )
     def run_command(
         body: HarnessRunRequest,
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
@@ -1343,7 +1398,12 @@ def create_app(
         if callable(closer):
             closer()
 
-    @app.post("/harness/complete", response_model=CompleteResponse)
+    @app.post(
+        "/harness/complete",
+        response_model=CompleteResponse,
+        tags=["complete"],
+        operation_id="complete",
+    )
     def complete(body: CompleteRequest, _slot_held: None = Depends(_slot)) -> CompleteResponse:
         backend = _resolve_request_backend(body.backend, body.checkpoint_dir)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
@@ -1371,7 +1431,11 @@ def create_app(
             receipt_hashes=body.receipt_hashes or [],
         )
 
-    @app.post("/harness/complete/stream")
+    @app.post(
+        "/harness/complete/stream",
+        tags=["complete"],
+        operation_id="complete_stream",
+    )
     def complete_stream(
         body: CompleteRequest, _slot_held: None = Depends(_slot)
     ) -> StreamingResponse:
@@ -1506,7 +1570,12 @@ def create_app(
 
         return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
 
-    @app.post("/harness/complete/batch", response_model=CompleteBatchResponse)
+    @app.post(
+        "/harness/complete/batch",
+        response_model=CompleteBatchResponse,
+        tags=["complete"],
+        operation_id="complete_batch",
+    )
     def complete_batch(
         body: CompleteBatchRequest, _slot_held: None = Depends(_slot)
     ) -> CompleteBatchResponse:
@@ -1564,7 +1633,12 @@ def create_app(
             results=results,
         )
 
-    @app.post("/receipts/verify", response_model=ReceiptVerifyResponse)
+    @app.post(
+        "/receipts/verify",
+        response_model=ReceiptVerifyResponse,
+        tags=["receipts"],
+        operation_id="verify_receipt",
+    )
     def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
         result = verify_receipt_payload(body.receipt, path=Path("<api>"))
         return ReceiptVerifyResponse(

@@ -146,6 +146,22 @@ def contract_audit() -> dict[str, bool]:
             "surface_matches_golden",
         ):
             out[k] = False
+
+    # codegen-grade: every operation carries a stable unique operationId
+    # and at least one tag — generated clients get real method names.
+    from fx1.serve.api import create_app as _create_app  # noqa: PLC0415
+
+    ops = [
+        op
+        for ops in _create_app().openapi().get("paths", {}).values()
+        for op in ops.values()
+        if isinstance(op, dict)
+    ]
+    ids = [op.get("operationId") for op in ops]
+    out["operation_ids_present_unique"] = bool(ops) and all(ids) and len(set(ids)) == len(ids)
+    out["operation_tags_present"] = bool(ops) and all(
+        isinstance(op.get("tags"), list) and op["tags"] for op in ops
+    )
     return out
 
 
