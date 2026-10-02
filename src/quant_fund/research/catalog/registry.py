@@ -2278,6 +2278,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "astgcn",
         "mtgnn_lite",
         "agcrn",
+        # Wave-175 LM-components canon:
+        # RoPE, ALiBi, SwiGLU, RMSNorm,
+        # MoE router, muP init.
+        "rope_attn",
+        "alibi_attn",
+        "swiglu_ffn",
+        "rmsnorm_block",
+        "moe_router",
+        "mup_init",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
