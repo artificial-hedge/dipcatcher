@@ -2848,6 +2848,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mmap_pager",
         "semaphore_monitor",
         "syscall_layer",
+        # Wave-246 language-runtime canon.
+        "bytecode_vm",
+        "closure_conv",
+        "inline_cache",
+        "nan_tagging",
+        "tail_call_tramp",
+        "threaded_interp",
         "posting_merge",
         "wand_bmw",
     }
