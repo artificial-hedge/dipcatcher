@@ -853,6 +853,14 @@ from quant_fund.research.benches_w107 import (
     bench_level_set_family,
     bench_weno_family,
 )
+from quant_fund.research.benches_w108 import (
+    bench_expm_pade_family,
+    bench_matrix_sign_family,
+    bench_matrix_sqrt_family,
+    bench_riccati_care_family,
+    bench_sylvester_family,
+    bench_toeplitz_solve_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3046,6 +3054,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "level_set": bench_level_set_family(),
         "fast_marching": bench_fast_marching_family(),
         "godunov": bench_godunov_family(),
+        "expm_pade": bench_expm_pade_family(),
+        "matrix_sqrt": bench_matrix_sqrt_family(),
+        "sylvester": bench_sylvester_family(),
+        "riccati_care": bench_riccati_care_family(),
+        "matrix_sign": bench_matrix_sign_family(),
+        "toeplitz_solve": bench_toeplitz_solve_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
