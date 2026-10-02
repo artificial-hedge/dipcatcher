@@ -1277,6 +1277,14 @@ from quant_fund.research.benches_w160 import (
     bench_moon_fl_family,
     bench_scaffold_fl_family,
 )
+from quant_fund.research.benches_w161 import (
+    bench_cno_lite_family,
+    bench_deeponet_family,
+    bench_fno_1d_family,
+    bench_gno_lite_family,
+    bench_lowrank_op_family,
+    bench_pino_residual_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3788,6 +3796,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "moon_fl": bench_moon_fl_family(),
         "fedopt_adam": bench_fedopt_adam_family(),
         "mime_lite": bench_mime_lite_family(),
+        "fno_1d": bench_fno_1d_family(),
+        "deeponet": bench_deeponet_family(),
+        "lowrank_op": bench_lowrank_op_family(),
+        "pino_residual": bench_pino_residual_family(),
+        "gno_lite": bench_gno_lite_family(),
+        "cno_lite": bench_cno_lite_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
