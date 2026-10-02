@@ -2166,3 +2166,32 @@ detail: |
     (36+ tests).
   - Canon staged on top of w83-canon.
 note: canon PR to follow.
+
+---
+owner: devin (wave 85 canon)
+slice: six models lanes + benches_w85 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-02
+detail: |
+  - src/quant_fund/models: cma_es.py (Hansen 2006
+    mu/mu_w,lambda CMA-ES, rank-mu+rank-one updates,
+    CSA step-size control), sketches.py (Dunning-Ertl
+    2019 t-digest k1 scale, Flajolet 2007 HyperLogLog,
+    Cormode-Muthukrishnan 2005 Count-Min conservative,
+    Greenwald-Khanna 2001 quantiles), music_esprit.py
+    (Schmidt 1986 MUSIC/root-MUSIC + Roy-Kailath 1989
+    LS/TLS-ESPRIT subspace estimation), chain_ladder.py
+    (age-to-age factors, Mack 1993 MSE decomposition,
+    Bornhuetter-Ferguson 1972, England-Verrall 1999 ODP
+    bootstrap), erlang_queueing.py (Erlang 1917 B/C/A,
+    Pollaczek-Khinchine M/G/1, Allen-Cunneen/Whitt
+    G/G/c, Jackson 1957 open networks), inequality_
+    indices.py (Lorenz/Gini covariance form, Shorrocks
+    1980 GE, Theil T/L, Atkinson 1970, FGT 1984).
+  - benches_w85.py: +498..503 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "cma_es","sketches","music_esprit",
+    "chain_ladder","erlang_queueing","inequality_
+    indices" (464->470); agent.py wiring; tests: 6
+    module files + test_benches_w85 (44+ tests).
+  - Canon staged on top of w84-canon.
+note: canon PR to follow.

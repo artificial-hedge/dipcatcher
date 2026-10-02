@@ -669,6 +669,14 @@ from quant_fund.research.benches_w84 import (
     bench_recurrent_events,
     bench_sobol_sensitivity,
 )
+from quant_fund.research.benches_w85 import (
+    bench_chain_ladder,
+    bench_cma_es,
+    bench_erlang_queueing,
+    bench_inequality_indices,
+    bench_music_esprit,
+    bench_sketches,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2724,6 +2732,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "dawid_skene": bench_dawid_skene(),
         "matrix_profile": bench_matrix_profile(),
         "hierarchical_reconciliation": bench_hierarchical_reconciliation(),
+        "cma_es": bench_cma_es(),
+        "sketches": bench_sketches(),
+        "music_esprit": bench_music_esprit(),
+        "chain_ladder": bench_chain_ladder(),
+        "erlang_queueing": bench_erlang_queueing(),
+        "inequality_indices": bench_inequality_indices(),
     }
 
     hyps = _build_hypotheses(families, rankers)

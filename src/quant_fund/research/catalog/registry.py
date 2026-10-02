@@ -1252,6 +1252,29 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dawid_skene",
         "matrix_profile",
         "hierarchical_reconciliation",
+        # wave 85 — Hansen (2006)
+        # CMA-ES + CSA, Dunning-Ertl
+        # (2019) t-digest + Flajolet
+        # (2007) HLL + Cormode-
+        # Muthukrishnan (2005) CMS +
+        # GK (2001) sketches, Schmidt
+        # (1986) MUSIC + Roy-Kailath
+        # (1989) ESPRIT, Mack (1993)
+        # chain-ladder + BF (1972) +
+        # ODP bootstrap (1999), Erlang
+        # (1917) B/C/A + PK + Whitt
+        # G/G/c + Jackson (1957),
+        # and Atkinson (1970) /
+        # Shorrocks (1980) / FGT
+        # (1984) inequality indices.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "cma_es",
+        "sketches",
+        "music_esprit",
+        "chain_ladder",
+        "erlang_queueing",
+        "inequality_indices",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
