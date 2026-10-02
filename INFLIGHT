@@ -2637,3 +2637,4 @@ wave 236 (2026-10-02): graphics canon — raycaster, bresenham_line, scanline_fi
 wave 237 (2026-10-02): parser canon — recursive_descent, pratt_parser, earley_parser, slr_parser, peg_packrat, ll1_table; 1395→1401 families.
 wave 238 (2026-10-02): networking canon — tcp_aimd, sliding_window, token_bucket, rtt_estimator, nat_table, http2_flow; 1401→1407 families.
 wave 239 (2026-10-02): PL canon — hm_inference, tree_walk_interp, cps_transform, macro_expand, gc_marksweep, simple_types; 1407→1413 families.
+wave 240 (2026-10-02): applied-crypto canon — rsa_toy, winternitz_ots, merkle_ots, blind_sig, zkp_schnorr, commit_reveal; 1413→1419 families.
