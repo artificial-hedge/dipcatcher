@@ -1855,6 +1855,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "cnn_alpha",
         "mask_autoencoder",
         "graph_temporal",
+        # Wave-129 exec-summary DL-4:
+        # iTransformer, TCN, FT-
+        # Transformer, N-BEATS,
+        # Mamba, CrossFormer.
+        "itransformer",
+        "tcn_forecaster",
+        "ft_transformer",
+        "nbeats_deep",
+        "mambats",
+        "crossformer",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
