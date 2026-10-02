@@ -1,0 +1,1577 @@
+"""Surface-parity audit — the SDK, the HTTP API, and HarnessClient are one contract.
+
+``fx1.sdk.Fx1Harness`` (in-process), ``fx1.serve.api`` (the wire), and
+``fx1.serve.client.HarnessClient`` (the remote caller) expose the same
+harness over three transports. This audit drives the SAME injected backend
+through all three and asserts byte-identical results — a drift between
+what an in-process caller, the server, and a remote client get is a
+product defect, not a transport detail.
+
+- *Complete parity* — ``Fx1Harness.complete`` output equals
+  ``POST /harness/complete``: identical content (evidence footer included),
+  identical ``model``/``backend``/``receipt_hashes`` envelope fields.
+- *Batch parity* — ``complete_many`` results equal
+  ``POST /harness/complete/batch`` items in submission order, one shared
+  backend per batch on both surfaces (close counts prove it).
+- *Stream parity* — SSE ``token`` frames concatenate to exactly the
+  ``complete`` content; ``stream_complete`` returns the identical chunk
+  list; the ``final`` envelope matches the completion envelope.
+- *Error parity* — the same fault surfaces with the same class on both:
+  gate refusal (SDK raises ``Fx1HonestyError`` / API 502 JSON with the
+  refusal text), non-streaming backend (NotImplementedError / 501),
+  checkpoint_dir on a non-local backend (ValueError / 422), unknown
+  backend (KeyError / 422 literal rejection), malformed receipts.
+- *Verifier parity* — ``verify_receipt`` and ``POST /receipts/verify``
+  agree on valid/errors/warnings/schema for a sealed receipt, a tampered
+  digest, and a non-receipt dict.
+- *Registry/health parity* — command list and backend presence booleans
+  are identical over both surfaces.
+- *Remote-client parity* — ``HarnessClient`` (urllib transport injectable)
+  returns the SDK's own result types; wire status codes map back to the
+  SDK's exception classes (KeyError/ValueError/BackendNotConfiguredError/
+  NotImplementedError/Fx1HonestyError), auth faults are
+  ``HarnessAuthError``, transport faults ``HarnessTransportError``.
+- *In-flight cap* — ``max_inflight`` (env ``FX1_API_MAX_INFLIGHT``, default
+  16) bounds concurrent heavy requests: saturation is an honest 503 with
+  ``Retry-After``, cheap routes stay responsive, the slot releases
+  cleanly, ``max_inflight<1`` fails app construction.
+
+Sealed ``parity_audit.v1`` (fx1-side receipt).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import urllib.parse
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING, Any
+
+from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+from quant_fund.utils.reproducibility import git_revision
+
+if TYPE_CHECKING:
+    from fastapi.testclient import TestClient
+
+__all__ = ["parity_audit", "parity_audit_bench"]
+
+_API_KEY_ENV = "FX1_API_KEY"
+_BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+_LOCAL_ENVS = (
+    "FX1_LOCAL_SERVE_URL",
+    "FX1_LOCAL_SERVE_CMD",
+    "FX1_LOCAL_MODEL",
+    "FX1_LOCAL_API_KEY",
+    "FX1_CHECKPOINT_DIR",
+)
+
+
+class _ParityBackend:
+    """Deterministic streaming backend — one instance per resolution."""
+
+    _closed_total = 0
+
+    def __init__(self) -> None:
+        self._model = "parity-v0"
+
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        return f"echo:{messages[-1]['content']}"
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        text = self.complete(messages)
+        yield text[:3]
+        yield text[3:]
+
+    def close(self) -> None:
+        _ParityBackend._closed_total += 1
+
+
+class _DirtyBackend(_ParityBackend):
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        return "total Sharpe 4.2 on NAV"  # forbidden headline
+
+    def stream(self, messages: list[dict[str, str]]) -> Iterator[str]:
+        yield "total Sharpe 4.2 on NAV"
+
+
+class _NonStreamingBackend:
+    def __init__(self) -> None:
+        self._model = "ns-v0"
+
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        return "ans"
+
+    def close(self) -> None:
+        return None
+
+
+class _FlakyBackend(_ParityBackend):
+    """Refuses (gate-tripping output) only on prompts containing 'bad'."""
+
+    def complete(self, messages: list[dict[str, str]]) -> str:
+        if "bad" in messages[-1]["content"]:
+            return "total Sharpe 4.2 on NAV"
+        return super().complete(messages)
+
+
+def _raises(fn: Any) -> tuple[str, str]:
+    """(exception class name, str(exc)) — ("", "") when no raise."""
+    try:
+        fn()
+    except Exception as exc:  # noqa: BLE001 — probe captures the class
+        return type(exc).__name__, str(exc)
+    return "", ""
+
+
+def _surfaces(
+    backend: Any,
+) -> tuple[Any, TestClient]:
+    """(Fx1Harness, TestClient) wired to one resolver returning `backend`'s class."""
+    from fastapi.testclient import TestClient as _TC
+
+    import fx1.serve.api as api_mod
+    from fx1.harness import Harness
+    from fx1.sdk import Fx1Harness
+
+    def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
+        return 0, f"ran:{' '.join(argv)}", ""
+
+    def resolver(name: str, **kw: Any) -> Any:
+        if name not in {"hosted_k3", "local_fx1", "byok"}:
+            raise KeyError(name)
+        return backend()
+
+    sdk = Fx1Harness(harness=Harness(runner=fake_runner), backend_resolver=resolver)
+    app = api_mod.create_app(
+        harness=Harness(runner=fake_runner),
+        backend_resolver=resolver,
+        # no receipt store -> receipt_hashes citations stay advisory, so these
+        # probes can use synthetic hashes deterministically from any cwd.
+        receipts_dir="/nonexistent-parity-store",
+    )
+    return sdk, _TC(app)
+
+
+def _tc_transport(client: TestClient) -> Any:
+    """Adapt HarnessClient's transport contract to a TestClient."""
+
+    def send(
+        method: str,
+        url: str,
+        payload: dict[str, Any] | None,
+        headers: dict[str, str],
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        p = urllib.parse.urlparse(url)
+        path = p.path + (f"?{p.query}" if p.query else "")
+        resp = (
+            client.get(path, headers=headers)
+            if method == "GET"
+            else client.post(path, json=payload, headers=headers)
+        )
+        return resp.status_code, dict(resp.headers), resp.content
+
+    return send
+
+
+def parity_audit() -> dict[str, bool]:
+    out: dict[str, bool] = {}
+    saved = {
+        k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
+    }
+    try:
+        os.environ.pop(_API_KEY_ENV, None)
+
+        sdk, client = _surfaces(_ParityBackend)
+        msg = [{"role": "user", "content": "ping"}]
+        receipt = "a" * 64
+        sdk_out = sdk.complete(msg, backend="byok", receipt_hashes=[receipt])
+        api_out = client.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "receipt_hashes": [receipt],
+            },
+        )
+        out["complete_status_200"] = api_out.status_code == 200
+        api_json = api_out.json()
+        out["complete_content_identical"] = api_json["content"] == sdk_out.content
+        out["complete_envelope_identical"] = (
+            api_json["backend"] == sdk_out.backend
+            and api_json["model"] == sdk_out.model
+            and tuple(api_json["receipt_hashes"]) == sdk_out.receipt_hashes
+        )
+        out["complete_footer_identical"] = (
+            sdk_out.content.endswith(
+                f"Evidence: `{receipt[:16]}…` — verify with `dipcatcher verify-research`."
+            )
+            and api_json["content"] == sdk_out.content
+        )
+
+        # --- batch parity -----------------------------------------------------
+        _ParityBackend._closed_total = 0
+        batch = [
+            [{"role": "user", "content": "one"}],
+            [{"role": "user", "content": "two"}],
+        ]
+        sdk_many = sdk.complete_many(batch, backend="byok", receipt_hashes=[receipt], max_workers=2)
+        api_many = client.post(
+            "/harness/complete/batch",
+            json={
+                "backend": "byok",
+                "batch": batch,
+                "receipt_hashes": [receipt],
+                "max_workers": 2,
+            },
+        )
+        out["batch_status_200"] = api_many.status_code == 200
+        api_items = api_many.json()
+        out["batch_content_identical"] = [r.content for r in sdk_many] == [
+            i["content"] for i in api_items["results"]
+        ] and all(i["ok"] for i in api_items["results"])
+        out["batch_envelope_identical"] = (
+            api_items["backend"] == sdk_many[0].backend
+            and api_items["model"] == sdk_many[0].model
+            and tuple(api_items["receipt_hashes"]) == sdk_many[0].receipt_hashes
+        )
+        out["batch_one_backend_each_side"] = _ParityBackend._closed_total == 2
+
+        # --- stream parity ----------------------------------------------------
+        sdk_chunks = sdk.stream_complete(msg, backend="byok", receipt_hashes=[receipt])
+        api_stream = client.post(
+            "/harness/complete/stream",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "receipt_hashes": [receipt],
+            },
+        )
+        out["stream_status_200_sse"] = api_stream.status_code == 200 and api_stream.headers[
+            "content-type"
+        ].startswith("text/event-stream")
+        frames = [
+            ln[len("data: ") :] for ln in api_stream.text.splitlines() if ln.startswith("data: ")
+        ]
+        payloads = [json.loads(f) for f in frames if f.strip() != "[DONE]"]
+        token_chunks = [p["content"] for p in payloads if p["type"] == "token"]
+        final = [p for p in payloads if p["type"] == "final"]
+        out["stream_chunks_identical"] = token_chunks == sdk_chunks
+        out["stream_joined_eq_complete"] = (
+            "".join(token_chunks) == sdk_out.content and "".join(sdk_chunks) == sdk_out.content
+        )
+        out["stream_done_terminal"] = frames[-1].strip() == "[DONE]"
+        out["stream_final_envelope"] = (
+            len(final) == 1
+            and final[0]["model"] == sdk_out.model
+            and final[0]["receipt_hashes"] == [receipt]
+        )
+
+        # --- error parity -----------------------------------------------------
+        dirty_sdk, dirty_api = _surfaces(_DirtyBackend)
+        sdk_err_cls, sdk_err_txt = _raises(lambda: dirty_sdk.complete(msg, backend="byok"))
+        api_err = dirty_api.post("/harness/complete", json={"backend": "byok", "messages": msg})
+        out["gate_sdk_raises_api_502"] = (
+            sdk_err_cls == "Fx1HonestyError"
+            and api_err.status_code == 502
+            and "honesty gate" in api_err.json()["detail"]
+        )
+        # the API surfaces the SDK's exception text verbatim after the prefix
+        out["gate_error_text_shared"] = (
+            api_err.status_code == 502
+            and api_err.json()["detail"] == f"honesty gate refused model output: {sdk_err_txt}"
+        )
+        sdk_serr, _ = _raises(lambda: dirty_sdk.stream_complete(msg, backend="byok"))
+        api_serr = dirty_api.post(
+            "/harness/complete/stream", json={"backend": "byok", "messages": msg}
+        )
+        out["stream_gate_parity"] = (
+            sdk_serr == "Fx1HonestyError"
+            and api_serr.status_code == 502
+            and "total Sharpe" not in api_serr.text
+        )
+
+        ns_sdk, ns_api = _surfaces(_NonStreamingBackend)
+        out["stream_unsupported_parity"] = (
+            _raises(lambda: ns_sdk.stream_complete(msg, backend="byok"))[0] == "NotImplementedError"
+            and ns_api.post(
+                "/harness/complete/stream",
+                json={"backend": "byok", "messages": msg},
+            ).status_code
+            == 501
+        )
+        out["checkpoint_dir_non_local_parity"] = (
+            _raises(lambda: sdk.complete(msg, backend="byok", checkpoint_dir="/x"))[0]
+            == "ValueError"
+            and client.post(
+                "/harness/complete",
+                json={
+                    "backend": "byok",
+                    "messages": msg,
+                    "checkpoint_dir": "/x",
+                },
+            ).status_code
+            == 422
+        )
+        # Resolver KeyError is unreachable over the wire: CompleteRequest's
+        # backend Literal rejects unknown names with 422 before resolution;
+        # the SDK raises KeyError on the same name. Both fail closed.
+        out["unknown_backend_fail_closed"] = (
+            _raises(lambda: sdk.complete(msg, backend="bogus"))[0] == "KeyError"
+            and client.post(
+                "/harness/complete",
+                json={"backend": "bogus", "messages": msg},
+            ).status_code
+            == 422
+        )
+        out["empty_batch_contract"] = (
+            sdk.complete_many([], backend="byok") == []
+            and client.post(
+                "/harness/complete/batch",
+                json={"backend": "byok", "batch": []},
+            ).status_code
+            == 422
+        )
+
+        # --- verifier parity ----------------------------------------------------
+        from fx1.serve.byok_audit import byok_audit_bench
+
+        good = byok_audit_bench()
+        sdk_v = sdk.verify_receipt(good)
+        api_v = client.post("/receipts/verify", json={"receipt": good}).json()
+        out["verify_valid_parity"] = (
+            sdk_v.valid is True
+            and api_v["valid"] is True
+            and api_v["schema_tag"] == sdk_v.schema_tag
+            and api_v["kind"] == sdk_v.kind
+            and api_v["verdict"] == sdk_v.verdict
+            and tuple(api_v["errors"]) == sdk_v.errors
+            and tuple(api_v["warnings"]) == sdk_v.warnings
+        )
+        tampered = dict(good)
+        tampered["receipt_sha256"] = "0" * 64
+        sdk_tv = sdk.verify_receipt(tampered)
+        api_tv = client.post("/receipts/verify", json={"receipt": tampered}).json()
+        out["verify_tamper_parity"] = (
+            sdk_tv.valid is False
+            and api_tv["valid"] is False
+            and tuple(api_tv["errors"]) == sdk_tv.errors
+        )
+        sdk_mv = sdk.verify_receipt({"not": "a receipt"})
+        api_mv = client.post("/receipts/verify", json={"receipt": {"not": "a receipt"}}).json()
+        out["verify_malformed_parity"] = (
+            sdk_mv.valid is False
+            and api_mv["valid"] is False
+            and tuple(api_mv["errors"]) == sdk_mv.errors
+        )
+
+        # --- sealed-receipt store parity: SDK index vs HTTP fetch ------------
+        # One content-addressed store, three transports: the SDK reads it
+        # in-process, the API serves it, and HarnessClient fetches over the wire.
+        import tempfile as _tfd  # noqa: PLC0415
+        from pathlib import Path as _Ptd  # noqa: PLC0415
+
+        with _tfd.TemporaryDirectory() as _td:
+            _rdir = _Ptd(_td)
+            _sha = good["receipt_sha256"]
+            (_rdir / "sealed.json").write_text(json.dumps(good))
+            from fastapi.testclient import TestClient as _TCr  # noqa: PLC0415
+
+            import fx1.serve.api as _api_r  # noqa: PLC0415
+            from fx1.sdk import Fx1Harness as _FHr  # noqa: PLC0415
+            from fx1.serve.client import HarnessClient as _HCr  # noqa: PLC0415
+
+            _sdk_r = _FHr(receipts_dir=_rdir)
+            _api_r = _TCr(_api_r.create_app(receipts_dir=_rdir))
+            _rem_r = _HCr("http://harness.test", transport=_tc_transport(_api_r))
+
+            _idx = _api_r.get("/receipts").json()
+            _expect = ((_sha, "sealed.json"),)
+            out["receipts_store_index_parity"] = (
+                _idx["count"] == 1
+                and _idx["items"][0]["sha256"] == _sha
+                and tuple((r.sha256, r.name) for r in _sdk_r.receipts()) == _expect
+                and tuple((r.sha256, r.name) for r in _rem_r.receipts()) == _expect
+            )
+            _sdoc = _sdk_r.receipt(_sha)
+            _rdoc = _rem_r.receipt(_sha)
+            out["receipts_store_fetch_parity"] = (
+                _sdoc.document == good
+                and _sdoc.valid is True
+                and _rdoc.document == good
+                and _rdoc.valid is True
+                and _api_r.get(f"/receipts/{_sha}").json() == good
+            )
+            _miss = "f" * 64
+            out["receipts_store_error_parity"] = (
+                _raises(lambda: _sdk_r.receipt(_miss))[0] == "KeyError"
+                and _raises(lambda: _rem_r.receipt(_miss))[0] == "KeyError"
+                and _raises(lambda: _sdk_r.receipt("zz"))[0] == "ValueError"
+                and _raises(lambda: _rem_r.receipt("zz"))[0] == "ValueError"
+            )
+            out["receipts_store_conditional_304"] = (
+                _api_r.get(f"/receipts/{_sha}", headers={"if-none-match": f'"{_sha}"'}).status_code
+                == 304
+                and _api_r.get(f"/receipts/{_sha}", headers={"if-none-match": "*"}).status_code
+                == 304
+                and _api_r.get(
+                    f"/receipts/{_sha}",
+                    headers={"if-none-match": f'"{"b" * 64}"'},
+                ).status_code
+                == 200
+            )
+        out["receipts_store_absent_sdk"] = (
+            _raises(lambda: _FHr(receipts_dir="/nonexistent-zzz").receipts())[0]
+            == "FileNotFoundError"
+        )
+
+        # --- registry / run / health parity -----------------------------------
+        api_cmds = client.get("/harness/commands").json()
+        out["commands_parity"] = sorted(sdk.commands()) == sorted(
+            c["name"] for c in api_cmds["items"]
+        ) and api_cmds["total"] == len(api_cmds["items"])
+        name = sorted(sdk.commands())[0]
+        sdk_run = sdk.run(name)
+        api_run = client.post("/harness/runs", json={"command": name}).json()
+        out["run_parity"] = (
+            api_run["exit_code"] == sdk_run.exit_code
+            and api_run["stdout"] == sdk_run.stdout
+            and api_run["ok"] == sdk_run.ok
+        )
+        api_health = client.get("/health").json()
+        sdk_health = sdk.health()
+        out["health_parity"] = (
+            api_health["backends"] == sdk_health.backends
+            and api_health["version"] == sdk_health.version
+            and api_health["registered_commands"] == sdk_health.registered_commands
+        )
+
+        # --- per-request BYOK parity --------------------------------------------------
+        # SDK ``byok=`` and wire ``byok`` must hand the backend factory the
+        # identical kwargs — and a wrong-backend override must fail with the
+        # same class on both surfaces.
+        cap_kwargs: list[dict[str, Any]] = []
+
+        def _cap_res(name: str, **kw: Any) -> Any:
+            cap_kwargs.append(kw)
+            return _ParityBackend()
+
+        from fastapi.testclient import TestClient as _TCb  # noqa: PLC0415
+
+        import fx1.serve.api as api_mod2  # noqa: PLC0415
+        from fx1.harness import Harness as _Hb  # noqa: PLC0415
+        from fx1.sdk import Fx1Harness as _FHb  # noqa: PLC0415
+
+        def _fake_run(argv: list[str], t: int) -> tuple[int, str, str]:
+            return 0, "ran", ""
+
+        sdk_byok = _FHb(harness=_Hb(runner=_fake_run), backend_resolver=_cap_res)
+        app_byok = _TCb(
+            api_mod2.create_app(harness=_Hb(runner=_fake_run), backend_resolver=_cap_res)
+        )
+        ovr = {
+            "base_url": "https://llm.example.com/v1",
+            "api_key": "sk-x",
+            "model": "m1",
+        }
+        sdk_byok.complete(msg, backend="byok", byok=ovr)
+        sdk_wire_kwargs = dict(cap_kwargs[-1])
+        cap_kwargs.clear()
+        r_byok = app_byok.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "byok": ovr,
+            },
+        )
+        out["byok_override_kwargs_identical"] = (
+            r_byok.status_code == 200 and cap_kwargs[-1] == sdk_wire_kwargs
+        )
+        # Per-request backend deadline: SDK ``timeout_s=`` and the wire
+        # ``timeout_s`` must reach the resolver as the same kwarg.
+        sdk_byok.complete(msg, backend="byok", byok=ovr, timeout_s=2.5)
+        sdk_to_kwargs = dict(cap_kwargs[-1])
+        cap_kwargs.clear()
+        r_to = app_byok.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": msg,
+                "byok": ovr,
+                "timeout_s": 2.5,
+            },
+        )
+        out["timeout_s_kwargs_identical"] = (
+            r_to.status_code == 200 and cap_kwargs[-1] == sdk_to_kwargs
+        )
+        sdk_err, _ = _raises(lambda: sdk_byok.complete(msg, backend="hosted_k3", byok=ovr))
+        api_code = app_byok.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": msg,
+                "byok": ovr,
+            },
+        ).status_code
+        out["byok_override_error_parity"] = sdk_err == "ValueError" and api_code == 422
+        out["byok_override_bad_url_parity"] = (
+            _raises(
+                lambda: sdk_byok.complete(msg, backend="byok", byok={**ovr, "base_url": "ftp://x"})
+            )[0]
+            == "ValueError"
+        )
+        # the typed ``byok`` param is exactly the ``backend_kwargs`` merge
+        sdk_byok.complete(msg, backend="byok", backend_kwargs=ovr)
+        out["byok_backend_kwargs_equivalent"] = cap_kwargs[-1] == sdk_wire_kwargs
+
+        # --- HarnessClient: the remote-caller surface --------------------------------
+        from fx1.serve.client import (
+            HarnessAuthError,
+            HarnessClient,
+            HarnessCompatError,
+            HarnessJobError,
+            HarnessTransportError,
+        )
+
+        remote = HarnessClient("http://harness.test", transport=_tc_transport(client))
+        rem_out = remote.complete(msg, backend="byok", receipt_hashes=[receipt])
+        out["client_complete_identical"] = rem_out == sdk_out
+        out["client_stream_identical"] = (
+            remote.stream_complete(msg, backend="byok", receipt_hashes=[receipt]) == sdk_chunks
+        )
+        out["client_batch_identical"] = [
+            r.content
+            for r in remote.complete_many(
+                batch, backend="byok", receipt_hashes=[receipt], max_workers=2
+            )
+        ] == [r.content for r in sdk_many]
+        rem_v = remote.verify_receipt(good)
+        out["client_verify_parity"] = (
+            rem_v.valid is True
+            and rem_v.schema_tag == sdk_v.schema_tag
+            and rem_v.errors == sdk_v.errors
+        )
+        rem_tv = remote.verify_receipt(tampered)
+        out["client_verify_tamper_parity"] = (
+            rem_tv.valid is False and rem_tv.errors == sdk_tv.errors
+        )
+        # wire-only flag: a keyed retry replays instead of re-billing
+        remote.complete(msg, backend="byok", receipt_hashes=[receipt], idempotency_key="pk1")
+        replayed = remote.complete(
+            msg, backend="byok", receipt_hashes=[receipt], idempotency_key="pk1"
+        )
+        out["client_complete_idem_replay"] = replayed.replayed is True
+        rem_batch = remote.verify_receipts([good, tampered])
+        sdk_batch = sdk.verify_receipts([good, tampered])
+        out["client_verify_batch_parity"] = (
+            len(rem_batch) == 2
+            and rem_batch[0].valid is True
+            and rem_batch[1].valid is False
+            and rem_batch[0].errors == sdk_batch[0].errors
+            and rem_batch[1].errors == sdk_batch[1].errors
+        )
+        out["client_commands_parity"] = sorted(remote.commands()) == sorted(sdk.commands())
+        rem_run = remote.run(name)
+        out["client_run_parity"] = (
+            rem_run.exit_code == sdk_run.exit_code
+            and rem_run.stdout == sdk_run.stdout
+            and rem_run.ok == sdk_run.ok
+        )
+        rem_health = remote.health()
+        out["client_health_parity"] = (
+            rem_health.backends == sdk_health.backends and rem_health.version == sdk_health.version
+        )
+        filtered = remote.commands(role="evaluation")
+        out["client_role_filter"] = 0 < len(filtered) <= len(remote.commands()) and set(
+            filtered
+        ) <= set(remote.commands())
+
+        # usage accounting: the same endpoint counts surface identically on
+        # the in-process SDK, the wire JSON, and the remote client.
+        class _UsageBackend(_ParityBackend):
+            def __init__(self) -> None:
+                super().__init__()
+                self.last_usage: dict[str, int] | None = None
+                self.total_usage: dict[str, int] = {}
+
+            def complete(self, messages: list[dict[str, str]]) -> str:
+                u = {"prompt_tokens": 2, "total_tokens": 5}
+                self.last_usage = u
+                for k, v in u.items():
+                    self.total_usage[k] = self.total_usage.get(k, 0) + v
+                return super().complete(messages)
+
+        sdk_u, uclient = _surfaces(_UsageBackend)
+        sdk_usage = sdk_u.complete(msg, backend="byok").usage
+        wire_usage = uclient.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": msg},
+        ).json()["usage"]
+        remote_u = HarnessClient("http://harness.test", transport=_tc_transport(uclient))
+        out["usage_identical"] = (
+            sdk_usage == {"prompt_tokens": 2, "total_tokens": 5}
+            and wire_usage == sdk_usage
+            and remote_u.complete(msg, backend="byok").usage == sdk_usage
+        )
+
+        # deep-health probe: in-process verdict mirrors the wire verdict —
+        # latency differs per call so only the semantic fields are pinned.
+        sdk_pr = sdk_u.probe_backend("byok")
+        wire_pr = remote_u.probe_backend("byok")
+        out["probe_parity"] = (
+            sdk_pr.ok is True
+            and wire_pr.ok is True
+            and wire_pr.backend == sdk_pr.backend == "byok"
+            and wire_pr.model == sdk_pr.model == "parity-v0"
+            and wire_pr.error is None
+            and sdk_pr.error is None
+        )
+        # error mapping: the wire's codes map back to the SDK's classes
+        dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
+        out["client_gate_maps_fx1honesty"] = (
+            _raises(lambda: dirty_remote.complete(msg, backend="byok"))[0] == "Fx1HonestyError"
+        )
+        out["client_stream_gate_maps"] = (
+            _raises(lambda: dirty_remote.stream_complete(msg, backend="byok"))[0]
+            == "Fx1HonestyError"
+        )
+        ns_remote = HarnessClient("http://harness.test", transport=_tc_transport(ns_api))
+        out["client_501_maps"] = (
+            _raises(lambda: ns_remote.stream_complete(msg, backend="byok"))[0]
+            == "NotImplementedError"
+        )
+        out["client_404_maps_keyerror"] = (
+            _raises(lambda: remote.run("no-such-command"))[0] == "KeyError"
+        )
+        out["client_422_maps_valueerror"] = (
+            _raises(lambda: remote.complete(msg, backend="bogus"))[0] == "ValueError"
+        )
+        # per-item batch failure: lowest-index gate refusal raises on the client
+        flaky_sdk, flaky_api = _surfaces(_FlakyBackend)
+        flaky_remote = HarnessClient("http://harness.test", transport=_tc_transport(flaky_api))
+        mixed = [
+            [{"role": "user", "content": "fine"}],
+            [{"role": "user", "content": "bad"}],
+        ]
+        out["client_batch_gate_maps"] = (
+            _raises(lambda: flaky_remote.complete_many(mixed, backend="byok"))[0]
+            == "Fx1HonestyError"
+        )
+        out["sdk_batch_gate_raises"] = (
+            _raises(lambda: flaky_sdk.complete_many(mixed, backend="byok"))[0] == "Fx1HonestyError"
+        )
+
+        # transport-level faults
+        def _dead_transport(*a: Any) -> Any:
+            raise HarnessTransportError("connection refused")
+
+        out["client_transport_unreachable"] = (
+            _raises(
+                lambda: HarnessClient("http://harness.test", transport=_dead_transport).health()
+            )[0]
+            == "HarnessTransportError"
+        )
+        out["client_auth_error_maps"] = (
+            _raises(
+                lambda: HarnessClient(
+                    "http://harness.test",
+                    transport=lambda *a: (401, {}, b'{"detail":"denied"}'),
+                ).health()
+            )[0]
+            == HarnessAuthError.__name__
+        )
+        out["client_base_url_fail_closed"] = all(
+            _raises(lambda u=u: HarnessClient(u))[0] == "ValueError"
+            for u in ("not-a-url", "ftp://x", "http://")
+        )
+        out["client_timeout_fail_closed"] = (
+            _raises(lambda: HarnessClient("http://h.test", timeout_s=0))[0] == "ValueError"
+        )
+        captured: list[dict[str, str]] = []
+
+        def _capture(method: str, url: str, payload: Any, headers: dict[str, str], t: float) -> Any:
+            captured.append(headers)
+            return (200, {}, b'{"status":"ok","version":"v","registered_commands":0,"backends":{}}')
+
+        HarnessClient("http://harness.test", api_key="probe-key", transport=_capture).health()
+        out["client_api_key_header"] = (
+            bool(captured) and captured[0].get("X-API-Key") == "probe-key"
+        )
+        # stream without terminal [DONE] is a transport fault, never data
+        out["client_stream_no_done_fails"] = (
+            _raises(
+                lambda: HarnessClient(
+                    "http://harness.test",
+                    transport=lambda *a: (
+                        200,
+                        {},
+                        b'data: {"type":"token","content":"x"}\n\n',
+                    ),
+                ).stream_complete(msg, backend="byok")
+            )[0]
+            == "HarnessTransportError"
+        )
+
+        # --- in-flight cap: saturation is an honest 503, never a queue hang -----
+        import fx1.serve.api as api_mod
+        from fx1.harness import Harness
+
+        def fake_runner2(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
+            return 0, "ran", ""
+
+        def resolver2(name: str, **kw: Any) -> Any:
+            return _ParityBackend()
+
+        capped_app = api_mod.create_app(
+            harness=Harness(runner=fake_runner2),
+            backend_resolver=resolver2,
+            max_inflight=2,
+        )
+        from fastapi.testclient import TestClient as _TC
+
+        capped = _TC(capped_app)
+        slots = capped_app.state.inflight_slots
+        out["cap_normal_request_passes"] = (
+            capped.post(
+                "/harness/complete",
+                json={"backend": "byok", "messages": msg},
+            ).status_code
+            == 200
+        )
+        held1 = slots.acquire(blocking=False)
+        held2 = slots.acquire(blocking=False)
+        saturated = capped.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": msg},
+        )
+        out["cap_saturated_503"] = (
+            held1
+            and held2
+            and saturated.status_code == 503
+            and "max_inflight" in saturated.json()["detail"]
+        )
+        out["cap_client_maps_503"] = (
+            _raises(
+                lambda: HarnessClient(
+                    "http://harness.test", transport=_tc_transport(capped)
+                ).complete(msg, backend="byok")
+            )[0]
+            == "BackendNotConfiguredError"
+        )
+        out["cap_runs_also_capped"] = (
+            capped.post("/harness/runs", json={"command": name}).status_code == 503
+        )
+        out["cap_cheap_routes_respond"] = (
+            capped.get("/health").status_code == 200
+            and capped.get("/harness/commands").status_code == 200
+        )
+        if held1:
+            slots.release()
+        if held2:
+            slots.release()
+        out["cap_released_recovers"] = (
+            capped.post(
+                "/harness/complete",
+                json={"backend": "byok", "messages": msg},
+            ).status_code
+            == 200
+        )
+        out["cap_invalid_config_fails"] = (
+            _raises(
+                lambda: api_mod.create_app(harness=Harness(runner=fake_runner2), max_inflight=0)
+            )[0]
+            == "ValueError"
+        )
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    # --- resilience: bounded retries + Retry-After honoring -----------------
+    from fx1.serve.client import HarnessTransportError  # noqa: PLC0415
+
+    def _scripted(
+        seq: list[Any],
+    ) -> tuple[Any, dict[str, int]]:
+        calls = {"n": 0}
+
+        def transport(
+            method: str,
+            url: str,
+            payload: Any,
+            headers: Any,
+            timeout_s: float,
+        ) -> tuple[int, Mapping[str, str], bytes]:
+            item = seq[min(calls["n"], len(seq) - 1)]
+            calls["n"] += 1
+            if item == "RAISE":
+                raise HarnessTransportError("boom")
+            status, hdrs, body = item
+            return status, hdrs, body
+
+        return transport, calls
+
+    import json as _json_mod  # noqa: PLC0415
+
+    def _health_body() -> bytes:
+        return _json_mod.dumps(
+            {"status": "ok", "version": "v", "registered_commands": 1, "backends": {}}
+        ).encode()
+
+    sleeps: list[float] = []
+    tr, calls = _scripted(["RAISE", "RAISE", (200, {}, _health_body())])
+    resilient = HarnessClient(
+        "http://h.test",
+        transport=tr,
+        max_retries=2,
+        sleep=sleeps.append,
+    )
+    out["retry_get_recovers"] = (
+        resilient.health().status == "ok" and calls["n"] == 3 and len(sleeps) == 2
+    )
+
+    sleeps.clear()
+    tr2, calls2 = _scripted(
+        [
+            (503, {"Retry-After": "0.25"}, _json_mod.dumps({"detail": "cap"}).encode()),
+            (200, {}, _health_body()),
+        ]
+    )
+    resilient2 = HarnessClient("http://h.test", transport=tr2, max_retries=2, sleep=sleeps.append)
+    out["retry_after_honored"] = (
+        resilient2.health().status == "ok" and calls2["n"] == 2 and sleeps[0] == 0.25
+    )
+
+    tr429, calls429 = _scripted(
+        [
+            (
+                429,
+                {"Retry-After": "0.2"},
+                _json_mod.dumps(
+                    {"detail": "rate limit exceeded", "code": "too_many_requests"}
+                ).encode(),
+            ),
+            (200, {}, _health_body()),
+        ]
+    )
+    sleeps429: list[float] = []
+    resilient429 = HarnessClient(
+        "http://h.test", transport=tr429, max_retries=2, sleep=sleeps429.append
+    )
+    out["retry_429_rate_limited"] = (
+        resilient429.health().status == "ok" and calls429["n"] == 2 and sleeps429 == [0.2]
+    )
+
+    tr3, calls3 = _scripted(
+        [(503, {"Retry-After": "999"}, _json_mod.dumps({"detail": "cap"}).encode())]
+    )
+    resilient3 = HarnessClient("http://h.test", transport=tr3, max_retries=3, sleep=lambda s: None)
+    out["retry_over_budget_fails_fast"] = (
+        _raises(lambda: resilient3.health())[0] == "HarnessTransportError" and calls3["n"] == 1
+    )
+
+    tr4, calls4 = _scripted([(401, {}, _json_mod.dumps({"detail": "bad key"}).encode())])
+    resilient4 = HarnessClient("http://h.test", transport=tr4, max_retries=3, sleep=lambda s: None)
+    out["no_retry_on_auth"] = (
+        _raises(lambda: resilient4.health())[0] == "HarnessAuthError" and calls4["n"] == 1
+    )
+
+    tr5, calls5 = _scripted(["RAISE"])
+    resilient5 = HarnessClient("http://h.test", transport=tr5, max_retries=3, sleep=lambda s: None)
+    out["writes_never_retry_by_default"] = (
+        _raises(lambda: resilient5.complete([{"role": "user", "content": "hi"}]))[0]
+        == "HarnessTransportError"
+        and calls5["n"] == 1
+    )
+
+    verdict_body = _json_mod.dumps(
+        {
+            "valid": True,
+            "path": "<remote>",
+            "schema_tag": "x",
+            "kind": "k",
+            "verdict": "ok",
+            "digest_convention": None,
+            "errors": [],
+            "warnings": [],
+        }
+    ).encode()
+    tr6, calls6 = _scripted(["RAISE", (200, {}, verdict_body)])
+    resilient6 = HarnessClient("http://h.test", transport=tr6, max_retries=1, sleep=lambda s: None)
+    out["verify_is_idempotent_retried"] = (
+        resilient6.verify_receipt({"x": 1}).valid is True and calls6["n"] == 2
+    )
+
+    complete_body = _json_mod.dumps(
+        {"backend": "byok", "model": "m", "content": "c", "receipt_hashes": []}
+    ).encode()
+    tr6b, calls6b = _scripted(["RAISE", (200, {}, complete_body)])
+    resilient6b = HarnessClient(
+        "http://h.test",
+        transport=tr6b,
+        max_retries=1,
+        retry_writes=True,
+        sleep=lambda s: None,
+    )
+    out["writes_retry_when_opted_in"] = (
+        resilient6b.complete([{"role": "user", "content": "hi"}]).content == "c"
+        and calls6b["n"] == 2
+    )
+
+    # A keyed complete dedupes server-side — retries without the opt-in flag.
+    tr6c, calls6c = _scripted(["RAISE", (200, {}, complete_body)])
+    resilient6c = HarnessClient(
+        "http://h.test",
+        transport=tr6c,
+        max_retries=1,
+        sleep=lambda s: None,
+    )
+    out["keyed_complete_retries"] = (
+        resilient6c.complete(
+            [{"role": "user", "content": "hi"}],
+            idempotency_key="k1",
+        ).content
+        == "c"
+        and calls6c["n"] == 2
+    )
+    tr6d, calls6d = _scripted(
+        [
+            "RAISE",
+            (
+                200,
+                {},
+                _json_mod.dumps(
+                    {"results": [], "backend": "byok", "model": "m", "receipt_hashes": []}
+                ).encode(),
+            ),
+        ]
+    )
+    resilient6d = HarnessClient(
+        "http://h.test",
+        transport=tr6d,
+        max_retries=1,
+        sleep=lambda s: None,
+    )
+    out["keyed_batch_retries"] = (
+        resilient6d.complete_many(
+            [[{"role": "user", "content": "hi"}]],
+            idempotency_key="k2",
+        )
+        == []
+        and calls6d["n"] == 2
+    )
+
+    tr7, calls7 = _scripted(
+        [(503, {}, _json_mod.dumps({"detail": "backend not configured"}).encode())]
+    )
+    resilient7 = HarnessClient("http://h.test", transport=tr7, max_retries=3, sleep=lambda s: None)
+    out["unconfigured_503_not_retried"] = (
+        _raises(lambda: resilient7.health())[0] == "BackendNotConfiguredError" and calls7["n"] == 1
+    )
+
+    out["retry_validation_failclosed"] = all(
+        _raises(lambda kw=kw: HarnessClient("http://h.test", **kw))[0] == "ValueError"
+        for kw in (
+            {"max_retries": -1},
+            {"retry_backoff_s": 0.0},
+            {"max_retry_wait_s": 0.0},
+            {"circuit_breaker_threshold": -1},
+            {"circuit_reset_s": 0.0},
+        )
+    )
+
+    # circuit breaker: transport faults open it; half-open probe closes it
+    tr8, calls8 = _scripted(["RAISE"])
+    t8 = [0.0]
+    cb = HarnessClient(
+        "http://h.test",
+        transport=tr8,
+        circuit_breaker_threshold=2,
+        circuit_reset_s=30.0,
+        clock=lambda: t8[0],
+        sleep=lambda s: None,
+    )
+    for _ in range(2):
+        _raises(lambda: cb.health())
+    out["circuit_opens_and_fails_fast"] = (
+        _raises(lambda: cb.health())[0] == "HarnessTransportError"
+        and calls8["n"] == 2  # the third call never reached the wire
+        and "circuit open" in str(_raises(lambda: cb.health())[1])
+    )
+    # half-open probe: advance the clock past the reset window; a healthy
+    # transport closes the circuit
+    tr9, calls9 = _scripted(["RAISE", "RAISE", (200, {}, _health_body())])
+    t9 = [0.0]
+    cb9 = HarnessClient(
+        "http://h.test",
+        transport=tr9,
+        circuit_breaker_threshold=2,
+        circuit_reset_s=30.0,
+        clock=lambda: t9[0],
+        sleep=lambda s: None,
+    )
+    for _ in range(2):
+        _raises(lambda: cb9.health())
+    t9[0] = 31.0
+    out["circuit_half_open_closes"] = cb9.health().status == "ok" and calls9["n"] == 3
+    # a failed half-open probe re-opens the window
+    tr10, calls10 = _scripted(["RAISE"])
+    t10 = [0.0]
+    cb10 = HarnessClient(
+        "http://h.test",
+        transport=tr10,
+        circuit_breaker_threshold=1,
+        circuit_reset_s=30.0,
+        clock=lambda: t10[0],
+        sleep=lambda s: None,
+    )
+    _raises(lambda: cb10.health())  # trips (threshold 1)
+    t10[0] = 31.0
+    _raises(lambda: cb10.health())  # half-open probe fails -> re-open
+    out["circuit_half_open_reopens"] = calls10["n"] == 2 and "circuit open" in str(
+        _raises(lambda: cb10.health())[1]
+    )
+    # disabled by default: every call reaches the wire
+    tr11, calls11 = _scripted(["RAISE"])
+    cb11 = HarnessClient("http://h.test", transport=tr11, sleep=lambda s: None)
+    for _ in range(4):
+        _raises(lambda: cb11.health())
+    out["circuit_disabled_by_default"] = calls11["n"] == 4
+
+    # keepalive comments are skipped; in-band error frames map through the
+    # same exception table as HTTP errors (keepalive-mode wire contract)
+    ka_body = (
+        b": keepalive\n\n"
+        b'data: {"type":"token","content":"ka-tok"}\n\n'
+        b'data: {"type":"final","model":null,"receipt_hashes":[]}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    trka, _ = _scripted([(200, {}, ka_body)])
+    out["client_stream_skips_comments"] = HarnessClient(
+        "http://harness.test", transport=trka
+    ).stream_complete(msg, backend="byok") == ["ka-tok"]
+    inband_body = (
+        b": keepalive\n\n"
+        b'data: {"type":"error","status":503,"detail":"no backend"}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    trin, _ = _scripted([(200, {}, inband_body)])
+    out["client_stream_inband_error_maps"] = (
+        _raises(
+            lambda: HarnessClient("http://harness.test", transport=trin).stream_complete(
+                msg, backend="byok"
+            )
+        )[0]
+        == "BackendNotConfiguredError"
+    )
+    honesty_body = (
+        b'data: {"type":"error","status":502,'
+        b'"detail":"honesty gate refused model output: sharpe"}\n\n'
+        b"data: [DONE]\n\n"
+    )
+    trhon, _ = _scripted([(200, {}, honesty_body)])
+    out["client_stream_inband_honesty_maps"] = (
+        _raises(
+            lambda: HarnessClient("http://harness.test", transport=trhon).stream_complete(
+                msg, backend="byok"
+            )
+        )[0]
+        == "Fx1HonestyError"
+    )
+
+    # idempotency: run() sends Idempotency-Key, stable across retries;
+    # caller-supplied keys pass through verbatim.
+    sent_headers: list[dict[str, str]] = []
+    run_body = _json_mod.dumps(
+        {
+            "command": "doctor",
+            "exit_code": 0,
+            "stdout": "s",
+            "stderr": "",
+            "ok": True,
+            "timeout_s": 1,
+            "replayed": True,
+        }
+    ).encode()
+
+    def _cap_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        sent_headers.append(dict(headers))
+        if len(sent_headers) == 1:
+            raise HarnessTransportError("boom")
+        return 200, {}, run_body
+
+    c_idem = HarnessClient(
+        "http://harness.test",
+        transport=_cap_transport,
+        max_retries=1,
+        sleep=lambda _s: None,
+    )
+    c_idem.run("doctor")
+    out["client_run_idem_stable_across_retry"] = (
+        len(sent_headers) == 2
+        and bool(sent_headers[0].get("Idempotency-Key"))
+        and sent_headers[0]["Idempotency-Key"] == sent_headers[1]["Idempotency-Key"]
+    )
+    sent_headers.clear()
+    c_idem.run("doctor", idempotency_key="explicit-k")
+    out["client_run_idem_explicit_key"] = sent_headers[0].get("Idempotency-Key") == "explicit-k"
+
+    # ---- async jobs ----------------------------------------------------------
+    submit_body = _json_mod.dumps(
+        {"job_id": "abc123", "status": "queued", "replayed": False}
+    ).encode()
+    status_body = _json_mod.dumps(
+        {
+            "job_id": "abc123",
+            "status": "succeeded",
+            "created_at": 1.0,
+            "finished_at": 2.0,
+            "result": {
+                "command": "doctor",
+                "exit_code": 0,
+                "stdout": "s",
+                "stderr": "",
+                "ok": True,
+                "timeout_s": 1,
+                "replayed": False,
+            },
+            "error": None,
+        }
+    ).encode()
+    failed_body = _json_mod.dumps(
+        {
+            "job_id": "abc123",
+            "status": "failed",
+            "created_at": 1.0,
+            "finished_at": 2.0,
+            "result": None,
+            "error": "RuntimeError: boom",
+        }
+    ).encode()
+    job_calls: list[tuple[str, str, dict[str, str]]] = []
+
+    def _job_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        job_calls.append((method, url, dict(headers)))
+        if url.endswith("/harness/jobs"):
+            return 202, {}, submit_body
+        return 200, {}, status_body
+
+    c_jobs = HarnessClient(
+        "http://harness.test",
+        transport=_job_transport,
+        sleep=lambda _s: None,
+    )
+    jid = c_jobs.submit_run("doctor", idempotency_key="jk")
+    result = c_jobs.wait_run(jid, poll_s=0.01)
+    out["client_submit_returns_job_id"] = jid == "abc123"
+    out["client_wait_run_polls_to_result"] = result.command == "doctor" and result.ok
+    out["client_job_idem_sent"] = job_calls[0][2].get("Idempotency-Key") == "jk"
+    out["client_job_status_get"] = any(
+        m == "GET" and "/harness/jobs/abc123" in u for m, u, _h in job_calls
+    )
+    job_calls.clear()
+
+    def _fail_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return 200, {}, failed_body
+
+    c_fail = HarnessClient(
+        "http://harness.test",
+        transport=_fail_transport,
+        sleep=lambda _s: None,
+    )
+    try:
+        c_fail.wait_run("abc123", poll_s=0.01)
+        out["client_wait_run_failed_raises"] = False
+    except HarnessJobError:
+        out["client_wait_run_failed_raises"] = True
+
+    def _queued_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return (
+            200,
+            {},
+            _json_mod.dumps(
+                {
+                    "job_id": "abc123",
+                    "status": "queued",
+                    "created_at": 1.0,
+                    "finished_at": None,
+                    "result": None,
+                    "error": None,
+                }
+            ).encode(),
+        )
+
+    _ticks = iter([t * 0.03 for t in range(200)])
+    c_wait = HarnessClient(
+        "http://harness.test",
+        transport=_queued_transport,
+        sleep=lambda _s: None,
+        clock=lambda: next(_ticks),
+    )
+    try:
+        c_wait.wait_run("abc123", poll_s=0.01, timeout_s=0.05)
+        out["client_wait_run_timeout_raises"] = False
+    except HarnessTransportError:
+        out["client_wait_run_timeout_raises"] = True
+
+    # ---- readiness + blocking drain ---------------------------------------
+    ops_calls: list[tuple[str, str]] = []
+
+    def _ops_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        ops_calls.append((method, url))
+        if "/harness/version" in url:
+            return (
+                200,
+                {"X-Fx1-Api-Version": "1"},
+                b'{"api_version": "1", "fx1_version": "0.4.0"}',
+            )
+        if "/harness/capabilities" in url:
+            return (
+                200,
+                {},
+                b'{"api_version": "1", "fx1_version": "0.4.0", '
+                b'"features": {"idempotency": true, "sse": true}, '
+                b'"limits": {"max_inflight": 4.0, "job_batch_max": 64.0}, '
+                b'"backends": {"byok": false}, "roles": ["evaluation"]}',
+            )
+        if "/ready" in url:
+            return 200, {}, b'{"ready": true, "inflight": 2}'
+        return (
+            200,
+            {},
+            _json_mod.dumps({"draining": True, "inflight": 0, "drained": True}).encode(),
+        )
+
+    c_ops = HarnessClient("http://harness.test", transport=_ops_transport)
+    rd = c_ops.ready()
+    out["client_ready_get"] = rd == {"ready": True, "inflight": 2}
+    dr = c_ops.drain(wait_s=12.5)
+    out["client_drain_wait_s_sent"] = any("wait_s=12.5" in u for _m, u in ops_calls)
+    out["client_drain_reports_drained"] = dr["drained"] is True
+    out["client_server_version"] = c_ops.server_version() == {
+        "api_version": "1",
+        "fx1_version": "0.4.0",
+    }
+    out["client_last_api_version"] = c_ops.last_api_version == "1"
+    cabcaps = c_ops.capabilities()
+    out["client_capabilities_get"] = (
+        cabcaps["features"]["idempotency"] is True
+        and cabcaps["limits"]["job_batch_max"] == 64.0
+        and cabcaps["roles"] == ["evaluation"]
+    )
+
+    # ---- wire-contract negotiation --------------------------------------
+    compat = c_ops.check_compat()
+    out["client_check_compat_ok"] = (
+        compat["compatible"] is True
+        and compat["server_api_version"] == "1"
+        and compat["server_fx1_version"] == "0.4.0"
+        and compat["client_api_version"] == compat["server_api_version"]
+    )
+
+    def _stale_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return 200, {"X-Fx1-Api-Version": "99"}, b'{"api_version": "99", "fx1_version": "9.9"}'
+
+    c_stale = HarnessClient("http://harness.test", transport=_stale_transport)
+    try:
+        c_stale.check_compat()
+        out["client_check_compat_mismatch_raises"] = False
+    except HarnessCompatError as exc:
+        out["client_check_compat_mismatch_raises"] = exc.code == "incompatible_contract"
+    rep_stale = c_stale.check_compat(strict=False)
+    out["client_check_compat_mismatch_report"] = (
+        rep_stale["compatible"] is False and rep_stale["server_api_version"] == "99"
+    )
+    c_old = HarnessClient(
+        "http://harness.test",
+        transport=lambda *a, **k: (404, {}, b'{"detail": "Not Found"}'),
+    )
+    rep_old = c_old.check_compat(strict=False)
+    out["client_check_compat_unversioned"] = (
+        rep_old["compatible"] is False and rep_old["server_api_version"] is None
+    )
+    try:
+        c_old.check_compat()
+        out["client_check_compat_unversioned_strict"] = False
+    except HarnessCompatError:
+        out["client_check_compat_unversioned_strict"] = True
+
+    def _metrics_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return (
+            200,
+            {},
+            _json_mod.dumps(
+                {
+                    "uptime_s": 3.0,
+                    "requests_total": 9,
+                    "errors_total": 1,
+                    "by_status": {"200": 8, "429": 1},
+                    "inflight": 0,
+                    "inflight_watermark": 2,
+                    "max_inflight": 16,
+                    "draining": False,
+                    "rate_limited_total": 4,
+                }
+            ).encode(),
+        )
+
+    c_m = HarnessClient("http://harness.test", transport=_metrics_transport)
+    om = c_m.metrics()
+    out["client_metrics_rate_limited"] = om.rate_limited_total == 4 and om.by_status == {
+        "200": 8,
+        "429": 1,
+    }
+
+    # metrics_text negotiates the Prometheus view: the client must send
+    # Accept: text/plain and return the raw exposition verbatim.
+    seen_accept: list[str] = []
+
+    def _prom_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        seen_accept.append(str(headers.get("Accept", "")))
+        return (200, {}, b"fx1_requests_total 7\n")
+
+    c_p = HarnessClient("http://harness.test", transport=_prom_transport)
+    out["client_metrics_text"] = c_p.metrics_text() == "fx1_requests_total 7\n" and seen_accept == [
+        "text/plain"
+    ]
+
+    def _coded_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        return (
+            503,
+            {},
+            b'{"detail": "harness is draining - no new work", "code": "draining"}',
+        )
+
+    from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
+    from fx1.serve.client import HarnessJobError  # noqa: PLC0415
+
+    coded = HarnessClient("http://harness.test", transport=_coded_transport)
+    try:
+        coded.ready()
+        out["client_error_code_carried"] = False
+    except BackendNotConfiguredError as exc:
+        out["client_error_code_carried"] = exc.code == "draining"
+
+    # ---- job lifecycle: list / cancel / wait-on-cancelled ------------------
+    lifecycle_calls: list[tuple[str, str]] = []
+
+    def _jobs_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        lifecycle_calls.append((method, url))
+        if method == "DELETE":
+            return (
+                200,
+                {},
+                b'{"job_id": "j1", "status": "cancelled", "created_at": 1.0,'
+                b' "finished_at": 2.0, "result": null, "error": null}',
+            )
+        if url.startswith("http://harness.test/harness/jobs?"):
+            return (
+                200,
+                {},
+                b'{"jobs": [{"job_id": "j1", "status": "queued", "created_at": 1.0,'
+                b' "finished_at": null, "result": null, "error": null}], "total": 1}',
+            )
+        return (
+            200,
+            {},
+            b'{"job_id": "j1", "status": "cancelled", "created_at": 1.0,'
+            b' "finished_at": 2.0, "result": null, "error": null}',
+        )
+
+    cj = HarnessClient("http://harness.test", transport=_jobs_transport)
+    page = cj.list_jobs(status="queued", limit=5, offset=10)
+    out["client_list_jobs"] = page["total"] == 1 and any(
+        "status=queued" in u and "limit=5" in u and "offset=10" in u for _m, u in lifecycle_calls
+    )
+    out["client_cancel_job"] = (
+        cj.cancel_job("j1")["status"] == "cancelled"
+        and lifecycle_calls[-1][0] == "DELETE"
+        and "/harness/jobs/j1" in lifecycle_calls[-1][1]
+    )
+    try:
+        cj.wait_run("j1", poll_s=0.01, timeout_s=5.0)
+        out["client_wait_cancelled_raises"] = False
+    except HarnessJobError:
+        out["client_wait_cancelled_raises"] = True
+
+    # submit_run passes callback_url through the request body verbatim
+    cb_seen: list[dict[str, Any]] = []
+
+    def _cb_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        cb_seen.append(dict(payload))
+        return (202, {}, b'{"job_id": "cb1", "status": "queued", "replayed": false}')
+
+    c_cb = HarnessClient("http://harness.test", transport=_cb_transport)
+    jid_cb = c_cb.submit_run(
+        "doctor", callback_url="https://hooks.test/x", callback_secret="whsec-t"
+    )
+    out["client_submit_callback_url"] = (
+        jid_cb == "cb1"
+        and cb_seen[0].get("callback_url") == "https://hooks.test/x"
+        and cb_seen[0].get("callback_secret") == "whsec-t"
+    )
+
+    # --- job SSE stream: client parses event frames --------------------------
+    sse_body = (
+        b"event: job\n"
+        b'data: {"job_id": "j1", "status": "queued"}\n\n'
+        b": keepalive\n\n"
+        b"event: job\n"
+        b'data: {"job_id": "j1", "status": "succeeded", "result": '
+        b'{"command": "doctor", "exit_code": 0, "stdout": "ok", "stderr": ""}}\n\n'
+    )
+
+    def _sse_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        cb_seen.append({"_url": url, "_method": method})
+        return (200, {"Content-Type": "text/event-stream"}, sse_body)
+
+    c_sse = HarnessClient("http://harness.test", transport=_sse_transport)
+    frames = c_sse.stream_job("j1", timeout_s=42.0)
+    out["client_stream_job_frames"] = (
+        len(frames) == 2
+        and frames[0]["status"] == "queued"
+        and frames[-1]["status"] == "succeeded"
+        and "/harness/jobs/j1/events?timeout_s=42.0" in str(cb_seen[-1].get("_url"))
+    )
+    out["client_wait_run_stream_result"] = (
+        c_sse.wait_run_stream("j1", timeout_s=42.0).stdout == "ok"
+    )
+    empty_sse = HarnessClient(
+        "http://harness.test",
+        transport=lambda m, u, p, h, t: (200, {}, b": keepalive\n\n"),
+    )
+    try:
+        empty_sse.stream_job("j1")
+        out["client_stream_job_empty_raises"] = False
+    except HarnessTransportError:
+        out["client_stream_job_empty_raises"] = True
+
+    # --- batch submit: one POST carrying the item list -----------------------
+    def _batch_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        cb_seen.append({"_url": url, "_payload": payload})
+        return (
+            202,
+            {},
+            b'{"jobs": [{"index": 0, "job_id": "jb0", "status": "queued",'
+            b' "replayed": false}], "submitted": 1, "failed": 0}',
+        )
+
+    c_batch = HarnessClient("http://harness.test", transport=_batch_transport)
+    bout = c_batch.submit_batch([{"command": "doctor", "idempotency_key": "b1"}])
+    out["client_submit_batch"] = (
+        bout["submitted"] == 1
+        and bout["jobs"][0]["job_id"] == "jb0"
+        and cb_seen[-1]["_url"].endswith("/harness/jobs/batch")
+        and cb_seen[-1]["_payload"]["jobs"][0]["idempotency_key"] == "b1"
+    )
+    return out
+
+
+def parity_audit_bench() -> dict[str, Any]:
+    r = parity_audit()
+    ok = all(v is True for v in r.values())
+    out: dict[str, Any] = {
+        "kind": "parity_audit",
+        "schema": "parity_audit.v1",
+        "git_revision": git_revision(),
+        "data_label": "SYNTHETIC",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "claim": {"results": r, "ok": ok},
+        "interpretation": (
+            "three-surface parity holds: SDK, HTTP API, and HarnessClient "
+            "return byte-identical content, envelopes, chunk lists, error "
+            "classes, verifier verdicts, registry, and health over the same "
+            "injected backend; the in-flight cap fails saturated work with "
+            "503+Retry-After while cheap routes respond, and releases "
+            "cleanly. Flags: unknown backend names are KeyError in-process "
+            "vs 422 literal rejection over the wire (request validation "
+            "runs before resolution); empty batches are [] in-process vs "
+            "422 over the wire."
+            if ok
+            else f"PARITY AUDIT DEFECT: {r}"
+        ),
+    }
+    out["receipt_sha256"] = hash_bytes(canonical_json_bytes(out))
+    return out

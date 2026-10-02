@@ -16,8 +16,8 @@ def test_gates() -> None:
 
 def test_caveats_pinned() -> None:
     r = quality_audit()
-    # bounded near-dup window: dup >500 kept items later escapes
-    assert r["window_escape"] is True
+    # inverted shingle index: a dup >500 kept items later is still caught
+    assert r["far_apart_dup_caught"] is True
     # overlength drops are uncounted in the report
     assert r["overlong_silent_drop"] is True
 

@@ -128,7 +128,9 @@ def execute(request: Input, context: OperationContext) -> Output:
         versions[row.mapping_id][row.available_time].append(index)
         lookup[(row.ticker, row.exchange)].add(row.mapping_id)
     clocks = {mapping_id: sorted(vintages) for mapping_id, vintages in versions.items()}
-    minimum_work = sum(len(lookup.get((query.ticker, query.exchange), ())) for query in request.queries)
+    minimum_work = sum(
+        len(lookup.get((query.ticker, query.exchange), ())) for query in request.queries
+    )
     if minimum_work > request.work_budget:
         raise ValueError("candidate mapping/query work exceeds work_budget; split the query batch")
 
@@ -141,26 +143,28 @@ def execute(request: Input, context: OperationContext) -> Output:
         for mapping_id in sorted(lookup.get((query.ticker, query.exchange), ())):
             work += 1
             if work > request.work_budget:
-                raise ValueError("candidate mapping work exceeds work_budget; split the query batch")
+                raise ValueError(
+                    "candidate mapping work exceeds work_budget; split the query batch"
+                )
             position = bisect_right(clocks[mapping_id], query.decision_time) - 1
             if position < 0:
                 continue
             indices = versions[mapping_id][clocks[mapping_id][position]]
             work += len(indices)
             if work > request.work_budget:
-                raise ValueError("revision inspection work exceeds work_budget; split the query batch")
-            signatures = {_signature(request.mappings[index]) for index in indices}
-            applicable = [
-                index
-                for index in indices
-                if (request.mappings[index].ticker, request.mappings[index].exchange)
-                == (query.ticker, query.exchange)
-                and request.mappings[index].valid_from <= query.decision_time
-                and (
-                    request.mappings[index].valid_to is None
-                    or query.decision_time < request.mappings[index].valid_to
+                raise ValueError(
+                    "revision inspection work exceeds work_budget; split the query batch"
                 )
-            ]
+            signatures = {_signature(request.mappings[index]) for index in indices}
+            applicable: list[int] = []
+            for index in indices:
+                m = request.mappings[index]
+                if (
+                    (m.ticker, m.exchange) == (query.ticker, query.exchange)
+                    and m.valid_from <= query.decision_time
+                    and (m.valid_to is None or query.decision_time < m.valid_to)
+                ):
+                    applicable.append(index)
             if not applicable:
                 continue
             if len(signatures) > 1:

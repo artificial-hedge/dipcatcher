@@ -108,7 +108,9 @@ def execute(request: Input, context: OperationContext) -> Output:
         right_only = right_count - both
         neither = count - both - left_only - right_only
         union = both + left_only + right_only
-        denominator_squared = left_count * (count - left_count) * right_count * (count - right_count)
+        denominator_squared = (
+            left_count * (count - left_count) * right_count * (count - right_count)
+        )
         phi = (
             (both * neither - left_only * right_only) / sqrt(denominator_squared)
             if denominator_squared

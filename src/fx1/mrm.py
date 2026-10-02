@@ -93,16 +93,21 @@ def compile_dossier(
             raise FileNotFoundError(f"dossier artifact for {activity!r} missing: {path}")
         report_activity = "validation" if activity == "contamination_report" else activity
         hashes.setdefault(report_activity, {})[str(path)] = _sha(path)
-        if activity == "contamination_report" or "contamination" in path.name:
-            report: object = None
-            try:
-                report = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
-                report = None
-            # Valid JSON that is not an object ("[]", "null") has no
-            # overall_flagged field — the dossier cannot certify it clean.
-            if not isinstance(report, dict) or bool(report.get("overall_flagged", True)):
-                contamination_flagged = True
+        declared = activity == "contamination_report" or "contamination" in path.name
+        report: object = None
+        try:
+            report = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError, OSError):
+            report = None
+        if isinstance(report, dict) and "overall_flagged" in report:
+            # A dict carrying the field is contamination evidence wherever
+            # it sits — renaming the file or the activity cannot launder it.
+            contamination_flagged = contamination_flagged or bool(report["overall_flagged"])
+        elif declared:
+            # A declared contamination artifact that fails to parse, or a
+            # valid JSON non-dict ("[]", "null") with no overall_flagged
+            # field, cannot certify the corpus clean.
+            contamination_flagged = True
     sections: list[DossierSection] = []
     summaries = {
         "development": (

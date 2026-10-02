@@ -111,7 +111,8 @@ def validate_trace_scores(scores: dict[str, float]) -> None:
     ``sharpe``).
     """
     for key, value in scores.items():
-        tokens = set(key.lower().replace("-", "_").split("_"))
+        norm = key.lower().replace("-", "_")
+        tokens = set(norm.split("_"))
         for token in tokens:
             if token in _ALLOWED_SCORE_TOKENS:
                 continue
@@ -120,7 +121,7 @@ def validate_trace_scores(scores: dict[str, float]) -> None:
                     f"score key {key!r} is a forbidden headline metric, not a "
                     "recognized proper score; fx-1 traces carry scientific scores only"
                 )
-        if not tokens & _ALLOWED_SCORE_TOKENS:
+        if not tokens & _ALLOWED_SCORE_TOKENS and norm not in _ALLOWED_SCORE_TOKENS:
             raise ValueError(
                 f"score key {key!r} is not a recognized proper score; "
                 "fx-1 traces carry scientific scores only"
