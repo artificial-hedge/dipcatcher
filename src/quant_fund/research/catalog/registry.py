@@ -2836,6 +2836,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "karatsuba",
         "ntt",
         "strassen",
+        # Wave-244 IR canon.
+        "inverted_index",
+        "lsh_dedup",
+        "ngram_spell",
+        "positional_index",
+        "posting_merge",
+        "wand_bmw",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

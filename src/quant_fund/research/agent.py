@@ -1943,6 +1943,14 @@ from quant_fund.research.benches_w243 import (
     bench_ntt_family,
     bench_strassen_family,
 )
+from quant_fund.research.benches_w244 import (
+    bench_inverted_index_family,
+    bench_lsh_dedup_family,
+    bench_ngram_spell_family,
+    bench_positional_index_family,
+    bench_posting_merge_family,
+    bench_wand_bmw_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2088,6 +2096,12 @@ def _provenance(
         "karatsuba": bench_karatsuba_family,
         "ntt": bench_ntt_family,
         "strassen": bench_strassen_family,
+        "inverted_index": bench_inverted_index_family,
+        "lsh_dedup": bench_lsh_dedup_family,
+        "ngram_spell": bench_ngram_spell_family,
+        "positional_index": bench_positional_index_family,
+        "posting_merge": bench_posting_merge_family,
+        "wand_bmw": bench_wand_bmw_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
