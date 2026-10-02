@@ -2123,6 +2123,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "anom_transformer",
         "rrcf",
         "tranad",
+        # Wave-158 LTR canon:
+        # RankNet, ListNet, ListMLE,
+        # LambdaRank, ApproxNDCG, NeuralSort.
+        "ranknet_ltr",
+        "listnet_ltr",
+        "listmle_ltr",
+        "lambdarank_ltr",
+        "approx_ndcg_ltr",
+        "neural_sort_ltr",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
