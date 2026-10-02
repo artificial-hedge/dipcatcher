@@ -90,7 +90,8 @@ class SkillExtension(ExtensionModule):
             raise ValueError("SkillExtension requires kind='skill'")
 
     def _record_owner(self, entry: dict[str, object]) -> str | None:
-        return entry.get("command") if isinstance(entry.get("command"), str) else None
+        v = entry.get("command")
+        return v if isinstance(v, str) else None
 
     def command(self) -> HarnessCommand:
         """Return the fail-closed command this skill may invoke."""
@@ -120,7 +121,8 @@ class PluginExtension(ExtensionModule):
             raise ValueError("PluginExtension requires kind='plugin'")
 
     def _record_owner(self, entry: dict[str, object]) -> str | None:
-        return entry.get("source") if isinstance(entry.get("source"), str) else None
+        v = entry.get("source")
+        return v if isinstance(v, str) else None
 
     def adapter(self) -> DataSourceAdapter:
         """Build the registered adapter; availability remains fail-closed."""
@@ -151,7 +153,8 @@ class FeatureExtension(ExtensionModule):
             raise ValueError("FeatureExtension requires kind='feature'")
 
     def _record_owner(self, entry: dict[str, object]) -> str | None:
-        return entry.get("feature") if isinstance(entry.get("feature"), str) else None
+        v = entry.get("feature")
+        return v if isinstance(v, str) else None
 
     def metadata(self) -> FeatureDefinition:
         """Return the declared metadata for this public feature column."""

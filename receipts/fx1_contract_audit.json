@@ -1,0 +1,31 @@
+{
+  "claim": {
+    "ok": true,
+    "results": {
+      "golden_exists": true,
+      "golden_parses": true,
+      "golden_self_sealed": true,
+      "live_deterministic": true,
+      "metadata_pinned": true,
+      "methods_pinned": true,
+      "no_additive_drift": true,
+      "no_missing_routes": true,
+      "operation_ids_present_unique": true,
+      "operation_tags_present": true,
+      "params_pinned": true,
+      "request_body_pinned": true,
+      "responses_pinned": true,
+      "surface_matches_golden": true,
+      "ts_client_snapshot_exists": true,
+      "ts_client_snapshot_fresh": true
+    }
+  },
+  "data_label": "SYNTHETIC",
+  "git_revision": "92fe35241f1de302e462b43b69963287be6d3b03",
+  "interpretation": "the harness API surface is pinned: routes, methods, params, declared response codes, and request bodies match the committed golden; additive or breaking drift fails the seal",
+  "kind": "fx1_contract_audit",
+  "live_pnl_claim": false,
+  "receipt_sha256": "2279a983f79d21d40ef3401eb2115991e624a7a7b51e6fb4ae21a5dab7912abe",
+  "research_only": true,
+  "schema": "fx1_contract_audit.v1"
+}

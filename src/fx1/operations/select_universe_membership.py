@@ -167,7 +167,9 @@ def execute(request: Input, context: OperationContext) -> Output:
         status: Literal["included", "excluded", "missing", "ambiguous"] = "missing"
         if indices:
             effective = max(request.memberships[index].effective_from for index in indices)
-            winners = [index for index in indices if request.memberships[index].effective_from == effective]
+            winners = [
+                index for index in indices if request.memberships[index].effective_from == effective
+            ]
             states = {request.memberships[index].state for index in winners}
             conflict_ids = {
                 request.memberships[index].membership_id

@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        directory: [web, replay, clients/typescript]
+        directory: [web, replay, clients/typescript, clients/typescript/fx1]
     defaults:
       run:
         working-directory: ${{ matrix.directory }}
@@ -71,7 +71,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm audit
       - name: Typecheck API client
-        if: matrix.directory == 'clients/typescript'
+        if: startsWith(matrix.directory, 'clients/typescript')
         run: npm run typecheck
 
   rust:

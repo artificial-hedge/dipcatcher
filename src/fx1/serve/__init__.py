@@ -8,9 +8,11 @@ from fx1.serve.attestation import (
     verify_quote,
 )
 from fx1.serve.backends import (
+    BackendNotConfiguredError,
     HostedK3Backend,
     InferenceBackend,
     LocalFx1Backend,
+    OpenAICompatBackend,
     get_backend,
 )
 from fx1.serve.chat import cited_complete
@@ -18,9 +20,11 @@ from fx1.serve.signing import build_manifest, sign_release, verify_release
 
 __all__ = [
     "AttestationTier",
+    "BackendNotConfiguredError",
     "HostedK3Backend",
     "InferenceBackend",
     "LocalFx1Backend",
+    "OpenAICompatBackend",
     "OperatorProofManifest",
     "TEEQuote",
     "attestation_ladder_status",

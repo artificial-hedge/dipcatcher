@@ -56,7 +56,9 @@ class Output(OutputModel):
 
 def execute(request: Input, context: OperationContext) -> Output:
     """Hash the same bounded bytes used for the reported size comparison."""
-    with context.open_binary(request.path, suffixes=_SUFFIXES, max_bytes=request.max_bytes) as stream:
+    with context.open_binary(
+        request.path, suffixes=_SUFFIXES, max_bytes=request.max_bytes
+    ) as stream:
         while stream.read(65_536):
             pass
         actual, actual_bytes = stream.source_sha256, stream.bytes_read

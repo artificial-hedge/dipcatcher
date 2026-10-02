@@ -1,29 +1,29 @@
 {
- "claim": {
-  "flags": {
-   "near_dup_window_bounded": true,
-   "overlong_drops_uncounted": true
+  "kind": "quality_audit",
+  "schema": "quality_audit.v1",
+  "git_revision": "72e7fa9ff6fe1efce2c972bda3648d99dc19c3b0",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "results": {
+      "exact_dedup": true,
+      "contamination_flags": true,
+      "nfkc_evasion_closed": true,
+      "near_dup_windowed": true,
+      "far_apart_dup_caught": true,
+      "overlong_silent_drop": true,
+      "split_deterministic": true,
+      "split_counts": true,
+      "digest_binds_bytes": true,
+      "bounds_enforced": true
+    },
+    "flags": {
+      "near_dup_window_bounded": false,
+      "overlong_drops_uncounted": true
+    },
+    "ok": true
   },
-  "ok": true,
-  "results": {
-   "bounds_enforced": true,
-   "contamination_flags": true,
-   "digest_binds_bytes": true,
-   "exact_dedup": true,
-   "near_dup_windowed": true,
-   "nfkc_evasion_closed": true,
-   "overlong_silent_drop": true,
-   "split_counts": true,
-   "split_deterministic": true,
-   "window_escape": true
-  }
- },
- "data_label": "SYNTHETIC",
- "git_revision": "6303675f3f12fb52e65ef43e6473747e0a277a42",
- "interpretation": "Quality-gate contract holds: exact dupes removed, per-item containment catches verbatim + NFKC-folded eval embeds, frozen split deterministic with digest-bound files. Flags pinned: near-dup dedup is bounded to the last 500 kept items, and overlength drops are uncounted in the report.",
- "kind": "quality_audit",
- "live_pnl_claim": false,
- "receipt_sha256": "f780f3f768db342ef2efdd3e579102964d67be86d5ec841b3f6e96aefdf0ba03",
- "research_only": true,
- "schema": "quality_audit.v1"
+  "interpretation": "Quality-gate contract holds: exact dupes removed, per-item containment catches verbatim + NFKC-folded eval embeds, frozen split deterministic with digest-bound files. Flag pinned: overlength drops are uncounted in the report. Near-dup dedup is distance-unbounded (inverted shingle index).",
+  "receipt_sha256": "e9ea549f04cb6ddde3d7aaa0a0a3efec6d83f0e3153309bafb39846c818c38a6"
 }

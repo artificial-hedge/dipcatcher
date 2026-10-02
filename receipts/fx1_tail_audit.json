@@ -1,13 +1,14 @@
 {
   "kind": "fx1_tail_audit",
   "schema": "fx1_tail_audit.v1",
-  "git_revision": "7565a0311d1ccf38ab1c32b403560f59db8a2c3e",
+  "git_revision": "72e7fa9ff6fe1efce2c972bda3648d99dc19c3b0",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
   "claim": {
     "results": {
       "admit_positive": true,
+      "verify_no_receipts_demoted": true,
       "admit_negative": true,
       "admit_dishonest_refused": true,
       "flag_refused_traces_dropped": true,
@@ -43,5 +44,5 @@
     "ok": true
   },
   "interpretation": "tail surface holds: trace admission is honesty-gated and fail-closed (refusals write nothing), notebooks bind source hashes and never quote into the assistant turn, DPO emits one pair per bait with all chosen responses clean, the pipeline enforces stage order with gated eval stages, and the tracker always lands JSONL. Flags: 7/10 rejected responses are contract-clean to the gate; Stage.CARD is unreachable; run_training pre-quality raises KeyError; a missing artifact path is still recorded by the tracker; the trajectory hash includes its creation timestamp.",
-  "receipt_sha256": "250bd75897c74859515f63ef01e565226ff5e2e33eb4ff83c35895e30972b8af"
+  "receipt_sha256": "a5611f33de66ecb73d061a842cf34c39f11cf07e9dc5ddcf41d6cbe2ab8d6d16"
 }
