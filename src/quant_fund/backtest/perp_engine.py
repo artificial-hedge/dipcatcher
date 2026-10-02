@@ -137,7 +137,10 @@ def _funding_by_time(
 
 
 def _bar_enrichment(bars: pl.DataFrame) -> pl.DataFrame:
-    """Causal ADV/σ columns per symbol (shift-1 rolling stats) for cost sizing."""
+    """Causal ADV/σ columns per symbol, returned in event-time order."""
+    # Grouped rolling/shift expressions follow physical row order. Sort before
+    # enrichment so shuffled panels cannot use future bars for execution costs.
+    bars = bars.sort("event_time", "security_id")
     lagged = [
         (pl.col("close") * pl.col("volume"))
         .rolling_mean(20, min_samples=1)
@@ -165,7 +168,9 @@ def run_perp_backtest(
 ) -> BacktestResult:
     """`weights` columns: event_time, security_id, target_weight (of equity).
 
-    Targets decided on bar t's close execute at bar t+1+fill_delay_bars open.
+    Input bars may arrive in any row order; enrichment and execution are
+    chronological per symbol. Targets decided on bar t's close execute at
+    bar t+1+fill_delay_bars open.
     A funding event at timestamp f is applied to the bar whose window
     ``(open, close]`` contains f (funding at 08:00 lands on the 07:00 bar for
     1h data), marked at that bar's close.
