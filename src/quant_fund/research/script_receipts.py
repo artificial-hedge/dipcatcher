@@ -407,6 +407,7 @@ _MEASUREMENT_SCHEMAS = (
     "abc_calibrate.v1",
     "aftermath_flow.v1",
     "anchor_scan.v1",
+    "band_occupancy.v1",
     "band_shape.v1",
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",
