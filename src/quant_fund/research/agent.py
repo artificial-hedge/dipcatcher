@@ -757,6 +757,14 @@ from quant_fund.research.benches_w95 import (
     bench_graphical_models_family,
     bench_sparse_coding_family,
 )
+from quant_fund.research.benches_w96 import (
+    bench_adaboost_family,
+    bench_association_rules_family,
+    bench_collaborative_filtering_family,
+    bench_expectation_propagation_family,
+    bench_naive_bayes_family,
+    bench_nash_equilibrium_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2878,6 +2886,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "frank_wolfe": bench_frank_wolfe_family(),
         "sparse_coding": bench_sparse_coding_family(),
         "evolution_strategies": bench_evolution_strategies_family(),
+        "naive_bayes": bench_naive_bayes_family(),
+        "adaboost": bench_adaboost_family(),
+        "expectation_propagation": bench_expectation_propagation_family(),
+        "collaborative_filtering": bench_collaborative_filtering_family(),
+        "association_rules": bench_association_rules_family(),
+        "nash_equilibrium": bench_nash_equilibrium_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

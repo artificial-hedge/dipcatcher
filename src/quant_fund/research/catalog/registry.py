@@ -1488,6 +1488,24 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "frank_wolfe",
         "sparse_coding",
         "evolution_strategies",
+        # Wave-96 canon: Gaussian /
+        # multinomial / Bernoulli NB,
+        # AdaBoost.M1 + LogitBoost
+        # stumps, EP Bayesian probit,
+        # item-kNN + ALS-WR + bias-MF
+        # collaborative filtering,
+        # Apriori association rules,
+        # and fictitious play /
+        # support enumeration /
+        # regret matching.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "naive_bayes",
+        "adaboost",
+        "expectation_propagation",
+        "collaborative_filtering",
+        "association_rules",
+        "nash_equilibrium",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
