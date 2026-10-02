@@ -2646,3 +2646,4 @@ wave 245 (2026-10-02): OS-2 canon — elf_loader, malloc_freelist, mmap_pager, m
 wave 246 (2026-10-02): language-runtime canon — bytecode_vm, threaded_interp, closure_conv, tail_call_tramp, inline_cache, nan_tagging; 1449→1455 families.
 wave 247 (2026-10-02): concurrency canon — peterson_lock, bakery_lock, rw_lock, atomics_tas, work_stealing, channel_select; 1455→1461 families.
 wave 248 (2026-10-02): formal-language canon — turing_machine, pda_sim, brzozowski_deriv, dfa_equiv, mealy_moore, cellular_automata; 1461→1467 families.
+wave 249 (2026-10-02): bioinformatics canon — smith_waterman, needleman_wunsch, debruijn_assemble, fm_index, upgma_tree, motif_scan; 1467→1473 families.

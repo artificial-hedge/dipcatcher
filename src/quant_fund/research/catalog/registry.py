@@ -2860,6 +2860,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # Wave-248 formal-language canon.
         "brzozowski_deriv",
         "cellular_automata",
+        # Wave-249 bioinformatics canon.
+        "debruijn_assemble",
+        "fm_index",
+        "motif_scan",
+        "needleman_wunsch",
+        "smith_waterman",
+        "upgma_tree",
         "dfa_equiv",
         "mealy_moore",
         "pda_sim",

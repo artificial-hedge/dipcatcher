@@ -1983,6 +1983,14 @@ from quant_fund.research.benches_w248 import (
     bench_pda_sim_family,
     bench_turing_machine_family,
 )
+from quant_fund.research.benches_w249 import (
+    bench_debruijn_assemble_family,
+    bench_fm_index_family,
+    bench_motif_scan_family,
+    bench_needleman_wunsch_family,
+    bench_smith_waterman_family,
+    bench_upgma_tree_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2158,6 +2166,12 @@ def _provenance(
         "mealy_moore": bench_mealy_moore_family,
         "pda_sim": bench_pda_sim_family,
         "turing_machine": bench_turing_machine_family,
+        "debruijn_assemble": bench_debruijn_assemble_family,
+        "fm_index": bench_fm_index_family,
+        "motif_scan": bench_motif_scan_family,
+        "needleman_wunsch": bench_needleman_wunsch_family,
+        "smith_waterman": bench_smith_waterman_family,
+        "upgma_tree": bench_upgma_tree_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
