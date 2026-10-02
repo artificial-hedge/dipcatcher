@@ -1589,6 +1589,14 @@ from quant_fund.research.benches_w199 import (
     bench_quantum_walk_family,
     bench_vqe_ising_family,
 )
+from quant_fund.research.benches_w200 import (
+    bench_dmrg_tfim_family,
+    bench_mps_fidelity_family,
+    bench_tebd_quench_family,
+    bench_tensor_cross_family,
+    bench_tt_round_family,
+    bench_tt_svd_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4334,6 +4342,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "qpe_phase": bench_qpe_phase_family(),
         "qkernel_svm": bench_qkernel_svm_family(),
         "quantum_walk": bench_quantum_walk_family(),
+        "tt_svd": bench_tt_svd_family(),
+        "dmrg_tfim": bench_dmrg_tfim_family(),
+        "tensor_cross": bench_tensor_cross_family(),
+        "tebd_quench": bench_tebd_quench_family(),
+        "mps_fidelity": bench_mps_fidelity_family(),
+        "tt_round": bench_tt_round_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

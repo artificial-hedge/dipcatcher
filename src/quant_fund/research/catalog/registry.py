@@ -2491,6 +2491,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "qpe_phase",
         "qkernel_svm",
         "quantum_walk",
+        # Wave-200 tensor-network canon: TT-SVD, DMRG, cross interp,
+        # TEBD, MPS fidelity, TT rounding.
+        "tt_svd",
+        "dmrg_tfim",
+        "tensor_cross",
+        "tebd_quench",
+        "mps_fidelity",
+        "tt_round",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
