@@ -981,6 +981,14 @@ from quant_fund.research.benches_w123 import (
     bench_synthetic_gan_family,
     bench_ts_diffusion_family,
 )
+from quant_fund.research.benches_w124 import (
+    bench_asset_gnn_family,
+    bench_continual_learning_family,
+    bench_counterparty_gnn_family,
+    bench_fed_avg_family,
+    bench_insider_anomaly_family,
+    bench_maml_portfolio_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3270,6 +3278,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "synthetic_gan": bench_synthetic_gan_family(),
         "econ_calendar": bench_econ_calendar_family(),
         "quantcode_bench": bench_quantcode_bench_family(),
+        "asset_gnn": bench_asset_gnn_family(),
+        "counterparty_gnn": bench_counterparty_gnn_family(),
+        "maml_portfolio": bench_maml_portfolio_family(),
+        "continual_learning": bench_continual_learning_family(),
+        "fed_avg": bench_fed_avg_family(),
+        "insider_anomaly": bench_insider_anomaly_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

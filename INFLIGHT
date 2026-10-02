@@ -2521,3 +2521,4 @@ wave 121 (2026-10-01): best-arm-ID canon — lil_ucb, sequential_halving, median
 wave 122 (2026-10-01): exec-summary SOTA — exec_rl, smart_router, order_flow_imbalance, pg_mm, options_flow, dark_pool; 704→710 families.
 wave 123 (2026-10-01): exec-summary NLP/generative — say_echo_do, multimodal_fusion, ts_diffusion, synthetic_gan, econ_calendar, quantcode_bench; 710→716 families.
 note: canon PR to follow.
+wave 124 (2026-10-02): exec-summary graph/meta/continual — asset_gnn, counterparty_gnn, maml_portfolio, continual_learning, fed_avg, insider_anomaly; 716→722 families.

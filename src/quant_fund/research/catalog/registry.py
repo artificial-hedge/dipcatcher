@@ -1807,6 +1807,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "synthetic_gan",
         "econ_calendar",
         "quantcode_bench",
+        # Wave-124 exec-summary graph/meta:
+        # asset + counterparty GNNs,
+        # MAML, EWC, FedAvg, insider.
+        "asset_gnn",
+        "counterparty_gnn",
+        "maml_portfolio",
+        "continual_learning",
+        "fed_avg",
+        "insider_anomaly",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
