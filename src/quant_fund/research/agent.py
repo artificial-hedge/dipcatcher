@@ -1782,6 +1782,14 @@ from quant_fund.research.benches_w223 import (
     bench_raft_election_family,
     bench_vector_clock_family,
 )
+from quant_fund.research.benches_w224 import (
+    bench_aho_corasick_family,
+    bench_bwt_transform_family,
+    bench_edit_distance_family,
+    bench_kmp_search_family,
+    bench_lz77_family,
+    bench_suffix_automaton_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4672,6 +4680,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "consistent_hash": bench_consistent_hash_family(),
         "gossip_epidemic": bench_gossip_epidemic_family(),
         "pbft_lite": bench_pbft_lite_family(),
+        "aho_corasick": bench_aho_corasick_family(),
+        "suffix_automaton": bench_suffix_automaton_family(),
+        "kmp_search": bench_kmp_search_family(),
+        "edit_distance": bench_edit_distance_family(),
+        "lz77": bench_lz77_family(),
+        "bwt_transform": bench_bwt_transform_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
