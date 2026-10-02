@@ -53,6 +53,10 @@ export type JobListResponse = components["schemas"]["JobListResponse"];
 export type JobStatusResponse = components["schemas"]["JobStatusResponse"];
 export type JobSubmitResponse = components["schemas"]["JobSubmitResponse"];
 export type MetricsResponse = components["schemas"]["MetricsResponse"];
+export type OpenAIChatRequest = components["schemas"]["OpenAIChatRequest"];
+export type OpenAIChatResponse =
+  components["schemas"]["OpenAIChatResponse"];
+export type OpenAIModelList = components["schemas"]["OpenAIModelList"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
 export type ReceiptIndexItem = components["schemas"]["ReceiptIndexItem"];
 export type ReceiptIndexResponse =
@@ -542,6 +546,77 @@ export class HarnessApiClient {
     if (filter?.backend) q.set("backend", filter.backend);
     const suffix = q.size ? `?${q.toString()}` : "";
     return this.get(`/harness/completions${suffix}`) as Promise<CompletionListResponse>;
+  }
+
+  // ---- OpenAI-compatible ingress (/v1) ------------------------------------
+
+  /**
+   * GET /v1/models — the OpenAI `list` envelope: `fx1` (the default link)
+   * plus the backend names a request's `model` may carry.
+   */
+  async listModels(): Promise<OpenAIModelList> {
+    const res = await this.send({
+      method: "GET",
+      path: "/v1/models",
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIModelList;
+  }
+
+  /**
+   * POST /v1/chat/completions — the OpenAI chat surface over the gated
+   * pipeline. Non-streaming only (`stream: true` is rejected here; use
+   * `chatCompletionStream`). `headers` carries the fx1 selectors —
+   * `X-Fx1-Backend`, `X-Fx1-Fallbacks`, `X-Fx1-Byok-*` — for callers that
+   * can't put the `fx1` extension object in the body. Returns the
+   * `chat.completion` envelope plus the `X-Fx1-Completion-Id` handle that
+   * links the call to its sealed receipt.
+   */
+  async chatCompletion(
+    request: OpenAIChatRequest,
+    headers?: Record<string, string>,
+  ): Promise<{ response: OpenAIChatResponse; completionId: string | null }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/chat/completions",
+      body: { ...request, stream: false },
+      headers: { "Content-Type": "application/json", ...headers },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      response: (await res.json()) as OpenAIChatResponse,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
+  }
+
+  /**
+   * POST /v1/chat/completions with `stream: true` — SSE
+   * `chat.completion.chunk` frames. `onChunk` receives each parsed chunk
+   * (an `include_usage` terminal chunk carries `choices: []` + `usage`);
+   * the promise resolves with the `X-Fx1-Completion-Id` handle.
+   */
+  async chatCompletionStream(
+    request: OpenAIChatRequest,
+    onChunk: (chunk: Record<string, unknown>) => void,
+    headers?: Record<string, string>,
+  ): Promise<string | null> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/chat/completions",
+      body: { ...request, stream: true },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...headers,
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    for await (const ev of readSse(res)) {
+      if (ev.data === "[DONE]") break;
+      onChunk(JSON.parse(ev.data) as Record<string, unknown>);
+    }
+    return res.headers.get("X-Fx1-Completion-Id");
   }
 
   // ---- async jobs --------------------------------------------------------

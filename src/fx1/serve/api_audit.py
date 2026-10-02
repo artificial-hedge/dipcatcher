@@ -3531,6 +3531,282 @@ def _probe_backend_probes(
         ev_srv.shutdown()
         ev_srv.server_close()
 
+    # --- OpenAI-compatible ingress ------------------------------------------
+    # POST /v1/chat/completions is a drop-in OpenAI surface over the gated
+    # complete chain — probes pin the envelope, plumbing-through (metering,
+    # completion log, gate), header-based backend/BYOK selection, and the
+    # OpenAI error envelope on every failure class.
+    import json as _json3  # noqa: PLC0415
+
+    class _OiBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return f"clean:{messages[-1]['content']}"
+
+    class _OiDirty:
+        def complete(
+            self, messages: list[dict[str, str]], *, sampling: SamplingParams | None = None
+        ) -> str:
+            return "The strategy achieved a sharpe of 2.1 on the tape."
+
+    oi_clean = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    r = oi_clean.get("/v1/models")
+    out["openai_models_200"] = (
+        r.status_code == 200
+        and r.json().get("object") == "list"
+        and {m["id"] for m in r.json()["data"]} == {"fx1", "hosted_k3", "local_fx1", "byok"}
+    )
+
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "ping"}]},
+    )
+    oi = r.json()
+    out["openai_chat_200_envelope"] = (
+        r.status_code == 200
+        and oi.get("object") == "chat.completion"
+        and oi.get("id", "").startswith("chatcmpl-")
+        and oi["choices"][0]["message"]["role"] == "assistant"
+        and oi["choices"][0]["message"]["content"] == "clean:ping"
+        and oi["choices"][0]["finish_reason"] == "stop"
+        and oi.get("system_fingerprint") == "hosted_k3"
+        and oi.get("model") == "fake-0"
+    )
+    oc_cid = r.headers.get("X-Fx1-Completion-Id", "")
+    out["openai_completion_id_header"] = bool(oc_cid)
+    if oc_cid:
+        rl = oi_clean.get(f"/harness/completions/{oc_cid}")
+        out["openai_completion_logged"] = (
+            rl.status_code == 200 and rl.json().get("backend") == "hosted_k3"
+        )
+        rr = oi_clean.get(f"/harness/completions/{oc_cid}/receipt")
+        out["openai_completion_receipt_verifies"] = (
+            rr.status_code == 200 and _vrp(rr.json())["valid"] is True
+        )
+
+    # metering: an OpenAI call is a complete call
+    pre = oi_clean.get("/metrics").json()["complete"].get("hosted_k3", {})
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "m2"}]},
+    )
+    post = oi_clean.get("/metrics").json()["complete"].get("hosted_k3", {})
+    out["openai_metered"] = r.status_code == 200 and post.get("ok", 0) - pre.get("ok", 0) == 1
+
+    # SSE: stream:true → chat.completion.chunk frames, gated text, [DONE]
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "stream me"}],
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        },
+    )
+    sframes = [ln for ln in r.text.split("\n\n") if ln.strip()]
+    schunks = [
+        _json3.loads(ln[len("data: ") :])
+        for ln in sframes
+        if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+    ]
+    deltas = [
+        c["choices"][0]["delta"].get("content", "")
+        for c in schunks
+        if c.get("choices") and c["choices"][0]["delta"].get("content")
+    ]
+    out["openai_stream_frames"] = (
+        r.status_code == 200
+        and r.headers.get("content-type", "").startswith("text/event-stream")
+        and all(c.get("object") == "chat.completion.chunk" for c in schunks)
+        and schunks[0]["choices"][0]["delta"].get("role") == "assistant"
+        and "".join(deltas) == "clean:stream me"
+        and schunks[-1]["choices"] == []
+        and "usage" in schunks[-1]
+        and schunks[-2]["choices"][0]["finish_reason"] == "stop"
+        and sframes[-1].strip() == "data: [DONE]"
+    )
+
+    # backend selection: X-Fx1-Backend header names the link
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={"X-Fx1-Backend": "byok"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_backend_header"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+    # model naming a backend routes there (BYOK headers supply the creds)
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={
+            "X-Fx1-Byok-Base-Url": "https://provider.example/v1",
+            "X-Fx1-Byok-Api-Key": "sk-fake",
+            "X-Fx1-Byok-Model": "gpt-fake",
+        },
+        json={
+            "model": "byok",
+            "messages": [{"role": "user", "content": "h"}],
+        },
+    )
+    out["openai_model_selects_backend"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+    # BYOK headers → byok link; body model is the upstream model
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={
+            "X-Fx1-Byok-Base-Url": "https://provider.example/v1",
+            "X-Fx1-Byok-Api-Key": "sk-fake",
+            "X-Fx1-Byok-Model": "gpt-fake",
+        },
+        json={"model": "gpt-4o", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_byok_headers_route_byok"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        headers={"X-Fx1-Byok-Base-Url": "https://provider.example/v1"},
+        json={"model": "x", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_byok_missing_key_400"] = (
+        r.status_code == 400 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+
+    # fail-closed surface — every rejection in the OpenAI envelope
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "tools": [{"type": "function"}],
+        },
+    )
+    out["openai_unsupported_tools_422"] = (
+        r.status_code == 422 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "n": 2,
+        },
+    )
+    out["openai_n_gt_1_422"] = r.status_code == 422
+    r = oi_clean.post("/v1/chat/completions", json={"model": "fx1"})
+    out["openai_missing_messages_422_openai_shape"] = (
+        r.status_code == 422
+        and set(r.json()) == {"error"}
+        and r.json()["error"]["code"] == "validation"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": [{"type": "image_url", "url": "x"}]}],
+        },
+    )
+    out["openai_nontext_part_400"] = (
+        r.status_code == 400 and r.json()["error"]["type"] == "invalid_request_error"
+    )
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [
+                {"role": "user", "content": "part "},
+                {"role": "user", "content": [{"type": "text", "text": "two"}]},
+            ],
+        },
+    )
+    out["openai_content_parts_flattened"] = (
+        r.status_code == 200 and r.json()["choices"][0]["message"]["content"] == "clean:two"
+    )
+
+    # the gate fires over the OpenAI surface
+    oi_dirty = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiDirty()))
+    r = oi_dirty.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_gate_502_openai_shape"] = (
+        r.status_code == 502
+        and set(r.json()) == {"error"}
+        and r.json()["error"]["code"] == "honesty_gate"
+        and r.json()["error"]["type"] == "server_error"
+    )
+
+    # auth: Authorization Bearer works for stock clients; X-API-Key still works
+    _saved_key = os.environ.get(_API_KEY_ENV)
+    os.environ[_API_KEY_ENV] = "probe-key"
+    try:
+        keyed = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    finally:
+        if _saved_key is None:
+            os.environ.pop(_API_KEY_ENV, None)
+        else:
+            os.environ[_API_KEY_ENV] = _saved_key
+    r = keyed.post(
+        "/v1/chat/completions",
+        headers={"Authorization": "Bearer probe-key"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_bearer_auth_ok"] = r.status_code == 200
+    r = keyed.post(
+        "/v1/chat/completions",
+        headers={"X-API-Key": "probe-key"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_xapikey_still_ok"] = r.status_code == 200
+    r = keyed.post(
+        "/v1/chat/completions",
+        headers={"Authorization": "Bearer wrong"},
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_bad_bearer_401_openai_shape"] = (
+        r.status_code == 401 and r.json()["error"]["type"] == "authentication_error"
+    )
+
+    # the fx1 extension object carries the chain knobs (incl. body byok)
+    r = oi_clean.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "h"}],
+            "fx1": {
+                "backend": "byok",
+                "byok": {
+                    "base_url": "https://provider.example/v1",
+                    "api_key": "sk-fake",
+                    "model": "gpt-fake",
+                },
+                "fallbacks": ["hosted_k3"],
+            },
+        },
+    )
+    out["openai_fx1_extension_backend"] = (
+        r.status_code == 200 and r.json().get("system_fingerprint") == "byok"
+    )
+
+    # capacity admission applies to the OpenAI surface too
+    oi_drained = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    oi_drained.state.inflight_slots.acquire()
+    try:
+        r = _TC2(oi_drained).post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+        )
+    finally:
+        oi_drained.state.inflight_slots.release()
+    out["openai_over_capacity_openai_shape"] = (
+        r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

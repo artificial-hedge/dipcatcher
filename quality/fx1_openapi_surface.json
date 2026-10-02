@@ -480,7 +480,26 @@
           "422"
         ]
       }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
     }
   },
-  "schema_sha256": "f0ddc4855689bb28d7f6a27c6e9fe67de7c2c9756f80351fb5848d2d90a645c4"
+  "schema_sha256": "50cc2b551bb725c605791cfb0f063d51ed27c06edd5a9fcb51795fde6d1908d0"
 }

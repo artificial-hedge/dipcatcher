@@ -2068,6 +2068,386 @@
         "title": "MetricsResponse",
         "type": "object"
       },
+      "OpenAIChatChoice": {
+        "additionalProperties": false,
+        "description": "One choice of a `chat.completion` \u2014 the gated text lands here.",
+        "properties": {
+          "finish_reason": {
+            "const": "stop",
+            "title": "Finish Reason",
+            "type": "string"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "message": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Message",
+            "type": "object"
+          }
+        },
+        "required": [
+          "index",
+          "message",
+          "finish_reason"
+        ],
+        "title": "OpenAIChatChoice",
+        "type": "object"
+      },
+      "OpenAIChatMessage": {
+        "additionalProperties": true,
+        "description": "One chat message \u2014 content may be a string or an OpenAI\ncontent-part list; non-text parts are rejected at translation.",
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "OpenAIChatMessage",
+        "type": "object"
+      },
+      "OpenAIChatRequest": {
+        "additionalProperties": true,
+        "description": "POST /v1/chat/completions body \u2014 the OpenAI surface, extra fields\ntolerated (SDKs send bookkeeping keys like ``user``).",
+        "properties": {
+          "fx1": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIFx1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 262144.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIChatMessage"
+            },
+            "maxItems": 512,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "model": {
+            "default": "fx1",
+            "title": "Model",
+            "type": "string"
+          },
+          "n": {
+            "default": 1,
+            "title": "N",
+            "type": "integer"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Format"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          },
+          "stream_options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stream Options"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "top_p": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top P"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "OpenAIChatRequest",
+        "type": "object"
+      },
+      "OpenAIChatResponse": {
+        "additionalProperties": false,
+        "description": "POST /v1/chat/completions 200 body \u2014 the `chat.completion`\nenvelope. `system_fingerprint` carries the serving backend name;\n`usage` is null when the provider didn't report token counts.",
+        "properties": {
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIChatChoice"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "object": {
+            "const": "chat.completion",
+            "default": "chat.completion",
+            "title": "Object",
+            "type": "string"
+          },
+          "system_fingerprint": {
+            "title": "System Fingerprint",
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "required": [
+          "id",
+          "created",
+          "model",
+          "system_fingerprint",
+          "choices"
+        ],
+        "title": "OpenAIChatResponse",
+        "type": "object"
+      },
+      "OpenAIFx1": {
+        "additionalProperties": false,
+        "description": "The ``fx1`` extension object: harness knobs that have no OpenAI\nfield \u2014 backend selection, fallbacks, BYOK credentials, the local\ncheckpoint dir, receipt citations, and the per-call deadline.",
+        "properties": {
+          "backend": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hosted_k3",
+                  "local_fx1",
+                  "byok"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend"
+          },
+          "byok": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ByokOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checkpoint_dir": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Dir"
+          },
+          "fallbacks": {
+            "items": {
+              "enum": [
+                "hosted_k3",
+                "local_fx1",
+                "byok"
+              ],
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Fallbacks",
+            "type": "array"
+          },
+          "receipt_hashes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Hashes"
+          },
+          "timeout_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 3600.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout S"
+          }
+        },
+        "title": "OpenAIFx1",
+        "type": "object"
+      },
+      "OpenAIModel": {
+        "additionalProperties": false,
+        "description": "One entry of GET /v1/models \u2014 `id` is the name `model` may carry.",
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "object": {
+            "const": "model",
+            "default": "model",
+            "title": "Object",
+            "type": "string"
+          },
+          "owned_by": {
+            "default": "dipcatcher",
+            "title": "Owned By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "created"
+        ],
+        "title": "OpenAIModel",
+        "type": "object"
+      },
+      "OpenAIModelList": {
+        "additionalProperties": false,
+        "description": "GET /v1/models body \u2014 the OpenAI `list` envelope.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIModel"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "object": {
+            "const": "list",
+            "default": "list",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "OpenAIModelList",
+        "type": "object"
+      },
       "ReadyResponse": {
         "additionalProperties": false,
         "description": "Readiness probe payload \u2014 only emitted while accepting work.",
@@ -5864,6 +6244,166 @@
         "summary": "Receipt Fetch",
         "tags": [
           "receipts"
+        ]
+      }
+    },
+    "/v1/chat/completions": {
+      "post": {
+        "description": "OpenAI-compatible chat completion over the gated pipeline.\n\nThe `X-Fx1-Completion-Id` header links the response to the\ncompletion-log record (GET /harness/completions/{id}) and its\nsealed receipt. `model` selects a backend when it names one\n(hosted_k3/local_fx1/byok); anything else is the default link.\nBYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the\n`fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/\n`X-Fx1-Checkpoint-Dir` select the chain without body extensions.",
+        "operationId": "openai_chat_completions",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAIChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIChatResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Chat Completions",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "description": "Model inventory \u2014 the backend names a `model` field may carry,\nplus the `fx1` alias for the default link (hosted_k3).",
+        "operationId": "openai_list_models",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModelList"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Models",
+        "tags": [
+          "openai"
         ]
       }
     }

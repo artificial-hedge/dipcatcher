@@ -651,6 +651,55 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/chat/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Chat Completions
+         * @description OpenAI-compatible chat completion over the gated pipeline.
+         *
+         *     The `X-Fx1-Completion-Id` header links the response to the
+         *     completion-log record (GET /harness/completions/{id}) and its
+         *     sealed receipt. `model` selects a backend when it names one
+         *     (hosted_k3/local_fx1/byok); anything else is the default link.
+         *     BYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the
+         *     `fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/
+         *     `X-Fx1-Checkpoint-Dir` select the chain without body extensions.
+         */
+        post: operations["openai_chat_completions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Models
+         * @description Model inventory — the backend names a `model` field may carry,
+         *     plus the `fx1` alias for the default link (hosted_k3).
+         */
+        get: operations["openai_list_models"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1415,6 +1464,163 @@ export interface components {
             requests_total: number;
             /** Uptime S */
             uptime_s: number;
+        };
+        /**
+         * OpenAIChatChoice
+         * @description One choice of a `chat.completion` — the gated text lands here.
+         */
+        OpenAIChatChoice: {
+            /**
+             * Finish Reason
+             * @constant
+             */
+            finish_reason: "stop";
+            /** Index */
+            index: number;
+            /** Message */
+            message: {
+                [key: string]: string;
+            };
+        };
+        /**
+         * OpenAIChatMessage
+         * @description One chat message — content may be a string or an OpenAI
+         *     content-part list; non-text parts are rejected at translation.
+         */
+        OpenAIChatMessage: {
+            /** Content */
+            content?: string | {
+                [key: string]: unknown;
+            }[] | null;
+            /** Role */
+            role: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIChatRequest
+         * @description POST /v1/chat/completions body — the OpenAI surface, extra fields
+         *     tolerated (SDKs send bookkeeping keys like ``user``).
+         */
+        OpenAIChatRequest: {
+            fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
+            /** Messages */
+            messages: components["schemas"]["OpenAIChatMessage"][];
+            /**
+             * Model
+             * @default fx1
+             */
+            model: string;
+            /**
+             * N
+             * @default 1
+             */
+            n: number;
+            /** Response Format */
+            response_format?: {
+                [key: string]: unknown;
+            } | null;
+            /** Seed */
+            seed?: number | null;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+            /** Stream Options */
+            stream_options?: {
+                [key: string]: unknown;
+            } | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Top P */
+            top_p?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIChatResponse
+         * @description POST /v1/chat/completions 200 body — the `chat.completion`
+         *     envelope. `system_fingerprint` carries the serving backend name;
+         *     `usage` is null when the provider didn't report token counts.
+         */
+        OpenAIChatResponse: {
+            /** Choices */
+            choices: components["schemas"]["OpenAIChatChoice"][];
+            /** Created */
+            created: number;
+            /** Id */
+            id: string;
+            /** Model */
+            model: string;
+            /**
+             * Object
+             * @default chat.completion
+             * @constant
+             */
+            object: "chat.completion";
+            /** System Fingerprint */
+            system_fingerprint: string;
+            /** Usage */
+            usage?: {
+                [key: string]: number;
+            } | null;
+        };
+        /**
+         * OpenAIFx1
+         * @description The ``fx1`` extension object: harness knobs that have no OpenAI
+         *     field — backend selection, fallbacks, BYOK credentials, the local
+         *     checkpoint dir, receipt citations, and the per-call deadline.
+         */
+        OpenAIFx1: {
+            /** Backend */
+            backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+            byok?: components["schemas"]["ByokOverride"] | null;
+            /** Checkpoint Dir */
+            checkpoint_dir?: string | null;
+            /** Fallbacks */
+            fallbacks?: ("hosted_k3" | "local_fx1" | "byok")[];
+            /** Receipt Hashes */
+            receipt_hashes?: string[] | null;
+            /** Timeout S */
+            timeout_s?: number | null;
+        };
+        /**
+         * OpenAIModel
+         * @description One entry of GET /v1/models — `id` is the name `model` may carry.
+         */
+        OpenAIModel: {
+            /** Created */
+            created: number;
+            /** Id */
+            id: string;
+            /**
+             * Object
+             * @default model
+             * @constant
+             */
+            object: "model";
+            /**
+             * Owned By
+             * @default dipcatcher
+             */
+            owned_by: string;
+        };
+        /**
+         * OpenAIModelList
+         * @description GET /v1/models body — the OpenAI `list` envelope.
+         */
+        OpenAIModelList: {
+            /** Data */
+            data: components["schemas"]["OpenAIModel"][];
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
         };
         /**
          * ReadyResponse
@@ -3145,6 +3351,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_chat_completions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_list_models: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIModelList"];
                 };
             };
         };

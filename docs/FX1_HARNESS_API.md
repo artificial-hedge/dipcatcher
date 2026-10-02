@@ -13,6 +13,7 @@ integrator reference; `docs/FX1.md` has the model overview and
 | Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
 | Remote client | `fx1.serve.client.HarnessClient` | Python callers on a remote harness — same result types as the SDK |
 | TS client | `clients/typescript/fx1` (`HarnessApiClient`) | TypeScript/JS callers — generated from the pinned OpenAPI spec |
+| OpenAI-compatible | `GET /v1/models`, `POST /v1/chat/completions` | drop-in for OpenAI SDKs / existing toolchains — set `base_url` to the harness |
 | CLI | `fx1 harness …` | shell, CI, ops scripts |
 
 The Python surfaces share one error taxonomy (`KeyError` 404 /
@@ -188,6 +189,8 @@ same digested shape the job record embeds.
 | `GET /harness/evals/{id}/receipt` | terminal record sealed as `fx1_eval_record.v1` → `POST /receipts/verify` (`409 eval_not_terminal` until terminal); `HarnessClient.eval_receipt` / `fx1 harness eval-status --receipt` |
 | `DELETE /harness/evals/{id}` | cooperative cancel of a queued eval (running/terminal → 409); `HarnessClient.cancel_eval` / `fx1 harness eval-cancel` |
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
+| `GET /v1/models` | OpenAI `list` envelope: `fx1` + the backend names |
+| `POST /v1/chat/completions` | OpenAI-compatible gated completion (JSON or SSE `stream:true`) |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |
@@ -216,6 +219,57 @@ verify externally).
 `GET /openapi.json` is codegen-grade: every operation carries a stable
 `operation_id` + tag (`quality/fx1_openapi_surface.json` pins the
 surface — `paths` + `schema_sha256`).
+
+## OpenAI-compatible ingress (`/v1`)
+
+`POST /v1/chat/completions` is a translation layer, not a second
+pipeline: the request is mapped onto `CompleteRequest` and run through
+the same `complete` path — honesty gate, breaker, fallback chain,
+metering, completion log, and sealed per-call receipt all apply
+unchanged. Every response carries `X-Fx1-Completion-Id`, which links it
+to `GET /harness/completions/{id}` and its sealed
+`fx1_completion_record.v1` receipt.
+
+- **Backend selection:** the `fx1` extension's `backend` field >
+  `X-Fx1-Backend` > a `model` naming a backend
+  (`hosted_k3`/`local_fx1`/`byok`) > `hosted_k3`. Anything else in
+  `model` is the default link (or the BYOK upstream model when BYOK
+  headers are present).
+- **BYOK:** the `fx1` extension's `byok = {base_url, api_key, model}`,
+  or the `X-Fx1-Byok-Base-Url`/`X-Fx1-Byok-Api-Key`/`X-Fx1-Byok-Model`
+  headers (base-url without api-key is 400). Header BYOK with a
+  non-backend `model` field uses it as the upstream model (e.g.
+  `gpt-4o`).
+- **Chain knobs:** the `fx1` extension's `fallbacks` /
+  `X-Fx1-Fallbacks` (CSV), `checkpoint_dir` / `X-Fx1-Checkpoint-Dir`,
+  `timeout_s`, and `receipt_hashes`.
+- **Streaming:** `stream: true` returns SSE `chat.completion.chunk`
+  frames — a `role` delta, ~64-char content deltas on whitespace
+  boundaries, a `finish_reason: "stop"` frame, an optional
+  `choices: []` + `usage` chunk (`stream_options.include_usage`), then
+  `data: [DONE]`. The gate runs before the first delta — no ungated
+  bytes ever ship; a refusal is an OpenAI-shaped 502, not a truncated
+  stream.
+- **Fail-closed surface:** tool calls (`tools`, `functions`,
+  `tool_calls`, `tool_call_id`), `n != 1`, non-text `response_format`,
+  `logprobs`, `logit_bias`, `stop`, penalties, `modalities`, `audio`,
+  `prediction`, `reasoning_effort`, `service_tier`, `store`, `metadata`,
+  and `None`/non-text-part content are all rejected — nothing is
+  silently dropped.
+- **Error envelope:** under `/v1`, every error — validation, auth
+  (401/403), rate limit (429), body cap (413), over-capacity (503),
+  honesty refusal (502) — returns OpenAI's
+  `{error: {message, type, param, code}}` shape with OpenAI's type names
+  (`invalid_request_error`, `authentication_error`,
+  `rate_limit_error`, `server_error`, `service_unavailable`).
+- **Auth:** when `FX1_API_KEY` is set, `/v1` also accepts the OpenAI
+  `Authorization: Bearer` header in place of `X-API-Key`.
+
+Client-side: `HarnessClient.chat_completion` /
+`chat_completion_stream` / `list_models` in Python;
+`HarnessApiClient.chatCompletion` / `chatCompletionStream` /
+`listModels` in TS. Any OpenAI SDK works directly — point it at the
+harness `base_url` and use `model: "fx1"`.
 
 ## Auth & safety
 

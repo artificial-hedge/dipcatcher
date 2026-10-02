@@ -964,6 +964,135 @@ class HarnessClient:
             raise HarnessTransportError("stream ended without [DONE]")
         return chunks
 
+    # ---- OpenAI-compatible ingress (/v1) ------------------------------------
+
+    def list_models(self) -> dict[str, Any]:
+        """``GET /v1/models`` — the OpenAI ``list`` envelope: ``fx1``
+        (the default link) plus the backend names a request ``model`` may
+        carry (``hosted_k3``/``local_fx1``/``byok``)."""
+        return dict(self._json("GET", "/v1/models", idempotent=True))
+
+    def chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """``POST /v1/chat/completions`` — the OpenAI surface over the
+        gated pipeline. ``model`` selects a backend when it names one;
+        ``backend`` maps to ``X-Fx1-Backend`` and wins over ``model``, and
+        the remaining knobs ride the ``fx1`` extension object (BYOK callers
+        may instead pass ``X-Fx1-Byok-*`` via ``extra_headers``).
+
+        Returns ``(chat_completion_envelope, completion_id)`` — the id
+        links the call to ``completion()``/``completion_receipt()``. Call
+        :meth:`chat_completion_stream` for SSE deltas."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "seed": seed,
+            "stream": False,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        _status, headers, body = self._request(
+            "POST", "/v1/chat/completions", payload, extra_headers=extra_headers
+        )
+        envelope = json.loads(body)
+        return envelope, headers.get("X-Fx1-Completion-Id")
+
+    def chat_completion_stream(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_tokens: int | None = None,
+        seed: int | None = None,
+        include_usage: bool = False,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Streaming counterpart of :meth:`chat_completion` — returns
+        ``(chunks, completion_id)`` where chunks are the parsed
+        ``chat.completion.chunk`` frames (the terminal ``include_usage``
+        chunk carries ``choices: []`` + ``usage``). The text is already
+        past the honesty gate before the first delta ships."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_tokens": max_tokens,
+            "seed": seed,
+            "stream": True,
+            "stream_options": {"include_usage": True} if include_usage else None,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        _status, headers, body = self._request(
+            "POST", "/v1/chat/completions", payload, extra_headers=extra_headers
+        )
+        chunks: list[dict[str, Any]] = []
+        saw_done = False
+        for line in body.decode().splitlines():
+            if not line.startswith("data: "):
+                continue
+            frame = line[len("data: ") :].strip()
+            if frame == "[DONE]":
+                saw_done = True
+                break
+            chunks.append(json.loads(frame))
+        if not saw_done:
+            raise HarnessTransportError("stream ended without [DONE]")
+        return chunks, headers.get("X-Fx1-Completion-Id")
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:

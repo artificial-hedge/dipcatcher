@@ -467,6 +467,343 @@ class CompleteResponse(_Model):
     sampling: dict[str, Any] | None = None
 
 
+# --- OpenAI-compatible ingress (POST /v1/chat/completions) ----------------
+# The drop-in surface: any OpenAI client pointed at {harness}/v1 drives the
+# gated complete pipeline — same resolve chain, honesty gate, metering,
+# completion log, fallback contract. Request translation is a mapping, not
+# a second pipeline; fields the gated pipeline can't honor fail closed as
+# invalid_request_error instead of being silently dropped.
+
+_OPENAI_BACKENDS = frozenset({"hosted_k3", "local_fx1", "byok"})
+
+# Fields a caller may send that the gated pipeline cannot honor. Naming the
+# field beats silently dropping it — honest compat over fake compat.
+_OPENAI_UNSUPPORTED = (
+    "tools",
+    "tool_choice",
+    "functions",
+    "function_call",
+    "parallel_tool_calls",
+    "logprobs",
+    "top_logprobs",
+    "logit_bias",
+    "stop",
+    "presence_penalty",
+    "frequency_penalty",
+    "modalities",
+    "audio",
+    "prediction",
+    "reasoning_effort",
+    "service_tier",
+    "store",
+    "metadata",
+)
+
+_OPENAI_ERR_TYPES = {
+    400: "invalid_request_error",
+    404: "invalid_request_error",
+    409: "invalid_request_error",
+    413: "invalid_request_error",
+    422: "invalid_request_error",
+    401: "authentication_error",
+    403: "permission_error",
+    429: "rate_limit_error",
+    503: "service_unavailable",
+}
+
+
+def _openai_error_body(message: str, status: int, code: str) -> dict[str, Any]:
+    """The OpenAI error envelope — `{error: {message, type, param, code}}`.
+
+    ``code`` carries the harness's own code (``honesty_gate``,
+    ``over_capacity``, ``draining``, …) so clients can branch on it.
+    """
+    return {
+        "error": {
+            "message": message,
+            "type": _OPENAI_ERR_TYPES.get(
+                status, "server_error" if status >= 500 else "invalid_request_error"
+            ),
+            "param": None,
+            "code": code,
+        }
+    }
+
+
+def _is_openai_path(request: Request) -> bool:
+    return request.url.path.startswith("/v1")
+
+
+class OpenAIChatMessage(_Model):
+    """One chat message — content may be a string or an OpenAI
+    content-part list; non-text parts are rejected at translation."""
+
+    model_config = ConfigDict(extra="allow")
+
+    role: str
+    content: str | list[dict[str, Any]] | None = None
+
+
+class OpenAIFx1(_Model):
+    """The ``fx1`` extension object: harness knobs that have no OpenAI
+    field — backend selection, fallbacks, BYOK credentials, the local
+    checkpoint dir, receipt citations, and the per-call deadline."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None
+    fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
+        default_factory=list, max_length=2
+    )
+    byok: ByokOverride | None = None
+    checkpoint_dir: str | None = None
+    receipt_hashes: list[str] | None = None
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
+
+
+class OpenAIChatRequest(_Model):
+    """POST /v1/chat/completions body — the OpenAI surface, extra fields
+    tolerated (SDKs send bookkeeping keys like ``user``)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    model: str = "fx1"
+    messages: list[OpenAIChatMessage] = Field(min_length=1, max_length=512)
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, gt=0.0, le=1.0)
+    max_tokens: int | None = Field(default=None, gt=0, le=262144)
+    seed: int | None = Field(default=None, ge=0)
+    stream: bool = False
+    stream_options: dict[str, Any] | None = None
+    n: int = 1
+    response_format: dict[str, Any] | None = None
+    fx1: OpenAIFx1 | None = None
+
+    @model_validator(mode="after")
+    def _openai_valid(self) -> OpenAIChatRequest:
+        if self.n != 1:
+            raise ValueError("n must be 1 — the gated pipeline serves one completion")
+        if self.response_format is not None and self.response_format.get("type", "text") != "text":
+            raise ValueError("response_format other than text is not supported")
+        present = [f for f in _OPENAI_UNSUPPORTED if getattr(self, f, None) is not None]
+        # extras (extra="allow") that are also unsupported features
+        extra_bad = sorted(f for f in _OPENAI_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
+        bad = sorted(set(present) | set(extra_bad))
+        if bad:
+            raise ValueError(f"unsupported for the gated pipeline: {', '.join(bad)}")
+        return self
+
+
+class OpenAIModel(_Model):
+    """One entry of GET /v1/models — `id` is the name `model` may carry."""
+
+    id: str
+    object: Literal["model"] = "model"
+    created: int
+    owned_by: str = "dipcatcher"
+
+
+class OpenAIModelList(_Model):
+    """GET /v1/models body — the OpenAI `list` envelope."""
+
+    object: Literal["list"] = "list"
+    data: list[OpenAIModel]
+
+
+class OpenAIChatChoice(_Model):
+    """One choice of a `chat.completion` — the gated text lands here."""
+
+    index: int
+    message: dict[str, str]
+    finish_reason: Literal["stop"]
+
+
+class OpenAIChatResponse(_Model):
+    """POST /v1/chat/completions 200 body — the `chat.completion`
+    envelope. `system_fingerprint` carries the serving backend name;
+    `usage` is null when the provider didn't report token counts."""
+
+    id: str
+    object: Literal["chat.completion"] = "chat.completion"
+    created: int
+    model: str
+    system_fingerprint: str
+    choices: list[OpenAIChatChoice]
+    usage: dict[str, int] | None = None
+
+
+def _openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, str]]:
+    """Flatten OpenAI messages to harness {role, content} pairs.
+
+    Content-part lists keep only ``{"type": "text"}`` entries; any other
+    part type or a tool-bearing message fails closed — the gated pipeline
+    has no tool channel and silently dropping caller content is a lie.
+    """
+    out: list[dict[str, str]] = []
+    for i, m in enumerate(msgs):
+        if (
+            getattr(m, "tool_calls", None) is not None
+            or getattr(m, "tool_call_id", None) is not None
+        ):
+            raise ApiError(400, f"messages[{i}]: tool calls are not supported")
+        content = m.content
+        if content is None:
+            raise ApiError(400, f"messages[{i}]: content is required")
+        if isinstance(content, list):
+            parts: list[str] = []
+            for j, part in enumerate(content):
+                if part.get("type") != "text":
+                    raise ApiError(
+                        400,
+                        f"messages[{i}].content[{j}]: only 'text' parts are supported",
+                    )
+                parts.append(str(part.get("text", "")))
+            content = "".join(parts)
+        out.append({"role": m.role, "content": content})
+    return out
+
+
+def _openai_to_complete(body: OpenAIChatRequest, headers: Any) -> CompleteRequest:
+    """Translate an OpenAI request into the harness CompleteRequest.
+
+    Backend resolution order: ``fx1.backend`` > ``X-Fx1-Backend`` header >
+    a ``model`` naming a backend > ``hosted_k3``. BYOK credentials come
+    from ``fx1.byok`` or the ``X-Fx1-Byok-*`` headers — ``X-Fx1-Byok-Model``
+    defaults to the request ``model`` when it isn't a backend name.
+    """
+    ext = body.fx1
+    byok_headers = headers.get("x-fx1-byok-base-url")
+    backend = (
+        (ext.backend if ext is not None else None)
+        or headers.get("x-fx1-backend")
+        or (body.model if body.model in _OPENAI_BACKENDS else None)
+        # BYOK headers present and no explicit backend → the model string is
+        # the upstream model (e.g. "gpt-4o"), the link is byok.
+        or ("byok" if byok_headers else "hosted_k3")
+    )
+    if backend not in _OPENAI_BACKENDS:
+        raise ApiError(400, f"unknown backend {backend!r}")
+    fallbacks: list[str] = list(ext.fallbacks) if ext is not None else []
+    if not fallbacks and headers.get("x-fx1-fallbacks"):
+        fallbacks = [f.strip() for f in headers["x-fx1-fallbacks"].split(",") if f.strip()]
+    checkpoint_dir = (ext.checkpoint_dir if ext is not None else None) or headers.get(
+        "x-fx1-checkpoint-dir"
+    )
+    byok = ext.byok if ext is not None else None
+    if byok is None and byok_headers:
+        base_url = byok_headers
+        api_key = headers.get("x-fx1-byok-api-key")
+        model = headers.get("x-fx1-byok-model") or (
+            body.model if body.model not in _OPENAI_BACKENDS else None
+        )
+        if not api_key:
+            raise ApiError(400, "X-Fx1-Byok-Base-Url requires X-Fx1-Byok-Api-Key")
+        if not model:
+            raise ApiError(400, "byok needs a model — set X-Fx1-Byok-Model or body.model")
+        byok = ByokOverride(base_url=base_url, api_key=api_key, model=model)
+    return CompleteRequest(
+        backend=cast("Literal['hosted_k3', 'local_fx1', 'byok']", backend),
+        messages=[
+            ChatMessage(role=m["role"], content=m["content"])
+            for m in _openai_messages(body.messages)
+        ],
+        checkpoint_dir=checkpoint_dir,
+        receipt_hashes=ext.receipt_hashes if ext is not None else None,
+        byok=byok,
+        timeout_s=ext.timeout_s if ext is not None else None,
+        fallbacks=cast("list[Literal['hosted_k3', 'local_fx1', 'byok']]", fallbacks),
+        temperature=body.temperature,
+        top_p=body.top_p,
+        max_tokens=body.max_tokens,
+        seed=body.seed,
+    )
+
+
+def _openai_usage(usage: dict[str, int] | None) -> dict[str, int] | None:
+    """Usage dict in the OpenAI key set — the BYOK/hosted backends already
+    report prompt/completion/total; anything else passes through so the
+    evidence field stays faithful."""
+    if not isinstance(usage, dict):
+        return None
+    return {k: v for k, v in usage.items() if isinstance(v, int)}
+
+
+def _openai_envelope(out: CompleteResponse, cid: str) -> dict[str, Any]:
+    """CompleteResponse → the `chat.completion` envelope. `model` reports
+    the serving link's own model id (or the backend name); the completion
+    id mints the `chatcmpl-` handle."""
+    return {
+        "id": f"chatcmpl-{cid}",
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": out.model or out.backend,
+        "system_fingerprint": out.backend,
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": out.content},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": _openai_usage(out.usage),
+    }
+
+
+def _openai_sse(body: OpenAIChatRequest, out: CompleteResponse, cid: str) -> Iterator[str]:
+    """`chat.completion.chunk` frames over the gated text.
+
+    The content is already past the honesty gate (it is the gated
+    response), so delta chunking is a presentation choice — emit ~64-char
+    pieces on whitespace boundaries so streaming clients render
+    incrementally. `stream_options.include_usage` adds the OpenAI usage
+    chunk (choices=[], usage set) before [DONE].
+    """
+    chat_id = f"chatcmpl-{cid}"
+    created = int(time.time())
+    model = out.model or out.backend
+
+    def _frame(payload: dict[str, Any]) -> str:
+        return f"data: {json.dumps(payload, separators=(',', ':'))}\n\n"
+
+    base: dict[str, Any] = {
+        "id": chat_id,
+        "object": "chat.completion.chunk",
+        "created": created,
+        "model": model,
+        "system_fingerprint": out.backend,
+    }
+    first = dict(base)
+    first["choices"] = [{"index": 0, "delta": {"role": "assistant"}, "finish_reason": None}]
+    yield _frame(first)
+
+    text = out.content
+    pos = 0
+    while pos < len(text):
+        end = min(pos + 64, len(text))
+        if end < len(text):
+            sp = text.rfind(" ", pos, end)
+            if sp > pos:
+                end = sp + 1
+        piece = text[pos:end]
+        pos = end
+        frame = dict(base)
+        frame["choices"] = [{"index": 0, "delta": {"content": piece}, "finish_reason": None}]
+        yield _frame(frame)
+
+    last = dict(base)
+    last["choices"] = [{"index": 0, "delta": {}, "finish_reason": "stop"}]
+    yield _frame(last)
+
+    include_usage = bool((body.stream_options or {}).get("include_usage"))
+    if include_usage:
+        usage_frame = dict(base)
+        usage_frame["choices"] = []
+        usage_frame["usage"] = _openai_usage(out.usage)
+        yield _frame(usage_frame)
+
+    yield "data: [DONE]\n\n"
+
+
 class CompleteBatchRequest(_Model):
     backend: Literal["hosted_k3", "local_fx1", "byok"]
     batch: list[list[ChatMessage]] = Field(min_length=1, max_length=64)
@@ -2598,6 +2935,74 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
         return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
 
+    # --- OpenAI-compatible ingress ----------------------------------------
+    # Drop-in surface for stock OpenAI clients: translate the request onto
+    # the gated `complete` chain (same resolve/fallback/gate/meter/log path
+    # — no second pipeline), then emit the OpenAI envelope. Errors under
+    # /v1 get the OpenAI error shape via the app's exception handlers and
+    # auth middleware (path-prefix check). Streaming emits gated text as
+    # deltas after the honesty gate — first byte arrives post-gate, so
+    # first-token latency equals full latency; no ungated bytes ever ship.
+
+    _openai_created = int(time.time())
+
+    @app.get(
+        "/v1/models",
+        response_model=OpenAIModelList,
+        tags=["openai"],
+        operation_id="openai_list_models",
+    )
+    def openai_models() -> OpenAIModelList:
+        """Model inventory — the backend names a `model` field may carry,
+        plus the `fx1` alias for the default link (hosted_k3)."""
+        return OpenAIModelList(
+            data=[
+                OpenAIModel(id=m, created=_openai_created)
+                for m in ("fx1", "hosted_k3", "local_fx1", "byok")
+            ]
+        )
+
+    @app.post(
+        "/v1/chat/completions",
+        # the JSON path returns OpenAIChatResponse; stream=true returns SSE
+        # chunks (response_model stays None — the route returns a Response)
+        responses={200: {"model": OpenAIChatResponse}},
+        tags=["openai"],
+        operation_id="openai_chat_completions",
+    )
+    def openai_chat_completions(
+        body: OpenAIChatRequest,
+        request: Request,
+        _slot_held: None = Depends(slot),
+    ) -> Response:
+        """OpenAI-compatible chat completion over the gated pipeline.
+
+        The `X-Fx1-Completion-Id` header links the response to the
+        completion-log record (GET /harness/completions/{id}) and its
+        sealed receipt. `model` selects a backend when it names one
+        (hosted_k3/local_fx1/byok); anything else is the default link.
+        BYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the
+        `fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/
+        `X-Fx1-Checkpoint-Dir` select the chain without body extensions.
+        """
+        creq = _openai_to_complete(body, request.headers)
+        out = complete(
+            body=creq,
+            response=Response(),
+            _slot_held=None,
+            idempotency_key=None,
+        )
+        cid = out.completion_id or uuid.uuid4().hex
+        envelope = _openai_envelope(out, cid)
+        if body.stream:
+            headers = {"X-Fx1-Completion-Id": cid}
+            return StreamingResponse(
+                _openai_sse(body, out, cid),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+        return JSONResponse(envelope, headers={"X-Fx1-Completion-Id": cid})
+
     @app.post(
         "/harness/complete/batch",
         response_model=CompleteBatchResponse,
@@ -3003,6 +3408,12 @@ def create_app(
 
     @app.exception_handler(HTTPException)
     async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
+        if _is_openai_path(request):
+            return JSONResponse(
+                status_code=exc.status_code,
+                content=_openai_error_body(str(exc.detail), exc.status_code, _err_code(exc)),
+                headers=exc.headers,
+            )
         return JSONResponse(
             status_code=exc.status_code,
             content={"detail": exc.detail, "code": _err_code(exc)},
@@ -3011,6 +3422,16 @@ def create_app(
 
     @app.exception_handler(RequestValidationError)
     async def _validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        if _is_openai_path(request):
+            errs = jsonable_encoder(exc.errors())
+            msg = "; ".join(
+                f"{'.'.join(str(p) for p in e.get('loc', []))}: {e.get('msg', '')}"
+                for e in errs[:4]
+            )
+            return JSONResponse(
+                status_code=422,
+                content=_openai_error_body(msg or "invalid request", 422, "validation"),
+            )
         return JSONResponse(
             status_code=422,
             content=jsonable_encoder({"detail": exc.errors(), "code": "validation"}),
@@ -3036,12 +3457,16 @@ def create_app(
             }
             if wait > 0:
                 metrics.record_rate_limited()
+                rl_msg = f"rate limit exceeded; retry in {wait:.1f}s"
+                rl_content: dict[str, Any] = {
+                    "detail": rl_msg,
+                    "code": "too_many_requests",
+                }
+                if _is_openai_path(request):
+                    rl_content = _openai_error_body(rl_msg, 429, "too_many_requests")
                 response = JSONResponse(
                     status_code=429,
-                    content={
-                        "detail": f"rate limit exceeded; retry in {wait:.1f}s",
-                        "code": "too_many_requests",
-                    },
+                    content=rl_content,
                     headers={"Retry-After": str(max(1, math.ceil(wait))), **rl_headers},
                 )
                 return _finish(request, request_id, response, started)
@@ -3057,39 +3482,52 @@ def create_app(
                     )
                     return _finish(request, request_id, response, started)
                 if length > _MAX_BODY_BYTES:
-                    response = JSONResponse(
-                        status_code=413,
-                        content={
-                            "detail": f"body exceeds {_MAX_BODY_BYTES}-byte cap",
-                            "code": "too_large",
-                        },
-                    )
+                    big_content: dict[str, Any] = {
+                        "detail": f"body exceeds {_MAX_BODY_BYTES}-byte cap",
+                        "code": "too_large",
+                    }
+                    if _is_openai_path(request):
+                        big_content = _openai_error_body(
+                            str(big_content["detail"]), 413, "too_large"
+                        )
+                    response = JSONResponse(status_code=413, content=big_content)
                     return _finish(request, request_id, response, started)
         if request.url.path in _PUBLIC_PATHS:
             response = await call_next(request)
         elif api_key:
             provided = request.headers.get("X-API-Key")
+            # OpenAI-shape clients authenticate with Authorization: Bearer
+            # — accept it on /v1 so stock SDKs work unmodified.
+            if not provided and _is_openai_path(request):
+                auth_hdr = request.headers.get("Authorization", "")
+                if auth_hdr.startswith("Bearer "):
+                    provided = auth_hdr[len("Bearer ") :]
             if not provided or not hmac.compare_digest(provided, api_key):
-                response = JSONResponse(
-                    status_code=401,
-                    content={"detail": "invalid or missing X-API-Key", "code": "unauthorized"},
-                )
+                content: dict[str, Any] = {
+                    "detail": "invalid or missing X-API-Key",
+                    "code": "unauthorized",
+                }
+                if _is_openai_path(request):
+                    content = _openai_error_body("invalid or missing API key", 401, "unauthorized")
+                response = JSONResponse(status_code=401, content=content)
             else:
                 response = await call_next(request)
         else:
             host = (request.client.host if request.client else "") or ""
             if host not in _LOOPBACK_HOSTS:
-                response = JSONResponse(
-                    status_code=403,
-                    content={
-                        "detail": (
-                            "FX1_API_KEY is unset; non-localhost clients are "
-                            "refused. Set FX1_API_KEY and send X-API-Key, or "
-                            "bind to 127.0.0.1 only."
-                        ),
-                        "code": "forbidden",
-                    },
-                )
+                forbidden_body: dict[str, Any] = {
+                    "detail": (
+                        "FX1_API_KEY is unset; non-localhost clients are "
+                        "refused. Set FX1_API_KEY and send X-API-Key, or "
+                        "bind to 127.0.0.1 only."
+                    ),
+                    "code": "forbidden",
+                }
+                if _is_openai_path(request):
+                    forbidden_body = _openai_error_body(
+                        str(forbidden_body["detail"]), 403, "forbidden"
+                    )
+                response = JSONResponse(status_code=403, content=forbidden_body)
             else:
                 response = await call_next(request)
         if rl_headers is not None:
@@ -3170,6 +3608,7 @@ def create_app(
                 "breaker": breaker is not None,
                 "receipts_store": receipt_index.available(),
                 "byok_override": byok_override_enabled,
+                "openai_compat": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),
