@@ -2539,6 +2539,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ascending_clock",
         "double_auction",
         "gsp_auction",
+        # Wave-206 RL-theory canon: UCB bound, Hedge, eps-decay, PI
+        # contraction, TD rate, Q-learning rate.
+        "ucb_bound",
+        "mw_hedge",
+        "egreedy_decay",
+        "pi_contraction",
+        "td_rate",
+        "qlearn_rate",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

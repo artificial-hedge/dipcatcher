@@ -1637,6 +1637,14 @@ from quant_fund.research.benches_w205 import (
     bench_gsp_auction_family,
     bench_vickrey_auction_family,
 )
+from quant_fund.research.benches_w206 import (
+    bench_egreedy_decay_family,
+    bench_mw_hedge_family,
+    bench_pi_contraction_family,
+    bench_qlearn_rate_family,
+    bench_td_rate_family,
+    bench_ucb_bound_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4418,6 +4426,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ascending_clock": bench_ascending_clock_family(),
         "double_auction": bench_double_auction_family(),
         "gsp_auction": bench_gsp_auction_family(),
+        "ucb_bound": bench_ucb_bound_family(),
+        "mw_hedge": bench_mw_hedge_family(),
+        "egreedy_decay": bench_egreedy_decay_family(),
+        "pi_contraction": bench_pi_contraction_family(),
+        "td_rate": bench_td_rate_family(),
+        "qlearn_rate": bench_qlearn_rate_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
