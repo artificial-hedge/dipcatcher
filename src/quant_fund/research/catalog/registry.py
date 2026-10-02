@@ -1579,6 +1579,80 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "assignment",
         "graph_components",
         "exact_cover",
+        # Wave-102 canon: multi-
+        # armed bandits — UCB1/
+        # eps-greedy/ETC, KL-UCB,
+        # LinUCB + linear TS,
+        # EXP3 + Hedge, SE + LUCB
+        # best arm, SW-/D-UCB.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "stochastic_bandits",
+        "kl_bandits",
+        "contextual_bandits",
+        "adversarial_bandits",
+        "best_arm",
+        "nonstationary_bandits",
+        # Wave-103 canon: Krylov +
+        # randomized NLA — Lanczos,
+        # Arnoldi/GMRES, HMT rSVD,
+        # Nystrom, CUR leverage,
+        # interpolative decomp.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "lanczos",
+        "arnoldi_gmres",
+        "randomized_svd",
+        "nystrom",
+        "cur_decomp",
+        "interpolative_decomp",
+        # Wave-104 canon: OT II —
+        # Sinkhorn + transport LP,
+        # EMD 1-D/LP + Bures,
+        # Gromov-Wasserstein,
+        # unbalanced KL-UOT,
+        # fixed-support barycenter,
+        # fused GW. Same SYNTHETIC
+        # diagnostic contract.
+        "sinkhorn",
+        "emd_lp",
+        "gromov_wasserstein",
+        "unbalanced_ot",
+        "wasserstein_barycenter",
+        "fused_gromov",
+        # Wave-105 canon: game-tree
+        # search on a subtraction-race
+        # DAG — alpha-beta + TT, UCT,
+        # PUCT, NegaScout, PN, df-pn.
+        "alpha_beta",
+        "mcts",
+        "puct",
+        "negascout",
+        "proof_number",
+        "dfpn",
+        # Wave-106 canon: stiff
+        # time integration — BDF,
+        # Adams PECE, Radau IIA,
+        # Strang split, ETDRK4,
+        # Crank–Nicolson. Orders
+        # measured vs exact.
+        "bdf",
+        "adams",
+        "radau",
+        "strang",
+        "etdrk4",
+        "crank_nicolson",
+        # Wave-107 canon: transport
+        # & HJB PDE — ADI,
+        # Lax–Wendroff, WENO5,
+        # level set, fast
+        # marching, Godunov.
+        "adi",
+        "lax_wendroff",
+        "weno",
+        "level_set",
+        "fast_marching",
+        "godunov",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
