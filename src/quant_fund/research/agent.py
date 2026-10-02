@@ -1157,6 +1157,14 @@ from quant_fund.research.benches_w145 import (
     bench_reranker_crossenc_family,
     bench_rrf_fusion_family,
 )
+from quant_fund.research.benches_w146 import (
+    bench_consistency_vote_family,
+    bench_debate_multiagent_family,
+    bench_knowledge_graph_embed_family,
+    bench_mcts_reason_family,
+    bench_unlearn_ga_family,
+    bench_verifier_prm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3578,6 +3586,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "hyde_retrieval": bench_hyde_retrieval_family(),
         "reranker_crossenc": bench_reranker_crossenc_family(),
         "rrf_fusion": bench_rrf_fusion_family(),
+        "consistency_vote": bench_consistency_vote_family(),
+        "verifier_prm": bench_verifier_prm_family(),
+        "mcts_reason": bench_mcts_reason_family(),
+        "debate_multiagent": bench_debate_multiagent_family(),
+        "unlearn_ga": bench_unlearn_ga_family(),
+        "knowledge_graph_embed": bench_knowledge_graph_embed_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
