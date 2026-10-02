@@ -359,6 +359,66 @@ def parity_audit() -> dict[str, bool]:
             and tuple(api_mv["errors"]) == sdk_mv.errors
         )
 
+        # --- sealed-receipt store parity: SDK index vs HTTP fetch ------------
+        # One content-addressed store, three transports: the SDK reads it
+        # in-process, the API serves it, and HarnessClient fetches over the wire.
+        import tempfile as _tfd  # noqa: PLC0415
+        from pathlib import Path as _Ptd  # noqa: PLC0415
+
+        with _tfd.TemporaryDirectory() as _td:
+            _rdir = _Ptd(_td)
+            _sha = good["receipt_sha256"]
+            (_rdir / "sealed.json").write_text(json.dumps(good))
+            from fastapi.testclient import TestClient as _TCr  # noqa: PLC0415
+
+            import fx1.serve.api as _api_r  # noqa: PLC0415
+            from fx1.sdk import Fx1Harness as _FHr  # noqa: PLC0415
+            from fx1.serve.client import HarnessClient as _HCr  # noqa: PLC0415
+
+            _sdk_r = _FHr(receipts_dir=_rdir)
+            _api_r = _TCr(_api_r.create_app(receipts_dir=_rdir))
+            _rem_r = _HCr("http://harness.test", transport=_tc_transport(_api_r))
+
+            _idx = _api_r.get("/receipts").json()
+            _expect = ((_sha, "sealed.json"),)
+            out["receipts_store_index_parity"] = (
+                _idx["count"] == 1
+                and _idx["items"][0]["sha256"] == _sha
+                and tuple((r.sha256, r.name) for r in _sdk_r.receipts()) == _expect
+                and tuple((r.sha256, r.name) for r in _rem_r.receipts()) == _expect
+            )
+            _sdoc = _sdk_r.receipt(_sha)
+            _rdoc = _rem_r.receipt(_sha)
+            out["receipts_store_fetch_parity"] = (
+                _sdoc.document == good
+                and _sdoc.valid is True
+                and _rdoc.document == good
+                and _rdoc.valid is True
+                and _api_r.get(f"/receipts/{_sha}").json() == good
+            )
+            _miss = "f" * 64
+            out["receipts_store_error_parity"] = (
+                _raises(lambda: _sdk_r.receipt(_miss))[0] == "KeyError"
+                and _raises(lambda: _rem_r.receipt(_miss))[0] == "KeyError"
+                and _raises(lambda: _sdk_r.receipt("zz"))[0] == "ValueError"
+                and _raises(lambda: _rem_r.receipt("zz"))[0] == "ValueError"
+            )
+            out["receipts_store_conditional_304"] = (
+                _api_r.get(f"/receipts/{_sha}", headers={"if-none-match": f'"{_sha}"'}).status_code
+                == 304
+                and _api_r.get(f"/receipts/{_sha}", headers={"if-none-match": "*"}).status_code
+                == 304
+                and _api_r.get(
+                    f"/receipts/{_sha}",
+                    headers={"if-none-match": f'"{"b" * 64}"'},
+                ).status_code
+                == 200
+            )
+        out["receipts_store_absent_sdk"] = (
+            _raises(lambda: _FHr(receipts_dir="/nonexistent-zzz").receipts())[0]
+            == "FileNotFoundError"
+        )
+
         # --- registry / run / health parity -----------------------------------
         api_cmds = client.get("/harness/commands").json()
         out["commands_parity"] = sorted(sdk.commands()) == sorted(

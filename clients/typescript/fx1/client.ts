@@ -39,6 +39,9 @@ export type JobStatusResponse = components["schemas"]["JobStatusResponse"];
 export type JobSubmitResponse = components["schemas"]["JobSubmitResponse"];
 export type MetricsResponse = components["schemas"]["MetricsResponse"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
+export type ReceiptIndexItem = components["schemas"]["ReceiptIndexItem"];
+export type ReceiptIndexResponse =
+  components["schemas"]["ReceiptIndexResponse"];
 export type ReceiptVerifyRequest =
   components["schemas"]["ReceiptVerifyRequest"];
 export type ReceiptVerifyResponse =
@@ -48,6 +51,14 @@ export type ReceiptVerifyBatchRequest =
 export type ReceiptVerifyBatchResponse =
   components["schemas"]["ReceiptVerifyBatchResponse"];
 export type VersionResponse = components["schemas"]["VersionResponse"];
+
+/** Result of GET /receipts/{sha256}: sealed bytes plus the live-verifier flag. */
+export interface FetchedReceipt {
+  /** The sealed receipt document, verbatim. */
+  receipt: Record<string, unknown>;
+  /** Server-side re-verify verdict (X-Fx1-Receipt-Valid response header). */
+  valid: boolean;
+}
 
 /** JSON body of a 200 GET response for a path in the OpenAPI spec. */
 type GetJson<P extends keyof paths> =
@@ -526,6 +537,31 @@ export class HarnessApiClient {
       if (Date.now() >= deadline) return j;
       await new Promise((r) => setTimeout(r, pollMs));
     }
+  }
+
+  // ---- receipt store --------------------------------------------------------
+
+  /** GET /receipts — index the server's sealed-receipt store. */
+  receipts(): Promise<ReceiptIndexResponse> {
+    return this.get("/receipts");
+  }
+
+  /**
+   * GET /receipts/{sha256} — the sealed receipt verbatim plus the server's
+   * live re-verify verdict (X-Fx1-Receipt-Valid). Unknown hashes reject with
+   * a 404 HarnessApiError; malformed digests with 422.
+   */
+  async receipt(sha256: string): Promise<FetchedReceipt> {
+    const res = await this.send({
+      method: "GET",
+      path: `/receipts/${sha256}`,
+      idempotent: true,
+    });
+    const doc = (await this.parse(res)) as Record<string, unknown>;
+    return {
+      receipt: doc,
+      valid: res.headers.get("x-fx1-receipt-valid") === "true",
+    };
   }
 
   // ---- receipts ----------------------------------------------------------

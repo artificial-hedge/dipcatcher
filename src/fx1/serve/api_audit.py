@@ -1791,6 +1791,16 @@ def api_audit() -> dict[str, Any]:
             miss.status_code == 404 and miss.json().get("code") == "receipt_not_found"
         )
         out["receipt_fetch_422_malformed"] = rclient.get("/receipts/zzz").status_code == 422
+        nm = rclient.get(f"/receipts/{sha}", headers={"if-none-match": f'"{sha}"'})
+        out["receipt_fetch_conditional_304"] = (
+            nm.status_code == 304
+            and nm.content == b""
+            and nm.headers.get("etag") == f'"{sha}"'
+            and rclient.get(
+                f"/receipts/{sha}", headers={"if-none-match": '"' + "b" * 64 + '"'}
+            ).status_code
+            == 200
+        )
         # staleness key: a receipt written after the first scan is indexed
         (rdir / "second.json").write_text(_json.dumps({**good, "receipt_sha256": "b" * 64}))
         out["receipts_index_refreshes"] = rclient.get("/receipts").json()["count"] == 2

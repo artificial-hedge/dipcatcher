@@ -494,6 +494,59 @@ def harness_verify(
     raise typer.Exit(code=0 if verdict.valid else 1)
 
 
+@harness_app.command("receipts")
+def harness_receipts(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    receipts_dir: Path = typer.Option(
+        Path("receipts"),
+        "--receipts-dir",
+        help="Local sealed-receipts store (ignored with --remote).",
+    ),
+) -> None:
+    """Index the sealed-receipt store — a local dir or the remote's over HTTP."""
+    if remote is None:
+        from fx1.sdk import Fx1Harness
+
+        surface: Fx1Harness | HarnessClient = Fx1Harness(receipts_dir=receipts_dir)
+    else:
+        surface = _remote_client(remote, api_key, timeout_s)
+    items = _or_exit(lambda: surface.receipts())
+    typer.echo(
+        json.dumps(
+            {
+                "count": len(items),
+                "items": [{"sha256": r.sha256, "name": r.name} for r in items],
+            },
+            indent=2,
+        )
+    )
+
+
+@harness_app.command("receipt")
+def harness_receipt(
+    sha256: str = typer.Argument(..., help="Receipt content hash (64 lowercase hex)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    receipts_dir: Path = typer.Option(
+        Path("receipts"),
+        "--receipts-dir",
+        help="Local sealed-receipts store (ignored with --remote).",
+    ),
+) -> None:
+    """Fetch one sealed receipt by content hash: verbatim document + validity."""
+    if remote is None:
+        from fx1.sdk import Fx1Harness
+
+        surface: Fx1Harness | HarnessClient = Fx1Harness(receipts_dir=receipts_dir)
+    else:
+        surface = _remote_client(remote, api_key, timeout_s)
+    r = _or_exit(lambda: surface.receipt(sha256))
+    typer.echo(json.dumps({"sha256": r.sha256, "valid": r.valid, "receipt": r.document}, indent=2))
+
+
 @harness_app.command("health")
 def harness_health(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),

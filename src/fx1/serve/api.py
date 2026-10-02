@@ -86,6 +86,8 @@ from fx1.serve.backends import (
 )
 from fx1.serve.chat import cited_complete
 from fx1.serve.contract import API_VERSION
+from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
+from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
 from fx1.serve.webhooks import (
     WEBHOOK_SIGNATURE_HEADER,
     WEBHOOK_TIMESTAMP_HEADER,
@@ -876,7 +878,7 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         operation_id="receipt_fetch",
         response_class=Response,
     )
-    def receipt_fetch(sha256: str) -> Response:
+    def receipt_fetch(sha256: str, request: Request) -> Response:
         """Serve the sealed receipt addressed by its content hash.
 
         The body is the receipt's committed bytes verbatim, and receipts are
@@ -892,6 +894,12 @@ def _mount_receipt_routes(app: FastAPI, receipt_index: _ReceiptIndex) -> None:
         path = receipt_index.lookup(sha256)
         if path is None:
             raise ApiError(404, "receipt not found", code="receipt_not_found")
+        inm = request.headers.get("if-none-match", "")
+        if inm.strip() == "*" or f'"{sha256}"' in inm:
+            return Response(
+                status_code=304,
+                headers={"ETag": f'"{sha256}"', "Cache-Control": "public, immutable"},
+            )
         try:
             body = path.read_bytes()
         except OSError as exc:
@@ -1375,70 +1383,6 @@ class _BackendBreaker:
                 else 0.0
             )
             return opened is not None and remaining > 0.0, remaining, self._fails.get(backend, 0)
-
-
-_SHA256_HEX = re.compile(r"[0-9a-f]{64}")
-
-
-class _ReceiptIndex:
-    """Lazy sha256 → file index over the receipts store.
-
-    Receipts are append-only immutable blobs, so ``(file count, max mtime)``
-    is a sufficient staleness key — the index rebuilds only when the store
-    changes, and a missing/removed store reports itself unavailable rather
-    than serving stale lookups.
-    """
-
-    def __init__(self, root: Path) -> None:
-        self._root = root
-        self._lock = threading.Lock()
-        self._key: tuple[int, float] | None = None
-        self._by_sha: dict[str, Path] = {}
-        self._available = False
-
-    def _scan(self) -> None:
-        if not self._root.is_dir():
-            self._available = False
-            self._by_sha = {}
-            self._key = None
-            return
-        try:
-            files = list(self._root.glob("*.json"))
-            key = (len(files), max((f.stat().st_mtime for f in files), default=0.0))
-        except OSError:
-            self._available = False
-            self._by_sha = {}
-            self._key = None
-            return
-        if key == self._key:
-            return
-        by_sha: dict[str, Path] = {}
-        for f in files:
-            try:
-                doc = json.loads(f.read_bytes())
-            except (OSError, ValueError):
-                continue
-            sha = doc.get("receipt_sha256") if isinstance(doc, dict) else None
-            if isinstance(sha, str) and _SHA256_HEX.fullmatch(sha):
-                by_sha[sha] = f
-        self._by_sha = by_sha
-        self._key = key
-        self._available = True
-
-    def available(self) -> bool:
-        with self._lock:
-            self._scan()
-            return self._available
-
-    def lookup(self, sha256: str) -> Path | None:
-        with self._lock:
-            self._scan()
-            return self._by_sha.get(sha256)
-
-    def items(self) -> list[tuple[str, Path]]:
-        with self._lock:
-            self._scan()
-            return sorted(self._by_sha.items(), key=lambda kv: kv[1].name)
 
 
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:

@@ -39,7 +39,14 @@ from typing import Any
 from fx1 import __version__
 from fx1.harness import HarnessResult
 from fx1.honesty import Fx1HonestyError
-from fx1.sdk import CompletionResult, HarnessHealth, OpsMetrics, ReceiptVerdict
+from fx1.sdk import (
+    CompletionResult,
+    HarnessHealth,
+    OpsMetrics,
+    ReceiptRef,
+    ReceiptVerdict,
+    StoredReceipt,
+)
 from fx1.serve.backends import BackendNotConfiguredError
 from fx1.serve.contract import API_VERSION as EXPECTED_API_VERSION
 
@@ -665,6 +672,28 @@ class HarnessClient:
         if not saw_done:
             raise HarnessTransportError("stream ended without [DONE]")
         return chunks
+
+    # ---- receipt store -------------------------------------------------------
+
+    def receipts(self) -> tuple[ReceiptRef, ...]:
+        """GET /receipts — index the server's sealed-receipt store
+        (content hash → filename, sorted)."""
+        out = self._json("GET", "/receipts", idempotent=True)
+        assert isinstance(out, dict)
+        return tuple(ReceiptRef(sha256=item["sha256"], name=item["name"]) for item in out["items"])
+
+    def receipt(self, sha256: str) -> StoredReceipt:
+        """GET /receipts/{sha256} — the sealed document verbatim plus the
+        server's live re-verify verdict (``X-Fx1-Receipt-Valid``). Unknown
+        hashes raise KeyError; malformed digests raise ValueError."""
+        _status, headers, body = self._request("GET", f"/receipts/{sha256}", idempotent=True)
+        doc = json.loads(body)
+        assert isinstance(doc, dict)
+        return StoredReceipt(
+            sha256=sha256,
+            document=doc,
+            valid=headers.get("x-fx1-receipt-valid") == "true",
+        )
 
     # ---- receipts --------------------------------------------------------
 

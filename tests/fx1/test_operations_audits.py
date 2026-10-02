@@ -10,8 +10,14 @@ from pydantic import ValidationError
 
 from fx1.operations import (
     audit_bar_integrity as bars,
+)
+from fx1.operations import (
     audit_duplicate_keys as duplicates,
+)
+from fx1.operations import (
     audit_panel_gaps as gaps,
+)
+from fx1.operations import (
     audit_point_in_time as pit,
 )
 from fx1.operations.base import OperationContext

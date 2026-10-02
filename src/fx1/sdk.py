@@ -30,6 +30,7 @@ double and no subprocess or network is touched.
 
 from __future__ import annotations
 
+import json
 import os
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
@@ -47,14 +48,17 @@ from fx1.serve.backends import (
     get_backend,
 )
 from fx1.serve.chat import cited_complete
-from quant_fund.research.receipt_v2 import verify_receipt_payload
+from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
+from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 __all__ = [
     "BackendNotConfiguredError",
     "CompletionResult",
     "Fx1Harness",
     "OpsMetrics",
+    "ReceiptRef",
     "ReceiptVerdict",
+    "StoredReceipt",
 ]
 
 BackendResolver = Callable[..., InferenceBackend]
@@ -85,6 +89,25 @@ class ReceiptVerdict:
     digest_convention: str | None
     errors: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ReceiptRef:
+    """One entry in the sealed-receipt store index — mirrors ReceiptIndexItem."""
+
+    sha256: str
+    name: str
+
+
+@dataclass(frozen=True)
+class StoredReceipt:
+    """A fetched receipt: the verbatim sealed document plus the live
+    verifier's verdict (``X-Fx1-Receipt-Valid`` on the wire, re-verify
+    in-process here)."""
+
+    sha256: str
+    document: dict[str, Any]
+    valid: bool
 
 
 @dataclass(frozen=True)
@@ -123,9 +146,11 @@ class Fx1Harness:
         self,
         harness: Harness | None = None,
         backend_resolver: BackendResolver | None = None,
+        receipts_dir: str | Path = "receipts",
     ) -> None:
         self._harness = harness or Harness()
         self._resolve_backend = backend_resolver or get_backend
+        self._receipts = ReceiptIndex(Path(receipts_dir))
 
     # ---- registry ------------------------------------------------------
 
@@ -309,6 +334,28 @@ class Fx1Harness:
             digest_convention=result["digest_convention"],
             errors=tuple(result["errors"]),
             warnings=tuple(result["warnings"]),
+        )
+
+    def receipts(self) -> tuple[ReceiptRef, ...]:
+        """Index the local sealed-receipt store — the in-process twin of
+        ``GET /receipts``. An absent store raises FileNotFoundError."""
+        if not self._receipts.available():
+            raise FileNotFoundError(f"receipts store unavailable at {self._receipts.root}")
+        return tuple(ReceiptRef(sha256=sha, name=path.name) for sha, path in self._receipts.items())
+
+    def receipt(self, sha256: str) -> StoredReceipt:
+        """Fetch one sealed receipt by content hash — the in-process twin of
+        ``GET /receipts/{sha256}``: verbatim document plus a live re-verify.
+        Unknown hashes raise KeyError; a malformed digest raises ValueError."""
+        if SHA256_HEX.fullmatch(sha256) is None:
+            raise ValueError(f"malformed receipt sha256: {sha256!r}")
+        path = self._receipts.lookup(sha256)
+        if path is None or not path.is_file():
+            raise KeyError(f"receipt not found: {sha256}")
+        return StoredReceipt(
+            sha256=sha256,
+            document=json.loads(path.read_bytes()),
+            valid=bool(verify_receipt_file(path)["valid"]),
         )
 
     def verify_receipts(self, receipts: list[dict[str, Any]]) -> tuple[ReceiptVerdict, ...]:

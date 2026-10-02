@@ -185,6 +185,36 @@ def cli_audit() -> dict[str, Any]:
             runner.invoke(app, ["harness", "verify", str(empty)]).exit_code == 2
         )
 
+    # `harness receipts`/`receipt` over a local sealed store — same contract as
+    # the API's /receipts routes, read in-process.
+    with tempfile.TemporaryDirectory() as td2:
+        rdir = Path(td2) / "store"
+        rdir.mkdir()
+        sealed = dip_audit_bench()
+        sha = sealed["receipt_sha256"]
+        (rdir / "s.json").write_text(json.dumps(sealed))
+        ri = runner.invoke(app, ["harness", "receipts", "--receipts-dir", str(rdir)])
+        out["harness_receipts_lists"] = ri.exit_code == 0 and json.loads(ri.stdout)["items"] == [
+            {"sha256": sha, "name": "s.json"}
+        ]
+        rf = runner.invoke(app, ["harness", "receipt", sha, "--receipts-dir", str(rdir)])
+        rfj = json.loads(rf.stdout) if rf.exit_code == 0 else {}
+        out["harness_receipt_fetches"] = (
+            rfj.get("receipt", {}).get("receipt_sha256") == sha and rfj.get("valid") is True
+        )
+        out["harness_receipt_miss_exits_2"] = (
+            runner.invoke(
+                app, ["harness", "receipt", "f" * 64, "--receipts-dir", str(rdir)]
+            ).exit_code
+            == 2
+        )
+        out["harness_receipts_absent_dir_2"] = (
+            runner.invoke(
+                app, ["harness", "receipts", "--receipts-dir", str(Path(td2) / "gone")]
+            ).exit_code
+            == 2
+        )
+
     # `harness complete` gated surfaces — stream vs block over an injected SDK
     from unittest.mock import patch  # noqa: PLC0415
 

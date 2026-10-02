@@ -68,6 +68,19 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
 | `GET /receipts` | index the store: `sha256` → filename |
 | `GET /receipts/{sha256}` | fetch the sealed receipt by content hash — verbatim bytes, `ETag` = the hash, `Cache-Control: public, immutable`, `X-Fx1-Receipt-Valid` from live re-verify |
 
+The store is content-addressed, so `If-None-Match: "<sha256>"` (or `*`)
+answers `304` without a body — receipts are immutable, a cached copy is
+always current. The same store is reachable on every surface, one
+contract: `Fx1Harness(receipts_dir=…).receipts()` / `.receipt(sha256)`
+in-process, `HarnessClient.receipts()` / `.receipt(sha256)` over the
+wire (`.receipt()` returns the document plus the server's live
+re-verify flag), `HarnessApiClient.receipts()` / `.receipt()` in TS,
+and `fx1 harness receipts` / `fx1 harness receipt <sha256>` on the CLI
+(local `--receipts-dir` or `--remote`). Misses map to the same errors
+everywhere: `KeyError`/`404` unknown hash, `ValueError`/`422` malformed
+digest, store-absent → `FileNotFoundError` locally / `503
+receipts_unavailable` on the wire.
+
 `GET /openapi.json` is codegen-grade: every operation carries a stable
 `operation_id` + tag (`quality/fx1_openapi_surface.json` pins the
 surface — `paths` + `schema_sha256`).

@@ -200,7 +200,9 @@ def execute(request: Input, context: OperationContext) -> Output:
         decision_time=request.decision_time,
         staleness_clock=request.staleness_clock,
         max_age_seconds=request.max_age_seconds,
-        assessment=("incomplete" if missing or stale else "covered") if expected else "no_expected_pairs",
+        assessment=("incomplete" if missing or stale else "covered")
+        if expected
+        else "no_expected_pairs",
         complete_expected_coverage=missing == stale == 0 if expected else None,
         expected_pair_count=len(expected),
         covered_expected_pairs=covered,
