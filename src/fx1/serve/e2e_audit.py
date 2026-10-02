@@ -169,6 +169,8 @@ def e2e_audit() -> dict[str, bool]:
     stub_thread.start()
     server: uvicorn.Server | None = None
     server_thread: threading.Thread | None = None
+    server2: uvicorn.Server | None = None
+    server2_thread: threading.Thread | None = None
     try:
         stub_port = int(stub.server_address[1])
         os.environ.update(
@@ -286,11 +288,47 @@ def e2e_audit() -> dict[str, bool]:
             cli_app, ["harness", "list", "--remote", base, "--api-key", _API_KEY]
         )
         out["e2e_cli_remote_list"] = cr2.exit_code == 0 and sorted(cmds)[0] in cr2.output
+
+        # -- resilience over the real wire: cap 503 -> Retry-After -> recover
+        capped_app = api_mod.create_app(harness=Harness(runner=fake_runner), max_inflight=1)
+        server2, server2_thread, port2 = _serve_uvicorn(capped_app)
+        base2 = f"http://127.0.0.1:{port2}"
+        slots = capped_app.state.inflight_slots
+        held = slots.acquire(blocking=False)
+        out["e2e_cap_slot_held"] = held is True
+        released = {"done": False}
+
+        def _release_sleep(_s: float) -> None:
+            if not released["done"]:
+                released["done"] = True
+                slots.release()
+
+        resilient = HarnessClient(
+            base2,
+            api_key=_API_KEY,
+            timeout_s=15.0,
+            max_retries=3,
+            retry_backoff_s=1e-9,
+            retry_writes=True,
+            sleep=_release_sleep,
+        )
+        try:
+            sat = resilient.complete(msg, backend="byok")
+            out["e2e_retry_recovers_under_cap"] = sat.content.startswith("stub:ping")
+        except Exception:  # noqa: BLE001 — probe records, never crashes
+            out["e2e_retry_recovers_under_cap"] = False
+            if not released["done"]:
+                released["done"] = True
+                slots.release()
     finally:
         if server is not None:
             server.should_exit = True
         if server_thread is not None:
             server_thread.join(timeout=15)
+        if server2 is not None:
+            server2.should_exit = True
+        if server2_thread is not None:
+            server2_thread.join(timeout=15)
         stub.shutdown()
         stub.server_close()
         stub_thread.join(timeout=5)
