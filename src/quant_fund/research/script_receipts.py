@@ -487,6 +487,7 @@ _MEASUREMENT_SCHEMAS = (
     "release_chase.v1",
     "reload_gate.v1",
     "repost_frontier.v1",
+    "repost_latency.v1",
     "reseed_hazard.v1",
     "round_lot.v1",
     "sign_autocorr_real.v1",

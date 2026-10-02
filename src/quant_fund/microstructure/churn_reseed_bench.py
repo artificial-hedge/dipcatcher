@@ -66,9 +66,11 @@ def _reseed_fates(
     *,
     horizon: int,
     seed: int,
+    fr_frac: float = 0.8,
+    fr_delay: int = 280,
 ) -> dict[str, Any]:
     """sim_reseed's measure plus per-vacancy and repost fates."""
-    extra = _extra(zone, ttl, rq)
+    extra = _extra(zone, ttl, rq, fr_frac, fr_delay)
     flow = _split(inten, seed) if inten is not None else None
     sim = ZILobSimulator(_calibrated(seed, extra), flow)
     seen = 0
