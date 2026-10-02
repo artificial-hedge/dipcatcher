@@ -2483,6 +2483,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "knapsack_dp",
         "tsp_branchbound",
         "spt_weighted",
+        # Wave-199 quantum canon: QAOA MaxCut, VQE Ising, Grover, QPE,
+        # quantum kernel, continuous-time quantum walk.
+        "qaoa_maxcut",
+        "vqe_ising",
+        "grover_search",
+        "qpe_phase",
+        "qkernel_svm",
+        "quantum_walk",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
