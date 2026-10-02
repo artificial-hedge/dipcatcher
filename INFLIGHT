@@ -2632,3 +2632,4 @@ wave 231 (2026-10-02): architecture canon — cpu_pipeline, cache_sim, branch_pr
 wave 232 (2026-10-02): blockchain canon — merkle_tree, proof_of_work, utxo_set, difficulty_retarget, fork_resolution, block_validator; 1365→1371 families.
 wave 233 (2026-10-02): compiler-2 canon — ssa_construct, sccp_const, gvn_elim, reg_coalesce, instr_sched, licm_hoist; 1371→1377 families.
 wave 234 (2026-10-02): database-internals canon — btree_index, wal_recovery, join_algos, query_planner, mvcc_isolation, lsm_tree; 1377→1383 families.
+wave 235 (2026-10-02): OS-internals canon — round_robin_sched, cfs_scheduler, demand_paging, deadlock_detect, disk_sched, fs_journal; 1383→1389 families.
