@@ -67,7 +67,7 @@ def _per_symbol_vol(bars: pl.DataFrame, window: int) -> pl.DataFrame:
     return (
         bars.sort(["security_id", "event_time"])
         .with_columns(
-            pl.col("close").log().diff().alias("_r"),
+            pl.col("close").log().diff().over("security_id").alias("_r"),
         )
         .with_columns(
             pl.col("_r")
