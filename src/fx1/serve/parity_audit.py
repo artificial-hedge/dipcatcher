@@ -712,8 +712,68 @@ def parity_audit() -> dict[str, bool]:
             {"max_retries": -1},
             {"retry_backoff_s": 0.0},
             {"max_retry_wait_s": 0.0},
+            {"circuit_breaker_threshold": -1},
+            {"circuit_reset_s": 0.0},
         )
     )
+
+    # circuit breaker: transport faults open it; half-open probe closes it
+    tr8, calls8 = _scripted(["RAISE"])
+    t8 = [0.0]
+    cb = HarnessClient(
+        "http://h.test",
+        transport=tr8,
+        circuit_breaker_threshold=2,
+        circuit_reset_s=30.0,
+        clock=lambda: t8[0],
+        sleep=lambda s: None,
+    )
+    for _ in range(2):
+        _raises(lambda: cb.health())
+    out["circuit_opens_and_fails_fast"] = (
+        _raises(lambda: cb.health())[0] == "HarnessTransportError"
+        and calls8["n"] == 2  # the third call never reached the wire
+        and "circuit open" in str(_raises(lambda: cb.health())[1])
+    )
+    # half-open probe: advance the clock past the reset window; a healthy
+    # transport closes the circuit
+    tr9, calls9 = _scripted(["RAISE", "RAISE", (200, {}, _health_body())])
+    t9 = [0.0]
+    cb9 = HarnessClient(
+        "http://h.test",
+        transport=tr9,
+        circuit_breaker_threshold=2,
+        circuit_reset_s=30.0,
+        clock=lambda: t9[0],
+        sleep=lambda s: None,
+    )
+    for _ in range(2):
+        _raises(lambda: cb9.health())
+    t9[0] = 31.0
+    out["circuit_half_open_closes"] = cb9.health().status == "ok" and calls9["n"] == 3
+    # a failed half-open probe re-opens the window
+    tr10, calls10 = _scripted(["RAISE"])
+    t10 = [0.0]
+    cb10 = HarnessClient(
+        "http://h.test",
+        transport=tr10,
+        circuit_breaker_threshold=1,
+        circuit_reset_s=30.0,
+        clock=lambda: t10[0],
+        sleep=lambda s: None,
+    )
+    _raises(lambda: cb10.health())  # trips (threshold 1)
+    t10[0] = 31.0
+    _raises(lambda: cb10.health())  # half-open probe fails -> re-open
+    out["circuit_half_open_reopens"] = calls10["n"] == 2 and "circuit open" in str(
+        _raises(lambda: cb10.health())[1]
+    )
+    # disabled by default: every call reaches the wire
+    tr11, calls11 = _scripted(["RAISE"])
+    cb11 = HarnessClient("http://h.test", transport=tr11, sleep=lambda s: None)
+    for _ in range(4):
+        _raises(lambda: cb11.health())
+    out["circuit_disabled_by_default"] = calls11["n"] == 4
     return out
 
 

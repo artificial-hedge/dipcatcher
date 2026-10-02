@@ -109,6 +109,9 @@ class HarnessClient:
         retry_writes: bool = False,
         max_retry_wait_s: float = 5.0,
         sleep: Callable[[float], None] = time.sleep,
+        circuit_breaker_threshold: int = 0,
+        circuit_reset_s: float = 30.0,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         parsed = urllib.parse.urlparse(base_url)
         if parsed.scheme not in ("http", "https") or not parsed.netloc:
@@ -121,6 +124,12 @@ class HarnessClient:
             raise ValueError(f"retry_backoff_s must be > 0, got {retry_backoff_s}")
         if max_retry_wait_s <= 0:
             raise ValueError(f"max_retry_wait_s must be > 0, got {max_retry_wait_s}")
+        if circuit_breaker_threshold < 0:
+            raise ValueError(
+                f"circuit_breaker_threshold must be >= 0, got {circuit_breaker_threshold}"
+            )
+        if circuit_reset_s <= 0:
+            raise ValueError(f"circuit_reset_s must be > 0, got {circuit_reset_s}")
         self._base = f"{parsed.scheme}://{parsed.netloc}{parsed.path.rstrip('/')}"
         self._headers = {"X-API-Key": api_key} if api_key else {}
         self._timeout_s = timeout_s
@@ -130,6 +139,11 @@ class HarnessClient:
         self._retry_writes = retry_writes
         self._max_retry_wait_s = max_retry_wait_s
         self._sleep = sleep
+        self._cb_threshold = circuit_breaker_threshold
+        self._cb_reset_s = circuit_reset_s
+        self._clock = clock
+        self._cb_failures = 0
+        self._cb_open_until = 0.0
 
     # ---- transport ----------------------------------------------------
 
@@ -141,30 +155,59 @@ class HarnessClient:
         *,
         idempotent: bool = False,
     ) -> tuple[int, Mapping[str, str], bytes]:
+        if self._cb_threshold and self._clock() < self._cb_open_until:
+            raise HarnessTransportError(
+                f"circuit open for {self._base} — fail fast until "
+                f"{self._cb_open_until:.1f} (monotonic)"
+            )
         retries = self._max_retries if (idempotent or self._retry_writes) else 0
         backoff = self._retry_backoff_s
-        for attempt in range(retries + 1):
-            try:
-                status, headers, body = self._transport(
-                    method, self._base + path, payload, dict(self._headers), self._timeout_s
-                )
-            except HarnessTransportError:
-                if attempt >= retries:
-                    raise
-                self._sleep(backoff)
-                backoff *= 2
-                continue
-            if self._retryable_status(status, headers) and attempt < retries:
-                wait = _retry_after_s(headers)
-                if wait is not None and wait > self._max_retry_wait_s:
-                    break  # the server asked for a wait longer than the budget allows
-                self._sleep(min(wait if wait is not None else backoff, self._max_retry_wait_s))
-                backoff *= 2
-                continue
-            if status < 200 or status >= 300:
-                raise self._map_error(status, body)
-            return status, headers, body
-        raise HarnessTransportError(f"harness {method} {path} exhausted {retries} retries")
+        try:
+            for attempt in range(retries + 1):
+                try:
+                    status, headers, body = self._transport(
+                        method,
+                        self._base + path,
+                        payload,
+                        dict(self._headers),
+                        self._timeout_s,
+                    )
+                except HarnessTransportError:
+                    if attempt >= retries:
+                        raise
+                    self._sleep(backoff)
+                    backoff *= 2
+                    continue
+                if self._retryable_status(status, headers) and attempt < retries:
+                    wait = _retry_after_s(headers)
+                    if wait is not None and wait > self._max_retry_wait_s:
+                        break  # server asked for a wait longer than the budget allows
+                    self._sleep(min(wait if wait is not None else backoff, self._max_retry_wait_s))
+                    backoff *= 2
+                    continue
+                if status < 200 or status >= 300:
+                    raise self._map_error(status, body)
+                self._cb_reset()
+                return status, headers, body
+            raise HarnessTransportError(f"harness {method} {path} exhausted {retries} retries")
+        except HarnessTransportError:
+            self._cb_trip()
+            raise
+
+    def _cb_reset(self) -> None:
+        self._cb_failures = 0
+        self._cb_open_until = 0.0
+
+    def _cb_trip(self) -> None:
+        """Count a transport fault; past the threshold the circuit opens for
+        ``circuit_reset_s`` (the first call after that is the half-open probe —
+        a success closes it, a fault re-opens the window)."""
+        if not self._cb_threshold:
+            return
+        self._cb_failures += 1
+        if self._cb_failures >= self._cb_threshold:
+            self._cb_open_until = self._clock() + self._cb_reset_s
+            self._cb_failures = 0
 
     @staticmethod
     def _map_error(status: int, body: bytes) -> Exception:
