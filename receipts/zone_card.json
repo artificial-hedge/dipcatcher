@@ -3,7 +3,7 @@
  "kind": "microstructure_bench",
  "research_only": true,
  "data_label": "MIXED",
- "git_revision": "76b67ed64e8f0b253b21936b4dae3b4c6ba19423",
+ "git_revision": "46a24fc7b81bf22aa43e29e00012ae7f0db374c3",
  "horizon": 15000,
  "seed": 7,
  "config": {
@@ -73,7 +73,7 @@
     "delete": 0.4753,
     "exec": 0.0349
    },
-   "life_ev_p50_mean": 6932.0,
+   "life_ev_p50_mean": 250.93,
    "draws": [
     {
      "n_events": 15000,
@@ -83,9 +83,9 @@
       "delete": 0.4633,
       "exec": 0.0394
      },
-     "life_events_p50_executed": 7110.0,
-     "life_events_p90_all": 13746.0,
-     "life_tape_seconds_p50_executed": 616.759,
+     "life_events_p50_executed": 187.9966364133718,
+     "life_events_p90_all": 929.466554388851,
+     "life_tape_seconds_p50_executed": 16.308,
      "counts": {
       "n_lo_arrivals": 8122,
       "n_mo_arrivals": 73,
@@ -100,9 +100,9 @@
       "delete": 0.4872,
       "exec": 0.0305
      },
-     "life_events_p50_executed": 6754.0,
-     "life_events_p90_all": 14228.0,
-     "life_tape_seconds_p50_executed": 585.878,
+     "life_events_p50_executed": 313.87130960423224,
+     "life_events_p90_all": 935.4848057812159,
+     "life_tape_seconds_p50_executed": 27.227,
      "counts": {
       "n_lo_arrivals": 7904,
       "n_mo_arrivals": 67,
@@ -122,7 +122,7 @@
     "delete": 0.4514,
     "exec": 0.0486
    },
-   "life_ev_p50_mean": 9376.25,
+   "life_ev_p50_mean": 151.04,
    "draws": [
     {
      "n_events": 15000,
@@ -132,9 +132,9 @@
       "delete": 0.4404,
       "exec": 0.0582
      },
-     "life_events_p50_executed": 10058.0,
-     "life_events_p90_all": 14319.0,
-     "life_tape_seconds_p50_executed": 872.484,
+     "life_events_p50_executed": 121.27307410436495,
+     "life_events_p90_all": 1496.0214024685142,
+     "life_tape_seconds_p50_executed": 10.52,
      "counts": {
       "n_lo_arrivals": 8450,
       "n_mo_arrivals": 108,
@@ -149,9 +149,9 @@
       "delete": 0.4624,
       "exec": 0.0391
      },
-     "life_events_p50_executed": 8694.5,
-     "life_events_p90_all": 13253.0,
-     "life_tape_seconds_p50_executed": 754.207,
+     "life_events_p50_executed": 180.80331973050687,
+     "life_events_p90_all": 910.9514513774216,
+     "life_tape_seconds_p50_executed": 15.684,
      "counts": {
       "n_lo_arrivals": 8362,
       "n_mo_arrivals": 95,
@@ -171,7 +171,7 @@
     "delete": 0.4813,
     "exec": 0.0265
    },
-   "life_ev_p50_mean": 7241.5,
+   "life_ev_p50_mean": 301.1,
    "draws": [
     {
      "n_events": 15000,
@@ -181,9 +181,9 @@
       "delete": 0.4747,
       "exec": 0.0278
      },
-     "life_events_p50_executed": 6871.0,
-     "life_events_p90_all": 13416.0,
-     "life_tape_seconds_p50_executed": 596.027,
+     "life_events_p50_executed": 235.45504765874173,
+     "life_events_p90_all": 1082.2717342264493,
+     "life_tape_seconds_p50_executed": 20.425,
      "counts": {
       "n_lo_arrivals": 8312,
       "n_mo_arrivals": 62,
@@ -198,9 +198,9 @@
       "delete": 0.4878,
       "exec": 0.0251
      },
-     "life_events_p50_executed": 7612.0,
-     "life_events_p90_all": 14176.0,
-     "life_tape_seconds_p50_executed": 660.305,
+     "life_events_p50_executed": 366.7463222256147,
+     "life_events_p90_all": 1227.0716563414662,
+     "life_tape_seconds_p50_executed": 31.814,
      "counts": {
       "n_lo_arrivals": 8161,
       "n_mo_arrivals": 68,
@@ -220,7 +220,7 @@
     "delete": 0.4656,
     "exec": 0.0326
    },
-   "life_ev_p50_mean": 6939.0,
+   "life_ev_p50_mean": 204.8,
    "draws": [
     {
      "n_events": 15000,
@@ -230,9 +230,9 @@
       "delete": 0.4692,
       "exec": 0.0361
      },
-     "life_events_p50_executed": 5926.0,
-     "life_events_p90_all": 10317.399999999998,
-     "life_tape_seconds_p50_executed": 514.053,
+     "life_events_p50_executed": 195.4351303356178,
+     "life_events_p90_all": 982.1697238438179,
+     "life_tape_seconds_p50_executed": 16.953,
      "counts": {
       "n_lo_arrivals": 8466,
       "n_mo_arrivals": 79,
@@ -247,9 +247,9 @@
       "delete": 0.462,
       "exec": 0.0291
      },
-     "life_events_p50_executed": 7952.0,
-     "life_events_p90_all": 10269.800000000012,
-     "life_tape_seconds_p50_executed": 689.799,
+     "life_events_p50_executed": 214.16232955864905,
+     "life_events_p90_all": 985.6802403326055,
+     "life_tape_seconds_p50_executed": 18.578,
      "counts": {
       "n_lo_arrivals": 8435,
       "n_mo_arrivals": 59,
@@ -269,7 +269,7 @@
     "delete": 0.4443,
     "exec": 0.0393
    },
-   "life_ev_p50_mean": 6637.5,
+   "life_ev_p50_mean": 162.31,
    "draws": [
     {
      "n_events": 15000,
@@ -279,9 +279,9 @@
       "delete": 0.4366,
       "exec": 0.045
      },
-     "life_events_p50_executed": 5226.0,
-     "life_events_p90_all": 12492.0,
-     "life_tape_seconds_p50_executed": 453.331,
+     "life_events_p50_executed": 143.7634923383051,
+     "life_events_p90_all": 757.6222814861079,
+     "life_tape_seconds_p50_executed": 12.471,
      "counts": {
       "n_lo_arrivals": 9038,
       "n_mo_arrivals": 135,
@@ -296,9 +296,9 @@
       "delete": 0.4519,
       "exec": 0.0336
      },
-     "life_events_p50_executed": 8049.0,
-     "life_events_p90_all": 11326.0,
-     "life_tape_seconds_p50_executed": 698.213,
+     "life_events_p50_executed": 180.8506256369842,
+     "life_events_p90_all": 1153.609269723596,
+     "life_tape_seconds_p50_executed": 15.688,
      "counts": {
       "n_lo_arrivals": 8601,
       "n_mo_arrivals": 83,
@@ -318,7 +318,7 @@
     "delete": 0.4647,
     "exec": 0.0292
    },
-   "life_ev_p50_mean": 5905.0,
+   "life_ev_p50_mean": 207.5,
    "draws": [
     {
      "n_events": 15000,
@@ -328,9 +328,9 @@
       "delete": 0.4796,
       "exec": 0.0188
      },
-     "life_events_p50_executed": 5977.0,
-     "life_events_p90_all": 14168.0,
-     "life_tape_seconds_p50_executed": 518.477,
+     "life_events_p50_executed": 209.95858181022447,
+     "life_events_p90_all": 1408.7617093005547,
+     "life_tape_seconds_p50_executed": 18.213,
      "counts": {
       "n_lo_arrivals": 8078,
       "n_mo_arrivals": 41,
@@ -345,9 +345,9 @@
       "delete": 0.4497,
       "exec": 0.0397
      },
-     "life_events_p50_executed": 5833.0,
-     "life_events_p90_all": 13753.0,
-     "life_tape_seconds_p50_executed": 505.985,
+     "life_events_p50_executed": 205.04626107321877,
+     "life_events_p90_all": 1768.300685162802,
+     "life_tape_seconds_p50_executed": 17.787,
      "counts": {
       "n_lo_arrivals": 8701,
       "n_mo_arrivals": 76,
@@ -364,6 +364,6 @@
   "life_on_tape_scale": false,
   "exec_share_on_card": true
  },
- "notes": "Event grammar on the closed cells: mix shares over (submissions, deletes, execs) from sim.event_counts and per-fill maker age in events (tr.maker_t_submit), converted to tape-equivalent seconds at the tape's own 11.528 ev/s. The zone closes geometry (spread/occupancy/kernel); this measures whether the closed cell's event card and order lifetime also sit on the tape's values \u2014 48.9%/45.8%/3.3% mix, 25.5-event executed p50. Measured at 3k preview + 15k: geometry closes but grammar does not \u2014 executed-maker p50 sits ~1300-1500 events vs the tape's ~25.5 (50x), and the zone cells' mix gap is slightly WORSE than baseline (0.047-0.056 vs 0.041): the no-quote zone adds depth at the edge, inflating sub share. The residual is now cleanly an event-rate channel: the tape churns ~14 deletes per fill at ~26-event maker horizons; the sim's maker book is too deep relative to its flow.",
- "receipt_sha256": "c7ca4bb78bf37e0db13024509c18c178b2c72495ec46821e5fd0365b9dbc3606"
+ "notes": "Event grammar on the closed cells: mix shares over (submissions, deletes, execs) from sim.event_counts and per-fill maker age in events (tr.maker_t_submit), converted to tape-equivalent seconds at the tape's own 11.528 ev/s. The zone closes geometry (spread/occupancy/kernel); this measures whether the closed cell's event card and order lifetime also sit on the tape's values \u2014 48.9%/45.8%/3.3% mix, 25.5-event executed p50. Measured at 3k preview + 15k: geometry closes but grammar does not \u2014 executed-maker p50 sits ~90-250 events vs the tape's ~25.5 (~4-10x), and the zone cells' mix gap is slightly WORSE than baseline (0.047-0.056 vs 0.041): the no-quote zone adds depth at the edge, inflating sub share. The residual is now cleanly an event-rate channel: the tape churns ~14 deletes per fill at ~26-event maker horizons; the sim's makers rest far too long.",
+ "receipt_sha256": "a9997b7f9ca49a1e605e99a03cb1290d6ca8eada1309f08034235557102d240f"
 }

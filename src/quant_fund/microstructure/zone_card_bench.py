@@ -66,7 +66,7 @@ def _zone_cell(zone: int, inten: float | None, *, horizon: int, seed: int) -> di
     cfg = _calibrated(seed, extra)
     flow = _split(inten, seed + 1) if inten is not None else None
     sim = ZILobSimulator(cfg, flow)
-    ages: list[int] = []
+    ages: list[float] = []
     seen = 0
     for _ in range(horizon):
         sim.step()
@@ -74,7 +74,7 @@ def _zone_cell(zone: int, inten: float | None, *, horizon: int, seed: int) -> di
             tr = sim.trades[seen]
             seen += 1
             if tr.maker_t_submit is not None:
-                ages.append(sim.n_events - 1 - int(tr.maker_t_submit))
+                ages.append(sim._t - float(tr.maker_t_submit))
     counts = sim.event_counts()
     subs = float(counts.get("n_lo_units", 0))
     dels = float(counts.get("n_cancellations", 0))
@@ -82,8 +82,13 @@ def _zone_cell(zone: int, inten: float | None, *, horizon: int, seed: int) -> di
     tot = subs + dels + execs
     ages_a = np.asarray(ages, dtype=float)
     n_ages = len(ages_a)
-    life_ev_p50 = float(np.median(ages_a)) if n_ages else None
-    life_ev_p90 = float(np.quantile(ages_a, 0.9)) if n_ages else None
+    # Maker ages are measured on the sim's own clock (self._t is
+    # seconds); convert to event units via the draw's realized event
+    # rate so the tape's per-event lifetime compares honestly.
+    rate_ev_per_t = sim.n_events / sim._t if sim._t > 0 else 0.0
+    ages_ev = ages_a * rate_ev_per_t
+    life_ev_p50 = float(np.median(ages_ev)) if n_ages else None
+    life_ev_p90 = float(np.quantile(ages_ev, 0.9)) if n_ages else None
     return {
         "n_events": sim.n_events,
         "n_fills": sim.n_fills,
@@ -208,14 +213,14 @@ def zone_card_bench(*, horizon: int = 15000, seed: int = 7) -> dict[str, Any]:
             "card and order lifetime also sit on the tape's values — "
             "48.9%/45.8%/3.3% mix, 25.5-event executed p50. "
             "Measured at 3k preview + 15k: geometry closes but "
-            "grammar does not — executed-maker p50 sits ~1300-1500 "
-            "events vs the tape's ~25.5 (50x), and the zone cells' "
-            "mix gap is slightly WORSE than baseline (0.047-0.056 vs "
-            "0.041): the no-quote zone adds depth at the edge, "
-            "inflating sub share. The residual is now cleanly an "
-            "event-rate channel: the tape churns ~14 deletes per "
-            "fill at ~26-event maker horizons; the sim's maker book "
-            "is too deep relative to its flow."
+            "grammar does not — executed-maker p50 sits ~90-250 "
+            "events vs the tape's ~25.5 (~4-10x), and the zone "
+            "cells' mix gap is slightly WORSE than baseline "
+            "(0.047-0.056 vs 0.041): the no-quote zone adds depth "
+            "at the edge, inflating sub share. The residual is now "
+            "cleanly an event-rate channel: the tape churns ~14 "
+            "deletes per fill at ~26-event maker horizons; the "
+            "sim's makers rest far too long."
         ),
     }
     body = dict(out)
