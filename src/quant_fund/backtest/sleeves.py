@@ -637,7 +637,8 @@ def residual_mr_weights(
     )
     frame = frame.with_columns(pl.col("_r").mean().over("event_time").alias("_mkt"))
     # Trailing per-name beta to the book factor, all estimators shifted by one
-    # bar so no current-bar return enters them.
+    # bar so no current-bar return enters them. Match the population covariance
+    # E[r*m] - E[r]E[m] with population variance (ddof=0) in the denominator.
     frame = frame.with_columns(
         (
             (
@@ -645,7 +646,7 @@ def residual_mr_weights(
                 - pl.col("_r").rolling_mean(factor_window)
                 * pl.col("_mkt").rolling_mean(factor_window)
             )
-            / pl.col("_mkt").rolling_var(factor_window)
+            / pl.col("_mkt").rolling_var(factor_window, ddof=0)
         )
         .shift(1)
         .over("security_id")
