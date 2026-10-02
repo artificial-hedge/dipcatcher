@@ -2569,3 +2569,4 @@ wave 168 (2026-10-02): RL-exotics canon — awac, redq, td7_lite, crossq, dr3_re
 wave 169 (2026-10-02): amortized-inference canon — advi_bbvi, iwae_bound, nf_vi, sparse_gp_sv, structured_vi, vrnn_seq; 986→992 families.
 wave 170 (2026-10-02): causal-DL-2 canon — xlearner, rlearner, slearner_tlearner, causal_rep_bal, cate_distill, net_drlearner; 992→998 families.
 wave 171 (2026-10-02): conformal-2 canon — cqr_pred, survival_cp, aps_cp, ltt_cp, full_cp, risk_cp; 998→1004 families.
+wave 172 (2026-10-02): bandit-exotics canon — psrl, gittins_index, whittle_restless, cucb, corrupt_bandit, neural_ucb; 1004→1010 families.
