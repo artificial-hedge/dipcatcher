@@ -2138,3 +2138,31 @@ detail: |
     test_benches_w83 (39+ tests).
   - Canon staged on top of w82-canon.
 note: canon PR to follow.
+
+---
+owner: devin (wave 84 canon)
+slice: six models lanes + benches_w84 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-02
+detail: |
+  - src/quant_fund/models: lmoments.py (Hosking 1990
+    PWM/L-moments, GEV/GLO/GPA/normal fits, discordancy +
+    heterogeneity statistics), sobol_sensitivity.py
+    (Saltelli 2010 first/total-order + Campolongo Morris
+    1991 elementary effects), recurrent_events.py
+    (Andersen-Gill 1982 counting-process Cox PH, Nelson-
+    Aalen MCF + Lawless-Nadeau var, PWP gap, WLW marginal,
+    cluster sandwich), dawid_skene.py (Dawid-Skene 1979
+    EM annotation + GLAD Whitehill 2009 product model),
+    matrix_profile.py (Keogh 2007 z-normalized matrix
+    profile, motif/discord + SAX Lin 2007),
+    hierarchical_reconciliation.py (Hyndman 2011 MinT
+    OLS/WLS/Ledoit-shrunk + incoherence diagnostics).
+  - benches_w84.py: +492..497 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "lmoments","sobol_sensitivity",
+    "recurrent_events","dawid_skene","matrix_profile",
+    "hierarchical_reconciliation" (458->464); agent.py
+    wiring; tests: 6 module files + test_benches_w84
+    (36+ tests).
+  - Canon staged on top of w83-canon.
+note: canon PR to follow.

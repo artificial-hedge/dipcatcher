@@ -1227,6 +1227,31 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mds",
         "correspondence_analysis",
         "circular_correlation",
+        # wave 84 — Hosking (1990)
+        # L-moments + regional
+        # frequency (GEV/GLO/GPA,
+        # discordancy/heterogeneity),
+        # Saltelli (2010) Sobol
+        # indices + Morris (1991)
+        # elementary effects,
+        # Andersen-Gill (1982)
+        # recurrent events (MCF,
+        # PWP, WLW + cluster
+        # sandwich), Dawid-Skene
+        # (1979) EM + GLAD (2009)
+        # annotation models,
+        # Keogh (2007) matrix
+        # profile + SAX (Lin 2007),
+        # and Hyndman (2011) MinT
+        # reconciliation (OLS/WLS/
+        # shrunk). Same SYNTHETIC
+        # diagnostic contract.
+        "lmoments",
+        "sobol_sensitivity",
+        "recurrent_events",
+        "dawid_skene",
+        "matrix_profile",
+        "hierarchical_reconciliation",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
