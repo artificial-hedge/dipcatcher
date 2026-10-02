@@ -1272,6 +1272,7 @@ wave 54 (devin/w54-canon-integration): Pesaran-Timmermann sign test,
   AFNS curve, Danielsson-de Vries tail-simulation VaR — 6 modules +
   benches_w54 (scorecard 295->301 families).
 
+
 ---
 owner: devin (wave 56 canon)
 slice: unit-root inference battery — KPSS, ERS DF-GLS, Ng-Perron,
@@ -1337,7 +1338,6 @@ wave 104 (2026-09-30): optimal-transport canon II — sinkhorn, emd_lp, gromov_w
 wave 105 (2026-09-30): game-tree search canon — alpha_beta, mcts, puct, negascout, proof_number, dfpn; 602→608 families.
 wave 106 (2026-09-30): stiff/multistep integrators — bdf, adams, radau, strang, etdrk4, crank_nicolson; 608→614 families.
 note: canon PR to follow.
-
 
 ---
 owner: devin (wave 58 canon)

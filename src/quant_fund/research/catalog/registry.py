@@ -645,11 +645,6 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # with the verified adjustment-to-yield formula, Danielsson-
         # de Vries tail-simulation extreme VaR. Same SYNTHETIC
         # diagnostic contract.
-        "pesaran_timmermann",
-        "giacomini_rossi",
-        "muller_watson",
-        "romano_wolf",
-        "christensen_diebold_rudebusch",
         "danielsson_devries",
         # wave 56 — Kwiatkowski-Phillips-Schmidt-Shin level/trend
         # stationarity LM test, Elliott-Rothenberg-Stock DF-GLS
