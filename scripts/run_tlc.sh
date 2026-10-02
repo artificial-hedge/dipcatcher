@@ -5,18 +5,54 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-JAR="${TLA_TOOLS_JAR:-$ROOT/.tla/tla2tools.jar}"
-URL="https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar"
-SHA="ab4694601923fd5ac06452abbf847c366a5054a3d739552085edd6ed986c29ec"
+# Stable v1.7.4 (TLC 2.19), not the rolling v1.8.0 prerelease.
+# Asset IDs do not follow replacement uploads. Deletion must fail closed.
+# See spec/tla/README.md for upstream provenance and upgrade procedure.
+JAR="${TLA_TOOLS_JAR:-$ROOT/.tla/tla2tools-1.7.4.jar}"
+URL="https://api.github.com/repos/tlaplus/tlaplus/releases/assets/184694200"
+SHA="936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88"
+SIZE="2274532"
+
+DOWNLOAD=""
+META=""
+cleanup() {
+  [[ -z "$DOWNLOAD" ]] || rm -f -- "$DOWNLOAD"
+  [[ -z "$META" ]] || rm -rf -- "$META"
+  return 0
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+verify_jar() {
+  local file="$1" actual_sha actual_size
+  actual_sha="$(sha256sum < "$file")"
+  actual_sha="${actual_sha%% *}"
+  actual_size="$(wc -c < "$file" | tr -d '[:space:]')"
+  if [[ "$actual_sha" != "$SHA" || "$actual_size" != "$SIZE" ]]; then
+    printf 'TLC artifact verification failed: %s\n' "$file" >&2
+    printf 'Expected SHA-256: %s; bytes: %s\n' "$SHA" "$SIZE" >&2
+    printf 'Actual   SHA-256: %s; bytes: %s\n' "$actual_sha" "$actual_size" >&2
+    return 1
+  fi
+}
 
 if [[ ! -f "$JAR" ]]; then
   mkdir -p "$(dirname "$JAR")"
-  curl -fsSL -o "$JAR" "$URL"
+  DOWNLOAD="$(mktemp "${JAR}.download.XXXXXX")"
+  curl --fail --silent --show-error --location \
+    --proto '=https' --proto-redir '=https' \
+    --connect-timeout 30 --max-time 180 \
+    -H 'Accept: application/octet-stream' \
+    -o "$DOWNLOAD" "$URL"
+  verify_jar "$DOWNLOAD"
+  mv -T -- "$DOWNLOAD" "$JAR"
+  DOWNLOAD=""
 fi
-echo "${SHA}  ${JAR}" | sha256sum -c -
+# Overrides and cached files must satisfy exactly the same integrity checks.
+verify_jar "$JAR"
 
 META="$(mktemp -d)"
-trap 'rm -rf "$META"' EXIT
 
 run_tlc() {
   local cfg="$1"

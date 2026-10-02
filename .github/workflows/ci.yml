@@ -657,6 +657,8 @@ jobs:
           cache-dependency-glob: uv.lock
       - name: Sync
         run: uv sync --frozen --all-groups
+      - name: TLC downloader regression tests (offline)
+        run: python scripts/test_run_tlc.py
       - name: TLC order-lifecycle model check
         run: bash scripts/run_tlc.sh
       - name: SMT proofs, conformance, and stateful tests
