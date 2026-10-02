@@ -1469,6 +1469,14 @@ from quant_fund.research.benches_w184 import (
     bench_neural_grok_family,
     bench_ntk_kernel_family,
 )
+from quant_fund.research.benches_w185 import (
+    bench_gumbel_relax_family,
+    bench_implicit_diff_family,
+    bench_ode_adjoint_family,
+    bench_perturb_map_family,
+    bench_smooth_argmax_family,
+    bench_st_estimator_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4124,6 +4132,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "mode_connectivity": bench_mode_connectivity_family(),
         "catapult_phase": bench_catapult_phase_family(),
         "neural_grok": bench_neural_grok_family(),
+        "st_estimator": bench_st_estimator_family(),
+        "gumbel_relax": bench_gumbel_relax_family(),
+        "perturb_map": bench_perturb_map_family(),
+        "implicit_diff": bench_implicit_diff_family(),
+        "ode_adjoint": bench_ode_adjoint_family(),
+        "smooth_argmax": bench_smooth_argmax_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

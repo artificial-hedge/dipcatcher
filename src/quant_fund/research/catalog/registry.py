@@ -2367,6 +2367,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mode_connectivity",
         "catapult_phase",
         "neural_grok",
+        # Wave-185 differentiable-algorithm canon:
+        # STE, Gumbel relax, P&M grad,
+        # IFT, ODE adjoint, smooth argmax.
+        "st_estimator",
+        "gumbel_relax",
+        "perturb_map",
+        "implicit_diff",
+        "ode_adjoint",
+        "smooth_argmax",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
