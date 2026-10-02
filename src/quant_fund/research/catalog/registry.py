@@ -2168,6 +2168,305 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lagllama_lite",
         "timer_lite",
         "moment_lite",
+        # Wave-163 lifelong-CL canon:
+        # PackNet, LwF, DER,
+        # A-GEM, Piggyback, HAT.
+        "packnet_cl",
+        "lwf_cl",
+        "der_cl",
+        "agem_cl",
+        "piggyback_cl",
+        "hat_cl",
+        # Wave-164 Bayesian-DL canon:
+        # SWA-Gaussian, MC-dropout,
+        # BBB, snapshot ens, concrete
+        # dropout, VCL.
+        "swag_diag",
+        "mc_dropout",
+        "bbb_vi",
+        "snapshot_ens",
+        "concrete_dropout",
+        "vcl_online",
+        # Wave-165 conditional-density canon:
+        # MDN, cond-flow, diffusion
+        # regressor, het-GP, CRPS net,
+        # kernel mixture.
+        "mdn_cond",
+        "flow_regression",
+        "diffusion_regressor",
+        "het_gp",
+        "crps_net",
+        "kernel_mixture",
+        # Wave-166 meta-learning canon:
+        # Reptile, ProtoNet, Matching,
+        # ANIL, Meta-SGD, R2D2.
+        "reptile",
+        "protonet",
+        "matching_net",
+        "anil_meta",
+        "meta_sgd",
+        "r2d2_meta",
+        # Wave-167 graph-exotics canon:
+        # algo reasoning, PNA, virtual
+        # node, GPS, oversmooth, DGN.
+        "algo_reasoning",
+        "pna_agg",
+        "virtual_node",
+        "gps_transformer",
+        "oversmooth_metric",
+        "dgn_directional",
+        # Wave-168 RL-exotics canon:
+        # AWAC, REDQ, TD7-SALE,
+        # CrossQ, DR3, OB2I.
+        "awac",
+        "redq",
+        "td7_lite",
+        "crossq",
+        "dr3_reg",
+        "ob2i",
+        # Wave-169 amortized-inference canon:
+        # ADVI, IWAE, NF-VI, SVGP,
+        # structured VI, VRNN.
+        "advi_bbvi",
+        "iwae_bound",
+        "nf_vi",
+        "sparse_gp_sv",
+        "structured_vi",
+        "vrnn_seq",
+        # Wave-170 causal-DL-2 canon:
+        # X/R/S-T learners, CFRNET-balance,
+        # CATE distill, DR-learner.
+        "xlearner",
+        "rlearner",
+        "slearner_tlearner",
+        "causal_rep_bal",
+        "cate_distill",
+        "net_drlearner",
+        # Wave-171 conformal-2 canon:
+        # CQR, survival CP, APS, LTT,
+        # full CP, risk control.
+        "cqr_pred",
+        "survival_cp",
+        "aps_cp",
+        "ltt_cp",
+        "full_cp",
+        "risk_cp",
+        # Wave-172 bandit-exotics canon:
+        # PSRL, Gittins, Whittle,
+        # CUCB, corruption-robust, NeuralUCB.
+        "psrl",
+        "gittins_index",
+        "whittle_restless",
+        "cucb",
+        "corrupt_bandit",
+        "neural_ucb",
+        # Wave-173 diffusion-exotics canon:
+        # EDM, rectified flow, stoch interp,
+        # DDIM-ODE, cold diffusion, distill.
+        "edm_karras",
+        "rectified_flow",
+        "stoch_interp",
+        "ddim_ode",
+        "cold_diffusion",
+        "diff_distill",
+        # Wave-174 graph-temporal canon:
+        # DCRNN, STGCN, Graph WaveNet,
+        # ASTGCN, MTGNN, AGCRN.
+        "dcrnn_lite",
+        "stgcn_lite",
+        "gwnet_lite",
+        "astgcn",
+        "mtgnn_lite",
+        "agcrn",
+        # Wave-175 LM-components canon:
+        # RoPE, ALiBi, SwiGLU, RMSNorm,
+        # MoE router, muP init.
+        "rope_attn",
+        "alibi_attn",
+        "swiglu_ffn",
+        "rmsnorm_block",
+        "moe_router",
+        "mup_init",
+        # Wave-176 data-centric canon:
+        # BALD, cartography, EL2N,
+        # forgetting, influence, prototypicality.
+        "active_bald",
+        "data_cartography",
+        "el2n_scoring",
+        "forgetting_events",
+        "influence_func",
+        "proto_prune",
+        # Wave-177 neuromorphic canon:
+        # LIF, STDP, surrogate SNN,
+        # Izhikevich, LSM, temporal coding.
+        "lif_neuron",
+        "stdp_learn",
+        "surrogate_snn",
+        "izhikevich",
+        "lsm_reservoir",
+        "temporal_code",
+        # Wave-178 multi-task-gradient canon:
+        # PCGrad, MGDA, CAGrad, GradNorm,
+        # Nash-MTL, IMTL-G.
+        "pcgrad",
+        "mgda_mtl",
+        "cagrad_mtl",
+        "gradnorm_bal",
+        "nash_mtl",
+        "imtl_g",
+        # Wave-179 survival-DL canon:
+        # DeepSurv, DeepHit, Cox-Time,
+        # Nnet-survival, DRSA, PC-Hazard.
+        "deepsurv",
+        "deephit",
+        "cox_time",
+        "nnet_surv",
+        "drsa_surv",
+        "pchazard",
+        # Wave-180 PDMP / exotic-sampling canon:
+        # BPS, Zig-Zag, Boomerang, kinetic
+        # Langevin, elliptical slice, RMALA.
+        "bouncy_particle",
+        "zigzag_sampler",
+        "boomerang_sampler",
+        "kinetic_langevin",
+        "elliptical_slice",
+        "riemannian_mala",
+        # Wave-181 LM-arch-2 canon:
+        # Mamba-2 SSD, xLSTM mLSTM, RWKV-7,
+        # Titans memory, Gated DeltaNet, Longhorn.
+        "mamba2_ssd",
+        "xlstm_mlstm",
+        "rwkv7",
+        "titans_memory",
+        "gated_deltanet",
+        "longhorn_ssm",
+        # Wave-182 normalizing-flow canon:
+        # RealNVP, Glow, NSF, MAF, planar, IAF.
+        "real_nvp",
+        "glow_flow",
+        "neural_spline_flow",
+        "maf_flow",
+        "planar_flow",
+        "iaf_flow",
+        # Wave-183 causal-structure-DL canon:
+        # NOTEARS, DAGMA, GOLEM, NOTEARS-MLP,
+        # DAG-GNN, CAM-prune.
+        "notears",
+        "dagma_lin",
+        "golem_ev",
+        "notears_mlp",
+        "dag_gnn",
+        "cam_prune",
+        # Wave-184 training-dynamics canon:
+        # Hessian eig, NTK, edge-of-stability,
+        # LMC, catapult, grokking.
+        "hessian_eig",
+        "ntk_kernel",
+        "edge_stability",
+        "mode_connectivity",
+        "catapult_phase",
+        "neural_grok",
+        # Wave-185 differentiable-algorithm canon:
+        # STE, Gumbel relax, P&M grad,
+        # IFT, ODE adjoint, smooth argmax.
+        "st_estimator",
+        "gumbel_relax",
+        "perturb_map",
+        "implicit_diff",
+        "ode_adjoint",
+        "smooth_argmax",
+        # Wave-186 energy-based-model canon:
+        # ISM, DSM, NCE, CD, PCD, adversarial.
+        "score_matching",
+        "denoising_sm",
+        "noise_contrastive",
+        "contrastive_divergence",
+        "persistent_cd",
+        "adversarial_ebm",
+        # Wave-187 scientific-ML/PDE canon:
+        # DeepRitz, weak form, BSDE, spectral,
+        # MOL, Feynman-Kac MC.
+        "deepritz_pinn",
+        "weak_form_pinn",
+        "fbsde_solver",
+        "spectral_pde",
+        "moc_lines",
+        "feynman_kac_mc",
+        # Wave-188 active-learning canon:
+        # entropy, margin, QBC, k-center,
+        # BADGE, EGL.
+        "entropy_query",
+        "margin_sampling",
+        "qbc_committee",
+        "coreset_kcenter",
+        "badge_embed",
+        "egl_change",
+        # Wave-189 self-play/game-AI canon:
+        # AZ-lite, ExIt, NFSP, PSRO,
+        # deep-CFR, MCCFR.
+        "alphazero_lite",
+        "expert_iteration",
+        "nfsp",
+        "psro",
+        "deep_cfr",
+        "mccfr_outcome",
+        # Wave-190 classical causal-discovery canon:
+        # GES, FCI, ICA/Direct/VAR-LiNGAM, MMPC.
+        "ges_search",
+        "fci_alg",
+        "ica_lingam",
+        "direct_lingam",
+        "var_lingam",
+        "mmmb_select",
+        # Wave-191 exploration canon: count bonus, RND, ICM, NGU,
+        # RIDE, Go-Explore.
+        "count_bonus",
+        "rnd_explore",
+        "icm_explore",
+        "ngu_explore",
+        "ride_explore",
+        "go_explore",
+        # Wave-192 info-theory canon: MMD, HSIC, MINE, NWJ,
+        # copula MI, LSD.
+        "mmd_two_sample",
+        "hsic_independence",
+        "mine_mi",
+        "nwj_mi",
+        "copula_mi",
+        "lsd_deptest",
+        # Wave-193 optimal-control canon: LQR, DDP, MPPI, PMP,
+        # MPC-QP, LQG.
+        "lqr_control",
+        "ddp_solve",
+        "mppi_control",
+        "pmp_bangbang",
+        "mpc_qp",
+        "lqg_control",
+        # Wave-194 stochastic-process canon: CIR, OU bridge,
+        # Poisson/Hawkes thinning, Merton jumps, GP bridge.
+        "cir_sim",
+        "ou_bridge",
+        "poisson_thinning",
+        "hawkes_thinning",
+        "levy_jump",
+        "gp_bridge",
+        # Wave-195 ensemble/adaptive-MCMC canon: emcee stretch,
+        # DE-MCMC, DRAM, RJMCMC, pCN, independence MH.
+        "emcee_stretch",
+        "de_mcmc",
+        "dram",
+        "rjmcmc",
+        "pcn_sampler",
+        "indep_mh",
+        # Wave-196 eigen canon: power+deflation, inverse iteration,
+        # Jacobi, shifted QR, Hessenberg, bidiagonalization.
+        "power_iter",
+        "inverse_iter",
+        "jacobi_eig",
+        "qr_eig",
+        "hessenberg_red",
+        "bidiag_svd",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

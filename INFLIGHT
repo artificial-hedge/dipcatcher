@@ -2560,3 +2560,37 @@ wave 159 (2026-10-02): optimizer canon — muon_opt, lion_opt, sophia_opt, looka
 wave 160 (2026-10-02): FL canon — scaffold_fl, fednova_fl, ditto_fl, moon_fl, fedopt_adam, mime_lite; 932→938 families.
 wave 161 (2026-10-02): neural-operator canon — fno_1d, deeponet, lowrank_op, pino_residual, gno_lite, cno_lite; 938→944 families.
 wave 162 (2026-10-02): TS-foundation canon — chronos_lite, timesfm_lite, moirai_lite, lagllama_lite, timer_lite, moment_lite; 944→950 families.
+wave 163 (2026-10-02): lifelong-CL canon — packnet_cl, lwf_cl, der_cl, agem_cl, piggyback_cl, hat_cl; 950→956 families.
+wave 164 (2026-10-02): Bayesian-DL canon — swag_diag, mc_dropout, bbb_vi, snapshot_ens, concrete_dropout, vcl_online; 956→962 families.
+wave 165 (2026-10-02): conditional-density canon — mdn_cond, flow_regression, diffusion_regressor, het_gp, crps_net, kernel_mixture; 962→968 families.
+wave 166 (2026-10-02): meta-learning canon — reptile, protonet, matching_net, anil_meta, meta_sgd, r2d2_meta; 968→974 families.
+wave 167 (2026-10-02): graph-exotics canon — algo_reasoning, pna_agg, virtual_node, gps_transformer, oversmooth_metric, dgn_directional; 974→980 families.
+wave 168 (2026-10-02): RL-exotics canon — awac, redq, td7_lite, crossq, dr3_reg, ob2i; 980→986 families.
+wave 169 (2026-10-02): amortized-inference canon — advi_bbvi, iwae_bound, nf_vi, sparse_gp_sv, structured_vi, vrnn_seq; 986→992 families.
+wave 170 (2026-10-02): causal-DL-2 canon — xlearner, rlearner, slearner_tlearner, causal_rep_bal, cate_distill, net_drlearner; 992→998 families.
+wave 171 (2026-10-02): conformal-2 canon — cqr_pred, survival_cp, aps_cp, ltt_cp, full_cp, risk_cp; 998→1004 families.
+wave 172 (2026-10-02): bandit-exotics canon — psrl, gittins_index, whittle_restless, cucb, corrupt_bandit, neural_ucb; 1004→1010 families.
+wave 173 (2026-10-02): diffusion-exotics canon — edm_karras, rectified_flow, stoch_interp, ddim_ode, cold_diffusion, diff_distill; 1010→1016 families.
+wave 174 (2026-10-02): graph-temporal canon — dcrnn_lite, stgcn_lite, gwnet_lite, astgcn, mtgnn_lite, agcrn; 1016→1022 families.
+wave 175 (2026-10-02): LM-components canon — rope_attn, alibi_attn, swiglu_ffn, rmsnorm_block, moe_router, mup_init; 1022→1028 families.
+wave 176 (2026-10-02): data-centric canon — active_bald, data_cartography, el2n_scoring, forgetting_events, influence_func, proto_prune; 1028→1034 families.
+wave 177 (2026-10-02): neuromorphic canon — lif_neuron, stdp_learn, surrogate_snn, izhikevich, lsm_reservoir, temporal_code; 1034→1040 families.
+wave 178 (2026-10-02): multi-task-gradient canon — pcgrad, mgda_mtl, cagrad_mtl, gradnorm_bal, nash_mtl, imtl_g; 1040→1046 families.
+wave 179 (2026-10-02): survival-DL canon — deepsurv, deephit, cox_time, nnet_surv, drsa_surv, pchazard; 1046→1052 families.
+wave 180 (2026-10-02): PDMP exotic-sampling canon — bouncy_particle, zigzag_sampler, boomerang_sampler, kinetic_langevin, elliptical_slice, riemannian_mala; 1052→1058 families.
+wave 181 (2026-10-02): LM-arch-2 canon — mamba2_ssd, xlstm_mlstm, rwkv7, titans_memory, gated_deltanet, longhorn_ssm; 1058→1064 families.
+wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_spline_flow, maf_flow, planar_flow, iaf_flow; 1064→1070 families.
+wave 183 (2026-10-02): causal-structure-DL canon — notears, dagma_lin, golem_ev, notears_mlp, dag_gnn, cam_prune; 1070→1076 families.
+wave 184 (2026-10-02): training-dynamics canon — hessian_eig, ntk_kernel, edge_stability, mode_connectivity, catapult_phase, neural_grok; 1076→1082 families.
+wave 185 (2026-10-02): differentiable-algorithm canon — st_estimator, gumbel_relax, perturb_map, implicit_diff, ode_adjoint, smooth_argmax; 1082→1088 families.
+wave 186 (2026-10-02): energy-based-model canon — score_matching, denoising_sm, noise_contrastive, contrastive_divergence, persistent_cd, adversarial_ebm; 1088→1094 families.
+wave 187 (2026-10-02): scientific-ML/PDE canon — deepritz_pinn, weak_form_pinn, fbsde_solver, spectral_pde, moc_lines, feynman_kac_mc; 1094→1100 families.
+wave 188 (2026-10-02): active-learning canon — entropy_query, margin_sampling, qbc_committee, coreset_kcenter, badge_embed, egl_change; 1100→1106 families.
+wave 189 (2026-10-02): self-play/game-AI canon — alphazero_lite, expert_iteration, nfsp, psro, deep_cfr, mccfr_outcome; 1106→1112 families.
+wave 190 (2026-10-02): causal-discovery classical canon — ges_search, fci_alg, ica_lingam, direct_lingam, var_lingam, mmmb_select; 1112→1118 families.
+wave 191 (2026-10-02): RL-exploration canon — count_bonus, rnd_explore, icm_explore, ngu_explore, ride_explore, go_explore; 1118→1124 families.
+wave 192 (2026-10-02): info-theory canon — mmd_two_sample, hsic_independence, mine_mi, nwj_mi, copula_mi, lsd_deptest; 1124→1130 families.
+wave 193 (2026-10-02): optimal-control canon — lqr_control, ddp_solve, mppi_control, pmp_bangbang, mpc_qp, lqg_control; 1130→1136 families.
+wave 194 (2026-10-02): stochastic-process sim canon — cir_sim, ou_bridge, poisson_thinning, hawkes_thinning, levy_jump, gp_bridge; 1136→1142 families.
+wave 195 (2026-10-02): ensemble/adaptive-MCMC canon — emcee_stretch, de_mcmc, dram, rjmcmc, pcn_sampler, indep_mh; 1142→1148 families.
+wave 196 (2026-10-02): eigen-decomposition canon — power_iter, inverse_iter, jacobi_eig, qr_eig, hessenberg_red, bidiag_svd; 1148→1154 families.
