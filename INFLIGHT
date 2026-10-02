@@ -2554,3 +2554,4 @@ wave 153 (2026-10-02): NAS canon — random_search_nas, evolution_nas, darts_nas
 wave 154 (2026-10-02): vision canon — convnet_baseline, vit_classifier, clip_align, simclr_views, diffusion_ddim, attention_rollout; 896→902 families.
 wave 155 (2026-10-02): causal-DL canon — tarnet_ite, dragonnet_dr, deep_iv, cevae_latent, causal_rep, policy_value; 902→908 families.
 wave 156 (2026-10-02): tabular-DL canon — tokenizer_bpe, tabular_resnet, node_net, grownet_boost, soft_tree, tabm_mini; 908→914 families.
+wave 157 (2026-10-02): anomaly-detection canon — deep_svdd, dagmm, usad, anom_transformer, rrcf, tranad; 914→920 families.

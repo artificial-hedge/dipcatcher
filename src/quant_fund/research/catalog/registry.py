@@ -2114,6 +2114,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "grownet_boost",
         "soft_tree",
         "tabm_mini",
+        # Wave-157 anomaly canon:
+        # SVDD, DAGMM, USAD,
+        # anom-Transformer, RRCF, TranAD.
+        "deep_svdd",
+        "dagmm",
+        "usad",
+        "anom_transformer",
+        "rrcf",
+        "tranad",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

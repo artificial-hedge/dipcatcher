@@ -1245,6 +1245,14 @@ from quant_fund.research.benches_w156 import (
     bench_tabular_resnet_family,
     bench_tokenizer_bpe_family,
 )
+from quant_fund.research.benches_w157 import (
+    bench_anom_transformer_family,
+    bench_dagmm_family,
+    bench_deep_svdd_family,
+    bench_rrcf_family,
+    bench_tranad_family,
+    bench_usad_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3732,6 +3740,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "grownet_boost": bench_grownet_boost_family(),
         "soft_tree": bench_soft_tree_family(),
         "tabm_mini": bench_tabm_mini_family(),
+        "deep_svdd": bench_deep_svdd_family(),
+        "dagmm": bench_dagmm_family(),
+        "usad": bench_usad_family(),
+        "anom_transformer": bench_anom_transformer_family(),
+        "rrcf": bench_rrcf_family(),
+        "tranad": bench_tranad_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
