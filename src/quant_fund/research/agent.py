@@ -2119,6 +2119,14 @@ from quant_fund.research.benches_w265 import (
     bench_symbolic_exec_family,
     bench_taint_track_family,
 )
+from quant_fund.research.benches_w266 import (
+    bench_bump_map_family,
+    bench_mipmap_sample_family,
+    bench_phong_shade_family,
+    bench_shadow_map_family,
+    bench_ssao_lite_family,
+    bench_triangle_raster_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2396,6 +2404,12 @@ def _provenance(
         "symbolic_exec": bench_symbolic_exec_family,
         "contract_check": bench_contract_check_family,
         "grammar_fuzz": bench_grammar_fuzz_family,
+        "triangle_raster": bench_triangle_raster_family,
+        "phong_shade": bench_phong_shade_family,
+        "mipmap_sample": bench_mipmap_sample_family,
+        "shadow_map": bench_shadow_map_family,
+        "bump_map": bench_bump_map_family,
+        "ssao_lite": bench_ssao_lite_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

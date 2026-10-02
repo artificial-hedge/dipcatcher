@@ -2942,6 +2942,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "symbolic_exec",
         "contract_check",
         "grammar_fuzz",
+        # Wave-266 graphics-2 canon.
+        "triangle_raster",
+        "phong_shade",
+        "mipmap_sample",
+        "shadow_map",
+        "bump_map",
+        "ssao_lite",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
