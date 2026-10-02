@@ -13,7 +13,17 @@ import pytest
 
 from fx1.operations.registry import execute_operation, get_operation, list_operations
 
-WIRED_IDS = ("features.rolling_linear_trend", "skills.resolve_security_identity")
+WIRED_IDS = (
+    "features.rolling_linear_trend",
+    "skills.resolve_security_identity",
+    "features.bipower_variation",
+    "features.permutation_entropy",
+    "features.spectral_summary",
+    "skills.select_universe_membership",
+    "skills.audit_cross_field_contracts",
+    "skills.audit_missingness_association",
+    "skills.audit_source_coverage",
+)
 
 
 def test_wired_operations_are_reachable_through_registry() -> None:
