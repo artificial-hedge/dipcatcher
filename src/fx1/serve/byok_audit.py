@@ -10,8 +10,9 @@ trained.
 Pinned contract:
 
 - Construction is fail-closed: each of ``FX1_BYOK_BASE_URL`` /
-  ``FX1_BYOK_API_KEY`` / ``FX1_BYOK_MODEL`` missing raises RuntimeError
-  naming the env vars; empty strings count as missing; a non-http(s) or
+  ``FX1_BYOK_API_KEY`` / ``FX1_BYOK_MODEL`` missing raises
+  BackendNotConfiguredError (the 503-class RuntimeError) naming the env
+  vars; empty strings count as missing; a non-http(s) or
   hostless URL raises; a non-positive timeout raises ValueError.
 - Explicit kwargs beat env (a caller's override is never shadowed by
   ambient process state).
@@ -79,11 +80,17 @@ def byok_audit() -> dict[str, Any]:
     saved = {name: os.environ.pop(name, None) for name in _ENVS}
     try:
         # ---- construction fail-closed -----------------------------
-        out["missing_all_raises"] = _raises(lambda: OpenAICompatBackend()) == "RuntimeError"
+        out["missing_all_raises"] = (
+            _raises(lambda: OpenAICompatBackend()) == "BackendNotConfiguredError"
+        )
         os.environ[BYOK_BASE_URL_ENV] = "https://probe.local/v1"
-        out["missing_key_raises"] = _raises(lambda: OpenAICompatBackend()) == "RuntimeError"
+        out["missing_key_raises"] = (
+            _raises(lambda: OpenAICompatBackend()) == "BackendNotConfiguredError"
+        )
         os.environ[BYOK_API_KEY_ENV] = "byok-probe-key"
-        out["missing_model_raises"] = _raises(lambda: OpenAICompatBackend()) == "RuntimeError"
+        out["missing_model_raises"] = (
+            _raises(lambda: OpenAICompatBackend()) == "BackendNotConfiguredError"
+        )
         os.environ[BYOK_MODEL_ENV] = "probe-model"
         # error message must name the missing vars, not leak values
         for name in _ENVS:
@@ -100,7 +107,9 @@ def byok_audit() -> dict[str, Any]:
         os.environ[BYOK_BASE_URL_ENV] = ""
         os.environ[BYOK_API_KEY_ENV] = "k"
         os.environ[BYOK_MODEL_ENV] = "m"
-        out["empty_base_raises"] = _raises(lambda: OpenAICompatBackend()) == "RuntimeError"
+        out["empty_base_raises"] = (
+            _raises(lambda: OpenAICompatBackend()) == "BackendNotConfiguredError"
+        )
         # scheme / host validation
         os.environ[BYOK_BASE_URL_ENV] = "ftp://probe.local/v1"
         out["bad_scheme_raises"] = _raises(lambda: OpenAICompatBackend()) == "RuntimeError"

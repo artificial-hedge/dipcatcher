@@ -30,11 +30,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "72e7fa9ff6fe1efce2c972bda3648d99dc19c3b0",
+  "git_revision": "21cc52844f2ef4aa2c924709dcee66beeb7a8a67",
   "interpretation": "BYOK backend holds: construction refuses missing credentials/URLs/models, kwargs beat env, the request pins temperature=0 + Bearer auth + normalized chat/completions URL, and malformed payloads or transport errors fail closed. Flags: http bases allowed for local stacks, no retries, unary only.",
   "kind": "byok_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "6751780c69f34ae78420958202d05355cde99ff6d835f196badeebf1ca8d3d0b",
+  "receipt_sha256": "8689e03d307018ab3de20da5a3359a4a3353cb2d81520e915ef73baf7bcdd4d4",
   "research_only": true,
   "schema": "byok_audit.v1"
 }

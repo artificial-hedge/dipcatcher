@@ -11,8 +11,14 @@ Credentials come from environment variables only — never hardcoded.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
+import shlex
+import string
+import subprocess
+import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -27,6 +33,17 @@ BYOK_BASE_URL_ENV = "FX1_BYOK_BASE_URL"
 BYOK_API_KEY_ENV = "FX1_BYOK_API_KEY"
 BYOK_MODEL_ENV = "FX1_BYOK_MODEL"
 
+LOCAL_SERVE_URL_ENV = "FX1_LOCAL_SERVE_URL"
+LOCAL_SERVE_CMD_ENV = "FX1_LOCAL_SERVE_CMD"
+LOCAL_MODEL_ENV = "FX1_LOCAL_MODEL"
+LOCAL_API_KEY_ENV = "FX1_LOCAL_API_KEY"
+LOCAL_TIMEOUT_S_ENV = "FX1_LOCAL_TIMEOUT_S"
+LOCAL_START_TIMEOUT_S_ENV = "FX1_LOCAL_START_TIMEOUT_S"
+
+
+class BackendNotConfiguredError(RuntimeError):
+    """A backend whose required configuration is absent — a 503-class fault."""
+
 
 def _chat_completions_url(base_url: str) -> str:
     """Normalize a BYOK base to the chat-completions route.
@@ -38,6 +55,52 @@ def _chat_completions_url(base_url: str) -> str:
     if base.endswith("/chat/completions"):
         return base
     return f"{base}/chat/completions"
+
+
+def _env_float(name: str, override: float | None, default: float) -> float:
+    """Resolve a seconds-valued knob: kwarg beats env beats default."""
+    raw = override if override is not None else os.environ.get(name)
+    if raw is None or raw == "":
+        return default
+    val = float(raw)
+    if val <= 0:
+        raise ValueError(f"{name} must be positive, got {val!r}")
+    return val
+
+
+def _openai_chat_complete(
+    url: str,
+    *,
+    model: str,
+    messages: list[dict[str, str]],
+    timeout_s: float,
+    api_key: str | None,
+    label: str,
+) -> str:
+    """POST one OpenAI-compatible chat completion; map errors to RuntimeError."""
+    # temperature pinned to 0 — eval/teacher runs must be deterministic;
+    # unpinned sampling makes eval results unreproducible across replays.
+    body = json.dumps({"model": model, "messages": messages, "temperature": 0.0}).encode()
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+            payload = json.loads(response.read().decode())
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+    try:
+        content = payload["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise RuntimeError(
+            f"malformed {label} completion payload: missing choices[0].message.content"
+        ) from exc
+    if not isinstance(content, str):
+        raise RuntimeError(
+            f"malformed {label} completion payload: content is {type(content).__name__}, not str"
+        )
+    return content
 
 
 class InferenceBackend(Protocol):
@@ -121,7 +184,7 @@ class OpenAICompatBackend:
             if not val
         ]
         if missing:
-            raise RuntimeError(
+            raise BackendNotConfiguredError(
                 "BYOK backend is not configured; set "
                 + ", ".join(missing)
                 + " (fx-1 never hardcodes credentials)"
@@ -137,38 +200,36 @@ class OpenAICompatBackend:
         self._timeout_s = timeout_s
 
     def complete(self, messages: list[dict[str, str]]) -> str:
-        # temperature pinned to 0 — eval/teacher runs must be deterministic;
-        # unpinned sampling makes eval results unreproducible across replays.
-        body = json.dumps({"model": self._model, "messages": messages, "temperature": 0.0}).encode()
-        request = urllib.request.Request(
+        return _openai_chat_complete(
             self._url,
-            data=body,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self._api_key}",
-            },
-            method="POST",
+            model=self._model,
+            messages=messages,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="BYOK",
         )
-        try:
-            with urllib.request.urlopen(request, timeout=self._timeout_s) as response:  # noqa: S310 — user-declared BYOK endpoint  # nosec B310
-                payload = json.loads(response.read().decode())
-        except urllib.error.URLError as exc:
-            raise RuntimeError(f"BYOK endpoint {self._url} unreachable: {exc}") from exc
-        try:
-            content = payload["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as exc:
-            raise RuntimeError(
-                "malformed BYOK completion payload: missing choices[0].message.content"
-            ) from exc
-        if not isinstance(content, str):
-            raise RuntimeError(
-                f"malformed BYOK completion payload: content is {type(content).__name__}, not str"
-            )
-        return content
 
 
 class LocalFx1Backend:
-    """A local fx-1 checkpoint. Fail-closed without a valid model card.
+    """A local fx-1 checkpoint served by a local OpenAI-compatible engine.
+
+    fx-1 ships no in-process inference stack — the checkpoint is weights +
+    card, and completion goes through an engine that serves those weights
+    (vLLM, SGLang, llama.cpp's server, ...). Two ways to reach one:
+
+    - ``FX1_LOCAL_SERVE_URL`` / ``serve_url=`` — attach to an already-running
+      engine (e.g. ``http://127.0.0.1:8000/v1``).
+    - ``FX1_LOCAL_SERVE_CMD`` / ``serve_cmd=`` — a spawn template for the
+      engine, e.g. ``vllm serve \"$checkpoint_dir\" --port 8000``. The
+      ``$checkpoint_dir`` placeholder expands to the *verified* checkpoint
+      root and ``FX1_CHECKPOINT_DIR`` is exported to the child. The backend
+      waits for the attach URL to answer, and ``close()`` terminates the
+      child.
+
+    ``serve_url`` is always required to complete — ``serve_cmd`` only decides
+    who brings the engine up. Fail-closed: a missing card, a failed ship
+    gate, an unsigned release under ``FX1_SIGNING_KEY``, or no engine config
+    at all each raise instead of fabricating.
 
     Attestation enforcement: when ``require_signature=True`` (the default once
     FX1_SIGNING_KEY is set), unsigned or signature-mismatched checkpoints
@@ -177,7 +238,16 @@ class LocalFx1Backend:
     """
 
     def __init__(
-        self, checkpoint_dir: str | Path, *, require_signature: bool | None = None
+        self,
+        checkpoint_dir: str | Path,
+        *,
+        require_signature: bool | None = None,
+        serve_url: str | None = None,
+        serve_cmd: str | None = None,
+        model: str | None = None,
+        api_key: str | None = None,
+        timeout_s: float | None = None,
+        start_timeout_s: float | None = None,
     ) -> None:
         root = Path(checkpoint_dir)
         card_path = root / "modelcard.json"
@@ -203,12 +273,105 @@ class LocalFx1Backend:
                     "is configured"
                 )
         self._root = root
+        url = serve_url if serve_url is not None else os.environ.get(LOCAL_SERVE_URL_ENV, "")
+        if url:
+            parsed = urllib.parse.urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise RuntimeError(f"{LOCAL_SERVE_URL_ENV} must be an http(s) URL, got {url!r}")
+        self._url = _chat_completions_url(url) if url else ""
+        cmd = serve_cmd if serve_cmd is not None else os.environ.get(LOCAL_SERVE_CMD_ENV, "")
+        self._serve_cmd = cmd
+        self._model = (
+            model if model is not None else (os.environ.get(LOCAL_MODEL_ENV) or self.card.version)
+        )
+        self._api_key = api_key if api_key is not None else os.environ.get(LOCAL_API_KEY_ENV, "")
+        self._timeout_s = _env_float(LOCAL_TIMEOUT_S_ENV, timeout_s, 120.0)
+        self._start_timeout_s = _env_float(LOCAL_START_TIMEOUT_S_ENV, start_timeout_s, 60.0)
+        self._proc: subprocess.Popen[bytes] | None = None
+
+    def _engine_up(self) -> bool:
+        """True once the attach URL's engine answers a models probe."""
+        parsed = urllib.parse.urlparse(self._url)
+        probe = f"{parsed.scheme}://{parsed.netloc}/v1/models"
+        try:
+            with urllib.request.urlopen(probe, timeout=1):  # noqa: S310 — declared local engine  # nosec B310
+                return True
+        except urllib.error.HTTPError:
+            return True  # any HTTP response means a server is listening
+        except (urllib.error.URLError, OSError):
+            return False
+
+    def _ensure_engine(self) -> None:
+        """Spawn the engine from the serve template, once, and wait for it."""
+        if not self._serve_cmd or self._proc is not None or self._engine_up():
+            return
+        argv = shlex.split(
+            string.Template(self._serve_cmd).substitute(
+                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
+            )
+        )
+        env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
+        try:
+            self._proc = subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
+                argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        except OSError as exc:
+            raise RuntimeError(
+                f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
+            ) from exc
+        deadline = time.monotonic() + self._start_timeout_s
+        while time.monotonic() < deadline:
+            if self._proc.poll() is not None:
+                raise RuntimeError(
+                    "local fx-1 engine exited during startup "
+                    f"(rc={self._proc.returncode}): {self._serve_cmd!r}"
+                )
+            if self._engine_up():
+                return
+            time.sleep(0.1)
+        self.close()
+        raise RuntimeError(
+            "local fx-1 engine did not become ready within "
+            f"{self._start_timeout_s:g}s: {self._serve_cmd!r}"
+        )
 
     def complete(self, messages: list[dict[str, str]]) -> str:
-        raise NotImplementedError(
-            "local inference requires the serving stack (vLLM/SGLang with K3 "
-            "support); wire it here when the first distilled student ships"
+        if not self._url:
+            raise BackendNotConfiguredError(
+                "local_fx1 is not configured: set FX1_LOCAL_SERVE_URL to an "
+                "OpenAI-compatible engine serving the checkpoint (fx-1 never "
+                "hardcodes endpoints); FX1_LOCAL_SERVE_CMD may spawn one"
+            )
+        self._ensure_engine()
+        return _openai_chat_complete(
+            self._url,
+            model=self._model,
+            messages=messages,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key or None,
+            label="local_fx1",
         )
+
+    def close(self) -> None:
+        """Terminate a spawned engine; a no-op when only attaching."""
+        proc, self._proc = self._proc, None
+        if proc is None or proc.poll() is not None:
+            return
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+    def __enter__(self) -> LocalFx1Backend:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        with contextlib.suppress(Exception):
+            self.close()
 
 
 def get_backend(kind: str, **kwargs: object) -> InferenceBackend:

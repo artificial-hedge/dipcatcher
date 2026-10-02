@@ -16,7 +16,12 @@ in-process ``Harness`` allows — no more. These probes pin that parity:
 - *Completion gate* — completions run through ``cited_complete``, so a
   backend that emits a forbidden headline is cut off at the gate (502)
   rather than served; unconfigured BYOK/hosted creds surface as 503, a
-  backend that doesn't exist as 422.
+  backend that doesn't exist as 422. ``local_fx1`` completes through an
+  attached/spawned OpenAI-compatible engine: no ``FX1_LOCAL_SERVE_URL`` /
+  ``FX1_LOCAL_SERVE_CMD`` → 503, a dead engine → 502, a live one → 200
+  with the card's version as the model id; ``/health`` reports
+  ``local_fx1`` ready only when a card'd checkpoint *and* engine config
+  are both present.
 - *Verification surface* — ``POST /receipts/verify`` verifies arbitrary
   payloads through the same ``verify_receipt_payload`` the CLI uses;
   malformed receipts fail closed, never crash.
@@ -41,6 +46,13 @@ __all__ = ["api_audit", "api_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
 _BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
+_LOCAL_ENVS = (
+    "FX1_LOCAL_SERVE_URL",
+    "FX1_LOCAL_SERVE_CMD",
+    "FX1_LOCAL_MODEL",
+    "FX1_LOCAL_API_KEY",
+    "FX1_CHECKPOINT_DIR",
+)
 
 
 def _client(
@@ -57,7 +69,9 @@ def _client(
     def fake_runner(argv: list[str], timeout_s: int) -> tuple[int, str, str]:
         return 0, f"ran:{' '.join(argv)}", ""
 
-    saved = {k: os.environ.get(k) for k in (_API_KEY_ENV, *(_BYOK_ENVS), "MOONSHOT_API_KEY")}
+    saved = {
+        k: os.environ.get(k) for k in (_API_KEY_ENV, *_BYOK_ENVS, *_LOCAL_ENVS, "MOONSHOT_API_KEY")
+    }
     try:
         if api_key is None:
             os.environ.pop(_API_KEY_ENV, None)
@@ -199,6 +213,106 @@ def api_audit() -> dict[str, Any]:
         ).status_code
         == 422
     )
+
+    # --- local weights surface: card'd checkpoint + engine attach ----------
+    import json as _json
+    import tempfile
+    from pathlib import Path
+    from unittest.mock import patch
+
+    from fx1.modelcard import EvalDelta, ModelCard
+
+    card = ModelCard(
+        version="fx-1.v0.1",
+        corpus_sha256="a" * 64,
+        corpus_receipt_range="aa..bb",
+        training_manifest_sha256="b" * 64,
+        eval_delta=EvalDelta(
+            domain_pass_rate_base=0.5,
+            domain_pass_rate_candidate=0.6,
+            general_pass_rate_base=0.5,
+            general_pass_rate_candidate=0.5,
+            honesty_gate_candidate=True,
+        ),
+    )
+    with tempfile.TemporaryDirectory() as td:
+        ckpt = Path(td) / "ckpt"
+        ckpt.mkdir()
+        card.save(ckpt / "modelcard.json")
+
+        out["local_unconfigured_503"] = (
+            client.post(
+                "/harness/complete",
+                json={
+                    "backend": "local_fx1",
+                    "messages": [{"role": "user", "content": "ping"}],
+                    "checkpoint_dir": str(ckpt),
+                },
+            ).status_code
+            == 503
+        )
+        os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
+        try:
+            out["health_local_needs_engine"] = (
+                client.get("/health").json()["backends"]["local_fx1"] is False
+            )
+        finally:
+            os.environ.pop("FX1_CHECKPOINT_DIR", None)
+
+        class _Resp:
+            def read(self) -> bytes:
+                return _json.dumps({"choices": [{"message": {"content": "answer"}}]}).encode()
+
+            def __enter__(self) -> _Resp:
+                return self
+
+            def __exit__(self, *a: Any) -> None:
+                return None
+
+        def fake_urlopen(req: Any, **kw: Any) -> _Resp:
+            return _Resp()
+
+        import urllib.request  # noqa: PLC0415
+
+        os.environ["FX1_CHECKPOINT_DIR"] = str(ckpt)
+        os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:8011/v1"
+        try:
+            with patch.object(urllib.request, "urlopen", fake_urlopen):
+                resp = client.post(
+                    "/harness/complete",
+                    json={
+                        "backend": "local_fx1",
+                        "messages": [{"role": "user", "content": "ping"}],
+                        "checkpoint_dir": str(ckpt),
+                    },
+                )
+            body = resp.json()
+            out["local_attach_complete_200"] = (
+                resp.status_code == 200
+                and body["content"].startswith("answer")
+                and body["model"] == "fx-1.v0.1"
+            )
+            out["health_local_configured"] = (
+                client.get("/health").json()["backends"]["local_fx1"] is True
+            )
+        finally:
+            os.environ.pop("FX1_CHECKPOINT_DIR", None)
+            os.environ.pop("FX1_LOCAL_SERVE_URL", None)
+        os.environ["FX1_LOCAL_SERVE_URL"] = "http://127.0.0.1:9/v1"
+        try:
+            out["local_engine_down_502"] = (
+                client.post(
+                    "/harness/complete",
+                    json={
+                        "backend": "local_fx1",
+                        "messages": [{"role": "user", "content": "ping"}],
+                        "checkpoint_dir": str(ckpt),
+                    },
+                ).status_code
+                == 502
+            )
+        finally:
+            os.environ.pop("FX1_LOCAL_SERVE_URL", None)
 
     # honesty gate fires over the wire: a backend emitting a forbidden
     # headline must not serve it.

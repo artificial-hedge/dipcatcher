@@ -47,6 +47,9 @@ from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
     BYOK_MODEL_ENV,
+    LOCAL_SERVE_CMD_ENV,
+    LOCAL_SERVE_URL_ENV,
+    BackendNotConfiguredError,
     get_backend,
 )
 from fx1.serve.chat import cited_complete
@@ -140,7 +143,9 @@ def _backend_configured() -> dict[str, bool]:
         "byok": all(
             os.environ.get(name) for name in (BYOK_BASE_URL_ENV, BYOK_API_KEY_ENV, BYOK_MODEL_ENV)
         ),
-        "local_fx1": bool(checkpoint_env) and (Path(checkpoint_env) / "modelcard.json").is_file(),
+        "local_fx1": bool(checkpoint_env)
+        and (Path(checkpoint_env) / "modelcard.json").is_file()
+        and bool(os.environ.get(LOCAL_SERVE_URL_ENV) or os.environ.get(LOCAL_SERVE_CMD_ENV)),
     }
 
 
@@ -280,6 +285,8 @@ def create_app(
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
+        except BackendNotConfiguredError as exc:
+            raise HTTPException(503, str(exc)) from exc
         except NotImplementedError as exc:
             raise HTTPException(501, str(exc)) from exc
         except Fx1HonestyError as exc:
@@ -288,6 +295,10 @@ def create_app(
             raise HTTPException(502, f"honesty gate refused model output: {exc}") from exc
         except RuntimeError as exc:
             raise HTTPException(502, str(exc)) from exc
+        finally:
+            closer = getattr(backend, "close", None)
+            if callable(closer):
+                closer()
         model_name = getattr(backend, "_model", None)
         return CompleteResponse(
             backend=body.backend,
