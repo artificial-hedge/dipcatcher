@@ -512,6 +512,7 @@ _MEASUREMENT_SCHEMAS = (
     "vpin.v1",
     "wave23_map.v1",
     "wave24_map.v1",
+    "zone_embargo.v1",
 )
 
 

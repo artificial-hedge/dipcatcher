@@ -403,6 +403,16 @@ class ZILobConfig:
     # and the post-fill narrowing marker still reach the touch. 0 is
     # bit-identical (max(dist, 0) == dist, no extra draws).
     min_quote_dist: int = 0
+    # ``zone_embargo`` >= 0: NO visible placement class lands strictly
+    # inside ``|level - ref| < zone_embargo`` — join/crown/improve/
+    # chase/repost/ambient levels are clamped to the embargo edge
+    # (ref - z for buys, ref + z for sells) after their class choice.
+    # The no-quote zone the tape's standing spread needs — a market
+    # maker's entire class set respects the zone, not only ambient
+    # draws (band_occupancy.v1 falsified the ambient-only floor).
+    # Applies only under ``anchor="ref"``. 0 is bit-identical (the
+    # clamp is gated on ``zone_embargo > 0``, no extra draws).
+    zone_embargo: int = 0
     # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
     # order of a level immediately re-rests one unit at the SAME level
     # tagged ``iceberg`` — hidden reserve liquidity that refills after
@@ -768,6 +778,8 @@ class ZILobConfig:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
         if isinstance(self.min_quote_dist, bool) or int(self.min_quote_dist) < 0:
             raise ValueError(f"min_quote_dist must be an int >= 0, got {self.min_quote_dist!r}")
+        if isinstance(self.zone_embargo, bool) or int(self.zone_embargo) < 0:
+            raise ValueError(f"zone_embargo must be an int >= 0, got {self.zone_embargo!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
         if self.iceberg_reload_mode not in ("per_unit", "residual"):
             raise ValueError(
@@ -2283,6 +2295,9 @@ class ZILobSimulator:
                     level = bb + 1 + int(self._rng.random() * (ba - bb - 1))
                 else:
                     level = ref - dist
+                zone_b = self._cfg.zone_embargo
+                if zone_b > 0 and level > ref - zone_b:
+                    level = ref - zone_b
                 if repost_l is None:
                     level = self._step_unhit("buy", level)
                 if repost_l is None and self._is_cooled("buy", level):
@@ -2336,6 +2351,9 @@ class ZILobSimulator:
                 level = ba - 1 - int(self._rng.random() * (ba - bb - 1))
             else:
                 level = ref + dist
+            zone_s = self._cfg.zone_embargo
+            if zone_s > 0 and level < ref + zone_s:
+                level = ref + zone_s
             if repost_l is None:
                 level = self._step_unhit("sell", level)
             if repost_l is None and self._is_cooled("sell", level):
