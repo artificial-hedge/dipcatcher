@@ -2531,6 +2531,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ctmc_availability",
         "renewal_reward",
         "vacation_queue",
+        # Wave-205 auction canon: Vickrey, first-price BNE, all-pay,
+        # ascending clock, double auction, GSP positions.
+        "vickrey_auction",
+        "first_price_auction",
+        "all_pay_auction",
+        "ascending_clock",
+        "double_auction",
+        "gsp_auction",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

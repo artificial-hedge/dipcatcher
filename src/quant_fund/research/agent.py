@@ -1629,6 +1629,14 @@ from quant_fund.research.benches_w204 import (
     bench_renewal_reward_family,
     bench_vacation_queue_family,
 )
+from quant_fund.research.benches_w205 import (
+    bench_all_pay_auction_family,
+    bench_ascending_clock_family,
+    bench_double_auction_family,
+    bench_first_price_auction_family,
+    bench_gsp_auction_family,
+    bench_vickrey_auction_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4404,6 +4412,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ctmc_availability": bench_ctmc_availability_family(),
         "renewal_reward": bench_renewal_reward_family(),
         "vacation_queue": bench_vacation_queue_family(),
+        "vickrey_auction": bench_vickrey_auction_family(),
+        "first_price_auction": bench_first_price_auction_family(),
+        "all_pay_auction": bench_all_pay_auction_family(),
+        "ascending_clock": bench_ascending_clock_family(),
+        "double_auction": bench_double_auction_family(),
+        "gsp_auction": bench_gsp_auction_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
