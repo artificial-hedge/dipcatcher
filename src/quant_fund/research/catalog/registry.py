@@ -2341,6 +2341,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "titans_memory",
         "gated_deltanet",
         "longhorn_ssm",
+        # Wave-182 normalizing-flow canon:
+        # RealNVP, Glow, NSF, MAF, planar, IAF.
+        "real_nvp",
+        "glow_flow",
+        "neural_spline_flow",
+        "maf_flow",
+        "planar_flow",
+        "iaf_flow",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

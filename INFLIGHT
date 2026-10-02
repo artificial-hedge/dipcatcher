@@ -2579,3 +2579,4 @@ wave 178 (2026-10-02): multi-task-gradient canon — pcgrad, mgda_mtl, cagrad_mt
 wave 179 (2026-10-02): survival-DL canon — deepsurv, deephit, cox_time, nnet_surv, drsa_surv, pchazard; 1046→1052 families.
 wave 180 (2026-10-02): PDMP exotic-sampling canon — bouncy_particle, zigzag_sampler, boomerang_sampler, kinetic_langevin, elliptical_slice, riemannian_mala; 1052→1058 families.
 wave 181 (2026-10-02): LM-arch-2 canon — mamba2_ssd, xlstm_mlstm, rwkv7, titans_memory, gated_deltanet, longhorn_ssm; 1058→1064 families.
+wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_spline_flow, maf_flow, planar_flow, iaf_flow; 1064→1070 families.

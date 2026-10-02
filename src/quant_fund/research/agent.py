@@ -1445,6 +1445,14 @@ from quant_fund.research.benches_w181 import (
     bench_titans_memory_family,
     bench_xlstm_mlstm_family,
 )
+from quant_fund.research.benches_w182 import (
+    bench_glow_flow_family,
+    bench_iaf_flow_family,
+    bench_maf_flow_family,
+    bench_neural_spline_flow_family,
+    bench_planar_flow_family,
+    bench_real_nvp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4082,6 +4090,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "titans_memory": bench_titans_memory_family(),
         "gated_deltanet": bench_gated_deltanet_family(),
         "longhorn_ssm": bench_longhorn_ssm_family(),
+        "real_nvp": bench_real_nvp_family(),
+        "glow_flow": bench_glow_flow_family(),
+        "neural_spline_flow": bench_neural_spline_flow_family(),
+        "maf_flow": bench_maf_flow_family(),
+        "planar_flow": bench_planar_flow_family(),
+        "iaf_flow": bench_iaf_flow_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
