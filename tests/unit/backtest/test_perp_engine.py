@@ -1,6 +1,7 @@
 """USDT-M perp backtester: funding cashflows, margin, liquidation, annualization."""
 
 from datetime import UTC, datetime, timedelta
+from statistics import stdev
 
 import polars as pl
 import pytest
@@ -181,3 +182,73 @@ def test_funding_spike_multiplier_scales_cashflow(tmp_path) -> None:
         _bars([100.0] * 10), _funding(0.01, at=5), _weights(0.5), cfg, initial_nav=1e5
     )
     assert res.metrics["funding_paid_total"] == pytest.approx(1500.0, rel=0.05)
+
+
+@pytest.mark.parametrize("order", ["reverse", "shuffle"])
+def test_enrichment_uses_chronological_history_per_symbol(order) -> None:
+    from polars.testing import assert_frame_equal
+
+    from quant_fund.backtest.perp_engine import _bar_enrichment
+
+    bars = pl.concat(
+        [
+            _bars([100.0 + i * (i % 3 + 1) for i in range(25)], sid="A"),
+            _bars([50.0 + i * (i % 4 + 1) for i in range(25)], sid="B"),
+        ]
+    ).with_columns((pl.col("close") * 10).alias("volume"))
+    reordered = (
+        bars.reverse() if order == "reverse" else bars.sample(fraction=1, shuffle=True, seed=7)
+    )
+    expected = _bar_enrichment(bars.sort("event_time", "security_id"))
+    actual = _bar_enrichment(reordered)
+    assert_frame_equal(
+        actual.sort("event_time", "security_id"), expected.sort("event_time", "security_id")
+    )
+    for sid in ("A", "B"):
+        symbol = expected.filter(pl.col("security_id") == sid)
+        assert symbol["adv"][0] is None
+        assert symbol["vol_20"][0] is None
+        for i in range(1, symbol.height):
+            history = symbol.slice(max(0, i - 20), min(i, 20))
+            assert symbol["adv"][i] == pytest.approx((history["close"] * history["volume"]).mean())
+            returns = [
+                symbol["close"][j] / symbol["close"][j - 1] - 1 for j in range(max(1, i - 20), i)
+            ]
+            if len(returns) < 2:
+                assert symbol["vol_20"][i] is None
+            else:
+                assert symbol["vol_20"][i] == pytest.approx(stdev(returns))
+    # Future observations cannot alter prior cost inputs, even when supplied first.
+    prefix = bars.filter(pl.col("event_time") < T0 + timedelta(hours=12))
+    assert_frame_equal(
+        actual.filter(pl.col("event_time") < T0 + timedelta(hours=12)).sort(
+            "event_time", "security_id"
+        ),
+        _bar_enrichment(prefix).sort("event_time", "security_id"),
+    )
+
+
+@pytest.mark.parametrize("order", ["reverse", "shuffle"])
+def test_perp_backtest_is_invariant_to_bar_input_order(tmp_path, order) -> None:
+    from polars.testing import assert_frame_equal
+
+    cfg = _cfg(tmp_path)
+    bars = pl.concat(
+        [
+            _bars([100.0, 101.0, 100.5, 102.0, 103.0, 102.0], sid="A"),
+            _bars([50.0, 49.0, 50.0, 51.0, 50.0, 52.0], sid="B"),
+        ]
+    ).with_columns((pl.col("close") * 10).alias("volume"))
+    weights = pl.concat([_weights(0.5, sid="A"), _weights(-0.4, sid="B", at=3)])
+    reordered = (
+        bars.reverse() if order == "reverse" else bars.sample(fraction=1, shuffle=True, seed=7)
+    )
+    expected = run_perp_backtest(
+        bars.sort("event_time", "security_id"), None, weights, cfg, initial_nav=1e5
+    )
+    actual = run_perp_backtest(reordered, None, weights, cfg, initial_nav=1e5)
+    assert expected.fills.height == 2
+    assert expected.metrics["impact"] > 0
+    assert_frame_equal(actual.fills, expected.fills)
+    assert_frame_equal(actual.equity, expected.equity)
+    assert actual.metrics == expected.metrics
