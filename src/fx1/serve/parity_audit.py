@@ -975,6 +975,32 @@ def parity_audit() -> dict[str, bool]:
         out["client_wait_run_timeout_raises"] = False
     except HarnessTransportError:
         out["client_wait_run_timeout_raises"] = True
+
+    # ---- readiness + blocking drain ---------------------------------------
+    ops_calls: list[tuple[str, str]] = []
+
+    def _ops_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        ops_calls.append((method, url))
+        if "/ready" in url:
+            return 200, {}, b'{"ready": true, "inflight": 2}'
+        return (
+            200,
+            {},
+            _json_mod.dumps({"draining": True, "inflight": 0, "drained": True}).encode(),
+        )
+
+    c_ops = HarnessClient("http://harness.test", transport=_ops_transport)
+    rd = c_ops.ready()
+    out["client_ready_get"] = rd == {"ready": True, "inflight": 2}
+    dr = c_ops.drain(wait_s=12.5)
+    out["client_drain_wait_s_sent"] = any("wait_s=12.5" in u for _m, u in ops_calls)
+    out["client_drain_reports_drained"] = dr["drained"] is True
     return out
 
 

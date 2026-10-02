@@ -371,7 +371,12 @@ def e2e_audit() -> dict[str, bool]:
                 st["status"] == "succeeded" and st["result"]["command"] == "doctor"
             )
             out["e2e_job_unknown_404"] = _raises(lambda: jremote.job_status("nope")) == "KeyError"
+            rdy = jremote.ready()
+            out["e2e_ready_200"] = rdy["ready"] is True and isinstance(rdy["inflight"], int)
             jremote.drain()
+            out["e2e_ready_under_drain"] = (
+                _raises(lambda: jremote.ready()) == "BackendNotConfiguredError"
+            )
             out["e2e_job_replay_under_drain"] = (
                 jremote.submit_run("doctor", idempotency_key="e2e-job-key") == j1
             )
@@ -381,6 +386,26 @@ def e2e_audit() -> dict[str, bool]:
         finally:
             server3.should_exit = True
             server3_thread.join(timeout=15)
+
+        # blocking drain over the real wire: a job holds a slot, drain
+        # wait_s=0 reports not drained, wait_s=10 blocks until it empties.
+        def _slow_runner(a: list[str], t: float) -> tuple[int, str, str]:
+            time.sleep(0.5)
+            return (0, "ran:" + " ".join(a), "")
+
+        server4, server4_thread, port4 = _serve_uvicorn(
+            api_mod.create_app(harness=Harness(runner=_slow_runner))
+        )
+        try:
+            wremote = HarnessClient(f"http://127.0.0.1:{port4}", api_key=_API_KEY, timeout_s=15.0)
+            wremote.submit_run("doctor")
+            d0 = wremote.drain(wait_s=0.01)
+            out["e2e_drain_wait_timeout"] = d0["drained"] is False
+            d1 = wremote.drain(wait_s=10.0)
+            out["e2e_drain_wait_blocks"] = d1["drained"] is True and d1["inflight"] == 0
+        finally:
+            server4.should_exit = True
+            server4_thread.join(timeout=15)
     finally:
         if server is not None:
             server.should_exit = True

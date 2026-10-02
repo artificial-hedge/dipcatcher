@@ -1,7 +1,7 @@
 {
   "kind": "api_audit",
   "schema": "api_audit.v1",
-  "git_revision": "c9558b7bdc29862de0d1f807278978acebb34ccb",
+  "git_revision": "d7feb34ccfb093d8a9776d1a47f89f65a9e7afee",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -54,6 +54,7 @@
       "stream_keepalive_off_json_error": true,
       "stream_keepalive_negative_rejected": true,
       "stream_keepalive_env_config": true,
+      "ready_200": true,
       "drain_response_shape": true,
       "drain_reports_inflight": true,
       "drain_complete_refused_503": true,
@@ -62,7 +63,12 @@
       "drain_health_reports": true,
       "drain_metrics_reports": true,
       "drain_idempotent": true,
+      "ready_under_drain_503": true,
       "drain_replay_served": true,
+      "drain_wait_s_timeout_reports_not_drained": true,
+      "drain_wait_s_blocks_until_empty": true,
+      "drain_wait_s_job_completes": true,
+      "drain_wait_s_validated": true,
       "idem_same_key_replays": true,
       "idem_distinct_keys_fresh": true,
       "idem_absent_ok": true,
@@ -119,5 +125,5 @@
     "ok": true
   },
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
-  "receipt_sha256": "4a458b521a48285124e9d8d36e5cf02b745f637c627e07b4d2c212f438e99515"
+  "receipt_sha256": "f19fb7b20865b93e50792103eac69d7104da72aee54c1ee8e49664b1c6aadd8c"
 }

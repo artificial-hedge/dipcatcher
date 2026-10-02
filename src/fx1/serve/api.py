@@ -196,6 +196,14 @@ class DrainResponse(_Model):
 
     draining: bool
     inflight: int
+    drained: bool = False
+
+
+class ReadyResponse(_Model):
+    """Readiness probe payload — only emitted while accepting work."""
+
+    ready: Literal[True] = True
+    inflight: int
 
 
 class JobSubmitResponse(_Model):
@@ -221,7 +229,7 @@ class _Metrics:
     def __init__(self, max_inflight: int) -> None:
         self.started = time.monotonic()
         self.max_inflight = max_inflight
-        self._lock = threading.Lock()
+        self._cond = threading.Condition()
         self._requests_total = 0
         self._errors_total = 0
         self._by_status: dict[int, int] = {}
@@ -230,23 +238,36 @@ class _Metrics:
         self.draining = threading.Event()
 
     def record(self, status: int) -> None:
-        with self._lock:
+        with self._cond:
             self._requests_total += 1
             self._by_status[status] = self._by_status.get(status, 0) + 1
             if status >= 400:
                 self._errors_total += 1
 
     def acquire(self) -> None:
-        with self._lock:
+        with self._cond:
             self._inflight += 1
             self._watermark = max(self._watermark, self._inflight)
 
     def release(self) -> None:
-        with self._lock:
+        with self._cond:
             self._inflight -= 1
+            self._cond.notify_all()
+
+    def wait_idle(self, timeout_s: float) -> bool:
+        """Block until inflight reaches zero or the timeout lapses — the
+        drain-lifecycle wait channel. True when the pool actually emptied."""
+        deadline = time.monotonic() + timeout_s
+        with self._cond:
+            while self._inflight > 0:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    return False
+                self._cond.wait(remaining)
+            return True
 
     def snapshot(self) -> MetricsResponse:
-        with self._lock:
+        with self._cond:
             return MetricsResponse(
                 uptime_s=round(time.monotonic() - self.started, 3),
                 requests_total=self._requests_total,
@@ -633,15 +654,31 @@ def create_app(
             draining=metrics.draining.is_set(),
         )
 
+    @app.get("/ready", response_model=ReadyResponse)
+    def ready() -> ReadyResponse:
+        """Kubernetes-style readiness: 200 while accepting work, 503 once
+        drain is latched — the load balancer's signal to deregister the
+        pod before gated routes start refusing."""
+        if metrics.draining.is_set():
+            raise HTTPException(503, "harness is draining")
+        return ReadyResponse(inflight=metrics.snapshot().inflight)
+
     @app.post("/harness/drain", response_model=DrainResponse)
-    def drain() -> DrainResponse:
+    def drain(
+        wait_s: float = Query(default=0.0, ge=0.0, le=600.0),
+    ) -> DrainResponse:
         """Latch drain mode (one-way): gated routes refuse new work with
-        503 while in-flight requests finish; ``/health`` and ``/metrics``
-        keep answering so orchestrators can watch ``inflight`` bleed to
-        zero before stopping the process. Idempotent — re-POSTing just
-        re-reads the latch."""
+        503 while in-flight requests finish; ``/health``, ``/metrics``
+        and ``/ready`` keep answering so orchestrators can watch
+        ``inflight`` bleed to zero before stopping the process.
+        Idempotent — re-POSTing just re-reads the latch. ``wait_s>0``
+        blocks (server-side) until in-flight work empties or the window
+        lapses; ``drained`` reports which happened."""
         metrics.draining.set()
-        return DrainResponse(draining=True, inflight=metrics.snapshot().inflight)
+        if wait_s > 0:
+            metrics.wait_idle(wait_s)
+        snap = metrics.snapshot()
+        return DrainResponse(draining=True, inflight=snap.inflight, drained=snap.inflight == 0)
 
     @app.get("/harness/commands", response_model=HarnessCommandListResponse)
     def list_commands(

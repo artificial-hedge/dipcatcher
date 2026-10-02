@@ -554,11 +554,27 @@ class HarnessClient:
             draining=bool(out.get("draining", False)),
         )
 
-    def drain(self) -> dict[str, Any]:
+    def drain(self, wait_s: float = 0.0) -> dict[str, Any]:
         """Latch the remote harness into drain mode — one-way: gated routes
         refuse new work (503), in-flight requests finish, ``/metrics`` keeps
         reporting ``inflight`` so a deploy can wait for it to hit zero before
         stopping the process. Idempotent; marks the latch idempotent=True so
-        transport blips retry."""
-        out = self._json("POST", "/harness/drain", {}, idempotent=True)
-        return {"draining": bool(out["draining"]), "inflight": int(out["inflight"])}
+        transport blips retry. ``wait_s>0`` lets the server block until the
+        in-flight pool empties — ``drained`` in the payload reports whether
+        it did within the window."""
+        path = "/harness/drain"
+        if wait_s > 0:
+            path += "?" + urllib.parse.urlencode({"wait_s": wait_s})
+        out = self._json("POST", path, {}, idempotent=True)
+        return {
+            "draining": bool(out["draining"]),
+            "inflight": int(out["inflight"]),
+            "drained": bool(out.get("drained", out["inflight"] == 0)),
+        }
+
+    def ready(self) -> dict[str, Any]:
+        """Readiness probe: returns the payload while the server accepts new
+        work; raises ``BackendNotConfiguredError`` (503) once drain is
+        latched — a deploy loop polls this before cutting traffic."""
+        out = self._json("GET", "/ready", idempotent=True)
+        return {"ready": bool(out["ready"]), "inflight": int(out["inflight"])}

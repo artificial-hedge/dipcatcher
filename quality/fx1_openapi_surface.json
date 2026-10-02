@@ -51,10 +51,17 @@
     },
     "/harness/drain": {
       "post": {
-        "params": [],
+        "params": [
+          {
+            "name": "wait_s",
+            "in": "query",
+            "required": false
+          }
+        ],
         "request_body_required": null,
         "responses": [
-          "200"
+          "200",
+          "422"
         ]
       }
     },
@@ -124,6 +131,15 @@
         ]
       }
     },
+    "/ready": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/receipts/verify": {
       "post": {
         "params": [],
@@ -135,5 +151,5 @@
       }
     }
   },
-  "schema_sha256": "049f450730c5e5fdf73ccbfd950e1170b0aee6e93ea48da1738a425cb0be9d76"
+  "schema_sha256": "006952a0d5e4919adb6ed02487a8d0f58aadc7f95ab98c596266e7bc8fbdecc7"
 }

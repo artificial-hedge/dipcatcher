@@ -628,6 +628,12 @@ def api_audit() -> dict[str, Any]:
         headers={"Idempotency-Key": "pre-drain-key"},
     )
     try:
+        ready0 = dclient.get("/ready")
+        out["ready_200"] = (
+            ready0.status_code == 200
+            and ready0.json()["ready"] is True
+            and ready0.json()["inflight"] >= 1
+        )
         d0 = dclient.post("/harness/drain")
         out["drain_response_shape"] = (
             d0.status_code == 200
@@ -655,6 +661,7 @@ def api_audit() -> dict[str, Any]:
         )
         out["drain_metrics_reports"] = dclient.get("/metrics").json()["draining"] is True
         out["drain_idempotent"] = dclient.post("/harness/drain").json()["draining"] is True
+        out["ready_under_drain_503"] = dclient.get("/ready").status_code == 503
         replayed = dclient.post(
             "/harness/runs",
             json={"command": "doctor"},
@@ -665,6 +672,32 @@ def api_audit() -> dict[str, Any]:
         )
     finally:
         drain_app.state.metrics.release()
+
+    # --- drain wait_s: server-side wait for the in-flight pool --------------
+    import time as _time  # noqa: PLC0415
+
+    def _slow_runner(a: list[str], t: float) -> tuple[int, str, str]:
+        _time.sleep(0.4)
+        return (0, "ran:" + " ".join(a), "")
+
+    wait_app = api_mod.create_app(
+        harness=_Harness(runner=_slow_runner),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+    )
+    wclient = _TC2(wait_app)
+    wjob = wclient.post("/harness/jobs", json={"command": "doctor"}).json()["job_id"]
+    w0 = wclient.post("/harness/drain?wait_s=0.01")
+    out["drain_wait_s_timeout_reports_not_drained"] = (
+        w0.status_code == 200 and w0.json()["drained"] is False
+    )
+    w1 = wclient.post("/harness/drain?wait_s=5")
+    out["drain_wait_s_blocks_until_empty"] = (
+        w1.status_code == 200 and w1.json()["drained"] is True and w1.json()["inflight"] == 0
+    )
+    out["drain_wait_s_job_completes"] = (
+        wclient.get(f"/harness/jobs/{wjob}").json()["status"] == "succeeded"
+    )
+    out["drain_wait_s_validated"] = wclient.post("/harness/drain?wait_s=-1").status_code == 422
 
     # --- idempotency keys: dedup retries of a submitted run ------------------
     r1 = client.post(

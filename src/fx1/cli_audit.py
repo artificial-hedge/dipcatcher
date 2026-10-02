@@ -294,6 +294,7 @@ def cli_audit() -> dict[str, Any]:
             self.last_idem: str | None = None
             self.last_job: str | None = None
             self.last_wait: float | None = None
+            self.last_drain_wait: float | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -319,8 +320,12 @@ def cli_audit() -> dict[str, Any]:
                 max_inflight=16,
             )
 
-        def drain(self) -> dict[str, Any]:
-            return {"draining": True, "inflight": 2}
+        def drain(self, wait_s: float = 0.0) -> dict[str, Any]:
+            self.last_drain_wait = wait_s
+            return {"draining": True, "inflight": 2, "drained": False}
+
+        def ready(self) -> dict[str, Any]:
+            return {"ready": True, "inflight": 2}
 
         def run(self, name: str, **kw: Any) -> Any:
             from fx1.harness import HarnessResult
@@ -375,7 +380,31 @@ def cli_audit() -> dict[str, Any]:
         out["remote_drain_json"] = rd.exit_code == 0 and json.loads(rd.stdout) == {
             "draining": True,
             "inflight": 2,
+            "drained": False,
         }
+        rw = runner.invoke(
+            app,
+            ["harness", "drain", "--remote", "http://h.test", "--wait-s", "10"],
+        )
+        out["remote_drain_wait_flag"] = rw.exit_code == 0 and remotes[-1].last_drain_wait == 10.0
+        rready = runner.invoke(app, ["harness", "ready", "--remote", "http://h.test"])
+        out["remote_ready_json"] = (
+            rready.exit_code == 0 and json.loads(rready.stdout)["ready"] is True
+        )
+
+    # ready under drain: client raises the mapped 503, CLI exits 1
+    from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
+
+    with patch("fx1.serve.client.HarnessClient") as mc:
+        inst = mc.return_value
+        inst.ready.side_effect = BackendNotConfiguredError("draining")
+        rnot = runner.invoke(app, ["harness", "ready", "--remote", "http://h.test"])
+        out["remote_ready_under_drain_exit1"] = (
+            rnot.exit_code == 1 and '"ready": false' in rnot.stdout
+        )
+
+    ry_local = runner.invoke(app, ["harness", "ready"])
+    out["ready_local_refused"] = ry_local.exit_code == 2 and "--remote" in ry_local.output
 
     # metrics + drain + jobs are wire-ops surfaces — without --remote they fail clean
     rm_local = runner.invoke(app, ["harness", "metrics"])

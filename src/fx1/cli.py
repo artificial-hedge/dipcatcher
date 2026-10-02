@@ -422,12 +422,18 @@ def harness_drain(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    wait_s: float = typer.Option(
+        0.0,
+        "--wait-s",
+        help="Block server-side up to N seconds for in-flight work to drain.",
+    ),
 ) -> None:
     """Latch the remote harness into drain mode — one-way, idempotent.
 
     Gated routes start refusing new work with 503 while in-flight
-    requests finish; watch ``harness metrics --remote`` until ``inflight``
-    reaches zero, then stop the process.
+    requests finish; ``--wait-s N`` blocks until the pool empties and
+    reports ``drained``; otherwise watch ``harness metrics --remote``
+    until ``inflight`` reaches zero, then stop the process.
     """
     if remote is None:
         typer.echo(
@@ -442,7 +448,37 @@ def harness_drain(
         api_key=api_key or os.environ.get("FX1_API_KEY") or None,
         timeout_s=timeout_s,
     )
-    typer.echo(json.dumps(_or_exit(client.drain), indent=2))
+    typer.echo(json.dumps(_or_exit(lambda: client.drain(wait_s=wait_s)), indent=2))
+
+
+@harness_app.command("ready")
+def harness_ready(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Readiness probe: exits 0 while the remote accepts work, 1 once
+    draining — for deploy scripts and Kubernetes readiness gates."""
+    if remote is None:
+        typer.echo(
+            "error: harness ready is a wire-ops surface; pass --remote",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    from fx1.serve.backends import BackendNotConfiguredError
+    from fx1.serve.client import HarnessClient
+
+    client = HarnessClient(
+        remote,
+        api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+        timeout_s=timeout_s,
+    )
+    try:
+        out = client.ready()
+    except BackendNotConfiguredError:
+        typer.echo(json.dumps({"ready": False}))
+        raise typer.Exit(code=1) from None
+    typer.echo(json.dumps(out))
 
 
 def _remote_client(remote: str, api_key: str | None, timeout_s: float) -> HarnessClient:

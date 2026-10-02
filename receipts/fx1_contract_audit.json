@@ -1,7 +1,7 @@
 {
   "kind": "fx1_contract_audit",
   "schema": "fx1_contract_audit.v1",
-  "git_revision": "c9558b7bdc29862de0d1f807278978acebb34ccb",
+  "git_revision": "d7feb34ccfb093d8a9776d1a47f89f65a9e7afee",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -23,5 +23,5 @@
     "ok": true
   },
   "interpretation": "the harness API surface is pinned: routes, methods, params, declared response codes, and request bodies match the committed golden; additive or breaking drift fails the seal",
-  "receipt_sha256": "a017372ba3475b5f1eb699407b19d77748b793ee21ee85ce1faefdbdfc74fd2f"
+  "receipt_sha256": "2bdc4892bfc1236e44ffea1d864b13dfc6b764b6186e14feac645cb0221dd3f9"
 }
