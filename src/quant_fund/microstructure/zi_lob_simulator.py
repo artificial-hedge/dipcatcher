@@ -393,6 +393,16 @@ class ZILobConfig:
     # adverse-selection-aware quoting (makers refuse the touch). 0 is
     # bit-identical to the legacy placement.
     lo_offset: int = 0
+    # ``min_quote_dist`` >= 0: ambient density draws never land closer
+    # than this to the anchor — ``dist`` is floored at ``min_quote_dist``
+    # right after the CDF draw, piling all sub-floor mass at exactly the
+    # floor. The behavioral channel the tape's standing 9-21-tick spread
+    # needs (band_shape.v1 falsified every mechanical family): makers
+    # simply do not quote inside a minimum depth band. Only the ambient
+    # density path is floored — chase/crown/repost/join/improve classes
+    # and the post-fill narrowing marker still reach the touch. 0 is
+    # bit-identical (max(dist, 0) == dist, no extra draws).
+    min_quote_dist: int = 0
     # ``iceberg_reload`` ∈ [0, 1]: probability that consuming the front
     # order of a level immediately re-rests one unit at the SAME level
     # tagged ``iceberg`` — hidden reserve liquidity that refills after
@@ -756,6 +766,8 @@ class ZILobConfig:
         _check_size_pmf(self.lo_size_pmf, "lo_size_pmf")
         if isinstance(self.lo_offset, bool) or int(self.lo_offset) < 0:
             raise ValueError(f"lo_offset must be an int >= 0, got {self.lo_offset!r}")
+        if isinstance(self.min_quote_dist, bool) or int(self.min_quote_dist) < 0:
+            raise ValueError(f"min_quote_dist must be an int >= 0, got {self.min_quote_dist!r}")
         _prob(self.iceberg_reload, "iceberg_reload")
         if self.iceberg_reload_mode not in ("per_unit", "residual"):
             raise ValueError(
@@ -1774,10 +1786,14 @@ class ZILobSimulator:
         marketable) — a refilled or walked-past vacancy is dropped.
         """
         keep: list[tuple[int, Side, int]] = []
+        floor = self._cfg.min_quote_dist if self._cfg.anchor == "ref" else 0
+        ref = int(round(self._ref_ema)) if floor > 0 else 0
         for due, side, level in self._fill_repost_q:
             if due > self.n_events:
                 keep.append((due, side, level))
                 continue
+            if floor > 0 and abs(level - ref) < floor:
+                continue  # the maker floor never re-seeds inside the band
             book = self._bids if side == "buy" else self._asks
             opp = self.best_ask_level if side == "buy" else self.best_bid_level
             if level in book:
@@ -1813,10 +1829,17 @@ class ZILobSimulator:
         own = self.best_bid_level if side == "buy" else self.best_ask_level
         band = self._cfg.repost_band
         cause_filter = self._cfg.repost_cause
+        floor = self._cfg.min_quote_dist if self._cfg.anchor == "ref" else 0
+        ref = int(round(self._ref_ema)) if floor > 0 else 0
         for cand_l, (ev0, cause) in sorted(vacs.items(), key=lambda kv: kv[1][0], reverse=True):
             if now - ev0 > self._cfg.repost_window:
                 break  # sorted freshest-first; rest are staler
             if cause_filter == "fill" and cause != "fill":
+                continue
+            if floor > 0 and abs(cand_l - ref) < floor:
+                # The maker floor binds reposts too: a vacancy inside the
+                # no-quote band stays dead — its refill mass lands at the
+                # floor via the floored density draw instead.
                 continue
             if cand_l in book:
                 continue
@@ -2147,6 +2170,8 @@ class ZILobSimulator:
         dist = int(np.searchsorted(self._dist_cdf, float(self._rng.random()), side="left")) + 1
         if dist > band:
             dist = band
+        if self._cfg.min_quote_dist > 0 and dist < self._cfg.min_quote_dist:
+            dist = self._cfg.min_quote_dist
         ba, bb = self.best_ask_level, self.best_bid_level
         want_buy = u < bid_rate * (1.0 + self._tilt) if self._tilt != 0.0 else u < bid_rate
         # Post-fill narrowing: while the marker is live, placements on the

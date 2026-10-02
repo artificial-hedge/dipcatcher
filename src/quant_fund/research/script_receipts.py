@@ -470,6 +470,7 @@ _MEASUREMENT_SCHEMAS = (
     "price_clustering.v1",
     "price_improvement.v1",
     "propagator_real.v1",
+    "quote_floor.v1",
     "quote_place.v1",
     "refill_hazard.v1",
     "regime_clock.v1",
