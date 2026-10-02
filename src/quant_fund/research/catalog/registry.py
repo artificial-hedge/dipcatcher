@@ -1275,6 +1275,30 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "chain_ladder",
         "erlang_queueing",
         "inequality_indices",
+        # wave 86 — ASTM E1049-85
+        # rainflow + Miner damage +
+        # Goodman/Gerber/SWT
+        # corrections, Blom &
+        # Bar-Shalom (1988) IMM +
+        # Bar-Shalom & Tse (1975)
+        # PDA, Karrer-Newman (2011)
+        # DC-SBM + Amini (2013)
+        # spectral + Danon (2005)
+        # NMI, Elkan-Noto (2008) +
+        # du Plessis (2014) + Kiryo
+        # (2017) nnPU, Perrin (2003)
+        # GR4J + McCarthy (1938)
+        # Muskingum + NSE/KGE, and
+        # Brinson-Hood-Beebower
+        # (1986) + Carino (1999)
+        # attribution. Same SYNTHETIC
+        # diagnostic contract.
+        "rainflow_fatigue",
+        "bayesian_tracking",
+        "sbm_inference",
+        "pu_learning",
+        "gr4j_hydrology",
+        "brinson_attribution",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -677,6 +677,14 @@ from quant_fund.research.benches_w85 import (
     bench_music_esprit,
     bench_sketches,
 )
+from quant_fund.research.benches_w86 import (
+    bench_bayesian_tracking,
+    bench_brinson_attribution,
+    bench_gr4j_hydrology,
+    bench_pu_learning,
+    bench_rainflow_fatigue,
+    bench_sbm_inference,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2738,6 +2746,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "chain_ladder": bench_chain_ladder(),
         "erlang_queueing": bench_erlang_queueing(),
         "inequality_indices": bench_inequality_indices(),
+        "rainflow_fatigue": bench_rainflow_fatigue(),
+        "bayesian_tracking": bench_bayesian_tracking(),
+        "sbm_inference": bench_sbm_inference(),
+        "pu_learning": bench_pu_learning(),
+        "gr4j_hydrology": bench_gr4j_hydrology(),
+        "brinson_attribution": bench_brinson_attribution(),
     }
 
     hyps = _build_hypotheses(families, rankers)

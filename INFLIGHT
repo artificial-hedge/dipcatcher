@@ -2195,3 +2195,32 @@ detail: |
     module files + test_benches_w85 (44+ tests).
   - Canon staged on top of w84-canon.
 note: canon PR to follow.
+
+---
+owner: devin (wave 86 canon)
+slice: six models lanes + benches_w86 adapters + catalog/agent wiring
+status: COMPLETE + VERIFIED 2026-10-02
+detail: |
+  - src/quant_fund/models: rainflow_fatigue.py (ASTM
+    E1049-85 four-point rainflow + Palmgren-Miner
+    damage + Goodman/Gerber/SWT mean-stress
+    corrections), bayesian_tracking.py (Blom &
+    Bar-Shalom 1988 IMM + Bar-Shalom & Tse 1975 PDA
+    gating/association), sbm_inference.py (Karrer-
+    Newman 2011 DC-SBM loglik + Amini 2013 regularized
+    spectral + Danon 2005 NMI), pu_learning.py
+    (Elkan-Noto 2008 e-correction + du Plessis 2014
+    unbiased risk + Kiryo 2017 nnPU clipping),
+    gr4j_hydrology.py (Perrin 2003 GR4J + McCarthy
+    1938 Muskingum + NSE/KGE), brinson_attribution.py
+    (Brinson-Hood-Beebower 1986 BHB/BF + Carino 1999
+    logarithmic linking).
+  - benches_w86.py: +504..509 seed stamps, canonical
+    adapter structure.
+  - registry +6 -> "rainflow_fatigue","bayesian_
+    tracking","sbm_inference","pu_learning",
+    "gr4j_hydrology","brinson_attribution"
+    (470->476); agent.py wiring; tests: 6 module
+    files + test_benches_w86 (40+ tests).
+  - Canon staged on top of w85-canon.
+note: canon PR to follow.
