@@ -91,6 +91,17 @@ calls — breaker rejections and pre-call validation never land in it.
 provider reads as 0 tokens and 0 calls, distinct from a zero bill.
 The JSON view exposes the same data under `complete.<backend>`.
 
+**Per-call evidence:** every gated call (sync, stream, batch item —
+success or failure) lands in a bounded in-process log of 256 records.
+A record carries `completion_id`, backend, model, ok, `latency_ms`,
+timestamp, usage, error class, and sha256 hashes of the request
+messages and the pre-citation output — evidence handles, never
+content. The id returns on `CompleteResponse.completion_id`,
+per-item on batch results, on the stream's `final` frame, and as the
+`X-Fx1-Completion-Id` response header (idempotency replays echo the
+original id). Probes never log. In-process, `Fx1Harness.completions()`
+/ `.completion(id)` return the same records.
+
 ## Routes
 
 | Route | Purpose |
@@ -103,11 +114,13 @@ The JSON view exposes the same data under `complete.<backend>`.
 | `GET /harness/backends` | per-backend liveness: `configured`, `circuit_open`, `cooldown_remaining_s`, `consecutive_failures`, plus `last_probe` — the most recent deep-health verdict (`ok`, `latency_ms`, `checked_at`, `error_class`; null before the first probe), so scrapes read health without spending a live call |
 | `POST /harness/backends/{name}/probe` | deep health: one live gated completion through the real resolver → `{ok, model, latency_ms, error, error_class}`; an unconfigured backend is a verdict (`ok:false, error_class:"backend_unavailable"`), not a wire fault. BYOK probes test the caller's endpoint inline; probes bypass and never feed the breaker, and land under `probe:<name>` in metrics so they can't pollute completion SLOs |
 | `POST /harness/gate/check` | pre-flight text through the honesty gate → `{ok, error}`; a refusal is a verdict, not a wire fault. Advisory: not slot-gated, stays up during drain, never metered — also `Fx1Harness.check_text` / `HarnessClient.check_text` / `fx1 harness check-text` |
+| `GET /harness/completions` | newest-first window on the per-call completion log (`?limit≤256`, `?backend=`); `Fx1Harness.completions` / `HarnessClient.completions` / `fx1 harness completions` |
+| `GET /harness/completions/{id}` | one logged call by `completion_id` → record or `404 not_found`; `Fx1Harness.completion` / `HarnessClient.completion` / `fx1 harness completion` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter |
 | `POST /harness/runs` | synchronous command run |
-| `POST /harness/complete` | gated model completion (sync) — response carries `latency_ms` (per-call wall clock; replays report the original) |
-| `POST /harness/complete/batch` | up to 64 conversations over one shared backend; per-item `latency_ms` |
-| `POST /harness/complete/stream` | SSE `token` frames + `final` (with `latency_ms` and `usage` when the provider reports it) + `[DONE]` — the gate runs before any frame leaves |
+| `POST /harness/complete` | gated model completion (sync) — carries `completion_id`, `latency_ms` (per-call wall clock; replays report the original) |
+| `POST /harness/complete/batch` | up to 64 conversations over one shared backend; per-item `completion_id` + `latency_ms` |
+| `POST /harness/complete/stream` | SSE `token` frames + `final` (`completion_id`, `latency_ms`, `usage` when the provider reports it) + `[DONE]` — the gate runs before any frame leaves |
 | `POST /harness/jobs` | async run → `202 {job_id}` |
 | `POST /harness/jobs/batch` | up to 64 submissions, per-item `{error, code}` outcomes |
 | `GET /harness/jobs` | list/filter (`?status=`, `?limit=`, `?offset=`) |

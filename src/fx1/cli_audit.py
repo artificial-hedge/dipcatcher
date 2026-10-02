@@ -145,6 +145,8 @@ def cli_audit() -> dict[str, Any]:
         "health",
         "probe",
         "check-text",
+        "completions",
+        "completion",
     } <= hnames
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -189,6 +191,16 @@ def cli_audit() -> dict[str, Any]:
     sent = "deadbeefsecret-marker-do-not-leak"
     h2 = runner.invoke(app, ["harness", "health"], env={"FX1_BYOK_API_KEY": sent})
     out["harness_health_no_secret_leak"] = sent not in h2.stdout
+
+    # completion log: in-process SDK records its own calls; the log starts
+    # empty so `completions` prints a zero window and `completion` exits 2.
+    c_empty = runner.invoke(app, ["harness", "completions"])
+    out["harness_completions_empty"] = (
+        c_empty.exit_code == 0 and json.loads(c_empty.stdout).get("count") == 0
+    )
+    out["harness_completion_missing"] = (
+        runner.invoke(app, ["harness", "completion", "0" * 32]).exit_code == 2
+    )
 
     import tempfile  # noqa: PLC0415
     from pathlib import Path  # noqa: PLC0415
@@ -884,8 +896,9 @@ def cli_audit_bench() -> dict[str, Any]:
             "fx1 CLI holds: bare callback + help exit clean, fetch params "
             "must be a JSON object (exit 2), unknown sources/commands fail "
             "non-zero, judge resolution fails closed, dipbench smoke is "
-            "SYNTHETIC-labeled, doctor emits presence-only JSON. Flagged "
-            "wart: the command is registered as 'maskedaEval'."
+            "SYNTHETIC-labeled, doctor emits presence-only JSON, and the "
+            "completion log reads cleanly (empty window + missing-id exit "
+            "2). Flagged wart: the command is registered as 'maskedaEval'."
             if ok
             else f"CLI AUDIT DEFECT: {r}"
         ),

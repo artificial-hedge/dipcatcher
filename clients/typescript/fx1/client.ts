@@ -28,6 +28,9 @@ export type CompleteBatchRequest =
   components["schemas"]["CompleteBatchRequest"];
 export type CompleteBatchResponse =
   components["schemas"]["CompleteBatchResponse"];
+export type CompletionRecord = components["schemas"]["CompletionRecord"];
+export type CompletionListResponse =
+  components["schemas"]["CompletionListResponse"];
 export type DrainResponse = components["schemas"]["DrainResponse"];
 export type HarnessCommandItem =
   components["schemas"]["HarnessCommandItem"];
@@ -496,6 +499,30 @@ export class HarnessApiClient {
     return this.post("/harness/gate/check", {
       text,
     } satisfies GateCheckRequest) as Promise<GateCheckResponse>;
+  }
+
+  /**
+   * GET /harness/completions/{id} — one recorded call from the server's
+   * completion log (hashes, usage, verdict; 404 on unknown ids).
+   */
+  completion(completionId: string): Promise<CompletionRecord> {
+    return this.get(
+      `/harness/completions/${encodeURIComponent(completionId)}`,
+    ) as Promise<CompletionRecord>;
+  }
+
+  /**
+   * GET /harness/completions — newest-first window on the completion log.
+   */
+  completions(filter?: {
+    limit?: number;
+    backend?: "hosted_k3" | "local_fx1" | "byok";
+  }): Promise<CompletionListResponse> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.backend) q.set("backend", filter.backend);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(`/harness/completions${suffix}`) as Promise<CompletionListResponse>;
   }
 
   // ---- async jobs --------------------------------------------------------

@@ -119,6 +119,7 @@ _CORS_EXPOSE_HEADERS = [
     "Location",
     "Retry-After",
     "X-Fx1-Api-Version",
+    "X-Fx1-Completion-Id",
     "X-Fx1-Receipt-Valid",
     "X-RateLimit-Limit",
     "X-RateLimit-Remaining",
@@ -385,6 +386,9 @@ class CompleteResponse(_Model):
     # True when the response came from the Idempotency-Key cache — lets
     # fx-1 audit retried calls without paying for them twice.
     replayed: bool = False
+    # Server-minted handle into the completion log
+    # (``GET /harness/completions/{id}``) — replays keep the original id.
+    completion_id: str | None = None
 
 
 class CompleteBatchRequest(_Model):
@@ -441,6 +445,7 @@ class CompleteBatchItem(_Model):
     content: str | None = None
     error: str | None = None
     error_class: str | None = None
+    completion_id: str | None = None
 
 
 class CompleteBatchResponse(_Model):
@@ -454,6 +459,30 @@ class CompleteBatchResponse(_Model):
     # silent on usage.
     usage_total: dict[str, int] | None = None
     replayed: bool = False
+
+
+class CompletionRecord(_Model):
+    """One recorded model call: hashes of what went in and came out,
+    latency, reported usage, and the verdict — the harness's own calls
+    are auditable evidence. Content itself is never stored (hashes only),
+    and the log is a bounded in-process ring."""
+
+    completion_id: str
+    backend: str
+    model: str | None = None
+    ok: bool
+    latency_ms: float
+    at: float
+    usage: dict[str, int] | None = None
+    error: str | None = None
+    error_class: str | None = None
+    prompt_sha256: str
+    output_sha256: str | None = None
+
+
+class CompletionListResponse(_Model):
+    items: list[CompletionRecord]
+    count: int
 
 
 class ReceiptIndexItem(_Model):
@@ -1578,6 +1607,38 @@ class _BackendBreaker:
             return opened is not None and remaining > 0.0, remaining, self._fails.get(backend, 0)
 
 
+_COMPLETION_LOG_MAX = 256
+
+
+class _CompletionLog:
+    """Bounded in-process ring of per-call completion records. Hashes of
+    prompt/output are stored, never the content — the log is evidence,
+    not a transcript. Probes stay out of it: they already carry their own
+    surface (``probe:<name>`` metrics + the status-cache verdicts)."""
+
+    def __init__(self, cap: int = _COMPLETION_LOG_MAX) -> None:
+        self._cap = cap
+        self._lock = threading.Lock()
+        self._items: dict[str, CompletionRecord] = {}
+
+    def append(self, rec: CompletionRecord) -> None:
+        with self._lock:
+            self._items[rec.completion_id] = rec
+            while len(self._items) > self._cap:
+                self._items.pop(next(iter(self._items)))
+
+    def get(self, completion_id: str) -> CompletionRecord | None:
+        with self._lock:
+            return self._items.get(completion_id)
+
+    def latest(self, limit: int, backend: str | None) -> list[CompletionRecord]:
+        with self._lock:
+            items = sorted(self._items.values(), key=lambda r: r.at, reverse=True)
+        if backend is not None:
+            items = [r for r in items if r.backend == backend]
+        return items[:limit]
+
+
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
     """Render the ops snapshot as Prometheus text exposition (format
     0.0.4) — ``GET /metrics`` stays JSON by default; ``?format=prom``
@@ -1673,6 +1734,7 @@ def _mount_complete_routes(
     metrics: _Metrics,
     probe_cache: dict[str, BackendProbeVerdict],
     probe_lock: threading.Lock,
+    completion_log: _CompletionLog,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) — extracted from
     ``create_app`` to keep its branch complexity under the ruff cap."""
@@ -1717,6 +1779,7 @@ def _mount_complete_routes(
     )
     def complete(
         body: CompleteRequest,
+        response: Response,
         _slot_held: None = Depends(slot),
         idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     ) -> CompleteResponse:
@@ -1725,6 +1788,8 @@ def _mount_complete_routes(
         body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, complete_idem_store, body_fp)
         if replay is not None:
+            if replay.completion_id is not None:
+                response.headers["X-Fx1-Completion-Id"] = replay.completion_id
             return replay
         _check_citations(body.receipt_hashes)
         _breaker_admit(_breaker_key(body))
@@ -1745,18 +1810,31 @@ def _mount_complete_routes(
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         t0 = time.monotonic()
         call_ok = False
+        cid = uuid.uuid4().hex
+        prompt_sha256 = hashlib.sha256(
+            json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        rec_err: str | None = None
+        rec_cls: str | None = None
+        content = ""
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
             call_ok = True
         except NotImplementedError as exc:
+            rec_cls = "not_supported"
+            rec_err = str(exc)
             raise ApiError(501, str(exc)) from exc
         except Fx1HonestyError as exc:
+            rec_cls = "honesty_refusal"
+            rec_err = str(exc)
             # The model produced a contract-violating headline; the gate
             # caught it before the bytes left — surface as 502, not success.
             raise ApiError(
                 502, f"honesty gate refused model output: {exc}", code="honesty_gate"
             ) from exc
         except (BackendNotConfiguredError, RuntimeError) as exc:
+            rec_cls = type(exc).__name__
+            rec_err = str(exc)
             if breaker is not None:
                 breaker.report(_breaker_key(body), False)
             if isinstance(exc, BackendNotConfiguredError):
@@ -1766,25 +1844,42 @@ def _mount_complete_routes(
             if breaker is not None:
                 breaker.report(_breaker_key(body), True)
         finally:
+            usage_snap = getattr(backend, "last_usage", None)
+            model_snap = getattr(backend, "_model", None)
             metrics.record_complete(
                 body.backend,
                 call_ok,
                 (time.monotonic() - t0) * 1000.0,
-                usage=getattr(backend, "last_usage", None)
-                if isinstance(getattr(backend, "last_usage", None), dict)
-                else None,
+                usage=usage_snap if isinstance(usage_snap, dict) else None,
+            )
+            completion_log.append(
+                CompletionRecord(
+                    completion_id=cid,
+                    backend=body.backend,
+                    model=model_snap if isinstance(model_snap, str) else None,
+                    ok=call_ok,
+                    latency_ms=(time.monotonic() - t0) * 1000.0,
+                    at=time.time(),
+                    usage=usage_snap if isinstance(usage_snap, dict) else None,
+                    error=rec_err,
+                    error_class=rec_cls,
+                    prompt_sha256=prompt_sha256,
+                    output_sha256=(
+                        hashlib.sha256(content.encode("utf-8")).hexdigest() if call_ok else None
+                    ),
+                )
             )
             _close_backend(backend)
-        model_name = getattr(backend, "_model", None)
-        usage = getattr(backend, "last_usage", None)
         resp = CompleteResponse(
             backend=body.backend,
-            model=model_name if isinstance(model_name, str) else None,
+            model=model_snap if isinstance(model_snap, str) else None,
             content=content,
             receipt_hashes=body.receipt_hashes or [],
             latency_ms=(time.monotonic() - t0) * 1000.0,
-            usage=usage if isinstance(usage, dict) else None,
+            usage=usage_snap if isinstance(usage_snap, dict) else None,
+            completion_id=cid,
         )
+        response.headers["X-Fx1-Completion-Id"] = cid
         if key is not None:
             complete_idem_store.put(key, body_fp, resp)
         return resp
@@ -1821,7 +1916,7 @@ def _mount_complete_routes(
         _check_citations(body.receipt_hashes)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
 
-        def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None]:
+        def _gather() -> tuple[list[str], str | None, float, dict[str, int] | None, str]:
             """Buffer + gate the backend stream; raises the mapped errors."""
             _breaker_admit(_breaker_key(body))
             try:
@@ -1837,6 +1932,12 @@ def _mount_complete_routes(
                 raise
             t0 = time.monotonic()
             call_ok = False
+            cid = uuid.uuid4().hex
+            prompt_sha256 = hashlib.sha256(
+                json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
+            ).hexdigest()
+            rec_err: str | None = None
+            rec_cls: str | None = None
             try:
                 if not isinstance(backend, StreamingBackend):
                     raise NotImplementedError(
@@ -1847,12 +1948,18 @@ def _mount_complete_routes(
                 try:
                     validate_fx1_output(joined)
                 except Fx1HonestyError as exc:
+                    rec_cls = "honesty_refusal"
+                    rec_err = str(exc)
                     raise ApiError(
                         502, f"honesty gate refused model output: {exc}", code="honesty_gate"
                     ) from exc
             except NotImplementedError as exc:
+                rec_cls = "not_supported"
+                rec_err = str(exc)
                 raise ApiError(501, str(exc)) from exc
             except (BackendNotConfiguredError, RuntimeError) as exc:
+                rec_cls = type(exc).__name__
+                rec_err = str(exc)
                 if breaker is not None:
                     breaker.report(_breaker_key(body), False)
                 if isinstance(exc, BackendNotConfiguredError):
@@ -1863,30 +1970,47 @@ def _mount_complete_routes(
                 if breaker is not None:
                     breaker.report(_breaker_key(body), True)
             finally:
+                usage_snap = getattr(backend, "last_usage", None)
+                model_snap = getattr(backend, "_model", None)
+                joined_snap = "".join(chunks) if call_ok else ""
                 metrics.record_complete(
                     body.backend,
                     call_ok,
                     (time.monotonic() - t0) * 1000.0,
-                    usage=getattr(backend, "last_usage", None)
-                    if isinstance(getattr(backend, "last_usage", None), dict)
-                    else None,
+                    usage=usage_snap if isinstance(usage_snap, dict) else None,
+                )
+                completion_log.append(
+                    CompletionRecord(
+                        completion_id=cid,
+                        backend=body.backend,
+                        model=model_snap if isinstance(model_snap, str) else None,
+                        ok=call_ok,
+                        latency_ms=(time.monotonic() - t0) * 1000.0,
+                        at=time.time(),
+                        usage=usage_snap if isinstance(usage_snap, dict) else None,
+                        error=rec_err,
+                        error_class=rec_cls,
+                        prompt_sha256=prompt_sha256,
+                        output_sha256=(
+                            hashlib.sha256(joined_snap.encode("utf-8")).hexdigest()
+                            if call_ok
+                            else None
+                        ),
+                    )
                 )
                 _close_backend(backend)
-            model_name = getattr(backend, "_model", None)
             if body.receipt_hashes:
                 chunks.append(
                     "\n\nEvidence: "
                     + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
                     + " — verify with `dipcatcher verify-research`."
                 )
-            stream_usage = getattr(backend, "last_usage", None)
             return (
                 chunks,
-                model_name if isinstance(model_name, str) else None,
+                model_snap if isinstance(model_snap, str) else None,
                 (time.monotonic() - t0) * 1000.0,
-                cast("dict[str, int]", dict(stream_usage))
-                if isinstance(stream_usage, dict)
-                else None,
+                cast("dict[str, int]", dict(usage_snap)) if isinstance(usage_snap, dict) else None,
+                cid,
             )
 
         def _events(
@@ -1894,6 +2018,7 @@ def _mount_complete_routes(
             model_name: str | None,
             latency_ms: float,
             usage: dict[str, int] | None = None,
+            completion_id: str | None = None,
         ) -> Iterator[str]:
             for chunk in chunks:
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
@@ -1906,6 +2031,7 @@ def _mount_complete_routes(
                         "receipt_hashes": body.receipt_hashes or [],
                         "latency_ms": latency_ms,
                         "usage": usage,
+                        "completion_id": completion_id,
                     }
                 )
                 + "\n\n"
@@ -1913,9 +2039,10 @@ def _mount_complete_routes(
             yield "data: [DONE]\n\n"
 
         if sse_keepalive_s <= 0:
-            chunks, model_name, latency_ms, usage = _gather()
+            chunks, model_name, latency_ms, usage, cid = _gather()
             return StreamingResponse(
-                _events(chunks, model_name, latency_ms, usage), media_type="text/event-stream"
+                _events(chunks, model_name, latency_ms, usage, cid),
+                media_type="text/event-stream",
             )
 
         pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
@@ -1942,9 +2069,10 @@ def _mount_complete_routes(
             tag, payload = grace
             if tag == "error":
                 raise payload
-            chunks, model_name, latency_ms, usage = payload
+            chunks, model_name, latency_ms, usage, cid = payload
             return StreamingResponse(
-                _events(chunks, model_name, latency_ms, usage), media_type="text/event-stream"
+                _events(chunks, model_name, latency_ms, usage, cid),
+                media_type="text/event-stream",
             )
 
         def _events_keepalived() -> Iterator[str]:
@@ -1969,8 +2097,8 @@ def _mount_complete_routes(
                     )
                     yield "data: [DONE]\n\n"
                     return
-                chunks, model_name, latency_ms, usage = payload
-                yield from _events(chunks, model_name, latency_ms, usage)
+                chunks, model_name, latency_ms, usage, cid = payload
+                yield from _events(chunks, model_name, latency_ms, usage, cid)
                 return
 
         return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
@@ -2021,29 +2149,59 @@ def _mount_complete_routes(
 
                 def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
                     t0 = time.monotonic()
+                    cid = uuid.uuid4().hex
+                    prompt_sha256 = hashlib.sha256(
+                        json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                    ).hexdigest()
+                    model_snap = getattr(backend, "_model", None)
+
+                    def _log_item(
+                        ok: bool, content: str | None, err: str | None, cls: str | None
+                    ) -> None:
+                        completion_log.append(
+                            CompletionRecord(
+                                completion_id=cid,
+                                backend=body.backend,
+                                model=model_snap if isinstance(model_snap, str) else None,
+                                ok=ok,
+                                latency_ms=(time.monotonic() - t0) * 1000.0,
+                                at=time.time(),
+                                # usage is only honest at batch level (shared
+                                # endpoint attribution) — per-item stays None.
+                                error=err,
+                                error_class=cls,
+                                prompt_sha256=prompt_sha256,
+                                output_sha256=(
+                                    hashlib.sha256(content.encode("utf-8")).hexdigest()
+                                    if content is not None
+                                    else None
+                                ),
+                            )
+                        )
+
                     if breaker is not None and breaker.check(_breaker_key(body)) > 0:
+                        _log_item(False, None, "backend circuit open", "backend_unavailable")
                         return CompleteBatchItem(
                             ok=False,
                             latency_ms=0.0,
                             error="backend circuit open",
                             error_class="backend_unavailable",
+                            completion_id=cid,
                         )
                     item_ok = False
                     try:
-                        out = CompleteBatchItem(
-                            ok=True,
-                            latency_ms=(time.monotonic() - t0) * 1000.0,
-                            content=cited_complete(
-                                backend, messages, receipt_hashes=body.receipt_hashes
-                            ),
+                        content = cited_complete(
+                            backend, messages, receipt_hashes=body.receipt_hashes
                         )
                         item_ok = True
                     except Fx1HonestyError as exc:
+                        _log_item(False, None, str(exc), "honesty_refusal")
                         return CompleteBatchItem(
                             ok=False,
                             latency_ms=(time.monotonic() - t0) * 1000.0,
                             error=str(exc),
                             error_class="honesty_refusal",
+                            completion_id=cid,
                         )
                     except (
                         BackendNotConfiguredError,
@@ -2052,11 +2210,13 @@ def _mount_complete_routes(
                     ) as exc:
                         if breaker is not None and not isinstance(exc, NotImplementedError):
                             breaker.report(_breaker_key(body), False)
+                        _log_item(False, None, str(exc), type(exc).__name__)
                         return CompleteBatchItem(
                             ok=False,
                             latency_ms=(time.monotonic() - t0) * 1000.0,
                             error=str(exc),
                             error_class=type(exc).__name__,
+                            completion_id=cid,
                         )
                     finally:
                         metrics.record_complete(
@@ -2067,9 +2227,15 @@ def _mount_complete_routes(
                             if isinstance(getattr(backend, "last_usage", None), dict)
                             else None,
                         )
+                    _log_item(True, content, None, None)
                     if breaker is not None:
                         breaker.report(_breaker_key(body), True)
-                    return out
+                    return CompleteBatchItem(
+                        ok=True,
+                        latency_ms=(time.monotonic() - t0) * 1000.0,
+                        content=content,
+                        completion_id=cid,
+                    )
 
                 results = list(
                     pool.map(
@@ -2268,6 +2434,7 @@ def create_app(
     # scrapes read it off ``GET /harness/backends`` without re-probing.
     probe_cache: dict[str, BackendProbeVerdict] = {}
     probe_lock = threading.Lock()
+    completion_log = _CompletionLog()
     idem_store: _IdemStore[HarnessRunResponse] = _IdemStore(idem_max)
     complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
@@ -2551,6 +2718,34 @@ def create_app(
             )
         return out
 
+    @app.get(
+        "/harness/completions",
+        response_model=CompletionListResponse,
+        tags=["ops"],
+        operation_id="completions_list",
+    )
+    def completions_list(
+        limit: int = Query(default=50, ge=1, le=_COMPLETION_LOG_MAX),
+        backend: Literal["hosted_k3", "local_fx1", "byok"] | None = None,
+    ) -> CompletionListResponse:
+        """Newest-first window on the completion log — per-call evidence
+        (hashes, usage, verdict) for every gated model call the process
+        has served, bounded by the ring."""
+        items = completion_log.latest(limit, backend)
+        return CompletionListResponse(items=items, count=len(items))
+
+    @app.get(
+        "/harness/completions/{completion_id}",
+        response_model=CompletionRecord,
+        tags=["ops"],
+        operation_id="completion_get",
+    )
+    def completion_get(completion_id: str) -> CompletionRecord:
+        rec = completion_log.get(completion_id)
+        if rec is None:
+            raise ApiError(404, f"completion {completion_id!r} not in the log", code="not_found")
+        return rec
+
     @app.post(
         "/harness/drain",
         response_model=DrainResponse,
@@ -2689,6 +2884,7 @@ def create_app(
         metrics=metrics,
         probe_cache=probe_cache,
         probe_lock=probe_lock,
+        completion_log=completion_log,
     )
 
     _mount_receipt_routes(app, receipt_index)

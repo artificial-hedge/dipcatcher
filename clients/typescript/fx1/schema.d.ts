@@ -164,6 +164,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Completions List
+         * @description Newest-first window on the completion log — per-call evidence
+         *     (hashes, usage, verdict) for every gated model call the process
+         *     has served, bounded by the ring.
+         */
+        get: operations["completions_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/harness/completions/{completion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Completion Get */
+        get: operations["completion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/drain": {
         parameters: {
             query?: never;
@@ -674,6 +713,8 @@ export interface components {
         };
         /** CompleteBatchItem */
         CompleteBatchItem: {
+            /** Completion Id */
+            completion_id?: string | null;
             /** Content */
             content?: string | null;
             /** Error */
@@ -748,6 +789,8 @@ export interface components {
         CompleteResponse: {
             /** Backend */
             backend: string;
+            /** Completion Id */
+            completion_id?: string | null;
             /** Content */
             content: string;
             /** Latency Ms */
@@ -761,6 +804,46 @@ export interface components {
              * @default false
              */
             replayed: boolean;
+            /** Usage */
+            usage?: {
+                [key: string]: number;
+            } | null;
+        };
+        /** CompletionListResponse */
+        CompletionListResponse: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["CompletionRecord"][];
+        };
+        /**
+         * CompletionRecord
+         * @description One recorded model call: hashes of what went in and came out,
+         *     latency, reported usage, and the verdict — the harness's own calls
+         *     are auditable evidence. Content itself is never stored (hashes only),
+         *     and the log is a bounded in-process ring.
+         */
+        CompletionRecord: {
+            /** At */
+            at: number;
+            /** Backend */
+            backend: string;
+            /** Completion Id */
+            completion_id: string;
+            /** Error */
+            error?: string | null;
+            /** Error Class */
+            error_class?: string | null;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Model */
+            model?: string | null;
+            /** Ok */
+            ok: boolean;
+            /** Output Sha256 */
+            output_sha256?: string | null;
+            /** Prompt Sha256 */
+            prompt_sha256: string;
             /** Usage */
             usage?: {
                 [key: string]: number;
@@ -1470,6 +1553,109 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    completions_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                backend?: ("hosted_k3" | "local_fx1" | "byok") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    completion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                completion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompletionRecord"];
                 };
             };
             /** @description Validation Error */

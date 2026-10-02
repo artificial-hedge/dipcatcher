@@ -30,10 +30,13 @@ double and no subprocess or network is touched.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import threading
 import time
 import urllib.parse
+import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -55,6 +58,7 @@ from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_p
 
 __all__ = [
     "BackendNotConfiguredError",
+    "CompletionRecord",
     "CompletionResult",
     "GateCheckResult",
     "ProbeResult",
@@ -83,6 +87,63 @@ class CompletionResult:
     # has no usage channel). Never populated on ``complete_many`` items —
     # a shared backend can't attribute counts per prompt.
     usage: dict[str, int] | None = None
+    # Handle into the surface's completion log — minted server-side on the
+    # wire, by the SDK in-process. Every gated call is fetchable evidence.
+    completion_id: str | None = None
+
+
+@dataclass(frozen=True)
+class CompletionRecord:
+    """One recorded gated call — mirrors ``CompletionRecord`` on the API.
+
+    Hashes of the prompt and output, never the content: the log is
+    evidence, not a transcript.
+    """
+
+    completion_id: str
+    backend: str
+    ok: bool
+    latency_ms: float
+    at: float
+    prompt_sha256: str
+    model: str | None = None
+    usage: dict[str, int] | None = None
+    error: str | None = None
+    error_class: str | None = None
+    output_sha256: str | None = None
+
+
+class _CompletionLog:
+    """Bounded in-process ring of completion records, newest-first on
+    read; the in-process twin of the API's log."""
+
+    def __init__(self, cap: int = 256) -> None:
+        self._cap = cap
+        self._lock = threading.Lock()
+        self._items: dict[str, CompletionRecord] = {}
+
+    def append(self, rec: CompletionRecord) -> None:
+        with self._lock:
+            self._items[rec.completion_id] = rec
+            while len(self._items) > self._cap:
+                self._items.pop(next(iter(self._items)))
+
+    def get(self, completion_id: str) -> CompletionRecord | None:
+        with self._lock:
+            return self._items.get(completion_id)
+
+    def latest(self, limit: int, backend: str | None) -> list[CompletionRecord]:
+        with self._lock:
+            items = sorted(self._items.values(), key=lambda r: r.at, reverse=True)
+        if backend is not None:
+            items = [r for r in items if r.backend == backend]
+        return items[:limit]
+
+
+def _messages_sha256(messages: list[dict[str, str]]) -> str:
+    return hashlib.sha256(
+        json.dumps(messages, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -183,6 +244,51 @@ class Fx1Harness:
         self._harness = harness or Harness()
         self._resolve_backend = backend_resolver or get_backend
         self._receipts = ReceiptIndex(Path(receipts_dir))
+        self._log = _CompletionLog()
+
+    def _record_call(
+        self,
+        backend: str,
+        model: str | None,
+        ok: bool,
+        latency_ms: float,
+        usage: dict[str, int] | None,
+        error: str | None,
+        error_class: str | None,
+        prompt_sha256: str,
+        output_sha256: str | None,
+    ) -> str:
+        """Append one call to the completion log; returns its id."""
+        cid = uuid.uuid4().hex
+        self._log.append(
+            CompletionRecord(
+                completion_id=cid,
+                backend=backend,
+                model=model,
+                ok=ok,
+                latency_ms=latency_ms,
+                at=time.time(),
+                usage=usage,
+                error=error,
+                error_class=error_class,
+                prompt_sha256=prompt_sha256,
+                output_sha256=output_sha256,
+            )
+        )
+        return cid
+
+    def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
+        """Newest-first window on the in-process completion log — the
+        same audit evidence the API exposes at ``GET /harness/completions``."""
+        return self._log.latest(limit, backend)
+
+    def completion(self, completion_id: str) -> CompletionRecord:
+        """Fetch one recorded call — KeyError when the id is unknown or
+        already evicted (mirrors the wire's 404)."""
+        rec = self._log.get(completion_id)
+        if rec is None:
+            raise KeyError(completion_id)
+        return rec
 
     # ---- registry ------------------------------------------------------
 
@@ -292,20 +398,51 @@ class Fx1Harness:
         backend_obj = self._resolve_completion_backend(
             backend, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
+        t0 = time.monotonic()
+        prompt_sha256 = _messages_sha256(messages)
         try:
             content = cited_complete(backend_obj, messages, receipt_hashes=receipt_hashes)
+        except Exception as exc:
+            self._record_call(
+                backend,
+                getattr(backend_obj, "_model", None)
+                if isinstance(getattr(backend_obj, "_model", None), str)
+                else None,
+                False,
+                (time.monotonic() - t0) * 1000.0,
+                getattr(backend_obj, "last_usage", None)
+                if isinstance(getattr(backend_obj, "last_usage", None), dict)
+                else None,
+                str(exc),
+                type(exc).__name__,
+                prompt_sha256,
+                None,
+            )
+            raise
         finally:
             closer = getattr(backend_obj, "close", None)
             if callable(closer):
                 closer()
         model_name = getattr(backend_obj, "_model", None)
         usage = getattr(backend_obj, "last_usage", None)
+        cid = self._record_call(
+            backend,
+            model_name if isinstance(model_name, str) else None,
+            True,
+            (time.monotonic() - t0) * 1000.0,
+            usage if isinstance(usage, dict) else None,
+            None,
+            None,
+            prompt_sha256,
+            hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        )
         return CompletionResult(
             backend=backend,
             model=model_name if isinstance(model_name, str) else None,
             content=content,
             usage=usage if isinstance(usage, dict) else None,
             receipt_hashes=tuple(receipt_hashes or ()),
+            completion_id=cid,
         )
 
     def complete_many(
@@ -335,31 +472,58 @@ class Fx1Harness:
         backend_obj = self._resolve_completion_backend(
             backend, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
+        model_name = getattr(backend_obj, "_model", None)
+        model_str = model_name if isinstance(model_name, str) else None
+
+        def _one(msgs: list[dict[str, str]]) -> tuple[str, str]:
+            t0 = time.monotonic()
+            p_sha = _messages_sha256(msgs)
+            try:
+                content = cited_complete(backend_obj, msgs, receipt_hashes=receipt_hashes)
+            except Exception as exc:
+                self._record_call(
+                    backend,
+                    model_str,
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    None,
+                    str(exc),
+                    type(exc).__name__,
+                    p_sha,
+                    None,
+                )
+                raise
+            cid = self._record_call(
+                backend,
+                model_str,
+                True,
+                (time.monotonic() - t0) * 1000.0,
+                None,
+                None,
+                None,
+                p_sha,
+                hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            )
+            return content, cid
+
         try:
             with ThreadPoolExecutor(
                 max_workers=min(max_workers, len(batch)), thread_name_prefix="fx1-complete"
             ) as pool:
-                contents = list(
-                    pool.map(
-                        lambda msgs: cited_complete(
-                            backend_obj, msgs, receipt_hashes=receipt_hashes
-                        ),
-                        batch,
-                    )
-                )
+                done = list(pool.map(_one, batch))
         finally:
             closer = getattr(backend_obj, "close", None)
             if callable(closer):
                 closer()
-        model_name = getattr(backend_obj, "_model", None)
         return [
             CompletionResult(
                 backend=backend,
-                model=model_name if isinstance(model_name, str) else None,
+                model=model_str,
                 content=content,
                 receipt_hashes=tuple(receipt_hashes or ()),
+                completion_id=cid,
             )
-            for content in contents
+            for content, cid in done
         ]
 
     # ---- receipts --------------------------------------------------------
@@ -388,6 +552,8 @@ class Fx1Harness:
         backend_obj = self._resolve_completion_backend(
             backend, checkpoint_dir, backend_kwargs, byok, timeout_s
         )
+        t0 = time.monotonic()
+        prompt_sha256 = _messages_sha256(messages)
         try:
             if not isinstance(backend_obj, StreamingBackend):
                 raise NotImplementedError(f"backend {backend!r} does not support streaming")
@@ -400,11 +566,41 @@ class Fx1Harness:
                     + ", ".join(f"`{h[:16]}…`" for h in receipt_hashes)
                     + " — verify with `dipcatcher verify-research`."
                 )
-            return chunks
+        except Exception as exc:
+            self._record_call(
+                backend,
+                getattr(backend_obj, "_model", None)
+                if isinstance(getattr(backend_obj, "_model", None), str)
+                else None,
+                False,
+                (time.monotonic() - t0) * 1000.0,
+                getattr(backend_obj, "last_usage", None)
+                if isinstance(getattr(backend_obj, "last_usage", None), dict)
+                else None,
+                str(exc),
+                type(exc).__name__,
+                prompt_sha256,
+                None,
+            )
+            raise
         finally:
             closer = getattr(backend_obj, "close", None)
             if callable(closer):
                 closer()
+        model_name = getattr(backend_obj, "_model", None)
+        usage = getattr(backend_obj, "last_usage", None)
+        self._record_call(
+            backend,
+            model_name if isinstance(model_name, str) else None,
+            True,
+            (time.monotonic() - t0) * 1000.0,
+            usage if isinstance(usage, dict) else None,
+            None,
+            None,
+            prompt_sha256,
+            hashlib.sha256(joined.encode("utf-8")).hexdigest(),
+        )
+        return chunks
 
     def _resolve_completion_backend(
         self,

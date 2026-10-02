@@ -40,6 +40,7 @@ from fx1 import __version__
 from fx1.harness import HarnessResult
 from fx1.honesty import Fx1HonestyError
 from fx1.sdk import (
+    CompletionRecord,
     CompletionResult,
     GateCheckResult,
     HarnessHealth,
@@ -579,7 +580,54 @@ class HarnessClient:
             receipt_hashes=tuple(out["receipt_hashes"]),
             replayed=out.get("replayed", False),
             usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
+            completion_id=out.get("completion_id"),
         )
+
+    def completion(self, completion_id: str) -> CompletionRecord:
+        """Fetch one recorded call from the server's completion log —
+        ``GET /harness/completions/{id}``; 404 maps to KeyError."""
+        out = self._json("GET", f"/harness/completions/{completion_id}", idempotent=True)
+        return CompletionRecord(
+            completion_id=out["completion_id"],
+            backend=out["backend"],
+            model=out.get("model"),
+            ok=out["ok"],
+            latency_ms=out["latency_ms"],
+            at=out["at"],
+            usage=out.get("usage") if isinstance(out.get("usage"), dict) else None,
+            error=out.get("error"),
+            error_class=out.get("error_class"),
+            prompt_sha256=out["prompt_sha256"],
+            output_sha256=out.get("output_sha256"),
+        )
+
+    def completions(self, *, limit: int = 50, backend: str | None = None) -> list[CompletionRecord]:
+        """Newest-first window on the server's completion log —
+        ``GET /harness/completions``."""
+        params: dict[str, Any] = {"limit": limit}
+        if backend is not None:
+            params["backend"] = backend
+        out = self._json(
+            "GET",
+            f"/harness/completions?{urllib.parse.urlencode(params)}",
+            idempotent=True,
+        )
+        return [
+            CompletionRecord(
+                completion_id=r["completion_id"],
+                backend=r["backend"],
+                model=r.get("model"),
+                ok=r["ok"],
+                latency_ms=r["latency_ms"],
+                at=r["at"],
+                usage=r.get("usage") if isinstance(r.get("usage"), dict) else None,
+                error=r.get("error"),
+                error_class=r.get("error_class"),
+                prompt_sha256=r["prompt_sha256"],
+                output_sha256=r.get("output_sha256"),
+            )
+            for r in out["items"]
+        ]
 
     def check_text(self, text: str) -> GateCheckResult:
         """Pre-flight text through the remote honesty gate — POSTs
@@ -670,6 +718,7 @@ class HarnessClient:
                     model=out["model"],
                     content=item["content"],
                     receipt_hashes=tuple(out["receipt_hashes"]),
+                    completion_id=item.get("completion_id"),
                 )
             )
         return results

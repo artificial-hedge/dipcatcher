@@ -648,6 +648,52 @@ def harness_check_text(
         raise typer.Exit(code=1)
 
 
+def _record_json(rec: Any) -> dict[str, Any]:
+    return {
+        "completion_id": rec.completion_id,
+        "backend": rec.backend,
+        "model": rec.model,
+        "ok": rec.ok,
+        "latency_ms": rec.latency_ms,
+        "at": rec.at,
+        "usage": rec.usage,
+        "error": rec.error,
+        "error_class": rec.error_class,
+        "prompt_sha256": rec.prompt_sha256,
+        "output_sha256": rec.output_sha256,
+    }
+
+
+@harness_app.command("completions")
+def harness_completions(
+    limit: int = typer.Option(50, "--limit", help="Newest N records (log is ring-bounded)."),
+    backend: str | None = typer.Option(None, "--backend", help=_BACKEND_HELP),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Newest-first window on the completion log — per-call evidence
+    (hashes, usage, verdict) for every gated call this surface served."""
+    surface = _surface(remote, api_key, timeout_s)
+    items = _or_exit(lambda: surface.completions(limit=limit, backend=backend))
+    typer.echo(
+        json.dumps({"count": len(items), "items": [_record_json(r) for r in items]}, indent=2)
+    )
+
+
+@harness_app.command("completion")
+def harness_completion(
+    completion_id: str = typer.Argument(..., help="Completion record id (hex)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Fetch one recorded call by id — the audit handle minted per call."""
+    surface = _surface(remote, api_key, timeout_s)
+    rec = _or_exit(lambda: surface.completion(completion_id))
+    typer.echo(json.dumps(_record_json(rec), indent=2))
+
+
 @harness_app.command("health")
 def harness_health(
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),

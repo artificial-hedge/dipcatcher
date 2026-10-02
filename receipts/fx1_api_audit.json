@@ -76,6 +76,13 @@
       "complete_replay_reuses_latency_ms": true,
       "complete_reports_latency_ms": true,
       "complete_unknown_backend_422": true,
+      "completions_get_404": true,
+      "completions_list_filter": true,
+      "completions_logged_batch": true,
+      "completions_logged_failure": true,
+      "completions_logged_stream": true,
+      "completions_logged_sync": true,
+      "completions_ring_cap": true,
       "config_escape_422": true,
       "contract_single_source": true,
       "cors_actual_response_marked": true,
@@ -284,11 +291,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "254656bb8c8e08ec4cbc9bcd8634fb68c42a9884",
-  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, and auth is X-API-Key or loopback-only.",
+  "git_revision": "42d5bc06fc61e72caf4b3f55fd4989343858da9b",
+  "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}].",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "278037385361e2741acdc02963403b10217f64a9771b293c0c793cace27d65bd",
+  "receipt_sha256": "2e3fc29a947a50be94e4ced0651b3235049dbfe75448dc1e3d91bd5e889dd0d9",
   "research_only": true,
   "schema": "api_audit.v1"
 }

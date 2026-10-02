@@ -345,6 +345,17 @@
       "CompleteBatchItem": {
         "additionalProperties": false,
         "properties": {
+          "completion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Id"
+          },
           "content": {
             "anyOf": [
               {
@@ -626,6 +637,17 @@
             "title": "Backend",
             "type": "string"
           },
+          "completion_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Id"
+          },
           "content": {
             "title": "Content",
             "type": "string"
@@ -680,6 +702,126 @@
           "latency_ms"
         ],
         "title": "CompleteResponse",
+        "type": "object"
+      },
+      "CompletionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CompletionRecord"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "count"
+        ],
+        "title": "CompletionListResponse",
+        "type": "object"
+      },
+      "CompletionRecord": {
+        "additionalProperties": false,
+        "description": "One recorded model call: hashes of what went in and came out,\nlatency, reported usage, and the verdict \u2014 the harness's own calls\nare auditable evidence. Content itself is never stored (hashes only),\nand the log is a bounded in-process ring.",
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "number"
+          },
+          "backend": {
+            "title": "Backend",
+            "type": "string"
+          },
+          "completion_id": {
+            "title": "Completion Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "number"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "output_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Sha256"
+          },
+          "prompt_sha256": {
+            "title": "Prompt Sha256",
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "required": [
+          "completion_id",
+          "backend",
+          "ok",
+          "latency_ms",
+          "at",
+          "prompt_sha256"
+        ],
+        "title": "CompletionRecord",
         "type": "object"
       },
       "DrainResponse": {
@@ -2401,6 +2543,243 @@
         "summary": "Complete Stream",
         "tags": [
           "complete"
+        ]
+      }
+    },
+    "/harness/completions": {
+      "get": {
+        "description": "Newest-first window on the completion log \u2014 per-call evidence\n(hashes, usage, verdict) for every gated model call the process\nhas served, bounded by the ring.",
+        "operationId": "completions_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 256,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "backend",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "hosted_k3",
+                    "local_fx1",
+                    "byok"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Backend"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Completions List",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/harness/completions/{completion_id}": {
+      "get": {
+        "operationId": "completion_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "completion_id",
+            "required": true,
+            "schema": {
+              "title": "Completion Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompletionRecord"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Completion Get",
+        "tags": [
+          "ops"
         ]
       }
     },

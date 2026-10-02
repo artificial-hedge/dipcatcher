@@ -2584,6 +2584,89 @@ def _probe_backend_probes(
         and fresh.get("/harness/backends").json()["byok"]["last_probe"] is None
     )
 
+    # completion log: every gated call leaves a fetchable record (hashes,
+    # usage, verdict) — the harness's own calls are auditable evidence.
+    import hashlib as _hl  # noqa: PLC0415
+
+    c_res = uapp.post(
+        "/harness/complete",
+        json={"backend": "byok", "messages": [{"role": "u", "content": "x"}]},
+    )
+    c_id = c_res.json()["completion_id"]
+    c_rec = uapp.get(f"/harness/completions/{c_id}")
+    want_p = _hl.sha256(
+        _json.dumps([{"role": "u", "content": "x"}], sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    want_o = _hl.sha256(b"clean:x").hexdigest()
+    out["completions_logged_sync"] = (
+        c_res.status_code == 200
+        and c_res.headers.get("x-fx1-completion-id") == c_id
+        and c_rec.status_code == 200
+        and c_rec.json()["ok"] is True
+        and c_rec.json()["prompt_sha256"] == want_p
+        and c_rec.json()["output_sha256"] == want_o
+        and c_rec.json()["usage"] == {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}
+    )
+    out["completions_get_404"] = (
+        uapp.get("/harness/completions/00000000000000000000000000000000").status_code == 404
+    )
+    d_fail = [
+        r
+        for r in dirty.get("/harness/completions", params={"backend": "byok"}).json()["items"]
+        if r["ok"] is False
+    ]
+    out["completions_logged_failure"] = (
+        len(d_fail) >= 1
+        and d_fail[0]["error_class"] == "honesty_refusal"
+        and d_fail[0]["output_sha256"] is None
+    )
+    out["completions_list_filter"] = (
+        uapp.get("/harness/completions", params={"backend": "byok"}).json()["count"] >= 4
+        and uapp.get("/harness/completions", params={"backend": "local_fx1"}).json()["count"] == 0
+        and uapp.get("/harness/completions", params={"limit": 0}).status_code == 422
+    )
+
+    s_final_id = s_final.get("completion_id")
+    s_rec = sapp.get(f"/harness/completions/{s_final_id}")
+    out["completions_logged_stream"] = (
+        isinstance(s_final_id, str)
+        and s_rec.status_code == 200
+        and s_rec.json()["ok"] is True
+        and s_rec.json()["output_sha256"] == _hl.sha256(b"hello").hexdigest()
+    )
+
+    b_res = uapp.post(
+        "/harness/complete/batch",
+        json={"backend": "byok", "batch": [[{"role": "u", "content": "q"}]]},
+    ).json()
+    b_cid = b_res["results"][0]["completion_id"]
+    b_rec = uapp.get(f"/harness/completions/{b_cid}")
+    out["completions_logged_batch"] = (
+        isinstance(b_cid, str)
+        and b_rec.status_code == 200
+        and b_rec.json()["ok"] is True
+        and b_rec.json()["usage"] is None
+    )
+
+    # the ring is bounded and newest-first — oldest records evict at cap
+    cap3 = api_mod._CompletionLog(cap=3)
+    for i in range(5):
+        cap3.append(
+            api_mod.CompletionRecord(
+                completion_id=f"c{i}",
+                backend="byok",
+                ok=True,
+                latency_ms=0.0,
+                at=float(i),
+                prompt_sha256="p",
+            )
+        )
+    out["completions_ring_cap"] = (
+        cap3.get("c0") is None
+        and len(cap3.latest(10, None)) == 3
+        and [r.completion_id for r in cap3.latest(10, None)] == ["c4", "c3", "c2"]
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""
@@ -2605,7 +2688,10 @@ def api_audit_bench() -> dict[str, Any]:
             "configs/ containment over the wire, uniform 4xx fail-closed shape, "
             "the honesty gate fires on model output (502), credential-less "
             "backends 503, arbitrary receipts verify through the posted "
-            "payload, and auth is X-API-Key or loopback-only."
+            "payload, auth is X-API-Key or loopback-only, and every gated "
+            "call lands in the bounded completion log (X-Fx1-Completion-Id "
+            "handle; hashes, usage, verdict — never content) fetchable via "
+            "GET /harness/completions[/{id}]."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

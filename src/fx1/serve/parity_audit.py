@@ -41,6 +41,7 @@ Sealed ``parity_audit.v1`` (fx1-side receipt).
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 import urllib.parse
@@ -536,7 +537,22 @@ def parity_audit() -> dict[str, bool]:
 
         remote = HarnessClient("http://harness.test", transport=_tc_transport(client))
         rem_out = remote.complete(msg, backend="byok", receipt_hashes=[receipt])
-        out["client_complete_identical"] = rem_out == sdk_out
+        # completion_id is a per-surface minted handle — everything else must match.
+        out["client_complete_identical"] = dataclasses.replace(
+            rem_out, completion_id=None
+        ) == dataclasses.replace(sdk_out, completion_id=None)
+        # both surfaces logged a fetchable record carrying the same hashes
+        rec_wire = remote.completion(rem_out.completion_id or "")
+        rec_sdk = sdk.completion(sdk_out.completion_id or "")
+        out["completion_log_parity"] = (
+            rec_wire.prompt_sha256 == rec_sdk.prompt_sha256
+            and rec_wire.output_sha256 == rec_sdk.output_sha256
+            and rec_wire.ok is rec_sdk.ok is True
+            and rec_wire.backend == rec_sdk.backend == "byok"
+        )
+        out["completion_log_list_parity"] = (
+            len(remote.completions(limit=1)) == 1 and len(sdk.completions(limit=1)) == 1
+        )
         out["client_stream_identical"] = (
             remote.stream_complete(msg, backend="byok", receipt_hashes=[receipt]) == sdk_chunks
         )
@@ -1576,7 +1592,10 @@ def parity_audit_bench() -> dict[str, Any]:
             "classes, verifier verdicts, registry, and health over the same "
             "injected backend; the in-flight cap fails saturated work with "
             "503+Retry-After while cheap routes respond, and releases "
-            "cleanly. Flags: unknown backend names are KeyError in-process "
+            "cleanly. Both surfaces keep a per-call completion log whose "
+            "records share prompt/output sha256s (the completion_id itself "
+            "is a per-surface mint — not part of the parity claim). Flags: "
+            "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "
             "422 over the wire."
