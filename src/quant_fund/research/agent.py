@@ -1421,6 +1421,14 @@ from quant_fund.research.benches_w178 import (
     bench_nash_mtl_family,
     bench_pcgrad_family,
 )
+from quant_fund.research.benches_w179 import (
+    bench_cox_time_family,
+    bench_deephit_family,
+    bench_deepsurv_family,
+    bench_drsa_surv_family,
+    bench_nnet_surv_family,
+    bench_pchazard_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4040,6 +4048,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gradnorm_bal": bench_gradnorm_bal_family(),
         "nash_mtl": bench_nash_mtl_family(),
         "imtl_g": bench_imtl_g_family(),
+        "deepsurv": bench_deepsurv_family(),
+        "deephit": bench_deephit_family(),
+        "cox_time": bench_cox_time_family(),
+        "nnet_surv": bench_nnet_surv_family(),
+        "drsa_surv": bench_drsa_surv_family(),
+        "pchazard": bench_pchazard_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

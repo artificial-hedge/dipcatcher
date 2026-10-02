@@ -2314,6 +2314,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gradnorm_bal",
         "nash_mtl",
         "imtl_g",
+        # Wave-179 survival-DL canon:
+        # DeepSurv, DeepHit, Cox-Time,
+        # Nnet-survival, DRSA, PC-Hazard.
+        "deepsurv",
+        "deephit",
+        "cox_time",
+        "nnet_surv",
+        "drsa_surv",
+        "pchazard",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
