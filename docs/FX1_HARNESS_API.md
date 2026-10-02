@@ -50,6 +50,7 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
 | `GET /metrics` | ops counters; `?format=prom` or `Accept: text/plain` renders Prometheus exposition |
 | `GET /harness/version` | `{"api_version", "fx1_version"}` — negotiate before sending work |
 | `GET /harness/capabilities` | `{"features", "limits", "backends", "roles"}` — self-configure batch caps, retry budgets, stream use |
+| `GET /harness/backends` | per-backend liveness: `configured`, `circuit_open`, `cooldown_remaining_s`, `consecutive_failures` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter |
 | `POST /harness/runs` | synchronous command run |
 | `POST /harness/complete` | gated model completion (sync) |
@@ -180,6 +181,8 @@ out-of-range values:
 | `--rate-limit-rps` | `FX1_API_RATE_LIMIT_RPS` | 0 (off) | per-client token bucket → 429 + `Retry-After`; every response also carries `X-RateLimit-Limit`/`Remaining`/`Reset` while the limiter is on |
 | `--gzip-min-bytes` | `FX1_API_GZIP_MIN_BYTES` | 1024 | gzip only when the client advertises it; 0 disables |
 | `--cors-origins` | `FX1_API_CORS_ORIGINS` | (off) | comma-separated browser origins for CORS; each must be a scheme+host URL, `*` and non-http(s) refused; preflights bypass the API-key gate (they carry no credentials), every preflight reflects the `expose` list of stamped headers |
+| `--breaker-threshold` | `FX1_API_BREAKER_THRESHOLD` | 5 | consecutive call faults that open a backend's circuit; 0 disables. While open, calls fast-fail `503 backend_unavailable` + `Retry-After` without burning an inflight slot; a single half-open probe is admitted after cooldown and closes the circuit on success. Resolution faults that surface as 503 count; client errors (404/422), capability gaps (501), and honesty-gate refusals never do |
+| `--breaker-cooldown-s` | `FX1_API_BREAKER_COOLDOWN_S` | 30 | seconds an open circuit fast-fails before admitting a probe |
 
 `POST /harness/drain` is the one-way graceful-exit latch: work routes
 refuse `503 draining` while health/metrics/version/verify stay live so

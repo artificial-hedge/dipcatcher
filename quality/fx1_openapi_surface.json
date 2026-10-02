@@ -1,6 +1,17 @@
 {
   "openapi": "3.1.0",
+  "title": "fx-1 harness API",
+  "version": "0.4.0",
   "paths": {
+    "/harness/backends": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      }
+    },
     "/harness/capabilities": {
       "get": {
         "params": [],
@@ -14,8 +25,8 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "role",
+            "in": "query",
             "required": false
           }
         ],
@@ -30,8 +41,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -46,8 +57,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -72,8 +83,8 @@
       "post": {
         "params": [
           {
-            "in": "query",
             "name": "wait_s",
+            "in": "query",
             "required": false
           }
         ],
@@ -88,18 +99,18 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "limit",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "offset",
+            "in": "query",
             "required": false
           },
           {
-            "in": "query",
             "name": "status",
+            "in": "query",
             "required": false
           }
         ],
@@ -112,8 +123,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -138,8 +149,8 @@
       "delete": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -152,8 +163,8 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           }
         ],
@@ -168,13 +179,13 @@
       "get": {
         "params": [
           {
-            "in": "path",
             "name": "job_id",
+            "in": "path",
             "required": true
           },
           {
-            "in": "query",
             "name": "timeout_s",
+            "in": "query",
             "required": false
           }
         ],
@@ -189,8 +200,8 @@
       "post": {
         "params": [
           {
-            "in": "header",
             "name": "Idempotency-Key",
+            "in": "header",
             "required": false
           }
         ],
@@ -223,8 +234,8 @@
       "get": {
         "params": [
           {
-            "in": "query",
             "name": "format",
+            "in": "query",
             "required": false
           }
         ],
@@ -265,7 +276,5 @@
       }
     }
   },
-  "schema_sha256": "6f6d1b6ae6707c191a6c7cc8f82a7acbab6697acab60fa0af3599f2802f83967",
-  "title": "fx-1 harness API",
-  "version": "0.4.0"
+  "schema_sha256": "8feac778605a1beaae8ff3fa4a7f93761032100b28f8abcd24fe7318fc747ce6"
 }
