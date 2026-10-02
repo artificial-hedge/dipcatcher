@@ -2060,6 +2060,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "kd_distill",
         "lowrank_factor",
         "fisher_prune",
+        # Wave-151 agentic canon:
+        # ReAct, Toolformer, ToT,
+        # Reflexion, multi-agent, judge.
+        "react_loop",
+        "toolformer_call",
+        "plan_search",
+        "reflexion_retry",
+        "multi_agent_pipeline",
+        "judge_pairwise",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

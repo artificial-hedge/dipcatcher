@@ -1197,6 +1197,14 @@ from quant_fund.research.benches_w150 import (
     bench_magnitude_pruning_family,
     bench_quant_int8_family,
 )
+from quant_fund.research.benches_w151 import (
+    bench_judge_pairwise_family,
+    bench_multi_agent_pipeline_family,
+    bench_plan_search_family,
+    bench_react_loop_family,
+    bench_reflexion_retry_family,
+    bench_toolformer_call_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3648,6 +3656,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "kd_distill": bench_kd_distill_family(),
         "lowrank_factor": bench_lowrank_factor_family(),
         "fisher_prune": bench_fisher_prune_family(),
+        "react_loop": bench_react_loop_family(),
+        "toolformer_call": bench_toolformer_call_family(),
+        "plan_search": bench_plan_search_family(),
+        "reflexion_retry": bench_reflexion_retry_family(),
+        "multi_agent_pipeline": bench_multi_agent_pipeline_family(),
+        "judge_pairwise": bench_judge_pairwise_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
