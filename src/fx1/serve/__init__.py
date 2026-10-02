@@ -11,6 +11,7 @@ from fx1.serve.backends import (
     HostedK3Backend,
     InferenceBackend,
     LocalFx1Backend,
+    OpenAICompatBackend,
     get_backend,
 )
 from fx1.serve.chat import cited_complete
@@ -21,6 +22,7 @@ __all__ = [
     "HostedK3Backend",
     "InferenceBackend",
     "LocalFx1Backend",
+    "OpenAICompatBackend",
     "OperatorProofManifest",
     "TEEQuote",
     "attestation_ladder_status",

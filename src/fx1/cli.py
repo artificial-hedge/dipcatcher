@@ -123,21 +123,23 @@ def harness_run(
     raise typer.Exit(code=result.exit_code)
 
 
+_BACKEND_HELP = (
+    "hosted_k3 | local_fx1 | byok (BYOK reads FX1_BYOK_BASE_URL / "
+    "FX1_BYOK_API_KEY / FX1_BYOK_MODEL)"
+)
+
+
 @app.command("eval")
 def eval_bank(
-    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     out: Path = typer.Option(Path("data/fx1/eval.json")),
 ) -> None:
     """Run the built-in eval task bank against an fx-1 backend."""
     from fx1.eval import DEFAULT_BANK, run_suite
-    from fx1.serve import get_backend
 
-    if backend == "local_fx1":
-        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
-    else:
-        model = get_backend("hosted_k3")
-    summary = run_suite(model.complete, list(DEFAULT_BANK))
+    model = _resolve_model_backend(backend, checkpoint_dir)
+    summary = run_suite(model, list(DEFAULT_BANK))
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     typer.echo(
@@ -146,6 +148,25 @@ def eval_bank(
             indent=2,
         )
     )
+
+
+def _resolve_model_backend(backend: str, checkpoint_dir: Path | None) -> ModelFn:
+    """Resolve the model under test. Fail-closed on unknown names.
+
+    ``local_fx1`` needs ``--checkpoint-dir``; ``byok`` reads the
+    FX1_BYOK_* env contract (never argv); ``hosted_k3`` needs
+    MOONSHOT_API_KEY. An unknown backend string exits 2 — silently
+    running a different backend than the flag names would corrupt the
+    receipt's meaning.
+    """
+    from fx1.serve import get_backend
+
+    if backend == "local_fx1":
+        return get_backend("local_fx1", checkpoint_dir=checkpoint_dir).complete
+    if backend in ("hosted_k3", "byok"):
+        return get_backend(backend).complete
+    typer.echo(f"unknown --backend {backend!r}; choose hosted_k3 | local_fx1 | byok", err=True)
+    raise typer.Exit(code=2)
 
 
 _JUDGE_BACKEND_HELP = (
@@ -163,21 +184,22 @@ def _resolve_judge(judge_backend: str | None) -> ModelFn | None:
     """
     if judge_backend is None:
         return None
-    if judge_backend != "hosted_k3":
+    if judge_backend not in ("hosted_k3", "byok"):
         typer.echo(
-            f"unknown --judge-backend {judge_backend!r}; only 'hosted_k3' is "
-            "supported (omit the flag for the deterministic rule-based judge)",
+            f"unknown --judge-backend {judge_backend!r}; 'hosted_k3' and "
+            "'byok' are supported (omit the flag for the deterministic "
+            "rule-based judge)",
             err=True,
         )
         raise typer.Exit(code=2)
     from fx1.serve import get_backend
 
-    return get_backend("hosted_k3").complete
+    return get_backend(judge_backend).complete
 
 
 @app.command("capability-eval")
 def capability_eval(
-    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
     judge_backend: str | None = typer.Option(None, "--judge-backend", help=_JUDGE_BACKEND_HELP),
@@ -191,14 +213,10 @@ def capability_eval(
     fails. Real ext-bench JSONL sources plug in via `fx1 ext-bench-eval`;
     the options bank is sealed (no external loader)."""
     from fx1.eval import run_capability_eval
-    from fx1.serve import get_backend
 
     judge = _resolve_judge(judge_backend)
-    if backend == "local_fx1":
-        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
-    else:
-        model = get_backend("hosted_k3")
-    report = run_capability_eval(model.complete, seed=seed, judge=judge)
+    model = _resolve_model_backend(backend, checkpoint_dir)
+    report = run_capability_eval(model, seed=seed, judge=judge)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(
@@ -231,7 +249,7 @@ def capability_eval(
 
 @app.command("ext-bench-eval")
 def ext_bench_eval(
-    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
     judge_backend: str | None = typer.Option(None, "--judge-backend", help=_JUDGE_BACKEND_HELP),
@@ -258,13 +276,9 @@ def ext_bench_eval(
     exports plug in per benchmark (schema-validated, fail-closed). Exit 1
     when any refusal/honesty gate or score gate fails."""
     from fx1.eval.ext_bench import run_ext_bench_eval
-    from fx1.serve import get_backend
 
     judge = _resolve_judge(judge_backend)
-    if backend == "local_fx1":
-        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
-    else:
-        model = get_backend("hosted_k3")
+    model = _resolve_model_backend(backend, checkpoint_dir)
     sources: dict[str, Path] = {}
     if mtbench_jsonl is not None:
         sources["mtbench"] = mtbench_jsonl
@@ -272,7 +286,7 @@ def ext_bench_eval(
         sources["financebench"] = financebench_jsonl
     if fintoolbench_jsonl is not None:
         sources["fintoolbench"] = fintoolbench_jsonl
-    report = run_ext_bench_eval(model.complete, seed=seed, judge=judge, sources=sources or None)
+    report = run_ext_bench_eval(model, seed=seed, judge=judge, sources=sources or None)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(
@@ -301,7 +315,7 @@ def ext_bench_eval(
 
 @app.command("options-reasoning-eval")
 def options_reasoning_eval(
-    backend: str = typer.Option("hosted_k3", help="hosted_k3 | local_fx1"),
+    backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     seed: int = typer.Option(0, help="Seeded SYNTHETIC bank seed."),
     out: Path = typer.Option(Path("data/fx1/options_reasoning_eval.json")),
@@ -313,13 +327,9 @@ def options_reasoning_eval(
     (no external JSONL loader exists), so there is no --options-jsonl
     pass-through. Exit 1 when the bait/honesty gate fails."""
     from fx1.eval.options_reasoning_eval import run_options_reasoning_eval
-    from fx1.serve import get_backend
 
-    if backend == "local_fx1":
-        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
-    else:
-        model = get_backend("hosted_k3")
-    report = run_options_reasoning_eval(model.complete, seed=seed)
+    model = _resolve_model_backend(backend, checkpoint_dir)
+    report = run_options_reasoning_eval(model, seed=seed)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report.model_dump_json(indent=2), encoding="utf-8")
     typer.echo(
@@ -361,13 +371,9 @@ def redteam(
     """Run the adversarial red-team suite against an fx-1 backend."""
     from fx1.eval.redteam import REDTEAM_TASKS
     from fx1.eval.suite import run_suite
-    from fx1.serve import get_backend
 
-    if backend == "local_fx1":
-        model = get_backend("local_fx1", checkpoint_dir=checkpoint_dir)
-    else:
-        model = get_backend("hosted_k3")
-    summary = run_suite(model.complete, list(REDTEAM_TASKS))
+    model = _resolve_model_backend(backend, checkpoint_dir)
+    summary = run_suite(model, list(REDTEAM_TASKS))
     failed = [r["task"] for r in summary.results if not r["passed"]]
     typer.echo(
         json.dumps(
