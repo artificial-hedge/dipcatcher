@@ -510,6 +510,7 @@ _MEASUREMENT_SCHEMAS = (
     "vol_signature.v1",
     "vpin.v1",
     "wave23_map.v1",
+    "wave24_map.v1",
 )
 
 
