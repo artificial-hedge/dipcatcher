@@ -1181,6 +1181,14 @@ from quant_fund.research.benches_w148 import (
     bench_probe_linear_family,
     bench_sae_feature_family,
 )
+from quant_fund.research.benches_w149 import (
+    bench_coreset_herding_family,
+    bench_curriculum_magnitude_family,
+    bench_dataset_distillation_family,
+    bench_label_smoothing_family,
+    bench_mixup_cutmix_family,
+    bench_sharpness_sam_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3620,6 +3628,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "logit_lens": bench_logit_lens_family(),
         "patch_activation": bench_patch_activation_family(),
         "circuit_ablation": bench_circuit_ablation_family(),
+        "dataset_distillation": bench_dataset_distillation_family(),
+        "coreset_herding": bench_coreset_herding_family(),
+        "curriculum_magnitude": bench_curriculum_magnitude_family(),
+        "label_smoothing": bench_label_smoothing_family(),
+        "mixup_cutmix": bench_mixup_cutmix_family(),
+        "sharpness_sam": bench_sharpness_sam_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -2042,6 +2042,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "logit_lens",
         "patch_activation",
         "circuit_ablation",
+        # Wave-149 data-dynamics canon:
+        # distill, herding, curriculum,
+        # smoothing, mixup, SAM.
+        "dataset_distillation",
+        "coreset_herding",
+        "curriculum_magnitude",
+        "label_smoothing",
+        "mixup_cutmix",
+        "sharpness_sam",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

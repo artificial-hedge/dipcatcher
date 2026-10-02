@@ -2546,3 +2546,4 @@ wave 145 (2026-10-02): retrieval canon — bm25_retriever, dpr_retriever, colber
 wave 146 (2026-10-02): test-time-compute + multi-agent canon — consistency_vote, verifier_prm, mcts_reason, debate_multiagent, unlearn_ga, knowledge_graph_embed; 848→854 families.
 wave 147 (2026-10-02): alignment canon — reward_model, dpo_train, ipo_train, kto_train, grpo_train, rlhf_ppo; 854→860 families.
 wave 148 (2026-10-02): interpretability canon — sae_feature, activation_steering, probe_linear, logit_lens, patch_activation, circuit_ablation; 860→866 families.
+wave 149 (2026-10-02): data-dynamics canon — dataset_distillation, coreset_herding, curriculum_magnitude, label_smoothing, mixup_cutmix, sharpness_sam; 866→872 families.
