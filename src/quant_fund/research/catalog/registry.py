@@ -2215,6 +2215,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gps_transformer",
         "oversmooth_metric",
         "dgn_directional",
+        # Wave-168 RL-exotics canon:
+        # AWAC, REDQ, TD7-SALE,
+        # CrossQ, DR3, OB2I.
+        "awac",
+        "redq",
+        "td7_lite",
+        "crossq",
+        "dr3_reg",
+        "ob2i",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
