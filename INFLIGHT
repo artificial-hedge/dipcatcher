@@ -2633,3 +2633,4 @@ wave 232 (2026-10-02): blockchain canon — merkle_tree, proof_of_work, utxo_set
 wave 233 (2026-10-02): compiler-2 canon — ssa_construct, sccp_const, gvn_elim, reg_coalesce, instr_sched, licm_hoist; 1371→1377 families.
 wave 234 (2026-10-02): database-internals canon — btree_index, wal_recovery, join_algos, query_planner, mvcc_isolation, lsm_tree; 1377→1383 families.
 wave 235 (2026-10-02): OS-internals canon — round_robin_sched, cfs_scheduler, demand_paging, deadlock_detect, disk_sched, fs_journal; 1383→1389 families.
+wave 236 (2026-10-02): graphics canon — raycaster, bresenham_line, scanline_fill, zbuffer_render, quaternion_slerp, bsp_tree, mvp_transform; 1389→1395 families.

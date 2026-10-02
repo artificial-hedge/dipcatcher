@@ -1878,6 +1878,15 @@ from quant_fund.research.benches_w235 import (
     bench_fs_journal_family,
     bench_round_robin_sched_family,
 )
+from quant_fund.research.benches_w236 import (
+    bench_bresenham_line_family,
+    bench_bsp_tree_family,
+    bench_mvp_transform_family,
+    bench_quaternion_slerp_family,
+    bench_raycaster_family,
+    bench_scanline_fill_family,
+    bench_zbuffer_render_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4840,6 +4849,13 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "deadlock_detect": bench_deadlock_detect_family(),
         "disk_sched": bench_disk_sched_family(),
         "fs_journal": bench_fs_journal_family(),
+        "raycaster": bench_raycaster_family(),
+        "bresenham_line": bench_bresenham_line_family(),
+        "scanline_fill": bench_scanline_fill_family(),
+        "zbuffer_render": bench_zbuffer_render_family(),
+        "quaternion_slerp": bench_quaternion_slerp_family(),
+        "bsp_tree": bench_bsp_tree_family(),
+        "mvp_transform": bench_mvp_transform_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
