@@ -1533,6 +1533,14 @@ from quant_fund.research.benches_w192 import (
     bench_mmd_two_sample_family,
     bench_nwj_mi_family,
 )
+from quant_fund.research.benches_w193 import (
+    bench_ddp_solve_family,
+    bench_lqg_control_family,
+    bench_lqr_control_family,
+    bench_mpc_qp_family,
+    bench_mppi_control_family,
+    bench_pmp_bangbang_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4236,6 +4244,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "nwj_mi": bench_nwj_mi_family(),
         "copula_mi": bench_copula_mi_family(),
         "lsd_deptest": bench_lsd_deptest_family(),
+        "lqr_control": bench_lqr_control_family(),
+        "ddp_solve": bench_ddp_solve_family(),
+        "mppi_control": bench_mppi_control_family(),
+        "pmp_bangbang": bench_pmp_bangbang_family(),
+        "mpc_qp": bench_mpc_qp_family(),
+        "lqg_control": bench_lqg_control_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

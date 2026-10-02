@@ -2435,6 +2435,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "nwj_mi",
         "copula_mi",
         "lsd_deptest",
+        # Wave-193 optimal-control canon: LQR, DDP, MPPI, PMP,
+        # MPC-QP, LQG.
+        "lqr_control",
+        "ddp_solve",
+        "mppi_control",
+        "pmp_bangbang",
+        "mpc_qp",
+        "lqg_control",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
