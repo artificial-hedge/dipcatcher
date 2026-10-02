@@ -1317,6 +1317,14 @@ from quant_fund.research.benches_w165 import (
     bench_kernel_mixture_family,
     bench_mdn_cond_family,
 )
+from quant_fund.research.benches_w166 import (
+    bench_anil_meta_family,
+    bench_matching_net_family,
+    bench_meta_sgd_family,
+    bench_protonet_family,
+    bench_r2d2_meta_family,
+    bench_reptile_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3858,6 +3866,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "het_gp": bench_het_gp_family(),
         "crps_net": bench_crps_net_family(),
         "kernel_mixture": bench_kernel_mixture_family(),
+        "reptile": bench_reptile_family(),
+        "protonet": bench_protonet_family(),
+        "matching_net": bench_matching_net_family(),
+        "anil_meta": bench_anil_meta_family(),
+        "meta_sgd": bench_meta_sgd_family(),
+        "r2d2_meta": bench_r2d2_meta_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
