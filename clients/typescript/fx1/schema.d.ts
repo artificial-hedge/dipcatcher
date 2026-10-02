@@ -461,6 +461,8 @@ export interface components {
             error?: string | null;
             /** Error Class */
             error_class?: string | null;
+            /** Latency Ms */
+            latency_ms: number;
             /** Ok */
             ok: boolean;
         };
@@ -519,6 +521,8 @@ export interface components {
             backend: string;
             /** Content */
             content: string;
+            /** Latency Ms */
+            latency_ms: number;
             /** Model */
             model: string | null;
             /** Receipt Hashes */

@@ -53,9 +53,9 @@ real-socket lifecycle (uvicorn + urllib) by `receipts/fx1_e2e_audit.json`.
 | `GET /harness/backends` | per-backend liveness: `configured`, `circuit_open`, `cooldown_remaining_s`, `consecutive_failures` |
 | `GET /harness/commands` | registered commands, optional `?role=` filter |
 | `POST /harness/runs` | synchronous command run |
-| `POST /harness/complete` | gated model completion (sync) |
-| `POST /harness/complete/batch` | up to 64 conversations over one shared backend |
-| `POST /harness/complete/stream` | SSE `token` frames + `final` + `[DONE]` — the gate runs before any frame leaves |
+| `POST /harness/complete` | gated model completion (sync) — response carries `latency_ms` (per-call wall clock; replays report the original) |
+| `POST /harness/complete/batch` | up to 64 conversations over one shared backend; per-item `latency_ms` |
+| `POST /harness/complete/stream` | SSE `token` frames + `final` (with `latency_ms`) + `[DONE]` — the gate runs before any frame leaves |
 | `POST /harness/jobs` | async run → `202 {job_id}` |
 | `POST /harness/jobs/batch` | up to 64 submissions, per-item `{error, code}` outcomes |
 | `GET /harness/jobs` | list/filter (`?status=`, `?limit=`, `?offset=`) |
@@ -178,7 +178,7 @@ out-of-range values:
 | `--job-max` | `FX1_API_JOB_MAX` | 1024 | job-store capacity (LRU evict drops key backrefs) |
 | `--idem-max` | `FX1_API_IDEM_MAX` | 1024 | idempotency-store capacity |
 | `--sse-keepalive-s` | `FX1_API_SSE_KEEPALIVE_S` | 15 | `: keepalive` comment cadence; 0 disables |
-| `--rate-limit-rps` | `FX1_API_RATE_LIMIT_RPS` | 0 (off) | per-client token bucket → 429 + `Retry-After`; every response also carries `X-RateLimit-Limit`/`Remaining`/`Reset` while the limiter is on |
+| `--rate-limit-rps` | `FX1_API_RATE_LIMIT_RPS` | 0 (off) | per-client token bucket → 429 + `Retry-After`; every response also carries `X-RateLimit-Limit`/`Remaining`/`Reset` while the limiter is on. Public paths (`/health`) are exempt — LB probes never consume the client budget |
 | `--gzip-min-bytes` | `FX1_API_GZIP_MIN_BYTES` | 1024 | gzip only when the client advertises it; 0 disables |
 | `--cors-origins` | `FX1_API_CORS_ORIGINS` | (off) | comma-separated browser origins for CORS; each must be a scheme+host URL, `*` and non-http(s) refused; preflights bypass the API-key gate (they carry no credentials), every preflight reflects the `expose` list of stamped headers |
 | `--breaker-threshold` | `FX1_API_BREAKER_THRESHOLD` | 5 | consecutive call faults that open a backend's circuit; 0 disables. While open, calls fast-fail `503 backend_unavailable` + `Retry-After` without burning an inflight slot; a single half-open probe is admitted after cooldown and closes the circuit on success. Resolution faults that surface as 503 count; client errors (404/422), capability gaps (501), and honesty-gate refusals never do |

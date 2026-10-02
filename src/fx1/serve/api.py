@@ -344,6 +344,10 @@ class CompleteResponse(_Model):
     model: str | None
     content: str
     receipt_hashes: list[str]
+    # wall-clock ms inside the backend call — fx-1 sees per-call cost without
+    # timing middleware overhead; idempotent replays report the original call's
+    # latency alongside ``replayed``.
+    latency_ms: float
     # True when the response came from the Idempotency-Key cache — lets
     # fx-1 audit retried calls without paying for them twice.
     replayed: bool = False
@@ -359,6 +363,7 @@ class CompleteBatchRequest(_Model):
 
 class CompleteBatchItem(_Model):
     ok: bool
+    latency_ms: float
     content: str | None = None
     error: str | None = None
     error_class: str | None = None
@@ -1410,6 +1415,7 @@ def _mount_complete_routes(
                 breaker.report(body.backend, False)
             raise
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
+        t0 = time.monotonic()
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
         except NotImplementedError as exc:
@@ -1437,6 +1443,7 @@ def _mount_complete_routes(
             model=model_name if isinstance(model_name, str) else None,
             content=content,
             receipt_hashes=body.receipt_hashes or [],
+            latency_ms=(time.monotonic() - t0) * 1000.0,
         )
         if key is not None:
             complete_idem_store.put(key, body_fp, resp)
@@ -1473,7 +1480,7 @@ def _mount_complete_routes(
         """
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
 
-        def _gather() -> tuple[list[str], str | None]:
+        def _gather() -> tuple[list[str], str | None, float]:
             """Buffer + gate the backend stream; raises the mapped errors."""
             _breaker_admit(body.backend)
             try:
@@ -1482,6 +1489,7 @@ def _mount_complete_routes(
                 if breaker is not None and exc.status_code == 503:
                     breaker.report(body.backend, False)
                 raise
+            t0 = time.monotonic()
             try:
                 if not isinstance(backend, StreamingBackend):
                     raise NotImplementedError(
@@ -1515,9 +1523,13 @@ def _mount_complete_routes(
                     + ", ".join(f"`{h[:16]}…`" for h in body.receipt_hashes)
                     + " — verify with `dipcatcher verify-research`."
                 )
-            return chunks, model_name if isinstance(model_name, str) else None
+            return (
+                chunks,
+                model_name if isinstance(model_name, str) else None,
+                (time.monotonic() - t0) * 1000.0,
+            )
 
-        def _events(chunks: list[str], model_name: str | None) -> Iterator[str]:
+        def _events(chunks: list[str], model_name: str | None, latency_ms: float) -> Iterator[str]:
             for chunk in chunks:
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk})}\n\n"
             yield (
@@ -1527,6 +1539,7 @@ def _mount_complete_routes(
                         "type": "final",
                         "model": model_name,
                         "receipt_hashes": body.receipt_hashes or [],
+                        "latency_ms": latency_ms,
                     }
                 )
                 + "\n\n"
@@ -1534,8 +1547,10 @@ def _mount_complete_routes(
             yield "data: [DONE]\n\n"
 
         if sse_keepalive_s <= 0:
-            chunks, model_name = _gather()
-            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
+            chunks, model_name, latency_ms = _gather()
+            return StreamingResponse(
+                _events(chunks, model_name, latency_ms), media_type="text/event-stream"
+            )
 
         pipe: queue.Queue[tuple[str, Any]] = queue.Queue()
 
@@ -1561,8 +1576,10 @@ def _mount_complete_routes(
             tag, payload = grace
             if tag == "error":
                 raise payload
-            chunks, model_name = payload
-            return StreamingResponse(_events(chunks, model_name), media_type="text/event-stream")
+            chunks, model_name, latency_ms = payload
+            return StreamingResponse(
+                _events(chunks, model_name, latency_ms), media_type="text/event-stream"
+            )
 
         def _events_keepalived() -> Iterator[str]:
             while True:
@@ -1586,8 +1603,8 @@ def _mount_complete_routes(
                     )
                     yield "data: [DONE]\n\n"
                     return
-                chunks, model_name = payload
-                yield from _events(chunks, model_name)
+                chunks, model_name, latency_ms = payload
+                yield from _events(chunks, model_name, latency_ms)
                 return
 
         return StreamingResponse(_events_keepalived(), media_type="text/event-stream")
@@ -1629,22 +1646,28 @@ def _mount_complete_routes(
             ) as pool:
 
                 def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
+                    t0 = time.monotonic()
                     if breaker is not None and breaker.check(body.backend) > 0:
                         return CompleteBatchItem(
                             ok=False,
+                            latency_ms=0.0,
                             error="backend circuit open",
                             error_class="backend_unavailable",
                         )
                     try:
                         out = CompleteBatchItem(
                             ok=True,
+                            latency_ms=(time.monotonic() - t0) * 1000.0,
                             content=cited_complete(
                                 backend, messages, receipt_hashes=body.receipt_hashes
                             ),
                         )
                     except Fx1HonestyError as exc:
                         return CompleteBatchItem(
-                            ok=False, error=str(exc), error_class="honesty_refusal"
+                            ok=False,
+                            latency_ms=(time.monotonic() - t0) * 1000.0,
+                            error=str(exc),
+                            error_class="honesty_refusal",
                         )
                     except (
                         BackendNotConfiguredError,
@@ -1654,7 +1677,10 @@ def _mount_complete_routes(
                         if breaker is not None and not isinstance(exc, NotImplementedError):
                             breaker.report(body.backend, False)
                         return CompleteBatchItem(
-                            ok=False, error=str(exc), error_class=type(exc).__name__
+                            ok=False,
+                            latency_ms=(time.monotonic() - t0) * 1000.0,
+                            error=str(exc),
+                            error_class=type(exc).__name__,
                         )
                     if breaker is not None:
                         breaker.report(body.backend, True)
@@ -1815,7 +1841,9 @@ def create_app(
         request.state.request_id = request_id
         started = time.monotonic()
         rl_headers: dict[str, str] | None = None
-        if limiter is not None:
+        # Public paths are exempt — a load balancer's /health probe cadence
+        # must never consume the client's own request budget (or 429 liveness).
+        if limiter is not None and request.url.path not in _PUBLIC_PATHS:
             # keyed on client host so a rotating fake API key can't evade it
             host = (request.client.host if request.client else "") or "unknown"
             wait, remaining = limiter.allow(host)

@@ -260,6 +260,10 @@ def api_audit() -> dict[str, Any]:
     ic.post("/harness/complete/batch", json=bbody, headers={"Idempotency-Key": "bk1"})
     cb2 = ic.post("/harness/complete/batch", json=bbody, headers={"Idempotency-Key": "bk1"}).json()
     out["complete_batch_idem_replay"] = cb2["replayed"] is True
+    out["complete_reports_latency_ms"] = (
+        isinstance(c1.json()["latency_ms"], (int, float)) and c1.json()["latency_ms"] >= 0
+    )
+    out["complete_replay_reuses_latency_ms"] = c2.json()["latency_ms"] == c1.json()["latency_ms"]
 
     # --- local weights surface: card'd checkpoint + engine attach ----------
     import json as _json
@@ -424,6 +428,9 @@ def api_audit() -> dict[str, Any]:
     ]
     out["batch_one_backend"] = resolves[0] == 1 and clean.calls == 3
     out["batch_closed_once"] = clean.closed == 1
+    out["batch_item_latency_ms"] = all(
+        isinstance(i["latency_ms"], (int, float)) and i["latency_ms"] >= 0 for i in bj["results"]
+    )
     out["batch_empty_422"] = (
         batch_client.post(
             "/harness/complete/batch", json={"backend": "byok", "batch": []}
@@ -511,6 +518,9 @@ def api_audit() -> dict[str, Any]:
     ) == ["a" * 64]
     out["stream_done_terminates"] = frames[-1].strip() == "data: [DONE]"
     out["stream_footer_cited"] = any("Evidence:" in p.get("content", "") for p in payloads)
+    out["stream_final_reports_latency_ms"] = (
+        isinstance(payloads[-1].get("latency_ms"), (int, float)) and payloads[-1]["latency_ms"] >= 0
+    )
 
     class _DirtyStreamBackend(_DirtyBackend):
         def stream(self, messages: list[dict[str, str]]) -> Any:
@@ -1217,8 +1227,8 @@ def api_audit() -> dict[str, Any]:
         rate_limit_rps=5.0,
     )
     lc = _TC2(limited)
-    hits = [lc.get("/health").status_code for _ in range(7)]
-    denied = lc.get("/health")
+    hits = [lc.get("/harness/version").status_code for _ in range(7)]
+    denied = lc.get("/harness/version")
     out["rate_limit_429"] = hits[:5] == [200] * 5 and 429 in hits[5:] + [denied.status_code]
     out["rate_limit_envelope"] = (
         denied.status_code == 429
@@ -1227,7 +1237,7 @@ def api_audit() -> dict[str, Any]:
         and int(denied.headers["retry-after"]) >= 1
     )
     time.sleep(0.3)
-    out["rate_limit_recovers"] = lc.get("/health").status_code == 200
+    out["rate_limit_recovers"] = lc.get("/harness/version").status_code == 200
     # X-RateLimit-* headers on every response while the limiter is active
     limited3 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
@@ -1236,8 +1246,8 @@ def api_audit() -> dict[str, Any]:
     )
     lc3 = _TC2(limited3)
     spec_limited = lc3.get("/openapi.json").json()
-    first = lc3.get("/health")
-    second = lc3.get("/health")
+    first = lc3.get("/harness/version")
+    second = lc3.get("/harness/version")
     out["rate_limit_headers_on_success"] = (
         first.status_code == 200
         and first.headers.get("x-ratelimit-limit") == "10"
@@ -1245,9 +1255,9 @@ def api_audit() -> dict[str, Any]:
         and int(first.headers["x-ratelimit-reset"]) >= 0
         and int(second.headers["x-ratelimit-remaining"]) == 7
     )
-    while lc3.get("/health").status_code == 200:
+    while lc3.get("/harness/version").status_code == 200:
         pass
-    denied3 = lc3.get("/health")
+    denied3 = lc3.get("/harness/version")
     out["rate_limit_headers_on_429"] = (
         denied3.status_code == 429
         and denied3.headers.get("x-ratelimit-limit") == "10"
@@ -1256,6 +1266,23 @@ def api_audit() -> dict[str, Any]:
     )
     out["rate_limit_headers_absent_when_off"] = (
         "x-ratelimit-limit" not in client.get("/health").headers
+    )
+    # public paths are exempt: a health probe must not consume the budget —
+    # with a 1 rps bucket, /version takes the only token, /health still 200s
+    # (no bucket touch, no limiter headers), and the next /version 429s.
+    lim_pub = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=1.0,
+    )
+    lp = _TC2(lim_pub)
+    lp.get("/harness/version")
+    h_exempt = lp.get("/health")
+    v_after = lp.get("/harness/version")
+    out["rate_limit_public_path_exempt"] = (
+        h_exempt.status_code == 200
+        and "x-ratelimit-limit" not in h_exempt.headers
+        and v_after.status_code == 429
     )
     # the spec declares the headers the middleware sets — generated clients
     # see them typed instead of having to know
@@ -1455,7 +1482,7 @@ def api_audit() -> dict[str, Any]:
         rate_limit_rps=20.0,
     )
     lc2 = _TC2(limited2)
-    statuses = [lc2.get("/health").status_code for _ in range(23)]
+    statuses = [lc2.get("/harness/version").status_code for _ in range(23)]
     time.sleep(0.15)
     m = lc2.get("/metrics")
     out["rate_limit_metrics_counts"] = (
@@ -1470,9 +1497,9 @@ def api_audit() -> dict[str, Any]:
             backend_resolver=lambda *a, **k: _CleanBackend(),
         )
         ec = _TC2(env_app)
-        out["rate_limit_env_config"] = [ec.get("/health").status_code for _ in range(5)].count(
-            429
-        ) >= 1
+        out["rate_limit_env_config"] = [
+            ec.get("/harness/version").status_code for _ in range(5)
+        ].count(429) >= 1
     finally:
         os.environ.pop("FX1_API_RATE_LIMIT_RPS", None)
 

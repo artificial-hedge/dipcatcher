@@ -138,13 +138,18 @@
             ],
             "title": "Error Class"
           },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "number"
+          },
           "ok": {
             "title": "Ok",
             "type": "boolean"
           }
         },
         "required": [
-          "ok"
+          "ok",
+          "latency_ms"
         ],
         "title": "CompleteBatchItem",
         "type": "object"
@@ -325,6 +330,10 @@
             "title": "Content",
             "type": "string"
           },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "number"
+          },
           "model": {
             "anyOf": [
               {
@@ -353,7 +362,8 @@
           "backend",
           "model",
           "content",
-          "receipt_hashes"
+          "receipt_hashes",
+          "latency_ms"
         ],
         "title": "CompleteResponse",
         "type": "object"
