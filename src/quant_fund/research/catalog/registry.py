@@ -2794,6 +2794,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "slr_parser",
         "peg_packrat",
         "ll1_table",
+        # Wave-238 networking canon.
+        "tcp_aimd",
+        "sliding_window",
+        "token_bucket",
+        "rtt_estimator",
+        "nat_table",
+        "http2_flow",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1895,6 +1895,14 @@ from quant_fund.research.benches_w237 import (
     bench_recursive_descent_family,
     bench_slr_parser_family,
 )
+from quant_fund.research.benches_w238 import (
+    bench_http2_flow_family,
+    bench_nat_table_family,
+    bench_rtt_estimator_family,
+    bench_sliding_window_family,
+    bench_tcp_aimd_family,
+    bench_token_bucket_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4870,6 +4878,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "slr_parser": bench_slr_parser_family(),
         "peg_packrat": bench_peg_packrat_family(),
         "ll1_table": bench_ll1_table_family(),
+        "tcp_aimd": bench_tcp_aimd_family(),
+        "sliding_window": bench_sliding_window_family(),
+        "token_bucket": bench_token_bucket_family(),
+        "rtt_estimator": bench_rtt_estimator_family(),
+        "nat_table": bench_nat_table_family(),
+        "http2_flow": bench_http2_flow_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

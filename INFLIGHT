@@ -2635,3 +2635,4 @@ wave 234 (2026-10-02): database-internals canon — btree_index, wal_recovery, j
 wave 235 (2026-10-02): OS-internals canon — round_robin_sched, cfs_scheduler, demand_paging, deadlock_detect, disk_sched, fs_journal; 1383→1389 families.
 wave 236 (2026-10-02): graphics canon — raycaster, bresenham_line, scanline_fill, zbuffer_render, quaternion_slerp, bsp_tree, mvp_transform; 1389→1395 families.
 wave 237 (2026-10-02): parser canon — recursive_descent, pratt_parser, earley_parser, slr_parser, peg_packrat, ll1_table; 1395→1401 families.
+wave 238 (2026-10-02): networking canon — tcp_aimd, sliding_window, token_bucket, rtt_estimator, nat_table, http2_flow; 1401→1407 families.
