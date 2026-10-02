@@ -2015,6 +2015,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hyde_retrieval",
         "reranker_crossenc",
         "rrf_fusion",
+        # Wave-146 test-time compute:
+        # SC, PRM, MCTS, debate,
+        # unlearning, KG embeddings.
+        "consistency_vote",
+        "verifier_prm",
+        "mcts_reason",
+        "debate_multiagent",
+        "unlearn_ga",
+        "knowledge_graph_embed",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
