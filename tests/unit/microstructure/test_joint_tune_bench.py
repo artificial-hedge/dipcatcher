@@ -21,6 +21,9 @@ def test_joint_tune_shape() -> None:
         "kernel_carried",
     }
     assert len(out["receipt_sha256"]) == 64
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    assert contract_errors(out) == []
 
 
 # SYNTHETIC correctness cases: these do not regenerate research receipts.
@@ -42,15 +45,41 @@ def _mock_bench(monkeypatch, draws):
     import importlib
 
     bench = importlib.import_module("quant_fund.microstructure.joint_tune_bench")
-    monkeypatch.setattr(bench, "_CELLS", (("synthetic", 12, 50, 0.9, 110),))
     by_seed = dict(zip((7007, 7011), draws, strict=True))
-    monkeypatch.setattr(bench, "_cell", lambda *args, **kwargs: by_seed[kwargs["seed"]])
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import surface_inputs
+
+    def cell(zone, ttl, intensity, **kwargs):
+        draw = deepcopy(by_seed[kwargs["seed"]])
+        inputs = surface_inputs(
+            zone,
+            ttl,
+            kwargs["requote"],
+            kwargs["fr_delay"],
+            horizon=kwargs["horizon"],
+            seed=kwargs["seed"],
+            intensity=intensity,
+        )
+        draw["surface_inputs"] = {k: dict(inputs) for k in ("card", "crown", "reseed", "kernel")}
+        return draw
+
+    monkeypatch.setattr(bench, "_cell", cell)
     monkeypatch.setattr(
         bench,
         "_reseed_fates",
-        lambda *args, **kwargs: {
-            "reseed_rate_500": None,
-            "reseed_as_touch_share": None,
+        lambda zone, ttl, rq, inten, **kwargs: {
+            "inputs": surface_inputs(
+                zone,
+                ttl,
+                rq,
+                kwargs["fr_delay"],
+                horizon=kwargs["horizon"],
+                seed=kwargs["seed"],
+                intensity=inten,
+            ),
+            "reseed_rate_500": 0.5376,
+            "reseed_as_touch_share": 0.75,
             "reseed_latency_p50": None,
         },
     )
@@ -164,6 +193,7 @@ def test_joint_tune_requests_uniform_iid_on_every_draw(monkeypatch):
         bench,
         "_reseed_fates",
         lambda *a, **kw: {
+            "inputs": {},
             "reseed_rate_500": None,
             "reseed_as_touch_share": None,
             "reseed_latency_p50": None,
@@ -207,7 +237,8 @@ def test_uniform_iid_cell_routes_every_surface_and_preserves_legacy_default(monk
         "reseed": (None, 7007),
         "kernel_flow": None,
     }
-    cell._cell(12, 50, None, horizon=1, seed=7007)
+    legacy = cell._cell(12, 50, None, horizon=1, seed=7007)
+    assert "surface_inputs" not in legacy
     assert seen["crown"] == (3.0, 7007)
     assert seen["kernel_flow"] is None
 
@@ -261,3 +292,193 @@ def test_v2_contract_rejects_dropping_a_failed_sample(monkeypatch):
     errors = script_receipt_contract_errors("joint_tune.v2", out)
     assert "cell_0:draw_count_mismatch" in errors
     assert "cells_measured_mismatch" in errors
+
+
+def test_v2_requires_complete_seed_and_cell_design(monkeypatch):
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw(k200=7.0)])
+    assert contract_errors(out) == []
+    for seeds in ([7], [11, 7], [7, 7], [True, 11], [7.0, 11], []):
+        sample = deepcopy(out)
+        sample["config"]["seeds"] = seeds
+        assert "joint_tune_seed_set_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    sample["config"]["seeds"] = [7]
+    for cell in sample["cells"]:
+        cell["draws"] = cell["draws"][:1]
+    assert "joint_tune_seed_set_mismatch" in contract_errors(sample)
+    for key in ("config", "cells"):
+        sample = deepcopy(out)
+        if key == "config":
+            sample[key]["cells"] = sample[key]["cells"][:1]
+        else:
+            sample[key] = sample[key][:1]
+        assert contract_errors(sample)
+
+
+def test_v2_binds_each_surface_to_draw_seed_and_configuration(monkeypatch):
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw()])
+    for surface in ("card", "crown", "reseed", "kernel"):
+        for key, value in (
+            ("flow_intensity", 3.0),
+            ("seed", 7011),
+            ("seed", True),
+            ("horizon", 1),
+            ("maker_ttl", 75),
+            ("fill_repost_frac", 0.5),
+        ):
+            sample = deepcopy(out)
+            sample["cells"][0]["draws"][0]["surface_inputs"][surface][key] = value
+            assert "cell_0:draw_0:surface_inputs_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    del sample["cells"][0]["draws"][0]["surface_inputs"]
+    assert "cell_0:draw_0:surface_inputs_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    sample["cells"][0]["draws"][1] = deepcopy(sample["cells"][0]["draws"][0])
+    assert "cell_0:draw_1:surface_inputs_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    sample["cells"][0]["draws"][0]["reseed_fates"]["inputs"]["seed"] = 7011
+    assert "cell_0:draw_0:reseed_inputs_mismatch" in contract_errors(sample)
+
+
+def test_v2_rederives_all_claims_and_every_cell_summary(monkeypatch):
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import contract_errors, summaries
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw(k200=7.0)])
+    for key in out["claims"]:
+        sample = deepcopy(out)
+        sample["claims"][key] = not sample["claims"][key]
+        assert key + "_mismatch" in contract_errors(sample)
+    for key in summaries(out["cells"][0]["draws"]):
+        sample = deepcopy(out)
+        sample["cells"][0][key] = "invalid"
+        assert "cell_0:" + key + "_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    sample["cells"][0]["draws"][0]["n_pins"] = 6
+    assert "cell_0:draw_0:n_pins_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    sample["claims"]["extra_result"] = True
+    assert "joint_tune_claim_set_mismatch" in contract_errors(sample)
+
+
+def test_v2_reference_is_exact_and_independent_of_live_benchmark(monkeypatch):
+    import importlib
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw()])
+    for key in out["tape_reference"]:
+        sample = deepcopy(out)
+        sample["tape_reference"][key] = None
+        assert "joint_tune_tape_reference_mismatch" in contract_errors(sample)
+    bench = importlib.import_module("quant_fund.microstructure.joint_tune_bench")
+    monkeypatch.setattr(bench, "_draw_closed", lambda d: False)
+    monkeypatch.setattr(bench, "_TAPE_LIFE_EV", -1)
+    assert contract_errors(out) == []
+
+
+def test_v2_best_cell_tiebreak_is_pin_count_then_life_then_first():
+    from quant_fund.microstructure.joint_tune_contract import claims
+
+    def cell(pins, life, instant, k200):
+        return dict(
+            n_draws=2,
+            n_pins_mean=pins,
+            life_ev_p50_mean=life,
+            instant_mean=instant,
+            k200_mean=k200,
+            joint_closure_by_draw=[False, False],
+        )
+
+    fail = cell(7, 30, 5, 20)
+    passed = cell(7, 25.5, 0.887, 4.64)
+    assert claims([fail, passed])["kernel_carried"] is True
+    assert claims([passed, cell(7, 25.5, 5, 20)])["kernel_carried"] is True
+    assert claims([cell(7, 25.5, 5, 20), passed])["kernel_carried"] is False
+    assert claims([cell(7, 100, 5, 20), cell(6, 25.5, 0.887, 4.64)])["kernel_carried"] is False
+
+
+def test_v2_contract_rejects_malformed_nested_values_without_raising(monkeypatch):
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw()])
+    for key in ("config", "cells", "claims", "seed", "horizon", "tape_reference"):
+        for value in (None, True, [], "invalid"):
+            sample = deepcopy(out)
+            sample[key] = value
+            assert contract_errors(sample)
+    for key in ("pins", "card", "reseed_fates", "surface_inputs", "instant_signed_ticks", "k200"):
+        for value in (True, [], "invalid", float("nan"), float("inf")):
+            sample = deepcopy(out)
+            sample["cells"][0]["draws"][0][key] = value
+            assert contract_errors(sample)
+
+
+def test_v2_rejects_impossible_domains_and_evidence_labels(monkeypatch):
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import contract_errors
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw()])
+    for section, key, value in (
+        ("card", "life_events_p50_executed", -1),
+        ("reseed_fates", "reseed_rate_500", 1.1),
+        ("reseed_fates", "reseed_as_touch_share", -0.1),
+        ("reseed_fates", "reseed_latency_p50", -1),
+    ):
+        sample = deepcopy(out)
+        sample["cells"][0]["draws"][0][section][key] = value
+        assert "cell_0:draw_0:measurement_domain_invalid" in contract_errors(sample)
+    for key, value in (("data_label", "REAL"), ("kind", "market_evidence")):
+        sample = deepcopy(out)
+        sample[key] = value
+        assert "joint_tune_evidence_label_mismatch" in contract_errors(sample)
+    sample = deepcopy(out)
+    sample["claim_semantics"]["grammar_keeps_pins"] = "every draw closes"
+    assert "joint_tune_claim_semantics_mismatch" in contract_errors(sample)
+
+
+def test_v2_aggregate_instant_preserves_original_absolute_difference():
+    from quant_fund.microstructure.joint_tune_contract import claims
+
+    for instant in (0.537, 1.237, 0.887):
+        cells = [
+            dict(
+                n_draws=2,
+                n_pins_mean=7,
+                life_ev_p50_mean=25.5,
+                instant_mean=instant,
+                k200_mean=4.64,
+                joint_closure_by_draw=[True, True],
+            )
+        ]
+        assert claims(cells)["kernel_carried"] is (abs(instant - 0.887) <= 0.35)
+
+
+def test_v2_binds_reseed_pins_to_embedded_same_run_measurements(monkeypatch):
+    from copy import deepcopy
+
+    from quant_fund.microstructure.joint_tune_contract import claims, contract_errors, summaries
+
+    out = _mock_bench(monkeypatch, [_synthetic_draw(), _synthetic_draw()])
+    for key in ("reseed_rate_500", "reseed_as_touch_share"):
+        for value in (None, 0.0):
+            sample = deepcopy(out)
+            for cell in sample["cells"]:
+                for draw in cell["draws"]:
+                    draw["reseed_fates"][key] = value
+                cell.update(summaries(cell["draws"]))
+            sample["claims"] = claims(sample["cells"])
+            assert "cell_0:draw_0:reseed_pin_mismatch" in contract_errors(sample)
