@@ -493,6 +493,46 @@ def e2e_audit() -> dict[str, bool]:
         finally:
             server6.should_exit = True
             server6_thread.join(timeout=15)
+
+        # job-completion webhook over the real wire: a submitted job POSTs
+        # its terminal record to the caller's callback_url.
+        hook_hits: list[dict[str, Any]] = []
+
+        class _JobHook(BaseHTTPRequestHandler):
+            def do_POST(self) -> None:  # noqa: N802 — stdlib hook name
+                n = int(self.headers.get("Content-Length", "0"))
+                hook_hits.append(json.loads(self.rfile.read(n)))
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, *args: Any) -> None:
+                pass
+
+        hook_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
+        hook_thread = threading.Thread(target=hook_srv.serve_forever, daemon=True)
+        hook_thread.start()
+        hook_url = f"http://127.0.0.1:{hook_srv.server_address[1]}/hook"
+        server7_app = api_mod.create_app(harness=Harness(runner=fake_runner))
+        server7, server7_thread, port7 = _serve_uvicorn(server7_app)
+        try:
+            hc = HarnessClient(f"http://127.0.0.1:{port7}", api_key=_API_KEY, timeout_s=15.0)
+            jid = hc.submit_run("doctor", callback_url=hook_url)
+            deadline = time.monotonic() + 15.0
+            while time.monotonic() < deadline and not hook_hits:
+                time.sleep(0.05)
+            st = hc.job_status(jid)
+            out["e2e_job_webhook_delivered"] = (
+                len(hook_hits) == 1
+                and hook_hits[0]["job_id"] == jid
+                and hook_hits[0]["status"] == "succeeded"
+                and st.get("callback_status") == "delivered"
+            )
+        finally:
+            server7.should_exit = True
+            server7_thread.join(timeout=15)
+            hook_srv.shutdown()
+            hook_srv.server_close()
+            hook_thread.join(timeout=5)
     finally:
         if server is not None:
             server.should_exit = True

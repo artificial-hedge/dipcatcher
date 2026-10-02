@@ -345,6 +345,7 @@ class HarnessClient:
         *,
         config: str | Path | None = None,
         idempotency_key: str | None = None,
+        callback_url: str | None = None,
     ) -> str:
         """Submit a run as a background job; returns the job id.
 
@@ -352,6 +353,8 @@ class HarnessClient:
         keep the id, and poll with ``job_status``/``wait_run``. Same
         ``Idempotency-Key`` dedup as ``run``: a retried submit returns
         the original job id instead of spawning a second execution.
+        ``callback_url`` (http(s)) gets the full job record POSTed on
+        every terminal transition — succeeded, failed, or cancelled.
         """
         key = idempotency_key or uuid.uuid4().hex
         out = self._json(
@@ -361,6 +364,7 @@ class HarnessClient:
                 "command": command,
                 "extra_args": extra_args or [],
                 "config": str(config) if config is not None else None,
+                "callback_url": callback_url,
             },
             idempotent=True,
             extra_headers={"Idempotency-Key": key},

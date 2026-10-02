@@ -1154,6 +1154,25 @@ def parity_audit() -> dict[str, bool]:
         out["client_wait_cancelled_raises"] = False
     except HarnessJobError:
         out["client_wait_cancelled_raises"] = True
+
+    # submit_run passes callback_url through the request body verbatim
+    cb_seen: list[dict[str, Any]] = []
+
+    def _cb_transport(
+        method: str,
+        url: str,
+        payload: Any,
+        headers: Any,
+        timeout_s: float,
+    ) -> tuple[int, Mapping[str, str], bytes]:
+        cb_seen.append(dict(payload))
+        return (202, {}, b'{"job_id": "cb1", "status": "queued", "replayed": false}')
+
+    c_cb = HarnessClient("http://harness.test", transport=_cb_transport)
+    jid_cb = c_cb.submit_run("doctor", callback_url="https://hooks.test/x")
+    out["client_submit_callback_url"] = (
+        jid_cb == "cb1" and cb_seen[0].get("callback_url") == "https://hooks.test/x"
+    )
     return out
 
 

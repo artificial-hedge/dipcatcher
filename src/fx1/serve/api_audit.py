@@ -909,6 +909,138 @@ def api_audit() -> dict[str, Any]:
         time.sleep(0.1)
     out["job_cancel_slot_recovered"] = qc.get("/metrics").json()["inflight"] == 0
 
+    # --- webhooks: terminal-state job callbacks --------------------------------
+    # A submitted job's record is POSTed to its callback_url on every
+    # terminal transition (succeeded/failed/cancelled); delivery is
+    # best-effort — a dead or erroring endpoint is recorded on the job,
+    # never raised into the worker.
+    import json as _json  # noqa: PLC0415
+    import socket as _socket  # noqa: PLC0415
+    import threading as _threading  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    _cb_hits: list[dict[str, Any]] = []
+
+    class _JobHook(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            n = int(self.headers.get("Content-Length", "0"))
+            _cb_hits.append(_json.loads(self.rfile.read(n)))
+            if self.path == "/fail":
+                self.send_response(500)
+            else:
+                self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    cb_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        max_inflight=2,
+    )
+    cbc = _TC2(cb_app)
+    cb_srv = ThreadingHTTPServer(("127.0.0.1", 0), _JobHook)
+    cb_thread = _threading.Thread(target=cb_srv.serve_forever, daemon=True)
+    cb_thread.start()
+    cb_url = f"http://127.0.0.1:{cb_srv.server_address[1]}/hook"
+    _dead_sock = _socket.socket()
+    _dead_sock.bind(("127.0.0.1", 0))
+    _dead_port = _dead_sock.getsockname()[1]
+    _dead_sock.close()
+    try:
+        ok_job = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
+        jid_cb = ok_job.json()["job_id"]
+        deadline = time.monotonic() + 10.0
+        st_cb: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_cb = cbc.get(f"/harness/jobs/{jid_cb}").json()
+            if st_cb["status"] == "succeeded" and st_cb.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["callback_delivered_on_success"] = (
+            ok_job.status_code == 202
+            and st_cb.get("callback_status") == "delivered"
+            and st_cb.get("callback_url") == cb_url
+            and len(_cb_hits) == 1
+            and _cb_hits[0]["job_id"] == jid_cb
+            and _cb_hits[0]["status"] == "succeeded"
+            and _cb_hits[0]["result"]["ok"] is True
+        )
+        # endpoint returning 5xx -> recorded as failed, job unaffected
+        err_job = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_url": cb_url.replace("/hook", "/fail")},
+        )
+        jid_err = err_job.json()["job_id"]
+        deadline = time.monotonic() + 10.0
+        st_err: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_err = cbc.get(f"/harness/jobs/{jid_err}").json()
+            if st_err.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["callback_http_error_recorded"] = (
+            st_err["status"] == "succeeded"
+            and st_err.get("callback_status") == "failed"
+            and "500" in (st_err.get("callback_error") or "")
+        )
+        # dead endpoint -> connection error recorded, job unaffected
+        dead_job = cbc.post(
+            "/harness/jobs",
+            json={
+                "command": "doctor",
+                "callback_url": f"http://127.0.0.1:{_dead_port}/hook",
+            },
+        )
+        jid_dead = dead_job.json()["job_id"]
+        deadline = time.monotonic() + 15.0
+        st_dead: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            st_dead = cbc.get(f"/harness/jobs/{jid_dead}").json()
+            if st_dead["status"] == "succeeded" and st_dead.get("callback_status"):
+                break
+            time.sleep(0.05)
+        out["callback_dead_endpoint_recorded"] = (
+            st_dead["status"] == "succeeded"
+            and st_dead.get("callback_status") == "failed"
+            and bool(st_dead.get("callback_error"))
+        )
+        # cancelling a queued job is a terminal transition — it fires too
+        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
+        cb_app.state.jobs_executor.submit(lambda: time.sleep(3.0))
+        qjob = cbc.post("/harness/jobs", json={"command": "doctor", "callback_url": cb_url})
+        qid = qjob.json()["job_id"]
+        cxl = cbc.delete(f"/harness/jobs/{qid}")
+        deadline = time.monotonic() + 10.0
+        while time.monotonic() < deadline and (
+            len(_cb_hits) < 3 or _cb_hits[-1].get("job_id") != qid
+        ):
+            time.sleep(0.05)
+        out["callback_fires_on_cancel"] = (
+            qjob.status_code == 202
+            and cxl.status_code == 200
+            and cxl.json()["status"] == "cancelled"
+            and cxl.json().get("callback_status") == "delivered"
+            and _cb_hits[-1]["job_id"] == qid
+            and _cb_hits[-1]["status"] == "cancelled"
+        )
+        dl = time.monotonic() + 10.0
+        while cbc.get("/metrics").json()["inflight"] != 0 and time.monotonic() < dl:
+            time.sleep(0.1)
+        bad = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_url": "ftp://x/hook"},
+        )
+        nohost = cbc.post(
+            "/harness/jobs",
+            json={"command": "doctor", "callback_url": "http:///hook"},
+        )
+        out["callback_bad_url_422"] = bad.status_code == 422 and nohost.status_code == 422
+    finally:
+        cb_srv.shutdown()
+        cb_srv.server_close()
+
     # --- rate limiting: per-client-host token bucket ----------------------------
     out["rate_limit_default_off"] = all(client.get("/health").status_code == 200 for _ in range(8))
     try:

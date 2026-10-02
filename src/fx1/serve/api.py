@@ -42,6 +42,8 @@ import queue
 import re
 import threading
 import time
+import urllib.parse
+import urllib.request
 import uuid
 from collections import OrderedDict
 from collections.abc import Iterator
@@ -54,7 +56,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
@@ -167,6 +169,19 @@ class HarnessRunRequest(_Model):
     command: str
     extra_args: list[str] = Field(default_factory=list, max_length=64)
     config: str | None = None
+    callback_url: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def _callback_url_http(cls, v: str | None) -> str | None:
+        """Webhook target must be a real http(s) URL — the job record is
+        POSTed to it on every terminal transition."""
+        if v is None:
+            return v
+        parsed = urllib.parse.urlparse(v)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
+        return v
 
 
 class HarnessRunResponse(_Model):
@@ -290,6 +305,9 @@ class JobStatusResponse(_Model):
     finished_at: float | None
     result: HarnessRunResponse | None
     error: str | None
+    callback_url: str | None = None
+    callback_status: Literal["delivered", "failed"] | None = None
+    callback_error: str | None = None
 
 
 class _Metrics:
@@ -394,6 +412,30 @@ def _idem_lookup(
     return key, cached.model_copy(update={"replayed": True})
 
 
+def _deliver_job_callback(job: JobStatusResponse) -> None:
+    """Terminal-state webhook: POST the full job record to the caller's
+    ``callback_url``. Best-effort — a dead or slow endpoint records
+    ``callback_status='failed'`` on the job, never raises into the worker
+    and never changes the job's own status."""
+    url = job.callback_url
+    if not url:
+        return
+    try:
+        req = urllib.request.Request(
+            url,
+            data=job.model_dump_json().encode(),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
+            job.callback_status = "delivered" if resp.status < 400 else "failed"
+            if resp.status >= 400:
+                job.callback_error = f"callback endpoint returned {resp.status}"
+    except Exception as exc:  # noqa: BLE001 — delivery faults land on the record, not the worker
+        job.callback_status = "failed"
+        job.callback_error = f"{type(exc).__name__}: {exc}"
+
+
 def _submit_job(
     body: HarnessRunRequest,
     idempotency_key: str | None,
@@ -444,6 +486,7 @@ def _submit_job(
         finished_at=None,
         result=None,
         error=None,
+        callback_url=body.callback_url,
     )
 
     def _exec() -> None:
@@ -471,6 +514,8 @@ def _submit_job(
         except Exception as exc:  # noqa: BLE001 — worker faults land in the record
             job.error = f"{type(exc).__name__}: {exc}"
             job.status = "failed"
+        finally:
+            _deliver_job_callback(job)
         job.finished_at = time.time()
         metrics.release()
         inflight.release()
@@ -535,6 +580,7 @@ def _mount_job_routes(
             raise ApiError(404, f"unknown job_id {job_id!r}")
         if outcome != "cancelled":
             raise ApiError(409, f"job {job_id!r} is {outcome}")
+        _deliver_job_callback(job)  # cancelled is terminal — fire the webhook
         return job
 
 
