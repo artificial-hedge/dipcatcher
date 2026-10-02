@@ -2651,6 +2651,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "twosat_scc",
         "bdd_ops",
         "ltl_mc",
+        # Wave-220 verification canon: k-induction, IC3/PDR,
+        # BMC, invariant synth, Hoare, ranking fns, CEGAR.
+        "k_induction",
+        "ic3_pdr",
+        "bmc_unroll",
+        "invariant_synth",
+        "hoare_logic",
+        "ranking_function",
+        "cegar_loop",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

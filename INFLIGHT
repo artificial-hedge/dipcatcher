@@ -2617,3 +2617,4 @@ wave 216 (2026-10-02): advanced-MC-sampling canon — parallel_tempering, wang_l
 wave 217 (2026-10-02): estimation/filtering canon — hinf_filter, cubature_kalman, mhe, variational_bayes, huber_filter, particle_smoother; 1274→1280 families.
 wave 218 (2026-10-02): advanced-derivatives canon — dupire_localvol, sabr_calib, deep_hedge, heston_calib, barrier_adjoint, andreasen_huge; 1280→1286 families.
 wave 219 (2026-10-02): SAT/symbolic canon — cdcl_solver, walksat, unit_propagation, twosat_scc, bdd_ops, ltl_mc; 1286→1292 families.
+wave 220 (2026-10-02): program-verification canon — k_induction, ic3_pdr, bmc_unroll, invariant_synth, hoare_logic, ranking_function, cegar_loop; 1292→1299 families.
