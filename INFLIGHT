@@ -2593,3 +2593,4 @@ wave 192 (2026-10-02): info-theory canon — mmd_two_sample, hsic_independence, 
 wave 193 (2026-10-02): optimal-control canon — lqr_control, ddp_solve, mppi_control, pmp_bangbang, mpc_qp, lqg_control; 1130→1136 families.
 wave 194 (2026-10-02): stochastic-process sim canon — cir_sim, ou_bridge, poisson_thinning, hawkes_thinning, levy_jump, gp_bridge; 1136→1142 families.
 wave 195 (2026-10-02): ensemble/adaptive-MCMC canon — emcee_stretch, de_mcmc, dram, rjmcmc, pcn_sampler, indep_mh; 1142→1148 families.
+wave 196 (2026-10-02): eigen-decomposition canon — power_iter, inverse_iter, jacobi_eig, qr_eig, hessenberg_red, bidiag_svd; 1148→1154 families.

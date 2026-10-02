@@ -1557,6 +1557,14 @@ from quant_fund.research.benches_w195 import (
     bench_pcn_sampler_family,
     bench_rjmcmc_family,
 )
+from quant_fund.research.benches_w196 import (
+    bench_bidiag_svd_family,
+    bench_hessenberg_red_family,
+    bench_inverse_iter_family,
+    bench_jacobi_eig_family,
+    bench_power_iter_family,
+    bench_qr_eig_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4278,6 +4286,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rjmcmc": bench_rjmcmc_family(),
         "pcn_sampler": bench_pcn_sampler_family(),
         "indep_mh": bench_indep_mh_family(),
+        "power_iter": bench_power_iter_family(),
+        "inverse_iter": bench_inverse_iter_family(),
+        "jacobi_eig": bench_jacobi_eig_family(),
+        "qr_eig": bench_qr_eig_family(),
+        "hessenberg_red": bench_hessenberg_red_family(),
+        "bidiag_svd": bench_bidiag_svd_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
