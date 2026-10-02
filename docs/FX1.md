@@ -22,6 +22,10 @@ is exposed four ways, all implemented over one code path:
 | CLI | `fx1 harness {list,run,complete,batch,verify,health}` | shell/CI |
 | Direct | `Harness().run(...)` / `get_backend(name)` | library composition |
 
+The full wire contract — routes, auth, idempotency, async jobs +
+signed webhooks, version negotiation, ops knobs — is
+[FX1_HARNESS_API.md](FX1_HARNESS_API.md).
+
 Completion routes beyond `POST /harness/complete`:
 `POST /harness/complete/batch` fans up to 64 conversations over one
 shared backend (per-item `ok`/`error_class` verdicts; a gate refusal
