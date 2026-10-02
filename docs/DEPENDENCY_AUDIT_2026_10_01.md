@@ -93,7 +93,7 @@ Additional validation issues:
 - Web unit tests lack `adaptive_mix_20asset_1d_20260922.json` and have an
   existing fixture-index mismatch for an untracked cost-calibration receipt.
 - Harness mypy reports one missing annotation for `pooled` at line 244 of
-  the existing untracked `src/quant_fund/cli/blueprint_cmds.py` (888 files checked).
+  the existing untracked `blueprint_cmds.py` (888 files checked).
 - `uv pip check` rejects the existing z3-solver wheel's platform metadata.
 - Native numeric parity passes, but the timed `hash_many` benchmark initially
   failed its speed floor under concurrent load. The committed PyO3 0.23.5

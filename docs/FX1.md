@@ -10,6 +10,42 @@ total / 104B active MoE, Kimi K3 License).
 verification layer. `src/fx1/harness.py` is the typed bridge; `fx1 harness list`
 shows the registered lab surfaces.
 
+## Consuming the harness
+
+The same contract — registry, backends, honesty gate, receipt verifier —
+is exposed four ways, all implemented over one code path:
+
+| Surface | Entry point | Use when |
+|---|---|---|
+| HTTP API | `fx1 harness serve` → `src/fx1/serve/api.py` | fx-1 (or any service) calls over the network |
+| Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
+| CLI | `fx1 harness {list,run,complete,verify,health}` | shell/CI |
+| Direct | `Harness().run(...)` / `get_backend(name)` | library composition |
+
+Backends (the model side of `complete`/eval lanes):
+
+- `hosted_k3` — the K3 endpoint (`MOONSHOT_API_KEY`), temperature 0.
+- `local_fx1` — weights-direct: attaches to a running engine
+  (`FX1_LOCAL_SERVE_URL`) or spawns one (`FX1_LOCAL_SERVE_CMD`, with
+  `$checkpoint_dir`/`$python` template vars); a card'd checkpoint dir
+  (`--checkpoint-dir` or `FX1_CHECKPOINT_DIR`) is required and
+  signature-gated before any spawn.
+- `byok` — bring-your-own-key to any OpenAI-compatible endpoint:
+  `FX1_BYOK_BASE_URL` + `FX1_BYOK_API_KEY` + `FX1_BYOK_MODEL` (kwargs
+  beat env). Construction fails closed on missing credentials; the URL
+  must be http(s) with a netloc.
+
+Every surface returns structured errors mirroring HTTP status classes
+(`404` unknown command/backend, `422` contract violation, `503`
+unconfigured backend, `502` honesty-gate refusal), and `complete` always
+closes the backend — spawned engines never leak. The honesty gate runs
+before output bytes reach the caller; cited receipts are appended to
+completions as a provenance footer.
+
+`fx1 harness serve` binds loopback-only unless `FX1_API_KEY` is set, in
+which case every route requires `X-API-Key` (constant-time compare);
+`/health` leaks presence booleans only — never env values.
+
 ## What the plumbing enforces
 
 The table is the corpus and eval contract. It is a plan for a future training
