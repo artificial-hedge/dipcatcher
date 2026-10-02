@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import typer
 
@@ -48,6 +48,69 @@ app.add_typer(corpus_app, name="corpus")
 app.add_typer(train_app, name="train")
 app.add_typer(harness_app, name="harness")
 app.add_typer(sources_app, name="sources")
+
+
+@harness_app.command("operations")
+def harness_operations(
+    query: str = typer.Argument("", help="Substring filter over operation ids."),
+    kind: str | None = typer.Option(
+        None, help="Restrict to one kind: feature, skill, or plugin."
+    ),
+    offset: int = typer.Option(0, help="Zero-based page offset."),
+    limit: int = typer.Option(20, help="Page size (1-100)."),
+) -> None:
+    """List registered dipcatcher capabilities through the explicit registry."""
+    from fx1.operations.base import OperationKind
+    from fx1.operations.registry import list_operations
+
+    kind_arg = cast(OperationKind, kind) if kind is not None else None
+    typer.echo(
+        json.dumps(
+            list_operations(query, kind=kind_arg, offset=offset, limit=limit),
+            indent=2,
+        )
+    )
+
+
+@harness_app.command("describe-operation")
+def harness_describe_operation(
+    operation_id: str = typer.Argument(
+        ..., help="Registered operation id, e.g. features.simple_returns."
+    ),
+) -> None:
+    """Print the exact input/output schema of one registered operation."""
+    from fx1.operations.registry import get_operation
+
+    typer.echo(json.dumps(get_operation(operation_id).describe(), indent=2))
+
+
+@harness_app.command("execute-operation")
+def harness_execute_operation(
+    operation_id: str = typer.Argument(..., help="Registered operation id."),
+    arguments: str | None = typer.Option(None, "--arguments", help="JSON object of inputs."),
+    arguments_file: Path | None = typer.Option(
+        None, "--arguments-file", help="Path to a JSON file of inputs."
+    ),
+    workspace_root: Path | None = typer.Option(
+        None, "--workspace-root", help="Workspace filesystem boundary."
+    ),
+) -> None:
+    """Execute one registered operation with validated, bounded inputs."""
+    if (arguments is None) == (arguments_file is None):
+        raise typer.BadParameter("Provide exactly one of --arguments or --arguments-file.")
+    if arguments is not None:
+        raw = arguments
+    else:
+        assert arguments_file is not None
+        raw = arguments_file.read_text(encoding="utf-8")
+    try:
+        payload = json.loads(raw)
+    except (json.JSONDecodeError, OSError) as exc:
+        raise typer.BadParameter(f"cannot read arguments: {exc}") from exc
+    from fx1.operations.registry import execute_operation
+
+    result = execute_operation(operation_id, payload, workspace_root=workspace_root)
+    typer.echo(json.dumps(result, indent=2))
 
 
 @corpus_app.command("build")
