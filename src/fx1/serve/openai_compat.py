@@ -53,6 +53,16 @@ __all__ = [
     "OpenAIModel",
     "OpenAIModelList",
     "OpenAIResponseRequest",
+    "OPENAI_BATCH_ENDPOINTS",
+    "OPENAI_BATCH_LINE_MAX",
+    "OPENAI_FILE_BYTES_MAX",
+    "OPENAI_FILE_PURPOSE_ACCEPT",
+    "OpenAIBatchRequest",
+    "batch_line_body",
+    "batch_line_shape",
+    "batch_object",
+    "batch_output_line",
+    "file_object",
     "is_openai_path",
     "openai_chunks",
     "openai_envelope",
@@ -1092,3 +1102,143 @@ def openai_response_events(
             ),
         },
     )
+
+
+# ---- /v1/files + /v1/batches ------------------------------------------------
+# The async-batch surface: ``POST /v1/files`` takes the request JSONL
+# (multipart, ``purpose="batch"``), ``POST /v1/batches`` runs it through the
+# gated pipeline as one tracked unit, and ``GET /v1/files/{id}/content``
+# returns the output JSONL. Same fail-closed rule as the rest of /v1 —
+# shapes the pipeline can't honor refuse at submit; per-line request errors
+# land in the output file with their OpenAI error body, never silently.
+
+OPENAI_BATCH_ENDPOINTS = frozenset({"/v1/chat/completions", "/v1/responses"})
+"""Endpoints a batch may target — one per batch, declared up front."""
+
+OPENAI_BATCH_LINE_MAX = 1024
+"""Max request lines per batch file."""
+
+OPENAI_FILE_BYTES_MAX = 8 << 20
+"""Max upload size (8 MiB)."""
+
+OPENAI_FILE_PURPOSE_ACCEPT = "batch"
+"""The only upload purpose the harness serves — batch input JSONL."""
+
+
+class OpenAIBatchRequest(_Model):
+    """``POST /v1/batches`` body."""
+
+    model_config = ConfigDict(extra="allow")
+    input_file_id: str = Field(min_length=1, max_length=64)
+    endpoint: Literal["/v1/chat/completions", "/v1/responses"]
+    # only "24h" exists on the real surface; anything else refuses (422)
+    completion_window: Literal["24h"] = "24h"
+    metadata: dict[str, str] | None = None
+
+    @field_validator("metadata")
+    @classmethod
+    def _meta_bounds(cls, v: dict[str, str] | None) -> dict[str, str] | None:
+        if v is not None and len(v) > 16:
+            raise ValueError("metadata must have <= 16 keys")
+        return v
+
+
+def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]:
+    """Validate one input-file line into ``{custom_id, body}``.
+
+    Line-shape errors are submit-time failures (400) — a batch whose input
+    can't be trusted never starts, rather than half-running a corrupt file.
+    Per-line *request* errors (a valid line whose body fails the endpoint's
+    own validation) run through the pipeline and land in the output file.
+    """
+    where = f"line {lineno}"
+    if not isinstance(line, dict):
+        raise OpenAICompatError(f"{where}: must be a JSON object")
+    custom_id = line.get("custom_id")
+    if not isinstance(custom_id, str) or not custom_id.strip() or len(custom_id) > 64:
+        raise OpenAICompatError(f"{where}: custom_id must be a non-empty string <= 64 chars")
+    if line.get("method") != "POST":
+        raise OpenAICompatError(f"{where}: method must be 'POST', got {line.get('method')!r}")
+    url = line.get("url")
+    if url != endpoint:
+        raise OpenAICompatError(
+            f"{where}: url {url!r} does not match the batch endpoint {endpoint!r}"
+        )
+    body = line.get("body")
+    if not isinstance(body, dict):
+        raise OpenAICompatError(f"{where}: body must be a JSON object")
+    return {"custom_id": custom_id, "body": body}
+
+
+def batch_line_body(
+    line: dict[str, Any], endpoint: str
+) -> OpenAIChatRequest | OpenAIResponseRequest:
+    """Parse a line's ``body`` into the endpoint's request model — the same
+    validation object the wire route uses, so a batch line can never carry
+    a request the live route would refuse differently."""
+    try:
+        if endpoint == "/v1/responses":
+            return OpenAIResponseRequest.model_validate(line["body"])
+        return OpenAIChatRequest.model_validate(line["body"])
+    except ValueError as exc:
+        raise OpenAICompatError(f"invalid request body: {exc}") from exc
+
+
+def file_object(rec: Mapping[str, Any]) -> dict[str, Any]:
+    """The OpenAI ``file`` envelope for a stored record."""
+    return {
+        "id": rec["file_id"],
+        "object": "file",
+        "purpose": rec["purpose"],
+        "filename": rec["filename"],
+        "bytes": rec["size"],
+        "created_at": rec["created_at"],
+        "status": "processed",
+    }
+
+
+def batch_object(rec: Mapping[str, Any]) -> dict[str, Any]:
+    """The OpenAI ``batch`` envelope for a stored record."""
+    return {
+        "id": rec["batch_id"],
+        "object": "batch",
+        "endpoint": rec["endpoint"],
+        "errors": rec.get("errors"),
+        "input_file_id": rec["input_file_id"],
+        "completion_window": rec["completion_window"],
+        "status": rec["status"],
+        "output_file_id": rec.get("output_file_id"),
+        "error_file_id": rec.get("error_file_id"),
+        "created_at": rec["created_at"],
+        "in_progress_at": rec.get("in_progress_at"),
+        "expires_at": rec.get("expires_at"),
+        "finalizing_at": rec.get("finalizing_at"),
+        "completed_at": rec.get("completed_at"),
+        "failed_at": rec.get("failed_at"),
+        "expired_at": rec.get("expired_at"),
+        "cancelling_at": rec.get("cancelling_at"),
+        "cancelled_at": rec.get("cancelled_at"),
+        "request_counts": dict(rec["request_counts"]),
+        "metadata": rec.get("metadata"),
+    }
+
+
+def batch_output_line(
+    *,
+    custom_id: str,
+    status_code: int,
+    body: dict[str, Any],
+    rid: str,
+    error: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """One output-file line — the OpenAI batch result shape."""
+    return {
+        "id": f"batch_req_{rid}",
+        "custom_id": custom_id,
+        "response": {
+            "status_code": status_code,
+            "request_id": f"req_{rid}",
+            "body": body,
+        },
+        "error": error,
+    }

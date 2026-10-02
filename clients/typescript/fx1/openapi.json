@@ -282,6 +282,29 @@
         "title": "BackendStatusEntry",
         "type": "object"
       },
+      "Body_openai_file_upload": {
+        "properties": {
+          "file": {
+            "anyOf": [
+              {
+                "contentMediaType": "application/octet-stream",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File"
+          },
+          "purpose": {
+            "default": "",
+            "title": "Purpose",
+            "type": "string"
+          }
+        },
+        "title": "Body_openai_file_upload",
+        "type": "object"
+      },
       "ByokOverride": {
         "additionalProperties": false,
         "description": "Per-request BYOK credentials \u2014 the caller's own OpenAI-compatible\nendpoint. ``api_key`` is used for the upstream call only; it is never\nlogged and never echoed into error text. The idempotency fingerprint\nis hashed, so the stored dedupe record carries no secret bytes.",
@@ -2347,6 +2370,52 @@
           "draining"
         ],
         "title": "MetricsResponse",
+        "type": "object"
+      },
+      "OpenAIBatchRequest": {
+        "additionalProperties": true,
+        "description": "``POST /v1/batches`` body.",
+        "properties": {
+          "completion_window": {
+            "const": "24h",
+            "default": "24h",
+            "title": "Completion Window",
+            "type": "string"
+          },
+          "endpoint": {
+            "enum": [
+              "/v1/chat/completions",
+              "/v1/responses"
+            ],
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "input_file_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Input File Id",
+            "type": "string"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "required": [
+          "input_file_id",
+          "endpoint"
+        ],
+        "title": "OpenAIBatchRequest",
         "type": "object"
       },
       "OpenAIChatChoice": {
@@ -6862,6 +6931,459 @@
         ]
       }
     },
+    "/v1/batches": {
+      "get": {
+        "description": "Newest-first batch listing; ``after`` pages by batch id.",
+        "operationId": "openai_batches_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Batches List",
+        "tags": [
+          "openai"
+        ]
+      },
+      "post": {
+        "description": "Submit a batch over an uploaded input file. One worker slot\nruns the whole batch through the gated route cores; ``expires_at``\nis +24h (the completion_window the surface declares).",
+        "operationId": "openai_batches_create",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAIBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Batches Create",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/batches/{batch_id}": {
+      "get": {
+        "operationId": "openai_batches_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Batches Get",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/batches/{batch_id}/cancel": {
+      "post": {
+        "description": "Cooperative cancel: the worker checks the flag between lines \u2014\nan in-flight line finishes, then the batch lands 'cancelled' with\nwhatever output lines exist written to output_file_id.",
+        "operationId": "openai_batches_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "title": "Batch Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Batches Cancel",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
     "/v1/chat/completions": {
       "post": {
         "description": "OpenAI-compatible chat completion over the gated pipeline.\n\nThe `X-Fx1-Completion-Id` header links the response to the\ncompletion-log record (GET /harness/completions/{id}) and its\nsealed receipt. `model` selects a backend when it names one\n(hosted_k3/local_fx1/byok); anything else is the default link.\nBYOK binds via `X-Fx1-Byok-{Base-Url,Api-Key,Model}` headers or the\n`fx1` extension object; `X-Fx1-Backend`/`X-Fx1-Fallbacks`/\n`X-Fx1-Checkpoint-Dir` select the chain without body extensions.\n`Idempotency-Key` makes the call retry-safe: a retry with the\nsame key and body replays the stored response byte-identically\n(JSON or SSE) instead of re-spending the model \u2014 flagged via\n`X-Fx1-Idempotent-Replay`; a key reused with a different body\nfails closed 409.\n\nStreams are resumable: every SSE frame carries `id: <index>`\nand a client that records `Last-Event-ID` can replay the keyed\ncall with that header \u2014 the stored response regenerates\nbyte-identically and frames at or below the delivered index are\ndropped. Resume fails closed: it needs the original\n`Idempotency-Key` (an unpinned stream has nothing to resume)\nand a stored record for that key (otherwise 409 \u2014 executing\nfresh and skipping would graft a different completion onto the\nclient's earlier frames).",
@@ -6997,6 +7519,470 @@
           }
         },
         "summary": "Openai Chat Completions",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/files": {
+      "get": {
+        "description": "Newest-first file listing.",
+        "operationId": "openai_file_list",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai File List",
+        "tags": [
+          "openai"
+        ]
+      },
+      "post": {
+        "description": "Upload a batch-input JSONL (multipart/form-data). Purpose is\nfail-closed \u2014 only ``batch`` is served; the file is validated into\nthe store as-is (shape checks happen at batch submit).",
+        "operationId": "openai_file_upload",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_openai_file_upload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai File Upload",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/files/{file_id}": {
+      "delete": {
+        "operationId": "openai_file_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai File Delete",
+        "tags": [
+          "openai"
+        ]
+      },
+      "get": {
+        "operationId": "openai_file_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai File Get",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/files/{file_id}/content": {
+      "get": {
+        "description": "Raw bytes \u2014 JSONL in, JSONL out (batch results land here too).",
+        "operationId": "openai_file_content",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "file_id",
+            "required": true,
+            "schema": {
+              "title": "File Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai File Content",
         "tags": [
           "openai"
         ]

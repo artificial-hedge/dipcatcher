@@ -481,6 +481,73 @@
         ]
       }
     },
+    "/v1/batches": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/batches/{batch_id}": {
+      "get": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/batches/{batch_id}/cancel": {
+      "post": {
+        "params": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/chat/completions": {
       "post": {
         "params": [
@@ -496,6 +563,69 @@
           }
         ],
         "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files": {
+      "get": {
+        "params": [],
+        "request_body_required": null,
+        "responses": [
+          "200"
+        ]
+      },
+      "post": {
+        "params": [],
+        "request_body_required": false,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files/{file_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/files/{file_id}/content": {
+      "get": {
+        "params": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
         "responses": [
           "200",
           "422"
@@ -549,5 +679,5 @@
       }
     }
   },
-  "schema_sha256": "be940d9799d9d976d3db14b2337855196d0ff2ff39f853d67a5fc67700671ff3"
+  "schema_sha256": "8b48c2ce44d329f75f4763d76878936a933496c3ffa69224a8a46397f5234cf0"
 }

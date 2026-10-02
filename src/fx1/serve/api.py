@@ -48,7 +48,7 @@ import urllib.parse
 import urllib.request
 import uuid
 from collections import OrderedDict
-from collections.abc import AsyncIterator, Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import (
     AbstractAsyncContextManager,
@@ -58,7 +58,18 @@ from contextlib import (
 from pathlib import Path
 from typing import Any, Literal, cast
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
@@ -101,14 +112,21 @@ from fx1.serve.evals import (
     suite_accepts_judge,
 )
 from fx1.serve.openai_compat import (
+    OPENAI_FILE_PURPOSE_ACCEPT,
     OPENAI_MODEL_IDS,
     ByokOverride,
+    OpenAIBatchRequest,
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
     OpenAIModel,
     OpenAIModelList,
     OpenAIResponseRequest,
+    batch_line_body,
+    batch_line_shape,
+    batch_object,
+    batch_output_line,
+    file_object,
     is_openai_path,
     openai_chunks,
     openai_envelope,
@@ -147,6 +165,10 @@ _BREAKER_THRESHOLD_ENV = "FX1_API_BREAKER_THRESHOLD"
 _BREAKER_COOLDOWN_ENV = "FX1_API_BREAKER_COOLDOWN_S"
 _RECEIPTS_DIR_ENV = "FX1_API_RECEIPTS_DIR"
 _BYOK_OVERRIDE_ENV = "FX1_API_BYOK_OVERRIDE"
+_FILE_MAX_ENV = "FX1_API_FILE_MAX"
+_FILE_BYTES_ENV = "FX1_API_FILE_BYTES"
+_BATCH_MAX_ENV = "FX1_API_BATCH_MAX"
+_BATCH_LINES_ENV = "FX1_API_BATCH_LINES"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -1817,6 +1839,135 @@ class _JobStore:
                     self._keys.pop(old_key, None)
 
 
+class _FileRecord(_Model):
+    """A stored upload — content stays in process memory (LRU-bounded,
+    like every store on this surface; nothing durable pretends otherwise)."""
+
+    file_id: str
+    filename: str
+    purpose: str
+    size: int
+    created_at: int
+    content: bytes
+
+
+class _FileStore:
+    """Bounded LRU store of uploaded files (the /v1/files surface).
+
+    Files are the batch input channel — one upload, then batches reference
+    it by id. Bounded by entry count AND per-file bytes so an upload flood
+    can't pin the process; eviction is silent LRU like the job store."""
+
+    def __init__(self, max_entries: int, max_bytes: int) -> None:
+        self._lock = threading.Lock()
+        self._max = max_entries
+        self._max_bytes = max_bytes
+        self._files: OrderedDict[str, _FileRecord] = OrderedDict()
+
+    def put(self, *, filename: str, purpose: str, content: bytes) -> _FileRecord:
+        rec = _FileRecord(
+            file_id=f"file-{uuid.uuid4().hex}",
+            filename=filename,
+            purpose=purpose,
+            size=len(content),
+            created_at=int(time.time()),
+            content=content,
+        )
+        with self._lock:
+            self._files[rec.file_id] = rec
+            self._files.move_to_end(rec.file_id)
+            while len(self._files) > self._max:
+                self._files.popitem(last=False)
+        return rec
+
+    def get(self, file_id: str) -> _FileRecord | None:
+        with self._lock:
+            rec = self._files.get(file_id)
+            if rec is not None:
+                self._files.move_to_end(file_id)
+            return rec
+
+    def list(self) -> builtins.list[_FileRecord]:
+        """Newest-first snapshot."""
+        with self._lock:
+            out = list(self._files.values())
+        out.reverse()
+        return out
+
+    def delete(self, file_id: str) -> _FileRecord | None:
+        with self._lock:
+            return self._files.pop(file_id, None)
+
+    @property
+    def max_bytes(self) -> int:
+        return self._max_bytes
+
+
+class _BatchCounts(_Model):
+    """OpenAI ``request_counts`` shape."""
+
+    total: int = 0
+    completed: int = 0
+    failed: int = 0
+
+
+class _BatchRecord(_Model):
+    """A running/finished batch — the fields ``batch_object`` projects."""
+
+    batch_id: str
+    input_file_id: str
+    endpoint: str
+    completion_window: str
+    status: str  # validating | in_progress | finalizing | completed | failed | expired | cancelling | cancelled
+    created_at: int
+    expires_at: int
+    metadata: dict[str, str] | None = None
+    output_file_id: str | None = None
+    error_file_id: str | None = None
+    errors: dict[str, Any] | None = None
+    in_progress_at: int | None = None
+    finalizing_at: int | None = None
+    completed_at: int | None = None
+    failed_at: int | None = None
+    expired_at: int | None = None
+    cancelling_at: int | None = None
+    cancelled_at: int | None = None
+    request_counts: _BatchCounts = Field(default_factory=_BatchCounts)
+    _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
+    _lines: builtins.list[dict[str, Any]] = PrivateAttr(default_factory=builtins.list)
+    _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+
+
+class _BatchStore:
+    """Bounded LRU store of batches (newest-first listing)."""
+
+    def __init__(self, max_entries: int) -> None:
+        self._lock = threading.Lock()
+        self._max = max_entries
+        self._batches: OrderedDict[str, _BatchRecord] = OrderedDict()
+
+    def put(self, batch: _BatchRecord) -> None:
+        with self._lock:
+            self._batches[batch.batch_id] = batch
+            self._batches.move_to_end(batch.batch_id)
+            while len(self._batches) > self._max:
+                self._batches.popitem(last=False)
+
+    def get(self, batch_id: str) -> _BatchRecord | None:
+        with self._lock:
+            return self._batches.get(batch_id)
+
+    def list(self) -> builtins.list[_BatchRecord]:
+        """Newest-first snapshot."""
+        with self._lock:
+            out = list(self._batches.values())
+        out.reverse()
+        return out
+
+
+_BATCH_TERMINAL = frozenset({"completed", "failed", "expired", "cancelled"})
+
+
 def _backend_configured() -> dict[str, bool]:
     """Presence-of-credentials flags only — values never leave the process."""
     checkpoint_env = os.environ.get("FX1_CHECKPOINT_DIR", "")
@@ -2098,6 +2249,10 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     eval_store: EvalStore,
     inflight: threading.BoundedSemaphore,
     jobs_executor: ThreadPoolExecutor,
+    file_store: _FileStore,
+    batch_store: _BatchStore,
+    batch_line_max: int,
+    file_bytes_max: int,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) + eval submissions —
     extracted from ``create_app`` to keep its branch complexity under the
@@ -2779,6 +2934,70 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
     _openai_created = int(time.time())
 
+    def _openai_chat_core(
+        body: OpenAIChatRequest,
+        headers: Mapping[str, str],
+    ) -> tuple[dict[str, Any], str]:
+        """The non-streaming chat-completions completion core, shared by
+        the ``/v1/chat/completions`` route and the ``/v1/batches`` worker —
+        one gated path, one envelope. Raises ``OpenAICompatError`` on
+        translation or post-validation failures (callers map it to the
+        wire shape)."""
+        creq = CompleteRequest(**openai_to_kwargs(body, headers))
+        # n>1 fans out into n gated calls — each completion gets its own
+        # honesty-gate pass, format check, and completion-log record; usage
+        # sums what was actually spent (n calls × provider-reported counts).
+        outs = [
+            complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
+            for _ in range(body.n)
+        ]
+        contents: list[str] = []
+        usage_sum: dict[str, int] = {}
+        usage_seen = False
+        for out in outs:
+            # response_format post-validation: the provider can't be
+            # constrain-decoded, so a format violation is its failure (502),
+            # never shipped, never pinned into the idempotency record.
+            validate_openai_output(body, out.content)
+            contents.append(out.content)
+            if isinstance(out.usage, dict):
+                usage_seen = True
+                for uk, uv in out.usage.items():
+                    if isinstance(uv, int):
+                        usage_sum[uk] = usage_sum.get(uk, 0) + uv
+        cid = outs[0].completion_id or uuid.uuid4().hex
+        served_by = dict.fromkeys(o.backend for o in outs)
+        envelope = openai_envelope(
+            cid=cid,
+            content=contents if body.n > 1 else contents[0],
+            backend="+".join(served_by),
+            model=outs[0].model,
+            usage=usage_sum if usage_seen else None,
+        )
+        return envelope, cid
+
+    def _openai_response_core(
+        body: OpenAIResponseRequest,
+        headers: Mapping[str, str],
+    ) -> tuple[dict[str, Any], str, dict[str, int] | None]:
+        """The non-streaming ``/v1/responses`` completion core — shared by
+        the route and the ``/v1/batches`` worker. Returns the envelope
+        plus the completion-log id and raw usage (the caller decides what
+        rides the idempotency record)."""
+        creq = CompleteRequest(**response_to_kwargs(body, headers))
+        out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
+        validate_response_format(response_text_format(body), out.content)
+        cid = out.completion_id or uuid.uuid4().hex
+        envelope = openai_response_object(
+            rid=f"resp_{uuid.uuid4().hex}",
+            item_id=f"msg_{uuid.uuid4().hex}",
+            content=out.content,
+            body=body,
+            model=out.model,
+            usage=out.usage,
+        )
+        return envelope, cid, out.usage
+
     @app.get(
         "/v1/models",
         response_model=OpenAIModelList,
@@ -2905,59 +3124,26 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
             return JSONResponse(env, headers=headers)
         try:
-            creq = CompleteRequest(**openai_to_kwargs(body, request.headers))
+            env_chat, cid = _openai_chat_core(body, request.headers)
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        # n>1 fans out into n gated calls — each completion gets its own
-        # honesty-gate pass, format check, and completion-log record; usage
-        # sums what was actually spent (n calls × provider-reported counts).
-        outs = [
-            complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
-            for _ in range(body.n)
-        ]
-        contents: list[str] = []
-        usage_sum: dict[str, int] = {}
-        usage_seen = False
-        for out in outs:
-            # response_format post-validation: the provider can't be
-            # constrain-decoded, so a format violation is its failure (502),
-            # never shipped, never pinned into the idempotency record.
-            try:
-                validate_openai_output(body, out.content)
-            except OpenAICompatError as exc:
-                raise ApiError(exc.status, str(exc), code=exc.code) from exc
-            contents.append(out.content)
-            if isinstance(out.usage, dict):
-                usage_seen = True
-                for uk, uv in out.usage.items():
-                    if isinstance(uv, int):
-                        usage_sum[uk] = usage_sum.get(uk, 0) + uv
-        cid = outs[0].completion_id or uuid.uuid4().hex
-        served_by = dict.fromkeys(o.backend for o in outs)
-        envelope = openai_envelope(
-            cid=cid,
-            content=contents if body.n > 1 else contents[0],
-            backend="+".join(served_by),
-            model=outs[0].model,
-            usage=usage_sum if usage_seen else None,
-        )
         if key is not None:
-            openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=envelope))
+            openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
         if body.stream:
             headers = {"X-Fx1-Completion-Id": cid}
             return StreamingResponse(
                 _openai_sse(
                     body,
-                    content=contents,
-                    backend="+".join(served_by),
-                    model=outs[0].model,
-                    usage=usage_sum if usage_seen else None,
+                    content=[c["message"]["content"] for c in env_chat["choices"]],
+                    backend=env_chat["system_fingerprint"],
+                    model=env_chat["model"],
+                    usage=env_chat["usage"],
                     cid=cid,
                 ),
                 media_type="text/event-stream",
                 headers=headers,
             )
-        return JSONResponse(envelope, headers={"X-Fx1-Completion-Id": cid})
+        return JSONResponse(env_chat, headers={"X-Fx1-Completion-Id": cid})
 
     @app.post(
         "/v1/responses",
@@ -3056,25 +3242,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             }
             return JSONResponse(out_env, headers=headers)
         try:
-            creq = CompleteRequest(**response_to_kwargs(body, request.headers))
+            envelope, cid, usage = _openai_response_core(body, request.headers)
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
-        try:
-            validate_response_format(response_text_format(body), out.content)
-        except OpenAICompatError as exc:
-            raise ApiError(exc.status, str(exc), code=exc.code) from exc
-        cid = out.completion_id or uuid.uuid4().hex
-        rid = f"resp_{uuid.uuid4().hex}"
-        item_id = f"msg_{uuid.uuid4().hex}"
-        envelope = openai_response_object(
-            rid=rid,
-            item_id=item_id,
-            content=out.content,
-            body=body,
-            model=out.model,
-            usage=out.usage,
-        )
+        rid = str(envelope["id"])
+        item_id = str(envelope["output"][0]["id"])
         if key is not None:
             # the cid + raw usage ride the stored envelope so the replay can
             # re-link the completion-log record and regenerate byte-identical
@@ -3086,7 +3258,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     envelope={
                         **envelope,
                         "_fx1_completion_id": cid,
-                        "_fx1_usage": out.usage,
+                        "_fx1_usage": usage,
                     }
                 ),
             )
@@ -3095,17 +3267,369 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return StreamingResponse(
                 _responses_sse(
                     body,
-                    content=out.content,
+                    content=str(envelope["output"][0]["content"][0]["text"]),
                     rid=rid,
                     item_id=item_id,
-                    model=out.model,
-                    usage=out.usage,
-                    created=envelope["created_at"],
+                    model=envelope.get("model"),
+                    usage=usage,
+                    created=int(envelope["created_at"]),
                 ),
                 media_type="text/event-stream",
                 headers=headers,
             )
         return JSONResponse(envelope, headers=headers)
+
+    # --- /v1/files + /v1/batches ------------------------------------------
+    # The async-batch surface: files carry request JSONL (multipart upload,
+    # purpose="batch"), a batch runs its lines through the SAME gated route
+    # cores above (literal parity, not a second pipeline), and the output
+    # file holds one OpenAI batch-result line per input line — per-line
+    # request errors land as status_code-carrying output lines, never as a
+    # failed batch.
+
+    def _run_batch_line(line: dict[str, Any], batch: _BatchRecord) -> dict[str, Any]:
+        """One batch line through the endpoint's own validation + core —
+        the same verdicts the live route returns, packed into the output
+        line shape. Per-line faults never abort the batch."""
+        rid = uuid.uuid4().hex
+        custom_id = str(line["custom_id"])
+        try:
+            obj = batch_line_body(line, batch.endpoint)
+            if getattr(obj, "stream", False):
+                raise OpenAICompatError(
+                    "stream requests are not valid inside a batch",
+                    code="invalid_request",
+                )
+            if isinstance(obj, OpenAIChatRequest):
+                env, _cid = _openai_chat_core(obj, batch._headers)
+            else:
+                env, _cid, _usage = _openai_response_core(obj, batch._headers)
+            return batch_output_line(custom_id=custom_id, status_code=200, body=env, rid=rid)
+        except OpenAICompatError as exc:
+            return batch_output_line(
+                custom_id=custom_id,
+                status_code=exc.status,
+                body=openai_error_body(str(exc), exc.status, exc.code),
+                rid=rid,
+            )
+        except ApiError as exc:
+            return batch_output_line(
+                custom_id=custom_id,
+                status_code=exc.status_code,
+                body=openai_error_body(str(exc.detail), exc.status_code, _err_code(exc)),
+                rid=rid,
+            )
+        except Exception as exc:  # noqa: BLE001 — a line fault is data, not a crash
+            return batch_output_line(
+                custom_id=custom_id,
+                status_code=500,
+                body=openai_error_body(f"{type(exc).__name__}: {exc}", 500, "server_error"),
+                rid=rid,
+            )
+
+    def _exec_batch(batch: _BatchRecord) -> None:
+        """Worker: validate → in_progress → per-line through the gated cores
+        → finalizing → write the output file → terminal status. Holds ONE
+        inflight slot for the whole batch (the jobs-channel contract)."""
+        try:
+            batch.status = "in_progress"
+            batch.in_progress_at = int(time.time())
+            out_lines: builtins.list[str] = []
+            counts = batch.request_counts
+            cancelled = False
+            for line in batch._lines:
+                if batch._cancel.is_set():
+                    cancelled = True
+                    break
+                out = _run_batch_line(line, batch)
+                if out["response"]["status_code"] == 200:
+                    counts.completed += 1
+                else:
+                    counts.failed += 1
+                out_lines.append(json.dumps(out, sort_keys=True, separators=(",", ":")))
+            batch.status = "finalizing"
+            batch.finalizing_at = int(time.time())
+            if out_lines:
+                rec = file_store.put(
+                    filename=f"{batch.batch_id}_output.jsonl",
+                    purpose="batch_output",
+                    content=("\n".join(out_lines) + "\n").encode(),
+                )
+                batch.output_file_id = rec.file_id
+            if cancelled:
+                batch.status = "cancelled"
+                batch.cancelled_at = int(time.time())
+            else:
+                batch.status = "completed"
+                batch.completed_at = int(time.time())
+        except Exception as exc:  # noqa: BLE001 — worker fault fails the batch, not the process
+            batch.status = "failed"
+            batch.failed_at = int(time.time())
+            batch.errors = {
+                "object": "list",
+                "data": [{"code": "internal_error", "message": f"{type(exc).__name__}: {exc}"}],
+            }
+            try:
+                err_rec = file_store.put(
+                    filename=f"{batch.batch_id}_errors.jsonl",
+                    purpose="batch_output",
+                    content=(json.dumps(out_lines) + "\n").encode() if out_lines else b"\n",
+                )
+                batch.error_file_id = err_rec.file_id
+            except Exception:  # noqa: BLE001,S110 — error-file write must never mask the failure
+                pass
+        finally:
+            metrics.release()
+            inflight.release()
+
+    def _batch_project(batch: _BatchRecord) -> dict[str, Any]:
+        """Expiry check + envelope projection."""
+        if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
+            batch.status = "expired"
+            batch.expired_at = int(time.time())
+        return batch_object(batch.model_dump())
+
+    @app.post(
+        "/v1/files",
+        tags=["openai"],
+        operation_id="openai_file_upload",
+    )
+    async def openai_file_upload(
+        file: UploadFile | None = File(default=None),
+        purpose: str = Form(default=""),
+    ) -> JSONResponse:
+        """Upload a batch-input JSONL (multipart/form-data). Purpose is
+        fail-closed — only ``batch`` is served; the file is validated into
+        the store as-is (shape checks happen at batch submit)."""
+        if file is None:
+            raise ApiError(400, "multipart field 'file' is required", code="invalid_request")
+        if purpose != OPENAI_FILE_PURPOSE_ACCEPT:
+            raise ApiError(
+                400,
+                f"unsupported purpose {purpose!r} — only {OPENAI_FILE_PURPOSE_ACCEPT!r} is served",
+                code="invalid_request",
+            )
+        data = await file.read()
+        if not data:
+            raise ApiError(400, "file is empty", code="invalid_request")
+        if len(data) > file_bytes_max:
+            raise ApiError(
+                413,
+                f"file exceeds the {file_bytes_max}-byte cap",
+                code="file_too_large",
+            )
+        filename = file.filename or "upload.jsonl"
+        if not filename.endswith(".jsonl"):
+            raise ApiError(
+                400,
+                f"batch input must be a .jsonl file, got {filename!r}",
+                code="invalid_request",
+            )
+        rec = file_store.put(filename=filename, purpose="batch", content=data)
+        return JSONResponse(file_object(rec.model_dump()))
+
+    @app.get(
+        "/v1/files",
+        tags=["openai"],
+        operation_id="openai_file_list",
+    )
+    def openai_file_list() -> JSONResponse:
+        """Newest-first file listing."""
+        return JSONResponse(
+            {
+                "object": "list",
+                "data": [file_object(r.model_dump()) for r in file_store.list()],
+            }
+        )
+
+    @app.get(
+        "/v1/files/{file_id}",
+        tags=["openai"],
+        operation_id="openai_file_get",
+    )
+    def openai_file_get(file_id: str) -> JSONResponse:
+        rec = file_store.get(file_id)
+        if rec is None:
+            raise ApiError(404, f"file {file_id!r} not found", code="file_not_found")
+        return JSONResponse(file_object(rec.model_dump()))
+
+    @app.get(
+        "/v1/files/{file_id}/content",
+        tags=["openai"],
+        operation_id="openai_file_content",
+    )
+    def openai_file_content(file_id: str) -> Response:
+        """Raw bytes — JSONL in, JSONL out (batch results land here too)."""
+        rec = file_store.get(file_id)
+        if rec is None:
+            raise ApiError(404, f"file {file_id!r} not found", code="file_not_found")
+        return Response(
+            content=rec.content,
+            media_type="application/jsonl",
+            headers={"Cache-Control": "no-store"},
+        )
+
+    @app.delete(
+        "/v1/files/{file_id}",
+        tags=["openai"],
+        operation_id="openai_file_delete",
+    )
+    def openai_file_delete(file_id: str) -> JSONResponse:
+        rec = file_store.delete(file_id)
+        if rec is None:
+            raise ApiError(404, f"file {file_id!r} not found", code="file_not_found")
+        return JSONResponse({"id": file_id, "object": "file", "deleted": True})
+
+    @app.post(
+        "/v1/batches",
+        tags=["openai"],
+        operation_id="openai_batches_create",
+    )
+    def openai_batches_create(
+        body: OpenAIBatchRequest,
+        request: Request,
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    ) -> JSONResponse:
+        """Submit a batch over an uploaded input file. One worker slot
+        runs the whole batch through the gated route cores; ``expires_at``
+        is +24h (the completion_window the surface declares)."""
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
+        if replay is not None:
+            return JSONResponse(replay.envelope, headers={"X-Fx1-Idempotent-Replay": "true"})
+        frec = file_store.get(body.input_file_id)
+        if frec is None:
+            raise ApiError(404, f"file {body.input_file_id!r} not found", code="file_not_found")
+        if frec.purpose != "batch":
+            raise ApiError(
+                400,
+                f"file {body.input_file_id!r} purpose is {frec.purpose!r}, not 'batch'",
+                code="invalid_request",
+            )
+        try:
+            text = frec.content.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ApiError(400, "input file is not valid UTF-8", code="invalid_request") from exc
+        raw_lines = [ln for ln in text.splitlines() if ln.strip()]
+        if not raw_lines:
+            raise ApiError(400, "input file has no request lines", code="invalid_request")
+        if len(raw_lines) > batch_line_max:
+            raise ApiError(
+                400,
+                f"input file has {len(raw_lines)} lines > cap {batch_line_max}",
+                code="batch_input_limit",
+            )
+        parsed: builtins.list[dict[str, Any]] = []
+        for i, raw in enumerate(raw_lines, 1):
+            try:
+                parsed.append(batch_line_shape(json.loads(raw), endpoint=body.endpoint, lineno=i))
+            except json.JSONDecodeError as exc:
+                raise ApiError(
+                    400, f"line {i}: invalid JSON — {exc}", code="invalid_request"
+                ) from exc
+            except OpenAICompatError as exc:
+                raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        if metrics.draining.is_set():
+            raise ApiError(503, "harness is draining — no new work accepted", code="draining")
+        if not inflight.acquire(blocking=False):
+            raise ApiError(
+                503,
+                "harness at max_inflight — retry later",
+                code="over_capacity",
+                headers={"Retry-After": "1"},
+            )
+        metrics.acquire()
+        now = int(time.time())
+        batch = _BatchRecord(
+            batch_id=f"batch_{uuid.uuid4().hex}",
+            input_file_id=frec.file_id,
+            endpoint=body.endpoint,
+            completion_window=body.completion_window,
+            metadata=body.metadata,
+            status="validating",
+            created_at=now,
+            expires_at=now + 86400,
+            request_counts=_BatchCounts(total=len(parsed)),
+        )
+        batch._lines = parsed
+        # the caller's X-Fx1-* routing headers apply to every line — the
+        # batch inherits the submitter's backend choice, never ambient env.
+        batch._headers = {
+            k: v for k, v in request.headers.items() if k.lower().startswith("x-fx1-")
+        }
+        try:
+            jobs_executor.submit(_exec_batch, batch)
+        except RuntimeError as exc:
+            metrics.release()
+            inflight.release()
+            raise ApiError(503, "job executor unavailable", code="over_capacity") from exc
+        batch_store.put(batch)
+        env = _batch_project(batch)
+        if key is not None:
+            openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env))
+        return JSONResponse(env)
+
+    @app.get(
+        "/v1/batches",
+        tags=["openai"],
+        operation_id="openai_batches_list",
+    )
+    def openai_batches_list(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+    ) -> JSONResponse:
+        """Newest-first batch listing; ``after`` pages by batch id."""
+        items = batch_store.list()
+        if after is not None:
+            idx = next((i for i, b in enumerate(items) if b.batch_id == after), None)
+            if idx is not None:
+                items = items[idx + 1 :]
+        page = items[:limit]
+        return JSONResponse(
+            {
+                "object": "list",
+                "data": [_batch_project(b) for b in page],
+                "first_id": page[0].batch_id if page else None,
+                "last_id": page[-1].batch_id if page else None,
+                "has_more": len(items) > limit,
+            }
+        )
+
+    @app.get(
+        "/v1/batches/{batch_id}",
+        tags=["openai"],
+        operation_id="openai_batches_get",
+    )
+    def openai_batches_get(batch_id: str) -> JSONResponse:
+        batch = batch_store.get(batch_id)
+        if batch is None:
+            raise ApiError(404, f"batch {batch_id!r} not found", code="batch_not_found")
+        return JSONResponse(_batch_project(batch))
+
+    @app.post(
+        "/v1/batches/{batch_id}/cancel",
+        tags=["openai"],
+        operation_id="openai_batches_cancel",
+    )
+    def openai_batches_cancel(batch_id: str) -> JSONResponse:
+        """Cooperative cancel: the worker checks the flag between lines —
+        an in-flight line finishes, then the batch lands 'cancelled' with
+        whatever output lines exist written to output_file_id."""
+        batch = batch_store.get(batch_id)
+        if batch is None:
+            raise ApiError(404, f"batch {batch_id!r} not found", code="batch_not_found")
+        if batch.status in _BATCH_TERMINAL:
+            raise ApiError(
+                409,
+                f"batch {batch_id!r} is already {batch.status}",
+                code="batch_terminal",
+            )
+        if batch.status == "cancelling":
+            return JSONResponse(_batch_project(batch))
+        batch._cancel.set()
+        batch.status = "cancelling"
+        batch.cancelling_at = int(time.time())
+        return JSONResponse(_batch_project(batch))
 
     @app.post(
         "/harness/complete/batch",
@@ -3393,6 +3917,10 @@ def create_app(
     breaker_cooldown_s: float | None = None,
     receipts_dir: str | os.PathLike[str] | None = None,
     byok_override: bool | None = None,
+    file_max: int | None = None,
+    file_bytes_max: int | None = None,
+    batch_max: int | None = None,
+    batch_line_max: int | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -3443,8 +3971,14 @@ def create_app(
     complete_idem_store: _IdemStore[CompleteResponse] = _IdemStore(idem_max)
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse] = _IdemStore(idem_max)
     openai_idem_store: _IdemStore[_OpenAIIdemRecord] = _IdemStore(idem_max)
+    file_max = _env_int_bound(_FILE_MAX_ENV, 128, file_max)
+    file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
+    batch_max = _env_int_bound(_BATCH_MAX_ENV, 256, batch_max)
+    batch_line_max = _env_int_bound(_BATCH_LINES_ENV, 1024, batch_line_max)
     job_store = _JobStore(job_max)
     eval_store = EvalStore(job_max)
+    file_store = _FileStore(file_max, file_bytes_max)
+    batch_store = _BatchStore(batch_max)
     jobs_executor = ThreadPoolExecutor(max_workers=max_inflight, thread_name_prefix="fx1-job")
 
     @contextmanager
@@ -3508,6 +4042,8 @@ def create_app(
     app.state.idem_store = idem_store
     app.state.job_store = job_store
     app.state.eval_store = eval_store
+    app.state.file_store = file_store
+    app.state.batch_store = batch_store
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
@@ -3724,6 +4260,10 @@ def create_app(
                 "job_max": float(job_store._max),
                 "eval_max": float(eval_store.capacity),
                 "idem_max": float(idem_store._max),
+                "file_max": float(file_max),
+                "file_bytes_max": float(file_bytes_max),
+                "batch_max": float(batch_max),
+                "batch_line_max": float(batch_line_max),
                 "job_batch_max": float(_JOB_BATCH_MAX),
                 "verify_batch_max": float(_VERIFY_BATCH_MAX),
                 "complete_batch_max": 64.0,
@@ -3954,6 +4494,10 @@ def create_app(
         eval_store=eval_store,
         inflight=inflight,
         jobs_executor=jobs_executor,
+        file_store=file_store,
+        batch_store=batch_store,
+        batch_line_max=batch_line_max,
+        file_bytes_max=file_bytes_max,
     )
 
     _mount_receipt_routes(app, receipt_index)

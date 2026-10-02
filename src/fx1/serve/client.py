@@ -63,7 +63,7 @@ __all__ = [
 ]
 
 Transport = Callable[
-    [str, str, dict[str, Any] | None, dict[str, str], float],
+    [str, str, dict[str, Any] | bytes | None, dict[str, str], float],
     "tuple[int, Mapping[str, str], bytes]",
 ]
 
@@ -106,13 +106,17 @@ class HarnessCompatError(RuntimeError):
 def _urllib_transport(
     method: str,
     url: str,
-    payload: dict[str, Any] | None,
+    payload: dict[str, Any] | bytes | None,
     headers: dict[str, str],
     timeout_s: float,
 ) -> tuple[int, Mapping[str, str], bytes]:
     req_headers = {"Accept": "application/json", **headers}
     data = None
-    if payload is not None:
+    if isinstance(payload, bytes):
+        # raw upload bytes (multipart file posts) — Content-Type rides
+        # the caller's headers, never JSON-encoded.
+        data = payload
+    elif payload is not None:
         data = json.dumps(payload).encode()
         req_headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url, data=data, headers=req_headers, method=method)
@@ -195,7 +199,7 @@ class HarnessClient:
         self,
         method: str,
         path: str,
-        payload: dict[str, Any] | None = None,
+        payload: dict[str, Any] | bytes | None = None,
         *,
         idempotent: bool = False,
         extra_headers: dict[str, str] | None = None,
@@ -270,6 +274,16 @@ class HarnessClient:
                 detail = "; ".join(
                     d.get("msg", str(d)) for d in detail if isinstance(d, dict)
                 ) or str(detail)
+            openai_err = parsed.get("error")
+            if isinstance(openai_err, dict):
+                # /v1 routes shape errors as {error: {message, type, code}} —
+                # the machine code and the human message live there.
+                msg = openai_err.get("message")
+                if isinstance(msg, str):
+                    detail = msg
+                raw_code = openai_err.get("code")
+                if isinstance(raw_code, str):
+                    code = raw_code
         except (json.JSONDecodeError, AttributeError, UnicodeDecodeError):
             detail = body.decode(errors="replace")[:500]
         if status in (401, 403):
@@ -1356,6 +1370,129 @@ class HarnessClient:
         if fx1:
             payload["fx1"] = fx1
         return payload
+
+    # ---- files + batches -----------------------------------------------------
+
+    def upload_file(
+        self,
+        content: bytes,
+        *,
+        filename: str = "input.jsonl",
+        purpose: str = "batch",
+    ) -> dict[str, Any]:
+        """``POST /v1/files`` — multipart upload of a batch-input JSONL.
+
+        The multipart body is assembled here (stdlib only — no extra dep
+        on the client); the server accepts only ``purpose='batch'`` and
+        ``.jsonl`` names."""
+        boundary = f"fx1{uuid.uuid4().hex}"
+        head = (
+            f"--{boundary}\r\n"
+            'Content-Disposition: form-data; name="purpose"\r\n\r\n'
+            f"{purpose}\r\n"
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+            "Content-Type: application/jsonl\r\n\r\n"
+        ).encode()
+        body = head + content + f"\r\n--{boundary}--\r\n".encode()
+        _status, _headers, raw = self._request(
+            "POST",
+            "/v1/files",
+            body,
+            extra_headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        )
+        return dict(json.loads(raw))
+
+    def files(self) -> list[dict[str, Any]]:
+        """``GET /v1/files`` — newest-first listing."""
+        out = self._json("GET", "/v1/files", idempotent=True)
+        return list(out["data"])
+
+    def file(self, file_id: str) -> dict[str, Any]:
+        """``GET /v1/files/{id}`` — one file's card."""
+        return dict(self._json("GET", f"/v1/files/{file_id}", idempotent=True))
+
+    def file_content(self, file_id: str) -> bytes:
+        """``GET /v1/files/{id}/content`` — raw bytes (JSONL in, JSONL out)."""
+        _status, _headers, body = self._request(
+            "GET", f"/v1/files/{file_id}/content", idempotent=True
+        )
+        return body
+
+    def delete_file(self, file_id: str) -> dict[str, Any]:
+        """``DELETE /v1/files/{id}``."""
+        return dict(self._json("DELETE", f"/v1/files/{file_id}"))
+
+    def create_batch(
+        self,
+        input_file_id: str,
+        *,
+        endpoint: str = "/v1/chat/completions",
+        metadata: dict[str, str] | None = None,
+        idempotency_key: str | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/batches`` — submit an uploaded file as one batch.
+
+        The batch runs under the caller's X-Fx1-* headers (backend/Byok
+        routing applies to every line). ``Idempotency-Key`` replays the
+        submit envelope — the shared /v1 idempotency space."""
+        payload: dict[str, Any] = {
+            "input_file_id": input_file_id,
+            "endpoint": endpoint,
+            "completion_window": "24h",
+        }
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if idempotency_key is not None:
+            hdrs = {"Idempotency-Key": idempotency_key}
+            out = self._json("POST", "/v1/batches", payload, idempotent=True, extra_headers=hdrs)
+        else:
+            out = self._json("POST", "/v1/batches", payload)
+        return dict(out)
+
+    def batch(self, batch_id: str) -> dict[str, Any]:
+        """``GET /v1/batches/{id}`` — status + request counts."""
+        return dict(self._json("GET", f"/v1/batches/{batch_id}", idempotent=True))
+
+    def batches(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
+        """``GET /v1/batches`` — newest-first page (``after`` = last id of
+        the previous page)."""
+        path = f"/v1/batches?limit={limit}"
+        if after is not None:
+            path += f"&after={urllib.parse.quote(after)}"
+        return dict(self._json("GET", path, idempotent=True))
+
+    def cancel_batch(self, batch_id: str) -> dict[str, Any]:
+        """``POST /v1/batches/{id}/cancel`` — cooperative cancel; the
+        worker checks between lines and lands 'cancelled' with partial
+        output written."""
+        return dict(self._json("POST", f"/v1/batches/{batch_id}/cancel"))
+
+    def wait_batch(
+        self,
+        batch_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Poll ``batch`` until a terminal status; returns the batch object.
+
+        Raises ``HarnessJobError`` on failed/expired/cancelled and
+        ``HarnessTransportError`` on timeout — same contract as
+        ``wait_run``/``wait_eval``."""
+        deadline = None if timeout_s is None else self._clock() + timeout_s
+        while True:
+            b = self.batch(batch_id)
+            if b["status"] == "completed":
+                return b
+            if b["status"] in ("failed", "expired", "cancelled"):
+                raise HarnessJobError(f"batch {batch_id} {b['status']}")
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
+                raise HarnessTransportError(
+                    f"batch {batch_id} still {b['status']} after {timeout_s}s"
+                )
+            self._sleep(min(poll_s, remaining) if remaining is not None else poll_s)
 
     # ---- receipt store -------------------------------------------------------
 

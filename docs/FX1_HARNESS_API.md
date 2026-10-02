@@ -193,6 +193,13 @@ same digested shape the job record embeds.
 | `GET /v1/models/{id}` | `models.retrieve` — unknown id is `404 model_not_found` |
 | `POST /v1/chat/completions` | OpenAI-compatible gated completion (JSON or SSE `stream:true`) |
 | `POST /v1/responses` | OpenAI Responses surface — `input` string/items, `instructions`, `reasoning`, `text.format`; SSE `stream:true` emits the `response.*` event grammar |
+| `POST /v1/files` | multipart upload of a batch-input JSONL (`purpose=batch` only) |
+| `GET /v1/files` / `GET /v1/files/{id}` | list / retrieve uploaded + output files |
+| `GET /v1/files/{id}/content` | raw bytes — input JSONL in, batch result JSONL out |
+| `DELETE /v1/files/{id}` | evict a stored file |
+| `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions` or `/v1/responses`) — async over the jobs channel |
+| `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
+| `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |
@@ -373,6 +380,65 @@ Client-side: `HarnessClient.responses_create` /
 `openai_response_stream` in-process — same `(envelope|events, cid)`
 returns); `HarnessApiClient.responsesCreate` /
 `responsesCreateStream` in TS.
+
+### Batches + files (`/v1/batches`, `/v1/files`)
+
+The OpenAI async-batch surface over the same gated pipeline — upload
+a request JSONL once, submit it as one tracked batch, collect an
+output JSONL of per-line results.
+
+- **Files:** `POST /v1/files` takes `multipart/form-data` with a
+  `purpose` field (`"batch"` only — fail-closed) and a `.jsonl`
+  `file` part; the response is the OpenAI `file` object. Files live
+  in a bounded store (`FX1_API_FILE_MAX` entries, default 128;
+  `FX1_API_FILE_BYTES` per file, default 8 MiB — LRU eviction like
+  every store on this surface). `GET /v1/files` lists newest-first,
+  `GET /v1/files/{id}` retrieves the card, `GET
+  /v1/files/{id}/content` returns the raw bytes, `DELETE` evicts.
+- **Batches:** `POST /v1/batches` takes `{input_file_id, endpoint,
+  completion_window, metadata}` — `endpoint` is one of
+  `/v1/chat/completions` or `/v1/responses`, `completion_window` is
+  `"24h"` (the only declared window; `expires_at` is set +24h). Line
+  shape is validated at submit — a batch never starts on a corrupt
+  file: bad JSON, missing/oversized `custom_id`, non-`POST` method,
+  or a `url` that doesn't match `endpoint` is a submit-time 400 with
+  the line number. Per-line cap `FX1_API_BATCH_LINES` (default 1024).
+- **Execution:** the batch holds ONE inflight slot on the jobs
+  executor (`FX1_API_JOB_MAX` bounds the store, `FX1_API_BATCH_MAX`
+  the batch index). Each line runs through the endpoint's own
+  request model + the same extracted completion core the live route
+  uses — parity is literal, not a second pipeline. The submitter's
+  `X-Fx1-*` routing headers (`X-Fx1-Backend`, `X-Fx1-Byok-*`, …)
+  apply to every line — a BYOK batch stays on the caller's endpoint
+  and never reads ambient env. Status moves `validating` →
+  `in_progress` → `finalizing` → `completed`; `GET /v1/batches/{id}`
+  carries `request_counts.{total,completed,failed}` live.
+- **Output:** on terminal the output lines land in a new file
+  (`output_file_id`) — `GET /v1/files/{id}/content` returns one
+  OpenAI batch-result line per input: `{id, custom_id,
+  response:{status_code, request_id, body}, error}`. A line whose
+  request the live route would refuse lands as a `status_code`
+  line with the OpenAI error body — the batch itself still
+  completes; only a worker crash fails the batch (`errors.data`
+  carries the fault, `error_file_id` the partial output).
+  `stream: true` inside a line is a per-line 400 — batch results
+  are never streams.
+- **Cancel:** `POST /v1/batches/{id}/cancel` is cooperative — the
+  worker checks between lines, lands `cancelled`, and writes
+  whatever output lines exist. Terminal batches 409.
+- **Retry-safe:** `Idempotency-Key` shares the `/v1` dedup space —
+  a resubmitted create replays the submit envelope; a key reused
+  under a different body is 409.
+
+Client-side: `HarnessClient.upload_file` / `files` / `file` /
+`file_content` / `delete_file` / `create_batch` / `batch` /
+`batches` / `cancel_batch` / `wait_batch` in Python;
+`HarnessApiClient.uploadFile` / `files` / `file` / `fileContent` /
+`deleteFile` / `createBatch` / `batch` / `batches` / `cancelBatch`
+/ `waitBatch` in TS. In-process, `Fx1Harness.openai_batch(lines,
+endpoint=…)` runs the same lines through `openai_chat` /
+`openai_response` synchronously and returns `(batch,
+output_lines)` — no upload/poll machinery needed weights-direct.
 
 ## Auth & safety
 

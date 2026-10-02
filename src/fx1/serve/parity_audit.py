@@ -194,17 +194,20 @@ def _tc_transport(client: TestClient) -> Any:
     def send(
         method: str,
         url: str,
-        payload: dict[str, Any] | None,
+        payload: dict[str, Any] | bytes | None,
         headers: dict[str, str],
         timeout_s: float,
     ) -> tuple[int, Mapping[str, str], bytes]:
         p = urllib.parse.urlparse(url)
         path = p.path + (f"?{p.query}" if p.query else "")
-        resp = (
-            client.get(path, headers=headers)
-            if method == "GET"
-            else client.post(path, json=payload, headers=headers)
-        )
+        if method == "GET":
+            resp = client.get(path, headers=headers)
+        elif method == "DELETE":
+            resp = client.delete(path, headers=headers)
+        elif isinstance(payload, bytes):
+            resp = client.post(path, content=payload, headers=headers)
+        else:
+            resp = client.post(path, json=payload, headers=headers)
         return resp.status_code, dict(resp.headers), resp.content
 
     return send
@@ -2047,6 +2050,81 @@ def parity_audit() -> dict[str, bool]:
         and cb_seen[-1]["_url"].endswith("/harness/jobs/batch")
         and cb_seen[-1]["_payload"]["jobs"][0]["idempotency_key"] == "b1"
     )
+
+    # /v1/files + /v1/batches parity: the wire client uploads, submits,
+    # polls, and fetches the output file; the SDK's openai_batch runs the
+    # same lines through the same gated cores in-process — per-line
+    # verdicts must agree (ids/timestamps differ by construction).
+    sdk_b, client_b = _surfaces(_ParityBackend)
+    c_b = HarnessClient("http://parity.local", transport=_tc_transport(client_b))
+    batch_lines = [
+        {
+            "custom_id": "p1",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "messages": msg},
+        },
+        {
+            "custom_id": "p2",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "temperature": 9.0, "messages": msg},
+        },
+        {
+            "custom_id": "p3",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "messages": msg},
+        },
+    ]
+    up = c_b.upload_file(("\n".join(json.dumps(line) for line in batch_lines) + "\n").encode())
+    out["client_upload_file"] = (
+        up["object"] == "file" and up["purpose"] == "batch" and up["filename"] == "input.jsonl"
+    )
+    bc = c_b.create_batch(up["id"], endpoint="/v1/chat/completions")
+    bt = c_b.wait_batch(bc["id"], poll_s=0.01)
+    wire_out = [
+        json.loads(line)
+        for line in c_b.file_content(bt["output_file_id"]).decode().splitlines()
+        if line.strip()
+    ]
+    sdk_b_out, sdk_b_lines = sdk_b.openai_batch(batch_lines)
+    out["sdk_openai_batch_shape"] = (
+        sdk_b_out["object"] == "batch"
+        and sdk_b_out["status"] == "completed"
+        and sdk_b_out["request_counts"] == {"total": 3, "completed": 2, "failed": 1}
+        and len(sdk_b_lines) == 3
+    )
+    out["batch_wire_sdk_line_parity"] = (
+        bt["request_counts"] == sdk_b_out["request_counts"]
+        and [o["custom_id"] for o in wire_out] == [o["custom_id"] for o in sdk_b_lines]
+        and [o["response"]["status_code"] for o in wire_out]
+        == [o["response"]["status_code"] for o in sdk_b_lines]
+        and wire_out[0]["response"]["body"]["choices"][0]["message"]["content"]
+        == sdk_b_lines[0]["response"]["body"]["choices"][0]["message"]["content"]
+        and wire_out[1]["response"]["body"]["error"]["type"]
+        == sdk_b_lines[1]["response"]["body"]["error"]["type"]
+    )
+    out["client_batch_surface"] = (
+        c_b.batch(bt["id"])["status"] == "completed"
+        and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])
+        and c_b.batches(limit=5)["object"] == "list"
+        and c_b.file(up["id"])["id"] == up["id"]
+        and any(f["id"] == up["id"] for f in c_b.files())
+        and c_b.delete_file(up["id"])["deleted"] is True
+    )
+    out["client_batch_terminal_cancel_raises"] = False
+    try:
+        c_b.cancel_batch(bt["id"])
+    except HarnessTransportError as exc:
+        out["client_batch_terminal_cancel_raises"] = exc.code == "batch_terminal" and "409" in str(
+            exc
+        )
+    out["client_batch_bad_endpoint_422"] = False
+    try:
+        c_b.create_batch(up["id"], endpoint="/v1/completions")
+    except ValueError:
+        out["client_batch_bad_endpoint_422"] = True
     return out
 
 

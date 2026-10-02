@@ -52,6 +52,9 @@ dependencies = [
     # mode — the harness can't constrain-decode arbitrary backends, so the
     # gate validates the returned text against the declared schema.
     "jsonschema>=4.23",
+    # FastAPI multipart parsing for POST /v1/files (the OpenAI batch-input
+    # upload contract is multipart/form-data).
+    "python-multipart>=0.0.20",
     "exchange-calendars==4.13.2",
 ]
 

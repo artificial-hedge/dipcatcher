@@ -57,13 +57,19 @@ from fx1.serve.backends import (
 from fx1.serve.chat import cited_complete
 from fx1.serve.evals import EvalRecord, EvalStore
 from fx1.serve.openai_compat import (
+    OPENAI_BATCH_ENDPOINTS,
     OpenAIChatRequest,
     OpenAIChatResponse,
+    OpenAICompatError,
     OpenAIModel,
     OpenAIModelList,
     OpenAIResponseRequest,
+    batch_line_body,
+    batch_line_shape,
+    batch_output_line,
     openai_chunks,
     openai_envelope,
+    openai_error_body,
     openai_model,
     openai_models,
     openai_response_events,
@@ -1467,6 +1473,105 @@ class Fx1Harness:
         if last_event_id is not None:
             events = events[last_event_id + 1 :]
         return events, result.completion_id
+
+    def openai_batch(
+        self,
+        lines: list[dict[str, Any]],
+        *,
+        endpoint: str = "/v1/chat/completions",
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        """The ``/v1/batches`` surface, weights-direct — synchronous in
+        process (no upload/poll machinery: lines in, the batch object +
+        output lines out). Each line goes through the endpoint's own
+        request model and the same ``openai_chat``/``openai_response``
+        calls the wire batch worker makes — one pipeline, not a second
+        codepath. Per-line faults land as ``status_code``-carrying output
+        lines, never as a raised batch — same rule as the wire.
+
+        Returns ``(batch, output_lines)``: the batch envelope (status
+        ``completed`` — in-process has no queue to observe) and the
+        OpenAI batch-result lines the wire would write into the output
+        file.
+        """
+        if endpoint not in OPENAI_BATCH_ENDPOINTS:
+            raise OpenAICompatError(
+                f"endpoint must be one of {sorted(OPENAI_BATCH_ENDPOINTS)}, got {endpoint!r}"
+            )
+        parsed = [
+            batch_line_shape(dict(line), endpoint=endpoint, lineno=i)
+            for i, line in enumerate(lines, 1)
+        ]
+        out_lines: list[dict[str, Any]] = []
+        completed = failed = 0
+        hdrs = dict(headers or {})
+        for line in parsed:
+            rid = uuid.uuid4().hex
+            custom_id = str(line["custom_id"])
+            status = 200
+            try:
+                obj = batch_line_body(line, endpoint)
+                if getattr(obj, "stream", False):
+                    raise OpenAICompatError(
+                        "stream requests are not valid inside a batch",
+                        code="invalid_request",
+                    )
+                if isinstance(obj, OpenAIChatRequest):
+                    env, _cid = self.openai_chat(obj, headers=hdrs)
+                    body_out: dict[str, Any] = env.model_dump(mode="json")
+                else:
+                    env_r, _cid = self.openai_response(obj, headers=hdrs)
+                    body_out = env_r
+            except OpenAICompatError as exc:
+                status = exc.status
+                body_out = openai_error_body(str(exc), status, exc.code)
+            except BackendNotConfiguredError as exc:  # 503 on the wire
+                status = 503
+                body_out = openai_error_body(str(exc), status, "backend_unavailable")
+            except Fx1HonestyError as exc:  # gate refusal — 502 on the wire
+                status = 502
+                body_out = openai_error_body(str(exc), status, "gate_refused")
+            except ValueError as exc:  # remaining contract violations — 422
+                status = 422
+                body_out = openai_error_body(str(exc), status, "invalid_request")
+            except Exception as exc:  # noqa: BLE001 — a line fault is data, not a crash
+                status = 500
+                body_out = openai_error_body(f"{type(exc).__name__}: {exc}", status, "server_error")
+            if status == 200:
+                completed += 1
+            else:
+                failed += 1
+            out_lines.append(
+                batch_output_line(custom_id=custom_id, status_code=status, body=body_out, rid=rid)
+            )
+        now = int(time.time())
+        batch = {
+            "id": f"batch_{uuid.uuid4().hex}",
+            "object": "batch",
+            "endpoint": endpoint,
+            "errors": None,
+            "input_file_id": None,
+            "completion_window": "24h",
+            "status": "completed",
+            "output_file_id": None,
+            "error_file_id": None,
+            "created_at": now,
+            "in_progress_at": now,
+            "expires_at": now + 86400,
+            "finalizing_at": now,
+            "completed_at": now,
+            "failed_at": None,
+            "expired_at": None,
+            "cancelling_at": None,
+            "cancelled_at": None,
+            "request_counts": {
+                "total": len(parsed),
+                "completed": completed,
+                "failed": failed,
+            },
+            "metadata": None,
+        }
+        return batch, out_lines
 
     def _resolve_chain(
         self,

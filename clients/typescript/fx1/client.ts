@@ -60,7 +60,70 @@ export type OpenAIModelList = components["schemas"]["OpenAIModelList"];
 export type OpenAIModel = components["schemas"]["OpenAIModel"];
 export type OpenAIResponseRequest =
   components["schemas"]["OpenAIResponseRequest"];
+export type OpenAIBatchRequest = components["schemas"]["OpenAIBatchRequest"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
+
+/** The OpenAI `file` object as served by POST/GET /v1/files. */
+export interface OpenAIFileObject {
+  id: string;
+  object: "file";
+  purpose: string;
+  filename: string;
+  bytes: number;
+  created_at: number;
+  status: string;
+}
+
+/** GET /v1/files listing envelope. */
+export interface OpenAIFileList {
+  object: "list";
+  data: OpenAIFileObject[];
+}
+
+/** The OpenAI `batch` object as served by /v1/batches. */
+export interface OpenAIBatchObject {
+  id: string;
+  object: "batch";
+  endpoint: string;
+  errors: unknown;
+  input_file_id: string;
+  completion_window: string;
+  status: string;
+  output_file_id: string | null;
+  error_file_id: string | null;
+  created_at: number;
+  in_progress_at: number | null;
+  expires_at: number | null;
+  finalizing_at: number | null;
+  completed_at: number | null;
+  failed_at: number | null;
+  expired_at: number | null;
+  cancelling_at: number | null;
+  cancelled_at: number | null;
+  request_counts: { total: number; completed: number; failed: number };
+  metadata: Record<string, string> | null;
+}
+
+/** GET /v1/batches listing envelope. */
+export interface OpenAIBatchList {
+  object: "list";
+  data: OpenAIBatchObject[];
+  first_id: string | null;
+  last_id: string | null;
+  has_more: boolean;
+}
+
+/** One line of a batch output file. */
+export interface OpenAIBatchOutputLine {
+  id: string;
+  custom_id: string;
+  response: {
+    status_code: number;
+    request_id: string;
+    body: Record<string, unknown>;
+  };
+  error: unknown;
+}
 export type ReceiptIndexItem = components["schemas"]["ReceiptIndexItem"];
 export type ReceiptIndexResponse =
   components["schemas"]["ReceiptIndexResponse"];
@@ -313,6 +376,8 @@ export class HarnessApiClient {
     method: string;
     path: string;
     body?: unknown;
+    /** Raw fetch body (multipart uploads) — sent verbatim, never JSON'd. */
+    rawBody?: BodyInit;
     idempotent?: boolean;
     headers?: Record<string, string>;
   }): Promise<Response> {
@@ -330,9 +395,11 @@ export class HarnessApiClient {
           res = await this.fetchImpl(this.baseUrl + init.path, {
             method: init.method,
             headers: this.headers(init.headers),
-            ...(init.body !== undefined
-              ? { body: JSON.stringify(init.body) }
-              : {}),
+            ...(init.rawBody !== undefined
+              ? { body: init.rawBody }
+              : init.body !== undefined
+                ? { body: JSON.stringify(init.body) }
+                : {}),
           });
           this.stampVersion(res);
         } catch (exc) {
@@ -747,6 +814,190 @@ export class HarnessApiClient {
         "responses stream ended before response.completed",
       );
     return res.headers.get("X-Fx1-Completion-Id");
+  }
+
+  // ---- files + batches -----------------------------------------------------
+
+  /**
+   * POST /v1/files — upload a batch-input JSONL (multipart). `content` is
+   * the raw JSONL bytes; only `purpose: "batch"` and `.jsonl` filenames
+   * are served (fail-closed server-side).
+   */
+  async uploadFile(
+    content: string | Uint8Array | Blob,
+    filename = "input.jsonl",
+    purpose = "batch",
+  ): Promise<OpenAIFileObject> {
+    const form = new FormData();
+    form.append("purpose", purpose);
+    const blob =
+      typeof content === "string"
+        ? new Blob([content], { type: "application/jsonl" })
+        : content instanceof Uint8Array
+          ? new Blob([content as BlobPart], { type: "application/jsonl" })
+          : content;
+    form.append("file", blob, filename);
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/files",
+      rawBody: form,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIFileObject;
+  }
+
+  /** GET /v1/files — newest-first listing. */
+  async files(): Promise<OpenAIFileObject[]> {
+    const res = await this.send({
+      method: "GET",
+      path: "/v1/files",
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return ((await res.json()) as OpenAIFileList).data;
+  }
+
+  /** GET /v1/files/{id} — one file's card. */
+  async file(fileId: string): Promise<OpenAIFileObject> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/files/${encodeURIComponent(fileId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIFileObject;
+  }
+
+  /** GET /v1/files/{id}/content — the raw bytes (JSONL in, JSONL out). */
+  async fileContent(fileId: string): Promise<string> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/files/${encodeURIComponent(fileId)}/content`,
+      idempotent: true,
+    });
+    if (!res.ok) {
+      let detail: unknown = await res.text();
+      try {
+        detail = JSON.parse(detail as string);
+      } catch {
+        /* non-JSON body */
+      }
+      throw new HarnessApiError(res.status, detail);
+    }
+    return res.text();
+  }
+
+  /** DELETE /v1/files/{id}. */
+  async deleteFile(fileId: string): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/files/${encodeURIComponent(fileId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /**
+   * POST /v1/batches — run an uploaded file as one batch through the
+   * gated pipeline. `endpoint` is `/v1/chat/completions` or
+   * `/v1/responses`; the submitter's `X-Fx1-*` headers route every line.
+   * `idempotencyKey` replays the submit envelope (shared /v1 idem space).
+   */
+  async createBatch(
+    inputFileId: string,
+    endpoint: "/v1/chat/completions" | "/v1/responses",
+    metadata?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<OpenAIBatchObject> {
+    const body: Record<string, unknown> = {
+      input_file_id: inputFileId,
+      endpoint,
+      completion_window: "24h",
+      ...(metadata !== undefined ? { metadata } : {}),
+    };
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/batches",
+      body,
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchObject;
+  }
+
+  /** GET /v1/batches/{id} — status + request counts. */
+  async batch(batchId: string): Promise<OpenAIBatchObject> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/batches/${encodeURIComponent(batchId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchObject;
+  }
+
+  /** GET /v1/batches — newest-first page (`after` = last id seen). */
+  async batches(filter?: {
+    limit?: number;
+    after?: string;
+  }): Promise<OpenAIBatchList> {
+    const q = new URLSearchParams();
+    if (filter?.limit !== undefined) q.set("limit", String(filter.limit));
+    if (filter?.after) q.set("after", filter.after);
+    const qs = q.toString();
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/batches${qs ? `?${qs}` : ""}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchList;
+  }
+
+  /**
+   * POST /v1/batches/{id}/cancel — cooperative cancel; the worker checks
+   * between lines and lands 'cancelled' with partial output written.
+   */
+  async cancelBatch(batchId: string): Promise<OpenAIBatchObject> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/batches/${encodeURIComponent(batchId)}/cancel`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as OpenAIBatchObject;
+  }
+
+  /**
+   * Poll `batch` until a terminal status; resolves with the batch object
+   * on 'completed', throws `HarnessApiError` on failed/expired/cancelled,
+   * `HarnessTransportError` on timeout — the `waitRun` contract.
+   */
+  async waitBatch(
+    batchId: string,
+    pollMs = 500,
+    timeoutMs?: number,
+  ): Promise<OpenAIBatchObject> {
+    const deadline =
+      timeoutMs === undefined ? undefined : this.now() + timeoutMs;
+    for (;;) {
+      const b = await this.batch(batchId);
+      if (b.status === "completed") return b;
+      if (["failed", "expired", "cancelled"].includes(b.status))
+        throw new HarnessApiError(409, `batch ${batchId} ${b.status}`);
+      const remaining =
+        deadline === undefined ? pollMs : deadline - this.now();
+      if (remaining <= 0)
+        throw new HarnessTransportError(
+          `batch ${batchId} still ${b.status} after ${timeoutMs}ms`,
+        );
+      await this.sleep(Math.min(pollMs, remaining));
+    }
   }
 
   // ---- async jobs --------------------------------------------------------

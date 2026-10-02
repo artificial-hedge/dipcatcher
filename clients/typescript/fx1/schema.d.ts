@@ -651,6 +651,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai Batches List
+         * @description Newest-first batch listing; ``after`` pages by batch id.
+         */
+        get: operations["openai_batches_list"];
+        put?: never;
+        /**
+         * Openai Batches Create
+         * @description Submit a batch over an uploaded input file. One worker slot
+         *     runs the whole batch through the gated route cores; ``expires_at``
+         *     is +24h (the completion_window the surface declares).
+         */
+        post: operations["openai_batches_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/batches/{batch_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Openai Batches Get */
+        get: operations["openai_batches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/batches/{batch_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Batches Cancel
+         * @description Cooperative cancel: the worker checks the flag between lines —
+         *     an in-flight line finishes, then the batch lands 'cancelled' with
+         *     whatever output lines exist written to output_file_id.
+         */
+        post: operations["openai_batches_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/chat/completions": {
         parameters: {
             query?: never;
@@ -688,6 +753,70 @@ export interface paths {
          *     client's earlier frames).
          */
         post: operations["openai_chat_completions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai File List
+         * @description Newest-first file listing.
+         */
+        get: operations["openai_file_list"];
+        put?: never;
+        /**
+         * Openai File Upload
+         * @description Upload a batch-input JSONL (multipart/form-data). Purpose is
+         *     fail-closed — only ``batch`` is served; the file is validated into
+         *     the store as-is (shape checks happen at batch submit).
+         */
+        post: operations["openai_file_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/files/{file_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Openai File Get */
+        get: operations["openai_file_get"];
+        put?: never;
+        post?: never;
+        /** Openai File Delete */
+        delete: operations["openai_file_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/files/{file_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Openai File Content
+         * @description Raw bytes — JSONL in, JSONL out (batch results land here too).
+         */
+        get: operations["openai_file_content"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -918,6 +1047,16 @@ export interface components {
             /** Cooldown Remaining S */
             cooldown_remaining_s: number;
             last_probe?: components["schemas"]["BackendProbeVerdict"] | null;
+        };
+        /** Body_openai_file_upload */
+        Body_openai_file_upload: {
+            /** File */
+            file?: string | null;
+            /**
+             * Purpose
+             * @default
+             */
+            purpose: string;
         };
         /**
          * ByokOverride
@@ -1589,6 +1728,31 @@ export interface components {
             requests_total: number;
             /** Uptime S */
             uptime_s: number;
+        };
+        /**
+         * OpenAIBatchRequest
+         * @description ``POST /v1/batches`` body.
+         */
+        OpenAIBatchRequest: {
+            /**
+             * Completion Window
+             * @default 24h
+             * @constant
+             */
+            completion_window: "24h";
+            /**
+             * Endpoint
+             * @enum {string}
+             */
+            endpoint: "/v1/chat/completions" | "/v1/responses";
+            /** Input File Id */
+            input_file_id: string;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * OpenAIChatChoice
@@ -3560,6 +3724,215 @@ export interface operations {
             };
         };
     };
+    openai_batches_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_batches_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_batches_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_batches_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     openai_chat_completions: {
         parameters: {
             query?: never;
@@ -3593,6 +3966,242 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpenAIChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_file_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    openai_file_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_openai_file_upload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_file_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_file_content: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

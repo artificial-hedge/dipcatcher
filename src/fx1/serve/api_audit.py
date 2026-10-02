@@ -4743,6 +4743,438 @@ def _probe_backend_probes(
         r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
     )
 
+    # ---- /v1/files + /v1/batches: the OpenAI async channel over the jobs
+    # executor — store caps, submit-time line validation, per-line gated
+    # execution through the live route cores, output files, cooperative
+    # cancel, expiry projection, and the shared /v1 idempotency space.
+    fb = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend()))
+    _bf_lines = [
+        {
+            "custom_id": "a",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+        },
+        {
+            "custom_id": "b",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {"model": "fx1", "messages": [{"role": "user", "content": "y"}]},
+        },
+        {
+            "custom_id": "bad-temp",
+            "method": "POST",
+            "url": "/v1/chat/completions",
+            "body": {
+                "model": "fx1",
+                "temperature": 5.0,
+                "messages": [{"role": "user", "content": "z"}],
+            },
+        },
+    ]
+    _bf_bytes = ("\n".join(_json3.dumps(line) for line in _bf_lines) + "\n").encode()
+
+    def _upload(client: Any, content: bytes = _bf_bytes) -> dict[str, Any]:
+        r = client.post(
+            "/v1/files",
+            files={"file": ("in.jsonl", content, "application/jsonl")},
+            data={"purpose": "batch"},
+        )
+        return dict(r.json())
+
+    def _wait_batch(client: Any, batch_id: str) -> dict[str, Any]:
+        for _ in range(500):
+            b = client.get(f"/v1/batches/{batch_id}").json()
+            if b["status"] in ("completed", "failed", "expired", "cancelled"):
+                return dict(b)
+            time.sleep(0.01)
+        return dict(b)
+
+    up = fb.post(
+        "/v1/files",
+        files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
+        data={"purpose": "batch"},
+    )
+    fobj = up.json()
+    out["file_upload_200_shape"] = (
+        up.status_code == 200
+        and fobj["object"] == "file"
+        and fobj["purpose"] == "batch"
+        and fobj["filename"] == "in.jsonl"
+        and fobj["bytes"] == len(_bf_bytes)
+        and fobj["status"] == "processed"
+        and fobj["id"].startswith("file-")
+    )
+    # fail-closed upload surface: wrong purpose, missing file part,
+    # non-jsonl name, empty content, oversized — all OpenAI-shaped 4xx
+    up_purpose = fb.post(
+        "/v1/files",
+        files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
+        data={"purpose": "fine-tune"},
+    )
+    out["file_upload_purpose_400"] = (
+        up_purpose.status_code == 400
+        and up_purpose.json()["error"]["code"] == "invalid_request"
+        and "purpose" in up_purpose.json()["error"]["message"]
+    )
+    out["file_upload_missing_400"] = (
+        fb.post("/v1/files", data={"purpose": "batch"}).status_code == 400
+    )
+    out["file_upload_ext_400"] = (
+        fb.post(
+            "/v1/files",
+            files={"file": ("in.txt", _bf_bytes, "text/plain")},
+            data={"purpose": "batch"},
+        ).status_code
+        == 400
+    )
+    out["file_upload_empty_400"] = (
+        fb.post(
+            "/v1/files",
+            files={"file": ("in.jsonl", b"", "application/jsonl")},
+            data={"purpose": "batch"},
+        ).status_code
+        == 400
+    )
+    tiny = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), file_bytes_max=4))
+    out["file_upload_oversize_413"] = (
+        tiny.post(
+            "/v1/files",
+            files={"file": ("in.jsonl", _bf_bytes, "application/jsonl")},
+            data={"purpose": "batch"},
+        ).status_code
+        == 413
+    )
+    # listing newest-first + retrieve + content round-trip + delete
+    fid = fobj["id"]
+    flist = fb.get("/v1/files").json()
+    out["files_list_newest_first"] = (
+        flist["object"] == "list"
+        and flist["data"][0]["id"] == fid
+        and all(f["object"] == "file" for f in flist["data"])
+    )
+    out["file_retrieve_200"] = fb.get(f"/v1/files/{fid}").json()["id"] == fid
+    out["file_retrieve_404_shape"] = (
+        fb.get("/v1/files/file-nope").status_code == 404
+        and fb.get("/v1/files/file-nope").json()["error"]["code"] == "file_not_found"
+    )
+    fcont = fb.get(f"/v1/files/{fid}/content")
+    out["file_content_roundtrip"] = (
+        fcont.status_code == 200
+        and fcont.content == _bf_bytes
+        and fcont.headers["content-type"].startswith("application/jsonl")
+    )
+    out["file_delete_then_404"] = (
+        fb.delete(f"/v1/files/{fid}").json() == {"id": fid, "object": "file", "deleted": True}
+        and fb.get(f"/v1/files/{fid}").status_code == 404
+    )
+    # LRU bound: file_max=1 evicts the first upload
+    lru = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), file_max=1))
+    fid1 = _upload(lru)["id"]
+    fid2 = _upload(lru)["id"]
+    out["file_lru_evicts_oldest"] = (
+        lru.get(f"/v1/files/{fid1}").status_code == 404
+        and lru.get(f"/v1/files/{fid2}").status_code == 200
+    )
+
+    # batch lifecycle over the uploaded file
+    upb = _upload(fb)
+    bc = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": upb["id"],
+            "endpoint": "/v1/chat/completions",
+            "completion_window": "24h",
+            "metadata": {"k": "v"},
+        },
+    )
+    bobj = bc.json()
+    out["batch_create_200_shape"] = (
+        bc.status_code == 200
+        and bobj["object"] == "batch"
+        and bobj["id"].startswith("batch_")
+        and bobj["input_file_id"] == upb["id"]
+        and bobj["endpoint"] == "/v1/chat/completions"
+        and bobj["completion_window"] == "24h"
+        and bobj["metadata"] == {"k": "v"}
+        # counts race with the worker — pin only the total at create time
+        and bobj["request_counts"]["total"] == 3
+        and bobj["request_counts"]["completed"] + bobj["request_counts"]["failed"] <= 3
+        and bobj["status"] in ("validating", "in_progress", "completed")
+        and bobj["expires_at"] == bobj["created_at"] + 86400
+    )
+    bterm = _wait_batch(fb, bobj["id"])
+    out["batch_completes_counts"] = (
+        bterm["status"] == "completed"
+        and bterm["request_counts"] == {"total": 3, "completed": 2, "failed": 1}
+        and bterm["completed_at"] is not None
+        and bterm["finalizing_at"] is not None
+        and bterm["in_progress_at"] is not None
+        and bobj["id"] == bterm["id"]
+    )
+    # output file: one OpenAI batch-result line per input; the bad line
+    # carries the same 400 error body the live route would have returned
+    outf = fb.get(f"/v1/files/{bterm['output_file_id']}/content")
+    olines = [_json3.loads(line) for line in outf.text.splitlines() if line.strip()]
+    out["batch_output_file_shape"] = (
+        outf.status_code == 200
+        and outf.headers["content-type"].startswith("application/jsonl")
+        and len(olines) == 3
+        and all(
+            o["id"].startswith("batch_req_") and o["response"]["request_id"].startswith("req_")
+            for o in olines
+        )
+    )
+    out["batch_output_line_bodies"] = (
+        olines[0]["custom_id"] == "a"
+        and olines[0]["response"]["status_code"] == 200
+        and olines[0]["response"]["body"]["object"] == "chat.completion"
+        and olines[0]["response"]["body"]["choices"][0]["message"]["content"] == "clean:x"
+        and olines[1]["response"]["body"]["choices"][0]["message"]["content"] == "clean:y"
+        and olines[2]["custom_id"] == "bad-temp"
+        and olines[2]["response"]["status_code"] == 400
+        and olines[2]["response"]["body"]["error"]["type"] == "invalid_request_error"
+    )
+    # output files are listed with purpose=batch_output
+    out["batch_output_file_listed"] = any(
+        f["id"] == bterm["output_file_id"] and f["purpose"] == "batch_output"
+        for f in fb.get("/v1/files").json()["data"]
+    )
+    # submit-time validation: corrupt lines fail the whole create 400
+    out["batch_submit_bad_json_400"] = (
+        fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": _upload(fb, b"not json\n")["id"],
+                "endpoint": "/v1/chat/completions",
+            },
+        ).status_code
+        == 400
+    )
+    _bad_shape = (
+        _json3.dumps({"custom_id": "x", "method": "GET", "url": "/v1/chat/completions", "body": {}})
+        + "\n"
+    ).encode()
+    r_bad = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": _upload(fb, _bad_shape)["id"],
+            "endpoint": "/v1/chat/completions",
+        },
+    )
+    out["batch_submit_line_shape_400"] = (
+        r_bad.status_code == 400 and "line 1" in r_bad.json()["error"]["message"]
+    )
+    _url_mm = (
+        _json3.dumps(
+            {
+                "custom_id": "x",
+                "method": "POST",
+                "url": "/v1/responses",
+                "body": {"model": "fx1", "input": "h"},
+            }
+        )
+        + "\n"
+    ).encode()
+    out["batch_submit_url_mismatch_400"] = (
+        fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": _upload(fb, _url_mm)["id"],
+                "endpoint": "/v1/chat/completions",
+            },
+        ).status_code
+        == 400
+    )
+    out["batch_bad_endpoint_422"] = (
+        fb.post(
+            "/v1/batches",
+            json={"input_file_id": upb["id"], "endpoint": "/v1/completions"},
+        ).status_code
+        == 422
+    )
+    out["batch_bad_file_404"] = (
+        fb.post(
+            "/v1/batches",
+            json={"input_file_id": "file-nope", "endpoint": "/v1/chat/completions"},
+        ).status_code
+        == 404
+    )
+    # output files can't be resubmitted as batch input
+    out["batch_output_as_input_400"] = (
+        fb.post(
+            "/v1/batches",
+            json={
+                "input_file_id": bterm["output_file_id"],
+                "endpoint": "/v1/chat/completions",
+            },
+        ).status_code
+        == 400
+    )
+    # idempotency: keyed create replays the submit envelope; conflict 409
+    bidem = {"input_file_id": upb["id"], "endpoint": "/v1/chat/completions"}
+    bi1 = fb.post("/v1/batches", json=bidem, headers={"Idempotency-Key": "bk-1"})
+    bi2 = fb.post("/v1/batches", json=bidem, headers={"Idempotency-Key": "bk-1"})
+    out["batch_idem_replay"] = (
+        bi1.json()["id"] == bi2.json()["id"]
+        and bi2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    out["batch_idem_conflict_409"] = (
+        fb.post(
+            "/v1/batches",
+            json={"input_file_id": upb["id"], "endpoint": "/v1/responses"},
+            headers={"Idempotency-Key": "bk-1"},
+        ).status_code
+        == 409
+    )
+    # listing + cursor pagination
+    blist = fb.get("/v1/batches?limit=1").json()
+    out["batches_list_shape"] = (
+        blist["object"] == "list"
+        and len(blist["data"]) == 1
+        and blist["has_more"] is True
+        and blist["first_id"] == blist["data"][0]["id"]
+        and blist["last_id"] == blist["data"][0]["id"]
+    )
+    bpage2 = fb.get(f"/v1/batches?limit=50&after={blist['last_id']}").json()
+    out["batches_list_after_cursor"] = (
+        bpage2["has_more"] is False
+        and all(b["id"] != blist["last_id"] for b in bpage2["data"])
+        and len(bpage2["data"]) >= 1
+    )
+    out["batch_retrieve_404"] = fb.get("/v1/batches/batch_nope").status_code == 404
+    out["batch_cancel_terminal_409"] = (
+        fb.post(f"/v1/batches/{bterm['id']}/cancel").status_code == 409
+    )
+    # cooperative cancel: a gated backend holds the worker mid-batch;
+    # cancel lands 'cancelling', the batch finishes 'cancelled' with the
+    # lines completed so far written to the output file
+    gate_ev = _threading.Event()
+
+    class _GateBackend(_OiBackend):
+        def complete(
+            self,
+            messages: list[dict[str, str]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            gate_ev.wait(10)
+            return super().complete(messages, sampling=sampling)
+
+    gapp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _GateBackend()))
+    gid = _upload(gapp)["id"]
+    gcb = gapp.post(
+        "/v1/batches",
+        json={"input_file_id": gid, "endpoint": "/v1/chat/completions"},
+    )
+    gcc = gapp.post(f"/v1/batches/{gcb.json()['id']}/cancel")
+    gate_ev.set()
+    gterm = _wait_batch(gapp, gcb.json()["id"])
+    out["batch_cancel_cooperative"] = (
+        gcc.status_code == 200
+        and gcc.json()["status"] == "cancelling"
+        and gterm["status"] == "cancelled"
+        and gterm["cancelled_at"] is not None
+        and gterm["request_counts"]["completed"] <= 1
+        and gterm["output_file_id"] is not None
+    )
+    # expiry projection: a record past expires_at reports 'expired'
+    exp_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    past = api_mod._BatchRecord(  # noqa: SLF001
+        batch_id="batch_past",
+        input_file_id="file-x",
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+        status="in_progress",
+        created_at=1,
+        expires_at=2,
+    )
+    exp_app.state.batch_store.put(past)
+    r_exp = _TC2(exp_app).get("/v1/batches/batch_past").json()
+    out["batch_expiry_projection"] = (
+        r_exp["status"] == "expired" and r_exp["expired_at"] is not None
+    )
+    # over-capacity admission: a batch submit under a held inflight slot
+    # is the same 503 over_capacity as the sync surface
+    cap_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    cap = _TC2(cap_app)
+    cap_fid = _upload(cap)["id"]
+    cap_app.state.inflight_slots.acquire()
+    try:
+        cap_r = cap.post(
+            "/v1/batches",
+            json={"input_file_id": cap_fid, "endpoint": "/v1/chat/completions"},
+        )
+    finally:
+        cap_app.state.inflight_slots.release()
+    out["batch_over_capacity_503"] = (
+        cap_r.status_code == 503
+        and cap_r.json()["error"]["code"] == "over_capacity"
+        and cap_r.headers.get("retry-after") == "1"
+    )
+
+    # header routing: the submitter's X-Fx1-Backend applies to every line
+    # (unknown names are rejected per-line 400, like the live route)
+    def _hdr_resolver(name: str, **kw: Any) -> _OiBackend:
+        be = _OiBackend()
+        be._model = f"routed-{name}"
+        return be
+
+    happ = _TC2(api_mod.create_app(backend_resolver=_hdr_resolver))
+    hid = _upload(happ)["id"]
+    hcb = happ.post(
+        "/v1/batches",
+        json={"input_file_id": hid, "endpoint": "/v1/chat/completions"},
+        headers={"X-Fx1-Backend": "byok"},
+    )
+    hterm = _wait_batch(happ, hcb.json()["id"])
+    hout = happ.get(f"/v1/files/{hterm['output_file_id']}/content")
+    hlines = [_json3.loads(line) for line in hout.text.splitlines() if line.strip()]
+    out["batch_header_backend_routes_lines"] = (
+        hterm["status"] == "completed"
+        and hlines[0]["response"]["status_code"] == 200
+        and hlines[0]["response"]["body"]["model"] == "routed-byok"
+        and hlines[1]["response"]["body"]["model"] == "routed-byok"
+        and hlines[2]["response"]["status_code"] == 400
+    )
+    out["batch_header_unknown_backend_line_400"] = (
+        lambda hb: _wait_batch(happ, hb["id"])["request_counts"]["failed"] == 3
+    )(
+        happ.post(
+            "/v1/batches",
+            json={"input_file_id": hid, "endpoint": "/v1/chat/completions"},
+            headers={"X-Fx1-Backend": "not-a-backend"},
+        ).json()
+    )
+    # the Responses endpoint runs through the same machinery
+    rid2 = _upload(
+        fb,
+        (
+            _json3.dumps(
+                {
+                    "custom_id": "r1",
+                    "method": "POST",
+                    "url": "/v1/responses",
+                    "body": {"model": "fx1", "input": "hi"},
+                }
+            )
+            + "\n"
+        ).encode(),
+    )["id"]
+    rcb = fb.post(
+        "/v1/batches",
+        json={"input_file_id": rid2, "endpoint": "/v1/responses"},
+    )
+    rterm = _wait_batch(fb, rcb.json()["id"])
+    rout = fb.get(f"/v1/files/{rterm['output_file_id']}/content")
+    rlines = [_json3.loads(line) for line in rout.text.splitlines() if line.strip()]
+    out["batch_responses_endpoint"] = (
+        rterm["status"] == "completed"
+        and rlines[0]["response"]["status_code"] == 200
+        and rlines[0]["response"]["body"]["object"] == "response"
+        and rlines[0]["response"]["body"]["output"][0]["content"][0]["text"] == "clean:hi"
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""
