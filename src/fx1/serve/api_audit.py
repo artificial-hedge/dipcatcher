@@ -1176,6 +1176,34 @@ def api_audit() -> dict[str, Any]:
     )
     time.sleep(0.3)
     out["rate_limit_recovers"] = lc.get("/health").status_code == 200
+    # X-RateLimit-* headers on every response while the limiter is active
+    limited3 = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        rate_limit_rps=10.0,
+    )
+    lc3 = _TC2(limited3)
+    first = lc3.get("/health")
+    second = lc3.get("/health")
+    out["rate_limit_headers_on_success"] = (
+        first.status_code == 200
+        and first.headers.get("x-ratelimit-limit") == "10"
+        and first.headers.get("x-ratelimit-remaining") == "9"
+        and int(first.headers["x-ratelimit-reset"]) >= 0
+        and int(second.headers["x-ratelimit-remaining"]) == 8
+    )
+    while lc3.get("/health").status_code == 200:
+        pass
+    denied3 = lc3.get("/health")
+    out["rate_limit_headers_on_429"] = (
+        denied3.status_code == 429
+        and denied3.headers.get("x-ratelimit-limit") == "10"
+        and denied3.headers.get("x-ratelimit-remaining") == "0"
+        and int(denied3.headers["x-ratelimit-reset"]) >= 1
+    )
+    out["rate_limit_headers_absent_when_off"] = (
+        "x-ratelimit-limit" not in client.get("/health").headers
+    )
     # limiter counts denials; a public-path request also draws a token
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),

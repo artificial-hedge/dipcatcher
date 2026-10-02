@@ -1106,7 +1106,10 @@ class _RateLimiter:
         self._lock = threading.Lock()
         self._buckets: OrderedDict[str, tuple[float, float]] = OrderedDict()
 
-    def allow(self, identity: str) -> float:
+    def allow(self, identity: str) -> tuple[float, float]:
+        """Consume one token: returns ``(wait, remaining)`` — seconds until a
+        token refills (0.0 when the request may proceed) and the post-consume
+        token count for the `X-RateLimit-Remaining` header."""
         now = time.monotonic()
         with self._lock:
             entry = self._buckets.pop(identity, None)
@@ -1114,12 +1117,12 @@ class _RateLimiter:
             tokens = min(self.capacity, tokens + self.rps * (now - ts))
             if tokens >= 1.0:
                 self._buckets[identity] = (tokens - 1.0, now)
-                return 0.0
+                return 0.0, max(0.0, tokens - 1.0)
             wait = (1.0 - tokens) / self.rps
             self._buckets[identity] = (tokens, now)
             while len(self._buckets) > self.max_keys:
                 self._buckets.popitem(last=False)
-            return wait
+            return wait, 0.0
 
 
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
@@ -1554,10 +1557,17 @@ def create_app(
         request_id = _request_id(request.headers.get("x-request-id"))
         request.state.request_id = request_id
         started = time.monotonic()
+        rl_headers: dict[str, str] | None = None
         if limiter is not None:
             # keyed on client host so a rotating fake API key can't evade it
             host = (request.client.host if request.client else "") or "unknown"
-            wait = limiter.allow(host)
+            wait, remaining = limiter.allow(host)
+            reset = max(0, math.ceil((limiter.capacity - remaining) / limiter.rps))
+            rl_headers = {
+                "X-RateLimit-Limit": str(int(limiter.rps)),
+                "X-RateLimit-Remaining": str(int(remaining)),
+                "X-RateLimit-Reset": str(reset),
+            }
             if wait > 0:
                 metrics.record_rate_limited()
                 response = JSONResponse(
@@ -1566,7 +1576,7 @@ def create_app(
                         "detail": f"rate limit exceeded; retry in {wait:.1f}s",
                         "code": "too_many_requests",
                     },
-                    headers={"Retry-After": str(max(1, math.ceil(wait)))},
+                    headers={"Retry-After": str(max(1, math.ceil(wait))), **rl_headers},
                 )
                 return _finish(request, request_id, response, started)
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
@@ -1616,6 +1626,8 @@ def create_app(
                 )
             else:
                 response = await call_next(request)
+        if rl_headers is not None:
+            response.headers.update(rl_headers)
         return _finish(request, request_id, response, started)
 
     @app.get("/metrics", response_model=MetricsResponse, tags=["ops"], operation_id="get_metrics")
