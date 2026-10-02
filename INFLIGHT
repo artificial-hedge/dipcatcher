@@ -2574,3 +2574,4 @@ wave 173 (2026-10-02): diffusion-exotics canon — edm_karras, rectified_flow, s
 wave 174 (2026-10-02): graph-temporal canon — dcrnn_lite, stgcn_lite, gwnet_lite, astgcn, mtgnn_lite, agcrn; 1016→1022 families.
 wave 175 (2026-10-02): LM-components canon — rope_attn, alibi_attn, swiglu_ffn, rmsnorm_block, moe_router, mup_init; 1022→1028 families.
 wave 176 (2026-10-02): data-centric canon — active_bald, data_cartography, el2n_scoring, forgetting_events, influence_func, proto_prune; 1028→1034 families.
+wave 177 (2026-10-02): neuromorphic canon — lif_neuron, stdp_learn, surrogate_snn, izhikevich, lsm_reservoir, temporal_code; 1034→1040 families.
