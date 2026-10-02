@@ -877,6 +877,14 @@ from quant_fund.research.benches_w110 import (
     bench_rrc_filter_family,
     bench_viterbi_decode_family,
 )
+from quant_fund.research.benches_w111 import (
+    bench_convex_hull_family,
+    bench_delaunay_family,
+    bench_frechet_family,
+    bench_hausdorff_family,
+    bench_icp_family,
+    bench_kabsch_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3088,6 +3096,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "costas": bench_costas_family(),
         "gardner": bench_gardner_family(),
         "rrc_filter": bench_rrc_filter_family(),
+        "kabsch": bench_kabsch_family(),
+        "icp": bench_icp_family(),
+        "frechet": bench_frechet_family(),
+        "hausdorff": bench_hausdorff_family(),
+        "convex_hull": bench_convex_hull_family(),
+        "delaunay": bench_delaunay_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

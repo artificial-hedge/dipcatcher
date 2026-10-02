@@ -1684,6 +1684,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "costas",
         "gardner",
         "rrc_filter",
+        # Wave-111 canon: geometry —
+        # Kabsch, ICP, Fréchet,
+        # Hausdorff, hull,
+        # Delaunay.
+        "kabsch",
+        "icp",
+        "frechet",
+        "hausdorff",
+        "convex_hull",
+        "delaunay",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
