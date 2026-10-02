@@ -1333,6 +1333,14 @@ from quant_fund.research.benches_w167 import (
     bench_pna_agg_family,
     bench_virtual_node_family,
 )
+from quant_fund.research.benches_w168 import (
+    bench_awac_family,
+    bench_crossq_family,
+    bench_dr3_reg_family,
+    bench_ob2i_family,
+    bench_redq_family,
+    bench_td7_lite_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3886,6 +3894,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gps_transformer": bench_gps_transformer_family(),
         "oversmooth_metric": bench_oversmooth_metric_family(),
         "dgn_directional": bench_dgn_directional_family(),
+        "awac": bench_awac_family(),
+        "redq": bench_redq_family(),
+        "td7_lite": bench_td7_lite_family(),
+        "crossq": bench_crossq_family(),
+        "dr3_reg": bench_dr3_reg_family(),
+        "ob2i": bench_ob2i_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
