@@ -1000,6 +1000,61 @@ export class HarnessApiClient {
     }
   }
 
+  // ---- /v1 retrieval -------------------------------------------------------
+
+  /**
+   * GET /v1/chat/completions/{id} — the stored `chat.completion` envelope
+   * (404 when evicted, deleted, or the call went out with `store: false`).
+   */
+  async retrieveChatCompletion(
+    completionId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** DELETE /v1/chat/completions/{id} — drop the stored envelope. */
+  async deleteChatCompletion(
+    completionId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** GET /v1/responses/{id} — the stored `response` object. */
+  async retrieveResponse(
+    responseId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "GET",
+      path: `/v1/responses/${encodeURIComponent(responseId)}`,
+      idempotent: true,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
+  /** DELETE /v1/responses/{id} — drop the stored envelope. */
+  async deleteResponse(
+    responseId: string,
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "DELETE",
+      path: `/v1/responses/${encodeURIComponent(responseId)}`,
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
   // ---- async jobs --------------------------------------------------------
 
   /** POST /harness/jobs — 202 + job id. */

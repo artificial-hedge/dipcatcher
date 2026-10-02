@@ -2125,6 +2125,53 @@ def parity_audit() -> dict[str, bool]:
         c_b.create_batch(up["id"], endpoint="/v1/completions")
     except ValueError:
         out["client_batch_bad_endpoint_422"] = True
+
+    # --- /v1 retrieval parity: the store flag governs the index on every
+    # surface — SDK, wire, and the typed remote client fetch/drop the same
+    # envelope by id and miss identically.
+    _ret_req = {
+        "model": "hosted_k3",
+        "messages": msg,
+        "fx1": {"backend": "byok"},
+    }
+    _ret_sdk_env, _ = sdk.openai_chat(dict(_ret_req))
+    _ret_wire = client.post("/v1/chat/completions", json=_ret_req)
+    _ret_sdk_stored = sdk.openai_chat_get(_ret_sdk_env.id)
+    _ret_wire_stored = client.get(f"/v1/chat/completions/{_ret_wire.json()['id']}").json()
+    # each surface's index returns the envelope that surface issued, and
+    # the two stored envelopes agree on everything but the minted id
+    # (created ticks can differ by a second across the two calls)
+    out["retrieval_chat_envelope_parity"] = _ret_wire_stored == _ret_wire.json() and {
+        k: v for k, v in _ret_sdk_stored.items() if k not in ("id", "created")
+    } == {k: v for k, v in _ret_wire_stored.items() if k not in ("id", "created")}
+    # store=false misses on both surfaces as KeyError / 404
+    _ns_sdk_env, _ = sdk.openai_chat({**_ret_req, "store": False})
+    _ns_wire = client.post("/v1/chat/completions", json={**_ret_req, "store": False})
+    out["retrieval_store_false_parity"] = (
+        _raises(lambda: sdk.openai_chat_get(_ns_sdk_env.id))[0] == "KeyError"
+        and client.get(f"/v1/chat/completions/{_ns_wire.json()['id']}").status_code == 404
+    )
+    # delete parity — same tombstone shape (ids differ across calls), then
+    # both surfaces miss
+    _del_sdk = sdk.openai_chat_delete(_ret_sdk_env.id)
+    _del_wire = client.delete(f"/v1/chat/completions/{_ret_wire.json()['id']}").json()
+    out["retrieval_delete_parity"] = (
+        {k: v for k, v in _del_sdk.items() if k != "id"}
+        == {k: v for k, v in _del_wire.items() if k != "id"}
+        and _raises(lambda: sdk.openai_chat_get(_ret_sdk_env.id))[0] == "KeyError"
+        and client.get(f"/v1/chat/completions/{_ret_wire.json()['id']}").status_code == 404
+    )
+    # the typed remote client rides the same routes
+    _rr_wire = client.post(
+        "/v1/responses", json={"model": "fx1", "input": "hi", "fx1": {"backend": "byok"}}
+    )
+    out["client_retrieval_surface"] = (
+        remote.retrieve_response(_rr_wire.json()["id"]) == _rr_wire.json()
+        and remote.delete_response(_rr_wire.json()["id"])["deleted"] is True
+    )
+    out["client_retrieval_miss_404"] = (
+        _raises(lambda: remote.retrieve_chat_completion("chatcmpl-miss"))[0] == "KeyError"
+    )
     return out
 
 

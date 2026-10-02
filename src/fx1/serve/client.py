@@ -1494,6 +1494,38 @@ class HarnessClient:
                 )
             self._sleep(min(poll_s, remaining) if remaining is not None else poll_s)
 
+    # ---- /v1 retrieval ------------------------------------------------------
+
+    def retrieve_chat_completion(self, completion_id: str) -> dict[str, Any]:
+        """``GET /v1/chat/completions/{id}`` — the stored ``chat.completion``
+        envelope (``KeyError`` on 404: evicted, deleted, or ``store=false``)."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                idempotent=True,
+            )
+        )
+
+    def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
+        """``DELETE /v1/chat/completions/{id}`` — drop the stored envelope."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+            )
+        )
+
+    def retrieve_response(self, response_id: str) -> dict[str, Any]:
+        """``GET /v1/responses/{id}`` — the stored ``response`` object."""
+        return dict(
+            self._json("GET", f"/v1/responses/{urllib.parse.quote(response_id)}", idempotent=True)
+        )
+
+    def delete_response(self, response_id: str) -> dict[str, Any]:
+        """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
+        return dict(self._json("DELETE", f"/v1/responses/{urllib.parse.quote(response_id)}"))
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:

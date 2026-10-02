@@ -119,6 +119,7 @@ from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
+    OpenAIEnvelopeStore,
     OpenAIModel,
     OpenAIModelList,
     OpenAIResponseRequest,
@@ -169,6 +170,7 @@ _FILE_MAX_ENV = "FX1_API_FILE_MAX"
 _FILE_BYTES_ENV = "FX1_API_FILE_BYTES"
 _BATCH_MAX_ENV = "FX1_API_BATCH_MAX"
 _BATCH_LINES_ENV = "FX1_API_BATCH_LINES"
+_STORE_MAX_ENV = "FX1_API_STORE_MAX"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -2251,6 +2253,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     jobs_executor: ThreadPoolExecutor,
     file_store: _FileStore,
     batch_store: _BatchStore,
+    envelope_store: OpenAIEnvelopeStore,
     batch_line_max: int,
     file_bytes_max: int,
 ) -> None:
@@ -2974,6 +2977,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             model=outs[0].model,
             usage=usage_sum if usage_seen else None,
         )
+        if body.store is not False:
+            envelope_store.put(envelope)
         return envelope, cid
 
     def _openai_response_core(
@@ -2996,6 +3001,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             model=out.model,
             usage=out.usage,
         )
+        if body.store is not False:
+            envelope_store.put(envelope)
         return envelope, cid, out.usage
 
     @app.get(
@@ -3103,6 +3110,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if replay is not None:
             env = replay.envelope
             cid_replay = str(env["id"]).removeprefix("chatcmpl-")
+            # re-pin in the retrieval index — a replay refreshes the entry
+            if body.store is not False:
+                envelope_store.put(env)
             headers = {
                 "X-Fx1-Completion-Id": cid_replay,
                 "X-Fx1-Idempotent-Replay": "true",
@@ -3174,8 +3184,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         Same fail-closed rule as chat completions: ``tools``/
         ``tool_choice``/``parallel_tool_calls``/``truncation``/``include``/
         ``background``/``previous_response_id`` refuse at validation (422).
-        ``store=false`` refuses — the audit ledger records every call and
-        this surface has no retrieval tier for the flag to govern.
+        ``store`` governs the retrieval index — ``store=false`` keeps the
+        call out of ``GET /v1/responses/{id}`` (the audit ledger still
+        records it).
         ``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as
         on ``/v1/chat/completions`` (the stream's terminal frame is
         ``response.completed``, not ``[DONE]``).
@@ -3227,6 +3238,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
 
         if replay is not None:
             env = replay.envelope
+            # re-pin in the retrieval index — a replay refreshes the entry
+            if body.store is not False:
+                envelope_store.put(env)
             headers = {
                 "X-Fx1-Completion-Id": str(env["_fx1_completion_id"]),
                 "X-Fx1-Idempotent-Replay": "true",
@@ -3278,6 +3292,69 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 headers=headers,
             )
         return JSONResponse(envelope, headers=headers)
+
+    # --- /v1 retrieval tier --------------------------------------------------
+    # The OpenAI retrieval surface: GET by the issued id returns the stored
+    # envelope; DELETE drops it. ``store=false`` on the original call keeps
+    # it out of the index (the completion log still records the call — the
+    # flag governs retrieval, never evidence).
+
+    def _stored_envelope(envelope_id: str, *, object_: str) -> dict[str, Any]:
+        env = envelope_store.get(envelope_id)
+        if env is None or env.get("object") != object_:
+            raise ApiError(
+                404,
+                f"{envelope_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def _drop_envelope(envelope_id: str, *, object_: str) -> dict[str, Any]:
+        env = envelope_store.get(envelope_id)
+        if env is None or env.get("object") != object_:
+            raise ApiError(404, f"{envelope_id!r} not found", code="not_found")
+        envelope_store.delete(envelope_id)
+        return {"id": envelope_id, "object": f"{object_}.deleted", "deleted": True}
+
+    @app.get(
+        "/v1/chat/completions/{completion_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_retrieve",
+    )
+    def openai_chat_retrieve(completion_id: str) -> dict[str, Any]:
+        """Retrieve a stored chat completion (``chatcmpl-…``)."""
+        return _stored_envelope(completion_id, object_="chat.completion")
+
+    @app.delete(
+        "/v1/chat/completions/{completion_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_delete",
+    )
+    def openai_chat_delete(completion_id: str) -> dict[str, Any]:
+        """Drop a stored chat completion from the retrieval index."""
+        return _drop_envelope(completion_id, object_="chat.completion")
+
+    @app.get(
+        "/v1/responses/{response_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_responses_retrieve",
+    )
+    def openai_response_retrieve(response_id: str) -> dict[str, Any]:
+        """Retrieve a stored response object (``resp_…``)."""
+        return _stored_envelope(response_id, object_="response")
+
+    @app.delete(
+        "/v1/responses/{response_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_responses_delete",
+    )
+    def openai_response_delete(response_id: str) -> dict[str, Any]:
+        """Drop a stored response object from the retrieval index."""
+        return _drop_envelope(response_id, object_="response")
 
     # --- /v1/files + /v1/batches ------------------------------------------
     # The async-batch surface: files carry request JSONL (multipart upload,
@@ -3921,6 +3998,7 @@ def create_app(
     file_bytes_max: int | None = None,
     batch_max: int | None = None,
     batch_line_max: int | None = None,
+    store_max: int | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -3975,10 +4053,14 @@ def create_app(
     file_bytes_max = _env_int_bound(_FILE_BYTES_ENV, 8 << 20, file_bytes_max)
     batch_max = _env_int_bound(_BATCH_MAX_ENV, 256, batch_max)
     batch_line_max = _env_int_bound(_BATCH_LINES_ENV, 1024, batch_line_max)
+    store_max = _env_int_bound(_STORE_MAX_ENV, 256, store_max)
     job_store = _JobStore(job_max)
     eval_store = EvalStore(job_max)
     file_store = _FileStore(file_max, file_bytes_max)
     batch_store = _BatchStore(batch_max)
+    # The /v1 retrieval index behind GET/DELETE /v1/chat/completions/{id}
+    # and /v1/responses/{id} — `store=false` keeps a call out of it.
+    envelope_store = OpenAIEnvelopeStore(store_max)
     jobs_executor = ThreadPoolExecutor(max_workers=max_inflight, thread_name_prefix="fx1-job")
 
     @contextmanager
@@ -4252,6 +4334,7 @@ def create_app(
                 "receipts_store": receipt_index.available(),
                 "byok_override": byok_override_enabled,
                 "openai_compat": True,
+                "openai_retrieval": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),
@@ -4264,6 +4347,7 @@ def create_app(
                 "file_bytes_max": float(file_bytes_max),
                 "batch_max": float(batch_max),
                 "batch_line_max": float(batch_line_max),
+                "store_max": float(store_max),
                 "job_batch_max": float(_JOB_BATCH_MAX),
                 "verify_batch_max": float(_VERIFY_BATCH_MAX),
                 "complete_batch_max": 64.0,
@@ -4496,6 +4580,7 @@ def create_app(
         jobs_executor=jobs_executor,
         file_store=file_store,
         batch_store=batch_store,
+        envelope_store=envelope_store,
         batch_line_max=batch_line_max,
         file_bytes_max=file_bytes_max,
     )

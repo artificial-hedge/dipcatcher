@@ -335,6 +335,10 @@ def harness_serve(
         None,
         help="Sealed-receipts directory for GET /receipts fetch (env FX1_API_RECEIPTS_DIR).",
     ),
+    store_max: int | None = typer.Option(
+        None,
+        help="/v1 retrieval-index capacity (env FX1_API_STORE_MAX, default 256).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
@@ -359,6 +363,7 @@ def harness_serve(
             breaker_threshold=breaker_threshold,
             breaker_cooldown_s=breaker_cooldown_s,
             receipts_dir=receipts_dir,
+            store_max=store_max,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)

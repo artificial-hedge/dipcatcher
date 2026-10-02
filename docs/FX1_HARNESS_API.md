@@ -200,6 +200,8 @@ same digested shape the job record embeds.
 | `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions` or `/v1/responses`) — async over the jobs channel |
 | `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
 | `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |
+| `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
+| `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |
@@ -277,10 +279,10 @@ to `GET /harness/completions/{id}` and its sealed
   `tool_calls`, `tool_call_id`), `response_format` types
   outside `text`/`json_object`/`json_schema`, `logprobs`,
   `top_logprobs`, `modalities`, `audio`, `prediction`,
-  `web_search_options`, `suffix`, `echo`, `best_of`, `store` (the audit
-  ledger already records every call; there is no retrieval surface for
-  the flag to honor), and `None`/non-text-part content are all
-  rejected — nothing is silently dropped.
+  `web_search_options`, `suffix`, `echo`, `best_of`, and
+  `None`/non-text-part content are all rejected — nothing is silently
+  dropped. `store` is honored, not refused: it governs the retrieval
+  index (below).
 - **Structured output:** `response_format` `json_object` and
   `json_schema` are honored by post-validation — the harness can't
   constrain-decode an arbitrary provider, so the gate's second pass
@@ -364,12 +366,11 @@ same OpenAI error taxonomy:
   (the completed event is terminal). `Last-Event-ID` resume works
   identically to the chat stream: the keyed response replays
   byte-identically, frames ≤ the cursor dropped.
-- **Fail-closed surface:** `store:false` (the audit ledger already
-  records every call — no retrieval tier exists for it to gate),
-  `tools`/`tool_choice`, `truncation`, `background`,
-  `previous_response_id`, `include`, `parallel_tool_calls`, and
-  every other unsupported field refuse 422 at validation; nothing
-  is silently dropped.
+- **Fail-closed surface:** `tools`/`tool_choice`, `truncation`,
+  `background`, `previous_response_id`, `include`,
+  `parallel_tool_calls`, and every other unsupported field refuse
+  422 at validation; nothing is silently dropped. `store` is
+  honored, not refused (retrieval section below).
 - **Retry-safe:** `Idempotency-Key` shares the `/v1/chat/completions`
   dedup space — same key + body replays the stored envelope (or the
   pinned stream) byte-identically; a key reused under a different
@@ -439,6 +440,41 @@ Client-side: `HarnessClient.upload_file` / `files` / `file` /
 endpoint=…)` runs the same lines through `openai_chat` /
 `openai_response` synchronously and returns `(batch,
 output_lines)` — no upload/poll machinery needed weights-direct.
+
+### Retrieval (`store` + `GET`/`DELETE`)
+
+The `store` flag is honored on both `/v1` surfaces: `store: false`
+(the OpenAI default is `true`) keeps the call's envelope out of the
+retrieval index; every gated call still lands in the completion log
+and its sealed receipt — the flag governs *retrieval*, never
+evidence. The index is a bounded LRU (`FX1_API_STORE_MAX`, default
+256) holding whole envelopes — `chat.completion` for the chat
+surface, `response` for Responses.
+
+- `GET /v1/chat/completions/{chatcmpl-…}` returns the stored
+  envelope verbatim; `GET /v1/responses/{resp_…}` the stored
+  response object. A miss (evicted, deleted, or sent with
+  `store:false`) is an OpenAI-shaped 404 `not_found`; an id from
+  the wrong surface is the same 404, not a cross-read.
+- `DELETE` drops the envelope and returns
+  `{id, object: "<type>.deleted", deleted: true}`; deleting a miss
+  is 404.
+- Stored envelopes index on **completion**: sync calls, streams
+  (`store:false` on a stream keeps the assembled envelope out),
+  n-fan-out (one envelope per request), batch lines, and
+  idempotent replays all land identically — a replayed call
+  re-pins its envelope at the head of the LRU.
+- The index is a fetch cache for callers, not the audit trail —
+  the completion log (hash-only) and sealed receipts still carry
+  every call regardless of `store`.
+
+Client-side: `HarnessClient.retrieve_chat_completion` /
+`delete_chat_completion` / `retrieve_response` / `delete_response`
+in Python (`KeyError` on 404), `Fx1Harness.openai_chat_get` /
+`openai_chat_delete` / `openai_response_get` /
+`openai_response_delete` in-process, `retrieveChatCompletion` /
+`deleteChatCompletion` / `retrieveResponse` / `deleteResponse` in
+TS.
 
 ## Auth & safety
 
@@ -585,6 +621,7 @@ out-of-range values:
 | `--max-inflight` | `FX1_API_MAX_INFLIGHT` | 16 | concurrent heavy requests; 503 + `Retry-After` when saturated |
 | `--job-max` | `FX1_API_JOB_MAX` | 1024 | job-store capacity (LRU evict drops key backrefs) |
 | `--idem-max` | `FX1_API_IDEM_MAX` | 1024 | idempotency-store capacity |
+| `--store-max` | `FX1_API_STORE_MAX` | 256 | /v1 retrieval-index capacity (LRU evict) |
 | `--sse-keepalive-s` | `FX1_API_SSE_KEEPALIVE_S` | 15 | `: keepalive` comment cadence; 0 disables |
 | `--rate-limit-rps` | `FX1_API_RATE_LIMIT_RPS` | 0 (off) | per-client token bucket → 429 + `Retry-After`; every response also carries `X-RateLimit-Limit`/`Remaining`/`Reset` while the limiter is on. Public paths (`/health`) are exempt — LB probes never consume the client budget |
 | `--gzip-min-bytes` | `FX1_API_GZIP_MIN_BYTES` | 1024 | gzip only when the client advertises it; 0 disables |

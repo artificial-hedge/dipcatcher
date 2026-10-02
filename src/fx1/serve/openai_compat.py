@@ -9,9 +9,9 @@ taxonomy — so the wire and the weights-direct path cannot drift apart.
   honor (tools, ``logprobs``, non-text ``response_format`` types, content
   parts other than ``text``…) is rejected by
   :class:`OpenAICompatError`, never silently dropped. The
-  ``/v1/responses`` surface applies the same rule — ``store=false``
-  refuses rather than pretending zero-retention over an audit ledger
-  that records every call.
+  ``/v1/responses`` surface applies the same rule; ``store`` governs the
+  retrieval index (``store=false`` keeps the call out of
+  ``GET /v1/responses/{id}`` — the audit ledger still records it).
 - *Backend precedence* — ``fx1.backend`` > ``X-Fx1-Backend`` >
   ``model`` naming a backend > ``byok`` when BYOK headers are present >
   ``hosted_k3``. Header-based BYOK treats a non-backend ``model`` as the
@@ -26,6 +26,7 @@ taxonomy — so the wire and the weights-direct path cannot drift apart.
 from __future__ import annotations
 
 import json
+import threading
 import time
 import urllib.parse
 from collections.abc import Iterator, Mapping
@@ -74,6 +75,7 @@ __all__ = [
     "openai_response_object",
     "openai_to_kwargs",
     "openai_usage",
+    "OpenAIEnvelopeStore",
     "response_input_to_messages",
     "response_text_format",
     "response_to_kwargs",
@@ -115,8 +117,9 @@ OPENAI_MODEL_IDS = ("fx1", "hosted_k3", "local_fx1", "byok")
 
 # Fields a caller may send that the gated pipeline cannot honor. Naming the
 # field beats silently dropping it — honest compat over fake compat.
-# ``store`` stays refused: the audit ledger already records every call and
-# there is no retrieval surface for the flag to honor against.
+# ``store`` is honored, not refused: it governs the retrieval index behind
+# ``GET /v1/chat/completions/{id}`` (the audit ledger records every call
+# regardless — retrieval is a convenience surface, not the evidence).
 OPENAI_UNSUPPORTED = (
     "tools",
     "tool_choice",
@@ -132,7 +135,6 @@ OPENAI_UNSUPPORTED = (
     "suffix",
     "echo",
     "best_of",
-    "store",
 )
 
 # OpenAI's `type` names per status — the error envelope stays SDK-faithful.
@@ -244,6 +246,7 @@ class OpenAIChatRequest(_Model):
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
     response_format: dict[str, Any] | None = None
+    store: bool | None = None
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -649,10 +652,10 @@ def openai_chunks(
 # --- Responses API surface ----------------------------------------------------
 # POST /v1/responses — OpenAI's canonical surface. Same gated pipeline, same
 # translation layer, same fail-closed rule: a field the pipeline can't honor
-# is a 400, never a silent drop. ``store=false`` is refused outright — the
-# audit ledger records every call and there is no retrieval surface for a
-# store flag to govern; claiming zero-retention while writing receipts would
-# be a lie.
+# is a 400, never a silent drop. ``store`` is honored: it governs the
+# retrieval index behind ``GET|DELETE /v1/responses/{id}`` (the audit ledger
+# records every call regardless — retrieval is a convenience surface, not
+# the evidence).
 RESPONSES_UNSUPPORTED = (
     "tools",
     "tool_choice",
@@ -745,11 +748,6 @@ class OpenAIResponseRequest(_Model):
             raise ValueError("input must not be empty")
         if isinstance(self.input, list) and not self.input:
             raise ValueError("input must not be empty")
-        if self.store is False:
-            raise ValueError(
-                "store=false can't be honored — the audit ledger records every "
-                "call; there is no zero-retention mode on this surface"
-            )
         if self.metadata is not None:
             if len(self.metadata) > 16:
                 raise ValueError("metadata accepts at most 16 entries")
@@ -918,8 +916,9 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "service_tier": body.service_tier,
         "reasoning": body.reasoning,
         "text": body.text,
-        # fields we refuse on input are echoed as their honest constants
-        "store": True,
+        # fields we refuse on input are echoed as their honest constants;
+        # `store` echoes the actual knob — the retrieval index honors it
+        "store": body.store is not False,
         "tools": [],
         "tool_choice": "none",
         "parallel_tool_calls": False,
@@ -1242,3 +1241,44 @@ def batch_output_line(
         },
         "error": error,
     }
+
+
+# ---- retrieval index (GET /v1/chat/completions/{id}, GET|DELETE /v1/responses/{id}) ----
+
+
+class OpenAIEnvelopeStore:
+    """Bounded ``id → envelope`` index backing the ``/v1`` retrieval
+    routes. ``store=false`` keeps a call out of this index — the
+    completion log still records it; retrieval is a convenience surface,
+    not the evidence. Oldest entries evict at ``cap`` (insertion order —
+    a re-put refreshes the id's position)."""
+
+    def __init__(self, cap: int = 256) -> None:
+        if cap < 1:
+            raise ValueError(f"store cap must be >= 1, got {cap}")
+        self._cap = cap
+        self._lock = threading.Lock()
+        self._items: dict[str, dict[str, Any]] = {}
+
+    def put(self, envelope: dict[str, Any]) -> None:
+        eid = envelope.get("id")
+        if not isinstance(eid, str) or not eid:
+            raise ValueError("envelope carries no string 'id'")
+        with self._lock:
+            self._items.pop(eid, None)
+            self._items[eid] = envelope
+            while len(self._items) > self._cap:
+                self._items.pop(next(iter(self._items)))
+
+    def get(self, envelope_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            env = self._items.get(envelope_id)
+            return dict(env) if env is not None else None
+
+    def delete(self, envelope_id: str) -> bool:
+        with self._lock:
+            return self._items.pop(envelope_id, None) is not None
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._items)

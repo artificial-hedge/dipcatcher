@@ -569,6 +569,36 @@
         ]
       }
     },
+    "/v1/chat/completions/{completion_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/files": {
       "get": {
         "params": [],
@@ -677,7 +707,37 @@
           "422"
         ]
       }
+    },
+    "/v1/responses/{response_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "8b48c2ce44d329f75f4763d76878936a933496c3ffa69224a8a46397f5234cf0"
+  "schema_sha256": "b237118cbdbb3f07dc69735aecaced5fb0ee4dfbf46c8143d9b9652023884ac7"
 }

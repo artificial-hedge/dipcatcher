@@ -61,6 +61,7 @@ from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
+    OpenAIEnvelopeStore,
     OpenAIModel,
     OpenAIModelList,
     OpenAIResponseRequest,
@@ -390,6 +391,9 @@ class Fx1Harness:
         self._receipts = ReceiptIndex(Path(receipts_dir))
         self._log = _CompletionLog()
         self._eval_store = EvalStore(256)
+        # The /v1 retrieval index, in-process — store=false keeps a call
+        # out of it, matching the wire's OpenAIEnvelopeStore semantics.
+        self._openai_store = OpenAIEnvelopeStore(256)
 
     def _record_call(
         self,
@@ -1340,6 +1344,8 @@ class Fx1Harness:
             model=first.model,
             usage=usage_sum if usage_seen else None,
         )
+        if body.store is not False:
+            self._openai_store.put(envelope)
         return OpenAIChatResponse.model_validate(envelope), first.completion_id
 
     def openai_chat_stream(
@@ -1390,6 +1396,16 @@ class Fx1Harness:
                         usage_sum[uk] = usage_sum.get(uk, 0) + uv
         first = results[0]
         cid = first.completion_id or uuid.uuid4().hex
+        if body.store is not False:
+            self._openai_store.put(
+                openai_envelope(
+                    cid=cid,
+                    content=contents if body.n > 1 else contents[0],
+                    backend="+".join(dict.fromkeys(r.backend for r in results)),
+                    model=first.model,
+                    usage=usage_sum if usage_seen else None,
+                )
+            )
         chunks = list(
             openai_chunks(
                 text=contents,
@@ -1435,6 +1451,8 @@ class Fx1Harness:
             model=result.model,
             usage=result.usage,
         )
+        if body.store is not False:
+            self._openai_store.put(envelope)
         return envelope, result.completion_id
 
     def openai_response_stream(
@@ -1460,6 +1478,17 @@ class Fx1Harness:
         validate_response_format(response_text_format(body), result.content)
         rid = f"resp_{uuid.uuid4().hex}"
         item_id = f"msg_{uuid.uuid4().hex}"
+        if body.store is not False:
+            self._openai_store.put(
+                openai_response_object(
+                    rid=rid,
+                    item_id=item_id,
+                    content=result.content,
+                    body=body,
+                    model=result.model,
+                    usage=result.usage,
+                )
+            )
         events = list(
             openai_response_events(
                 text=result.content,
@@ -1473,6 +1502,35 @@ class Fx1Harness:
         if last_event_id is not None:
             events = events[last_event_id + 1 :]
         return events, result.completion_id
+
+    def openai_chat_get(self, completion_id: str) -> dict[str, Any]:
+        """``GET /v1/chat/completions/{id}`` in-process — the stored
+        ``chat.completion`` envelope, or ``KeyError`` (404 on the wire:
+        evicted, deleted, or sent with ``store=false``)."""
+        env = self._openai_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        return env
+
+    def openai_chat_delete(self, completion_id: str) -> dict[str, Any]:
+        """``DELETE /v1/chat/completions/{id}`` in-process."""
+        if not self._openai_store.delete(completion_id):
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        return {"id": completion_id, "object": "chat.completion.deleted", "deleted": True}
+
+    def openai_response_get(self, response_id: str) -> dict[str, Any]:
+        """``GET /v1/responses/{id}`` in-process — the stored ``response``
+        envelope, or ``KeyError``."""
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        return env
+
+    def openai_response_delete(self, response_id: str) -> dict[str, Any]:
+        """``DELETE /v1/responses/{id}`` in-process."""
+        if not self._openai_store.delete(response_id):
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        return {"id": response_id, "object": "response.deleted", "deleted": True}
 
     def openai_batch(
         self,

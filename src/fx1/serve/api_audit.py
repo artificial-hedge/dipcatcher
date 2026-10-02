@@ -3915,8 +3915,20 @@ def _probe_backend_probes(
             ("suffix", "x"),
             ("echo", True),
             ("best_of", 2),
-            ("store", True),
         )
+    )
+    # `store` is honored, not refused — it admits the call and governs the
+    # retrieval index (probed below under retrieve_*)
+    out["openai_store_accepted"] = (
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "store": False,
+            },
+        ).status_code
+        == 200
     )
 
     # n>1 streams emit per-index frame groups; keyed replay reproduces them
@@ -4534,7 +4546,7 @@ def _probe_backend_probes(
     # fail closed: the fields the pipeline can't honor never reach the
     # model — tools/tool_choice/parallel_tool_calls/truncation/include/
     # background/previous_response_id, a refused item type, an unknown
-    # item type, an empty input, and store=false
+    # item type, an empty input. `store` is honored (retrieval below).
     out["responses_unsupported_refused"] = all(
         oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x", k: v}).status_code == 422
         for k, v in (
@@ -4545,7 +4557,6 @@ def _probe_backend_probes(
             ("include", ["output_text"]),
             ("background", True),
             ("previous_response_id", "resp_x"),
-            ("store", False),
         )
     )
     # refused item types fail at translation — a 400 invalid_request_error
@@ -5173,6 +5184,146 @@ def _probe_backend_probes(
         and rlines[0]["response"]["status_code"] == 200
         and rlines[0]["response"]["body"]["object"] == "response"
         and rlines[0]["response"]["body"]["output"][0]["content"][0]["text"] == "clean:hi"
+    )
+
+    # ---- /v1 retrieval: the `store` flag honored end-to-end — stored
+    # envelopes fetch verbatim by id (sync, stream, n-fan-out, batch
+    # lines, idem replays all index identically), store=false and
+    # deletes 404, wrong-surface ids 404, the LRU bound evicts.
+
+    # sync chat call → GET returns the identical envelope
+    s1 = fb.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "keep-me"}]},
+    )
+    sid = s1.json()["id"]
+    out["retrieve_chat_stored"] = (
+        s1.status_code == 200 and fb.get(f"/v1/chat/completions/{sid}").json() == s1.json()
+    )
+    # store=false keeps the call out of the index (still logged)
+    s2 = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "skip-me"}],
+            "store": False,
+        },
+    )
+    r_get_miss = fb.get(f"/v1/chat/completions/{s2.json()['id']}")
+    out["retrieve_store_false_404"] = (
+        s2.status_code == 200
+        and r_get_miss.status_code == 404
+        and r_get_miss.json()["error"]["code"] == "not_found"
+        # still evidence-logged — the flag gates retrieval, not the ledger
+        and fb.get(f"/harness/completions/{s2.headers['x-fx1-completion-id']}").status_code == 200
+    )
+    # delete drops the envelope; a second delete 404s
+    d1 = fb.delete(f"/v1/chat/completions/{sid}")
+    out["retrieve_chat_delete"] = (
+        d1.status_code == 200
+        and d1.json()["object"] == "chat.completion.deleted"
+        and d1.json()["deleted"] is True
+        and fb.get(f"/v1/chat/completions/{sid}").status_code == 404
+        and fb.delete(f"/v1/chat/completions/{sid}").status_code == 404
+    )
+    # responses surface stores + deletes symmetrically
+    r1 = fb.post("/v1/responses", json={"model": "fx1", "input": "keep-r"})
+    rid = r1.json()["id"]
+    out["retrieve_response_stored"] = (
+        r1.status_code == 200
+        and fb.get(f"/v1/responses/{rid}").json() == r1.json()
+        and fb.delete(f"/v1/responses/{rid}").json()["object"] == "response.deleted"
+        and fb.get(f"/v1/responses/{rid}").status_code == 404
+    )
+    r2 = fb.post("/v1/responses", json={"model": "fx1", "input": "skip-r", "store": False})
+    out["retrieve_response_store_false_404"] = (
+        r2.status_code == 200 and fb.get(f"/v1/responses/{r2.json()['id']}").status_code == 404
+    )
+    # wrong-surface id is a miss, not a cross-read
+    out["retrieve_wrong_surface_404"] = (
+        fb.get(f"/v1/responses/{sid}").status_code == 404
+        and fb.get("/v1/chat/completions/resp_deadbeef").status_code == 404
+    )
+    # a streamed call lands the assembled envelope under the same id
+    st = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "stream-me"}],
+            "stream": True,
+        },
+    )
+    st_id = next(
+        _json3.loads(ln[6:])["id"]
+        for ln in st.text.splitlines()
+        if ln.startswith("data: ") and ln != "data: [DONE]"
+    )
+    st_env = fb.get(f"/v1/chat/completions/{st_id}")
+    out["retrieve_stream_stored"] = (
+        st.status_code == 200
+        and st_env.status_code == 200
+        and st_env.json()["choices"][0]["message"]["content"] == "clean:stream-me"
+    )
+    # n>1: one envelope (n choices) under one id
+    n2 = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "fan"}],
+            "n": 2,
+        },
+    )
+    n2_env = fb.get(f"/v1/chat/completions/{n2.json()['id']}")
+    out["retrieve_n_fanout_single_envelope"] = (
+        n2_env.status_code == 200 and len(n2_env.json()["choices"]) == 2
+    )
+    # batch lines store too — the output body's id fetches the same envelope
+    bfid = _upload(fb)["id"]
+    bcb = fb.post(
+        "/v1/batches",
+        json={"input_file_id": bfid, "endpoint": "/v1/chat/completions"},
+    )
+    bterm = _wait_batch(fb, bcb.json()["id"])
+    bline0 = _json3.loads(
+        fb.get(f"/v1/files/{bterm['output_file_id']}/content").text.splitlines()[0]
+    )
+    b_id = bline0["response"]["body"]["id"]
+    out["retrieve_batch_line_stored"] = (
+        bterm["status"] == "completed"
+        and fb.get(f"/v1/chat/completions/{b_id}").json() == bline0["response"]["body"]
+    )
+    # an idempotent replay re-pins the envelope — still retrievable
+    idem = fb.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "idem"}]},
+        headers={"Idempotency-Key": "lane80-idem"},
+    )
+    fb.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "idem"}]},
+        headers={"Idempotency-Key": "lane80-idem"},
+    )
+    out["retrieve_idem_replay_stored"] = (
+        fb.get(f"/v1/chat/completions/{idem.json()['id']}").status_code == 200
+    )
+    # LRU bound: store_max=2 evicts the oldest entry
+    ev_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), store_max=2))
+    ev_ids = [
+        ev_app.post(
+            "/v1/chat/completions",
+            json={"model": "fx1", "messages": [{"role": "user", "content": f"ev{i}"}]},
+        ).json()["id"]
+        for i in range(3)
+    ]
+    out["retrieve_store_max_evicts"] = (
+        ev_app.get(f"/v1/chat/completions/{ev_ids[0]}").status_code == 404
+        and ev_app.get(f"/v1/chat/completions/{ev_ids[1]}").status_code == 200
+        and ev_app.get(f"/v1/chat/completions/{ev_ids[2]}").status_code == 200
+    )
+    # capabilities advertises the index bound + flag
+    caps = fb.get("/harness/capabilities").json()
+    out["capabilities_retrieval"] = (
+        caps["features"]["openai_retrieval"] is True and caps["limits"]["store_max"] == 256.0
     )
 
 
