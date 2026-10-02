@@ -1485,6 +1485,14 @@ from quant_fund.research.benches_w186 import (
     bench_persistent_cd_family,
     bench_score_matching_family,
 )
+from quant_fund.research.benches_w187 import (
+    bench_deepritz_pinn_family,
+    bench_fbsde_solver_family,
+    bench_feynman_kac_mc_family,
+    bench_moc_lines_family,
+    bench_spectral_pde_family,
+    bench_weak_form_pinn_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4152,6 +4160,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "contrastive_divergence": bench_contrastive_divergence_family(),
         "persistent_cd": bench_persistent_cd_family(),
         "adversarial_ebm": bench_adversarial_ebm_family(),
+        "deepritz_pinn": bench_deepritz_pinn_family(),
+        "weak_form_pinn": bench_weak_form_pinn_family(),
+        "fbsde_solver": bench_fbsde_solver_family(),
+        "spectral_pde": bench_spectral_pde_family(),
+        "moc_lines": bench_moc_lines_family(),
+        "feynman_kac_mc": bench_feynman_kac_mc_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
