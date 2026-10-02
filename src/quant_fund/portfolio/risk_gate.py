@@ -17,14 +17,18 @@ LIMIT_REL_SLACK = 1e-12
 
 
 def exceeds_limit(value: float, limit: float) -> bool:
-    """True when ``value`` is above ``limit`` by more than float noise."""
+    """Reject non-finite operands or a breach larger than float noise."""
+    if not math.isfinite(value) or not math.isfinite(limit):
+        return True
     if not value > limit:
         return False
     return (value - limit) > max(LIMIT_ABS_SLACK, LIMIT_REL_SLACK * abs(limit))
 
 
 def funded(cash: float, needed: float) -> bool:
-    """True when ``cash`` covers ``needed``, ignoring a float-ulp shortfall."""
+    """Finite cash covers finite need, ignoring a float-ulp shortfall."""
+    if not math.isfinite(cash) or not math.isfinite(needed):
+        return False
     if cash >= needed:
         return True
     return not exceeds_limit(needed, cash)
@@ -85,11 +89,15 @@ def check_order(
     if not math.isfinite(float(order.quantity)) or order.quantity <= 0.0:
         raise RiskGateRejected("quantity must be finite and strictly positive")
     if price_age_bars is not None:
+        if not math.isfinite(price_age_bars):
+            raise RiskGateRejected("price age must be finite")
         if price_age_bars < 0:
             raise RiskGateRejected("price age cannot be negative")
         if price_age_bars > g.stale_price_bars:
             raise RiskGateRejected(f"price is stale: {price_age_bars} bars")
     if model_age_hours is not None:
+        if not math.isfinite(model_age_hours):
+            raise RiskGateRejected("model age must be finite")
         if model_age_hours < 0.0:
             raise RiskGateRejected("model age cannot be negative")
         if model_age_hours > g.stale_model_hours:
