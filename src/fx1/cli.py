@@ -343,6 +343,43 @@ def harness_health(
     )
 
 
+@harness_app.command("metrics")
+def harness_metrics(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Remote ops counters — requires --remote (nothing meters in-process)."""
+    if remote is None:
+        typer.echo(
+            "error: harness metrics is a wire-ops surface; pass --remote",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    from fx1.serve.client import HarnessClient
+
+    client = HarnessClient(
+        remote,
+        api_key=api_key or os.environ.get("FX1_API_KEY") or None,
+        timeout_s=timeout_s,
+    )
+    m = _or_exit(client.metrics)
+    typer.echo(
+        json.dumps(
+            {
+                "uptime_s": m.uptime_s,
+                "requests_total": m.requests_total,
+                "errors_total": m.errors_total,
+                "by_status": m.by_status,
+                "inflight": m.inflight,
+                "inflight_watermark": m.inflight_watermark,
+                "max_inflight": m.max_inflight,
+            },
+            indent=2,
+        )
+    )
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

@@ -284,6 +284,19 @@ def cli_audit() -> dict[str, Any]:
 
             return HarnessHealth(status="ok", version="v", registered_commands=1, backends={})
 
+        def metrics(self) -> Any:
+            from fx1.sdk import OpsMetrics
+
+            return OpsMetrics(
+                uptime_s=1.0,
+                requests_total=7,
+                errors_total=0,
+                by_status={"200": 7},
+                inflight=0,
+                inflight_watermark=1,
+                max_inflight=16,
+            )
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -306,6 +319,16 @@ def cli_audit() -> dict[str, Any]:
             runner.invoke(app, ["harness", "list", "--remote", "http://h.test"]).stdout.strip()
             == "cmd-a"
         )
+        rm = runner.invoke(app, ["harness", "metrics", "--remote", "http://h.test"])
+        out["remote_metrics_json"] = (
+            rm.exit_code == 0
+            and json.loads(rm.stdout)["requests_total"] == 7
+            and json.loads(rm.stdout)["by_status"] == {"200": 7}
+        )
+
+    # metrics is a wire-ops surface — without --remote it fails clean
+    rm_local = runner.invoke(app, ["harness", "metrics"])
+    out["metrics_local_refused"] = rm_local.exit_code == 2 and "--remote" in rm_local.output
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:

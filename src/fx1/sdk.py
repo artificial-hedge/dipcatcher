@@ -53,6 +53,7 @@ __all__ = [
     "BackendNotConfiguredError",
     "CompletionResult",
     "Fx1Harness",
+    "OpsMetrics",
     "ReceiptVerdict",
 ]
 
@@ -91,6 +92,23 @@ class HarnessHealth:
     version: str
     registered_commands: int
     backends: dict[str, bool] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class OpsMetrics:
+    """Remote ops snapshot — mirrors ``MetricsResponse`` on the API.
+
+    Wire-only: the in-process surface has no HTTP layer to meter, so
+    ``Fx1Harness`` deliberately does not expose this shape.
+    """
+
+    uptime_s: float
+    requests_total: int
+    errors_total: int
+    by_status: dict[str, int] = field(default_factory=dict)
+    inflight: int = 0
+    inflight_watermark: int = 0
+    max_inflight: int = 0
 
 
 class Fx1Harness:

@@ -320,6 +320,20 @@ def e2e_audit() -> dict[str, bool]:
             if not released["done"]:
                 released["done"] = True
                 slots.release()
+
+        # ops surface over the wire — counters reflect this audit's calls
+        m = remote.metrics()
+        out["e2e_metrics_counts"] = (
+            m.requests_total >= 10
+            and m.errors_total >= 2
+            and m.by_status.get("200", 0) >= 5
+            and "401" in m.by_status
+            and m.inflight == 0
+            and m.inflight_watermark >= 1
+            and m.max_inflight == 16
+        )
+        m2 = resilient.metrics()
+        out["e2e_metrics_capped_server"] = m2.max_inflight == 1 and m2.requests_total >= 1
     finally:
         if server is not None:
             server.should_exit = True

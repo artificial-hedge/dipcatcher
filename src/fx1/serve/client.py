@@ -37,7 +37,7 @@ from typing import Any
 
 from fx1.harness import HarnessResult
 from fx1.honesty import Fx1HonestyError
-from fx1.sdk import CompletionResult, HarnessHealth, ReceiptVerdict
+from fx1.sdk import CompletionResult, HarnessHealth, OpsMetrics, ReceiptVerdict
 from fx1.serve.backends import BackendNotConfiguredError
 
 __all__ = [
@@ -431,4 +431,20 @@ class HarnessClient:
             version=out["version"],
             registered_commands=out["registered_commands"],
             backends=dict(out["backends"]),
+        )
+
+    # ---- ops --------------------------------------------------------------
+
+    def metrics(self) -> OpsMetrics:
+        """Ops counters from the remote harness — wire-only (the in-process
+        SDK has no HTTP layer to meter)."""
+        out = self._json("GET", "/metrics", idempotent=True)
+        return OpsMetrics(
+            uptime_s=out["uptime_s"],
+            requests_total=out["requests_total"],
+            errors_total=out["errors_total"],
+            by_status=dict(out["by_status"]),
+            inflight=out["inflight"],
+            inflight_watermark=out["inflight_watermark"],
+            max_inflight=out["max_inflight"],
         )
