@@ -2367,6 +2367,106 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mode_connectivity",
         "catapult_phase",
         "neural_grok",
+        # Wave-185 differentiable-algorithm canon:
+        # STE, Gumbel relax, P&M grad,
+        # IFT, ODE adjoint, smooth argmax.
+        "st_estimator",
+        "gumbel_relax",
+        "perturb_map",
+        "implicit_diff",
+        "ode_adjoint",
+        "smooth_argmax",
+        # Wave-186 energy-based-model canon:
+        # ISM, DSM, NCE, CD, PCD, adversarial.
+        "score_matching",
+        "denoising_sm",
+        "noise_contrastive",
+        "contrastive_divergence",
+        "persistent_cd",
+        "adversarial_ebm",
+        # Wave-187 scientific-ML/PDE canon:
+        # DeepRitz, weak form, BSDE, spectral,
+        # MOL, Feynman-Kac MC.
+        "deepritz_pinn",
+        "weak_form_pinn",
+        "fbsde_solver",
+        "spectral_pde",
+        "moc_lines",
+        "feynman_kac_mc",
+        # Wave-188 active-learning canon:
+        # entropy, margin, QBC, k-center,
+        # BADGE, EGL.
+        "entropy_query",
+        "margin_sampling",
+        "qbc_committee",
+        "coreset_kcenter",
+        "badge_embed",
+        "egl_change",
+        # Wave-189 self-play/game-AI canon:
+        # AZ-lite, ExIt, NFSP, PSRO,
+        # deep-CFR, MCCFR.
+        "alphazero_lite",
+        "expert_iteration",
+        "nfsp",
+        "psro",
+        "deep_cfr",
+        "mccfr_outcome",
+        # Wave-190 classical causal-discovery canon:
+        # GES, FCI, ICA/Direct/VAR-LiNGAM, MMPC.
+        "ges_search",
+        "fci_alg",
+        "ica_lingam",
+        "direct_lingam",
+        "var_lingam",
+        "mmmb_select",
+        # Wave-191 exploration canon: count bonus, RND, ICM, NGU,
+        # RIDE, Go-Explore.
+        "count_bonus",
+        "rnd_explore",
+        "icm_explore",
+        "ngu_explore",
+        "ride_explore",
+        "go_explore",
+        # Wave-192 info-theory canon: MMD, HSIC, MINE, NWJ,
+        # copula MI, LSD.
+        "mmd_two_sample",
+        "hsic_independence",
+        "mine_mi",
+        "nwj_mi",
+        "copula_mi",
+        "lsd_deptest",
+        # Wave-193 optimal-control canon: LQR, DDP, MPPI, PMP,
+        # MPC-QP, LQG.
+        "lqr_control",
+        "ddp_solve",
+        "mppi_control",
+        "pmp_bangbang",
+        "mpc_qp",
+        "lqg_control",
+        # Wave-194 stochastic-process canon: CIR, OU bridge,
+        # Poisson/Hawkes thinning, Merton jumps, GP bridge.
+        "cir_sim",
+        "ou_bridge",
+        "poisson_thinning",
+        "hawkes_thinning",
+        "levy_jump",
+        "gp_bridge",
+        # Wave-195 ensemble/adaptive-MCMC canon: emcee stretch,
+        # DE-MCMC, DRAM, RJMCMC, pCN, independence MH.
+        "emcee_stretch",
+        "de_mcmc",
+        "dram",
+        "rjmcmc",
+        "pcn_sampler",
+        "indep_mh",
+        # Wave-196 eigen canon: power+deflation, inverse iteration,
+        # Jacobi, shifted QR, Hessenberg, bidiagonalization.
+        "power_iter",
+        "inverse_iter",
+        "jacobi_eig",
+        "qr_eig",
+        "hessenberg_red",
+        "bidiag_svd",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

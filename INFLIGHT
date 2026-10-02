@@ -2582,3 +2582,15 @@ wave 181 (2026-10-02): LM-arch-2 canon — mamba2_ssd, xlstm_mlstm, rwkv7, titan
 wave 182 (2026-10-02): normalizing-flow canon — real_nvp, glow_flow, neural_spline_flow, maf_flow, planar_flow, iaf_flow; 1064→1070 families.
 wave 183 (2026-10-02): causal-structure-DL canon — notears, dagma_lin, golem_ev, notears_mlp, dag_gnn, cam_prune; 1070→1076 families.
 wave 184 (2026-10-02): training-dynamics canon — hessian_eig, ntk_kernel, edge_stability, mode_connectivity, catapult_phase, neural_grok; 1076→1082 families.
+wave 185 (2026-10-02): differentiable-algorithm canon — st_estimator, gumbel_relax, perturb_map, implicit_diff, ode_adjoint, smooth_argmax; 1082→1088 families.
+wave 186 (2026-10-02): energy-based-model canon — score_matching, denoising_sm, noise_contrastive, contrastive_divergence, persistent_cd, adversarial_ebm; 1088→1094 families.
+wave 187 (2026-10-02): scientific-ML/PDE canon — deepritz_pinn, weak_form_pinn, fbsde_solver, spectral_pde, moc_lines, feynman_kac_mc; 1094→1100 families.
+wave 188 (2026-10-02): active-learning canon — entropy_query, margin_sampling, qbc_committee, coreset_kcenter, badge_embed, egl_change; 1100→1106 families.
+wave 189 (2026-10-02): self-play/game-AI canon — alphazero_lite, expert_iteration, nfsp, psro, deep_cfr, mccfr_outcome; 1106→1112 families.
+wave 190 (2026-10-02): causal-discovery classical canon — ges_search, fci_alg, ica_lingam, direct_lingam, var_lingam, mmmb_select; 1112→1118 families.
+wave 191 (2026-10-02): RL-exploration canon — count_bonus, rnd_explore, icm_explore, ngu_explore, ride_explore, go_explore; 1118→1124 families.
+wave 192 (2026-10-02): info-theory canon — mmd_two_sample, hsic_independence, mine_mi, nwj_mi, copula_mi, lsd_deptest; 1124→1130 families.
+wave 193 (2026-10-02): optimal-control canon — lqr_control, ddp_solve, mppi_control, pmp_bangbang, mpc_qp, lqg_control; 1130→1136 families.
+wave 194 (2026-10-02): stochastic-process sim canon — cir_sim, ou_bridge, poisson_thinning, hawkes_thinning, levy_jump, gp_bridge; 1136→1142 families.
+wave 195 (2026-10-02): ensemble/adaptive-MCMC canon — emcee_stretch, de_mcmc, dram, rjmcmc, pcn_sampler, indep_mh; 1142→1148 families.
+wave 196 (2026-10-02): eigen-decomposition canon — power_iter, inverse_iter, jacobi_eig, qr_eig, hessenberg_red, bidiag_svd; 1148→1154 families.
