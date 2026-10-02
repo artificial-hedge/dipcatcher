@@ -1405,6 +1405,14 @@ from quant_fund.research.benches_w176 import (
     bench_influence_func_family,
     bench_proto_prune_family,
 )
+from quant_fund.research.benches_w177 import (
+    bench_izhikevich_family,
+    bench_lif_neuron_family,
+    bench_lsm_reservoir_family,
+    bench_stdp_learn_family,
+    bench_surrogate_snn_family,
+    bench_temporal_code_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4012,6 +4020,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "forgetting_events": bench_forgetting_events_family(),
         "influence_func": bench_influence_func_family(),
         "proto_prune": bench_proto_prune_family(),
+        "lif_neuron": bench_lif_neuron_family(),
+        "stdp_learn": bench_stdp_learn_family(),
+        "surrogate_snn": bench_surrogate_snn_family(),
+        "izhikevich": bench_izhikevich_family(),
+        "lsm_reservoir": bench_lsm_reservoir_family(),
+        "temporal_code": bench_temporal_code_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

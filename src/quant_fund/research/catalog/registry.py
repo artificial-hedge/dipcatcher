@@ -2296,6 +2296,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "forgetting_events",
         "influence_func",
         "proto_prune",
+        # Wave-177 neuromorphic canon:
+        # LIF, STDP, surrogate SNN,
+        # Izhikevich, LSM, temporal coding.
+        "lif_neuron",
+        "stdp_learn",
+        "surrogate_snn",
+        "izhikevich",
+        "lsm_reservoir",
+        "temporal_code",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
