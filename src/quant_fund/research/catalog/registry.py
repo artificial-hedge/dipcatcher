@@ -1875,6 +1875,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "trajectory_transformer",
         "sac_agent",
         "gail_imitation",
+        # Wave-131 generative-seq:
+        # VQ-VAE, flow matching,
+        # score SDE, consistency,
+        # EBM, Perceiver.
+        "vq_vae_ts",
+        "flow_matching_ts",
+        "score_sde_ts",
+        "consistency_ts",
+        "energy_ts",
+        "perceiver_ts",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
