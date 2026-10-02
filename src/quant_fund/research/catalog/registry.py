@@ -1825,6 +1825,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "adversarial_robust",
         "risk_flow",
         "causal_miner",
+        # Wave-126 exec-summary deep-DL:
+        # TFT, PatchTST, DeepLOB, set-
+        # transformer, NODE, world model.
+        "tft_forecaster",
+        "patchtst",
+        "lob_transformer",
+        "set_transformer",
+        "neural_ode",
+        "world_model",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
