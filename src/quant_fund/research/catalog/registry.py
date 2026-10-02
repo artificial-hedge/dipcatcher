@@ -2069,6 +2069,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "reflexion_retry",
         "multi_agent_pipeline",
         "judge_pairwise",
+        # Wave-152 privacy canon:
+        # DP-SGD, sec-agg, FedAvg,
+        # PATE, DLG, canary.
+        "dp_sgd",
+        "secure_agg",
+        "fedavg_hetero",
+        "pate_teacher",
+        "gradient_leakage",
+        "canary_exposure",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

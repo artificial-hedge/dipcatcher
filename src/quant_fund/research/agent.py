@@ -1205,6 +1205,14 @@ from quant_fund.research.benches_w151 import (
     bench_reflexion_retry_family,
     bench_toolformer_call_family,
 )
+from quant_fund.research.benches_w152 import (
+    bench_canary_exposure_family,
+    bench_dp_sgd_family,
+    bench_fedavg_hetero_family,
+    bench_gradient_leakage_family,
+    bench_pate_teacher_family,
+    bench_secure_agg_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3662,6 +3670,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "reflexion_retry": bench_reflexion_retry_family(),
         "multi_agent_pipeline": bench_multi_agent_pipeline_family(),
         "judge_pairwise": bench_judge_pairwise_family(),
+        "dp_sgd": bench_dp_sgd_family(),
+        "secure_agg": bench_secure_agg_family(),
+        "fedavg_hetero": bench_fedavg_hetero_family(),
+        "pate_teacher": bench_pate_teacher_family(),
+        "gradient_leakage": bench_gradient_leakage_family(),
+        "canary_exposure": bench_canary_exposure_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
