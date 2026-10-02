@@ -2555,6 +2555,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pedersen_commit",
         "diffie_hellman",
         "ecc_secp256k1",
+        # Wave-208 signal canon: CWT ridge, cepstrum, MVDR, Hilbert,
+        # LPC formants, Goertzel.
+        "cwt_ridge",
+        "cepstrum_pitch",
+        "mvdr_beamformer",
+        "hilbert_instant",
+        "lpc_formant",
+        "goertzel_detect",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
