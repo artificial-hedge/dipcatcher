@@ -110,3 +110,40 @@ def test_normalization_preserves_returned_text() -> None:
     """The gate returns the original bytes — normalization is for matching only."""
     original = "ｓynthetic data has no numeric claim"
     assert validate_fx1_output(original) == original
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        # A run of invisible chars must preserve the token/number boundary.
+        "Sharpe\u200b\u20602.1",
+        "nav\u200e\ufeff1.9",
+        "pnl\u00ad\u200b4200",
+        # Homoglyph folding must happen before ASCII boundary/collapse rules.
+        "s h α r p e: 2.1",
+        "Ν Α V of 1.9",
+        "sharpе\u200b2.1",  # final letter is Cyrillic
+        "sharpе\u2060\ufeff2.1",
+        # Bidi and invisible mathematical formatting must not split a token.
+        "sha\u202erpe: 2.1",
+        "na\u2066v of 1.9",
+        "live\u2063 trading returns of 4%",
+        "synthe\u2063tic results show 92% accuracy",
+    ],
+)
+def test_composed_normalization_bypasses_fail_closed(text: str) -> None:
+    with pytest.raises(Fx1HonestyError):
+        validate_fx1_output(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "s h α r p e is excluded from research headlines",
+        "sha\u202erpe is a forbidden metric",
+        "S Y Ν T H E T I C results show 92% accuracy",
+        "SYNTHETIC results show 92% accuracy\u2063 on the fixture",
+    ],
+)
+def test_composed_normalization_preserves_allowed_text(text: str) -> None:
+    assert validate_fx1_output(text) == text
