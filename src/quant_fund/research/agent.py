@@ -2079,6 +2079,14 @@ from quant_fund.research.benches_w260 import (
     bench_kuhn_munkres_family,
     bench_topo_layers_family,
 )
+from quant_fund.research.benches_w261 import (
+    bench_ekf_slam_family,
+    bench_frontier_explore_family,
+    bench_occupancy_grid_family,
+    bench_particle_slam_family,
+    bench_pure_pursuit_family,
+    bench_stanley_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2326,6 +2334,12 @@ def _provenance(
         "konig_cover": bench_konig_cover_family,
         "gale_chu": bench_gale_chu_family,
         "topo_layers": bench_topo_layers_family,
+        "ekf_slam": bench_ekf_slam_family,
+        "occupancy_grid": bench_occupancy_grid_family,
+        "pure_pursuit": bench_pure_pursuit_family,
+        "stanley": bench_stanley_family,
+        "particle_slam": bench_particle_slam_family,
+        "frontier_explore": bench_frontier_explore_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
