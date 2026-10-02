@@ -411,6 +411,7 @@ _MEASUREMENT_SCHEMAS = (
     "band_shape.v1",
     "cancel_cluster.v1",
     "cancel_gradient_bench.v1",
+    "churn_reseed.v1",
     "churn_stability.v1",
     "closure_fit.v1",
     "closure_stack.v1",

@@ -1345,6 +1345,14 @@ class ZILobSimulator:
         self.n_lo_capped = 0
         self.n_lo_reposts = 0
         self.n_requotes = 0
+        # Fill-repost fates: a due repost either rests or drops with a
+        # reason (the maker floor veto, natural refill, or the grid
+        # walked past). Only incremented while the queue drains.
+        self.n_repost_due = 0
+        self.n_repost_drop_floor = 0
+        self.n_repost_drop_refill = 0
+        self.n_repost_drop_walked = 0
+        self.n_repost_rested = 0
         # Cancel-distance histogram: bucket d counts cancels d ticks
         # from that side's touch; index 20 collects the tail.
         self.cxl_dist = [0] * 21
@@ -1825,15 +1833,20 @@ class ZILobSimulator:
             if due > self.n_events:
                 keep.append((due, side, level))
                 continue
+            self.n_repost_due += 1
             if floor > 0 and abs(level - ref) < floor:
+                self.n_repost_drop_floor += 1
                 continue  # the maker floor never re-seeds inside the band
             book = self._bids if side == "buy" else self._asks
             opp = self.best_ask_level if side == "buy" else self.best_bid_level
             if level in book:
+                self.n_repost_drop_refill += 1
                 continue  # natural refill already reseeded it
             if opp is not None and (level >= opp if side == "buy" else level <= opp):
+                self.n_repost_drop_walked += 1
                 continue  # the price grid walked past the vacancy
             self.n_lo_reposts += 1
+            self.n_repost_rested += 1
             for _ in range(self._cfg.repost_depth):
                 self._rest(side, level, "repost")
         self._fill_repost_q = keep

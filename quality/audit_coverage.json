@@ -96,7 +96,7 @@
     },
     "microstructure": {
       "doc": "docs/AUDIT_P65_MICRO.md",
-      "n_modules": 176,
+      "n_modules": 177,
       "status": "audited"
     },
     "models": {
