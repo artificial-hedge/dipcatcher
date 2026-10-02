@@ -1501,6 +1501,14 @@ from quant_fund.research.benches_w188 import (
     bench_margin_sampling_family,
     bench_qbc_committee_family,
 )
+from quant_fund.research.benches_w189 import (
+    bench_alphazero_lite_family,
+    bench_deep_cfr_family,
+    bench_expert_iteration_family,
+    bench_mccfr_outcome_family,
+    bench_nfsp_family,
+    bench_psro_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4180,6 +4188,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "coreset_kcenter": bench_coreset_kcenter_family(),
         "badge_embed": bench_badge_embed_family(),
         "egl_change": bench_egl_change_family(),
+        "alphazero_lite": bench_alphazero_lite_family(),
+        "expert_iteration": bench_expert_iteration_family(),
+        "nfsp": bench_nfsp_family(),
+        "psro": bench_psro_family(),
+        "deep_cfr": bench_deep_cfr_family(),
+        "mccfr_outcome": bench_mccfr_outcome_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

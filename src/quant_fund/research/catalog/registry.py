@@ -2402,6 +2402,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "coreset_kcenter",
         "badge_embed",
         "egl_change",
+        # Wave-189 self-play/game-AI canon:
+        # AZ-lite, ExIt, NFSP, PSRO,
+        # deep-CFR, MCCFR.
+        "alphazero_lite",
+        "expert_iteration",
+        "nfsp",
+        "psro",
+        "deep_cfr",
+        "mccfr_outcome",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
