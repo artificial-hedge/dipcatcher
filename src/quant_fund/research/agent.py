@@ -829,6 +829,14 @@ from quant_fund.research.benches_w104 import (
     bench_unbalanced_ot_family,
     bench_wasserstein_barycenter_family,
 )
+from quant_fund.research.benches_w105 import (
+    bench_alpha_beta_family,
+    bench_dfpn_family,
+    bench_mcts_family,
+    bench_negascout_family,
+    bench_proof_number_family,
+    bench_puct_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3004,6 +3012,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "unbalanced_ot": bench_unbalanced_ot_family(),
         "wasserstein_barycenter": bench_wasserstein_barycenter_family(),
         "fused_gromov": bench_fused_gromov_family(),
+        "alpha_beta": bench_alpha_beta_family(),
+        "mcts": bench_mcts_family(),
+        "puct": bench_puct_family(),
+        "negascout": bench_negascout_family(),
+        "proof_number": bench_proof_number_family(),
+        "dfpn": bench_dfpn_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

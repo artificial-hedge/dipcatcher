@@ -1620,6 +1620,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "unbalanced_ot",
         "wasserstein_barycenter",
         "fused_gromov",
+        # Wave-105 canon: game-tree
+        # search on a subtraction-race
+        # DAG — alpha-beta + TT, UCT,
+        # PUCT, NegaScout, PN, df-pn.
+        "alpha_beta",
+        "mcts",
+        "puct",
+        "negascout",
+        "proof_number",
+        "dfpn",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
