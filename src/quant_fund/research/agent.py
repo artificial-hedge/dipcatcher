@@ -1774,6 +1774,14 @@ from quant_fund.research.benches_w222 import (
     bench_pollard_rho_family,
     bench_tonelli_shanks_family,
 )
+from quant_fund.research.benches_w223 import (
+    bench_consistent_hash_family,
+    bench_gossip_epidemic_family,
+    bench_paxos_family,
+    bench_pbft_lite_family,
+    bench_raft_election_family,
+    bench_vector_clock_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4658,6 +4666,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "continued_fraction": bench_continued_fraction_family(),
         "crt_garner": bench_crt_garner_family(),
         "ec_scalar": bench_ec_scalar_family(),
+        "paxos": bench_paxos_family(),
+        "raft_election": bench_raft_election_family(),
+        "vector_clock": bench_vector_clock_family(),
+        "consistent_hash": bench_consistent_hash_family(),
+        "gossip_epidemic": bench_gossip_epidemic_family(),
+        "pbft_lite": bench_pbft_lite_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
