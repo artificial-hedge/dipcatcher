@@ -2443,6 +2443,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pmp_bangbang",
         "mpc_qp",
         "lqg_control",
+        # Wave-194 stochastic-process canon: CIR, OU bridge,
+        # Poisson/Hawkes thinning, Merton jumps, GP bridge.
+        "cir_sim",
+        "ou_bridge",
+        "poisson_thinning",
+        "hawkes_thinning",
+        "levy_jump",
+        "gp_bridge",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

@@ -1541,6 +1541,14 @@ from quant_fund.research.benches_w193 import (
     bench_mppi_control_family,
     bench_pmp_bangbang_family,
 )
+from quant_fund.research.benches_w194 import (
+    bench_cir_sim_family,
+    bench_gp_bridge_family,
+    bench_hawkes_thinning_family,
+    bench_levy_jump_family,
+    bench_ou_bridge_family,
+    bench_poisson_thinning_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4250,6 +4258,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pmp_bangbang": bench_pmp_bangbang_family(),
         "mpc_qp": bench_mpc_qp_family(),
         "lqg_control": bench_lqg_control_family(),
+        "cir_sim": bench_cir_sim_family(),
+        "ou_bridge": bench_ou_bridge_family(),
+        "poisson_thinning": bench_poisson_thinning_family(),
+        "hawkes_thinning": bench_hawkes_thinning_family(),
+        "levy_jump": bench_levy_jump_family(),
+        "gp_bridge": bench_gp_bridge_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
