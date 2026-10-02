@@ -61,12 +61,18 @@ from fx1.serve.openai_compat import (
     OpenAIChatResponse,
     OpenAIModel,
     OpenAIModelList,
+    OpenAIResponseRequest,
     openai_chunks,
     openai_envelope,
     openai_model,
     openai_models,
+    openai_response_events,
+    openai_response_object,
     openai_to_kwargs,
+    response_text_format,
+    response_to_kwargs,
     validate_openai_output,
+    validate_response_format,
 )
 from fx1.serve.receipt_store import SHA256_HEX, ReceiptIndex
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
@@ -81,6 +87,7 @@ __all__ = [
     "OpenAIChatRequest",
     "OpenAIChatResponse",
     "OpenAIModelList",
+    "OpenAIResponseRequest",
     "OpsMetrics",
     "ReceiptRef",
     "ReceiptVerdict",
@@ -1390,6 +1397,76 @@ class Fx1Harness:
         if last_event_id is not None:
             chunks = chunks[last_event_id + 1 :]
         return chunks, first.completion_id
+
+    def openai_response(
+        self,
+        request: OpenAIResponseRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """One Responses-API surface call, weights-direct.
+
+        ``request`` is the same body ``POST /v1/responses`` takes — a dict
+        or a parsed :class:`OpenAIResponseRequest`. Same fail-closed
+        translation as the wire (``response_to_kwargs``), same honesty
+        gate, same metering and completion log. Returns the ``response``
+        object (``id`` mints the ``resp_`` handle; ``output[0]`` is the
+        message item) plus the completion-log id for receipt lookup.
+        """
+        body = (
+            request
+            if isinstance(request, OpenAIResponseRequest)
+            else OpenAIResponseRequest.model_validate(request)
+        )
+        kwargs = response_to_kwargs(body, dict(headers or {}))
+        result = self.complete(**kwargs)
+        validate_response_format(response_text_format(body), result.content)
+        envelope = openai_response_object(
+            rid=f"resp_{uuid.uuid4().hex}",
+            item_id=f"msg_{uuid.uuid4().hex}",
+            content=result.content,
+            body=body,
+            model=result.model,
+            usage=result.usage,
+        )
+        return envelope, result.completion_id
+
+    def openai_response_stream(
+        self,
+        request: OpenAIResponseRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+        last_event_id: int | None = None,
+    ) -> tuple[list[tuple[str, dict[str, Any]]], str | None]:
+        """The Responses ``stream: true`` surface in-process —
+        ``(event, payload)`` pairs, identical to what the wire serializes
+        into ``event:``/``data:`` frames (minus framing). ``last_event_id``
+        applies the same sequence filter as the wire resume."""
+        if last_event_id is not None and last_event_id < 0:
+            raise ValueError(f"last_event_id must be >= 0, got {last_event_id}")
+        body = (
+            request
+            if isinstance(request, OpenAIResponseRequest)
+            else OpenAIResponseRequest.model_validate(request)
+        )
+        kwargs = response_to_kwargs(body, dict(headers or {}))
+        result = self.complete(**kwargs)
+        validate_response_format(response_text_format(body), result.content)
+        rid = f"resp_{uuid.uuid4().hex}"
+        item_id = f"msg_{uuid.uuid4().hex}"
+        events = list(
+            openai_response_events(
+                text=result.content,
+                rid=rid,
+                item_id=item_id,
+                body=body,
+                model=result.model,
+                usage=result.usage,
+            )
+        )
+        if last_event_id is not None:
+            events = events[last_event_id + 1 :]
+        return events, result.completion_id
 
     def _resolve_chain(
         self,

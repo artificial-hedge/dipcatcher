@@ -526,7 +526,28 @@
           "422"
         ]
       }
+    },
+    "/v1/responses": {
+      "post": {
+        "params": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "454eef3b0f863dd2d8a4ae1bad87fb0a9ff63720ff6a7c12497286a741b01498"
+  "schema_sha256": "be940d9799d9d976d3db14b2337855196d0ff2ff39f853d67a5fc67700671ff3"
 }

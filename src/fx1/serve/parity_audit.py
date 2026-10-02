@@ -610,7 +610,85 @@ def parity_audit() -> dict[str, bool]:
             and sdk_byok_env.system_fingerprint == "byok"
         )
 
-        # --- verifier parity ----------------------------------------------------
+        # /v1/responses parity — one gated completion through either
+        # surface carries the same text, the same echoed object fields,
+        # the same fail-closed refusals, and the same completion log
+        resp_body = {
+            "model": "fx1",
+            "instructions": "be terse",
+            "input": [
+                {"role": "developer", "content": [{"type": "input_text", "text": "d"}]},
+                {"role": "user", "content": "ping"},
+            ],
+            "max_output_tokens": 32,
+            "reasoning": {"effort": "low"},
+            "metadata": {"lane": "78"},
+        }
+        wire_resp = client.post("/v1/responses", json=resp_body)
+        sdk_resp, sdk_resp_cid = sdk.openai_response(resp_body)
+        wire_rd = wire_resp.json()
+        out["openai_response_parity"] = (
+            wire_resp.status_code == 200
+            and wire_rd["object"] == "response"
+            and wire_rd["output"][0]["content"][0]["text"]
+            == sdk_resp["output"][0]["content"][0]["text"]
+            == "echo:ping"
+            and wire_rd["status"] == sdk_resp["status"] == "completed"
+            and wire_rd["metadata"] == sdk_resp["metadata"] == {"lane": "78"}
+            and wire_rd["reasoning"] == sdk_resp["reasoning"] == {"effort": "low"}
+            and bool(sdk_resp_cid)
+            and sdk.completion(sdk_resp_cid or "").metadata == {"lane": "78"}
+        )
+        # refused fields refuse identically on both surfaces
+        resp_tools = {**resp_body, "tools": []}
+        wire_rt = client.post("/v1/responses", json=resp_tools)
+        sdk_rt = _raises(lambda: sdk.openai_response(resp_tools))[0]
+        out["openai_response_refusal_parity"] = (
+            wire_rt.status_code == 422
+            and wire_rt.json()["error"]["type"] == "invalid_request_error"
+            and sdk_rt == "ValidationError"
+        )
+        resp_item_refuse = {
+            **resp_body,
+            "input": [{"type": "function_call", "role": "user", "content": "x"}],
+        }
+        wire_rf = client.post("/v1/responses", json=resp_item_refuse)
+        sdk_rf = _raises(lambda: sdk.openai_response(resp_item_refuse))[0]
+        out["openai_response_item_refusal_parity"] = (
+            wire_rf.status_code == 400
+            and wire_rf.json()["error"]["type"] == "invalid_request_error"
+            and sdk_rf == "OpenAICompatError"
+        )
+        # stream parity — identical (event, payload) sequences modulo the
+        # server-minted ids/timestamp
+        resp_stream = {**resp_body, "stream": True}
+        wire_rs = client.post("/v1/responses", json=resp_stream)
+        wire_revents = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_rs.text.splitlines()
+            if ln.startswith("data: ")
+        ]
+        sdk_revents, _ = sdk.openai_response_stream(resp_body)
+        _volatile = ("id", "item_id", "created_at")
+
+        def _resp_norm(p: dict[str, Any]) -> Any:
+            p_ = {k: v for k, v in p.items() if k not in _volatile}
+            if "response" in p_:
+                r_ = {k: v for k, v in p_["response"].items() if k not in _volatile}
+                r_["output"] = [
+                    {k: v for k, v in i.items() if k != "id"} for i in p_["response"]["output"]
+                ]
+                p_["response"] = r_
+            if "item" in p_:
+                p_["item"] = {k: v for k, v in p_["item"].items() if k != "id"}
+            return p_
+
+        out["openai_response_stream_parity"] = (
+            wire_rs.status_code == 200
+            and [_resp_norm(p) for p in wire_revents] == [_resp_norm(p) for _e, p in sdk_revents]
+            and [e for e, _p in sdk_revents] == [p["type"] for p in wire_revents]
+        )
+
         from fx1.serve.byok_audit import byok_audit_bench
 
         good = byok_audit_bench()

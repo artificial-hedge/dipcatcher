@@ -58,6 +58,8 @@ export type OpenAIChatResponse =
   components["schemas"]["OpenAIChatResponse"];
 export type OpenAIModelList = components["schemas"]["OpenAIModelList"];
 export type OpenAIModel = components["schemas"]["OpenAIModel"];
+export type OpenAIResponseRequest =
+  components["schemas"]["OpenAIResponseRequest"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
 export type ReceiptIndexItem = components["schemas"]["ReceiptIndexItem"];
 export type ReceiptIndexResponse =
@@ -661,6 +663,89 @@ export class HarnessApiClient {
       if (ev.data === "[DONE]") break;
       onChunk(JSON.parse(ev.data) as Record<string, unknown>);
     }
+    return res.headers.get("X-Fx1-Completion-Id");
+  }
+
+  /**
+   * POST /v1/responses — the OpenAI Responses surface over the gated
+   * pipeline. Non-streaming only (`stream: true` is rejected here; use
+   * `responsesCreateStream`). `input` is a string or message-item list;
+   * `instructions` prepends a system turn; `text.format` is the
+   * post-validated structured-output channel. Returns the `response`
+   * object plus the `X-Fx1-Completion-Id` handle.
+   */
+  async responsesCreate(
+    request: OpenAIResponseRequest,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<{ response: Record<string, unknown>; completionId: string | null }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/responses",
+      body: { ...request, stream: false },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      response: (await res.json()) as Record<string, unknown>,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
+  }
+
+  /**
+   * POST /v1/responses with `stream: true` — SSE frames in the Responses
+   * event grammar (`response.created` … `response.completed`; there is
+   * no `[DONE]` sentinel — the completed event is terminal). `onEvent`
+   * receives each parsed payload (every payload carries `type`).
+   * `lastEventId` resumes a dropped keyed stream exactly like
+   * `chatCompletionStream` — frames carry `id:` equal to their index.
+   */
+  async responsesCreateStream(
+    request: OpenAIResponseRequest,
+    onEvent: (payload: Record<string, unknown>) => void,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+    lastEventId?: number,
+  ): Promise<string | null> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/responses",
+      body: { ...request, stream: true },
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+        ...(lastEventId !== undefined
+          ? { "Last-Event-ID": String(lastEventId) }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    let terminal = false;
+    for await (const ev of readSse(res)) {
+      const payload = JSON.parse(ev.data) as Record<string, unknown>;
+      onEvent(payload);
+      if (payload.type === "response.completed") {
+        terminal = true;
+        break;
+      }
+    }
+    if (!terminal)
+      throw new HarnessApiError(
+        0,
+        "responses stream ended before response.completed",
+      );
     return res.headers.get("X-Fx1-Completion-Id");
   }
 

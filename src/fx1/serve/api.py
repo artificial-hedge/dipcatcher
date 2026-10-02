@@ -108,13 +108,19 @@ from fx1.serve.openai_compat import (
     OpenAICompatError,
     OpenAIModel,
     OpenAIModelList,
+    OpenAIResponseRequest,
     is_openai_path,
     openai_chunks,
     openai_envelope,
     openai_error_body,
     openai_model,
+    openai_response_events,
+    openai_response_object,
     openai_to_kwargs,
+    response_text_format,
+    response_to_kwargs,
     validate_openai_output,
+    validate_response_format,
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
@@ -158,6 +164,7 @@ _CORS_EXPOSE_HEADERS = [
 _CORS_ALLOW_HEADERS = [
     "Content-Type",
     "Idempotency-Key",
+    "Last-Event-ID",
     "X-API-Key",
     "X-Request-ID",
 ]
@@ -1039,6 +1046,41 @@ def _body_fp(body: BaseModel, *, exclude: set[str] | None = None) -> str:
     """Fingerprint for the idempotency contract — hashed so a stored
     dedupe record can never carry a secret (per-request BYOK keys)."""
     return hashlib.sha256(body.model_dump_json(exclude=exclude).encode()).hexdigest()
+
+
+def _responses_sse(
+    body: OpenAIResponseRequest,
+    *,
+    content: str,
+    rid: str,
+    item_id: str,
+    model: str | None,
+    usage: dict[str, int] | None,
+    created: int | None = None,
+    skip: int = 0,
+) -> Iterator[str]:
+    """Serialize ``openai_response_events`` into SSE frames —
+    ``event:`` + ``id:`` + ``data:`` per frame, ``id`` equal to the
+    frame index so ``Last-Event-ID`` resume works identically to the
+    chat-completions stream. No ``[DONE]`` marker — ``response.completed``
+    is the terminal event."""
+
+    def _frame(event: str, payload: dict[str, Any], seq: int) -> str:
+        return f"event: {event}\nid: {seq}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
+
+    for seq, (event, payload) in enumerate(
+        openai_response_events(
+            text=content,
+            rid=rid,
+            item_id=item_id,
+            body=body,
+            model=model,
+            usage=usage,
+            created=created,
+        )
+    ):
+        if seq >= skip:
+            yield _frame(event, payload, seq)
 
 
 def _openai_sse(
@@ -2916,6 +2958,154 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 headers=headers,
             )
         return JSONResponse(envelope, headers={"X-Fx1-Completion-Id": cid})
+
+    @app.post(
+        "/v1/responses",
+        # the JSON path returns the ``response`` object; stream=true returns
+        # the Responses SSE event grammar (response_model stays None)
+        responses={200: {"model": None}},
+        tags=["openai"],
+        operation_id="openai_responses",
+    )
+    def openai_responses(
+        body: OpenAIResponseRequest,
+        request: Request,
+        _slot_held: None = Depends(slot),
+        idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+        last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
+    ) -> Response:
+        """OpenAI Responses API over the same gated pipeline.
+
+        ``input`` is a string or a list of message items
+        (``{type: "message", role, content: [{type: "input_text", text}]}``
+        or the shorthand ``{role, content: "..."}``); ``instructions``
+        prepends a system turn; ``developer`` roles map to ``system``.
+        ``max_output_tokens`` lands on the decode cap, ``reasoning.effort``
+        on the reasoning hint, ``text.format`` on the post-validated
+        ``response_format`` channel (a violation is a provider-side 502),
+        ``user``/``safety_identifier``/``metadata`` stamp the audit record.
+
+        Same fail-closed rule as chat completions: ``tools``/
+        ``tool_choice``/``parallel_tool_calls``/``truncation``/``include``/
+        ``background``/``previous_response_id`` refuse at validation (422).
+        ``store=false`` refuses — the audit ledger records every call and
+        this surface has no retrieval tier for the flag to govern.
+        ``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as
+        on ``/v1/chat/completions`` (the stream's terminal frame is
+        ``response.completed``, not ``[DONE]``).
+        """
+        skip = 0
+        if last_event_id is not None:
+            if not body.stream:
+                raise ApiError(
+                    400, "Last-Event-ID applies to stream requests only", code="bad_resume"
+                )
+            try:
+                seen = int(last_event_id)
+            except ValueError as exc:
+                raise ApiError(
+                    400,
+                    f"Last-Event-ID must be a frame index, got {last_event_id!r}",
+                    code="bad_resume",
+                ) from exc
+            if seen < 0:
+                raise ApiError(400, "Last-Event-ID must be >= 0", code="bad_resume")
+            if not (idempotency_key or "").strip():
+                raise ApiError(
+                    400,
+                    "resuming a stream needs the original call's Idempotency-Key",
+                    code="resume_needs_key",
+                )
+            skip = seen + 1
+        body_fp = _body_fp(body)
+        key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
+        if skip and replay is None:
+            raise ApiError(
+                409,
+                "Last-Event-ID resume needs a pinned stream under this "
+                "Idempotency-Key — nothing stored",
+                code="resume_miss",
+            )
+
+        def _resp_sse_from(env: dict[str, Any], drop: int) -> Iterator[str]:
+            return _responses_sse(
+                body,
+                content=env["output"][0]["content"][0]["text"],
+                rid=env["id"],
+                item_id=env["output"][0]["id"],
+                model=env.get("model"),
+                usage=env.get("_fx1_usage"),
+                created=env.get("created_at"),
+                skip=drop,
+            )
+
+        if replay is not None:
+            env = replay.envelope
+            headers = {
+                "X-Fx1-Completion-Id": str(env["_fx1_completion_id"]),
+                "X-Fx1-Idempotent-Replay": "true",
+            }
+            if body.stream:
+                return StreamingResponse(
+                    _resp_sse_from(env, skip),
+                    media_type="text/event-stream",
+                    headers=headers,
+                )
+            out_env = {
+                k: v for k, v in env.items() if k not in ("_fx1_completion_id", "_fx1_usage")
+            }
+            return JSONResponse(out_env, headers=headers)
+        try:
+            creq = CompleteRequest(**response_to_kwargs(body, request.headers))
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        out = complete(body=creq, response=Response(), _slot_held=None, idempotency_key=None)
+        try:
+            validate_response_format(response_text_format(body), out.content)
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        cid = out.completion_id or uuid.uuid4().hex
+        rid = f"resp_{uuid.uuid4().hex}"
+        item_id = f"msg_{uuid.uuid4().hex}"
+        envelope = openai_response_object(
+            rid=rid,
+            item_id=item_id,
+            content=out.content,
+            body=body,
+            model=out.model,
+            usage=out.usage,
+        )
+        if key is not None:
+            # the cid + raw usage ride the stored envelope so the replay can
+            # re-link the completion-log record and regenerate byte-identical
+            # stream frames; both are stripped before the JSON leaves.
+            openai_idem_store.put(
+                key,
+                body_fp,
+                _OpenAIIdemRecord(
+                    envelope={
+                        **envelope,
+                        "_fx1_completion_id": cid,
+                        "_fx1_usage": out.usage,
+                    }
+                ),
+            )
+        headers = {"X-Fx1-Completion-Id": cid}
+        if body.stream:
+            return StreamingResponse(
+                _responses_sse(
+                    body,
+                    content=out.content,
+                    rid=rid,
+                    item_id=item_id,
+                    model=out.model,
+                    usage=out.usage,
+                    created=envelope["created_at"],
+                ),
+                media_type="text/event-stream",
+                headers=headers,
+            )
+        return JSONResponse(envelope, headers=headers)
 
     @app.post(
         "/harness/complete/batch",

@@ -737,6 +737,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Responses
+         * @description OpenAI Responses API over the same gated pipeline.
+         *
+         *     ``input`` is a string or a list of message items
+         *     (``{type: "message", role, content: [{type: "input_text", text}]}``
+         *     or the shorthand ``{role, content: "..."}``); ``instructions``
+         *     prepends a system turn; ``developer`` roles map to ``system``.
+         *     ``max_output_tokens`` lands on the decode cap, ``reasoning.effort``
+         *     on the reasoning hint, ``text.format`` on the post-validated
+         *     ``response_format`` channel (a violation is a provider-side 502),
+         *     ``user``/``safety_identifier``/``metadata`` stamp the audit record.
+         *
+         *     Same fail-closed rule as chat completions: ``tools``/
+         *     ``tool_choice``/``parallel_tool_calls``/``truncation``/``include``/
+         *     ``background``/``previous_response_id`` refuse at validation (422).
+         *     ``store=false`` refuses — the audit ledger records every call and
+         *     this surface has no retrieval tier for the flag to govern.
+         *     ``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as
+         *     on ``/v1/chat/completions`` (the stream's terminal frame is
+         *     ``response.completed``, not ``[DONE]``).
+         */
+        post: operations["openai_responses"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1732,6 +1770,62 @@ export interface components {
              * @constant
              */
             object: "list";
+        };
+        /**
+         * OpenAIResponseRequest
+         * @description POST /v1/responses body — the Responses surface over the same
+         *     gated pipeline. ``input`` is one string or a list of message items;
+         *     ``instructions`` prepends a system message. ``reasoning.effort`` maps
+         *     to the decode hint; ``text.format`` maps to the post-validated
+         *     ``response_format`` channel; ``user``/``safety_identifier`` stamp the
+         *     audit record.
+         */
+        OpenAIResponseRequest: {
+            fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Input */
+            input: string | {
+                [key: string]: unknown;
+            }[];
+            /** Instructions */
+            instructions?: string | null;
+            /** Max Output Tokens */
+            max_output_tokens?: number | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /**
+             * Model
+             * @default fx1
+             */
+            model: string;
+            /** Reasoning */
+            reasoning?: {
+                [key: string]: unknown;
+            } | null;
+            /** Safety Identifier */
+            safety_identifier?: string | null;
+            /** Service Tier */
+            service_tier?: ("auto" | "default" | "flex" | "priority" | "scale") | null;
+            /** Store */
+            store?: boolean | null;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+            /** Temperature */
+            temperature?: number | null;
+            /** Text */
+            text?: {
+                [key: string]: unknown;
+            } | null;
+            /** Top P */
+            top_p?: number | null;
+            /** User */
+            user?: string | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * ReadyResponse
@@ -3580,6 +3674,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpenAIModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_responses: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                "Last-Event-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIResponseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

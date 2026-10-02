@@ -6,9 +6,12 @@ pydantic validation object, one backend-resolution order, one error
 taxonomy — so the wire and the weights-direct path cannot drift apart.
 
 - *Fail-closed surface* — every OpenAI feature the gated pipeline cannot
-  honor (tools, ``n != 1``, ``logprobs``, non-text ``response_format``,
-  content parts other than ``text``…) is rejected by
-  :class:`OpenAICompatError`, never silently dropped.
+  honor (tools, ``logprobs``, non-text ``response_format`` types, content
+  parts other than ``text``…) is rejected by
+  :class:`OpenAICompatError`, never silently dropped. The
+  ``/v1/responses`` surface applies the same rule — ``store=false``
+  refuses rather than pretending zero-retention over an audit ledger
+  that records every call.
 - *Backend precedence* — ``fx1.backend`` > ``X-Fx1-Backend`` >
   ``model`` naming a backend > ``byok`` when BYOK headers are present >
   ``hosted_k3``. Header-based BYOK treats a non-backend ``model`` as the
@@ -37,6 +40,10 @@ __all__ = [
     "OPENAI_UNSUPPORTED",
     "OPENAI_MODEL_IDS",
     "OPENAI_RESPONSE_FORMATS",
+    "RESPONSE_ITEM_TYPES_REFUSED",
+    "RESPONSE_PART_TYPES",
+    "RESPONSE_ROLES",
+    "RESPONSES_UNSUPPORTED",
     "ByokOverride",
     "OpenAIChatMessage",
     "OpenAIChatResponse",
@@ -45,6 +52,7 @@ __all__ = [
     "OpenAIFx1",
     "OpenAIModel",
     "OpenAIModelList",
+    "OpenAIResponseRequest",
     "is_openai_path",
     "openai_chunks",
     "openai_envelope",
@@ -52,9 +60,15 @@ __all__ = [
     "openai_messages",
     "openai_model",
     "openai_models",
+    "openai_response_events",
+    "openai_response_object",
     "openai_to_kwargs",
     "openai_usage",
+    "response_input_to_messages",
+    "response_text_format",
+    "response_to_kwargs",
     "validate_openai_output",
+    "validate_response_format",
 ]
 
 
@@ -375,6 +389,44 @@ def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, str]]:
     return out
 
 
+def _resolve_openai_link(
+    model: str, ext: OpenAIFx1 | None, hdrs: dict[str, str]
+) -> tuple[str, list[str], str | None, ByokOverride | None]:
+    """Backend resolution shared by the chat and responses translators —
+    ``fx1.backend`` > ``X-Fx1-Backend`` > a ``model`` naming a backend >
+    ``byok`` when BYOK headers are present > ``hosted_k3``. Returns
+    ``(backend, fallbacks, checkpoint_dir, byok)``."""
+    byok_headers = hdrs.get("x-fx1-byok-base-url")
+    backend = (
+        (ext.backend if ext is not None else None)
+        or hdrs.get("x-fx1-backend")
+        or (model if model in OPENAI_BACKENDS else None)
+        # BYOK headers present and no explicit backend → the model string is
+        # the upstream model (e.g. "gpt-4o"), the link is byok.
+        or ("byok" if byok_headers else "hosted_k3")
+    )
+    if backend not in OPENAI_BACKENDS:
+        raise OpenAICompatError(f"unknown backend {backend!r}")
+    fallbacks: list[str] = list(ext.fallbacks) if ext is not None else []
+    if not fallbacks and hdrs.get("x-fx1-fallbacks"):
+        fallbacks = [f.strip() for f in hdrs["x-fx1-fallbacks"].split(",") if f.strip()]
+    checkpoint_dir = (ext.checkpoint_dir if ext is not None else None) or hdrs.get(
+        "x-fx1-checkpoint-dir"
+    )
+    byok = ext.byok if ext is not None else None
+    if byok is None and byok_headers:
+        api_key = hdrs.get("x-fx1-byok-api-key")
+        byok_model = hdrs.get("x-fx1-byok-model") or (
+            model if model not in OPENAI_BACKENDS else None
+        )
+        if not api_key:
+            raise OpenAICompatError("X-Fx1-Byok-Base-Url requires X-Fx1-Byok-Api-Key")
+        if not byok_model:
+            raise OpenAICompatError("byok needs a model — set X-Fx1-Byok-Model or body.model")
+        byok = ByokOverride(base_url=byok_headers, api_key=api_key, model=byok_model)
+    return backend, fallbacks, checkpoint_dir, byok
+
+
 def openai_to_kwargs(
     body: OpenAIChatRequest, headers: Mapping[str, str] | None = None
 ) -> dict[str, Any]:
@@ -394,34 +446,7 @@ def openai_to_kwargs(
     """
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    byok_headers = hdrs.get("x-fx1-byok-base-url")
-    backend = (
-        (ext.backend if ext is not None else None)
-        or hdrs.get("x-fx1-backend")
-        or (body.model if body.model in OPENAI_BACKENDS else None)
-        # BYOK headers present and no explicit backend → the model string is
-        # the upstream model (e.g. "gpt-4o"), the link is byok.
-        or ("byok" if byok_headers else "hosted_k3")
-    )
-    if backend not in OPENAI_BACKENDS:
-        raise OpenAICompatError(f"unknown backend {backend!r}")
-    fallbacks: list[str] = list(ext.fallbacks) if ext is not None else []
-    if not fallbacks and hdrs.get("x-fx1-fallbacks"):
-        fallbacks = [f.strip() for f in hdrs["x-fx1-fallbacks"].split(",") if f.strip()]
-    checkpoint_dir = (ext.checkpoint_dir if ext is not None else None) or hdrs.get(
-        "x-fx1-checkpoint-dir"
-    )
-    byok = ext.byok if ext is not None else None
-    if byok is None and byok_headers:
-        api_key = hdrs.get("x-fx1-byok-api-key")
-        model = hdrs.get("x-fx1-byok-model") or (
-            body.model if body.model not in OPENAI_BACKENDS else None
-        )
-        if not api_key:
-            raise OpenAICompatError("X-Fx1-Byok-Base-Url requires X-Fx1-Byok-Api-Key")
-        if not model:
-            raise OpenAICompatError("byok needs a model — set X-Fx1-Byok-Model or body.model")
-        byok = ByokOverride(base_url=byok_headers, api_key=api_key, model=model)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
     return {
         "backend": backend,
         "messages": openai_messages(body.messages),
@@ -456,8 +481,8 @@ def openai_to_kwargs(
     }
 
 
-def validate_openai_output(body: OpenAIChatRequest, content: str) -> None:
-    """Post-validate a gated completion against ``response_format``.
+def validate_response_format(rf: dict[str, Any] | None, content: str) -> None:
+    """Post-validate a gated completion against a response_format dict.
 
     The harness can't constrain-decode arbitrary providers (BYOK),
     so the gate's second pass verifies the returned text: a
@@ -465,7 +490,6 @@ def validate_openai_output(body: OpenAIChatRequest, content: str) -> None:
     ``format_violation``, never silently shipped and never pinned
     into an idempotency record.
     """
-    rf = body.response_format
     if not rf:
         return
     rtype = rf.get("type", "text")
@@ -496,6 +520,12 @@ def validate_openai_output(body: OpenAIChatRequest, content: str) -> None:
                 status=502,
                 code="format_violation",
             ) from exc
+
+
+def validate_openai_output(body: OpenAIChatRequest, content: str) -> None:
+    """Post-validate a gated chat completion — thin shim over
+    :func:`validate_response_format` on ``body.response_format``."""
+    validate_response_format(body.response_format, content)
 
 
 def openai_usage(usage: dict[str, int] | None) -> dict[str, int] | None:
@@ -539,6 +569,21 @@ def openai_envelope(
     }
 
 
+def _text_pieces(text: str) -> Iterator[str]:
+    """~64-char delta pieces on whitespace boundaries — the shared
+    chunking for ``chat.completion.chunk`` deltas and ``output_text``
+    response events."""
+    pos = 0
+    while pos < len(text):
+        end = min(pos + 64, len(text))
+        if end < len(text):
+            sp = text.rfind(" ", pos, end)
+            if sp > pos:
+                end = sp + 1
+        yield text[pos:end]
+        pos = end
+
+
 def openai_chunks(
     *,
     text: str | list[str],
@@ -575,15 +620,7 @@ def openai_chunks(
         first["choices"] = [{"index": i, "delta": {"role": "assistant"}, "finish_reason": None}]
         yield first
 
-        pos = 0
-        while pos < len(choice_text):
-            end = min(pos + 64, len(choice_text))
-            if end < len(choice_text):
-                sp = choice_text.rfind(" ", pos, end)
-                if sp > pos:
-                    end = sp + 1
-            piece = choice_text[pos:end]
-            pos = end
+        for piece in _text_pieces(choice_text):
             frame = dict(base)
             frame["choices"] = [{"index": i, "delta": {"content": piece}, "finish_reason": None}]
             yield frame
@@ -597,3 +634,461 @@ def openai_chunks(
         usage_frame["choices"] = []
         usage_frame["usage"] = openai_usage(usage)
         yield usage_frame
+
+
+# --- Responses API surface ----------------------------------------------------
+# POST /v1/responses — OpenAI's canonical surface. Same gated pipeline, same
+# translation layer, same fail-closed rule: a field the pipeline can't honor
+# is a 400, never a silent drop. ``store=false`` is refused outright — the
+# audit ledger records every call and there is no retrieval surface for a
+# store flag to govern; claiming zero-retention while writing receipts would
+# be a lie.
+RESPONSES_UNSUPPORTED = (
+    "tools",
+    "tool_choice",
+    "parallel_tool_calls",
+    "truncation",
+    "include",
+    "background",
+    "previous_response_id",
+    # chat-completions fields that don't exist on this surface — refuse
+    # rather than drop so a caller's intent never evaporates
+    "n",
+    "stop",
+    "logit_bias",
+    "presence_penalty",
+    "frequency_penalty",
+    "logprobs",
+    "top_logprobs",
+    "messages",
+    "stream_options",
+    "response_format",
+    "max_tokens",
+    "seed",
+    "echo",
+    "suffix",
+    "best_of",
+    "modalities",
+    "audio",
+    "prediction",
+    "web_search_options",
+    "functions",
+    "function_call",
+)
+
+# Item types inside ``input[]`` that a text-only gated pipeline cannot honor.
+RESPONSE_ITEM_TYPES_REFUSED = frozenset(
+    {
+        "item_reference",
+        "function_call",
+        "function_call_output",
+        "reasoning",
+        "web_search_call",
+        "file_search_call",
+        "computer_call",
+        "computer_call_output",
+        "code_interpreter_call",
+        "image_generation_call",
+        "local_shell_call",
+        "mcp_call",
+        "mcp_list_tools",
+        "mcp_approval_request",
+        "mcp_approval_response",
+    }
+)
+
+# Content-part types inside a message item the pipeline accepts.
+RESPONSE_PART_TYPES = frozenset({"input_text", "output_text"})
+
+RESPONSE_ROLES = frozenset({"user", "assistant", "system", "developer"})
+
+
+class OpenAIResponseRequest(_Model):
+    """POST /v1/responses body — the Responses surface over the same
+    gated pipeline. ``input`` is one string or a list of message items;
+    ``instructions`` prepends a system message. ``reasoning.effort`` maps
+    to the decode hint; ``text.format`` maps to the post-validated
+    ``response_format`` channel; ``user``/``safety_identifier`` stamp the
+    audit record."""
+
+    model_config = ConfigDict(extra="allow")
+
+    model: str = "fx1"
+    input: str | list[dict[str, Any]]
+    instructions: str | None = Field(default=None, max_length=32768)
+    temperature: float | None = Field(default=None, ge=0.0, le=2.0)
+    top_p: float | None = Field(default=None, gt=0.0, le=1.0)
+    max_output_tokens: int | None = Field(default=None, gt=0, le=262144)
+    stream: bool = False
+    store: bool | None = None
+    metadata: dict[str, str] | None = None
+    service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
+    user: str | None = Field(default=None, max_length=512)
+    safety_identifier: str | None = Field(default=None, max_length=512)
+    reasoning: dict[str, Any] | None = None
+    text: dict[str, Any] | None = None
+    fx1: OpenAIFx1 | None = None
+
+    @model_validator(mode="after")
+    def _response_valid(self) -> OpenAIResponseRequest:
+        if isinstance(self.input, str) and not self.input.strip():
+            raise ValueError("input must not be empty")
+        if isinstance(self.input, list) and not self.input:
+            raise ValueError("input must not be empty")
+        if self.store is False:
+            raise ValueError(
+                "store=false can't be honored — the audit ledger records every "
+                "call; there is no zero-retention mode on this surface"
+            )
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        if self.reasoning is not None:
+            extra = set(self.reasoning) - {"effort"}
+            if extra:
+                raise ValueError(
+                    f"unsupported reasoning keys: {sorted(extra)} "
+                    "(only 'effort' maps onto the gated decode hints)"
+                )
+            effort = self.reasoning.get("effort")
+            if effort is not None and effort not in (
+                "none",
+                "minimal",
+                "low",
+                "medium",
+                "high",
+            ):
+                raise ValueError(
+                    f"reasoning.effort must be none|minimal|low|medium|high, got {effort!r}"
+                )
+        if self.text is not None:
+            extra_t = set(self.text) - {"format", "verbosity"}
+            if extra_t:
+                raise ValueError(f"unsupported text keys: {sorted(extra_t)}")
+            fmt = self.text.get("format")
+            if fmt is not None:
+                if not isinstance(fmt, dict):
+                    raise ValueError("text.format must be an object")
+                ftype = fmt.get("type", "text")
+                if ftype not in OPENAI_RESPONSE_FORMATS:
+                    raise ValueError(
+                        "text.format.type must be one of "
+                        f"{sorted(OPENAI_RESPONSE_FORMATS)}; got {ftype!r}"
+                    )
+                if ftype == "json_schema":
+                    schema = fmt.get("schema")
+                    if not isinstance(schema, dict):
+                        raise ValueError(
+                            "text.format json_schema needs "
+                            "{type: 'json_schema', name?, schema: {...}}"
+                        )
+                    try:
+                        jsonschema.validators.validator_for(schema).check_schema(schema)
+                    except jsonschema.SchemaError as exc:
+                        raise ValueError(
+                            f"text.format json_schema is not a valid schema: {exc.message}"
+                        ) from exc
+        present = [f for f in RESPONSES_UNSUPPORTED if getattr(self, f, None) is not None]
+        extra_bad = sorted(f for f in RESPONSES_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
+        bad = sorted(set(present) | set(extra_bad))
+        if bad:
+            raise ValueError(f"unsupported for the gated pipeline: {', '.join(bad)}")
+        return self
+
+
+def response_input_to_messages(
+    input_: str | list[dict[str, Any]], instructions: str | None
+) -> list[dict[str, str]]:
+    """Flatten a Responses ``input`` + ``instructions`` into harness
+    ``{role, content}`` pairs. ``developer`` items map to ``system``;
+    every non-message item type and non-text content part fails
+    closed."""
+    msgs: list[dict[str, str]] = []
+    if instructions:
+        msgs.append({"role": "system", "content": instructions})
+    if isinstance(input_, str):
+        msgs.append({"role": "user", "content": input_})
+        return msgs
+    for i, item in enumerate(input_):
+        if not isinstance(item, dict):
+            raise OpenAICompatError(f"input[{i}]: items must be objects")
+        itype = item.get("type")
+        if itype in RESPONSE_ITEM_TYPES_REFUSED:
+            raise OpenAICompatError(f"input[{i}]: {itype!r} items are not supported")
+        role = item.get("role")
+        if itype not in (None, "message") or role is None:
+            raise OpenAICompatError(f"input[{i}]: only message items with a role are supported")
+        if role not in RESPONSE_ROLES:
+            raise OpenAICompatError(f"input[{i}]: unknown role {role!r}")
+        content = item.get("content")
+        if isinstance(content, str):
+            text = content
+        elif isinstance(content, list):
+            parts: list[str] = []
+            for j, part in enumerate(content):
+                if not isinstance(part, dict):
+                    raise OpenAICompatError(f"input[{i}].content[{j}]: parts must be objects")
+                ptype = part.get("type")
+                if ptype not in RESPONSE_PART_TYPES:
+                    raise OpenAICompatError(
+                        f"input[{i}].content[{j}]: only text parts are supported, got {ptype!r}"
+                    )
+                if ptype == "output_text" and role != "assistant":
+                    raise OpenAICompatError(
+                        f"input[{i}].content[{j}]: output_text belongs to assistant items"
+                    )
+                parts.append(str(part.get("text", "")))
+            text = "".join(parts)
+        else:
+            raise OpenAICompatError(f"input[{i}]: content is required")
+        msgs.append({"role": "system" if role == "developer" else role, "content": text})
+    if not any(m["role"] != "system" for m in msgs):
+        raise OpenAICompatError("input carried no user/assistant turn")
+    return msgs
+
+
+def response_text_format(body: OpenAIResponseRequest) -> dict[str, Any] | None:
+    """``text.format`` → the chat-shape ``response_format`` dict
+    :func:`validate_response_format` consumes (or ``None``)."""
+    if not body.text:
+        return None
+    fmt = body.text.get("format")
+    if not isinstance(fmt, dict):
+        return None
+    ftype = fmt.get("type", "text")
+    if ftype == "json_schema":
+        return {
+            "type": "json_schema",
+            "json_schema": {"name": fmt.get("name"), "schema": fmt["schema"]},
+        }
+    return {"type": ftype}
+
+
+def response_to_kwargs(
+    body: OpenAIResponseRequest, headers: Mapping[str, str] | None = None
+) -> dict[str, Any]:
+    """Translate a Responses request into ``complete`` kwargs — the same
+    backend-resolution order and the same extension/headers as the chat
+    surface. ``max_output_tokens`` lands on ``max_tokens``;
+    ``reasoning.effort`` on ``reasoning_effort``; the audit stamp takes
+    ``user`` or ``safety_identifier``."""
+    hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+    ext = body.fx1
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    effort = (body.reasoning or {}).get("effort")
+    return {
+        "backend": backend,
+        "messages": response_input_to_messages(body.input, body.instructions),
+        "checkpoint_dir": checkpoint_dir,
+        "receipt_hashes": ext.receipt_hashes if ext is not None else None,
+        "timeout_s": ext.timeout_s if ext is not None else None,
+        "fallbacks": fallbacks,
+        "byok": byok.model_dump() if byok is not None else None,
+        "temperature": body.temperature,
+        "top_p": body.top_p,
+        "max_tokens": body.max_output_tokens,
+        "user": body.user or body.safety_identifier,
+        "metadata": body.metadata,
+        "service_tier": body.service_tier,
+        "reasoning_effort": effort,
+    }
+
+
+def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
+    """The request fields a faithful ``response`` object echoes back."""
+    return {
+        "temperature": body.temperature,
+        "top_p": body.top_p,
+        "max_output_tokens": body.max_output_tokens,
+        "metadata": body.metadata,
+        "instructions": body.instructions,
+        "service_tier": body.service_tier,
+        "reasoning": body.reasoning,
+        "text": body.text,
+        # fields we refuse on input are echoed as their honest constants
+        "store": True,
+        "tools": [],
+        "tool_choice": "none",
+        "parallel_tool_calls": False,
+        "truncation": "disabled",
+    }
+
+
+def openai_response_object(
+    *,
+    rid: str,
+    item_id: str,
+    content: str,
+    body: OpenAIResponseRequest,
+    model: str | None,
+    usage: dict[str, int] | None,
+    status: str = "completed",
+    created: int | None = None,
+) -> dict[str, Any]:
+    """A gated result → the ``response`` object. ``output`` carries one
+    ``message`` item with one ``output_text`` part; ``usage`` maps the
+    provider's counts onto input/output/total (``None`` when the backend
+    reports nothing — never fabricated). ``status`` is ``in_progress``
+    only inside the pre-completion stream events."""
+    resp_usage: dict[str, int] | None = None
+    if isinstance(usage, dict):
+        it = usage.get("prompt_tokens")
+        ot = usage.get("completion_tokens")
+        tt = usage.get("total_tokens")
+        if isinstance(it, int) or isinstance(ot, int) or isinstance(tt, int):
+            i_v = it if isinstance(it, int) else 0
+            o_v = ot if isinstance(ot, int) else 0
+            resp_usage = {
+                "input_tokens": i_v,
+                "output_tokens": o_v,
+                "total_tokens": tt if isinstance(tt, int) else i_v + o_v,
+            }
+    output = (
+        [
+            {
+                "type": "message",
+                "id": item_id,
+                "status": "completed",
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": content, "annotations": []}],
+            }
+        ]
+        if status == "completed"
+        else []
+    )
+    return {
+        "id": rid,
+        "object": "response",
+        "created_at": int(time.time()) if created is None else created,
+        "status": status,
+        "model": model or body.model,
+        "output": output,
+        "usage": resp_usage,
+        "error": None,
+        "incomplete_details": None,
+        **_response_echoes(body),
+    }
+
+
+def openai_response_events(
+    *,
+    text: str,
+    rid: str,
+    item_id: str,
+    body: OpenAIResponseRequest,
+    model: str | None,
+    usage: dict[str, int] | None,
+    created: int | None = None,
+) -> Iterator[tuple[str, dict[str, Any]]]:
+    """The Responses SSE event sequence over gated text — the core grammar
+    a streaming client needs: ``response.created``/``in_progress``, the
+    output-item lifecycle, ``output_text.delta`` frames (the shared
+    ~64-char splitter), and ``response.completed`` carrying the full
+    response object with usage. Each ``(event, payload)`` pair serializes
+    as an SSE ``event:`` + ``data:`` frame."""
+    created_obj = openai_response_object(
+        rid=rid,
+        item_id=item_id,
+        content="",
+        body=body,
+        model=model,
+        usage=None,
+        status="in_progress",
+        created=created,
+    )
+    yield "response.created", {"type": "response.created", "response": created_obj}
+    yield (
+        "response.in_progress",
+        {
+            "type": "response.in_progress",
+            "response": created_obj,
+        },
+    )
+    yield (
+        "response.output_item.added",
+        {
+            "type": "response.output_item.added",
+            "output_index": 0,
+            "item": {
+                "type": "message",
+                "id": item_id,
+                "status": "in_progress",
+                "role": "assistant",
+                "content": [],
+            },
+        },
+    )
+    yield (
+        "response.content_part.added",
+        {
+            "type": "response.content_part.added",
+            "item_id": item_id,
+            "output_index": 0,
+            "content_index": 0,
+            "part": {"type": "output_text", "text": "", "annotations": []},
+        },
+    )
+    for piece in _text_pieces(text):
+        yield (
+            "response.output_text.delta",
+            {
+                "type": "response.output_text.delta",
+                "item_id": item_id,
+                "output_index": 0,
+                "content_index": 0,
+                "delta": piece,
+            },
+        )
+    yield (
+        "response.output_text.done",
+        {
+            "type": "response.output_text.done",
+            "item_id": item_id,
+            "output_index": 0,
+            "content_index": 0,
+            "text": text,
+        },
+    )
+    yield (
+        "response.content_part.done",
+        {
+            "type": "response.content_part.done",
+            "item_id": item_id,
+            "output_index": 0,
+            "content_index": 0,
+            "part": {"type": "output_text", "text": text, "annotations": []},
+        },
+    )
+    yield (
+        "response.output_item.done",
+        {
+            "type": "response.output_item.done",
+            "output_index": 0,
+            "item": {
+                "type": "message",
+                "id": item_id,
+                "status": "completed",
+                "role": "assistant",
+                "content": [{"type": "output_text", "text": text, "annotations": []}],
+            },
+        },
+    )
+    yield (
+        "response.completed",
+        {
+            "type": "response.completed",
+            "response": openai_response_object(
+                rid=rid,
+                item_id=item_id,
+                content=text,
+                body=body,
+                model=model,
+                usage=usage,
+                status="completed",
+                created=created,
+            ),
+        },
+    )

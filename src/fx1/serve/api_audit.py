@@ -4432,6 +4432,317 @@ def _probe_backend_probes(
     )
     out["openai_format_violation_not_pinned"] = v1.status_code == 502 and v2.status_code == 502
 
+    # POST /v1/responses — the Responses API surface over the same gated
+    # pipeline. `input` is a string or a message-item list, `instructions`
+    # prepends a system turn, `developer` roles map to system,
+    # `reasoning.effort` lands on the decode hint, `text.format` lands on
+    # the post-validated structured-output channel, and the wire carries
+    # the same idempotency + resume + fail-closed contracts as
+    # /v1/chat/completions. The `store` flag is refused at false — the
+    # audit ledger records every call; there is no retrieval tier for it
+    # to govern.
+    r = oi_clean.post("/v1/responses", json={"model": "fx1", "input": "hello"})
+    out["responses_string_input_200"] = (
+        r.status_code == 200
+        and r.json()["object"] == "response"
+        and r.json()["id"].startswith("resp_")
+        and r.json()["status"] == "completed"
+        # the model slot echoes the backend's reported model id (same as
+        # the chat surface); the requested id is the fallback
+        and r.json()["model"] == "fake-0"
+        and r.json()["created_at"] > 0
+        and isinstance(r.headers.get("X-Fx1-Completion-Id"), str)
+    )
+    _item = r.json()["output"][0]
+    out["responses_output_shape"] = (
+        _item["type"] == "message"
+        and _item["id"].startswith("msg_")
+        and _item["status"] == "completed"
+        and _item["role"] == "assistant"
+        and _item["content"] == [{"type": "output_text", "text": "clean:hello", "annotations": []}]
+    )
+    out["responses_defaults_echo"] = (
+        r.json()["tools"] == []
+        and r.json()["tool_choice"] == "none"
+        and r.json()["parallel_tool_calls"] is False
+        and r.json()["truncation"] == "disabled"
+        and r.json()["store"] is True
+        and r.json()["error"] is None
+        and r.json()["incomplete_details"] is None
+    )
+    # usage maps the provider's prompt/completion/total onto input/output/
+    # total — never fabricated (None when the backend reports nothing)
+    r = oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x"})
+    out["responses_no_usage_channel_null"] = r.json()["usage"] is None
+    r = oi_usage.post("/v1/responses", json={"model": "fx1", "input": "x"})
+    out["responses_usage_shape"] = r.json()["usage"] == {
+        "input_tokens": 5,
+        "output_tokens": 4,
+        "total_tokens": 9,
+    }
+    # instructions prepends a system turn; a `developer` role maps to
+    # system; the last user turn reaches the backend verbatim
+    usage_be.seen = None
+    r = oi_usage.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "instructions": "be terse",
+            "input": [
+                {
+                    "type": "message",
+                    "role": "developer",
+                    "content": [{"type": "input_text", "text": "dev rules"}],
+                },
+                {"role": "user", "content": "first"},
+                {"role": "assistant", "content": [{"type": "output_text", "text": "ack"}]},
+                {"role": "user", "content": "ping"},
+            ],
+            "reasoning": {"effort": "high"},
+            "max_output_tokens": 77,
+        },
+    )
+    out["responses_items_and_instructions"] = (
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:ping"
+    )
+    out["responses_reasoning_effort_forwarded"] = (
+        usage_be.seen is not None
+        and usage_be.seen.reasoning_effort == "high"
+        and usage_be.seen.max_tokens == 77
+    )
+    # the shorthand `{role, content: "..."}` item and multi-part input_text
+    # lists join before reaching the model
+    r = oi_clean.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {"role": "user", "content": "a"},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": "b"},
+                        {"type": "input_text", "text": "c"},
+                    ],
+                },
+            ],
+        },
+    )
+    out["responses_shorthand_and_parts_join"] = (
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == "clean:bc"
+    )
+    # fail closed: the fields the pipeline can't honor never reach the
+    # model — tools/tool_choice/parallel_tool_calls/truncation/include/
+    # background/previous_response_id, a refused item type, an unknown
+    # item type, an empty input, and store=false
+    out["responses_unsupported_refused"] = all(
+        oi_clean.post("/v1/responses", json={"model": "fx1", "input": "x", k: v}).status_code == 422
+        for k, v in (
+            ("tools", []),
+            ("tool_choice", "auto"),
+            ("parallel_tool_calls", True),
+            ("truncation", "auto"),
+            ("include", ["output_text"]),
+            ("background", True),
+            ("previous_response_id", "resp_x"),
+            ("store", False),
+        )
+    )
+    # refused item types fail at translation — a 400 invalid_request_error
+    # in the OpenAI shape, not a pydantic 422
+    out["responses_item_types_refused"] = all(
+        oi_clean.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": [{"type": t, "role": "user", "content": "x"}]},
+        ).status_code
+        == 400
+        for t in ("function_call", "item_reference", "reasoning", "bogus")
+    )
+    out["responses_empty_input_422"] = (
+        oi_clean.post("/v1/responses", json={"model": "fx1", "input": []}).status_code == 422
+        and oi_clean.post(
+            "/v1/responses", json={"model": "fx1", "input": [{"role": "user"}]}
+        ).status_code
+        == 400
+    )
+    # reasoning.effort outside the pinned set and a non-object reasoning
+    # block both fail validation
+    out["responses_reasoning_bounds"] = all(
+        oi_clean.post(
+            "/v1/responses", json={"model": "fx1", "input": "x", "reasoning": r_}
+        ).status_code
+        == 422
+        for r_ in ({"effort": "extreme"}, {"effort": "high", "extra": 1}, "high")
+    )
+    # text.format is the post-validated structured-output channel:
+    # json_object/schema ship when the output conforms, violation 502s in
+    # the OpenAI error shape, a malformed spec is refused pre-spend, and
+    # the validated bytes are what lands on the response object
+    r = oi_json.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "text": {"format": {"type": "json_object"}},
+        },
+    )
+    out["responses_text_format_json_pass"] = (
+        r.status_code == 200 and r.json()["output"][0]["content"][0]["text"] == '{"score": 0.9}'
+    )
+    r = oi_broken.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "text": {"format": {"type": "json_object"}},
+        },
+    )
+    out["responses_text_format_violation_502"] = (
+        r.status_code == 502 and r.json()["error"]["code"] == "format_violation"
+    )
+    r = oi_json.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "text": {
+                "format": {
+                    "type": "json_schema",
+                    "name": "s",
+                    "schema": _schema,
+                }
+            },
+        },
+    )
+    out["responses_text_format_schema_pass"] = r.status_code == 200
+    out["responses_text_format_bad_spec_422"] = (
+        oi_json.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "text": {"format": {"type": "weird"}}},
+        ).status_code
+        == 422
+    )
+    # user/safety_identifier/metadata stamp the completion record
+    r = oi_clean.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "stamp",
+            "user": "u-9",
+            "metadata": {"team": "risk"},
+        },
+    )
+    _resp_rec = oi_clean.get(f"/harness/completions/{r.headers['X-Fx1-Completion-Id']}").json()
+    out["responses_stamps_record"] = (
+        r.status_code == 200
+        and _resp_rec.get("user") == "u-9"
+        and _resp_rec.get("metadata") == {"team": "risk"}
+    )
+    # the gate fires over the Responses surface too — honesty refusal in
+    # the OpenAI error shape
+    r = oi_dirty.post("/v1/responses", json={"model": "fx1", "input": "h"})
+    out["responses_gate_502_openai_shape"] = (
+        r.status_code == 502
+        and set(r.json()) == {"error"}
+        and r.json()["error"]["code"] == "honesty_gate"
+    )
+    # Idempotency-Key: keyed retry replays byte-identically (no re-spend),
+    # a different body under the same key 409s, a refusal never pins
+    _r_idem = {"model": "fx1", "input": "idem"}
+    _r_key = {"Idempotency-Key": "resp-k1"}
+    i1 = oi_clean.post("/v1/responses", json=_r_idem, headers=_r_key)
+    i2 = oi_clean.post("/v1/responses", json=_r_idem, headers=_r_key)
+    out["responses_idem_replay_byte_identical"] = (
+        i1.status_code == 200
+        and i2.status_code == 200
+        and i1.content == i2.content
+        and i2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+        and "_fx1_completion_id" not in i2.text
+        and "_fx1_usage" not in i2.text
+    )
+    i3 = oi_clean.post("/v1/responses", json={"model": "fx1", "input": "different"}, headers=_r_key)
+    out["responses_idem_conflict_409"] = i3.status_code == 409
+    # stream: the Responses event grammar — event:/id:/data: per frame,
+    # sequential ids, terminal frame is response.completed (no [DONE]),
+    # and the completed event embeds usage + the same response object the
+    # JSON path returns
+    rs1 = oi_usage.post(
+        "/v1/responses",
+        json={**_r_idem, "stream": True},
+        headers={"Idempotency-Key": "resp-rs1"},
+    )
+    _rlines = rs1.text.splitlines()
+    _rev = [ln[7:] for ln in _rlines if ln.startswith("event: ")]
+    _rid_lines = [ln[4:] for ln in _rlines if ln.startswith("id: ")]
+    _rdata = [_json3.loads(ln[6:]) for ln in _rlines if ln.startswith("data: ")]
+    out["responses_stream_event_grammar"] = (
+        rs1.status_code == 200
+        and rs1.headers["content-type"].startswith("text/event-stream")
+        and len(_rev) == len(_rdata) == len(_rid_lines)
+        and _rid_lines == [str(i) for i in range(len(_rid_lines))]
+        and _rev[0] == "response.created"
+        and _rev[1] == "response.in_progress"
+        and _rev[-1] == "response.completed"
+        and "response.output_text.delta" in _rev
+        and "[DONE]" not in rs1.text
+        and all(d.get("type") == e for d, e in zip(_rdata, _rev, strict=True))
+        and _rdata[-1]["response"]["usage"]
+        == {
+            "input_tokens": 5,
+            "output_tokens": 4,
+            "total_tokens": 9,
+        }
+        and "".join(d["delta"] for d in _rdata if d["type"] == "response.output_text.delta")
+        == "clean:idem"
+    )
+    # keyed stream replay regenerates the byte-identical byte sequence;
+    # Last-Event-ID resume replays the pinned stream minus the seen prefix
+    rs2 = oi_usage.post(
+        "/v1/responses",
+        json={**_r_idem, "stream": True},
+        headers={"Idempotency-Key": "resp-rs1"},
+    )
+    out["responses_stream_replay_byte_identical"] = (
+        rs2.status_code == 200
+        and rs1.content == rs2.content
+        and rs2.headers.get("X-Fx1-Idempotent-Replay") == "true"
+    )
+    _rframes = rs1.text.split("\n\n")[:-1]
+    rs_res = oi_usage.post(
+        "/v1/responses",
+        json={**_r_idem, "stream": True},
+        headers={"Idempotency-Key": "resp-rs1", "Last-Event-ID": "3"},
+    )
+    out["responses_resume_suffix"] = rs_res.status_code == 200 and rs_res.text == "".join(
+        f + "\n\n" for f in _rframes[4:]
+    )
+    out["responses_resume_miss_409"] = (
+        oi_usage.post(
+            "/v1/responses",
+            json={**_r_idem, "stream": True},
+            headers={"Idempotency-Key": "resp-fresh", "Last-Event-ID": "0"},
+        ).status_code
+        == 409
+    )
+    out["responses_resume_needs_stream_400"] = (
+        oi_clean.post(
+            "/v1/responses",
+            json=_r_idem,
+            headers={**_r_key, "Last-Event-ID": "0"},
+        ).status_code
+        == 400
+    )
+    # capacity admission applies to the Responses surface too
+    rd_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
+    rd_app.state.inflight_slots.acquire()
+    try:
+        r = _TC2(rd_app).post("/v1/responses", json={"model": "fx1", "input": "h"})
+    finally:
+        rd_app.state.inflight_slots.release()
+    out["responses_over_capacity_503_shape"] = (
+        r.status_code == 503 and r.json()["error"]["code"] == "over_capacity"
+    )
+
 
 def api_audit_bench() -> dict[str, Any]:
     """Sealed receipt: every probe True under api_audit.v1."""

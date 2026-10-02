@@ -2875,6 +2875,194 @@
         "title": "OpenAIModelList",
         "type": "object"
       },
+      "OpenAIResponseRequest": {
+        "additionalProperties": true,
+        "description": "POST /v1/responses body \u2014 the Responses surface over the same\ngated pipeline. ``input`` is one string or a list of message items;\n``instructions`` prepends a system message. ``reasoning.effort`` maps\nto the decode hint; ``text.format`` maps to the post-validated\n``response_format`` channel; ``user``/``safety_identifier`` stamp the\naudit record.",
+        "properties": {
+          "fx1": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIFx1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Input"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "maxLength": 32768,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "max_output_tokens": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 262144.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output Tokens"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "model": {
+            "default": "fx1",
+            "title": "Model",
+            "type": "string"
+          },
+          "reasoning": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning"
+          },
+          "safety_identifier": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Identifier"
+          },
+          "service_tier": {
+            "anyOf": [
+              {
+                "enum": [
+                  "auto",
+                  "default",
+                  "flex",
+                  "priority",
+                  "scale"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Tier"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "top_p": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top P"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "title": "OpenAIResponseRequest",
+        "type": "object"
+      },
       "ReadyResponse": {
         "additionalProperties": false,
         "description": "Readiness probe payload \u2014 only emitted while accepting work.",
@@ -6970,6 +7158,144 @@
           }
         },
         "summary": "Openai Retrieve Model",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/responses": {
+      "post": {
+        "description": "OpenAI Responses API over the same gated pipeline.\n\n``input`` is a string or a list of message items\n(``{type: \"message\", role, content: [{type: \"input_text\", text}]}``\nor the shorthand ``{role, content: \"...\"}``); ``instructions``\nprepends a system turn; ``developer`` roles map to ``system``.\n``max_output_tokens`` lands on the decode cap, ``reasoning.effort``\non the reasoning hint, ``text.format`` on the post-validated\n``response_format`` channel (a violation is a provider-side 502),\n``user``/``safety_identifier``/``metadata`` stamp the audit record.\n\nSame fail-closed rule as chat completions: ``tools``/\n``tool_choice``/``parallel_tool_calls``/``truncation``/``include``/\n``background``/``previous_response_id`` refuse at validation (422).\n``store=false`` refuses \u2014 the audit ledger records every call and\nthis surface has no retrieval tier for the flag to govern.\n``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as\non ``/v1/chat/completions`` (the stream's terminal frame is\n``response.completed``, not ``[DONE]``).",
+        "operationId": "openai_responses",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAIResponseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Responses",
         "tags": [
           "openai"
         ]

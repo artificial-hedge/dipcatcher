@@ -190,7 +190,9 @@ same digested shape the job record embeds.
 | `DELETE /harness/evals/{id}` | cooperative cancel of a queued eval (running/terminal → 409); `HarnessClient.cancel_eval` / `fx1 harness eval-cancel` |
 | `POST /harness/drain` | latch draining; `?wait_s=` blocks until inflight empties |
 | `GET /v1/models` | OpenAI `list` envelope: `fx1` + the backend names |
+| `GET /v1/models/{id}` | `models.retrieve` — unknown id is `404 model_not_found` |
 | `POST /v1/chat/completions` | OpenAI-compatible gated completion (JSON or SSE `stream:true`) |
+| `POST /v1/responses` | OpenAI Responses surface — `input` string/items, `instructions`, `reasoning`, `text.format`; SSE `stream:true` emits the `response.*` event grammar |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |
@@ -322,6 +324,55 @@ translate through `fx1.serve.openai_compat` — one validation object,
 one backend-precedence order, one error taxonomy — and the parity
 audit pins envelope, chunk stream, rejection classes, and
 completion-log linkage identical across them.
+
+`POST /v1/responses` is the OpenAI Responses surface over the same
+translation layer — same gated completion, same backend precedence,
+same OpenAI error taxonomy:
+
+- **Input:** a bare `input` string, shorthand message items
+  (`{role, content: "…"}`), or full items with `input_text` /
+  `output_text` parts; `instructions` prepends a system turn and
+  `developer` roles map to system. Parts join by concatenation
+  (per the spec), empty input is 422/400, and item types outside
+  `message` (`function_call`, `function_call_output`,
+  `computer_call`, …) fail closed 400 — the harness never fabricates
+  tool output.
+- **Envelope:** the `response` object — `{id: "resp_…", status:
+  "completed", output: [{type:"message", content: [{type:
+  "output_text", …}]}], usage: {input_tokens, output_tokens,
+  total_tokens} or null}` — plus request echoes (`temperature`,
+  `top_p`, `max_output_tokens`, `metadata`, `instructions`,
+  `service_tier`, `reasoning`, `text`).
+- **Decode contract:** `max_output_tokens` maps to `max_tokens`;
+  `reasoning.effort`, `service_tier`, `user`, `safety_identifier`,
+  `metadata` forward like their chat counterparts; `text.format`
+  is the same post-validated structured-output channel as
+  `response_format` (`text` / `json_object` / `json_schema`, a
+  violation is the same 502 `format_violation`).
+- **Streaming:** `stream: true` emits the `response.*` event
+  grammar (`response.created` → `response.in_progress` →
+  `output_item.added` → `content_part.added` → `output_text.delta`
+  ×N → `done`s → `response.completed`) with `event:` + `id:` +
+  `data:` per frame — `id` is the frame index, no `[DONE]` sentinel
+  (the completed event is terminal). `Last-Event-ID` resume works
+  identically to the chat stream: the keyed response replays
+  byte-identically, frames ≤ the cursor dropped.
+- **Fail-closed surface:** `store:false` (the audit ledger already
+  records every call — no retrieval tier exists for it to gate),
+  `tools`/`tool_choice`, `truncation`, `background`,
+  `previous_response_id`, `include`, `parallel_tool_calls`, and
+  every other unsupported field refuse 422 at validation; nothing
+  is silently dropped.
+- **Retry-safe:** `Idempotency-Key` shares the `/v1/chat/completions`
+  dedup space — same key + body replays the stored envelope (or the
+  pinned stream) byte-identically; a key reused under a different
+  body is 409.
+
+Client-side: `HarnessClient.responses_create` /
+`responses_create_stream` in Python (`Fx1Harness.openai_response` /
+`openai_response_stream` in-process — same `(envelope|events, cid)`
+returns); `HarnessApiClient.responsesCreate` /
+`responsesCreateStream` in TS.
 
 ## Auth & safety
 

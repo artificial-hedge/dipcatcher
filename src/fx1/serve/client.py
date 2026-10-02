@@ -1186,6 +1186,177 @@ class HarnessClient:
             raise HarnessTransportError("stream ended without [DONE]")
         return chunks, headers.get("X-Fx1-Completion-Id")
 
+    def responses_create(
+        self,
+        input: str | list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        instructions: str | None = None,
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        user: str | None = None,
+        safety_identifier: str | None = None,
+        reasoning_effort: str | None = None,
+        text_format: dict[str, Any] | None = None,
+        idempotency_key: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """POST /v1/responses — the Responses API over the gated pipeline.
+
+        ``input`` is a string or a list of message items
+        (``{"type": "message", "role": ..., "content": [{"type": "input_text",
+        "text": ...}]}`` or the shorthand ``{"role": ..., "content": "..."}``);
+        ``instructions`` prepends a system turn. ``text_format`` is the
+        ``text.format`` object (``{"type": "json_object"}`` /
+        ``{"type": "json_schema", "schema": {...}}``) — post-validated, a
+        violation is a provider-side 502.
+
+        Returns ``(response_object, completion_id)`` — the response's
+        ``output[0].content[0].text`` is the gated text; the cid links to
+        the completion log. ``Idempotency-Key`` replays byte-identically.
+        """
+        payload = self._responses_payload(
+            input,
+            model=model,
+            instructions=instructions,
+            backend=backend,
+            byok=byok,
+            checkpoint_dir=checkpoint_dir,
+            fallbacks=fallbacks,
+            receipt_hashes=receipt_hashes,
+            timeout_s=timeout_s,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens,
+            metadata=metadata,
+            service_tier=service_tier,
+            user=user,
+            safety_identifier=safety_identifier,
+            reasoning_effort=reasoning_effort,
+            text_format=text_format,
+            stream=False,
+        )
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/responses",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        return json.loads(body), headers.get("X-Fx1-Completion-Id")
+
+    def responses_create_stream(
+        self,
+        input: str | list[dict[str, Any]],
+        *,
+        idempotency_key: str | None = None,
+        last_event_id: int | None = None,
+        extra_headers: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Streaming counterpart of :meth:`responses_create` — returns
+        ``(events, completion_id)`` where events are the parsed Responses
+        event payloads (``response.created`` … ``response.completed``,
+        each carrying ``type``). ``last_event_id`` resumes a dropped
+        keyed stream exactly like the chat surface — frames carry ``id:``
+        equal to their event index."""
+        payload = self._responses_payload(input, stream=True, **kwargs)
+        if idempotency_key is not None:
+            extra_headers = {**(extra_headers or {}), "Idempotency-Key": idempotency_key}
+        if last_event_id is not None:
+            extra_headers = {
+                **(extra_headers or {}),
+                "Last-Event-ID": str(last_event_id),
+            }
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/responses",
+            payload,
+            idempotent=idempotency_key is not None,
+            extra_headers=extra_headers,
+        )
+        events: list[dict[str, Any]] = []
+        saw_completed = False
+        for line in body.decode().splitlines():
+            if not line.startswith("data: "):
+                continue
+            frame = json.loads(line[len("data: ") :])
+            events.append(frame)
+            if frame.get("type") == "response.completed":
+                saw_completed = True
+                break
+        if not saw_completed:
+            raise HarnessTransportError("stream ended without response.completed")
+        return events, headers.get("X-Fx1-Completion-Id")
+
+    def _responses_payload(
+        self,
+        input: str | list[dict[str, Any]],
+        *,
+        model: str = "fx1",
+        instructions: str | None = None,
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        receipt_hashes: list[str] | None = None,
+        timeout_s: float | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        max_output_tokens: int | None = None,
+        metadata: dict[str, str] | None = None,
+        service_tier: str | None = None,
+        user: str | None = None,
+        safety_identifier: str | None = None,
+        reasoning_effort: str | None = None,
+        text_format: dict[str, Any] | None = None,
+        stream: bool = False,
+    ) -> dict[str, Any]:
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if receipt_hashes:
+            fx1["receipt_hashes"] = receipt_hashes
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": input,
+            "instructions": instructions,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_output_tokens": max_output_tokens,
+            "metadata": metadata,
+            "service_tier": service_tier,
+            "user": user,
+            "safety_identifier": safety_identifier,
+            "stream": stream,
+        }
+        if reasoning_effort is not None:
+            payload["reasoning"] = {"effort": reasoning_effort}
+        if text_format is not None:
+            payload["text"] = {"format": text_format}
+        if fx1:
+            payload["fx1"] = fx1
+        return payload
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:
