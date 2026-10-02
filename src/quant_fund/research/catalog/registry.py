@@ -2187,6 +2187,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "snapshot_ens",
         "concrete_dropout",
         "vcl_online",
+        # Wave-165 conditional-density canon:
+        # MDN, cond-flow, diffusion
+        # regressor, het-GP, CRPS net,
+        # kernel mixture.
+        "mdn_cond",
+        "flow_regression",
+        "diffusion_regressor",
+        "het_gp",
+        "crps_net",
+        "kernel_mixture",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
