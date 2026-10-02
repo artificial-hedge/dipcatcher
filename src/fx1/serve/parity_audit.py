@@ -410,6 +410,15 @@ def parity_audit() -> dict[str, bool]:
         out["client_verify_tamper_parity"] = (
             rem_tv.valid is False and rem_tv.errors == sdk_tv.errors
         )
+        rem_batch = remote.verify_receipts([good, tampered])
+        sdk_batch = sdk.verify_receipts([good, tampered])
+        out["client_verify_batch_parity"] = (
+            len(rem_batch) == 2
+            and rem_batch[0].valid is True
+            and rem_batch[1].valid is False
+            and rem_batch[0].errors == sdk_batch[0].errors
+            and rem_batch[1].errors == sdk_batch[1].errors
+        )
         out["client_commands_parity"] = sorted(remote.commands()) == sorted(sdk.commands())
         rem_run = remote.run(name)
         out["client_run_parity"] = (

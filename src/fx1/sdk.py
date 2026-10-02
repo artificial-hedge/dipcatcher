@@ -308,6 +308,11 @@ class Fx1Harness:
             warnings=tuple(result["warnings"]),
         )
 
+    def verify_receipts(self, receipts: list[dict[str, Any]]) -> tuple[ReceiptVerdict, ...]:
+        """Batch counterpart: in-process it's a loop; the wire client's twin
+        is one POST — same return shape either way."""
+        return tuple(self.verify_receipt(r) for r in receipts)
+
     # ---- health ----------------------------------------------------------
 
     def health(self) -> HarnessHealth:

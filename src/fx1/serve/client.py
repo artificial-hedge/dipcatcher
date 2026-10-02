@@ -659,6 +659,26 @@ class HarnessClient:
             warnings=tuple(out["warnings"]),
         )
 
+    def verify_receipts(self, receipts: list[dict[str, Any]]) -> tuple[ReceiptVerdict, ...]:
+        """One-round-trip batch verify — the remote counterpart of looping
+        ``verify_receipt``; per-item verdicts, no partial-failure abort."""
+        out = self._json("POST", "/receipts/verify/batch", {"receipts": receipts}, idempotent=True)
+        verdicts = []
+        for item in out["results"]:
+            verdicts.append(
+                ReceiptVerdict(
+                    valid=item["valid"],
+                    path=item["path"],
+                    schema_tag=item["schema_tag"],
+                    kind=item["kind"],
+                    verdict=item["verdict"],
+                    digest_convention=item["digest_convention"],
+                    errors=tuple(item["errors"]),
+                    warnings=tuple(item["warnings"]),
+                )
+            )
+        return tuple(verdicts)
+
     # ---- health ------------------------------------------------------------
 
     def health(self) -> HarnessHealth:

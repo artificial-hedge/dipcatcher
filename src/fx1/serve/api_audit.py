@@ -1279,6 +1279,24 @@ def api_audit() -> dict[str, Any]:
         and cap_out["jobs"][1]["code"] == "over_capacity"
     )
 
+    # --- batch receipt verification ---------------------------------------------
+    vb = bc.post(
+        "/receipts/verify/batch",
+        json={"receipts": [{"not": "a receipt"}, {"x": 1}]},
+    ).json()
+    out["verify_batch_per_item"] = (
+        vb["verified"] + vb["failed"] == 2
+        and len(vb["results"]) == 2
+        and vb["results"][0]["index"] == 0
+        and vb["results"][0]["valid"] is False
+    )
+    out["verify_batch_empty_422"] = (
+        bc.post("/receipts/verify/batch", json={"receipts": []}).status_code == 422
+    )
+    out["verify_batch_over_cap_422"] = (
+        bc.post("/receipts/verify/batch", json={"receipts": [{}] * 65}).status_code == 422
+    )
+
     # --- gzip response compression --------------------------------------------
     g_app = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran", "")),

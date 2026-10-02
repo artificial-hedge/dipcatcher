@@ -97,6 +97,9 @@ _MAX_INFLIGHT_ENV = "FX1_API_MAX_INFLIGHT"
 _SSE_KEEPALIVE_ENV = "FX1_API_SSE_KEEPALIVE_S"
 _IDEM_MAX_ENV = "FX1_API_IDEM_MAX"
 _IDEM_KEY_MAX = 256
+# One POST verifies a whole receipt bundle — fx-1's gating path handles
+# dozens per task; still bounded so a hostile bundle can't pin a worker.
+_VERIFY_BATCH_MAX = 64
 _JOB_MAX_ENV = "FX1_API_JOB_MAX"
 _RATE_LIMIT_ENV = "FX1_API_RATE_LIMIT_RPS"
 _GZIP_MIN_ENV = "FX1_API_GZIP_MIN_BYTES"
@@ -294,6 +297,23 @@ class ReceiptVerifyResponse(_Model):
     digest_convention: str | None
     errors: list[str]
     warnings: list[str]
+
+
+class ReceiptVerifyBatchRequest(_Model):
+    receipts: list[dict[str, Any]] = Field(min_length=1, max_length=_VERIFY_BATCH_MAX)
+
+
+class ReceiptVerifyBatchItem(ReceiptVerifyResponse):
+    """One per-item verdict: the same payload the single-verify route
+    returns, plus the index so callers can map results back."""
+
+    index: int
+
+
+class ReceiptVerifyBatchResponse(_Model):
+    verified: int
+    failed: int
+    results: list[ReceiptVerifyBatchItem]
 
 
 class MetricsResponse(_Model):
@@ -617,6 +637,76 @@ def _make_lifespan(
         jobs_executor.shutdown(wait=False, cancel_futures=True)
 
     return _lifespan
+
+
+def _mount_receipt_routes(app: FastAPI) -> None:
+    """Receipt-verify routes: single + batch, kept out of ``create_app``
+    to keep its branch complexity under the repo's ruff cap."""
+
+    @app.post(
+        "/receipts/verify",
+        response_model=ReceiptVerifyResponse,
+        tags=["receipts"],
+        operation_id="verify_receipt",
+    )
+    def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
+        result = verify_receipt_payload(body.receipt, path=Path("<api>"))
+        return ReceiptVerifyResponse(
+            valid=result["valid"],
+            path=result["path"],
+            schema_tag=result["schema"],
+            kind=result["kind"] if isinstance(result["kind"], str) else None,
+            verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
+            digest_convention=result["digest_convention"],
+            errors=list(result["errors"]),
+            warnings=list(result["warnings"]),
+        )
+
+    @app.post(
+        "/receipts/verify/batch",
+        response_model=ReceiptVerifyBatchResponse,
+        tags=["receipts"],
+        operation_id="verify_receipts_batch",
+    )
+    def verify_receipts_batch(body: ReceiptVerifyBatchRequest) -> ReceiptVerifyBatchResponse:
+        items: list[ReceiptVerifyBatchItem] = []
+        for i, receipt in enumerate(body.receipts):
+            try:
+                result = verify_receipt_payload(receipt, path=Path("<api>"))
+            except Exception as exc:  # verifier must fail item-local, never 500
+                items.append(
+                    ReceiptVerifyBatchItem(
+                        index=i,
+                        valid=False,
+                        path="<api>",
+                        schema_tag="",
+                        kind=None,
+                        verdict=None,
+                        digest_convention=None,
+                        errors=[str(exc)],
+                        warnings=[],
+                    )
+                )
+                continue
+            items.append(
+                ReceiptVerifyBatchItem(
+                    index=i,
+                    valid=result["valid"],
+                    path=result["path"],
+                    schema_tag=result["schema"],
+                    kind=result["kind"] if isinstance(result["kind"], str) else None,
+                    verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
+                    digest_convention=result["digest_convention"],
+                    errors=list(result["errors"]),
+                    warnings=list(result["warnings"]),
+                )
+            )
+        verified = sum(1 for it in items if it.valid)
+        return ReceiptVerifyBatchResponse(
+            verified=verified,
+            failed=len(items) - verified,
+            results=items,
+        )
 
 
 def _mount_job_routes(
@@ -1633,24 +1723,7 @@ def create_app(
             results=results,
         )
 
-    @app.post(
-        "/receipts/verify",
-        response_model=ReceiptVerifyResponse,
-        tags=["receipts"],
-        operation_id="verify_receipt",
-    )
-    def verify_receipt(body: ReceiptVerifyRequest) -> ReceiptVerifyResponse:
-        result = verify_receipt_payload(body.receipt, path=Path("<api>"))
-        return ReceiptVerifyResponse(
-            valid=result["valid"],
-            path=result["path"],
-            schema_tag=result["schema"],
-            kind=result["kind"] if isinstance(result["kind"], str) else None,
-            verdict=result["verdict"] if isinstance(result["verdict"], str) else None,
-            digest_convention=result["digest_convention"],
-            errors=list(result["errors"]),
-            warnings=list(result["warnings"]),
-        )
+    _mount_receipt_routes(app)
 
     return app
 
