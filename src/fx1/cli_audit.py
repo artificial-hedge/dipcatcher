@@ -165,6 +165,50 @@ def cli_audit() -> dict[str, Any]:
         out["harness_verify_tampered_fails"] = (
             runner.invoke(app, ["harness", "verify", str(bad)]).exit_code != 0
         )
+
+    # `harness complete` gated surfaces — stream vs block over an injected SDK
+    from unittest.mock import patch  # noqa: PLC0415
+
+    from fx1.sdk import CompletionResult  # noqa: PLC0415
+
+    class _FakeSDK:
+        def __init__(self) -> None:
+            self.stream_calls: list[dict[str, Any]] = []
+
+        def complete(self, messages: Any, **kw: Any) -> CompletionResult:
+            return CompletionResult(
+                backend=str(kw.get("backend")), model="fake-v0", content="block-text"
+            )
+
+        def stream_complete(self, messages: Any, **kw: Any) -> list[str]:
+            self.stream_calls.append(dict(kw))
+            return ["chunk-a", "chunk-b"]
+
+    fake = _FakeSDK()
+    with patch("fx1.sdk.Fx1Harness", return_value=fake):
+        out["complete_block_echoes_content"] = (
+            runner.invoke(app, ["harness", "complete", "hi", "--backend", "byok"]).stdout.strip()
+            == "block-text"
+        )
+        rs = runner.invoke(
+            app,
+            [
+                "harness",
+                "complete",
+                "hi",
+                "--backend",
+                "byok",
+                "--stream",
+                "--receipt",
+                "a" * 64,
+            ],
+        )
+        out["complete_stream_concatenates_chunks"] = (
+            rs.exit_code == 0 and rs.stdout == "chunk-achunk-b\n"
+        )
+        out["complete_stream_forwards_receipts"] = bool(fake.stream_calls) and (
+            fake.stream_calls[0].get("receipt_hashes") == ["a" * 64]
+        )
     return out
 
 

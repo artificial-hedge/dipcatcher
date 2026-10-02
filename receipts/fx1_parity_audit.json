@@ -1,0 +1,41 @@
+{
+  "kind": "parity_audit",
+  "schema": "parity_audit.v1",
+  "git_revision": "8950a379d248a1bae827898fcf33839ae518968e",
+  "data_label": "SYNTHETIC",
+  "research_only": true,
+  "live_pnl_claim": false,
+  "claim": {
+    "results": {
+      "complete_status_200": true,
+      "complete_content_identical": true,
+      "complete_envelope_identical": true,
+      "complete_footer_identical": true,
+      "batch_status_200": true,
+      "batch_content_identical": true,
+      "batch_envelope_identical": true,
+      "batch_one_backend_each_side": true,
+      "stream_status_200_sse": true,
+      "stream_chunks_identical": true,
+      "stream_joined_eq_complete": true,
+      "stream_done_terminal": true,
+      "stream_final_envelope": true,
+      "gate_sdk_raises_api_502": true,
+      "gate_error_text_shared": true,
+      "stream_gate_parity": true,
+      "stream_unsupported_parity": true,
+      "checkpoint_dir_non_local_parity": true,
+      "unknown_backend_fail_closed": true,
+      "empty_batch_contract": true,
+      "verify_valid_parity": true,
+      "verify_tamper_parity": true,
+      "verify_malformed_parity": true,
+      "commands_parity": true,
+      "run_parity": true,
+      "health_parity": true
+    },
+    "ok": true
+  },
+  "interpretation": "surface parity holds: SDK and HTTP API return byte-identical content, envelopes, chunk lists, error taxonomy, verifier verdicts, registry, and health over the same injected backend \u2014 no transport-dependent behavior drift. Flags: unknown backend names surface as KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
+  "receipt_sha256": "dcb8ef30a71173e160a5ee040ad870d8b41bc9a2e58841ad6a9397d615ff3326"
+}

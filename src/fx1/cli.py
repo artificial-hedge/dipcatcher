@@ -155,11 +155,25 @@ def harness_complete(
     backend: str = typer.Option("local_fx1", help=_BACKEND_HELP),
     checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
     receipt: list[str] = typer.Option([], "--receipt", help="Receipt sha256 to cite (repeatable)."),
+    stream: bool = typer.Option(
+        False, "--stream", help="Emit gated token deltas instead of one block."
+    ),
 ) -> None:
     """One gated completion through the SDK — the honesty gate runs before output."""
     from fx1.sdk import Fx1Harness
 
-    out = Fx1Harness().complete(
+    sdk = Fx1Harness()
+    if stream:
+        for chunk in sdk.stream_complete(
+            [{"role": "user", "content": prompt}],
+            backend=backend,
+            checkpoint_dir=checkpoint_dir,
+            receipt_hashes=receipt or None,
+        ):
+            typer.echo(chunk, nl=False)
+        typer.echo()
+        return
+    out = sdk.complete(
         [{"role": "user", "content": prompt}],
         backend=backend,
         checkpoint_dir=checkpoint_dir,
