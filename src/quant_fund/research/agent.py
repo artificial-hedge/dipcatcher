@@ -1975,6 +1975,14 @@ from quant_fund.research.benches_w247 import (
     bench_rw_lock_family,
     bench_work_stealing_family,
 )
+from quant_fund.research.benches_w248 import (
+    bench_brzozowski_deriv_family,
+    bench_cellular_automata_family,
+    bench_dfa_equiv_family,
+    bench_mealy_moore_family,
+    bench_pda_sim_family,
+    bench_turing_machine_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2144,6 +2152,12 @@ def _provenance(
         "peterson_lock": bench_peterson_lock_family,
         "rw_lock": bench_rw_lock_family,
         "work_stealing": bench_work_stealing_family,
+        "brzozowski_deriv": bench_brzozowski_deriv_family,
+        "cellular_automata": bench_cellular_automata_family,
+        "dfa_equiv": bench_dfa_equiv_family,
+        "mealy_moore": bench_mealy_moore_family,
+        "pda_sim": bench_pda_sim_family,
+        "turing_machine": bench_turing_machine_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
