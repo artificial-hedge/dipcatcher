@@ -1903,6 +1903,14 @@ from quant_fund.research.benches_w238 import (
     bench_tcp_aimd_family,
     bench_token_bucket_family,
 )
+from quant_fund.research.benches_w239 import (
+    bench_cps_transform_family,
+    bench_gc_marksweep_family,
+    bench_hm_inference_family,
+    bench_macro_expand_family,
+    bench_simple_types_family,
+    bench_tree_walk_interp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4884,6 +4892,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "rtt_estimator": bench_rtt_estimator_family(),
         "nat_table": bench_nat_table_family(),
         "http2_flow": bench_http2_flow_family(),
+        "hm_inference": bench_hm_inference_family(),
+        "tree_walk_interp": bench_tree_walk_interp_family(),
+        "cps_transform": bench_cps_transform_family(),
+        "macro_expand": bench_macro_expand_family(),
+        "gc_marksweep": bench_gc_marksweep_family(),
+        "simple_types": bench_simple_types_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
