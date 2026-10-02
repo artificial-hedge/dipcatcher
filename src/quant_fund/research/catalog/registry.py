@@ -2242,6 +2242,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "causal_rep_bal",
         "cate_distill",
         "net_drlearner",
+        # Wave-171 conformal-2 canon:
+        # CQR, survival CP, APS, LTT,
+        # full CP, risk control.
+        "cqr_pred",
+        "survival_cp",
+        "aps_cp",
+        "ltt_cp",
+        "full_cp",
+        "risk_cp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
