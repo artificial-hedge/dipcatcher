@@ -2197,6 +2197,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "het_gp",
         "crps_net",
         "kernel_mixture",
+        # Wave-166 meta-learning canon:
+        # Reptile, ProtoNet, Matching,
+        # ANIL, Meta-SGD, R2D2.
+        "reptile",
+        "protonet",
+        "matching_net",
+        "anil_meta",
+        "meta_sgd",
+        "r2d2_meta",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
