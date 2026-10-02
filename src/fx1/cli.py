@@ -307,6 +307,14 @@ def harness_serve(
         None,
         help="Comma-separated allowed browser origins (env FX1_API_CORS_ORIGINS, empty = off).",
     ),
+    breaker_threshold: int | None = typer.Option(
+        None,
+        help="Consecutive backend faults that open the circuit (env FX1_API_BREAKER_THRESHOLD, 0 = off).",
+    ),
+    breaker_cooldown_s: float | None = typer.Option(
+        None,
+        help="Seconds an open circuit fast-fails before a probe (env FX1_API_BREAKER_COOLDOWN_S).",
+    ),
 ) -> None:
     """Serve the harness API (POST /harness/runs, /harness/complete, /receipts/verify)."""
     import uvicorn
@@ -328,6 +336,8 @@ def harness_serve(
             rate_limit_rps=rate_limit_rps,
             gzip_min_bytes=gzip_min_bytes,
             cors_origins=cors_origins,
+            breaker_threshold=breaker_threshold,
+            breaker_cooldown_s=breaker_cooldown_s,
         )
     except ValueError as exc:
         typer.echo(str(exc), err=True)

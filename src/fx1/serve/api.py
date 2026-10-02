@@ -105,6 +105,8 @@ _JOB_MAX_ENV = "FX1_API_JOB_MAX"
 _RATE_LIMIT_ENV = "FX1_API_RATE_LIMIT_RPS"
 _GZIP_MIN_ENV = "FX1_API_GZIP_MIN_BYTES"
 _CORS_ORIGINS_ENV = "FX1_API_CORS_ORIGINS"
+_BREAKER_THRESHOLD_ENV = "FX1_API_BREAKER_THRESHOLD"
+_BREAKER_COOLDOWN_ENV = "FX1_API_BREAKER_COOLDOWN_S"
 
 # Headers browser clients can read off responses when CORS is enabled.
 _CORS_EXPOSE_HEADERS = [
@@ -450,6 +452,16 @@ class CapabilitiesResponse(_Model):
     limits: dict[str, float]
     backends: dict[str, bool]
     roles: list[str]
+
+
+class BackendStatusEntry(_Model):
+    """One backend's liveness surface: whether it is configured and, when
+    the circuit breaker is enabled, whether it is currently fast-failing."""
+
+    configured: bool
+    circuit_open: bool
+    cooldown_remaining_s: float
+    consecutive_failures: int
 
 
 _JOB_STATUSES = ("queued", "running", "succeeded", "failed", "cancelled")
@@ -1230,6 +1242,67 @@ class _RateLimiter:
             return wait, 0.0
 
 
+class _BackendBreaker:
+    """Consecutive-fault circuit breaker keyed on backend name.
+
+    `threshold` consecutive call faults open the circuit for
+    `cooldown_s`: calls fail fast (503 + Retry-After) without touching the
+    backend or holding an inflight slot. When the window lapses a single
+    half-open probe is admitted; success closes the circuit, failure
+    re-opens it for a fresh window. A probe in flight fast-fails other
+    callers — only the probe touches the backend. Configuration faults
+    (501, honesty-gate refusals) never count: the breaker measures
+    backend health, not model output.
+    """
+
+    def __init__(self, threshold: int, cooldown_s: float) -> None:
+        self.threshold = threshold
+        self.cooldown_s = cooldown_s
+        self._lock = threading.Lock()
+        self._fails: dict[str, int] = {}
+        self._opened: dict[str, float] = {}
+        self._probing: set[str] = set()
+
+    def check(self, backend: str) -> float:
+        """Admit or refuse a call: 0.0 proceeds, >0 fast-fails for that
+        many seconds of remaining cooldown."""
+        with self._lock:
+            opened = self._opened.get(backend)
+            if opened is None:
+                return 0.0
+            remaining = self.cooldown_s - (time.monotonic() - opened)
+            if remaining <= 0.0:
+                if backend in self._probing:
+                    return 0.01
+                self._probing.add(backend)
+                return 0.0
+            return remaining
+
+    def report(self, backend: str, ok: bool) -> None:
+        """Record the admitted call's outcome."""
+        with self._lock:
+            self._probing.discard(backend)
+            if ok:
+                self._fails.pop(backend, None)
+                self._opened.pop(backend, None)
+                return
+            fails = self._fails.get(backend, 0) + 1
+            self._fails[backend] = fails
+            if fails >= self.threshold:
+                self._opened[backend] = time.monotonic()
+
+    def state(self, backend: str) -> tuple[bool, float, int]:
+        """``(circuit_open, cooldown_remaining_s, consecutive_failures)``."""
+        with self._lock:
+            opened = self._opened.get(backend)
+            remaining = (
+                max(0.0, self.cooldown_s - (time.monotonic() - opened))
+                if opened is not None
+                else 0.0
+            )
+            return opened is not None and remaining > 0.0, remaining, self._fails.get(backend, 0)
+
+
 def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str:
     """Render the ops snapshot as Prometheus text exposition (format
     0.0.4) — ``GET /metrics`` stays JSON by default; ``?format=prom``
@@ -1290,9 +1363,24 @@ def _mount_complete_routes(
     sse_keepalive_s: float,
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
+    breaker: _BackendBreaker | None,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) — extracted from
     ``create_app`` to keep its branch complexity under the ruff cap."""
+
+    def _breaker_admit(name: str) -> None:
+        """Fast-fail while the backend's circuit is open — the call never
+        burns an inflight slot waiting on a dead endpoint."""
+        if breaker is None:
+            return
+        wait = breaker.check(name)
+        if wait > 0:
+            raise ApiError(
+                503,
+                f"backend {name!r} circuit open — retry in {wait:.1f}s",
+                code="backend_unavailable",
+                headers={"Retry-After": str(max(1, math.ceil(wait)))},
+            )
 
     @app.post(
         "/harness/complete",
@@ -1311,12 +1399,19 @@ def _mount_complete_routes(
         key, replay = _idem_lookup(idempotency_key, complete_idem_store, body_fp)
         if replay is not None:
             return replay
-        backend = resolve_backend(body.backend, body.checkpoint_dir)
+        _breaker_admit(body.backend)
+        try:
+            backend = resolve_backend(body.backend, body.checkpoint_dir)
+        except ApiError as exc:
+            # only backend-unavailable counts — client errors (404 unknown
+            # backend, 422 bad args) must never trip the circuit, or a caller
+            # could deny the backend for everyone by spamming bad requests.
+            if breaker is not None and exc.status_code == 503:
+                breaker.report(body.backend, False)
+            raise
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
-        except BackendNotConfiguredError as exc:
-            raise ApiError(503, str(exc), code="backend_unavailable") from exc
         except NotImplementedError as exc:
             raise ApiError(501, str(exc)) from exc
         except Fx1HonestyError as exc:
@@ -1325,8 +1420,15 @@ def _mount_complete_routes(
             raise ApiError(
                 502, f"honesty gate refused model output: {exc}", code="honesty_gate"
             ) from exc
-        except RuntimeError as exc:
+        except (BackendNotConfiguredError, RuntimeError) as exc:
+            if breaker is not None:
+                breaker.report(body.backend, False)
+            if isinstance(exc, BackendNotConfiguredError):
+                raise ApiError(503, str(exc), code="backend_unavailable") from exc
             raise ApiError(502, str(exc), code="backend_failure") from exc
+        else:
+            if breaker is not None:
+                breaker.report(body.backend, True)
         finally:
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
@@ -1373,7 +1475,13 @@ def _mount_complete_routes(
 
         def _gather() -> tuple[list[str], str | None]:
             """Buffer + gate the backend stream; raises the mapped errors."""
-            backend = resolve_backend(body.backend, body.checkpoint_dir)
+            _breaker_admit(body.backend)
+            try:
+                backend = resolve_backend(body.backend, body.checkpoint_dir)
+            except ApiError as exc:
+                if breaker is not None and exc.status_code == 503:
+                    breaker.report(body.backend, False)
+                raise
             try:
                 if not isinstance(backend, StreamingBackend):
                     raise NotImplementedError(
@@ -1387,12 +1495,17 @@ def _mount_complete_routes(
                     raise ApiError(
                         502, f"honesty gate refused model output: {exc}", code="honesty_gate"
                     ) from exc
-            except BackendNotConfiguredError as exc:
-                raise ApiError(503, str(exc), code="backend_unavailable") from exc
             except NotImplementedError as exc:
                 raise ApiError(501, str(exc)) from exc
-            except RuntimeError as exc:
+            except (BackendNotConfiguredError, RuntimeError) as exc:
+                if breaker is not None:
+                    breaker.report(body.backend, False)
+                if isinstance(exc, BackendNotConfiguredError):
+                    raise ApiError(503, str(exc), code="backend_unavailable") from exc
                 raise ApiError(502, str(exc), code="backend_failure") from exc
+            else:
+                if breaker is not None:
+                    breaker.report(body.backend, True)
             finally:
                 _close_backend(backend)
             model_name = getattr(backend, "_model", None)
@@ -1494,11 +1607,21 @@ def _mount_complete_routes(
         key, replay = _idem_lookup(idempotency_key, complete_batch_idem_store, body_fp)
         if replay is not None:
             return replay
-        backend = resolve_backend(body.backend, body.checkpoint_dir)
+        _breaker_admit(body.backend)
+        try:
+            backend = resolve_backend(body.backend, body.checkpoint_dir)
+        except ApiError as exc:
+            # only backend-unavailable counts — client errors (404 unknown
+            # backend, 422 bad args) must never trip the circuit, or a caller
+            # could deny the backend for everyone by spamming bad requests.
+            if breaker is not None and exc.status_code == 503:
+                breaker.report(body.backend, False)
+            raise
         # One backend serves the whole batch — a spawned local engine is
         # shared across workers (spawn path is lock-guarded). Item failures
         # are per-slot verdicts: a gate refusal on one prompt does not lose
-        # the rest of the batch.
+        # the rest of the batch. An open circuit short-circuits items
+        # individually so a batch over a dead backend ends fast.
         try:
             with ThreadPoolExecutor(
                 max_workers=min(body.max_workers, len(body.batch)),
@@ -1506,8 +1629,14 @@ def _mount_complete_routes(
             ) as pool:
 
                 def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
-                    try:
+                    if breaker is not None and breaker.check(body.backend) > 0:
                         return CompleteBatchItem(
+                            ok=False,
+                            error="backend circuit open",
+                            error_class="backend_unavailable",
+                        )
+                    try:
+                        out = CompleteBatchItem(
                             ok=True,
                             content=cited_complete(
                                 backend, messages, receipt_hashes=body.receipt_hashes
@@ -1519,13 +1648,17 @@ def _mount_complete_routes(
                         )
                     except (
                         BackendNotConfiguredError,
-                        NotImplementedError,
                         RuntimeError,
                         ValueError,
                     ) as exc:
+                        if breaker is not None and not isinstance(exc, NotImplementedError):
+                            breaker.report(body.backend, False)
                         return CompleteBatchItem(
                             ok=False, error=str(exc), error_class=type(exc).__name__
                         )
+                    if breaker is not None:
+                        breaker.report(body.backend, True)
+                    return out
 
                 results = list(
                     pool.map(
@@ -1560,6 +1693,8 @@ def create_app(
     rate_limit_rps: float | None = None,
     gzip_min_bytes: int | None = None,
     cors_origins: str | None = None,
+    breaker_threshold: int | None = None,
+    breaker_cooldown_s: float | None = None,
 ) -> FastAPI:
     api_key = os.environ.get(_API_KEY_ENV) or None
     lab = harness or Harness()
@@ -1570,6 +1705,8 @@ def create_app(
     sse_keepalive_s = _env_float_floor(_SSE_KEEPALIVE_ENV, 15.0, sse_keepalive_s)
     rate_limit_rps = _env_float_floor(_RATE_LIMIT_ENV, 0.0, rate_limit_rps)
     gzip_min_bytes = _env_int_floor(_GZIP_MIN_ENV, 1024, gzip_min_bytes)
+    breaker_threshold = _env_int_floor(_BREAKER_THRESHOLD_ENV, 5, breaker_threshold)
+    breaker_cooldown_s = _env_float_floor(_BREAKER_COOLDOWN_ENV, 30.0, breaker_cooldown_s)
     cors_raw = cors_origins if cors_origins is not None else os.environ.get(_CORS_ORIGINS_ENV, "")
     cors_list = [o.strip() for o in cors_raw.split(",") if o.strip()]
     for origin in cors_list:
@@ -1580,6 +1717,9 @@ def create_app(
                 "never the wildcard"
             )
     limiter = _RateLimiter(rate_limit_rps) if rate_limit_rps > 0 else None
+    breaker = (
+        _BackendBreaker(breaker_threshold, breaker_cooldown_s) if breaker_threshold > 0 else None
+    )
     # Bounded in-flight work: the harness executes lab commands and model
     # calls on shared resources (a spawned local engine, GPU memory, the
     # box itself) — saturation must fail honestly as 503, never queue
@@ -1652,6 +1792,7 @@ def create_app(
     app.state.jobs_executor = jobs_executor
     app.state.sse_keepalive_s = sse_keepalive_s
     app.state.rate_limiter = limiter
+    app.state.breaker = breaker
 
     @app.exception_handler(HTTPException)
     async def _http_error(request: Request, exc: HTTPException) -> JSONResponse:
@@ -1817,6 +1958,7 @@ def create_app(
                 "drain": True,
                 "streaming": True,
                 "cors": bool(cors_list),
+                "breaker": breaker is not None,
             },
             limits={
                 "max_inflight": float(metrics.max_inflight),
@@ -1828,12 +1970,38 @@ def create_app(
                 "body_max_bytes": float(_MAX_BODY_BYTES),
                 "job_result_max_bytes": float(_JOB_RESULT_MAX_BYTES),
                 "rate_limit_rps": limiter.rps if limiter is not None else 0.0,
+                "breaker_threshold": float(breaker_threshold),
+                "breaker_cooldown_s": float(breaker_cooldown_s),
                 "sse_keepalive_s": float(sse_keepalive_s),
                 "gzip_min_bytes": float(gzip_min_bytes),
             },
             backends=_backend_configured(),
             roles=sorted({str(c.role) for c in lab.list_commands()}),
         )
+
+    @app.get(
+        "/harness/backends",
+        response_model=dict[str, BackendStatusEntry],
+        tags=["ops"],
+        operation_id="backends_status",
+    )
+    def backends_status() -> dict[str, BackendStatusEntry]:
+        """Per-backend liveness: configured flag plus circuit state —
+        whether the breaker is fast-failing this backend, how much
+        cooldown remains, and the consecutive-fault streak."""
+        configured = _backend_configured()
+        out: dict[str, BackendStatusEntry] = {}
+        for name, cfg in configured.items():
+            circuit_open, remaining, fails = (
+                breaker.state(name) if breaker is not None else (False, 0.0, 0)
+            )
+            out[name] = BackendStatusEntry(
+                configured=cfg,
+                circuit_open=circuit_open,
+                cooldown_remaining_s=round(remaining, 3),
+                consecutive_failures=fails,
+            )
+        return out
 
     @app.post(
         "/harness/drain",
@@ -1950,6 +2118,7 @@ def create_app(
         sse_keepalive_s=sse_keepalive_s,
         complete_idem_store=complete_idem_store,
         complete_batch_idem_store=complete_batch_idem_store,
+        breaker=breaker,
     )
 
     _mount_receipt_routes(app)

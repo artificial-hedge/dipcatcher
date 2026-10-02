@@ -1,6 +1,36 @@
 {
   "components": {
     "schemas": {
+      "BackendStatusEntry": {
+        "additionalProperties": false,
+        "description": "One backend's liveness surface: whether it is configured and, when\nthe circuit breaker is enabled, whether it is currently fast-failing.",
+        "properties": {
+          "circuit_open": {
+            "title": "Circuit Open",
+            "type": "boolean"
+          },
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "consecutive_failures": {
+            "title": "Consecutive Failures",
+            "type": "integer"
+          },
+          "cooldown_remaining_s": {
+            "title": "Cooldown Remaining S",
+            "type": "number"
+          }
+        },
+        "required": [
+          "configured",
+          "circuit_open",
+          "cooldown_remaining_s",
+          "consecutive_failures"
+        ],
+        "title": "BackendStatusEntry",
+        "type": "object"
+      },
       "CapabilitiesResponse": {
         "additionalProperties": false,
         "description": "Self-describing discovery payload: which wire features this build\nserves and the operational limits in effect \u2014 clients self-configure\n(batch sizes, retry budgets, stream use) from one call instead of\nhardcoding server internals.",
@@ -1254,6 +1284,64 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/harness/backends": {
+      "get": {
+        "description": "Per-backend liveness: configured flag plus circuit state \u2014\nwhether the breaker is fast-failing this backend, how much\ncooldown remains, and the consecutive-fault streak.",
+        "operationId": "backends_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/BackendStatusEntry"
+                  },
+                  "title": "Response Backends Status",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Backends Status",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
     "/harness/capabilities": {
       "get": {
         "description": "Discovery: the wire features this build serves and the\noperational limits actually in effect. A client learns batch\ncaps, store bounds, rate limits, and feature flags (idempotency,\nSSE, webhooks, drain) from one call \u2014 nothing is hardcoded.",

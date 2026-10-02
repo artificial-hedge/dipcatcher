@@ -4,6 +4,28 @@
  */
 
 export interface paths {
+    "/harness/backends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Backends Status
+         * @description Per-backend liveness: configured flag plus circuit state —
+         *     whether the breaker is fast-failing this backend, how much
+         *     cooldown remains, and the consecutive-fault streak.
+         */
+        get: operations["backends_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/capabilities": {
         parameters: {
             query?: never;
@@ -382,6 +404,21 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * BackendStatusEntry
+         * @description One backend's liveness surface: whether it is configured and, when
+         *     the circuit breaker is enabled, whether it is currently fast-failing.
+         */
+        BackendStatusEntry: {
+            /** Circuit Open */
+            circuit_open: boolean;
+            /** Configured */
+            configured: boolean;
+            /** Consecutive Failures */
+            consecutive_failures: number;
+            /** Cooldown Remaining S */
+            cooldown_remaining_s: number;
+        };
         /**
          * CapabilitiesResponse
          * @description Self-describing discovery payload: which wire features this build
@@ -847,6 +884,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    backends_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["BackendStatusEntry"];
+                    };
+                };
+            };
+        };
+    };
     get_capabilities: {
         parameters: {
             query?: never;

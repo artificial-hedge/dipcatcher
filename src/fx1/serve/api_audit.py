@@ -1355,6 +1355,99 @@ def api_audit() -> dict[str, Any]:
         client.get("/harness/capabilities").json()["features"]["cors"] is False
         and cc.get("/harness/capabilities").json()["features"]["cors"] is True
     )
+
+    # Backend circuit breaker: consecutive call faults open the circuit —
+    # later calls fast-fail 503 + Retry-After without touching the backend;
+    # a half-open probe admits after cooldown and closes on success.
+    class _FlakyBackend:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            if self.calls <= 2:
+                raise RuntimeError("backend exploded")
+            return "ok"
+
+    _flaky = _FlakyBackend()
+    brk_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda name, *a, **k: _flaky if name == "byok" else _CleanBackend(),
+        breaker_threshold=2,
+        breaker_cooldown_s=60.0,
+    )
+    bc = _TC2(brk_app)
+    cp_body = {"backend": "byok", "messages": [{"role": "user", "content": "x"}]}
+    r_fail1 = bc.post("/harness/complete", json=cp_body)
+    r_fail2 = bc.post("/harness/complete", json=cp_body)
+    r_open = bc.post("/harness/complete", json=cp_body)
+    out["breaker_opens_at_threshold"] = (
+        r_fail1.status_code == 502
+        and r_fail2.status_code == 502
+        and r_open.status_code == 503
+        and r_open.json()["code"] == "backend_unavailable"
+        and "circuit open" in r_open.json()["detail"]
+        and "retry-after" in {k.lower() for k in r_open.headers}
+        and _flaky.calls == 2  # the open-circuit call never reached the backend
+    )
+    st = bc.get("/harness/backends").json()
+    out["backends_route_reports_state"] = (
+        set(st) == {"hosted_k3", "byok", "local_fx1"}
+        and st["byok"]["circuit_open"] is True
+        and st["byok"]["consecutive_failures"] >= 2
+        and st["hosted_k3"]["circuit_open"] is False
+    )
+    r_other = bc.post(
+        "/harness/complete",
+        json={"backend": "hosted_k3", "messages": [{"role": "user", "content": "x"}]},
+    )
+    out["breaker_isolated_per_backend"] = r_other.status_code == 200
+    caps_brk = bc.get("/harness/capabilities").json()
+    out["capabilities_reports_breaker"] = (
+        caps_brk["features"]["breaker"] is True
+        and caps_brk["limits"]["breaker_threshold"] == 2.0
+        and caps_brk["limits"]["breaker_cooldown_s"] == 60.0
+    )
+    brk = api_mod._BackendBreaker(2, 0.05)
+    brk.report("x", False)
+    brk.report("x", False)
+    opened = brk.check("x") > 0
+    time.sleep(0.06)
+    probe1 = brk.check("x")  # admits the single half-open probe
+    probe2 = brk.check("x")  # a second concurrent caller fast-fails
+    brk.report("x", True)  # probe succeeded → closed
+    closed = brk.check("x") == 0 and brk.state("x")[0] is False
+    out["breaker_half_open_recovers"] = opened and probe1 == 0.0 and probe2 > 0 and closed
+    off_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _CleanBackend(),
+        breaker_threshold=0,
+    )
+    oc = _TC2(off_app)
+    out["breaker_disabled_by_zero"] = (
+        oc.get("/harness/capabilities").json()["features"]["breaker"] is False
+        and oc.get("/harness/backends").json()["byok"]["circuit_open"] is False
+    )
+    # honesty-gate refusals are model output, not backend health — they
+    # must never trip the circuit.
+    dirty_app = api_mod.create_app(
+        harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
+        backend_resolver=lambda *a, **k: _DirtyBackend(),
+        breaker_threshold=2,
+        breaker_cooldown_s=60.0,
+    )
+    dc = _TC2(dirty_app)
+    gate_fails = [
+        dc.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": [{"role": "user", "content": "x"}]},
+        ).status_code
+        for _ in range(3)
+    ]
+    out["breaker_ignores_honesty_gate"] = (
+        gate_fails == [502, 502, 502]
+        and dc.get("/harness/backends").json()["byok"]["circuit_open"] is False
+    )
     # limiter counts denials; a public-path request also draws a token
     limited2 = api_mod.create_app(
         harness=_Harness(runner=lambda argv, t: (0, "ran:" + " ".join(argv), "")),
