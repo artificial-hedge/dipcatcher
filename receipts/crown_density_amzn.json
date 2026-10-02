@@ -1,0 +1,82 @@
+{
+  "schema": "crown_density.v1",
+  "kind": "sim_bench",
+  "data_label": "MIXED",
+  "research_only": true,
+  "git_revision": "6fadcd0df09324943097a3765bc7610e4ac1f317",
+  "seed": 7,
+  "horizon_events": 20000,
+  "cells": [
+    {
+      "regime": "tape",
+      "n_events": 267303,
+      "n_fills": 8974,
+      "crown_ticks": 3,
+      "crown_units_mean": 735.53,
+      "visible_units_mean": 3359.3,
+      "crown_share_of_visible": 0.2082,
+      "reveal_gap_ticks_mean": 3.7554,
+      "reveal_gap_ticks_p50": 2.0,
+      "n_reveals": 4239
+    },
+    {
+      "regime": "thin",
+      "n_events": 20000,
+      "n_fills": 828,
+      "spread_mean": 18.5297,
+      "crown_ticks": 3,
+      "crown_units_mean": 9.5,
+      "visible_units_mean": 189.2,
+      "crown_share_of_visible": 0.0527,
+      "reveal_gap_ticks_mean": 1.8636,
+      "reveal_gap_ticks_p50": 1.0,
+      "n_reveals": 22
+    },
+    {
+      "regime": "thin_flee_chase",
+      "n_events": 20000,
+      "n_fills": 764,
+      "spread_mean": 15.6889,
+      "crown_ticks": 3,
+      "crown_units_mean": 11.99,
+      "visible_units_mean": 110.45,
+      "crown_share_of_visible": 0.1096,
+      "reveal_gap_ticks_mean": 1.9677,
+      "reveal_gap_ticks_p50": 1.0,
+      "n_reveals": 31
+    },
+    {
+      "regime": "wide",
+      "n_events": 20000,
+      "n_fills": 629,
+      "spread_mean": 27.3651,
+      "crown_ticks": 3,
+      "crown_units_mean": 18.75,
+      "visible_units_mean": 668.69,
+      "crown_share_of_visible": 0.0313,
+      "reveal_gap_ticks_mean": null,
+      "reveal_gap_ticks_p50": null,
+      "n_reveals": 0
+    },
+    {
+      "regime": "wide_flee_chase",
+      "n_events": 20000,
+      "n_fills": 1633,
+      "spread_mean": 23.5191,
+      "crown_ticks": 3,
+      "crown_units_mean": 16.57,
+      "visible_units_mean": 385.52,
+      "crown_share_of_visible": 0.0465,
+      "reveal_gap_ticks_mean": 6.9231,
+      "reveal_gap_ticks_p50": 8.0,
+      "n_reveals": 13
+    }
+  ],
+  "claims": {
+    "cells_evaluated": true,
+    "wide_crown_starved": true,
+    "wide_over_reveals": true
+  },
+  "notes": "Direct measurement of the primitive flee_wide.v1's residual named: the dense near-touch crown inside a wide spread. crown_share_of_visible = resting quantity within 3 ticks of each touch over total visible top-10 depth; reveal_gap_ticks = distance from an emptied touch to its successor. Tape vs sim arms decide whether the over-reveal is a placement-law gap (no crown mass joins the touch in the wide book) \u2014 the missing placement class for wave-23's last residual.",
+  "receipt_sha256": "636ad6866050868da04fe254ef71fe7c81b83d0a6b60a0d968aaafe9deae02e3"
+}
