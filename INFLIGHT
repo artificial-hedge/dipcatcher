@@ -2547,3 +2547,4 @@ wave 146 (2026-10-02): test-time-compute + multi-agent canon — consistency_vot
 wave 147 (2026-10-02): alignment canon — reward_model, dpo_train, ipo_train, kto_train, grpo_train, rlhf_ppo; 854→860 families.
 wave 148 (2026-10-02): interpretability canon — sae_feature, activation_steering, probe_linear, logit_lens, patch_activation, circuit_ablation; 860→866 families.
 wave 149 (2026-10-02): data-dynamics canon — dataset_distillation, coreset_herding, curriculum_magnitude, label_smoothing, mixup_cutmix, sharpness_sam; 866→872 families.
+wave 150 (2026-10-02): compression canon — magnitude_pruning, lottery_ticket, quant_int8, kd_distill, lowrank_factor, fisher_prune; 872→878 families.
