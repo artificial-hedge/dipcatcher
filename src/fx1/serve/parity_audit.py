@@ -142,7 +142,13 @@ def _surfaces(
         return backend()
 
     sdk = Fx1Harness(harness=Harness(runner=fake_runner), backend_resolver=resolver)
-    app = api_mod.create_app(harness=Harness(runner=fake_runner), backend_resolver=resolver)
+    app = api_mod.create_app(
+        harness=Harness(runner=fake_runner),
+        backend_resolver=resolver,
+        # no receipt store -> receipt_hashes citations stay advisory, so these
+        # probes can use synthetic hashes deterministically from any cwd.
+        receipts_dir="/nonexistent-parity-store",
+    )
     return sdk, _TC(app)
 
 

@@ -489,7 +489,13 @@ def api_audit() -> dict[str, Any]:
             yield "tok-a"
             yield "tok-b"
 
-    stream_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _StreamBackend()))
+    # no receipt store -> the synthetic citation below is advisory, not 422.
+    stream_client = _TC2(
+        api_mod.create_app(
+            backend_resolver=lambda *a, **k: _StreamBackend(),
+            receipts_dir="/nonexistent-stream-store",
+        )
+    )
     rs = stream_client.post(
         "/harness/complete/stream",
         json={
@@ -1925,6 +1931,87 @@ def api_audit() -> dict[str, Any]:
         # staleness key: a receipt written after the first scan is indexed
         (rdir / "second.json").write_text(_json.dumps({**good, "receipt_sha256": "b" * 64}))
         out["receipts_index_refreshes"] = rclient.get("/receipts").json()["count"] == 2
+
+        # --- cited-receipt verification --------------------------------------
+        # With a store mounted, a completion may not footnote evidence the
+        # server cannot produce: unknown or malformed hashes are 422 across
+        # sync, batch, and stream — checked before the breaker/backend call.
+        cite = _TC2(
+            api_mod.create_app(receipts_dir=rdir, backend_resolver=lambda *a, **k: _CleanBackend())
+        )
+        out["cite_resolves_200"] = (
+            cite.post(
+                "/harness/complete",
+                json={
+                    "backend": "hosted_k3",
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "receipt_hashes": [sha],
+                },
+            ).status_code
+            == 200
+        )
+        bad = cite.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": [{"role": "user", "content": "hi"}],
+                "receipt_hashes": ["e" * 64],
+            },
+        )
+        out["cite_unknown_422"] = (
+            bad.status_code == 422 and bad.json().get("code") == "receipt_not_found"
+        )
+        out["cite_malformed_422"] = (
+            cite.post(
+                "/harness/complete",
+                json={
+                    "backend": "hosted_k3",
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "receipt_hashes": ["zzz"],
+                },
+            ).status_code
+            == 422
+        )
+        out["cite_batch_checked"] = (
+            cite.post(
+                "/harness/complete/batch",
+                json={
+                    "backend": "hosted_k3",
+                    "batch": [[{"role": "user", "content": "hi"}]],
+                    "receipt_hashes": ["e" * 64],
+                },
+            ).status_code
+            == 422
+        )
+        out["cite_stream_checked"] = (
+            cite.post(
+                "/harness/complete/stream",
+                json={
+                    "backend": "hosted_k3",
+                    "messages": [{"role": "user", "content": "hi"}],
+                    "receipt_hashes": ["e" * 64],
+                },
+            ).status_code
+            == 422
+        )
+    # No store mounted -> citations stay advisory (nothing to check against).
+    nostore = _TC2(
+        api_mod.create_app(
+            receipts_dir="/nonexistent-receipts-dir-zzz",
+            backend_resolver=lambda *a, **k: _CleanBackend(),
+        )
+    )
+    out["cite_advisory_no_store"] = (
+        nostore.post(
+            "/harness/complete",
+            json={
+                "backend": "hosted_k3",
+                "messages": [{"role": "user", "content": "hi"}],
+                "receipt_hashes": ["e" * 64],
+            },
+        ).status_code
+        == 200
+    )
     gone = _TC2(api_mod.create_app(receipts_dir="/nonexistent-receipts-dir-zzz"))
     out["receipt_fetch_store_unavailable"] = (
         gone.get("/receipts/" + "a" * 64).status_code == 503

@@ -1485,6 +1485,7 @@ def _mount_complete_routes(
     complete_idem_store: _IdemStore[CompleteResponse],
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
     breaker: _BackendBreaker | None,
+    receipt_index: _ReceiptIndex,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) — extracted from
     ``create_app`` to keep its branch complexity under the ruff cap."""
@@ -1501,6 +1502,24 @@ def _mount_complete_routes(
                 f"backend {name!r} circuit open — retry in {wait:.1f}s",
                 code="backend_unavailable",
                 headers={"Retry-After": str(max(1, math.ceil(wait)))},
+            )
+
+    def _check_citations(hashes: list[str] | None) -> None:
+        """Cited evidence must resolve against the mounted receipt store:
+        a completion may not footnote a receipt the server cannot produce.
+        Runs before the breaker and the backend call — a bogus citation is a
+        422 client fault and never burns a slot or trips the circuit. When no
+        store is mounted, citations stay advisory (nothing to check against)."""
+        if not hashes or not receipt_index.available():
+            return
+        missing = [
+            h for h in hashes if not _SHA256_HEX.fullmatch(h) or receipt_index.lookup(h) is None
+        ]
+        if missing:
+            raise ApiError(
+                422,
+                f"unresolvable receipt citations: {missing}",
+                code="receipt_not_found",
             )
 
     @app.post(
@@ -1520,6 +1539,7 @@ def _mount_complete_routes(
         key, replay = _idem_lookup(idempotency_key, complete_idem_store, body_fp)
         if replay is not None:
             return replay
+        _check_citations(body.receipt_hashes)
         _breaker_admit(_breaker_key(body))
         try:
             backend = resolve_backend(
@@ -1598,6 +1618,7 @@ def _mount_complete_routes(
         wire). ``sse_keepalive_s`` = 0 disables the worker entirely — the
         fully synchronous path.
         """
+        _check_citations(body.receipt_hashes)
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
 
         def _gather() -> tuple[list[str], str | None, float]:
@@ -1748,6 +1769,7 @@ def _mount_complete_routes(
         key, replay = _idem_lookup(idempotency_key, complete_batch_idem_store, body_fp)
         if replay is not None:
             return replay
+        _check_citations(body.receipt_hashes)
         _breaker_admit(_breaker_key(body))
         try:
             backend = resolve_backend(
@@ -2303,6 +2325,7 @@ def create_app(
         complete_idem_store=complete_idem_store,
         complete_batch_idem_store=complete_batch_idem_store,
         breaker=breaker,
+        receipt_index=receipt_index,
     )
 
     _mount_receipt_routes(app, receipt_index)

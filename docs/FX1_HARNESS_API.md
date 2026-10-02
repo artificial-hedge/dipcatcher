@@ -95,7 +95,14 @@ and `fx1 harness receipts` / `fx1 harness receipt <sha256>` on the CLI
 (local `--receipts-dir` or `--remote`). Misses map to the same errors
 everywhere: `KeyError`/`404` unknown hash, `ValueError`/`422` malformed
 digest, store-absent → `FileNotFoundError` locally / `503
-receipts_unavailable` on the wire.
+receipts_unavailable` on the wire.sha.
+
+`receipt_hashes` on a completion request cites that store: when it is
+mounted, every cited hash must resolve — an unknown or malformed hash is
+`422 receipt_not_found` before the backend call (never breaker-counted),
+on sync, batch, and stream alike. With no store mounted the citations
+stay advisory footnotes (the response footer already tells consumers to
+verify externally).
 
 `GET /openapi.json` is codegen-grade: every operation carries a stable
 `operation_id` + tag (`quality/fx1_openapi_surface.json` pins the
