@@ -554,6 +554,26 @@ def api_audit() -> dict[str, Any]:
     )
     out["body_cap_413"] = big.status_code == 413
 
+    # request tracing: X-Request-ID echoes when well-formed, mints otherwise
+    echoed = client.get("/health", headers={"X-Request-ID": "trace-abc.123"})
+    minted = client.get("/health")
+    forged = client.get("/health", headers={"X-Request-ID": "bad\nid\x00inj"})
+    out["request_id_echoed"] = echoed.headers.get("x-request-id") == "trace-abc.123"
+    out["request_id_minted_when_absent"] = (
+        minted.headers.get("x-request-id") is not None and len(minted.headers["x-request-id"]) == 32
+    )
+    out["request_id_malformed_replaced"] = (
+        forged.headers.get("x-request-id") is not None
+        and "\n" not in forged.headers["x-request-id"]
+    )
+    out["request_id_on_error_too"] = (
+        secured.get("/harness/commands").headers.get("x-request-id") is not None
+    )
+    out["request_id_distinct"] = (
+        client.get("/health").headers["x-request-id"]
+        != client.get("/health").headers["x-request-id"]
+    )
+
     return out
 
 

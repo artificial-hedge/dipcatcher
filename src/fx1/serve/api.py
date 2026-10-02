@@ -36,7 +36,9 @@ from __future__ import annotations
 import hmac
 import json
 import os
+import re
 import threading
+import uuid
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -179,6 +181,17 @@ def _backend_configured() -> dict[str, bool]:
     }
 
 
+_RID_OK = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+
+def _request_id(raw: str | None) -> str:
+    """Echo a well-formed client request id; anything else mints a fresh one
+    (untrusted headers never reach the response unparsed)."""
+    if raw is not None and _RID_OK.fullmatch(raw):
+        return raw
+    return uuid.uuid4().hex
+
+
 def create_app(
     harness: Harness | None = None,
     backend_resolver: Any | None = None,
@@ -223,6 +236,7 @@ def create_app(
 
     @app.middleware("http")
     async def harness_api_auth(request: Request, call_next: Any) -> Any:
+        request_id = _request_id(request.headers.get("x-request-id"))
         if request.method in ("POST", "PUT", "PATCH", "DELETE"):
             declared = request.headers.get("content-length")
             if declared is not None:
@@ -265,6 +279,7 @@ def create_app(
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["X-Request-ID"] = request_id
         return response
 
     @app.get("/health", response_model=HealthResponse)
