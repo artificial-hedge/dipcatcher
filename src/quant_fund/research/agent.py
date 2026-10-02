@@ -741,6 +741,14 @@ from quant_fund.research.benches_w93 import (
     bench_phase_retrieval,
     bench_tree_ensembles,
 )
+from quant_fund.research.benches_w94 import (
+    bench_coordinate_descent_enet_family,
+    bench_discriminant_analysis,
+    bench_kernel_methods_family,
+    bench_lda_topics_family,
+    bench_online_convex_family,
+    bench_svm_classifiers,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2850,6 +2858,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gp_classification": bench_gp_classification(),
         "phase_retrieval": bench_phase_retrieval(),
         "factorization_machine": bench_factorization_machine(),
+        "svm_classifiers": bench_svm_classifiers(),
+        "discriminant_analysis": bench_discriminant_analysis(),
+        "coordinate_descent_enet": bench_coordinate_descent_enet_family(),
+        "kernel_methods": bench_kernel_methods_family(),
+        "lda_topics": bench_lda_topics_family(),
+        "online_convex": bench_online_convex_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

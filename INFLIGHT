@@ -2272,4 +2272,11 @@ note: canon PR to follow.
     (530->536); agent.py wiring; tests: 6 module
     files + test_benches_w93 (25 tests).
   - Canon staged on top of w92-canon.
+  wave94:
+  - "svm_classifiers","discriminant_analysis",
+    "coordinate_descent_enet","kernel_methods",
+    "lda_topics","online_convex"
+    (536->542); agent.py wiring; tests: 6 module
+    files + test_benches_w94 (21 tests).
+  - Canon staged on top of w93-canon.
 note: canon PR to follow.

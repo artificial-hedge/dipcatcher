@@ -1455,6 +1455,23 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gp_classification",
         "phase_retrieval",
         "factorization_machine",
+        # Wave-94 canon: Pegasos +
+        # kernel SVMs, Fisher LDA/QDA
+        # + regularized DA, coordinate
+        # -descent elastic-net paths,
+        # KRR/RFF/Nyström kernel
+        # methods, collapsed-Gibbs
+        # LDA topics, and
+        # perceptron/PA/OGD/FTRL
+        # online convex learners.
+        # Same SYNTHETIC diagnostic
+        # contract.
+        "svm_classifiers",
+        "discriminant_analysis",
+        "coordinate_descent_enet",
+        "kernel_methods",
+        "lda_topics",
+        "online_convex",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
