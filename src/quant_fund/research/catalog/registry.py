@@ -1979,6 +1979,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lipschitz_net",
         "vector_neurons",
         "gumbel_topk",
+        # Wave-142 sequence exotics:
+        # S4, RWKV, Hyena, RetNet,
+        # DeltaNet, MoD routing.
+        "s4_ssm",
+        "rwkv_wkv",
+        "hyena_conv",
+        "retnet_decay",
+        "delta_net",
+        "mixture_of_depths",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

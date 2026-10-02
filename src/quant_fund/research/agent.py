@@ -1125,6 +1125,14 @@ from quant_fund.research.benches_w141 import (
     bench_randomized_smoothing_family,
     bench_vector_neurons_family,
 )
+from quant_fund.research.benches_w142 import (
+    bench_delta_net_family,
+    bench_hyena_conv_family,
+    bench_mixture_of_depths_family,
+    bench_retnet_decay_family,
+    bench_rwkv_wkv_family,
+    bench_s4_ssm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3522,6 +3530,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "lipschitz_net": bench_lipschitz_net_family(),
         "vector_neurons": bench_vector_neurons_family(),
         "gumbel_topk": bench_gumbel_topk_family(),
+        "s4_ssm": bench_s4_ssm_family(),
+        "rwkv_wkv": bench_rwkv_wkv_family(),
+        "hyena_conv": bench_hyena_conv_family(),
+        "retnet_decay": bench_retnet_decay_family(),
+        "delta_net": bench_delta_net_family(),
+        "mixture_of_depths": bench_mixture_of_depths_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
