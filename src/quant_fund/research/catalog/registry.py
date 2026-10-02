@@ -2923,6 +2923,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "func_dep",
         "bitmap_index",
         "adaptive_qp",
+        # Wave-259 networking-2 canon.
+        "bgp_pathvec",
+        "dns_resolver",
+        "nat_traversal",
+        "arp_table",
+        "dhcp_lease",
+        "eth_switch",
         "critical_path",
         "dinic_flow",
         "mincost_flow",

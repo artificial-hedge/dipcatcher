@@ -2063,6 +2063,14 @@ from quant_fund.research.benches_w258 import (
     bench_vectorized_exec_family,
     bench_zone_map_family,
 )
+from quant_fund.research.benches_w259 import (
+    bench_arp_table_family,
+    bench_bgp_pathvec_family,
+    bench_dhcp_lease_family,
+    bench_dns_resolver_family,
+    bench_eth_switch_family,
+    bench_nat_traversal_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2298,6 +2306,12 @@ def _provenance(
         "func_dep": bench_func_dep_family,
         "bitmap_index": bench_bitmap_index_family,
         "adaptive_qp": bench_adaptive_qp_family,
+        "bgp_pathvec": bench_bgp_pathvec_family,
+        "dns_resolver": bench_dns_resolver_family,
+        "nat_traversal": bench_nat_traversal_family,
+        "arp_table": bench_arp_table_family,
+        "dhcp_lease": bench_dhcp_lease_family,
+        "eth_switch": bench_eth_switch_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
