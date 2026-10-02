@@ -1,6 +1,42 @@
 {
   "components": {
     "schemas": {
+      "BackendCompletionStats": {
+        "additionalProperties": false,
+        "description": "Per-backend completion accounting: outcome counts + a cumulative\nlatency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``).",
+        "properties": {
+          "error": {
+            "default": 0,
+            "title": "Error",
+            "type": "integer"
+          },
+          "latency_buckets": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "default": {},
+            "title": "Latency Buckets",
+            "type": "object"
+          },
+          "latency_count": {
+            "default": 0,
+            "title": "Latency Count",
+            "type": "integer"
+          },
+          "latency_sum_ms": {
+            "default": 0.0,
+            "title": "Latency Sum Ms",
+            "type": "number"
+          },
+          "ok": {
+            "default": 0,
+            "title": "Ok",
+            "type": "integer"
+          }
+        },
+        "title": "BackendCompletionStats",
+        "type": "object"
+      },
       "BackendStatusEntry": {
         "additionalProperties": false,
         "description": "One backend's liveness surface: whether it is configured and, when\nthe circuit breaker is enabled, whether it is currently fast-failing.",
@@ -1040,6 +1076,14 @@
               "type": "integer"
             },
             "title": "By Status",
+            "type": "object"
+          },
+          "complete": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/BackendCompletionStats"
+            },
+            "default": {},
+            "title": "Complete",
             "type": "object"
           },
           "draining": {

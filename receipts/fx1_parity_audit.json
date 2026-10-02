@@ -122,11 +122,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "eb147cba12777a6d4b83597e97d5cfaf24869163",
+  "git_revision": "add4a1304a936dd5d2c798a5677bb3ed28a56743",
   "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "a69bb66aeb4b0df9f0c3132dc61c6148d350f7000de9db3e7c2afee53fd2d5b5",
+  "receipt_sha256": "d5f7343462f2bb46a29431a7dbe6bb709005ec69aa04887f444c3f5a889186b9",
   "research_only": true,
   "schema": "parity_audit.v1"
 }

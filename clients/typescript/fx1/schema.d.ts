@@ -451,6 +451,40 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * BackendCompletionStats
+         * @description Per-backend completion accounting: outcome counts + a cumulative
+         *     latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``).
+         */
+        BackendCompletionStats: {
+            /**
+             * Error
+             * @default 0
+             */
+            error: number;
+            /**
+             * Latency Buckets
+             * @default {}
+             */
+            latency_buckets: {
+                [key: string]: number;
+            };
+            /**
+             * Latency Count
+             * @default 0
+             */
+            latency_count: number;
+            /**
+             * Latency Sum Ms
+             * @default 0
+             */
+            latency_sum_ms: number;
+            /**
+             * Ok
+             * @default 0
+             */
+            ok: number;
+        };
+        /**
          * BackendStatusEntry
          * @description One backend's liveness surface: whether it is configured and, when
          *     the circuit breaker is enabled, whether it is currently fast-failing.
@@ -829,6 +863,13 @@ export interface components {
             /** By Status */
             by_status: {
                 [key: string]: number;
+            };
+            /**
+             * Complete
+             * @default {}
+             */
+            complete: {
+                [key: string]: components["schemas"]["BackendCompletionStats"];
             };
             /** Draining */
             draining: boolean;

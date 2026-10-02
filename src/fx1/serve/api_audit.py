@@ -2393,6 +2393,21 @@ def api_audit() -> dict[str, Any]:
         and _be_mod._extract_usage({"usage": "broken"}) is None
     )
 
+    # --- completion observability ------------------------------------------
+    # Per-backend outcome counters + a latency histogram over attempted
+    # model calls — the uapp backend served 1 sync + 2 batch items above.
+    um = uapp.get("/metrics").json()
+    out["metrics_complete_counters"] = um["complete"]["byok"]["ok"] == 3
+    up = uapp.get("/metrics", headers={"Accept": "text/plain"}).text
+    out["metrics_latency_histogram"] = (
+        'fx1_complete_total{backend="byok",outcome="ok"} 3' in up
+        and 'fx1_complete_latency_ms_count{backend="byok"} 3' in up
+        and 'fx1_complete_latency_ms_bucket{backend="byok",le="+Inf"} 3' in up
+    )
+    # gate refusals land in the error outcome, not silently dropped
+    dm = dirty.get("/metrics").json()
+    out["metrics_complete_error_outcome"] = dm["complete"]["byok"]["error"] >= 1
+
     return out
 
 

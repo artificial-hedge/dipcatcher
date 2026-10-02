@@ -76,6 +76,13 @@ delta — per-item attribution would be a lie. Streaming leaves `usage`
 null (chunk deltas carry no reliable counts). The same values land on
 `CompletionResult.usage` in the SDK and `HarnessClient`.
 
+**Completion observability:** `GET /metrics` carries per-backend outcome
+counters (`fx1_complete_total{backend,outcome}`) and a cumulative
+latency histogram (`fx1_complete_latency_ms_bucket{le=…}`, `_sum`,
+`_count`) over attempted model calls — breaker rejections and pre-call
+validation never land in it. The JSON view exposes the same data under
+`complete.<backend>`.
+
 ## Routes
 
 | Route | Purpose |

@@ -460,6 +460,17 @@ class ReceiptVerifyBatchResponse(_Model):
     results: list[ReceiptVerifyBatchItem]
 
 
+class BackendCompletionStats(_Model):
+    """Per-backend completion accounting: outcome counts + a cumulative
+    latency histogram (edges are ``_LAT_BUCKETS_MS`` plus ``+Inf``)."""
+
+    ok: int = 0
+    error: int = 0
+    latency_count: int = 0
+    latency_sum_ms: float = 0.0
+    latency_buckets: dict[str, int] = {}
+
+
 class MetricsResponse(_Model):
     """Point-in-time ops snapshot: totals since process start."""
 
@@ -472,6 +483,8 @@ class MetricsResponse(_Model):
     max_inflight: int
     draining: bool
     rate_limited_total: int = 0
+    # completion calls only — per backend name as requested on the wire
+    complete: dict[str, BackendCompletionStats] = {}
 
 
 class DrainResponse(_Model):
@@ -547,8 +560,12 @@ class JobStatusResponse(_Model):
     callback_attempts: int = 0
 
 
+_LAT_BUCKETS_MS = (100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0, 10000.0, 30000.0, 60000.0)
+
+
 class _Metrics:
-    """Request counters + inflight gauge, shared via app.state."""
+    """Request counters + inflight gauge + per-backend completion
+    histograms, shared via app.state."""
 
     def __init__(self, max_inflight: int) -> None:
         self.started = time.monotonic()
@@ -560,7 +577,33 @@ class _Metrics:
         self._inflight = 0
         self._watermark = 0
         self._rate_limited_total = 0
+        # backend -> {"ok","error","count","sum","buckets" (cumulative)}
+        self._complete: dict[str, dict[str, Any]] = {}
         self.draining = threading.Event()
+
+    def record_complete(self, backend: str, ok: bool, latency_ms: float) -> None:
+        """One attempted model call: outcome + latency into the backend's
+        cumulative histogram. Called only when the backend was invoked —
+        breaker rejections and pre-call validation aren't model work."""
+        with self._cond:
+            st = self._complete.setdefault(
+                backend,
+                {
+                    "ok": 0,
+                    "error": 0,
+                    "count": 0,
+                    "sum": 0.0,
+                    # one entry per edge + a final +Inf slot
+                    "buckets": [0] * (len(_LAT_BUCKETS_MS) + 1),
+                },
+            )
+            st["ok" if ok else "error"] += 1
+            st["count"] += 1
+            st["sum"] += latency_ms
+            for i, edge in enumerate(_LAT_BUCKETS_MS):
+                if latency_ms <= edge:
+                    st["buckets"][i] += 1
+            st["buckets"][-1] += 1
 
     def record_rate_limited(self) -> None:
         with self._cond:
@@ -607,7 +650,26 @@ class _Metrics:
                 max_inflight=self.max_inflight,
                 draining=self.draining.is_set(),
                 rate_limited_total=self._rate_limited_total,
+                complete={
+                    b: BackendCompletionStats(
+                        ok=st["ok"],
+                        error=st["error"],
+                        latency_count=st["count"],
+                        latency_sum_ms=round(st["sum"], 3),
+                        latency_buckets={
+                            **_lat_bucket_labels(st["buckets"]),
+                        },
+                    )
+                    for b, st in sorted(self._complete.items())
+                },
             )
+
+
+def _lat_bucket_labels(counts: list[int]) -> dict[str, int]:
+    """Cumulative bucket counts keyed by le-label, ``+Inf`` last — the
+    Prometheus histogram convention, kept identical on the JSON snapshot."""
+    labels = [f"{edge:g}" for edge in _LAT_BUCKETS_MS] + ["+Inf"]
+    return dict(zip(labels, counts, strict=True))
 
 
 def _env_int_bound(name: str, default: int, given: int | None) -> int:
@@ -1479,6 +1541,21 @@ def _render_prometheus(snap: MetricsResponse, job_counts: dict[str, int]) -> str
     ]
     for status in _JOB_STATUSES:
         lines.append(f'fx1_jobs{{status="{status}"}} {job_counts.get(status, 0)}')
+    lines += [
+        "# HELP fx1_complete_total Model calls attempted, by backend and outcome.",
+        "# TYPE fx1_complete_total counter",
+        "# HELP fx1_complete_latency_ms Model-call latency histogram (ms), per backend.",
+        "# TYPE fx1_complete_latency_ms histogram",
+    ]
+    for b in sorted(snap.complete):
+        c = snap.complete[b]
+        lb = _label(b)
+        lines.append(f'fx1_complete_total{{backend="{lb}",outcome="ok"}} {c.ok}')
+        lines.append(f'fx1_complete_total{{backend="{lb}",outcome="error"}} {c.error}')
+        for le, n in c.latency_buckets.items():
+            lines.append(f'fx1_complete_latency_ms_bucket{{backend="{lb}",le="{le}"}} {n}')
+        lines.append(f'fx1_complete_latency_ms_sum{{backend="{lb}"}} {c.latency_sum_ms}')
+        lines.append(f'fx1_complete_latency_ms_count{{backend="{lb}"}} {c.latency_count}')
     return "\n".join(lines) + "\n"
 
 
@@ -1498,6 +1575,7 @@ def _mount_complete_routes(
     complete_batch_idem_store: _IdemStore[CompleteBatchResponse],
     breaker: _BackendBreaker | None,
     receipt_index: _ReceiptIndex,
+    metrics: _Metrics,
 ) -> None:
     """Complete routes (sync / SSE stream / batch) — extracted from
     ``create_app`` to keep its branch complexity under the ruff cap."""
@@ -1569,8 +1647,10 @@ def _mount_complete_routes(
             raise
         messages = [{"role": m.role, "content": m.content} for m in body.messages]
         t0 = time.monotonic()
+        call_ok = False
         try:
             content = cited_complete(backend, messages, receipt_hashes=body.receipt_hashes)
+            call_ok = True
         except NotImplementedError as exc:
             raise ApiError(501, str(exc)) from exc
         except Fx1HonestyError as exc:
@@ -1589,6 +1669,7 @@ def _mount_complete_routes(
             if breaker is not None:
                 breaker.report(_breaker_key(body), True)
         finally:
+            metrics.record_complete(body.backend, call_ok, (time.monotonic() - t0) * 1000.0)
             _close_backend(backend)
         model_name = getattr(backend, "_model", None)
         usage = getattr(backend, "last_usage", None)
@@ -1651,6 +1732,7 @@ def _mount_complete_routes(
                     breaker.report(_breaker_key(body), False)
                 raise
             t0 = time.monotonic()
+            call_ok = False
             try:
                 if not isinstance(backend, StreamingBackend):
                     raise NotImplementedError(
@@ -1673,9 +1755,11 @@ def _mount_complete_routes(
                     raise ApiError(503, str(exc), code="backend_unavailable") from exc
                 raise ApiError(502, str(exc), code="backend_failure") from exc
             else:
+                call_ok = True
                 if breaker is not None:
                     breaker.report(_breaker_key(body), True)
             finally:
+                metrics.record_complete(body.backend, call_ok, (time.monotonic() - t0) * 1000.0)
                 _close_backend(backend)
             model_name = getattr(backend, "_model", None)
             if body.receipt_hashes:
@@ -1823,6 +1907,7 @@ def _mount_complete_routes(
                             error="backend circuit open",
                             error_class="backend_unavailable",
                         )
+                    item_ok = False
                     try:
                         out = CompleteBatchItem(
                             ok=True,
@@ -1831,6 +1916,7 @@ def _mount_complete_routes(
                                 backend, messages, receipt_hashes=body.receipt_hashes
                             ),
                         )
+                        item_ok = True
                     except Fx1HonestyError as exc:
                         return CompleteBatchItem(
                             ok=False,
@@ -1850,6 +1936,10 @@ def _mount_complete_routes(
                             latency_ms=(time.monotonic() - t0) * 1000.0,
                             error=str(exc),
                             error_class=type(exc).__name__,
+                        )
+                    finally:
+                        metrics.record_complete(
+                            body.backend, item_ok, (time.monotonic() - t0) * 1000.0
                         )
                     if breaker is not None:
                         breaker.report(_breaker_key(body), True)
@@ -2356,6 +2446,7 @@ def create_app(
         complete_batch_idem_store=complete_batch_idem_store,
         breaker=breaker,
         receipt_index=receipt_index,
+        metrics=metrics,
     )
 
     _mount_receipt_routes(app, receipt_index)
