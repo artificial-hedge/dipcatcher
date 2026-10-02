@@ -45,3 +45,41 @@ def regime_task(seed: int, n: int = 600, k: int = 4, d: int = 8) -> tuple[FloatA
     # clean decision boundary + label-flip noise
     y = (s + 0.4 * rng.standard_normal(n) > 0).astype(np.float64)
     return X, y
+
+
+def attn_baseline(seed: int, iters: int = 800) -> float:
+    """Single-head full-attention readout on recall_batch — shared comparator."""
+    import torch
+
+    torch.manual_seed(seed)
+    x, y = recall_batch(seed)
+    D = 16
+    emb = torch.nn.Embedding(VOCAB, D)
+    wq = torch.nn.Linear(D, D)
+    wk = torch.nn.Linear(D, D)
+    wv = torch.nn.Linear(D, D)
+    head = torch.nn.Linear(D, VOCAB)
+    opt = torch.optim.Adam(
+        list(emb.parameters())
+        + list(wq.parameters())
+        + list(wk.parameters())
+        + list(wv.parameters())
+        + list(head.parameters()),
+        lr=0.005,
+    )
+    X = torch.tensor(x)
+    Y = torch.tensor(y)
+    for _ in range(iters):
+        h = emb(X)
+        q, k, v = wq(h), wk(h), wv(h)
+        a = torch.softmax(q @ k.transpose(-1, -2) / D**0.5, -1)
+        o = a @ v
+        loss = torch.nn.functional.cross_entropy(head(o[:, -1]), Y)
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+    with torch.no_grad():
+        h = emb(X)
+        a = torch.softmax(wq(h) @ wk(h).transpose(-1, -2) / D**0.5, -1)
+        acc = (head((a @ wv(h))[:, -1]).argmax(-1) == Y).float().mean().item()
+    return float(acc)

@@ -1437,6 +1437,14 @@ from quant_fund.research.benches_w180 import (
     bench_riemannian_mala_family,
     bench_zigzag_sampler_family,
 )
+from quant_fund.research.benches_w181 import (
+    bench_gated_deltanet_family,
+    bench_longhorn_ssm_family,
+    bench_mamba2_ssd_family,
+    bench_rwkv7_family,
+    bench_titans_memory_family,
+    bench_xlstm_mlstm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4068,6 +4076,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "kinetic_langevin": bench_kinetic_langevin_family(),
         "elliptical_slice": bench_elliptical_slice_family(),
         "riemannian_mala": bench_riemannian_mala_family(),
+        "mamba2_ssd": bench_mamba2_ssd_family(),
+        "xlstm_mlstm": bench_xlstm_mlstm_family(),
+        "rwkv7": bench_rwkv7_family(),
+        "titans_memory": bench_titans_memory_family(),
+        "gated_deltanet": bench_gated_deltanet_family(),
+        "longhorn_ssm": bench_longhorn_ssm_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
