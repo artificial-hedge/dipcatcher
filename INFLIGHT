@@ -2519,4 +2519,5 @@ wave 119 (2026-09-30): MARL canon — vdn, qmix, coma, maddpg, mappo, mf_q; 686�
 wave 120 (2026-09-30): coop-game + mechanism canon — nucleolus, banzhaf, owen, myerson_auction, groves, envy_free; 692→698 families.
 wave 121 (2026-10-01): best-arm-ID canon — lil_ucb, sequential_halving, median_elim, ugape, ttts, track_stop; 698→704 families.
 wave 122 (2026-10-01): exec-summary SOTA — exec_rl, smart_router, order_flow_imbalance, pg_mm, options_flow, dark_pool; 704→710 families.
+wave 123 (2026-10-01): exec-summary NLP/generative — say_echo_do, multimodal_fusion, ts_diffusion, synthetic_gan, econ_calendar, quantcode_bench; 710→716 families.
 note: canon PR to follow.

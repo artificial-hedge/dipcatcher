@@ -1797,6 +1797,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "pg_mm",
         "options_flow",
         "dark_pool",
+        # Wave-123 exec-summary NLP/gen:
+        # say-echo-do, multimodal,
+        # ts diffusion, ts GAN,
+        # econ calendar, quantcode.
+        "say_echo_do",
+        "multimodal_fusion",
+        "ts_diffusion",
+        "synthetic_gan",
+        "econ_calendar",
+        "quantcode_bench",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

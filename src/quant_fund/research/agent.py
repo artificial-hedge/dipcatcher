@@ -973,6 +973,14 @@ from quant_fund.research.benches_w122 import (
     bench_pg_mm_family,
     bench_smart_router_family,
 )
+from quant_fund.research.benches_w123 import (
+    bench_econ_calendar_family,
+    bench_multimodal_fusion_family,
+    bench_quantcode_bench_family,
+    bench_say_echo_do_family,
+    bench_synthetic_gan_family,
+    bench_ts_diffusion_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3256,6 +3264,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "pg_mm": bench_pg_mm_family(),
         "options_flow": bench_options_flow_family(),
         "dark_pool": bench_dark_pool_family(),
+        "say_echo_do": bench_say_echo_do_family(),
+        "multimodal_fusion": bench_multimodal_fusion_family(),
+        "ts_diffusion": bench_ts_diffusion_family(),
+        "synthetic_gan": bench_synthetic_gan_family(),
+        "econ_calendar": bench_econ_calendar_family(),
+        "quantcode_bench": bench_quantcode_bench_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
