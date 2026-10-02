@@ -1934,6 +1934,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sliding_attn",
         "sinkhorn_attn",
         "nystrom_attn",
+        # Wave-137 distributional-RL
+        # canon: C51, QR-DQN, IQN,
+        # NoisyNet, PER, bootstrap.
+        "c51_dqn",
+        "qr_dqn",
+        "iqn_dqn",
+        "noisy_net",
+        "prioritized_replay",
+        "bootstrapped_dqn",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

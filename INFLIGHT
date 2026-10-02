@@ -2534,3 +2534,4 @@ wave 133 (2026-10-02): neural-process + amortized-UQ canon — neural_process, a
 wave 134 (2026-10-02): differentiable-optimization canon — optnet_qp, cvxpy_layer, input_convex, deep_declarative, spd_net, diff_mpc; 776→782 families.
 wave 135 (2026-10-02): graph-neural-net canon — chebnet, graphsage, gin_gnn, graph_unet, apnp_prop, jk_net; 782→788 families.
 wave 136 (2026-10-02): attention-efficiency canon — linformer_attn, performer_attn, linear_attn, sliding_attn, sinkhorn_attn, nystrom_attn; 788→794 families.
+wave 137 (2026-10-02): distributional-RL canon — c51_dqn, qr_dqn, iqn_dqn, noisy_net, prioritized_replay, bootstrapped_dqn; 794→800 families.
