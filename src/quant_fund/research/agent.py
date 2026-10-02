@@ -1053,6 +1053,14 @@ from quant_fund.research.benches_w132 import (
     bench_max_softmax_ood_family,
     bench_vim_ood_family,
 )
+from quant_fund.research.benches_w133 import (
+    bench_attentive_np_family,
+    bench_convnp_family,
+    bench_deep_kernel_gp_family,
+    bench_llaplace_gp_family,
+    bench_meta_uq_family,
+    bench_neural_process_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3396,6 +3404,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "energy_ood": bench_energy_ood_family(),
         "knn_ood": bench_knn_ood_family(),
         "vim_ood": bench_vim_ood_family(),
+        "neural_process": bench_neural_process_family(),
+        "attentive_np": bench_attentive_np_family(),
+        "deep_kernel_gp": bench_deep_kernel_gp_family(),
+        "convnp": bench_convnp_family(),
+        "meta_uq": bench_meta_uq_family(),
+        "llaplace_gp": bench_llaplace_gp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
