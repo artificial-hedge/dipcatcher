@@ -1952,6 +1952,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dnc_memory",
         "rssm_world",
         "mpc_planning",
+        # Wave-139 SSL + TTA canon:
+        # BYOL, Barlow, VICReg, Tent,
+        # SHOT, TTT.
+        "byol",
+        "barlow_twins",
+        "vicreg",
+        "tent_tta",
+        "shot_tta",
+        "ttt_layer",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
