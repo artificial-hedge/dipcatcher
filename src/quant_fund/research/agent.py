@@ -933,6 +933,14 @@ from quant_fund.research.benches_w117 import (
     bench_trpo_family,
     bench_vtrace_family,
 )
+from quant_fund.research.benches_w118 import (
+    bench_grid_pomdp_family,
+    bench_hsvi_family,
+    bench_pbvi_family,
+    bench_perseus_family,
+    bench_pomcp_family,
+    bench_qmdp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3186,6 +3194,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "ppo": bench_ppo_family(),
         "ddpg": bench_ddpg_family(),
         "td3": bench_td3_family(),
+        "qmdp": bench_qmdp_family(),
+        "grid_pomdp": bench_grid_pomdp_family(),
+        "pbvi": bench_pbvi_family(),
+        "perseus": bench_perseus_family(),
+        "hsvi": bench_hsvi_family(),
+        "pomcp": bench_pomcp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

@@ -1750,6 +1750,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ppo",
         "ddpg",
         "td3",
+        # Wave-118 canon: POMDP solvers —
+        # QMDP, grid VI, PBVI, Perseus,
+        # HSVI, POMCP.
+        "qmdp",
+        "grid_pomdp",
+        "pbvi",
+        "perseus",
+        "hsvi",
+        "pomcp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
