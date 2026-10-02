@@ -18,6 +18,7 @@ import shlex
 import string
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -288,6 +289,8 @@ class LocalFx1Backend:
         self._timeout_s = _env_float(LOCAL_TIMEOUT_S_ENV, timeout_s, 120.0)
         self._start_timeout_s = _env_float(LOCAL_START_TIMEOUT_S_ENV, start_timeout_s, 60.0)
         self._proc: subprocess.Popen[bytes] | None = None
+        # Guards spawn/close so a shared backend is safe under complete_many.
+        self._engine_lock = threading.Lock()
 
     def _engine_up(self) -> bool:
         """True once the attach URL's engine answers a models probe."""
@@ -305,30 +308,33 @@ class LocalFx1Backend:
         """Spawn the engine from the serve template, once, and wait for it."""
         if not self._serve_cmd or self._proc is not None or self._engine_up():
             return
-        argv = shlex.split(
-            string.Template(self._serve_cmd).substitute(
-                checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
-            )
-        )
-        env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
-        try:
-            self._proc = subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
-                argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-        except OSError as exc:
-            raise RuntimeError(
-                f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
-            ) from exc
-        deadline = time.monotonic() + self._start_timeout_s
-        while time.monotonic() < deadline:
-            if self._proc.poll() is not None:
-                raise RuntimeError(
-                    "local fx-1 engine exited during startup "
-                    f"(rc={self._proc.returncode}): {self._serve_cmd!r}"
+        with self._engine_lock:
+            if self._proc is not None or self._engine_up():
+                return  # another thread spawned/attached it while we waited
+            argv = shlex.split(
+                string.Template(self._serve_cmd).substitute(
+                    checkpoint_dir=str(self._root), python=shlex.quote(sys.executable)
                 )
-            if self._engine_up():
-                return
-            time.sleep(0.1)
+            )
+            env = dict(os.environ, FX1_CHECKPOINT_DIR=str(self._root))
+            try:
+                self._proc = subprocess.Popen(  # noqa: S603 — argv list, no shell  # nosec B603
+                    argv, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            except OSError as exc:
+                raise RuntimeError(
+                    f"failed to spawn local fx-1 engine {self._serve_cmd!r}: {exc}"
+                ) from exc
+            deadline = time.monotonic() + self._start_timeout_s
+            while time.monotonic() < deadline:
+                if self._proc.poll() is not None:
+                    raise RuntimeError(
+                        "local fx-1 engine exited during startup "
+                        f"(rc={self._proc.returncode}): {self._serve_cmd!r}"
+                    )
+                if self._engine_up():
+                    return
+                time.sleep(0.1)
         self.close()
         raise RuntimeError(
             "local fx-1 engine did not become ready within "
@@ -354,7 +360,8 @@ class LocalFx1Backend:
 
     def close(self) -> None:
         """Terminate a spawned engine; a no-op when only attaching."""
-        proc, self._proc = self._proc, None
+        with self._engine_lock:
+            proc, self._proc = self._proc, None
         if proc is None or proc.poll() is not None:
             return
         proc.terminate()

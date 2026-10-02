@@ -20,6 +20,8 @@ Routes (all POST bodies are ``extra="forbid"`` — no silent arguments):
   runs server-side, in production, on every response). Backend config
   failures 503, unknown backends 404, honesty violations 502 — the model's
   output contract is enforced before bytes leave.
+- ``POST /harness/complete/batch`` — many gated completions over one shared
+  backend instance; per-item ok/error verdicts, never a 5xx per item.
 - ``POST /receipts/verify`` — verify an arbitrary receipt object with
   ``verify_receipt_payload``; callers never need filesystem access to the
   evidence store.
@@ -33,6 +35,7 @@ from __future__ import annotations
 
 import hmac
 import os
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Literal
 
@@ -118,6 +121,28 @@ class CompleteResponse(_Model):
     model: str | None
     content: str
     receipt_hashes: list[str]
+
+
+class CompleteBatchRequest(_Model):
+    backend: Literal["hosted_k3", "local_fx1", "byok"]
+    batch: list[list[ChatMessage]] = Field(min_length=1, max_length=64)
+    checkpoint_dir: str | None = None
+    receipt_hashes: list[str] | None = None
+    max_workers: int = Field(default=4, ge=1, le=16)
+
+
+class CompleteBatchItem(_Model):
+    ok: bool
+    content: str | None = None
+    error: str | None = None
+    error_class: str | None = None
+
+
+class CompleteBatchResponse(_Model):
+    backend: str
+    model: str | None
+    receipt_hashes: list[str]
+    results: list[CompleteBatchItem]
 
 
 class ReceiptVerifyRequest(_Model):
@@ -305,6 +330,81 @@ def create_app(
             model=model_name if isinstance(model_name, str) else None,
             content=content,
             receipt_hashes=body.receipt_hashes or [],
+        )
+
+    @app.post("/harness/complete/batch", response_model=CompleteBatchResponse)
+    def complete_batch(body: CompleteBatchRequest) -> CompleteBatchResponse:
+        kwargs: dict[str, Any] = {}
+        if body.backend == "local_fx1":
+            checkpoint = body.checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
+            if not checkpoint:
+                raise HTTPException(
+                    422,
+                    "local_fx1 needs a checkpoint_dir in the request or "
+                    "FX1_CHECKPOINT_DIR on the server",
+                )
+            kwargs["checkpoint_dir"] = checkpoint
+        elif body.checkpoint_dir is not None:
+            raise HTTPException(422, "checkpoint_dir applies only to the local_fx1 backend")
+        try:
+            backend = resolve_backend(body.backend, **kwargs)
+        except KeyError as exc:
+            raise HTTPException(404, str(exc)) from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        except (RuntimeError, ValueError) as exc:
+            raise HTTPException(503, str(exc)) from exc
+        # One backend serves the whole batch — a spawned local engine is
+        # shared across workers (spawn path is lock-guarded). Item failures
+        # are per-slot verdicts: a gate refusal on one prompt does not lose
+        # the rest of the batch.
+        try:
+            with ThreadPoolExecutor(
+                max_workers=min(body.max_workers, len(body.batch)),
+                thread_name_prefix="fx1-complete",
+            ) as pool:
+
+                def _one(messages: list[dict[str, str]]) -> CompleteBatchItem:
+                    try:
+                        return CompleteBatchItem(
+                            ok=True,
+                            content=cited_complete(
+                                backend, messages, receipt_hashes=body.receipt_hashes
+                            ),
+                        )
+                    except Fx1HonestyError as exc:
+                        return CompleteBatchItem(
+                            ok=False, error=str(exc), error_class="honesty_refusal"
+                        )
+                    except (
+                        BackendNotConfiguredError,
+                        NotImplementedError,
+                        RuntimeError,
+                        ValueError,
+                    ) as exc:
+                        return CompleteBatchItem(
+                            ok=False, error=str(exc), error_class=type(exc).__name__
+                        )
+
+                results = list(
+                    pool.map(
+                        _one,
+                        [
+                            [{"role": m.role, "content": m.content} for m in msgs]
+                            for msgs in body.batch
+                        ],
+                    )
+                )
+        finally:
+            closer = getattr(backend, "close", None)
+            if callable(closer):
+                closer()
+        model_name = getattr(backend, "_model", None)
+        return CompleteBatchResponse(
+            backend=body.backend,
+            model=model_name if isinstance(model_name, str) else None,
+            receipt_hashes=body.receipt_hashes or [],
+            results=results,
         )
 
     @app.post("/receipts/verify", response_model=ReceiptVerifyResponse)

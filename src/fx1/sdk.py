@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -171,6 +172,67 @@ class Fx1Harness:
             content=content,
             receipt_hashes=tuple(receipt_hashes or ()),
         )
+
+    def complete_many(
+        self,
+        batch: list[list[dict[str, str]]],
+        *,
+        backend: str = "local_fx1",
+        checkpoint_dir: str | Path | None = None,
+        receipt_hashes: list[str] | None = None,
+        backend_kwargs: dict[str, Any] | None = None,
+        max_workers: int = 4,
+    ) -> list[CompletionResult]:
+        """Many gated completions over ONE shared backend instance.
+
+        The backend resolves once and is shared across worker threads — a
+        spawned local engine serves the whole batch, not one spawn per
+        item (``LocalFx1Backend``'s spawn path is lock-guarded). Results
+        come back in submission order; the lowest-index failure propagates
+        after the pool drains. The backend is always closed afterwards.
+        """
+        if max_workers < 1:
+            raise ValueError(f"max_workers must be >= 1, got {max_workers}")
+        if not batch:
+            return []
+        kwargs: dict[str, Any] = dict(backend_kwargs or {})
+        if backend == "local_fx1":
+            checkpoint = checkpoint_dir or os.environ.get("FX1_CHECKPOINT_DIR")
+            if not checkpoint:
+                raise ValueError(
+                    "local_fx1 needs a checkpoint_dir argument or "
+                    "FX1_CHECKPOINT_DIR in the environment"
+                )
+            kwargs["checkpoint_dir"] = str(checkpoint)
+        elif checkpoint_dir is not None:
+            raise ValueError("checkpoint_dir applies only to the local_fx1 backend")
+        backend_obj = self._resolve_backend(backend, **kwargs)
+        try:
+            with ThreadPoolExecutor(
+                max_workers=min(max_workers, len(batch)), thread_name_prefix="fx1-complete"
+            ) as pool:
+                contents = list(
+                    pool.map(
+                        lambda msgs: cited_complete(
+                            backend_obj, msgs, receipt_hashes=receipt_hashes
+                        ),
+                        batch,
+                    )
+                )
+        finally:
+            closer = getattr(backend_obj, "close", None)
+            if callable(closer):
+                closer()
+        model_name = getattr(backend_obj, "_model", None)
+        return [
+            CompletionResult(
+                backend=backend,
+                model=model_name if isinstance(model_name, str) else None,
+                content=content,
+                receipt_hashes=tuple(receipt_hashes or ()),
+            )
+            for content in contents
+        ]
 
     # ---- receipts --------------------------------------------------------
 

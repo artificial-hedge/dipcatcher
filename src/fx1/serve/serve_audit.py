@@ -230,14 +230,13 @@ def serve_audit() -> dict[str, Any]:
                 serve_cmd='${python} -c "import time; time.sleep(30)"',
             )
             captured2["urls"] = []
-            spawn_seen = {"tried": False}
 
             def fake_urlopen_cold(req: Any, **kw: Any) -> _Resp2:
-                # The first readiness probe fails (engine not up yet), so the
-                # spawn template must actually run; later probes succeed.
+                # The engine reads as down only until a proc exists — the
+                # spawn template must actually run (a concurrent-ready fake
+                # would let the lock's re-check skip spawning entirely).
                 url = req.full_url if hasattr(req, "full_url") else str(req)
-                if url.endswith("/v1/models") and not spawn_seen["tried"]:
-                    spawn_seen["tried"] = True
+                if url.endswith("/v1/models") and spawned._proc is None:
                     raise urllib.error.URLError("connection refused")
                 return fake_urlopen2(req, **kw)
 
@@ -260,6 +259,51 @@ def serve_audit() -> dict[str, Any]:
             )
             dead.close()
             out["local_close_idempotent"] = True
+
+            # Concurrency: N threads sharing one backend must spawn exactly
+            # once — the engine lock makes the check-spawn sequence atomic.
+            import subprocess  # noqa: PLC0415
+            from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+            real_popen = subprocess.Popen
+            spawn_count = [0]
+
+            def counting_popen(*a: Any, **kw: Any) -> Any:
+                spawn_count[0] += 1
+                return real_popen(*a, **kw)
+
+            shared = LocalFx1Backend(
+                root,
+                require_signature=True,
+                serve_url="http://127.0.0.1:8014/v1",
+                serve_cmd='${python} -c "import time; time.sleep(30)"',
+            )
+
+            def fake_urlopen_cold_locked(req: Any, **kw: Any) -> _Resp2:
+                # The engine reads as down only until a spawn has occurred —
+                # so whichever thread loses the readiness race must be the
+                # one that spawns, and the lock re-check must short-circuit
+                # the rest.
+                url = req.full_url if hasattr(req, "full_url") else str(req)
+                if url.endswith("/v1/models") and spawn_count[0] == 0:
+                    raise urllib.error.URLError("connection refused")
+                return fake_urlopen2(req, **kw)
+
+            try:
+                with (
+                    patch.object(subprocess, "Popen", counting_popen),
+                    patch.object(urllib.request, "urlopen", fake_urlopen_cold_locked),
+                    ThreadPoolExecutor(max_workers=4) as pool,
+                ):
+                    list(
+                        pool.map(
+                            lambda _i: shared.complete([{"role": "u", "content": "x"}]),
+                            range(6),
+                        )
+                    )
+                out["local_spawn_once_concurrent"] = spawn_count[0] == 1
+            finally:
+                shared.close()
         finally:
             for k, v in saved_env.items():
                 if v is None:

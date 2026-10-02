@@ -336,6 +336,99 @@ def api_audit() -> dict[str, Any]:
         == 502
     )
 
+    # --- batch completions ----------------------------------------------------
+    # One backend instance serves the whole batch; per-item verdicts.
+    class _CleanBackend:
+        def __init__(self) -> None:
+            self._model = "fake-0"
+            self.calls = 0
+            self.closed = 0
+
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            self.calls += 1
+            return f"clean:{messages[-1]['content']}"
+
+        def close(self) -> None:
+            self.closed += 1
+
+    clean = _CleanBackend()
+    resolves = [0]
+
+    def _resolve_once(*a: Any, **k: Any) -> _CleanBackend:
+        resolves[0] += 1
+        return clean
+
+    batch_client = _TC2(api_mod.create_app(backend_resolver=_resolve_once))
+    r = batch_client.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [[{"role": "user", "content": f"q{i}"}] for i in range(3)],
+        },
+    )
+    bj = r.json()
+    out["batch_complete_200"] = (
+        r.status_code == 200 and len(bj["results"]) == 3 and all(i["ok"] for i in bj["results"])
+    )
+    out["batch_in_order"] = [i["content"] for i in bj["results"]] == [
+        "clean:q0",
+        "clean:q1",
+        "clean:q2",
+    ]
+    out["batch_one_backend"] = resolves[0] == 1 and clean.calls == 3
+    out["batch_closed_once"] = clean.closed == 1
+    out["batch_empty_422"] = (
+        batch_client.post(
+            "/harness/complete/batch", json={"backend": "byok", "batch": []}
+        ).status_code
+        == 422
+    )
+    out["batch_local_no_checkpoint_422"] = (
+        batch_client.post(
+            "/harness/complete/batch",
+            json={
+                "backend": "local_fx1",
+                "batch": [[{"role": "user", "content": "x"}]],
+            },
+        ).status_code
+        == 422
+    )
+    out["batch_unknown_backend_422"] = (
+        batch_client.post(
+            "/harness/complete/batch",
+            json={"backend": "bogus", "batch": [[{"role": "u", "content": "x"}]]},
+        ).status_code
+        == 422
+    )
+
+    # Per-slot verdicts: a refusal on one item doesn't lose the batch.
+    class _PartialBackend(_CleanBackend):
+        def complete(self, messages: list[dict[str, str]]) -> str:
+            if messages[-1]["content"] == "bad":
+                return "total Sharpe 4.2 on NAV"  # forbidden headline
+            return super().complete(messages)
+
+    partial_client = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _PartialBackend()))
+    r2 = partial_client.post(
+        "/harness/complete/batch",
+        json={
+            "backend": "byok",
+            "batch": [
+                [{"role": "user", "content": "good"}],
+                [{"role": "user", "content": "bad"}],
+                [{"role": "user", "content": "good2"}],
+            ],
+        },
+    )
+    rj = r2.json()["results"]
+    out["batch_per_item_verdicts"] = (
+        r2.status_code == 200
+        and rj[0]["ok"]
+        and rj[2]["ok"]
+        and not rj[1]["ok"]
+        and rj[1]["error_class"] == "honesty_refusal"
+    )
+
     # --- receipt verification -------------------------------------------------
     from fx1.serve.byok_audit import byok_audit_bench
 

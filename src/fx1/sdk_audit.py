@@ -49,10 +49,12 @@ class _FakeBackend:
     def __init__(self, content: str = "clean answer") -> None:
         self._model = "fake-0"
         self.closed = 0
+        self.calls = 0
         self._content = content
         self.seen_messages: list[dict[str, str]] = []
 
     def complete(self, messages: list[dict[str, str]]) -> str:
+        self.calls += 1
         self.seen_messages = list(messages)
         return self._content
 
@@ -147,6 +149,54 @@ def sdk_audit() -> dict[str, bool]:
     )
     out["cited_footer"] = "Evidence:" in cited.content and "`aaaaaaaaaaaaaaaa…`" in cited.content
     out["cited_hashes_echoed"] = cited.receipt_hashes == ("a" * 64,)
+
+    # complete_many: one resolved backend serves the whole batch, in order
+    shared = _FakeBackend()
+    resolves = [0]
+
+    def _resolve_once(*a: Any, **k: Any) -> _FakeBackend:
+        resolves[0] += 1
+        return shared
+
+    sdk7 = Fx1Harness(backend_resolver=_resolve_once)
+    batch = sdk7.complete_many(
+        [[{"role": "user", "content": f"m{i}"}] for i in range(5)],
+        backend="byok",
+        max_workers=4,
+    )
+    out["batch_count_order"] = len(batch) == 5 and all(r.content == "clean answer" for r in batch)
+    out["batch_shared_backend"] = resolves[0] == 1 and shared.calls == 5
+    out["batch_closed_once"] = shared.closed == 1
+    out["batch_result_fields"] = all(r.backend == "byok" and r.model == "fake-0" for r in batch)
+    out["batch_empty_no_resolve"] = (
+        sdk7.complete_many([], backend="byok") == [] and resolves[0] == 1
+    )
+    out["batch_workers_422"] = (
+        _raises(
+            lambda: sdk7.complete_many(
+                [[{"role": "u", "content": "x"}]], backend="byok", max_workers=0
+            )
+        )
+        == "ValueError"
+    )
+    out["batch_checkpoint_rejected"] = (
+        _raises(
+            lambda: sdk7.complete_many(
+                [[{"role": "u", "content": "x"}]],
+                backend="byok",
+                checkpoint_dir="some-checkpoint",
+            )
+        )
+        == "ValueError"
+    )
+    dirty_batch = _FakeBackend("total Sharpe 9.9 on NAV")
+    sdk8 = Fx1Harness(backend_resolver=lambda *a, **k: dirty_batch)
+    out["batch_gate_propagates"] = (
+        _raises(lambda: sdk8.complete_many([[{"role": "u", "content": "x"}]], backend="byok"))
+        == "Fx1HonestyError"
+    )
+    out["batch_closed_on_gate_fail"] = dirty_batch.closed == 1
+
     out["checkpoint_rejected_nonlocal"] = (
         _raises(
             lambda: sdk3.complete(
