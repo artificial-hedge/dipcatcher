@@ -2731,6 +2731,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "quotient_filter",
         "minhash_lsh",
         "simhash",
+        # Wave-230 computational-geometry canon: triangulation,
+        # clipping, intersection, point location, closest pair,
+        # calipers.
+        "ear_clipping",
+        "sutherland_hodgman",
+        "segment_intersection",
+        "point_in_polygon",
+        "closest_pair",
+        "rotating_calipers",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

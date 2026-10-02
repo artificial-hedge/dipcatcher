@@ -1830,6 +1830,14 @@ from quant_fund.research.benches_w229 import (
     bench_simhash_family,
     bench_xor_filter_family,
 )
+from quant_fund.research.benches_w230 import (
+    bench_closest_pair_family,
+    bench_ear_clipping_family,
+    bench_point_in_polygon_family,
+    bench_rotating_calipers_family,
+    bench_segment_intersection_family,
+    bench_sutherland_hodgman_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4756,6 +4764,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "quotient_filter": bench_quotient_filter_family(),
         "minhash_lsh": bench_minhash_lsh_family(),
         "simhash": bench_simhash_family(),
+        "ear_clipping": bench_ear_clipping_family(),
+        "sutherland_hodgman": bench_sutherland_hodgman_family(),
+        "segment_intersection": bench_segment_intersection_family(),
+        "point_in_polygon": bench_point_in_polygon_family(),
+        "closest_pair": bench_closest_pair_family(),
+        "rotating_calipers": bench_rotating_calipers_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
