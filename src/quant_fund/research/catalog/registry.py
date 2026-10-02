@@ -1845,6 +1845,16 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bnn_ensemble",
         "option_vae",
         "diff_policy",
+        # Wave-128 exec-summary DL-3:
+        # KAN, TSMixer, Informer,
+        # chart-CNN, MAE, graph-
+        # temporal.
+        "kan_forecaster",
+        "ts_mixer",
+        "informer_attn",
+        "cnn_alpha",
+        "mask_autoencoder",
+        "graph_temporal",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
