@@ -1988,6 +1988,15 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "retnet_decay",
         "delta_net",
         "mixture_of_depths",
+        # Wave-143 PEFT canon:
+        # LoRA, QLoRA-NF4, DoRA,
+        # prompt, prefix, task-vector merge.
+        "lora_ft",
+        "qlora_nf4",
+        "dora_weight",
+        "prompt_tuning",
+        "prefix_tuning",
+        "task_vector_merge",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
