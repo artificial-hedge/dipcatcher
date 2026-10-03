@@ -2167,6 +2167,14 @@ from quant_fund.research.benches_w271 import (
     bench_stp_spanning_family,
     bench_vlan_tag_family,
 )
+from quant_fund.research.benches_w272 import (
+    bench_backstepping_family,
+    bench_gain_schedule_family,
+    bench_pid_antiwindup_family,
+    bench_repetitive_ctrl_family,
+    bench_sliding_mode_family,
+    bench_smith_predictor_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2480,6 +2488,12 @@ def _provenance(
         "csma_ca": bench_csma_ca_family,
         "icmp_path": bench_icmp_path_family,
         "diffserv_qos": bench_diffserv_qos_family,
+        "pid_antiwindup": bench_pid_antiwindup_family,
+        "sliding_mode": bench_sliding_mode_family,
+        "gain_schedule": bench_gain_schedule_family,
+        "smith_predictor": bench_smith_predictor_family,
+        "backstepping": bench_backstepping_family,
+        "repetitive_ctrl": bench_repetitive_ctrl_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
