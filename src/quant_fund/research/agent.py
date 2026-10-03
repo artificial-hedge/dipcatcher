@@ -2640,6 +2640,14 @@ from quant_fund.research.benches_w330 import (
     bench_lia_branch_family,
     bench_mcsat_lite_family,
 )
+from quant_fund.research.benches_w331 import (
+    bench_circuit_lb_family,
+    bench_fpras_dnf_family,
+    bench_np_reduce_family,
+    bench_param_fpt_family,
+    bench_pcp_verify_family,
+    bench_sumcheck_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3019,6 +3027,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "np_reduce": bench_np_reduce_family,
+        "fpras_dnf": bench_fpras_dnf_family,
+        "sumcheck": bench_sumcheck_family,
+        "param_fpt": bench_param_fpt_family,
+        "pcp_verify": bench_pcp_verify_family,
+        "circuit_lb": bench_circuit_lb_family,
         "diff_logic": bench_diff_logic_family,
         "array_theory": bench_array_theory_family,
         "bv_ops": bench_bv_ops_family,
