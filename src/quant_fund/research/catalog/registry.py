@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-545 Thurston-geometrization canon.
+        "thurston_geometrization",
+        "eight_geometries",
+        "seifert_fibered",
+        "haken_mfd",
+        "jsj_decomp",
+        "ricci_flow",
         # Wave-544 Kleinian-groups canon.
         "kleinian_group",
         "limit_set",
