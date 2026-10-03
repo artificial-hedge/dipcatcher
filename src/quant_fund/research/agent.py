@@ -7687,6 +7687,14 @@ from quant_fund.research.benches_w961 import (
     bench_lumer_phillips_family,
     bench_trotter_kato_family,
 )
+from quant_fund.research.benches_w962 import (
+    bench_double_commutant_family,
+    bench_jones_index_family,
+    bench_normal_state_family,
+    bench_predual_space_family,
+    bench_tomita_takesaki_family,
+    bench_von_neumann_alg_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8058,6 +8066,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "von_neumann_alg": bench_von_neumann_alg_family,
+        "double_commutant": bench_double_commutant_family,
+        "predual_space": bench_predual_space_family,
+        "normal_state": bench_normal_state_family,
+        "tomita_takesaki": bench_tomita_takesaki_family,
+        "jones_index": bench_jones_index_family,
         "c0_semigroup": bench_c0_semigroup_family,
         "hille_yosida": bench_hille_yosida_family,
         "lumer_phillips": bench_lumer_phillips_family,

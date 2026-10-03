@@ -1,3 +1,4 @@
+feat(research): wave 962 — von-Neumann-algebra canon (von_neumann_alg, double_commutant, predual_space, normal_state, tomita_takesaki, jones_index) (5721->5727 families)
 feat(research): wave 961 — semigroup-theory canon (c0_semigroup, hille_yosida, lumer_phillips, analytic_semigroup, cosine_family, trotter_kato) (5715->5721 families)
 feat(research): wave 960 — banach-algebra canon (banach_algebra, gelfand_transform, c_star_algebra, spectrum_algebra, holomorphic_calculus, positive_functional) (5709->5715 families)
 feat(research): wave 959 — operator-theory-3 canon (toeplitz_op, integral_op, differential_op, contraction_op, accretive_op, sectorial_op) (5703->5709 families)
