@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-540 transcendence-theory canon.
+        "hermite_lindemann",
+        "gelfond_schneider",
+        "baker_thm",
+        "lindemann_weier",
+        "schanuel_conj",
+        "siegel_shidlovskii",
         # Wave-539 diophantine-approximation canon.
         "dirichlet_approx",
         "roth_thm2",
