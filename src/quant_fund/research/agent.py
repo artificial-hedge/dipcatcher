@@ -5183,6 +5183,14 @@ from quant_fund.research.benches_w648 import (
     bench_suslin_k2_family,
     bench_tsukada_k_family,
 )
+from quant_fund.research.benches_w649 import (
+    bench_breuil_prism_family,
+    bench_cartier_prism_family,
+    bench_filtered_prism_family,
+    bench_frobenius_prism_family,
+    bench_prism_site2_family,
+    bench_stacky_prism_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5562,6 +5570,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "prism_site2": bench_prism_site2_family,
+        "cartier_prism": bench_cartier_prism_family,
+        "breuil_prism": bench_breuil_prism_family,
+        "filtered_prism": bench_filtered_prism_family,
+        "frobenius_prism": bench_frobenius_prism_family,
+        "stacky_prism": bench_stacky_prism_family,
         "kodaira_k": bench_kodaira_k_family,
         "lindenstrauss_k": bench_lindenstrauss_k_family,
         "tsukada_k": bench_tsukada_k_family,
