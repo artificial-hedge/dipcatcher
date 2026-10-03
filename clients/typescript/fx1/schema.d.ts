@@ -1646,6 +1646,8 @@ export interface components {
             presence_penalty?: number | null;
             /** Prompt Cache Key */
             prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning Effort */
             reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Receipt Hashes */
@@ -1664,6 +1666,8 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+            /** Verbosity */
+            verbosity?: ("low" | "medium" | "high") | null;
         };
         /** CompleteBatchResponse */
         CompleteBatchResponse: {
@@ -1728,6 +1732,8 @@ export interface components {
             presence_penalty?: number | null;
             /** Prompt Cache Key */
             prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning Effort */
             reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Receipt Hashes */
@@ -1756,6 +1762,8 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+            /** Verbosity */
+            verbosity?: ("low" | "medium" | "high") | null;
         };
         /** CompleteResponse */
         CompleteResponse: {
@@ -2686,6 +2694,8 @@ export interface components {
             presence_penalty?: number | null;
             /** Prompt Cache Key */
             prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning Effort */
             reasoning_effort?: ("none" | "minimal" | "low" | "medium" | "high") | null;
             /** Response Format */
@@ -2723,6 +2733,8 @@ export interface components {
             top_p?: number | null;
             /** User */
             user?: string | null;
+            /** Verbosity */
+            verbosity?: ("low" | "medium" | "high") | null;
         } & {
             [key: string]: unknown;
         };
@@ -2986,6 +2998,10 @@ export interface components {
             parallel_tool_calls?: boolean | null;
             /** Previous Response Id */
             previous_response_id?: string | null;
+            /** Prompt Cache Key */
+            prompt_cache_key?: string | null;
+            /** Prompt Cache Retention */
+            prompt_cache_retention?: ("in-memory" | "24h") | null;
             /** Reasoning */
             reasoning?: {
                 [key: string]: unknown;

@@ -544,6 +544,8 @@ def _sampling_of(body: CompleteRequest | CompleteBatchRequest) -> SamplingParams
         reasoning_effort=body.reasoning_effort,
         service_tier=body.service_tier,
         prompt_cache_key=body.prompt_cache_key,
+        prompt_cache_retention=body.prompt_cache_retention,
+        verbosity=body.verbosity,
         user=body.user,
     )
 
@@ -585,6 +587,8 @@ class CompleteRequest(_Model):
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
     service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
     # Agent-loop tool context — the OpenAI tool-calling surface on the
@@ -707,6 +711,8 @@ class CompleteBatchRequest(_Model):
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
     service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
     user: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
 
@@ -4206,6 +4212,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 if isinstance(env_parts, list) and env_parts and isinstance(env_parts[0], dict)
                 else None
             )
+            # ``None`` marks a prose turn; a calls turn truncated to zero
+            # by max_tool_calls replays as the empty list — never a
+            # phantom empty message item
+            if env_calls:
+                env_call_list: list[dict[str, Any]] | None = env_calls
+            elif env.get("status") == "incomplete" and env_msg is None:
+                env_call_list = []
+            else:
+                env_call_list = None
             return _responses_sse(
                 body,
                 content=(str(env_msg["content"][0]["text"]) if isinstance(env_msg, dict) else ""),
@@ -4215,14 +4230,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 usage=env.get("_fx1_usage"),
                 created=env.get("created_at"),
                 skip=drop,
-                # ``None`` marks a prose turn; a calls turn truncated to
-                # zero by max_tool_calls replays as the empty list — never
-                # a phantom empty message item
-                call_items=(
-                    env_calls
-                    if env_calls
-                    else ([] if env.get("status") == "incomplete" and env_msg is None else None)
-                ),
+                call_items=env_call_list,
                 logprobs=(env_lp if isinstance(env_lp, list) else None),
                 # a truncated turn replays its terminal event too —
                 # response.incomplete, not response.completed
@@ -4417,6 +4425,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             None,
         )
         env_call_items = [it for it in envelope["output"] if it.get("type") == "function_call"]
+        # ``None`` marks a prose turn; a calls turn truncated to zero
+        # replays the empty list, never a phantom message item
+        if env_call_items:
+            call_list: list[dict[str, Any]] | None = env_call_items
+        elif envelope.get("status") == "incomplete" and msg_item is None:
+            call_list = []
+        else:
+            call_list = None
         if key is not None:
             # the cid + raw usage ride the stored envelope so the replay can
             # re-link the completion-log record and regenerate byte-identical
@@ -4448,15 +4464,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     model=envelope.get("model"),
                     usage=usage,
                     created=int(envelope["created_at"]),
-                    call_items=(
-                        env_call_items
-                        if env_call_items
-                        else (
-                            []
-                            if envelope.get("status") == "incomplete" and msg_item is None
-                            else None
-                        )
-                    ),
+                    call_items=call_list,
                     logprobs=(
                         msg_item["content"][0].get("logprobs")
                         if isinstance(msg_item, dict)

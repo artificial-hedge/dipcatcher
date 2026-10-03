@@ -146,6 +146,7 @@
       "openai_n_parity": true,
       "openai_n_stream_parity": true,
       "openai_penalty_range_parity": true,
+      "openai_response_hint_refusal_parity": true,
       "openai_response_item_refusal_parity": true,
       "openai_response_parity": true,
       "openai_response_refusal_parity": true,
@@ -176,6 +177,8 @@
       "openai_toplogprobs_guard_parity": true,
       "openai_validation_parity": true,
       "probe_parity": true,
+      "provider_hints_failclosed": true,
+      "provider_hints_parity": true,
       "receipts_store_absent_sdk": true,
       "receipts_store_conditional_304": true,
       "receipts_store_error_parity": true,
@@ -220,11 +223,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "81686b3d5c7341295d7f9397c0bb56ce504f940b",
+  "git_revision": "c06b5929ca600c8a32d65d7e13799449f6c24af0",
   "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. A terminal wire job's fx1_job_record.v1 embeds the same digested run result that Fx1Harness.run_receipt seals in-process as fx1_run_result.v1 \u2014 identical on the shared fields. Fine-tuning parity holds: the SDK's synchronous create_finetune_job produces the same terminal job fields (status, ft:-name grammar, result_files, event feed) as the wire route under the same runner, and guards map ValueError\u2194HarnessTransportError / KeyError\u2194KeyError. The model registry holds on both surfaces: a succeeded job's ft: name lists and retrieves, completions naming it resolve to local_fx1 at the job's checkpoint, and unregistered ft: names fail closed (OpenAICompatError in-process, 404 on the wire). Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "e0888fe41887574cd5ca7b9481b86e13be2054e3adb800fb648bc59abd8abd07",
+  "receipt_sha256": "014fb02ed77b06a5893d297ce0f59ee78e46064703a0d40fb6e1b99a1793e3b3",
   "research_only": true,
   "schema": "parity_audit.v1"
 }

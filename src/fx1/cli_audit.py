@@ -29,7 +29,7 @@ from quant_fund.utils.reproducibility import git_revision
 __all__ = ["cli_audit", "cli_audit_bench"]
 
 
-def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
+def cli_audit() -> dict[str, Any]:  # noqa: C901 — NOSONAR: probe accumulator
     import json
 
     import typer
@@ -474,6 +474,10 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             self.stream_calls.append(dict(kw))
             return ["chunk-a", "chunk-b"]
 
+        def openai_response(self, request: Any, **kw: Any) -> tuple[dict[str, Any], None]:
+            self.complete_calls.append({"responses_body": dict(request)})
+            return {"id": "resp_fake", "status": "completed"}, None
+
         def openai_response_stream(
             self, request: Any, **kw: Any
         ) -> tuple[list[tuple[str, dict[str, Any]]], None]:
@@ -573,6 +577,35 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         # the .delta strings concatenate onto stdout
         rsx = runner.invoke(app, ["harness", "respond", "hi", "--stream"])
         out["respond_stream_local_concat"] = rsx.exit_code == 0 and rsx.stdout == "local\n"
+        # in-process leg: hint flags land on the Responses body —
+        # verbosity nests under text (merging with --format), cache hints
+        # ride top-level
+        rl = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "hi",
+                "--verbosity",
+                "low",
+                "--format",
+                '{"type":"json_object"}',
+                "--prompt-cache-key",
+                "pk2",
+                "--prompt-cache-retention",
+                "in-memory",
+            ],
+        )
+        rbody_raw = (
+            (fake.complete_calls[-1] or {}).get("responses_body") if rl.exit_code == 0 else None
+        )
+        rbody = rbody_raw if isinstance(rbody_raw, dict) else {}
+        out["respond_hints_inproc"] = (
+            rl.exit_code == 0
+            and rbody.get("text") == {"format": {"type": "json_object"}, "verbosity": "low"}
+            and rbody.get("prompt_cache_key") == "pk2"
+            and rbody.get("prompt_cache_retention") == "in-memory"
+        )
         # per-request BYOK flags pack into the byok override (all-or-none)
         rb2 = runner.invoke(
             app,
@@ -2003,12 +2036,13 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             runner.invoke(app, ["harness", "ft-checkpoints", "ftjob-x"]).exit_code == 2
         )
 
+        _say = "say hi"
         _rr = runner.invoke(
             app,
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--model",
                 "fx1",
                 "--backend",
@@ -2021,6 +2055,12 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
                 '{"type":"json_object"}',
                 "--previous-response-id",
                 "resp_prev9",
+                "--verbosity",
+                "high",
+                "--prompt-cache-key",
+                "pck",
+                "--prompt-cache-retention",
+                "24h",
                 "--background",
                 "--remote",
                 "http://h.test",
@@ -2031,6 +2071,9 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
             and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
             and (remotes[-1].last_ft_query or {}).get("previous_response_id") == "resp_prev9"
+            and (remotes[-1].last_ft_query or {}).get("verbosity") == "high"
+            and (remotes[-1].last_ft_query or {}).get("prompt_cache_key") == "pck"
+            and (remotes[-1].last_ft_query or {}).get("prompt_cache_retention") == "24h"
             and (remotes[-1].last_ft_query or {}).get("background") is True
             and json.loads(_rr.stdout).get("id") == "resp_x"
         )
@@ -2041,7 +2084,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--conversation",
                 "conv_9",
                 "--remote",
@@ -2059,7 +2102,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--max-tool-calls",
                 "2",
                 "--remote",
@@ -2071,7 +2114,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--stream",
                 "--max-tool-calls",
                 "3",
@@ -2086,6 +2129,15 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             and (remotes[-2].last_ft_query or {}).get("max_tool_calls") == 2
             and (remotes[-1].last_ft_query or {}).get("max_tool_calls") == 3
         )
+        # a bad enum is a request-model fault — the body never reaches
+        # a backend
+        out["respond_hints_inproc_bad_enum_2"] = (
+            runner.invoke(
+                app,
+                ["harness", "respond", "hi", "--prompt-cache-retention", "forever"],
+            ).exit_code
+            == 2
+        )
         # respond --stream remote-side: bare payload dicts — the deltas
         # concatenate and the flag kwargs forward verbatim
         _rsr = runner.invoke(
@@ -2093,7 +2145,7 @@ def cli_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             [
                 "harness",
                 "respond",
-                "say hi",
+                _say,
                 "--stream",
                 "--format",
                 '{"type":"json_object"}',

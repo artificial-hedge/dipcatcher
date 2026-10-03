@@ -392,6 +392,7 @@
       "openai_functions_still_refused_422": true,
       "openai_fx1_extension_backend": true,
       "openai_gate_502_openai_shape": true,
+      "openai_hint_enum_422": true,
       "openai_idem_conflict_409": true,
       "openai_idem_first_not_flagged": true,
       "openai_idem_key_bound_400": true,
@@ -541,6 +542,7 @@
       "responses_defaults_echo": true,
       "responses_empty_input_422": true,
       "responses_gate_502_openai_shape": true,
+      "responses_hint_enum_422": true,
       "responses_idem_conflict_409": true,
       "responses_idem_replay_byte_identical": true,
       "responses_include_bad_member_422": true,
@@ -551,6 +553,7 @@
       "responses_no_usage_channel_null": true,
       "responses_output_shape": true,
       "responses_over_capacity_503_shape": true,
+      "responses_provider_hints_forwarded": true,
       "responses_reasoning_bounds": true,
       "responses_reasoning_effort_forwarded": true,
       "responses_resume_miss_409": true,
@@ -665,11 +668,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "81686b3d5c7341295d7f9397c0bb56ce504f940b",
+  "git_revision": "c06b5929ca600c8a32d65d7e13799449f6c24af0",
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it. The /v1/fine_tuning surface holds the OpenAI job grammar: synchronous corpus validation (bad corpus/model/file fail closed 4xx before any queue), cooperative cancel, idempotent submit, events feed, artifacts re-registered as fine-tune-result files. A succeeded job's ft: name registers into the model inventory (listed + retrievable), completions naming it resolve to the local_fx1 lane pinned at the job's checkpoint, explicit backend headers still override, and unregistered ft: names fail closed 404 model_not_found. X-Fx1-Timeout sets the per-request backend deadline on the OpenAI surface (fx1.timeout_s extension wins; malformed or out-of-range values fail closed 400). Every gated response self-describes its evidence: X-Fx1-Receipt-Sha256 carries the seal of the logged record (identical to the document GET /harness/completions/{id}/receipt exports), idempotent replays echo the original seal, and SSE streams carry the digest in the final frame. Evidence citations ride X-Fx1-Receipt-Hashes for clients that can't edit the body \u2014 comma-separated digests, the same store check, a malformed digest a fail-closed 400, and fx1.receipt_hashes wins. DELETE /v1/models/{id} unregisters an ft: name with a real tombstone (list/retrieve/chat all 404 after; built-ins refuse 400), and every X-Fx1-* request knob is in the CORS allow-headers list so browser clients can send them.",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "8b68fec5d95e7fd6e4c03fb7a1fb3c1ae5da836f1c77ef8b5c40fbcb3b6dc479",
+  "receipt_sha256": "77314c992b5479dcabfddaf7d844800b33279035376a14fe0f899c1a455a688d",
   "research_only": true,
   "schema": "api_audit.v1"
 }

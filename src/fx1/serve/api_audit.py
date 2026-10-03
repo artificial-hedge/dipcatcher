@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 __all__ = ["api_audit", "api_audit_bench"]
 
 _API_KEY_ENV = "FX1_API_KEY"
+_CONVERSATIONS_URL = "/v1/conversations"
 _BYOK_ENVS = ("FX1_BYOK_BASE_URL", "FX1_BYOK_API_KEY", "FX1_BYOK_MODEL")
 _LOCAL_ENVS = (
     "FX1_LOCAL_SERVE_URL",
@@ -3253,7 +3254,7 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
     _ft_srv.server_close()
 
 
-def _probe_backend_probes(  # noqa: C901 — probe accumulator
+def _probe_backend_probes(  # noqa: C901 — NOSONAR: probe accumulator
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
 ) -> None:
     import json as _json  # noqa: PLC0415
@@ -5370,7 +5371,9 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
             "logit_bias": {"42": -10},
             "reasoning_effort": "low",
             "service_tier": "flex",
+            "verbosity": "high",
             "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
             "user": "u-1",
             "metadata": {"team": "risk"},
         },
@@ -5386,7 +5389,9 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         and seen.logit_bias == {"42": -10}
         and seen.reasoning_effort == "low"
         and seen.service_tier == "flex"
+        and seen.verbosity == "high"
         and seen.prompt_cache_key == "pck"
+        and seen.prompt_cache_retention == "24h"
         and seen.user == "u-1"
     )
     cid_dec = r.headers.get("X-Fx1-Completion-Id", "")
@@ -5401,7 +5406,26 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
             rl.status_code == 200
             and rl.json().get("sampling", {}).get("logit_bias") == {"42": -10}
             and rl.json().get("sampling", {}).get("presence_penalty") == 0.5
+            and rl.json().get("sampling", {}).get("verbosity") == "high"
+            and rl.json().get("sampling", {}).get("prompt_cache_retention") == "24h"
         )
+    # enum-valued provider hints fail closed at the model — a value
+    # outside the Literal set is a 422, never silently dropped
+    out["openai_hint_enum_422"] = all(
+        oi_clean.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                field: value,
+            },
+        ).status_code
+        == 422
+        for field, value in (
+            ("verbosity", "extreme"),
+            ("prompt_cache_retention", "forever"),
+        )
+    )
 
     # max_completion_tokens alias + disagreeing pair fails closed
     r = oi_usage.post(
@@ -6086,6 +6110,43 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         usage_be.seen is not None
         and usage_be.seen.reasoning_effort == "high"
         and usage_be.seen.max_tokens == 77
+    )
+    # request fidelity: the provider-hint knobs that extra=allow used to
+    # drop silently — prompt_cache_key/prompt_cache_retention ride the
+    # top level, text.verbosity nests under text; all three reach the
+    # backend's SamplingParams and echo on the response object
+    usage_be.seen = None
+    r = oi_usage.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "hints",
+            "prompt_cache_key": "pck2",
+            "prompt_cache_retention": "24h",
+            "text": {"verbosity": "low"},
+        },
+    )
+    out["responses_provider_hints_forwarded"] = (
+        r.status_code == 200
+        and usage_be.seen is not None
+        and usage_be.seen.prompt_cache_key == "pck2"
+        and usage_be.seen.prompt_cache_retention == "24h"
+        and usage_be.seen.verbosity == "low"
+        and r.json().get("prompt_cache_key") == "pck2"
+        and r.json().get("prompt_cache_retention") == "24h"
+        and r.json().get("text", {}).get("verbosity") == "low"
+    )
+    out["responses_hint_enum_422"] = all(
+        oi_clean.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", **bad},
+        ).status_code
+        == 422
+        for bad in (
+            {"prompt_cache_retention": "forever"},
+            {"text": {"verbosity": "extreme"}},
+            {"text": {"verbosity": 3}},
+        )
     )
     # the shorthand `{role, content: "..."}` item and multi-part input_text
     # lists join before reaching the model
@@ -7675,7 +7736,7 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
     # own turn back.
     cv = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _ChainBackend()))
     cv0 = cv.post(
-        "/v1/conversations",
+        _CONVERSATIONS_URL,
         json={
             "items": [
                 {
@@ -7785,7 +7846,7 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         == "conversation_not_found"
     )
     # background + conv: submit validates the conv, the worker appends
-    cvb = cv.post("/v1/conversations", json={})
+    cvb = cv.post(_CONVERSATIONS_URL, json={})
     cvb_id = cvb.json()["id"]
     cvb_r = cv.post(
         "/v1/responses",
@@ -7915,7 +7976,7 @@ def _probe_backend_probes(  # noqa: C901 — probe accumulator
         and len(mt_line["response"]["body"]["output"]) == 2
     )
     # the conv trail records the truncation, not a fake completion
-    mt_conv = oi_tool3_app.post("/v1/conversations", json={}).json()["id"]
+    mt_conv = oi_tool3_app.post(_CONVERSATIONS_URL, json={}).json()["id"]
     mt_cv = oi_tool3_app.post("/v1/responses", json={**mt_req, "conversation": mt_conv}).json()
     mt_cv_items = oi_tool3_app.get(f"/v1/conversations/{mt_conv}/items").json()["data"]
     out["resp_max_tool_calls_conv_append"] = (

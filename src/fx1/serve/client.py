@@ -836,6 +836,11 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
     ) -> CompletionResult:
         """Remote counterpart of ``Fx1Harness.complete``."""
         out = self._json(
@@ -853,6 +858,11 @@ class HarnessClient:
                 "top_p": top_p,
                 "max_tokens": max_tokens,
                 "seed": seed,
+                "reasoning_effort": reasoning_effort,
+                "service_tier": service_tier,
+                "verbosity": verbosity,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": prompt_cache_retention,
             },
             # A keyed complete dedupes server-side — safe to retry by
             # construction, so it marks idempotent for the retry policy.
@@ -1006,6 +1016,11 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
     ) -> list[CompletionResult]:
         """Remote counterpart of ``Fx1Harness.complete_many``.
 
@@ -1034,6 +1049,11 @@ class HarnessClient:
                 "top_p": top_p,
                 "max_tokens": max_tokens,
                 "seed": seed,
+                "reasoning_effort": reasoning_effort,
+                "service_tier": service_tier,
+                "verbosity": verbosity,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": prompt_cache_retention,
             },
             idempotent=idempotency_key is not None,
             extra_headers={"Idempotency-Key": idempotency_key} if idempotency_key else None,
@@ -1071,6 +1091,11 @@ class HarnessClient:
         top_p: float | None = None,
         max_tokens: int | None = None,
         seed: int | None = None,
+        reasoning_effort: str | None = None,
+        service_tier: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
     ) -> list[str]:
         """Remote counterpart of ``Fx1Harness.stream_complete``.
 
@@ -1093,6 +1118,11 @@ class HarnessClient:
                 "top_p": top_p,
                 "max_tokens": max_tokens,
                 "seed": seed,
+                "reasoning_effort": reasoning_effort,
+                "service_tier": service_tier,
+                "verbosity": verbosity,
+                "prompt_cache_key": prompt_cache_key,
+                "prompt_cache_retention": prompt_cache_retention,
             },
         )
         chunks: list[str] = []
@@ -1166,7 +1196,9 @@ class HarnessClient:
         metadata: dict[str, str] | None = None,
         service_tier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         max_completion_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -1230,7 +1262,9 @@ class HarnessClient:
             "metadata": metadata,
             "service_tier": service_tier,
             "reasoning_effort": reasoning_effort,
+            "verbosity": verbosity,
             "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "response_format": response_format,
             "tools": tools,
             "tool_choice": tool_choice,
@@ -1277,7 +1311,9 @@ class HarnessClient:
         metadata: dict[str, str] | None = None,
         service_tier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         max_completion_tokens: int | None = None,
         response_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -1332,7 +1368,9 @@ class HarnessClient:
             "metadata": metadata,
             "service_tier": service_tier,
             "reasoning_effort": reasoning_effort,
+            "verbosity": verbosity,
             "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "response_format": response_format,
             "tools": tools,
             "tool_choice": tool_choice,
@@ -1392,6 +1430,9 @@ class HarnessClient:
         user: str | None = None,
         safety_identifier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         text_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
@@ -1446,6 +1487,9 @@ class HarnessClient:
             user=user,
             safety_identifier=safety_identifier,
             reasoning_effort=reasoning_effort,
+            verbosity=verbosity,
+            prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
             text_format=text_format,
             tools=tools,
             tool_choice=tool_choice,
@@ -1535,6 +1579,9 @@ class HarnessClient:
         user: str | None = None,
         safety_identifier: str | None = None,
         reasoning_effort: str | None = None,
+        verbosity: str | None = None,
+        prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
         text_format: dict[str, Any] | None = None,
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
@@ -1574,13 +1621,20 @@ class HarnessClient:
             "previous_response_id": previous_response_id,
             "conversation": conversation,
             "max_tool_calls": max_tool_calls,
+            "prompt_cache_key": prompt_cache_key,
+            "prompt_cache_retention": prompt_cache_retention,
             "background": background,
             "stream": stream,
         }
         if reasoning_effort is not None:
             payload["reasoning"] = {"effort": reasoning_effort}
-        if text_format is not None:
-            payload["text"] = {"format": text_format}
+        if text_format is not None or verbosity is not None:
+            text: dict[str, Any] = {}
+            if text_format is not None:
+                text["format"] = text_format
+            if verbosity is not None:
+                text["verbosity"] = verbosity
+            payload["text"] = text
         if tools is not None:
             payload["tools"] = tools
         if tool_choice is not None:

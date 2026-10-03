@@ -895,6 +895,9 @@ def parity_audit() -> dict[str, bool]:
             "max_output_tokens": 32,
             "reasoning": {"effort": "low"},
             "metadata": {"lane": "78"},
+            "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
+            "text": {"verbosity": "low"},
         }
         wire_resp = client.post("/v1/responses", json=resp_body)
         sdk_resp, sdk_resp_cid = sdk.openai_response(resp_body)
@@ -908,8 +911,20 @@ def parity_audit() -> dict[str, bool]:
             and wire_rd["status"] == sdk_resp["status"] == "completed"
             and wire_rd["metadata"] == sdk_resp["metadata"] == {"lane": "78"}
             and wire_rd["reasoning"] == sdk_resp["reasoning"] == {"effort": "low"}
+            and wire_rd["prompt_cache_key"] == sdk_resp["prompt_cache_key"] == "pck"
+            and wire_rd["prompt_cache_retention"] == sdk_resp["prompt_cache_retention"] == "24h"
+            and wire_rd["text"] == sdk_resp["text"] == {"verbosity": "low"}
             and bool(sdk_resp_cid)
             and sdk.completion(sdk_resp_cid or "").metadata == {"lane": "78"}
+        )
+        # hint enum faults refuse identically on both surfaces
+        resp_bad_hint = {**resp_body, "text": {"verbosity": "extreme"}}
+        wire_bh = client.post("/v1/responses", json=resp_bad_hint)
+        sdk_bh = _raises(lambda: sdk.openai_response(resp_bad_hint))[0]
+        out["openai_response_hint_refusal_parity"] = (
+            wire_bh.status_code == 422
+            and wire_bh.json()["error"]["type"] == "invalid_request_error"
+            and sdk_bh == "ValidationError"
         )
         # refused fields refuse identically on both surfaces
         resp_tools = {**resp_body, "truncation": "auto"}
@@ -1591,6 +1606,53 @@ def parity_audit() -> dict[str, bool]:
             and remote_s == want_s
             and sdk_u.complete(msg, backend="byok").sampling == {"temperature": 0.0}
             and remote_u.complete(msg, backend="byok").sampling == {"temperature": 0.0}
+        )
+
+        # provider hints resolve identically on all three surfaces — the
+        # resolved dict seals on the record; enum faults are ValueError on
+        # the SDK and the wire's 422-class error remotely
+        want_h = {
+            "temperature": 0.0,
+            "reasoning_effort": "low",
+            "service_tier": "flex",
+            "verbosity": "high",
+            "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
+        }
+        hint_kw = {
+            "reasoning_effort": "low",
+            "service_tier": "flex",
+            "verbosity": "high",
+            "prompt_cache_key": "pck",
+            "prompt_cache_retention": "24h",
+        }
+        sdk_h = sdk_u.complete(msg, backend="byok", **hint_kw).sampling
+        wire_h = uclient.post(
+            "/harness/complete",
+            json={"backend": "byok", "messages": msg, **hint_kw},
+        ).json()["sampling"]
+        remote_h = remote_u.complete(
+            msg,
+            backend="byok",
+            reasoning_effort="low",
+            service_tier="flex",
+            verbosity="high",
+            prompt_cache_key="pck",
+            prompt_cache_retention="24h",
+        ).sampling
+        out["provider_hints_parity"] = sdk_h == want_h and wire_h == want_h and remote_h == want_h
+        out["provider_hints_failclosed"] = (
+            _raises(lambda: sdk_u.complete(msg, backend="byok", verbosity="extreme"))[0]
+            == "ValueError"
+            and uclient.post(
+                "/harness/complete",
+                json={"backend": "byok", "messages": msg, "verbosity": "extreme"},
+            ).status_code
+            == 422
+            and _raises(
+                lambda: remote_u.complete(msg, backend="byok", prompt_cache_retention="forever")
+            )[0]
+            in ("HarnessApiError", "ValueError")
         )
 
         # deep-health probe: in-process verdict mirrors the wire verdict —

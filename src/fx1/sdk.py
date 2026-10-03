@@ -265,6 +265,8 @@ def _sampling_params(
     reasoning_effort: str | None = None,
     service_tier: str | None = None,
     prompt_cache_key: str | None = None,
+    prompt_cache_retention: str | None = None,
+    verbosity: str | None = None,
     user: str | None = None,
 ) -> SamplingParams:
     """Build the declared-params dataclass — the SDK twin of the wire's
@@ -310,6 +312,13 @@ def _sampling_params(
         "scale",
     ):
         raise ValueError("service_tier must be auto|default|flex|priority|scale")
+    if prompt_cache_retention is not None and prompt_cache_retention not in (
+        "in-memory",
+        "24h",
+    ):
+        raise ValueError("prompt_cache_retention must be in-memory|24h")
+    if verbosity is not None and verbosity not in ("low", "medium", "high"):
+        raise ValueError("verbosity must be low|medium|high")
     return SamplingParams(
         temperature=temperature,
         top_p=top_p,
@@ -322,6 +331,8 @@ def _sampling_params(
         reasoning_effort=reasoning_effort,
         service_tier=service_tier,
         prompt_cache_key=prompt_cache_key,
+        prompt_cache_retention=prompt_cache_retention,
+        verbosity=verbosity,
         user=user,
     )
 
@@ -1148,6 +1159,8 @@ class Fx1Harness:
         reasoning_effort: str | None = None,
         service_tier: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
+        verbosity: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
         tools: list[dict[str, Any]] | None = None,
@@ -1211,6 +1224,8 @@ class Fx1Harness:
             reasoning_effort=reasoning_effort,
             service_tier=service_tier,
             prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            verbosity=verbosity,
             user=user,
         )
         sampling_fields = sampling.body_fields()
@@ -1436,6 +1451,8 @@ class Fx1Harness:
         reasoning_effort: str | None = None,
         service_tier: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
+        verbosity: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
     ) -> list[CompletionResult]:
@@ -1475,6 +1492,8 @@ class Fx1Harness:
             reasoning_effort=reasoning_effort,
             service_tier=service_tier,
             prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            verbosity=verbosity,
             user=user,
         )
         sampling_fields = sampling.body_fields()
@@ -1567,6 +1586,8 @@ class Fx1Harness:
         reasoning_effort: str | None = None,
         service_tier: str | None = None,
         prompt_cache_key: str | None = None,
+        prompt_cache_retention: str | None = None,
+        verbosity: str | None = None,
         user: str | None = None,
         metadata: dict[str, str] | None = None,
     ) -> list[str]:
@@ -1597,6 +1618,8 @@ class Fx1Harness:
             reasoning_effort=reasoning_effort,
             service_tier=service_tier,
             prompt_cache_key=prompt_cache_key,
+            prompt_cache_retention=prompt_cache_retention,
+            verbosity=verbosity,
             user=user,
         )
         sampling_fields = sampling.body_fields()

@@ -95,6 +95,21 @@ def _json_meta(raw: str | None) -> dict[str, str] | None:
     return meta
 
 
+def _response_frame_of(event: Any) -> tuple[str | None, str | None]:
+    """One stream frame → ``(delta text, incomplete reason)``."""
+    payload = event[1] if isinstance(event, tuple) else event
+    if not isinstance(payload, dict):
+        return None, None
+    reason: str | None = None
+    if payload.get("type") == "response.incomplete":
+        resp = payload.get("response")
+        details = resp.get("incomplete_details") if isinstance(resp, dict) else None
+        if isinstance(details, dict) and isinstance(details.get("reason"), str):
+            reason = details["reason"]
+    delta = payload.get("delta")
+    return delta if isinstance(delta, str) else None, reason
+
+
 def _emit_response_deltas(events: Iterable[Any]) -> None:
     """Print a Responses event stream's text — every ``*.delta`` frame's
     ``delta`` string (output text and function-call arguments alike),
@@ -104,16 +119,11 @@ def _emit_response_deltas(events: Iterable[Any]) -> None:
     look like a full answer."""
     incomplete_reason: str | None = None
     for event in events:
-        payload = event[1] if isinstance(event, tuple) else event
-        if isinstance(payload, dict):
-            delta = payload.get("delta")
-            if isinstance(delta, str):
-                typer.echo(delta, nl=False)
-            if payload.get("type") == "response.incomplete":
-                resp = payload.get("response")
-                details = resp.get("incomplete_details") if isinstance(resp, dict) else None
-                if isinstance(details, dict) and isinstance(details.get("reason"), str):
-                    incomplete_reason = details["reason"]
+        delta, reason = _response_frame_of(event)
+        if delta is not None:
+            typer.echo(delta, nl=False)
+        if reason is not None:
+            incomplete_reason = reason
     typer.echo()
     if incomplete_reason is not None:
         typer.echo(f"[incomplete: {incomplete_reason}]", err=True)
@@ -2076,7 +2086,7 @@ def harness_model_delete(
 
 
 @harness_app.command("respond")
-def harness_respond(
+def harness_respond(  # NOSONAR: Typer options are the CLI surface
     input_: str = typer.Argument(..., help="Input string, or a JSON array of Responses items."),
     model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
     instructions: str | None = typer.Option(
@@ -2108,6 +2118,15 @@ def harness_respond(
         "--max-tool-calls",
         help="Cap the function calls one response may carry — over the cap the "
         "turn truncates to status='incomplete'.",
+    ),
+    verbosity: str | None = typer.Option(
+        None, "--verbosity", help="Output verbosity hint: low|medium|high."
+    ),
+    prompt_cache_key: str | None = typer.Option(
+        None, "--prompt-cache-key", help="Provider prompt-cache key hint."
+    ),
+    prompt_cache_retention: str | None = typer.Option(
+        None, "--prompt-cache-retention", help="in-memory|24h."
     ),
     stream: bool = typer.Option(
         False, "--stream", help="Emit Responses event deltas instead of one JSON block."
@@ -2201,6 +2220,9 @@ def harness_respond(
                     previous_response_id=previous_response_id,
                     conversation=conversation,
                     max_tool_calls=max_tool_calls,
+                    verbosity=verbosity,
+                    prompt_cache_key=prompt_cache_key,
+                    prompt_cache_retention=prompt_cache_retention,
                 )
             )
             _emit_response_deltas(events)
@@ -2225,6 +2247,9 @@ def harness_respond(
                 previous_response_id=previous_response_id,
                 conversation=conversation,
                 max_tool_calls=max_tool_calls,
+                verbosity=verbosity,
+                prompt_cache_key=prompt_cache_key,
+                prompt_cache_retention=prompt_cache_retention,
                 background=background,
             )
         )
@@ -2259,11 +2284,18 @@ def harness_respond(
         "previous_response_id": previous_response_id,
         "conversation": conversation,
         "max_tool_calls": max_tool_calls,
+        "prompt_cache_key": prompt_cache_key,
+        "prompt_cache_retention": prompt_cache_retention,
         "background": background,
         "fx1": fx1 or None,
     }
-    if tfmt is not None:
-        body["text"] = {"format": tfmt}
+    if tfmt is not None or verbosity is not None:
+        text: dict[str, Any] = {}
+        if tfmt is not None:
+            text["format"] = tfmt
+        if verbosity is not None:
+            text["verbosity"] = verbosity
+        body["text"] = text
     if stream:
         sevents, _cid = _or_exit(lambda: Fx1Harness().openai_response_stream(body, headers=headers))
         _emit_response_deltas(sevents)

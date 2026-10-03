@@ -116,7 +116,12 @@ response (`sampling`), the SSE `final` frame, and the `CompletionRecord`
 — the decode configuration is part of the sealed evidence. SDK
 `complete`/`complete_many`/`stream_complete` and `HarnessClient` take
 the same names as flat kwargs; the CLI takes
-`--temperature --top-p --max-tokens --seed`.
+`--temperature --top-p --max-tokens --seed`. Provider hints ride the
+same surfaces: `reasoning_effort`, `service_tier`, `verbosity`
+(`low`/`medium`/`high`), `prompt_cache_key` (≤128 chars), and
+`prompt_cache_retention` (`in-memory`/`24h`) — enums fail closed
+(422 on the wire, `ValueError` in-process) and the declared values
+land verbatim in `body_fields()` for BYOK links that support them.
 
 **Completion observability:** `GET /metrics` carries per-backend outcome
 counters (`fx1_complete_total{backend,outcome}`), a cumulative
@@ -306,8 +311,10 @@ to `GET /harness/completions/{id}` and its sealed
   sum of actual spend, and streams emit per-index frame groups;
   `presence_penalty`/`frequency_penalty` (±2) and `logit_bias`
   (token-id keys, ±100) are range-checked and forwarded verbatim;
-  `reasoning_effort`, `service_tier`, `prompt_cache_key`, and `user`
-  pass through as provider hints, and `user`/`metadata` (≤16 pairs)
+  `reasoning_effort`, `service_tier`, `prompt_cache_key`,
+  `prompt_cache_retention`, `verbosity`, and `user` pass through as
+  provider hints (enums fail closed 422), and `user`/`metadata`
+  (≤16 pairs)
   also stamp the call's audit-ledger record;
   `max_completion_tokens` is the OpenAI alias for `max_tokens` — a
   disagreeing pair is a 422, never a silent pick.
@@ -416,7 +423,8 @@ same OpenAI error taxonomy:
   "output_text", …}]}], usage: {input_tokens, output_tokens,
   total_tokens} or null}` — plus request echoes (`temperature`,
   `top_p`, `max_output_tokens`, `metadata`, `instructions`,
-  `service_tier`, `reasoning`, `text`). A tool-call turn appends
+  `service_tier`, `reasoning`, `text`, `prompt_cache_key`,
+  `prompt_cache_retention`). A tool-call turn appends
   `{type: "function_call", call_id, name, arguments,
   status: "completed"}` items to `output` (a calls-only turn ships
   no message item).
@@ -451,7 +459,10 @@ same OpenAI error taxonomy:
   `logprobs` field (that's the chat surface's name) refuse 422.
 - **Decode contract:** `max_output_tokens` maps to `max_tokens`;
   `reasoning.effort`, `service_tier`, `user`, `safety_identifier`,
-  `metadata` forward like their chat counterparts; `text.format`
+  `metadata`, `prompt_cache_key`, and `prompt_cache_retention`
+  forward like their chat counterparts (enums fail closed 422);
+  `text.verbosity` (`low`/`medium`/`high` — anything else is 422)
+  rides inside `text` and echoes verbatim. `text.format`
   is the same post-validated structured-output channel as
   `response_format` (`text` / `json_object` / `json_schema`, a
   violation is the same 502 `format_violation`).
@@ -682,7 +693,10 @@ per-endpoint request models and gate, `--backend`/`--checkpoint-dir`/
 `model <id>` expose the `/v1/models` inventory both ways — remote over
 the wire, or in-process where the `ft:` registry lists your own
 fine-tunes. `fx1 harness respond` (`/v1/responses` — JSON items arg,
-`--instructions`/`--format`/`--tools`/`--tool-choice`; `--stream` prints
+`--instructions`/`--format`/`--tools`/`--tool-choice`/
+`--max-tool-calls`/`--previous-response-id`/`--conversation`/
+`--background`/`--verbosity`/`--prompt-cache-key`/
+`--prompt-cache-retention`; `--stream` prints
 the Responses event stream's delta frames — token text and tool-call
 arguments — on either leg instead of the one-shot JSON object), `embed`
 (`/v1/embeddings` — repeatable input, `--encoding`/`--dimensions`), and

@@ -292,7 +292,9 @@ class OpenAIChatRequest(_Model):
     metadata: dict[str, str] | None = None
     service_tier: Literal["auto", "default", "flex", "priority", "scale"] | None = None
     reasoning_effort: Literal["none", "minimal", "low", "medium", "high"] | None = None
+    verbosity: Literal["low", "medium", "high"] | None = None
     prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
     response_format: dict[str, Any] | None = None
     store: bool | None = None
     tools: list[OpenAITool] | None = None
@@ -701,7 +703,9 @@ def openai_to_kwargs(
         "metadata": body.metadata,
         "service_tier": body.service_tier,
         "reasoning_effort": body.reasoning_effort,
+        "verbosity": body.verbosity,
         "prompt_cache_key": body.prompt_cache_key,
+        "prompt_cache_retention": body.prompt_cache_retention,
         "tools": ([t.model_dump(exclude_none=True) for t in body.tools] if body.tools else None),
         "tool_choice": body.tool_choice,
         "parallel_tool_calls": body.parallel_tool_calls,
@@ -1010,6 +1014,8 @@ class OpenAIResponseRequest(_Model):
     # lands ``status: 'incomplete'`` with ``incomplete_details.reason``
     # ``'max_tool_calls'`` (OpenAI's own semantics); 0 refuses calls outright.
     max_tool_calls: int | None = Field(default=None, ge=0)
+    prompt_cache_key: str | None = Field(default=None, max_length=128)
+    prompt_cache_retention: Literal["in-memory", "24h"] | None = None
     stream: bool = False
     store: bool | None = None
     metadata: dict[str, str] | None = None
@@ -1090,6 +1096,9 @@ class OpenAIResponseRequest(_Model):
                         raise ValueError(
                             f"text.format json_schema is not a valid schema: {exc.message}"
                         ) from exc
+            vb = self.text.get("verbosity")
+            if vb is not None and vb not in ("low", "medium", "high"):
+                raise ValueError(f"text.verbosity must be low|medium|high, got {vb!r}")
         if self.tools is not None and len(self.tools) > 128:
             raise ValueError("tools accepts at most 128 entries")
         if isinstance(self.tool_choice, dict) and (
@@ -1405,6 +1414,9 @@ def response_to_kwargs(
         "metadata": body.metadata,
         "service_tier": body.service_tier,
         "reasoning_effort": effort,
+        "verbosity": body.text.get("verbosity") if body.text else None,
+        "prompt_cache_key": body.prompt_cache_key,
+        "prompt_cache_retention": body.prompt_cache_retention,
         # the flattened Responses spec nests under ``function`` for the
         # shared tool channel; a dict tool_choice folds the same way
         "tools": (
@@ -1458,6 +1470,8 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
         "include": body.include or [],
         "top_logprobs": body.top_logprobs,
         "max_tool_calls": body.max_tool_calls,
+        "prompt_cache_key": body.prompt_cache_key,
+        "prompt_cache_retention": body.prompt_cache_retention,
         "truncation": "disabled",
         "background": body.background,
         "previous_response_id": body.previous_response_id,
