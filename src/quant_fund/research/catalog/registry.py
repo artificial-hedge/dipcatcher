@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-511 Fargues-Scholze canon.
+        "fs_diamond",
+        "geometric_satake",
+        "v_sheaf",
+        "bun_g",
+        "hecke_stack",
+        "y_diamond",
         # Wave-510 spectral-AG canon.
         "spectral_scheme2",
         "connective_e_ring",

@@ -4079,6 +4079,14 @@ from quant_fund.research.benches_w510 import (
     bench_spectral_stack_family,
     bench_taf_lurie_family,
 )
+from quant_fund.research.benches_w511 import (
+    bench_bun_g_family,
+    bench_fs_diamond_family,
+    bench_geometric_satake_family,
+    bench_hecke_stack_family,
+    bench_v_sheaf_family,
+    bench_y_diamond_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4458,6 +4466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fs_diamond": bench_fs_diamond_family,
+        "geometric_satake": bench_geometric_satake_family,
+        "v_sheaf": bench_v_sheaf_family,
+        "bun_g": bench_bun_g_family,
+        "hecke_stack": bench_hecke_stack_family,
+        "y_diamond": bench_y_diamond_family,
         "spectral_scheme2": bench_spectral_scheme2_family,
         "connective_e_ring": bench_connective_e_ring_family,
         "spectral_alg": bench_spectral_alg_family,
