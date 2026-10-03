@@ -5047,6 +5047,14 @@ from quant_fund.research.benches_w631 import (
     bench_torsion_sheaf_family,
     bench_weil_sheaf_family,
 )
+from quant_fund.research.benches_w632 import (
+    bench_big_witt_family,
+    bench_good_reduction_family,
+    bench_odeur_zarba_family,
+    bench_potential_reduction_family,
+    bench_tate_curve_family,
+    bench_witt_len2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5426,6 +5434,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "witt_len2": bench_witt_len2_family,
+        "big_witt": bench_big_witt_family,
+        "good_reduction": bench_good_reduction_family,
+        "potential_reduction": bench_potential_reduction_family,
+        "tate_curve": bench_tate_curve_family,
+        "odeur_zarba": bench_odeur_zarba_family,
         "etale_cover3": bench_etale_cover3_family,
         "etale_site3": bench_etale_site3_family,
         "constructible_sh": bench_constructible_sh_family,
