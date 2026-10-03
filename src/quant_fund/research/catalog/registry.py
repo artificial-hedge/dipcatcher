@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-450 stable-infinity canon.
+        "stable_infty",
+        "spectra_cat",
+        "exact_seq",
+        "stable_tstruct",
+        "smash_monoidal",
+        "thh_tc",
         # Wave-449 analytic-geometry-2 canon.
         "dagger_space",
         "huber_ring",
