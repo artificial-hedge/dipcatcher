@@ -6327,6 +6327,14 @@ from quant_fund.research.benches_w791 import (
     bench_spde_heat_family,
     bench_stochastic_burgers_family,
 )
+from quant_fund.research.benches_w792 import (
+    bench_backward_sde_family,
+    bench_bsde_solver_family,
+    bench_fbsde_markov_family,
+    bench_pardoux_peng_family,
+    bench_reflected_bsde_family,
+    bench_second_order_bsde_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6706,6 +6714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bsde_solver": bench_bsde_solver_family,
+        "fbsde_markov": bench_fbsde_markov_family,
+        "backward_sde": bench_backward_sde_family,
+        "pardoux_peng": bench_pardoux_peng_family,
+        "reflected_bsde": bench_reflected_bsde_family,
+        "second_order_bsde": bench_second_order_bsde_family,
         "spde_heat": bench_spde_heat_family,
         "stochastic_burgers": bench_stochastic_burgers_family,
         "kpz_equation": bench_kpz_equation_family,
