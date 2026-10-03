@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-395 combinatorial-enumeration canon.
+        "catalan_dp",
+        "stirling_cycle",
+        "partition_count",
+        "bell_triangle",
+        "eulerian_num",
+        "inclusion_excl",
         # Wave-394 order-theory canon.
         "downset_lattice",
         "zeta_mobius",

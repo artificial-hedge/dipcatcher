@@ -18,6 +18,7 @@ def downsets(elems: tuple[int, ...], leq) -> set[frozenset[int]]:
 
 def _bench_downset_lattice(seed: int = 0) -> float:
     checks = []
+
     def leq(a: int, b: int) -> bool:
         return a <= b
 
@@ -29,6 +30,7 @@ def _bench_downset_lattice(seed: int = 0) -> float:
     anti = tuple(range(2))
     ds2 = downsets(anti, lambda a, b: a == b)
     checks.append(len(ds2) == 4)
+
     # diamond poset (V shape): 3 minimal-downsets + 5 total
     def leq_v(a: int, b: int) -> bool:
         return a == b or (a in (0, 1) and b == 2)
