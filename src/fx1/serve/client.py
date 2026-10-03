@@ -590,6 +590,111 @@ class HarnessClient:
         )
         return dict(out)
 
+    # ---- fine-tuning (/v1/fine_tuning/jobs) ----------------------------------
+
+    def create_finetune_job(
+        self,
+        *,
+        model: str,
+        training_file: str,
+        hyperparameters: dict[str, Any] | None = None,
+        suffix: str | None = None,
+        validation_file: str | None = None,
+        seed: int | None = None,
+        metadata: dict[str, str] | None = None,
+        idempotency_key: str | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
+    ) -> dict[str, Any]:
+        """POST /v1/fine_tuning/jobs — queue a gated fine-tune over an
+        uploaded chat-format JSONL (upload with ``purpose='fine-tune'``).
+        Validation is synchronous: a malformed corpus 400s at submit.
+        ``callback_url``/``callback_secret`` are the fx1 terminal-webhook
+        extension (the finished job record POSTs to the URL, signed)."""
+        payload: dict[str, Any] = {"model": model, "training_file": training_file}
+        if hyperparameters is not None:
+            payload["hyperparameters"] = hyperparameters
+        if suffix is not None:
+            payload["suffix"] = suffix
+        if validation_file is not None:
+            payload["validation_file"] = validation_file
+        if seed is not None:
+            payload["seed"] = seed
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if callback_url is not None:
+            payload["callback_url"] = callback_url
+        if callback_secret is not None:
+            payload["callback_secret"] = callback_secret
+        out = self._json(
+            "POST",
+            "/v1/fine_tuning/jobs",
+            payload,
+            extra_headers=({"Idempotency-Key": idempotency_key} if idempotency_key else None),
+        )
+        return dict(out)
+
+    def finetune_jobs(self, *, limit: int = 20, after: str | None = None) -> dict[str, Any]:
+        """GET /v1/fine_tuning/jobs — newest-first page + has_more."""
+        q = f"limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        return dict(self._json("GET", f"/v1/fine_tuning/jobs?{q}", idempotent=True))
+
+    def finetune_job(self, job_id: str) -> dict[str, Any]:
+        """GET /v1/fine_tuning/jobs/{id} — the job record."""
+        out = self._json(
+            "GET",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}",
+            idempotent=True,
+        )
+        return dict(out)
+
+    def finetune_job_events(
+        self, job_id: str, *, limit: int = 20, after: str | None = None
+    ) -> dict[str, Any]:
+        """GET /v1/fine_tuning/jobs/{id}/events — oldest-first feed."""
+        q = f"limit={limit}" + (f"&after={urllib.parse.quote(after)}" if after else "")
+        jid = urllib.parse.quote(job_id)
+        out = self._json("GET", f"/v1/fine_tuning/jobs/{jid}/events?{q}", idempotent=True)
+        return dict(out)
+
+    def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
+        """POST /v1/fine_tuning/jobs/{id}/cancel — cooperative: queued
+        cancels at once, running stops at the next stage boundary."""
+        out = self._json(
+            "POST",
+            f"/v1/fine_tuning/jobs/{urllib.parse.quote(job_id)}/cancel",
+        )
+        return dict(out)
+
+    def wait_finetune_job(
+        self,
+        job_id: str,
+        *,
+        poll_s: float = 0.5,
+        timeout_s: float | None = None,
+    ) -> dict[str, Any]:
+        """Poll ``finetune_job`` until terminal; returns the record —
+        ``result_files`` carries the registered artifacts. Raises
+        ``HarnessJobError`` on 'failed'/'cancelled' and
+        ``HarnessTransportError`` on ``timeout_s``."""
+        deadline = None if timeout_s is None else self._clock() + timeout_s
+        while True:
+            st = self.finetune_job(job_id)
+            if st["status"] == "succeeded":
+                return st
+            if st["status"] == "failed":
+                raise HarnessJobError(
+                    f"fine-tuning job {job_id} failed: {(st.get('error') or {}).get('message')}"
+                )
+            if st["status"] == "cancelled":
+                raise HarnessJobError(f"fine-tuning job {job_id} cancelled")
+            remaining = None if deadline is None else deadline - self._clock()
+            if remaining is not None and remaining <= 0:
+                raise HarnessTransportError(
+                    f"fine-tuning job {job_id} did not finish within {timeout_s}s"
+                )
+            self._sleep(poll_s if remaining is None else min(poll_s, remaining))
+
     def wait_eval(
         self,
         eval_id: str,
@@ -1568,12 +1673,18 @@ class HarnessClient:
         endpoint: str = "/v1/chat/completions",
         metadata: dict[str, str] | None = None,
         idempotency_key: str | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> dict[str, Any]:
         """``POST /v1/batches`` — submit an uploaded file as one batch.
 
         The batch runs under the caller's X-Fx1-* headers (backend/Byok
         routing applies to every line). ``Idempotency-Key`` replays the
-        submit envelope — the shared /v1 idempotency space."""
+        submit envelope — the shared /v1 idempotency space.
+        ``callback_url``/``callback_secret`` are the fx1 terminal-webhook
+        extension: the finished batch envelope POSTs to the URL once
+        (completed/failed/expired/cancelled), signed when the secret is
+        set."""
         payload: dict[str, Any] = {
             "input_file_id": input_file_id,
             "endpoint": endpoint,
@@ -1581,6 +1692,10 @@ class HarnessClient:
         }
         if metadata is not None:
             payload["metadata"] = metadata
+        if callback_url is not None:
+            payload["callback_url"] = callback_url
+        if callback_secret is not None:
+            payload["callback_secret"] = callback_secret
         if idempotency_key is not None:
             hdrs = {"Idempotency-Key": idempotency_key}
             out = self._json("POST", "/v1/batches", payload, idempotent=True, extra_headers=hdrs)

@@ -716,6 +716,12 @@ export interface paths {
          * @description Submit a batch over an uploaded input file. One worker slot
          *     runs the whole batch through the gated route cores; ``expires_at``
          *     is +24h (the completion_window the surface declares).
+         *     ``callback_url``/``callback_secret`` are the fx1 webhook
+         *     extension: the terminal batch envelope
+         *     (completed/failed/expired/cancelled — including expiry observed
+         *     on read) is POSTed to the URL once, HMAC-signed when the secret
+         *     is set; ``callback_status``/``callback_attempts``/
+         *     ``callback_error`` ride the projected record.
          */
         post: operations["openai_batches_create"];
         delete?: never;
@@ -875,9 +881,10 @@ export interface paths {
         put?: never;
         /**
          * Openai File Upload
-         * @description Upload a batch-input JSONL (multipart/form-data). Purpose is
-         *     fail-closed — only ``batch`` is served; the file is validated into
-         *     the store as-is (shape checks happen at batch submit).
+         * @description Upload a batch-input or fine-tuning JSONL (multipart/form-data).
+         *     Purpose is fail-closed — ``batch`` and ``fine-tune`` are the only
+         *     purposes served; the file is validated into the store as-is
+         *     (shape checks happen at batch submit / fine-tune submit).
          */
         post: operations["openai_file_upload"];
         delete?: never;
@@ -924,6 +931,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/fine_tuning/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Finetune Jobs
+         * @description Newest-first page; ``after`` is the exclusive id cursor.
+         */
+        get: operations["list_finetune_jobs"];
+        put?: never;
+        /**
+         * Create Finetune Job
+         * @description Queue a gated fine-tuning run against an uploaded chat-format
+         *     JSONL training file. File validation is synchronous — malformed
+         *     corpora 400 at submit, never limbo in ``validating_files``.
+         *     ``callback_url``/``callback_secret`` are the fx1 webhook
+         *     extension: the terminal job record (succeeded/failed/cancelled)
+         *     is POSTed to the URL, HMAC-signed when the secret is set — the
+         *     same delivery contract as ``/harness/jobs`` webhooks.
+         */
+        post: operations["create_finetune_job"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fine_tuning/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Finetune Job */
+        get: operations["get_finetune_job"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fine_tuning/jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Finetune Job
+         * @description Cooperative cancel — a queued job ends immediately; a running
+         *     one is marked and the pipeline stops at the next stage boundary.
+         */
+        post: operations["cancel_finetune_job"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/fine_tuning/jobs/{job_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Finetune Job Events
+         * @description Oldest-first event feed for one job (OpenAI's order).
+         */
+        get: operations["list_finetune_job_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/models": {
         parameters: {
             query?: never;
@@ -956,7 +1051,7 @@ export interface paths {
          * Openai Retrieve Model
          * @description OpenAI's models.retrieve — one card for a listed id; unknown
          *     ids fail closed 404 in the OpenAI error shape, never a
-         *     fabricated card.
+         *     fabricated card. Registered ``ft:`` fine-tunes resolve too.
          */
         get: operations["openai_retrieve_model"];
         put?: never;
@@ -1757,6 +1852,165 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** FTEventList */
+        FTEventList: {
+            /** Data */
+            data: components["schemas"]["FTJobEvent"][];
+            /** Has More */
+            has_more: boolean;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /** FTHyperparameters */
+        FTHyperparameters: {
+            /** Batch Size */
+            batch_size?: number | null;
+            /** Learning Rate Multiplier */
+            learning_rate_multiplier?: number | null;
+            /** N Epochs */
+            n_epochs?: number | null;
+        };
+        /** FTJob */
+        FTJob: {
+            /**
+             * Callback Attempts
+             * @default 0
+             */
+            callback_attempts: number;
+            /** Callback Error */
+            callback_error?: string | null;
+            /** Callback Status */
+            callback_status?: ("delivered" | "failed") | null;
+            /** Callback Url */
+            callback_url?: string | null;
+            /** Created At */
+            created_at: number;
+            error?: components["schemas"]["FTJobError"] | null;
+            /** Estimated Finish */
+            estimated_finish?: number | null;
+            /** Fine Tuned Model */
+            fine_tuned_model?: string | null;
+            /** Finished At */
+            finished_at?: number | null;
+            hyperparameters?: components["schemas"]["FTHyperparameters"];
+            /** Id */
+            id: string;
+            /** Integrations */
+            integrations?: unknown[];
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Method */
+            method?: {
+                [key: string]: unknown;
+            };
+            /** Model */
+            model: string;
+            /**
+             * Object
+             * @default fine_tuning.job
+             * @constant
+             */
+            object: "fine_tuning.job";
+            /**
+             * Organization Id
+             * @default fx1-harness
+             */
+            organization_id: string;
+            /** Result Files */
+            result_files?: string[];
+            /** Seed */
+            seed?: number | null;
+            /**
+             * Status
+             * @default queued
+             * @enum {string}
+             */
+            status: "validating_files" | "queued" | "running" | "succeeded" | "failed" | "cancelled";
+            /** Trained Tokens */
+            trained_tokens?: number | null;
+            /** Training File */
+            training_file: string;
+            /** User Provided Suffix */
+            user_provided_suffix?: string | null;
+            /** Validation File */
+            validation_file?: string | null;
+        };
+        /** FTJobError */
+        FTJobError: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Param */
+            param?: string | null;
+        };
+        /** FTJobEvent */
+        FTJobEvent: {
+            /** Created At */
+            created_at: number;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+            /** Id */
+            id: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "info" | "warn" | "error";
+            /** Message */
+            message: string;
+            /**
+             * Object
+             * @default fine_tuning.job.event
+             * @constant
+             */
+            object: "fine_tuning.job.event";
+        };
+        /** FTJobList */
+        FTJobList: {
+            /** Data */
+            data: components["schemas"]["FTJob"][];
+            /** Has More */
+            has_more: boolean;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /** FTJobRequest */
+        FTJobRequest: {
+            /** Callback Secret */
+            callback_secret?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
+            hyperparameters?: components["schemas"]["FTHyperparameters"] | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Method */
+            method?: "supervised" | null;
+            /** Model */
+            model: string;
+            /** Seed */
+            seed?: number | null;
+            /** Suffix */
+            suffix?: string | null;
+            /** Training File */
+            training_file: string;
+            /** Validation File */
+            validation_file?: string | null;
+        };
         /**
          * GateCheckRequest
          * @description Text to run through the honesty gate — pre-flight for writers
@@ -2059,6 +2313,10 @@ export interface components {
          * @description ``POST /v1/batches`` body.
          */
         OpenAIBatchRequest: {
+            /** Callback Secret */
+            callback_secret?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
             /**
              * Completion Window
              * @default 24h
@@ -4985,6 +5243,269 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_finetune_jobs: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJobList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FTJobRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_finetune_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTJob"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_finetune_job_events: {
+        parameters: {
+            query?: {
+                limit?: number;
+                after?: string | null;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FTEventList"];
                 };
             };
             /** @description Validation Error */
