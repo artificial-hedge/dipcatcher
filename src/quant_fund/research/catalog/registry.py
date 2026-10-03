@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-416 model-theory-6 canon.
+        "decidable_theory",
+        "indiscernible_seq",
+        "saturated_model",
+        "omitting_prime",
+        "interpol_thm",
+        "definable_set",
         # Wave-415 topology-4 canon.
         "quotient_map",
         "open_cover",
