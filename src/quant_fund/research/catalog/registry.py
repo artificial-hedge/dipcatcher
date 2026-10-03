@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-881 Krylov-solver canon.
+        "minres_solver",
+        "cgs_solver",
+        "tfqmr",
+        "qmr_solver",
+        "bicgstab2",
+        "block_cg",
         # Wave-880 quadrature/cubature canon.
         "gq_adaptive",
         "adaptive_quad2",

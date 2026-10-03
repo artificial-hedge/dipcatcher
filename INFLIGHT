@@ -1,3 +1,4 @@
+feat(research): wave 881 — Krylov-solver canon (minres_solver, cgs_solver, tfqmr, qmr_solver, bicgstab2, block_cg) (5235->5241 families)
 feat(research): wave 880 — quadrature/cubature canon (gq_adaptive, adaptive_quad2, pod_deim, empirical_interp, cubature_rule, tensor_interp) (5229->5235 families)
 feat(research): wave 879 — exponential-time-integrator canon (expm_int, expokit, krylov_subspace_time, leja_point, phi_function, etd_rk4_classic) (5223->5229 families)
 feat(research): wave 878 — low-rank/hierarchical-matrix canon (low_rank_svd, h_matrix, hss_matrix, randomized_nystrom, block_low_rank, kronecker_approx) (5217->5223 families)
