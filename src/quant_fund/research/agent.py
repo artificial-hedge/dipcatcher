@@ -5239,6 +5239,14 @@ from quant_fund.research.benches_w655 import (
     bench_morava_stab_family,
     bench_telescope_tower_family,
 )
+from quant_fund.research.benches_w656 import (
+    bench_admissible_cat_family,
+    bench_cartesian_cat2_family,
+    bench_cocomplete_cat_family,
+    bench_definable_cat_family,
+    bench_essentially_small_family,
+    bench_finitely_accessible_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5618,6 +5626,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "essentially_small": bench_essentially_small_family,
+        "finitely_accessible": bench_finitely_accessible_family,
+        "admissible_cat": bench_admissible_cat_family,
+        "definable_cat": bench_definable_cat_family,
+        "cocomplete_cat": bench_cocomplete_cat_family,
+        "cartesian_cat2": bench_cartesian_cat2_family,
         "devinatz_htpy": bench_devinatz_htpy_family,
         "hopkins_smith": bench_hopkins_smith_family,
         "morava_stab": bench_morava_stab_family,
