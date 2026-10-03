@@ -2598,3 +2598,4 @@ wave 197 (2026-10-02): inventory-theory canon — eoq_model, newsvendor, ss_poli
 wave 198 (2026-10-02): scheduling/combinatorial canon — johnson_flowshop, neh_heuristic, lpt_schedule, knapsack_dp, tsp_branchbound, spt_weighted; 1160→1166 families.
 wave 199 (2026-10-02): quantum-computing canon — qaoa_maxcut, vqe_ising, grover_search, qpe_phase, qkernel_svm, quantum_walk; 1166→1172 families.
 wave 200 (2026-10-02): tensor-network canon — tt_svd, dmrg_tfim, tensor_cross, tebd_quench, mps_fidelity, tt_round; 1172→1178 families.
+wave 201 (2026-10-02): stochastic-control canon — psor_american, crr_tree, kushner_mca, hjb_penalty, dual_american, exercise_boundary; 1178→1184 families.

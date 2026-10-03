@@ -1597,6 +1597,14 @@ from quant_fund.research.benches_w200 import (
     bench_tt_round_family,
     bench_tt_svd_family,
 )
+from quant_fund.research.benches_w201 import (
+    bench_crr_tree_family,
+    bench_dual_american_family,
+    bench_exercise_boundary_family,
+    bench_hjb_penalty_family,
+    bench_kushner_mca_family,
+    bench_psor_american_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4348,6 +4356,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "tebd_quench": bench_tebd_quench_family(),
         "mps_fidelity": bench_mps_fidelity_family(),
         "tt_round": bench_tt_round_family(),
+        "psor_american": bench_psor_american_family(),
+        "crr_tree": bench_crr_tree_family(),
+        "kushner_mca": bench_kushner_mca_family(),
+        "hjb_penalty": bench_hjb_penalty_family(),
+        "dual_american": bench_dual_american_family(),
+        "exercise_boundary": bench_exercise_boundary_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
