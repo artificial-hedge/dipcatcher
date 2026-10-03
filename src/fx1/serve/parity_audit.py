@@ -3205,6 +3205,21 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         _raises(lambda: sdk.openai_chat_get(_ns_sdk_env.id))[0] == "KeyError"
         and client.get(f"/v1/chat/completions/{_ns_wire.json()['id']}").status_code == 404
     )
+    # metadata update parity — POST replaces wholesale on both surfaces and
+    # a second GET reflects it; gone ids fail the same way
+    _upd_sdk = sdk.openai_chat_update(_ret_sdk_env.id, metadata={"k": "1"})
+    _upd_wire = client.post(
+        f"/v1/chat/completions/{_ret_wire.json()['id']}", json={"metadata": {"k": "1"}}
+    ).json()
+    out["retrieval_update_parity"] = (
+        _upd_sdk["metadata"] == {"k": "1"}
+        and _upd_wire["metadata"] == {"k": "1"}
+        and {kk: vv for kk, vv in _upd_sdk.items() if kk not in ("id", "created")}
+        == {kk: vv for kk, vv in _upd_wire.items() if kk not in ("id", "created")}
+        and sdk.openai_chat_get(_ret_sdk_env.id)["metadata"] == {"k": "1"}
+        and _raises(lambda: sdk.openai_chat_update("chatcmpl-miss"))[0] == "KeyError"
+        and client.post("/v1/chat/completions/chatcmpl-miss", json={}).status_code == 404
+    )
     # delete parity — same tombstone shape (ids differ across calls), then
     # both surfaces miss
     _del_sdk = sdk.openai_chat_delete(_ret_sdk_env.id)

@@ -909,7 +909,12 @@ export interface paths {
          */
         get: operations["openai_chat_retrieve"];
         put?: never;
-        post?: never;
+        /**
+         * Openai Chat Update
+         * @description Update a stored chat completion's ``metadata`` (the only
+         *     mutable field — choices/usage are sealed at creation).
+         */
+        post: operations["openai_chat_update"];
         /**
          * Openai Chat Delete
          * @description Drop a stored chat completion from the retrieval index.
@@ -3773,6 +3778,20 @@ export interface components {
             usage?: {
                 [key: string]: number;
             } | null;
+        };
+        /**
+         * OpenAIChatUpdate
+         * @description ``POST /v1/chat/completions/{id}`` body — ``metadata`` replaces
+         *     the stored completion's metadata wholesale (OpenAI's update
+         *     semantics; the only mutable field on a stored completion).
+         */
+        OpenAIChatUpdate: {
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * OpenAIConversationCreate
@@ -7495,6 +7514,77 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_chat_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                completion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIChatUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Server-side wall-clock milliseconds for the request — the OpenAI-convention tracing header, present on every response. */
+                    "Openai-Processing-Ms"?: number;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Managed-key rpm window size — present only on responses authenticated by an `fx1k_` key minted with `rpm` (and its 429s). */
+                    "X-RateLimit-Limit-Requests"?: number;
+                    /** @description Requests left in the key's fixed 60 s window after this response. */
+                    "X-RateLimit-Remaining-Requests"?: number;
+                    /** @description Seconds until the key's rpm window reopens. */
+                    "X-RateLimit-Reset-Requests"?: number;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

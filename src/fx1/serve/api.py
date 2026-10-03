@@ -151,6 +151,7 @@ from fx1.serve.openai_compat import (
     OpenAIBatchRequest,
     OpenAIChatRequest,
     OpenAIChatResponse,
+    OpenAIChatUpdate,
     OpenAICompatError,
     OpenAIConversationCreate,
     OpenAIConversationItemsAdd,
@@ -5220,6 +5221,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_chat_retrieve(completion_id: str) -> dict[str, Any]:
         """Retrieve a stored chat completion (``chatcmpl-…``)."""
         return _stored_envelope(completion_id, object_="chat.completion")
+
+    @app.post(
+        "/v1/chat/completions/{completion_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_update",
+    )
+    def openai_chat_update(completion_id: str, body: OpenAIChatUpdate) -> dict[str, Any]:
+        """Update a stored chat completion's ``metadata`` (the only
+        mutable field — choices/usage are sealed at creation)."""
+        env = envelope_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise ApiError(
+                404,
+                f"{completion_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        updated = envelope_store.update_metadata(
+            completion_id, dict(body.metadata) if body.metadata is not None else {}
+        )
+        if updated is None:
+            raise ApiError(
+                404,
+                f"{completion_id!r} not found — evicted, deleted, or sent with store=false",
+                code="not_found",
+            )
+        return {k: v for k, v in updated.items() if not k.startswith("_fx1_")}
 
     @app.delete(
         "/v1/chat/completions/{completion_id}",

@@ -2173,6 +2173,20 @@ class HarnessClient:
             )
         )
 
+    def update_chat_completion(
+        self, completion_id: str, *, metadata: dict[str, str] | None = None
+    ) -> dict[str, Any]:
+        """``POST /v1/chat/completions/{id}`` — replace the stored
+        completion's ``metadata`` wholesale (the only mutable field)."""
+        body: dict[str, Any] = {"metadata": dict(metadata) if metadata is not None else {}}
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/chat/completions/{urllib.parse.quote(completion_id)}",
+                body,
+            )
+        )
+
     def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
         """``DELETE /v1/chat/completions/{id}`` — drop the stored envelope."""
         return dict(

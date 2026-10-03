@@ -55,6 +55,7 @@ __all__ = [
     "OpenAIChatMessage",
     "OpenAIChatResponse",
     "OpenAIChatChoice",
+    "OpenAIChatUpdate",
     "OpenAICompatError",
     "OpenAIEmbeddingItem",
     "OpenAIEmbeddingRequest",
@@ -1802,6 +1803,26 @@ class OpenAIConversationCreate(_Model):
         return self
 
 
+class OpenAIChatUpdate(_Model):
+    """``POST /v1/chat/completions/{id}`` body — ``metadata`` replaces
+    the stored completion's metadata wholesale (OpenAI's update
+    semantics; the only mutable field on a stored completion)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    metadata: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIChatUpdate:
+        if self.metadata is not None:
+            if len(self.metadata) > 16:
+                raise ValueError("metadata accepts at most 16 entries")
+            for k, v in self.metadata.items():
+                if len(k) > 64 or len(v) > 512:
+                    raise ValueError("metadata keys are ≤64 chars, values ≤512")
+        return self
+
+
 class OpenAIConversationUpdate(_Model):
     """``POST /v1/conversations/{id}`` body — ``metadata`` replaces the
     conv's metadata wholesale (OpenAI's update semantics)."""
@@ -2530,6 +2551,18 @@ class OpenAIEnvelopeStore:
         with self._lock:
             self._subitems.pop(envelope_id, None)
             return self._items.pop(envelope_id, None) is not None
+
+    def update_metadata(self, envelope_id: str, metadata: dict[str, str]) -> dict[str, Any] | None:
+        """Replace a stored envelope's ``metadata`` atomically — the wire
+        model already bounds the mapping (≤16 pairs / ≤64-char keys /
+        ≤512-char values); a re-put keeps the envelope's slot. None when
+        the id is gone (evicted, deleted, never stored)."""
+        with self._lock:
+            env = self._items.get(envelope_id)
+            if env is None:
+                return None
+            env["metadata"] = dict(metadata)
+            return dict(env)
 
     def __len__(self) -> int:
         with self._lock:

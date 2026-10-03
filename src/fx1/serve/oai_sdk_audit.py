@@ -255,6 +255,13 @@ async def _probe_chat(cl: Any, out: dict[str, Any]) -> None:
     out["sdk_chat_list"] = any(c.id == stored.id for c in listed)
     msgs = [m async for m in cl.chat.completions.messages.list(stored.id)]
     out["sdk_chat_messages"] = any("store-me" in str(m.content) for m in msgs)
+    updated = await cl.chat.completions.update(stored.id, metadata={"t": "1"})
+    refetched = await cl.chat.completions.retrieve(stored.id)
+    out["sdk_chat_update"] = (
+        updated.id == stored.id
+        and dict(updated.metadata or {}) == {"t": "1"}
+        and dict(refetched.metadata or {}) == {"t": "1"}
+    )
     deleted = await cl.chat.completions.delete(stored.id)
     out["sdk_chat_delete"] = deleted.id == stored.id and deleted.deleted is True
     try:

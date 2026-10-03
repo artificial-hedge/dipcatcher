@@ -8051,6 +8051,38 @@ def _probe_backend_probes(  # NOSONAR
     out["retrieve_chat_stored"] = (
         s1.status_code == 200 and fb.get(f"/v1/chat/completions/{sid}").json() == s1.json()
     )
+    # POST /v1/chat/completions/{id} — metadata replaces wholesale; choices/
+    # usage sealed; the items subresource survives the update
+    u1 = fb.post(
+        f"/v1/chat/completions/{sid}",
+        json={"metadata": {"tenant": "t1", "trace": "abc"}},
+    )
+    u2 = fb.post(f"/v1/chat/completions/{sid}", json={"metadata": {"trace": "xyz"}})
+    u_after = fb.get(f"/v1/chat/completions/{sid}")
+    u_items = fb.get(f"/v1/chat/completions/{sid}/messages")
+    out["chat_update_metadata"] = (
+        u1.status_code == 200
+        and u1.json()["id"] == sid
+        and u1.json()["metadata"] == {"tenant": "t1", "trace": "abc"}
+        and u1.json()["choices"] == s1.json()["choices"]
+        and u1.json()["usage"] == s1.json()["usage"]
+        # wholesale replace — `tenant` is gone, not merged
+        and u2.json()["metadata"] == {"trace": "xyz"}
+        and u_after.json()["metadata"] == {"trace": "xyz"}
+        and u_items.status_code == 200
+        and len(u_items.json()["data"]) >= 1
+    )
+    # bounded + fail-closed: >16 pairs 422, a response id isn't a completion,
+    # deleted/gone ids 404
+    out["chat_update_failclosed"] = (
+        fb.post(
+            f"/v1/chat/completions/{sid}",
+            json={"metadata": {f"k{i}": "v" for i in range(17)}},
+        ).status_code
+        == 422
+        and fb.post("/v1/chat/completions/resp_deadbeef", json={}).status_code == 404
+        and fb.post("/v1/chat/completions/chatcmpl-gone", json={}).status_code == 404
+    )
     # store=false keeps the call out of the index (still logged)
     s2 = fb.post(
         "/v1/chat/completions",

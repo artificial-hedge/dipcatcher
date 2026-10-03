@@ -90,6 +90,8 @@
       "capabilities_route_200": true,
       "capabilities_shape": true,
       "capabilities_vector_stores": true,
+      "chat_update_failclosed": true,
+      "chat_update_metadata": true,
       "cite_advisory_no_store": true,
       "cite_batch_checked": true,
       "cite_malformed_422": true,
@@ -793,11 +795,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "ab097ec080e181c6575ea005698ef9094bde389a",
+  "git_revision": "12c2248cc78c2f8539db8441f6decf2700a3d4cc",
   "interpretation": "Harness API holds: registry parity with the in-process Harness, configs/ containment over the wire, uniform 4xx fail-closed shape, the honesty gate fires on model output (502), credential-less backends 503, arbitrary receipts verify through the posted payload, auth is X-API-Key or loopback-only, and every gated call lands in the bounded completion log (X-Fx1-Completion-Id handle; hashes, usage, verdict \u2014 never content) fetchable via GET /harness/completions[/{id}], and each logged call exports as a sealed fx1_completion_record.v1 document (GET \u2026/{id}/receipt) \u2014 deterministic, verifiable through verify_receipt / POST /receipts/verify, and broken by any byte of record tampering. Terminal jobs export the same way as fx1_job_record.v1 (GET /harness/jobs/{id}/receipt): stdout/stderr digested inside record.result, callback URL hashed, seal re-derives and verifies, tampering breaks it. The /v1/fine_tuning surface holds the OpenAI job grammar: synchronous corpus validation (bad corpus/model/file fail closed 4xx before any queue), cooperative cancel, idempotent submit, events feed, artifacts re-registered as fine-tune-result files. A succeeded job's ft: name registers into the model inventory (listed + retrievable), completions naming it resolve to the local_fx1 lane pinned at the job's checkpoint, explicit backend headers still override, and unregistered ft: names fail closed 404 model_not_found. X-Fx1-Timeout sets the per-request backend deadline on the OpenAI surface (fx1.timeout_s extension wins; malformed or out-of-range values fail closed 400). Every gated response self-describes its evidence: X-Fx1-Receipt-Sha256 carries the seal of the logged record (identical to the document GET /harness/completions/{id}/receipt exports), idempotent replays echo the original seal, and SSE streams carry the digest in the final frame. Evidence citations ride X-Fx1-Receipt-Hashes for clients that can't edit the body \u2014 comma-separated digests, the same store check, a malformed digest a fail-closed 400, and fx1.receipt_hashes wins. DELETE /v1/models/{id} unregisters an ft: name with a real tombstone (list/retrieve/chat all 404 after; built-ins refuse 400), and every X-Fx1-* request knob is in the CORS allow-headers list so browser clients can send them.",
   "kind": "api_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "ebf3853b6224fcdfa6a3891fde99dfdfc5e13b65e5eacef759b303ae6486217f",
+  "receipt_sha256": "64bef10396b314a5fa8958b65f421d416b09051b50631aabd0c73aa8a2354a0f",
   "research_only": true,
   "schema": "api_audit.v1"
 }

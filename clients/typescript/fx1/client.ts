@@ -1444,6 +1444,24 @@ export class HarnessApiClient {
     return (await res.json()) as Record<string, unknown>;
   }
 
+  /**
+   * POST /v1/chat/completions/{id} — replace the stored completion's
+   * `metadata` wholesale (the only mutable field; ≤16 pairs, keys ≤64
+   * chars, values ≤512 — the API fails closed past the bounds).
+   */
+  async updateChatCompletion(
+    completionId: string,
+    metadata: Record<string, string> = {},
+  ): Promise<Record<string, unknown>> {
+    const res = await this.send({
+      method: "POST",
+      path: `/v1/chat/completions/${encodeURIComponent(completionId)}`,
+      body: { metadata },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return (await res.json()) as Record<string, unknown>;
+  }
+
   /** DELETE /v1/chat/completions/{id} — drop the stored envelope. */
   async deleteChatCompletion(
     completionId: string,

@@ -2880,6 +2880,23 @@ class Fx1Harness:
             raise KeyError(f"completion {completion_id!r} not in the retrieval index")
         return {"id": completion_id, "object": "chat.completion.deleted", "deleted": True}
 
+    def openai_chat_update(
+        self, completion_id: str, *, metadata: Mapping[str, str] | None = None
+    ) -> dict[str, Any]:
+        """``POST /v1/chat/completions/{id}`` in-process — ``metadata``
+        replaces the stored completion's wholesale (the only mutable
+        field); ``KeyError`` when the id isn't a live stored completion."""
+        env = self._openai_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        md = dict(metadata) if metadata is not None else {}
+        if len(md) > 16 or any(len(k) > 64 or len(v) > 512 for k, v in md.items()):
+            raise ValueError("metadata accepts ≤16 pairs, keys ≤64 chars, values ≤512")
+        updated = self._openai_store.update_metadata(completion_id, md)
+        if updated is None:
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        return {k: v for k, v in updated.items() if not k.startswith("_fx1_")}
+
     def openai_response_get(self, response_id: str) -> dict[str, Any]:
         """``GET /v1/responses/{id}`` in-process — the stored ``response``
         envelope, or ``KeyError``."""

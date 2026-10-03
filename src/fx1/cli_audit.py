@@ -196,6 +196,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
         "embed",
         "moderate",
         "chat-get",
+        "chat-update",
         "chat-delete",
         "chat-list",
         "chat-messages",
@@ -315,6 +316,7 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
             for name in (
                 "chat-get",
+                "chat-update",
                 "chat-delete",
                 "response-get",
                 "response-delete",
@@ -1805,6 +1807,16 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             self.last_ft_query = {"chat_get": completion_id}
             return {"id": completion_id, "object": "chat.completion"}
 
+        def update_chat_completion(
+            self, completion_id: str, *, metadata: dict[str, str] | None = None
+        ) -> dict[str, Any]:
+            self.last_ft_query = {"chat_update": completion_id, "metadata": metadata}
+            return {
+                "id": completion_id,
+                "object": "chat.completion",
+                "metadata": dict(metadata or {}),
+            }
+
         def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
             self.last_ft_query = {"chat_delete": completion_id}
             return {
@@ -3205,6 +3217,24 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "response-cancel",
             )
         )
+        # chat-update --remote forwards the metadata payload verbatim
+        out["remote_chat_update"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "chat-update",
+                    "chatcmpl-x",
+                    "--metadata",
+                    '{"a": "1"}',
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        ).get("id") == "chatcmpl-x" and remotes[-1].last_ft_query == {
+            "chat_update": "chatcmpl-x",
+            "metadata": {"a": "1"},
+        }
         # the stored-request subresources — --remote forwards id + paging
         out["remote_chat_messages"] = json.loads(
             runner.invoke(

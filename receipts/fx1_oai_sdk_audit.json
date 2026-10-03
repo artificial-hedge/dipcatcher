@@ -13,6 +13,7 @@
       "sdk_chat_retrieve": true,
       "sdk_chat_stream": true,
       "sdk_chat_stream_usage": true,
+      "sdk_chat_update": true,
       "sdk_conv_create": true,
       "sdk_conv_delete": true,
       "sdk_conv_items_create": true,
@@ -81,11 +82,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "5341608effa17f550ba80ae2a26a831ffa658681",
+  "git_revision": "12c2248cc78c2f8539db8441f6decf2700a3d4cc",
   "interpretation": "The unmodified openai AsyncOpenAI client drives the harness end-to-end in-process: models, chat completions (sync + SSE stream + include_usage), responses (sync + event stream + cancel), files, batches, fine-tuning jobs incl. events/checkpoints/cancel, vector stores incl. expires_after, evals specs+runs, conversations incl. single-item retrieve, chunked uploads, embeddings, moderations \u2014 and every error lands as the SDK's typed exception class carrying our error envelope.",
   "kind": "oai_sdk_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "80bcefc8fe331d6f22e7f7f4563004b694a899165aa8e46198a01a4803c0f9cc",
+  "receipt_sha256": "6bb4bd4677df8d4a2fce05247f15052c812ad7861978c6614c96e7cea7f22909",
   "research_only": true,
   "schema": "oai_sdk_audit.v1"
 }

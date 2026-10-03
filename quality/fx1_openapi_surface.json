@@ -745,6 +745,20 @@
           "200",
           "422"
         ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
       }
     },
     "/v1/chat/completions/{completion_id}/messages": {
@@ -1918,5 +1932,5 @@
       }
     }
   },
-  "schema_sha256": "96b8647207fc8818d68c4d06e0ced76294561d59e779f8e35bb182b39070e938"
+  "schema_sha256": "eb4aaba44e7a8c7ec1c3e2f89f5fb4cc4a0822b814a1924b05b1199c01682254"
 }

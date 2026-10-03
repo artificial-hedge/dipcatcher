@@ -3012,6 +3012,33 @@ def harness_chat_get(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("chat-update")
+def harness_chat_update(
+    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    metadata_json: str | None = typer.Option(
+        None, "--metadata", help="Replacement metadata as a JSON object of string pairs."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/chat/completions/{id}`` — replace the stored completion's
+    metadata wholesale (the only mutable field); unknown ids exit 2."""
+    metadata = _json_meta(metadata_json) if metadata_json is not None else {}
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).update_chat_completion(
+                completion_id, metadata=metadata
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_chat_update(completion_id, metadata=metadata))
+    typer.echo(json.dumps(out, indent=2))
+
+
 @harness_app.command("chat-delete")
 def harness_chat_delete(
     completion_id: str = typer.Argument(..., help="Stored chat.completion id."),

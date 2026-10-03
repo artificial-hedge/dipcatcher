@@ -249,6 +249,7 @@ same digested shape the job record embeds.
 | `POST /v1/fine_tuning/jobs/{id}/pause` / `.../resume` | cooperative pause — queued parks pre-start, running parks at the next stage boundary; `paused` is non-terminal; `HarnessClient.pause_finetune_job`/`resume_finetune_job` / `fx1 harness ft-pause`/`ft-resume` |
 | `GET /v1/chat/completions` | list stored `chat.completion` envelopes, oldest first (`?limit≤100`, `?after`/`?before`/`?order`, `?model=`, `?metadata[k]=v` subset filter) — OpenAI's `chat.completions.list`; `Fx1Harness.openai_chat_list` / `HarnessClient.list_chat_completions` / `client.listChatCompletions` / `fx1 harness chat-list` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
+| `POST /v1/chat/completions/{id}` | update a stored completion — `metadata` replaces wholesale (≤16 pairs, keys ≤64 chars, values ≤512), choices/usage sealed; `Fx1Harness.openai_chat_update` / `HarnessClient.update_chat_completion` / `client.updateChatCompletion` / `fx1 harness chat-update` |
 | `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
 | `POST /v1/responses/{id}/cancel` | cancel a queued/in-progress `background:true` response (`status` → `cancelled`; 409 once terminal) — `Fx1Harness.openai_response_cancel` / `HarnessClient.cancel_response` / `client.cancelResponse` / `fx1 harness response-cancel` |
@@ -779,10 +780,10 @@ arguments — on either leg instead of the one-shot JSON object), `embed`
 (`/v1/embeddings` — repeatable input, `--encoding`/`--dimensions`), and
 `moderate` (`/v1/moderations` — the honesty gate as an OpenAI verdict,
 no backend needed) each run both legs: `--remote` over the wire or
-in-process through the SDK twin. `chat-get`/`chat-delete`/
+in-process through the SDK twin. `chat-get`/`chat-update`/`chat-delete`/
 `response-get`/`response-delete` cover the stored-object
-`GET`/`DELETE` routes (missing ids exit 2 — never a fabricated
-envelope), `fx1 harness score <text...>` scores through the
+`GET`/`POST`/`DELETE` routes (missing ids exit 2 — never a fabricated
+envelope; `chat-update --metadata` is a JSON object of string pairs), `fx1 harness score <text...>` scores through the
 reward contract with no model spend, `fx1 harness commands`
 lists the registry (`--role` filters; a bogus role exits 2 like
 the wire's 422), and `fx1 harness verify <dir>` posts the whole
@@ -917,7 +918,7 @@ Identical contract in-process: `Fx1Harness.openai_file_create`
 (content bytes → `file-*`) + `vector_store_*` twin methods drive
 the same store, and `openai_response` emits the same
 `file_search_call` grammar. `HarnessClient.vector_store_*` +
-`fx1 harness vs-*` cover the wire leg; TS exposes
+`fx1 harness` `vs-*` cover the wire leg; TS exposes
 `vectorStoreCreate`/`…List`/`…Files`/`…FileContent`. Unknown
 stores fail closed `vector_store_not_found` (404 on the wire,
 `VectorStoreError`/`OpenAICompatError` in-process).
