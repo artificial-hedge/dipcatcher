@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-639 homotopy-16 canon.
+        "homotopy_fiber2",
+        "stable_htpy2",
+        "finite_htpy",
+        "rational_spec",
+        "finite_chromatic",
+        "periodic_htpy",
         # Wave-638 algebraic-K-7 canon.
         "grayson_s",
         "karoubi_v2",
