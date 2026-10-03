@@ -4367,6 +4367,14 @@ from quant_fund.research.benches_w546 import (
     bench_knot_signature_family,
     bench_vassiliev_inv_family,
 )
+from quant_fund.research.benches_w547 import (
+    bench_donaldson_thm_family,
+    bench_exotic_r4_family,
+    bench_four_mfd_family,
+    bench_freedman_thm_family,
+    bench_intersection_form_family,
+    bench_seiberg_witten_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4746,6 +4754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "four_mfd": bench_four_mfd_family,
+        "donaldson_thm": bench_donaldson_thm_family,
+        "seiberg_witten": bench_seiberg_witten_family,
+        "exotic_r4": bench_exotic_r4_family,
+        "intersection_form": bench_intersection_form_family,
+        "freedman_thm": bench_freedman_thm_family,
         "knot_invariant": bench_knot_invariant_family,
         "jones_poly": bench_jones_poly_family,
         "alexander_poly": bench_alexander_poly_family,
