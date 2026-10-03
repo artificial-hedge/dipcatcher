@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-988 spectral-geometry canon.
+        "spectral_geometry",
+        "heat_invariants",
+        "weyl_law",
+        "isospectral",
+        "cheeger_ineq",
+        "nodal_domain",
         # Wave-987 parabolic/Li-Yau canon.
         "parabolic_harnack",
         "gaussian_upper",
