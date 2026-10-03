@@ -2999,6 +2999,14 @@ from quant_fund.research.benches_w375 import (
     bench_scheme_local_family,
     bench_sheaf_cohomology_family,
 )
+from quant_fund.research.benches_w376 import (
+    bench_cofibration_family,
+    bench_fibration_family,
+    bench_serre_ss_family,
+    bench_spectra_family,
+    bench_suspension_family,
+    bench_whitehead_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3378,6 +3386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fibration": bench_fibration_family,
+        "cofibration": bench_cofibration_family,
+        "serre_ss": bench_serre_ss_family,
+        "whitehead": bench_whitehead_family,
+        "suspension": bench_suspension_family,
+        "spectra": bench_spectra_family,
         "riemann_roch": bench_riemann_roch_family,
         "sheaf_cohomology": bench_sheaf_cohomology_family,
         "scheme_local": bench_scheme_local_family,
