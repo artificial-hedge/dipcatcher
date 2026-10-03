@@ -6183,6 +6183,14 @@ from quant_fund.research.benches_w773 import (
     bench_priority_queue_family,
     bench_retrial_queue_family,
 )
+from quant_fund.research.benches_w774 import (
+    bench_fluctuation_rw_family,
+    bench_ladder_epoch_family,
+    bench_maxwell_rw_family,
+    bench_sparc_rw_family,
+    bench_spitzer_rw_family,
+    bench_wiener_hopf_rw_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6562,6 +6570,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sparc_rw": bench_sparc_rw_family,
+        "spitzer_rw": bench_spitzer_rw_family,
+        "fluctuation_rw": bench_fluctuation_rw_family,
+        "ladder_epoch": bench_ladder_epoch_family,
+        "wiener_hopf_rw": bench_wiener_hopf_rw_family,
+        "maxwell_rw": bench_maxwell_rw_family,
         "mm1_queue": bench_mm1_queue_family,
         "mg1_queue": bench_mg1_queue_family,
         "gm_queue": bench_gm_queue_family,
