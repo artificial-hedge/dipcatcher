@@ -4823,6 +4823,14 @@ from quant_fund.research.benches_w603 import (
     bench_logical_morph_family,
     bench_slice_topos_family,
 )
+from quant_fund.research.benches_w604 import (
+    bench_bokstedt_periodicity_family,
+    bench_elliptic_k_family,
+    bench_equivariant_cohomology2_family,
+    bench_may_ss_family,
+    bench_topo_k_theory_family,
+    bench_unstable_cohomology_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5202,6 +5210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "unstable_cohomology": bench_unstable_cohomology_family,
+        "may_ss": bench_may_ss_family,
+        "bokstedt_periodicity": bench_bokstedt_periodicity_family,
+        "topo_k_theory": bench_topo_k_theory_family,
+        "elliptic_k": bench_elliptic_k_family,
+        "equivariant_cohomology2": bench_equivariant_cohomology2_family,
         "slice_topos": bench_slice_topos_family,
         "logical_morph": bench_logical_morph_family,
         "classifying_topos": bench_classifying_topos_family,
