@@ -3287,6 +3287,14 @@ from quant_fund.research.benches_w411 import (
     bench_normalization_family,
     bench_tangent_cone_family,
 )
+from quant_fund.research.benches_w412 import (
+    bench_bicat_comp_family,
+    bench_cat_enriched_family,
+    bench_double_cat_family,
+    bench_lax_functor_family,
+    bench_mate_calc_family,
+    bench_two_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3666,6 +3674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "two_cat": bench_two_cat_family,
+        "bicat_comp": bench_bicat_comp_family,
+        "mate_calc": bench_mate_calc_family,
+        "double_cat": bench_double_cat_family,
+        "lax_functor": bench_lax_functor_family,
+        "cat_enriched": bench_cat_enriched_family,
         "blow_up": bench_blow_up_family,
         "intersection_mult": bench_intersection_mult_family,
         "tangent_cone": bench_tangent_cone_family,
