@@ -2143,6 +2143,14 @@ from quant_fund.research.benches_w268 import (
     bench_paillier_he_family,
     bench_poly1305_mac_family,
 )
+from quant_fund.research.benches_w269 import (
+    bench_epipolar_8pt_family,
+    bench_homography_4pt_family,
+    bench_lk_flow_family,
+    bench_orb_feature_family,
+    bench_ransac_plane_family,
+    bench_stereo_disparity_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2438,6 +2446,12 @@ def _provenance(
         "ot_12": bench_ot_12_family,
         "chacha_stream": bench_chacha_stream_family,
         "poly1305_mac": bench_poly1305_mac_family,
+        "lk_flow": bench_lk_flow_family,
+        "orb_feature": bench_orb_feature_family,
+        "homography_4pt": bench_homography_4pt_family,
+        "ransac_plane": bench_ransac_plane_family,
+        "epipolar_8pt": bench_epipolar_8pt_family,
+        "stereo_disparity": bench_stereo_disparity_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
