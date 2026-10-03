@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-487 category-7 canon.
+        "compact_obj",
+        "dualizable_cat",
+        "comma_cat",
+        "prestack",
+        "endo_prof",
+        "exact_cat",
         # Wave-486 algebraic-K-theory-2 canon.
         "waldhausen_k",
         "plus_k",
