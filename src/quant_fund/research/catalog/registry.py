@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-520 automorphic-GL(n) canon.
+        "gln_automorphic",
+        "whittaker_model",
+        "godement_jacq",
+        "rankin_selberg",
+        "langlands_lfunc",
+        "converse_thm",
         # Wave-519 modular-forms canon.
         "modular_form",
         "hecke_op2",
