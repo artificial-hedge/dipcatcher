@@ -6719,6 +6719,14 @@ from quant_fund.research.benches_w840 import (
     bench_schur_continued_family,
     bench_stieltjes_fraction_family,
 )
+from quant_fund.research.benches_w841 import (
+    bench_chebyshev_t_family,
+    bench_gegenbauer_poly_family,
+    bench_hermite_poly_family,
+    bench_jacobi_poly_family,
+    bench_laguerre_poly_family,
+    bench_legendre_poly_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7090,6 +7098,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "legendre_poly": bench_legendre_poly_family,
+        "chebyshev_t": bench_chebyshev_t_family,
+        "hermite_poly": bench_hermite_poly_family,
+        "laguerre_poly": bench_laguerre_poly_family,
+        "jacobi_poly": bench_jacobi_poly_family,
+        "gegenbauer_poly": bench_gegenbauer_poly_family,
         "pade_approx": bench_pade_approx_family,
         "rational_chebyshev": bench_rational_chebyshev_family,
         "stieltjes_fraction": bench_stieltjes_fraction_family,

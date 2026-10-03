@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-841 orthogonal-polynomial canon.
+        "legendre_poly",
+        "chebyshev_t",
+        "hermite_poly",
+        "laguerre_poly",
+        "jacobi_poly",
+        "gegenbauer_poly",
         # Wave-840 rational-approximation canon.
         "pade_approx",
         "rational_chebyshev",
