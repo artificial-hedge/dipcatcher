@@ -1,3 +1,4 @@
+feat(research): wave 370 — graph-theory-2 canon (tutte_berge, dirac_ore, turan_theorem, planar_five, graph_minor, ramsey_num) (2175->2181 families)
 feat(research): wave 369 — numerical-6 canon (broyden, cheb_approx, brent_root, romberg, aitken_delta, collocation_ode) (2169->2175 families)
 feat(research): wave 368 — model-theory-2/logic canon (unification_fol, skolem_normal, herbrand_model, presburger, los_theorem) (2164->2169 families)
 feat(research): wave 367 — Galois-2/field-theory canon (finite_field, galois_corresp, normality_check, separable_check, cyclotomic_poly, primitive_elem) (2158->2164 families)

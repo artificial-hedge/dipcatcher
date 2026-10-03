@@ -2951,6 +2951,14 @@ from quant_fund.research.benches_w369 import (
     bench_collocation_ode_family,
     bench_romberg_family,
 )
+from quant_fund.research.benches_w370 import (
+    bench_dirac_ore_family,
+    bench_graph_minor_family,
+    bench_planar_five_family,
+    bench_ramsey_num_family,
+    bench_turan_theorem_family,
+    bench_tutte_berge_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3330,6 +3338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tutte_berge": bench_tutte_berge_family,
+        "dirac_ore": bench_dirac_ore_family,
+        "turan_theorem": bench_turan_theorem_family,
+        "planar_five": bench_planar_five_family,
+        "graph_minor": bench_graph_minor_family,
+        "ramsey_num": bench_ramsey_num_family,
         "broyden": bench_broyden_family,
         "cheb_approx": bench_cheb_approx_family,
         "brent_root": bench_brent_root_family,

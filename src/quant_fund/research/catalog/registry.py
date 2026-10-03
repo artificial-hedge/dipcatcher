@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-370 graph-theory-2 canon.
+        "tutte_berge",
+        "dirac_ore",
+        "turan_theorem",
+        "planar_five",
+        "graph_minor",
+        "ramsey_num",
         # Wave-369 numerical-6 canon.
         "broyden",
         "cheb_approx",
