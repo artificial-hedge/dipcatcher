@@ -1,3 +1,4 @@
+feat(research): wave 688 — spectral-AG-7 canon (spectral_field, spectral_lattice, spectral_filtration, spectral_cellular, spectral_cohomological, spectral_finite) (4083->4089 families)
 feat(research): wave 687 — category-17 canon (cat_fibrant_obj, cat_cofibrant, cat_bicomplete, cat_univariant, cat_descent, cat_glueable) (4077->4083 families)
 feat(research): wave 686 — higher-algebra-8 canon (e4_algebra, centralizer_alg, delooping2, factorization_hom2, koszul_duality2, braces_e4) (4071->4077 families)
 feat(research): wave 685 — homotopy-26 canon (homotopy_limit, homotopy_tower, spectral_sequence5, homotopy_class2, stable_mapping, stable_bousfield) (4065->4071 families)
