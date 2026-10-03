@@ -2319,6 +2319,14 @@ from quant_fund.research.benches_w290 import (
     bench_substruct_family,
     bench_tanimoto_family,
 )
+from quant_fund.research.benches_w291 import (
+    bench_a_star_route_family,
+    bench_drc_check_family,
+    bench_levelize_family,
+    bench_netlist_parse_family,
+    bench_place_quadratic_family,
+    bench_sta_timing_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2698,6 +2706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "netlist_parse": bench_netlist_parse_family,
+        "sta_timing": bench_sta_timing_family,
+        "a_star_route": bench_a_star_route_family,
+        "drc_check": bench_drc_check_family,
+        "place_quadratic": bench_place_quadratic_family,
+        "levelize": bench_levelize_family,
         "smiles_parse": bench_smiles_parse_family,
         "morgan_fp": bench_morgan_fp_family,
         "tanimoto": bench_tanimoto_family,
