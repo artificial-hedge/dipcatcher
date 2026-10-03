@@ -7919,6 +7919,14 @@ from quant_fund.research.benches_w990 import (
     bench_legendre_cond_family,
     bench_soap_film_family,
 )
+from quant_fund.research.benches_w991 import (
+    bench_bloch_decomp_family,
+    bench_gamma_convergence_family,
+    bench_h_convergence_family,
+    bench_homogenization_family,
+    bench_mosco_conv_family,
+    bench_two_scale_conv_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8290,6 +8298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "homogenization": bench_homogenization_family,
+        "two_scale_conv": bench_two_scale_conv_family,
+        "gamma_convergence": bench_gamma_convergence_family,
+        "mosco_conv": bench_mosco_conv_family,
+        "bloch_decomp": bench_bloch_decomp_family,
+        "h_convergence": bench_h_convergence_family,
         "euler_lagrange": bench_euler_lagrange_family,
         "legendre_cond": bench_legendre_cond_family,
         "jacobi_eq": bench_jacobi_eq_family,
