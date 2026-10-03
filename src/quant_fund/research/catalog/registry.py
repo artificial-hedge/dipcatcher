@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-446 Goodwillie-calculus canon.
+        "goodwillie_tower",
+        "excisive_fn",
+        "linearization",
+        "deriv_layer",
+        "calc_converge",
+        "orth_calc",
         # Wave-445 six-functor canon.
         "six_functors",
         "base_change",

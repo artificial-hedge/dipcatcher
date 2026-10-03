@@ -3559,6 +3559,14 @@ from quant_fund.research.benches_w445 import (
     bench_six_functors_family,
     bench_verdier_dual_family,
 )
+from quant_fund.research.benches_w446 import (
+    bench_calc_converge_family,
+    bench_deriv_layer_family,
+    bench_excisive_fn_family,
+    bench_goodwillie_tower_family,
+    bench_linearization_family,
+    bench_orth_calc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3938,6 +3946,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "goodwillie_tower": bench_goodwillie_tower_family,
+        "excisive_fn": bench_excisive_fn_family,
+        "linearization": bench_linearization_family,
+        "deriv_layer": bench_deriv_layer_family,
+        "calc_converge": bench_calc_converge_family,
+        "orth_calc": bench_orth_calc_family,
         "six_functors": bench_six_functors_family,
         "base_change": bench_base_change_family,
         "projection_frm": bench_projection_frm_family,
