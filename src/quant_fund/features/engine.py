@@ -422,6 +422,16 @@ def build_features(
     decision_time: datetime | None = None,
     membership: pl.DataFrame | None = None,
 ) -> pl.DataFrame:
+    """Build a decision panel from bars observable at their close labels.
+
+    Validate source rows before rolling history, membership filtering, or
+    cross-sectional maxima can hide unavailable inputs. This batch builder
+    does not reconstruct late publication vintages or infer close timestamps
+    for open-labeled bars; callers must supply the close-time contract.
+    """
+    if bars.height and {"event_time", "available_time"} <= set(bars.columns):
+        source_clock = bars.select("available_time", pl.col("event_time").alias("decision_time"))
+        validate_feature_frame(source_clock, cast(datetime, bars["event_time"].min()))
     df = compute_base_features(bars, config)
     if membership is not None:
         if membership.is_empty() and bars.height:

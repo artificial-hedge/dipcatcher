@@ -1,0 +1,377 @@
+{
+  "schema": "closure_fit.v1",
+  "kind": "closure_fit_bench",
+  "ticker": "AMZN",
+  "horizon": 30000,
+  "seed": 7,
+  "grid_axes": {
+    "refill_cooldown": [
+      200,
+      200,
+      200,
+      200,
+      300,
+      300,
+      300,
+      300,
+      400,
+      400,
+      400,
+      400,
+      500,
+      650,
+      500
+    ],
+    "ref_fill_gain": [
+      0.3,
+      0.5
+    ],
+    "intensity_mult": [
+      3.0,
+      5.0
+    ],
+    "fixed": {
+      "density_exponent": 1.0,
+      "band": 40,
+      "anchor": "ref"
+    }
+  },
+  "targets": {
+    "instant": 0.887,
+    "k200": 4.6447,
+    "g1": 2.4909471061879978,
+    "spread": 13.086169313581564
+  },
+  "targets_source": {
+    "instant": "tape:instant_decomp",
+    "k200": "sealed:impact_persist.v1",
+    "g1": "tape:level_gap",
+    "spread": "tape:level_gap"
+  },
+  "tolerances": {
+    "instant": 0.2,
+    "k200": 1.0,
+    "g1": 0.6,
+    "spread": 4.0
+  },
+  "real": {
+    "instant_decomp": {
+      "ok": true,
+      "n_fills": 8974,
+      "p_empty_touch": 0.4724,
+      "mean_gap_ticks_when_empty": 3.7554,
+      "realized_instant_ticks": 0.887,
+      "predicted_instant_ticks": 0.887,
+      "unexplained_instant_ticks": -0.0
+    },
+    "level_gaps": {
+      "ok": true,
+      "n_rows": 269748,
+      "g1_ask": {
+        "ok": true,
+        "n": 269748,
+        "mean": 2.188542639797144,
+        "p50": 1.0,
+        "p_ge2": 0.41559529635066805,
+        "p_ge4": 0.16377878612631047
+      },
+      "g1_bid": {
+        "ok": true,
+        "n": 269748,
+        "mean": 2.7933515725788514,
+        "p50": 2.0,
+        "p_ge2": 0.5615018461675342,
+        "p_ge4": 0.25117146373652444
+      },
+      "g2": {
+        "ok": true,
+        "n": 539496,
+        "mean": 1.8911002120497649,
+        "p50": 1.0,
+        "p_ge2": 0.3968333407476608,
+        "p_ge4": 0.10547622225187953
+      },
+      "g3": {
+        "ok": true,
+        "n": 539496,
+        "mean": 1.7436218248142712,
+        "p50": 1.0,
+        "p_ge2": 0.3838323175704732,
+        "p_ge4": 0.07196902293992911
+      },
+      "spread_mean": 13.086169313581564
+    },
+    "k200_ticks": 4.6447
+  },
+  "cells": [
+    {
+      "refill_cooldown": 200,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 3.0,
+      "n_fills": 1344,
+      "instant_signed_ticks": 0.5922619047619048,
+      "k200_ticks": 3.833833458364591,
+      "g1_mean": 2.4904166666666665,
+      "spread_mean": 16.557666666666666,
+      "n_lo_suppressed": 1183,
+      "score": 1.8927426704548471,
+      "n_targets_within_tol": 3,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 300,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 3.0,
+      "n_fills": 1461,
+      "instant_signed_ticks": 0.9103353867214237,
+      "k200_ticks": 3.364453665283541,
+      "g1_mean": 2.7327666666666666,
+      "spread_mean": 19.160966666666667,
+      "n_lo_suppressed": 1895,
+      "score": 2.030154462537844,
+      "n_targets_within_tol": 2,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 400,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 3.0,
+      "n_fills": 1306,
+      "instant_signed_ticks": 0.5038284839203675,
+      "k200_ticks": 4.661901081916538,
+      "g1_mean": 2.4953,
+      "spread_mean": 16.3815,
+      "n_lo_suppressed": 2302,
+      "score": 2.0855596488349213,
+      "n_targets_within_tol": 3,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 300,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 3.0,
+      "n_fills": 1483,
+      "instant_signed_ticks": 0.47403910991233983,
+      "k200_ticks": 4.760311020960108,
+      "g1_mean": 2.3996666666666666,
+      "spread_mean": 16.329133333333335,
+      "n_lo_suppressed": 1889,
+      "score": 2.226483567826818,
+      "n_targets_within_tol": 3,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 400,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 3.0,
+      "n_fills": 1451,
+      "instant_signed_ticks": 0.7143349414197105,
+      "k200_ticks": 3.311111111111111,
+      "g1_mean": 2.8162166666666666,
+      "spread_mean": 19.5195,
+      "n_lo_suppressed": 2451,
+      "score": 2.3247394594923843,
+      "n_targets_within_tol": 2,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 650,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 5.0,
+      "n_fills": 1332,
+      "instant_signed_ticks": 0.7252252252252253,
+      "k200_ticks": 3.8069977426636568,
+      "g1_mean": 3.00235,
+      "spread_mean": 20.553733333333334,
+      "n_lo_suppressed": 3713,
+      "score": 2.359615301882097,
+      "n_targets_within_tol": 3,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 300,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 5.0,
+      "n_fills": 1809,
+      "instant_signed_ticks": 0.6337755666113875,
+      "k200_ticks": 3.5582306830907053,
+      "g1_mean": 2.77945,
+      "spread_mean": 20.013966666666665,
+      "n_lo_suppressed": 2059,
+      "score": 2.452414068046734,
+      "n_targets_within_tol": 1,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 200,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 5.0,
+      "n_fills": 1476,
+      "instant_signed_ticks": 0.7540650406504065,
+      "k200_ticks": 2.660217243720299,
+      "g1_mean": 2.709633333333333,
+      "spread_mean": 18.073166666666665,
+      "n_lo_suppressed": 1189,
+      "score": 2.4631670313626315,
+      "n_targets_within_tol": 2,
+      "n_targets_within_30pct": 2
+    },
+    {
+      "refill_cooldown": 400,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 5.0,
+      "n_fills": 2024,
+      "instant_signed_ticks": 0.8248517786561265,
+      "k200_ticks": 5.431852221667499,
+      "g1_mean": 2.8679333333333332,
+      "spread_mean": 22.493933333333334,
+      "n_lo_suppressed": 2996,
+      "score": 2.577318194949067,
+      "n_targets_within_tol": 3,
+      "n_targets_within_30pct": 3
+    },
+    {
+      "refill_cooldown": 200,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 3.0,
+      "n_fills": 1228,
+      "instant_signed_ticks": 0.8363192182410424,
+      "k200_ticks": 2.175,
+      "g1_mean": 2.62475,
+      "spread_mean": 17.769966666666665,
+      "n_lo_suppressed": 1192,
+      "score": 2.7539943963052287,
+      "n_targets_within_tol": 2,
+      "n_targets_within_30pct": 2
+    },
+    {
+      "refill_cooldown": 300,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 5.0,
+      "n_fills": 1822,
+      "instant_signed_ticks": 0.5060373216245884,
+      "k200_ticks": 6.788968166849616,
+      "g1_mean": 2.6039,
+      "spread_mean": 18.041833333333333,
+      "n_lo_suppressed": 2065,
+      "score": 3.129944532243419,
+      "n_targets_within_tol": 1,
+      "n_targets_within_30pct": 1
+    },
+    {
+      "refill_cooldown": 500,
+      "ref_fill_gain": 0.3,
+      "intensity_mult": 5.0,
+      "n_fills": 2089,
+      "instant_signed_ticks": 0.8734793187347932,
+      "k200_ticks": 4.495818986719135,
+      "g1_mean": 3.2647342831489605,
+      "spread_mean": 24.98775551851978,
+      "n_lo_suppressed": 4090,
+      "score": 3.2469840468515887,
+      "n_targets_within_tol": 2,
+      "n_targets_within_30pct": 2
+    },
+    {
+      "refill_cooldown": 500,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 5.0,
+      "n_fills": 2037,
+      "instant_signed_ticks": 0.4570446735395189,
+      "k200_ticks": 6.7514778325123155,
+      "g1_mean": 2.59895,
+      "spread_mean": 18.7424,
+      "n_lo_suppressed": 3216,
+      "score": 3.3304674205422087,
+      "n_targets_within_tol": 1,
+      "n_targets_within_30pct": 1
+    },
+    {
+      "refill_cooldown": 200,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 5.0,
+      "n_fills": 1737,
+      "instant_signed_ticks": 0.4274193548387097,
+      "k200_ticks": 7.5064027939464495,
+      "g1_mean": 2.49065,
+      "spread_mean": 15.453233333333333,
+      "n_lo_suppressed": 1155,
+      "score": 3.7175111789815865,
+      "n_targets_within_tol": 2,
+      "n_targets_within_30pct": 2
+    },
+    {
+      "refill_cooldown": 400,
+      "ref_fill_gain": 0.5,
+      "intensity_mult": 5.0,
+      "n_fills": 1993,
+      "instant_signed_ticks": 0.5117912694430506,
+      "k200_ticks": 7.7202832574608,
+      "g1_mean": 3.039816666666667,
+      "spread_mean": 18.781,
+      "n_lo_suppressed": 3103,
+      "score": 3.9802666872504022,
+      "n_targets_within_tol": 1,
+      "n_targets_within_30pct": 1
+    }
+  ],
+  "best_cell": {
+    "refill_cooldown": 200,
+    "ref_fill_gain": 0.5,
+    "intensity_mult": 3.0,
+    "score": 1.8927426704548471,
+    "instant_signed_ticks": 0.5922619047619048,
+    "k200_ticks": 3.833833458364591,
+    "g1_mean": 2.4904166666666665,
+    "spread_mean": 16.557666666666666,
+    "n_targets_within_30pct": 3
+  },
+  "divergences": [
+    "cd200/g0.5/im3.0:instant_0.59_vs_0.89",
+    "cd300/g0.3/im3.0:k200_3.36_vs_4.64",
+    "cd300/g0.3/im3.0:spread_19.16_vs_13.09",
+    "cd400/g0.5/im3.0:instant_0.50_vs_0.89",
+    "cd300/g0.5/im3.0:instant_0.47_vs_0.89",
+    "cd400/g0.3/im3.0:k200_3.31_vs_4.64",
+    "cd400/g0.3/im3.0:spread_19.52_vs_13.09",
+    "cd650/g0.5/im5.0:spread_20.55_vs_13.09",
+    "cd300/g0.3/im5.0:instant_0.63_vs_0.89",
+    "cd300/g0.3/im5.0:k200_3.56_vs_4.64",
+    "cd300/g0.3/im5.0:spread_20.01_vs_13.09",
+    "cd200/g0.3/im5.0:k200_2.66_vs_4.64",
+    "cd200/g0.3/im5.0:spread_18.07_vs_13.09",
+    "cd400/g0.3/im5.0:spread_22.49_vs_13.09",
+    "cd200/g0.3/im3.0:k200_2.17_vs_4.64",
+    "cd200/g0.3/im3.0:spread_17.77_vs_13.09",
+    "cd300/g0.5/im5.0:instant_0.51_vs_0.89",
+    "cd300/g0.5/im5.0:k200_6.79_vs_4.64",
+    "cd300/g0.5/im5.0:spread_18.04_vs_13.09",
+    "cd500/g0.3/im5.0:g1_3.26_vs_2.49",
+    "cd500/g0.3/im5.0:spread_24.99_vs_13.09",
+    "cd500/g0.5/im5.0:instant_0.46_vs_0.89",
+    "cd500/g0.5/im5.0:k200_6.75_vs_4.64",
+    "cd500/g0.5/im5.0:spread_18.74_vs_13.09",
+    "cd200/g0.5/im5.0:instant_0.43_vs_0.89",
+    "cd200/g0.5/im5.0:k200_7.51_vs_4.64",
+    "cd400/g0.5/im5.0:instant_0.51_vs_0.89",
+    "cd400/g0.5/im5.0:k200_7.72_vs_4.64",
+    "cd400/g0.5/im5.0:spread_18.78_vs_13.09"
+  ],
+  "claims": {
+    "frontier_three_of_four": true,
+    "instant_continuation_antagonism": {
+      "holds": true,
+      "mode": "negative_correlation",
+      "pearson_r_instant_k200": -0.6802
+    },
+    "mechanism_gap": {
+      "holds": true,
+      "note": "No (refill_cooldown x ref_fill_gain x intensity_mult) cell reproduces all four tape targets at once: cooldown lifts instant by keeping emptied levels vacant, gain lifts continuation through the reference, intensity lifts both weakly \u2014 but the composition still trades instant against k200. The missing ingredient is correlated placement persistence (metaorder state in the LO flow \u2014 children of one parent re-quoting the same side/levels), not stronger MO persistence."
+    }
+  },
+  "interpretation": "Measured on the 15-cell surface: the best cell (cd200/g0.5/im3, score ~1.9) sits within 30% on k200, g1 and spread but its instant stays ~0.59 vs the tape's 0.887 \u2014 frontier_three_of_four. Cells that do reach instant ~0.9 (cd300/g0.3/im3, cd500/g0.3/im5) pay for it in spread (19-25 ticks vs 13.1) or lose continuation: instant and k200 anti-correlate across the surface (r ~ -0.7), so the antagonism is a real trade-off, not unexplored corners. The vacancy-memory knob buys instant impact \u2014 emptied levels stay holes \u2014 but buying enough of it to match the tape's instant term widens the spread past tolerance, and no cell meets all four tolerances: mechanism_gap stands. What the composition lacks is correlated placement persistence \u2014 metaorder state in the LO flow so refills arrive directionally behind the walk \u2014 not stronger MO persistence.",
+  "git_revision": "0a6478de79cb3aa8b5b28d0102b638a1c6e587eb",
+  "data_label": "MIXED",
+  "research_only": true,
+  "receipt_sha256": "91da7c04f0ded751014e984fc5097561d5d01b113e64b3a405161a0e6b8b45fb"
+}

@@ -1,0 +1,42 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/race_real_drill.py",
+  "receipt_sha256": "974b94380c298047cc3272a79be90962a9dc9b8db06f5abef62644332e1afd1a",
+  "replay": {
+    "argv": [
+      "scripts/race_real_drill.py",
+      "--bars",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay/fleet_race_real_drill.json"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/fleet_race_real_drill.json",
+        "sha256": "41a0c7f1bf9ddc7f46e1a22972beb2ba828e040b8b5a4e79e107fd065c81b3fb"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "global_evidence",
+        "shard_meta",
+        "shard_winners"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "0530bbc98903f8ee2944d468f6124fae0c0034da0956d8c22ece140295ad4def",
+      "drift_reason": "lane_evolution",
+      "receipt": "receipts/fleet_race_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

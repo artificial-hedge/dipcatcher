@@ -19,9 +19,9 @@ def test_eligibility_matrix() -> None:
 
 
 def test_coercion_flag() -> None:
-    # pinned caveat: truthiness values coerce — {research_only: "yes",
-    # live_pnl_claim: null} is eligible
-    assert receipts_audit()["coercion_flag"] is True
+    # coercion is closed: {research_only: "yes", live_pnl_claim: null}
+    # is ineligible — research_only must be the literal true
+    assert receipts_audit()["coercion_closed"] is True
 
 
 def test_bench_ok_and_verifies() -> None:

@@ -8,12 +8,14 @@ Pinned contract for ``dedup_and_filter``:
   unrelated prompts do not sum to a hit.
 - NFKC folding closes the formatting-evasion class (fullwidth /
   punctuation variants tokenize identically).
-- Near-duplicates are Jaccard ≥0.9 against the **last 500 kept** items.
+- Near-duplicates are Jaccard ≥0.9 against every kept item
+  sharing a shingle (inverted index — no distance window).
 
-**Pinned caveats**: (a) near-dup window is bounded — a duplicate >500
-kept items later escapes; (b) overlength drops are silent — the report
-has no ``overlong_removed`` counter, so ``loaded`` need not equal
-kept+removed.
+**Pinned caveats**: overlength drops are silent — the report has no
+``overlong_removed`` counter, so ``loaded`` need not equal kept+removed.
+The near-dup check is NOT window-bounded: an inverted shingle index
+compares each candidate against every kept example sharing a shingle, so
+a duplicate any distance later is caught (``far_apart_dup_caught``).
 
 ``frozen_split``: deterministic under a fixed seed, val_fraction bounds
 enforced, manifest digests bind the written files' contents.
@@ -40,7 +42,7 @@ def _ex(text: str) -> dict[str, Any]:
 
 
 def _filler(i: int) -> dict[str, Any]:
-    # unique long filler so near-dup window advances without collisions
+    # unique long filler so the near-dup index sees unrelated kept items
     return _ex(" ".join(f"f{i}_{j}" for j in range(12)))
 
 
@@ -74,10 +76,12 @@ def quality_audit() -> dict[str, Any]:
     kept, rep = dedup_and_filter([base, near], eval_prompts=[])
     out["near_dup_windowed"] = rep.near_duplicates_removed == 1
 
-    # >500 kept between the pair: near-dup escapes the bounded window
+    # >500 kept between the pair: the inverted shingle index compares a
+    # candidate against EVERY kept example sharing a shingle — there is no
+    # distance-bounded window for a near-dup to slip past.
     many = [base] + [_filler(i) for i in range(502)] + [near]
     kept, rep = dedup_and_filter(many, eval_prompts=[])
-    out["window_escape"] = rep.near_duplicates_removed == 0 and len(kept) == 504
+    out["far_apart_dup_caught"] = rep.near_duplicates_removed == 1 and len(kept) == 503
 
     # overlength drop is uncounted
     kept, rep = dedup_and_filter([_ex("x" * 40_000), benign], eval_prompts=[], max_len_chars=32_000)
@@ -100,10 +104,7 @@ def quality_audit() -> dict[str, Any]:
         line = (Path(tmp) / "a.train.jsonl").read_text()
         import hashlib
 
-        lines = [ln for ln in line.splitlines() if ln]
-        out["digest_binds_bytes"] = (
-            hashlib.sha256("".join(lines).encode()).hexdigest() == m1.train_sha256
-        )
+        out["digest_binds_bytes"] = hashlib.sha256(line.encode()).hexdigest() == m1.train_sha256
         for bad in (0.0, 0.5, -0.1):
             try:
                 frozen_split(exs, Path(tmp) / "x", val_fraction=bad)
@@ -131,7 +132,7 @@ def quality_audit_bench() -> dict[str, Any]:
         "claim": {
             "results": r,
             "flags": {
-                "near_dup_window_bounded": r["window_escape"],
+                "near_dup_window_bounded": not r["far_apart_dup_caught"],
                 "overlong_drops_uncounted": r["overlong_silent_drop"],
             },
             "ok": ok,
@@ -139,9 +140,9 @@ def quality_audit_bench() -> dict[str, Any]:
         "interpretation": (
             "Quality-gate contract holds: exact dupes removed, per-item "
             "containment catches verbatim + NFKC-folded eval embeds, "
-            "frozen split deterministic with digest-bound files. Flags "
-            "pinned: near-dup dedup is bounded to the last 500 kept "
-            "items, and overlength drops are uncounted in the report."
+            "frozen split deterministic with digest-bound files. Flag "
+            "pinned: overlength drops are uncounted in the report. Near-dup "
+            "dedup is distance-unbounded (inverted shingle index)."
             if ok
             else f"QUALITY AUDIT DEFECT: {r}"
         ),

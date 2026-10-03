@@ -1,0 +1,46 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/conformal_real_drill.py",
+  "receipt_sha256": "c00d40e4afad10353045853d6a0056c100f77d1c120d336b9053939e990650a5",
+  "replay": {
+    "argv": [
+      "scripts/conformal_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/conformal_real_drill_gaussian_pit.json",
+        "sha256": "d11c879becf3ae8d15e0ad619bf9e43feec6b34527fa2a1dec274a58ae0062e5"
+      },
+      {
+        "path": "data/metadata/replay/conformal_real_drill_gaussian_minus_conf_t_pinball.json",
+        "sha256": "39f07e22b73fa9a5417a467aa03f6e5fbda7ce7d55d81d1d42ecf5b8a8ebc1ba"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [],
+      "claims_equal": true,
+      "committed_sha256": "94de7928be51179c7119d751d1812dbd91c2b7992aba08528d094d8101eff21e",
+      "receipt": "receipts/conformal_real_drill_gaussian_pit.json"
+    },
+    {
+      "claim_diff_keys": [],
+      "claims_equal": true,
+      "committed_sha256": "48b240ea495b7ab633a4ec61c7da34f82c414f2370220f60894612ceef8b3dc9",
+      "receipt": "receipts/conformal_real_drill_gaussian_minus_conf_t_pinball.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

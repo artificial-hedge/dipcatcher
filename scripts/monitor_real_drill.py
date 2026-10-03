@@ -22,9 +22,9 @@ from typing import Any
 
 import numpy as np
 import polars as pl
-from quant_fund.research.monitor_run import monitor_fleet
 
 from quant_fund.research.fleet_eval import FLEET_HEAD_REGISTRY, SyntheticShard
+from quant_fund.research.monitor_run import monitor_fleet
 from quant_fund.research.receipt_v2 import seal_receipt
 
 _DRILL_HEADS = (
@@ -80,7 +80,7 @@ def main() -> int:
         bars.group_by("symbol")
         .agg(pl.len())
         .filter(pl.col("len") >= args.n_train + args.n_eval + 1)
-        .sort("len", descending=True)
+        .sort(["len", "symbol"], descending=[True, False])
         .head(args.n_symbols)["symbol"]
         .to_list()
     )
@@ -108,6 +108,8 @@ def main() -> int:
         n_eval=args.n_eval,
         seed=args.seed,
     )
+    receipt.pop("code_revision", None)
+    receipt.pop("meta", None)
     sealed = seal_receipt(receipt)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")

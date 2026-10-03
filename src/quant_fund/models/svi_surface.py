@@ -705,9 +705,11 @@ def calibrate_slice(
             x0c = np.clip(np.asarray(x0, dtype=float), lb + 1e-9, ub - 1e-9)
             try:
                 res = optimize.least_squares(resid_fn, x0c, bounds=(lb, ub), method="trf")
-            except (ValueError, np.linalg.LinAlgError):
+            except (ValueError, RuntimeError, np.linalg.LinAlgError):
                 # Narrowed from `except Exception` (quality ratchet): trf
                 # failures at a start point are bad-seed skips, not verdicts.
+                # RuntimeError is included because scipy/torch/etc. backends
+                # can raise it on Windows when the optimizer aborts.
                 continue
             if (
                 np.isfinite(res.cost)

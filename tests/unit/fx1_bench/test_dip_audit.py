@@ -10,11 +10,12 @@ def test_dip_contract() -> None:
     r = dip_audit()
     d, s, h = r["detection"], r["scoring"], r["honesty"]
     assert d["n_events"] == 1
-    assert d["boundary_out"] == {"h1": False, "h2": False, "h3": True}
+    assert d["boundary_out"] == {"h1": False, "h2": True, "h3": None}
     assert d["rearm"] is True
     assert d["nonfinite_raises"] == "raise:ValueError"
     assert s["baseline_h1"] == 0.5
     assert s["h2_skips_unobservable"] is True
+    assert s["ghost_rejected"] == "raise:ValueError"
     assert s["oor_prob_raises"] == "raise:ValueError"
     outcomes = {c["name"]: c["outcome"] for c in h["cases"]}
     for n in ("ratio_bare", "pl_underscored", "pl_embedded", "camel_ratio", "navlike_suffix"):

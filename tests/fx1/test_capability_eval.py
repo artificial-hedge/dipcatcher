@@ -230,7 +230,7 @@ class _StubBackend:
     def __init__(self, fn) -> None:
         self._fn = fn
 
-    def complete(self, messages: list[dict[str, str]]) -> str:
+    def complete(self, messages: list[dict[str, str]], *, sampling=None) -> str:
         return self._fn(messages)
 
 

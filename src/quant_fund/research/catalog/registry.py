@@ -3245,22 +3245,30 @@ def family_blob_forbidden_metrics_absent(payload: object) -> bool:
     """Return True iff *payload* has no forbidden research-headline metric keys.
 
     Fail closed: any mapping key whose underscore tokens include sharpe / sortino /
-    calmar / pnl / nav marks the blob unclean. Values are not scanned (keys only).
+    calmar / pnl / nav marks the blob unclean. Scalar metric values are not scanned.
 
     Scope: research family / scorecard blobs only. Paper ``analytics_export`` may
     contain equity ``nav_*`` / stress ``*_pnl`` diagnostics; validate those with
     ``validate_analytics_export`` (live_pnl_claim fail-closed), not this helper.
 
-    ``live_pnl_claim`` itself is exempt at any depth: it is the honesty flag,
-    not a metric — receipts that embed other receipts carry it nested (e.g. a
-    tournament manifest quoting its benchmark manifest).
+    ``live_pnl_claim`` itself is exempt at any depth only when its value is
+    literally False: it is the honesty flag, not a metric. Receipts that embed
+    other receipts carry it nested (e.g. a tournament manifest quoting its
+    benchmark manifest); a true or malformed nested flag must fail closed too.
     """
-    for key in _iter_mapping_keys(payload):
-        if key == "live_pnl_claim":
-            continue
-        parts = str(key).lower().replace("-", "_").split("_")
-        if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
-            return False
+    if isinstance(payload, dict):
+        for key, value in payload.items():
+            if key == "live_pnl_claim":
+                if value is not False:
+                    return False
+                continue
+            parts = str(key).lower().replace("-", "_").split("_")
+            if any(tok in FORBIDDEN_RESEARCH_METRIC_KEYS for tok in parts if tok):
+                return False
+            if not family_blob_forbidden_metrics_absent(value):
+                return False
+    elif isinstance(payload, (list, tuple)):
+        return all(family_blob_forbidden_metrics_absent(item) for item in payload)
     return True
 
 

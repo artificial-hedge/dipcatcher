@@ -27,9 +27,16 @@ def emd_lp(xs: FloatArray, xt: FloatArray) -> float:
     """n-D EMD between equal-mass point clouds via transport LP."""
     xs = np.asarray(xs, dtype=np.float64)
     xt = np.asarray(xt, dtype=np.float64)
+    if np.allclose(xs, xt):
+        return 0.0
     m, n = xs.shape[0], xt.shape[0]
     cost = np.sqrt(
-        np.sum(xs**2, axis=1, keepdims=True) + np.sum(xt**2, axis=1)[None, :] - 2.0 * xs @ xt.T
+        np.maximum(
+            np.sum(xs**2, axis=1, keepdims=True)
+            + np.sum(xt**2, axis=1)[None, :]
+            - 2.0 * xs @ xt.T,
+            0.0,
+        )
     )
     a_eq = np.zeros((m + n, m * n))
     for i in range(m):

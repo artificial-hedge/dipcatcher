@@ -21,6 +21,7 @@ Every result carries ``research_only=True`` and ``live_pnl_claim=False``.
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Protocol
@@ -119,8 +120,20 @@ def _funding_by_time(
     funding: pl.DataFrame | None,
     *,
     multiplier: float = 1.0,
+    bar_times: set[datetime] | None = None,
 ) -> dict[datetime, list[tuple[str, float]]]:
-    """Group funding events by timestamp; ``multiplier`` stress-scales rates."""
+    """Group unique funding settlements; ``multiplier`` stress-scales rates.
+
+    Each (security_id, event_time) identifies one settlement. Repeated rows,
+    including conflicting rates or revisions, are ambiguous and fail closed
+    rather than charging twice or choosing a rate by input order.
+
+    Optional ``application_time`` explicitly maps a settlement onto an earlier
+    or equal bar label while retaining the original settlement identity. When
+    ``bar_times`` is supplied, this must be the latest label at-or-before the
+    settlement. Rates are never netted: each cashflow and its sign remain
+    separately observable.
+    """
     out: dict[datetime, list[tuple[str, float]]] = {}
     if funding is None or funding.height == 0:
         return out
@@ -128,16 +141,46 @@ def _funding_by_time(
     missing = required - set(funding.columns)
     if missing:
         raise ValueError(f"funding frame missing columns: {sorted(missing)}")
+    ordered_bar_times = sorted(bar_times) if bar_times is not None else None
+    seen: set[tuple[str, datetime]] = set()
     for row in funding.iter_rows(named=True):
+        sid, event_time = str(row["security_id"]), row["event_time"]
+        key = (sid, event_time)
+        if key in seen:
+            raise ValueError(f"duplicate funding event for {sid} at {event_time}")
+        seen.add(key)
         rate = float(row["value"]) * multiplier
         if not np.isfinite(rate):
             raise ValueError("funding rate must be finite")
-        out.setdefault(row["event_time"], []).append((str(row["security_id"]), rate))
+        application_time = row.get("application_time", event_time)
+        if "application_time" in row:
+            if not isinstance(application_time, datetime) or not isinstance(event_time, datetime):
+                raise ValueError("funding application_time and event_time must be datetimes")
+            try:
+                future = application_time > event_time
+            except TypeError as exc:
+                raise ValueError(
+                    "funding application_time must be comparable to event_time"
+                ) from exc
+            if future:
+                raise ValueError("funding application_time cannot be later than event_time")
+            if bar_times is not None and application_time not in bar_times:
+                raise ValueError("funding application_time must match an input bar label")
+            if ordered_bar_times is not None:
+                index = bisect_right(ordered_bar_times, event_time) - 1
+                if index < 0 or ordered_bar_times[index] != application_time:
+                    raise ValueError(
+                        "funding application_time must be the latest bar at-or-before event_time"
+                    )
+        out.setdefault(application_time, []).append((sid, rate))
     return out
 
 
 def _bar_enrichment(bars: pl.DataFrame) -> pl.DataFrame:
-    """Causal ADV/σ columns per symbol (shift-1 rolling stats) for cost sizing."""
+    """Causal ADV/σ columns per symbol, returned in event-time order."""
+    # Grouped rolling/shift expressions follow physical row order. Sort before
+    # enrichment so shuffled panels cannot use future bars for execution costs.
+    bars = bars.sort("event_time", "security_id")
     lagged = [
         (pl.col("close") * pl.col("volume"))
         .rolling_mean(20, min_samples=1)
@@ -165,10 +208,18 @@ def run_perp_backtest(
 ) -> BacktestResult:
     """`weights` columns: event_time, security_id, target_weight (of equity).
 
-    Targets decided on bar t's close execute at bar t+1+fill_delay_bars open.
-    A funding event at timestamp f is applied to the bar whose window
-    ``(open, close]`` contains f (funding at 08:00 lands on the 07:00 bar for
-    1h data), marked at that bar's close.
+    Input bars may arrive in any row order; enrichment and execution are
+    chronological per symbol. Targets decided on bar t's close execute at
+    bar t+1+fill_delay_bars open.
+    Funding normally uses exact ``event_time`` equality with a bar label: an 08:00
+    event is processed on the 08:00 bar, not implicitly shifted to 07:00. It is
+    applied after that bar's open fills and before its liquidation check, using the
+    current close mark (or a permitted carried mark). No implicit interval
+    bucketing or settlement-time price interpolation is performed. An explicit
+    ``application_time`` can select a bar label while preserving the original
+    ``event_time`` settlement identity. Unmapped off-grid events are skipped
+    and counted in ``funding_events_dropped``; see DATA_CONTRACTS.md
+    for the scope of that diagnostic and input timestamp conventions.
     """
     if weights.height:
         _ = _target_weight_map(weights)
@@ -189,7 +240,7 @@ def run_perp_backtest(
         else infer_periods_per_year(times, perp.bar_seconds_hint)
     )
     fund_map = (
-        _funding_by_time(funding, multiplier=perp.funding_spike_multiplier)
+        _funding_by_time(funding, multiplier=perp.funding_spike_multiplier, bar_times=set(times))
         if perp.funding_enabled
         else {}
     )
@@ -378,7 +429,7 @@ def run_perp_backtest(
                 }
             )
 
-        # --- funding events inside this bar window (prev_close, this_close] ---
+        # --- funding events assigned exactly to this bar label ---
         for sid, rate in fund_map.get(dt, []):
             q = book.qty.get(sid, 0.0)
             if abs(q) < 1e-12:

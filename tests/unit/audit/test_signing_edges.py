@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import stat
 from pathlib import Path
 
@@ -64,7 +65,9 @@ class TestEd25519:
         signer = Ed25519Signer.generate()
         path = tmp_path / "nested" / "key.hex"
         signer.write(path)
-        assert stat.S_IMODE(path.stat().st_mode) == 0o600
+        # Windows has no POSIX mode bits; chmod(0o600) only toggles read-only.
+        if os.name != "nt":
+            assert stat.S_IMODE(path.stat().st_mode) == 0o600
         pub = path.with_name("key.hex.pub")
         assert pub.read_text().strip() == signer.public_key_hex
         assert Ed25519Signer.from_path(path).public_key == signer.public_key
