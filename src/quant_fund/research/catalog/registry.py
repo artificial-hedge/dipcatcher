@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-305 text-index-2/stringology canon.
+        "suffix_array_lcp",
+        "z_function",
+        "suffix_tree_lex",
+        "booth_rotation",
+        "lyndon_factor",
+        "palindromic_tree",
         # Wave-304 computer-vision-2 canon.
         "harris_corner",
         "hough_lines",

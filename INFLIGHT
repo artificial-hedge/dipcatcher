@@ -1,3 +1,4 @@
+feat(research): wave 305 — text-index-2/stringology canon (suffix_array_lcp, z_function, suffix_tree_lex, booth_rotation, lyndon_factor, palindromic_tree) (1803->1809 families)
 feat(research): wave 304 — computer-vision-2 canon (harris_corner, hough_lines, integral_image, seam_carving, grabcut_lite, meanshift_track) (1797->1803 families)
 feat(research): wave 303 — speech/audio codec canon (mulaw_compand, adpcm_ima, lpc_analysis, celp_encode, mel_cepstrum, viterbi_vad) (1791->1797 families)
 feat(research): wave 302 — compiler-5/JIT canon (card_table_gc, escape_analysis, osr_deopt, trace_tree, ssa_repair, gvn_pre) (1785->1791 families)
