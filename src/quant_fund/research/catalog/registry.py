@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-717 nc-motives canon.
+        "nc_motive",
+        "dg_enhancement",
+        "bondal_kapranov",
+        "enhanced_triangulated",
+        "tabuada_motive",
+        "nc_k_theory",
         # Wave-716 triangulated-geometry canon.
         "exceptional_coll",
         "spherical_functor",
