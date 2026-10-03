@@ -2579,6 +2579,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bch_code",
         "crc_check",
         "conv_interleaver",
+        # Wave-211 integer-programming canon: Gomory cuts, column
+        # generation, Benders, Lagrangian, branch-and-cut, Held-Karp.
+        "gomory_cut",
+        "column_generation",
+        "benders_decomp",
+        "lagrangian_relax",
+        "branch_and_cut",
+        "held_karp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

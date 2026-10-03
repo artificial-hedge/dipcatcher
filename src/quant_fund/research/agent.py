@@ -1677,6 +1677,14 @@ from quant_fund.research.benches_w210 import (
     bench_polar_code_family,
     bench_turbo_decoder_family,
 )
+from quant_fund.research.benches_w211 import (
+    bench_benders_decomp_family,
+    bench_branch_and_cut_family,
+    bench_column_generation_family,
+    bench_gomory_cut_family,
+    bench_held_karp_family,
+    bench_lagrangian_relax_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4488,6 +4496,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "bch_code": bench_bch_code_family(),
         "crc_check": bench_crc_check_family(),
         "conv_interleaver": bench_conv_interleaver_family(),
+        "gomory_cut": bench_gomory_cut_family(),
+        "column_generation": bench_column_generation_family(),
+        "benders_decomp": bench_benders_decomp_family(),
+        "lagrangian_relax": bench_lagrangian_relax_family(),
+        "branch_and_cut": bench_branch_and_cut_family(),
+        "held_karp": bench_held_karp_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
