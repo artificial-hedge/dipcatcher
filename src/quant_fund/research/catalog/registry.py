@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-484 synthetic-math-2 canon.
+        "internal_univ",
+        "virtual_hodge",
+        "stein_space",
+        "formal_model",
+        "univalent_found",
+        "synth_stable",
         # Wave-483 homotopy-10 canon.
         "steenrod_ops",
         "dyer_lashof",

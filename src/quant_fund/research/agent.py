@@ -3863,6 +3863,14 @@ from quant_fund.research.benches_w483 import (
     bench_steenrod_ops_family,
     bench_sullivan_min_family,
 )
+from quant_fund.research.benches_w484 import (
+    bench_formal_model_family,
+    bench_internal_univ_family,
+    bench_stein_space_family,
+    bench_synth_stable_family,
+    bench_univalent_found_family,
+    bench_virtual_hodge_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4242,6 +4250,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "internal_univ": bench_internal_univ_family,
+        "virtual_hodge": bench_virtual_hodge_family,
+        "stein_space": bench_stein_space_family,
+        "formal_model": bench_formal_model_family,
+        "univalent_found": bench_univalent_found_family,
+        "synth_stable": bench_synth_stable_family,
         "steenrod_ops": bench_steenrod_ops_family,
         "dyer_lashof": bench_dyer_lashof_family,
         "bar_spec": bench_bar_spec_family,
