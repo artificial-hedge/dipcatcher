@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-590 algebraic-K-3 canon.
+        "quillen_plus",
+        "gersten_ss",
+        "loday_k",
+        "volodin_k",
+        "suslin_k",
+        "bloch_k",
         # Wave-589 topos-3 canon.
         "cartesian_closed",
         "internal_logic",
