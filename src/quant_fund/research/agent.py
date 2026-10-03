@@ -4783,6 +4783,14 @@ from quant_fund.research.benches_w598 import (
     bench_soul_elem_family,
     bench_thh_trace_family,
 )
+from quant_fund.research.benches_w599 import (
+    bench_algebra_cat_family,
+    bench_codensity_monad_family,
+    bench_distributive_law_family,
+    bench_klesli_cat_family,
+    bench_monad_theorem_family,
+    bench_monadicity_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5162,6 +5170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "monad_theorem": bench_monad_theorem_family,
+        "klesli_cat": bench_klesli_cat_family,
+        "codensity_monad": bench_codensity_monad_family,
+        "monadicity": bench_monadicity_family,
+        "distributive_law": bench_distributive_law_family,
+        "algebra_cat": bench_algebra_cat_family,
         "borel_regulator": bench_borel_regulator_family,
         "soul_elem": bench_soul_elem_family,
         "lichtenbaum_k": bench_lichtenbaum_k_family,
