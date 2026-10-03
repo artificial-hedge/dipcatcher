@@ -6575,6 +6575,14 @@ from quant_fund.research.benches_w822 import (
     bench_right_continuous_f_family,
     bench_usual_aug_family,
 )
+from quant_fund.research.benches_w823 import (
+    bench_cylindrical_law_family,
+    bench_finite_dim_family,
+    bench_law_convergence_family,
+    bench_polish_law_family,
+    bench_support_law_family,
+    bench_tight_law_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6946,6 +6954,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "support_law": bench_support_law_family,
+        "polish_law": bench_polish_law_family,
+        "tight_law": bench_tight_law_family,
+        "law_convergence": bench_law_convergence_family,
+        "finite_dim": bench_finite_dim_family,
+        "cylindrical_law": bench_cylindrical_law_family,
         "natural_filtration": bench_natural_filtration_family,
         "right_continuous_f": bench_right_continuous_f_family,
         "usual_aug": bench_usual_aug_family,
