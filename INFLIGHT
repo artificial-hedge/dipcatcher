@@ -1,3 +1,4 @@
+feat(research): wave 406 — homological-algebra-3 canon (poincare_duality2, universal_coeff, kunneth, leray_hirsch, hopf_algebra2, functor_derived) (2391->2397 families)
 feat(research): wave 405 — derived-categories canon (derived_functor2, triangulated, bounded_complex, mapping_cone_tri, koszul_dual, t_structure) (2385->2391 families)
 feat(research): wave 404 — operad-2 canon (operad_algt, brace_operad, swiss_cheese, little_intervals, operad_homology, props_toy) (2379->2385 families)
 feat(research): wave 403 — homotopy-4 canon (j_hom_toy, toda_bracket, spectral_atiyah, pi_stems, hopf_invariant, thom_spectrum) (2373->2379 families)

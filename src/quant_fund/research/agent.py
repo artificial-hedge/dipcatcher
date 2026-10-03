@@ -3239,6 +3239,14 @@ from quant_fund.research.benches_w405 import (
     bench_t_structure_family,
     bench_triangulated_family,
 )
+from quant_fund.research.benches_w406 import (
+    bench_functor_derived_family,
+    bench_hopf_algebra2_family,
+    bench_kunneth_family,
+    bench_leray_hirsch_family,
+    bench_poincare_duality2_family,
+    bench_universal_coeff_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3618,6 +3626,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "poincare_duality2": bench_poincare_duality2_family,
+        "universal_coeff": bench_universal_coeff_family,
+        "kunneth": bench_kunneth_family,
+        "leray_hirsch": bench_leray_hirsch_family,
+        "hopf_algebra2": bench_hopf_algebra2_family,
+        "functor_derived": bench_functor_derived_family,
         "derived_functor2": bench_derived_functor2_family,
         "triangulated": bench_triangulated_family,
         "bounded_complex": bench_bounded_complex_family,
