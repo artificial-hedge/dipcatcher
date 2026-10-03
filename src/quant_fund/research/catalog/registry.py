@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-933 convex-analysis canon.
+        "subgradient_proj",
+        "proximal_map",
+        "fenchel_dual",
+        "moreau_env",
+        "bregman_proj",
+        "conjugate_fn",
         # Wave-932 local-search-3 canon.
         "vns_search",
         "large_neighborhood",

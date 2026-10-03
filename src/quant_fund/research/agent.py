@@ -7455,6 +7455,14 @@ from quant_fund.research.benches_w932 import (
     bench_simulated_annealing_family,
     bench_vns_search_family,
 )
+from quant_fund.research.benches_w933 import (
+    bench_bregman_proj_family,
+    bench_conjugate_fn_family,
+    bench_fenchel_dual_family,
+    bench_moreau_env_family,
+    bench_proximal_map_family,
+    bench_subgradient_proj_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7826,6 +7834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "subgradient_proj": bench_subgradient_proj_family,
+        "proximal_map": bench_proximal_map_family,
+        "fenchel_dual": bench_fenchel_dual_family,
+        "moreau_env": bench_moreau_env_family,
+        "bregman_proj": bench_bregman_proj_family,
+        "conjugate_fn": bench_conjugate_fn_family,
         "vns_search": bench_vns_search_family,
         "large_neighborhood": bench_large_neighborhood_family,
         "ruin_recreate": bench_ruin_recreate_family,

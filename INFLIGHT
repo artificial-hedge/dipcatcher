@@ -1,3 +1,4 @@
+feat(research): wave 933 — convex-analysis canon (subgradient_proj, proximal_map, fenchel_dual, moreau_env, bregman_proj, conjugate_fn) (5547->5553 families)
 feat(research): wave 932 — local-search-3 canon (vns_search, large_neighborhood, ruin_recreate, path_relinking, guided_local, simulated_annealing) (5541->5547 families)
 feat(research): wave 931 — population-metaheuristics canon (ant_colony, pso_swarm, diff_evolution, genetic_tsp, firefly_algo, harmony_search) (5535->5541 families)
 feat(research): wave 930 — metaheuristics canon (lin_kernighan, two_opt_move, three_opt_move, tabu_search, iterated_local, grasp_meta) (5529->5535 families)
