@@ -6959,6 +6959,14 @@ from quant_fund.research.benches_w870 import (
     bench_newton_method_family,
     bench_quasi_newton_lbfgs_family,
 )
+from quant_fund.research.benches_w871 import (
+    bench_arnoldi_eig_family,
+    bench_bicg_solver_family,
+    bench_cg_solver_family,
+    bench_gmres_solver_family,
+    bench_lanczos_eig_family,
+    bench_lsqr_solver_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7330,6 +7338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cg_solver": bench_cg_solver_family,
+        "gmres_solver": bench_gmres_solver_family,
+        "bicg_solver": bench_bicg_solver_family,
+        "arnoldi_eig": bench_arnoldi_eig_family,
+        "lanczos_eig": bench_lanczos_eig_family,
+        "lsqr_solver": bench_lsqr_solver_family,
         "newton_method": bench_newton_method_family,
         "quasi_newton_lbfgs": bench_quasi_newton_lbfgs_family,
         "augmented_lagrangian": bench_augmented_lagrangian_family,
