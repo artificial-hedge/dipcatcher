@@ -1,3 +1,4 @@
+feat(research): wave 548 — Floer-theory canon (floer_homology, knot_floer, instanton_floer, monopole_floer, lagrangian_floer, fukaya_cat) (3243->3249 families)
 feat(research): wave 547 — 4-manifold canon (four_mfd, donaldson_thm, seiberg_witten, exotic_r4, intersection_form, freedman_thm) (3237->3243 families)
 feat(research): wave 546 — knot-theory canon (knot_invariant, jones_poly, alexander_poly, knot_group, knot_signature, vassiliev_inv) (3231->3237 families)
 feat(research): wave 545 — Thurston-geometrization canon (thurston_geometrization, eight_geometries, seifert_fibered, haken_mfd, jsj_decomp, ricci_flow) (3225->3231 families)
