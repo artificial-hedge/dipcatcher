@@ -3815,6 +3815,14 @@ from quant_fund.research.benches_w477 import (
     bench_dagger_dm_family,
     bench_spencer_dm_family,
 )
+from quant_fund.research.benches_w478 import (
+    bench_beilinson_con_family,
+    bench_cellular_motive_family,
+    bench_levine_morel_family,
+    bench_mgl_spec_family,
+    bench_motivic_pi0_family,
+    bench_quadratic_k_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4194,6 +4202,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "levine_morel": bench_levine_morel_family,
+        "quadratic_k": bench_quadratic_k_family,
+        "mgl_spec": bench_mgl_spec_family,
+        "cellular_motive": bench_cellular_motive_family,
+        "motivic_pi0": bench_motivic_pi0_family,
+        "beilinson_con": bench_beilinson_con_family,
         "dagger_dm": bench_dagger_dm_family,
         "spencer_dm": bench_spencer_dm_family,
         "caro_dm": bench_caro_dm_family,
