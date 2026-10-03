@@ -7983,6 +7983,14 @@ from quant_fund.research.benches_w998 import (
     bench_semilinear_heat_family,
     bench_singularity_formation_family,
 )
+from quant_fund.research.benches_w999 import (
+    bench_brakke_varifolds_family,
+    bench_currents_theory_family,
+    bench_flat_chains_family,
+    bench_integral_currents_family,
+    bench_rectifiable_measures_family,
+    bench_varifold_theory_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8354,6 +8362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "currents_theory": bench_currents_theory_family,
+        "varifold_theory": bench_varifold_theory_family,
+        "flat_chains": bench_flat_chains_family,
+        "integral_currents": bench_integral_currents_family,
+        "rectifiable_measures": bench_rectifiable_measures_family,
+        "brakke_varifolds": bench_brakke_varifolds_family,
         "semilinear_heat": bench_semilinear_heat_family,
         "fujita_exponent": bench_fujita_exponent_family,
         "singularity_formation": bench_singularity_formation_family,
