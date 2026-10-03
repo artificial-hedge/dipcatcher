@@ -2447,6 +2447,14 @@ from quant_fund.research.benches_w306 import (
     bench_laplace_iod_family,
     bench_porkchop_grid_family,
 )
+from quant_fund.research.benches_w307 import (
+    bench_bitap_fuzzy_family,
+    bench_glushkov_nfa_family,
+    bench_lazy_dfa_family,
+    bench_literal_prefilter_family,
+    bench_pike_vm_family,
+    bench_regex_simplify_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2826,6 +2834,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pike_vm": bench_pike_vm_family,
+        "lazy_dfa": bench_lazy_dfa_family,
+        "bitap_fuzzy": bench_bitap_fuzzy_family,
+        "literal_prefilter": bench_literal_prefilter_family,
+        "glushkov_nfa": bench_glushkov_nfa_family,
+        "regex_simplify": bench_regex_simplify_family,
         "laplace_iod": bench_laplace_iod_family,
         "cowell_j2": bench_cowell_j2_family,
         "batch_od": bench_batch_od_family,

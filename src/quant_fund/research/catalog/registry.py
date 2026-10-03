@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-307 regex-2 canon.
+        "pike_vm",
+        "lazy_dfa",
+        "bitap_fuzzy",
+        "literal_prefilter",
+        "glushkov_nfa",
+        "regex_simplify",
         # Wave-306 astronomy-3/IOD canon.
         "laplace_iod",
         "cowell_j2",
