@@ -2399,6 +2399,14 @@ from quant_fund.research.benches_w300 import (
     bench_planet_vsop_family,
     bench_rise_set_family,
 )
+from quant_fund.research.benches_w301 import (
+    bench_avo_shuey_family,
+    bench_eikonal_fmm_family,
+    bench_kirchhoff_mig_family,
+    bench_nmo_dix_family,
+    bench_taup_transform_family,
+    bench_vibroseis_sweep_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2778,6 +2786,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "nmo_dix": bench_nmo_dix_family,
+        "taup_transform": bench_taup_transform_family,
+        "kirchhoff_mig": bench_kirchhoff_mig_family,
+        "avo_shuey": bench_avo_shuey_family,
+        "vibroseis_sweep": bench_vibroseis_sweep_family,
+        "eikonal_fmm": bench_eikonal_fmm_family,
         "equinox_prec": bench_equinox_prec_family,
         "nutation_lite": bench_nutation_lite_family,
         "rise_set": bench_rise_set_family,
