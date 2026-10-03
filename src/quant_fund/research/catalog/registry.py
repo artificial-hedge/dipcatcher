@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-510 spectral-AG canon.
+        "spectral_scheme2",
+        "connective_e_ring",
+        "spectral_alg",
+        "spectral_stack",
+        "elliptic_cohor",
+        "taf_lurie",
         # Wave-509 Weil-II/l-adic canon.
         "etale_site2",
         "l_adic_sheaf",
