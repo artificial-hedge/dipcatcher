@@ -3061,6 +3061,27 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-340 homological-algebra/algebraic-geometry canon.
+        "chain_complex",
+        "tor_ext",
+        "sheaf_check",
+        "hilbert_series",
+        "snake_lemma",
+        "variety_morph",
+        # Wave-339 algebra canon.
+        "field_ext",
+        "galois_group",
+        "splitting_field",
+        "lie_bracket",
+        "rep_theory",
+        "root_system",
+        # Wave-338 set-theory canon.
+        "ordinal_arith",
+        "cardinal_arith",
+        "transfinite_induct",
+        "well_founded",
+        "v_omega",
+        "ac_choice",
         # Wave-337 lambda-calculus/rewriting canon.
         "ski_combinator",
         "de_bruijn",
