@@ -7111,6 +7111,14 @@ from quant_fund.research.benches_w889 import (
     bench_spline_theory_family,
     bench_walsh_table_family,
 )
+from quant_fund.research.benches_w890 import (
+    bench_clenshaw_quad_family,
+    bench_elliptic_fn_family,
+    bench_fejer_nested_family,
+    bench_hartley_transform_family,
+    bench_radon_transform_family,
+    bench_zeta_fn_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7482,6 +7490,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "zeta_fn": bench_zeta_fn_family,
+        "elliptic_fn": bench_elliptic_fn_family,
+        "hartley_transform": bench_hartley_transform_family,
+        "radon_transform": bench_radon_transform_family,
+        "clenshaw_quad": bench_clenshaw_quad_family,
+        "fejer_nested": bench_fejer_nested_family,
         "quadrilateral_basis": bench_quadrilateral_basis_family,
         "hexahedral_basis": bench_hexahedral_basis_family,
         "chebyshev_u": bench_chebyshev_u_family,

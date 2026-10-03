@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-890 special-function canon.
+        "zeta_fn",
+        "elliptic_fn",
+        "hartley_transform",
+        "radon_transform",
+        "clenshaw_quad",
+        "fejer_nested",
         # Wave-889 FE-basis/sequence canon.
         "quadrilateral_basis",
         "hexahedral_basis",
