@@ -2736,6 +2736,22 @@ from quant_fund.research.benches_w342 import (
     bench_jump_operator_family,
     bench_rice_theorem_family,
 )
+from quant_fund.research.benches_w343 import (
+    bench_boolean_algebra_family,
+    bench_congruence_lattice_family,
+    bench_galois_connection_family,
+    bench_lattice_check_family,
+    bench_tarski_fixed_family,
+    bench_term_algebra_family,
+)
+from quant_fund.research.benches_w344 import (
+    bench_burnside_lemma_family,
+    bench_cayley_graph_family,
+    bench_conjugacy_classes_family,
+    bench_free_group_family,
+    bench_group_presentation_family,
+    bench_sylow_theorems_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3115,6 +3131,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sylow_theorems": bench_sylow_theorems_family,
+        "group_presentation": bench_group_presentation_family,
+        "burnside_lemma": bench_burnside_lemma_family,
+        "free_group": bench_free_group_family,
+        "conjugacy_classes": bench_conjugacy_classes_family,
+        "cayley_graph": bench_cayley_graph_family,
+        "lattice_check": bench_lattice_check_family,
+        "galois_connection": bench_galois_connection_family,
+        "tarski_fixed": bench_tarski_fixed_family,
+        "boolean_algebra": bench_boolean_algebra_family,
+        "congruence_lattice": bench_congruence_lattice_family,
+        "term_algebra": bench_term_algebra_family,
         "borel_hierarchy": bench_borel_hierarchy_family,
         "analytic_sets": bench_analytic_sets_family,
         "forcing_lite": bench_forcing_lite_family,
