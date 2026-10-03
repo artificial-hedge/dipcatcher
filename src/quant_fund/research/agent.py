@@ -3191,6 +3191,14 @@ from quant_fund.research.benches_w399 import (
     bench_real_closed_family,
     bench_vaught_test_family,
 )
+from quant_fund.research.benches_w400 import (
+    bench_dual_ab_var_family,
+    bench_etale_cover_family,
+    bench_hom_stack_toy_family,
+    bench_jacobian_toy_family,
+    bench_picard_variety_family,
+    bench_seesaw_theorem_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3570,6 +3578,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "etale_cover": bench_etale_cover_family,
+        "jacobian_toy": bench_jacobian_toy_family,
+        "hom_stack_toy": bench_hom_stack_toy_family,
+        "seesaw_theorem": bench_seesaw_theorem_family,
+        "picard_variety": bench_picard_variety_family,
+        "dual_ab_var": bench_dual_ab_var_family,
         "ef_game_toy": bench_ef_game_toy_family,
         "vaught_test": bench_vaught_test_family,
         "real_closed": bench_real_closed_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-400 algebraic-geometry-7 canon.
+        "etale_cover",
+        "jacobian_toy",
+        "hom_stack_toy",
+        "seesaw_theorem",
+        "picard_variety",
+        "dual_ab_var",
         # Wave-399 model-theory-5 canon.
         "ef_game_toy",
         "vaught_test",
