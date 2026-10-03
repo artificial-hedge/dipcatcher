@@ -2538,7 +2538,8 @@
           "endpoint": {
             "enum": [
               "/v1/chat/completions",
-              "/v1/responses"
+              "/v1/responses",
+              "/v1/embeddings"
             ],
             "title": "Endpoint",
             "type": "string"
@@ -3044,6 +3045,179 @@
           "choices"
         ],
         "title": "OpenAIChatResponse",
+        "type": "object"
+      },
+      "OpenAIEmbeddingItem": {
+        "additionalProperties": true,
+        "description": "One ``data[]`` entry \u2014 vector numbers or a base64 payload.\nExtra keys tolerate provider-specific fields (echoed verbatim).",
+        "properties": {
+          "embedding": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Embedding"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "object": {
+            "const": "embedding",
+            "default": "embedding",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "embedding"
+        ],
+        "title": "OpenAIEmbeddingItem",
+        "type": "object"
+      },
+      "OpenAIEmbeddingRequest": {
+        "additionalProperties": true,
+        "description": "``POST /v1/embeddings`` body \u2014 the OpenAI surface, extra fields\ntolerated (SDKs send bookkeeping keys).",
+        "properties": {
+          "dimensions": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dimensions"
+          },
+          "encoding_format": {
+            "anyOf": [
+              {
+                "enum": [
+                  "float",
+                  "base64"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encoding Format"
+          },
+          "fx1": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIFx1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "items": {
+                  "items": {
+                    "type": "integer"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Input"
+          },
+          "model": {
+            "default": "fx1",
+            "title": "Model",
+            "type": "string"
+          },
+          "user": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "title": "OpenAIEmbeddingRequest",
+        "type": "object"
+      },
+      "OpenAIEmbeddingResponse": {
+        "additionalProperties": false,
+        "description": "``POST /v1/embeddings`` answer \u2014 ``data`` in request order.",
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIEmbeddingItem"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "object": {
+            "const": "list",
+            "default": "list",
+            "title": "Object",
+            "type": "string"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "required": [
+          "data",
+          "model"
+        ],
+        "title": "OpenAIEmbeddingResponse",
         "type": "object"
       },
       "OpenAIFx1": {
@@ -8173,6 +8347,112 @@
           }
         },
         "summary": "Openai Chat Retrieve",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/embeddings": {
+      "post": {
+        "description": "OpenAI's embeddings.create \u2014 vectors for retrieval/eval lanes.\n\n``model`` forwards verbatim (embedding models name themselves on\nthe provider); the link chain is chat's \u2014 ``fx1.backend`` >\n``X-Fx1-Backend`` > a ``model`` naming a backend > ``hosted_k3``,\nBYOK via ``fx1.byok`` or the ``X-Fx1-Byok-*`` headers. A link\nwithout the embeddings channel answers 501 \u2014 never fabricated\nvectors. ``encoding_format``/``dimensions``/``user`` pass through;\nthe provider's ``data[]``/``model``/``usage`` echo verbatim (null\nusage under provider silence). The call lands in the completion\nlog \u2014 ``X-Fx1-Completion-Id`` links it.",
+        "operationId": "openai_create_embedding",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAIEmbeddingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIEmbeddingResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Create Embedding",
         "tags": [
           "openai"
         ]

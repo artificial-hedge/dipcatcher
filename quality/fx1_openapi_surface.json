@@ -599,6 +599,16 @@
         ]
       }
     },
+    "/v1/embeddings": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/files": {
       "get": {
         "params": [],
@@ -739,5 +749,5 @@
       }
     }
   },
-  "schema_sha256": "b237118cbdbb3f07dc69735aecaced5fb0ee4dfbf46c8143d9b9652023884ac7"
+  "schema_sha256": "9a32b2de0af55685a1074fb750bdecf6138fdb6f8a46c03fa727472241b775b0"
 }

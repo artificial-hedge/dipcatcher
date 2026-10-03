@@ -93,6 +93,7 @@ from fx1.serve.backends import (
     LOCAL_SERVE_CMD_ENV,
     LOCAL_SERVE_URL_ENV,
     BackendNotConfiguredError,
+    EmbeddingBackend,
     SamplingParams,
     StreamingBackend,
     get_backend,
@@ -119,6 +120,8 @@ from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
+    OpenAIEmbeddingRequest,
+    OpenAIEmbeddingResponse,
     OpenAIEnvelopeStore,
     OpenAIModel,
     OpenAIModelList,
@@ -127,9 +130,11 @@ from fx1.serve.openai_compat import (
     batch_line_shape,
     batch_object,
     batch_output_line,
+    embeddings_to_kwargs,
     file_object,
     is_openai_path,
     openai_chunks,
+    openai_embedding_envelope,
     openai_envelope,
     openai_error_body,
     openai_model,
@@ -673,6 +678,30 @@ class CompleteBatchRequest(_Model):
     def _chain_valid(self) -> CompleteBatchRequest:
         _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
         _sampling_extras_valid(self.stop, self.logit_bias, self.metadata)
+        return self
+
+
+class EmbedRequest(_Model):
+    """``/v1/embeddings`` resolved-call record — the link fields plus the
+    provider-forwarded embedding params (``embeddings_to_kwargs`` output
+    lands here so the chain contract stays fail-closed)."""
+
+    backend: Literal["hosted_k3", "local_fx1", "byok"]
+    fallbacks: list[Literal["hosted_k3", "local_fx1", "byok"]] = Field(
+        default_factory=list, max_length=2
+    )
+    checkpoint_dir: str | None = None
+    byok: ByokOverride | None = None
+    timeout_s: float | None = Field(default=None, gt=0, le=3600)
+    model: str = Field(min_length=1, max_length=256)
+    input: str | list[str] | list[int] | list[list[int]]
+    encoding_format: Literal["float", "base64"] | None = None
+    dimensions: int | None = Field(default=None, ge=1)
+    user: str | None = Field(default=None, max_length=512)
+
+    @model_validator(mode="after")
+    def _chain_valid(self) -> EmbedRequest:
+        _fallback_chain_valid(self.backend, self.fallbacks, self.checkpoint_dir, self.byok)
         return self
 
 
@@ -2401,7 +2430,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             )
 
     def _resolve_candidate(
-        name: str, body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest
+        name: str,
+        body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
     ) -> Any:
         """Resolve one chain link — per-link kwargs: the byok override binds
         only a 'byok' link, checkpoint_dir only a 'local_fx1' link."""
@@ -2413,7 +2443,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
     def _resolve_chain(
-        body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest,
+        body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
     ) -> tuple[str, Any, list[BackendAttempt]]:
         """First chain link that admits + resolves serves; a 503
         (unconfigured / unavailable / circuit open) records the attempt and
@@ -3206,6 +3236,161 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             envelope_store.put(envelope)
         return envelope, cid, out.usage
 
+    def _openai_embeddings_core(
+        body: OpenAIEmbeddingRequest,
+        headers: Mapping[str, str],
+    ) -> tuple[dict[str, Any], str]:
+        """The embeddings core, shared by the ``/v1/embeddings`` route and
+        the ``/v1/batches`` worker — same chain contract as chat:
+        availability faults advance the fallback chain, capability gaps
+        answer 501, provider errors surface as their own class. Vectors
+        aren't claims — there's no honesty gate — but the call lands in
+        the completion log and metrics exactly like a completion (the
+        digest binds the sent input and the verbatim ``data[]``).
+
+        Returns ``(envelope, completion_id)``."""
+        ereq = EmbedRequest(**embeddings_to_kwargs(body, headers))
+        cid = uuid.uuid4().hex
+        prompt_sha256 = hashlib.sha256(
+            json.dumps(
+                {"model": ereq.model, "input": ereq.input},
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        rec_err: str | None = None
+        rec_cls: str | None = None
+        serving: str | None = None
+        usage_snap: Any = None
+        model_out: str = ereq.model
+        call_latency_ms = 0.0
+        attempts: list[BackendAttempt] = []
+        last_exc: ApiError | None = None
+        data_out: tuple[dict[str, Any], ...] = ()
+        try:
+            for cand in [ereq.backend, *ereq.fallbacks]:
+                cand_key = _breaker_key_name(cand, ereq.byok)
+                backend: Any = None
+                try:
+                    _breaker_admit(cand_key)
+                    backend = _resolve_candidate(cand, ereq)
+                except ApiError as exc:
+                    if exc.status_code == 503:
+                        rec_cls = "backend_unavailable"
+                        rec_err = str(exc)
+                        attempts.append(
+                            BackendAttempt(
+                                backend=cand, ok=False, error_class="backend_unavailable"
+                            )
+                        )
+                        if breaker is not None:
+                            breaker.report(cand_key, False)
+                        last_exc = exc
+                        continue
+                    raise
+                t0 = time.monotonic()
+                try:
+                    if not isinstance(backend, EmbeddingBackend):
+                        raise NotImplementedError(f"backend {cand!r} has no embeddings channel")
+                    result = backend.embeddings(
+                        ereq.input,
+                        model=ereq.model,
+                        encoding_format=ereq.encoding_format,
+                        dimensions=ereq.dimensions,
+                        user=ereq.user,
+                    )
+                except NotImplementedError as exc:
+                    rec_cls = "not_supported"
+                    rec_err = str(exc)
+                    attempts.append(
+                        BackendAttempt(backend=cand, ok=False, error_class="not_supported")
+                    )
+                    raise ApiError(501, str(exc), code="not_supported") from exc
+                except (BackendNotConfiguredError, RuntimeError) as exc:
+                    rec_cls = type(exc).__name__
+                    rec_err = str(exc)
+                    call_latency_ms = (time.monotonic() - t0) * 1000.0
+                    attempts.append(
+                        BackendAttempt(
+                            backend=cand,
+                            ok=False,
+                            error_class=rec_cls,
+                            latency_ms=call_latency_ms,
+                        )
+                    )
+                    if breaker is not None:
+                        breaker.report(cand_key, False)
+                    last_exc = (
+                        ApiError(503, str(exc), code="backend_unavailable")
+                        if isinstance(exc, BackendNotConfiguredError)
+                        else ApiError(502, str(exc), code="backend_failure")
+                    )
+                    continue
+                finally:
+                    _close_backend(backend)
+                call_latency_ms = (time.monotonic() - t0) * 1000.0
+                if breaker is not None:
+                    breaker.report(cand_key, True)
+                data_out = result.data
+                usage_snap = result.usage
+                model_out = result.model or ereq.model
+                serving = cand
+                attempts.append(BackendAttempt(backend=cand, ok=True, latency_ms=call_latency_ms))
+                break
+            if serving is None:
+                raise (
+                    last_exc
+                    if last_exc is not None
+                    else ApiError(503, "no backend in the chain served")
+                )
+        finally:
+            metrics.record_complete(
+                serving or ereq.backend,
+                serving is not None,
+                call_latency_ms,
+                usage=usage_snap if isinstance(usage_snap, dict) else None,
+            )
+            completion_log.append(
+                CompletionRecord(
+                    completion_id=cid,
+                    backend=serving or ereq.backend,
+                    model=model_out if serving is not None else None,
+                    ok=serving is not None,
+                    latency_ms=call_latency_ms,
+                    at=time.time(),
+                    usage=usage_snap if isinstance(usage_snap, dict) else None,
+                    error=rec_err if serving is None else None,
+                    error_class=rec_cls if serving is None else None,
+                    prompt_sha256=prompt_sha256,
+                    output_sha256=(
+                        hashlib.sha256(
+                            json.dumps(list(data_out), sort_keys=True).encode("utf-8")
+                        ).hexdigest()
+                        if serving is not None
+                        else None
+                    ),
+                    attempts=attempts if len(attempts) > 1 else None,
+                    sampling={
+                        k: v
+                        for k, v in (
+                            ("encoding_format", ereq.encoding_format),
+                            ("dimensions", ereq.dimensions),
+                        )
+                        if v is not None
+                    }
+                    or None,
+                    user=ereq.user,
+                    metadata=None,
+                )
+            )
+        assert serving is not None  # noqa: S101 — None already raised above
+        envelope = openai_embedding_envelope(
+            data=data_out,
+            model=model_out,
+            usage=usage_snap if isinstance(usage_snap, dict) else None,
+        )
+        return envelope, cid
+
     @app.get(
         "/v1/models",
         response_model=OpenAIModelList,
@@ -3594,6 +3779,37 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Drop a stored response object from the retrieval index."""
         return _drop_envelope(response_id, object_="response")
 
+    @app.post(
+        "/v1/embeddings",
+        response_model=OpenAIEmbeddingResponse,
+        tags=["openai"],
+        operation_id="openai_create_embedding",
+    )
+    def openai_create_embedding(
+        body: OpenAIEmbeddingRequest,
+        request: Request,
+        response: Response,
+        _slot_held: None = Depends(slot),
+    ) -> dict[str, Any]:
+        """OpenAI's embeddings.create — vectors for retrieval/eval lanes.
+
+        ``model`` forwards verbatim (embedding models name themselves on
+        the provider); the link chain is chat's — ``fx1.backend`` >
+        ``X-Fx1-Backend`` > a ``model`` naming a backend > ``hosted_k3``,
+        BYOK via ``fx1.byok`` or the ``X-Fx1-Byok-*`` headers. A link
+        without the embeddings channel answers 501 — never fabricated
+        vectors. ``encoding_format``/``dimensions``/``user`` pass through;
+        the provider's ``data[]``/``model``/``usage`` echo verbatim (null
+        usage under provider silence). The call lands in the completion
+        log — ``X-Fx1-Completion-Id`` links it.
+        """
+        try:
+            env, cid = _openai_embeddings_core(body, request.headers)
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+        response.headers["X-Fx1-Completion-Id"] = cid
+        return env
+
     # --- /v1/files + /v1/batches ------------------------------------------
     # The async-batch surface: files carry request JSONL (multipart upload,
     # purpose="batch"), a batch runs its lines through the SAME gated route
@@ -3617,6 +3833,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 )
             if isinstance(obj, OpenAIChatRequest):
                 env, _cid = _openai_chat_core(obj, batch._headers)
+            elif isinstance(obj, OpenAIEmbeddingRequest):
+                env, _cid = _openai_embeddings_core(obj, batch._headers)
             else:
                 env, _cid, _usage = _openai_response_core(obj, batch._headers)
             return batch_output_line(custom_id=custom_id, status_code=200, body=env, rid=rid)
@@ -4587,6 +4805,7 @@ def create_app(
                 "openai_tools": True,
                 "openai_responses_tools": True,
                 "openai_logprobs": True,
+                "openai_embeddings": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),

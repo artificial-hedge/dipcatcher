@@ -51,6 +51,9 @@ __all__ = [
     "OpenAIChatResponse",
     "OpenAIChatChoice",
     "OpenAICompatError",
+    "OpenAIEmbeddingItem",
+    "OpenAIEmbeddingRequest",
+    "OpenAIEmbeddingResponse",
     "OpenAIFx1",
     "OpenAIModel",
     "OpenAIModelList",
@@ -65,6 +68,8 @@ __all__ = [
     "OpenAIBatchRequest",
     "batch_line_body",
     "batch_line_shape",
+    "embeddings_to_kwargs",
+    "openai_embedding_envelope",
     "batch_object",
     "batch_output_line",
     "file_object",
@@ -1468,6 +1473,113 @@ def openai_response_events(
     )
 
 
+# ---- /v1/embeddings ---------------------------------------------------------
+# The embedding surface: POST /v1/embeddings → provider ``data[]`` verbatim.
+# Same fail-closed rule as the rest of /v1 — a link without the channel
+# answers 501, a provider's own 4xx surfaces as its own error, and input
+# shapes the route can't honor refuse 422 before any spend. Embeddings
+# have no stream and no retrieval id — the envelope is the response.
+
+
+class OpenAIEmbeddingRequest(_Model):
+    """``POST /v1/embeddings`` body — the OpenAI surface, extra fields
+    tolerated (SDKs send bookkeeping keys)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    model: str = "fx1"
+    input: str | list[str] | list[int] | list[list[int]]
+    encoding_format: Literal["float", "base64"] | None = None
+    dimensions: int | None = Field(default=None, ge=1)
+    user: str | None = Field(default=None, max_length=512)
+    fx1: OpenAIFx1 | None = None
+
+    @model_validator(mode="after")
+    def _input_shape(self) -> OpenAIEmbeddingRequest:
+        raw = self.input
+        if isinstance(raw, str):
+            if not raw.strip():
+                raise ValueError("input must not be empty")
+            return self
+        if not isinstance(raw, list) or len(raw) == 0 or len(raw) > 2048:
+            raise ValueError("input must be a non-empty list of at most 2048 items")
+        strings = [v for v in raw if isinstance(v, str)]
+        tokens = all(isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in raw)
+        token_lists = all(
+            isinstance(v, list)
+            and len(v) > 0
+            and all(isinstance(t, int) and not isinstance(t, bool) and t >= 0 for t in v)
+            for v in raw
+        )
+        if len(strings) == len(raw):
+            if any(not v.strip() for v in strings):
+                raise ValueError("input strings must not be empty")
+        elif not tokens and not token_lists:
+            raise ValueError(
+                "input must be a string, a list of strings, a token array, "
+                "or a list of token arrays — not a mixture"
+            )
+        return self
+
+
+class OpenAIEmbeddingItem(_Model):
+    """One ``data[]`` entry — vector numbers or a base64 payload.
+    Extra keys tolerate provider-specific fields (echoed verbatim)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    object: Literal["embedding"] = "embedding"
+    index: int
+    embedding: list[float] | str
+
+
+class OpenAIEmbeddingResponse(_Model):
+    """``POST /v1/embeddings`` answer — ``data`` in request order."""
+
+    object: Literal["list"] = "list"
+    data: list[OpenAIEmbeddingItem]
+    model: str
+    usage: dict[str, int] | None = None
+
+
+def openai_embedding_envelope(
+    *, data: Iterable[dict[str, Any]], model: str, usage: dict[str, int] | None
+) -> dict[str, Any]:
+    """The OpenAI ``list`` envelope — ``data`` verbatim, ``model``/``usage``
+    echo what the provider answered (``None`` under provider silence)."""
+    return {
+        "object": "list",
+        "data": list(data),
+        "model": model,
+        "usage": usage,
+    }
+
+
+def embeddings_to_kwargs(
+    body: OpenAIEmbeddingRequest, headers: Mapping[str, str] | None = None
+) -> dict[str, Any]:
+    """Translate an embeddings request into call kwargs — same link
+    resolution as chat (``fx1.backend`` > header > model > hosted_k3);
+    keys: ``backend``, ``fallbacks``, ``byok``, ``checkpoint_dir``,
+    ``timeout_s`` plus the forwarded fields ``model``, ``input``,
+    ``encoding_format``, ``dimensions``, ``user``."""
+    hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
+    ext = body.fx1
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    return {
+        "backend": backend,
+        "fallbacks": fallbacks,
+        "byok": byok.model_dump() if byok is not None else None,
+        "checkpoint_dir": checkpoint_dir,
+        "timeout_s": ext.timeout_s if ext is not None else None,
+        "model": body.model,
+        "input": body.input,
+        "encoding_format": body.encoding_format,
+        "dimensions": body.dimensions,
+        "user": body.user,
+    }
+
+
 # ---- /v1/files + /v1/batches ------------------------------------------------
 # The async-batch surface: ``POST /v1/files`` takes the request JSONL
 # (multipart, ``purpose="batch"``), ``POST /v1/batches`` runs it through the
@@ -1476,7 +1588,7 @@ def openai_response_events(
 # shapes the pipeline can't honor refuse at submit; per-line request errors
 # land in the output file with their OpenAI error body, never silently.
 
-OPENAI_BATCH_ENDPOINTS = frozenset({"/v1/chat/completions", "/v1/responses"})
+OPENAI_BATCH_ENDPOINTS = frozenset({"/v1/chat/completions", "/v1/responses", "/v1/embeddings"})
 """Endpoints a batch may target — one per batch, declared up front."""
 
 OPENAI_BATCH_LINE_MAX = 1024
@@ -1494,7 +1606,7 @@ class OpenAIBatchRequest(_Model):
 
     model_config = ConfigDict(extra="allow")
     input_file_id: str = Field(min_length=1, max_length=64)
-    endpoint: Literal["/v1/chat/completions", "/v1/responses"]
+    endpoint: Literal["/v1/chat/completions", "/v1/responses", "/v1/embeddings"]
     # only "24h" exists on the real surface; anything else refuses (422)
     completion_window: Literal["24h"] = "24h"
     metadata: dict[str, str] | None = None
@@ -1536,13 +1648,15 @@ def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]
 
 def batch_line_body(
     line: dict[str, Any], endpoint: str
-) -> OpenAIChatRequest | OpenAIResponseRequest:
+) -> OpenAIChatRequest | OpenAIResponseRequest | OpenAIEmbeddingRequest:
     """Parse a line's ``body`` into the endpoint's request model — the same
     validation object the wire route uses, so a batch line can never carry
     a request the live route would refuse differently."""
     try:
         if endpoint == "/v1/responses":
             return OpenAIResponseRequest.model_validate(line["body"])
+        if endpoint == "/v1/embeddings":
+            return OpenAIEmbeddingRequest.model_validate(line["body"])
         return OpenAIChatRequest.model_validate(line["body"])
     except ValueError as exc:
         raise OpenAICompatError(f"invalid request body: {exc}") from exc

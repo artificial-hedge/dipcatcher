@@ -61,6 +61,12 @@ export type OpenAIModel = components["schemas"]["OpenAIModel"];
 export type OpenAIResponseRequest =
   components["schemas"]["OpenAIResponseRequest"];
 export type OpenAIBatchRequest = components["schemas"]["OpenAIBatchRequest"];
+export type OpenAIEmbeddingRequest =
+  components["schemas"]["OpenAIEmbeddingRequest"];
+export type OpenAIEmbeddingItem =
+  components["schemas"]["OpenAIEmbeddingItem"];
+export type OpenAIEmbeddingResponse =
+  components["schemas"]["OpenAIEmbeddingResponse"];
 export type ReadyResponse = components["schemas"]["ReadyResponse"];
 
 /** The OpenAI `file` object as served by POST/GET /v1/files. */
@@ -819,6 +825,41 @@ export class HarnessApiClient {
         "responses stream ended before response.completed",
       );
     return res.headers.get("X-Fx1-Completion-Id");
+  }
+
+  /**
+   * POST /v1/embeddings — the OpenAI embeddings surface over the link
+   * chain (`model` forwards verbatim to the provider; a link without the
+   * embeddings channel answers 501). Returns the `list` envelope and the
+   * completion-log id from `X-Fx1-Completion-Id` — the call is recorded
+   * exactly like a completion (input/output digests bind the wire).
+   */
+  async embeddingsCreate(
+    request: OpenAIEmbeddingRequest,
+    headers?: Record<string, string>,
+    idempotencyKey?: string,
+  ): Promise<{
+    response: OpenAIEmbeddingResponse;
+    completionId: string | null;
+  }> {
+    const res = await this.send({
+      method: "POST",
+      path: "/v1/embeddings",
+      body: request,
+      idempotent: idempotencyKey !== undefined,
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+        ...(idempotencyKey !== undefined
+          ? { "Idempotency-Key": idempotencyKey }
+          : {}),
+      },
+    });
+    if (!res.ok) throw new HarnessApiError(res.status, await res.json());
+    return {
+      response: (await res.json()) as OpenAIEmbeddingResponse,
+      completionId: res.headers.get("X-Fx1-Completion-Id"),
+    };
   }
 
   // ---- files + batches -----------------------------------------------------

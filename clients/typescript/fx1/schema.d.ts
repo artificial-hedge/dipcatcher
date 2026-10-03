@@ -783,6 +783,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/embeddings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Create Embedding
+         * @description OpenAI's embeddings.create — vectors for retrieval/eval lanes.
+         *
+         *     ``model`` forwards verbatim (embedding models name themselves on
+         *     the provider); the link chain is chat's — ``fx1.backend`` >
+         *     ``X-Fx1-Backend`` > a ``model`` naming a backend > ``hosted_k3``,
+         *     BYOK via ``fx1.byok`` or the ``X-Fx1-Byok-*`` headers. A link
+         *     without the embeddings channel answers 501 — never fabricated
+         *     vectors. ``encoding_format``/``dimensions``/``user`` pass through;
+         *     the provider's ``data[]``/``model``/``usage`` echo verbatim (null
+         *     usage under provider silence). The call lands in the completion
+         *     log — ``X-Fx1-Completion-Id`` links it.
+         */
+        post: operations["openai_create_embedding"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/files": {
         parameters: {
             query?: never;
@@ -1836,7 +1866,7 @@ export interface components {
              * Endpoint
              * @enum {string}
              */
-            endpoint: "/v1/chat/completions" | "/v1/responses";
+            endpoint: "/v1/chat/completions" | "/v1/responses" | "/v1/embeddings";
             /** Input File Id */
             input_file_id: string;
             /** Metadata */
@@ -1989,6 +2019,68 @@ export interface components {
             object: "chat.completion";
             /** System Fingerprint */
             system_fingerprint: string;
+            /** Usage */
+            usage?: {
+                [key: string]: number;
+            } | null;
+        };
+        /**
+         * OpenAIEmbeddingItem
+         * @description One ``data[]`` entry — vector numbers or a base64 payload.
+         *     Extra keys tolerate provider-specific fields (echoed verbatim).
+         */
+        OpenAIEmbeddingItem: {
+            /** Embedding */
+            embedding: number[] | string;
+            /** Index */
+            index: number;
+            /**
+             * Object
+             * @default embedding
+             * @constant
+             */
+            object: "embedding";
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIEmbeddingRequest
+         * @description ``POST /v1/embeddings`` body — the OpenAI surface, extra fields
+         *     tolerated (SDKs send bookkeeping keys).
+         */
+        OpenAIEmbeddingRequest: {
+            /** Dimensions */
+            dimensions?: number | null;
+            /** Encoding Format */
+            encoding_format?: ("float" | "base64") | null;
+            fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Input */
+            input: string | string[] | number[] | number[][];
+            /**
+             * Model
+             * @default fx1
+             */
+            model: string;
+            /** User */
+            user?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIEmbeddingResponse
+         * @description ``POST /v1/embeddings`` answer — ``data`` in request order.
+         */
+        OpenAIEmbeddingResponse: {
+            /** Data */
+            data: components["schemas"]["OpenAIEmbeddingItem"][];
+            /** Model */
+            model: string;
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
             /** Usage */
             usage?: {
                 [key: string]: number;
@@ -4253,6 +4345,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_create_embedding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIEmbeddingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIEmbeddingResponse"];
                 };
             };
             /** @description Validation Error */

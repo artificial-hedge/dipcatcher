@@ -48,6 +48,7 @@ from fx1.harness import Harness, HarnessCommand, HarnessResult, HarnessRole
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
 from fx1.serve.backends import (
     BackendNotConfiguredError,
+    EmbeddingBackend,
     InferenceBackend,
     SamplingParams,
     StreamingBackend,
@@ -61,6 +62,7 @@ from fx1.serve.openai_compat import (
     OpenAIChatRequest,
     OpenAIChatResponse,
     OpenAICompatError,
+    OpenAIEmbeddingRequest,
     OpenAIEnvelopeStore,
     OpenAIModel,
     OpenAIModelList,
@@ -68,7 +70,9 @@ from fx1.serve.openai_compat import (
     batch_line_body,
     batch_line_shape,
     batch_output_line,
+    embeddings_to_kwargs,
     openai_chunks,
+    openai_embedding_envelope,
     openai_envelope,
     openai_error_body,
     openai_model,
@@ -1618,6 +1622,181 @@ class Fx1Harness:
             events = events[last_event_id + 1 :]
         return events, result.completion_id
 
+    def openai_embeddings(
+        self,
+        request: OpenAIEmbeddingRequest | dict[str, Any],
+        *,
+        headers: Mapping[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """One OpenAI ``embeddings.create``, weights-direct.
+
+        ``request`` is the same body ``POST /v1/embeddings`` takes — a
+        dict or a parsed :class:`OpenAIEmbeddingRequest`; ``headers``
+        accepts the wire's ``X-Fx1-*`` knobs. Validation and link
+        resolution are the wire's own (``embeddings_to_kwargs``), so this
+        path cannot drift from ``/v1``. ``model`` reaches the provider
+        verbatim — embedding models name themselves; a link without the
+        ``embeddings`` channel answers ``NotImplementedError``, never
+        fabricated vectors. Returns ``(list envelope, completion_id)`` —
+        the id links the completion-log record.
+        """
+        body = (
+            request
+            if isinstance(request, OpenAIEmbeddingRequest)
+            else OpenAIEmbeddingRequest.model_validate(request)
+        )
+        kwargs = embeddings_to_kwargs(body, dict(headers or {}))
+        prompt_sha256 = hashlib.sha256(
+            json.dumps(
+                {"model": kwargs["model"], "input": kwargs["input"]},
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        params: dict[str, Any] = {
+            k: v
+            for k, v in (
+                ("encoding_format", kwargs["encoding_format"]),
+                ("dimensions", kwargs["dimensions"]),
+            )
+            if v is not None
+        }
+        attempts: list[dict[str, Any]] = []
+        chain = _fallback_chain(kwargs["backend"], kwargs["fallbacks"])
+        _check_link_kwargs(chain, kwargs["checkpoint_dir"], kwargs["byok"])
+        last_exc: Exception | None = None
+        for cand in chain:
+            t0 = time.monotonic()
+            try:
+                backend_obj = self._resolve_link(
+                    cand,
+                    kwargs["checkpoint_dir"],
+                    None,
+                    kwargs["byok"],
+                    kwargs["timeout_s"],
+                )
+            except (BackendNotConfiguredError, RuntimeError, ValueError) as exc:
+                # resolve-level availability fault — the wire's 503 class
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                last_exc = exc
+                continue
+            except Exception as exc:
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                self._record_call(
+                    cand,
+                    None,
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    None,
+                    str(exc),
+                    type(exc).__name__,
+                    prompt_sha256,
+                    None,
+                    tuple(attempts),
+                    params or None,
+                    kwargs["user"],
+                    None,
+                )
+                raise
+            t0 = time.monotonic()
+            try:
+                if not isinstance(backend_obj, EmbeddingBackend):
+                    raise NotImplementedError(f"backend {cand!r} has no embeddings channel")
+                result = backend_obj.embeddings(
+                    kwargs["input"],
+                    model=kwargs["model"],
+                    encoding_format=kwargs["encoding_format"],
+                    dimensions=kwargs["dimensions"],
+                    user=kwargs["user"],
+                )
+            except Exception as exc:
+                attempts.append(
+                    {
+                        "backend": cand,
+                        "ok": False,
+                        "error_class": type(exc).__name__,
+                        "latency_ms": (time.monotonic() - t0) * 1000.0,
+                    }
+                )
+                closer = getattr(backend_obj, "close", None)
+                if callable(closer):
+                    closer()
+                if isinstance(exc, (BackendNotConfiguredError, RuntimeError)) and not isinstance(
+                    exc, NotImplementedError
+                ):
+                    # call-time availability fault — advance the chain
+                    last_exc = exc
+                    continue
+                self._record_call(
+                    cand,
+                    None,
+                    False,
+                    (time.monotonic() - t0) * 1000.0,
+                    getattr(backend_obj, "last_usage", None)
+                    if isinstance(getattr(backend_obj, "last_usage", None), dict)
+                    else None,
+                    str(exc),
+                    type(exc).__name__,
+                    prompt_sha256,
+                    None,
+                    tuple(attempts),
+                    params or None,
+                    kwargs["user"],
+                    None,
+                )
+                raise
+            attempts.append(
+                {
+                    "backend": cand,
+                    "ok": True,
+                    "latency_ms": (time.monotonic() - t0) * 1000.0,
+                }
+            )
+            cid = self._record_call(
+                cand,
+                result.model or kwargs["model"],
+                True,
+                (time.monotonic() - t0) * 1000.0,
+                result.usage,
+                None,
+                None,
+                prompt_sha256,
+                hashlib.sha256(
+                    json.dumps(list(result.data), sort_keys=True).encode("utf-8")
+                ).hexdigest(),
+                tuple(attempts) if len(attempts) > 1 else None,
+                params or None,
+                kwargs["user"],
+                None,
+            )
+            closer = getattr(backend_obj, "close", None)
+            if callable(closer):
+                closer()
+            return (
+                openai_embedding_envelope(
+                    data=result.data,
+                    model=result.model or kwargs["model"],
+                    usage=result.usage,
+                ),
+                cid,
+            )
+        assert last_exc is not None  # noqa: S101 — every link failed retriably
+        raise last_exc
+
     def openai_chat_get(self, completion_id: str) -> dict[str, Any]:
         """``GET /v1/chat/completions/{id}`` in-process — the stored
         ``chat.completion`` envelope, or ``KeyError`` (404 on the wire:
@@ -1692,6 +1871,9 @@ class Fx1Harness:
                 if isinstance(obj, OpenAIChatRequest):
                     env, _cid = self.openai_chat(obj, headers=hdrs)
                     body_out: dict[str, Any] = env.model_dump(mode="json")
+                elif isinstance(obj, OpenAIEmbeddingRequest):
+                    env_e, _cid = self.openai_embeddings(obj, headers=hdrs)
+                    body_out = env_e
                 else:
                     env_r, _cid = self.openai_response(obj, headers=hdrs)
                     body_out = env_r
@@ -1701,6 +1883,9 @@ class Fx1Harness:
             except BackendNotConfiguredError as exc:  # 503 on the wire
                 status = 503
                 body_out = openai_error_body(str(exc), status, "backend_unavailable")
+            except NotImplementedError as exc:  # no channel — 501 on the wire
+                status = 501
+                body_out = openai_error_body(str(exc), status, "not_supported")
             except Fx1HonestyError as exc:  # gate refusal — 502 on the wire
                 status = 502
                 body_out = openai_error_body(str(exc), status, "gate_refused")

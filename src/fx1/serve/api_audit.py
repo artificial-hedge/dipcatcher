@@ -3834,10 +3834,96 @@ def _probe_backend_probes(
                 logprobs=lp,
             )
 
+    from fx1.serve.backends import EmbeddingResult as _EmbeddingResult  # noqa: PLC0415
+
+    class _OiEmbedBackend:
+        """Embedding-capable stub: records the forwarded fields verbatim
+        and answers a canned ``data[]`` — one item per string in a list
+        input, one item for a bare string or token array. The ``model``
+        echo is the request model suffixed (the provider's own model id),
+        which is what the envelope reports."""
+
+        def __init__(self) -> None:
+            self._model = "emb-chat-pin"  # the link's chat pin — not the wire model
+            self.seen_model: str | None = None
+            self.seen_input: Any = None
+            self.seen_format: str | None = None
+            self.seen_dimensions: int | None = None
+            self.seen_user: str | None = None
+
+        def complete(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            return f"clean:{messages[-1]['content']}"
+
+        def embeddings(
+            self,
+            input: Any,  # noqa: A002 — the wire field's own name
+            *,
+            model: str,
+            encoding_format: str | None = None,
+            dimensions: int | None = None,
+            user: str | None = None,
+        ) -> _EmbeddingResult:
+            self.seen_model = model
+            self.seen_input = input
+            self.seen_format = encoding_format
+            self.seen_dimensions = dimensions
+            self.seen_user = user
+            # OpenAI arity: a list of strings or a list of token arrays is
+            # N inputs; a bare string or a flat token array is ONE.
+            n = (
+                len(input)
+                if isinstance(input, list) and input and isinstance(input[0], (str, list))
+                else 1
+            )
+            if encoding_format == "base64":
+                data = tuple(
+                    {"object": "embedding", "index": i, "embedding": "AAE="} for i in range(n)
+                )
+            else:
+                data = tuple(
+                    {
+                        "object": "embedding",
+                        "index": i,
+                        "embedding": [0.1 * (i + 1), 0.2],
+                    }
+                    for i in range(n)
+                )
+            return _EmbeddingResult(
+                data=data,
+                model=f"{model}-v1",
+                usage={"prompt_tokens": 4, "total_tokens": 4},
+            )
+
+    class _OiEmbedBadBackend:
+        """Embedding stub whose provider frame was malformed — the
+        helper's fail-closed raise arrives as RuntimeError → 502."""
+
+        def __init__(self) -> None:
+            self._model = "emb-bad"
+
+        def embeddings(
+            self,
+            input: Any,  # noqa: A002
+            *,
+            model: str,
+            encoding_format: str | None = None,
+            dimensions: int | None = None,
+            user: str | None = None,
+        ) -> _EmbeddingResult:
+            raise RuntimeError("malformed embeddings payload: data is dict, not list")
+
     oi_tool = _OiToolBackend()
     oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
     oi_lp_b = _OiLpBackend()
     oi_lp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_lp_b))
+    oi_emb_b = _OiEmbedBackend()
+    oi_emb = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_emb_b))
+    oi_emb_bad = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiEmbedBadBackend()))
     tool_spec = {
         "type": "function",
         "function": {
@@ -4292,6 +4378,123 @@ def _probe_backend_probes(
     )
     out["capabilities_reports_openai_logprobs"] = (
         oi_clean.get("/harness/capabilities").json()["features"].get("openai_logprobs") is True
+    )
+
+    # ---- lane 84: the embeddings channel ----
+    # ``POST /v1/embeddings`` forwards model/input/encoding_format/
+    # dimensions/user verbatim to an embedding-capable link and echoes the
+    # provider's ``data[]``/``model``/``usage`` untouched — a link without
+    # the channel answers 501, never fabricated vectors.
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-m", "input": "hello"},
+    )
+    out["openai_embeddings_200"] = (
+        r.status_code == 200
+        and r.json()["object"] == "list"
+        and r.json()["data"] == [{"object": "embedding", "index": 0, "embedding": [0.1, 0.2]}]
+        and r.json()["model"] == "emb-m-v1"
+        and r.json()["usage"] == {"prompt_tokens": 4, "total_tokens": 4}
+        and r.headers.get("X-Fx1-Completion-Id") is not None
+    )
+    out["openai_embeddings_forwarded"] = (
+        oi_emb_b.seen_model == "emb-m"
+        and oi_emb_b.seen_input == "hello"
+        and oi_emb_b.seen_format is None
+        and oi_emb_b.seen_dimensions is None
+        and oi_emb_b.seen_user is None
+    )
+    oi_emb.post(
+        "/v1/embeddings",
+        json={
+            "model": "emb-x",
+            "input": ["a", "b", "c"],
+            "dimensions": 2,
+            "encoding_format": "float",
+            "user": "u-1",
+        },
+    )
+    out["openai_embeddings_list_input"] = (
+        oi_emb_b.seen_input == ["a", "b", "c"]
+        and oi_emb_b.seen_dimensions == 2
+        and oi_emb_b.seen_format == "float"
+        and oi_emb_b.seen_user == "u-1"
+    )
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-tok", "input": [1, 2, 3]},
+    )
+    out["openai_embeddings_token_input"] = (
+        r.status_code == 200 and len(r.json()["data"]) == 1 and oi_emb_b.seen_input == [1, 2, 3]
+    )
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-b", "input": "x", "encoding_format": "base64"},
+    )
+    out["openai_embeddings_base64_passthrough"] = (
+        r.status_code == 200
+        and oi_emb_b.seen_format == "base64"
+        and r.json()["data"][0]["embedding"] == "AAE="
+    )
+    out["openai_embeddings_no_channel_501"] = (
+        oi_clean.post(
+            "/v1/embeddings",
+            json={"model": "emb-m", "input": "x"},
+        ).status_code
+        == 501
+    )
+    out["openai_embeddings_empty_422"] = (
+        oi_emb.post("/v1/embeddings", json={"model": "emb-m", "input": ""}).status_code == 422
+        and oi_emb.post("/v1/embeddings", json={"model": "emb-m", "input": []}).status_code == 422
+        and oi_emb.post(
+            "/v1/embeddings", json={"model": "emb-m", "input": ["ok", "  "]}
+        ).status_code
+        == 422
+    )
+    out["openai_embeddings_mixed_422"] = (
+        oi_emb.post("/v1/embeddings", json={"model": "emb-m", "input": ["a", 1]}).status_code == 422
+    )
+    out["openai_embeddings_bad_encoding_422"] = (
+        oi_emb.post(
+            "/v1/embeddings",
+            json={"model": "emb-m", "input": "x", "encoding_format": "utf8"},
+        ).status_code
+        == 422
+    )
+    out["openai_embeddings_provider_failure_502"] = (
+        oi_emb_bad.post("/v1/embeddings", json={"model": "emb-m", "input": "x"}).status_code == 502
+    )
+    # the call lands in the completion log — digests bind the sent input
+    # and the verbatim data[] exactly like a completion
+    r = oi_emb.post(
+        "/v1/embeddings",
+        json={"model": "emb-log", "input": "audit"},
+    )
+    _emb_cid = r.headers.get("X-Fx1-Completion-Id")
+    _emb_rec = oi_emb.get(f"/harness/completions/{_emb_cid}") if _emb_cid is not None else None
+    _emb_expect_in = _hl_t.sha256(
+        _json3.dumps(
+            {"model": "emb-log", "input": "audit"},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    _emb_expect_out = _hl_t.sha256(
+        _json3.dumps(
+            [{"object": "embedding", "index": 0, "embedding": [0.1, 0.2]}],
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    out["openai_embeddings_completion_log"] = (
+        _emb_rec is not None
+        and _emb_rec.status_code == 200
+        and _emb_rec.json().get("ok") is True
+        and _emb_rec.json().get("prompt_sha256") == _emb_expect_in
+        and _emb_rec.json().get("output_sha256") == _emb_expect_out
+        and _emb_rec.json().get("model") == "emb-log-v1"
+    )
+    out["capabilities_reports_openai_embeddings"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_embeddings") is True
     )
 
     # — decode contract: n / stop / penalties / bias / hints / attribution —
@@ -5851,6 +6054,47 @@ def _probe_backend_probes(
             json={"input_file_id": "file-nope", "endpoint": "/v1/chat/completions"},
         ).status_code
         == 404
+    )
+    # embeddings lines ride the same channel — the endpoint's own request
+    # model validates the body and the embed core answers the envelope
+    _emb_lines = (
+        _json3.dumps(
+            {
+                "custom_id": "e1",
+                "method": "POST",
+                "url": "/v1/embeddings",
+                "body": {"model": "emb-m", "input": ["a", "b"]},
+            }
+        )
+        + "\n"
+        + _json3.dumps(
+            {
+                "custom_id": "e2",
+                "method": "POST",
+                "url": "/v1/embeddings",
+                "body": {"model": "emb-m", "input": ""},
+            }
+        )
+        + "\n"
+    ).encode()
+    _eb_fid = _upload(oi_emb, _emb_lines)["id"]
+    _eb = oi_emb.post(
+        "/v1/batches",
+        json={"input_file_id": _eb_fid, "endpoint": "/v1/embeddings"},
+    )
+    _eb_done = _wait_batch(oi_emb, _eb.json()["id"])
+    _eb_lines = [
+        _json3.loads(ol)
+        for ol in oi_emb.get(f"/v1/files/{_eb_done['output_file_id']}/content").text.splitlines()
+        if ol.strip()
+    ]
+    out["openai_embeddings_batch_lines"] = (
+        _eb.status_code == 200
+        and _eb_done["status"] == "completed"
+        and _eb_lines[0]["response"]["status_code"] == 200
+        and _eb_lines[0]["response"]["body"]["object"] == "list"
+        and len(_eb_lines[0]["response"]["body"]["data"]) == 2
+        and _eb_lines[1]["response"]["status_code"] == 400
     )
     # output files can't be resubmitted as batch input
     out["batch_output_as_input_400"] = (

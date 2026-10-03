@@ -60,7 +60,7 @@ from quant_fund.utils.reproducibility import git_revision
 if TYPE_CHECKING:
     from fastapi.testclient import TestClient
 
-    from fx1.serve.backends import SamplingParams, ToolCompletion
+    from fx1.serve.backends import EmbeddingResult, SamplingParams, ToolCompletion
 
 __all__ = ["parity_audit", "parity_audit_bench"]
 
@@ -209,6 +209,34 @@ class _ParityLpBackend(_ParityBackend):
             tool_calls=None,
             finish_reason="stop",
             logprobs=lp,
+        )
+
+
+class _ParityEmbedBackend(_ParityBackend):
+    """Embedding-capable parity stub — deterministic canned vectors."""
+
+    def embeddings(
+        self,
+        input: Any,  # noqa: A002 — the wire field's own name
+        *,
+        model: str,
+        encoding_format: str | None = None,
+        dimensions: int | None = None,
+        user: str | None = None,
+    ) -> EmbeddingResult:
+        from fx1.serve.backends import EmbeddingResult  # noqa: PLC0415
+
+        n = (
+            len(input)
+            if isinstance(input, list) and input and isinstance(input[0], (str, list))
+            else 1
+        )
+        return EmbeddingResult(
+            data=tuple(
+                {"object": "embedding", "index": i, "embedding": [0.1, 0.2]} for i in range(n)
+            ),
+            model=f"{model}-v1",
+            usage={"prompt_tokens": 4, "total_tokens": 4},
         )
 
 
@@ -1023,6 +1051,53 @@ def parity_audit() -> dict[str, bool]:
         sdk_ni = _raises(lambda: sdk_l.openai_response(no_inc))[0]
         out["openai_responses_toplogprobs_guard_parity"] = (
             wire_ni.status_code == 422 and sdk_ni == "ValidationError"
+        )
+
+        # ---- lane 84: the embeddings channel carries the same parity ----
+        # contract: the canned provider answer arrives byte-identical on
+        # the wire and in-process, the non-embedding link refuses 501 on
+        # both, and the guards fire identically.
+        sdk_e, client_e = _surfaces(_ParityEmbedBackend)
+        eb_body = {
+            "model": "emb-m",
+            "input": ["a", "b"],
+            "encoding_format": "float",
+            "dimensions": 2,
+            "user": "u",
+        }
+        wire_eb = client_e.post("/v1/embeddings", json=eb_body)
+        sdk_eb, sdk_eb_cid = sdk_e.openai_embeddings(eb_body)
+        out["openai_embeddings_parity"] = (
+            wire_eb.status_code == 200
+            and wire_eb.json() == sdk_eb
+            and wire_eb.json()["object"] == "list"
+            and len(wire_eb.json()["data"]) == 2
+            and wire_eb.json()["model"] == "emb-m-v1"
+            and isinstance(sdk_eb_cid, str)
+            and isinstance(wire_eb.headers.get("X-Fx1-Completion-Id"), str)
+        )
+        # digests land in each surface's own completion log identically
+        _rec_we = client_e.get(
+            f"/harness/completions/{wire_eb.headers.get('X-Fx1-Completion-Id')}"
+        ).json()
+        _rec_se = sdk_e.completion(sdk_eb_cid or "")
+        out["openai_embeddings_log_parity"] = (
+            _rec_we.get("prompt_sha256") == _rec_se.prompt_sha256
+            and _rec_we.get("output_sha256") == _rec_se.output_sha256
+            and _rec_we.get("model") == _rec_se.model == "emb-m-v1"
+            and _rec_we.get("ok") is _rec_se.ok is True
+        )
+        sdk_ne, client_ne = _surfaces(_NonStreamingBackend)
+        wire_ne = client_ne.post("/v1/embeddings", json={"model": "m", "input": "x"})
+        sdk_ne_err = _raises(lambda: sdk_ne.openai_embeddings({"model": "m", "input": "x"}))[0]
+        out["openai_embeddings_no_channel_parity"] = (
+            wire_ne.status_code == 501 and sdk_ne_err == "NotImplementedError"
+        )
+        eb_bad = {"model": "emb-m", "input": []}
+        wire_eg = client_e.post("/v1/embeddings", json=eb_bad)
+        sdk_eg = _raises(lambda: sdk_e.openai_embeddings(eb_bad))[0]
+        out["openai_embeddings_guard_parity"] = (
+            wire_eg.status_code == 422 and sdk_eg == "ValidationError"
         )
 
         from fx1.serve.byok_audit import byok_audit_bench

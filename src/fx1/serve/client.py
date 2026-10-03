@@ -1427,6 +1427,63 @@ class HarnessClient:
             payload["fx1"] = fx1
         return payload
 
+    # ---- embeddings -----------------------------------------------------------
+
+    def embeddings_create(
+        self,
+        input: str | list[str] | list[int] | list[list[int]],
+        *,
+        model: str = "fx1",
+        backend: str | None = None,
+        byok: dict[str, str] | None = None,
+        checkpoint_dir: str | Path | None = None,
+        fallbacks: list[str] | None = None,
+        timeout_s: float | None = None,
+        encoding_format: str | None = None,
+        dimensions: int | None = None,
+        user: str | None = None,
+        extra_headers: dict[str, str] | None = None,
+    ) -> tuple[dict[str, Any], str | None]:
+        """``POST /v1/embeddings`` — the embedding surface over the gated
+        pipeline. ``input`` is a string, a string list, a token array, or
+        a list of token arrays — forwarded verbatim. ``model`` reaches
+        the provider verbatim (embedding models name themselves — the
+        link's chat pin does not apply); ``encoding_format``
+        (``"float"``/``"base64"``) and ``dimensions`` pass through. A
+        link without the channel answers 501, never fabricated vectors.
+
+        Returns ``(list envelope, completion_id)`` — the envelope's
+        ``data[]`` is the provider's verbatim answer; the id links the
+        completion-log record."""
+        fx1: dict[str, Any] = {}
+        if byok is not None:
+            fx1["byok"] = byok
+        if checkpoint_dir is not None:
+            fx1["checkpoint_dir"] = str(checkpoint_dir)
+        if fallbacks:
+            fx1["fallbacks"] = fallbacks
+        if timeout_s is not None:
+            fx1["timeout_s"] = timeout_s
+        if backend is not None:
+            fx1["backend"] = backend
+        payload: dict[str, Any] = {
+            "model": model,
+            "input": input,
+            "encoding_format": encoding_format,
+            "dimensions": dimensions,
+            "user": user,
+        }
+        if fx1:
+            payload["fx1"] = fx1
+        _status, headers, body = self._request(
+            "POST",
+            "/v1/embeddings",
+            payload,
+            extra_headers=extra_headers,
+        )
+        envelope = json.loads(body)
+        return envelope, headers.get("X-Fx1-Completion-Id")
+
     # ---- files + batches -----------------------------------------------------
 
     def upload_file(

@@ -165,6 +165,21 @@ def _chat_completions_url(base_url: str) -> str:
     return f"{base}/chat/completions"
 
 
+def _openai_sibling_url(chat_url: str, route: str) -> str:
+    """Derive a sibling route from a chat-completions URL.
+
+    ``https://host/v1/chat/completions`` + ``"embeddings"`` →
+    ``https://host/v1/embeddings``; a URL already ending in the route
+    passes through unchanged.
+    """
+    base = chat_url.rstrip("/")
+    if base.endswith("/chat/completions"):
+        base = base[: -len("/chat/completions")]
+    if base.endswith(f"/{route}"):
+        return base
+    return f"{base}/{route}"
+
+
 def _env_float(name: str, override: float | None, default: float) -> float:
     """Resolve a seconds-valued knob: kwarg beats env beats default."""
     raw = override if override is not None else os.environ.get(name)
@@ -461,6 +476,97 @@ def _openai_chat_stream(
         raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
 
 
+def _embedding_item_shape(raw: Any, label: str, i: int) -> dict[str, Any]:
+    """Validate one ``data[]`` entry — fail closed on a malformed upstream
+    frame rather than shipping a vector fx-1 can't attribute."""
+    if not isinstance(raw, dict):
+        raise RuntimeError(f"malformed {label} embeddings payload: data[{i}] not an object")
+    emb = raw.get("embedding")
+    emb_ok = isinstance(emb, str) or (
+        isinstance(emb, list)
+        and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in emb)
+    )
+    if (
+        raw.get("object") != "embedding"
+        or not isinstance(raw.get("index"), int)
+        or isinstance(raw.get("index"), bool)
+        or not emb_ok
+    ):
+        raise RuntimeError(
+            f"malformed {label} embeddings payload: data[{i}] needs "
+            "{object: 'embedding', index: int, embedding: number[]|base64}"
+        )
+    return raw
+
+
+def _openai_embeddings_complete(
+    url: str,
+    *,
+    model: str,
+    input: Any,  # noqa: A002 — the wire field's own name
+    encoding_format: str | None,
+    dimensions: int | None,
+    user: str | None,
+    timeout_s: float,
+    api_key: str | None,
+    label: str,
+) -> EmbeddingResult:
+    """POST one OpenAI-compatible embeddings call; errors → RuntimeError.
+
+    ``input`` forwards verbatim — strings or token arrays both ride the
+    wire (the provider's tokenizer contract is its own). ``model`` is the
+    request's model verbatim: embedding models name themselves, the
+    link's pinned chat model does not apply. The response's ``data`` is
+    validated fail-closed: each entry must carry the OpenAI embedding
+    shape (``{object: "embedding", index: int, embedding:
+    number[]|base64-str}``) — malformed frames raise, nothing is
+    synthesized harness-side.
+    """
+    body_map: dict[str, Any] = {"model": model, "input": input}
+    if encoding_format is not None:
+        body_map["encoding_format"] = encoding_format
+    if dimensions is not None:
+        body_map["dimensions"] = dimensions
+    if user is not None:
+        body_map["user"] = user
+    body = json.dumps(body_map).encode()
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    request = urllib.request.Request(url, data=body, headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_s) as response:  # noqa: S310 — caller-declared endpoint  # nosec B310
+            payload = json.loads(response.read().decode())
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"{label} endpoint {url} unreachable: {exc}") from exc
+    data = payload.get("data")
+    if not isinstance(data, list):
+        raise RuntimeError(
+            f"malformed {label} embeddings payload: data is {type(data).__name__}, not list"
+        )
+    return EmbeddingResult(
+        data=tuple(_embedding_item_shape(raw, label, i) for i, raw in enumerate(data)),
+        model=payload.get("model") if isinstance(payload.get("model"), str) else None,
+        usage=_extract_usage(payload),
+    )
+
+
+@dataclass(frozen=True)
+class EmbeddingResult:
+    """A provider's ``/v1/embeddings`` answer.
+
+    ``data`` is the verbatim ``data[]`` list (each validated to the
+    OpenAI ``{object: "embedding", index, embedding}`` shape — number
+    arrays or base64 strings as the provider sent them); ``model`` and
+    ``usage`` echo the provider's own fields (``None`` under provider
+    silence — never fabricated).
+    """
+
+    data: tuple[dict[str, Any], ...]
+    model: str | None
+    usage: dict[str, int] | None
+
+
 @dataclass(frozen=True)
 class ToolCompletion:
     """A provider's structured answer when the request carried ``tools``.
@@ -522,6 +628,31 @@ class ToolBackend(Protocol):
         logprobs: bool | None = None,
         top_logprobs: int | None = None,
     ) -> ToolCompletion: ...
+
+
+@runtime_checkable
+class EmbeddingBackend(Protocol):
+    """Backends with a ``/v1/embeddings`` channel.
+
+    ``embeddings`` is the optional capability: consumers check
+    ``isinstance(b, EmbeddingBackend)`` before routing an embeddings
+    request, so a resolver-supplied backend without the channel fails
+    closed (501) rather than fabricating vectors. ``input`` is the
+    request's own value verbatim — string, string list, token array, or
+    token-array list; ``model`` is the request's model verbatim
+    (embedding models name themselves on the provider — a link's chat
+    pin does not apply).
+    """
+
+    def embeddings(
+        self,
+        input: Any,  # noqa: A002 — the wire field's own name
+        *,
+        model: str,
+        encoding_format: str | None = None,
+        dimensions: int | None = None,
+        user: str | None = None,
+    ) -> EmbeddingResult: ...
 
 
 @runtime_checkable
@@ -656,6 +787,32 @@ class HostedK3Backend(_UsageTracker):
         if box:
             self._record_usage(box[-1])
 
+    def embeddings(
+        self,
+        input: Any,  # noqa: A002 — the wire field's own name
+        *,
+        model: str,
+        encoding_format: str | None = None,
+        dimensions: int | None = None,
+        user: str | None = None,
+    ) -> EmbeddingResult:
+        """``/v1/embeddings`` against the sibling route of the chat URL —
+        the request's ``model`` reaches the wire verbatim (the chat pin
+        ``kimi-k3`` is not an embedding model)."""
+        result = _openai_embeddings_complete(
+            _openai_sibling_url(self._api_url, "embeddings"),
+            model=model,
+            input=input,
+            encoding_format=encoding_format,
+            dimensions=dimensions,
+            user=user,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="hosted_k3",
+        )
+        self._record_usage(result.usage)
+        return result
+
 
 class OpenAICompatBackend(_UsageTracker):
     """BYOK — any OpenAI-compatible chat-completions endpoint.
@@ -782,6 +939,33 @@ class OpenAICompatBackend(_UsageTracker):
             yield tok
         if box:
             self._record_usage(box[-1])
+
+    def embeddings(
+        self,
+        input: Any,  # noqa: A002 — the wire field's own name
+        *,
+        model: str,
+        encoding_format: str | None = None,
+        dimensions: int | None = None,
+        user: str | None = None,
+    ) -> EmbeddingResult:
+        """``/v1/embeddings`` on the caller-declared endpoint — the
+        request's ``model`` reaches the wire verbatim (the BYOK chat
+        pin is not an embedding model); a provider that doesn't know
+        the route answers honestly (its own 4xx surfaces)."""
+        result = _openai_embeddings_complete(
+            _openai_sibling_url(self._url, "embeddings"),
+            model=model,
+            input=input,
+            encoding_format=encoding_format,
+            dimensions=dimensions,
+            user=user,
+            timeout_s=self._timeout_s,
+            api_key=self._api_key,
+            label="BYOK",
+        )
+        self._record_usage(result.usage)
+        return result
 
 
 class LocalFx1Backend(_UsageTracker):

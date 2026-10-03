@@ -13,7 +13,7 @@ integrator reference; `docs/FX1.md` has the model overview and
 | Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
 | Remote client | `fx1.serve.client.HarnessClient` | Python callers on a remote harness — same result types as the SDK |
 | TS client | `clients/typescript/fx1` (`HarnessApiClient`) | TypeScript/JS callers — generated from the pinned OpenAPI spec |
-| OpenAI-compatible | `GET /v1/models`, `POST /v1/chat/completions` | drop-in for OpenAI SDKs / existing toolchains — set `base_url` to the harness |
+| OpenAI-compatible | `GET /v1/models`, `POST /v1/chat/completions`, `/v1/responses`, `/v1/embeddings`, `/v1/files`, `/v1/batches` | drop-in for OpenAI SDKs / existing toolchains — set `base_url` to the harness |
 | CLI | `fx1 harness …` | shell, CI, ops scripts |
 
 The Python surfaces share one error taxonomy (`KeyError` 404 /
@@ -193,11 +193,12 @@ same digested shape the job record embeds.
 | `GET /v1/models/{id}` | `models.retrieve` — unknown id is `404 model_not_found` |
 | `POST /v1/chat/completions` | OpenAI-compatible gated completion (JSON or SSE `stream:true`) |
 | `POST /v1/responses` | OpenAI Responses surface — `input` string/items, `instructions`, `reasoning`, `text.format`; SSE `stream:true` emits the `response.*` event grammar |
+| `POST /v1/embeddings` | OpenAI `embeddings.create` — verbatim provider forward, 501 when the link has no embeddings channel |
 | `POST /v1/files` | multipart upload of a batch-input JSONL (`purpose=batch` only) |
 | `GET /v1/files` / `GET /v1/files/{id}` | list / retrieve uploaded + output files |
 | `GET /v1/files/{id}/content` | raw bytes — input JSONL in, batch result JSONL out |
 | `DELETE /v1/files/{id}` | evict a stored file |
-| `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions` or `/v1/responses`) — async over the jobs channel |
+| `POST /v1/batches` | submit an input file as one batch (`endpoint` = `/v1/chat/completions`, `/v1/responses`, or `/v1/embeddings`) — async over the jobs channel |
 | `GET /v1/batches` / `GET /v1/batches/{id}` | list (`?limit≤100`, `?after=`) / poll status + `request_counts` |
 | `POST /v1/batches/{id}/cancel` | cooperative cancel — partial output still lands in `output_file_id` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
@@ -439,6 +440,42 @@ Client-side: `HarnessClient.responses_create` /
 returns); `HarnessApiClient.responsesCreate` /
 `responsesCreateStream` in TS.
 
+### Embeddings (`/v1/embeddings`)
+
+`POST /v1/embeddings` is the OpenAI embeddings surface over the same
+link chain — same backend precedence, same `fx1.*` extension block and
+`X-Fx1-*` headers, same error taxonomy — for the retrieval/eval lanes
+that need vectors:
+
+- **Input:** a string, `list[str]` (N inputs), a token array
+  `list[int]`, or `list[list[int]]` (N token-array inputs) — the same
+  shapes the OpenAI surface accepts. Empty/blank strings, empty lists,
+  mixed-type lists, and >2048 items refuse 422; `encoding_format` is
+  `float`/`base64`, `dimensions` ≥ 1, `user` ≤ 512 chars.
+- **Forward:** `model`, `input`, `encoding_format`, `dimensions`,
+  `user` reach the provider **verbatim** — embedding models name
+  themselves, so the request `model` goes on the wire, not the link's
+  chat pin. The provider's `data[]`, `model`, and `usage` echo back
+  untouched (`usage: null` under provider silence).
+- **Channel:** capability is the `embeddings` method on the backend —
+  hosted_k3 and BYOK have it, `local_fx1` deliberately does not (fx-1
+  is a decoder; point BYOK at an embedding engine). A link without the
+  channel answers **501 `not_supported`** — never fabricated vectors.
+  Provider faults are the same 502/503 split as chat
+  (`BackendNotConfiguredError` → 503 and the chain advances;
+  `RuntimeError` → 502 on the last link).
+- **Evidence:** vectors aren't claims — no honesty gate — but the call
+  lands in the completion log and metrics exactly like a completion:
+  `prompt_sha256` binds `{model, input}`, `output_sha256` binds the
+  verbatim `data[]`, `X-Fx1-Completion-Id` links the record, and the
+  entry is fetchable at `/harness/completions/{id}`.
+- **Batch:** `endpoint: "/v1/embeddings"` is a first-class batch
+  endpoint — same JSONL in/out channel as chat/responses.
+
+Client-side: `HarnessClient.embeddings_create` in Python
+(`Fx1Harness.openai_embeddings` in-process — same `(envelope, cid)`
+return); `HarnessApiClient.embeddingsCreate` in TS.
+
 ### Batches + files (`/v1/batches`, `/v1/files`)
 
 The OpenAI async-batch surface over the same gated pipeline — upload
@@ -455,7 +492,8 @@ output JSONL of per-line results.
   /v1/files/{id}/content` returns the raw bytes, `DELETE` evicts.
 - **Batches:** `POST /v1/batches` takes `{input_file_id, endpoint,
   completion_window, metadata}` — `endpoint` is one of
-  `/v1/chat/completions` or `/v1/responses`, `completion_window` is
+  `/v1/chat/completions`, `/v1/responses`, or `/v1/embeddings`,
+  `completion_window` is
   `"24h"` (the only declared window; `expires_at` is set +24h). Line
   shape is validated at submit — a batch never starts on a corrupt
   file: bad JSON, missing/oversized `custom_id`, non-`POST` method,
