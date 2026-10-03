@@ -3423,6 +3423,14 @@ from quant_fund.research.benches_w428 import (
     bench_tangent_space_def_family,
     bench_versal_deformation_family,
 )
+from quant_fund.research.benches_w429 import (
+    bench_bass_heller_swan_family,
+    bench_k0_group_family,
+    bench_k1_group_family,
+    bench_k_theory_spec_family,
+    bench_milnor_k2_family,
+    bench_quillen_q_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3802,6 +3810,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "k0_group": bench_k0_group_family,
+        "k1_group": bench_k1_group_family,
+        "milnor_k2": bench_milnor_k2_family,
+        "quillen_q": bench_quillen_q_family,
+        "k_theory_spec": bench_k_theory_spec_family,
+        "bass_heller_swan": bench_bass_heller_swan_family,
         "deformation_functor": bench_deformation_functor_family,
         "schlessinger": bench_schlessinger_family,
         "tangent_space_def": bench_tangent_space_def_family,
