@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-336 computability/model-theory canon.
+        "pr_functions",
+        "turing_degrees",
+        "busy_beaver",
+        "ultraproduct",
+        "ramsey_theory",
+        "compactness_lite",
         # Wave-335 category-2/topos canon.
         "fin_limit",
         "subobject_classifier",

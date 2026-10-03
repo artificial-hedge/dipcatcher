@@ -1,3 +1,4 @@
+feat(research): wave 336 — computability/model-theory canon (pr_functions, turing_degrees, busy_beaver, ultraproduct, ramsey_theory, compactness_lite) (1972->1978 families)
 feat(research): wave 335 — category-2/topos canon (fin_limit, subobject_classifier, exponential_obj, yoneda_embed, adjoint_check, cat_colimit) (1966->1972 families)
 feat(research): wave 334 — secure-computation canon (garbled_circuit, bgw_mpc, beaver_triple, ot_extension, spdz_mac, psi_intersect) (1960->1966 families)
 feat(research): wave 333 — computer-algebra-2 canon (poly_factor_fp, hensel_lift, poly_crt, subresultant, sparse_interp, poly_eval_interp) (1954->1960 families)
