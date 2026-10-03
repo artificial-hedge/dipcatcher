@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-455 synthetic-math canon.
+        "cubical_path",
+        "hcomp_fill",
+        "glue_types",
+        "interval_obj",
+        "kan_op",
+        "transport_coe",
         # Wave-454 intersection-cohomology-2 canon.
         "ic_stalk",
         "decomp_thm",
