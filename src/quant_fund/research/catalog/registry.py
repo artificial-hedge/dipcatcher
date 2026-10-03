@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-702 motivic-23 canon.
+        "motivic_spark",
+        "motivic_fundamental",
+        "motivic_hochschild",
+        "motivic_field",
+        "motivic_degree",
+        "motivic_diagonal",
         # Wave-701 derived-geometry-9 canon.
         "derived_conn",
         "derived_local",

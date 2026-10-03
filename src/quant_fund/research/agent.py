@@ -5607,6 +5607,14 @@ from quant_fund.research.benches_w701 import (
     bench_derived_normal_family,
     bench_derived_reduced_family,
 )
+from quant_fund.research.benches_w702 import (
+    bench_motivic_degree_family,
+    bench_motivic_diagonal_family,
+    bench_motivic_field_family,
+    bench_motivic_fundamental_family,
+    bench_motivic_hochschild_family,
+    bench_motivic_spark_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5986,6 +5994,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_spark": bench_motivic_spark_family,
+        "motivic_fundamental": bench_motivic_fundamental_family,
+        "motivic_hochschild": bench_motivic_hochschild_family,
+        "motivic_field": bench_motivic_field_family,
+        "motivic_degree": bench_motivic_degree_family,
+        "motivic_diagonal": bench_motivic_diagonal_family,
         "derived_conn": bench_derived_conn_family,
         "derived_local": bench_derived_local_family,
         "derived_reduced": bench_derived_reduced_family,
