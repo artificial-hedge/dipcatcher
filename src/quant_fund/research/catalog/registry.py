@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-609 spectral-AG-2 canon.
+        "e_infty_space",
+        "brave_new_ring",
+        "thom_constr",
+        "log_ring",
+        "orient_cohom",
+        "formal_moduli",
         # Wave-608 sheaf-4 canon.
         "etale_descent",
         "etale_morphism",
