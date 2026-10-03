@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-447 TQFT canon.
+        "tqft_axiom",
+        "bord_cat",
+        "frobenius_2d",
+        "extended_tqft",
+        "dw_theory",
+        "chern_simons",
         # Wave-446 Goodwillie-calculus canon.
         "goodwillie_tower",
         "excisive_fn",

@@ -3567,6 +3567,14 @@ from quant_fund.research.benches_w446 import (
     bench_linearization_family,
     bench_orth_calc_family,
 )
+from quant_fund.research.benches_w447 import (
+    bench_bord_cat_family,
+    bench_chern_simons_family,
+    bench_dw_theory_family,
+    bench_extended_tqft_family,
+    bench_frobenius_2d_family,
+    bench_tqft_axiom_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3946,6 +3954,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tqft_axiom": bench_tqft_axiom_family,
+        "bord_cat": bench_bord_cat_family,
+        "frobenius_2d": bench_frobenius_2d_family,
+        "extended_tqft": bench_extended_tqft_family,
+        "dw_theory": bench_dw_theory_family,
+        "chern_simons": bench_chern_simons_family,
         "goodwillie_tower": bench_goodwillie_tower_family,
         "excisive_fn": bench_excisive_fn_family,
         "linearization": bench_linearization_family,
