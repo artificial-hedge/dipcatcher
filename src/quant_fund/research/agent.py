@@ -6967,6 +6967,14 @@ from quant_fund.research.benches_w871 import (
     bench_lanczos_eig_family,
     bench_lsqr_solver_family,
 )
+from quant_fund.research.benches_w872 import (
+    bench_amg_precond_family,
+    bench_ic_precond_family,
+    bench_ilut_precond_family,
+    bench_jacobi_precond_family,
+    bench_polynomial_precond_family,
+    bench_ssor_precond_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7338,6 +7346,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "jacobi_precond": bench_jacobi_precond_family,
+        "ilut_precond": bench_ilut_precond_family,
+        "ssor_precond": bench_ssor_precond_family,
+        "amg_precond": bench_amg_precond_family,
+        "ic_precond": bench_ic_precond_family,
+        "polynomial_precond": bench_polynomial_precond_family,
         "cg_solver": bench_cg_solver_family,
         "gmres_solver": bench_gmres_solver_family,
         "bicg_solver": bench_bicg_solver_family,
