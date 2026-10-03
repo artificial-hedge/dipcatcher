@@ -128,11 +128,13 @@ class CompletionResult:
     attempts: tuple[dict[str, Any], ...] = ()
     # The resolved decode params sent to the provider.
     sampling: dict[str, Any] | None = None
-    # Upstream-reported tool calls and the provider's own finish_reason —
-    # verbatim on tool-capable links; None on plain-text turns. Mirrors
-    # the wire's ``tool_calls``/``finish_reason`` response fields.
+    # Upstream-reported tool calls, the provider's own finish_reason, and
+    # the verbatim ``choices[].logprobs`` payload when the request asked
+    # for it — verbatim on structured-channel links; None on plain-text
+    # turns. Mirrors the wire's response fields.
     tool_calls: tuple[dict[str, Any], ...] | None = None
     finish_reason: str | None = None
+    logprobs: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -852,6 +854,8 @@ class Fx1Harness:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
     ) -> CompletionResult:
         """One chat completion through the honesty gate.
 
@@ -880,13 +884,20 @@ class Fx1Harness:
         ``tools``/``tool_choice``/``parallel_tool_calls`` carry the
         OpenAI function-calling surface — function specs, the call
         policy, the parallel flag — verbatim to tool-capable links.
-        A link without ``complete_with_tools`` answers
-        ``NotImplementedError``, never a silently dropped tool intent.
-        Tool-call *history* (assistant ``tool_calls`` entries, ``role:
-        'tool'`` results) passes through the message list itself. The
-        honesty gate reads the assistant's text only — tool arguments
-        are machine-bound JSON, not claims.
+        ``logprobs``/``top_logprobs`` ask the provider for its
+        ``choices[].logprobs`` payload — echoed verbatim on the result
+        (``None`` under provider silence). A link without
+        ``complete_with_tools`` answers ``NotImplementedError``, never a
+        silently dropped tool or logprobs intent. Tool-call *history*
+        (assistant ``tool_calls`` entries, ``role: 'tool'`` results)
+        passes through the message list itself. The honesty gate reads
+        the assistant's text only — tool arguments are machine-bound
+        JSON and logprobs are provider scores, not claims.
         """
+        if top_logprobs is not None and not logprobs:
+            raise ValueError("top_logprobs requires logprobs=True")
+        if top_logprobs is not None and not 0 <= top_logprobs <= 20:
+            raise ValueError(f"top_logprobs must be 0..20, got {top_logprobs}")
         chain = _fallback_chain(backend, fallbacks)
         _check_link_kwargs(chain, checkpoint_dir, byok)
         sampling = _sampling_params(
@@ -955,10 +966,14 @@ class Fx1Harness:
                 raise
             t0 = time.monotonic()
             tool_calls_out: tuple[dict[str, Any], ...] | None = None
+            logprobs_out: dict[str, Any] | None = None
             finish_out: str | None = None
             try:
-                wants_tools = tools is not None or any(
-                    m.get("role") == "tool" or m.get("tool_calls") for m in messages
+                wants_tools = (
+                    tools is not None
+                    or logprobs
+                    or top_logprobs is not None
+                    or any(m.get("role") == "tool" or m.get("tool_calls") for m in messages)
                 )
                 if wants_tools:
                     tool_result = cited_complete_tools(
@@ -969,9 +984,12 @@ class Fx1Harness:
                         tools=tools,
                         tool_choice=tool_choice,
                         parallel_tool_calls=parallel_tool_calls,
+                        logprobs=logprobs,
+                        top_logprobs=top_logprobs,
                     )
                     content = tool_result.content or ""
                     tool_calls_out = tool_result.tool_calls
+                    logprobs_out = tool_result.logprobs
                     finish_out = tool_result.finish_reason
                 else:
                     content = cited_complete(
@@ -1048,9 +1066,13 @@ class Fx1Harness:
                 prompt_sha256,
                 hashlib.sha256(
                     (
-                        content + "\n" + json.dumps(list(tool_calls_out), sort_keys=True)
-                        if tool_calls_out
-                        else content
+                        content
+                        + (
+                            "\n" + json.dumps(list(tool_calls_out), sort_keys=True)
+                            if tool_calls_out
+                            else ""
+                        )
+                        + ("\n" + json.dumps(logprobs_out, sort_keys=True) if logprobs_out else "")
                     ).encode("utf-8")
                 ).hexdigest(),
                 tuple(attempts) if len(attempts) > 1 else None,
@@ -1072,6 +1094,7 @@ class Fx1Harness:
                 sampling=sampling_fields,
                 tool_calls=tool_calls_out,
                 finish_reason=finish_out,
+                logprobs=logprobs_out,
             )
         assert last_exc is not None  # every link failed retriably
         self._record_call(
@@ -1385,6 +1408,7 @@ class Fx1Harness:
         contents: list[str] = []
         choice_calls: list[list[dict[str, Any]] | None] = []
         choice_reasons: list[str] = []
+        choice_lps: list[dict[str, Any] | None] = []
         usage_sum: dict[str, int] = {}
         usage_seen = False
         for result in results:
@@ -1392,6 +1416,7 @@ class Fx1Harness:
             contents.append(result.content)
             choice_calls.append(list(result.tool_calls) if result.tool_calls is not None else None)
             choice_reasons.append(result.finish_reason or "stop")
+            choice_lps.append(result.logprobs)
             if isinstance(result.usage, dict):
                 usage_seen = True
                 for uk, uv in result.usage.items():
@@ -1407,6 +1432,7 @@ class Fx1Harness:
             usage=usage_sum if usage_seen else None,
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
+            logprobs=choice_lps,
         )
         if body.store is not False:
             self._openai_store.put(envelope)
@@ -1450,6 +1476,7 @@ class Fx1Harness:
         contents: list[str] = []
         choice_calls: list[list[dict[str, Any]] | None] = []
         choice_reasons: list[str] = []
+        choice_lps: list[dict[str, Any] | None] = []
         usage_sum: dict[str, int] = {}
         usage_seen = False
         for result in results:
@@ -1457,6 +1484,7 @@ class Fx1Harness:
             contents.append(result.content)
             choice_calls.append(list(result.tool_calls) if result.tool_calls is not None else None)
             choice_reasons.append(result.finish_reason or "stop")
+            choice_lps.append(result.logprobs)
             if isinstance(result.usage, dict):
                 usage_seen = True
                 for uk, uv in result.usage.items():
@@ -1474,6 +1502,7 @@ class Fx1Harness:
                     usage=usage_sum if usage_seen else None,
                     tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
                     finish_reasons=choice_reasons,
+                    logprobs=choice_lps,
                 )
             )
         chunks = list(
@@ -1486,6 +1515,7 @@ class Fx1Harness:
                 usage=usage_sum if usage_seen else None,
                 tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
                 finish_reasons=choice_reasons,
+                logprobs=choice_lps,
             )
         )
         if last_event_id is not None:
@@ -1518,6 +1548,7 @@ class Fx1Harness:
         if result.content or not result.tool_calls:
             validate_response_format(response_text_format(body), result.content)
         call_items = openai_response_call_items(result.tool_calls or [])
+        lp_arr = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         envelope = openai_response_object(
             rid=f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
@@ -1526,6 +1557,7 @@ class Fx1Harness:
             model=result.model,
             usage=result.usage,
             call_items=call_items or None,
+            logprobs=(lp_arr if isinstance(lp_arr, list) else None),
         )
         if body.store is not False:
             self._openai_store.put(envelope)
@@ -1556,6 +1588,7 @@ class Fx1Harness:
         rid = f"resp_{uuid.uuid4().hex}"
         item_id = f"msg_{uuid.uuid4().hex}"
         call_items = openai_response_call_items(result.tool_calls or [])
+        lp_arr_s = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         if body.store is not False:
             self._openai_store.put(
                 openai_response_object(
@@ -1566,6 +1599,7 @@ class Fx1Harness:
                     model=result.model,
                     usage=result.usage,
                     call_items=call_items or None,
+                    logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
                 )
             )
         events = list(
@@ -1577,6 +1611,7 @@ class Fx1Harness:
                 model=result.model,
                 usage=result.usage,
                 call_items=call_items or None,
+                logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
             )
         )
         if last_event_id is not None:

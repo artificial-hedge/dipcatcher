@@ -125,7 +125,8 @@ class _NonStreamingBackend:
 
 
 class _ParityToolBackend(_ParityBackend):
-    """Tool-capable parity backend — answers one canned function call."""
+    """Tool-capable parity backend — answers one canned function call,
+    plus a canned logprobs payload when the request asks for scores."""
 
     def complete_with_tools(
         self,
@@ -135,9 +136,27 @@ class _ParityToolBackend(_ParityBackend):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: Any = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
     ) -> ToolCompletion:
         from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
 
+        lp: dict[str, Any] | None = None
+        if logprobs:
+            lp = {
+                "content": [
+                    {
+                        "token": "x",
+                        "logprob": -0.5,
+                        "bytes": [120],
+                        "top_logprobs": (
+                            [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                            if top_logprobs is not None
+                            else []
+                        ),
+                    }
+                ]
+            }
         return ToolCompletion(
             content=None,
             tool_calls=(
@@ -148,6 +167,48 @@ class _ParityToolBackend(_ParityBackend):
                 },
             ),
             finish_reason="tool_calls",
+            logprobs=lp,
+        )
+
+
+class _ParityLpBackend(_ParityBackend):
+    """Structured-channel stub answering a text turn with scores — no
+    tool_calls, so the message part exists to carry the logprobs."""
+
+    def complete_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        sampling: SamplingParams | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: Any = None,
+        parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
+    ) -> ToolCompletion:
+        from fx1.serve.backends import ToolCompletion  # noqa: PLC0415
+
+        lp: dict[str, Any] | None = None
+        if logprobs:
+            lp = {
+                "content": [
+                    {
+                        "token": "x",
+                        "logprob": -0.5,
+                        "bytes": [120],
+                        "top_logprobs": (
+                            [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                            if top_logprobs is not None
+                            else []
+                        ),
+                    }
+                ]
+            }
+        return ToolCompletion(
+            content=self.complete(messages),
+            tool_calls=None,
+            finish_reason="stop",
+            logprobs=lp,
         )
 
 
@@ -673,6 +734,53 @@ def parity_audit() -> dict[str, bool]:
             and wire_nc.json()["error"]["type"] == "server_error"
             and sdk_nc == "NotImplementedError"
         )
+        # logprobs channel parity — request fields reach the provider
+        # verbatim on both surfaces and the payload lands on the same
+        # envelope slot; a plain link is 501 / NotImplementedError
+        lp_body = {
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "calc"}],
+            "logprobs": True,
+            "top_logprobs": 2,
+        }
+        wire_lp = client_t.post("/v1/chat/completions", json=lp_body)
+        sdk_lp, _ = sdk_t.openai_chat(lp_body)
+        out["openai_logprobs_parity"] = (
+            wire_lp.status_code == 200
+            and wire_lp.json()["choices"][0]["logprobs"] == sdk_lp.choices[0].logprobs
+        )
+        wire_lps = client_t.post("/v1/chat/completions", json={**lp_body, "stream": True})
+        wire_lp_frames = [
+            json.loads(ln[len("data: ") :])
+            for ln in wire_lps.text.splitlines()
+            if ln.startswith("data: ") and ln[len("data: ") :].strip() != "[DONE]"
+        ]
+        sdk_lp_frames, _ = sdk_t.openai_chat_stream(lp_body)
+        out["openai_logprobs_stream_parity"] = [_strip_meta(f) for f in wire_lp_frames] == [
+            _strip_meta(f) for f in sdk_lp_frames
+        ] and any(
+            f["choices"][0]["delta"].get("logprobs") for f in sdk_lp_frames if f.get("choices")
+        )
+        wire_lnc = client.post("/v1/chat/completions", json=lp_body)
+        sdk_lnc = _raises(lambda: sdk.openai_chat(lp_body))[0]
+        out["openai_logprobs_501_parity"] = (
+            wire_lnc.status_code == 501 and sdk_lnc == "NotImplementedError"
+        )
+        out["openai_toplogprobs_guard_parity"] = (
+            client.post(
+                "/v1/chat/completions",
+                json={
+                    "model": "fx1",
+                    "messages": [{"role": "user", "content": "h"}],
+                    "top_logprobs": 2,
+                },
+            ).status_code
+            == 422
+            and _raises(
+                lambda: sdk.openai_chat({"model": "fx1", "messages": msg, "top_logprobs": 2})
+            )[0]
+            == "ValidationError"
+        )
         # agent history passes through verbatim on both surfaces
         tool_hist = [
             {"role": "user", "content": "q"},
@@ -879,6 +987,42 @@ def parity_audit() -> dict[str, bool]:
             and [_resp_norm(p) for p in wire_rtevents] == [_resp_norm(p) for _e, p in sdk_rtevents]
             and [e for e, _p in sdk_rtevents] == [p["type"] for p in wire_rtevents]
             and "response.function_call_arguments.delta" in [p["type"] for p in wire_rtevents]
+        )
+        # lane 83: the logprobs channel on /v1/responses — include +
+        # top_logprobs carry identically and the provider's array lands on
+        # the output_text part on both surfaces (a message stub — a
+        # call-only turn has no output_text part for scores to ride on)
+        sdk_l, client_l = _surfaces(_ParityLpBackend)
+        rlp_body = {
+            "model": "fx1",
+            "input": "calc one",
+            "include": ["message.output_text.logprobs"],
+            "top_logprobs": 2,
+        }
+        wire_rlp = client_l.post("/v1/responses", json=rlp_body)
+        sdk_rlp, _ = sdk_l.openai_response(rlp_body)
+        wire_rlp_lp = wire_rlp.json()["output"][0]["content"][0].get("logprobs")
+        sdk_rlp_lp = sdk_rlp["output"][0]["content"][0].get("logprobs")
+        out["openai_responses_logprobs_parity"] = (
+            wire_rlp.status_code == 200
+            and wire_rlp_lp == sdk_rlp_lp
+            and isinstance(wire_rlp_lp, list)
+            and wire_rlp_lp[0].get("token") == "x"
+            and wire_rlp.json()["include"] == sdk_rlp["include"] == ["message.output_text.logprobs"]
+        )
+        # the include member is pinned to the logprobs channel on both
+        # surfaces; top_logprobs without it refuses identically
+        bad_inc = {**rlp_body, "include": ["bogus.member"]}
+        wire_bi = client_l.post("/v1/responses", json=bad_inc)
+        sdk_bi = _raises(lambda: sdk_l.openai_response(bad_inc))[0]
+        out["openai_responses_include_parity"] = (
+            wire_bi.status_code == 422 and sdk_bi == "ValidationError"
+        )
+        no_inc = {"model": "fx1", "input": "x", "top_logprobs": 1}
+        wire_ni = client_l.post("/v1/responses", json=no_inc)
+        sdk_ni = _raises(lambda: sdk_l.openai_response(no_inc))[0]
+        out["openai_responses_toplogprobs_guard_parity"] = (
+            wire_ni.status_code == 422 and sdk_ni == "ValidationError"
         )
 
         from fx1.serve.byok_audit import byok_audit_bench

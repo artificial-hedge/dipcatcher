@@ -3712,7 +3712,9 @@ def _probe_backend_probes(
     from fx1.serve.backends import ToolCompletion as _ToolCompletion  # noqa: PLC0415
 
     class _OiToolBackend:
-        """Tool-capable stub: records the forwarded spec, answers a call."""
+        """Tool-capable stub: records the forwarded spec, answers a call.
+        Answers a canned ``logprobs`` payload when the request asks for
+        one — the wire's verbatim echo is what gets probed."""
 
         def __init__(self) -> None:
             self._model = "tool-0"
@@ -3721,6 +3723,8 @@ def _probe_backend_probes(
             self.seen_choice: Any = None
             self.seen_parallel: bool | None = None
             self.seen_messages: list[dict[str, Any]] | None = None
+            self.seen_logprobs: bool | None = None
+            self.seen_top_logprobs: int | None = None
 
         def complete(
             self,
@@ -3738,12 +3742,32 @@ def _probe_backend_probes(
             tools: list[dict[str, Any]] | None = None,
             tool_choice: Any = None,
             parallel_tool_calls: bool | None = None,
+            logprobs: bool | None = None,
+            top_logprobs: int | None = None,
         ) -> _ToolCompletion:
             self.calls += 1
             self.seen_tools = tools
             self.seen_choice = tool_choice
             self.seen_parallel = parallel_tool_calls
             self.seen_messages = [dict(m) for m in messages]
+            self.seen_logprobs = logprobs
+            self.seen_top_logprobs = top_logprobs
+            lp: dict[str, Any] | None = None
+            if logprobs:
+                lp = {
+                    "content": [
+                        {
+                            "token": "x",
+                            "logprob": -0.5,
+                            "bytes": [120],
+                            "top_logprobs": (
+                                [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                                if top_logprobs is not None
+                                else []
+                            ),
+                        }
+                    ]
+                }
             return _ToolCompletion(
                 content=None,
                 tool_calls=(
@@ -3754,10 +3778,66 @@ def _probe_backend_probes(
                     },
                 ),
                 finish_reason="tool_calls",
+                logprobs=lp,
+            )
+
+    class _OiLpBackend:
+        """Structured-channel stub answering a text turn with scores —
+        no tool_calls, so the message part exists to carry logprobs."""
+
+        def __init__(self) -> None:
+            self._model = "lp-0"
+            self.seen_logprobs: bool | None = None
+            self.seen_top_logprobs: int | None = None
+
+        def complete(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+        ) -> str:
+            return f"clean:{messages[-1]['content']}"
+
+        def complete_with_tools(
+            self,
+            messages: list[dict[str, Any]],
+            *,
+            sampling: SamplingParams | None = None,
+            tools: list[dict[str, Any]] | None = None,
+            tool_choice: Any = None,
+            parallel_tool_calls: bool | None = None,
+            logprobs: bool | None = None,
+            top_logprobs: int | None = None,
+        ) -> _ToolCompletion:
+            self.seen_logprobs = logprobs
+            self.seen_top_logprobs = top_logprobs
+            lp: dict[str, Any] | None = None
+            if logprobs:
+                lp = {
+                    "content": [
+                        {
+                            "token": "x",
+                            "logprob": -0.5,
+                            "bytes": [120],
+                            "top_logprobs": (
+                                [{"token": "x", "logprob": -0.5, "bytes": [120]}]
+                                if top_logprobs is not None
+                                else []
+                            ),
+                        }
+                    ]
+                }
+            return _ToolCompletion(
+                content=self.complete(messages),
+                tool_calls=None,
+                finish_reason="stop",
+                logprobs=lp,
             )
 
     oi_tool = _OiToolBackend()
     oi_tools = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_tool))
+    oi_lp_b = _OiLpBackend()
+    oi_lp = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: oi_lp_b))
     tool_spec = {
         "type": "function",
         "function": {
@@ -4019,6 +4099,201 @@ def _probe_backend_probes(
     out["capabilities_reports_openai_tools"] = (
         oi_clean.get("/harness/capabilities").json()["features"].get("openai_tools") is True
     )
+
+    # — logprobs channel: request fields reach the provider verbatim and
+    # the provider's payload lands verbatim on the envelope —
+    lp_req = {
+        "model": "fx1",
+        "messages": [{"role": "user", "content": "calc"}],
+        "logprobs": True,
+        "top_logprobs": 3,
+    }
+    r = oi_tools.post("/v1/chat/completions", json=lp_req)
+    out["openai_logprobs_forwarded_verbatim"] = (
+        oi_tool.seen_logprobs is True and oi_tool.seen_top_logprobs == 3
+    )
+    out["openai_logprobs_envelope"] = r.status_code == 200 and (
+        r.json()["choices"][0].get("logprobs") or {}
+    ).get("content") == [
+        {
+            "token": "x",
+            "logprob": -0.5,
+            "bytes": [120],
+            "top_logprobs": [{"token": "x", "logprob": -0.5, "bytes": [120]}],
+        }
+    ]
+    # no request → null slot (OpenAI's own null shape); a plain-link
+    # request fails closed — scores need the structured channel
+    r = oi_tools.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "h"}]},
+    )
+    out["openai_logprobs_absent_null"] = (
+        r.status_code == 200 and r.json()["choices"][0].get("logprobs") is None
+    )
+    out["openai_logprobs_no_channel_501"] = (
+        oi_clean.post("/v1/chat/completions", json=lp_req).status_code == 501
+    )
+    out["openai_toplogprobs_needs_logprobs_422"] = (
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "top_logprobs": 2,
+            },
+        ).status_code
+        == 422
+    )
+    out["openai_toplogprobs_bounds_422"] = all(
+        oi_tools.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1",
+                "messages": [{"role": "user", "content": "h"}],
+                "logprobs": True,
+                "top_logprobs": bad,
+            },
+        ).status_code
+        == 422
+        for bad in (-1, 21)
+    )
+    # SSE emits one aggregated delta.logprobs frame — the provider's
+    # token boundaries don't align with the text re-chunking, so the
+    # array ships whole before the finish frame rather than fake-aligned
+    r = oi_tools.post("/v1/chat/completions", json={**lp_req, "stream": True})
+    lp_chunks = [
+        _json3.loads(dln[len("data: ") :])
+        for dln in r.text.splitlines()
+        if dln.startswith("data: ") and dln[len("data: ") :].strip() != "[DONE]"
+    ]
+    lp_frames = [
+        c for c in lp_chunks if c.get("choices") and c["choices"][0]["delta"].get("logprobs")
+    ]
+    out["openai_logprobs_stream_frame"] = (
+        r.status_code == 200
+        and len(lp_frames) == 1
+        and lp_frames[0]["choices"][0]["delta"]["logprobs"].get("content")
+        == [
+            {
+                "token": "x",
+                "logprob": -0.5,
+                "bytes": [120],
+                "top_logprobs": [{"token": "x", "logprob": -0.5, "bytes": [120]}],
+            }
+        ]
+    )
+    # the native surface carries the channel too — and the digest binds
+    # the score payload alongside text
+    r = oi_tools.post(
+        "/harness/complete",
+        json={
+            "backend": "byok",
+            "messages": [{"role": "user", "content": "calc"}],
+            "logprobs": True,
+        },
+    )
+    lp_body = r.json().get("logprobs") or {}
+    out["complete_logprobs_200"] = r.status_code == 200 and lp_body.get("content") == [
+        {
+            "token": "x",
+            "logprob": -0.5,
+            "bytes": [120],
+            "top_logprobs": [],
+        }
+    ]
+    out["complete_logprobs_no_channel_501"] = (
+        oi_clean.post(
+            "/harness/complete",
+            json={
+                "backend": "byok",
+                "messages": [{"role": "user", "content": "calc"}],
+                "logprobs": True,
+            },
+        ).status_code
+        == 501
+    )
+    lp_cid = r.headers.get("X-Fx1-Completion-Id", "")
+    if lp_cid:
+        lp_rec = oi_tools.get(f"/harness/completions/{lp_cid}")
+        lp_calls = [
+            {
+                "id": "call_0",
+                "type": "function",
+                "function": {"name": "calc", "arguments": '{"x": 1}'},
+            }
+        ]
+        expect_lp = _hl_t.sha256(
+            (
+                ""
+                + "\n"
+                + _json3.dumps(lp_calls, sort_keys=True)
+                + "\n"
+                + _json3.dumps(lp_body, sort_keys=True)
+            ).encode("utf-8")
+        ).hexdigest()
+        out["complete_logprobs_digest_binds"] = (
+            lp_rec.status_code == 200 and lp_rec.json().get("output_sha256") == expect_lp
+        )
+    else:
+        out["complete_logprobs_digest_binds"] = False
+    # the Responses surface: include/['message.output_text.logprobs'] +
+    # top_logprobs gate the channel; output lands on the text part
+    # (message stub — a call-only turn has no output_text to carry it)
+    r = oi_lp.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "calc",
+            "include": ["message.output_text.logprobs"],
+            "top_logprobs": 2,
+        },
+    )
+    resp_msg: dict[str, Any] = next(
+        (it for it in r.json().get("output", []) if it.get("type") == "message"),
+        {},
+    )
+    resp_lp = (
+        resp_msg.get("content", [{}])[0].get("logprobs")
+        if isinstance(resp_msg.get("content"), list)
+        else None
+    )
+    out["responses_logprobs_include"] = (
+        r.status_code == 200
+        and oi_lp_b.seen_logprobs is True
+        and oi_lp_b.seen_top_logprobs == 2
+        and isinstance(resp_lp, list)
+        and resp_lp[0].get("token") == "x"
+    )
+    out["responses_toplogprobs_needs_include_422"] = (
+        oi_tools.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "top_logprobs": 1},
+        ).status_code
+        == 422
+    )
+    out["responses_include_bad_member_422"] = (
+        oi_tools.post(
+            "/v1/responses",
+            json={"model": "fx1", "input": "x", "include": ["bogus.member"]},
+        ).status_code
+        == 422
+    )
+    out["responses_logprobs_no_channel_501"] = (
+        oi_clean.post(
+            "/v1/responses",
+            json={
+                "model": "fx1",
+                "input": "x",
+                "include": ["message.output_text.logprobs"],
+            },
+        ).status_code
+        == 501
+    )
+    out["capabilities_reports_openai_logprobs"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("openai_logprobs") is True
+    )
+
     # — decode contract: n / stop / penalties / bias / hints / attribution —
     # n fans out into n independent gated calls (each its own gate pass).
     r = oi_clean.post(

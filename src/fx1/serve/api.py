@@ -556,6 +556,12 @@ class CompleteRequest(_Model):
     tools: list[dict[str, Any]] | None = Field(default=None, max_length=128)
     tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
     parallel_tool_calls: bool | None = None
+    # Provider token-level scores — ``logprobs: true`` asks the backend
+    # for its ``choices[].logprobs`` payload (echoed verbatim); the
+    # ``top_logprobs`` cap rides the same wire field. Both need the
+    # structured channel — a link without it answers 501.
+    logprobs: bool | None = None
+    top_logprobs: int | None = Field(default=None, ge=0, le=20)
 
     @model_validator(mode="after")
     def _chain_valid(self) -> CompleteRequest:
@@ -593,6 +599,8 @@ class CompleteRequest(_Model):
             self.tool_choice is not None or self.parallel_tool_calls is not None
         ):
             raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
+        if self.top_logprobs is not None and not self.logprobs:
+            raise ValueError("top_logprobs requires logprobs: true")
         return self
 
 
@@ -613,10 +621,13 @@ class CompleteResponse(_Model):
     # fx-1 audit retried calls without paying for them twice.
     replayed: bool = False
     # Upstream-reported tool calls (None when the model answered with
-    # text) and the provider's own finish_reason — verbatim fields on
-    # tool-capable links; None/omit on plain-text turns.
+    # text), the provider's own finish_reason, and the verbatim
+    # ``choices[].logprobs`` payload when the request asked for it —
+    # verbatim fields on structured-channel links; None on plain-text
+    # turns.
     tool_calls: list[dict[str, Any]] | None = None
     finish_reason: str | None = None
+    logprobs: dict[str, Any] | None = None
     # Server-minted handle into the completion log
     # (``GET /harness/completions/{id}``) — replays keep the original id.
     completion_id: str | None = None
@@ -1168,6 +1179,7 @@ def _responses_sse(
     created: int | None = None,
     skip: int = 0,
     call_items: list[dict[str, Any]] | None = None,
+    logprobs: list[dict[str, Any]] | None = None,
 ) -> Iterator[str]:
     """Serialize ``openai_response_events`` into SSE frames —
     ``event:`` + ``id:`` + ``data:`` per frame, ``id`` equal to the
@@ -1188,6 +1200,7 @@ def _responses_sse(
             usage=usage,
             created=created,
             call_items=call_items,
+            logprobs=logprobs,
         )
     ):
         if seq >= skip:
@@ -1205,6 +1218,7 @@ def _openai_sse(
     tool_calls: Sequence[Sequence[dict[str, Any]] | None] | None = None,
     finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
+    logprobs: Sequence[dict[str, Any] | None] | None = None,
     skip: int = 0,
 ) -> Iterator[str]:
     """Serialize ``openai_chunks`` payloads into SSE frames +
@@ -1234,6 +1248,7 @@ def _openai_sse(
         tool_calls=tool_calls,
         finish_reasons=finish_reasons,
         created=created,
+        logprobs=logprobs,
     ):
         if seq >= skip:
             yield _frame(payload, seq)
@@ -2638,8 +2653,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return replay
         _check_citations(body.receipt_hashes)
         messages = [m.model_dump(exclude_none=True) for m in body.messages]
-        wants_tools = body.tools is not None or any(
-            m.role == "tool" or m.tool_calls for m in body.messages
+        # the structured channel carries tool context AND provider
+        # logprob scores — a logprobs request on a plain link is the
+        # same capability gap (501) as a tool request on one
+        wants_tools = (
+            body.tools is not None
+            or body.logprobs
+            or body.top_logprobs is not None
+            or any(m.role == "tool" or m.tool_calls for m in body.messages)
         )
         # plain-path messages are str-typed — the tool-context branch is
         # the only place a dict carries tool_calls/tool_call_id values
@@ -2654,6 +2675,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         rec_cls: str | None = None
         content = ""
         tool_calls_out: list[dict[str, Any]] | None = None
+        logprobs_out: dict[str, Any] | None = None
         finish_out: str | None = None
         serving: str | None = None
         usage_snap: Any = None
@@ -2702,6 +2724,8 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             tools=body.tools,
                             tool_choice=body.tool_choice,
                             parallel_tool_calls=body.parallel_tool_calls,
+                            logprobs=body.logprobs,
+                            top_logprobs=body.top_logprobs,
                         )
                         content = tool_result.content or ""
                         tool_calls_out = (
@@ -2709,6 +2733,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                             if tool_result.tool_calls is not None
                             else None
                         )
+                        logprobs_out = tool_result.logprobs
                         finish_out = tool_result.finish_reason
                     else:
                         content = cited_complete(
@@ -2798,13 +2823,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     # the digest binds what shipped — text alone for a
                     # plain turn; text + the verbatim call list when the
                     # answer is a tool call (content "" would digest an
-                    # empty answer and let the payload slip the seal)
+                    # empty answer and let the payload slip the seal),
+                    # plus the logprob payload when the caller asked for
+                    # scores (they're part of what shipped).
                     output_sha256=(
                         hashlib.sha256(
                             (
-                                content + "\n" + json.dumps(tool_calls_out, sort_keys=True)
-                                if tool_calls_out
-                                else content
+                                content
+                                + (
+                                    "\n" + json.dumps(tool_calls_out, sort_keys=True)
+                                    if tool_calls_out
+                                    else ""
+                                )
+                                + (
+                                    "\n" + json.dumps(logprobs_out, sort_keys=True)
+                                    if logprobs_out
+                                    else ""
+                                )
                             ).encode("utf-8")
                         ).hexdigest()
                         if serving is not None
@@ -2829,6 +2864,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             sampling=sampling_fields,
             tool_calls=tool_calls_out,
             finish_reason=finish_out,
+            logprobs=logprobs_out,
         )
         response.headers["X-Fx1-Completion-Id"] = cid
         if key is not None:
@@ -2871,6 +2907,15 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(
                 501,
                 "tool calls are not streamable on /harness/complete/stream; "
+                "use /v1/chat/completions?stream=true",
+                code="not_supported",
+            )
+        if body.logprobs or body.top_logprobs is not None:
+            # same channel boundary — provider scores ride the /v1 wire's
+            # aggregated delta.logprobs frame
+            raise ApiError(
+                501,
+                "logprobs are not streamable on /harness/complete/stream; "
                 "use /v1/chat/completions?stream=true",
                 code="not_supported",
             )
@@ -3097,6 +3142,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         contents: list[str] = []
         choice_calls: list[list[dict[str, Any]] | None] = []
         choice_reasons: list[str] = []
+        choice_lps: list[dict[str, Any] | None] = []
         usage_sum: dict[str, int] = {}
         usage_seen = False
         for out in outs:
@@ -3107,6 +3153,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             contents.append(out.content)
             choice_calls.append(out.tool_calls)
             choice_reasons.append(out.finish_reason or "stop")
+            choice_lps.append(out.logprobs)
             if isinstance(out.usage, dict):
                 usage_seen = True
                 for uk, uv in out.usage.items():
@@ -3122,6 +3169,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             usage=usage_sum if usage_seen else None,
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
+            logprobs=choice_lps,
         )
         if body.store is not False:
             envelope_store.put(envelope)
@@ -3143,6 +3191,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             validate_response_format(response_text_format(body), out.content)
         cid = out.completion_id or uuid.uuid4().hex
         call_items = openai_response_call_items(out.tool_calls or [])
+        lp_arr = out.logprobs.get("content") if isinstance(out.logprobs, dict) else None
         envelope = openai_response_object(
             rid=f"resp_{uuid.uuid4().hex}",
             item_id=f"msg_{uuid.uuid4().hex}",
@@ -3151,6 +3200,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             model=out.model,
             usage=out.usage,
             call_items=call_items or None,
+            logprobs=(lp_arr if isinstance(lp_arr, list) else None),
         )
         if body.store is not False:
             envelope_store.put(envelope)
@@ -3275,6 +3325,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         content=[c["message"]["content"] or "" for c in env["choices"]],
                         tool_calls=[c["message"].get("tool_calls") for c in env["choices"]],
                         finish_reasons=[c["finish_reason"] for c in env["choices"]],
+                        logprobs=[c.get("logprobs") for c in env["choices"]],
                         backend=env["system_fingerprint"],
                         model=env["model"],
                         usage=env["usage"],
@@ -3300,6 +3351,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     content=[c["message"]["content"] or "" for c in env_chat["choices"]],
                     tool_calls=[c["message"].get("tool_calls") for c in env_chat["choices"]],
                     finish_reasons=[c["finish_reason"] for c in env_chat["choices"]],
+                    logprobs=[c.get("logprobs") for c in env_chat["choices"]],
                     backend=env_chat["system_fingerprint"],
                     model=env_chat["model"],
                     usage=env_chat["usage"],
@@ -3388,6 +3440,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             env_items = [it for it in env["output"] if isinstance(it, dict)]
             env_msg = next((it for it in env_items if it.get("type") == "message"), None)
             env_calls = [it for it in env_items if it.get("type") == "function_call"]
+            env_parts = env_msg.get("content") if isinstance(env_msg, dict) else None
+            env_lp = (
+                env_parts[0].get("logprobs")
+                if isinstance(env_parts, list) and env_parts and isinstance(env_parts[0], dict)
+                else None
+            )
             return _responses_sse(
                 body,
                 content=(str(env_msg["content"][0]["text"]) if isinstance(env_msg, dict) else ""),
@@ -3398,6 +3456,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 created=env.get("created_at"),
                 skip=drop,
                 call_items=env_calls or None,
+                logprobs=(env_lp if isinstance(env_lp, list) else None),
             )
 
         if replay is not None:
@@ -3458,6 +3517,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                     usage=usage,
                     created=int(envelope["created_at"]),
                     call_items=env_call_items or None,
+                    logprobs=(
+                        msg_item["content"][0].get("logprobs")
+                        if isinstance(msg_item, dict)
+                        and isinstance(msg_item.get("content"), list)
+                        and msg_item["content"]
+                        and isinstance(msg_item["content"][0], dict)
+                        else None
+                    ),
                 ),
                 media_type="text/event-stream",
                 headers=headers,
@@ -4519,6 +4586,7 @@ def create_app(
                 "openai_retrieval": True,
                 "openai_tools": True,
                 "openai_responses_tools": True,
+                "openai_logprobs": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),

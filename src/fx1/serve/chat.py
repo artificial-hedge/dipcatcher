@@ -55,29 +55,40 @@ def cited_complete_tools(
     tools: list[dict[str, Any]] | None = None,
     tool_choice: str | dict[str, Any] | None = None,
     parallel_tool_calls: bool | None = None,
+    logprobs: bool | None = None,
+    top_logprobs: int | None = None,
 ) -> ToolCompletion:
-    """The tool-calling half of the gated completion contract.
+    """The structured-channel half of the gated completion contract.
 
     Same rules as :func:`cited_complete` — ``sampling.stop`` truncates the
     assistant text before the gate, the honesty gate validates whatever
     text shipped, and declared receipts append the provenance footer.
     The gate reads ``content`` only: ``tool_calls[].function.arguments``
     are machine-bound JSON (a calculator needs ``{"sharpe": ...}`` keys a
-    headline must never carry), so gating the arguments would punish a
-    correct call — the *text* is the claim surface and it stays gated.
+    headline must never carry) and ``logprobs`` are provider-reported
+    scores, not claims — the *text* is the claim surface and it stays
+    gated.
+
+    ``logprobs``/``top_logprobs`` pass through verbatim; the provider's
+    ``choices[].logprobs`` rides the returned :class:`ToolCompletion`
+    untouched (``None`` under provider silence — never fabricated).
 
     A backend without ``complete_with_tools`` fails closed
     (``NotImplementedError`` → 501), never a silent drop of the tool
-    context."""
+    or logprobs context."""
     fn = getattr(backend, "complete_with_tools", None)
     if fn is None:
-        raise NotImplementedError(f"backend {type(backend).__name__} has no tool-calling channel")
+        raise NotImplementedError(
+            f"backend {type(backend).__name__} has no structured-completion channel"
+        )
     result: ToolCompletion = fn(
         messages,
         sampling=sampling,
         tools=tools,
         tool_choice=tool_choice,
         parallel_tool_calls=parallel_tool_calls,
+        logprobs=logprobs,
+        top_logprobs=top_logprobs,
     )
     content = result.content
     if content is not None and sampling is not None:
@@ -97,4 +108,5 @@ def cited_complete_tools(
         content=content,
         tool_calls=result.tool_calls,
         finish_reason=result.finish_reason,
+        logprobs=result.logprobs,
     )

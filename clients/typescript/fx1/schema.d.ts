@@ -1293,6 +1293,8 @@ export interface components {
             logit_bias?: {
                 [key: string]: number;
             } | null;
+            /** Logprobs */
+            logprobs?: boolean | null;
             /** Max Tokens */
             max_tokens?: number | null;
             /** Messages */
@@ -1329,6 +1331,8 @@ export interface components {
             tools?: {
                 [key: string]: unknown;
             }[] | null;
+            /** Top Logprobs */
+            top_logprobs?: number | null;
             /** Top P */
             top_p?: number | null;
             /** User */
@@ -1351,6 +1355,10 @@ export interface components {
             finish_reason?: string | null;
             /** Latency Ms */
             latency_ms: number;
+            /** Logprobs */
+            logprobs?: {
+                [key: string]: unknown;
+            } | null;
             /** Model */
             model: string | null;
             /** Receipt Hashes */
@@ -1842,13 +1850,19 @@ export interface components {
          * OpenAIChatChoice
          * @description One choice of a `chat.completion` — the gated text lands here.
          *     ``message`` may carry ``tool_calls`` (content then null);
-         *     ``finish_reason`` is the upstream's own verdict.
+         *     ``logprobs`` is the verbatim provider payload when the request asked
+         *     for it (null otherwise); ``finish_reason`` is the upstream's own
+         *     verdict.
          */
         OpenAIChatChoice: {
             /** Finish Reason */
             finish_reason: string;
             /** Index */
             index: number;
+            /** Logprobs */
+            logprobs?: {
+                [key: string]: unknown;
+            } | null;
             /** Message */
             message: {
                 [key: string]: unknown;
@@ -1884,6 +1898,8 @@ export interface components {
             logit_bias?: {
                 [key: string]: number;
             } | null;
+            /** Logprobs */
+            logprobs?: boolean | null;
             /** Max Completion Tokens */
             max_completion_tokens?: number | null;
             /** Max Tokens */
@@ -1941,6 +1957,8 @@ export interface components {
             } | null;
             /** Tools */
             tools?: components["schemas"]["OpenAITool"][] | null;
+            /** Top Logprobs */
+            top_logprobs?: number | null;
             /** Top P */
             top_p?: number | null;
             /** User */
@@ -2041,6 +2059,8 @@ export interface components {
          */
         OpenAIResponseRequest: {
             fx1?: components["schemas"]["OpenAIFx1"] | null;
+            /** Include */
+            include?: string[] | null;
             /** Input */
             input: string | {
                 [key: string]: unknown;
@@ -2087,6 +2107,8 @@ export interface components {
             } | null;
             /** Tools */
             tools?: components["schemas"]["OpenAIResponseTool"][] | null;
+            /** Top Logprobs */
+            top_logprobs?: number | null;
             /** Top P */
             top_p?: number | null;
             /** User */

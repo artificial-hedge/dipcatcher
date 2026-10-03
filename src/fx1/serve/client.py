@@ -1024,6 +1024,8 @@ class HarnessClient:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
@@ -1085,6 +1087,8 @@ class HarnessClient:
             "tools": tools,
             "tool_choice": tool_choice,
             "parallel_tool_calls": parallel_tool_calls,
+            "logprobs": logprobs,
+            "top_logprobs": top_logprobs,
             "stream": False,
         }
         if fx1:
@@ -1131,6 +1135,8 @@ class HarnessClient:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
         include_usage: bool = False,
         idempotency_key: str | None = None,
         last_event_id: int | None = None,
@@ -1183,6 +1189,8 @@ class HarnessClient:
             "tools": tools,
             "tool_choice": tool_choice,
             "parallel_tool_calls": parallel_tool_calls,
+            "logprobs": logprobs,
+            "top_logprobs": top_logprobs,
             "stream": True,
             "stream_options": {"include_usage": True} if include_usage else None,
         }
@@ -1240,6 +1248,8 @@ class HarnessClient:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        include: list[str] | None = None,
+        top_logprobs: int | None = None,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
@@ -1286,6 +1296,8 @@ class HarnessClient:
             tools=tools,
             tool_choice=tool_choice,
             parallel_tool_calls=parallel_tool_calls,
+            include=include,
+            top_logprobs=top_logprobs,
             stream=False,
         )
         if idempotency_key is not None:
@@ -1367,6 +1379,8 @@ class HarnessClient:
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        include: list[str] | None = None,
+        top_logprobs: int | None = None,
         stream: bool = False,
     ) -> dict[str, Any]:
         fx1: dict[str, Any] = {}
@@ -1405,6 +1419,10 @@ class HarnessClient:
             payload["tool_choice"] = tool_choice
         if parallel_tool_calls is not None:
             payload["parallel_tool_calls"] = parallel_tool_calls
+        if include is not None:
+            payload["include"] = include
+        if top_logprobs is not None:
+            payload["top_logprobs"] = top_logprobs
         if fx1:
             payload["fx1"] = fx1
         return payload

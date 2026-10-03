@@ -130,8 +130,6 @@ OPENAI_UNSUPPORTED = (
     # ``tool_choice`` (which the pipeline honors; see OpenAITool)
     "functions",
     "function_call",
-    "logprobs",
-    "top_logprobs",
     "modalities",
     "audio",
     "prediction",
@@ -277,6 +275,8 @@ class OpenAIChatRequest(_Model):
     tools: list[OpenAITool] | None = None
     tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
     parallel_tool_calls: bool | None = None
+    logprobs: bool | None = None
+    top_logprobs: int | None = Field(default=None, ge=0, le=20)
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -352,6 +352,8 @@ class OpenAIChatRequest(_Model):
             self.tool_choice is not None or self.parallel_tool_calls is not None
         ):
             raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
+        if self.top_logprobs is not None and not self.logprobs:
+            raise ValueError("top_logprobs requires logprobs: true")
         present = [f for f in OPENAI_UNSUPPORTED if getattr(self, f, None) is not None]
         # extras (extra="allow") that are also unsupported features
         extra_bad = sorted(f for f in OPENAI_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
@@ -380,11 +382,14 @@ class OpenAIModelList(_Model):
 class OpenAIChatChoice(_Model):
     """One choice of a `chat.completion` — the gated text lands here.
     ``message`` may carry ``tool_calls`` (content then null);
-    ``finish_reason`` is the upstream's own verdict."""
+    ``logprobs`` is the verbatim provider payload when the request asked
+    for it (null otherwise); ``finish_reason`` is the upstream's own
+    verdict."""
 
     index: int
     message: dict[str, Any]
     finish_reason: str
+    logprobs: dict[str, Any] | None = None
 
 
 class OpenAIChatResponse(_Model):
@@ -590,6 +595,8 @@ def openai_to_kwargs(
         "tools": ([t.model_dump(exclude_none=True) for t in body.tools] if body.tools else None),
         "tool_choice": body.tool_choice,
         "parallel_tool_calls": body.parallel_tool_calls,
+        "logprobs": body.logprobs,
+        "top_logprobs": body.top_logprobs,
     }
 
 
@@ -659,19 +666,24 @@ def openai_envelope(
     tool_calls: Sequence[Sequence[dict[str, Any]] | None] | None = None,
     finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
+    logprobs: Sequence[dict[str, Any] | None] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the `chat.completion` envelope. `model` reports
     the serving link's own model id (or the backend name); the completion
     id mints the `chatcmpl-` handle. ``content`` accepts the ``n>1``
     choice list — one entry per completion, index-ordered.
 
-    ``tool_calls``/``finish_reasons`` are per-choice upstream-verbatim
-    lists (index-ordered like ``content``). A choice carrying tool calls
-    with no assistant text emits ``content: null`` — OpenAI's own
-    encoding for a pure tool-call turn."""
+    ``tool_calls``/``finish_reasons``/``logprobs`` are per-choice
+    upstream-verbatim values (index-ordered like ``content``). A choice
+    carrying tool calls with no assistant text emits ``content: null`` —
+    OpenAI's own encoding for a pure tool-call turn. ``logprobs`` is the
+    provider's ``choices[i].logprobs`` payload verbatim (null when the
+    provider stayed silent — the field always serializes, matching
+    OpenAI's envelope shape)."""
     contents = [content] if isinstance(content, str) else list(content)
     calls = list(tool_calls or [])
     reasons = list(finish_reasons or [])
+    lps = list(logprobs or [])
     choices: list[dict[str, Any]] = []
     for i, text in enumerate(contents):
         tc = calls[i] if i < len(calls) else None
@@ -686,6 +698,7 @@ def openai_envelope(
                 "index": i,
                 "message": message,
                 "finish_reason": reasons[i] if i < len(reasons) else "stop",
+                "logprobs": lps[i] if i < len(lps) else None,
             }
         )
     return {
@@ -725,6 +738,7 @@ def openai_chunks(
     tool_calls: Sequence[Sequence[dict[str, Any]] | None] | None = None,
     finish_reasons: Sequence[str] | None = None,
     created: int | None = None,
+    logprobs: Sequence[dict[str, Any] | None] | None = None,
 ) -> Iterator[dict[str, Any]]:
     """`chat.completion.chunk` payloads over gated text.
 
@@ -740,11 +754,16 @@ def openai_chunks(
     per index (spec-legal; ``choices[].index`` disambiguates).
     ``tool_calls`` per choice ride one ``delta.tool_calls`` frame
     carrying the complete call list (spec-legal single-shot deltas);
+    ``logprobs`` per choice ride one aggregated ``delta.logprobs``
+    frame after the content pieces — the provider's token boundaries
+    don't align with the harness's whitespace re-chunking, so the full
+    token array ships in one frame rather than faking alignment;
     ``finish_reasons`` override the ``stop`` default.
     """
     texts = [text] if isinstance(text, str) else list(text)
     calls = list(tool_calls or [])
     reasons = list(finish_reasons or [])
+    lps = list(logprobs or [])
     base: dict[str, Any] = {
         "id": f"chatcmpl-{cid}",
         "object": "chat.completion.chunk",
@@ -771,6 +790,12 @@ def openai_chunks(
             frame["choices"] = [{"index": i, "delta": {"content": piece}, "finish_reason": None}]
             yield frame
 
+        lp = lps[i] if i < len(lps) else None
+        if lp:
+            lp_frame = dict(base)
+            lp_frame["choices"] = [{"index": i, "delta": {"logprobs": lp}, "finish_reason": None}]
+            yield lp_frame
+
         last = dict(base)
         last["choices"] = [{"index": i, "delta": {}, "finish_reason": finish}]
         yield last
@@ -791,7 +816,6 @@ def openai_chunks(
 # the evidence).
 RESPONSES_UNSUPPORTED = (
     "truncation",
-    "include",
     "background",
     "previous_response_id",
     # chat-completions fields that don't exist on this surface — refuse
@@ -802,7 +826,6 @@ RESPONSES_UNSUPPORTED = (
     "presence_penalty",
     "frequency_penalty",
     "logprobs",
-    "top_logprobs",
     "messages",
     "stream_options",
     "response_format",
@@ -879,6 +902,8 @@ class OpenAIResponseRequest(_Model):
     tools: list[OpenAIResponseTool] | None = None
     tool_choice: Literal["none", "auto", "required"] | dict[str, Any] | None = None
     parallel_tool_calls: bool | None = None
+    include: list[str] | None = None
+    top_logprobs: int | None = Field(default=None, ge=0, le=20)
     fx1: OpenAIFx1 | None = None
 
     @model_validator(mode="after")
@@ -952,6 +977,17 @@ class OpenAIResponseRequest(_Model):
             self.tool_choice is not None or self.parallel_tool_calls is not None
         ):
             raise ValueError("tool_choice/parallel_tool_calls require a non-empty tools list")
+        if self.include is not None:
+            bad_inc = sorted(set(self.include) - {"message.output_text.logprobs"})
+            if bad_inc:
+                raise ValueError(
+                    f"include accepts only 'message.output_text.logprobs' on this "
+                    f"surface; got {bad_inc}"
+                )
+        if self.top_logprobs is not None and (
+            not self.include or "message.output_text.logprobs" not in self.include
+        ):
+            raise ValueError("top_logprobs requires include: ['message.output_text.logprobs']")
         present = [f for f in RESPONSES_UNSUPPORTED if getattr(self, f, None) is not None]
         extra_bad = sorted(f for f in RESPONSES_UNSUPPORTED if f in (self.__pydantic_extra__ or {}))
         bad = sorted(set(present) | set(extra_bad))
@@ -1119,7 +1155,15 @@ def response_to_kwargs(
             else body.tool_choice
         ),
         "parallel_tool_calls": body.parallel_tool_calls,
+        "logprobs": (True if _wants_response_logprobs(body) else None),
+        "top_logprobs": body.top_logprobs,
     }
+
+
+def _wants_response_logprobs(body: OpenAIResponseRequest) -> bool:
+    """True when ``include`` requests the logprobs channel — the request
+    param that maps onto the shared channel's ``logprobs: true``."""
+    return bool(body.include and "message.output_text.logprobs" in body.include)
 
 
 def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
@@ -1142,6 +1186,8 @@ def _response_echoes(body: OpenAIResponseRequest) -> dict[str, Any]:
             body.tool_choice if body.tool_choice is not None else ("auto" if body.tools else "none")
         ),
         "parallel_tool_calls": bool(body.parallel_tool_calls),
+        "include": body.include or [],
+        "top_logprobs": body.top_logprobs,
         "truncation": "disabled",
     }
 
@@ -1183,6 +1229,7 @@ def openai_response_object(
     status: str = "completed",
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
+    logprobs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """A gated result → the ``response`` object. ``output`` carries one
     ``message`` item with one ``output_text`` part — plus one
@@ -1190,8 +1237,10 @@ def openai_response_object(
     calls (a calls-only turn ships no message item, matching OpenAI).
     ``usage`` maps the provider's counts onto input/output/total
     (``None`` when the backend reports nothing — never fabricated).
-    ``status`` is ``in_progress`` only inside the pre-completion stream
-    events."""
+    ``logprobs`` is the provider's per-token array — it lands verbatim
+    on the ``output_text`` part's ``logprobs`` field (the key is emitted
+    only when the provider reported scores). ``status`` is
+    ``in_progress`` only inside the pre-completion stream events."""
     resp_usage: dict[str, int] | None = None
     if isinstance(usage, dict):
         it = usage.get("prompt_tokens")
@@ -1208,13 +1257,20 @@ def openai_response_object(
     output: list[dict[str, Any]] = []
     if status == "completed":
         if content or not call_items:
+            part: dict[str, Any] = {
+                "type": "output_text",
+                "text": content,
+                "annotations": [],
+            }
+            if logprobs:
+                part["logprobs"] = list(logprobs)
             output.append(
                 {
                     "type": "message",
                     "id": item_id,
                     "status": "completed",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": content, "annotations": []}],
+                    "content": [part],
                 }
             )
         output.extend(call_items or [])
@@ -1242,13 +1298,19 @@ def openai_response_events(
     usage: dict[str, int] | None,
     created: int | None = None,
     call_items: list[dict[str, Any]] | None = None,
+    logprobs: list[dict[str, Any]] | None = None,
 ) -> Iterator[tuple[str, dict[str, Any]]]:
     """The Responses SSE event sequence over gated text — the core grammar
     a streaming client needs: ``response.created``/``in_progress``, the
     output-item lifecycle, ``output_text.delta`` frames (the shared
     ~64-char splitter), and ``response.completed`` carrying the full
-    response object with usage. Each ``(event, payload)`` pair serializes
-    as an SSE ``event:`` + ``data:`` frame."""
+    response object with usage. ``logprobs`` lands on the terminal
+    ``content_part.done`` / ``output_item.done`` payloads' ``output_text``
+    part and inside ``response.completed`` — provider token boundaries
+    don't align with the text deltas, so the array ships whole at
+    completion rather than faking per-delta alignment. Each
+    ``(event, payload)`` pair serializes as an SSE ``event:`` + ``data:``
+    frame."""
     created_obj = openai_response_object(
         rid=rid,
         item_id=item_id,
@@ -1314,6 +1376,13 @@ def openai_response_events(
                 "text": text,
             },
         )
+        done_part: dict[str, Any] = {
+            "type": "output_text",
+            "text": text,
+            "annotations": [],
+        }
+        if logprobs:
+            done_part["logprobs"] = list(logprobs)
         yield (
             "response.content_part.done",
             {
@@ -1321,7 +1390,7 @@ def openai_response_events(
                 "item_id": item_id,
                 "output_index": 0,
                 "content_index": 0,
-                "part": {"type": "output_text", "text": text, "annotations": []},
+                "part": done_part,
             },
         )
         yield (
@@ -1334,7 +1403,7 @@ def openai_response_events(
                     "id": item_id,
                     "status": "completed",
                     "role": "assistant",
-                    "content": [{"type": "output_text", "text": text, "annotations": []}],
+                    "content": [done_part],
                 },
             },
         )
@@ -1393,6 +1462,7 @@ def openai_response_events(
                 status="completed",
                 created=created,
                 call_items=call_items,
+                logprobs=logprobs,
             ),
         },
     )

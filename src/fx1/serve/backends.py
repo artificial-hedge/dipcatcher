@@ -295,15 +295,21 @@ def _openai_chat_complete_tools(
     api_key: str | None,
     label: str,
     sampling: SamplingParams | None = None,
+    logprobs: bool | None = None,
+    top_logprobs: int | None = None,
 ) -> tuple[ToolCompletion, dict[str, int] | None]:
     """POST one OpenAI-compatible chat completion carrying ``tools``.
 
     ``tools``/``tool_choice``/``parallel_tool_calls`` pass through
-    verbatim — the provider decides what each means. The response's
-    ``choices[0]`` is validated fail-closed: ``content`` may be ``null``
-    (pure tool call), ``tool_calls`` entries must carry the OpenAI
-    function-call shape, and a non-string ``content`` or malformed call
-    raises ``RuntimeError`` — never a synthesized message.
+    verbatim — the provider decides what each means. ``logprobs`` /
+    ``top_logprobs`` pass through the same way: the response's
+    ``choices[0].logprobs`` is echoed verbatim (``None`` when the
+    provider stays silent — provider silence is its own answer, never
+    fabricated). The response's ``choices[0]`` is validated fail-closed:
+    ``content`` may be ``null`` (pure tool call), ``tool_calls`` entries
+    must carry the OpenAI function-call shape, and a non-string
+    ``content`` or malformed call raises ``RuntimeError`` — never a
+    synthesized message.
 
     Returns ``(ToolCompletion, usage)`` — usage ``None`` when the
     endpoint omits the block."""
@@ -318,6 +324,10 @@ def _openai_chat_complete_tools(
         body_map["tool_choice"] = tool_choice
     if parallel_tool_calls is not None:
         body_map["parallel_tool_calls"] = parallel_tool_calls
+    if logprobs is not None:
+        body_map["logprobs"] = logprobs
+    if top_logprobs is not None:
+        body_map["top_logprobs"] = top_logprobs
     body = json.dumps(body_map).encode()
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -355,11 +365,18 @@ def _openai_chat_complete_tools(
             )
         tool_calls = tuple(_tool_call_shape(raw, label, i) for i, raw in enumerate(raw_calls))
     finish = choice.get("finish_reason")
+    raw_lp = choice.get("logprobs")
+    if raw_lp is not None and not isinstance(raw_lp, dict):
+        raise RuntimeError(
+            f"malformed {label} completion payload: logprobs is "
+            f"{type(raw_lp).__name__}, not object|null"
+        )
     return (
         ToolCompletion(
             content=content,
             tool_calls=tool_calls,
             finish_reason=finish if isinstance(finish, str) else None,
+            logprobs=raw_lp,
         ),
         _extract_usage(payload),
     )
@@ -453,13 +470,16 @@ class ToolCompletion:
     ``tool_calls`` is the verbatim ``choices[].message.tool_calls`` list
     (each ``{id, type: \"function\", function: {name, arguments}}``);
     ``finish_reason`` is the upstream's own reason (``tool_calls`` /
-    ``stop`` / ``length`` / ...). All three are provider-reported —
-    nothing is synthesized harness-side.
+    ``stop`` / ``length`` / ...); ``logprobs`` is the verbatim
+    ``choices[].logprobs`` payload when the request asked for it
+    (``None`` when unrequested or the provider stayed silent). All four
+    are provider-reported — nothing is synthesized harness-side.
     """
 
     content: str | None
     tool_calls: tuple[dict[str, Any], ...] | None
     finish_reason: str | None
+    logprobs: dict[str, Any] | None = None
 
 
 class InferenceBackend(Protocol):
@@ -499,6 +519,8 @@ class ToolBackend(Protocol):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
     ) -> ToolCompletion: ...
 
 
@@ -590,9 +612,11 @@ class HostedK3Backend(_UsageTracker):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
     ) -> ToolCompletion:
-        """Tool-calling completion — Moonshot's wire accepts the OpenAI
-        ``tools`` fields; they pass through verbatim."""
+        """Structured completion — Moonshot's wire accepts the OpenAI
+        ``tools`` and ``logprobs`` fields; they pass through verbatim."""
         result, usage = _openai_chat_complete_tools(
             self._api_url,
             model=self._model,
@@ -604,6 +628,8 @@ class HostedK3Backend(_UsageTracker):
             api_key=self._api_key,
             label="hosted_k3",
             sampling=sampling,
+            logprobs=logprobs,
+            top_logprobs=top_logprobs,
         )
         self._record_usage(usage)
         return result
@@ -710,11 +736,14 @@ class OpenAICompatBackend(_UsageTracker):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
     ) -> ToolCompletion:
-        """Tool-calling completion against the caller-declared endpoint —
-        ``tools``/``tool_choice``/``parallel_tool_calls`` pass through
-        verbatim; a provider that doesn't know them answers honestly
-        (its own 4xx surfaces as ``RuntimeError``)."""
+        """Structured completion against the caller-declared endpoint —
+        ``tools``/``tool_choice``/``parallel_tool_calls`` and
+        ``logprobs``/``top_logprobs`` pass through verbatim; a provider
+        that doesn't know them answers honestly (its own 4xx surfaces
+        as ``RuntimeError``)."""
         result, usage = _openai_chat_complete_tools(
             self._url,
             model=self._model,
@@ -726,6 +755,8 @@ class OpenAICompatBackend(_UsageTracker):
             api_key=self._api_key,
             label="BYOK",
             sampling=sampling,
+            logprobs=logprobs,
+            top_logprobs=top_logprobs,
         )
         self._record_usage(usage)
         return result
@@ -917,10 +948,13 @@ class LocalFx1Backend(_UsageTracker):
         tools: list[dict[str, Any]] | None = None,
         tool_choice: str | dict[str, Any] | None = None,
         parallel_tool_calls: bool | None = None,
+        logprobs: bool | None = None,
+        top_logprobs: int | None = None,
     ) -> ToolCompletion:
-        """Tool-calling completion — delegated to the serving engine. An
-        engine/chat-template without tool support answers its own error
-        (honest 4xx → RuntimeError); nothing is faked harness-side."""
+        """Structured completion — delegated to the serving engine. An
+        engine/chat-template without tool or logprobs support answers its
+        own error (honest 4xx → RuntimeError); nothing is faked
+        harness-side."""
         if not self._url:
             raise BackendNotConfiguredError(
                 "local_fx1 is not configured: set FX1_LOCAL_SERVE_URL to an "
@@ -939,6 +973,8 @@ class LocalFx1Backend(_UsageTracker):
             api_key=self._api_key or None,
             label="local_fx1",
             sampling=sampling,
+            logprobs=logprobs,
+            top_logprobs=top_logprobs,
         )
         self._record_usage(usage)
         return result

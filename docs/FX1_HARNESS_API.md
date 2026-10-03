@@ -289,14 +289,25 @@ to `GET /harness/completions/{id}` and its sealed
   *text* only: `tool_calls[].function.arguments` are machine-bound
   JSON, not claims. Legacy `functions`/`function_call` stay refused —
   `tools` is the only function-calling grammar.
+- **Logprobs channel:** `logprobs: true` + `top_logprobs` (0–20,
+  requires `logprobs`) ride the same structured channel — they forward
+  verbatim to a capable link and the provider's `choices[].logprobs`
+  payload lands verbatim on the choice (null under provider silence).
+  The streamed form emits one aggregated `delta.logprobs` frame per
+  choice before the finish frame — provider token boundaries don't
+  align with the harness's whitespace re-chunking, so the array ships
+  whole rather than faking alignment. The completion record's
+  `output_sha256` binds text + calls + the score payload when present.
+  The native `/harness/complete` route takes the same fields;
+  `/harness/complete/stream` answers 501 (use `stream: true` here).
 - **Fail-closed surface:** `response_format` types
-  outside `text`/`json_object`/`json_schema`, `logprobs`,
-  `top_logprobs`, `modalities`, `audio`, `prediction`,
+  outside `text`/`json_object`/`json_schema`,
+  `modalities`, `audio`, `prediction`,
   `web_search_options`, `suffix`, `echo`, `best_of`, and
   `None`/non-text-part content are all rejected — nothing is silently
   dropped. `store` is honored, not refused: it governs the retrieval
   index (below). The native `/harness/complete` route takes the same
-  `tools` fields; `/harness/complete/stream` and
+  `tools`/`logprobs` fields; `/harness/complete/stream` and
   `/harness/complete/batch` are text surfaces — tool context there is
   a refusal (501 / 422), not a dropped field.
 - **Structured output:** `response_format` `json_object` and
@@ -385,6 +396,14 @@ same OpenAI error taxonomy:
   `tool_choice`/`parallel_tool_calls` without tools refuse 422,
   malformed `function_call`/`function_call_output` items refuse
   400.
+- **Logprobs channel:** `include: ["message.output_text.logprobs"]`
+  is the only honored `include` member — it asks the provider for
+  per-token scores, and `top_logprobs` (0–20) requires it. The
+  provider's array lands on the message item's `output_text` part as
+  `logprobs`, on both the JSON object and the stream's terminal
+  `content_part.done` / `output_item.done` payloads and the embedded
+  `response.completed` object. Other `include` members and a bare
+  `logprobs` field (that's the chat surface's name) refuse 422.
 - **Decode contract:** `max_output_tokens` maps to `max_tokens`;
   `reasoning.effort`, `service_tier`, `user`, `safety_identifier`,
   `metadata` forward like their chat counterparts; `text.format`
@@ -405,7 +424,8 @@ same OpenAI error taxonomy:
   stream: the keyed response replays byte-identically, frames ≤
   the cursor dropped.
 - **Fail-closed surface:** `truncation`, `background`,
-  `previous_response_id`, `include`, and every other unsupported
+  `previous_response_id`, `include` members outside
+  `message.output_text.logprobs`, and every other unsupported
   field refuse 422 at validation; nothing is silently dropped.
   `store` is honored, not refused (retrieval section below).
 - **Retry-safe:** `Idempotency-Key` shares the `/v1/chat/completions`

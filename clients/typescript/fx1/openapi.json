@@ -955,6 +955,17 @@
             ],
             "title": "Logit Bias"
           },
+          "logprobs": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
+          },
           "max_tokens": {
             "anyOf": [
               {
@@ -1165,6 +1176,19 @@
             ],
             "title": "Tools"
           },
+          "top_logprobs": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Logprobs"
+          },
           "top_p": {
             "anyOf": [
               {
@@ -1242,6 +1266,18 @@
           "latency_ms": {
             "title": "Latency Ms",
             "type": "number"
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
           },
           "model": {
             "anyOf": [
@@ -2537,7 +2573,7 @@
       },
       "OpenAIChatChoice": {
         "additionalProperties": false,
-        "description": "One choice of a `chat.completion` \u2014 the gated text lands here.\n``message`` may carry ``tool_calls`` (content then null);\n``finish_reason`` is the upstream's own verdict.",
+        "description": "One choice of a `chat.completion` \u2014 the gated text lands here.\n``message`` may carry ``tool_calls`` (content then null);\n``logprobs`` is the verbatim provider payload when the request asked\nfor it (null otherwise); ``finish_reason`` is the upstream's own\nverdict.",
         "properties": {
           "finish_reason": {
             "title": "Finish Reason",
@@ -2546,6 +2582,18 @@
           "index": {
             "title": "Index",
             "type": "integer"
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
           },
           "message": {
             "additionalProperties": true,
@@ -2634,6 +2682,17 @@
               }
             ],
             "title": "Logit Bias"
+          },
+          "logprobs": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logprobs"
           },
           "max_completion_tokens": {
             "anyOf": [
@@ -2884,6 +2943,19 @@
             ],
             "title": "Tools"
           },
+          "top_logprobs": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Logprobs"
+          },
           "top_p": {
             "anyOf": [
               {
@@ -3128,6 +3200,20 @@
               }
             ]
           },
+          "include": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include"
+          },
           "input": {
             "anyOf": [
               {
@@ -3314,6 +3400,19 @@
               }
             ],
             "title": "Tools"
+          },
+          "top_logprobs": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Logprobs"
           },
           "top_p": {
             "anyOf": [
