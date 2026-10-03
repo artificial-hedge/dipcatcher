@@ -164,6 +164,8 @@
       "retry_validation_failclosed": true,
       "run_parity": true,
       "sampling_parity": true,
+      "score_guard_parity": true,
+      "score_parity": true,
       "sdk_batch_gate_raises": true,
       "sdk_openai_batch_shape": true,
       "stream_chunks_identical": true,
@@ -186,11 +188,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "2e1f6a1a865b5e95875d94446c2256db67d9d86a",
+  "git_revision": "d118969f82d818af1d8d0488389a1474fe639b0a",
   "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. A terminal wire job's fx1_job_record.v1 embeds the same digested run result that Fx1Harness.run_receipt seals in-process as fx1_run_result.v1 \u2014 identical on the shared fields. Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "2fccd2fb456fe6e8e7f7ce39f7bb8f323809a68990ce2fb4f91a2af3f058de24",
+  "receipt_sha256": "9c0c323f47cd7d69d354fd554eb7692af65bd153c52c2a475229cc03eb9a818e",
   "research_only": true,
   "schema": "parity_audit.v1"
 }

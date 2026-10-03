@@ -783,6 +783,27 @@ class Fx1Harness:
             return GateCheckResult(ok=False, error=str(exc))
         return GateCheckResult(ok=True)
 
+    def score(self, input: str | list[str]) -> list[dict[str, Any]]:  # noqa: A002
+        """Score text through the deterministic reward contract in-process
+        — same breakdown shape as ``POST /harness/score`` on the wire:
+        ``{object:"score", index, total, components, violations}`` per
+        input. Argument faults raise ``ValueError``."""
+        from fx1.reward import score_response  # noqa: PLC0415
+        from fx1.serve.api import ScoreRequest  # noqa: PLC0415
+
+        validated = ScoreRequest(input=input).input
+        items = [validated] if isinstance(validated, str) else list(validated)
+        return [
+            {
+                "object": "score",
+                "index": i,
+                "total": bd.total,
+                "components": dict(bd.components),
+                "violations": list(bd.violations),
+            }
+            for i, bd in enumerate(score_response(t) for t in items)
+        ]
+
     def probe_backend(
         self,
         backend: str,

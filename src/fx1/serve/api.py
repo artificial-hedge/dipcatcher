@@ -86,6 +86,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from fx1 import __version__
 from fx1.harness import Harness, HarnessRole
 from fx1.honesty import Fx1HonestyError, validate_fx1_output
+from fx1.reward import score_response
 from fx1.serve.backends import (
     BYOK_API_KEY_ENV,
     BYOK_BASE_URL_ENV,
@@ -741,6 +742,45 @@ class GateCheckResponse(_Model):
 
     ok: bool
     error: str | None = None
+
+
+class ScoreRequest(_Model):
+    """Text to run through the reward contract — the full deterministic
+    breakdown (components, violations, total) for writers preflighting a
+    response or validators auditing one. A str is one input; a list scores
+    each element independently (cap 128)."""
+
+    input: str | list[str]
+
+    @model_validator(mode="after")
+    def _input_shape(self) -> ScoreRequest:
+        raw = self.input
+        if isinstance(raw, str):
+            if len(raw) > 262144:
+                raise ValueError("input strings must be at most 262144 characters")
+            return self
+        if not isinstance(raw, list) or len(raw) == 0 or len(raw) > 128:
+            raise ValueError("input must be a non-empty list of at most 128 items")
+        if not all(isinstance(v, str) for v in raw):
+            raise ValueError("input must be a string or a list of strings")
+        if any(len(v) > 262144 for v in raw):
+            raise ValueError("input strings must be at most 262144 characters")
+        return self
+
+
+class ScoreItem(_Model):
+    """One scored input — the reward contract's verdict verbatim."""
+
+    object: Literal["score"] = "score"
+    index: int
+    total: float
+    components: dict[str, float]
+    violations: list[str]
+
+
+class ScoreResponse(_Model):
+    object: Literal["list"]
+    data: list[ScoreItem]
 
 
 class EvalSubmitRequest(_Model):
@@ -4446,6 +4486,31 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return GateCheckResponse(ok=False, error=str(exc))
         return GateCheckResponse(ok=True)
 
+    @app.post(
+        "/harness/score",
+        response_model=ScoreResponse,
+        tags=["harness"],
+        operation_id="harness_score",
+    )
+    async def score(body: ScoreRequest) -> ScoreResponse:
+        """Score text through the deterministic reward contract — the same
+        breakdown the corpus and reward lanes use (honesty violation caps
+        the total at -10; empty text scores 0). Advisory like the gate
+        pre-flight: no backend, no slot, stays up during drain."""
+        texts = [body.input] if isinstance(body.input, str) else body.input
+        return ScoreResponse(
+            object="list",
+            data=[
+                ScoreItem(
+                    index=i,
+                    total=bd.total,
+                    components=bd.components,
+                    violations=bd.violations,
+                )
+                for i, bd in enumerate(score_response(t) for t in texts)
+            ],
+        )
+
 
 def create_app(
     harness: Harness | None = None,
@@ -4806,6 +4871,7 @@ def create_app(
                 "openai_responses_tools": True,
                 "openai_logprobs": True,
                 "openai_embeddings": True,
+                "score": True,
                 "evals": True,
             },
             eval_suites=list(EVAL_SUITES),

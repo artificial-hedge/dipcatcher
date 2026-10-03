@@ -22,6 +22,9 @@ export type BackendProbeResponse =
   components["schemas"]["BackendProbeResponse"];
 export type GateCheckRequest = components["schemas"]["GateCheckRequest"];
 export type GateCheckResponse = components["schemas"]["GateCheckResponse"];
+export type ScoreRequest = components["schemas"]["ScoreRequest"];
+export type ScoreItem = components["schemas"]["ScoreItem"];
+export type ScoreResponse = components["schemas"]["ScoreResponse"];
 export type CompleteRequest = components["schemas"]["CompleteRequest"];
 export type CompleteResponse = components["schemas"]["CompleteResponse"];
 export type CompleteBatchRequest =
@@ -589,6 +592,15 @@ export class HarnessApiClient {
     return this.post("/harness/gate/check", {
       text,
     } satisfies GateCheckRequest) as Promise<GateCheckResponse>;
+  }
+
+  /**
+   * POST /harness/score — run text through the deterministic reward
+   * contract; returns the per-item breakdowns (total, components,
+   * violations). Advisory: never spends model tokens.
+   */
+  score(request: ScoreRequest): Promise<ScoreResponse> {
+    return this.post("/harness/score", request) as Promise<ScoreResponse>;
   }
 
   /**

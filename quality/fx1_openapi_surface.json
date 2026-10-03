@@ -393,6 +393,16 @@
         ]
       }
     },
+    "/harness/score": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/harness/version": {
       "get": {
         "params": [],
@@ -749,5 +759,5 @@
       }
     }
   },
-  "schema_sha256": "9a32b2de0af55685a1074fb750bdecf6138fdb6f8a46c03fa727472241b775b0"
+  "schema_sha256": "e8f794c3eaf49828584d3f25887ccb90984350768bdb4e98ace29a16bf2e4646"
 }

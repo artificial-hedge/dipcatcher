@@ -491,6 +491,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/harness/score": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Score
+         * @description Score text through the deterministic reward contract — the same
+         *     breakdown the corpus and reward lanes use (honesty violation caps
+         *     the total at -10; empty text scores 0). Advisory like the gate
+         *     pre-flight: no backend, no slot, stays up during drain.
+         */
+        post: operations["harness_score"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/harness/version": {
         parameters: {
             query?: never;
@@ -2363,6 +2386,49 @@ export interface components {
             /** Warnings */
             warnings: string[];
         };
+        /**
+         * ScoreItem
+         * @description One scored input — the reward contract's verdict verbatim.
+         */
+        ScoreItem: {
+            /** Components */
+            components: {
+                [key: string]: number;
+            };
+            /** Index */
+            index: number;
+            /**
+             * Object
+             * @default score
+             * @constant
+             */
+            object: "score";
+            /** Total */
+            total: number;
+            /** Violations */
+            violations: string[];
+        };
+        /**
+         * ScoreRequest
+         * @description Text to run through the reward contract — the full deterministic
+         *     breakdown (components, violations, total) for writers preflighting a
+         *     response or validators auditing one. A str is one input; a list scores
+         *     each element independently (cap 128).
+         */
+        ScoreRequest: {
+            /** Input */
+            input: string | string[];
+        };
+        /** ScoreResponse */
+        ScoreResponse: {
+            /** Data */
+            data: components["schemas"]["ScoreItem"][];
+            /**
+             * Object
+             * @constant
+             */
+            object: "list";
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -3652,6 +3718,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HarnessRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    harness_score: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScoreResponse"];
                 };
             };
             /** @description Validation Error */

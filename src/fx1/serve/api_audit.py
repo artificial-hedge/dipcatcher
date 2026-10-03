@@ -734,6 +734,9 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         out["drain_gate_check_up"] = (
             dclient.post("/harness/gate/check", json={"text": "ok"}).status_code == 200
         )
+        out["drain_score_up"] = (
+            dclient.post("/harness/score", json={"input": "ok"}).status_code == 200
+        )
         out["drain_uncapped_routes_up"] = (
             dclient.get("/harness/commands").status_code == 200
             and dclient.post("/receipts/verify", json={"receipt": {"x": 1}}).status_code == 200
@@ -2720,6 +2723,52 @@ def _probe_backend_probes(
         client.post("/harness/gate/check", json={"text": "x" * 262145}).status_code == 422
     )
 
+    # score surface: the deterministic reward contract over the wire —
+    # components + violations verbatim, not a model call.
+    s_one = client.post(
+        "/harness/score",
+        json={
+            "input": "verify-research pins receipt 0123456789abcdef — "
+            "simulated evidence, CRPS 0.4, uncertainty calibrated"
+        },
+    )
+    s_many = client.post(
+        "/harness/score",
+        json={"input": ["", "Sharpe 3.2 live trading NAV up", "x"]},
+    )
+    sd_many = s_many.json()["data"]
+    out["score_single_200"] = (
+        s_one.status_code == 200
+        and s_one.json()["object"] == "list"
+        and len(s_one.json()["data"]) == 1
+        and s_one.json()["data"][0]["object"] == "score"
+        and s_one.json()["data"][0]["index"] == 0
+        and s_one.json()["data"][0]["total"] == 8.5
+    )
+    out["score_components"] = (
+        s_one.json()["data"][0]["components"].get("honesty_clean") == 4.0
+        and s_one.json()["data"][0]["components"].get("cites_receipt") == 2.0
+        and s_one.json()["data"][0]["components"].get("proper_score_vocabulary") == 1.0
+    )
+    out["score_empty_zero"] = (
+        s_many.status_code == 200
+        and len(sd_many) == 3
+        and sd_many[0]["index"] == 0
+        and sd_many[0]["total"] == 0.0
+        and sd_many[0]["components"] == {}
+    )
+    out["score_honesty_violation"] = (
+        sd_many[1]["total"] == -10.0
+        and len(sd_many[1]["violations"]) == 1
+        and "forbidden" in sd_many[1]["violations"][0]
+    )
+    out["score_input_422"] = (
+        client.post("/harness/score", json={"input": []}).status_code == 422
+        and client.post("/harness/score", json={"input": [1]}).status_code == 422
+        and client.post("/harness/score", json={"input": "x" * 262145}).status_code == 422
+        and client.post("/harness/score", json={"input": ["x"] * 129}).status_code == 422
+    )
+
     # usage ledger: backend-reported tokens accumulate per series; the
     # usage_calls counter separates "silent provider" from "zero bill".
     m2 = uapp.get("/metrics").json()["complete"]
@@ -4495,6 +4544,9 @@ def _probe_backend_probes(
     )
     out["capabilities_reports_openai_embeddings"] = (
         oi_clean.get("/harness/capabilities").json()["features"].get("openai_embeddings") is True
+    )
+    out["capabilities_reports_score"] = (
+        oi_clean.get("/harness/capabilities").json()["features"].get("score") is True
     )
 
     # — decode contract: n / stop / penalties / bias / hints / attribution —
