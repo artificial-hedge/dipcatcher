@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-998 singularity/blow-up canon.
+        "semilinear_heat",
+        "fujita_exponent",
+        "singularity_formation",
+        "matched_asymptotic_pde",
+        "self_similar_blowup",
+        "regularity_critical",
         # Wave-997 dispersive-PDE canon.
         "nls_dispersion",
         "kdv_dispersion",

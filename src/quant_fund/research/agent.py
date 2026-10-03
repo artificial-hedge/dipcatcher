@@ -7975,6 +7975,14 @@ from quant_fund.research.benches_w997 import (
     bench_nls_dispersion_family,
     bench_strichartz_estimates_family,
 )
+from quant_fund.research.benches_w998 import (
+    bench_fujita_exponent_family,
+    bench_matched_asymptotic_pde_family,
+    bench_regularity_critical_family,
+    bench_self_similar_blowup_family,
+    bench_semilinear_heat_family,
+    bench_singularity_formation_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8346,6 +8354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "semilinear_heat": bench_semilinear_heat_family,
+        "fujita_exponent": bench_fujita_exponent_family,
+        "singularity_formation": bench_singularity_formation_family,
+        "matched_asymptotic_pde": bench_matched_asymptotic_pde_family,
+        "self_similar_blowup": bench_self_similar_blowup_family,
+        "regularity_critical": bench_regularity_critical_family,
         "nls_dispersion": bench_nls_dispersion_family,
         "kdv_dispersion": bench_kdv_dispersion_family,
         "strichartz_estimates": bench_strichartz_estimates_family,
