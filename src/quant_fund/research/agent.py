@@ -4415,6 +4415,14 @@ from quant_fund.research.benches_w552 import (
     bench_overtwisted_family,
     bench_tight_contact_family,
 )
+from quant_fund.research.benches_w553 import (
+    bench_frobenius_mfd_family,
+    bench_givental_j_family,
+    bench_mirror_symmetry_family,
+    bench_quantum_cohomology_family,
+    bench_quintic_invariants_family,
+    bench_toric_mirror_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4794,6 +4802,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mirror_symmetry": bench_mirror_symmetry_family,
+        "givental_j": bench_givental_j_family,
+        "quantum_cohomology": bench_quantum_cohomology_family,
+        "quintic_invariants": bench_quintic_invariants_family,
+        "toric_mirror": bench_toric_mirror_family,
+        "frobenius_mfd": bench_frobenius_mfd_family,
         "contact_form": bench_contact_form_family,
         "legendrian_knot": bench_legendrian_knot_family,
         "overtwisted": bench_overtwisted_family,
