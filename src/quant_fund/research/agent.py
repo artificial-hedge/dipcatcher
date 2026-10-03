@@ -7839,6 +7839,14 @@ from quant_fund.research.benches_w980 import (
     bench_walsh_series_family,
     bench_whitney_ext_family,
 )
+from quant_fund.research.benches_w981 import (
+    bench_grothendieck_const_family,
+    bench_john_ellipsoid_family,
+    bench_kadison_singer_family,
+    bench_loewner_ellipsoid_family,
+    bench_milman_isotropic_family,
+    bench_milman_rev_thm_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8210,6 +8218,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "john_ellipsoid": bench_john_ellipsoid_family,
+        "loewner_ellipsoid": bench_loewner_ellipsoid_family,
+        "milman_rev_thm": bench_milman_rev_thm_family,
+        "grothendieck_const": bench_grothendieck_const_family,
+        "kadison_singer": bench_kadison_singer_family,
+        "milman_isotropic": bench_milman_isotropic_family,
         "walsh_series": bench_walsh_series_family,
         "haar_system": bench_haar_system_family,
         "faber_schauder": bench_faber_schauder_family,
