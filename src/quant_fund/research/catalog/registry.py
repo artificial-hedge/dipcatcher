@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-845 integral-transforms canon.
+        "laplace_transform",
+        "mellin_transform",
+        "hankel_transform",
+        "z_transform",
+        "hilbert_transform",
+        "abel_transform",
         # Wave-844 asymptotic-analysis canon.
         "asymptotic_series",
         "poincare_expansion",
