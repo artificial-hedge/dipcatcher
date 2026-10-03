@@ -4119,6 +4119,14 @@ from quant_fund.research.benches_w515 import (
     bench_quillen_suslin_family,
     bench_serre_conj_family,
 )
+from quant_fund.research.benches_w516 import (
+    bench_affine_lie_family,
+    bench_kac_moody_family,
+    bench_moonshine_module_family,
+    bench_vertex_alg_family,
+    bench_weyl_kac_family,
+    bench_zhu_algebra_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4498,6 +4506,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kac_moody": bench_kac_moody_family,
+        "weyl_kac": bench_weyl_kac_family,
+        "vertex_alg": bench_vertex_alg_family,
+        "moonshine_module": bench_moonshine_module_family,
+        "affine_lie": bench_affine_lie_family,
+        "zhu_algebra": bench_zhu_algebra_family,
         "betti_series": bench_betti_series_family,
         "minimal_free": bench_minimal_free_family,
         "auslander_buchs": bench_auslander_buchs_family,
