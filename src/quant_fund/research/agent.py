@@ -6711,6 +6711,14 @@ from quant_fund.research.benches_w839 import (
     bench_kolmogorov_nwidth_family,
     bench_markov_brothers_family,
 )
+from quant_fund.research.benches_w840 import (
+    bench_loewner_interp_family,
+    bench_nevanlinna_pick_family,
+    bench_pade_approx_family,
+    bench_rational_chebyshev_family,
+    bench_schur_continued_family,
+    bench_stieltjes_fraction_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7082,6 +7090,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pade_approx": bench_pade_approx_family,
+        "rational_chebyshev": bench_rational_chebyshev_family,
+        "stieltjes_fraction": bench_stieltjes_fraction_family,
+        "loewner_interp": bench_loewner_interp_family,
+        "nevanlinna_pick": bench_nevanlinna_pick_family,
+        "schur_continued": bench_schur_continued_family,
         "jackson_direct": bench_jackson_direct_family,
         "chebyshev_alternation": bench_chebyshev_alternation_family,
         "kolmogorov_nwidth": bench_kolmogorov_nwidth_family,
