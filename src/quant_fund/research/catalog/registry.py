@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-451 equivariant-homotopy canon.
+        "g_spectrum",
+        "mackey_functor",
+        "norm_map",
+        "ro_grading",
+        "wirthmuller",
+        "tom_dieck",
         # Wave-450 stable-infinity canon.
         "stable_infty",
         "spectra_cat",

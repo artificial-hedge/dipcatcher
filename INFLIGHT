@@ -1,3 +1,4 @@
+feat(research): wave 451 — equivariant-homotopy canon (g_spectrum, mackey_functor, norm_map, ro_grading, wirthmuller, tom_dieck) (2661->2667 families)
 feat(research): wave 450 — stable-infinity canon (stable_infty, spectra_cat, exact_seq, stable_tstruct, smash_monoidal, thh_tc) (2655->2661 families)
 feat(research): wave 449 — analytic-geometry-2 canon (dagger_space, huber_ring, adic_generic, witt_perfect, fargues_curve, prism_site) (2649->2655 families)
 feat(research): wave 448 — higher-topos canon (infty_topos, univ_colimit, object_classif, trunc_modal, cohesive_top, hypercomplete) (2643->2649 families)
