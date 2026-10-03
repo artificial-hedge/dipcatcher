@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-344 group-theory-2 canon.
+        "sylow_theorems",
+        "group_presentation",
+        "burnside_lemma",
+        "free_group",
+        "conjugacy_classes",
+        "cayley_graph",
         # Wave-343 lattice/universal-algebra canon.
         "lattice_check",
         "galois_connection",
