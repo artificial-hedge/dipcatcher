@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-309 post-quantum-3 canon.
+        "mceliece_lite",
+        "bike_lite",
+        "hqc_lite",
+        "uov_sig",
+        "rainbow_sig",
+        "sidh_lite",
         # Wave-308 geophysics-2 canon.
         "reflectivity_synth",
         "gassmann_sub",

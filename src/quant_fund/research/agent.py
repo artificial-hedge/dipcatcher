@@ -2463,6 +2463,14 @@ from quant_fund.research.benches_w308 import (
     bench_spectral_decomp_family,
     bench_vz_raytrace_family,
 )
+from quant_fund.research.benches_w309 import (
+    bench_bike_lite_family,
+    bench_hqc_lite_family,
+    bench_mceliece_lite_family,
+    bench_rainbow_sig_family,
+    bench_sidh_lite_family,
+    bench_uov_sig_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2842,6 +2850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mceliece_lite": bench_mceliece_lite_family,
+        "bike_lite": bench_bike_lite_family,
+        "hqc_lite": bench_hqc_lite_family,
+        "uov_sig": bench_uov_sig_family,
+        "rainbow_sig": bench_rainbow_sig_family,
+        "sidh_lite": bench_sidh_lite_family,
         "reflectivity_synth": bench_reflectivity_synth_family,
         "gassmann_sub": bench_gassmann_sub_family,
         "spectral_decomp": bench_spectral_decomp_family,
