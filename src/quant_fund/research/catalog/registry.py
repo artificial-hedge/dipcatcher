@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-831 empirical-process-3 canon.
+        "entropy_integral",
+        "uniform_clt",
+        "symmetrization",
+        "rademacher_cplx",
+        "covering_number",
+        "metric_entropy",
         # Wave-830 concentration-of-measure canon.
         "azuma_ineq",
         "mcdiarmid_ineq",
