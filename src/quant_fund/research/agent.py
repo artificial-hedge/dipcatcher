@@ -7783,6 +7783,14 @@ from quant_fund.research.benches_w973 import (
     bench_schauder_basis_family,
     bench_type_cotype_family,
 )
+from quant_fund.research.benches_w974 import (
+    bench_complex_interp_family,
+    bench_lorentz_space_family,
+    bench_marcinkiewicz_interp_family,
+    bench_peetre_kfunctor_family,
+    bench_real_interp_k_family,
+    bench_reiteration_thm_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8154,6 +8162,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "real_interp_k": bench_real_interp_k_family,
+        "complex_interp": bench_complex_interp_family,
+        "lorentz_space": bench_lorentz_space_family,
+        "marcinkiewicz_interp": bench_marcinkiewicz_interp_family,
+        "peetre_kfunctor": bench_peetre_kfunctor_family,
+        "reiteration_thm": bench_reiteration_thm_family,
         "banach_mazur": bench_banach_mazur_family,
         "type_cotype": bench_type_cotype_family,
         "gl_property": bench_gl_property_family,
