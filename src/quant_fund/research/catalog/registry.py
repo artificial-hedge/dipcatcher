@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-373 optimization-3 canon.
+        "bundle_method",
+        "sqp",
+        "ip_qp",
+        "trust_region",
+        "frank_wolfe2",
+        "bfgs_wolfe",
         # Wave-372 stochastic-analysis canon.
         "ito_lemma",
         "girsanov",

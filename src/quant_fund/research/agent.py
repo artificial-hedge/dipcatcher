@@ -2975,6 +2975,14 @@ from quant_fund.research.benches_w372 import (
     bench_quadratic_var_family,
     bench_sde_strong_family,
 )
+from quant_fund.research.benches_w373 import (
+    bench_bfgs_wolfe_family,
+    bench_bundle_method_family,
+    bench_frank_wolfe2_family,
+    bench_ip_qp_family,
+    bench_sqp_family,
+    bench_trust_region_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3354,6 +3362,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bundle_method": bench_bundle_method_family,
+        "sqp": bench_sqp_family,
+        "ip_qp": bench_ip_qp_family,
+        "trust_region": bench_trust_region_family,
+        "frank_wolfe2": bench_frank_wolfe2_family,
+        "bfgs_wolfe": bench_bfgs_wolfe_family,
         "ito_lemma": bench_ito_lemma_family,
         "girsanov": bench_girsanov_family,
         "sde_strong": bench_sde_strong_family,
