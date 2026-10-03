@@ -730,6 +730,17 @@ backends are configured (`backends`, booleans only), and the registered
 command roles (`roles`). Clients self-configure from this instead of
 hardcoding server internals.
 
+`fx1 harness selftest` is the deploy gate: zero-config golden-path smoke
+of the whole contract. With no flags it boots a stub OpenAI engine and
+the production app on loopback and walks auth, commands, a BYOK
+completion, SSE reassembly, idempotent replay, the async job lifecycle,
+sealed-receipt verification, drain, and in-process parity with
+`Fx1Harness` — 17 checks, exit 0 only when all pass. `--state-dir DIR`
+adds a real process restart proving job-record recovery. `--remote URL`
+flips to read-only probes against a live deployment (no model spend):
+health, version negotiation, commands, advisory surfaces, and the auth
+gate when `--api-key` is given.
+
 ## Async jobs & webhooks
 
 `POST /harness/jobs` admits under the drain + `max_inflight` gates and

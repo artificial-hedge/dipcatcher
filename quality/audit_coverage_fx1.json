@@ -124,6 +124,9 @@
     "sdk_audit.py": {
       "status": "audited"
     },
+    "selftest.py": {
+      "status": "pending"
+    },
     "tail_audit.py": {
       "status": "audited"
     }
