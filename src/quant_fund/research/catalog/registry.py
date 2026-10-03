@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-934 convex-analysis-2 canon.
+        "inf_convolution",
+        "legendre_transform",
+        "support_fn",
+        "perspective_fn",
+        "polar_cone",
+        "normal_cone",
         # Wave-933 convex-analysis canon.
         "subgradient_proj",
         "proximal_map",
