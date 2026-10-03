@@ -7543,6 +7543,14 @@ from quant_fund.research.benches_w943 import (
     bench_ostrowski_bound_family,
     bench_wielandt_ineq_family,
 )
+from quant_fund.research.benches_w944 import (
+    bench_cauchy_binet_family,
+    bench_fan_inequality_family,
+    bench_horn_inequality_family,
+    bench_majorization_vec_family,
+    bench_schur_complement_family,
+    bench_weyl_ineq_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7914,6 +7922,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fan_inequality": bench_fan_inequality_family,
+        "horn_inequality": bench_horn_inequality_family,
+        "weyl_ineq": bench_weyl_ineq_family,
+        "cauchy_binet": bench_cauchy_binet_family,
+        "schur_complement": bench_schur_complement_family,
+        "majorization_vec": bench_majorization_vec_family,
         "loewner_matrix": bench_loewner_matrix_family,
         "operator_convex": bench_operator_convex_family,
         "kadison_ineq": bench_kadison_ineq_family,
