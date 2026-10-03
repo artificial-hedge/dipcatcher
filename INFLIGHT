@@ -1,3 +1,4 @@
+feat(research): wave 308 — geophysics-2 canon (reflectivity_synth, gassmann_sub, spectral_decomp, semblance_scan, gardner_relation, vz_raytrace) (1815->1821 families)
 feat(research): wave 307 — regex-2 canon (pike_vm, lazy_dfa, bitap_fuzzy, literal_prefilter, glushkov_nfa, regex_simplify) (1815->1821 families)
 feat(research): wave 306 — astronomy-3/IOD canon (laplace_iod, cowell_j2, batch_od, cr3bp_dynamics, porkchop_grid, davenport_q) (1809->1815 families)
 feat(research): wave 305 — text-index-2/stringology canon (suffix_array_lcp, z_function, suffix_tree_lex, booth_rotation, lyndon_factor, palindromic_tree) (1803->1809 families)
