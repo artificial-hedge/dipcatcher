@@ -4855,6 +4855,14 @@ from quant_fund.research.benches_w607 import (
     bench_mapping_space_family,
     bench_nerve_cat_family,
 )
+from quant_fund.research.benches_w608 import (
+    bench_etale_descent_family,
+    bench_etale_morphism_family,
+    bench_fppf_site_family,
+    bench_fpqc_site_family,
+    bench_ladic_sheaf_family,
+    bench_lisse_sheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5234,6 +5242,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "etale_descent": bench_etale_descent_family,
+        "etale_morphism": bench_etale_morphism_family,
+        "fppf_site": bench_fppf_site_family,
+        "fpqc_site": bench_fpqc_site_family,
+        "ladic_sheaf": bench_ladic_sheaf_family,
+        "lisse_sheaf": bench_lisse_sheaf_family,
         "kan_complex": bench_kan_complex_family,
         "horn_filler": bench_horn_filler_family,
         "nerve_cat": bench_nerve_cat_family,
