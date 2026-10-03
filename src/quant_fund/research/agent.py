@@ -6271,6 +6271,14 @@ from quant_fund.research.benches_w784 import (
     bench_stable_levy_family,
     bench_subordinator_family,
 )
+from quant_fund.research.benches_w785 import (
+    bench_dolean_mart_family,
+    bench_follmer_mart_family,
+    bench_local_mart2_family,
+    bench_protter_ito_family,
+    bench_strong_sol_family,
+    bench_usual_cond_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6650,6 +6658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "usual_cond": bench_usual_cond_family,
+        "dolean_mart": bench_dolean_mart_family,
+        "strong_sol": bench_strong_sol_family,
+        "local_mart2": bench_local_mart2_family,
+        "follmer_mart": bench_follmer_mart_family,
+        "protter_ito": bench_protter_ito_family,
         "levy_khinchine": bench_levy_khinchine_family,
         "subordinator": bench_subordinator_family,
         "stable_levy": bench_stable_levy_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-785 semimartingale-2 canon.
+        "usual_cond",
+        "dolean_mart",
+        "strong_sol",
+        "local_mart2",
+        "follmer_mart",
+        "protter_ito",
         # Wave-784 Levy canon.
         "levy_khinchine",
         "subordinator",
