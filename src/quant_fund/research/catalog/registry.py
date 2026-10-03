@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-666 derived-geometry-5 canon.
+        "derived_abelian",
+        "simplicial_comm",
+        "derived_bezout",
+        "derived_hecke",
+        "cotangent_stack",
+        "derived_bun",
         # Wave-665 homotopy-23 canon.
         "cohen_moore2",
         "whitehead_product",
