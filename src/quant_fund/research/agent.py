@@ -2568,6 +2568,14 @@ from quant_fund.research.benches_w321 import (
     bench_shape_graph_family,
     bench_three_valued_logic_family,
 )
+from quant_fund.research.benches_w322 import (
+    bench_cegis_loop_family,
+    bench_horn_clauses_family,
+    bench_interpolant_mc_family,
+    bench_predicate_abs_family,
+    bench_sygus_synth_family,
+    bench_weakest_precond_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2947,6 +2955,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "weakest_precond": bench_weakest_precond_family,
+        "sygus_synth": bench_sygus_synth_family,
+        "horn_clauses": bench_horn_clauses_family,
+        "interpolant_mc": bench_interpolant_mc_family,
+        "predicate_abs": bench_predicate_abs_family,
+        "cegis_loop": bench_cegis_loop_family,
         "three_valued_logic": bench_three_valued_logic_family,
         "shape_graph": bench_shape_graph_family,
         "separation_logic": bench_separation_logic_family,

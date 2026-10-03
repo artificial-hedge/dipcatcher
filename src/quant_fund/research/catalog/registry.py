@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-322 verification-2 canon.
+        "weakest_precond",
+        "sygus_synth",
+        "horn_clauses",
+        "interpolant_mc",
+        "predicate_abs",
+        "cegis_loop",
         # Wave-321 shape-analysis canon.
         "three_valued_logic",
         "shape_graph",
