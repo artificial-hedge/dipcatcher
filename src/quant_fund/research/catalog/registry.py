@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-359 harmonic-analysis canon.
+        "plancherel",
+        "poisson_summation",
+        "fejer_kernel",
+        "uncertainty",
+        "fourier_multiplier",
+        "sobolev_embed",
         # Wave-358 functional-analysis-2 canon.
         "open_mapping",
         "uniform_bounded",

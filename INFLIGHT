@@ -1,3 +1,4 @@
+feat(research): wave 359 — harmonic-analysis canon (plancherel, poisson_summation, fejer_kernel, uncertainty, fourier_multiplier, sobolev_embed) (2110->2116 families)
 feat(research): wave 358 — functional-analysis-2 canon (open_mapping, uniform_bounded, weak_convergence, banach_alaoglu, reflexive_space, closed_graph) (2104->2110 families)
 feat(research): wave 357 — differential-geometry-2 canon (connection_form, parallel_transport, holonomy, gauss_bonnet, geodesic_eq, sectional_curv) (2098->2104 families)
 feat(research): wave 356 — stochastic-processes-2 canon (markov_chain, martingale_check, poisson_process, gambler_ruin, stopping_time, markov_hitting) (2092->2098 families)
