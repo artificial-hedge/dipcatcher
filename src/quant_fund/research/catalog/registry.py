@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-497 birational-geometry canon.
+        "minimal_model",
+        "klt_pair",
+        "flip_cone",
+        "fano_mori",
+        "mmp_algorithm",
+        "toric_flip",
         # Wave-496 DAG-deformation canon.
         "derived_deformation",
         "formal_deformation",
