@@ -6591,6 +6591,14 @@ from quant_fund.research.benches_w824 import (
     bench_supermodular_order_family,
     bench_usual_stoch_order_family,
 )
+from quant_fund.research.benches_w825 import (
+    bench_castaing_rep_family,
+    bench_integrand_map_family,
+    bench_kura_ryll_family,
+    bench_measur_select_family,
+    bench_measurable_graph_family,
+    bench_stoch_open_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6962,6 +6970,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "measur_select": bench_measur_select_family,
+        "kura_ryll": bench_kura_ryll_family,
+        "castaing_rep": bench_castaing_rep_family,
+        "measurable_graph": bench_measurable_graph_family,
+        "integrand_map": bench_integrand_map_family,
+        "stoch_open": bench_stoch_open_family,
         "usual_stoch_order": bench_usual_stoch_order_family,
         "first_order_dom": bench_first_order_dom_family,
         "second_order_dom": bench_second_order_dom_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-825 measurable-selection canon.
+        "measur_select",
+        "kura_ryll",
+        "castaing_rep",
+        "measurable_graph",
+        "integrand_map",
+        "stoch_open",
         # Wave-824 stochastic-order canon.
         "usual_stoch_order",
         "first_order_dom",
