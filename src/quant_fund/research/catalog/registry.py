@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-330 SMT-theory canon.
+        "diff_logic",
+        "array_theory",
+        "bv_ops",
+        "dpllt",
+        "lia_branch",
+        "mcsat_lite",
         # Wave-329 proof-theory canon.
         "nd_check",
         "sequent_prove",
