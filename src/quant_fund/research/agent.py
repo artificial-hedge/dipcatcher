@@ -3583,6 +3583,14 @@ from quant_fund.research.benches_w448 import (
     bench_trunc_modal_family,
     bench_univ_colimit_family,
 )
+from quant_fund.research.benches_w449 import (
+    bench_adic_generic_family,
+    bench_dagger_space_family,
+    bench_fargues_curve_family,
+    bench_huber_ring_family,
+    bench_prism_site_family,
+    bench_witt_perfect_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3962,6 +3970,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dagger_space": bench_dagger_space_family,
+        "huber_ring": bench_huber_ring_family,
+        "adic_generic": bench_adic_generic_family,
+        "witt_perfect": bench_witt_perfect_family,
+        "fargues_curve": bench_fargues_curve_family,
+        "prism_site": bench_prism_site_family,
         "infty_topos": bench_infty_topos_family,
         "univ_colimit": bench_univ_colimit_family,
         "object_classif": bench_object_classif_family,

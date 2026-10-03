@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-449 analytic-geometry-2 canon.
+        "dagger_space",
+        "huber_ring",
+        "adic_generic",
+        "witt_perfect",
+        "fargues_curve",
+        "prism_site",
         # Wave-448 higher-topos canon.
         "infty_topos",
         "univ_colimit",
