@@ -3879,6 +3879,14 @@ from quant_fund.research.benches_w485 import (
     bench_lubin_tate2_family,
     bench_scholze_weinstein_family,
 )
+from quant_fund.research.benches_w486 import (
+    bench_karoubi_v_family,
+    bench_kv_theory_family,
+    bench_nk_theory_family,
+    bench_plus_k_family,
+    bench_vorst_stab_family,
+    bench_waldhausen_k_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4258,6 +4266,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "waldhausen_k": bench_waldhausen_k_family,
+        "plus_k": bench_plus_k_family,
+        "kv_theory": bench_kv_theory_family,
+        "karoubi_v": bench_karoubi_v_family,
+        "vorst_stab": bench_vorst_stab_family,
+        "nk_theory": bench_nk_theory_family,
         "lubin_tate2": bench_lubin_tate2_family,
         "bc_space": bench_bc_space_family,
         "local_shimura": bench_local_shimura_family,
