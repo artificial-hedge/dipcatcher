@@ -1,3 +1,4 @@
+feat(research): wave 569 — geometric-PDE canon (yamabe_problem, prescribed_curvature, nirenberg_problem, kazdan_warner, aubin_thm, trudinger_thm) (3369->3375 families)
 feat(research): wave 568 — symplectic-field-theory canon (symplectic_field, contact_homology3, floer_homol, reeb_orbit, sft_algebra, eliashberg_givental) (3363->3369 families)
 feat(research): wave 567 — algebraic-combinatorics canon (littlewood_richardson, knuth_rsk, macdonald_poly, schubert_calc, honeycomb_tiling, berenstein_zelevinsky) (3357->3363 families)
 feat(research): wave 566 — L-functions/random-matrix canon (selberg_trace2, zero_spacing, montgomery_pair, gue_statistics, keating_snaith, rudnick_sarnak) (3351->3357 families)

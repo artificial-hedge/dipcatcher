@@ -4543,6 +4543,14 @@ from quant_fund.research.benches_w568 import (
     bench_sft_algebra_family,
     bench_symplectic_field_family,
 )
+from quant_fund.research.benches_w569 import (
+    bench_aubin_thm_family,
+    bench_kazdan_warner_family,
+    bench_nirenberg_problem_family,
+    bench_prescribed_curvature_family,
+    bench_trudinger_thm_family,
+    bench_yamabe_problem_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4922,6 +4930,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "yamabe_problem": bench_yamabe_problem_family,
+        "prescribed_curvature": bench_prescribed_curvature_family,
+        "nirenberg_problem": bench_nirenberg_problem_family,
+        "kazdan_warner": bench_kazdan_warner_family,
+        "aubin_thm": bench_aubin_thm_family,
+        "trudinger_thm": bench_trudinger_thm_family,
         "symplectic_field": bench_symplectic_field_family,
         "contact_homology3": bench_contact_homology3_family,
         "floer_homol": bench_floer_homol_family,
