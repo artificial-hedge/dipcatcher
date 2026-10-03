@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-852 boundary-element canon.
+        "bem_kernel",
+        "fredholm_solve",
+        "nystrom_method",
+        "singular_integrals",
+        "fast_multipole",
+        "galerkin_bem",
         # Wave-851 discontinuous-Galerkin canon.
         "dg_discretization",
         "numerical_flux_dg",
