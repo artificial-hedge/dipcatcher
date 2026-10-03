@@ -1,3 +1,4 @@
+feat(research): wave 481 — motivic-5 canon (mtc_motive, fqmotive, triang_motive, motivic_chern, motivic_landin, higher_chow2) (2841->2847 families)
 feat(research): wave 480 — infinity-topos-3 canon (etale_geom, gros_topos, local_homeo, classify_obj, pi_infty, exponentiable) (2835->2841 families)
 feat(research): wave 479 — p-adic-3 canon (fargues_diam, tilting_equiv, scholze_diamond, ahb_ring, prism_2, drinfeld_sym) (2829->2835 families)
 feat(research): wave 478 — motivic-4 canon (levine_morel, quadratic_k, mgl_spec, cellular_motive, motivic_pi0, beilinson_con) (2823->2829 families)

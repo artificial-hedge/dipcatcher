@@ -3839,6 +3839,14 @@ from quant_fund.research.benches_w480 import (
     bench_local_homeo_family,
     bench_pi_infty_family,
 )
+from quant_fund.research.benches_w481 import (
+    bench_fqmotive_family,
+    bench_higher_chow2_family,
+    bench_motivic_chern_family,
+    bench_motivic_landin_family,
+    bench_mtc_motive_family,
+    bench_triang_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4218,6 +4226,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "mtc_motive": bench_mtc_motive_family,
+        "fqmotive": bench_fqmotive_family,
+        "triang_motive": bench_triang_motive_family,
+        "motivic_chern": bench_motivic_chern_family,
+        "motivic_landin": bench_motivic_landin_family,
+        "higher_chow2": bench_higher_chow2_family,
         "etale_geom": bench_etale_geom_family,
         "gros_topos": bench_gros_topos_family,
         "local_homeo": bench_local_homeo_family,
