@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-741 percolation-2 canon.
+        "beffara_nolin",
+        "hara_slade",
+        "gandre_liggett",
+        "heyman_redner",
+        "aiten_chayes",
+        "newman_percolation",
         # Wave-740 percolation canon.
         "smirnov_percolation",
         "duminil_copin",
