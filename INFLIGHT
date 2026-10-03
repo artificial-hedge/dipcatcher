@@ -1,3 +1,4 @@
+feat(research): wave 304 — computer-vision-2 canon (harris_corner, hough_lines, integral_image, seam_carving, grabcut_lite, meanshift_track) (1797->1803 families)
 feat(research): wave 303 — speech/audio codec canon (mulaw_compand, adpcm_ima, lpc_analysis, celp_encode, mel_cepstrum, viterbi_vad) (1791->1797 families)
 feat(research): wave 302 — compiler-5/JIT canon (card_table_gc, escape_analysis, osr_deopt, trace_tree, ssa_repair, gvn_pre) (1785->1791 families)
 feat(research): wave 301 — geophysics/seismic canon (nmo_dix, taup_transform, kirchhoff_mig, avo_shuey, vibroseis_sweep, eikonal_fmm) (1779->1785 families)

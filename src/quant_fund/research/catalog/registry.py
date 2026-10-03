@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-304 computer-vision-2 canon.
+        "harris_corner",
+        "hough_lines",
+        "integral_image",
+        "seam_carving",
+        "grabcut_lite",
+        "meanshift_track",
         # Wave-303 speech/audio codec canon.
         "mulaw_compand",
         "adpcm_ima",
