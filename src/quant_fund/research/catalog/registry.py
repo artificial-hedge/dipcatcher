@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-356 stochastic-processes-2 canon.
+        "markov_chain",
+        "martingale_check",
+        "poisson_process",
+        "gambler_ruin",
+        "stopping_time",
+        "markov_hitting",
         # Wave-355 probability-2 canon.
         "kolmogorov_axioms",
         "conditional_expect",
