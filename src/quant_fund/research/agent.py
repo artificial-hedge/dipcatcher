@@ -4687,6 +4687,14 @@ from quant_fund.research.benches_w586 import (
     bench_residue_thm_family,
     bench_verdier_duality_family,
 )
+from quant_fund.research.benches_w587 import (
+    bench_abundance_conj_family,
+    bench_bdd_fano_family,
+    bench_canonical_sing2_family,
+    bench_klt_mmp_family,
+    bench_mmp_flip_family,
+    bench_terminal_sing_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5066,6 +5074,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "terminal_sing": bench_terminal_sing_family,
+        "canonical_sing2": bench_canonical_sing2_family,
+        "klt_mmp": bench_klt_mmp_family,
+        "mmp_flip": bench_mmp_flip_family,
+        "abundance_conj": bench_abundance_conj_family,
+        "bdd_fano": bench_bdd_fano_family,
         "groth_duality": bench_groth_duality_family,
         "dualizing_cmplx": bench_dualizing_cmplx_family,
         "residue_thm": bench_residue_thm_family,
