@@ -4199,6 +4199,14 @@ from quant_fund.research.benches_w525 import (
     bench_mixing_weak_family,
     bench_osceledets_family,
 )
+from quant_fund.research.benches_w526 import (
+    bench_douady_hubbard_family,
+    bench_fatou_set_family,
+    bench_julia_set_family,
+    bench_mandelbrot_set_family,
+    bench_parabolic_impl_family,
+    bench_sullivan_no_wander_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4578,6 +4586,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "julia_set": bench_julia_set_family,
+        "mandelbrot_set": bench_mandelbrot_set_family,
+        "fatou_set": bench_fatou_set_family,
+        "sullivan_no_wander": bench_sullivan_no_wander_family,
+        "douady_hubbard": bench_douady_hubbard_family,
+        "parabolic_impl": bench_parabolic_impl_family,
         "birkhoff": bench_birkhoff_family,
         "mean_ergodic": bench_mean_ergodic_family,
         "mixing_weak": bench_mixing_weak_family,
