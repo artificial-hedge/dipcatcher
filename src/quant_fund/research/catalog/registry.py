@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-826 maximal-inequality canon.
+        "doob_ineq",
+        "max_ineq",
+        "bj_ineq",
+        "kolmogorov_ineq",
+        "etemadi_ineq",
+        "levy_ineq",
         # Wave-825 measurable-selection canon.
         "measur_select",
         "kura_ryll",

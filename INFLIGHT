@@ -1,3 +1,4 @@
+feat(research): wave 826 — maximal-inequality canon (doob_ineq, max_ineq, bj_ineq, kolmogorov_ineq, etemadi_ineq, levy_ineq) (4905->4911 families)
 feat(research): wave 825 — measurable-selection canon (measur_select, kura_ryll, castaing_rep, measurable_graph, integrand_map, stoch_open) (4899->4905 families)
 feat(research): wave 824 — stochastic-order canon (usual_stoch_order, first_order_dom, second_order_dom, convex_order, hazard_rate_order, supermodular_order) (4893->4899 families)
 feat(research): wave 823 — law-of-process canon (support_law, polish_law, tight_law, law_convergence, finite_dim, cylindrical_law) (4887->4893 families)
