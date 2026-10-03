@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-438 condensed-mathematics canon.
+        "condensed_set",
+        "solid_group",
+        "liquid_group",
+        "proetale_site",
+        "light_condensed",
+        "analytic_ring",
         # Wave-437 p-adic cohomology canon.
         "crystalline_coh",
         "prismatic_coh",
