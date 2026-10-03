@@ -2563,6 +2563,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "hilbert_instant",
         "lpc_formant",
         "goertzel_detect",
+        # Wave-209 reliability canon: Weibull life, fault tree, RAM
+        # Markov, FMEA, Arrhenius life-stress, RBD redundancy.
+        "weibull_life",
+        "fault_tree",
+        "ram_markov",
+        "fmea_rpn",
+        "life_stress",
+        "redundancy_block",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
