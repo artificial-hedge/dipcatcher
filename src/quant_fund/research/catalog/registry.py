@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-398 representation-theory-3 canon.
+        "induced_char",
+        "artins_theorem",
+        "tensor_char",
+        "clifford_toy",
+        "schur_index",
+        "frobenius_group",
         # Wave-397 stochastic-analysis-2 canon.
         "ost_calcul",
         "tanaka",

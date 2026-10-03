@@ -1,3 +1,4 @@
+feat(research): wave 398 — representation-theory-3 canon (induced_char, artins_theorem, tensor_char, clifford_toy, schur_index, frobenius_group) (2343->2349 families)
 feat(research): wave 397 — stochastic-analysis-2 canon (ost_calcul, tanaka, bessel3, reflect_bm, occupation_bm, h_transform) (2337->2343 families)
 feat(research): wave 396 — algebraic-number-theory-2 canon (cyclotomic_field, kronecker_weber, local_field, hensel_field, cm_points, idele_class) (2331->2337 families)
 feat(research): wave 395 — combinatorial-enumeration canon (catalan_dp, stirling_cycle, partition_count, bell_triangle, eulerian_num, inclusion_excl) (2325->2331 families)
