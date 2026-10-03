@@ -1,3 +1,4 @@
+feat(research): wave 822 — filtration canon (natural_filtration, right_continuous_f, usual_aug, enlargement_f, initial_enlarg, progressive_enlarg) (4881->4887 families)
 feat(research): wave 821 — random-measure canon (random_measure, integer_measure, poisson_rm, compensator_rm, jump_measure, sato_measure) (4875->4881 families)
 feat(research): wave 820 — semimartingale-decomp canon (doom_decomp, pcdt, special_sem, canonical_decomp, sem_loc_char, triplet_char) (4869->4875 families)
 feat(research): wave 819 — stopping-time canon (first_hitting, last_exit, stopping_sigma, progressive_set, debuts_theorem, accessible_time) (4863->4869 families)
