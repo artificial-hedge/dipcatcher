@@ -1846,6 +1846,14 @@ from quant_fund.research.benches_w231 import (
     bench_roofline_model_family,
     bench_tomasulo_sim_family,
 )
+from quant_fund.research.benches_w232 import (
+    bench_block_validator_family,
+    bench_difficulty_retarget_family,
+    bench_fork_resolution_family,
+    bench_merkle_tree_family,
+    bench_proof_of_work_family,
+    bench_utxo_set_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4784,6 +4792,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "tomasulo_sim": bench_tomasulo_sim_family(),
         "paging_sim": bench_paging_sim_family(),
         "roofline_model": bench_roofline_model_family(),
+        "merkle_tree": bench_merkle_tree_family(),
+        "proof_of_work": bench_proof_of_work_family(),
+        "utxo_set": bench_utxo_set_family(),
+        "difficulty_retarget": bench_difficulty_retarget_family(),
+        "fork_resolution": bench_fork_resolution_family(),
+        "block_validator": bench_block_validator_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
