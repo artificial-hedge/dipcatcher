@@ -10,7 +10,7 @@ def segre_dim(a: int, b: int) -> int:
 
 def veronese_degree(n: int, d: int) -> int:
     """Degree of the d-Veronese image of P^n = d^n."""
-    return d**n
+    return int(d**n)
 
 
 def veronese_target(n: int, d: int) -> int:
