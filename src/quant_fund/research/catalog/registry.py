@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-483 homotopy-10 canon.
+        "steenrod_ops",
+        "dyer_lashof",
+        "bar_spec",
+        "free_loop",
+        "sullivan_min",
+        "loop_functor",
         # Wave-482 chromatic-4 canon.
         "chromatic_fracture",
         "morava_stabilizer",
