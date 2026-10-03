@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-546 knot-theory canon.
+        "knot_invariant",
+        "jones_poly",
+        "alexander_poly",
+        "knot_group",
+        "knot_signature",
+        "vassiliev_inv",
         # Wave-545 Thurston-geometrization canon.
         "thurston_geometrization",
         "eight_geometries",
