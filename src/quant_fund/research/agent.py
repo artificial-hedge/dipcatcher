@@ -1999,6 +1999,14 @@ from quant_fund.research.benches_w250 import (
     bench_dinic_flow_family,
     bench_mincost_flow_family,
 )
+from quant_fund.research.benches_w251 import (
+    bench_givens_qr_family,
+    bench_jacobi_svd_family,
+    bench_ldlt_solve_family,
+    bench_lu_pivots_family,
+    bench_orth_iter_family,
+    bench_sturm_eig_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2186,6 +2194,12 @@ def _provenance(
         "critical_path": bench_critical_path_family,
         "dinic_flow": bench_dinic_flow_family,
         "mincost_flow": bench_mincost_flow_family,
+        "givens_qr": bench_givens_qr_family,
+        "jacobi_svd": bench_jacobi_svd_family,
+        "ldlt_solve": bench_ldlt_solve_family,
+        "lu_pivots": bench_lu_pivots_family,
+        "orth_iter": bench_orth_iter_family,
+        "sturm_eig": bench_sturm_eig_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
