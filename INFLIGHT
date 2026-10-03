@@ -1,3 +1,4 @@
+feat(research): wave 286 — security-defensive canon (beacon_detect, entropy_dns, cred_stuffing, impossible_travel, exfil_zscore, sig_score) (1689->1695 families)
 feat(research): wave 285 — information-theory canon (markov_entropy, blahut_arimoto, kl_knn, type_class, elias_gamma, miller_madow) (1683->1689 families)
 feat(research): wave 284 — bioinformatics-3 canon (nj_tree, fitch_pars, seed_extend, band_align, jc69_lik, codon_usage) (1677->1683 families)
 feat(research): wave 283 — robotics-3 canon (fk_dh, ik_jac, ray_lidar, pot_field, bezier_curve, odom_comp) (1671->1677 families)

@@ -2279,6 +2279,14 @@ from quant_fund.research.benches_w285 import (
     bench_miller_madow_family,
     bench_type_class_family,
 )
+from quant_fund.research.benches_w286 import (
+    bench_beacon_detect_family,
+    bench_cred_stuffing_family,
+    bench_entropy_dns_family,
+    bench_exfil_zscore_family,
+    bench_impossible_travel_family,
+    bench_sig_score_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2658,6 +2666,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "beacon_detect": bench_beacon_detect_family,
+        "entropy_dns": bench_entropy_dns_family,
+        "cred_stuffing": bench_cred_stuffing_family,
+        "impossible_travel": bench_impossible_travel_family,
+        "exfil_zscore": bench_exfil_zscore_family,
+        "sig_score": bench_sig_score_family,
         "markov_entropy": bench_markov_entropy_family,
         "blahut_arimoto": bench_blahut_arimoto_family,
         "kl_knn": bench_kl_knn_family,

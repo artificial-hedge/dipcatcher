@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-286 security-defensive canon.
+        "beacon_detect",
+        "entropy_dns",
+        "cred_stuffing",
+        "impossible_travel",
+        "exfil_zscore",
+        "sig_score",
         # Wave-285 information-theory canon.
         "markov_entropy",
         "blahut_arimoto",
