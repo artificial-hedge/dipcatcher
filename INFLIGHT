@@ -1,3 +1,4 @@
+feat(research): wave 517 — quantum-groups canon (quantum_group, crystal_base, quantum_rmatrix, jimbo_drin, lusztig_can, quantum_schur) (3057->3063 families)
 feat(research): wave 516 — Kac-Moody/VOA canon (kac_moody, weyl_kac, vertex_alg, moonshine_module, affine_lie, zhu_algebra) (3051->3057 families)
 feat(research): wave 515 — syzygy-theory canon (betti_series, minimal_free, auslander_buchs, serre_conj, quillen_suslin, green_koszul) (3045->3051 families)
 feat(research): wave 514 — differential-cohomology canon (diff_cohom, cheeger_simons, deligne_cohom, flat_bundle, beilinson_reg, secondary_inv) (3039->3045 families)
