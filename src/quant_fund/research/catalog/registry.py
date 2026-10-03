@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-763 mixing/urn canon.
+        "polya_urn",
+        "hopf_chain",
+        "boneschi_boal",
+        "bradley_mixing",
+        "rosenthal_mom",
+        "ibagimov_mixing",
         # Wave-762 weak-convergence canon.
         "martin_boundary",
         "doob_meyer",
