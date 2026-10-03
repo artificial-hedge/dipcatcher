@@ -23,6 +23,7 @@ def lift_root(a: int, p: int, power: int, f, fprime) -> int | None:
 
 def _bench_hensel_field(seed: int = 0) -> float:
     checks = []
+
     # sqrt(2) mod 7: x=3 (9 = 2 mod 7); lift to mod 49
     def f(t: int) -> int:
         return t * t - 2

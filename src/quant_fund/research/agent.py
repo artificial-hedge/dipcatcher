@@ -3167,6 +3167,14 @@ from quant_fund.research.benches_w396 import (
     bench_kronecker_weber_family,
     bench_local_field_family,
 )
+from quant_fund.research.benches_w397 import (
+    bench_bessel3_family,
+    bench_h_transform_family,
+    bench_occupation_bm_family,
+    bench_ost_calcul_family,
+    bench_reflect_bm_family,
+    bench_tanaka_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3546,6 +3554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ost_calcul": bench_ost_calcul_family,
+        "tanaka": bench_tanaka_family,
+        "bessel3": bench_bessel3_family,
+        "reflect_bm": bench_reflect_bm_family,
+        "occupation_bm": bench_occupation_bm_family,
+        "h_transform": bench_h_transform_family,
         "cyclotomic_field": bench_cyclotomic_field_family,
         "kronecker_weber": bench_kronecker_weber_family,
         "local_field": bench_local_field_family,
