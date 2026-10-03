@@ -35,6 +35,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
 from fx1.serve.backends import InferenceBackend
+from fx1.serve.journal import JobJournal
 from fx1.serve.webhooks import check_callback_url
 
 TRAINABLE_MODELS = ("fx1", "local_fx1")
@@ -227,9 +228,20 @@ class FTJobEntry:
 class FTJobStore:
     """Bounded LRU store for fine-tuning jobs — same posture as the job
     and eval stores: newest-first listing, silent eviction, idempotency
-    keys replaying to the original record."""
+    keys replaying to the original record.
 
-    def __init__(self, max_entries: int) -> None:
+    With a ``JobJournal`` bound (``--state-dir``) every transition,
+    event, model registration, cancel, and eviction appends to a
+    hash-chained ``ft_jobs.jsonl``; boot replays the chain: terminal
+    jobs return as-was with their event feed, jobs still
+    ``queued``/``running`` at the crash recover as ``failed`` with a
+    restart-explaining error (specs aren't journaled — nothing is
+    silently re-run), ``ft:`` idempotency keys still resolve, and the
+    ``ft:`` model registry rebuilds minus refs whose producing job was
+    evicted. ``callback_secret`` never touches disk, so a recovered job
+    keeps ``callback_url`` for audit but cannot deliver post-restart."""
+
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max(1, max_entries)
         self._entries: OrderedDict[str, FTJobEntry] = OrderedDict()
@@ -239,6 +251,88 @@ class FTJobStore:
         # only while its producing job does — evicting the job drops the
         # card so a listed model can never point at forgotten provenance.
         self._models: dict[str, dict[str, Any]] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = int(time.time())
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._drop(str(evict))
+                if "ft_model" in payload:
+                    ref = payload["ft_model"]
+                    self._models[str(ref["id"])] = dict(ref)
+                if "ft_event" in payload:
+                    ev = payload["ft_event"]
+                    host = self._entries.get(str(ev["job_id"]))
+                    if host is not None:
+                        host.events.append(FTJobEvent.model_validate(ev["event"]))
+                        while len(host.events) > _FT_EVENT_CAP:
+                            host.events.pop(0)
+                    continue
+                if "ft_job" not in payload:
+                    continue
+                job = FTJob.model_validate(payload["ft_job"])
+                key = payload.get("key")
+                fp = payload.get("fp")
+                entry = FTJobEntry(
+                    job,
+                    str(key) if key is not None else None,
+                    str(fp) if fp is not None else "",
+                )
+                for ev in payload.get("events") or ():
+                    entry.events.append(FTJobEvent.model_validate(ev))
+                self._entries[job.id] = entry
+                self._entries.move_to_end(job.id)
+                if entry.idem_key is not None:
+                    self._keys[f"ft:{entry.idem_key}"] = job.id
+            for entry in self._entries.values():
+                if entry.job.status not in _FT_TERMINAL:
+                    entry.job.status = "failed"
+                    entry.job.finished_at = now
+                    entry.job.error = FTJobError(
+                        code="job_failed",
+                        message="process restarted before the job reached a terminal state",
+                    )
+            # a model card can never outlive its producing job — drop refs
+            # whose job was evicted mid-journal
+            for mname, mref in list(self._models.items()):
+                if str(mref["job_id"]) not in self._entries:
+                    del self._models[mname]
+            self._compact_locked()
+
+    def _drop(self, job_id: str) -> None:
+        """Evict one entry plus its idem key and any model cards it minted."""
+        old = self._entries.pop(job_id, None)
+        if old is not None and old.idem_key is not None:
+            self._keys.pop(f"ft:{old.idem_key}", None)
+        for mname, mref in list(self._models.items()):
+            if str(mref["job_id"]) == job_id:
+                del self._models[mname]
+
+    def _record(self, entry: FTJobEntry) -> dict[str, Any]:
+        return {
+            "ft_job": entry.job.model_dump(mode="json"),
+            "events": [e.model_dump(mode="json") for e in entry.events],
+            "key": entry.idem_key,
+            "fp": entry.body_fp,
+        }
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — boot post-replay
+        so dead history and torn tails don't accumulate."""
+        if self._journal is not None:
+            live = [self._record(e) for e in self._entries.values()]
+            live.extend({"ft_model": ref} for ref in self._models.values())
+            self._journal.compact(live)
+
+    def mark(self, entry: FTJobEntry) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``entry.job`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(entry))
 
     def put(self, job: FTJob, idem_key: str | None, body_fp: str) -> FTJobEntry:
         entry = FTJobEntry(job, idem_key, body_fp)
@@ -247,13 +341,20 @@ class FTJobStore:
             self._entries.move_to_end(job.id)
             if idem_key is not None:
                 self._keys[f"ft:{idem_key}"] = job.id
+            evicted: list[str] = []
             while len(self._entries) > self._max:
-                old_id, old_entry = self._entries.popitem(last=False)
-                if old_entry.idem_key is not None:
-                    self._keys.pop(f"ft:{old_entry.idem_key}", None)
+                old_id, _old = self._entries.popitem(last=False)
+                if _old.idem_key is not None:
+                    self._keys.pop(f"ft:{_old.idem_key}", None)
                 for mname, mref in list(self._models.items()):
                     if mref["job_id"] == old_id:
                         del self._models[mname]
+                evicted.append(old_id)
+            if self._journal is not None:
+                payload = self._record(entry)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
         return entry
 
     def register_model(self, name: str, *, job_id: str, checkpoint: str, created: int) -> None:
@@ -267,6 +368,8 @@ class FTJobStore:
                 "checkpoint": checkpoint,
                 "created": created,
             }
+            if self._journal is not None:
+                self._journal.append({"ft_model": dict(self._models[name])})
 
     def get_model(self, name: str) -> dict[str, Any] | None:
         with self._lock:
@@ -336,6 +439,10 @@ class FTJobStore:
             entry.events.append(event)
             while len(entry.events) > _FT_EVENT_CAP:
                 entry.events.pop(0)
+            if self._journal is not None:
+                self._journal.append(
+                    {"ft_event": {"job_id": job_id, "event": event.model_dump(mode="json")}}
+                )
 
     def list_events(
         self, job_id: str, *, limit: int, after: str | None
@@ -363,6 +470,8 @@ class FTJobStore:
                 entry.job.status = "cancelled"
                 entry.job.finished_at = int(time.time())
                 entry.cancel.set()
+                if self._journal is not None:
+                    self._journal.append(self._record(entry))
                 return "queued"
             entry.cancel.set()
             return "running"
@@ -378,6 +487,8 @@ class FTJobStore:
                 e.job.status = "cancelled"
                 e.job.finished_at = int(time.time())
                 e.cancel.set()
+                if self._journal is not None:
+                    self._journal.append(self._record(e))
             running = [e for e in self._entries.values() if e.job.status == "running"]
             for e in running:
                 e.cancel.set()
