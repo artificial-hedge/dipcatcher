@@ -1,3 +1,4 @@
+feat(research): wave 922 — distributed-systems-6 canon (abcast_lite, cbc_bcast, slush_consensus, snowflake_consensus, cap_theorem, lake_wisc) (5481->5487 families)
 feat(research): wave 921 — distributed-systems-5 canon (virtual_synchrony, isis_bcast, atomic_bcast, honey_badger, avalanche_consensus, snowball_consensus) (5475->5481 families)
 feat(research): wave 920 — computational-geometry-5 canon (monotone_partition, polygon_triangulate, min_area_rect, diameter_pair, alpha_shape, minkowski_sum_poly) (5469->5475 families)
 feat(research): wave 919 — computational-geometry-4 canon (voronoi_lite, delaunay_flip, convex_layers, polygon_offset, rotating_sweep, visibility_graph) (5463->5469 families)
