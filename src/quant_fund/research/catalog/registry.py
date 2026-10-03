@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-387 probability-4 canon.
+        "uniform_integrability",
+        "vitali_conv",
+        "ldp_theory",
+        "concentration_ineq",
+        "kolmogorov_01",
+        "prokhorov_metric",
         # Wave-386 proof-theory-2 canon.
         "sequent_calculus",
         "natural_ded",

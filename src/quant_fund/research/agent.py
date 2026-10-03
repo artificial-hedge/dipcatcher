@@ -3087,6 +3087,14 @@ from quant_fund.research.benches_w386 import (
     bench_proof_complexity_family,
     bench_sequent_calculus_family,
 )
+from quant_fund.research.benches_w387 import (
+    bench_concentration_ineq_family,
+    bench_kolmogorov_01_family,
+    bench_ldp_theory_family,
+    bench_prokhorov_metric_family,
+    bench_uniform_integrability_family,
+    bench_vitali_conv_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3466,6 +3474,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "uniform_integrability": bench_uniform_integrability_family,
+        "vitali_conv": bench_vitali_conv_family,
+        "ldp_theory": bench_ldp_theory_family,
+        "concentration_ineq": bench_concentration_ineq_family,
+        "kolmogorov_01": bench_kolmogorov_01_family,
+        "prokhorov_metric": bench_prokhorov_metric_family,
         "sequent_calculus": bench_sequent_calculus_family,
         "natural_ded": bench_natural_ded_family,
         "godel_incomp": bench_godel_incomp_family,
