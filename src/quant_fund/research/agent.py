@@ -5751,6 +5751,14 @@ from quant_fund.research.benches_w719 import (
     bench_orbit_category_family,
     bench_stable_category_family,
 )
+from quant_fund.research.benches_w720 import (
+    bench_categorical_entropy_family,
+    bench_cluster_tilting_family,
+    bench_derived_morita_family,
+    bench_preprojective_alg_family,
+    bench_rouquier_dim_family,
+    bench_serre_dim_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6130,6 +6138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cluster_tilting": bench_cluster_tilting_family,
+        "derived_morita": bench_derived_morita_family,
+        "preprojective_alg": bench_preprojective_alg_family,
+        "categorical_entropy": bench_categorical_entropy_family,
+        "serre_dim": bench_serre_dim_family,
+        "rouquier_dim": bench_rouquier_dim_family,
         "calabi_yau_tri": bench_calabi_yau_tri_family,
         "d_calabi_yau": bench_d_calabi_yau_family,
         "gorenstein_proj": bench_gorenstein_proj_family,
