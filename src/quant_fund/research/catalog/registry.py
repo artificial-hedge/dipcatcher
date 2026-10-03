@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-840 rational-approximation canon.
+        "pade_approx",
+        "rational_chebyshev",
+        "stieltjes_fraction",
+        "loewner_interp",
+        "nevanlinna_pick",
+        "schur_continued",
         # Wave-839 approximation-theory canon.
         "jackson_direct",
         "chebyshev_alternation",
