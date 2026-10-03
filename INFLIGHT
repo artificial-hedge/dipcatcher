@@ -1,3 +1,4 @@
+feat(research): wave 268 — crypto-4 canon (elgamal_enc, paillier_he, fiat_shamir, ot_12, chacha_stream, poly1305_mac) (1581->1587 families)
 feat(research): wave 267 — GPU-architecture canon (warp_scheduler, simt_divergence, bank_conflict, mem_coalesce, occupancy_calc, shared_mem_tile) (1575->1581 families)
 feat(research): wave 266 — graphics-2 canon (triangle_raster, phong_shade, mipmap_sample, shadow_map, bump_map, ssao_lite) (1569->1575 families)
 owner: opencode (resumed session)

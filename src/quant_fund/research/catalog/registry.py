@@ -2956,6 +2956,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "mem_coalesce",
         "occupancy_calc",
         "shared_mem_tile",
+        # Wave-268 crypto-4 canon.
+        "elgamal_enc",
+        "paillier_he",
+        "fiat_shamir",
+        "ot_12",
+        "chacha_stream",
+        "poly1305_mac",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
