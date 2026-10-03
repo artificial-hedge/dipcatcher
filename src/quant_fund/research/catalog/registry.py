@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-632 witt-vectors-2 canon.
+        "witt_len2",
+        "big_witt",
+        "good_reduction",
+        "potential_reduction",
+        "tate_curve",
+        "odeur_zarba",
         # Wave-631 etale-2 canon.
         "etale_cover3",
         "etale_site3",
