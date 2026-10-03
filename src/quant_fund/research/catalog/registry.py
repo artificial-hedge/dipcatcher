@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-463 arithmetic-D-modules canon.
+        "overconv_dm",
+        "arithmetic_dm",
+        "frobenius_dm",
+        "holonomic_dm",
+        "rigid_dm",
+        "isocrystal",
         # Wave-462 infinity-topos-2 canon.
         "n_localic",
         "shape_theory",
