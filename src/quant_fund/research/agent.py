@@ -5071,6 +5071,14 @@ from quant_fund.research.benches_w634 import (
     bench_two_transform_family,
     bench_vert_cat_family,
 )
+from quant_fund.research.benches_w635 import (
+    bench_excellent_ring_family,
+    bench_going_up_family,
+    bench_integral_closure2_family,
+    bench_lying_over_family,
+    bench_weil_divisor2_family,
+    bench_zariski_main_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5450,6 +5458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "excellent_ring": bench_excellent_ring_family,
+        "zariski_main": bench_zariski_main_family,
+        "going_up": bench_going_up_family,
+        "lying_over": bench_lying_over_family,
+        "integral_closure2": bench_integral_closure2_family,
+        "weil_divisor2": bench_weil_divisor2_family,
         "icon_cat": bench_icon_cat_family,
         "bicat2": bench_bicat2_family,
         "vert_cat": bench_vert_cat_family,
