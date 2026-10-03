@@ -2728,6 +2728,14 @@ from quant_fund.research.benches_w341 import (
     bench_kripke_semantics_family,
     bench_topo_separation_family,
 )
+from quant_fund.research.benches_w342 import (
+    bench_analytic_sets_family,
+    bench_arith_hierarchy_family,
+    bench_borel_hierarchy_family,
+    bench_forcing_lite_family,
+    bench_jump_operator_family,
+    bench_rice_theorem_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3107,6 +3115,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "borel_hierarchy": bench_borel_hierarchy_family,
+        "analytic_sets": bench_analytic_sets_family,
+        "forcing_lite": bench_forcing_lite_family,
+        "arith_hierarchy": bench_arith_hierarchy_family,
+        "jump_operator": bench_jump_operator_family,
+        "rice_theorem": bench_rice_theorem_family,
         "kripke_semantics": bench_kripke_semantics_family,
         "bisimulation": bench_bisimulation_family,
         "ef_game": bench_ef_game_family,
