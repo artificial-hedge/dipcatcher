@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-641 homotopy-17 canon.
+        "smash_prod",
+        "stable_stem2",
+        "homotopy_colim",
+        "unstable_tower",
+        "periodic_fam",
+        "chromatic_htpy",
         # Wave-640 spectral-AG-3 canon.
         "spectral_group",
         "azure_space",
