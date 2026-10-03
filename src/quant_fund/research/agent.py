@@ -4303,6 +4303,14 @@ from quant_fund.research.benches_w538 import (
     bench_sobolev_space_family,
     bench_trace_thm_family,
 )
+from quant_fund.research.benches_w539 import (
+    bench_continued_frac2_family,
+    bench_dirichlet_approx_family,
+    bench_kronecker_thm_family,
+    bench_liouville_number_family,
+    bench_roth_thm2_family,
+    bench_subspace_thm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4682,6 +4690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dirichlet_approx": bench_dirichlet_approx_family,
+        "roth_thm2": bench_roth_thm2_family,
+        "continued_frac2": bench_continued_frac2_family,
+        "kronecker_thm": bench_kronecker_thm_family,
+        "liouville_number": bench_liouville_number_family,
+        "subspace_thm": bench_subspace_thm_family,
         "sobolev_space": bench_sobolev_space_family,
         "poincare_ineq": bench_poincare_ineq_family,
         "trace_thm": bench_trace_thm_family,
