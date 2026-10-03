@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-754 random-cluster canon.
+        "sokal_bcc",
+        "caracciolo_pelissetto",
+        "grimmett_rc",
+        "hara_hara",
+        "brydges_spencer",
+        "glasner_aizenman",
         # Wave-753 O(N)-model canon.
         "fernandez_frohlich",
         "aizenman_irf",

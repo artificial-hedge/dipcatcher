@@ -6023,6 +6023,14 @@ from quant_fund.research.benches_w753 import (
     bench_nienhuis_on_family,
     bench_pelissetto_vicari_family,
 )
+from quant_fund.research.benches_w754 import (
+    bench_brydges_spencer_family,
+    bench_caracciolo_pelissetto_family,
+    bench_glasner_aizenman_family,
+    bench_grimmett_rc_family,
+    bench_hara_hara_family,
+    bench_sokal_bcc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6402,6 +6410,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sokal_bcc": bench_sokal_bcc_family,
+        "caracciolo_pelissetto": bench_caracciolo_pelissetto_family,
+        "grimmett_rc": bench_grimmett_rc_family,
+        "hara_hara": bench_hara_hara_family,
+        "brydges_spencer": bench_brydges_spencer_family,
+        "glasner_aizenman": bench_glasner_aizenman_family,
         "fernandez_frohlich": bench_fernandez_frohlich_family,
         "aizenman_irf": bench_aizenman_irf_family,
         "fradkin_sokal": bench_fradkin_sokal_family,
