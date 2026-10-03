@@ -3807,6 +3807,14 @@ from quant_fund.research.benches_w476 import (
     bench_picard_grp_family,
     bench_smith_toda_family,
 )
+from quant_fund.research.benches_w477 import (
+    bench_arithmetic_ht_family,
+    bench_berthelo_crys_family,
+    bench_berthelot_rigid_family,
+    bench_caro_dm_family,
+    bench_dagger_dm_family,
+    bench_spencer_dm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4186,6 +4194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dagger_dm": bench_dagger_dm_family,
+        "spencer_dm": bench_spencer_dm_family,
+        "caro_dm": bench_caro_dm_family,
+        "berthelot_rigid": bench_berthelot_rigid_family,
+        "berthelo_crys": bench_berthelo_crys_family,
+        "arithmetic_ht": bench_arithmetic_ht_family,
         "bp_spectrum": bench_bp_spectrum_family,
         "adams_novikov": bench_adams_novikov_family,
         "landweber_exact": bench_landweber_exact_family,

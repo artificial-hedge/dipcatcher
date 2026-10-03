@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-477 arithmetic-D-modules-2 canon.
+        "dagger_dm",
+        "spencer_dm",
+        "caro_dm",
+        "berthelot_rigid",
+        "berthelo_crys",
+        "arithmetic_ht",
         # Wave-476 chromatic-3 canon.
         "bp_spectrum",
         "adams_novikov",
