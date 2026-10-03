@@ -3079,6 +3079,14 @@ from quant_fund.research.benches_w385 import (
     bench_noether_normal_family,
     bench_primary_decomp_family,
 )
+from quant_fund.research.benches_w386 import (
+    bench_godel_incomp_family,
+    bench_interp_proof_family,
+    bench_modal_completeness_family,
+    bench_natural_ded_family,
+    bench_proof_complexity_family,
+    bench_sequent_calculus_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3458,6 +3466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sequent_calculus": bench_sequent_calculus_family,
+        "natural_ded": bench_natural_ded_family,
+        "godel_incomp": bench_godel_incomp_family,
+        "interp_proof": bench_interp_proof_family,
+        "proof_complexity": bench_proof_complexity_family,
+        "modal_completeness": bench_modal_completeness_family,
         "hilbert_samuel": bench_hilbert_samuel_family,
         "krull_dim": bench_krull_dim_family,
         "noether_normal": bench_noether_normal_family,

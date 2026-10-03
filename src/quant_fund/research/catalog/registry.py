@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-386 proof-theory-2 canon.
+        "sequent_calculus",
+        "natural_ded",
+        "godel_incomp",
+        "interp_proof",
+        "proof_complexity",
+        "modal_completeness",
         # Wave-385 commutative-algebra-2 canon.
         "hilbert_samuel",
         "krull_dim",
