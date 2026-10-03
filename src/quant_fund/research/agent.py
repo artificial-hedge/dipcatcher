@@ -5767,6 +5767,14 @@ from quant_fund.research.benches_w721 import (
     bench_mzc_motive_family,
     bench_zeta_element_family,
 )
+from quant_fund.research.benches_w722 import (
+    bench_borel_motivic_family,
+    bench_deligne_period_family,
+    bench_motivic_multiple_zeta_family,
+    bench_period_poly_family,
+    bench_specialization_motive_family,
+    bench_zagier_polylog_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6146,6 +6154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "period_poly": bench_period_poly_family,
+        "specialization_motive": bench_specialization_motive_family,
+        "borel_motivic": bench_borel_motivic_family,
+        "zagier_polylog": bench_zagier_polylog_family,
+        "deligne_period": bench_deligne_period_family,
+        "motivic_multiple_zeta": bench_motivic_multiple_zeta_family,
         "brown_motives": bench_brown_motives_family,
         "mzc_motive": bench_mzc_motive_family,
         "zeta_element": bench_zeta_element_family,
