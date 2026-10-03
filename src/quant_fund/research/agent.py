@@ -3407,6 +3407,14 @@ from quant_fund.research.benches_w426 import (
     bench_simplicial_set_family,
     bench_stable_cat_family,
 )
+from quant_fund.research.benches_w427 import (
+    bench_bsd_toy_family,
+    bench_elliptic_height_family,
+    bench_lseries_toy_family,
+    bench_modularity_toy_family,
+    bench_mordell_weil_family,
+    bench_padic_integral_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3786,6 +3794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "elliptic_height": bench_elliptic_height_family,
+        "mordell_weil": bench_mordell_weil_family,
+        "lseries_toy": bench_lseries_toy_family,
+        "bsd_toy": bench_bsd_toy_family,
+        "modularity_toy": bench_modularity_toy_family,
+        "padic_integral": bench_padic_integral_family,
         "model_category": bench_model_category_family,
         "quillen_adj": bench_quillen_adj_family,
         "simplicial_set": bench_simplicial_set_family,

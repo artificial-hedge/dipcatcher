@@ -1,3 +1,4 @@
+feat(research): wave 427 — number-theory-4 canon (elliptic_height, mordell_weil, lseries_toy, bsd_toy, modularity_toy, padic_integral) (2517->2523 families)
 feat(research): wave 426 — homotopy-7 canon (model_category, quillen_adj, simplicial_set, infinity_cat, derived_alg, stable_cat) (2511->2517 families)
 feat(research): wave 425 — stacks/moduli canon (moduli_stack, stacky_curve, coarse_space, quotient_stack, gerbe_toy, stack_morph) (2505->2511 families)
 feat(research): wave 424 — set-theory-4 canon (club_set, stationary_set, ultrafilter_toy, partition_calc, closed_unbounded, mahlo_cardinal) (2499->2505 families)
