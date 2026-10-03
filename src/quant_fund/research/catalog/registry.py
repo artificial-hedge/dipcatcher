@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-756 GFF canon.
+        "berestycki_gff",
+        "duplantier_sheffield",
+        "houchmandzadeh_gff",
+        "nick_gff",
+        "sheffield_miller",
+        "wiegmann_zabrodin",
         # Wave-755 loop-soup canon.
         "lupu_loop",
         "lejan_loop",

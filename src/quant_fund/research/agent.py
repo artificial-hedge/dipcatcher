@@ -6039,6 +6039,14 @@ from quant_fund.research.benches_w755 import (
     bench_lupu_loop_family,
     bench_lyons_peres_family,
 )
+from quant_fund.research.benches_w756 import (
+    bench_berestycki_gff_family,
+    bench_duplantier_sheffield_family,
+    bench_houchmandzadeh_gff_family,
+    bench_nick_gff_family,
+    bench_sheffield_miller_family,
+    bench_wiegmann_zabrodin_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6418,6 +6426,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "berestycki_gff": bench_berestycki_gff_family,
+        "duplantier_sheffield": bench_duplantier_sheffield_family,
+        "houchmandzadeh_gff": bench_houchmandzadeh_gff_family,
+        "nick_gff": bench_nick_gff_family,
+        "sheffield_miller": bench_sheffield_miller_family,
+        "wiegmann_zabrodin": bench_wiegmann_zabrodin_family,
         "lupu_loop": bench_lupu_loop_family,
         "lejan_loop": bench_lejan_loop_family,
         "kassel_wu": bench_kassel_wu_family,
