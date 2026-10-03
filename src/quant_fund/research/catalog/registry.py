@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-611 category-8 canon.
+        "pasting_diag",
+        "mate_dual",
+        "whisker_comp",
+        "pseudo_naturality",
+        "two_adjoint",
+        "modification",
         # Wave-610 deformations-2 canon.
         "schlessinger2",
         "prorepresent",
