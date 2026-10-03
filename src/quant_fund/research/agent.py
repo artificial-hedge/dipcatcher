@@ -7351,6 +7351,14 @@ from quant_fund.research.benches_w919 import (
     bench_visibility_graph_family,
     bench_voronoi_lite_family,
 )
+from quant_fund.research.benches_w920 import (
+    bench_alpha_shape_family,
+    bench_diameter_pair_family,
+    bench_min_area_rect_family,
+    bench_minkowski_sum_poly_family,
+    bench_monotone_partition_family,
+    bench_polygon_triangulate_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7722,6 +7730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "monotone_partition": bench_monotone_partition_family,
+        "polygon_triangulate": bench_polygon_triangulate_family,
+        "min_area_rect": bench_min_area_rect_family,
+        "diameter_pair": bench_diameter_pair_family,
+        "alpha_shape": bench_alpha_shape_family,
+        "minkowski_sum_poly": bench_minkowski_sum_poly_family,
         "voronoi_lite": bench_voronoi_lite_family,
         "delaunay_flip": bench_delaunay_flip_family,
         "convex_layers": bench_convex_layers_family,
