@@ -1,3 +1,4 @@
+feat(research): wave 893 — collocation/least-squares canon (covello_est, dual_goal_est, pseudospectral_coll, tau_method, galerkin_least_sq, coarsening_mark) (5307->5313 families)
 feat(research): wave 892 — adaptive-mesh canon (space_time_adapt, greedy_marking, form_analysis, hp_adaptive, wavelet_adapt, residual_marking) (5301->5307 families)
 feat(research): wave 891 — optimization/IGA canon (trust_region_dogleg, bfgs_update, lebesgue_const, iga_colloc, trimmed_cad, newton_armijo) (5295->5301 families)
 feat(research): wave 890 — special-function canon (zeta_fn, elliptic_fn, hartley_transform, radon_transform, clenshaw_quad, fejer_nested) (5289->5295 families)
