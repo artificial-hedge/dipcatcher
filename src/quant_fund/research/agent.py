@@ -5655,6 +5655,14 @@ from quant_fund.research.benches_w707 import (
     bench_spectral_prime_family,
     bench_spectral_residue_family,
 )
+from quant_fund.research.benches_w708 import (
+    bench_cat_dold_kan_family,
+    bench_cat_enriched_lim_family,
+    bench_cat_hoc_family,
+    bench_cat_pseudo_limit_family,
+    bench_cat_reedy_cat_family,
+    bench_cat_weak_eq_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6034,6 +6042,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cat_pseudo_limit": bench_cat_pseudo_limit_family,
+        "cat_weak_eq": bench_cat_weak_eq_family,
+        "cat_reedy_cat": bench_cat_reedy_cat_family,
+        "cat_dold_kan": bench_cat_dold_kan_family,
+        "cat_hoc": bench_cat_hoc_family,
+        "cat_enriched_lim": bench_cat_enriched_lim_family,
         "spectral_prime": bench_spectral_prime_family,
         "spectral_residue": bench_spectral_residue_family,
         "spectral_level": bench_spectral_level_family,
