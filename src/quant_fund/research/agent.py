@@ -7167,6 +7167,14 @@ from quant_fund.research.benches_w896 import (
     bench_fehlberg_rk_family,
     bench_predictor_corrector_family,
 )
+from quant_fund.research.benches_w897 import (
+    bench_dahlquist_test_family,
+    bench_explicit_midpoint_family,
+    bench_heun_method_family,
+    bench_linear_multistep_family,
+    bench_order_barrier_family,
+    bench_trapezoid_rule_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7538,6 +7546,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "linear_multistep": bench_linear_multistep_family,
+        "dahlquist_test": bench_dahlquist_test_family,
+        "explicit_midpoint": bench_explicit_midpoint_family,
+        "heun_method": bench_heun_method_family,
+        "trapezoid_rule": bench_trapezoid_rule_family,
+        "order_barrier": bench_order_barrier_family,
         "fehlberg_rk": bench_fehlberg_rk_family,
         "dormand_prince": bench_dormand_prince_family,
         "cash_karp": bench_cash_karp_family,
