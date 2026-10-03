@@ -2912,6 +2912,22 @@ from quant_fund.research.benches_w364 import (
     bench_riesz_repr_family,
     bench_selfadjoint_spectrum_family,
 )
+from quant_fund.research.benches_w365 import (
+    bench_azuma_family,
+    bench_coupling_arg_family,
+    bench_doob_decomp_family,
+    bench_ergodic_thm_family,
+    bench_martingale_clt_family,
+    bench_optional_stopping_family,
+)
+from quant_fund.research.benches_w366 import (
+    bench_cw_complex_family,
+    bench_excision_family,
+    bench_homotopy_group_family,
+    bench_poincare_dual_family,
+    bench_singular_homology_family,
+    bench_spectral_seq_toy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3291,6 +3307,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "singular_homology": bench_singular_homology_family,
+        "cw_complex": bench_cw_complex_family,
+        "spectral_seq_toy": bench_spectral_seq_toy_family,
+        "homotopy_group": bench_homotopy_group_family,
+        "excision": bench_excision_family,
+        "poincare_dual": bench_poincare_dual_family,
+        "optional_stopping": bench_optional_stopping_family,
+        "doob_decomp": bench_doob_decomp_family,
+        "martingale_clt": bench_martingale_clt_family,
+        "azuma": bench_azuma_family,
+        "coupling_arg": bench_coupling_arg_family,
+        "ergodic_thm": bench_ergodic_thm_family,
         "hahn_banach": bench_hahn_banach_family,
         "riesz_repr": bench_riesz_repr_family,
         "adjoint_op": bench_adjoint_op_family,
