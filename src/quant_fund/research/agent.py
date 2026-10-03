@@ -1870,6 +1870,14 @@ from quant_fund.research.benches_w234 import (
     bench_query_planner_family,
     bench_wal_recovery_family,
 )
+from quant_fund.research.benches_w235 import (
+    bench_cfs_scheduler_family,
+    bench_deadlock_detect_family,
+    bench_demand_paging_family,
+    bench_disk_sched_family,
+    bench_fs_journal_family,
+    bench_round_robin_sched_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4826,6 +4834,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "query_planner": bench_query_planner_family(),
         "mvcc_isolation": bench_mvcc_isolation_family(),
         "lsm_tree": bench_lsm_tree_family(),
+        "round_robin_sched": bench_round_robin_sched_family(),
+        "cfs_scheduler": bench_cfs_scheduler_family(),
+        "demand_paging": bench_demand_paging_family(),
+        "deadlock_detect": bench_deadlock_detect_family(),
+        "disk_sched": bench_disk_sched_family(),
+        "fs_journal": bench_fs_journal_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

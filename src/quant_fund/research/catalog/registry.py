@@ -2772,6 +2772,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "query_planner",
         "mvcc_isolation",
         "lsm_tree",
+        # Wave-235 OS canon: schedulers, paging, deadlock, disk, journal.
+        "round_robin_sched",
+        "cfs_scheduler",
+        "demand_paging",
+        "deadlock_detect",
+        "disk_sched",
+        "fs_journal",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
