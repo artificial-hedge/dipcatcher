@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-308 geophysics-2 canon.
+        "reflectivity_synth",
+        "gassmann_sub",
+        "spectral_decomp",
+        "semblance_scan",
+        "gardner_relation",
+        "vz_raytrace",
         # Wave-307 regex-2 canon.
         "pike_vm",
         "lazy_dfa",
