@@ -2343,6 +2343,14 @@ from quant_fund.research.benches_w293 import (
     bench_sdf_raymarch_family,
     bench_shadow_pcf_family,
 )
+from quant_fund.research.benches_w294 import (
+    bench_bb_reorder_family,
+    bench_cfg_simplify_family,
+    bench_jump_thread_family,
+    bench_modulo_sched_family,
+    bench_tail_dup_family,
+    bench_tree_cover_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2722,6 +2730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tree_cover": bench_tree_cover_family,
+        "modulo_sched": bench_modulo_sched_family,
+        "jump_thread": bench_jump_thread_family,
+        "tail_dup": bench_tail_dup_family,
+        "cfg_simplify": bench_cfg_simplify_family,
+        "bb_reorder": bench_bb_reorder_family,
         "deferred_shade": bench_deferred_shade_family,
         "sdf_raymarch": bench_sdf_raymarch_family,
         "frustum_cull": bench_frustum_cull_family,
