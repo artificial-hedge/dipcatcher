@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-792 BSDE canon.
+        "bsde_solver",
+        "fbsde_markov",
+        "backward_sde",
+        "pardoux_peng",
+        "reflected_bsde",
+        "second_order_bsde",
         # Wave-791 SPDE canon.
         "spde_heat",
         "stochastic_burgers",
