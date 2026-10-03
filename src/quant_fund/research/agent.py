@@ -4551,6 +4551,14 @@ from quant_fund.research.benches_w569 import (
     bench_trudinger_thm_family,
     bench_yamabe_problem_family,
 )
+from quant_fund.research.benches_w570 import (
+    bench_bogomolov_ineq_family,
+    bench_boundedness_moduli_family,
+    bench_hodge_index_family,
+    bench_kodaira_vanishing_family,
+    bench_kollar_mori_family,
+    bench_stability_sheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4930,6 +4938,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hodge_index": bench_hodge_index_family,
+        "kodaira_vanishing": bench_kodaira_vanishing_family,
+        "kollar_mori": bench_kollar_mori_family,
+        "boundedness_moduli": bench_boundedness_moduli_family,
+        "stability_sheaf": bench_stability_sheaf_family,
+        "bogomolov_ineq": bench_bogomolov_ineq_family,
         "yamabe_problem": bench_yamabe_problem_family,
         "prescribed_curvature": bench_prescribed_curvature_family,
         "nirenberg_problem": bench_nirenberg_problem_family,
