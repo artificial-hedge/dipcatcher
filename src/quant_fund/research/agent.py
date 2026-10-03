@@ -5663,6 +5663,14 @@ from quant_fund.research.benches_w708 import (
     bench_cat_reedy_cat_family,
     bench_cat_weak_eq_family,
 )
+from quant_fund.research.benches_w709 import (
+    bench_cat_ab2_family,
+    bench_cat_ab_loc_family,
+    bench_cat_exact3_family,
+    bench_cat_freyd_family,
+    bench_cat_pro_object2_family,
+    bench_cat_univariant2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6042,6 +6050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cat_univariant2": bench_cat_univariant2_family,
+        "cat_ab2": bench_cat_ab2_family,
+        "cat_exact3": bench_cat_exact3_family,
+        "cat_freyd": bench_cat_freyd_family,
+        "cat_ab_loc": bench_cat_ab_loc_family,
+        "cat_pro_object2": bench_cat_pro_object2_family,
         "cat_pseudo_limit": bench_cat_pseudo_limit_family,
         "cat_weak_eq": bench_cat_weak_eq_family,
         "cat_reedy_cat": bench_cat_reedy_cat_family,
