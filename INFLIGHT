@@ -1,3 +1,4 @@
+feat(research): wave 875 — adaptive-marking canon (adaptive_marking, hierarchical_est, dorfler_marking, convergence_theory, adaptive_finite, goal_adaptive) (5199->5205 families)
 feat(research): wave 874 — reliability-analysis canon (uq_reliability, first_order_rel, sorm_method, subset_sim, line_sampling, metamodel_rel) (5193->5199 families)
 feat(research): wave 873 — domain-decomposition canon (dd_partition, baldding_dd, neumann_dd, feti_dp, subspace_dd, asm_precond) (5187->5193 families)
 feat(research): wave 872 — preconditioner canon (jacobi_precond, ilut_precond, ssor_precond, amg_precond, ic_precond, polynomial_precond) (5181->5187 families)
