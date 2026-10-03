@@ -7055,6 +7055,14 @@ from quant_fund.research.benches_w882 import (
     bench_restrictive_dd_family,
     bench_spai_precond_family,
 )
+from quant_fund.research.benches_w883 import (
+    bench_cv_optimal_family,
+    bench_is_drift_family,
+    bench_min_var_closure_family,
+    bench_nest_accel_family,
+    bench_subgradient_descent_family,
+    bench_tangent_predictor_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7426,6 +7434,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tangent_predictor": bench_tangent_predictor_family,
+        "is_drift": bench_is_drift_family,
+        "cv_optimal": bench_cv_optimal_family,
+        "nest_accel": bench_nest_accel_family,
+        "subgradient_descent": bench_subgradient_descent_family,
+        "min_var_closure": bench_min_var_closure_family,
         "spai_precond": bench_spai_precond_family,
         "diagonal_scale": bench_diagonal_scale_family,
         "nonoverlap_dd": bench_nonoverlap_dd_family,
