@@ -1305,7 +1305,33 @@ wave 107 (2026-09-30): transport/HJB PDE canon — adi, lax_wendroff, weno, leve
 wave 108 (2026-09-30): matrix functions & equations — expm_pade, matrix_sqrt, sylvester, riccati_care, matrix_sign, toeplitz_solve; 620→626 families.
 note: canon PR to follow.
 
----
+  6 SOTA lanes on devin/w52-lanes: nardl (Shin-Yu-Greenwood-Nimmo
+  nonlinear ARDL — asymmetric long/short multipliers, bounds-F,
+  Wald symmetry), growth_at_risk (Adrian-Boyarchenko-Giannone —
+  Koenker-Bassett LP quantile surface, isotonic crossing fix,
+  GaR/upside/asymmetry), melick_thomas (3-component lognormal
+  implied-PDF recovery, martingale-pinned least_squares, tail
+  mass), bandi_russell (noise/volatility separation — MA(1) level
+  noise, optimal sparse sampling m*, bias-corrected RV), hong_li
+  (PIT density-forecast eval — integer-Fourier L2 M-statistic,
+  Berkowitz LR, score correlogram), beveridge_nelson (companion-
+  form permanent/transitory decomposition, closed-form Neumann
+  gain). benches_w52 adapters (seeds +299..304); registry +6
+  families (283->289 title convention); agent.py scorecard wired;
+  audit_coverage re-pinned (metrics 98->107, models 309->369,
+  research 184->196 — merged-tree drift incl. w51 pending);
+  arch diagrams regen. 46 module tests + 6 wiring tests green;
+  mypy --strict clean; PR pending (w51 #690 still open).
+
+
+w53 canon (2026-09-30): 6 lanes — corradi_swanson (OOS MSPE MBB test),
+engle_kroner_bekk (variance-targeted diagonal BEKK), heston_qe (Andersen
+QE discretization), model_confidence_set (HLN step-down block-boot),
+christoffersen_pelletier (Weibull-duration VaR clustering backtest),
+sheppard_heavy (two-equation realized-measure vol). benches_w53 seeds
++305..310; registry +6; audit re-pinned (metrics 98->107, models
+309->369, research 184->196).
+
 owner: devin (wave 57 canon)
 slice: frequency/multiresolution + robust-inference battery — MODWT
   wavelets, Geweke spectral, IVX, Bai-Ng IC, Wooldridge serial,
