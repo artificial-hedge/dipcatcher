@@ -52,6 +52,8 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+import shutil
+import sys
 
 from quant_fund.models.base import JoblibMixin, ModelMeta
 
@@ -191,6 +193,14 @@ class Tirex2Distribution(JoblibMixin):
         """Load (once) and return the model plus its native-grid index map."""
         if self._model is None or self._idx is None:
             load_model, ts_type = _load_model_fns()
+            import torch  # local lane dep; installed alongside tirex-2
+
+            # TiRex-2 internally @torch.compile-s its forward. On Windows this
+            # requires an MSVC (cl) compiler for the inductor C++ backend. If
+            # cl is not on PATH, disable Dynamo so the model falls back to eager
+            # mode rather than raising InvalidCxxCompiler mid-predict.
+            if sys.platform == "win32" and shutil.which("cl") is None:
+                torch._dynamo.config.disable = True
             model = load_model(self.model_id, device=self.device)
             self._ts_type = ts_type
             native = _native_grid(model)

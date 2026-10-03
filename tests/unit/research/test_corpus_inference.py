@@ -170,3 +170,30 @@ def test_dataset_sha256_edges_suite_health_on_same_corpus(tmp_path: Path) -> Non
     _, health = suite_health(tmp_path)
     audit = corpus_audit(tmp_path)
     assert health["dataset_sha256"] == audit["dataset_sha256"]
+
+
+def test_membership_pins_the_input_set(tmp_path: Path) -> None:
+    """A pinned membership audits exactly those basenames — new files
+    arriving in the dir are ignored, so a frozen pin replays identically."""
+    _write(tmp_path, "a.json", {"kind": "k", "p": 0.01})
+    _write(tmp_path, "b.json", {"kind": "k", "p": 0.9})
+    rep = corpus_audit(tmp_path, members={"a.json"})
+    assert rep["n_receipts"] == 1
+    assert rep["n_p_findings"] == 1
+    assert rep["n_parse_errors"] == 0
+    # a later arrival does not perturb the pinned audit
+    _write(tmp_path, "c.json", {"kind": "k", "p": 0.001})
+    rep2 = corpus_audit(tmp_path, members={"a.json"})
+    assert rep2["n_receipts"] == 1
+    assert rep2["inputs_sha256"] == rep["inputs_sha256"]
+    assert rep2["dataset_sha256"] == rep["dataset_sha256"]
+
+
+def test_membership_missing_member_fails_closed(tmp_path: Path) -> None:
+    """A pinned member absent from the dir is a recorded error — the
+    audit never silently reports a subset as the pinned corpus."""
+    _write(tmp_path, "a.json", {"kind": "k", "p": 0.01})
+    rep = corpus_audit(tmp_path, members={"a.json", "ghost.json"})
+    assert rep["n_parse_errors"] == 1
+    assert rep["parse_errors"][0]["file"] == "ghost.json"
+    assert rep["parse_errors"][0]["error"] == "member_missing_from_dir"

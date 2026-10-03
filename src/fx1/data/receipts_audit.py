@@ -11,11 +11,11 @@ Pinned contract for ``load_receipts``/``_eligibility``:
 - Unparseable files and non-dict payloads are skipped silently.
 - ``rglob("*.json")`` — nested dirs are scanned.
 
-**Pinned caveat**: truthiness coercion — ``live_pnl_claim: null``
-present-but-null counts as ``False``, disabling the absent-key
-failsafe; ``research_only: "yes"`` counts as True. Together
-``{"research_only": "yes", "live_pnl_claim": null}`` is eligible.
-Values are not type-checked.
+**Type contract**: ``research_only`` must be the literal ``true`` — a
+truthy non-boolean (``"yes"``, ``1``) is not a research-scope
+declaration; ``live_pnl_claim`` present is read with ``bool(...)``.
+Together ``{"research_only": "yes", "live_pnl_claim": null}`` is
+**ineligible** — the coercion escape is closed.
 
 Sealed ``receipts_audit.v1`` (fx1-side receipt).
 """
@@ -105,7 +105,7 @@ def receipts_audit() -> dict[str, Any]:
             recs["explicit_wins.json"].eligible is False
             and recs["explicit_wins.json"].live_pnl_claim is True
         )
-        out["coercion_flag"] = recs["weird_coerce.json"].eligible is True
+        out["coercion_closed"] = recs["weird_coerce.json"].eligible is False
         out["synthetic_class"] = (
             recs["good.json"].evidence_class == "synthetic"
             and recs["implicit.json"].evidence_class == "research"
@@ -134,7 +134,7 @@ def receipts_audit_bench() -> dict[str, Any]:
         "claim": {
             "results": r,
             "flags": {
-                "truthiness_coercion_eligible": r["coercion_flag"],
+                "truthiness_coercion_eligible": not r["coercion_closed"],
             },
             "ok": ok,
         },
@@ -142,9 +142,9 @@ def receipts_audit_bench() -> dict[str, Any]:
             "Receipt eligibility contract holds: absent markers fail "
             "closed, explicit live claim always wins, claim contract "
             "resolves, digests bind bytes, unparseable skipped. Flag "
-            "pinned: truthiness coercion — {'research_only': 'yes', "
-            "'live_pnl_claim': null} is eligible because values are "
-            "never type-checked."
+            "closed: {'research_only': 'yes', 'live_pnl_claim': "
+            "null} is ineligible — research_only requires the literal "
+            "true, and truthy non-booleans no longer qualify."
             if ok
             else f"RECEIPTS AUDIT DEFECT: {r}"
         ),

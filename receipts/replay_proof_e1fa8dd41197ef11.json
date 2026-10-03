@@ -1,0 +1,90 @@
+{
+  "code_files": {
+    "replay_proof.py": "7902d5c82f5b779b90f1c3afae322943f548f1f054b48c027714bce50ec7f6af"
+  },
+  "code_sha256": "988777fdaec2b834cf592a4ed4a14d73ec9b1d6d0ae43d4f5be4f92110d8b2f2",
+  "data_label": "yahoo_eod",
+  "dataset_hash": "0c591c327a9abf1076f9bcc3cdcbfd8b14e06f43c50a0321372657b6ede735a2",
+  "environment": {
+    "blas": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "byteorder": "little",
+    "fingerprint_sha256": "207a7ded44205cd3554555ff934f3b8bc709709ad1635770d1a75739a5be6aab",
+    "implementation": "CPython",
+    "lapack": {
+      "found": true,
+      "name": "accelerate",
+      "version": null
+    },
+    "machine": "arm64",
+    "packages": {
+      "numpy": "2.5.3",
+      "polars": "1.44.2",
+      "scipy": "1.18.1"
+    },
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.14",
+    "threadpools": []
+  },
+  "generated_at": "2026-09-30T13:06:29.825882+00:00",
+  "git_revision": "caabee7568a4627e967e6663d4bc53a25e1e9980",
+  "kind": "replay_proof",
+  "live_pnl_claim": false,
+  "params_hash": "d212b83098e5e589818550095faca6c3f1e03124f5ce5fbdbbd68fc9fefdeb50",
+  "payload": {
+    "all_match": true,
+    "argv": [
+      "scripts/coverage_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "expected_sha256": "d31cf28b8809889c6572e1039b7ef751565b478b79d307f0b52f3e1851eff2ab",
+        "match": true,
+        "observed_sha256": "d31cf28b8809889c6572e1039b7ef751565b478b79d307f0b52f3e1851eff2ab",
+        "path": "data/metadata/replay/coverage_real_drill.json"
+      }
+    ],
+    "data_label": "yahoo_eod",
+    "elapsed_s": 1.812489,
+    "exit_code": 0,
+    "input_tapes": [
+      {
+        "expected_sha256": "e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117",
+        "match": true,
+        "observed_sha256": "e22bf3eff634c742299b6495f8daf8f02adcc6cda47d9641e3094c0c191ae117",
+        "path": "data/file_us_wide/bronze/bars.parquet",
+        "via_manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ],
+    "inputs_ok": true,
+    "kind": "replay_proof",
+    "live_pnl_claim": false,
+    "receipt": "data/manifests/replay/coverage.json",
+    "receipt_sha256": "c965f42ae5c7c50f7db6202aee565b16e0a442953aab5775bf89dd174f6dc430",
+    "research_only": true,
+    "resolved_argv": [
+      "/Users/devin/repos/dipcatcher/.venv/bin/python",
+      "scripts/coverage_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "schema": "replay_proof.v1",
+    "source_receipt_seal": "d0ef250135960be15ffd0b83cd96046907dda6143f6a3805b6e22401861e616b",
+    "source_receipt_sha256": "211003f6041ff7bc7628d0da5a53cdef5a8ceef69e28d63e001b0a10acbcfddb",
+    "stderr_tail": "",
+    "timed_out": false,
+    "timeout_s": 120.0,
+    "verdict": "pass"
+  },
+  "receipt_sha256": "e1fa8dd41197ef110cf655caeac180e316372842ad36ebdf3a51d22c0de699f8",
+  "schema": "receipt.v2",
+  "schema_version": 2,
+  "verdict": "pass"
+}

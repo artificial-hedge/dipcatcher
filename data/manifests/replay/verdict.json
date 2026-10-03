@@ -1,0 +1,40 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/verdict_real_drill.py",
+  "receipt_sha256": "98ef9e6cc621d772b4db923144536f5a05eb01e24e82e0e19cc6c9b79d6b499c",
+  "replay": {
+    "argv": [
+      "scripts/verdict_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/verdict_real_drill.json",
+        "sha256": "647061e5b49099a33261373cec4c8b1eb107e53f7e6760ce4d8d6b52f839bc99"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "components",
+        "drill"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "63e4fcfcd616f08ad740b2be0fe3163eaaae8243bdfbbdb8d196cafd19d790e7",
+      "drift_reason": "lane_evolution",
+      "receipt": "receipts/verdict_real_drill.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

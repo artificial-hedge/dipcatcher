@@ -4,15 +4,28 @@
 payload; it never re-runs the lane. The honesty contract asks for more: every
 research claim should be reproducible from a receipt hash. A **replay
 manifest** closes that loop — a receipt may carry an optional ``replay``
-block declaring the exact argv that produces its artifacts::
+block declaring the exact argv that produces its artifacts plus the input
+tapes the lane read::
 
     "replay": {
         "argv": ["dipcatcher", "serial-watch", "tests/fixtures/replay/serial_pits.json",
                  "--data-label", "SYNTHETIC", "--out-dir", "data/metadata/replay"],
         "artifacts": [{"path": "data/metadata/replay/serial_watch_<d16>.json",
                        "sha256": "<64-hex file digest>"}],
-        "cwd": "."                         # optional, relative to repo root
+        "cwd": ".",                        # optional, relative to repo root
+        "input_tapes": [{"path": "data/raw/x/bars.parquet", "sha256": "<64-hex>"},
+                        {"manifest": "data/manifests/yahoo_eod.json"}]
     }
+
+``input_tapes`` (optional) binds the tape bytes the replayed lane read.
+Each entry is a literal ``{path, sha256}`` file pin, or a ``{manifest}``
+reference to a committed ``tape_manifest.v1`` — expanded to its declared
+``tape_files`` so the input digests come from committed evidence, not the
+replay block itself. Inputs are verified **before** argv runs: a missing
+or drifted tape yields ``inputs_ok=false`` and a ``fail`` verdict without
+executing — a tampered tape must never reach a lane's parser, and the
+proof then attributes the failure (``input_tape_missing`` /
+``input_tape_drift``) instead of a bare artifact mismatch.
 
 ``replay_manifest`` reads the block (``None`` when absent — an undeclared
 lane is honest, it simply has nothing to re-execute). ``run_replay``
@@ -115,6 +128,24 @@ def replay_manifest_errors(manifest: object) -> list[str]:
     cwd = manifest.get("cwd")
     if cwd is not None and not (isinstance(cwd, str) and cwd.strip()):
         errors.append("cwd_not_nonempty_str")
+    tapes = manifest.get("input_tapes")
+    if tapes is not None:
+        if not isinstance(tapes, list):
+            errors.append("input_tapes_not_list")
+        else:
+            for index, entry in enumerate(tapes):
+                if not isinstance(entry, Mapping):
+                    errors.append(f"input_tapes[{index}]_not_object")
+                    continue
+                has_pin = isinstance(entry.get("path"), str) and bool(entry["path"].strip())
+                has_manifest = isinstance(entry.get("manifest"), str) and bool(
+                    entry["manifest"].strip()
+                )
+                if has_pin == has_manifest:
+                    errors.append(f"input_tapes[{index}]_needs_exactly_one_of_path_or_manifest")
+                    continue
+                if has_pin and not _is_sha256(entry.get("sha256")):
+                    errors.append(f"input_tapes[{index}].sha256")
     return errors
 
 
@@ -153,6 +184,8 @@ def replay_manifest(receipt_path: Path | str) -> dict[str, Any] | None:
     }
     if manifest.get("cwd") is not None:
         declared["cwd"] = str(manifest["cwd"])
+    if manifest.get("input_tapes") is not None:
+        declared["input_tapes"] = [dict(entry) for entry in manifest["input_tapes"]]
     return declared
 
 
@@ -176,15 +209,143 @@ def _resolve_argv(argv: list[str]) -> list[str]:
     ``dipcatcher``/``quant`` resolve to the current interpreter's
     ``quant_fund.cli.main`` module — the entry point pyproject binds them
     to — so the replay runs this checkout's code rather than depending on
-    ``PATH``. Any other argv runs verbatim.
+    ``PATH``. A leading ``*.py`` path resolves to the same interpreter so
+    script lanes also run this checkout's code. Any other argv runs verbatim.
     """
     if argv and argv[0] in _CLI_ENTRYPOINTS:
         return [sys.executable, "-m", "quant_fund.cli.main", *argv[1:]]
+    if argv and argv[0].endswith(".py"):
+        return [sys.executable, *argv]
     return list(argv)
 
 
 def _file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _resolve_input_tapes(
+    declared: list[Mapping[str, Any]], root_path: Path
+) -> tuple[list[dict[str, Any]], bool]:
+    """Verify declared input tapes against committed bytes before execution.
+
+    ``{path, sha256}`` entries pin one file; ``{manifest}`` entries expand to
+    the tape_files of a seal-valid ``tape_manifest.v1`` under ``root_path`` —
+    the manifest itself must verify or every derived row fails closed.
+    Returns (rows, all_ok). Row ``note`` values attribute failure precisely:
+    ``input_tape_missing``, ``input_tape_drift``, ``manifest_missing``,
+    ``manifest_invalid``, ``path_escapes_root``.
+    """
+    from quant_fund.research.tape_registry import TAPE_MANIFEST_SCHEMA
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+    rows: list[dict[str, Any]] = []
+    for entry in declared:
+        if "manifest" in entry:
+            rel = str(entry["manifest"])
+            manifest_path = (root_path / rel).resolve()
+            if not manifest_path.is_relative_to(root_path):
+                rows.append({"manifest": rel, "note": "path_escapes_root", "match": False})
+                continue
+            try:
+                manifest: object = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                manifest = None
+            seal_ok = False
+            tape_files: list[Mapping[str, Any]] = []
+            if isinstance(manifest, dict) and manifest.get("schema") == TAPE_MANIFEST_SCHEMA:
+                seal = manifest.get("receipt_sha256")
+                body = {k: v for k, v in manifest.items() if k != "receipt_sha256"}
+                seal_ok = _is_sha256(seal) and hash_bytes(canonical_json_bytes(body)) == seal
+                tape_files = [
+                    t for t in (manifest.get("tape_files") or []) if isinstance(t, Mapping)
+                ]
+            if not manifest_path.is_file():
+                rows.append({"manifest": rel, "note": "manifest_missing", "match": False})
+            elif not seal_ok:
+                rows.append({"manifest": rel, "note": "manifest_invalid", "match": False})
+            elif not tape_files:
+                rows.append({"manifest": rel, "note": "manifest_no_tape_files", "match": False})
+            for tape in tape_files:
+                rows.append(
+                    {
+                        "path": str(tape.get("path")),
+                        "expected_sha256": tape.get("sha256"),
+                        "via_manifest": rel,
+                        **_tape_file_row(tape, root_path),
+                    }
+                )
+            continue
+        rows.append(_tape_file_row(entry, root_path))
+    return rows, all(row.get("match") is True for row in rows)
+
+
+def _tape_file_row(entry: Mapping[str, Any], root_path: Path) -> dict[str, Any]:
+    """Resolve one ``{path, sha256}`` tape pin against the live tree."""
+    declared_path = str(entry.get("path") or "")
+    expected = str(entry.get("sha256") or "")
+    resolved = (root_path / declared_path).resolve()
+    row: dict[str, Any] = {
+        "path": declared_path,
+        "expected_sha256": expected,
+        "observed_sha256": None,
+        "match": False,
+    }
+    if not _is_sha256(expected):
+        row["note"] = "expected_sha256_invalid"
+        return row
+    if not resolved.is_relative_to(root_path):
+        row["note"] = "path_escapes_root"
+        return row
+    if not resolved.is_file():
+        row["note"] = "input_tape_missing"
+        return row
+    observed = _file_sha256(resolved)
+    row["observed_sha256"] = observed
+    row["match"] = observed == expected
+    if not row["match"]:
+        row["note"] = "input_tape_drift"
+    return row
+
+
+def _committed_artifact(
+    artifacts: list[Mapping[str, Any]], root_path: Path, run_cwd: Path
+) -> str | None:
+    """Return the first declared artifact path that is git-tracked, or None.
+
+    Replays may legitimately produce bytes identical to a committed file, but
+    they must land on an untracked path; writing onto a tracked path would
+    clobber the very evidence the manifest claims to reproduce.
+    """
+    rel_paths: list[str] = []
+    resolved_entries: list[tuple[str, Path]] = []
+    for entry in artifacts:
+        declared = str(entry.get("path") or "")
+        candidate = Path(declared)
+        resolved = candidate if candidate.is_absolute() else (run_cwd / candidate)
+        resolved = resolved.resolve()
+        if not resolved.is_relative_to(root_path):
+            continue  # escapes are flagged by the artifact pass itself
+        rel = str(resolved.relative_to(root_path))
+        rel_paths.append(rel)
+        resolved_entries.append((declared, resolved))
+    if not rel_paths:
+        return None
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", *rel_paths],
+            cwd=root_path,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None  # not a git checkout — nothing to clobber
+    tracked = set(proc.stdout.split())
+    for declared, resolved in resolved_entries:
+        if str(resolved.relative_to(root_path)) in tracked:
+            return declared
+    return None
 
 
 def run_replay(
@@ -234,44 +395,84 @@ def run_replay(
         source_receipt_seal = None
 
     env = dict(os.environ)
+    # The replayed argv must run the verifier's own code, never whatever an
+    # ambient installed package resolves to — prefer the root's src/, else
+    # fall back to this process's own quant_fund source tree.
     src_dir = root_path / "src"
-    if (src_dir / "quant_fund").is_dir():
-        existing = env.get("PYTHONPATH")
-        env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+    if not (src_dir / "quant_fund").is_dir():
+        src_dir = Path(__file__).resolve().parents[2]
+    existing = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = f"{src_dir}{os.pathsep}{existing}" if existing else str(src_dir)
+
+    # Input binding: declared tapes verify BEFORE argv runs — a drifted or
+    # missing input means the replay could never reproduce the receipt, so
+    # executing would only burn time (and feed a tampered tape to the lane's
+    # parser). The proof records the attribution and fails closed.
+    declared_tapes = manifest.get("input_tapes")
+    input_tape_rows: list[dict[str, Any]] | None = None
+    inputs_ok: bool | None = None
+    if isinstance(declared_tapes, list):
+        input_tape_rows, inputs_ok = _resolve_input_tapes(declared_tapes, root_path)
 
     exit_code: int | None = None
     timed_out = False
     spawn_error: str | None = None
     stderr_tail = ""
+    inputs_blocked = inputs_ok is False
+    # A declared artifact landing on a git-tracked path would clobber
+    # committed evidence — fail before argv runs. Artifact digests are the
+    # proof's only integrity surface; a tracked path means the bytes were
+    # fixed at commit time and a hostile argv could overwrite them.
+    committed_overwrite = _committed_artifact(manifest["artifacts"], root_path, run_cwd)
     started = time.monotonic()
-    if not run_cwd.is_dir():
+    if inputs_blocked:
+        spawn_error = "inputs_not_verified"
+    elif committed_overwrite is not None:
+        spawn_error = f"artifact_overwrites_committed:{committed_overwrite}"
+    elif not run_cwd.is_dir():
         spawn_error = f"cwd_missing:{declared_cwd}"
     elif not run_cwd.is_relative_to(root_path):
         spawn_error = f"cwd_escapes_root:{declared_cwd}"
     else:
-        try:
-            proc = subprocess.run(
-                resolved_argv,
-                cwd=run_cwd,
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=float(timeout_s),
-                check=False,
-            )
-            exit_code = int(proc.returncode)
-            stderr_tail = (proc.stderr or "")[-_MAX_STDERR_TAIL:]
-        except subprocess.TimeoutExpired as exc:
-            timed_out = True
-            if exc.stderr:
-                tail = (
-                    exc.stderr
-                    if isinstance(exc.stderr, str)
-                    else exc.stderr.decode("utf-8", errors="replace")
+        # Delete declared artifacts first: a stale file must not satisfy a
+        # digest pin when argv never produced it. Untracked deletions only —
+        # committed paths were already refused by the overwrite guard.
+        stale_error: str | None = None
+        for entry in manifest["artifacts"]:
+            declared = Path(str(entry["path"]))
+            resolved = (declared if declared.is_absolute() else (run_cwd / declared)).resolve()
+            if resolved.is_relative_to(root_path) and resolved.is_file():
+                try:
+                    resolved.unlink()
+                except OSError as exc:
+                    stale_error = f"artifact_stale_delete_failed:{entry['path']}:{exc}"
+                    break
+        if stale_error is not None:
+            spawn_error = stale_error
+        else:
+            try:
+                proc = subprocess.run(
+                    resolved_argv,
+                    cwd=run_cwd,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=float(timeout_s),
+                    check=False,
                 )
-                stderr_tail = tail[-_MAX_STDERR_TAIL:]
-        except OSError as exc:
-            spawn_error = f"{type(exc).__name__}: {exc}"
+                exit_code = int(proc.returncode)
+                stderr_tail = (proc.stderr or "")[-_MAX_STDERR_TAIL:]
+            except subprocess.TimeoutExpired as exc:
+                timed_out = True
+                if exc.stderr:
+                    tail = (
+                        exc.stderr
+                        if isinstance(exc.stderr, str)
+                        else exc.stderr.decode("utf-8", errors="replace")
+                    )
+                    stderr_tail = tail[-_MAX_STDERR_TAIL:]
+            except OSError as exc:
+                spawn_error = f"{type(exc).__name__}: {exc}"
     elapsed_s = time.monotonic() - started
 
     artifact_rows: list[dict[str, Any]] = []
@@ -306,6 +507,7 @@ def run_replay(
         and not timed_out
         and spawn_error is None
         and all(row["match"] for row in artifact_rows)
+        and inputs_ok is not False
     )
     verdict = "pass" if all_match else "fail"
     body: dict[str, Any] = {
@@ -327,6 +529,13 @@ def run_replay(
         "stderr_tail": stderr_tail,
         "verdict": verdict,
     }
+    if spawn_error is not None:
+        body["spawn_error"] = spawn_error
+    if input_tape_rows is not None:
+        body["input_tapes"] = input_tape_rows
+        body["inputs_ok"] = bool(inputs_ok)
+        if inputs_blocked:
+            body["execution_skipped"] = "inputs_not_verified"
     if declared_cwd is not None:
         body["cwd"] = str(declared_cwd)
     if source_receipt_seal is not None:
@@ -429,6 +638,43 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             if match != want:
                 errors.append(f"artifacts[{index}].match")
             artifact_matches.append(match)
+    input_tapes = payload.get("input_tapes")
+    tape_matches: list[bool] = []
+    inputs_ok_claimed = payload.get("inputs_ok")
+    if input_tapes is not None:
+        if not isinstance(input_tapes, list) or not input_tapes:
+            errors.append("input_tapes")
+        elif not isinstance(inputs_ok_claimed, bool):
+            errors.append("inputs_ok")
+        else:
+            for index, row in enumerate(input_tapes):
+                if not isinstance(row, Mapping):
+                    errors.append(f"input_tapes[{index}]_not_object")
+                    continue
+                match = row.get("match")
+                if not isinstance(match, bool):
+                    errors.append(f"input_tapes[{index}].match")
+                    continue
+                expected = row.get("expected_sha256")
+                observed = row.get("observed_sha256")
+                if row.get("via_manifest") is None:
+                    # Literal pin rows: match requires equal present digests.
+                    want = (
+                        expected is not None
+                        and observed is not None
+                        and _is_sha256(expected)
+                        and _is_sha256(observed)
+                        and expected == observed
+                    )
+                else:
+                    want = bool(expected and observed and expected == observed)
+                if match != want:
+                    errors.append(f"input_tapes[{index}].match")
+                tape_matches.append(match)
+            # manifest-level rows carry match=False only (no digests) — the
+            # row check above already enforces that.
+            if inputs_ok_claimed != (bool(tape_matches) and all(tape_matches)):
+                errors.append("inputs_ok")
     exit_code = payload.get("exit_code")
     if not (exit_code is None or (isinstance(exit_code, int) and not isinstance(exit_code, bool))):
         errors.append("exit_code")
@@ -460,9 +706,15 @@ def replay_proof_contract_errors(payload: Mapping[str, Any]) -> list[str]:
             and timed_out is False
             and bool(artifact_matches)
             and all(artifact_matches)
+            and (input_tapes is None or inputs_ok_claimed is True)
         )
         if all_match != want_all:
             errors.append("all_match")
+    if input_tapes is not None and inputs_ok_claimed is False:
+        if payload.get("execution_skipped") != "inputs_not_verified":
+            errors.append("execution_skipped")
+        if exit_code is not None:
+            errors.append("exit_code")
     verdict = payload.get("verdict")
     if (
         verdict not in REPLAY_PROOF_VERDICTS

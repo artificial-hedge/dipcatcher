@@ -46,14 +46,14 @@ _SYNTHETIC_LABEL = re.compile(r"\bSYNTHETIC\b")
 
 # Invisible/zero-width characters a writer can hide inside a token. Escaped
 # so the source carries no raw bidi/format control characters (B613):
-# \u200b-\u200f zero-width + bidi marks, \u2060 word joiner, \ufeff BOM,
-# \u00ad soft hyphen.
-_FORMAT_CHAR_CLASS = "\u200b-\u200f\u2060\ufeff\u00ad"
+# Zero-width marks, bidi controls, invisible mathematical operators, BOM,
+# and soft hyphen. Include directional embeddings/isolates as well as marks.
+_FORMAT_CHAR_CLASS = "\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff"
 _FORMAT_CHARS = re.compile(f"[{_FORMAT_CHAR_CLASS}]")
-# A format char sitting between a letter and a digit must become a space, not
-# vanish — else "sharpe\u20602.1" fuses to "sharpe2.1" and loses its boundary.
+# A run of format chars between a letter and a digit must become a space,
+# not vanish — else "sharpe\u20602.1" fuses to "sharpe2.1" and loses its boundary.
 _FUSION_BREAK = re.compile(
-    rf"(?<=[A-Za-z])[{_FORMAT_CHAR_CLASS}](?=\d)|(?<=\d)[{_FORMAT_CHAR_CLASS}](?=[A-Za-z])"
+    rf"(?<=[A-Za-z])[{_FORMAT_CHAR_CLASS}]+(?=\d)|(?<=\d)[{_FORMAT_CHAR_CLASS}]+(?=[A-Za-z])"
 )
 # Collapse spaces between a word-initial letter and a one-letter word:
 # "s h a r p e" → "sharpe", "N A V" → "NAV". Letters only — a trailing
@@ -120,9 +120,11 @@ def _normalize(text: str) -> str:
     """Fold a text for gate matching: NFKC compatibility fold (fullwidth,
     mathematical alphanumerics, ligatures), strip invisible formatting chars,
     map Cyrillic/Greek homoglyphs, collapse spaced letters."""
-    folded = unicodedata.normalize("NFKC", text)
+    # Fold lookalikes before ASCII-only boundary and spaced-letter handling:
+    # a Cyrillic final e must preserve the same boundary as a Latin e.
+    folded = unicodedata.normalize("NFKC", text).translate(_HOMOGLYPHS)
     folded = _FUSION_BREAK.sub(" ", folded)
-    return _SPACED_LETTERS.sub("", _FORMAT_CHARS.sub("", folded)).translate(_HOMOGLYPHS)
+    return _SPACED_LETTERS.sub("", _FORMAT_CHARS.sub("", folded))
 
 
 # Token spellings beyond the literal token. "pnl" admits the spelled forms
@@ -135,18 +137,33 @@ _TOKEN_SPELLINGS: dict[str, str] = {
 # the vocabulary a headline uses. Words outside this set end the adjacency
 # (bare discussion of the metric is not a claim).
 _CONNECTOR = (
-    r"(?:of|=|:|is|was|were|at|to|reads?|hits?|reached?|posts?|posted|"
+    r"(?:of|=|:|is|was|were|are|at|to|reads?|hits?|reached?|posts?|posted|"
     r"lands?|landed|clocks?|clocked|prints?|printed|records?|recorded|"
     r"logs?|logged|stands?|stood|sits?|sat|runs?|ran|came\s+(?:in|out)\s+at|"
+    r"the|a|an|this|that|its|our|your|their|my|about|roughly|approximately|"
+    r"around|over|under|above|below|current(?:ly)?|latest|reported|expected|"
+    r"projected|implied|delivered|generated|produced|whole|all|entire|same|"
+    r"given|first|last|single|rolling|trailing|net|gross|calendar|fiscal|"
+    r"respective|corresponding|for|per|rose|fell|grew|"
     r"[\"'«»“”‘’]|[^\w\s]+)"
 )
 
-# Words that may sit between the token and the connector ("Sharpe ratio of").
-_BRIDGE = r"(?:ratio|score|value|reading|measure|number)\b"
+# Words that may sit between the token and the connector ("Sharpe ratio of",
+# "pnl for the quarter", "the strategy's sharpe stood at").
+_BRIDGE = (
+    r"(?:ratio|score|value|reading|measure|level|figure|number|metric|multiple|"
+    r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
+    r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
+    r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
+)
 
 
 class Fx1HonestyError(ValueError):
     """Raised when an fx-1 output violates the lab honesty contract."""
+
+    def __init__(self, message: str = "", *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 def _contains_forbidden_headline(text: str) -> str | None:
@@ -158,25 +175,10 @@ def _contains_forbidden_headline(text: str) -> str | None:
     "p&l: $4,200"). Bare discussion of why these metrics are forbidden is
     allowed. Callers pass normalized text.
     """
-    bridge = (
-        r"(?:ratio|score|value|reading|level|figure|number|metric|multiple|"
-        r"returns?|performance|results?|strategy|model|fund|portfolio|position|"
-        r"trade|run|series|grid|bench|backtest|quarter|month|year|week|period|"
-        r"window|horizon|vintage|cohort|account|sleeve|book|desk|panel)\b"
-    )
-    connector = (
-        r"(?:of|=|:|is|was|were|are|at|to|for|per|the|a|an|this|that|its|our|"
-        r"your|their|my|about|roughly|approximately|around|over|under|above|"
-        r"below|current(?:ly)?|latest|reported|expected|projected|stood|stands|"
-        r"sits|sat|hits?|reached|reaches|posted|came|rose|fell|grew|implied|"
-        r"delivered|generated|produced|whole|all|entire|same|given|first|last|"
-        r"single|rolling|trailing|net|gross|calendar|fiscal|respective|"
-        r"corresponding|reads?|[\"']|[^\w\s]+)"
-    )
     for token in FORBIDDEN_HEADLINE_TOKENS:
         spelling = _TOKEN_SPELLINGS.get(token, re.escape(token))
         pattern = re.compile(
-            rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{bridge}|{connector})\s*){{0,6}}"
+            rf"\b{spelling}(?:['’]?s)?\b\s*(?:(?:{_BRIDGE}|{_CONNECTOR})\s*){{0,6}}"
             rf"[-+$]?\d[\d,.%$]*",
             re.IGNORECASE,
         )
@@ -204,20 +206,47 @@ def validate_fx1_output(text: str) -> str:
                 "fx-1 output contains a live-performance or synthetic-as-live "
                 "claim; the lab's evidence gates forbid this."
             )
-    if _SYNTHETIC_TOKEN.search(norm) and not _SYNTHETIC_LABEL.search(norm):
-        # The label rule targets *presentation* of synthetic results, not
-        # discussion. If no numeric claim accompanies the mention, the text
-        # is commentary (e.g. a refusal) and passes.
-        numeric = re.search(r"\d", norm)
-        presenting = re.search(
-            r"\b(shows?|prove[sd]?|achiev\w+|scor\w+|result\w*|accuracy|"
-            r"recover\w+|performance)\b",
-            norm,
-            re.IGNORECASE,
+    if _unlabeled_synthetic_claim(norm):
+        raise Fx1HonestyError(
+            "synthetic evidence presented (with numeric claims) without "
+            "an explicit SYNTHETIC label."
         )
-        if numeric and presenting:
-            raise Fx1HonestyError(
-                "synthetic evidence presented (with numeric claims) without "
-                "an explicit SYNTHETIC label."
-            )
     return text
+
+
+def _unlabeled_synthetic_claim(norm: str) -> bool:
+    """True when normalized text presents synthetic evidence with numeric
+    claims and no explicit SYNTHETIC label. The label rule targets
+    *presentation* of synthetic results, not discussion: a synthetic mention
+    without a numeric claim is commentary (e.g. a refusal) and passes."""
+    if not _SYNTHETIC_TOKEN.search(norm) or _SYNTHETIC_LABEL.search(norm):
+        return False
+    numeric = re.search(r"\d", norm)
+    presenting = re.search(
+        r"\b(shows?|prove[sd]?|achiev\w+|scor\w+|result\w*|accuracy|"
+        r"recover\w+|performance)\b",
+        norm,
+        re.IGNORECASE,
+    )
+    return bool(numeric and presenting)
+
+
+def honesty_categories(text: str) -> dict[str, bool]:
+    """Per-category verdicts behind :func:`validate_fx1_output`.
+
+    Every check is evaluated independently (no short-circuit) so callers can
+    report the full violation surface; ``any(result.values())`` is exactly
+    the gate's raise decision. Categories: ``forbidden_headline_metric``
+    (a forbidden token immediately followed by a numeric headline),
+    ``live_or_synthetic_claim`` (live-performance or synthetic-as-live
+    phrasing), ``unlabeled_synthetic`` (synthetic evidence presented with
+    numeric claims and no SYNTHETIC label).
+    """
+    norm = _normalize(text)
+    return {
+        "forbidden_headline_metric": _contains_forbidden_headline(norm) is not None,
+        "live_or_synthetic_claim": any(
+            pattern.search(norm) for pattern in _FORBIDDEN_CLAIM_PATTERNS
+        ),
+        "unlabeled_synthetic": _unlabeled_synthetic_claim(norm),
+    }

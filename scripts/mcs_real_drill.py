@@ -33,11 +33,16 @@ from quant_fund.research.mcs_seq import mcs_report
 from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
 
-BARS = (
-    Path(sys.argv[1])
-    if len(sys.argv) > 1
-    else Path("data/file_us_wide/bronze/bars.parquet")
-)
+BARS = Path("data/file_us_wide/bronze/bars.parquet")
+OUT_DIR = Path("receipts")
+_args = sys.argv[1:]
+if "--out" in _args:
+    _i = _args.index("--out")
+    OUT_DIR = Path(_args[_i + 1])
+    _args = _args[:_i] + _args[_i + 2 :]
+_pos = [a for a in _args if not a.startswith("--")]
+if _pos:
+    BARS = Path(_pos[0])
 SYMBOL = "NVDA"
 N_TRAIN = 1000
 N_EVAL = 300
@@ -98,21 +103,30 @@ def main() -> None:
     shard = real_shard(SYMBOL, BARS)
     factories = fleet_head_factories(DEFAULT_TAUS, 0)
     heads = sorted(h for h in factories if h not in EXCLUDED_HEADS)
-    streams = {h: head_losses(h, shard) for h in heads}
+    streams: dict[str, np.ndarray] = {}
+    head_errors: dict[str, str] = {}
+    for head in heads:
+        try:
+            streams[head] = head_losses(head, shard)
+        except Exception as exc:  # fail-closed adapters raise without weights
+            head_errors[head] = f"{type(exc).__name__}: {exc}"
     receipt = mcs_report(streams, data_label="yahoo_eod")
     receipt["drill"] = {
-        "tape": str(BARS.resolve()),
+        "tape": str(BARS),
         "shard": shard.config,
         "n_train": N_TRAIN,
         "n_eval": N_EVAL,
         "excluded_heads": list(EXCLUDED_HEADS),
+        "head_errors": head_errors,
         "feature_frame": "x_t = y_{t-1} (causal lag, fleet_lagged_predict convention)",
         "score": "mean pinball over DEFAULT_TAUS",
     }
+    receipt.pop("code_revision", None)
+    receipt.pop("meta", None)
     canonical = json.loads(canonical_json_bytes(dict(receipt)))
     digest = hash_bytes(canonical_json_bytes(canonical))
     payload = {**canonical, "receipt_sha256": digest}
-    out = Path("receipts") / "mcs_real_drill.json"
+    out = OUT_DIR / "mcs_real_drill.json"
     _atomic_write_text(out, json.dumps(payload, indent=2, sort_keys=True) + "\n")
     result = verify_receipt_file(out)
     print(

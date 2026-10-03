@@ -172,3 +172,14 @@ def test_missing_spot_bar_blocks_entry(tmp_path) -> None:
     )
     res = run_carry_backtest(perp, spot_late, None, _weights(0.5, at=0), cfg, initial_nav=1e5)
     assert res.fills.height == 0
+
+
+@pytest.mark.parametrize("second_rate", [0.01, 0.02, -0.01])
+def test_duplicate_funding_events_fail_closed(tmp_path, second_rate: float) -> None:
+    """SYNTHETIC: the shared funding parser must also protect paired carry."""
+    cfg = _cfg(tmp_path)
+    cfg.costs.frictionless = True
+    perp, spot = _pair_bars([100.0] * 10)
+    funding = pl.concat([_funding(0.01, at=5), _funding(second_rate, at=5)])
+    with pytest.raises(ValueError, match="duplicate funding event"):
+        run_carry_backtest(perp, spot, funding, _weights(0.5), cfg, initial_nav=1e5)

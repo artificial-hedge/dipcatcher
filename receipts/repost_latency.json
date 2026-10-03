@@ -1,0 +1,973 @@
+{
+ "schema": "repost_latency.v1",
+ "kind": "microstructure_bench",
+ "research_only": true,
+ "data_label": "MIXED",
+ "git_revision": "de9e1ea6d153b34e713e8696ecbeeee0c4313a5b",
+ "horizon": 15000,
+ "seed": 7,
+ "config": {
+  "seeds": [
+   7,
+   11
+  ],
+  "cells": [
+   {
+    "label": "joint_d280",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "maker_requote": 0.6,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 280,
+    "flow_intensity": null
+   },
+   {
+    "label": "joint_d160",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "maker_requote": 0.6,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 160,
+    "flow_intensity": null
+   },
+   {
+    "label": "joint_d110",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "maker_requote": 0.6,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 110,
+    "flow_intensity": null
+   },
+   {
+    "label": "joint_d60",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "maker_requote": 0.6,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 60,
+    "flow_intensity": null
+   },
+   {
+    "label": "joint_d110_f100",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "maker_requote": 0.6,
+    "fill_repost_frac": 1.0,
+    "fill_repost_delay": 110,
+    "flow_intensity": null
+   },
+   {
+    "label": "joint_d160_split",
+    "zone_embargo": 12,
+    "maker_ttl": 200,
+    "maker_requote": 0.6,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 160,
+    "flow_intensity": 2.0
+   },
+   {
+    "label": "fast_d110",
+    "zone_embargo": 12,
+    "maker_ttl": 50,
+    "maker_requote": 0.9,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 110,
+    "flow_intensity": null
+   },
+   {
+    "label": "fast_d110_split",
+    "zone_embargo": 12,
+    "maker_ttl": 50,
+    "maker_requote": 0.9,
+    "fill_repost_frac": 0.8,
+    "fill_repost_delay": 110,
+    "flow_intensity": 2.0
+   }
+  ]
+ },
+ "tape_reference": {
+  "reseed_rate_500": 0.54,
+  "reseed_as_touch_share": 0.75,
+  "reseed_latency_p50": 110.0,
+  "instant_signed_ticks": 0.887,
+  "sources": [
+   "reseed_hazard.v1",
+   "impact_persist.v1"
+  ]
+ },
+ "cells": [
+  {
+   "regime": "joint_d280",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "maker_requote": 0.6,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 280,
+   "flow": "iid",
+   "n_draws": 2,
+   "n_pins_mean": 7.0,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 1.0
+   },
+   "reseed_rate_500": 0.5897,
+   "reseed_as_touch_share": 0.8395,
+   "reseed_latency_p50": 123.5,
+   "instant_mean": 0.8391,
+   "k200_mean": 5.1764,
+   "life_ev_p50_mean": 87.6619,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 897,
+      "mix_share": {
+       "sub": 0.3856,
+       "delete": 0.5828,
+       "exec": 0.0316
+      },
+      "life_events_p50_executed": 81.36253592454747
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 0.8010033444816054,
+     "k200": 4.390746934225195
+    },
+    {
+     "card": {
+      "n_fills": 639,
+      "mix_share": {
+       "sub": 0.3835,
+       "delete": 0.5941,
+       "exec": 0.0224
+      },
+      "life_events_p50_executed": 93.96123388877672
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 0.877151799687011,
+     "k200": 5.962025316455696
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 78,
+     "reseed_rate_500": 0.5641,
+     "reseed_latency_p50": 127.0,
+     "reseed_as_touch_share": 0.7727,
+     "n_timeout": 33,
+     "timeout_walked_share": 0.0,
+     "repost_due": 49,
+     "repost_rested": 42,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 7,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 52,
+     "reseed_rate_500": 0.6154,
+     "reseed_latency_p50": 120.0,
+     "reseed_as_touch_share": 0.9062,
+     "n_timeout": 20,
+     "timeout_walked_share": 0.1,
+     "repost_due": 36,
+     "repost_rested": 32,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 2,
+      "walked": 2
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "joint_d160",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "maker_requote": 0.6,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 160,
+   "flow": "iid",
+   "n_draws": 2,
+   "n_pins_mean": 5.5,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 0.5,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.0
+   },
+   "reseed_rate_500": 0.6803,
+   "reseed_as_touch_share": 0.8559,
+   "reseed_latency_p50": 93.5,
+   "instant_mean": 0.8628,
+   "k200_mean": 4.6491,
+   "life_ev_p50_mean": 93.5915,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 524,
+      "mix_share": {
+       "sub": 0.3717,
+       "delete": 0.6104,
+       "exec": 0.0178
+      },
+      "life_events_p50_executed": 92.86854551622417
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 1.0543893129770991,
+     "k200": 3.33587786259542
+    },
+    {
+     "card": {
+      "n_fills": 943,
+      "mix_share": {
+       "sub": 0.3852,
+       "delete": 0.5818,
+       "exec": 0.033
+      },
+      "life_events_p50_executed": 94.31445127109146
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 0.6712619300106044,
+     "k200": 5.962354188759279
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 51,
+     "reseed_rate_500": 0.7843,
+     "reseed_latency_p50": 68.5,
+     "reseed_as_touch_share": 0.8,
+     "n_timeout": 10,
+     "timeout_walked_share": 0.0,
+     "repost_due": 37,
+     "repost_rested": 34,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 3,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 59,
+     "reseed_rate_500": 0.5763,
+     "reseed_latency_p50": 118.5,
+     "reseed_as_touch_share": 0.9118,
+     "n_timeout": 25,
+     "timeout_walked_share": 0.08,
+     "repost_due": 32,
+     "repost_rested": 26,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 4,
+      "walked": 2
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "joint_d110",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "maker_requote": 0.6,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 110,
+   "flow": "iid",
+   "n_draws": 2,
+   "n_pins_mean": 6.0,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 0.5,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.5
+   },
+   "reseed_rate_500": 0.6833,
+   "reseed_as_touch_share": 0.7216,
+   "reseed_latency_p50": 71.0,
+   "instant_mean": 1.07,
+   "k200_mean": 5.694,
+   "life_ev_p50_mean": 92.8672,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 658,
+      "mix_share": {
+       "sub": 0.362,
+       "delete": 0.6159,
+       "exec": 0.0221
+      },
+      "life_events_p50_executed": 94.09770690269013
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 0.5817610062893082,
+     "k200": 4.373100303951368
+    },
+    {
+     "card": {
+      "n_fills": 628,
+      "mix_share": {
+       "sub": 0.3807,
+       "delete": 0.5974,
+       "exec": 0.0219
+      },
+      "life_events_p50_executed": 91.63677885726015
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 1.558252427184466,
+     "k200": 7.014950166112957
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 73,
+     "reseed_rate_500": 0.726,
+     "reseed_latency_p50": 83.0,
+     "reseed_as_touch_share": 0.7358,
+     "n_timeout": 20,
+     "timeout_walked_share": 0.0,
+     "repost_due": 50,
+     "repost_rested": 45,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 5,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 64,
+     "reseed_rate_500": 0.6406,
+     "reseed_latency_p50": 59.0,
+     "reseed_as_touch_share": 0.7073,
+     "n_timeout": 23,
+     "timeout_walked_share": 0.0435,
+     "repost_due": 45,
+     "repost_rested": 39,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 5,
+      "walked": 1
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "joint_d60",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "maker_requote": 0.6,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 60,
+   "flow": "iid",
+   "n_draws": 2,
+   "n_pins_mean": 7.0,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 1.0
+   },
+   "reseed_rate_500": 0.6397,
+   "reseed_as_touch_share": 0.8937,
+   "reseed_latency_p50": 49.0,
+   "instant_mean": 1.0714,
+   "k200_mean": 6.043,
+   "life_ev_p50_mean": 89.4237,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 726,
+      "mix_share": {
+       "sub": 0.3734,
+       "delete": 0.6016,
+       "exec": 0.025
+      },
+      "life_events_p50_executed": 87.13296920828492
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 1.2226074895977808,
+     "k200": 6.328275862068965
+    },
+    {
+     "card": {
+      "n_fills": 754,
+      "mix_share": {
+       "sub": 0.3826,
+       "delete": 0.5912,
+       "exec": 0.0262
+      },
+      "life_events_p50_executed": 91.71446299636321
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 0.920249653259362,
+     "k200": 5.7578125
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 55,
+     "reseed_rate_500": 0.6364,
+     "reseed_latency_p50": 60.0,
+     "reseed_as_touch_share": 0.9429,
+     "n_timeout": 20,
+     "timeout_walked_share": 0.1,
+     "repost_due": 35,
+     "repost_rested": 34,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 0,
+      "walked": 1
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 70,
+     "reseed_rate_500": 0.6429,
+     "reseed_latency_p50": 38.0,
+     "reseed_as_touch_share": 0.8444,
+     "n_timeout": 25,
+     "timeout_walked_share": 0.0,
+     "repost_due": 51,
+     "repost_rested": 48,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 3,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "joint_d110_f100",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "maker_requote": 0.6,
+   "fill_repost_frac": 1.0,
+   "fill_repost_delay": 110,
+   "flow": "iid",
+   "n_draws": 2,
+   "n_pins_mean": 5.5,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 0.5,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 0.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 1.0
+   },
+   "reseed_rate_500": 0.8068,
+   "reseed_as_touch_share": 0.9119,
+   "reseed_latency_p50": 53.0,
+   "instant_mean": 0.6278,
+   "k200_mean": 4.3151,
+   "life_ev_p50_mean": 99.5636,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 586,
+      "mix_share": {
+       "sub": 0.3709,
+       "delete": 0.6091,
+       "exec": 0.02
+      },
+      "life_events_p50_executed": 92.99309107452535
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 0.46070726915520627,
+     "k200": 5.815972222222222
+    },
+    {
+     "card": {
+      "n_fills": 595,
+      "mix_share": {
+       "sub": 0.3698,
+       "delete": 0.6097,
+       "exec": 0.0205
+      },
+      "life_events_p50_executed": 106.13415548130953
+     },
+     "pins": {
+      "crown": true,
+      "empty": false,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 5,
+     "instant_signed_ticks": 0.7949579831932773,
+     "k200": 2.8142857142857145
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 61,
+     "reseed_rate_500": 0.7705,
+     "reseed_latency_p50": 54.0,
+     "reseed_as_touch_share": 0.8936,
+     "n_timeout": 14,
+     "timeout_walked_share": 0.1429,
+     "repost_due": 54,
+     "repost_rested": 49,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 4,
+      "walked": 1
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 51,
+     "reseed_rate_500": 0.8431,
+     "reseed_latency_p50": 52.0,
+     "reseed_as_touch_share": 0.9302,
+     "n_timeout": 7,
+     "timeout_walked_share": 0.0,
+     "repost_due": 45,
+     "repost_rested": 40,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 5,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "joint_d160_split",
+   "zone_embargo": 12,
+   "maker_ttl": 200,
+   "maker_requote": 0.6,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 160,
+   "flow": "split",
+   "n_draws": 2,
+   "n_pins_mean": 6.5,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 1.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.5
+   },
+   "reseed_rate_500": 0.604,
+   "reseed_as_touch_share": 0.7994,
+   "reseed_latency_p50": 107.0,
+   "instant_mean": 0.9157,
+   "k200_mean": 7.3851,
+   "life_ev_p50_mean": 78.4761,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 879,
+      "mix_share": {
+       "sub": 0.4109,
+       "delete": 0.556,
+       "exec": 0.0331
+      },
+      "life_events_p50_executed": 62.80340006040942
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 1.1718146718146718,
+     "k200": 7.9676300578034684
+    },
+    {
+     "card": {
+      "n_fills": 1094,
+      "mix_share": {
+       "sub": 0.3984,
+       "delete": 0.5622,
+       "exec": 0.0394
+      },
+      "life_events_p50_executed": 94.14885323509652
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 7,
+     "instant_signed_ticks": 0.6595576619273301,
+     "k200": 6.802527646129542
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 156,
+     "reseed_rate_500": 0.6731,
+     "reseed_latency_p50": 104.0,
+     "reseed_as_touch_share": 0.6857,
+     "n_timeout": 50,
+     "timeout_walked_share": 0.06,
+     "repost_due": 110,
+     "repost_rested": 104,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 6,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 43,
+     "reseed_rate_500": 0.5349,
+     "reseed_latency_p50": 110.0,
+     "reseed_as_touch_share": 0.913,
+     "n_timeout": 20,
+     "timeout_walked_share": 0.0,
+     "repost_due": 29,
+     "repost_rested": 29,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 0,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "fast_d110",
+   "zone_embargo": 12,
+   "maker_ttl": 50,
+   "maker_requote": 0.9,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 110,
+   "flow": "iid",
+   "n_draws": 2,
+   "n_pins_mean": 6.0,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 0.5,
+    "reseed_touch": 1.0,
+    "reveal_gap": 0.5
+   },
+   "reseed_rate_500": 0.67,
+   "reseed_as_touch_share": 0.7673,
+   "reseed_latency_p50": 118.5,
+   "instant_mean": 0.835,
+   "k200_mean": 4.4365,
+   "life_ev_p50_mean": 29.9685,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 498,
+      "mix_share": {
+       "sub": 0.162,
+       "delete": 0.8297,
+       "exec": 0.0084
+      },
+      "life_events_p50_executed": 34.02534372662154
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": true,
+      "reseed_touch": true,
+      "reveal_gap": false
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 0.8012170385395537,
+     "k200": 3.874245472837022
+    },
+    {
+     "card": {
+      "n_fills": 899,
+      "mix_share": {
+       "sub": 0.1708,
+       "delete": 0.8138,
+       "exec": 0.0153
+      },
+      "life_events_p50_executed": 25.911680688658553
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 0.8688423645320197,
+     "k200": 4.998792270531401
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 37,
+     "reseed_rate_500": 0.6216,
+     "reseed_latency_p50": 146.0,
+     "reseed_as_touch_share": 0.913,
+     "n_timeout": 14,
+     "timeout_walked_share": 0.0,
+     "repost_due": 24,
+     "repost_rested": 22,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 2,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 103,
+     "reseed_rate_500": 0.7184,
+     "reseed_latency_p50": 91.0,
+     "reseed_as_touch_share": 0.6216,
+     "n_timeout": 29,
+     "timeout_walked_share": 0.0,
+     "repost_due": 73,
+     "repost_rested": 68,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 5,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  },
+  {
+   "regime": "fast_d110_split",
+   "zone_embargo": 12,
+   "maker_ttl": 50,
+   "maker_requote": 0.9,
+   "fill_repost_frac": 0.8,
+   "fill_repost_delay": 110,
+   "flow": "split",
+   "n_draws": 2,
+   "n_pins_mean": 6.0,
+   "pin_rates": {
+    "crown": 1.0,
+    "empty": 1.0,
+    "spread": 1.0,
+    "hidden": 1.0,
+    "reseed_rate": 0.0,
+    "reseed_touch": 1.0,
+    "reveal_gap": 1.0
+   },
+   "reseed_rate_500": 0.7548,
+   "reseed_as_touch_share": 0.7218,
+   "reseed_latency_p50": 65.0,
+   "instant_mean": 1.3424,
+   "k200_mean": 7.5494,
+   "life_ev_p50_mean": 24.1719,
+   "draws": [
+    {
+     "card": {
+      "n_fills": 950,
+      "mix_share": {
+       "sub": 0.2054,
+       "delete": 0.7747,
+       "exec": 0.0199
+      },
+      "life_events_p50_executed": 24.326850934017287
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 1.7312430011198208,
+     "k200": 9.402930402930403
+    },
+    {
+     "card": {
+      "n_fills": 837,
+      "mix_share": {
+       "sub": 0.188,
+       "delete": 0.7961,
+       "exec": 0.0159
+      },
+      "life_events_p50_executed": 24.016985590103985
+     },
+     "pins": {
+      "crown": true,
+      "empty": true,
+      "spread": true,
+      "hidden": true,
+      "reseed_rate": false,
+      "reseed_touch": true,
+      "reveal_gap": true
+     },
+     "n_pins": 6,
+     "instant_signed_ticks": 0.9534632034632035,
+     "k200": 5.695856873822976
+    }
+   ],
+   "fates": [
+    {
+     "n_emptied": 286,
+     "reseed_rate_500": 0.7273,
+     "reseed_latency_p50": 70.0,
+     "reseed_as_touch_share": 0.6587,
+     "n_timeout": 67,
+     "timeout_walked_share": 0.3284,
+     "repost_due": 213,
+     "repost_rested": 202,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 9,
+      "walked": 2
+     },
+     "repost_fate_sums": true
+    },
+    {
+     "n_emptied": 101,
+     "reseed_rate_500": 0.7822,
+     "reseed_latency_p50": 60.0,
+     "reseed_as_touch_share": 0.7848,
+     "n_timeout": 19,
+     "timeout_walked_share": 0.0526,
+     "repost_due": 83,
+     "repost_rested": 79,
+     "repost_drops": {
+      "floor": 0,
+      "refill": 4,
+      "walked": 0
+     },
+     "repost_fate_sums": true
+    }
+   ]
+  }
+ ],
+ "claims": {
+  "cells_measured": true,
+  "reseed_card_closed": true,
+  "pins_survive": true,
+  "kernel_carried": true
+ },
+ "notes": "placeholder \u2014 replaced after measurement.",
+ "receipt_sha256": "079542bc6a1f598ade091982091b486ba8ff0fae58919d5c214ba41e19340649"
+}

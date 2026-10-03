@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -149,6 +149,7 @@ def corpus_audit(
     *,
     q: float = 0.05,
     glob: str = "*.json",
+    members: Collection[str] | None = None,
 ) -> dict[str, Any]:
     """Pool every committed receipt's claims into one FDR family.
 
@@ -156,7 +157,10 @@ def corpus_audit(
     flags, the merged corpus e-value (arithmetic mean — valid under
     arbitrary dependence), and counts. Fails closed on a missing dir;
     unreadable receipts are recorded as errors rather than silently
-    skipped.
+    skipped. ``members`` pins the input set to exactly those basenames —
+    without it the glob picks up whatever the dir contains, so a pinned
+    membership is required for byte-reproducible replays. A member absent
+    from the dir is a recorded error, never silently dropped.
     """
     root = Path(receipts_dir)
     if not root.is_dir():
@@ -165,8 +169,18 @@ def corpus_audit(
         raise ValueError("q must lie in (0, 1)")
 
     findings: list[dict[str, Any]] = []
-    receipt_files = sorted(p for p in root.glob(glob) if p.is_file())
     errors: list[dict[str, str]] = []
+    if members is not None:
+        member_set = {str(m) for m in members}
+        receipt_files = [root / name for name in sorted(member_set)]
+        present = {p.name for p in root.glob(glob) if p.is_file()}
+        for name in sorted(member_set - present):
+            errors.append({"file": name, "error": "member_missing_from_dir"})
+        # Files in the dir that are not members are ignored — a pinned
+        # membership audits the same frozen set even as the corpus grows.
+        receipt_files = [p for p in receipt_files if p.name in present]
+    else:
+        receipt_files = sorted(p for p in root.glob(glob) if p.is_file())
     digests: dict[str, str] = {}
     input_labels: dict[str, str] = {}
     # Retractions exclude their target's findings from the inference pool —
