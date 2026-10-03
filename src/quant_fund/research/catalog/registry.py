@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-415 topology-4 canon.
+        "quotient_map",
+        "open_cover",
+        "locally_compact",
+        "homeo_top",
+        "paracompact",
+        "partition_unity",
         # Wave-414 homotopy-6 canon.
         "exact_couple",
         "adams_ss",
