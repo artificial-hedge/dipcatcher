@@ -7831,6 +7831,14 @@ from quant_fund.research.benches_w979 import (
     bench_van_der_corput_family,
     bench_weyl_equidist_family,
 )
+from quant_fund.research.benches_w980 import (
+    bench_de_boor_stable_family,
+    bench_faber_schauder_family,
+    bench_haar_system_family,
+    bench_korovkin_thm_family,
+    bench_walsh_series_family,
+    bench_whitney_ext_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8202,6 +8210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "walsh_series": bench_walsh_series_family,
+        "haar_system": bench_haar_system_family,
+        "faber_schauder": bench_faber_schauder_family,
+        "de_boor_stable": bench_de_boor_stable_family,
+        "whitney_ext": bench_whitney_ext_family,
+        "korovkin_thm": bench_korovkin_thm_family,
         "weyl_equidist": bench_weyl_equidist_family,
         "van_der_corput": bench_van_der_corput_family,
         "horocycle_flow": bench_horocycle_flow_family,

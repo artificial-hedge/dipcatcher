@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-980 approximation-theory-2 canon.
+        "walsh_series",
+        "haar_system",
+        "faber_schauder",
+        "de_boor_stable",
+        "whitney_ext",
+        "korovkin_thm",
         # Wave-979 ergodic-2 canon.
         "weyl_equidist",
         "van_der_corput",
