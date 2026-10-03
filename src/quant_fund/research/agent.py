@@ -7047,6 +7047,14 @@ from quant_fund.research.benches_w881 import (
     bench_qmr_solver_family,
     bench_tfqmr_family,
 )
+from quant_fund.research.benches_w882 import (
+    bench_balanced_dd_family,
+    bench_diagonal_scale_family,
+    bench_nonoverlap_dd_family,
+    bench_overlap_dd_family,
+    bench_restrictive_dd_family,
+    bench_spai_precond_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7418,6 +7426,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spai_precond": bench_spai_precond_family,
+        "diagonal_scale": bench_diagonal_scale_family,
+        "nonoverlap_dd": bench_nonoverlap_dd_family,
+        "overlap_dd": bench_overlap_dd_family,
+        "restrictive_dd": bench_restrictive_dd_family,
+        "balanced_dd": bench_balanced_dd_family,
         "minres_solver": bench_minres_solver_family,
         "cgs_solver": bench_cgs_solver_family,
         "tfqmr": bench_tfqmr_family,
