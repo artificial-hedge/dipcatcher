@@ -2576,6 +2576,14 @@ from quant_fund.research.benches_w322 import (
     bench_sygus_synth_family,
     bench_weakest_precond_family,
 )
+from quant_fund.research.benches_w323 import (
+    bench_alg_effects_family,
+    bench_free_monad_family,
+    bench_gradual_types_family,
+    bench_row_types_family,
+    bench_session_types_family,
+    bench_shift_reset_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2955,6 +2963,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "free_monad": bench_free_monad_family,
+        "alg_effects": bench_alg_effects_family,
+        "shift_reset": bench_shift_reset_family,
+        "row_types": bench_row_types_family,
+        "session_types": bench_session_types_family,
+        "gradual_types": bench_gradual_types_family,
         "weakest_precond": bench_weakest_precond_family,
         "sygus_synth": bench_sygus_synth_family,
         "horn_clauses": bench_horn_clauses_family,
