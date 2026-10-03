@@ -1911,6 +1911,14 @@ from quant_fund.research.benches_w239 import (
     bench_simple_types_family,
     bench_tree_walk_interp_family,
 )
+from quant_fund.research.benches_w240 import (
+    bench_blind_sig_family,
+    bench_commit_reveal_family,
+    bench_merkle_ots_family,
+    bench_rsa_toy_family,
+    bench_winternitz_ots_family,
+    bench_zkp_schnorr_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4898,6 +4906,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "macro_expand": bench_macro_expand_family(),
         "gc_marksweep": bench_gc_marksweep_family(),
         "simple_types": bench_simple_types_family(),
+        "rsa_toy": bench_rsa_toy_family(),
+        "winternitz_ots": bench_winternitz_ots_family(),
+        "merkle_ots": bench_merkle_ots_family(),
+        "blind_sig": bench_blind_sig_family(),
+        "zkp_schnorr": bench_zkp_schnorr_family(),
+        "commit_reveal": bench_commit_reveal_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)

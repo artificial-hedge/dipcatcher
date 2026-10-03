@@ -2808,6 +2808,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "macro_expand",
         "gc_marksweep",
         "simple_types",
+        # Wave-240 applied-crypto canon.
+        "rsa_toy",
+        "winternitz_ots",
+        "merkle_ots",
+        "blind_sig",
+        "zkp_schnorr",
+        "commit_reveal",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
