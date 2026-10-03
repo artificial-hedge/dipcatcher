@@ -1,3 +1,4 @@
+feat(research): wave 770 — extreme-value canon (gumbel_domain, weibull_domain, frechet_domain, peak_over, hill_est, pickands_est) (4575->4581 families)
 feat(research): wave 769 — Stein-method canon (stein_method, stein_equation, barbour_stein, chen_stein, ross_stein, chatt_stein) (4569->4575 families)
 feat(research): wave 768 — large-deviation canon (varadhan_ldp, freidlin_wentzell, dw_ldp, sanov_thm, mogulskii_thm, schider_thm) (4563->4569 families)
 feat(research): wave 767 — Gaussian-process canon (slepian_lemma, fernique_thm, borell_tis, sudakov_min, talagrand_conc, gordon_thm) (4557->4563 families)
