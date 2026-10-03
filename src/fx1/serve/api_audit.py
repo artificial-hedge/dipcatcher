@@ -539,6 +539,14 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     out["stream_final_reports_latency_ms"] = (
         isinstance(payloads[-1].get("latency_ms"), (int, float)) and payloads[-1]["latency_ms"] >= 0
     )
+    # the final frame self-describes its evidence: receipt_sha256 equals the
+    # sealed export of the logged record — a stream client pins the record
+    # without a second call
+    sf_cid = payloads[-1].get("completion_id")
+    sf_doc = stream_client.get(f"/harness/completions/{sf_cid}/receipt")
+    out["stream_final_receipt_sha"] = (
+        sf_cid is not None and payloads[-1].get("receipt_sha256") == sf_doc.json()["receipt_sha256"]
+    )
 
     class _DirtyStreamBackend(_DirtyBackend):
         def stream(
@@ -1924,6 +1932,48 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
     )
     out["xfx_timeout_responses_reaches_backend"] = (
         hr.status_code == 200 and _cap[-1].get("timeout_s") == 4.0
+    )
+
+    # X-Fx1-Receipt-Sha256 — every gated response self-describes the seal of
+    # its completion-log record: the header equals the receipt_sha256 of the
+    # document GET /harness/completions/{id}/receipt exports, so the wire is
+    # evidence-pinned without a second fetch. Idempotent replays echo the
+    # original seal; SSE responses carry it as a header.
+    rc = bapp.post(
+        "/v1/chat/completions",
+        json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+    )
+    rc_doc = bapp.get(f"/harness/completions/{rc.headers.get('x-fx1-completion-id')}/receipt")
+    out["receipt_sha_header_chat"] = (
+        rc.status_code == 200
+        and rc.headers.get("x-fx1-receipt-sha256") == rc_doc.json()["receipt_sha256"]
+    )
+    rr = bapp.post("/v1/responses", json={"model": "fx1", "input": "x"})
+    rr_doc = bapp.get(f"/harness/completions/{rr.headers.get('x-fx1-completion-id')}/receipt")
+    out["receipt_sha_header_responses"] = (
+        rr.status_code == 200
+        and rr.headers.get("x-fx1-receipt-sha256") == rr_doc.json()["receipt_sha256"]
+    )
+    rkey = {"Idempotency-Key": "rsha-probe-1"}
+    r1 = ic.post("/harness/complete", json=cbody, headers=rkey)
+    r2 = ic.post("/harness/complete", json=cbody, headers=rkey)
+    r1_doc = ic.get(f"/harness/completions/{r1.headers.get('x-fx1-completion-id')}/receipt")
+    out["receipt_sha_header_complete_replay"] = (
+        r1.status_code == 200
+        and r1.headers.get("x-fx1-receipt-sha256") == r1_doc.json()["receipt_sha256"]
+        and r2.json()["replayed"] is True
+        and r2.headers.get("x-fx1-receipt-sha256") == r1.headers["x-fx1-receipt-sha256"]
+    )
+    rss = bapp.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [{"role": "user", "content": "x"}],
+            "stream": True,
+        },
+    )
+    out["receipt_sha_header_sse"] = (
+        rss.status_code == 200 and rss.headers.get("x-fx1-receipt-sha256") is not None
     )
     # Isolated circuits per endpoint: the dead override opens its own
     # breaker key while the healthy override (and the env default) pass.
@@ -5028,6 +5078,10 @@ def _probe_backend_probes(
         and oi_emb_b.seen_format == "float"
         and oi_emb_b.seen_user == "u-1"
     )
+    em_doc = oi_emb.get(f"/harness/completions/{r.headers.get('x-fx1-completion-id')}/receipt")
+    out["receipt_sha_header_embeddings"] = (
+        r.headers.get("x-fx1-receipt-sha256") == em_doc.json()["receipt_sha256"]
+    )
     r = oi_emb.post(
         "/v1/embeddings",
         json={"model": "emb-tok", "input": [1, 2, 3]},
@@ -7169,7 +7223,12 @@ def api_audit_bench() -> dict[str, Any]:
             "unregistered ft: names fail closed 404 model_not_found. "
             "X-Fx1-Timeout sets the per-request backend deadline on the "
             "OpenAI surface (fx1.timeout_s extension wins; malformed or "
-            "out-of-range values fail closed 400)."
+            "out-of-range values fail closed 400). Every gated response "
+            "self-describes its evidence: X-Fx1-Receipt-Sha256 carries the "
+            "seal of the logged record (identical to the document "
+            "GET /harness/completions/{id}/receipt exports), idempotent "
+            "replays echo the original seal, and SSE streams carry the "
+            "digest in the final frame."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),

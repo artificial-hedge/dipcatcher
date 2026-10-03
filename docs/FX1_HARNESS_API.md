@@ -140,6 +140,13 @@ per-item on batch results, on the stream's `final` frame, and as the
 original id). Probes never log. In-process, `Fx1Harness.completions()`
 / `.completion(id)` return the same records.
 
+**Response-side seal:** responses that carry `X-Fx1-Completion-Id` also
+carry `X-Fx1-Receipt-Sha256` — the `receipt_sha256` of the sealed
+`fx1_completion_record.v1` document, so a client pins the evidence
+without a second fetch (replays echo the original seal while the record
+is in the log; `/harness/complete/stream` carries the digest in the
+`final` frame instead).
+
 **Sealed exports:** `GET /harness/completions/{id}/receipt` returns the
 record wrapped as a `fx1_completion_record.v1` sealed document —
 `{kind, schema, git_revision, data_label:"OPS", research_only,

@@ -202,6 +202,7 @@ _CORS_EXPOSE_HEADERS = [
     "Retry-After",
     "X-Fx1-Api-Version",
     "X-Fx1-Completion-Id",
+    "X-Fx1-Receipt-Sha256",
     "X-Fx1-Receipt-Valid",
     "X-RateLimit-Limit",
     "X-RateLimit-Remaining",
@@ -2769,6 +2770,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 code="receipt_not_found",
             )
 
+    def _completion_receipt_sha(completion_id: str | None) -> str | None:
+        """Digest of the logged call's sealed ``fx1_completion_record.v1``
+        document — the response-side twin of ``X-Fx1-Completion-Id``, so a
+        client can pin the evidence without a second fetch. None when the
+        record is gone (bounded log evicts)."""
+        if completion_id is None:
+            return None
+        rec = completion_log.get(completion_id)
+        if rec is None:
+            return None
+        from fx1.serve.ops_receipt import (  # noqa: PLC0415
+            completion_record_receipt,
+        )
+
+        return str(completion_record_receipt(rec.model_dump(mode="json"))["receipt_sha256"])
+
     def _resolve_candidate(
         name: str,
         body: CompleteRequest | CompleteBatchRequest | EvalSubmitRequest | EmbedRequest,
@@ -3049,6 +3066,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         if replay is not None:
             if replay.completion_id is not None:
                 response.headers["X-Fx1-Completion-Id"] = replay.completion_id
+                _rsha = _completion_receipt_sha(replay.completion_id)
+                if _rsha is not None:
+                    response.headers["X-Fx1-Receipt-Sha256"] = _rsha
             return replay
         _check_citations(body.receipt_hashes)
         messages = [m.model_dump(exclude_none=True) for m in body.messages]
@@ -3266,6 +3286,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             logprobs=logprobs_out,
         )
         response.headers["X-Fx1-Completion-Id"] = cid
+        _rsha = _completion_receipt_sha(cid)
+        if _rsha is not None:
+            response.headers["X-Fx1-Receipt-Sha256"] = _rsha
         if key is not None:
             complete_idem_store.put(key, body_fp, resp)
         return resp
@@ -3438,6 +3461,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                         "latency_ms": latency_ms,
                         "usage": usage,
                         "completion_id": completion_id,
+                        "receipt_sha256": _completion_receipt_sha(completion_id),
                         "sampling": sampling_fields,
                     }
                 )
@@ -3885,6 +3909,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "X-Fx1-Completion-Id": cid_replay,
                 "X-Fx1-Idempotent-Replay": "true",
             }
+            _rsha = _completion_receipt_sha(cid_replay)
+            if _rsha is not None:
+                headers["X-Fx1-Receipt-Sha256"] = _rsha
             if body.stream:
                 return StreamingResponse(
                     _openai_sse(
@@ -3910,8 +3937,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         if key is not None:
             openai_idem_store.put(key, body_fp, _OpenAIIdemRecord(envelope=env_chat))
+        headers = {"X-Fx1-Completion-Id": cid}
+        _rsha = _completion_receipt_sha(cid)
+        if _rsha is not None:
+            headers["X-Fx1-Receipt-Sha256"] = _rsha
         if body.stream:
-            headers = {"X-Fx1-Completion-Id": cid}
             return StreamingResponse(
                 _openai_sse(
                     body,
@@ -3927,7 +3957,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 media_type="text/event-stream",
                 headers=headers,
             )
-        return JSONResponse(env_chat, headers={"X-Fx1-Completion-Id": cid})
+        return JSONResponse(env_chat, headers=headers)
 
     @app.post(
         "/v1/responses",
@@ -4035,6 +4065,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 "X-Fx1-Completion-Id": str(env["_fx1_completion_id"]),
                 "X-Fx1-Idempotent-Replay": "true",
             }
+            _rsha = _completion_receipt_sha(headers["X-Fx1-Completion-Id"])
+            if _rsha is not None:
+                headers["X-Fx1-Receipt-Sha256"] = _rsha
             if body.stream:
                 return StreamingResponse(
                     _resp_sse_from(env, skip),
@@ -4071,6 +4104,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 ),
             )
         headers = {"X-Fx1-Completion-Id": cid}
+        _rsha = _completion_receipt_sha(cid)
+        if _rsha is not None:
+            headers["X-Fx1-Receipt-Sha256"] = _rsha
         if body.stream:
             return StreamingResponse(
                 _responses_sse(
@@ -4190,6 +4226,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         except OpenAICompatError as exc:
             raise ApiError(exc.status, str(exc), code=exc.code) from exc
         response.headers["X-Fx1-Completion-Id"] = cid
+        _rsha = _completion_receipt_sha(cid)
+        if _rsha is not None:
+            response.headers["X-Fx1-Receipt-Sha256"] = _rsha
         return env
 
     # --- /v1/files + /v1/batches ------------------------------------------
