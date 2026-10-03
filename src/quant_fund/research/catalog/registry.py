@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-629 deformations-3 canon.
+        "deform_functor2",
+        "tangent_def",
+        "rim_deform",
+        "small_ext",
+        "hull_deform",
+        "artinian_alg",
         # Wave-628 operads-2 canon.
         "moerdijk_weiss",
         "higher_operad",
