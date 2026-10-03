@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-697 spectral-AG-8 canon.
+        "spectral_dvr",
+        "spectral_noether",
+        "spectral_regular",
+        "spectral_dedekind",
+        "spectral_jacobson",
+        "spectral_excellent",
         # Wave-696 category-19 canon.
         "cat_rank",
         "cat_index",
