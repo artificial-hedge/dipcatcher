@@ -3991,6 +3991,14 @@ from quant_fund.research.benches_w499 import (
     bench_period_map_family,
     bench_vhs_polarized_family,
 )
+from quant_fund.research.benches_w500 import (
+    bench_epsilon_factor_family,
+    bench_harris_taylor_family,
+    bench_l_packet_family,
+    bench_langlands_functoriality_family,
+    bench_local_langlands_family,
+    bench_weil_group_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4370,6 +4378,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "local_langlands": bench_local_langlands_family,
+        "harris_taylor": bench_harris_taylor_family,
+        "weil_group": bench_weil_group_family,
+        "langlands_functoriality": bench_langlands_functoriality_family,
+        "epsilon_factor": bench_epsilon_factor_family,
+        "l_packet": bench_l_packet_family,
         "hodge_decomp": bench_hodge_decomp_family,
         "l2_hodge": bench_l2_hodge_family,
         "mixed_hodge": bench_mixed_hodge_family,

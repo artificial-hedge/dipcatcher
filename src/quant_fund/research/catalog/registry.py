@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-500 arithmetic-Langlands canon.
+        "local_langlands",
+        "harris_taylor",
+        "weil_group",
+        "langlands_functoriality",
+        "epsilon_factor",
+        "l_packet",
         # Wave-499 Hodge-theory canon.
         "hodge_decomp",
         "l2_hodge",
