@@ -7447,6 +7447,14 @@ from quant_fund.research.benches_w931 import (
     bench_harmony_search_family,
     bench_pso_swarm_family,
 )
+from quant_fund.research.benches_w932 import (
+    bench_guided_local_family,
+    bench_large_neighborhood_family,
+    bench_path_relinking_family,
+    bench_ruin_recreate_family,
+    bench_simulated_annealing_family,
+    bench_vns_search_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7818,6 +7826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "vns_search": bench_vns_search_family,
+        "large_neighborhood": bench_large_neighborhood_family,
+        "ruin_recreate": bench_ruin_recreate_family,
+        "path_relinking": bench_path_relinking_family,
+        "guided_local": bench_guided_local_family,
+        "simulated_annealing": bench_simulated_annealing_family,
         "ant_colony": bench_ant_colony_family,
         "pso_swarm": bench_pso_swarm_family,
         "diff_evolution": bench_diff_evolution_family,
