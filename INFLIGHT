@@ -1,3 +1,4 @@
+feat(research): wave 505 — cobordism-theory canon (cobordism_grp, oriented_cob, unoriented_cob, complex_cob, framed_cob, thom_cob) (2985->2991 families)
 feat(research): wave 504 — Steenrod/cohomology-operations canon (steenrod_algebra, adem_relations, serre_cartan, unstable_modules, lambda_algebra, bar_resolution) (2979->2985 families)
 feat(research): wave 503 — elliptic-surface canon (elliptic_surface, weierstrass_eq, kodaira_fiber, tate_algorithm, mordell_weil2, neron_model) (2973->2979 families)
 feat(research): wave 502 — dg-category canon (dg_cat2, dg_morita, dg_quotient, drinfeld_quotient, dg_nerve, keller_dg) (2967->2973 families)

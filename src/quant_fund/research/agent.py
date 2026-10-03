@@ -4031,6 +4031,14 @@ from quant_fund.research.benches_w504 import (
     bench_steenrod_algebra_family,
     bench_unstable_modules_family,
 )
+from quant_fund.research.benches_w505 import (
+    bench_cobordism_grp_family,
+    bench_complex_cob_family,
+    bench_framed_cob_family,
+    bench_oriented_cob_family,
+    bench_thom_cob_family,
+    bench_unoriented_cob_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4410,6 +4418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cobordism_grp": bench_cobordism_grp_family,
+        "oriented_cob": bench_oriented_cob_family,
+        "unoriented_cob": bench_unoriented_cob_family,
+        "complex_cob": bench_complex_cob_family,
+        "framed_cob": bench_framed_cob_family,
+        "thom_cob": bench_thom_cob_family,
         "steenrod_algebra": bench_steenrod_algebra_family,
         "adem_relations": bench_adem_relations_family,
         "serre_cartan": bench_serre_cartan_family,
