@@ -7951,6 +7951,14 @@ from quant_fund.research.benches_w994 import (
     bench_marchenko_eq_family,
     bench_trace_formulas_family,
 )
+from quant_fund.research.benches_w995 import (
+    bench_calogero_moser_family,
+    bench_kp_hierarchy_family,
+    bench_nls_soliton_family,
+    bench_painleve_eq_family,
+    bench_sine_gordon_family,
+    bench_toda_lattice_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8322,6 +8330,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sine_gordon": bench_sine_gordon_family,
+        "nls_soliton": bench_nls_soliton_family,
+        "toda_lattice": bench_toda_lattice_family,
+        "calogero_moser": bench_calogero_moser_family,
+        "kp_hierarchy": bench_kp_hierarchy_family,
+        "painleve_eq": bench_painleve_eq_family,
         "inverse_scattering": bench_inverse_scattering_family,
         "marchenko_eq": bench_marchenko_eq_family,
         "gelfand_levitan": bench_gelfand_levitan_family,
