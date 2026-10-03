@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-475 homotopical-algebra canon.
+        "dendroidal",
+        "infty_operad",
+        "cyclic_hk",
+        "chiral_alg",
+        "sifted_cat",
+        "seq_spectra",
         # Wave-474 TQFT-2 canon.
         "reshet_turaev",
         "khovanov",

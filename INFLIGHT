@@ -1,3 +1,4 @@
+feat(research): wave 475 — homotopical-algebra canon (dendroidal, infty_operad, cyclic_hk, chiral_alg, sifted_cat, seq_spectra) (2805->2811 families)
 feat(research): wave 474 — TQFT-2 canon (reshet_turaev, khovanov, heegaard_floer, cobordism_hyp, modular_cat, topological_order) (2799->2805 families)
 feat(research): wave 473 — higher-algebra-3 canon (thh_2, cyclotomic2, cartier_mod, witt_vec2, crystalline_stack, trt_functor) (2793->2799 families)
 feat(research): wave 472 — motivic-3 canon (alg_cobordism, hermitian_k, oriented_coh, slice_spec, motivic_stem2, rostmotive) (2787->2793 families)
