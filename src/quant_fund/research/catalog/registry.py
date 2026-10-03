@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-866 model-order-reduction canon.
+        "pod_galerkin",
+        "reduced_basis",
+        "deim_point",
+        "greedy_rb",
+        "eim_interp",
+        "proper_gen",
         # Wave-865 a-posteriori error-estimation canon.
         "residual_estimator",
         "zienkiewicz_zhu",
