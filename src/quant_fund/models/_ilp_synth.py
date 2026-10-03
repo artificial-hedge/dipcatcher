@@ -92,6 +92,18 @@ def simplex(c: np.ndarray, a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, fl
     return x[:n], float(c @ x[:n])
 
 
+def brute_set_cover(costs: np.ndarray, a: np.ndarray) -> float:
+    import itertools
+
+    best = np.inf
+    n = a.shape[1]
+    for xs in itertools.product([0, 1], repeat=n):
+        x = np.array(xs, dtype=float)
+        if (a @ x >= 1.0 - 1e-9).all():
+            best = min(best, float(costs @ x))
+    return best
+
+
 def brute_force_ilp(c: np.ndarray, a: np.ndarray, b: np.ndarray, ub: np.ndarray) -> float:
     best = -np.inf
     import itertools

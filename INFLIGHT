@@ -2609,3 +2609,4 @@ wave 208 (2026-10-02): signal-processing-3 canon — cwt_ridge, cepstrum_pitch, 
 wave 209 (2026-10-02): reliability-engineering canon — weibull_life, fault_tree, ram_markov, fmea_rpn, life_stress, redundancy_block; 1226→1232 families.
 wave 210 (2026-10-02): coding-theory canon — ldpc_decoder, turbo_decoder, polar_code, bch_code, crc_check, conv_interleaver; 1232→1238 families.
 wave 211 (2026-10-02): integer-programming canon — gomory_cut, column_generation, benders_decomp, lagrangian_relax, branch_and_cut, held_karp; 1238→1244 families.
+wave 212 (2026-10-02): approximation-algorithm canon — greedy_set_cover, primal_dual_vc, lp_rounding_sc, fptas_knapsack, local_search_maxcut, christofides_tsp; 1244→1250 families.

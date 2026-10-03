@@ -2587,6 +2587,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "lagrangian_relax",
         "branch_and_cut",
         "held_karp",
+        # Wave-212 approximation-algorithm canon: greedy, primal-dual,
+        # LP rounding, FPTAS, local search, Christofides.
+        "greedy_set_cover",
+        "primal_dual_vc",
+        "lp_rounding_sc",
+        "fptas_knapsack",
+        "local_search_maxcut",
+        "christofides_tsp",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
