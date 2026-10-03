@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-570 positivity/moduli canon.
+        "hodge_index",
+        "kodaira_vanishing",
+        "kollar_mori",
+        "boundedness_moduli",
+        "stability_sheaf",
+        "bogomolov_ineq",
         # Wave-569 geometric-PDE canon.
         "yamabe_problem",
         "prescribed_curvature",
