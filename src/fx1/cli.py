@@ -2068,6 +2068,90 @@ def harness_moderate(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("chat-get")
+def harness_chat_get(
+    completion_id: str = typer.Argument(..., help="Stored chat.completion id (chatcmpl-*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/chat/completions/{id}`` — the stored envelope; missing ids
+    (evicted, deleted, ``store: false``) exit 2, never a fabricated object."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).retrieve_chat_completion(
+                completion_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_chat_get(completion_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("chat-delete")
+def harness_chat_delete(
+    completion_id: str = typer.Argument(..., help="Stored chat.completion id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/chat/completions/{id}`` — drop the stored envelope."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).delete_chat_completion(completion_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_chat_delete(completion_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("response-get")
+def harness_response_get(
+    response_id: str = typer.Argument(..., help="Stored response id (resp_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/responses/{id}`` — the stored response object; missing ids
+    exit 2, never a fabricated object."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).retrieve_response(response_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_response_get(response_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("response-delete")
+def harness_response_delete(
+    response_id: str = typer.Argument(..., help="Stored response id (resp_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``DELETE /v1/responses/{id}`` — drop the stored envelope."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).delete_response(response_id)
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_response_delete(response_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

@@ -172,6 +172,10 @@ def cli_audit() -> dict[str, Any]:
         "respond",
         "embed",
         "moderate",
+        "chat-get",
+        "chat-delete",
+        "response-get",
+        "response-delete",
     } <= hnames
 
     # the files/batches family is wire-only — no --remote is exit 2 on
@@ -274,6 +278,12 @@ def cli_audit() -> dict[str, Any]:
         _mf = runner.invoke(app, ["harness", "moderate", "our live trading sharpe is 9"])
         out["harness_moderate_flags"] = (
             _mf.exit_code == 0 and json.loads(_mf.stdout)["results"][0]["flagged"] is True
+        )
+        # stored-object retrieval: a missing id is a clean 2 in-process
+        # (the wire's 404), never a fabricated envelope.
+        out["harness_stored_missing_2"] = all(
+            runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
+            for name in ("chat-get", "chat-delete", "response-get", "response-delete")
         )
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -990,6 +1000,30 @@ def cli_audit() -> dict[str, Any]:
                 "results": [{"flagged": False, "categories": {}, "category_scores": {}}],
             }
 
+        def retrieve_chat_completion(self, completion_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"chat_get": completion_id}
+            return {"id": completion_id, "object": "chat.completion"}
+
+        def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"chat_delete": completion_id}
+            return {
+                "id": completion_id,
+                "object": "chat.completion.deleted",
+                "deleted": True,
+            }
+
+        def retrieve_response(self, response_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"resp_get": response_id}
+            return {"id": response_id, "object": "response"}
+
+        def delete_response(self, response_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"resp_delete": response_id}
+            return {
+                "id": response_id,
+                "object": "response.deleted",
+                "deleted": True,
+            }
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -1678,6 +1712,18 @@ def cli_audit() -> dict[str, Any]:
                 ).stdout
             ).get("model")
             == "fx1-honesty-gate"
+        )
+        out["remote_stored_family"] = all(
+            json.loads(
+                runner.invoke(app, ["harness", name, "id-x", "--remote", "http://h.test"]).stdout
+            ).get("id")
+            == "id-x"
+            for name in (
+                "chat-get",
+                "chat-delete",
+                "response-get",
+                "response-delete",
+            )
         )
 
     class _FailingRemote:

@@ -75,6 +75,7 @@
       "harness_respond_bad_fmt_2": true,
       "harness_respond_bad_meta_2": true,
       "harness_respond_deadlink_2": true,
+      "harness_stored_missing_2": true,
       "harness_surface": true,
       "harness_verify_dir_all_valid": true,
       "harness_verify_dir_empty_2": true,
@@ -129,6 +130,7 @@
       "remote_ready_json": true,
       "remote_ready_under_drain_exit1": true,
       "remote_respond_kwargs": true,
+      "remote_stored_family": true,
       "remote_version_json": true,
       "serve_bad_knob_exit2": true,
       "serve_flags_reach_app": true,
@@ -140,11 +142,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "871b56d00b388b1bffbe5f0ea8bdc93669ab1d5a",
+  "git_revision": "6aaa2cc9b016c625e3a85b2e66868748dd3c3f13",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "16db70026b11c5425d0b95f89e19922fe03c8b852df70ae291cef73f49a24aea",
+  "receipt_sha256": "329a083883fb7efe16b13fae6df96b0728aa45769b75ce51ac9eefa3bd0842f6",
   "research_only": true,
   "schema": "cli_audit.v1"
 }
