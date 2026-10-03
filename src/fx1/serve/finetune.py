@@ -32,9 +32,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr, field_validator, model_validator
 
 from fx1.serve.backends import InferenceBackend
+from fx1.serve.webhooks import check_callback_url
 
 TRAINABLE_MODELS = ("fx1", "local_fx1")
 
@@ -59,6 +60,22 @@ class FTJobRequest(BaseModel, extra="forbid"):
     seed: int | None = Field(default=None, ge=0)
     method: Literal["supervised"] | None = None
     metadata: dict[str, str] | None = Field(default=None, max_length=16)
+    # fx1 extension: terminal-state webhook — the finished job record is
+    # POSTed to ``callback_url`` on succeeded/failed/cancelled, signed with
+    # ``callback_secret`` via the X-Fx1-Webhook-* headers (never echoed).
+    callback_url: str | None = None
+    callback_secret: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def _callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _callback_secret_needs_url(self) -> FTJobRequest:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
 
 
 class FTJobError(BaseModel, extra="forbid"):
@@ -97,6 +114,14 @@ class FTJob(BaseModel, extra="forbid"):
     estimated_finish: int | None = None
     metadata: dict[str, str] | None = None
     user_provided_suffix: str | None = None
+    # fx1 extension — terminal webhook bookkeeping (same contract as the
+    # /harness/* jobs): the finished record is POSTed to callback_url;
+    # delivery state is readable on the job itself.
+    callback_url: str | None = None
+    callback_status: Literal["delivered", "failed"] | None = None
+    callback_attempts: int = 0
+    callback_error: str | None = None
+    _callback_secret: str | None = PrivateAttr(default=None)
 
 
 class FTJobList(BaseModel, extra="forbid"):
@@ -342,7 +367,11 @@ class FTJobStore:
             entry.cancel.set()
             return "running"
 
-    def cancel_pending(self) -> int:
+    def cancel_pending(self) -> list[FTJob]:
+        """Mass-cancel on drain: queued jobs flip to ``cancelled`` outright
+        (their workers never started — the returned records owe any
+        terminal webhook); running jobs only get the flag — their workers
+        own the terminal transition."""
         with self._lock:
             pending = [e for e in self._entries.values() if e.job.status == "queued"]
             for e in pending:
@@ -352,7 +381,7 @@ class FTJobStore:
             running = [e for e in self._entries.values() if e.job.status == "running"]
             for e in running:
                 e.cancel.set()
-        return len(pending) + len(running)
+        return [e.job for e in pending]
 
 
 def default_ft_runner(

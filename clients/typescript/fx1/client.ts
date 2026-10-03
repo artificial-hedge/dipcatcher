@@ -982,18 +982,27 @@ export class HarnessApiClient {
    * gated pipeline. `endpoint` is `/v1/chat/completions` or
    * `/v1/responses`; the submitter's `X-Fx1-*` headers route every line.
    * `idempotencyKey` replays the submit envelope (shared /v1 idem space).
+   * `callbackUrl`/`callbackSecret` are the fx1 terminal-webhook extension:
+   * the finished batch envelope POSTs to the URL once (signed when the
+   * secret is set); verify deliveries with `HarnessClient.verifyWebhook`.
    */
   async createBatch(
     inputFileId: string,
     endpoint: "/v1/chat/completions" | "/v1/responses",
     metadata?: Record<string, string>,
     idempotencyKey?: string,
+    callbackUrl?: string,
+    callbackSecret?: string,
   ): Promise<OpenAIBatchObject> {
     const body: Record<string, unknown> = {
       input_file_id: inputFileId,
       endpoint,
       completion_window: "24h",
       ...(metadata !== undefined ? { metadata } : {}),
+      ...(callbackUrl !== undefined ? { callback_url: callbackUrl } : {}),
+      ...(callbackSecret !== undefined
+        ? { callback_secret: callbackSecret }
+        : {}),
     };
     const res = await this.send({
       method: "POST",

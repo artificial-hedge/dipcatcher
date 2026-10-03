@@ -725,6 +725,16 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
   `cancelled` (firing their webhooks), the executor releases pending
   futures; running jobs finish bounded by their command timeout.
 
+The same contract applies on the OpenAI-compatible async surfaces:
+`POST /v1/fine_tuning/jobs` and `POST /v1/batches` accept
+`callback_url`/`callback_secret` and POST the terminal record (job or
+batch object) once — same HMAC headers, same 3-attempt/4xx-definitive
+delivery, same `callback_status`/`callback_attempts`/`callback_error`
+fields on the record. A 4xx is a definitive rejection and never retried;
+transient faults retry up to 3 times with capped backoff. In-process,
+`Fx1Harness.create_finetune_job` and `Fx1Harness.openai_batch` take the
+same kwargs and deliver over real HTTP before returning.
+
 Poll with `GET /harness/jobs/{id}`, or stream
 `/harness/jobs/{id}/events` (`HarnessClient.stream_job`,
 `wait_run_stream`, `fx1 harness watch`).

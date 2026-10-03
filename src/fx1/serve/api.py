@@ -168,11 +168,7 @@ from fx1.serve.openai_compat import (
 )
 from fx1.serve.receipt_store import SHA256_HEX as _SHA256_HEX
 from fx1.serve.receipt_store import ReceiptIndex as _ReceiptIndex
-from fx1.serve.webhooks import (
-    WEBHOOK_SIGNATURE_HEADER,
-    WEBHOOK_TIMESTAMP_HEADER,
-    sign_webhook,
-)
+from fx1.serve.webhooks import check_callback_url, deliver_signed
 from quant_fund.research.receipt_v2 import verify_receipt_file, verify_receipt_payload
 
 _API_KEY_ENV = "FX1_API_KEY"
@@ -394,12 +390,7 @@ class HarnessRunRequest(_Model):
     def _callback_url_http(cls, v: str | None) -> str | None:
         """Webhook target must be a real http(s) URL — the job record is
         POSTed to it on every terminal transition."""
-        if v is None:
-            return v
-        parsed = urllib.parse.urlparse(v)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
-        return v
+        return check_callback_url(v)
 
     @model_validator(mode="after")
     def _callback_secret_needs_url(self) -> HarnessRunRequest:
@@ -860,12 +851,7 @@ class EvalSubmitRequest(_Model):
     @field_validator("callback_url")
     @classmethod
     def _eval_callback_url_http(cls, v: str | None) -> str | None:
-        if v is None:
-            return v
-        parsed = urllib.parse.urlparse(v)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError(f"callback_url must be an http(s) URL with a host, got {v!r}")
-        return v
+        return check_callback_url(v)
 
     @model_validator(mode="after")
     def _eval_valid(self) -> EvalSubmitRequest:
@@ -1406,51 +1392,29 @@ def _idem_lookup[IdemT: BaseModel](
     return key, cached.model_copy(update={"replayed": True})
 
 
-_WEBHOOK_MAX_ATTEMPTS = 3
-_WEBHOOK_BACKOFF_S = 0.5
-
-
-def _deliver_callback(rec: JobStatusResponse | EvalRecord) -> None:
-    """Terminal-state webhook: POST the full record to the caller's
-    ``callback_url`` — the shared contract for jobs and evals.
+def _deliver_callback(
+    rec: JobStatusResponse | EvalRecord | FTJob | _BatchRecord,
+    *,
+    body: bytes | None = None,
+) -> None:
+    """Terminal-state webhook: POST the record to the caller's
+    ``callback_url`` — the shared contract for jobs, evals, fine-tuning
+    jobs, and batches. ``body`` overrides the serialized payload (batches
+    deliver the projected OpenAI envelope, not the internal record).
     Best-effort — a dead or slow endpoint records
     ``callback_status='failed'`` on the record, never raises into the
     worker and never changes the record's own status. Transient faults
-    (network errors, 5xx) retry ``_WEBHOOK_MAX_ATTEMPTS`` times with
+    (network errors, 5xx) retry ``WEBHOOK_MAX_ATTEMPTS`` times with
     capped backoff; a 4xx is a definitive rejection and is never
     retried."""
     url = rec.callback_url
     if not url:
         return
-    for attempt in range(_WEBHOOK_MAX_ATTEMPTS):
-        if attempt:
-            time.sleep(_WEBHOOK_BACKOFF_S * (1 << (attempt - 1)))
-        rec.callback_attempts = attempt + 1
-        try:
-            payload = rec.model_dump_json().encode()
-            headers = {"Content-Type": "application/json"}
-            if rec._callback_secret:
-                ts = str(int(time.time()))
-                headers[WEBHOOK_TIMESTAMP_HEADER] = ts
-                headers[WEBHOOK_SIGNATURE_HEADER] = sign_webhook(rec._callback_secret, ts, payload)
-            req = urllib.request.Request(
-                url,
-                data=payload,
-                headers=headers,
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310  # nosec B310 — caller-declared webhook target, validated http(s) at submit
-                if resp.status < 400:
-                    rec.callback_status = "delivered"
-                    rec.callback_error = None
-                    return
-                rec.callback_status = "failed"
-                rec.callback_error = f"callback endpoint returned {resp.status}"
-                if 400 <= resp.status < 500:
-                    return  # definitive rejection — never retried
-        except Exception as exc:  # noqa: BLE001 — delivery faults land on the record, not the worker
-            rec.callback_status = "failed"
-            rec.callback_error = f"{type(exc).__name__}: {exc}"
+    payload = body if body is not None else rec.model_dump_json().encode()
+    ok, err, attempts = deliver_signed(url, rec._callback_secret, payload)
+    rec.callback_status = "delivered" if ok else "failed"
+    rec.callback_error = None if ok else err
+    rec.callback_attempts = attempts
 
 
 def _submit_job(
@@ -1574,7 +1538,8 @@ def _make_lifespan(
         for pending_eval in eval_store.cancel_pending():
             _deliver_callback(pending_eval)
         if ft_store is not None:
-            ft_store.cancel_pending()
+            for pending_ft in ft_store.cancel_pending():
+                _deliver_callback(pending_ft)
         jobs_executor.shutdown(wait=False, cancel_futures=True)
 
     return _lifespan
@@ -2156,9 +2121,18 @@ class _BatchRecord(_Model):
     cancelling_at: int | None = None
     cancelled_at: int | None = None
     request_counts: _BatchCounts = Field(default_factory=_BatchCounts)
+    # fx1 extension — terminal webhook bookkeeping (the same fields the
+    # /harness/* jobs surface); projected onto the batch envelope.
+    callback_url: str | None = None
+    callback_status: Literal["delivered", "failed"] | None = None
+    callback_attempts: int = 0
+    callback_error: str | None = None
     _cancel: threading.Event = PrivateAttr(default_factory=threading.Event)
     _lines: builtins.list[dict[str, Any]] = PrivateAttr(default_factory=builtins.list)
     _headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _callback_secret: str | None = PrivateAttr(default=None)
+    _callback_fired: bool = PrivateAttr(default=False)
+    _callback_lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
 
 class _BatchStore:
@@ -4043,12 +4017,29 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         finally:
             metrics.release()
             inflight.release()
+            _batch_webhook(batch)
+
+    def _batch_webhook(batch: _BatchRecord) -> None:
+        """Fire-once terminal webhook: the projected OpenAI envelope is the
+        payload (the same shape GET returns — never the internal record).
+        The first terminal transition fires; expiry-on-read is one."""
+        if not batch.callback_url or batch.status not in _BATCH_TERMINAL:
+            return
+        with batch._callback_lock:
+            if batch._callback_fired:
+                return
+            batch._callback_fired = True
+        _deliver_callback(
+            batch,
+            body=json.dumps(batch_object(batch.model_dump(mode="json"))).encode(),
+        )
 
     def _batch_project(batch: _BatchRecord) -> dict[str, Any]:
         """Expiry check + envelope projection."""
         if batch.status not in _BATCH_TERMINAL and time.time() > batch.expires_at:
             batch.status = "expired"
             batch.expired_at = int(time.time())
+            _batch_webhook(batch)  # expiry is a terminal transition too
         return batch_object(batch.model_dump())
 
     @app.post(
@@ -4156,7 +4147,13 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ) -> JSONResponse:
         """Submit a batch over an uploaded input file. One worker slot
         runs the whole batch through the gated route cores; ``expires_at``
-        is +24h (the completion_window the surface declares)."""
+        is +24h (the completion_window the surface declares).
+        ``callback_url``/``callback_secret`` are the fx1 webhook
+        extension: the terminal batch envelope
+        (completed/failed/expired/cancelled — including expiry observed
+        on read) is POSTed to the URL once, HMAC-signed when the secret
+        is set; ``callback_status``/``callback_attempts``/
+        ``callback_error`` ride the projected record."""
         body_fp = _body_fp(body)
         key, replay = _idem_lookup(idempotency_key, openai_idem_store, body_fp)
         if replay is not None:
@@ -4214,7 +4211,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             created_at=now,
             expires_at=now + 86400,
             request_counts=_BatchCounts(total=len(parsed)),
+            callback_url=body.callback_url,
         )
+        batch._callback_secret = body.callback_secret
         batch._lines = parsed
         # the caller's X-Fx1-* routing headers apply to every line — the
         # batch inherits the submitter's backend choice, never ambient env.
@@ -4727,6 +4726,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             job.finished_at = job.finished_at or int(time.time())
             metrics.release()
             inflight.release()
+            _deliver_callback(job)
 
     @app.post(
         "/v1/fine_tuning/jobs",
@@ -4740,7 +4740,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     ) -> FTJob:
         """Queue a gated fine-tuning run against an uploaded chat-format
         JSONL training file. File validation is synchronous — malformed
-        corpora 400 at submit, never limbo in ``validating_files``."""
+        corpora 400 at submit, never limbo in ``validating_files``.
+        ``callback_url``/``callback_secret`` are the fx1 webhook
+        extension: the terminal job record (succeeded/failed/cancelled)
+        is POSTed to the URL, HMAC-signed when the secret is set — the
+        same delivery contract as ``/harness/jobs`` webhooks."""
         body_fp = _body_fp(body)
         if idempotency_key is not None:
             entry = ft_store.lookup_idem(idempotency_key)
@@ -4818,7 +4822,9 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             seed=body.seed,
             metadata=body.metadata,
             user_provided_suffix=body.suffix,
+            callback_url=body.callback_url,
         )
+        job._callback_secret = body.callback_secret
         ft_name = f"ft:{body.model}:{body.suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
         work_dir = ft_dir / job.id
         work_dir.mkdir(parents=True, exist_ok=True)

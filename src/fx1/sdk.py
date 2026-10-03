@@ -785,6 +785,8 @@ class Fx1Harness:
         suffix: str | None = None,
         seed: int | None = None,
         metadata: dict[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> FTJob:
         """The ``POST /v1/fine_tuning/jobs`` surface, weights-direct —
         synchronous in process (there is no queue to observe): the corpus
@@ -793,10 +795,21 @@ class Fx1Harness:
         terminal. The record lands in the in-process store — the same
         FTJobStore the wire serves — for ``finetune_job``/events reads.
 
+        ``callback_url``/``callback_secret`` are honored the same as the
+        wire: the terminal record POSTs to the URL, HMAC-signed via the
+        X-Fx1-Webhook-* headers when the secret is set (still real HTTP —
+        in-process doesn't mean silent).
+
         ``ValueError`` is the wire's 400; a runner exception yields a
         ``failed`` job record (never a raise — the job's own verdict is
         the honest outcome).
         """
+        if callback_secret is not None and not callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        if callback_url is not None:
+            from fx1.serve.webhooks import check_callback_url  # noqa: PLC0415
+
+            check_callback_url(callback_url)
         if model not in TRAINABLE_MODELS:
             raise ValueError(
                 f"model {model!r} is not trainable through the harness "
@@ -816,10 +829,12 @@ class Fx1Harness:
             seed=seed,
             metadata=metadata,
             user_provided_suffix=suffix,
+            callback_url=callback_url,
             # The wire echoes training_file=the file id; in-process carries
             # the corpus content-length as the honest handle.
             training_file=f"inline:{len(corpus)}B",
         )
+        job._callback_secret = callback_secret
         ft_name = f"ft:{model}:{suffix or 'job'}:{job.id.split('-', 1)[1][:12]}"
         work_dir = self._ft_dir / job.id
         work_dir.mkdir(parents=True, exist_ok=True)
@@ -879,6 +894,15 @@ class Fx1Harness:
         self._ft_store.add_event(
             job.id, "info" if job.status == "succeeded" else "error", f"job {job.status}"
         )
+        if job.callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                job.callback_url, callback_secret, job.model_dump_json().encode()
+            )
+            job.callback_status = "delivered" if ok else "failed"
+            job.callback_error = None if ok else err
+            job.callback_attempts = attempts
         return job
 
     def finetune_jobs(self, *, limit: int | None = None) -> list[FTJob]:
@@ -2058,6 +2082,8 @@ class Fx1Harness:
         *,
         endpoint: str = "/v1/chat/completions",
         headers: Mapping[str, str] | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
         """The ``/v1/batches`` surface, weights-direct — synchronous in
         process (no upload/poll machinery: lines in, the batch object +
@@ -2071,7 +2097,18 @@ class Fx1Harness:
         ``completed`` — in-process has no queue to observe) and the
         OpenAI batch-result lines the wire would write into the output
         file.
+
+        ``callback_url``/``callback_secret`` behave as on the wire: the
+        finished batch envelope POSTs to the URL once, HMAC-signed when
+        the secret is set, and ``callback_status``/``callback_attempts``/
+        ``callback_error`` land on the returned envelope.
         """
+        if callback_secret is not None and not callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        if callback_url is not None:
+            from fx1.serve.webhooks import check_callback_url  # noqa: PLC0415
+
+            check_callback_url(callback_url)
         if endpoint not in OPENAI_BATCH_ENDPOINTS:
             raise OpenAICompatError(
                 f"endpoint must be one of {sorted(OPENAI_BATCH_ENDPOINTS)}, got {endpoint!r}"
@@ -2154,7 +2191,20 @@ class Fx1Harness:
                 "failed": failed,
             },
             "metadata": None,
+            "callback_url": callback_url,
+            "callback_status": None,
+            "callback_attempts": 0,
+            "callback_error": None,
         }
+        if callback_url:
+            from fx1.serve.webhooks import deliver_signed  # noqa: PLC0415
+
+            ok, err, attempts = deliver_signed(
+                callback_url, callback_secret, json.dumps(batch).encode()
+            )
+            batch["callback_status"] = "delivered" if ok else "failed"
+            batch["callback_error"] = None if ok else err
+            batch["callback_attempts"] = attempts
         return batch, out_lines
 
     def _resolve_chain(

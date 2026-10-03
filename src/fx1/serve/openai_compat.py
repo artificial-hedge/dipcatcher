@@ -36,6 +36,8 @@ from typing import Any, Literal
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from fx1.serve.webhooks import check_callback_url
+
 __all__ = [
     "OPENAI_BACKENDS",
     "OPENAI_ERR_TYPES",
@@ -1661,6 +1663,12 @@ class OpenAIBatchRequest(_Model):
     # only "24h" exists on the real surface; anything else refuses (422)
     completion_window: Literal["24h"] = "24h"
     metadata: dict[str, str] | None = None
+    # fx1 extension: terminal-state webhook — the finished batch envelope
+    # is POSTed to ``callback_url`` on completed/failed/expired/cancelled,
+    # signed with ``callback_secret`` via the X-Fx1-Webhook-* headers
+    # (never echoed on the record).
+    callback_url: str | None = None
+    callback_secret: str | None = None
 
     @field_validator("metadata")
     @classmethod
@@ -1668,6 +1676,17 @@ class OpenAIBatchRequest(_Model):
         if v is not None and len(v) > 16:
             raise ValueError("metadata must have <= 16 keys")
         return v
+
+    @field_validator("callback_url")
+    @classmethod
+    def _callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _callback_secret_needs_url(self) -> OpenAIBatchRequest:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
 
 
 def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]:
@@ -1749,6 +1768,12 @@ def batch_object(rec: Mapping[str, Any]) -> dict[str, Any]:
         "cancelled_at": rec.get("cancelled_at"),
         "request_counts": dict(rec["request_counts"]),
         "metadata": rec.get("metadata"),
+        # fx1 extension — terminal webhook bookkeeping (the same fields
+        # the /harness/* jobs surface); absent keys read as null.
+        "callback_url": rec.get("callback_url"),
+        "callback_status": rec.get("callback_status"),
+        "callback_attempts": rec.get("callback_attempts", 0),
+        "callback_error": rec.get("callback_error"),
     }
 
 
