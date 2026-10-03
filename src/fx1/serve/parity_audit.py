@@ -2923,6 +2923,82 @@ def parity_audit() -> dict[str, bool]:
     out["client_retrieval_miss_404"] = (
         _raises(lambda: remote.retrieve_chat_completion("chatcmpl-miss"))[0] == "KeyError"
     )
+    # stored-request subresources — the same helpers back both surfaces,
+    # so identical request bodies return identical item pages (item ids
+    # are per-surface mints — hashed off the envelope id — stripped here)
+    _im_req = {
+        "model": "hosted_k3",
+        "messages": [
+            {"role": "user", "content": "im-1"},
+            {"role": "user", "content": "im-2"},
+        ],
+        "fx1": {"backend": "byok"},
+    }
+    _im_sdk_env, _ = sdk.openai_chat(dict(_im_req))
+    _im_wire = client.post("/v1/chat/completions", json=_im_req)
+    _im_sdk_page = sdk.openai_chat_messages(_im_sdk_env.id)
+    _im_wl_page = remote.chat_completion_messages(_im_wire.json()["id"])
+    out["items_chat_parity"] = (
+        [m["role"] for m in _im_sdk_page["data"]] == ["user", "user"]
+        and [{k: v for k, v in m.items() if k != "id"} for m in _im_sdk_page["data"]]
+        == [{k: v for k, v in m.items() if k != "id"} for m in _im_wl_page["data"]]
+        and _im_sdk_page["has_more"] == _im_wl_page["has_more"] is False
+        and _im_sdk_page["object"] == _im_wl_page["object"] == "list"
+    )
+    _ir_sdk, _ = sdk.openai_response(
+        {"model": "hosted_k3", "input": "im-r", "fx1": {"backend": "byok"}}
+    )
+    _ir_wire = client.post(
+        "/v1/responses", json={"model": "fx1", "input": "im-r", "fx1": {"backend": "byok"}}
+    )
+    out["items_response_parity"] = (
+        sdk.openai_response_input_items(_ir_sdk["id"])["data"][0]["role"]
+        == remote.response_input_items(_ir_wire.json()["id"])["data"][0]["role"]
+        == "user"
+    )
+    out["items_miss_parity"] = (
+        _raises(lambda: sdk.openai_chat_messages("chatcmpl-ghost"))[0] == "KeyError"
+        and _raises(lambda: remote.chat_completion_messages("chatcmpl-ghost"))[0] == "KeyError"
+        and _raises(lambda: sdk.openai_response_input_items("resp_ghost"))[0] == "KeyError"
+        and _raises(lambda: remote.response_input_items("resp_ghost"))[0] == "KeyError"
+    )
+    # the retrieved envelope strips the internal item stash on both legs
+    out["items_not_in_envelope"] = (
+        "_fx1_messages" not in sdk.openai_chat_get(_im_sdk_env.id)
+        and "_fx1_messages"
+        not in client.get(f"/v1/chat/completions/{_im_wire.json()['id']}").json()
+        and "_fx1_input_items" not in sdk.openai_response_get(_ir_sdk["id"])
+    )
+    # GET /v1/chat/completions — stored-completion listing is identical
+    # in shape and filter semantics across the wire and the SDK (each
+    # surface lists its own store — compare shape + filter behavior, not
+    # ids, which are per-surface mints)
+    _lc_req = {
+        "model": "fx1-list-parity",
+        "messages": [{"role": "user", "content": "lc"}],
+        "metadata": {"lane": "lp"},
+        "fx1": {"backend": "byok"},
+    }
+    _lc_sdk_env, _ = sdk.openai_chat(dict(_lc_req))
+    _lc_wire = client.post("/v1/chat/completions", json=_lc_req)
+    _lc_sdk_list = sdk.openai_chat_list(model=_lc_sdk_env.model)
+    _lc_wl_list = remote.list_chat_completions(model=_lc_wire.json()["model"])
+    _lc_sdk_meta = sdk.openai_chat_list(metadata={"lane": "lp"})
+    _lc_wl_meta = remote.list_chat_completions(metadata={"lane": "lp"})
+    out["list_chat_parity"] = (
+        _lc_sdk_list["object"] == _lc_wl_list["object"] == "list"
+        and any(d["id"] == _lc_sdk_env.id for d in _lc_sdk_list["data"])
+        and any(d["id"] == _lc_wire.json()["id"] for d in _lc_wl_list["data"])
+        and all(d["object"] == "chat.completion" for d in _lc_sdk_list["data"])
+        and all(d["object"] == "chat.completion" for d in _lc_wl_list["data"])
+        and all(d["model"] == _lc_sdk_env.model for d in _lc_sdk_list["data"])
+        and all(d["model"] == _lc_wire.json()["model"] for d in _lc_wl_list["data"])
+        and any(d["id"] == _lc_sdk_env.id for d in _lc_sdk_meta["data"])
+        and any(d["id"] == _lc_wire.json()["id"] for d in _lc_wl_meta["data"])
+        and sdk.openai_chat_list(model="fx1-none")["data"]
+        == remote.list_chat_completions(model="fx1-none")["data"]
+        == []
+    )
     return out
 
 

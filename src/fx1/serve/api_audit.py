@@ -7256,6 +7256,89 @@ def _probe_backend_probes(
     out["retrieve_idem_replay_stored"] = (
         fb.get(f"/v1/chat/completions/{idem.json()['id']}").status_code == 200
     )
+    # GET /v1/chat/completions/{id}/messages + /v1/responses/{id}/input_items
+    # — OpenAI's stored-request subresources: the items the model ran on,
+    # paged by deterministic item ids.
+    ic = fb.post(
+        "/v1/chat/completions",
+        json={
+            "model": "fx1",
+            "messages": [
+                {"role": "user", "content": "m-one"},
+                {"role": "user", "content": "m-two"},
+            ],
+        },
+    )
+    ic_id = ic.json()["id"]
+    imsgs = fb.get(f"/v1/chat/completions/{ic_id}/messages").json()
+    out["items_chat_messages"] = (
+        ic.status_code == 200
+        and imsgs["object"] == "list"
+        and [m["content"] for m in imsgs["data"]] == ["m-one", "m-two"]
+        and all(m["id"].startswith("msg_") for m in imsgs["data"])
+        and imsgs["first_id"] == imsgs["data"][0]["id"]
+        and imsgs["has_more"] is False
+    )
+    page1 = fb.get(f"/v1/chat/completions/{ic_id}/messages?limit=1").json()
+    page2 = fb.get(f"/v1/chat/completions/{ic_id}/messages?limit=1&after={page1['last_id']}").json()
+    out["items_chat_paged"] = (
+        page1["has_more"] is True
+        and page2["data"][0]["content"] == "m-two"
+        and page2["has_more"] is False
+        and page2["first_id"] != page1["first_id"]
+    )
+    out["items_chat_order_desc"] = (
+        fb.get(f"/v1/chat/completions/{ic_id}/messages?order=desc").json()["data"][0]["content"]
+        == "m-two"
+    )
+    out["items_chat_cursor_400"] = (
+        fb.get(f"/v1/chat/completions/{ic_id}/messages?after=msg_bogus").status_code == 400
+        and fb.get(f"/v1/chat/completions/{ic_id}/messages?order=sideways").status_code == 422
+    )
+    # wrong-surface and unknown ids are misses; store=false never lists
+    out["items_404s"] = (
+        fb.get("/v1/chat/completions/chatcmpl-ghost/messages").status_code == 404
+        and fb.get(f"/v1/responses/{ic_id}/input_items").status_code == 404
+        and fb.get(f"/v1/responses/{r2.json()['id']}/input_items").status_code == 404
+    )
+    ri = fb.post("/v1/responses", json={"model": "fx1", "input": "itemize-me"})
+    ritems = fb.get(f"/v1/responses/{ri.json()['id']}/input_items").json()
+    out["items_response_input_items"] = (
+        ritems["object"] == "list"
+        and len(ritems["data"]) == 1
+        and ritems["data"][0]["role"] == "user"
+        and ritems["data"][0]["content"][0]["text"] == "itemize-me"
+        and ritems["data"][0]["id"].startswith("msg_")
+    )
+    rlist = fb.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": [
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": "l1"}],
+                },
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "l2"}],
+                },
+            ],
+        },
+    )
+    rit2 = fb.get(f"/v1/responses/{rlist.json()['id']}/input_items").json()
+    out["items_response_list_input"] = (
+        len(rit2["data"]) == 2
+        and rit2["data"][1]["role"] == "assistant"
+        and all(it["id"].startswith("msg_") for it in rit2["data"])
+    )
+    # the subresource dies with its envelope — no orphaned request history
+    fb.delete(f"/v1/chat/completions/{ic_id}")
+    out["items_die_with_envelope"] = (
+        fb.get(f"/v1/chat/completions/{ic_id}/messages").status_code == 404
+    )
     # LRU bound: store_max=2 evicts the oldest entry
     ev_app = _TC2(api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), store_max=2))
     ev_ids = [
@@ -7269,6 +7352,61 @@ def _probe_backend_probes(
         ev_app.get(f"/v1/chat/completions/{ev_ids[0]}").status_code == 404
         and ev_app.get(f"/v1/chat/completions/{ev_ids[1]}").status_code == 200
         and ev_app.get(f"/v1/chat/completions/{ev_ids[2]}").status_code == 200
+    )
+    out["items_evict_with_envelope"] = (
+        ev_app.get(f"/v1/chat/completions/{ev_ids[0]}/messages").status_code == 404
+    )
+    # GET /v1/chat/completions — OpenAI's stored-completion list surface:
+    # paged by completion id, filtered by model and metadata subset.
+    l_ids = [
+        fb.post(
+            "/v1/chat/completions",
+            json={
+                "model": "fx1-listprobe",
+                "messages": [{"role": "user", "content": f"lp{i}"}],
+                "metadata": {"lane": "list-probe", "kind": f"k{i % 2}"},
+            },
+        ).json()["id"]
+        for i in range(3)
+    ]
+    l_all = fb.get("/v1/chat/completions?metadata[lane]=list-probe&limit=50").json()
+    l_model = l_all["data"][0]["model"]
+    out["list_chat_basic"] = (
+        l_all["object"] == "list"
+        and [d["id"] for d in l_all["data"]] == l_ids
+        and all(d["object"] == "chat.completion" for d in l_all["data"])
+        and all(
+            d["metadata"] == {"lane": "list-probe", "kind": f"k{i % 2}"}
+            for i, d in enumerate(l_all["data"])
+        )
+        and l_all["first_id"] == l_ids[0]
+        and l_all["has_more"] is False
+    )
+    lp1 = fb.get("/v1/chat/completions?metadata[lane]=list-probe&limit=2").json()
+    lp2 = fb.get(
+        f"/v1/chat/completions?metadata[lane]=list-probe&limit=2&after={lp1['last_id']}"
+    ).json()
+    out["list_chat_paged"] = (
+        lp1["has_more"] is True and lp2["data"][0]["id"] == l_ids[2] and lp2["has_more"] is False
+    )
+    out["list_chat_desc"] = (
+        fb.get("/v1/chat/completions?metadata[lane]=list-probe&order=desc").json()["data"][0]["id"]
+        == l_ids[2]
+    )
+    l_meta = fb.get("/v1/chat/completions?metadata[lane]=list-probe&metadata[kind]=k1").json()
+    out["list_chat_metadata"] = [d["id"] for d in l_meta["data"]] == [l_ids[1]]
+    out["list_chat_model"] = [
+        d["id"]
+        for d in fb.get(f"/v1/chat/completions?model={l_model}&metadata[lane]=list-probe").json()[
+            "data"
+        ]
+    ] == l_ids and fb.get(
+        "/v1/chat/completions?model=fx1-none-such&metadata[lane]=list-probe"
+    ).json()["data"] == []
+    out["list_chat_edges"] = (
+        fb.get("/v1/chat/completions?after=chatcmpl-ghost").status_code == 400
+        and fb.get("/v1/chat/completions?metadata[lane]=none-such").json()["data"] == []
+        and fb.get("/v1/chat/completions?order=sideways").status_code == 422
     )
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()

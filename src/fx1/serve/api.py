@@ -152,6 +152,7 @@ from fx1.serve.openai_compat import (
     batch_line_shape,
     batch_object,
     batch_output_line,
+    chat_messages_for_store,
     embeddings_to_kwargs,
     file_object,
     is_openai_path,
@@ -164,6 +165,8 @@ from fx1.serve.openai_compat import (
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
+    paged_item_list,
+    response_input_items_for_store,
     response_text_format,
     response_to_kwargs,
     validate_openai_output,
@@ -3607,9 +3610,17 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
             logprobs=choice_lps,
+            metadata=body.metadata,
         )
         if body.store is not False:
-            envelope_store.put(envelope)
+            envelope_store.put(
+                envelope,
+                items={
+                    "messages": chat_messages_for_store(
+                        body.messages, envelope_id=str(envelope["id"])
+                    )
+                },
+            )
         return envelope, cid
 
     def _openai_response_core(
@@ -3642,7 +3653,14 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
         )
         if body.store is not False:
-            envelope_store.put(envelope)
+            envelope_store.put(
+                envelope,
+                items={
+                    "input_items": response_input_items_for_store(
+                        body.input, rid=str(envelope["id"])
+                    )
+                },
+            )
         return envelope, cid, out.usage
 
     def _openai_embeddings_core(
@@ -4230,6 +4248,120 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
     def openai_response_delete(response_id: str) -> dict[str, Any]:
         """Drop a stored response object from the retrieval index."""
         return _drop_envelope(response_id, object_="response")
+
+    def _request_items(
+        envelope_id: str,
+        *,
+        object_: str,
+        key: str,
+        limit: int,
+        after: str | None,
+        before: str | None,
+        order: Literal["asc", "desc"],
+    ) -> dict[str, Any]:
+        env = envelope_store.get(envelope_id)
+        if env is None or env.get("object") != object_:
+            raise ApiError(404, f"{envelope_id!r} not found", code="not_found")
+        items = envelope_store.get_items(envelope_id, key)
+        if items is None:
+            raise ApiError(404, f"{envelope_id!r} not found", code="not_found")
+        try:
+            return paged_item_list(
+                items,
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+            )
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+
+    @app.get(
+        "/v1/chat/completions",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_list",
+    )
+    def openai_chat_list(
+        request: Request,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+        model: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        """Stored chat completions, oldest first — OpenAI's
+        ``chat.completions.list``. ``metadata[key]=value`` query pairs
+        filter to envelopes carrying that exact subset."""
+        meta_filter = {
+            k[9:-1]: v
+            for k, v in request.query_params.multi_items()
+            if k.startswith("metadata[") and k.endswith("]") and len(k) > 10
+        }
+        envs = envelope_store.list_envelopes("chat.completion")
+        if model is not None:
+            envs = [e for e in envs if e.get("model") == model]
+        if meta_filter:
+            envs = [
+                e
+                for e in envs
+                if isinstance(e.get("metadata"), dict)
+                and all(e["metadata"].get(k) == v for k, v in meta_filter.items())
+            ]
+        try:
+            return paged_item_list(envs, limit=limit, after=after, before=before, order=order)
+        except OpenAICompatError as exc:
+            raise ApiError(exc.status, str(exc), code=exc.code) from exc
+
+    @app.get(
+        "/v1/chat/completions/{completion_id}/messages",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_chat_messages",
+    )
+    def openai_chat_messages(
+        completion_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+    ) -> dict[str, Any]:
+        """The request messages a stored chat completion ran on
+        (OpenAI's ``chat.completions.messages.list``)."""
+        return _request_items(
+            completion_id,
+            object_="chat.completion",
+            key="messages",
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+
+    @app.get(
+        "/v1/responses/{response_id}/input_items",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_responses_input_items",
+    )
+    def openai_response_input_items(
+        response_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+    ) -> dict[str, Any]:
+        """The ``input`` items a stored response ran on (OpenAI's
+        ``responses.input_items.list``)."""
+        return _request_items(
+            response_id,
+            object_="response",
+            key="input_items",
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
 
     @app.post(
         "/v1/embeddings",

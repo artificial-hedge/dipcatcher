@@ -580,6 +580,40 @@
       }
     },
     "/v1/chat/completions": {
+      "get": {
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
       "post": {
         "params": [
           {
@@ -621,6 +655,42 @@
             "name": "completion_id",
             "in": "path",
             "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/chat/completions/{completion_id}/messages": {
+      "get": {
+        "params": [
+          {
+            "name": "completion_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
           }
         ],
         "request_body_required": null,
@@ -921,7 +991,43 @@
           "422"
         ]
       }
+    },
+    "/v1/responses/{response_id}/input_items": {
+      "get": {
+        "params": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "9b7ee11bd6dee5dfc33f7704ffd627809fbc78b82f3ff0c3c62e5c9cc3ab71a2"
+  "schema_sha256": "22cc9f55401a5783d297188d93c6c1078811cee752d1c1da1012522bafa529ad"
 }

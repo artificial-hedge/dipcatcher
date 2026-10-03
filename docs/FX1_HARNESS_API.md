@@ -217,8 +217,11 @@ same digested shape the job record embeds.
 | `GET /v1/fine_tuning/jobs/{id}/events` | the job's event feed, oldest first (`?limit`, `?after=`) |
 | `GET /v1/fine_tuning/jobs/{id}/checkpoints` | the model artifacts the job registered, oldest first (`?limit`, `?after=`); empty for a job that produced none, a deleted `ft:` name drops off |
 | `POST /v1/fine_tuning/jobs/{id}/cancel` | cooperative cancel — queued at once, running at the next stage boundary; terminal `409 job_terminal` |
+| `GET /v1/chat/completions` | list stored `chat.completion` envelopes, oldest first (`?limit≤100`, `?after`/`?before`/`?order`, `?model=`, `?metadata[k]=v` subset filter) — OpenAI's `chat.completions.list`; `Fx1Harness.openai_chat_list` / `HarnessClient.list_chat_completions` / `client.listChatCompletions` / `fx1 harness chat-list` |
 | `GET /v1/chat/completions/{id}` / `DELETE` | retrieval: fetch / drop a stored `chat.completion` envelope |
+| `GET /v1/chat/completions/{id}/messages` | the request messages a stored completion ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `messages.list` |
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
+| `GET /v1/responses/{id}/input_items` | the `input` items a stored response ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `input_items.list` |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |

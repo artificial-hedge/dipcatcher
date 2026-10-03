@@ -86,6 +86,7 @@ from fx1.serve.openai_compat import (
     batch_line_body,
     batch_line_shape,
     batch_output_line,
+    chat_messages_for_store,
     embeddings_to_kwargs,
     openai_chunks,
     openai_embedding_envelope,
@@ -97,6 +98,8 @@ from fx1.serve.openai_compat import (
     openai_response_events,
     openai_response_object,
     openai_to_kwargs,
+    paged_item_list,
+    response_input_items_for_store,
     response_text_format,
     response_to_kwargs,
     validate_openai_output,
@@ -1739,9 +1742,17 @@ class Fx1Harness:
             tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
             finish_reasons=choice_reasons,
             logprobs=choice_lps,
+            metadata=body.metadata,
         )
         if body.store is not False:
-            self._openai_store.put(envelope)
+            self._openai_store.put(
+                envelope,
+                items={
+                    "messages": chat_messages_for_store(
+                        body.messages, envelope_id=str(envelope["id"])
+                    )
+                },
+            )
         return OpenAIChatResponse.model_validate(envelope), first.completion_id
 
     def openai_chat_stream(
@@ -1801,17 +1812,22 @@ class Fx1Harness:
         first = results[0]
         cid = first.completion_id or uuid.uuid4().hex
         if body.store is not False:
+            env = openai_envelope(
+                cid=cid,
+                content=contents if body.n > 1 else contents[0],
+                backend="+".join(dict.fromkeys(r.backend for r in results)),
+                model=first.model,
+                usage=usage_sum if usage_seen else None,
+                tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
+                finish_reasons=choice_reasons,
+                logprobs=choice_lps,
+                metadata=body.metadata,
+            )
             self._openai_store.put(
-                openai_envelope(
-                    cid=cid,
-                    content=contents if body.n > 1 else contents[0],
-                    backend="+".join(dict.fromkeys(r.backend for r in results)),
-                    model=first.model,
-                    usage=usage_sum if usage_seen else None,
-                    tool_calls=(choice_calls if any(c is not None for c in choice_calls) else None),
-                    finish_reasons=choice_reasons,
-                    logprobs=choice_lps,
-                )
+                env,
+                items={
+                    "messages": chat_messages_for_store(body.messages, envelope_id=str(env["id"]))
+                },
             )
         chunks = list(
             openai_chunks(
@@ -1870,7 +1886,14 @@ class Fx1Harness:
             logprobs=(lp_arr if isinstance(lp_arr, list) else None),
         )
         if body.store is not False:
-            self._openai_store.put(envelope)
+            self._openai_store.put(
+                envelope,
+                items={
+                    "input_items": response_input_items_for_store(
+                        body.input, rid=str(envelope["id"])
+                    )
+                },
+            )
         return envelope, result.completion_id
 
     def openai_response_stream(
@@ -1902,17 +1925,19 @@ class Fx1Harness:
         call_items = openai_response_call_items(result.tool_calls or [])
         lp_arr_s = result.logprobs.get("content") if isinstance(result.logprobs, dict) else None
         if body.store is not False:
+            env_s = openai_response_object(
+                rid=rid,
+                item_id=item_id,
+                content=result.content,
+                body=body,
+                model=result.model,
+                usage=result.usage,
+                call_items=call_items or None,
+                logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
+            )
             self._openai_store.put(
-                openai_response_object(
-                    rid=rid,
-                    item_id=item_id,
-                    content=result.content,
-                    body=body,
-                    model=result.model,
-                    usage=result.usage,
-                    call_items=call_items or None,
-                    logprobs=(lp_arr_s if isinstance(lp_arr_s, list) else None),
-                )
+                env_s,
+                items={"input_items": response_input_items_for_store(body.input, rid=rid)},
             )
         events = list(
             openai_response_events(
@@ -2114,7 +2139,31 @@ class Fx1Harness:
         env = self._openai_store.get(completion_id)
         if env is None or env.get("object") != "chat.completion":
             raise KeyError(f"completion {completion_id!r} not in the retrieval index")
-        return env
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
+
+    def openai_chat_list(
+        self,
+        *,
+        model: str | None = None,
+        metadata: Mapping[str, str] | None = None,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions`` in-process — stored completions,
+        optionally filtered by ``model`` and an exact ``metadata`` subset."""
+        envs = self._openai_store.list_envelopes("chat.completion")
+        if model is not None:
+            envs = [e for e in envs if e.get("model") == model]
+        if metadata:
+            envs = [
+                e
+                for e in envs
+                if isinstance(e.get("metadata"), dict)
+                and all(e["metadata"].get(k) == v for k, v in metadata.items())
+            ]
+        return paged_item_list(envs, limit=limit, after=after, before=before, order=order)
 
     def openai_chat_delete(self, completion_id: str) -> dict[str, Any]:
         """``DELETE /v1/chat/completions/{id}`` in-process."""
@@ -2128,13 +2177,57 @@ class Fx1Harness:
         env = self._openai_store.get(response_id)
         if env is None or env.get("object") != "response":
             raise KeyError(f"response {response_id!r} not in the retrieval index")
-        return env
+        return {k: v for k, v in env.items() if not k.startswith("_fx1_")}
 
     def openai_response_delete(self, response_id: str) -> dict[str, Any]:
         """``DELETE /v1/responses/{id}`` in-process."""
         if not self._openai_store.delete(response_id):
             raise KeyError(f"response {response_id!r} not in the retrieval index")
         return {"id": response_id, "object": "response.deleted", "deleted": True}
+
+    def openai_chat_messages(
+        self,
+        completion_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/chat/completions/{id}/messages`` in-process — the
+        stored request messages, paged."""
+        env = self._openai_store.get(completion_id)
+        if env is None or env.get("object") != "chat.completion":
+            raise KeyError(f"completion {completion_id!r} not in the retrieval index")
+        return paged_item_list(
+            self._openai_store.get_items(completion_id, "messages") or [],
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
+
+    def openai_response_input_items(
+        self,
+        response_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/responses/{id}/input_items`` in-process — the stored
+        ``input`` items, paged."""
+        env = self._openai_store.get(response_id)
+        if env is None or env.get("object") != "response":
+            raise KeyError(f"response {response_id!r} not in the retrieval index")
+        return paged_item_list(
+            self._openai_store.get_items(response_id, "input_items") or [],
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+        )
 
     def openai_batch(
         self,
