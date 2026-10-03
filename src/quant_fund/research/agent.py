@@ -7295,6 +7295,14 @@ from quant_fund.research.benches_w912 import (
     bench_rstar_tree_family,
     bench_z_curve_family,
 )
+from quant_fund.research.benches_w913 import (
+    bench_akima_interp_family,
+    bench_makima_interp_family,
+    bench_monotone_interp_family,
+    bench_pchip_interp_family,
+    bench_scattered_interp_family,
+    bench_spline_interp_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7666,6 +7674,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "scattered_interp": bench_scattered_interp_family,
+        "spline_interp": bench_spline_interp_family,
+        "monotone_interp": bench_monotone_interp_family,
+        "akima_interp": bench_akima_interp_family,
+        "pchip_interp": bench_pchip_interp_family,
+        "makima_interp": bench_makima_interp_family,
         "octree_index": bench_octree_index_family,
         "range_tree": bench_range_tree_family,
         "hilbert_curve": bench_hilbert_curve_family,
