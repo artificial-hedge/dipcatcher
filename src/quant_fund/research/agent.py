@@ -3591,6 +3591,14 @@ from quant_fund.research.benches_w449 import (
     bench_prism_site_family,
     bench_witt_perfect_family,
 )
+from quant_fund.research.benches_w450 import (
+    bench_exact_seq_family,
+    bench_smash_monoidal_family,
+    bench_spectra_cat_family,
+    bench_stable_infty_family,
+    bench_stable_tstruct_family,
+    bench_thh_tc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3970,6 +3978,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stable_infty": bench_stable_infty_family,
+        "spectra_cat": bench_spectra_cat_family,
+        "exact_seq": bench_exact_seq_family,
+        "stable_tstruct": bench_stable_tstruct_family,
+        "smash_monoidal": bench_smash_monoidal_family,
+        "thh_tc": bench_thh_tc_family,
         "dagger_space": bench_dagger_space_family,
         "huber_ring": bench_huber_ring_family,
         "adic_generic": bench_adic_generic_family,

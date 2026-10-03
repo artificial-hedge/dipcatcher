@@ -1,3 +1,4 @@
+feat(research): wave 450 — stable-infinity canon (stable_infty, spectra_cat, exact_seq, stable_tstruct, smash_monoidal, thh_tc) (2655->2661 families)
 feat(research): wave 449 — analytic-geometry-2 canon (dagger_space, huber_ring, adic_generic, witt_perfect, fargues_curve, prism_site) (2649->2655 families)
 feat(research): wave 448 — higher-topos canon (infty_topos, univ_colimit, object_classif, trunc_modal, cohesive_top, hypercomplete) (2643->2649 families)
 feat(research): wave 447 — TQFT canon (tqft_axiom, bord_cat, frobenius_2d, extended_tqft, dw_theory, chern_simons) (2637->2643 families)
