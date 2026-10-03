@@ -7591,6 +7591,14 @@ from quant_fund.research.benches_w949 import (
     bench_matrix_pencil_family,
     bench_rational_canonical_family,
 )
+from quant_fund.research.benches_w950 import (
+    bench_hadamard_product_family,
+    bench_khatri_rao_family,
+    bench_kron_product_family,
+    bench_outer_product_family,
+    bench_tensor_contraction_family,
+    bench_tensor_unfold_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7962,6 +7970,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "tensor_contraction": bench_tensor_contraction_family,
+        "khatri_rao": bench_khatri_rao_family,
+        "kron_product": bench_kron_product_family,
+        "hadamard_product": bench_hadamard_product_family,
+        "tensor_unfold": bench_tensor_unfold_family,
+        "outer_product": bench_outer_product_family,
         "matrix_pencil": bench_matrix_pencil_family,
         "kronecker_canonical": bench_kronecker_canonical_family,
         "invariant_subspace": bench_invariant_subspace_family,
