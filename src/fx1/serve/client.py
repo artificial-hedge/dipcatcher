@@ -603,10 +603,14 @@ class HarnessClient:
         seed: int | None = None,
         metadata: dict[str, str] | None = None,
         idempotency_key: str | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> dict[str, Any]:
         """POST /v1/fine_tuning/jobs — queue a gated fine-tune over an
         uploaded chat-format JSONL (upload with ``purpose='fine-tune'``).
-        Validation is synchronous: a malformed corpus 400s at submit."""
+        Validation is synchronous: a malformed corpus 400s at submit.
+        ``callback_url``/``callback_secret`` are the fx1 terminal-webhook
+        extension (the finished job record POSTs to the URL, signed)."""
         payload: dict[str, Any] = {"model": model, "training_file": training_file}
         if hyperparameters is not None:
             payload["hyperparameters"] = hyperparameters
@@ -618,6 +622,10 @@ class HarnessClient:
             payload["seed"] = seed
         if metadata is not None:
             payload["metadata"] = metadata
+        if callback_url is not None:
+            payload["callback_url"] = callback_url
+        if callback_secret is not None:
+            payload["callback_secret"] = callback_secret
         out = self._json(
             "POST",
             "/v1/fine_tuning/jobs",
@@ -1665,12 +1673,18 @@ class HarnessClient:
         endpoint: str = "/v1/chat/completions",
         metadata: dict[str, str] | None = None,
         idempotency_key: str | None = None,
+        callback_url: str | None = None,
+        callback_secret: str | None = None,
     ) -> dict[str, Any]:
         """``POST /v1/batches`` — submit an uploaded file as one batch.
 
         The batch runs under the caller's X-Fx1-* headers (backend/Byok
         routing applies to every line). ``Idempotency-Key`` replays the
-        submit envelope — the shared /v1 idempotency space."""
+        submit envelope — the shared /v1 idempotency space.
+        ``callback_url``/``callback_secret`` are the fx1 terminal-webhook
+        extension: the finished batch envelope POSTs to the URL once
+        (completed/failed/expired/cancelled), signed when the secret is
+        set."""
         payload: dict[str, Any] = {
             "input_file_id": input_file_id,
             "endpoint": endpoint,
@@ -1678,6 +1692,10 @@ class HarnessClient:
         }
         if metadata is not None:
             payload["metadata"] = metadata
+        if callback_url is not None:
+            payload["callback_url"] = callback_url
+        if callback_secret is not None:
+            payload["callback_secret"] = callback_secret
         if idempotency_key is not None:
             hdrs = {"Idempotency-Key": idempotency_key}
             out = self._json("POST", "/v1/batches", payload, idempotent=True, extra_headers=hdrs)

@@ -716,6 +716,12 @@ export interface paths {
          * @description Submit a batch over an uploaded input file. One worker slot
          *     runs the whole batch through the gated route cores; ``expires_at``
          *     is +24h (the completion_window the surface declares).
+         *     ``callback_url``/``callback_secret`` are the fx1 webhook
+         *     extension: the terminal batch envelope
+         *     (completed/failed/expired/cancelled — including expiry observed
+         *     on read) is POSTed to the URL once, HMAC-signed when the secret
+         *     is set; ``callback_status``/``callback_attempts``/
+         *     ``callback_error`` ride the projected record.
          */
         post: operations["openai_batches_create"];
         delete?: never;
@@ -943,6 +949,10 @@ export interface paths {
          * @description Queue a gated fine-tuning run against an uploaded chat-format
          *     JSONL training file. File validation is synchronous — malformed
          *     corpora 400 at submit, never limbo in ``validating_files``.
+         *     ``callback_url``/``callback_secret`` are the fx1 webhook
+         *     extension: the terminal job record (succeeded/failed/cancelled)
+         *     is POSTed to the URL, HMAC-signed when the secret is set — the
+         *     same delivery contract as ``/harness/jobs`` webhooks.
          */
         post: operations["create_finetune_job"];
         delete?: never;
@@ -1866,6 +1876,17 @@ export interface components {
         };
         /** FTJob */
         FTJob: {
+            /**
+             * Callback Attempts
+             * @default 0
+             */
+            callback_attempts: number;
+            /** Callback Error */
+            callback_error?: string | null;
+            /** Callback Status */
+            callback_status?: ("delivered" | "failed") | null;
+            /** Callback Url */
+            callback_url?: string | null;
             /** Created At */
             created_at: number;
             error?: components["schemas"]["FTJobError"] | null;
@@ -1968,6 +1989,10 @@ export interface components {
         };
         /** FTJobRequest */
         FTJobRequest: {
+            /** Callback Secret */
+            callback_secret?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
             hyperparameters?: components["schemas"]["FTHyperparameters"] | null;
             /** Metadata */
             metadata?: {
@@ -2288,6 +2313,10 @@ export interface components {
          * @description ``POST /v1/batches`` body.
          */
         OpenAIBatchRequest: {
+            /** Callback Secret */
+            callback_secret?: string | null;
+            /** Callback Url */
+            callback_url?: string | null;
             /**
              * Completion Window
              * @default 24h
