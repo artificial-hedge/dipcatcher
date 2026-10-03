@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-318 type-theory canon.
+        "bidirectional_tc",
+        "nbe_eval",
+        "dep_types",
+        "unify_meta",
+        "proof_kernel",
+        "tactic_engine",
         # Wave-317 image-processing canon.
         "canny_edge",
         "otsu_threshold",
