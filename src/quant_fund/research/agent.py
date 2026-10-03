@@ -3007,6 +3007,22 @@ from quant_fund.research.benches_w376 import (
     bench_suspension_family,
     bench_whitehead_family,
 )
+from quant_fund.research.benches_w377 import (
+    bench_endomorphism_op_family,
+    bench_little_discs_family,
+    bench_may_recognition_family,
+    bench_operad_assoc_family,
+    bench_operad_comm_family,
+    bench_operad_tree_family,
+)
+from quant_fund.research.benches_w378 import (
+    bench_cohen_adds_family,
+    bench_dense_filter_family,
+    bench_forcing_poset_family,
+    bench_large_cardinal_family,
+    bench_ma_toy_family,
+    bench_names_eval_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3386,6 +3402,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "forcing_poset": bench_forcing_poset_family,
+        "dense_filter": bench_dense_filter_family,
+        "names_eval": bench_names_eval_family,
+        "cohen_adds": bench_cohen_adds_family,
+        "ma_toy": bench_ma_toy_family,
+        "large_cardinal": bench_large_cardinal_family,
+        "operad_assoc": bench_operad_assoc_family,
+        "operad_comm": bench_operad_comm_family,
+        "little_discs": bench_little_discs_family,
+        "operad_tree": bench_operad_tree_family,
+        "endomorphism_op": bench_endomorphism_op_family,
+        "may_recognition": bench_may_recognition_family,
         "fibration": bench_fibration_family,
         "cofibration": bench_cofibration_family,
         "serre_ss": bench_serre_ss_family,

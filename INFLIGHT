@@ -1,3 +1,5 @@
+feat(research): wave 378 — set-theory-2/forcing canon (forcing_poset, dense_filter, names_eval, cohen_adds, ma_toy, large_cardinal) (2223->2229 families)
+feat(research): wave 377 — operad canon (operad_assoc, operad_comm, little_discs, operad_tree, endomorphism_op, may_recognition) (2217->2223 families)
 feat(research): wave 376 — homotopy-theory-2 canon (fibration, cofibration, serre_ss, whitehead, suspension, spectra) (2211->2217 families)
 feat(research): wave 375 — algebraic-geometry-5 canon (riemann_roch, sheaf_cohomology, scheme_local, blowup, elliptic_group, moduli_stable) (2205->2211 families)
 feat(research): wave 374 — model-theory-3 canon (quantifier_elim, realize_types, omega_categoricity, acl_closure, morley_rank, vocab_interp) (2199->2205 families)
