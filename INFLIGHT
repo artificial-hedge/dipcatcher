@@ -1,3 +1,4 @@
+feat(research): wave 815 — excursion-theory canon (excursion_proc, inverse_local, ray_knight, knight_theorem, mazza_yor, pitman_thm) (4839->4845 families)
 feat(research): wave 814 — stochastic-flow canon (stochastic_flow, kunita_flow, liouville_flow, stochastic_damping, meyers_process, karal_flow) (4833->4839 families)
 feat(research): wave 813 — diffusion-theory canon (feller_boundary, scale_measure, speed_measure, diffusion_semigroup, yosida_op, kreyn_resolvent) (4827->4833 families)
 feat(research): wave 812 — regenerative canon (regenerative, epsilon_coupling, small_set, petite_set, split_chain, nummelin) (4821->4827 families)

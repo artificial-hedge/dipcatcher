@@ -6511,6 +6511,14 @@ from quant_fund.research.benches_w814 import (
     bench_stochastic_damping_family,
     bench_stochastic_flow_family,
 )
+from quant_fund.research.benches_w815 import (
+    bench_excursion_proc_family,
+    bench_inverse_local_family,
+    bench_knight_theorem_family,
+    bench_mazza_yor_family,
+    bench_pitman_thm_family,
+    bench_ray_knight_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6882,6 +6890,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "excursion_proc": bench_excursion_proc_family,
+        "inverse_local": bench_inverse_local_family,
+        "ray_knight": bench_ray_knight_family,
+        "knight_theorem": bench_knight_theorem_family,
+        "mazza_yor": bench_mazza_yor_family,
+        "pitman_thm": bench_pitman_thm_family,
         "stochastic_flow": bench_stochastic_flow_family,
         "kunita_flow": bench_kunita_flow_family,
         "liouville_flow": bench_liouville_flow_family,
