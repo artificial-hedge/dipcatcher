@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-867 inverse-problem canon.
+        "tikhonov_reg",
+        "morozov_dp",
+        "l_curve_opt",
+        "iter_regularize",
+        "tv_denoise",
+        "bayes_inverse",
         # Wave-866 model-order-reduction canon.
         "pod_galerkin",
         "reduced_basis",
