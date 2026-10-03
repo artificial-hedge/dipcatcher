@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-992 scattering-theory canon.
+        "wave_operators",
+        "scattering_matrix",
+        "limiting_absorption",
+        "trace_class_scatt",
+        "resonances_thy",
+        "radiation_cond",
         # Wave-991 homogenization canon.
         "homogenization",
         "two_scale_conv",
