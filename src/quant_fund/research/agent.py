@@ -6223,6 +6223,14 @@ from quant_fund.research.benches_w778 import (
     bench_pollaczek_khinchine_family,
     bench_takacs_vacation_family,
 )
+from quant_fund.research.benches_w779 import (
+    bench_logarithmic_red_family,
+    bench_matrix_geom_family,
+    bench_neuts_map_family,
+    bench_phase_type_family,
+    bench_quasi_birth_family,
+    bench_ramaswami_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6602,6 +6610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "neuts_map": bench_neuts_map_family,
+        "phase_type": bench_phase_type_family,
+        "matrix_geom": bench_matrix_geom_family,
+        "quasi_birth": bench_quasi_birth_family,
+        "ramaswami": bench_ramaswami_family,
+        "logarithmic_red": bench_logarithmic_red_family,
         "engset": bench_engset_family,
         "erlang_b": bench_erlang_b_family,
         "erlang_c": bench_erlang_c_family,
