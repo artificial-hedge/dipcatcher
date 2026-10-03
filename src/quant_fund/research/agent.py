@@ -3535,6 +3535,14 @@ from quant_fund.research.benches_w442 import (
     bench_quillen_equiv_family,
     bench_reedy_model_family,
 )
+from quant_fund.research.benches_w443 import (
+    bench_brauer_grp_family,
+    bench_chow_group_family,
+    bench_milnor_conj_family,
+    bench_motivic_coh_family,
+    bench_motivic_stem_family,
+    bench_voevodsky_dm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3914,6 +3922,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_coh": bench_motivic_coh_family,
+        "chow_group": bench_chow_group_family,
+        "milnor_conj": bench_milnor_conj_family,
+        "voevodsky_dm": bench_voevodsky_dm_family,
+        "motivic_stem": bench_motivic_stem_family,
+        "brauer_grp": bench_brauer_grp_family,
         "cofibrant_rep": bench_cofibrant_rep_family,
         "quillen_equiv": bench_quillen_equiv_family,
         "monoidal_model": bench_monoidal_model_family,

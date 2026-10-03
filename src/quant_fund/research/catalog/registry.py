@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-443 motivic-2 canon.
+        "motivic_coh",
+        "chow_group",
+        "milnor_conj",
+        "voevodsky_dm",
+        "motivic_stem",
+        "brauer_grp",
         # Wave-442 model-categories-2 canon.
         "cofibrant_rep",
         "quillen_equiv",
