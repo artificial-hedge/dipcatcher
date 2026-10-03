@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-342 descriptive-set-theory/recursion-2 canon.
+        "borel_hierarchy",
+        "analytic_sets",
+        "forcing_lite",
+        "arith_hierarchy",
+        "jump_operator",
+        "rice_theorem",
+        # Wave-341 modal-logic/topology-2 canon.
+        "kripke_semantics",
+        "bisimulation",
+        "ef_game",
+        "fundamental_group",
+        "covering_space",
+        "topo_separation",
         # Wave-340 homological-algebra/algebraic-geometry canon.
         "chain_complex",
         "tor_ext",

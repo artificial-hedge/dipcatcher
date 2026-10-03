@@ -5,7 +5,9 @@ from __future__ import annotations
 import itertools
 
 
-def variety(fs: list[list[tuple[tuple[int, ...], int]]], p: int, n_vars: int) -> set[tuple[int, ...]]:
+def variety(
+    fs: list[list[tuple[tuple[int, ...], int]]], p: int, n_vars: int
+) -> set[tuple[int, ...]]:
     """Common zeros of polys (little-endian coeffs) in GF(p)^n."""
     out = set()
     for pt in itertools.product(range(p), repeat=n_vars):
