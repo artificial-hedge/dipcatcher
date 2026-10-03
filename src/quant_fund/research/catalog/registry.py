@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-784 Levy canon.
+        "levy_khinchine",
+        "subordinator",
+        "stable_levy",
+        "self_decomp",
+        "levy_measure",
+        "girsanov_thm2",
         # Wave-783 stochastic-order canon.
         "semi_mart",
         "predictable_bracket",
