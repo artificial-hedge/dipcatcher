@@ -7567,6 +7567,14 @@ from quant_fund.research.benches_w946 import (
     bench_polar_decomp_family,
     bench_sylvester_matrix_family,
 )
+from quant_fund.research.benches_w947 import (
+    bench_bezout_matrix_family,
+    bench_cauchy_interlace_family,
+    bench_haynsworth_inertia_family,
+    bench_min_max_eig_family,
+    bench_sturm_sequence_family,
+    bench_sylvester_law_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7938,6 +7946,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cauchy_interlace": bench_cauchy_interlace_family,
+        "sylvester_law": bench_sylvester_law_family,
+        "haynsworth_inertia": bench_haynsworth_inertia_family,
+        "min_max_eig": bench_min_max_eig_family,
+        "sturm_sequence": bench_sturm_sequence_family,
+        "bezout_matrix": bench_bezout_matrix_family,
         "perron_frobenius": bench_perron_frobenius_family,
         "douglas_factor": bench_douglas_factor_family,
         "cholesky_piv": bench_cholesky_piv_family,

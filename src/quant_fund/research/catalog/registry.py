@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-947 spectral-interlacing canon.
+        "cauchy_interlace",
+        "sylvester_law",
+        "haynsworth_inertia",
+        "min_max_eig",
+        "sturm_sequence",
+        "bezout_matrix",
         # Wave-946 positive-matrix canon.
         "perron_frobenius",
         "douglas_factor",
