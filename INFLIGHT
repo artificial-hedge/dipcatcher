@@ -1,3 +1,4 @@
+feat(research): wave 956 — tensor-theory canon (tucker_rank, cp_rank, tensor_norm, tensor_trace, mode_n_product, tensor_symmetry) (5685->5691 families)
 feat(research): wave 955 — linear-systems canon (gram_matrix, gram_determinant, householder_reflect, givens_rotation, back_substitution, forward_substitution) (5679->5685 families)
 feat(research): wave 954 — matrix-approximation canon (low_rank_approx, nuclear_norm, spectral_threshold, matrix_truncate, rank_estimate, condition_number) (5673->5679 families)
 feat(research): wave 953 — operator-theory canon (bounded_operator, operator_norm, operator_adjoint, projection_operator, positive_operator, isometry_operator) (5667->5673 families)
