@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-625 homotopy-15 canon.
+        "stable_cohomology2",
+        "woodward_op",
+        "spectrum_type",
+        "complexity_spectrum",
+        "small_spec",
+        "simplicial_htpy",
         # Wave-624 formal-geometry canon.
         "raynaud_formal",
         "formal_completion",
