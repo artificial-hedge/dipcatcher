@@ -2231,6 +2231,14 @@ from quant_fund.research.benches_w279 import (
     bench_lyap_synth_family,
     bench_mrac_adapt_family,
 )
+from quant_fund.research.benches_w280 import (
+    bench_boundary_sq_family,
+    bench_euler_char_family,
+    bench_graph_h1_family,
+    bench_rips_h1_family,
+    bench_simp_betti_family,
+    bench_winding_deg_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2592,6 +2600,12 @@ def _provenance(
         "flat_track": bench_flat_track_family,
         "lyap_synth": bench_lyap_synth_family,
         "l2_gain": bench_l2_gain_family,
+        "simp_betti": bench_simp_betti_family,
+        "boundary_sq": bench_boundary_sq_family,
+        "euler_char": bench_euler_char_family,
+        "rips_h1": bench_rips_h1_family,
+        "graph_h1": bench_graph_h1_family,
+        "winding_deg": bench_winding_deg_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

@@ -1,3 +1,4 @@
+feat(research): wave 280 — algebraic-topology canon (simp_betti, boundary_sq, euler_char, rips_h1, graph_h1, winding_deg) (1653->1659 families)
 feat(research): wave 279 — control-theory-3 canon (luen_obsv, dist_obsv, mrac_adapt, flat_track, lyap_synth, l2_gain) (1647->1653 families)
 feat(research): wave 278 — econ-models-2 canon (rbc_sim, nk_phillips, taylor_rule, solow_model, olg_model, cobweb_model) (1641->1647 families)
 feat(research): wave 277 — signal-processing-4 canon (stft_istft, chirp_z, fir_window, prony_model, wola_synth, decimate_int) (1635->1641 families)

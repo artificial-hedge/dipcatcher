@@ -3040,6 +3040,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "flat_track",
         "lyap_synth",
         "l2_gain",
+        # Wave-280 algebraic-topology canon.
+        "simp_betti",
+        "boundary_sq",
+        "euler_char",
+        "rips_h1",
+        "graph_h1",
+        "winding_deg",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
