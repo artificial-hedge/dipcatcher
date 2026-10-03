@@ -2055,6 +2055,14 @@ from quant_fund.research.benches_w257 import (
     bench_sigma_or_proof_family,
     bench_sis_hash_family,
 )
+from quant_fund.research.benches_w258 import (
+    bench_adaptive_qp_family,
+    bench_bitmap_index_family,
+    bench_cascades_opt_family,
+    bench_func_dep_family,
+    bench_vectorized_exec_family,
+    bench_zone_map_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2284,6 +2292,12 @@ def _provenance(
         "sis_hash": bench_sis_hash_family,
         "sigma_or_proof": bench_sigma_or_proof_family,
         "chaum_pedersen": bench_chaum_pedersen_family,
+        "cascades_opt": bench_cascades_opt_family,
+        "vectorized_exec": bench_vectorized_exec_family,
+        "zone_map": bench_zone_map_family,
+        "func_dep": bench_func_dep_family,
+        "bitmap_index": bench_bitmap_index_family,
+        "adaptive_qp": bench_adaptive_qp_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

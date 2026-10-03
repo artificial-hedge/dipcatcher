@@ -2655,3 +2655,4 @@ wave 254 (2026-10-02): applied-crypto-2 canon — tls_handshake, hmac_construct,
 wave 255 (2026-10-02): optimization-2 canon — simplex_lp, ellipsoid_method, barrier_ip, admm_lasso, coord_descent, proj_gradient; 1503→1509 families.
 wave 256 (2026-10-02): memory-models canon — hazard_pointer, seqlock, ms_queue, epoch_reclaim, flat_combining, rcu_lock; 1509→1515 families.
 wave 257 (2026-10-02): crypto-3 canon — lwe_kex, ntru_toy, bfv_fhe, sis_hash, sigma_or_proof, chaum_pedersen; 1515→1521 families.
+wave 258 (2026-10-02): databases-3 canon — cascades_opt, vectorized_exec, zone_map, func_dep, bitmap_index, adaptive_qp; 1521→1527 families.

@@ -2916,6 +2916,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "sis_hash",
         "sigma_or_proof",
         "chaum_pedersen",
+        # Wave-258 databases-3 canon.
+        "cascades_opt",
+        "vectorized_exec",
+        "zone_map",
+        "func_dep",
+        "bitmap_index",
+        "adaptive_qp",
         "critical_path",
         "dinic_flow",
         "mincost_flow",
