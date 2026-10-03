@@ -64,12 +64,22 @@ class KeyStoreError(RuntimeError):
     Carries an HTTP-style code so the route can fail closed with the
     same shape as every other bounded surface; ``retry_after`` carries
     the remaining window seconds on ``rate_limited`` so the wire can
-    set an honest ``Retry-After``."""
+    set an honest ``Retry-After``. ``key_id`` names the refused
+    credential on ``rate_limited`` so the wire can still answer its
+    declared budget headers — it is the truncated fingerprint, never
+    the secret."""
 
-    def __init__(self, code: str, message: str, retry_after: float | None = None) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        retry_after: float | None = None,
+        key_id: str | None = None,
+    ) -> None:
         super().__init__(message)
         self.code = code
         self.retry_after = retry_after
+        self.key_id = key_id
 
 
 def _hash(raw: str) -> str:
@@ -196,11 +206,35 @@ class ApiKeyStore:
                         "rate_limited",
                         f"key exceeds its {rpm}/min request limit",
                         retry_after=retry,
+                        key_id=rec["key_id"],
                     )
                 rec["_window_count"] += 1
             rec["uses"] += 1
             rec["last_used_at"] = now
             return _wire(rec)
+
+    def window_state(self, key_id: str) -> tuple[int, int, int] | None:
+        """``(limit, remaining, reset_s)`` for a key's declared rpm
+        window, or None when the key is unknown / has no rpm bound.
+
+        Advisory: the count is read after ``authenticate`` consumed this
+        request, so concurrent calls may shift it by the time headers are
+        emitted — the wire budget is still honest at read time."""
+        with self._lock:
+            sha = self._by_id.get(key_id)
+            rec = self._by_hash.get(sha) if sha is not None else None
+            if rec is None:
+                return None
+            rpm = rec.get("rpm")
+            if rpm is None:
+                return None
+            now = self._clock()
+            start = rec.get("_window_start")
+            if not isinstance(start, (int, float)) or now - start >= _RATE_WINDOW_S:
+                return (rpm, rpm, 0)
+            count = int(rec.get("_window_count", 0))
+            reset = max(0, int(round(_RATE_WINDOW_S - (now - start))))
+            return (rpm, max(0, rpm - count), reset)
 
     def get(self, key_id: str) -> dict[str, Any] | None:
         with self._lock:

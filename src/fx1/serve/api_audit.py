@@ -2613,6 +2613,27 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
         and limited.json().get("code") == "rate_limited"
         and int(limited.headers.get("Retry-After", "0")) >= 1
     )
+    # a rpm-declared key answers its standing budget on every response
+    # (OpenAI's header names); the 429 still carries the declared window
+    out["key_rpm_headers"] = (
+        first.headers.get("x-ratelimit-limit-requests") == "1"
+        and first.headers.get("x-ratelimit-remaining-requests") == "0"
+        and int(first.headers.get("x-ratelimit-reset-requests", "-1")) >= 0
+        and limited.headers.get("x-ratelimit-limit-requests") == "1"
+        and limited.headers.get("x-ratelimit-remaining-requests") == "0"
+        and int(limited.headers.get("x-ratelimit-reset-requests", "-1")) >= 1
+    )
+    # keys without a declared window, the env credential, and loopback
+    # auth emit no budget headers — no false scarcity
+    plain_mint = keys_client.post("/harness/keys", json={}, headers=root_h)
+    plain_raw = str(plain_mint.json().get("key", ""))
+    plain_hit = keys_client.get("/harness/commands", headers={"X-API-Key": plain_raw})
+    env_hit = keys_client.get("/harness/commands", headers=root_h)
+    out["key_rpm_headers_absent"] = (
+        plain_mint.status_code == 201
+        and "x-ratelimit-limit-requests" not in plain_hit.headers
+        and "x-ratelimit-limit-requests" not in env_hit.headers
+    )
     rpm_rec = keys_client.get(f"/harness/keys/{rpm_id}", headers=root_h)
     out["key_rpm_refusal_no_burn"] = rpm_rec.status_code == 200 and rpm_rec.json()["uses"] == 1
     out["key_policy_bad_422"] = (

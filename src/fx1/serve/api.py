@@ -7149,6 +7149,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         )
 
 
+def _key_budget_headers(key_store: ApiKeyStore, key_id: str | None) -> dict[str, str]:
+    """OpenAI's standing rate-limit headers for a managed key with a
+    declared rpm window — empty for env/loopback auth or unwindowed
+    keys (no false scarcity)."""
+    if key_id in (None, "env"):
+        return {}
+    ws = key_store.window_state(key_id)
+    if ws is None:
+        return {}
+    return {
+        "X-RateLimit-Limit-Requests": str(ws[0]),
+        "X-RateLimit-Remaining-Requests": str(ws[1]),
+        "X-RateLimit-Reset-Requests": str(ws[2]),
+    }
+
+
 def _resolve_auth(
     request: Request,
     api_key: str | None,
@@ -7510,17 +7526,20 @@ def create_app(
         except KeyStoreError as exc:
             # a managed key past its declared rpm refuses 429 — same
             # fail-closed shape as the global limiter, keyed to the
-            # credential's own window
+            # credential's own window; the budget headers still answer so
+            # a client learns its declared limit, not just the refusal
             metrics.record_rate_limited()
             wait_s = max(1, math.ceil(exc.retry_after or 1.0))
             key_rl_msg = f"key rate limit exceeded; retry in {wait_s}s"
             key_rl_body: dict[str, Any] = {"detail": key_rl_msg, "code": exc.code}
             if is_openai_path(request.url.path):
                 key_rl_body = openai_error_body(key_rl_msg, 429, exc.code)
+            over_headers = {"Retry-After": str(wait_s)}
+            over_headers.update(_key_budget_headers(key_store, exc.key_id))
             response = JSONResponse(
                 status_code=429,
                 content=key_rl_body,
-                headers={"Retry-After": str(wait_s)},
+                headers=over_headers,
             )
             return _finish(request, request_id, response, started)
         if isinstance(auth, JSONResponse):
@@ -7537,6 +7556,10 @@ def create_app(
                     _REQUEST_KEY_ID.reset(ctx_token)
             else:
                 response = await call_next(request)
+            # a managed key with a declared rpm window reports its
+            # standing budget on every answer (OpenAI header names) —
+            # env-key and loopback auth declare no window and get none
+            response.headers.update(_key_budget_headers(key_store, key_id))
         if rl_headers is not None:
             response.headers.update(rl_headers)
         return _finish(request, request_id, response, started)
