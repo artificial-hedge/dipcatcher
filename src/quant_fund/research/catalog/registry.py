@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-813 diffusion-theory canon.
+        "feller_boundary",
+        "scale_measure",
+        "speed_measure",
+        "diffusion_semigroup",
+        "yosida_op",
+        "kreyn_resolvent",
         # Wave-812 regenerative canon.
         "regenerative",
         "epsilon_coupling",
