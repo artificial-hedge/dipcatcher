@@ -5343,6 +5343,14 @@ from quant_fund.research.benches_w668 import (
     bench_period_realization2_family,
     bench_tannakian_motive2_family,
 )
+from quant_fund.research.benches_w669 import (
+    bench_f_motive2_family,
+    bench_milnor_operations2_family,
+    bench_motivic_bordism_family,
+    bench_motivic_eilenberg2_family,
+    bench_motivic_ss2_family,
+    bench_slice_filtration2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5722,6 +5730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "slice_filtration2": bench_slice_filtration2_family,
+        "milnor_operations2": bench_milnor_operations2_family,
+        "motivic_bordism": bench_motivic_bordism_family,
+        "motivic_eilenberg2": bench_motivic_eilenberg2_family,
+        "f_motive2": bench_f_motive2_family,
+        "motivic_ss2": bench_motivic_ss2_family,
         "norimotive3": bench_norimotive3_family,
         "motivic_galois2": bench_motivic_galois2_family,
         "tannakian_motive2": bench_tannakian_motive2_family,

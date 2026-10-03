@@ -1,3 +1,4 @@
+feat(research): wave 669 — motivic-16 canon (slice_filtration2, milnor_operations2, motivic_bordism, motivic_eilenberg2, f_motive2, motivic_ss2) (3969->3975 families)
 feat(research): wave 668 — motivic-15 canon (norimotive3, motivic_galois2, tannakian_motive2, period_realization2, beilinson_regulator2, hodge_motive2) (3963->3969 families)
 feat(research): wave 667 — category-13 canon (stable_cat2, exact_cat2, ab_cat, grothendieck_cat, coniveau_fil, special_cat) (3957->3963 families)
 feat(research): wave 666 — derived-geometry-5 canon (derived_abelian, simplicial_comm, derived_bezout, derived_hecke, cotangent_stack, derived_bun) (3951->3957 families)
