@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-554 DT/GW-theory canon.
+        "kontsevich_mgn",
+        "gw_descendant",
+        "donaldson_thomas",
+        "pandharipande_thomas",
+        "gopakumar_vafa",
+        "mnop_conj",
         # Wave-553 mirror-symmetry canon.
         "mirror_symmetry",
         "givental_j",
