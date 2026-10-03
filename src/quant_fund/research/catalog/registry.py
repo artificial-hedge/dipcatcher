@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-782 filtration/Jacod-Shiryaev canon.
+        "pinsky_proc",
+        "ffusion_lims",
+        "kunita_watanabe",
+        "filt_proc",
+        "slivnyak",
+        "jacod_shiryaev",
         # Wave-781 regeneration/Khinchin canon.
         "karlin_mcg",
         "keilson_stieltjes",

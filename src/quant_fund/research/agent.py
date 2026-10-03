@@ -6247,6 +6247,14 @@ from quant_fund.research.benches_w781 import (
     bench_regen_proc_family,
     bench_wold_proc_family,
 )
+from quant_fund.research.benches_w782 import (
+    bench_ffusion_lims_family,
+    bench_filt_proc_family,
+    bench_jacod_shiryaev_family,
+    bench_kunita_watanabe_family,
+    bench_pinsky_proc_family,
+    bench_slivnyak_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6626,6 +6634,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "pinsky_proc": bench_pinsky_proc_family,
+        "ffusion_lims": bench_ffusion_lims_family,
+        "kunita_watanabe": bench_kunita_watanabe_family,
+        "filt_proc": bench_filt_proc_family,
+        "slivnyak": bench_slivnyak_family,
+        "jacod_shiryaev": bench_jacod_shiryaev_family,
         "karlin_mcg": bench_karlin_mcg_family,
         "keilson_stieltjes": bench_keilson_stieltjes_family,
         "palm_khinchin": bench_palm_khinchin_family,
