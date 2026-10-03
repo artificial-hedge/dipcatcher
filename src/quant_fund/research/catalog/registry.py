@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-494 noncommutative-geometry canon.
+        "hochschild_coh",
+        "cyclic_coh",
+        "nc_scheme",
+        "calabi_yau_alg",
+        "ginzburg_dga",
+        "connes_nc",
         # Wave-493 tropical-geometry canon.
         "tropical_poly",
         "berkovich_an",

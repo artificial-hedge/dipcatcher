@@ -3943,6 +3943,14 @@ from quant_fund.research.benches_w493 import (
     bench_tropical_cycle_family,
     bench_tropical_poly_family,
 )
+from quant_fund.research.benches_w494 import (
+    bench_calabi_yau_alg_family,
+    bench_connes_nc_family,
+    bench_cyclic_coh_family,
+    bench_ginzburg_dga_family,
+    bench_hochschild_coh_family,
+    bench_nc_scheme_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4322,6 +4330,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hochschild_coh": bench_hochschild_coh_family,
+        "cyclic_coh": bench_cyclic_coh_family,
+        "nc_scheme": bench_nc_scheme_family,
+        "calabi_yau_alg": bench_calabi_yau_alg_family,
+        "ginzburg_dga": bench_ginzburg_dga_family,
+        "connes_nc": bench_connes_nc_family,
         "tropical_poly": bench_tropical_poly_family,
         "berkovich_an": bench_berkovich_an_family,
         "skeleton_trop": bench_skeleton_trop_family,
