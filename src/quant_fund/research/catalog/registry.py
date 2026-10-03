@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-878 low-rank/hierarchical-matrix canon.
+        "low_rank_svd",
+        "h_matrix",
+        "hss_matrix",
+        "randomized_nystrom",
+        "block_low_rank",
+        "kronecker_approx",
         # Wave-877 transport/SPn canon.
         "transport_sn",
         "discrete_ordinates",

@@ -1,3 +1,4 @@
+feat(research): wave 878 — low-rank/hierarchical-matrix canon (low_rank_svd, h_matrix, hss_matrix, randomized_nystrom, block_low_rank, kronecker_approx) (5217->5223 families)
 feat(research): wave 877 — transport/SPn canon (transport_sn, discrete_ordinates, spherical_harmonics, spn_equations, moc_transport, pn_closure) (5211->5217 families)
 feat(research): wave 876 — nonlinear-solver canon (moore_penrose, landweber_iter, conjugate_grad_ls, gauss_newton, levenberg_marq, anderson_mixing) (5205->5211 families)
 feat(research): wave 875 — adaptive-marking canon (adaptive_marking, hierarchical_est, dorfler_marking, convergence_theory, adaptive_finite, goal_adaptive) (5199->5205 families)
