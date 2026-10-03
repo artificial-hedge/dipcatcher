@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-437 p-adic cohomology canon.
+        "crystalline_coh",
+        "prismatic_coh",
+        "etale_coh",
+        "derham_coh",
+        "frobenius_coh",
+        "comparison_iso",
         # Wave-436 infinity-categories-2 canon.
         "complete_seg",
         "cartesian_fib",
