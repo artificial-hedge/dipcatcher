@@ -1,3 +1,4 @@
+feat(research): wave 701 — derived-geometry-9 canon (derived_conn, derived_local, derived_reduced, derived_integral, derived_normal, derived_noether) (4161->4167 families)
 feat(research): wave 700 — category-20 canon (cat_pushout, cat_span, cat_lax, cat_street, cat_size, cat_total) (4155->4161 families)
 feat(research): wave 699 — homotopy-29 canon (homotopy_general, homotopy_rational, stable_dual, stable_lie, stable_motivic, stable_perf) (4149->4155 families)
 feat(research): wave 698 — motivic-22 canon (motivic_frobenius, motivic_cartier, motivic_hodge, motivic_span, motivic_lax, motivic_street) (4143->4149 families)
