@@ -2832,6 +2832,14 @@ from quant_fund.research.benches_w354 import (
     bench_moduli_naive_family,
     bench_sheaf_gluing_family,
 )
+from quant_fund.research.benches_w355 import (
+    bench_conditional_expect_family,
+    bench_conv_sum_family,
+    bench_kolmogorov_axioms_family,
+    bench_markov_ineq_family,
+    bench_moment_generating_family,
+    bench_stochastic_order_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3211,6 +3219,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kolmogorov_axioms": bench_kolmogorov_axioms_family,
+        "conditional_expect": bench_conditional_expect_family,
+        "markov_ineq": bench_markov_ineq_family,
+        "conv_sum": bench_conv_sum_family,
+        "moment_generating": bench_moment_generating_family,
+        "stochastic_order": bench_stochastic_order_family,
         "sheaf_gluing": bench_sheaf_gluing_family,
         "local_ring_zn": bench_local_ring_zn_family,
         "dedekind_check": bench_dedekind_check_family,
