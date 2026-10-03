@@ -6767,6 +6767,14 @@ from quant_fund.research.benches_w846 import (
     bench_gamma_fn_family,
     bench_hypergeometric_fn_family,
 )
+from quant_fund.research.benches_w847 import (
+    bench_boundary_layer_family,
+    bench_lindstedt_poincare_family,
+    bench_matched_asymptotic_family,
+    bench_multiple_scales_family,
+    bench_regular_perturbation_family,
+    bench_singular_perturbation_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7138,6 +7146,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "regular_perturbation": bench_regular_perturbation_family,
+        "singular_perturbation": bench_singular_perturbation_family,
+        "matched_asymptotic": bench_matched_asymptotic_family,
+        "multiple_scales": bench_multiple_scales_family,
+        "lindstedt_poincare": bench_lindstedt_poincare_family,
+        "boundary_layer": bench_boundary_layer_family,
         "gamma_fn": bench_gamma_fn_family,
         "beta_fn": bench_beta_fn_family,
         "bessel_fn": bench_bessel_fn_family,

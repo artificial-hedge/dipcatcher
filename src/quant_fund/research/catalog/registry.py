@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-847 perturbation-theory canon.
+        "regular_perturbation",
+        "singular_perturbation",
+        "matched_asymptotic",
+        "multiple_scales",
+        "lindstedt_poincare",
+        "boundary_layer",
         # Wave-846 special-functions canon.
         "gamma_fn",
         "beta_fn",
