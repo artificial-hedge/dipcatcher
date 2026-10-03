@@ -5031,6 +5031,14 @@ from quant_fund.research.benches_w629 import (
     bench_small_ext_family,
     bench_tangent_def_family,
 )
+from quant_fund.research.benches_w630 import (
+    bench_cartesian_morphism_family,
+    bench_fib_infty_family,
+    bench_infty_functor_family,
+    bench_inner_horn_family,
+    bench_joyal_horn_family,
+    bench_quasi_cat2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5410,6 +5418,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quasi_cat2": bench_quasi_cat2_family,
+        "inner_horn": bench_inner_horn_family,
+        "joyal_horn": bench_joyal_horn_family,
+        "fib_infty": bench_fib_infty_family,
+        "cartesian_morphism": bench_cartesian_morphism_family,
+        "infty_functor": bench_infty_functor_family,
         "deform_functor2": bench_deform_functor2_family,
         "tangent_def": bench_tangent_def_family,
         "rim_deform": bench_rim_deform_family,
