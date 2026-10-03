@@ -6359,6 +6359,14 @@ from quant_fund.research.benches_w795 import (
     bench_stochastic_game2_family,
     bench_zero_sum_game_family,
 )
+from quant_fund.research.benches_w796 import (
+    bench_coupled_fbsde_family,
+    bench_decoupling_field2_family,
+    bench_four_step_scheme_family,
+    bench_quasi_bsde_family,
+    bench_random_bsde_family,
+    bench_time_bsde_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6738,6 +6746,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "four_step_scheme": bench_four_step_scheme_family,
+        "decoupling_field2": bench_decoupling_field2_family,
+        "quasi_bsde": bench_quasi_bsde_family,
+        "coupled_fbsde": bench_coupled_fbsde_family,
+        "random_bsde": bench_random_bsde_family,
+        "time_bsde": bench_time_bsde_family,
         "dynkin_game": bench_dynkin_game_family,
         "stochastic_game2": bench_stochastic_game2_family,
         "differential_game": bench_differential_game_family,

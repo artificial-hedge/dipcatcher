@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-796 FBSDE-2 canon.
+        "four_step_scheme",
+        "decoupling_field2",
+        "quasi_bsde",
+        "coupled_fbsde",
+        "random_bsde",
+        "time_bsde",
         # Wave-795 stochastic-games canon.
         "dynkin_game",
         "stochastic_game2",
