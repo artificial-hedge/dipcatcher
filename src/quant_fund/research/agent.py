@@ -7471,6 +7471,14 @@ from quant_fund.research.benches_w934 import (
     bench_polar_cone_family,
     bench_support_fn_family,
 )
+from quant_fund.research.benches_w935 import (
+    bench_analytic_center_family,
+    bench_cvx_reform_family,
+    bench_dik_ellipsoid_family,
+    bench_kkt_solve_family,
+    bench_logbarrier_fn_family,
+    bench_self_concordant_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7842,6 +7850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kkt_solve": bench_kkt_solve_family,
+        "cvx_reform": bench_cvx_reform_family,
+        "self_concordant": bench_self_concordant_family,
+        "logbarrier_fn": bench_logbarrier_fn_family,
+        "analytic_center": bench_analytic_center_family,
+        "dik_ellipsoid": bench_dik_ellipsoid_family,
         "inf_convolution": bench_inf_convolution_family,
         "legendre_transform": bench_legendre_transform_family,
         "support_fn": bench_support_fn_family,
