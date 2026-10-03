@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-601 derived-geometry-4 canon.
+        "dg_algebra",
+        "derived_loop",
+        "derived_tangent",
+        "virtual_fund",
+        "structured_space",
+        "e_infinity_ring",
         # Wave-600 operad-theory canon.
         "a_infty_alg",
         "l_infty_alg",
