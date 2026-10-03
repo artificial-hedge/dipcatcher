@@ -7391,6 +7391,14 @@ from quant_fund.research.benches_w924 import (
     bench_gibbs_type_family,
     bench_neutral_process_family,
 )
+from quant_fund.research.benches_w925 import (
+    bench_bondesson_shot_family,
+    bench_exchangeable_pf_family,
+    bench_kingman_paintbox_family,
+    bench_nggp_process_family,
+    bench_normalized_rm_family,
+    bench_sigma_stable_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7762,6 +7770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "exchangeable_pf": bench_exchangeable_pf_family,
+        "normalized_rm": bench_normalized_rm_family,
+        "sigma_stable": bench_sigma_stable_family,
+        "nggp_process": bench_nggp_process_family,
+        "bondesson_shot": bench_bondesson_shot_family,
+        "kingman_paintbox": bench_kingman_paintbox_family,
         "gem_distribution": bench_gem_distribution_family,
         "dp_mm": bench_dp_mm_family,
         "crp_table": bench_crp_table_family,

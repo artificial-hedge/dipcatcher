@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-925 Bayesian-nonparametrics-3 canon.
+        "exchangeable_pf",
+        "normalized_rm",
+        "sigma_stable",
+        "nggp_process",
+        "bondesson_shot",
+        "kingman_paintbox",
         # Wave-924 Bayesian-nonparametrics-2 canon.
         "gem_distribution",
         "dp_mm",
