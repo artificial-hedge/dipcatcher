@@ -2644,3 +2644,4 @@ wave 243 (2026-10-02): numeric-2 canon — fft_radix2, ntt, karatsuba, strassen,
 wave 244 (2026-10-02): IR canon — inverted_index, posting_merge, wand_bmw, lsh_dedup, ngram_spell, positional_index; 1437→1443 families.
 wave 245 (2026-10-02): OS-2 canon — elf_loader, malloc_freelist, mmap_pager, mlfq_sched, semaphore_monitor, syscall_layer; 1443→1449 families.
 wave 246 (2026-10-02): language-runtime canon — bytecode_vm, threaded_interp, closure_conv, tail_call_tramp, inline_cache, nan_tagging; 1449→1455 families.
+wave 247 (2026-10-02): concurrency canon — peterson_lock, bakery_lock, rw_lock, atomics_tas, work_stealing, channel_select; 1455→1461 families.

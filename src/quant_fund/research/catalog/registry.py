@@ -2853,6 +2853,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "closure_conv",
         "inline_cache",
         "nan_tagging",
+        # Wave-247 concurrency canon.
+        "atomics_tas",
+        "bakery_lock",
+        "channel_select",
+        "peterson_lock",
+        "rw_lock",
+        "work_stealing",
         "tail_call_tramp",
         "threaded_interp",
         "posting_merge",
