@@ -4319,6 +4319,14 @@ from quant_fund.research.benches_w540 import (
     bench_schanuel_conj_family,
     bench_siegel_shidlovskii_family,
 )
+from quant_fund.research.benches_w541 import (
+    bench_jensen_formula_family,
+    bench_montel_normal_family,
+    bench_picard_thm_family,
+    bench_riemann_mapping_family,
+    bench_runge_approx_family,
+    bench_schwarz_lemma_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4698,6 +4706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "riemann_mapping": bench_riemann_mapping_family,
+        "schwarz_lemma": bench_schwarz_lemma_family,
+        "picard_thm": bench_picard_thm_family,
+        "montel_normal": bench_montel_normal_family,
+        "runge_approx": bench_runge_approx_family,
+        "jensen_formula": bench_jensen_formula_family,
         "hermite_lindemann": bench_hermite_lindemann_family,
         "gelfond_schneider": bench_gelfond_schneider_family,
         "baker_thm": bench_baker_thm_family,

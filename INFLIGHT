@@ -1,3 +1,4 @@
+feat(research): wave 541 — complex-analysis-2 canon (riemann_mapping, schwarz_lemma, picard_thm, montel_normal, runge_approx, jensen_formula) (3201->3207 families)
 feat(research): wave 540 — transcendence-theory canon (hermite_lindemann, gelfond_schneider, baker_thm, lindemann_weier, schanuel_conj, siegel_shidlovskii) (3195->3201 families)
 feat(research): wave 539 — diophantine-approximation canon (dirichlet_approx, roth_thm2, continued_frac2, kronecker_thm, liouville_number, subspace_thm) (3189->3195 families)
 feat(research): wave 538 — elliptic-PDE canon (sobolev_space, poincare_ineq, trace_thm, harnack_thm, schauder_est, degiorgi_nash) (3183->3189 families)
