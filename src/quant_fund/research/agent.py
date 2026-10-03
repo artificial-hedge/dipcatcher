@@ -3023,6 +3023,22 @@ from quant_fund.research.benches_w378 import (
     bench_ma_toy_family,
     bench_names_eval_family,
 )
+from quant_fund.research.benches_w379 import (
+    bench_dual_matroid_family,
+    bench_greedy_matroid_family,
+    bench_matroid_axioms_family,
+    bench_matroid_intersect_family,
+    bench_matroid_union_family,
+    bench_represented_matroid_family,
+)
+from quant_fund.research.benches_w380 import (
+    bench_baire_space_family,
+    bench_borel_functions_family,
+    bench_determinacy_toy_family,
+    bench_perfect_set_prop_family,
+    bench_polish_topology_family,
+    bench_souslin_op_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3402,6 +3418,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "baire_space": bench_baire_space_family,
+        "polish_topology": bench_polish_topology_family,
+        "borel_functions": bench_borel_functions_family,
+        "souslin_op": bench_souslin_op_family,
+        "determinacy_toy": bench_determinacy_toy_family,
+        "perfect_set_prop": bench_perfect_set_prop_family,
+        "matroid_axioms": bench_matroid_axioms_family,
+        "greedy_matroid": bench_greedy_matroid_family,
+        "matroid_intersect": bench_matroid_intersect_family,
+        "dual_matroid": bench_dual_matroid_family,
+        "matroid_union": bench_matroid_union_family,
+        "represented_matroid": bench_represented_matroid_family,
         "forcing_poset": bench_forcing_poset_family,
         "dense_filter": bench_dense_filter_family,
         "names_eval": bench_names_eval_family,

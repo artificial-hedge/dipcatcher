@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-380 descriptive-set-theory-2 canon.
+        "baire_space",
+        "polish_topology",
+        "borel_functions",
+        "souslin_op",
+        "determinacy_toy",
+        "perfect_set_prop",
+        # Wave-379 matroid-2 canon.
+        "matroid_axioms",
+        "greedy_matroid",
+        "matroid_intersect",
+        "dual_matroid",
+        "matroid_union",
+        "represented_matroid",
         # Wave-378 set-theory-2/forcing canon.
         "forcing_poset",
         "dense_filter",

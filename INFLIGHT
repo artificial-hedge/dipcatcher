@@ -1,3 +1,5 @@
+feat(research): wave 380 — descriptive-set-theory-2 canon (baire_space, polish_topology, borel_functions, souslin_op, determinacy_toy, perfect_set_prop) (2235->2241 families)
+feat(research): wave 379 — matroid-2 canon (matroid_axioms, greedy_matroid, matroid_intersect, dual_matroid, matroid_union, represented_matroid) (2229->2235 families)
 feat(research): wave 378 — set-theory-2/forcing canon (forcing_poset, dense_filter, names_eval, cohen_adds, ma_toy, large_cardinal) (2223->2229 families)
 feat(research): wave 377 — operad canon (operad_assoc, operad_comm, little_discs, operad_tree, endomorphism_op, may_recognition) (2217->2223 families)
 feat(research): wave 376 — homotopy-theory-2 canon (fibration, cofibration, serre_ss, whitehead, suspension, spectra) (2211->2217 families)
