@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-835 stochastic-geometry canon.
+        "poisson_voronoi",
+        "boolean_model",
+        "germ_grain",
+        "steiner_formula",
+        "miles_matheron",
+        "intrinsic_volumes",
         # Wave-834 Markov-semigroup canon.
         "dirichlet_form",
         "markov_semigroup",
