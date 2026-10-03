@@ -2345,6 +2345,22 @@ class HarnessClient:
             )
         )
 
+    def conversation_item(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items/{item_id}`` — one item by
+        id."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id)}"
+                f"/items/{urllib.parse.quote(item_id)}",
+                idempotent=True,
+            )
+        )
+
     def conversation_item_delete(
         self,
         conversation_id: str,

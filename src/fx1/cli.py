@@ -3377,6 +3377,30 @@ def harness_conv_items_add(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("conv-item")
+def harness_conv_item(
+    conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),
+    item_id: str = typer.Argument(..., help="Item id inside the conv."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/conversations/{id}/items/{item_id}`` — one item by id;
+    prints the item."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).conversation_item(
+                conversation_id, item_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().openai_conversation_item(conversation_id, item_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
 @harness_app.command("conv-items-delete")
 def harness_conv_item_delete(
     conversation_id: str = typer.Argument(..., help="Conversation id (conv_*)."),

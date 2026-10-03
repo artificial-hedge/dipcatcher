@@ -3524,6 +3524,16 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         and sdk.openai_conversation_get(_cv_sdk["id"])["metadata"] == {"lane": "parity"}
         and remote.conversation_get(_cv_wl["id"])["metadata"] == {"lane": "parity"}
     )
+    # single-item retrieve — items.get on both legs returns the same
+    # minted item dict
+    _cv_iid_sdk = _cv_items_sdk[0]["id"]
+    _cv_iid_wl = _cv_items_wl[0]["id"]
+    out["conv_item_parity"] = (
+        sdk.openai_conversation_item(_cv_sdk["id"], _cv_iid_sdk)["id"] == _cv_iid_sdk
+        and remote.conversation_item(_cv_wl["id"], _cv_iid_wl)["id"] == _cv_iid_wl
+        and sdk.openai_conversation_item(_cv_sdk["id"], _cv_iid_sdk)["type"]
+        == remote.conversation_item(_cv_wl["id"], _cv_iid_wl)["type"]
+    )
     # fail-closed parity — a ghost conv and the exclusivity pair refuse
     # identically on both legs
     _cv_miss_sdk: tuple[str, str] = ("", "")

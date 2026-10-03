@@ -1026,7 +1026,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Openai Conversation Item Retrieve
+         * @description One item by id — the same store the list/delete routes read.
+         *     A missing item (or wrong conversation) is a 404, never a lookup
+         *     into another conversation's namespace.
+         */
+        get: operations["openai_conversation_item_retrieve"];
         put?: never;
         post?: never;
         /**
@@ -1196,7 +1202,10 @@ export interface paths {
         };
         /**
          * Openai File List
-         * @description Newest-first file listing.
+         * @description Newest-first file listing — the shared cursor page shape
+         *     (``has_more`` + ``first_id``/``last_id``) so stock-SDK
+         *     auto-pagination terminates; ``purpose`` filters by the upload's
+         *     declared intent.
          */
         get: operations["openai_file_list"];
         put?: never;
@@ -7249,6 +7258,58 @@ export interface operations {
             };
         };
     };
+    openai_conversation_item_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     openai_conversation_item_delete: {
         parameters: {
             query?: never;
@@ -7620,6 +7681,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                after?: string | null;
             };
             header?: never;
             path: {
@@ -7939,7 +8001,13 @@ export interface operations {
     };
     openai_file_list: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                after?: string | null;
+                before?: string | null;
+                order?: string;
+                purpose?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7963,6 +8031,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

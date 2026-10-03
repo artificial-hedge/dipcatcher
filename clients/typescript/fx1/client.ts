@@ -1665,6 +1665,16 @@ export class HarnessApiClient {
     return (await res.json()) as Record<string, unknown>;
   }
 
+  /** GET /v1/conversations/{id}/items/{item_id} — one item by id. */
+  conversationItem(
+    conversationId: string,
+    itemId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/conversations/${encodeURIComponent(conversationId)}/items/${encodeURIComponent(itemId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
   /** DELETE /v1/conversations/{id}/items/{item_id} — drop one item. */
   async conversationItemDelete(
     conversationId: string,

@@ -3054,6 +3054,20 @@ class Fx1Harness:
             "has_more": False,
         }
 
+    def openai_conversation_item(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items/{item_id}`` in-process —
+        one item by id; a miss raises ``KeyError``."""
+        self._conversation_get(conversation_id)
+        items = self._conv_store.get_items(conversation_id, "items") or []
+        for it in items:
+            if it.get("id") == item_id:
+                return it
+        raise KeyError(f"item {item_id!r} not found in {conversation_id!r}")
+
     def openai_conversation_item_delete(
         self,
         conversation_id: str,

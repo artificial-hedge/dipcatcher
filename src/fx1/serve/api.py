@@ -3571,12 +3571,22 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         operation_id="listEvalRuns",
         tags=["evals"],
     )
-    def eval_run_list(eval_id: str, limit: int = 20) -> EvalRunPage:
+    def eval_run_list(eval_id: str, limit: int = 20, after: str | None = None) -> EvalRunPage:
         _spec_or_404(eval_id)
         if not 1 <= limit <= 100:
             raise ApiError(400, _MSG_LIMIT_RANGE, code="invalid_request")
-        page, _total = eval_store.list_records(spec=eval_id, limit=limit + 1)
-        more = len(page) > limit
+        records, _total = eval_store.list_records(spec=eval_id)
+        if after is not None:
+            idx = next((i for i, r in enumerate(records) if r.eval_id == after), None)
+            if idx is None:
+                raise ApiError(
+                    400,
+                    f"cursor {after!r} is not a run id under {eval_id!r}",
+                    code="invalid_cursor",
+                )
+            records = records[idx + 1 :]
+        page = records[:limit]
+        more = len(records) > limit
         return EvalRunPage(
             data=[EvalRunObject.model_validate(run_wire(r)) for r in page[:limit]],
             has_more=more,
@@ -5365,6 +5375,23 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             "has_more": False,
         }
 
+    @app.get(
+        "/v1/conversations/{conversation_id}/items/{item_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_conversation_item_retrieve",
+    )
+    def openai_conversation_item_retrieve(conversation_id: str, item_id: str) -> dict[str, Any]:
+        """One item by id — the same store the list/delete routes read.
+        A missing item (or wrong conversation) is a 404, never a lookup
+        into another conversation's namespace."""
+        _stored_conversation(conversation_id)
+        items = conv_store.get_items(conversation_id, "items") or []
+        for it in items:
+            if it.get("id") == item_id:
+                return it
+        raise ApiError(404, f"item {item_id!r} not found in {conversation_id!r}", code="not_found")
+
     @app.delete(
         "/v1/conversations/{conversation_id}/items/{item_id}",
         response_model=None,
@@ -6031,13 +6058,33 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         tags=["openai"],
         operation_id="openai_file_list",
     )
-    def openai_file_list() -> JSONResponse:
-        """Newest-first file listing."""
+    def openai_file_list(
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: str = Query(default="desc"),
+        purpose: str | None = Query(default=None),
+    ) -> JSONResponse:
+        """Newest-first file listing — the shared cursor page shape
+        (``has_more`` + ``first_id``/``last_id``) so stock-SDK
+        auto-pagination terminates; ``purpose`` filters by the upload's
+        declared intent."""
+        if order not in ("asc", "desc"):
+            raise OpenAICompatError(
+                f"order must be 'asc' or 'desc', got {order!r}",
+                status=400,
+                code="invalid_cursor",
+            )
+        records = file_store.list()
+        if purpose is not None:
+            records = [r for r in records if r.purpose == purpose]
+        items = [file_object(r.model_dump()) for r in records]
+        # the store is newest-first — that IS desc; "asc" flips to
+        # oldest-first before the shared pager walks it
+        if order == "asc":
+            items.reverse()
         return JSONResponse(
-            {
-                "object": "list",
-                "data": [file_object(r.model_dump()) for r in file_store.list()],
-            }
+            paged_item_list(items, limit=limit, after=after, before=before, order="asc")
         )
 
     @app.get(

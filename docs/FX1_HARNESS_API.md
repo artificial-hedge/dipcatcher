@@ -437,7 +437,16 @@ Client-side: `HarnessClient.chat_completion` /
 `idempotency_key` /
 `idempotencyKey` and mark the call retryable for the built-in retry
 policy. Any OpenAI SDK works directly — point it at the harness
-`base_url` and use `model: "fx1"`.
+`base_url` and use `model: "fx1"`. The claim is measured, not
+asserted: `receipts/fx1_oai_sdk_audit.json`
+(`fx1.serve.oai_sdk_audit.oai_sdk_audit_bench`) drives the stock
+`openai` SDK — typed parsing, `async for` auto-pagination, SSE
+streams, typed error classes (`BadRequestError`/`ConflictError`/
+`NotFoundError`/`UnprocessableEntityError`) — through every `/v1`
+resource group: models, chat (incl. `store`+`list`), responses (incl.
+`background`+cancel+input_items), files+batches+fine-tuning,
+embeddings, moderations, uploads, evals, conversations, vector
+stores.
 
 The same surface exists in-process: `Fx1Harness.openai_chat(request)`
 accepts the same request body dict (or a parsed

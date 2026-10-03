@@ -8586,6 +8586,15 @@ def _probe_backend_probes(  # NOSONAR
         and len(cv_items3) == 4
         and cv_items3[0]["content"][0]["text"] == "turn-one"
     )
+    # single-item retrieve — OpenAI's conversations.items.retrieve: hit
+    # returns the item, a miss inside a live conv or a ghost conv 404s
+    got_item = cv.get(f"/v1/conversations/{cid0}/items/{cv_items3[0]['id']}")
+    out["conv_item_get"] = (
+        got_item.status_code == 200
+        and got_item.json()["id"] == cv_items3[0]["id"]
+        and cv.get(f"/v1/conversations/{cid0}/items/msg_ghost").status_code == 404
+        and cv.get("/v1/conversations/conv_ghost/items/msg_x").status_code == 404
+    )
     # conv is its own store: a store:false response still appends its
     # turn to the conv even though the envelope itself never indexes
     cv_ns = cv.post(

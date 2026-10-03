@@ -1910,6 +1910,15 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "has_more": False,
             }
 
+        def conversation_item(self, conversation_id: str, item_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"conv_item": [conversation_id, item_id]}
+            return {
+                "id": item_id,
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "hi"}],
+            }
+
         def conversation_item_delete(self, conversation_id: str, item_id: str) -> dict[str, Any]:
             self.last_ft_query = {"conv_item_delete": [conversation_id, item_id]}
             return {"id": conversation_id, "object": "conversation", "metadata": {}}
@@ -3313,6 +3322,12 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "conv_items_add": "conv_x",
             "items": [{"role": "user", "content": "more"}],
         }
+        out["remote_conv_item"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "conv-item", "conv_x", "msg_z", "--remote", "http://h.test"],
+            ).stdout
+        ).get("id") == "msg_z" and remotes[-1].last_ft_query == {"conv_item": ["conv_x", "msg_z"]}
         out["remote_conv_item_delete"] = json.loads(
             runner.invoke(
                 app,

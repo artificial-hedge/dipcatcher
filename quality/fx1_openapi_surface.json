@@ -906,6 +906,25 @@
           "200",
           "422"
         ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
       }
     },
     "/v1/embeddings": {
@@ -998,6 +1017,11 @@
             "name": "eval_id",
             "in": "path",
             "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
           },
           {
             "name": "limit",
@@ -1125,10 +1149,37 @@
     },
     "/v1/files": {
       "get": {
-        "params": [],
+        "params": [
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "purpose",
+            "in": "query",
+            "required": false
+          }
+        ],
         "request_body_required": null,
         "responses": [
-          "200"
+          "200",
+          "422"
         ]
       },
       "post": {
@@ -1867,5 +1918,5 @@
       }
     }
   },
-  "schema_sha256": "c39afbe5a74cef6c34b9febbccbe16ab431d0c77d877bf591e2dc03a346f03fd"
+  "schema_sha256": "96b8647207fc8818d68c4d06e0ced76294561d59e779f8e35bb182b39070e938"
 }
