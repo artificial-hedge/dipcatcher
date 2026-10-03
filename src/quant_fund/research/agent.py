@@ -2327,6 +2327,14 @@ from quant_fund.research.benches_w291 import (
     bench_place_quadratic_family,
     bench_sta_timing_family,
 )
+from quant_fund.research.benches_w292 import (
+    bench_doh_wire_family,
+    bench_qpack_pack_family,
+    bench_quic_streams_family,
+    bench_sctp_tsn_family,
+    bench_tls13_trans_family,
+    bench_wg_ik_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2706,6 +2714,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quic_streams": bench_quic_streams_family,
+        "tls13_trans": bench_tls13_trans_family,
+        "qpack_pack": bench_qpack_pack_family,
+        "wg_ik": bench_wg_ik_family,
+        "doh_wire": bench_doh_wire_family,
+        "sctp_tsn": bench_sctp_tsn_family,
         "netlist_parse": bench_netlist_parse_family,
         "sta_timing": bench_sta_timing_family,
         "a_star_route": bench_a_star_route_family,
