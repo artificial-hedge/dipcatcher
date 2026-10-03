@@ -6743,6 +6743,14 @@ from quant_fund.research.benches_w843 import (
     bench_de_boor_family,
     bench_knot_insertion_family,
 )
+from quant_fund.research.benches_w844 import (
+    bench_asymptotic_series_family,
+    bench_borel_resum_family,
+    bench_poincare_expansion_family,
+    bench_stationary_phase_family,
+    bench_steepest_descent_family,
+    bench_wkb_approx_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7114,6 +7122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "asymptotic_series": bench_asymptotic_series_family,
+        "poincare_expansion": bench_poincare_expansion_family,
+        "steepest_descent": bench_steepest_descent_family,
+        "stationary_phase": bench_stationary_phase_family,
+        "borel_resum": bench_borel_resum_family,
+        "wkb_approx": bench_wkb_approx_family,
         "b_spline": bench_b_spline_family,
         "de_boor": bench_de_boor_family,
         "cardinal_spline": bench_cardinal_spline_family,

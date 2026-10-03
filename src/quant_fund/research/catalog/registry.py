@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-844 asymptotic-analysis canon.
+        "asymptotic_series",
+        "poincare_expansion",
+        "steepest_descent",
+        "stationary_phase",
+        "borel_resum",
+        "wkb_approx",
         # Wave-843 spline-theory canon.
         "b_spline",
         "de_boor",
