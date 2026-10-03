@@ -7607,6 +7607,14 @@ from quant_fund.research.benches_w951 import (
     bench_permanent_matrix_family,
     bench_vec_operator_family,
 )
+from quant_fund.research.benches_w952 import (
+    bench_eigval_bounds_family,
+    bench_power_deflation_family,
+    bench_qr_iteration_family,
+    bench_schur_decomp_family,
+    bench_spectral_gap_family,
+    bench_spectral_radius_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7978,6 +7986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "qr_iteration": bench_qr_iteration_family,
+        "power_deflation": bench_power_deflation_family,
+        "schur_decomp": bench_schur_decomp_family,
+        "eigval_bounds": bench_eigval_bounds_family,
+        "spectral_radius": bench_spectral_radius_family,
+        "spectral_gap": bench_spectral_gap_family,
         "determinant_cofactor": bench_determinant_cofactor_family,
         "permanent_matrix": bench_permanent_matrix_family,
         "matrix_exponential": bench_matrix_exponential_family,
