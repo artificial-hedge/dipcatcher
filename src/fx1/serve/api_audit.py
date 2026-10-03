@@ -2410,6 +2410,55 @@ def api_audit() -> dict[str, Any]:  # noqa: C901 — probe accumulator
             ).status_code
             == 422
         )
+        # X-Fx1-Receipt-Hashes — the header twin of fx1.receipt_hashes for
+        # clients that can't edit the JSON body (same channel as
+        # X-Fx1-Fallbacks): comma-separated sha256 digests go through the
+        # same store check, the body extension wins, and a malformed
+        # digest is a fail-closed 400 at the translation layer.
+        out["xfx_receipt_hashes_header_cites"] = (
+            cite.post(
+                "/v1/chat/completions",
+                headers={"X-Fx1-Receipt-Hashes": sha},
+                json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+            ).status_code
+            == 200
+        )
+        out["xfx_receipt_hashes_unknown_422"] = (
+            cite.post(
+                "/v1/chat/completions",
+                headers={"X-Fx1-Receipt-Hashes": "e" * 64},
+                json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+            ).status_code
+            == 422
+        )
+        out["xfx_receipt_hashes_bad_400"] = (
+            cite.post(
+                "/v1/chat/completions",
+                headers={"X-Fx1-Receipt-Hashes": "zzz"},
+                json={"model": "fx1", "messages": [{"role": "user", "content": "x"}]},
+            ).status_code
+            == 400
+        )
+        out["xfx_receipt_hashes_ext_wins"] = (
+            cite.post(
+                "/v1/chat/completions",
+                headers={"X-Fx1-Receipt-Hashes": "e" * 64},
+                json={
+                    "model": "fx1",
+                    "messages": [{"role": "user", "content": "x"}],
+                    "fx1": {"receipt_hashes": [sha]},
+                },
+            ).status_code
+            == 200
+        )
+        out["xfx_receipt_hashes_responses"] = (
+            cite.post(
+                "/v1/responses",
+                headers={"X-Fx1-Receipt-Hashes": "e" * 64},
+                json={"model": "fx1", "input": "x"},
+            ).status_code
+            == 422
+        )
     # No store mounted -> citations stay advisory (nothing to check against).
     nostore = _TC2(
         api_mod.create_app(
@@ -7228,7 +7277,10 @@ def api_audit_bench() -> dict[str, Any]:
             "seal of the logged record (identical to the document "
             "GET /harness/completions/{id}/receipt exports), idempotent "
             "replays echo the original seal, and SSE streams carry the "
-            "digest in the final frame."
+            "digest in the final frame. Evidence citations ride "
+            "X-Fx1-Receipt-Hashes for clients that can't edit the body — "
+            "comma-separated digests, the same store check, a malformed "
+            "digest a fail-closed 400, and fx1.receipt_hashes wins."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),
