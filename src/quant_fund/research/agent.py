@@ -5463,6 +5463,14 @@ from quant_fund.research.benches_w683 import (
     bench_morava_stabilizer2_family,
     bench_tate_spec2_family,
 )
+from quant_fund.research.benches_w684 import (
+    bench_motivic_base2_family,
+    bench_motivic_frequency_family,
+    bench_motivic_infinite_family,
+    bench_motivic_suslin_family,
+    bench_motivic_weight2_family,
+    bench_motivic_wit_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5842,6 +5850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_weight2": bench_motivic_weight2_family,
+        "motivic_infinite": bench_motivic_infinite_family,
+        "motivic_suslin": bench_motivic_suslin_family,
+        "motivic_frequency": bench_motivic_frequency_family,
+        "motivic_wit": bench_motivic_wit_family,
+        "motivic_base2": bench_motivic_base2_family,
         "blue_shift2": bench_blue_shift2_family,
         "chromatic_fracture2": bench_chromatic_fracture2_family,
         "morava_stabilizer2": bench_morava_stabilizer2_family,
