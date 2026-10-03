@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-740 percolation canon.
+        "smirnov_percolation",
+        "duminil_copin",
+        "kesten_percolation",
+        "cardy_formula",
+        "russo_seymour",
+        "grimmett_percolation",
         # Wave-739 Brownian-map-2 canon.
         "caraceni_curien",
         "bonzom_combe",

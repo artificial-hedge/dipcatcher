@@ -5911,6 +5911,14 @@ from quant_fund.research.benches_w739 import (
     bench_mullin_bijection_family,
     bench_schaeffer_bijection_family,
 )
+from quant_fund.research.benches_w740 import (
+    bench_cardy_formula_family,
+    bench_duminil_copin_family,
+    bench_grimmett_percolation_family,
+    bench_kesten_percolation_family,
+    bench_russo_seymour_family,
+    bench_smirnov_percolation_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6290,6 +6298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "smirnov_percolation": bench_smirnov_percolation_family,
+        "duminil_copin": bench_duminil_copin_family,
+        "kesten_percolation": bench_kesten_percolation_family,
+        "cardy_formula": bench_cardy_formula_family,
+        "russo_seymour": bench_russo_seymour_family,
+        "grimmett_percolation": bench_grimmett_percolation_family,
         "caraceni_curien": bench_caraceni_curien_family,
         "bonzom_combe": bench_bonzom_combe_family,
         "mullin_bijection": bench_mullin_bijection_family,
