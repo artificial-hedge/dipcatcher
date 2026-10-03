@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-555 homological-mirror-symmetry canon.
+        "hms_conjecture",
+        "landau_ginzburg",
+        "syz_mirror",
+        "torus_fibration",
+        "wrapped_fukaya",
+        "mirror_functor",
         # Wave-554 DT/GW-theory canon.
         "kontsevich_mgn",
         "gw_descendant",
