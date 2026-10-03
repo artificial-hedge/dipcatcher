@@ -1,3 +1,4 @@
+feat(research): wave 987 — parabolic/Li-Yau canon (parabolic_harnack, gaussian_upper, li_yau, nash_ineq, davies_gaffney, grad_est) (5871->5877 families)
 feat(research): wave 986 — Calderon-Zygmund canon (calderon_zygmund, cz_decomp, cotlar_ineq, good_lambda, ap_weight, reverse_holder) (5865->5871 families)
 feat(research): wave 985 — Hardy-space/BMO canon (hardy_h1, bmo_space, atomic_h1, carleson_measure, john_nirenberg, fefferman_stein) (5859->5865 families)
 feat(research): wave 984 — modulation-spaces canon (modulation_space, short_time_ft, gabor_frame, wigner_dist, ambiguity_fn, feichtinger_alg) (5853->5859 families)
