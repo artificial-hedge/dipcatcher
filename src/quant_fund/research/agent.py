@@ -7743,6 +7743,14 @@ from quant_fund.research.benches_w968 import (
     bench_kk_duality_family,
     bench_kk_theory_family,
 )
+from quant_fund.research.benches_w969 import (
+    bench_bott_periodicity_k_family,
+    bench_elliott_invariant_family,
+    bench_k0_algebra_family,
+    bench_k1_algebra_family,
+    bench_pimsner_voicul_family,
+    bench_six_term_exact_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8114,6 +8122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "k0_algebra": bench_k0_algebra_family,
+        "k1_algebra": bench_k1_algebra_family,
+        "bott_periodicity_k": bench_bott_periodicity_k_family,
+        "six_term_exact": bench_six_term_exact_family,
+        "pimsner_voicul": bench_pimsner_voicul_family,
+        "elliott_invariant": bench_elliott_invariant_family,
         "kk_theory": bench_kk_theory_family,
         "kasparov_prod": bench_kasparov_prod_family,
         "ext_functor": bench_ext_functor_family,
