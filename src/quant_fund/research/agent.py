@@ -3487,6 +3487,14 @@ from quant_fund.research.benches_w436 import (
     bench_presentable_cat_family,
     bench_straightening_family,
 )
+from quant_fund.research.benches_w437 import (
+    bench_comparison_iso_family,
+    bench_crystalline_coh_family,
+    bench_derham_coh_family,
+    bench_etale_coh_family,
+    bench_frobenius_coh_family,
+    bench_prismatic_coh_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3866,6 +3874,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "crystalline_coh": bench_crystalline_coh_family,
+        "prismatic_coh": bench_prismatic_coh_family,
+        "etale_coh": bench_etale_coh_family,
+        "derham_coh": bench_derham_coh_family,
+        "frobenius_coh": bench_frobenius_coh_family,
+        "comparison_iso": bench_comparison_iso_family,
         "complete_seg": bench_complete_seg_family,
         "cartesian_fib": bench_cartesian_fib_family,
         "straightening": bench_straightening_family,
