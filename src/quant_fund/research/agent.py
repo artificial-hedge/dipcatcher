@@ -2135,6 +2135,14 @@ from quant_fund.research.benches_w267 import (
     bench_simt_divergence_family,
     bench_warp_scheduler_family,
 )
+from quant_fund.research.benches_w268 import (
+    bench_chacha_stream_family,
+    bench_elgamal_enc_family,
+    bench_fiat_shamir_family,
+    bench_ot_12_family,
+    bench_paillier_he_family,
+    bench_poly1305_mac_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2424,6 +2432,12 @@ def _provenance(
         "mem_coalesce": bench_mem_coalesce_family,
         "occupancy_calc": bench_occupancy_calc_family,
         "shared_mem_tile": bench_shared_mem_tile_family,
+        "elgamal_enc": bench_elgamal_enc_family,
+        "paillier_he": bench_paillier_he_family,
+        "fiat_shamir": bench_fiat_shamir_family,
+        "ot_12": bench_ot_12_family,
+        "chacha_stream": bench_chacha_stream_family,
+        "poly1305_mac": bench_poly1305_mac_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
