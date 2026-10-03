@@ -610,7 +610,12 @@ per-endpoint request models and gate, `--backend`/`--checkpoint-dir`/
 `--out` writes the OpenAI batch-result lines. `fx1 harness models` /
 `model <id>` expose the `/v1/models` inventory both ways — remote over
 the wire, or in-process where the `ft:` registry lists your own
-fine-tunes.
+fine-tunes. `fx1 harness respond` (`/v1/responses` — JSON items arg,
+`--instructions`/`--format`/`--tools`/`--tool-choice`), `embed`
+(`/v1/embeddings` — repeatable input, `--encoding`/`--dimensions`), and
+`moderate` (`/v1/moderations` — the honesty gate as an OpenAI verdict,
+no backend needed) each run both legs: `--remote` over the wire or
+in-process through the SDK twin.
 
 ### Retrieval (`store` + `GET`/`DELETE`)
 

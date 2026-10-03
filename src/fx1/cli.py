@@ -11,7 +11,7 @@ import json
 import os
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NoReturn, cast
 
 import typer
 
@@ -69,6 +69,12 @@ def _or_exit[T](fn: Callable[[], T]) -> T:
     except Exception as exc:  # noqa: BLE001 — CLI reports the class+message, not a traceback
         typer.echo(f"error: {type(exc).__name__}: {exc}", err=True)
         raise typer.Exit(code=2) from exc
+
+
+def _bad_arg(msg: str) -> NoReturn:
+    """A flag/value fault — one clean line, exit 2, no traceback."""
+    typer.echo(f"error: {msg}", err=True)
+    raise typer.Exit(code=2)
 
 
 app = typer.Typer(
@@ -1815,6 +1821,233 @@ def harness_model(
 
     card = _or_exit(lambda: Fx1Harness().openai_model(model_id))
     typer.echo(card.model_dump_json(indent=2))
+
+
+@harness_app.command("respond")
+def harness_respond(
+    input_: str = typer.Argument(..., help="Input string, or a JSON array of Responses items."),
+    model: str = typer.Option("fx1", "--model", help="Model id — backend name, fx1, or ft:name."),
+    instructions: str | None = typer.Option(
+        None, "--instructions", help="Prepended system-level instructions."
+    ),
+    backend: str | None = typer.Option(None, "--backend", help="Backend link override."),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [], "--fallback", help="Alternate backend on availability faults (repeatable)."
+    ),
+    temperature: float | None = typer.Option(None, "--temperature", help="Decode temperature."),
+    top_p: float | None = typer.Option(None, "--top-p", help="Nucleus sampling mass."),
+    max_output_tokens: int | None = typer.Option(
+        None, "--max-output-tokens", help="Output token cap."
+    ),
+    metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    text_format: str | None = typer.Option(
+        None, "--format", help='text.format JSON, e.g. \'{"type":"json_object"}\'.'
+    ),
+    tools: str | None = typer.Option(None, "--tools", help="JSON array of Responses tools."),
+    tool_choice: str | None = typer.Option(
+        None, "--tool-choice", help='"none"/"auto"/"required" or a JSON choice object.'
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+) -> None:
+    """``POST /v1/responses`` — the Responses API over the gated pipeline.
+
+    The response object prints verbatim (``output[0]`` is the message
+    item); a completion-log id rides ``X-Fx1-Completion-Id`` for receipt
+    lookup. In-process by default — the SDK twin runs the same request
+    model, link resolution, and gate.
+    """
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+
+    def _json_opt(raw: str | None, what: str) -> Any:
+        if raw is None:
+            return None
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            _bad_arg(f"invalid {what} JSON")
+            raise AssertionError("unreachable") from None
+
+    try:
+        parsed = json.loads(input_)
+        items: str | list[Any] = parsed if isinstance(parsed, list) else input_
+    except json.JSONDecodeError:
+        items = input_
+    meta = _json_opt(metadata, "metadata")
+    if meta is not None and not (
+        isinstance(meta, dict)
+        and all(isinstance(k, str) and isinstance(v, str) for k, v in meta.items())
+    ):
+        _bad_arg("--metadata must be a JSON object of string pairs")
+    tfmt = _json_opt(text_format, "format")
+    tool_list = _json_opt(tools, "tools")
+    if tool_list is not None and not isinstance(tool_list, list):
+        _bad_arg("--tools must be a JSON array")
+    tchoice: str | dict[str, Any] | None = None
+    if tool_choice is not None:
+        if tool_choice in {"none", "auto", "required"}:
+            tchoice = tool_choice
+        else:
+            tc = _json_opt(tool_choice, "tool-choice")
+            if not isinstance(tc, dict):
+                _bad_arg("--tool-choice must be none/auto/required or a JSON object")
+            tchoice = tc
+
+    if remote is not None:
+        resp, _cid = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).responses_create(
+                items,
+                model=model,
+                instructions=instructions,
+                backend=backend,
+                byok=byok,
+                checkpoint_dir=checkpoint_dir,
+                fallbacks=fallbacks or None,
+                timeout_s=backend_timeout,
+                temperature=temperature,
+                top_p=top_p,
+                max_output_tokens=max_output_tokens,
+                metadata=meta,
+                text_format=tfmt,
+                tools=tool_list,
+                tool_choice=tchoice,
+            )
+        )
+        typer.echo(json.dumps(resp, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    headers: dict[str, str] = {}
+    if backend is not None:
+        headers["x-fx1-backend"] = backend
+    if checkpoint_dir is not None:
+        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
+    if byok is not None:
+        headers["x-fx1-byok-base-url"] = byok["base_url"]
+        headers["x-fx1-byok-api-key"] = byok["api_key"]
+        headers["x-fx1-byok-model"] = byok["model"]
+    if fallbacks:
+        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    fx1: dict[str, Any] = {}
+    if backend_timeout is not None:
+        fx1["timeout_s"] = backend_timeout
+    body: dict[str, Any] = {
+        "model": model,
+        "input": items,
+        "instructions": instructions,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_output_tokens": max_output_tokens,
+        "metadata": meta,
+        "tools": tool_list,
+        "tool_choice": tchoice,
+        "fx1": fx1 or None,
+    }
+    if tfmt is not None:
+        body["text"] = {"format": tfmt}
+    resp, _cid = _or_exit(lambda: Fx1Harness().openai_response(body, headers=headers))
+    typer.echo(json.dumps(resp, indent=2))
+
+
+@harness_app.command("embed")
+def harness_embed(
+    inputs: list[str] = typer.Argument(..., help="Text to embed (repeatable)."),
+    model: str = typer.Option("fx1", "--model", help="Embedding model id."),
+    backend: str | None = typer.Option(None, "--backend", help="Backend link override."),
+    checkpoint_dir: Path | None = typer.Option(None, help="For local_fx1."),
+    byok_base_url: str | None = typer.Option(None, "--byok-base-url", help=_BYOK_URL_HELP),
+    byok_api_key: str | None = typer.Option(None, "--byok-api-key", help=_BYOK_KEY_HELP),
+    byok_model: str | None = typer.Option(None, "--byok-model", help=_BYOK_MODEL_HELP),
+    fallbacks: list[str] = typer.Option(
+        [], "--fallback", help="Alternate backend on availability faults (repeatable)."
+    ),
+    encoding_format: str | None = typer.Option(None, "--encoding", help='"float" | "base64".'),
+    dimensions: int | None = typer.Option(None, "--dimensions", help="Output dimensions."),
+    user: str | None = typer.Option(None, "--user", help="End-user tag."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+    backend_timeout: float | None = typer.Option(
+        None, "--backend-timeout", help="Per-call backend deadline in seconds."
+    ),
+) -> None:
+    """``POST /v1/embeddings`` — vectors through the gated pipeline; a link
+    without the channel answers a wire error, never fabricated floats.
+    In-process by default."""
+    byok = _byok_opts(byok_base_url, byok_api_key, byok_model)
+    inp: str | list[str] = inputs[0] if len(inputs) == 1 else list(inputs)
+    if remote is not None:
+        env, _cid = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).embeddings_create(
+                inp,
+                model=model,
+                backend=backend,
+                byok=byok,
+                checkpoint_dir=checkpoint_dir,
+                fallbacks=fallbacks or None,
+                timeout_s=backend_timeout,
+                encoding_format=encoding_format,
+                dimensions=dimensions,
+                user=user,
+            )
+        )
+        typer.echo(json.dumps(env, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    headers: dict[str, str] = {}
+    if backend is not None:
+        headers["x-fx1-backend"] = backend
+    if checkpoint_dir is not None:
+        headers["x-fx1-checkpoint-dir"] = str(checkpoint_dir)
+    if byok is not None:
+        headers["x-fx1-byok-base-url"] = byok["base_url"]
+        headers["x-fx1-byok-api-key"] = byok["api_key"]
+        headers["x-fx1-byok-model"] = byok["model"]
+    if fallbacks:
+        headers["x-fx1-fallbacks"] = ",".join(fallbacks)
+    fx1: dict[str, Any] = {}
+    if backend_timeout is not None:
+        fx1["timeout_s"] = backend_timeout
+    body: dict[str, Any] = {
+        "model": model,
+        "input": inp,
+        "encoding_format": encoding_format,
+        "dimensions": dimensions,
+        "user": user,
+        "fx1": fx1 or None,
+    }
+    env, _cid = _or_exit(lambda: Fx1Harness().openai_embeddings(body, headers=headers))
+    typer.echo(json.dumps(env, indent=2))
+
+
+@harness_app.command("moderate")
+def harness_moderate(
+    inputs: list[str] = typer.Argument(..., help="Text to classify (repeatable)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/moderations`` — the honesty gate as an OpenAI-moderations
+    verdict; flagged inputs carry per-category scores. Advisory — no
+    backend needed. In-process by default."""
+    inp: str | list[str] = inputs[0] if len(inputs) == 1 else list(inputs)
+    if remote is not None:
+        out = _or_exit(lambda: _remote_client(remote, api_key, timeout_s).moderate(inp))
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().moderate(inp))
+    typer.echo(json.dumps(out, indent=2))
 
 
 @app.command("eval")

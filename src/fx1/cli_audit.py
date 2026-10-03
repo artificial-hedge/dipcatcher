@@ -169,6 +169,9 @@ def cli_audit() -> dict[str, Any]:
         "batch-run",
         "models",
         "model",
+        "respond",
+        "embed",
+        "moderate",
     } <= hnames
 
     # the files/batches family is wire-only — no --remote is exit 2 on
@@ -249,6 +252,28 @@ def cli_audit() -> dict[str, Any]:
         )
         out["harness_model_unknown_2"] = (
             runner.invoke(app, ["harness", "model", "nope-model"]).exit_code == 2
+        )
+
+        # respond/embed/moderate: in-process legs — bad JSON flags are arg
+        # faults, a dead link is a clean 2 (never a traceback), and the
+        # moderation gate needs no backend at all.
+        out["harness_respond_bad_meta_2"] = (
+            runner.invoke(app, ["harness", "respond", "hi", "--metadata", "[1]"]).exit_code == 2
+        )
+        out["harness_respond_bad_fmt_2"] = (
+            runner.invoke(app, ["harness", "respond", "hi", "--format", "{bad"]).exit_code == 2
+        )
+        _rc = runner.invoke(app, ["harness", "respond", "hi", "--backend", "no-such"])
+        out["harness_respond_deadlink_2"] = _rc.exit_code == 2 and _rc.stderr.startswith("error:")
+        _ec = runner.invoke(app, ["harness", "embed", "hi", "--backend", "no-such"])
+        out["harness_embed_deadlink_2"] = _ec.exit_code == 2 and _ec.stderr.startswith("error:")
+        _mc = runner.invoke(app, ["harness", "moderate", "hello"])
+        out["harness_moderate_inprocess"] = _mc.exit_code == 0 and json.loads(_mc.stdout).get(
+            "id", ""
+        ).startswith("modr-")
+        _mf = runner.invoke(app, ["harness", "moderate", "our live trading sharpe is 9"])
+        out["harness_moderate_flags"] = (
+            _mf.exit_code == 0 and json.loads(_mf.stdout)["results"][0]["flagged"] is True
         )
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -920,6 +945,51 @@ def cli_audit() -> dict[str, Any]:
             self.last_ft_query = {"model": model_id}
             return {"id": model_id, "object": "model", "created": 1, "owned_by": "fx1"}
 
+        def responses_create(
+            self,
+            input: Any,
+            **kw: Any,  # noqa: A002
+        ) -> tuple[dict[str, Any], None]:
+            self.last_ft_query = {"input": input, **kw}
+            return (
+                {
+                    "id": "resp_x",
+                    "object": "response",
+                    "model": kw.get("model", "fx1"),
+                    "output": [
+                        {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "output_text", "text": "hi"}],
+                        }
+                    ],
+                },
+                None,
+            )
+
+        def embeddings_create(
+            self,
+            input: Any,
+            **kw: Any,  # noqa: A002
+        ) -> tuple[dict[str, Any], None]:
+            self.last_ft_query = {"input": input, **kw}
+            return (
+                {
+                    "object": "list",
+                    "data": [{"object": "embedding", "index": 0, "embedding": [0.1]}],
+                    "model": kw.get("model", "fx1"),
+                },
+                None,
+            )
+
+        def moderate(self, input: Any) -> dict[str, Any]:  # noqa: A002
+            self.last_ft_query = {"input": input}
+            return {
+                "id": "modr-x",
+                "model": "fx1-honesty-gate",
+                "results": [{"flagged": False, "categories": {}, "category_scores": {}}],
+            }
+
     remotes: list[_FakeRemote] = []
 
     def _mk_remote(url: str, **kw: Any) -> _FakeRemote:
@@ -1543,6 +1613,47 @@ def cli_audit() -> dict[str, Any]:
                 ).stdout
             ).get("id")
             == "ft:fx1-x"
+        )
+
+        _rr = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "say hi",
+                "--model",
+                "fx1",
+                "--backend",
+                "local_fx1",
+                "--checkpoint-dir",
+                "ckpt-x",
+                "--metadata",
+                '{"k":"v"}',
+                "--format",
+                '{"type":"json_object"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_respond_kwargs"] = (
+            _rr.exit_code == 0
+            and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
+            and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
+            and json.loads(_rr.stdout).get("id") == "resp_x"
+        )
+        out["remote_embed"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "embed", "a", "b", "--remote", "http://h.test"],
+            ).stdout
+        ).get("data", [{}])[0].get("embedding") == [0.1]
+        out["remote_moderate"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "moderate", "hi", "--remote", "http://h.test"]
+                ).stdout
+            ).get("model")
+            == "fx1-honesty-gate"
         )
 
     class _FailingRemote:
