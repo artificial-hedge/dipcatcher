@@ -3182,6 +3182,113 @@ def parity_audit() -> dict[str, bool]:
         and _s_wl.status_code == 400
         and _s_wl.json()["error"]["code"] == "background_requires_store"
     )
+
+    # /v1/conversations — the named-container surface is identical on
+    # both legs: create mints conv_*, a joined turn runs on the conv's
+    # items and appends its own turn, and a miss fails closed with the
+    # same code. The SDK twin resolves the same store semantics
+    # in-process — no wire needed.
+    _cv_sdk = sdk.openai_conversation_create(metadata={"lane": "parity"})
+    _cv_wl = remote.conversation_create(metadata={"lane": "parity"})
+    _cv_r_sdk, _ = sdk.openai_response(
+        {
+            "model": "hosted_k3",
+            "input": "conv-turn",
+            "conversation": _cv_sdk["id"],
+            "fx1": {"backend": "byok"},
+        }
+    )
+    _cv_r_wl = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "conv-turn",
+            "conversation": _cv_wl["id"],
+            "fx1": {"backend": "byok"},
+        },
+    ).json()
+    _cv_items_sdk = sdk.openai_conversation_items(_cv_sdk["id"])["data"]
+    _cv_items_wl = remote.conversation_items(_cv_wl["id"])["data"]
+    out["conv_parity"] = (
+        _cv_sdk["id"].startswith("conv_")
+        and _cv_wl["id"].startswith("conv_")
+        and _cv_sdk["object"] == _cv_wl["object"] == "conversation"
+        and _cv_r_sdk["conversation"] == {"id": _cv_sdk["id"]}
+        and _cv_r_wl["conversation"] == {"id": _cv_wl["id"]}
+        and [it["content"][0]["text"] for it in _cv_items_sdk]
+        == [it["content"][0]["text"] for it in _cv_items_wl]
+        == ["conv-turn", "echo:conv-turn"]
+        and sdk.openai_conversation_get(_cv_sdk["id"])["metadata"] == {"lane": "parity"}
+        and remote.conversation_get(_cv_wl["id"])["metadata"] == {"lane": "parity"}
+    )
+    # fail-closed parity — a ghost conv and the exclusivity pair refuse
+    # identically on both legs
+    _cv_miss_sdk: tuple[str, str] = ("", "")
+    try:
+        sdk.openai_response(
+            {
+                "model": "hosted_k3",
+                "input": "x",
+                "conversation": "conv_ghost",
+                "fx1": {"backend": "byok"},
+            }
+        )
+    except Exception as _exc4:  # noqa: BLE001 — probe captures the class+code
+        _cv_miss_sdk = (type(_exc4).__name__, str(getattr(_exc4, "code", "")))
+    _cv_miss_wl = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "conversation": "conv_ghost",
+            "fx1": {"backend": "byok"},
+        },
+    )
+    _cv_both_sdk: tuple[str, str] = ("", "")
+    try:
+        sdk.openai_response(
+            {
+                "model": "hosted_k3",
+                "input": "x",
+                "conversation": _cv_sdk["id"],
+                "previous_response_id": _cv_r_sdk["id"],
+                "fx1": {"backend": "byok"},
+            }
+        )
+    except Exception as _exc5:  # noqa: BLE001 — probe captures the class+code
+        _cv_both_sdk = (type(_exc5).__name__, str(getattr(_exc5, "code", "")))
+    _cv_both_wl = client.post(
+        "/v1/responses",
+        json={
+            "model": "fx1",
+            "input": "x",
+            "conversation": _cv_wl["id"],
+            "previous_response_id": _cv_r_wl["id"],
+            "fx1": {"backend": "byok"},
+        },
+    )
+    out["conv_fail_closed_parity"] = (
+        _cv_miss_sdk[0] == "OpenAICompatError"
+        and _cv_miss_sdk[1] == "conversation_not_found"
+        and _cv_miss_wl.status_code == 400
+        and _cv_miss_wl.json()["error"]["code"] == "conversation_not_found"
+        and _cv_both_sdk[0] in ("OpenAICompatError", "ValidationError")
+        and _cv_both_wl.status_code == 422
+        and _raises(lambda: sdk.openai_conversation_get("conv_ghost"))[0] == "KeyError"
+        and _raises(lambda: remote.conversation_get("conv_ghost"))[0] == "KeyError"
+    )
+    # delete parity — the conv drops on both legs; member responses stay
+    _cv_sdk_del = sdk.openai_conversation_delete(_cv_sdk["id"])
+    _cv_wl_del = remote.conversation_delete(_cv_wl["id"])
+    out["conv_delete_parity"] = (
+        _cv_sdk_del["deleted"] is True
+        and _cv_wl_del["deleted"] is True
+        and _cv_sdk_del["object"] == _cv_wl_del["object"] == "conversation.deleted"
+        and _raises(lambda: sdk.openai_conversation_get(_cv_sdk["id"]))[0] == "KeyError"
+        and _raises(lambda: remote.conversation_get(_cv_wl["id"]))[0] == "KeyError"
+        and sdk.openai_response_get(_cv_r_sdk["id"])["id"] == _cv_r_sdk["id"]
+        and remote.retrieve_response(_cv_r_wl["id"])["id"] == _cv_r_wl["id"]
+    )
     return out
 
 

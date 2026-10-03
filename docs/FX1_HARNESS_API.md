@@ -223,6 +223,11 @@ same digested shape the job record embeds.
 | `GET /v1/responses/{id}` / `DELETE` | retrieval: fetch / drop a stored `response` object |
 | `POST /v1/responses/{id}/cancel` | cancel a queued/in-progress `background:true` response (`status` → `cancelled`; 409 once terminal) — `Fx1Harness.openai_response_cancel` / `HarnessClient.cancel_response` / `client.cancelResponse` / `fx1 harness response-cancel` |
 | `GET /v1/responses/{id}/input_items` | the `input` items a stored response ran on (`?limit`, `?after`, `?before`, `?order`) — OpenAI's `input_items.list` |
+| `POST /v1/conversations` | mint a `conv_*` container (`items` seeds, `metadata` string pairs) — `Fx1Harness.openai_conversation_create` / `HarnessClient.conversation_create` / `client.conversationCreate` / `fx1 harness conv-create` |
+| `GET` / `POST` / `DELETE` `/v1/conversations/{id}` | fetch the conv object / replace its `metadata` wholesale / drop the container and its items (member responses stay retrievable on their own ids) |
+| `GET /v1/conversations/{id}/items` | the conv's accumulated items, paged by item id (`?limit`, `?after`, `?before`, `?order`) |
+| `POST /v1/conversations/{id}/items` | append item dicts — returns the minted items as a `{object:"list"}` page (no `item_ids` alias — items mint per append) |
+| `DELETE /v1/conversations/{id}/items/{item_id}` | drop one item; returns the conv object |
 | `POST /receipts/verify` | verify one receipt payload |
 | `POST /receipts/verify/batch` | up to 64 in one call, order-preserved |
 | `GET /receipts` | index the store: `sha256` → filename |
@@ -481,6 +486,15 @@ same OpenAI error taxonomy:
   history. Chains nest to arbitrary depth. An unknown, deleted,
   or `store=false` parent fails closed
   `400 previous_response_not_found` before the model runs.
+- **Named containers:** `conversation` (`conv_*` id or `{"id":
+  "conv_*"}`) anchors the turn to a `/v1/conversations` container
+  — its accumulated items are the context, and each completed
+  turn appends its input + output items back. A conv is its own
+  store: turns append even under `store: false`, and a deleted
+  conv fails `400 conversation_not_found`. `conversation` and
+  `previous_response_id` are mutually exclusive (422) and conv
+  requests can't nest in a batch line — a shared container would
+  race across lines.
 - **Retry-safe:** `Idempotency-Key` shares the `/v1/chat/completions`
   dedup space — same key + body replays the stored envelope (or the
   pinned stream) byte-identically; a key reused under a different
@@ -700,6 +714,13 @@ surface, `response` for Responses.
 - The index is a fetch cache for callers, not the audit trail —
   the completion log (hash-only) and sealed receipts still carry
   every call regardless of `store`.
+
+`/v1/conversations` is the named-container twin of the chain
+surface: `POST` mints a `conv_*` object (optional seed `items` +
+`metadata`), `GET`/`POST`/`DELETE` read, re-metadata, and drop
+it, and `/items` lists, appends, and deletes the accumulated
+item stream a `conversation`-anchored response draws its
+context from.
 
 Client-side: `HarnessClient.retrieve_chat_completion` /
 `delete_chat_completion` / `retrieve_response` / `delete_response`

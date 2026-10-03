@@ -700,6 +700,131 @@
         ]
       }
     },
+    "/v1/conversations": {
+      "post": {
+        "params": [],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/conversations/{conversation_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "get": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/conversations/{conversation_id}/items": {
+      "get": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      },
+      "post": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
+    "/v1/conversations/{conversation_id}/items/{item_id}": {
+      "delete": {
+        "params": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": null,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
+    },
     "/v1/embeddings": {
       "post": {
         "params": [],
@@ -1045,5 +1170,5 @@
       }
     }
   },
-  "schema_sha256": "2fef8102b468586e3a1e5d5d687610d792103c38c0d2018989ea7bb90864d5e8"
+  "schema_sha256": "c753f50168ba62539e73b47ddd4f826a2475196b770a65b6ec83fa47c95cc364"
 }

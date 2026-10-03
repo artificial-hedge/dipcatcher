@@ -1399,6 +1399,7 @@ class HarnessClient:
         include: list[str] | None = None,
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
+        conversation: str | dict[str, Any] | None = None,
         background: bool = False,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
@@ -1429,6 +1430,7 @@ class HarnessClient:
             model=model,
             instructions=instructions,
             previous_response_id=previous_response_id,
+            conversation=conversation,
             backend=backend,
             byok=byok,
             checkpoint_dir=checkpoint_dir,
@@ -1534,6 +1536,7 @@ class HarnessClient:
         include: list[str] | None = None,
         top_logprobs: int | None = None,
         previous_response_id: str | None = None,
+        conversation: str | dict[str, Any] | None = None,
         background: bool = False,
         stream: bool = False,
     ) -> dict[str, Any]:
@@ -1562,6 +1565,7 @@ class HarnessClient:
             "user": user,
             "safety_identifier": safety_identifier,
             "previous_response_id": previous_response_id,
+            "conversation": conversation,
             "background": background,
             "stream": stream,
         }
@@ -1873,6 +1877,105 @@ class HarnessClient:
         if before:
             q += f"&before={urllib.parse.quote(before)}"
         return dict(self._json("GET", f"/v1/responses/{rid}/input_items?{q}", idempotent=True))
+
+    # ---- conversations -------------------------------------------------------
+
+    def conversation_create(
+        self,
+        *,
+        items: list[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations`` — mint a ``conv_*`` container.
+        ``items`` seeds the list; ``metadata`` stamps the object."""
+        payload: dict[str, Any] = {}
+        if items is not None:
+            payload["items"] = items
+        if metadata is not None:
+            payload["metadata"] = metadata
+        return dict(self._json("POST", "/v1/conversations", payload))
+
+    def conversation_get(self, conversation_id: str) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}`` — the conversation object."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id)}",
+                idempotent=True,
+            )
+        )
+
+    def conversation_update(
+        self,
+        conversation_id: str,
+        *,
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations/{id}`` — ``metadata`` replaces the
+        object's metadata wholesale."""
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id)}",
+                {"metadata": metadata},
+            )
+        )
+
+    def conversation_delete(self, conversation_id: str) -> dict[str, Any]:
+        """``DELETE /v1/conversations/{id}`` — drop the container and its
+        items."""
+        return dict(
+            self._json("DELETE", f"/v1/conversations/{urllib.parse.quote(conversation_id)}")
+        )
+
+    def conversation_items(
+        self,
+        conversation_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+    ) -> dict[str, Any]:
+        """``GET /v1/conversations/{id}/items`` — the accumulated items,
+        paged by item id."""
+        cid = urllib.parse.quote(conversation_id)
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        return dict(self._json("GET", f"/v1/conversations/{cid}/items?{q}", idempotent=True))
+
+    def conversation_items_add(
+        self,
+        conversation_id: str,
+        items: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """``POST /v1/conversations/{id}/items`` — append item dicts,
+        returns the minted list."""
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id)}/items",
+                {"items": items},
+            )
+        )
+
+    def conversation_item_delete(
+        self,
+        conversation_id: str,
+        item_id: str,
+    ) -> dict[str, Any]:
+        """``DELETE /v1/conversations/{id}/items/{item_id}`` — drop one
+        item; returns the conversation object."""
+        return dict(
+            self._json(
+                "DELETE",
+                f"/v1/conversations/{urllib.parse.quote(conversation_id)}"
+                f"/items/{urllib.parse.quote(item_id)}",
+            )
+        )
 
     # ---- receipt store -------------------------------------------------------
 
