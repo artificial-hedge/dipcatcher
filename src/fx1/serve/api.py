@@ -165,6 +165,7 @@ from fx1.serve.openai_compat import (
     OpenAIUploadCompleteRequest,
     OpenAIUploadCreateRequest,
     OpenAIVectorStoreCreate,
+    OpenAIVectorStoreFileBatchCreate,
     OpenAIVectorStoreFileCreate,
     OpenAIVectorStoreSearch,
     OpenAIVectorStoreUpdate,
@@ -5608,6 +5609,90 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             "next_page": None,
         }
 
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/file_batches",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_create",
+    )
+    def openai_vectorstore_file_batch_create(
+        vector_store_id: str, body: OpenAIVectorStoreFileBatchCreate
+    ) -> dict[str, Any]:
+        """Attach many ``file-*`` records in one call — the OpenAI
+        ``vector_store.files_batch`` surface. Members attach
+        synchronously; per-file refusals (missing, already attached,
+        oversized, store full) count ``failed`` with ``last_error``,
+        never abort the batch. Status is terminal at return."""
+        try:
+            return vs_store.file_batch_create(
+                vector_store_id,
+                body.file_ids,
+                attributes=body.attributes,
+                chunking_strategy=body.chunking_strategy,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_retrieve",
+    )
+    def openai_vectorstore_file_batch_retrieve(
+        vector_store_id: str, batch_id: str
+    ) -> dict[str, Any]:
+        """Retrieve one ``vsfb_*`` batch — standing status + counts."""
+        try:
+            return vs_store.file_batch_get(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_cancel",
+    )
+    def openai_vectorstore_file_batch_cancel(vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """Cancel a batch — members attach synchronously at create so a
+        batch is always terminal; the 409 reports the standing status
+        rather than faking a mid-flight window."""
+        try:
+            return vs_store.file_batch_cancel(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
+    @app.get(
+        "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_file_batch_files",
+    )
+    def openai_vectorstore_file_batch_files(
+        vector_store_id: str,
+        batch_id: str,
+        limit: int = Query(default=20, ge=1, le=100),
+        after: str | None = Query(default=None),
+        before: str | None = Query(default=None),
+        order: Literal["asc", "desc"] = Query(default="asc"),
+        filter: str | None = Query(default=None),
+    ) -> dict[str, Any]:
+        """List a batch's per-file verdicts — frozen at processing time,
+        ``filter`` takes an OpenAI status word."""
+        try:
+            return vs_store.file_batch_files(
+                vector_store_id,
+                batch_id,
+                limit=limit,
+                order=order,
+                after=after,
+                before=before,
+                filter=filter,
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+
     def _request_items(
         envelope_id: str,
         *,
@@ -6638,7 +6723,11 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 **_runner_extra,
             )
             if entry.cancel.is_set():
-                already = job.status == "cancelled"
+                # the cancel sweep can stamp the terminal status before the
+                # runner returns — read wide so the check isn't narrowed to
+                # the last in-scope assignment
+                status_now: str = job.status
+                already = status_now == "cancelled"
                 job.status = "cancelled"
                 if not already:
                     ft_store.add_event(job.id, "info", "job cancelled", None)

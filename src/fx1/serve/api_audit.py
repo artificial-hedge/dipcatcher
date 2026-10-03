@@ -9094,6 +9094,76 @@ def _probe_backend_probes(  # NOSONAR
         ).status_code
         == 422
     )
+    # --- /v1/vector_stores/{id}/file_batches — bulk attach, per-file verdicts
+    vs_up2 = fb.post(
+        "/v1/files",
+        files={"file": ("vs2.jsonl", b"delta docs here", "application/jsonl")},
+        data={"purpose": "batch"},
+    ).json()
+    vs_batch = fb.post(
+        f"/v1/vector_stores/{vs_id}/file_batches",
+        json={"file_ids": [vs_up2["id"], "file-ghost"]},
+    )
+    vs_batch_body = vs_batch.json()
+    out["vs_batch_create"] = (
+        vs_batch.status_code == 200
+        and vs_batch_body["object"] == "vector_store.files_batch"
+        and vs_batch_body["id"].startswith("vsfb_")
+        and vs_batch_body["vector_store_id"] == vs_id
+        and vs_batch_body["status"] == "completed"
+        and vs_batch_body["file_counts"]
+        == {
+            "in_progress": 0,
+            "completed": 1,
+            "failed": 1,
+            "cancelled": 0,
+            "total": 2,
+        }
+    )
+    vs_batch_get = fb.get(f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}")
+    out["vs_batch_get"] = (
+        vs_batch_get.status_code == 200
+        and vs_batch_get.json()["id"] == vs_batch_body["id"]
+        and vs_batch_get.json()["status"] == "completed"
+    )
+    vs_batch_files = fb.get(
+        f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/files",
+        params={"filter": "failed"},
+    )
+    out["vs_batch_files"] = (
+        vs_batch_files.status_code == 200
+        and vs_batch_files.json()["object"] == "list"
+        and [r["id"] for r in vs_batch_files.json()["data"]] == ["file-ghost"]
+        and vs_batch_files.json()["data"][0]["last_error"]["code"] == "file_not_found"
+    )
+    vs_batch_files_all = fb.get(
+        f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/files"
+    ).json()
+    out["vs_batch_files_all"] = {r["id"] for r in vs_batch_files_all["data"]} == {
+        vs_up2["id"],
+        "file-ghost",
+    } and all(r["object"] == "vector_store.file" for r in vs_batch_files_all["data"])
+    out["vs_batch_cancel_409"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/cancel").status_code
+        == 409
+    )
+    out["vs_batch_404"] = (
+        fb.get(f"/v1/vector_stores/{vs_id}/file_batches/vsfb_nope").status_code == 404
+        and fb.post(
+            "/v1/vector_stores/vs_nope/file_batches", json={"file_ids": ["file-a"]}
+        ).status_code
+        == 404
+    )
+    out["vs_batch_empty_422"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/file_batches", json={"file_ids": []}).status_code == 422
+    )
+    out["vs_batch_filter_400"] = (
+        fb.get(
+            f"/v1/vector_stores/{vs_id}/file_batches/{vs_batch_body['id']}/files",
+            params={"filter": "bogus"},
+        ).status_code
+        == 400
+    )
     # delete tombstone + detach shape + 404 after
     out["vs_file_detach"] = fb.delete(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json() == {
         "id": vs_up["id"],

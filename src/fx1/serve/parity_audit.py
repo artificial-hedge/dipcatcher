@@ -3765,6 +3765,48 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         == ("HarnessTransportError", "invalid_filters")
     )
 
+    # POST .../file_batches — bulk attach + frozen per-file verdicts on
+    # both legs: same object/counts shape, same fail-closed mapping
+    _fs2_sdk = sdk.openai_file_create(content=b"zeta eta theta", filename="r.jsonl")
+    _fs2_wl = remote.upload_file(b"zeta eta theta", filename="r.jsonl")
+    _fb_sdk = sdk.vector_store_file_batch_create(_fs_sdk["id"], [_fs2_sdk["id"], "file-ghost"])
+    _fb_wl = remote.vector_store_file_batch_create(_fs_wl["id"], [_fs2_wl["id"], "file-ghost"])
+    out["vs_batch_parity"] = (
+        _fb_sdk["object"] == _fb_wl["object"] == "vector_store.files_batch"
+        and _fb_sdk["id"].startswith("vsfb_")
+        and _fb_wl["id"].startswith("vsfb_")
+        and _fb_sdk["status"] == _fb_wl["status"] == "completed"
+        and _fb_sdk["file_counts"]
+        == _fb_wl["file_counts"]
+        == {"in_progress": 0, "completed": 1, "failed": 1, "cancelled": 0, "total": 2}
+        and sdk.vector_store_file_batch_get(_fs_sdk["id"], _fb_sdk["id"])["id"] == _fb_sdk["id"]
+        and remote.vector_store_file_batch_get(_fs_wl["id"], _fb_wl["id"])["id"] == _fb_wl["id"]
+    )
+    _fbf_sdk = sdk.vector_store_file_batch_files(_fs_sdk["id"], _fb_sdk["id"], filter="failed")
+    _fbf_wl = remote.vector_store_file_batch_files(_fs_wl["id"], _fb_wl["id"], filter="failed")
+    out["vs_batch_files_parity"] = (
+        _fbf_sdk["object"] == _fbf_wl["object"] == "list"
+        and [r["id"] for r in _fbf_sdk["data"]] == ["file-ghost"]
+        and [r["id"] for r in _fbf_wl["data"]] == ["file-ghost"]
+        and _fbf_sdk["data"][0]["last_error"]["code"]
+        == _fbf_wl["data"][0]["last_error"]["code"]
+        == "file_not_found"
+    )
+    out["vs_batch_fail_closed_parity"] = (
+        _raises_code(lambda: sdk.vector_store_file_batch_cancel(_fs_sdk["id"], _fb_sdk["id"]))
+        == ("OpenAICompatError", "file_batch_terminal")
+        and _raises_code(lambda: remote.vector_store_file_batch_cancel(_fs_wl["id"], _fb_wl["id"]))
+        == ("HarnessTransportError", "file_batch_terminal")
+        and _raises_code(lambda: sdk.vector_store_file_batch_get(_fs_sdk["id"], "vsfb_nope"))
+        == ("OpenAICompatError", "file_batch_not_found")
+        and _raises_code(lambda: remote.vector_store_file_batch_get(_fs_wl["id"], "vsfb_nope"))
+        == ("KeyError", "")
+        and _raises_code(lambda: sdk.vector_store_file_batch_create("vs_ghost", ["file-a"]))
+        == ("OpenAICompatError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_file_batch_create("vs_ghost", ["file-a"]))
+        == ("KeyError", "")
+    )
+
     # /harness/keys — the managed-key lifecycle is identical on both legs:
     # mint shows the raw secret once, list/get never carry it, revoke is a
     # tombstone, and unknown/already-revoked fail closed the same way

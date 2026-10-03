@@ -550,3 +550,120 @@ class TestSdkVectorStores:
         with pytest.raises(OpenAICompatError) as ghost:
             h.vector_store_search("vs_ghost", "x")
         assert ghost.value.status == 404
+
+    def test_file_batch_create_counts_failures_not_abort(self) -> None:
+        s = _store(file_reader=_files_reader({"file-a": b"alpha beta", "file-b": b"gamma"}))
+        vs = s.create(name="kb")
+        batch = s.file_batch_create(vs["id"], ["file-a", "file-none", "file-b"])
+        assert batch["object"] == "vector_store.files_batch"
+        assert batch["id"].startswith("vsfb_")
+        assert batch["status"] == "completed"
+        c = batch["file_counts"]
+        assert (c["completed"], c["failed"], c["total"]) == (2, 1, 3)
+        # the failed member carries the per-file refusal as last_error
+        files = s.file_batch_files(vs["id"], batch["id"], filter="failed")
+        assert files["data"][0]["id"] == "file-none"
+        assert files["data"][0]["status"] == "failed"
+        assert files["data"][0]["last_error"]["code"] == "file_not_found"
+        ok = s.file_batch_files(vs["id"], batch["id"], filter="completed")
+        assert {r["id"] for r in ok["data"]} == {"file-a", "file-b"}
+        assert ok["data"][0]["indexed_chunks"] >= 1
+
+    def test_file_batch_all_failed_and_bad_input(self) -> None:
+        s = _store(file_reader=_files_reader({}))
+        vs = s.create()
+        batch = s.file_batch_create(vs["id"], ["file-none", "file-nada"])
+        assert batch["status"] == "failed"
+        assert batch["file_counts"]["completed"] == 0
+        with pytest.raises(VectorStoreError) as e:
+            s.file_batch_create(vs["id"], [])
+        assert e.value.status == 400
+        with pytest.raises(VectorStoreError) as e2:
+            s.file_batch_create(vs["id"], ["x"] * 501)
+        assert e2.value.status == 400
+        with pytest.raises(VectorStoreError) as ghost:
+            s.file_batch_create("vs_ghost", ["file-a"])
+        assert ghost.value.code == "vector_store_not_found"
+
+    def test_file_batch_get_cancel_files(self) -> None:
+        s = _store(file_reader=_files_reader({"file-a": b"alpha"}))
+        vs = s.create()
+        batch = s.file_batch_create(vs["id"], ["file-a"])
+        got = s.file_batch_get(vs["id"], batch["id"])
+        assert got["id"] == batch["id"] and got["status"] == "completed"
+        # terminal at create → cancel is an honest 409, not a fake window
+        with pytest.raises(VectorStoreError) as e:
+            s.file_batch_cancel(vs["id"], batch["id"])
+        assert e.value.status == 409 and e.value.code == "file_batch_terminal"
+        with pytest.raises(VectorStoreError) as e2:
+            s.file_batch_get(vs["id"], "vsfb_nope")
+        assert e2.value.code == "file_batch_not_found"
+        with pytest.raises(VectorStoreError) as e3:
+            s.file_batch_files(vs["id"], batch["id"], filter="bogus")
+        assert e3.value.code == "invalid_filters"
+        # dropping the store drops its batches too
+        s.delete(vs["id"])
+        with pytest.raises(VectorStoreError) as e4:
+            s.file_batch_get(vs["id"], batch["id"])
+        assert e4.value.code == "vector_store_not_found"
+
+    def test_file_batch_replays_from_journal(self, tmp_path: Path) -> None:
+        docs = {"file-a": b"alpha"}
+        s = _store(tmp_path, file_reader=_files_reader(docs))
+        vs = s.create(name="kb")
+        batch = s.file_batch_create(vs["id"], ["file-a"])
+        s2 = _store(tmp_path, file_reader=_files_reader(docs))
+        got = s2.file_batch_get(vs["id"], batch["id"])
+        assert got["file_counts"]["completed"] == 1
+
+    def test_file_batch_routes(self) -> None:
+        client = _client()
+        fid = _upload(client, b"epsilon transitions\n")
+        vs = client.post("/v1/vector_stores", json={"name": "kb"}).json()
+        created = client.post(
+            f"/v1/vector_stores/{vs['id']}/file_batches",
+            json={"file_ids": [fid, "file-ghost"]},
+        )
+        assert created.status_code == 200, created.text
+        batch = created.json()
+        assert batch["object"] == "vector_store.files_batch"
+        assert batch["file_counts"] == {
+            "in_progress": 0,
+            "completed": 1,
+            "failed": 1,
+            "cancelled": 0,
+            "total": 2,
+        }
+        got = client.get(f"/v1/vector_stores/{vs['id']}/file_batches/{batch['id']}")
+        assert got.status_code == 200 and got.json()["id"] == batch["id"]
+        files = client.get(
+            f"/v1/vector_stores/{vs['id']}/file_batches/{batch['id']}/files",
+            params={"filter": "failed"},
+        )
+        assert files.status_code == 200
+        assert [r["id"] for r in files.json()["data"]] == ["file-ghost"]
+        cancel = client.post(f"/v1/vector_stores/{vs['id']}/file_batches/{batch['id']}/cancel")
+        assert cancel.status_code == 409
+        assert cancel.json()["error"]["code"] == "file_batch_terminal"
+        ghost = client.get(f"/v1/vector_stores/{vs['id']}/file_batches/vsfb_x")
+        assert ghost.status_code == 404
+        bad = client.post(f"/v1/vector_stores/{vs['id']}/file_batches", json={"file_ids": []})
+        assert bad.status_code == 422
+
+    def test_sdk_file_batch_parity(self) -> None:
+        h = Fx1Harness(backend_resolver=lambda *a, **k: _B())
+        up = h.openai_file_create(content=b"alpha beta", filename="a.jsonl")
+        vs = h.vector_store_create(name="kb")
+        batch = h.vector_store_file_batch_create(vs["id"], [up["id"], "file-ghost"])
+        assert batch["object"] == "vector_store.files_batch"
+        assert batch["file_counts"]["completed"] == 1
+        assert batch["file_counts"]["failed"] == 1
+        got = h.vector_store_file_batch_get(vs["id"], batch["id"])
+        assert got["id"] == batch["id"]
+        rows = h.vector_store_file_batch_files(vs["id"], batch["id"], filter="failed")
+        assert [r["id"] for r in rows["data"]] == ["file-ghost"]
+        with pytest.raises(OpenAICompatError) as e:
+            h.vector_store_file_batch_cancel(vs["id"], batch["id"])
+        assert e.value.status == 409 and e.value.code == "file_batch_terminal"
+        with pytest.raises(ValueError):
+            h.vector_store_file_batch_create(vs["id"], [])

@@ -89,6 +89,8 @@
       "verify_shape": true,
       "verify_tamper_detected": true,
       "verify_valid_receipt": true,
+      "vs_batch": true,
+      "vs_batch_fail_closed": true,
       "vs_create_shape": true,
       "vs_delete_lifecycle": true,
       "vs_fail_closed": true,
@@ -101,11 +103,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "1862b29fa50af07a68ecd476dafa98b124297aab",
+  "git_revision": "58e3b0884e64702f85d07327beaddc02f75a520e",
   "interpretation": "Fx1Harness is the in-process twin of the harness HTTP API: identical registry, identical backend set and error taxonomy, honesty gate enforced before results return, spawned engines always closed, receipt verification parity with the wire surface, and health that leaks booleans only.",
   "kind": "sdk_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "af7493a416c8149eff23a45776b4f7818ea0f4dea62452876902f707bdbaf065",
+  "receipt_sha256": "4b250de9019923cb0dbebe315a80da1bc170236b59204b7d23184bdba05c5849",
   "research_only": true,
   "schema": "sdk_audit.v1"
 }

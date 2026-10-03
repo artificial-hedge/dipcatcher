@@ -1882,6 +1882,78 @@ export class HarnessApiClient {
     ) as Promise<Record<string, unknown>>;
   }
 
+  /**
+   * POST /v1/vector_stores/{id}/file_batches — attach up to 500 `file-*`
+   * records in one call; per-file refusals count `failed` with
+   * `last_error`, never abort the batch (`vector_store.files_batch`,
+   * terminal status at return).
+   */
+  vectorStoreFileBatchCreate(
+    vectorStoreId: string,
+    body: {
+      file_ids: string[];
+      attributes?: Record<string, unknown>;
+      chunking_strategy?: Record<string, unknown>;
+    },
+  ): Promise<Record<string, unknown>> {
+    return this.post(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches`,
+      body,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /** GET /v1/vector_stores/{id}/file_batches/{batch_id} — status + counts. */
+  vectorStoreFileBatchGet(
+    vectorStoreId: string,
+    batchId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches/${encodeURIComponent(batchId)}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * POST .../file_batches/{batch_id}/cancel — members attach
+   * synchronously at create, so a batch is always terminal: the server
+   * answers 409 `file_batch_terminal`.
+   */
+  vectorStoreFileBatchCancel(
+    vectorStoreId: string,
+    batchId: string,
+  ): Promise<Record<string, unknown>> {
+    return this.post(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches/${encodeURIComponent(batchId)}/cancel`,
+      {},
+    ) as Promise<Record<string, unknown>>;
+  }
+
+  /**
+   * GET .../file_batches/{batch_id}/files — the frozen per-file verdicts,
+   * paged; `filter` takes an OpenAI status word.
+   */
+  vectorStoreFileBatchFiles(
+    vectorStoreId: string,
+    batchId: string,
+    opts?: {
+      limit?: number;
+      after?: string;
+      before?: string;
+      order?: "asc" | "desc";
+      filter?: string;
+    },
+  ): Promise<Record<string, unknown>> {
+    const q = new URLSearchParams();
+    if (opts?.limit !== undefined) q.set("limit", String(opts.limit));
+    if (opts?.after) q.set("after", opts.after);
+    if (opts?.before) q.set("before", opts.before);
+    if (opts?.order) q.set("order", opts.order);
+    if (opts?.filter) q.set("filter", opts.filter);
+    const suffix = q.size ? `?${q.toString()}` : "";
+    return this.get(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/file_batches/${encodeURIComponent(batchId)}/files${suffix}`,
+    ) as Promise<Record<string, unknown>>;
+  }
+
   // ---- async jobs --------------------------------------------------------
 
   /** POST /harness/jobs — 202 + job id. */

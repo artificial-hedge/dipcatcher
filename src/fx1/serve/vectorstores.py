@@ -53,6 +53,7 @@ VS_ATTR_VALUE_MAX = 512  # str values
 VS_MAX_STORES_ID = 512  # id length bound (path-safe vs_* ids are 36)
 VS_FILTER_DEPTH = 4
 VS_FILTER_LEAVES = 16
+VS_MAX_BATCH_FILES = 500  # file_ids per file_batch (OpenAI's cap)
 
 _WORD = re.compile(r"[a-z0-9]+")
 
@@ -311,6 +312,24 @@ class VSFileRec(BaseModel):
     text_sha256: str | None = None
 
 
+class VSBatchRec(BaseModel):
+    """One ``file_batch`` — members attach synchronously at create, so
+    ``status`` is always terminal (``completed`` when ≥1 file attached,
+    ``failed`` when none did); ``files`` freezes each member's wire row
+    at processing time — later detaches don't rewrite the batch's
+    verdict."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    batch_id: str
+    vector_store_id: str
+    created_at: int
+    status: str  # completed | failed (cancelled unreachable: sync attach)
+    file_ids: list[str]
+    files: list[dict[str, Any]]
+    counts: dict[str, int]
+
+
 class VSMeta(BaseModel):
     """One vector store — ``files`` maps file_id → record (attach order)."""
 
@@ -371,6 +390,18 @@ def vs_file_object(rec: VSFileRec) -> dict[str, Any]:
         "chunking_strategy": dict(rec.chunking_strategy),
         "indexed_chunks": rec.indexed_chunks,
         "truncated": rec.truncated,
+    }
+
+
+def vs_batch_object(rec: VSBatchRec) -> dict[str, Any]:
+    """The OpenAI ``vector_store.files_batch`` wire object."""
+    return {
+        "id": rec.batch_id,
+        "object": "vector_store.files_batch",
+        "created_at": rec.created_at,
+        "vector_store_id": rec.vector_store_id,
+        "status": rec.status,
+        "file_counts": dict(rec.counts),
     }
 
 
@@ -438,6 +469,7 @@ class VectorStoreStore:
         self._reader = file_reader
         self._stores: OrderedDict[str, VSMeta] = OrderedDict()
         self._chunks: dict[str, dict[str, list[_Chunk]]] = {}
+        self._batches: dict[str, dict[str, VSBatchRec]] = {}
         # per-store df + N for the idf table — recomputed lazily
         self._idf_dirty: set[str] = set()
         self._idf: dict[str, dict[int, float]] = {}
@@ -472,6 +504,10 @@ class VectorStoreStore:
                 elif "vs_file_delete" in payload:
                     d = payload["vs_file_delete"]
                     self._detach(str(d["vs_id"]), str(d["file_id"]))
+                elif "vs_batch" in payload:
+                    brec = VSBatchRec.model_validate(payload["vs_batch"])
+                    if brec.vector_store_id in self._stores:
+                        self._batches.setdefault(brec.vector_store_id, {})[brec.batch_id] = brec
             self._compact_locked()
 
     @property
@@ -489,6 +525,7 @@ class VectorStoreStore:
     def _drop(self, vs_id: str) -> None:
         self._stores.pop(vs_id, None)
         self._chunks.pop(vs_id, None)
+        self._batches.pop(vs_id, None)
         self._idf.pop(vs_id, None)
         self._idf_dirty.discard(vs_id)
 
@@ -549,6 +586,8 @@ class VectorStoreStore:
             live.append({"vs": meta.model_dump(mode="json", exclude={"files", "usage_bytes"})})
             for rec in meta.files.values():
                 live.append({"vs_file": rec.model_dump(mode="json")})
+            for batch in self._batches.get(meta.vs_id, {}).values():
+                live.append({"vs_batch": batch.model_dump(mode="json")})
         self._journal.compact(live)
 
     def _store(self, vs_id: str) -> VSMeta:
@@ -794,6 +833,137 @@ class VectorStoreStore:
                 "has_more": False,
                 "next_page": None,
             }
+
+    # ---- file batches -------------------------------------------------------
+
+    def file_batch_create(
+        self,
+        vs_id: str,
+        file_ids: list[str] | tuple[str, ...],
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST .../file_batches`` — attach many ``file-*`` records in
+        one call. Members go through ``attach`` one at a time; a file
+        that fails (missing, already attached, oversized, store full)
+        counts ``failed`` with its refusal as ``last_error`` — it never
+        aborts the batch and never attaches half-validated. Status is
+        terminal at return (sync attach): ``completed`` when ≥1 file
+        attached, ``failed`` when none did."""
+        if not file_ids or len(file_ids) > VS_MAX_BATCH_FILES:
+            raise VectorStoreError(
+                400,
+                f"file_ids must be a list of 1..{VS_MAX_BATCH_FILES} ids",
+                "invalid_request",
+            )
+        if any(not isinstance(fid, str) or not fid or len(fid) > 128 for fid in file_ids):
+            raise VectorStoreError(
+                400, "file_ids entries must be non-empty strings ≤128 chars", "invalid_request"
+            )
+        attrs = validate_attributes(attributes)
+        strategy = validate_chunking_strategy(chunking_strategy)
+        self._store(vs_id)  # ghost store refuses the batch itself, 404
+        created = int(time.time())
+        rows: list[dict[str, Any]] = []
+        counts = {"in_progress": 0, "completed": 0, "failed": 0, "cancelled": 0, "total": 0}
+        for fid in file_ids:
+            counts["total"] += 1
+            try:
+                rec = self.attach(vs_id, fid, attributes=attrs, chunking_strategy=strategy)
+            except VectorStoreError as exc:
+                counts["failed"] += 1
+                rows.append(
+                    {
+                        "id": fid,
+                        "object": "vector_store.file",
+                        "vector_store_id": vs_id,
+                        "created_at": created,
+                        "status": "failed",
+                        "usage_bytes": 0,
+                        "last_error": {"code": exc.code, "message": str(exc)},
+                        "attributes": dict(attrs),
+                        "chunking_strategy": dict(strategy),
+                        "indexed_chunks": 0,
+                        "truncated": False,
+                    }
+                )
+            else:
+                counts["completed"] += 1
+                rows.append(rec)
+        batch = VSBatchRec(
+            batch_id=f"vsfb_{uuid.uuid4().hex}",
+            vector_store_id=vs_id,
+            created_at=created,
+            status="completed" if counts["completed"] > 0 else "failed",
+            file_ids=list(file_ids),
+            files=rows,
+            counts=counts,
+        )
+        with self._lock:
+            self._batches.setdefault(vs_id, {})[batch.batch_id] = batch
+            if self._journal is not None:
+                self._journal.append({"vs_batch": batch.model_dump(mode="json")})
+        return vs_batch_object(batch)
+
+    def _batch(self, vs_id: str, batch_id: str) -> VSBatchRec:
+        self._store(vs_id)  # 404 ghost store
+        rec = self._batches.get(vs_id, {}).get(batch_id)
+        if rec is None:
+            raise VectorStoreError(
+                404,
+                f"file batch {batch_id!r} not found in {vs_id!r}",
+                "file_batch_not_found",
+            )
+        return rec
+
+    def file_batch_get(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+        with self._lock:
+            return vs_batch_object(self._batch(vs_id, batch_id))
+
+    def file_batch_cancel(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+        """``POST .../file_batches/{id}/cancel`` — batches are terminal
+        at create (members attach synchronously), so cancel always
+        409s with the batch's standing status — honest, never a fake
+        mid-flight window."""
+        with self._lock:
+            rec = self._batch(vs_id, batch_id)
+            raise VectorStoreError(
+                409,
+                f"file batch {batch_id!r} already {rec.status} — "
+                "members attach synchronously at create",
+                "file_batch_terminal",
+            )
+
+    def file_batch_files(
+        self,
+        vs_id: str,
+        batch_id: str,
+        *,
+        limit: int = 20,
+        order: str = "asc",
+        after: str | None = None,
+        before: str | None = None,
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET .../file_batches/{id}/files`` — the frozen per-file
+        verdicts in request order (``filter`` takes an OpenAI status
+        word)."""
+        if filter is not None and filter not in (
+            "in_progress",
+            "completed",
+            "cancelled",
+            "failed",
+        ):
+            raise VectorStoreError(
+                400,
+                "file filter must be one of in_progress|completed|cancelled|failed",
+                "invalid_filters",
+            )
+        with self._lock:
+            rec = self._batch(vs_id, batch_id)
+            rows = [dict(r) for r in rec.files if filter is None or r.get("status") == filter]
+            return _page(rows, limit=limit, order=order, after=after, before=before)
 
     # ---- retrieval --------------------------------------------------------
 

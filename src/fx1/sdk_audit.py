@@ -721,6 +721,37 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: sdk_vs.vector_store_search(_vs["id"], "x", filters={"bad": "shape"}))
         == "OpenAICompatError"
     )
+    # file_batches twin — bulk attach, per-file verdicts, terminal status
+    # (own store so the lifecycle probe below still sees a single member)
+    _vs_b = sdk_vs.vector_store_create(name="kb-batches")
+    _f2 = sdk_vs.openai_file_create(b"theta iota kappa\n", filename="kb2.jsonl")
+    _fb = sdk_vs.vector_store_file_batch_create(_vs_b["id"], [_f2["id"], "file-ghost"])
+    out["vs_batch"] = (
+        _fb["object"] == "vector_store.files_batch"
+        and _fb["id"].startswith("vsfb_")
+        and _fb["vector_store_id"] == _vs_b["id"]
+        and _fb["status"] == "completed"
+        and _fb["file_counts"]
+        == {"in_progress": 0, "completed": 1, "failed": 1, "cancelled": 0, "total": 2}
+        and sdk_vs.vector_store_file_batch_get(_vs_b["id"], _fb["id"])["id"] == _fb["id"]
+        and [
+            r["id"]
+            for r in sdk_vs.vector_store_file_batch_files(_vs_b["id"], _fb["id"], filter="failed")[
+                "data"
+            ]
+        ]
+        == ["file-ghost"]
+    )
+    out["vs_batch_fail_closed"] = (
+        _raises(lambda: sdk_vs.vector_store_file_batch_cancel(_vs_b["id"], _fb["id"]))
+        == "OpenAICompatError"
+        and _raises(lambda: sdk_vs.vector_store_file_batch_get(_vs_b["id"], "vsfb_x"))
+        == "OpenAICompatError"
+        and _raises(lambda: sdk_vs.vector_store_file_batch_create(_vs_b["id"], []))
+        == "ValidationError"
+        and _raises(lambda: sdk_vs.vector_store_file_batch_create("vs_ghost", ["f"]))
+        == "OpenAICompatError"
+    )
     out["vs_delete_lifecycle"] = (
         sdk_vs.vector_store_file_delete(_vs["id"], _f["id"])
         == {"id": _f["id"], "object": "vector_store.file.deleted", "deleted": True}

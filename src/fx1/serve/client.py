@@ -2550,6 +2550,83 @@ class HarnessClient:
             )
         )
 
+    def vector_store_file_batch_create(
+        self,
+        vector_store_id: str,
+        file_ids: list[str],
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/file_batches`` — attach many
+        ``file-*`` records; per-file refusals count, never abort.
+        Status is terminal at return (sync attach)."""
+        payload: dict[str, Any] = {"file_ids": file_ids}
+        if attributes is not None:
+            payload["attributes"] = attributes
+        if chunking_strategy is not None:
+            payload["chunking_strategy"] = chunking_strategy
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/file_batches",
+                payload,
+            )
+        )
+
+    def vector_store_file_batch_get(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``GET .../file_batches/{batch_id}`` — standing status +
+        file_counts."""
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/file_batches/{urllib.parse.quote(batch_id)}",
+                idempotent=True,
+            )
+        )
+
+    def vector_store_file_batch_cancel(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``POST .../file_batches/{batch_id}/cancel`` — batches are
+        terminal at create; the server answers 409 ``file_batch_terminal``."""
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/file_batches/{urllib.parse.quote(batch_id)}/cancel",
+                {},
+            )
+        )
+
+    def vector_store_file_batch_files(
+        self,
+        vector_store_id: str,
+        batch_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET .../file_batches/{batch_id}/files`` — the frozen
+        per-file verdicts, paged; ``filter`` is an OpenAI status word."""
+        q = f"limit={limit}&order={order}"
+        if after:
+            q += f"&after={urllib.parse.quote(after)}"
+        if before:
+            q += f"&before={urllib.parse.quote(before)}"
+        if filter:
+            q += f"&filter={urllib.parse.quote(filter)}"
+        return dict(
+            self._json(
+                "GET",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}"
+                f"/file_batches/{urllib.parse.quote(batch_id)}/files?{q}",
+                idempotent=True,
+            )
+        )
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:

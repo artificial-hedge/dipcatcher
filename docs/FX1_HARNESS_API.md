@@ -266,6 +266,10 @@ same digested shape the job record embeds.
 | `GET` / `DELETE` `/v1/vector_stores/{id}/files/{file_id}` | fetch / detach one member (`vector_store.file.deleted`) |
 | `GET /v1/vector_stores/{id}/files/{file_id}/content` | the stored decoded text as a `vector_store.file_content.page` of per-chunk `{type:"text",text}` parts — `fx1 harness vs-file-content` |
 | `POST /v1/vector_stores/{id}/search` | ranked hits without a response turn → `vector_store.search_results.page` (`query` string or list-joined, `max_num_results≤50`, `filters`, `ranking_options.score_threshold`; `rewrite_query`/non-`auto` rankers refused) — `Fx1Harness.vector_store_search` / `HarnessClient.vector_store_search` / `client.vectorStoreSearch` / `fx1 harness vs-search` |
+| `POST /v1/vector_stores/{id}/file_batches` | attach up to 500 `file-*` ids in one call → `vector_store.files_batch` (`file_ids` 1..500, shared `attributes`/`chunking_strategy`; members attach synchronously — per-file refusals count `failed` with `last_error`, never abort) — `Fx1Harness.vector_store_file_batch_create` / `HarnessClient.vector_store_file_batch_create` / `client.vectorStoreFileBatchCreate` / `fx1 harness vs-batch-create` |
+| `GET /v1/vector_stores/{id}/file_batches/{batch_id}` | the `vsfb_*` object — standing `status` + `file_counts` (`{in_progress,completed,cancelled,failed,total}`) |
+| `POST /v1/vector_stores/{id}/file_batches/{batch_id}/cancel` | batches are terminal at create, so this is always `409 file_batch_terminal` — honest, never a fake in-flight window |
+| `GET /v1/vector_stores/{id}/file_batches/{batch_id}/files` | the frozen per-file verdicts in request order (`?limit`, `?after`, `?before`, `?order`, `?filter` status word) |
 | `POST /v1/evals` | create an `eval` spec container (`name`, `data_source_config.item_schema` = suite knobs — credentials never on the spec) → `201`; `Fx1Harness.eval_spec_create` / `HarnessClient.eval_spec_create` / `client.evalSpecCreate` / `fx1 harness eval-spec-create` |
 | `GET /v1/evals` | newest-first spec page (`?limit≤100`, `?after=`); `Fx1Harness.eval_specs` / `HarnessClient.eval_specs` / `client.evalSpecs` / `fx1 harness eval-spec-list` |
 | `GET` / `POST` / `DELETE` `/v1/evals/{id}` | fetch / rename+remetadata / tombstone a spec — delete journals and orphans the `/v1` run subresources (records stay on `/harness/evals/{id}`) |
@@ -867,6 +871,23 @@ condition schema — `{type: "eq", key, value}` leaves and
 `ranking_options.score_threshold` all behave exactly as on the
 tool spec. `rewrite_query` and any ranker other than `"auto"`
 are fail-closed `422`s — no silent query mutation.
+
+`POST /v1/vector_stores/{id}/file_batches` is the bulk-attach
+surface: `file_ids` (1..500, OpenAI's cap) attach one at a time
+through the same `attach` path as `…/files`, so a missing file,
+a double-attach, an oversized blob, or a full store counts
+`failed` with that refusal as the row's `last_error` — the
+batch never aborts on a bad member and never half-attaches.
+The batch object (`object: "vector_store.files_batch"`,
+`vsfb_*` id) reports `file_counts` and is terminal at return:
+`completed` when ≥1 member attached, `failed` when none did.
+`POST …/file_batches/{id}/cancel` therefore always answers
+`409 file_batch_terminal` — there is no fake in-flight window.
+`GET …/file_batches/{id}/files` pages the frozen per-file
+verdicts (`filter` accepts an OpenAI status word); the rows
+are the batch's record — a later `DELETE` of a member file
+doesn't rewrite history. Batches journal under `--state-dir`
+like the stores themselves and disappear with their store.
 
 Identical contract in-process: `Fx1Harness.openai_file_create`
 (content bytes → `file-*`) + `vector_store_*` twin methods drive

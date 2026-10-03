@@ -94,6 +94,7 @@ from fx1.serve.openai_compat import (
     OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
+    OpenAIVectorStoreFileBatchCreate,
     OpenAIVectorStoreSearch,
     batch_line_body,
     batch_line_shape,
@@ -3223,6 +3224,78 @@ class Fx1Harness:
             "has_more": False,
             "next_page": None,
         }
+
+    def vector_store_file_batch_create(
+        self,
+        vector_store_id: str,
+        file_ids: list[str],
+        *,
+        attributes: dict[str, Any] | None = None,
+        chunking_strategy: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/file_batches`` in-process —
+        attach many ``file-*`` records in one call. Members attach
+        synchronously through the same code path the wire calls;
+        per-file refusals count ``failed`` with ``last_error``, never
+        abort. Status is terminal at return."""
+        body = OpenAIVectorStoreFileBatchCreate.model_validate(
+            {
+                "file_ids": file_ids,
+                "attributes": attributes,
+                "chunking_strategy": chunking_strategy,
+            }
+        )
+        try:
+            return self._vs_store.file_batch_create(
+                vector_store_id,
+                body.file_ids,
+                attributes=body.attributes,
+                chunking_strategy=body.chunking_strategy,
+            )
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
+    def vector_store_file_batch_get(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``GET /v1/vector_stores/{id}/file_batches/{batch_id}`` —
+        standing status + file_counts."""
+        try:
+            return self._vs_store.file_batch_get(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
+    def vector_store_file_batch_cancel(self, vector_store_id: str, batch_id: str) -> dict[str, Any]:
+        """``POST .../file_batches/{id}/cancel`` — batches are terminal
+        at create; raises ``OpenAICompatError`` 409 ``file_batch_terminal``."""
+        try:
+            return self._vs_store.file_batch_cancel(vector_store_id, batch_id)
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+
+    def vector_store_file_batch_files(
+        self,
+        vector_store_id: str,
+        batch_id: str,
+        *,
+        limit: int = 20,
+        after: str | None = None,
+        before: str | None = None,
+        order: str = "asc",
+        filter: str | None = None,
+    ) -> dict[str, Any]:
+        """``GET .../file_batches/{id}/files`` — the frozen per-file
+        verdicts in request order."""
+        try:
+            return self._vs_store.file_batch_files(
+                vector_store_id,
+                batch_id,
+                limit=limit,
+                order=order,
+                after=after,
+                before=before,
+                filter=filter,
+            )
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
 
     def openai_batch(
         self,

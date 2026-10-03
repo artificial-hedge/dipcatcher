@@ -72,7 +72,9 @@ __all__ = [
     "OpenAITool",
     "OpenAIToolFunction",
     "OpenAIVectorStoreCreate",
+    "OpenAIVectorStoreFileBatchCreate",
     "OpenAIVectorStoreFileCreate",
+    "OpenAIVectorStoreSearch",
     "OpenAIVectorStoreUpdate",
     "OPENAI_BATCH_ENDPOINTS",
     "OPENAI_BATCH_LINE_MAX",
@@ -1915,6 +1917,25 @@ class OpenAIVectorStoreSearch(_Model):
         st = ro.get("score_threshold")
         if st is not None and not isinstance(st, (int, float)):
             raise ValueError("ranking_options.score_threshold must be a number")
+        return self
+
+
+class OpenAIVectorStoreFileBatchCreate(_Model):
+    """``POST /v1/vector_stores/{id}/file_batches`` body — attach up to
+    500 ``file-*`` records in one call (OpenAI's cap). Members attach
+    synchronously; per-file failures count, never abort the batch.
+    ``attributes``/``chunking_strategy`` apply to every member."""
+
+    model_config = ConfigDict(extra="allow")
+
+    file_ids: list[str] = Field(min_length=1, max_length=500)
+    attributes: dict[str, Any] | None = None
+    chunking_strategy: dict[str, Any] | None = None
+
+    @model_validator(mode="after")
+    def _ids_valid(self) -> OpenAIVectorStoreFileBatchCreate:
+        if any(not fid or len(fid) > 128 for fid in self.file_ids):
+            raise ValueError("file_ids entries must be non-empty strings ≤128 chars")
         return self
 
 

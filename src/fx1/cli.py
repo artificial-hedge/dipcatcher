@@ -3734,6 +3734,144 @@ def harness_vs_search(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("vs-batch-create")
+def harness_vs_batch_create(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    file_ids: list[str] = typer.Argument(..., help="file-* ids to attach (1..500)."),
+    attributes: str | None = typer.Option(
+        None, "--attributes", help="JSON object applied to every member."
+    ),
+    chunking_strategy: str | None = typer.Option(
+        None, "--chunking-strategy", help="JSON object (auto|static)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}/file_batches`` — attach many files
+    in one call; per-file refusals count ``failed``, never abort."""
+    attrs = _json_obj_opt(attributes, "--attributes")
+    strategy = _json_obj_opt(chunking_strategy, "--chunking-strategy")
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_create(
+                vector_store_id,
+                file_ids,
+                attributes=attrs,
+                chunking_strategy=strategy,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_batch_create(
+            vector_store_id,
+            file_ids,
+            attributes=attrs,
+            chunking_strategy=strategy,
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-get")
+def harness_vs_batch_get(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET /v1/vector_stores/{id}/file_batches/{batch_id}`` — status +
+    file_counts."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_get(
+                vector_store_id, batch_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_batch_get(vector_store_id, batch_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-cancel")
+def harness_vs_batch_cancel(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST .../file_batches/{batch_id}/cancel`` — members attach
+    synchronously at create, so a batch is always terminal: this
+    answers 409 ``file_batch_terminal`` (exit 2)."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_cancel(
+                vector_store_id, batch_id
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(lambda: Fx1Harness().vector_store_file_batch_cancel(vector_store_id, batch_id))
+    typer.echo(json.dumps(out, indent=2))
+
+
+@harness_app.command("vs-batch-files")
+def harness_vs_batch_files(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    batch_id: str = typer.Argument(..., help="Batch id (vsfb_*)."),
+    limit: int = typer.Option(20, "--limit", min=1, max=100),
+    after: str | None = typer.Option(None, "--after", help="Page cursor — a file-* id."),
+    before: str | None = typer.Option(None, "--before", help="Page cursor — a file-* id."),
+    order: str = typer.Option("asc", "--order", help="asc | desc"),
+    filter: str | None = typer.Option(
+        None, "--filter", help="in_progress | completed | cancelled | failed"
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``GET .../file_batches/{batch_id}/files`` — the frozen per-file
+    verdicts in request order."""
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_file_batch_files(
+                vector_store_id,
+                batch_id,
+                limit=limit,
+                after=after,
+                before=before,
+                order=order,
+                filter=filter,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_file_batch_files(
+            vector_store_id,
+            batch_id,
+            limit=limit,
+            after=after,
+            before=before,
+            order=order,
+            filter=filter,
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

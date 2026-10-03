@@ -674,6 +674,48 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "next_page": None,
             }
 
+        def vector_store_file_batch_create(
+            self, vs_id: str, file_ids: list[str], **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_create", (vs_id, *file_ids), kw)
+            return {
+                "id": "vsfb_fake",
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+                "file_counts": {
+                    "in_progress": 0,
+                    "completed": len(file_ids),
+                    "failed": 0,
+                    "cancelled": 0,
+                    "total": len(file_ids),
+                },
+            }
+
+        def vector_store_file_batch_get(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_get", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_batch_cancel(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_cancel", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "cancelled",
+            }
+
+        def vector_store_file_batch_files(
+            self, vs_id: str, batch_id: str, **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_files", (vs_id, batch_id), kw)
+            return {"object": "list", "data": [], "has_more": False}
+
         def verify_receipt(self, receipt: dict[str, Any]) -> Any:
             from fx1.sdk import ReceiptVerdict
 
@@ -1944,6 +1986,48 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "has_more": False,
                 "next_page": None,
             }
+
+        def vector_store_file_batch_create(
+            self, vs_id: str, file_ids: list[str], **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_create", (vs_id, *file_ids), kw)
+            return {
+                "id": "vsfb_fake",
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+                "file_counts": {
+                    "in_progress": 0,
+                    "completed": len(file_ids),
+                    "failed": 0,
+                    "cancelled": 0,
+                    "total": len(file_ids),
+                },
+            }
+
+        def vector_store_file_batch_get(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_get", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "completed",
+            }
+
+        def vector_store_file_batch_cancel(self, vs_id: str, batch_id: str) -> dict[str, Any]:
+            self._vs_note("batch_cancel", (vs_id, batch_id), {})
+            return {
+                "id": batch_id,
+                "object": "vector_store.files_batch",
+                "vector_store_id": vs_id,
+                "status": "cancelled",
+            }
+
+        def vector_store_file_batch_files(
+            self, vs_id: str, batch_id: str, **kw: Any
+        ) -> dict[str, Any]:
+            self._vs_note("batch_files", (vs_id, batch_id), kw)
+            return {"object": "list", "data": [], "has_more": False}
 
         def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
             self.last_ft_query = {"score": input}
@@ -3468,6 +3552,90 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 },
             )
         )
+        _vsbc = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-batch-create",
+                "vs_rem",
+                "file-1",
+                "file-2",
+                "--attributes",
+                '{"t": "v"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_batch_create"] = (
+            _vsbc.exit_code == 0
+            and json.loads(_vsbc.stdout)["object"] == "vector_store.files_batch"
+            and json.loads(_vsbc.stdout)["file_counts"]["total"] == 2
+            and remotes[-1].vs_calls[-1]
+            == (
+                "batch_create",
+                ("vs_rem", "file-1", "file-2"),
+                {"attributes": {"t": "v"}, "chunking_strategy": None},
+            )
+        )
+        out["remote_vs_batch_get"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "vs-batch-get",
+                    "vs_rem",
+                    "vsfb_9",
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        )["id"] == "vsfb_9" and remotes[-1].vs_calls[-1] == (
+            "batch_get",
+            ("vs_rem", "vsfb_9"),
+            {},
+        )
+        out["remote_vs_batch_cancel"] = json.loads(
+            runner.invoke(
+                app,
+                [
+                    "harness",
+                    "vs-batch-cancel",
+                    "vs_rem",
+                    "vsfb_9",
+                    "--remote",
+                    "http://h.test",
+                ],
+            ).stdout
+        )["status"] == "cancelled" and remotes[-1].vs_calls[-1] == (
+            "batch_cancel",
+            ("vs_rem", "vsfb_9"),
+            {},
+        )
+        out["remote_vs_batch_files"] = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-batch-files",
+                "vs_rem",
+                "vsfb_9",
+                "--filter",
+                "failed",
+                "--order",
+                "desc",
+                "--remote",
+                "http://h.test",
+            ],
+        ).exit_code == 0 and remotes[-1].vs_calls[-1] == (
+            "batch_files",
+            ("vs_rem", "vsfb_9"),
+            {
+                "limit": 20,
+                "after": None,
+                "before": None,
+                "order": "desc",
+                "filter": "failed",
+            },
+        )
         out["remote_vs_all_hit_client"] = len(remotes) > _n_remote0
 
         _rs = json.loads(
@@ -3537,6 +3705,72 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "ranking_options": {"score_threshold": 0.5},
             },
         )
+        _vsb_i = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-batch-create",
+                "vs_x",
+                "file-1",
+                "--chunking-strategy",
+                '{"type": "static", "static": {"max_chunk_size_tokens": 100}}',
+            ],
+        )
+        out["inproc_vs_batch_create"] = (
+            _vsb_i.exit_code == 0
+            and json.loads(_vsb_i.stdout)["id"] == "vsfb_fake"
+            and fake_vs.vs_calls[-1]
+            == (
+                "batch_create",
+                ("vs_x", "file-1"),
+                {
+                    "attributes": None,
+                    "chunking_strategy": {
+                        "type": "static",
+                        "static": {"max_chunk_size_tokens": 100},
+                    },
+                },
+            )
+        )
+        out["inproc_vs_batch_ops"] = (
+            json.loads(runner.invoke(app, ["harness", "vs-batch-get", "vs_x", "vsfb_1"]).stdout)[
+                "id"
+            ]
+            == "vsfb_1"
+            and fake_vs.vs_calls[-1] == ("batch_get", ("vs_x", "vsfb_1"), {})
+            and json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "vs-batch-files",
+                        "vs_x",
+                        "vsfb_1",
+                        "--filter",
+                        "failed",
+                    ],
+                ).stdout
+            )["object"]
+            == "list"
+            and fake_vs.vs_calls[-1]
+            == (
+                "batch_files",
+                ("vs_x", "vsfb_1"),
+                {
+                    "limit": 20,
+                    "after": None,
+                    "before": None,
+                    "order": "asc",
+                    "filter": "failed",
+                },
+            )
+        )
+        _vscx = runner.invoke(app, ["harness", "vs-batch-cancel", "vs_x", "vsfb_1"])
+        out["inproc_vs_batch_cancel"] = (
+            _vscx.exit_code == 0
+            and json.loads(_vscx.stdout)["status"] == "cancelled"
+            and fake_vs.vs_calls[-1] == ("batch_cancel", ("vs_x", "vsfb_1"), {})
+        )
         out["vs_bad_args_exit2"] = (
             runner.invoke(app, ["harness", "vs-create", "--file-ids", "notjson"]).exit_code == 2
             and runner.invoke(
@@ -3548,6 +3782,18 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             and runner.invoke(
                 app,
                 ["harness", "vs-search", "vs_x", "--query", "x", "--filters", "nope"],
+            ).exit_code
+            == 2
+            and runner.invoke(
+                app,
+                [
+                    "harness",
+                    "vs-batch-create",
+                    "vs_x",
+                    "file-1",
+                    "--attributes",
+                    "nope",
+                ],
             ).exit_code
             == 2
         )
