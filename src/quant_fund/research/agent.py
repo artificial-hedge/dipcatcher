@@ -3767,6 +3767,14 @@ from quant_fund.research.benches_w471 import (
     bench_integral_padic_family,
     bench_perfectoid2_family,
 )
+from quant_fund.research.benches_w472 import (
+    bench_alg_cobordism_family,
+    bench_hermitian_k_family,
+    bench_motivic_stem2_family,
+    bench_oriented_coh_family,
+    bench_rostmotive_family,
+    bench_slice_spec_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4146,6 +4154,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "alg_cobordism": bench_alg_cobordism_family,
+        "hermitian_k": bench_hermitian_k_family,
+        "oriented_coh": bench_oriented_coh_family,
+        "slice_spec": bench_slice_spec_family,
+        "motivic_stem2": bench_motivic_stem2_family,
+        "rostmotive": bench_rostmotive_family,
         "perfectoid2": bench_perfectoid2_family,
         "diamond_geo": bench_diamond_geo_family,
         "integral_padic": bench_integral_padic_family,
