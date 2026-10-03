@@ -3247,6 +3247,14 @@ from quant_fund.research.benches_w406 import (
     bench_poincare_duality2_family,
     bench_universal_coeff_family,
 )
+from quant_fund.research.benches_w407 import (
+    bench_adjunction2_family,
+    bench_cech_cohom_family,
+    bench_flattening_family,
+    bench_hilbert_scheme_family,
+    bench_scheme_fiber_family,
+    bench_serre_duality_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3626,6 +3634,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cech_cohom": bench_cech_cohom_family,
+        "serre_duality": bench_serre_duality_family,
+        "adjunction2": bench_adjunction2_family,
+        "scheme_fiber": bench_scheme_fiber_family,
+        "hilbert_scheme": bench_hilbert_scheme_family,
+        "flattening": bench_flattening_family,
         "poincare_duality2": bench_poincare_duality2_family,
         "universal_coeff": bench_universal_coeff_family,
         "kunneth": bench_kunneth_family,
