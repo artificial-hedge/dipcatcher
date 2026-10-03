@@ -1,3 +1,4 @@
+feat(research): wave 1002 — turbulence canon (kolmogorov_theory, reynolds_decomp, energy_spectrum, intermittency_models, wall_turbulence, taylor_series_hyp) (5961->5967 families)
 feat(research): wave 1001 — fluid-dynamics canon (euler_equations, navier_stokes, vorticity_form, beale_kato_majda, ladyzhenskaya_weak, leray_theory) (5955->5961 families)
 feat(research): wave 1000 — elasticity canon (navier_elasticity, kirchhoff_plate, mindlin_reissner, contact_mechanics, fracture_mechanics, homogenized_elasticity) (5949->5955 families)
 feat(research): wave 999 — GMT-2 canon (currents_theory, varifold_theory, flat_chains, integral_currents, rectifiable_measures, brakke_varifolds) (5943->5949 families)
