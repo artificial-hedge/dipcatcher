@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-771 copula canon.
+        "copula_gauss",
+        "copula_t",
+        "clayton_copula",
+        "gumbel_copula",
+        "frank_copula",
+        "joe_copula",
         # Wave-770 extreme-value canon.
         "gumbel_domain",
         "weibull_domain",
