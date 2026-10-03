@@ -2949,6 +2949,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "shadow_map",
         "bump_map",
         "ssao_lite",
+        # Wave-267 GPU-architecture canon.
+        "warp_scheduler",
+        "simt_divergence",
+        "bank_conflict",
+        "mem_coalesce",
+        "occupancy_calc",
+        "shared_mem_tile",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
