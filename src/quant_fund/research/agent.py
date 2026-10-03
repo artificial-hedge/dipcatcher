@@ -5303,6 +5303,14 @@ from quant_fund.research.benches_w663 import (
     bench_swiss_cheese2_family,
     bench_tensor_factorization_family,
 )
+from quant_fund.research.benches_w664 import (
+    bench_e_ring_moduli_family,
+    bench_elliptic_spec2_family,
+    bench_spectral_artstack_family,
+    bench_spectral_moduli_family,
+    bench_structured_spec_family,
+    bench_tmf_stack_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5682,6 +5690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_moduli": bench_spectral_moduli_family,
+        "e_ring_moduli": bench_e_ring_moduli_family,
+        "tmf_stack": bench_tmf_stack_family,
+        "spectral_artstack": bench_spectral_artstack_family,
+        "structured_spec": bench_structured_spec_family,
+        "elliptic_spec2": bench_elliptic_spec2_family,
         "e2_algebra": bench_e2_algebra_family,
         "dunn_additivity": bench_dunn_additivity_family,
         "tensor_factorization": bench_tensor_factorization_family,
