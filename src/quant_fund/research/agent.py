@@ -6103,6 +6103,14 @@ from quant_fund.research.benches_w763 import (
     bench_polya_urn_family,
     bench_rosenthal_mom_family,
 )
+from quant_fund.research.benches_w764 import (
+    bench_donsker_class_family,
+    bench_donsker_thm_family,
+    bench_dz_invariance_family,
+    bench_empirical_process_family,
+    bench_osj_metric_family,
+    bench_wiener_measure_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6482,6 +6490,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wiener_measure": bench_wiener_measure_family,
+        "dz_invariance": bench_dz_invariance_family,
+        "donsker_thm": bench_donsker_thm_family,
+        "empirical_process": bench_empirical_process_family,
+        "donsker_class": bench_donsker_class_family,
+        "osj_metric": bench_osj_metric_family,
         "polya_urn": bench_polya_urn_family,
         "hopf_chain": bench_hopf_chain_family,
         "boneschi_boal": bench_boneschi_boal_family,
