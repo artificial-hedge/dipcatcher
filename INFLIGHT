@@ -1,3 +1,4 @@
+feat(research): wave 696 — category-19 canon (cat_rank, cat_index, cat_monotone, cat_kernel, cat_image, cat_pullback) (4131->4137 families)
 feat(research): wave 695 — homotopy-28 canon (homotopy_abelian, homotopy_finite, homotopy_infinite, homotopy_extended, stable_synthetic, stable_compact) (4125->4131 families)
 feat(research): wave 694 — motivic-21 canon (motivic_trace, motivic_transfer2, motivic_coniveau, motivic_atiyah, motivic_deligne, motivic_residue) (4119->4125 families)
 feat(research): wave 693 — derived-geometry-8 canon (derived_etale, derived_flat, derived_smooth2, derived_quasi_coherent, derived_represent, derived_cartesian) (4113->4119 families)
