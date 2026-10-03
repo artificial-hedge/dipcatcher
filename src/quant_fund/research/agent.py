@@ -4223,6 +4223,14 @@ from quant_fund.research.benches_w528 import (
     bench_thermo_formal_family,
     bench_transfer_op_family,
 )
+from quant_fund.research.benches_w529 import (
+    bench_arnold_diff_family,
+    bench_aubry_mather_family,
+    bench_cantorus_family,
+    bench_greene_crit_family,
+    bench_kam_theorem_family,
+    bench_twist_map_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4602,6 +4610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kam_theorem": bench_kam_theorem_family,
+        "aubry_mather": bench_aubry_mather_family,
+        "twist_map": bench_twist_map_family,
+        "cantorus": bench_cantorus_family,
+        "greene_crit": bench_greene_crit_family,
+        "arnold_diff": bench_arnold_diff_family,
         "transfer_op": bench_transfer_op_family,
         "thermo_formal": bench_thermo_formal_family,
         "pressure_thm": bench_pressure_thm_family,
