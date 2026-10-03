@@ -6463,6 +6463,14 @@ from quant_fund.research.benches_w808 import (
     bench_particle_filter2_family,
     bench_zakai_eq_family,
 )
+from quant_fund.research.benches_w809 import (
+    bench_cutoff_phenomenon_family,
+    bench_doeblin_coupling_family,
+    bench_drift_lyapunov_family,
+    bench_ergodic_markov_family,
+    bench_harris_recurrent_family,
+    bench_mixing_time_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6842,6 +6850,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "doeblin_coupling": bench_doeblin_coupling_family,
+        "harris_recurrent": bench_harris_recurrent_family,
+        "ergodic_markov": bench_ergodic_markov_family,
+        "mixing_time": bench_mixing_time_family,
+        "drift_lyapunov": bench_drift_lyapunov_family,
+        "cutoff_phenomenon": bench_cutoff_phenomenon_family,
         "zakai_eq": bench_zakai_eq_family,
         "kushner_strat": bench_kushner_strat_family,
         "kalman_bucy": bench_kalman_bucy_family,
