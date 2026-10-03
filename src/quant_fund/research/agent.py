@@ -7375,6 +7375,14 @@ from quant_fund.research.benches_w922 import (
     bench_slush_consensus_family,
     bench_snowflake_consensus_family,
 )
+from quant_fund.research.benches_w923 import (
+    bench_chinese_restaurant_family,
+    bench_dirichlet_process_family,
+    bench_hierarchical_dp_family,
+    bench_indian_buffet_family,
+    bench_pitman_yor_family,
+    bench_stick_breaking_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7746,6 +7754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dirichlet_process": bench_dirichlet_process_family,
+        "stick_breaking": bench_stick_breaking_family,
+        "pitman_yor": bench_pitman_yor_family,
+        "indian_buffet": bench_indian_buffet_family,
+        "chinese_restaurant": bench_chinese_restaurant_family,
+        "hierarchical_dp": bench_hierarchical_dp_family,
         "abcast_lite": bench_abcast_lite_family,
         "cbc_bcast": bench_cbc_bcast_family,
         "slush_consensus": bench_slush_consensus_family,
