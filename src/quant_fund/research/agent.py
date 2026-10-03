@@ -3135,6 +3135,14 @@ from quant_fund.research.benches_w392 import (
     bench_mu_recursion_family,
     bench_primitive_recursion_family,
 )
+from quant_fund.research.benches_w393 import (
+    bench_cap_product_family,
+    bench_eilenberg_steenrod_family,
+    bench_k_theory_family,
+    bench_obstruction_toy_family,
+    bench_serre_class_family,
+    bench_thom_isom_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3514,6 +3522,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "eilenberg_steenrod": bench_eilenberg_steenrod_family,
+        "cap_product": bench_cap_product_family,
+        "thom_isom": bench_thom_isom_family,
+        "serre_class": bench_serre_class_family,
+        "obstruction_toy": bench_obstruction_toy_family,
+        "k_theory": bench_k_theory_family,
         "mu_recursion": bench_mu_recursion_family,
         "primitive_recursion": bench_primitive_recursion_family,
         "diagonal_lemma": bench_diagonal_lemma_family,

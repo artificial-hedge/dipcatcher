@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-393 algebraic-topology-4 canon.
+        "eilenberg_steenrod",
+        "cap_product",
+        "thom_isom",
+        "serre_class",
+        "obstruction_toy",
+        "k_theory",
         # Wave-392 computability canon.
         "mu_recursion",
         "primitive_recursion",
