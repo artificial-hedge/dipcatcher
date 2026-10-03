@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-794 stochastic-control canon.
+        "dynamic_programming",
+        "verification_thm",
+        "hamilton_jacobi",
+        "viscosity_solution",
+        "quasi_variational",
+        "impulsive_control",
         # Wave-793 stochastic-expansion canon.
         "wong_zakai",
         "stochastic_taylor",
