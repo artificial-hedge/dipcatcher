@@ -6383,6 +6383,14 @@ from quant_fund.research.benches_w798 import (
     bench_neutral_sde_family,
     bench_random_sde_family,
 )
+from quant_fund.research.benches_w799 import (
+    bench_dupire_functional_family,
+    bench_functional_ito_family,
+    bench_kolmogorov_path_family,
+    bench_path_dependent_pde_family,
+    bench_path_sobolev_family,
+    bench_viscosity_path_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6762,6 +6770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "path_dependent_pde": bench_path_dependent_pde_family,
+        "functional_ito": bench_functional_ito_family,
+        "dupire_functional": bench_dupire_functional_family,
+        "viscosity_path": bench_viscosity_path_family,
+        "path_sobolev": bench_path_sobolev_family,
+        "kolmogorov_path": bench_kolmogorov_path_family,
         "forward_sde": bench_forward_sde_family,
         "random_sde": bench_random_sde_family,
         "anticipating_sde": bench_anticipating_sde_family,
