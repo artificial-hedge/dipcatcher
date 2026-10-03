@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-578 arithmetic-geometry-2 canon.
+        "global_height",
+        "bogomolov_conj",
+        "equidistribution_thm",
+        "canonical_height",
+        "nevanlinna_th",
+        "vojta_conj",
         # Wave-577 perverse-sheaves canon.
         "perverse_sheaf",
         "intersection_homology",
