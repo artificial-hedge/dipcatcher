@@ -1,3 +1,4 @@
+feat(research): wave 367 — Galois-2/field-theory canon (finite_field, galois_corresp, normality_check, separable_check, cyclotomic_poly, primitive_elem) (2158->2164 families)
 feat(research): wave 366 — algebraic-topology-3 canon (singular_homology, cw_complex, spectral_seq_toy, homotopy_group, excision, poincare_dual) (2152->2158 families)
 feat(research): wave 365 — probability-3 canon (optional_stopping, doob_decomp, martingale_clt, azuma, coupling_arg, ergodic_thm) (2146->2152 families)
 feat(research): wave 364 — functional-analysis-3 canon (hahn_banach, riesz_repr, adjoint_op, selfadjoint_spectrum, compact_resolvent, projection_thm) (2140->2146 families)

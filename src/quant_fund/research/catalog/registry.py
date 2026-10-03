@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-367 Galois-2/field-theory canon.
+        "finite_field",
+        "galois_corresp",
+        "normality_check",
+        "separable_check",
+        "cyclotomic_poly",
+        "primitive_elem",
         # Wave-366 algebraic-topology-3 canon.
         "singular_homology",
         "cw_complex",

@@ -2928,6 +2928,14 @@ from quant_fund.research.benches_w366 import (
     bench_singular_homology_family,
     bench_spectral_seq_toy_family,
 )
+from quant_fund.research.benches_w367 import (
+    bench_cyclotomic_poly_family,
+    bench_finite_field_family,
+    bench_galois_corresp_family,
+    bench_normality_check_family,
+    bench_primitive_elem_family,
+    bench_separable_check_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3307,6 +3315,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "finite_field": bench_finite_field_family,
+        "galois_corresp": bench_galois_corresp_family,
+        "normality_check": bench_normality_check_family,
+        "separable_check": bench_separable_check_family,
+        "cyclotomic_poly": bench_cyclotomic_poly_family,
+        "primitive_elem": bench_primitive_elem_family,
         "singular_homology": bench_singular_homology_family,
         "cw_complex": bench_cw_complex_family,
         "spectral_seq_toy": bench_spectral_seq_toy_family,
