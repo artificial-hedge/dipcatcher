@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-929 information-geometry-4 canon.
+        "mahalanobis_div",
+        "bhat_distance",
+        "hellinger_dist",
+        "jeffreys_div",
+        "d_total_var",
+        "chi_square_div",
         # Wave-928 computational-geometry-6 canon.
         "convex_hull_3d",
         "polygon_boolean",
