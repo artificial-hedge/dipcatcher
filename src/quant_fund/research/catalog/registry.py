@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-300 astronomy-2 canon.
+        "equinox_prec",
+        "nutation_lite",
+        "rise_set",
+        "eclipse_circ",
+        "delta_t",
+        "planet_vsop",
         # Wave-299 game-playing-2 canon.
         "tablebase_dtm",
         "retrograde_wdl",
