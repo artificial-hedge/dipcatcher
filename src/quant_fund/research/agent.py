@@ -5631,6 +5631,14 @@ from quant_fund.research.benches_w704 import (
     bench_operad_infty5_family,
     bench_operad_swiss4_family,
 )
+from quant_fund.research.benches_w705 import (
+    bench_derived_abelian2_family,
+    bench_derived_cover_family,
+    bench_derived_geometry7_family,
+    bench_derived_morph_family,
+    bench_derived_stack3_family,
+    bench_derived_topos_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6010,6 +6018,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_geometry7": bench_derived_geometry7_family,
+        "derived_abelian2": bench_derived_abelian2_family,
+        "derived_stack3": bench_derived_stack3_family,
+        "derived_morph": bench_derived_morph_family,
+        "derived_cover": bench_derived_cover_family,
+        "derived_topos": bench_derived_topos_family,
         "higher_algebra9": bench_higher_algebra9_family,
         "operad_infty5": bench_operad_infty5_family,
         "operad_swiss4": bench_operad_swiss4_family,
