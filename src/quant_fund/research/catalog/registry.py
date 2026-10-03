@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-442 model-categories-2 canon.
+        "cofibrant_rep",
+        "quillen_equiv",
+        "monoidal_model",
+        "enriched_model",
+        "reedy_model",
+        "localization_mc",
         # Wave-441 Galois-representations canon.
         "gal_rep",
         "fontaine_ring",
