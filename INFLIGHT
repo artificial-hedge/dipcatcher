@@ -1,3 +1,4 @@
+feat(research): wave 310 — quantum-error-correction canon (gottesman_knill, steane_code, surface_code, shor_code, syndrome_circuit, repetition_qec) (1827->1833 families)
 feat(research): wave 309 — post-quantum-3 canon (mceliece_lite, bike_lite, hqc_lite, uov_sig, rainbow_sig, sidh_lite) (1821->1827 families)
 feat(research): wave 308 — geophysics-2 canon (reflectivity_synth, gassmann_sub, spectral_decomp, semblance_scan, gardner_relation, vz_raytrace) (1815->1821 families)
 feat(research): wave 307 — regex-2 canon (pike_vm, lazy_dfa, bitap_fuzzy, literal_prefilter, glushkov_nfa, regex_simplify) (1815->1821 families)
