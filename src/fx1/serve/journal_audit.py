@@ -24,6 +24,19 @@ Pinned contract:
 - The same binding on ``EvalStore`` (``evals.jsonl``) recovers eval
   records identically: terminal as-was, in-flight as failed, keys and
   cancels durable, ``callback_secret`` never on disk.
+- ``_BatchStore`` (``batches.jsonl``) recovers batch records the same
+  way — mid-flight batches (``validating``/``in_progress``/
+  ``finalizing``/``cancelling``) recover ``failed`` since input lines
+  are never journaled; output/error file ids and webhook verdicts ride
+  the record.
+- ``FTJobStore`` (``ft_jobs.jsonl``) restores jobs with their event
+  feed, ``ft:`` idempotency keys, and the fine-tuned model registry —
+  a card whose producing job was evicted never resolves post-restart.
+- ``_FileStore`` (``files.jsonl`` + ``files/*.bin`` blobs) restores
+  uploads byte-identical; a journaled record without its blob drops
+  with a warning, deletes/evictions tombstone, orphans GC on boot.
+- ``_IdemStore`` (``idem_*.jsonl``) journals the stored response itself
+  so a retried submission replays the recorded answer after a restart.
 
 Sealed ``journal_audit.v1`` (fx1-side receipt).
 """
@@ -56,6 +69,38 @@ def _mk_eval(eval_id: str, status: str = "queued", key: str | None = None):
     if key:
         rec._callback_secret = "esecret-" + eval_id  # noqa: SLF001
     return rec
+
+
+def _mk_batch(batch_id: str, status: str = "validating"):
+    from fx1.serve.api import _BatchRecord
+
+    rec = _BatchRecord(
+        batch_id=batch_id,
+        input_file_id="file-input",
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+        status=status,
+        created_at=1000,
+        expires_at=99999,
+        callback_url="https://cb.example/batch",
+    )
+    rec._callback_secret = "bsecret-" + batch_id  # noqa: SLF001
+    return rec
+
+
+def _mk_ftjob(job_id: str, status: str = "queued"):
+    from fx1.serve.finetune import FTJob
+
+    job = FTJob(
+        id=job_id,
+        model="local_fx1",
+        created_at=1000,
+        status=status,  # type: ignore[arg-type]
+        training_file="file-train",
+        callback_url="https://cb.example/ft",
+    )
+    job._callback_secret = "fsecret-" + job_id  # noqa: SLF001
+    return job
 
 
 def _mk_job(job_id: str, status: str = "queued", key: str | None = None):
@@ -250,6 +295,270 @@ def journal_audit() -> dict[str, Any]:
             es2 = EvalStore(2, journal=JobJournal(p6))
             r["eval_evict_journaled"] = es2.get("e-0") is None and es2.get("e-3") is not None
 
+    # --- _BatchStore (batches.jsonl) ------------------------------------
+    from fx1.serve.api import _BatchStore
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "batches.jsonl"
+        bstore = _BatchStore(8, journal=JobJournal(path))
+        bstore.put(_mk_batch("b-v", "validating"))
+        done_b = _mk_batch("b-ok", "completed")
+        done_b.completed_at = 1001
+        done_b.output_file_id = "file-out"
+        bstore.put(done_b)
+        live = _mk_batch("b-r", "validating")
+        bstore.put(live)
+        live.status = "in_progress"
+        live.in_progress_at = 1002
+        bstore.mark(live)
+
+        bstore2 = _BatchStore(8, journal=JobJournal(path))
+        rb = bstore2.get("b-v")
+        r["batch_validating_recovers_failed"] = (
+            rb is not None
+            and rb.status == "failed"
+            and rb.errors is not None
+            and "restarted" in json.dumps(rb.errors)
+        )
+        rb_ok = bstore2.get("b-ok")
+        r["batch_terminal_as_was"] = (
+            rb_ok is not None
+            and rb_ok.status == "completed"
+            and rb_ok.output_file_id == "file-out"
+            and rb_ok.completed_at == 1001
+        )
+        r["batch_inflight_recovers_failed"] = (
+            bstore2.get("b-r") is not None and bstore2.get("b-r").status == "failed"  # type: ignore[union-attr]
+        )
+        raw = path.read_bytes()
+        r["batch_secret_not_journaled"] = b"bsecret-" not in raw
+        r["batch_secret_not_recovered"] = (
+            rb is not None and rb._callback_secret is None  # noqa: SLF001
+        )
+
+        # 'cancelling' is mid-flight — recovers failed, never replays lines
+        cx = _mk_batch("b-cx", "validating")
+        bstore2.put(cx)
+        cx.status = "cancelling"
+        cx.cancelling_at = 1003
+        bstore2.mark(cx)
+        bstore3 = _BatchStore(8, journal=JobJournal(path))
+        r["batch_cancelling_recovers_failed"] = (
+            bstore3.get("b-cx") is not None and bstore3.get("b-cx").status == "failed"  # type: ignore[union-attr]
+        )
+        with tempfile.TemporaryDirectory() as td7:
+            p7 = Path(td7) / "b.jsonl"
+            bs = _BatchStore(2, journal=JobJournal(p7))
+            for i in range(4):
+                bs.put(_mk_batch(f"b-{i}", "completed"))
+            bs2 = _BatchStore(2, journal=JobJournal(p7))
+            r["batch_evict_journaled"] = bs2.get("b-0") is None and bs2.get("b-3") is not None
+
+    # --- FTJobStore (ft_jobs.jsonl) -------------------------------------
+    from fx1.serve.finetune import FTJobStore
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "ft_jobs.jsonl"
+        fstore = FTJobStore(8, journal=JobJournal(path))
+        fstore.put(_mk_ftjob("f-q", "queued"), "k-fq", "ffp-q")
+        succ = _mk_ftjob("f-ok", "succeeded")
+        succ.finished_at = 1001
+        succ.fine_tuned_model = "ft:local_fx1:x:fok1234abcd"
+        fstore.put(succ, "k-fok", "ffp-ok")
+        fstore.add_event("f-ok", "info", "job succeeded", {"checkpoint": "ckpt-1"})
+        fstore.register_model(
+            "ft:local_fx1:x:fok1234abcd",
+            job_id="f-ok",
+            checkpoint="ckpt-1",
+            created=1001,
+        )
+
+        fstore2 = FTJobStore(8, journal=JobJournal(path))
+        fe = fstore2.get("f-q")
+        r["ft_queued_recovers_failed"] = (
+            fe is not None
+            and fe.job.status == "failed"
+            and fe.job.error is not None
+            and "restarted" in fe.job.error.message
+        )
+        fe_ok = fstore2.get("f-ok")
+        r["ft_terminal_as_was"] = (
+            fe_ok is not None
+            and fe_ok.job.status == "succeeded"
+            and fe_ok.job.fine_tuned_model == "ft:local_fx1:x:fok1234abcd"
+        )
+        r["ft_events_survive"] = (
+            fe_ok is not None
+            and len(fe_ok.events) == 1
+            and fe_ok.events[0].message == "job succeeded"
+        )
+        r["ft_idem_key_survives"] = (
+            fstore2.lookup_idem("k-fq") is not None and fstore2.lookup_idem("k-fq").job.id == "f-q"  # type: ignore[union-attr]
+        )
+        r["ft_model_registry_survives"] = (
+            fstore2.checkpoint_for("ft:local_fx1:x:fok1234abcd") == "ckpt-1"
+        )
+        raw = path.read_bytes()
+        r["ft_secret_not_journaled"] = b"fsecret-" not in raw
+        r["ft_secret_not_recovered"] = (
+            fe is not None and fe.job._callback_secret is None  # noqa: SLF001
+        )
+
+        # queued cancel journaled
+        fstore2.put(_mk_ftjob("f-c", "queued"), "k-fc", "ffp-c")
+        fstore2.request_cancel("f-c")
+        fstore3 = FTJobStore(8, journal=JobJournal(path))
+        r["ft_cancel_journaled"] = (
+            fstore3.get("f-c") is not None and fstore3.get("f-c").job.status == "cancelled"  # type: ignore[union-attr]
+        )
+
+        # evicting the producing job drops the model card post-restart
+        with tempfile.TemporaryDirectory() as td8:
+            p8 = Path(td8) / "f.jsonl"
+            fs = FTJobStore(2, journal=JobJournal(p8))
+            j0 = _mk_ftjob("f-0", "succeeded")
+            j0.fine_tuned_model = "ft:m:a:f0"
+            fs.put(j0, None, "")
+            fs.register_model("ft:m:a:f0", job_id="f-0", checkpoint="c0", created=1)
+            for i in (1, 2, 3):
+                fs.put(_mk_ftjob(f"f-{i}", "succeeded"), None, "")
+            fs2 = FTJobStore(2, journal=JobJournal(p8))
+            r["ft_model_dies_with_job"] = fs2.get_model("ft:m:a:f0") is None
+
+    # --- _FileStore (files.jsonl + blobs) --------------------------------
+    from fx1.serve.api import _FileStore
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        filestore = _FileStore(8, 1 << 20, state_dir=root)
+        frec = filestore.put(filename="up.jsonl", purpose="batch", content=b'{"a":1}\n')
+        gone = filestore.put(filename="gone.jsonl", purpose="batch", content=b"XX")
+        filestore.delete(gone.file_id)
+        filestore2 = _FileStore(8, 1 << 20, state_dir=root)
+        r["file_bytes_survive"] = (
+            filestore2.get(frec.file_id) is not None
+            and filestore2.get(frec.file_id).content == b'{"a":1}\n'  # type: ignore[union-attr]
+        )
+        r["file_delete_journaled"] = filestore2.get(gone.file_id) is None
+        raw = (root / "files.jsonl").read_bytes()
+        r["file_content_not_in_journal"] = b'{"a":1}' not in raw and b"XX" not in raw
+
+        # journaled metadata without its blob drops with a warning
+        orphan = filestore2.put(filename="orphan.jsonl", purpose="batch", content=b"zz")
+        (root / "files" / f"{orphan.file_id}.bin").unlink()
+        filestore3 = _FileStore(8, 1 << 20, state_dir=root)
+        r["file_missing_blob_dropped"] = filestore3.get(orphan.file_id) is None and bool(
+            filestore3.recover_warnings
+        )
+
+        # orphan blob GC: a blob with no journaled record is unlinked
+        stray = root / "files" / "file-stray.bin"
+        stray.write_bytes(b"stray")
+        _FileStore(8, 1 << 20, state_dir=root)
+        r["file_orphan_blob_gcd"] = not stray.exists()
+
+        with tempfile.TemporaryDirectory() as td9:
+            root9 = Path(td9)
+            fst = _FileStore(2, 1 << 20, state_dir=root9)
+            ids = [
+                fst.put(filename=f"f{i}.jsonl", purpose="batch", content=b"x").file_id
+                for i in range(4)
+            ]
+            fst2 = _FileStore(2, 1 << 20, state_dir=root9)
+            r["file_evict_journaled"] = fst2.get(ids[0]) is None and fst2.get(ids[3]) is not None
+            r["file_evicted_blob_gone"] = not (root9 / "files" / f"{ids[0]}.bin").exists()
+
+    # --- _IdemStore (idem_*.jsonl) ---------------------------------------
+    from fx1.serve.api import HarnessRunResponse, _IdemStore
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "idem.jsonl"
+        idem = _IdemStore[HarnessRunResponse](4, journal=JobJournal(path), model=HarnessRunResponse)
+        resp = HarnessRunResponse(
+            command="selftest",
+            exit_code=0,
+            stdout="ok",
+            stderr="",
+            ok=True,
+            timeout_s=30,
+            stdout_truncated=False,
+            stderr_truncated=False,
+        )
+        idem.put("key-1", "fp-1", resp)
+        idem2 = _IdemStore[HarnessRunResponse](
+            4, journal=JobJournal(path), model=HarnessRunResponse
+        )
+        hit = idem2.get("key-1")
+        r["idem_replays_response"] = (
+            hit is not None and hit[0] == "fp-1" and hit[1].stdout == "ok" and hit[1].ok is True
+        )
+
+        with tempfile.TemporaryDirectory() as td10:
+            p10 = Path(td10) / "i.jsonl"
+            ist = _IdemStore[HarnessRunResponse](
+                2, journal=JobJournal(p10), model=HarnessRunResponse
+            )
+            for i in range(4):
+                ist.put(f"k-{i}", f"fp-{i}", resp)
+            ids2 = _IdemStore[HarnessRunResponse](
+                2, journal=JobJournal(p10), model=HarnessRunResponse
+            )
+            r["idem_evict_journaled"] = ids2.get("k-0") is None and ids2.get("k-3") is not None
+
+        r["idem_requires_model"] = False
+        try:
+            _IdemStore[HarnessRunResponse](2, journal=JobJournal(Path(td) / "x.jsonl"))
+        except ValueError:
+            r["idem_requires_model"] = True
+
+    # --- report serialization must be journal-safe ----------------------
+    # A real defect found while binding the SDK store: dataclass reports
+    # carry numpy leaves (calibration's `extracted`), which crashed
+    # model_dump(mode="json") inside put/mark — silent journal gaps.
+    from dataclasses import dataclass  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    from fx1.serve.evals import report_dump  # noqa: PLC0415
+
+    @dataclass
+    class _ArrReport:
+        bins: list[float]
+        extracted: Any
+
+    dump = report_dump(_ArrReport(bins=[0.5, 1.0], extracted=np.arange(4)))
+    r["report_dump_json_safe"] = dump["extracted"] == [0, 1, 2, 3] and isinstance(
+        json.dumps(dump), str
+    )
+    try:
+        report_dump({"not": "a report"})
+        r["report_dump_fail_closed"] = False
+    except TypeError:
+        r["report_dump_fail_closed"] = True
+
+    # --- SDK stores journal under state_dir ------------------------------
+    # Fx1Harness(state_dir=...) binds the same evals/ft_jobs journals a
+    # second instance replays — the in-process twin is durable too.
+    from fx1.sdk import Fx1Harness  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as td:
+        h = Fx1Harness(state_dir=td)
+        srec = h.run_eval("calibration", model_fn=lambda msgs: "0.5")
+        h2 = Fx1Harness(state_dir=td)
+        rec2 = h2.eval_record(srec.eval_id)
+        r["sdk_eval_journaled"] = (
+            srec.status == "succeeded"
+            and rec2.status == "succeeded"
+            and rec2.report is not None
+            and srec.report is not None
+            and rec2.report.get("extracted") == srec.report.get("extracted")
+        )
+        # a running eval record left by a 'crash' (put without mark)
+        crash_rec = _mk_eval("sdk-crash", "queued")
+        h2._eval_store.put(crash_rec, None, None)  # noqa: SLF001
+        h3 = Fx1Harness(state_dir=td)
+        r["sdk_inflight_recovers_failed"] = h3.eval_record("sdk-crash").status == "failed"
+
     return r
 
 
@@ -272,7 +581,13 @@ def journal_audit_bench() -> dict[str, Any]:
             "recover as failed with an honest restart error, idempotency "
             "keys still resolve, cancels and LRU evictions survive, and "
             "callback secrets never touch disk. The in-memory default is "
-            "unchanged when no state dir is configured."
+            "unchanged when no state dir is configured. The same binding "
+            "holds on evals, batches (in-flight recovers failed), "
+            "fine-tune jobs (events, idem keys, and the model registry — "
+            "a card dies with its producing job), files (blob bytes "
+            "round-trip, deletes tombstone, orphans GC), and the "
+            "idempotency stores (the recorded response replays after a "
+            "restart)."
             if ok
             else f"JOURNAL AUDIT DEFECT: {r}"
         ),
