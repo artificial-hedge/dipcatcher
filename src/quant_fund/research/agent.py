@@ -5855,6 +5855,14 @@ from quant_fund.research.benches_w732 import (
     bench_schiffmann_hall_family,
     bench_toen_hall_family,
 )
+from quant_fund.research.benches_w733 import (
+    bench_bridgeland_hall_family,
+    bench_calaque_hall_family,
+    bench_green_hall_family,
+    bench_kontsevich_soibelman_family,
+    bench_morita_hall_family,
+    bench_mozgovoy_hall_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6234,6 +6242,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "green_hall": bench_green_hall_family,
+        "bridgeland_hall": bench_bridgeland_hall_family,
+        "kontsevich_soibelman": bench_kontsevich_soibelman_family,
+        "mozgovoy_hall": bench_mozgovoy_hall_family,
+        "morita_hall": bench_morita_hall_family,
+        "calaque_hall": bench_calaque_hall_family,
         "hall_algebra": bench_hall_algebra_family,
         "ringel_hall": bench_ringel_hall_family,
         "toen_hall": bench_toen_hall_family,
