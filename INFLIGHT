@@ -2601,3 +2601,4 @@ wave 200 (2026-10-02): tensor-network canon — tt_svd, dmrg_tfim, tensor_cross,
 wave 201 (2026-10-02): stochastic-control canon — psor_american, crr_tree, kushner_mca, hjb_penalty, dual_american, exercise_boundary; 1178→1184 families.
 wave 202 (2026-10-02): game-theory canon — mfg_lq, mfg_flocking, nash_cournot, stackelberg_game, stochastic_game_vi, potential_game; 1184→1190 families.
 wave 203 (2026-10-02): information-geometry canon — fisher_rao, natural_gradient, mirror_descent, bregman_nmf, alpha_geodesic, jko_scheme; 1190→1196 families.
+wave 204 (2026-10-02): queueing + reliability canon — jackson_network, bcmp_mva, gordon_newell, ctmc_availability, renewal_reward, vacation_queue; 1196→1202 families.

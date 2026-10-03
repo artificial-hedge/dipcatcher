@@ -2523,6 +2523,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "bregman_nmf",
         "alpha_geodesic",
         "jko_scheme",
+        # Wave-204 queueing + reliability canon: Jackson, BCMP MVA,
+        # Gordon-Newell, CTMC availability, renewal reward, vacations.
+        "jackson_network",
+        "bcmp_mva",
+        "gordon_newell",
+        "ctmc_availability",
+        "renewal_reward",
+        "vacation_queue",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

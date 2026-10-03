@@ -1621,6 +1621,14 @@ from quant_fund.research.benches_w203 import (
     bench_mirror_descent_family,
     bench_natural_gradient_family,
 )
+from quant_fund.research.benches_w204 import (
+    bench_bcmp_mva_family,
+    bench_ctmc_availability_family,
+    bench_gordon_newell_family,
+    bench_jackson_network_family,
+    bench_renewal_reward_family,
+    bench_vacation_queue_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4390,6 +4398,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "bregman_nmf": bench_bregman_nmf_family(),
         "alpha_geodesic": bench_alpha_geodesic_family(),
         "jko_scheme": bench_jko_scheme_family(),
+        "jackson_network": bench_jackson_network_family(),
+        "bcmp_mva": bench_bcmp_mva_family(),
+        "gordon_newell": bench_gordon_newell_family(),
+        "ctmc_availability": bench_ctmc_availability_family(),
+        "renewal_reward": bench_renewal_reward_family(),
+        "vacation_queue": bench_vacation_queue_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
