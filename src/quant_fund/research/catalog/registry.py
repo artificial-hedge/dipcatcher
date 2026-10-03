@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-795 stochastic-games canon.
+        "dynkin_game",
+        "stochastic_game2",
+        "differential_game",
+        "zero_sum_game",
+        "nonzero_sum_game",
+        "isaacs_equation",
         # Wave-794 stochastic-control canon.
         "dynamic_programming",
         "verification_thm",

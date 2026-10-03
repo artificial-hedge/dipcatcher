@@ -6351,6 +6351,14 @@ from quant_fund.research.benches_w794 import (
     bench_verification_thm_family,
     bench_viscosity_solution_family,
 )
+from quant_fund.research.benches_w795 import (
+    bench_differential_game_family,
+    bench_dynkin_game_family,
+    bench_isaacs_equation_family,
+    bench_nonzero_sum_game_family,
+    bench_stochastic_game2_family,
+    bench_zero_sum_game_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6730,6 +6738,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dynkin_game": bench_dynkin_game_family,
+        "stochastic_game2": bench_stochastic_game2_family,
+        "differential_game": bench_differential_game_family,
+        "zero_sum_game": bench_zero_sum_game_family,
+        "nonzero_sum_game": bench_nonzero_sum_game_family,
+        "isaacs_equation": bench_isaacs_equation_family,
         "dynamic_programming": bench_dynamic_programming_family,
         "verification_thm": bench_verification_thm_family,
         "hamilton_jacobi": bench_hamilton_jacobi_family,
