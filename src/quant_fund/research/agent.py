@@ -4575,6 +4575,14 @@ from quant_fund.research.benches_w572 import (
     bench_shafarevich_conj_family,
     bench_tate_module_family,
 )
+from quant_fund.research.benches_w573 import (
+    bench_absolute_hodge_family,
+    bench_griffiths_transv_family,
+    bench_hodge_class_family,
+    bench_hodge_conj_family,
+    bench_mumford_tate_family,
+    bench_period_domain_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4954,6 +4962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "griffiths_transv": bench_griffiths_transv_family,
+        "period_domain": bench_period_domain_family,
+        "mumford_tate": bench_mumford_tate_family,
+        "hodge_class": bench_hodge_class_family,
+        "absolute_hodge": bench_absolute_hodge_family,
+        "hodge_conj": bench_hodge_conj_family,
         "abelian_variety": bench_abelian_variety_family,
         "isogeny_av": bench_isogeny_av_family,
         "tate_module": bench_tate_module_family,
