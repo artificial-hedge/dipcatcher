@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-476 chromatic-3 canon.
+        "bp_spectrum",
+        "adams_novikov",
+        "landweber_exact",
+        "greek_letter",
+        "smith_toda",
+        "picard_grp",
         # Wave-475 homotopical-algebra canon.
         "dendroidal",
         "infty_operad",

@@ -3799,6 +3799,14 @@ from quant_fund.research.benches_w475 import (
     bench_seq_spectra_family,
     bench_sifted_cat_family,
 )
+from quant_fund.research.benches_w476 import (
+    bench_adams_novikov_family,
+    bench_bp_spectrum_family,
+    bench_greek_letter_family,
+    bench_landweber_exact_family,
+    bench_picard_grp_family,
+    bench_smith_toda_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4178,6 +4186,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "bp_spectrum": bench_bp_spectrum_family,
+        "adams_novikov": bench_adams_novikov_family,
+        "landweber_exact": bench_landweber_exact_family,
+        "greek_letter": bench_greek_letter_family,
+        "smith_toda": bench_smith_toda_family,
+        "picard_grp": bench_picard_grp_family,
         "dendroidal": bench_dendroidal_family,
         "infty_operad": bench_infty_operad_family,
         "cyclic_hk": bench_cyclic_hk_family,
