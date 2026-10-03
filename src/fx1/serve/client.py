@@ -1398,6 +1398,7 @@ class HarnessClient:
         parallel_tool_calls: bool | None = None,
         include: list[str] | None = None,
         top_logprobs: int | None = None,
+        previous_response_id: str | None = None,
         idempotency_key: str | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> tuple[dict[str, Any], str | None]:
@@ -1426,6 +1427,7 @@ class HarnessClient:
             input,
             model=model,
             instructions=instructions,
+            previous_response_id=previous_response_id,
             backend=backend,
             byok=byok,
             checkpoint_dir=checkpoint_dir,
@@ -1529,6 +1531,7 @@ class HarnessClient:
         parallel_tool_calls: bool | None = None,
         include: list[str] | None = None,
         top_logprobs: int | None = None,
+        previous_response_id: str | None = None,
         stream: bool = False,
     ) -> dict[str, Any]:
         fx1: dict[str, Any] = {}
@@ -1555,6 +1558,7 @@ class HarnessClient:
             "service_tier": service_tier,
             "user": user,
             "safety_identifier": safety_identifier,
+            "previous_response_id": previous_response_id,
             "stream": stream,
         }
         if reasoning_effort is not None:

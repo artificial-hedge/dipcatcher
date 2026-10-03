@@ -4459,6 +4459,18 @@
             ],
             "title": "Parallel Tool Calls"
           },
+          "previous_response_id": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Response Id"
+          },
           "reasoning": {
             "anyOf": [
               {
@@ -11671,7 +11683,7 @@
     },
     "/v1/responses": {
       "post": {
-        "description": "OpenAI Responses API over the same gated pipeline.\n\n``input`` is a string or a list of message items\n(``{type: \"message\", role, content: [{type: \"input_text\", text}]}``\nor the shorthand ``{role, content: \"...\"}``); ``instructions``\nprepends a system turn; ``developer`` roles map to ``system``.\n``max_output_tokens`` lands on the decode cap, ``reasoning.effort``\non the reasoning hint, ``text.format`` on the post-validated\n``response_format`` channel (a violation is a provider-side 502),\n``user``/``safety_identifier``/``metadata`` stamp the audit record.\n\n``tools`` (flattened Responses specs), ``tool_choice``\n(``none``/``auto``/``required`` or ``{type: \"function\", name}``),\n``parallel_tool_calls``, ``function_call``/``function_call_output``\ninput items, and ``function_call`` output items are first-class \u2014\nthe same tool channel as ``/v1/chat/completions`` under its own\ngrammar (a link without the channel answers 501). Same fail-closed\nrule as chat completions for the rest: ``truncation``/``include``/\n``background``/``previous_response_id`` refuse at validation (422).\n``store`` governs the retrieval index \u2014 ``store=false`` keeps the\ncall out of ``GET /v1/responses/{id}`` (the audit ledger still\nrecords it).\n``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as\non ``/v1/chat/completions`` (the stream's terminal frame is\n``response.completed``, not ``[DONE]``).",
+        "description": "OpenAI Responses API over the same gated pipeline.\n\n``input`` is a string or a list of message items\n(``{type: \"message\", role, content: [{type: \"input_text\", text}]}``\nor the shorthand ``{role, content: \"...\"}``); ``instructions``\nprepends a system turn; ``developer`` roles map to ``system``.\n``max_output_tokens`` lands on the decode cap, ``reasoning.effort``\non the reasoning hint, ``text.format`` on the post-validated\n``response_format`` channel (a violation is a provider-side 502),\n``user``/``safety_identifier``/``metadata`` stamp the audit record.\n\n``tools`` (flattened Responses specs), ``tool_choice``\n(``none``/``auto``/``required`` or ``{type: \"function\", name}``),\n``parallel_tool_calls``, ``function_call``/``function_call_output``\ninput items, and ``function_call`` output items are first-class \u2014\nthe same tool channel as ``/v1/chat/completions`` under its own\ngrammar (a link without the channel answers 501). Same fail-closed\nrule as chat completions for the rest: ``truncation``/``include``/\n``background`` refuse at validation (422).\n``previous_response_id`` chains the turn onto a stored ``response``\n\u2014 the model runs on the parent's stored items + its output + this\nrequest's input, and the child's ``input_items`` carry the whole\nhistory. An unknown, deleted, or ``store=false`` parent fails\nclosed ``400 previous_response_not_found``.\n``store`` governs the retrieval index \u2014 ``store=false`` keeps the\ncall out of ``GET /v1/responses/{id}`` (the audit ledger still\nrecords it).\n``Idempotency-Key`` and ``Last-Event-ID`` resume behave exactly as\non ``/v1/chat/completions`` (the stream's terminal frame is\n``response.completed``, not ``[DONE]``).",
         "operationId": "openai_responses",
         "parameters": [
           {
