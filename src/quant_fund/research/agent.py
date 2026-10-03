@@ -4503,6 +4503,14 @@ from quant_fund.research.benches_w563 import (
     bench_sacks_uhlenbeck_family,
     bench_schoen_uhlenbeck_family,
 )
+from quant_fund.research.benches_w564 import (
+    bench_asymptotic_cone_family,
+    bench_baumslag_solitar_family,
+    bench_gromov_hyperbolic_family,
+    bench_quasi_isometry_family,
+    bench_thin_triangle_family,
+    bench_word_problem_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4882,6 +4890,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gromov_hyperbolic": bench_gromov_hyperbolic_family,
+        "quasi_isometry": bench_quasi_isometry_family,
+        "thin_triangle": bench_thin_triangle_family,
+        "word_problem": bench_word_problem_family,
+        "baumslag_solitar": bench_baumslag_solitar_family,
+        "asymptotic_cone": bench_asymptotic_cone_family,
         "harmonic_map": bench_harmonic_map_family,
         "eells_sampson": bench_eells_sampson_family,
         "schoen_uhlenbeck": bench_schoen_uhlenbeck_family,

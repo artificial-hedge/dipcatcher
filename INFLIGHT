@@ -1,3 +1,4 @@
+feat(research): wave 564 — geometric-group-theory canon (gromov_hyperbolic, quasi_isometry, thin_triangle, word_problem, baumslag_solitar, asymptotic_cone) (3339->3345 families)
 feat(research): wave 563 — harmonic-maps canon (harmonic_map, eells_sampson, schoen_uhlenbeck, bubbling_hm, heat_flow_hm, sacks_uhlenbeck) (3333->3339 families)
 feat(research): wave 562 — symplectic-geometry-2 canon (gromov_width, hofer_metric, symplectic_capacity, symplectic_packing, mcduff_polterovich, ekeland_hofer) (3327->3333 families)
 feat(research): wave 561 — minimal-surfaces canon (minimal_surface, plateau_problem, brakke_flow, almgren_pitts, simon_regularity, stable_minimal) (3321->3327 families)
