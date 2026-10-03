@@ -3495,6 +3495,14 @@ from quant_fund.research.benches_w437 import (
     bench_frobenius_coh_family,
     bench_prismatic_coh_family,
 )
+from quant_fund.research.benches_w438 import (
+    bench_analytic_ring_family,
+    bench_condensed_set_family,
+    bench_light_condensed_family,
+    bench_liquid_group_family,
+    bench_proetale_site_family,
+    bench_solid_group_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3874,6 +3882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "condensed_set": bench_condensed_set_family,
+        "solid_group": bench_solid_group_family,
+        "liquid_group": bench_liquid_group_family,
+        "proetale_site": bench_proetale_site_family,
+        "light_condensed": bench_light_condensed_family,
+        "analytic_ring": bench_analytic_ring_family,
         "crystalline_coh": bench_crystalline_coh_family,
         "prismatic_coh": bench_prismatic_coh_family,
         "etale_coh": bench_etale_coh_family,
