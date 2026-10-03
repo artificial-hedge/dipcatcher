@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-961 semigroup-theory canon.
+        "c0_semigroup",
+        "hille_yosida",
+        "lumer_phillips",
+        "analytic_semigroup",
+        "cosine_family",
+        "trotter_kato",
         # Wave-960 banach-algebra canon.
         "banach_algebra",
         "gelfand_transform",
