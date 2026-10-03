@@ -4695,6 +4695,14 @@ from quant_fund.research.benches_w587 import (
     bench_mmp_flip_family,
     bench_terminal_sing_family,
 )
+from quant_fund.research.benches_w588 import (
+    bench_ehp_sequence_family,
+    bench_freudenthal_susp_family,
+    bench_james_period_family,
+    bench_moore_space_family,
+    bench_unstable_adams_family,
+    bench_whitehead_prod_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5074,6 +5082,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ehp_sequence": bench_ehp_sequence_family,
+        "james_period": bench_james_period_family,
+        "whitehead_prod": bench_whitehead_prod_family,
+        "freudenthal_susp": bench_freudenthal_susp_family,
+        "moore_space": bench_moore_space_family,
+        "unstable_adams": bench_unstable_adams_family,
         "terminal_sing": bench_terminal_sing_family,
         "canonical_sing2": bench_canonical_sing2_family,
         "klt_mmp": bench_klt_mmp_family,
