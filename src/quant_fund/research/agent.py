@@ -2696,6 +2696,14 @@ from quant_fund.research.benches_w337 import (
     bench_ski_combinator_family,
     bench_unification_family,
 )
+from quant_fund.research.benches_w338 import (
+    bench_ac_choice_family,
+    bench_cardinal_arith_family,
+    bench_ordinal_arith_family,
+    bench_transfinite_induct_family,
+    bench_v_omega_family,
+    bench_well_founded_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3075,6 +3083,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ordinal_arith": bench_ordinal_arith_family,
+        "cardinal_arith": bench_cardinal_arith_family,
+        "transfinite_induct": bench_transfinite_induct_family,
+        "well_founded": bench_well_founded_family,
+        "v_omega": bench_v_omega_family,
+        "ac_choice": bench_ac_choice_family,
         "ski_combinator": bench_ski_combinator_family,
         "de_bruijn": bench_de_bruijn_family,
         "church_encoding": bench_church_encoding_family,
