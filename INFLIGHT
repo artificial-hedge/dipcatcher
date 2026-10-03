@@ -2659,3 +2659,4 @@ wave 258 (2026-10-02): databases-3 canon — cascades_opt, vectorized_exec, zone
 wave 259 (2026-10-02): networking-2 canon — bgp_pathvec, dns_resolver, nat_traversal, arp_table, dhcp_lease, eth_switch; 1527→1533 families.
 wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munkres, konig_cover, gale_chu, topo_layers; 1533→1539 families.
 wave 260 (2026-10-02): matching canon — gale_shapley, hopcroft_karp, kuhn_munkres, konig_cover, gale_chu, topo_layers; 1533→1539 families.
+- w261 robotics-2 canon (ekf_slam, occupancy_grid, pure_pursuit, stanley, particle_slam, frontier_explore) 1539->1545

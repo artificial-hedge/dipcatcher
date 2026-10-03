@@ -2931,6 +2931,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "dhcp_lease",
         "eth_switch",
         # Wave-260 matching canon.
+        # Wave-261 robotics-2 canon.
+        "ekf_slam",
+        "occupancy_grid",
+        "pure_pursuit",
+        "stanley",
+        "particle_slam",
+        "frontier_explore",
         "gale_shapley",
         "hopcroft_karp",
         "kuhn_munkres",
