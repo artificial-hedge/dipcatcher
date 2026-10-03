@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-397 stochastic-analysis-2 canon.
+        "ost_calcul",
+        "tanaka",
+        "bessel3",
+        "reflect_bm",
+        "occupation_bm",
+        "h_transform",
         # Wave-396 algebraic-number-theory-2 canon.
         "cyclotomic_field",
         "kronecker_weber",
