@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-885 DG-flux/asymptotics canon.
+        "ldg_flux",
+        "entropy_stable_dg",
+        "wkb_turning",
+        "averaging_method",
+        "laplace_method",
+        "hyperasymptotic",
         # Wave-884 wavelet-2/spectral-elem canon.
         "wavelet_matrix",
         "second_gen_wavelet",
