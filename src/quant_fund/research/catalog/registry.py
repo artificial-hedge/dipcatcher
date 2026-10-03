@@ -2801,6 +2801,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "rtt_estimator",
         "nat_table",
         "http2_flow",
+        # Wave-239 PL canon: HM inference, interpreter, CPS, macros, GC.
+        "hm_inference",
+        "tree_walk_interp",
+        "cps_transform",
+        "macro_expand",
+        "gc_marksweep",
+        "simple_types",
     }
 )
 BENCHMARK_FAMILY_ORDER = (
