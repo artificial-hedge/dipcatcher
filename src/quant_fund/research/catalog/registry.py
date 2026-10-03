@@ -2984,6 +2984,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "csma_ca",
         "icmp_path",
         "diffserv_qos",
+        # Wave-272 control-theory-2 canon.
+        "pid_antiwindup",
+        "sliding_mode",
+        "gain_schedule",
+        "smith_predictor",
+        "backstepping",
+        "repetitive_ctrl",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
