@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-661 chromatic-6 canon.
+        "ambidexterity",
+        "higher_semiadditivity",
+        "tate_height",
+        "dieudonne_module",
+        "honda_formal",
+        "raynaud_height",
         # Wave-660 chromatic-5 canon.
         "morava_k2",
         "telescope_tower2",
