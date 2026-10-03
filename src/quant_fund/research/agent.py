@@ -2936,6 +2936,21 @@ from quant_fund.research.benches_w367 import (
     bench_primitive_elem_family,
     bench_separable_check_family,
 )
+from quant_fund.research.benches_w368 import (
+    bench_herbrand_model_family,
+    bench_los_theorem_family,
+    bench_presburger_family,
+    bench_skolem_normal_family,
+    bench_unification_fol_family,
+)
+from quant_fund.research.benches_w369 import (
+    bench_aitken_delta_family,
+    bench_brent_root_family,
+    bench_broyden_family,
+    bench_cheb_approx_family,
+    bench_collocation_ode_family,
+    bench_romberg_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3315,6 +3330,17 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "broyden": bench_broyden_family,
+        "cheb_approx": bench_cheb_approx_family,
+        "brent_root": bench_brent_root_family,
+        "romberg": bench_romberg_family,
+        "aitken_delta": bench_aitken_delta_family,
+        "collocation_ode": bench_collocation_ode_family,
+        "unification_fol": bench_unification_fol_family,
+        "skolem_normal": bench_skolem_normal_family,
+        "herbrand_model": bench_herbrand_model_family,
+        "presburger": bench_presburger_family,
+        "los_theorem": bench_los_theorem_family,
         "finite_field": bench_finite_field_family,
         "galois_corresp": bench_galois_corresp_family,
         "normality_check": bench_normality_check_family,
