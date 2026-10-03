@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-564 geometric-group-theory canon.
+        "gromov_hyperbolic",
+        "quasi_isometry",
+        "thin_triangle",
+        "word_problem",
+        "baumslag_solitar",
+        "asymptotic_cone",
         # Wave-563 harmonic-maps canon.
         "harmonic_map",
         "eells_sampson",
