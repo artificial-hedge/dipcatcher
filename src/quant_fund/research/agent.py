@@ -6831,6 +6831,14 @@ from quant_fund.research.benches_w854 import (
     bench_rbf_interp_family,
     bench_wendland_rbf_family,
 )
+from quant_fund.research.benches_w855 import (
+    bench_adapt_wavelet_family,
+    bench_coiflet_basis_family,
+    bench_daubechies_basis_family,
+    bench_spline_wavelet_family,
+    bench_wavelet_collocation_family,
+    bench_wavelet_galerkin_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7202,6 +7210,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wavelet_galerkin": bench_wavelet_galerkin_family,
+        "daubechies_basis": bench_daubechies_basis_family,
+        "coiflet_basis": bench_coiflet_basis_family,
+        "spline_wavelet": bench_spline_wavelet_family,
+        "wavelet_collocation": bench_wavelet_collocation_family,
+        "adapt_wavelet": bench_adapt_wavelet_family,
         "rbf_interp": bench_rbf_interp_family,
         "gaussian_rbf": bench_gaussian_rbf_family,
         "multiquadric_rbf": bench_multiquadric_rbf_family,

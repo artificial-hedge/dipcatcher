@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-855 wavelet-Galerkin canon.
+        "wavelet_galerkin",
+        "daubechies_basis",
+        "coiflet_basis",
+        "spline_wavelet",
+        "wavelet_collocation",
+        "adapt_wavelet",
         # Wave-854 radial-basis-function canon.
         "rbf_interp",
         "gaussian_rbf",
