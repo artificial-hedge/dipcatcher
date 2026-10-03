@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-829 continuous-martingale canon.
+        "local_time_process",
+        "bounded_mart",
+        "fv_mart",
+        "cadlag_mart",
+        "locator_proc",
+        "decomp_mart",
         # Wave-828 projection/section canon.
         "projection_theorem",
         "uniform_section",
