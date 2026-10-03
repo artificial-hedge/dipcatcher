@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-378 set-theory-2/forcing canon.
+        "forcing_poset",
+        "dense_filter",
+        "names_eval",
+        "cohen_adds",
+        "ma_toy",
+        "large_cardinal",
         # Wave-377 operad canon.
         "operad_assoc",
         "operad_comm",
