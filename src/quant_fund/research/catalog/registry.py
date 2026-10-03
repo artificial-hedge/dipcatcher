@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-490 arithmetic-geometry canon.
+        "arakelov_deg",
+        "adelic_curve",
+        "height_arakelov",
+        "faltings_metric",
+        "arithmetic_chow",
+        "arith_rr",
         # Wave-489 group-theory-4 canon.
         "building_toy",
         "coxeter_grp",
