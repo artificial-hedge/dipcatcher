@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-458 matroid-3 canon.
+        "transversal_mat",
+        "matroid_rep",
+        "tutte_poly",
+        "matroid_minor",
+        "regular_mat",
+        "delta_matroid",
         # Wave-457 double-category/proarrow canon.
         "proarrow",
         "virtual_equip",
