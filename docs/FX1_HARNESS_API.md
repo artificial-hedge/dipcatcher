@@ -786,7 +786,11 @@ stdout/stderr cap at 1 MiB each (`*_truncated` flags). Options:
   (eviction drops the card). `callback_secret` never reaches disk, so
   a recovered record with a `callback_url` keeps it for audit but
   cannot deliver post-restart. Boot compacts each journal to live
-  records. Unset = the same in-memory stores as before.
+  records. Unset = the same in-memory stores as before. The in-process
+  SDK binds the same journals: `Fx1Harness(state_dir=...)` (or the
+  `FX1_SDK_STATE_DIR` env var) journals evals and fine-tune jobs with
+  identical restart semantics — a mid-eval crash recovers as `failed`,
+  terminal records return as-was.
 
 The same contract applies on the OpenAI-compatible async surfaces:
 `POST /v1/fine_tuning/jobs` and `POST /v1/batches` accept

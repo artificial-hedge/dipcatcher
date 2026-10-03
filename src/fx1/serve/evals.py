@@ -27,14 +27,18 @@ config the evidence was produced under.
 from __future__ import annotations
 
 import importlib
+import json
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, is_dataclass
+from datetime import date, datetime
+from enum import Enum
 from math import comb
 from typing import Any, Literal
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from fx1.eval.suite import ModelFn
@@ -106,14 +110,40 @@ def suite_accepts_judge(suite: str) -> bool:
     return _EVAL_RUNNERS[suite][2]
 
 
+def _jsonable(obj: Any) -> Any:
+    """Deep-normalize a report subtree to JSON-safe leaves — numpy
+    arrays/scalars, tuples/sets, enums, and date-likes convert;
+    anything still unserializable raises at the caller's check."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, np.generic):
+        return obj.item()
+    if isinstance(obj, Enum):
+        return _jsonable(obj.value)
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, Mapping):
+        return {str(k): _jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set, frozenset)):
+        return [_jsonable(v) for v in obj]
+    return obj
+
+
 def report_dump(report: Any) -> dict[str, Any]:
     """Serialize a suite report fail-closed — pydantic or dataclass,
-    nothing else seals into a record."""
+    nothing else seals into a record. The dict must be JSON-safe: it is
+    journaled and served verbatim, so numpy leaves/dataclasses are
+    normalized away rather than left to crash the serializer later."""
     if isinstance(report, BaseModel):
-        return report.model_dump(mode="json")
-    if is_dataclass(report) and not isinstance(report, type):
-        return asdict(report)
-    raise TypeError(f"eval report is not serializable: {type(report).__name__}")
+        out = _jsonable(report.model_dump(mode="python"))
+    elif is_dataclass(report) and not isinstance(report, type):
+        out = _jsonable(asdict(report))
+    else:
+        raise TypeError(f"eval report is not serializable: {type(report).__name__}")
+    if not isinstance(out, dict):
+        raise TypeError("eval report did not serialize to a dict")
+    json.dumps(out)  # fail-closed proof the dump is wire-safe
+    return out
 
 
 def metered_model(

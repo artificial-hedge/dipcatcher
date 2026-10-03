@@ -511,6 +511,54 @@ def journal_audit() -> dict[str, Any]:
         except ValueError:
             r["idem_requires_model"] = True
 
+    # --- report serialization must be journal-safe ----------------------
+    # A real defect found while binding the SDK store: dataclass reports
+    # carry numpy leaves (calibration's `extracted`), which crashed
+    # model_dump(mode="json") inside put/mark — silent journal gaps.
+    from dataclasses import dataclass  # noqa: PLC0415
+
+    import numpy as np  # noqa: PLC0415
+
+    from fx1.serve.evals import report_dump  # noqa: PLC0415
+
+    @dataclass
+    class _ArrReport:
+        bins: list[float]
+        extracted: Any
+
+    dump = report_dump(_ArrReport(bins=[0.5, 1.0], extracted=np.arange(4)))
+    r["report_dump_json_safe"] = dump["extracted"] == [0, 1, 2, 3] and isinstance(
+        json.dumps(dump), str
+    )
+    try:
+        report_dump({"not": "a report"})
+        r["report_dump_fail_closed"] = False
+    except TypeError:
+        r["report_dump_fail_closed"] = True
+
+    # --- SDK stores journal under state_dir ------------------------------
+    # Fx1Harness(state_dir=...) binds the same evals/ft_jobs journals a
+    # second instance replays — the in-process twin is durable too.
+    from fx1.sdk import Fx1Harness  # noqa: PLC0415
+
+    with tempfile.TemporaryDirectory() as td:
+        h = Fx1Harness(state_dir=td)
+        srec = h.run_eval("calibration", model_fn=lambda msgs: "0.5")
+        h2 = Fx1Harness(state_dir=td)
+        rec2 = h2.eval_record(srec.eval_id)
+        r["sdk_eval_journaled"] = (
+            srec.status == "succeeded"
+            and rec2.status == "succeeded"
+            and rec2.report is not None
+            and srec.report is not None
+            and rec2.report.get("extracted") == srec.report.get("extracted")
+        )
+        # a running eval record left by a 'crash' (put without mark)
+        crash_rec = _mk_eval("sdk-crash", "queued")
+        h2._eval_store.put(crash_rec, None, None)  # noqa: SLF001
+        h3 = Fx1Harness(state_dir=td)
+        r["sdk_inflight_recovers_failed"] = h3.eval_record("sdk-crash").status == "failed"
+
     return r
 
 
