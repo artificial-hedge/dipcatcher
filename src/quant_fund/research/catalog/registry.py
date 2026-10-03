@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-508 anabelian-geometry canon.
+        "anabelian_geo",
+        "section_conj",
+        "fundamental_grp",
+        "etale_pi1",
+        "groth_tei",
+        "tamagawa_mochi",
         # Wave-507 quasi-category/Joyal canon.
         "quasi_cat",
         "joyal_model",

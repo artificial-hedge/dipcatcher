@@ -4055,6 +4055,14 @@ from quant_fund.research.benches_w507 import (
     bench_nerve_quasi_family,
     bench_quasi_cat_family,
 )
+from quant_fund.research.benches_w508 import (
+    bench_anabelian_geo_family,
+    bench_etale_pi1_family,
+    bench_fundamental_grp_family,
+    bench_groth_tei_family,
+    bench_section_conj_family,
+    bench_tamagawa_mochi_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4434,6 +4442,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "anabelian_geo": bench_anabelian_geo_family,
+        "section_conj": bench_section_conj_family,
+        "fundamental_grp": bench_fundamental_grp_family,
+        "etale_pi1": bench_etale_pi1_family,
+        "groth_tei": bench_groth_tei_family,
+        "tamagawa_mochi": bench_tamagawa_mochi_family,
         "quasi_cat": bench_quasi_cat_family,
         "joyal_model": bench_joyal_model_family,
         "homotopy_coherent": bench_homotopy_coherent_family,

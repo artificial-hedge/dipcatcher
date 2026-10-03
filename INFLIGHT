@@ -1,3 +1,4 @@
+feat(research): wave 508 — anabelian-geometry canon (anabelian_geo, section_conj, fundamental_grp, etale_pi1, groth_tei, tamagawa_mochi) (3003->3009 families)
 feat(research): wave 507 — quasi-category/Joyal canon (quasi_cat, joyal_model, homotopy_coherent, nerve_quasi, htc_colimit, marking_qcat) (2997->3003 families)
 feat(research): wave 506 — NIP/distal model-theory canon (dp_rank, forking_seq, honest_def, uniform_def, distality, nip_formula) (2991->2997 families)
 feat(research): wave 505 — cobordism-theory canon (cobordism_grp, oriented_cob, unoriented_cob, complex_cob, framed_cob, thom_cob) (2985->2991 families)
