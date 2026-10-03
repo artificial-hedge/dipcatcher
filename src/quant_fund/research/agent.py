@@ -2191,6 +2191,14 @@ from quant_fund.research.benches_w274 import (
     bench_seq_logo_family,
     bench_star_msa_family,
 )
+from quant_fund.research.benches_w275 import (
+    bench_columnar_scan_family,
+    bench_graceful_hash_family,
+    bench_index_intersect_family,
+    bench_late_materialize_family,
+    bench_radix_join_family,
+    bench_simd_filter_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2522,6 +2530,12 @@ def _provenance(
         "orf_find": bench_orf_find_family,
         "kmer_count": bench_kmer_count_family,
         "seq_logo": bench_seq_logo_family,
+        "columnar_scan": bench_columnar_scan_family,
+        "simd_filter": bench_simd_filter_family,
+        "late_materialize": bench_late_materialize_family,
+        "radix_join": bench_radix_join_family,
+        "graceful_hash": bench_graceful_hash_family,
+        "index_intersect": bench_index_intersect_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

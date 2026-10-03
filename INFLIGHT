@@ -1,3 +1,4 @@
+feat(research): wave 275 — databases-4 canon (columnar_scan, simd_filter, late_materialize, radix_join, graceful_hash, index_intersect) (1623->1629 families)
 feat(research): wave 274 — bioinformatics-2 canon (hmm_profile, star_msa, gc_skew, orf_find, kmer_count, seq_logo) (1617->1623 families)
 feat(research): wave 273 — compiler-3 canon (partial_eval, peephole_opt, strength_red, const_fold, loop_unroll, inline_expand) (1611->1617 families)
 feat(research): wave 272 — control-theory-2 canon (pid_antiwindup, sliding_mode, gain_schedule, smith_predictor, backstepping, repetitive_ctrl) (1605->1611 families)
