@@ -2367,6 +2367,14 @@ from quant_fund.research.benches_w296 import (
     bench_rts_smoother_family,
     bench_se3_spline_family,
 )
+from quant_fund.research.benches_w297 import (
+    bench_dilithium_sig_family,
+    bench_frodokem_family,
+    bench_kyber_kem_family,
+    bench_ntt_ring_family,
+    bench_sphincs_sig_family,
+    bench_xmss_sig_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2746,6 +2754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ntt_ring": bench_ntt_ring_family,
+        "kyber_kem": bench_kyber_kem_family,
+        "dilithium_sig": bench_dilithium_sig_family,
+        "frodokem": bench_frodokem_family,
+        "xmss_sig": bench_xmss_sig_family,
+        "sphincs_sig": bench_sphincs_sig_family,
         "lqr_funnel": bench_lqr_funnel_family,
         "chomp": bench_chomp_family,
         "gjk_epa": bench_gjk_epa_family,

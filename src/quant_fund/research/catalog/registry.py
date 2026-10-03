@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-297 post-quantum crypto canon.
+        "ntt_ring",
+        "kyber_kem",
+        "dilithium_sig",
+        "frodokem",
+        "xmss_sig",
+        "sphincs_sig",
         # Wave-296 robotics-4 canon.
         "lqr_funnel",
         "chomp",
