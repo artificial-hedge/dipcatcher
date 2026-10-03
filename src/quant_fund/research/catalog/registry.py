@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-827 random-series canon.
+        "three_series",
+        "kolmogorov_two",
+        "ito_nisio",
+        "chung_series",
+        "ortega_series",
+        "salem_zygmund",
         # Wave-826 maximal-inequality canon.
         "doob_ineq",
         "max_ineq",
