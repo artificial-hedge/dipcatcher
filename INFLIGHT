@@ -1,3 +1,4 @@
+feat(research): wave 982 — potential-theory-2 canon (dirichlet_problem, energy_principle, equilibrium_measure, thin_set, boundary_regular, capacitary_pot) (5841->5847 families)
 feat(research): wave 981 — convex-geometry-2 canon (john_ellipsoid, loewner_ellipsoid, milman_rev_thm, grothendieck_const, kadison_singer, milman_isotropic) (5835->5841 families)
 feat(research): wave 980 — approximation-theory-2 canon (walsh_series, haar_system, faber_schauder, de_boor_stable, whitney_ext, korovkin_thm) (5829->5835 families)
 feat(research): wave 979 — ergodic-2 canon (weyl_equidist, van_der_corput, horocycle_flow, unipotent_ergodic, ratner_thm, disjointness_dyn) (5823->5829 families)
