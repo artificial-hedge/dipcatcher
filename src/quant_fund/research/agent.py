@@ -2664,6 +2664,22 @@ from quant_fund.research.benches_w333 import (
     bench_sparse_interp_family,
     bench_subresultant_family,
 )
+from quant_fund.research.benches_w334 import (
+    bench_beaver_triple_family,
+    bench_bgw_mpc_family,
+    bench_garbled_circuit_family,
+    bench_ot_extension_family,
+    bench_psi_intersect_family,
+    bench_spdz_mac_family,
+)
+from quant_fund.research.benches_w335 import (
+    bench_adjoint_check_family,
+    bench_cat_colimit_family,
+    bench_exponential_obj_family,
+    bench_fin_limit_family,
+    bench_subobject_classifier_family,
+    bench_yoneda_embed_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3043,6 +3059,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fin_limit": bench_fin_limit_family,
+        "subobject_classifier": bench_subobject_classifier_family,
+        "exponential_obj": bench_exponential_obj_family,
+        "yoneda_embed": bench_yoneda_embed_family,
+        "adjoint_check": bench_adjoint_check_family,
+        "cat_colimit": bench_cat_colimit_family,
+        "garbled_circuit": bench_garbled_circuit_family,
+        "bgw_mpc": bench_bgw_mpc_family,
+        "beaver_triple": bench_beaver_triple_family,
+        "ot_extension": bench_ot_extension_family,
+        "spdz_mac": bench_spdz_mac_family,
+        "psi_intersect": bench_psi_intersect_family,
         "poly_factor_fp": bench_poly_factor_fp_family,
         "hensel_lift": bench_hensel_lift_family,
         "poly_crt": bench_poly_crt_family,
