@@ -1,3 +1,4 @@
+feat(research): wave 628 — operads-2 canon (moerdijk_weiss, higher_operad, operad_infty3, operad_cat2, dendroidal_seg, operad_module) (3723->3729 families)
 feat(research): wave 627 — condensed-4 canon (discrete_liquid, smith_project, condensed_ring, liquid_ring, scholze_trace, condensed_coh) (3717->3723 families)
 feat(research): wave 626 — stacks-3 canon (algebraic_stack2, artin_stack, quotient_stack2, stacky_point, orbifold_stack, gerbe_cohomology) (3711->3717 families)
 feat(research): wave 625 — homotopy-15 canon (stable_cohomology2, woodward_op, spectrum_type, complexity_spectrum, small_spec, simplicial_htpy) (3705->3711 families)

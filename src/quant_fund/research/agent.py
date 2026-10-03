@@ -5015,6 +5015,14 @@ from quant_fund.research.benches_w627 import (
     bench_scholze_trace_family,
     bench_smith_project_family,
 )
+from quant_fund.research.benches_w628 import (
+    bench_dendroidal_seg_family,
+    bench_higher_operad_family,
+    bench_moerdijk_weiss_family,
+    bench_operad_cat2_family,
+    bench_operad_infty3_family,
+    bench_operad_module_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5394,6 +5402,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "moerdijk_weiss": bench_moerdijk_weiss_family,
+        "higher_operad": bench_higher_operad_family,
+        "operad_infty3": bench_operad_infty3_family,
+        "operad_cat2": bench_operad_cat2_family,
+        "dendroidal_seg": bench_dendroidal_seg_family,
+        "operad_module": bench_operad_module_family,
         "discrete_liquid": bench_discrete_liquid_family,
         "smith_project": bench_smith_project_family,
         "condensed_ring": bench_condensed_ring_family,
