@@ -3791,6 +3791,14 @@ from quant_fund.research.benches_w474 import (
     bench_reshet_turaev_family,
     bench_topological_order_family,
 )
+from quant_fund.research.benches_w475 import (
+    bench_chiral_alg_family,
+    bench_cyclic_hk_family,
+    bench_dendroidal_family,
+    bench_infty_operad_family,
+    bench_seq_spectra_family,
+    bench_sifted_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4170,6 +4178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dendroidal": bench_dendroidal_family,
+        "infty_operad": bench_infty_operad_family,
+        "cyclic_hk": bench_cyclic_hk_family,
+        "chiral_alg": bench_chiral_alg_family,
+        "sifted_cat": bench_sifted_cat_family,
+        "seq_spectra": bench_seq_spectra_family,
         "reshet_turaev": bench_reshet_turaev_family,
         "khovanov": bench_khovanov_family,
         "heegaard_floer": bench_heegaard_floer_family,
