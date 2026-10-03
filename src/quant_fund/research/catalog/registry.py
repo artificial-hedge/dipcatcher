@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-958 matrix-inequalities canon.
+        "ky_fan",
+        "lidskii_thm",
+        "von_neumann_trace",
+        "pinching_ineq",
+        "araki_lieb_thirring",
+        "hadamard_fischer",
         # Wave-957 operator-theory-2 canon.
         "selfadjoint_op",
         "unitary_operator",
