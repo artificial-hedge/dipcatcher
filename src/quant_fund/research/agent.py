@@ -7959,6 +7959,14 @@ from quant_fund.research.benches_w995 import (
     bench_sine_gordon_family,
     bench_toda_lattice_family,
 )
+from quant_fund.research.benches_w996 import (
+    bench_dbar_method_family,
+    bench_deift_zhou_family,
+    bench_fokas_unified_family,
+    bench_isomonodromy_family,
+    bench_orthogonal_poly_rh_family,
+    bench_small_norm_rh_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8330,6 +8338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dbar_method": bench_dbar_method_family,
+        "orthogonal_poly_rh": bench_orthogonal_poly_rh_family,
+        "isomonodromy": bench_isomonodromy_family,
+        "fokas_unified": bench_fokas_unified_family,
+        "deift_zhou": bench_deift_zhou_family,
+        "small_norm_rh": bench_small_norm_rh_family,
         "sine_gordon": bench_sine_gordon_family,
         "nls_soliton": bench_nls_soliton_family,
         "toda_lattice": bench_toda_lattice_family,
