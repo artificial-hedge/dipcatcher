@@ -1,3 +1,4 @@
+feat(research): wave 900 — spatial-index canon (kd_tree, ball_tree, cover_tree, r_tree, quad_tree, vp_tree) (5349->5355 families)
 feat(research): wave 899 — interpolation-2 canon (cardinal_interp, bernstein_form, shanks_trans, chebyshev_interp, osculating_interp, rational_interp) (5343->5349 families)
 feat(research): wave 898 — BVP canon (shooting_bvp, multiple_shooting, collocation_bvp, finite_diff_bvp, relaxation_bvp, riccati_bvp) (5337->5343 families)
 feat(research): wave 897 — ODE-theory/LMM canon (linear_multistep, dahlquist_test, explicit_midpoint, heun_method, trapezoid_rule, order_barrier) (5331->5337 families)
