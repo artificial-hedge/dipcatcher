@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-854 radial-basis-function canon.
+        "rbf_interp",
+        "gaussian_rbf",
+        "multiquadric_rbf",
+        "kansa_collocation",
+        "rbf_finite_diff",
+        "wendland_rbf",
         # Wave-853 spectral-element canon.
         "sem_grid",
         "gll_nodes",
