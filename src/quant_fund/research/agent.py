@@ -4407,6 +4407,14 @@ from quant_fund.research.benches_w551 import (
     bench_novikov_thm_family,
     bench_thurston_fol_family,
 )
+from quant_fund.research.benches_w552 import (
+    bench_contact_form_family,
+    bench_convex_surface_family,
+    bench_giroux_corr_family,
+    bench_legendrian_knot_family,
+    bench_overtwisted_family,
+    bench_tight_contact_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4786,6 +4794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "contact_form": bench_contact_form_family,
+        "legendrian_knot": bench_legendrian_knot_family,
+        "overtwisted": bench_overtwisted_family,
+        "tight_contact": bench_tight_contact_family,
+        "giroux_corr": bench_giroux_corr_family,
+        "convex_surface": bench_convex_surface_family,
         "foliation": bench_foliation_family,
         "holonomy_grp": bench_holonomy_grp_family,
         "godbillon_vey": bench_godbillon_vey_family,

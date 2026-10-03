@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-552 contact-topology canon.
+        "contact_form",
+        "legendrian_knot",
+        "overtwisted",
+        "tight_contact",
+        "giroux_corr",
+        "convex_surface",
         # Wave-551 foliation-theory canon.
         "foliation",
         "holonomy_grp",
