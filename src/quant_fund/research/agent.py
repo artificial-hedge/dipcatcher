@@ -8023,6 +8023,14 @@ from quant_fund.research.benches_w1003 import (
     bench_mhd_equations_family,
     bench_parker_solar_wind_family,
 )
+from quant_fund.research.benches_w1004 import (
+    bench_bgk_model_family,
+    bench_boltzmann_eq_family,
+    bench_chapman_enskog_family,
+    bench_h_theorem_family,
+    bench_landau_damping_family,
+    bench_vlasov_eq_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8394,6 +8402,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "boltzmann_eq": bench_boltzmann_eq_family,
+        "vlasov_eq": bench_vlasov_eq_family,
+        "bgk_model": bench_bgk_model_family,
+        "chapman_enskog": bench_chapman_enskog_family,
+        "h_theorem": bench_h_theorem_family,
+        "landau_damping": bench_landau_damping_family,
         "mhd_equations": bench_mhd_equations_family,
         "alfven_waves": bench_alfven_waves_family,
         "parker_solar_wind": bench_parker_solar_wind_family,
