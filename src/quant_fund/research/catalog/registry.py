@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-595 crystalline-cohomology canon.
+        "crys_cohom",
+        "syntomic",
+        "divided_power",
+        "pd_envelope",
+        "nygaard_filt",
+        "conjugate_fil",
         # Wave-594 etale-cohomology canon.
         "etale_homotopy",
         "pro_etale",
