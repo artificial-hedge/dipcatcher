@@ -2479,6 +2479,14 @@ from quant_fund.research.benches_w310 import (
     bench_surface_code_family,
     bench_syndrome_circuit_family,
 )
+from quant_fund.research.benches_w311 import (
+    bench_aig_rewrite_family,
+    bench_clock_tree_family,
+    bench_floorplan_sa_family,
+    bench_fm_partition_family,
+    bench_lee_router_family,
+    bench_power_est_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2858,6 +2866,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fm_partition": bench_fm_partition_family,
+        "lee_router": bench_lee_router_family,
+        "clock_tree": bench_clock_tree_family,
+        "aig_rewrite": bench_aig_rewrite_family,
+        "power_est": bench_power_est_family,
+        "floorplan_sa": bench_floorplan_sa_family,
         "gottesman_knill": bench_gottesman_knill_family,
         "steane_code": bench_steane_code_family,
         "surface_code": bench_surface_code_family,
