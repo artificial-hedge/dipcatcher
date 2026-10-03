@@ -1,3 +1,4 @@
+feat(research): wave 278 — econ-models-2 canon (rbc_sim, nk_phillips, taylor_rule, solow_model, olg_model, cobweb_model) (1641->1647 families)
 feat(research): wave 277 — signal-processing-4 canon (stft_istft, chirp_z, fir_window, prony_model, wola_synth, decimate_int) (1635->1641 families)
 feat(research): wave 276 — distributed-systems-3 canon (ra_mutex, token_ring, bully_elect, chord_look, quorum_rw, causal_bcast) (1629->1635 families)
 feat(research): wave 275 — databases-4 canon (columnar_scan, simd_filter, late_materialize, radix_join, graceful_hash, index_intersect) (1623->1629 families)

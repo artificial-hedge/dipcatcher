@@ -3026,6 +3026,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "prony_model",
         "wola_synth",
         "decimate_int",
+        # Wave-278 econ-models-2 canon.
+        "rbc_sim",
+        "nk_phillips",
+        "taylor_rule",
+        "solow_model",
+        "olg_model",
+        "cobweb_model",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
