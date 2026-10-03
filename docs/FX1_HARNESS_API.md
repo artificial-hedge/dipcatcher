@@ -594,6 +594,16 @@ Client-side: `HarnessClient.upload_file` / `files` / `file` /
 endpoint=…)` runs the same lines through `openai_chat` /
 `openai_response` synchronously and returns `(batch,
 output_lines)` — no upload/poll machinery needed weights-direct.
+The CLI drives the whole lifecycle over `--remote`: `fx1 harness
+files` / `file-upload` / `file-content` / `file-delete` for the
+file store, `batch-submit` (upload + submit + poll to terminal;
+`--no-wait`, `--metadata`, `--idem-key`, `--callback-url`,
+`--callback-secret`) / `batches` / `batch-status` /
+`batch-cancel` / `batch-output` (fetch `output_file_id` bytes to
+`--out` or stdout) for the batch lifecycle, and `ft-create`
+/`ft-jobs`/`ft-status`/`ft-events`/`ft-cancel` for fine-tuning —
+`ft-create` also accepts the webhook flags on both the remote and
+in-process SDK paths.
 
 ### Retrieval (`store` + `GET`/`DELETE`)
 

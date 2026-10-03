@@ -1341,6 +1341,12 @@ def harness_ft_create(
     no_wait: bool = typer.Option(
         False, "--no-wait", help="Remote only: submit and return immediately."
     ),
+    callback_url: str | None = typer.Option(
+        None, "--callback-url", help="Terminal webhook URL (POSTs the job record once)."
+    ),
+    callback_secret: str | None = typer.Option(
+        None, "--callback-secret", help="HMAC key signing the webhook delivery."
+    ),
 ) -> None:
     """Create a gated fine-tuning job on the /v1/fine_tuning/jobs surface:
     in-process by default (SDK twin — synchronous, returns the terminal
@@ -1377,6 +1383,8 @@ def harness_ft_create(
                 suffix=suffix,
                 validation_file=val_id,
                 seed=seed,
+                callback_url=callback_url,
+                callback_secret=callback_secret,
             )
         )
         if no_wait:
@@ -1400,6 +1408,8 @@ def harness_ft_create(
             hyperparameters=FTHyperparameters(**hp) if hp is not None else None,
             suffix=suffix,
             seed=seed,
+            callback_url=callback_url,
+            callback_secret=callback_secret,
         )
     )
     typer.echo(ftjob.model_dump_json(indent=2))
@@ -1469,6 +1479,223 @@ def harness_ft_cancel(
         lambda: _remote_client(remote or "", api_key, timeout_s).cancel_finetune_job(job_id)
     )
     typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("files")
+def harness_files(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """List the remote /v1/files store, newest first."""
+    _need_remote(remote)
+    typer.echo(
+        json.dumps(
+            _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).files()), indent=2
+        )
+    )
+
+
+@harness_app.command("file-upload")
+def harness_file_upload(
+    file: Path = typer.Argument(..., help="Local .jsonl to upload."),
+    purpose: str = typer.Option("batch", "--purpose", help="File purpose: batch|fine-tune."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(60.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Upload a local JSONL to /v1/files — prints the file object."""
+    _need_remote(remote)
+    body = file.read_bytes() if file.exists() else None
+    if body is None:
+        typer.echo(f"error: {file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    up = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).upload_file(
+            body, filename=file.name, purpose=purpose
+        )
+    )
+    typer.echo(json.dumps(up, indent=2))
+
+
+@harness_app.command("file-content")
+def harness_file_content(
+    file_id: str = typer.Argument(..., help="file- id."),
+    out: Path | None = typer.Option(
+        None, "--out", help="Write bytes to this path instead of stdout."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(60.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Fetch a remote file's raw bytes (JSONL in, JSONL out)."""
+    _need_remote(remote)
+    blob = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).file_content(file_id))
+    if out is not None:
+        out.write_bytes(blob)
+        typer.echo(json.dumps({"file_id": file_id, "bytes": len(blob), "out": str(out)}))
+        return
+    typer.echo(blob.decode("utf-8", "replace"), nl=False)
+
+
+@harness_app.command("file-delete")
+def harness_file_delete(
+    file_id: str = typer.Argument(..., help="file- id."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Delete a remote file."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).delete_file(file_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("batch-submit")
+def harness_batch_submit(
+    input_file: Path = typer.Argument(
+        ..., help="Local batch-input .jsonl ({custom_id,method,url,body} per line)."
+    ),
+    endpoint: str = typer.Option(
+        "/v1/chat/completions",
+        "--endpoint",
+        help="/v1/chat/completions | /v1/responses | /v1/embeddings.",
+    ),
+    metadata: str | None = typer.Option(
+        None, "--metadata", help="JSON object of str->str batch metadata."
+    ),
+    idem_key: str | None = typer.Option(
+        None, "--idem-key", help="Idempotency-Key — replays the submit envelope."
+    ),
+    callback_url: str | None = typer.Option(
+        None, "--callback-url", help="Terminal webhook URL (POSTs the batch once)."
+    ),
+    callback_secret: str | None = typer.Option(
+        None, "--callback-secret", help="HMAC key signing the webhook delivery."
+    ),
+    no_wait: bool = typer.Option(
+        False, "--no-wait", help="Submit and return immediately (don't poll)."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(120.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Upload + submit a batch on /v1/batches, then poll to terminal.
+    Prints the terminal batch object (or the submitted one with
+    --no-wait). The submitter's X-Fx1-* env routes every line."""
+    _need_remote(remote)
+    body = input_file.read_bytes() if input_file.exists() else None
+    if body is None:
+        typer.echo(f"error: {input_file} does not exist", err=True)
+        raise typer.Exit(code=2)
+    meta = None
+    if metadata is not None:
+        try:
+            meta = json.loads(metadata)
+        except ValueError as exc:
+            typer.echo(f"error: --metadata is not JSON: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        if not isinstance(meta, dict):
+            typer.echo("error: --metadata must be a JSON object", err=True)
+            raise typer.Exit(code=2)
+    client = _remote_client(remote or "", api_key, timeout_s)
+    up = _or_exit(lambda: client.upload_file(body, filename=input_file.name, purpose="batch"))
+    sub = _or_exit(
+        lambda: client.create_batch(
+            up["id"],
+            endpoint=endpoint,
+            metadata=meta,
+            idempotency_key=idem_key,
+            callback_url=callback_url,
+            callback_secret=callback_secret,
+        )
+    )
+    if no_wait:
+        typer.echo(json.dumps(sub, indent=2))
+        return
+    fin = _or_exit(lambda: client.wait_batch(sub["id"]))
+    typer.echo(json.dumps(fin, indent=2))
+
+
+@harness_app.command("batches")
+def harness_batches(
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    limit: int = typer.Option(20, "--limit", help="Page size (max 100)."),
+    after: str | None = typer.Option(None, "--after", help="Pagination cursor (batch id)."),
+) -> None:
+    """List remote batches, newest first."""
+    _need_remote(remote)
+    page = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).batches(limit=limit, after=after)
+    )
+    typer.echo(json.dumps(page, indent=2))
+
+
+@harness_app.command("batch-status")
+def harness_batch_status(
+    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Print a remote batch's live record (status + request_counts)."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).batch(batch_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("batch-cancel")
+def harness_batch_cancel(
+    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Cooperative cancel — the worker checks between lines; the batch
+    lands 'cancelled' with partial output in output_file_id."""
+    _need_remote(remote)
+    st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).cancel_batch(batch_id))
+    typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("batch-output")
+def harness_batch_output(
+    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    out: Path | None = typer.Option(
+        None, "--out", help="Write output JSONL bytes to this path instead of stdout."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(60.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Fetch a finished batch's output file (output_file_id → bytes)."""
+    _need_remote(remote)
+    client = _remote_client(remote or "", api_key, timeout_s)
+    rec = _or_exit(lambda: client.batch(batch_id))
+    out_fid = rec.get("output_file_id")
+    if out_fid is None:
+        typer.echo(
+            f"error: batch {batch_id} has no output_file_id (status {rec.get('status')})",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    blob = _or_exit(lambda: client.file_content(out_fid))
+    if out is not None:
+        out.write_bytes(blob)
+        typer.echo(
+            json.dumps(
+                {
+                    "batch_id": batch_id,
+                    "output_file_id": out_fid,
+                    "bytes": len(blob),
+                    "out": str(out),
+                }
+            )
+        )
+        return
+    typer.echo(blob.decode("utf-8", "replace"), nl=False)
 
 
 @app.command("eval")

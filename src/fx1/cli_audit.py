@@ -157,7 +157,56 @@ def cli_audit() -> dict[str, Any]:
         "ft-status",
         "ft-events",
         "ft-cancel",
+        "files",
+        "file-upload",
+        "file-content",
+        "file-delete",
+        "batch-submit",
+        "batches",
+        "batch-status",
+        "batch-cancel",
+        "batch-output",
     } <= hnames
+
+    # the files/batches family is wire-only — no --remote is exit 2 on
+    # every command, never a traceback.
+    out["harness_files_family_needs_remote"] = all(
+        runner.invoke(app, ["harness", name, *args]).exit_code == 2
+        for name, args in (
+            ("files", []),
+            ("file-upload", ["x.jsonl"]),
+            ("file-content", ["file-x"]),
+            ("file-delete", ["file-x"]),
+            ("batch-submit", ["x.jsonl"]),
+            ("batches", []),
+            ("batch-status", ["batch_x"]),
+            ("batch-cancel", ["batch_x"]),
+            ("batch-output", ["batch_x"]),
+        )
+    )
+    # ft-create: callback_secret without callback_url refuses before any
+    # network/backend work — the same guard as the wire's 422.
+    import tempfile as _tmpf  # noqa: PLC0415
+    from pathlib import Path as _P  # noqa: PLC0415
+
+    with _tmpf.TemporaryDirectory() as _td:
+        _cor = _P(_td) / "c.jsonl"
+        _cor.write_text(
+            '{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
+        )
+        out["harness_ft_create_guard"] = (
+            runner.invoke(
+                app,
+                ["harness", "ft-create", str(_cor), "--callback-secret", "x"],
+            ).exit_code
+            == 2
+        )
+        # a real corpus on the in-process SDK path exits 0 with the
+        # terminal job record (synchronous stub runner).
+        _ok = runner.invoke(app, ["harness", "ft-create", str(_cor), "--epochs", "1"])
+        out["harness_ft_create_inprocess"] = _ok.exit_code == 0 and json.loads(_ok.stdout).get(
+            "status"
+        ) in {"succeeded", "failed"}
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
     # a dead BYOK endpoint is a verdict, not a crash.
@@ -566,6 +615,9 @@ def cli_audit() -> dict[str, Any]:
             self.last_ft_job: str | None = None
             self.last_ft_query: dict[str, Any] | None = None
             self.last_upload: dict[str, Any] | None = None
+            self.last_file_id: str | None = None
+            self.last_batch_create: dict[str, Any] | None = None
+            self.last_batch_id: str | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -762,6 +814,58 @@ def cli_audit() -> dict[str, Any]:
         def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
             return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
+
+        def files(self) -> list[dict[str, Any]]:
+            return [{"id": "file-1", "object": "file", "purpose": "batch"}]
+
+        def file_content(self, file_id: str) -> bytes:
+            self.last_file_id = file_id
+            return b'{"custom_id":"r1"}\n'
+
+        def delete_file(self, file_id: str) -> dict[str, Any]:
+            self.last_file_id = file_id
+            return {"id": file_id, "object": "file", "deleted": True}
+
+        def create_batch(self, input_file_id: str, **kw: Any) -> dict[str, Any]:
+            rec = dict(kw)
+            rec["input_file_id"] = input_file_id
+            self.last_batch_create = rec
+            return {
+                "id": "batch_x",
+                "object": "batch",
+                "status": "validating",
+                "input_file_id": input_file_id,
+            }
+
+        def wait_batch(self, batch_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_batch_id = batch_id
+            return {
+                "id": batch_id,
+                "object": "batch",
+                "status": "completed",
+                "output_file_id": "file-out",
+            }
+
+        def batches(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [{"id": "batch_x", "object": "batch", "status": "completed"}],
+                "has_more": False,
+            }
+
+        def batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_batch_id = batch_id
+            return {
+                "id": batch_id,
+                "object": "batch",
+                "status": "completed",
+                "output_file_id": "file-out",
+            }
+
+        def cancel_batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_batch_id = batch_id
+            return {"id": batch_id, "object": "batch", "status": "cancelling"}
 
     remotes: list[_FakeRemote] = []
 
@@ -1124,8 +1228,32 @@ def cli_audit() -> dict[str, Any]:
                     "suffix": "pp",
                     "validation_file": None,
                     "seed": 11,
+                    "callback_url": None,
+                    "callback_secret": None,
                 }
                 and remotes[-1].last_ft_job == "ftjob-x"
+            )
+            # --callback-url/--callback-secret flow through to the client
+            rft_cb = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "ft-create",
+                    str(cpath),
+                    "--remote",
+                    "http://h.test",
+                    "--no-wait",
+                    "--callback-url",
+                    "https://hooks.test/ft",
+                    "--callback-secret",
+                    "whsec-cli",
+                ],
+            )
+            out["remote_ft_create_callback_kwargs"] = (
+                rft_cb.exit_code == 0
+                and remotes[-1].last_ft_create is not None
+                and remotes[-1].last_ft_create.get("callback_url") == "https://hooks.test/ft"
+                and remotes[-1].last_ft_create.get("callback_secret") == "whsec-cli"
             )
             rft_nw = runner.invoke(
                 app,
@@ -1195,6 +1323,157 @@ def cli_audit() -> dict[str, Any]:
             and json.loads(rfc.stdout)["status"] == "cancelled"
             and remotes[-1].last_ft_job == "ftjob-x"
         )
+
+        # /v1/files + /v1/batches wire family
+        with tempfile.TemporaryDirectory() as bfd:
+            blines = _Path(bfd) / "in.jsonl"
+            blines.write_bytes(
+                b'{"custom_id":"r1","method":"POST","url":"/v1/chat/completions","body":{}}\n'
+            )
+            out["remote_files_list"] = (
+                runner.invoke(app, ["harness", "files", "--remote", "http://h.test"]).exit_code == 0
+            )
+            rfu = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "file-upload",
+                    str(blines),
+                    "--purpose",
+                    "batch",
+                    "--remote",
+                    "http://h.test",
+                ],
+            )
+            out["remote_file_upload_json"] = (
+                rfu.exit_code == 0
+                and json.loads(rfu.stdout)["id"] == "file-ft"
+                and remotes[-1].last_upload
+                == {
+                    "purpose": "batch",
+                    "filename": "in.jsonl",
+                    "n_bytes": len(blines.read_bytes()),
+                }
+            )
+            rfc_out = runner.invoke(
+                app, ["harness", "file-content", "file-9", "--remote", "http://h.test"]
+            )
+            out["remote_file_content_stdout"] = (
+                rfc_out.exit_code == 0
+                and rfc_out.stdout.startswith('{"custom_id"')
+                and remotes[-1].last_file_id == "file-9"
+            )
+            out["remote_file_delete_json"] = (
+                runner.invoke(
+                    app, ["harness", "file-delete", "file-9", "--remote", "http://h.test"]
+                ).exit_code
+                == 0
+                and remotes[-1].last_file_id == "file-9"
+            )
+            # batch-submit: upload (purpose=batch) → create → wait → print
+            rbsub = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch-submit",
+                    str(blines),
+                    "--remote",
+                    "http://h.test",
+                    "--metadata",
+                    '{"k":"v"}',
+                    "--callback-url",
+                    "https://hooks.test/b",
+                    "--callback-secret",
+                    "whsec-b",
+                ],
+            )
+            out["remote_batch_submit_terminal"] = (
+                rbsub.exit_code == 0
+                and json.loads(rbsub.stdout)["status"] == "completed"
+                and (remotes[-1].last_upload or {}).get("purpose") == "batch"
+                and remotes[-1].last_batch_create
+                == {
+                    "endpoint": "/v1/chat/completions",
+                    "metadata": {"k": "v"},
+                    "idempotency_key": None,
+                    "callback_url": "https://hooks.test/b",
+                    "callback_secret": "whsec-b",
+                    "input_file_id": "file-ft",
+                }
+                and remotes[-1].last_batch_id == "batch_x"
+            )
+            out["remote_batch_submit_bad_meta_2"] = (
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "batch-submit",
+                        str(blines),
+                        "--remote",
+                        "http://h.test",
+                        "--metadata",
+                        "[1]",
+                    ],
+                ).exit_code
+                == 2
+            )
+            out["remote_batches_list"] = runner.invoke(
+                app, ["harness", "batches", "--remote", "http://h.test"]
+            ).exit_code == 0 and remotes[-1].last_ft_query == {"limit": 20, "after": None}
+            out["remote_batch_status_json"] = (
+                runner.invoke(
+                    app,
+                    ["harness", "batch-status", "batch_x", "--remote", "http://h.test"],
+                ).exit_code
+                == 0
+                and remotes[-1].last_batch_id == "batch_x"
+            )
+            out["remote_batch_cancel_json"] = (
+                json.loads(
+                    runner.invoke(
+                        app,
+                        ["harness", "batch-cancel", "batch_x", "--remote", "http://h.test"],
+                    ).stdout
+                )["status"]
+                == "cancelling"
+            )
+            # batch-output: batch record → output_file_id → file bytes
+            rbo = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch-output",
+                    "batch_x",
+                    "--remote",
+                    "http://h.test",
+                    "--out",
+                    str(_Path(bfd) / "out.jsonl"),
+                ],
+            )
+            out["remote_batch_output_writes_file"] = (
+                rbo.exit_code == 0
+                and (_Path(bfd) / "out.jsonl").read_bytes().startswith(b'{"custom_id"')
+                and remotes[-1].last_file_id == "file-out"
+            )
+
+        # a batch with no output_file_id exits 2, not a traceback
+        class _NoOutRemote(_FakeRemote):
+            def batch(self, batch_id: str) -> dict[str, Any]:
+                return {"id": batch_id, "object": "batch", "status": "failed"}
+
+        def _mk_noout(*a: Any, **kw: Any) -> _NoOutRemote:
+            nr = _NoOutRemote(*a, **kw)
+            remotes.append(nr)
+            return nr
+
+        with patch("fx1.serve.client.HarnessClient", side_effect=_mk_noout):
+            out["remote_batch_output_missing_2"] = (
+                runner.invoke(
+                    app,
+                    ["harness", "batch-output", "batch_x", "--remote", "http://h.test"],
+                ).exit_code
+                == 2
+            )
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:
