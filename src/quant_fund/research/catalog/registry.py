@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-863 domain-decomposition canon.
+        "schwarz_add",
+        "schwarz_mult",
+        "coarse_correction",
+        "mortar_dd",
+        "feti_lite",
+        "bddc_lite",
         # Wave-862 sparse-grid/dimension-adaptive canon.
         "smolyak_grid",
         "sparse_tensor",
