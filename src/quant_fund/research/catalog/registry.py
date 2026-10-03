@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-579 geometric-invariant-theory canon.
+        "git_quotient",
+        "hilbert_mumford",
+        "moment_polytope",
+        "kirwan_strat",
+        "symplectic_quot",
+        "luna_slice",
         # Wave-578 arithmetic-geometry-2 canon.
         "global_height",
         "bogomolov_conj",
