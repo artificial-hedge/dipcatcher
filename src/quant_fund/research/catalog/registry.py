@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-974 interpolation-theory canon.
+        "real_interp_k",
+        "complex_interp",
+        "lorentz_space",
+        "marcinkiewicz_interp",
+        "peetre_kfunctor",
+        "reiteration_thm",
         # Wave-973 Banach-space-geometry canon.
         "banach_mazur",
         "type_cotype",
