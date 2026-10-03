@@ -4175,6 +4175,14 @@ from quant_fund.research.benches_w522 import (
     bench_roth_thm_family,
     bench_szemeredi_family,
 )
+from quant_fund.research.benches_w523 import (
+    bench_erdos_distinct_family,
+    bench_ff_kakeya_family,
+    bench_guth_katz_family,
+    bench_joints_thm_family,
+    bench_kakeya_family,
+    bench_sz_trotter_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4554,6 +4562,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "erdos_distinct": bench_erdos_distinct_family,
+        "sz_trotter": bench_sz_trotter_family,
+        "kakeya": bench_kakeya_family,
+        "ff_kakeya": bench_ff_kakeya_family,
+        "joints_thm": bench_joints_thm_family,
+        "guth_katz": bench_guth_katz_family,
         "freiman_thm": bench_freiman_thm_family,
         "szemeredi": bench_szemeredi_family,
         "green_tao": bench_green_tao_family,
