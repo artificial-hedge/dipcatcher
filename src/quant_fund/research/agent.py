@@ -3471,6 +3471,14 @@ from quant_fund.research.benches_w434 import (
     bench_langlands_dual_family,
     bench_satake_iso_family,
 )
+from quant_fund.research.benches_w435 import (
+    bench_derived_fiber_family,
+    bench_derived_scheme_family,
+    bench_quasi_coherent_family,
+    bench_shifted_symplectic_family,
+    bench_spectral_scheme_family,
+    bench_virtual_class_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3850,6 +3858,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_scheme": bench_derived_scheme_family,
+        "quasi_coherent": bench_quasi_coherent_family,
+        "derived_fiber": bench_derived_fiber_family,
+        "spectral_scheme": bench_spectral_scheme_family,
+        "virtual_class": bench_virtual_class_family,
+        "shifted_symplectic": bench_shifted_symplectic_family,
         "satake_iso": bench_satake_iso_family,
         "hecke_operator": bench_hecke_operator_family,
         "langlands_dual": bench_langlands_dual_family,

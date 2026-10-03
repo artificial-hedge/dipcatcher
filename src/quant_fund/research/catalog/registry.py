@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-435 derived-schemes canon.
+        "derived_scheme",
+        "quasi_coherent",
+        "derived_fiber",
+        "spectral_scheme",
+        "virtual_class",
+        "shifted_symplectic",
         # Wave-434 Langlands-toy canon.
         "satake_iso",
         "hecke_operator",
