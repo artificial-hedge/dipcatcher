@@ -5719,6 +5719,14 @@ from quant_fund.research.benches_w715 import (
     bench_silting_object_family,
     bench_tilting_object_family,
 )
+from quant_fund.research.benches_w716 import (
+    bench_exceptional_coll_family,
+    bench_fourier_mukai_family,
+    bench_semi_orthogonal_family,
+    bench_serre_functor_family,
+    bench_sod_decomp_family,
+    bench_spherical_functor_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6098,6 +6106,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "exceptional_coll": bench_exceptional_coll_family,
+        "spherical_functor": bench_spherical_functor_family,
+        "serre_functor": bench_serre_functor_family,
+        "sod_decomp": bench_sod_decomp_family,
+        "fourier_mukai": bench_fourier_mukai_family,
+        "semi_orthogonal": bench_semi_orthogonal_family,
         "cluster_algebra": bench_cluster_algebra_family,
         "quiver_mutation": bench_quiver_mutation_family,
         "tilting_object": bench_tilting_object_family,
