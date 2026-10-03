@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-374 model-theory-3 canon.
+        "quantifier_elim",
+        "realize_types",
+        "omega_categoricity",
+        "acl_closure",
+        "morley_rank",
+        "vocab_interp",
         # Wave-373 optimization-3 canon.
         "bundle_method",
         "sqp",

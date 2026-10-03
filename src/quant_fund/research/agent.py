@@ -2983,6 +2983,14 @@ from quant_fund.research.benches_w373 import (
     bench_sqp_family,
     bench_trust_region_family,
 )
+from quant_fund.research.benches_w374 import (
+    bench_acl_closure_family,
+    bench_morley_rank_family,
+    bench_omega_categoricity_family,
+    bench_quantifier_elim_family,
+    bench_realize_types_family,
+    bench_vocab_interp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3362,6 +3370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "quantifier_elim": bench_quantifier_elim_family,
+        "realize_types": bench_realize_types_family,
+        "omega_categoricity": bench_omega_categoricity_family,
+        "acl_closure": bench_acl_closure_family,
+        "morley_rank": bench_morley_rank_family,
+        "vocab_interp": bench_vocab_interp_family,
         "bundle_method": bench_bundle_method_family,
         "sqp": bench_sqp_family,
         "ip_qp": bench_ip_qp_family,
