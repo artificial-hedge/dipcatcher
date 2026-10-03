@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-583 motivic-6 canon.
+        "motivic_base_change",
+        "six_op_motivic",
+        "motivic_smooth",
+        "motivic_proper",
+        "fulton_mclarty",
+        "motivic_homotopy2",
         # Wave-582 geometric-Langlands-2 canon.
         "arinkin_gaitsgory",
         "derived_satake",
