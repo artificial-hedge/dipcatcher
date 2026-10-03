@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-384 group-theory-3 canon.
+        "hall_subgroup",
+        "transfer_hom",
+        "schur_multiplier",
+        "aut_group",
+        "composition_series",
+        "permutation_poly",
         # Wave-383 homotopy-theory-3 canon.
         "mapping_cone",
         "loop_space",

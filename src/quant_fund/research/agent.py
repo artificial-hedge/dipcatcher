@@ -3063,6 +3063,14 @@ from quant_fund.research.benches_w383 import (
     bench_stiefel_whitney_family,
     bench_transfer_family,
 )
+from quant_fund.research.benches_w384 import (
+    bench_aut_group_family,
+    bench_composition_series_family,
+    bench_hall_subgroup_family,
+    bench_permutation_poly_family,
+    bench_schur_multiplier_family,
+    bench_transfer_hom_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3442,6 +3450,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hall_subgroup": bench_hall_subgroup_family,
+        "transfer_hom": bench_transfer_hom_family,
+        "schur_multiplier": bench_schur_multiplier_family,
+        "aut_group": bench_aut_group_family,
+        "composition_series": bench_composition_series_family,
+        "permutation_poly": bench_permutation_poly_family,
         "mapping_cone": bench_mapping_cone_family,
         "loop_space": bench_loop_space_family,
         "em_space": bench_em_space_family,
