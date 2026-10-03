@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-404 operad-2 canon.
+        "operad_algt",
+        "brace_operad",
+        "swiss_cheese",
+        "little_intervals",
+        "operad_homology",
+        "props_toy",
         # Wave-403 homotopy-4 canon.
         "j_hom_toy",
         "toda_bracket",
