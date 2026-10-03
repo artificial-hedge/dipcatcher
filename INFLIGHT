@@ -1,3 +1,4 @@
+feat(research): wave 588 — homotopy-11 canon (ehp_sequence, james_period, whitehead_prod, freudenthal_susp, moore_space, unstable_adams) (3483->3489 families)
 feat(research): wave 587 — birational-2 canon (terminal_sing, canonical_sing2, klt_mmp, mmp_flip, abundance_conj, bdd_fano) (3477->3483 families)
 feat(research): wave 586 — duality-theory canon (groth_duality, dualizing_cmplx, residue_thm, verdier_duality, dualizing_sheaf, relative_duality) (3471->3477 families)
 feat(research): wave 585 — intersection-theory canon (intersection_theory, macpherson_chern, weil_divisor, picard_group, line_bundle, canonical_bundle) (3465->3471 families)

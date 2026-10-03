@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-588 homotopy-11 canon.
+        "ehp_sequence",
+        "james_period",
+        "whitehead_prod",
+        "freudenthal_susp",
+        "moore_space",
+        "unstable_adams",
         # Wave-587 birational-2 canon.
         "terminal_sing",
         "canonical_sing2",
