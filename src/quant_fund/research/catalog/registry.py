@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-414 homotopy-6 canon.
+        "exact_couple",
+        "adams_ss",
+        "stable_homotopy",
+        "whitehead_thm",
+        "obstruction",
+        "cofiber",
         # Wave-413 Galois-3 canon.
         "artin_lemma",
         "normal_basis",
