@@ -6823,6 +6823,14 @@ from quant_fund.research.benches_w853 import (
     bench_spectral_element_family,
     bench_tensor_product_sem_family,
 )
+from quant_fund.research.benches_w854 import (
+    bench_gaussian_rbf_family,
+    bench_kansa_collocation_family,
+    bench_multiquadric_rbf_family,
+    bench_rbf_finite_diff_family,
+    bench_rbf_interp_family,
+    bench_wendland_rbf_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7194,6 +7202,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "rbf_interp": bench_rbf_interp_family,
+        "gaussian_rbf": bench_gaussian_rbf_family,
+        "multiquadric_rbf": bench_multiquadric_rbf_family,
+        "kansa_collocation": bench_kansa_collocation_family,
+        "rbf_finite_diff": bench_rbf_finite_diff_family,
+        "wendland_rbf": bench_wendland_rbf_family,
         "sem_grid": bench_sem_grid_family,
         "gll_nodes": bench_gll_nodes_family,
         "spectral_element": bench_spectral_element_family,
