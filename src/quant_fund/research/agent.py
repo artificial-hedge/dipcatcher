@@ -2407,6 +2407,14 @@ from quant_fund.research.benches_w301 import (
     bench_taup_transform_family,
     bench_vibroseis_sweep_family,
 )
+from quant_fund.research.benches_w302 import (
+    bench_card_table_gc_family,
+    bench_escape_analysis_family,
+    bench_gvn_pre_family,
+    bench_osr_deopt_family,
+    bench_ssa_repair_family,
+    bench_trace_tree_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2786,6 +2794,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "card_table_gc": bench_card_table_gc_family,
+        "escape_analysis": bench_escape_analysis_family,
+        "osr_deopt": bench_osr_deopt_family,
+        "trace_tree": bench_trace_tree_family,
+        "ssa_repair": bench_ssa_repair_family,
+        "gvn_pre": bench_gvn_pre_family,
         "nmo_dix": bench_nmo_dix_family,
         "taup_transform": bench_taup_transform_family,
         "kirchhoff_mig": bench_kirchhoff_mig_family,
