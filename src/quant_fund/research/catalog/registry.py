@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-440 homotopy-8 canon.
+        "thom_iso",
+        "postnikov_twr",
+        "whitehead_twr",
+        "bott_period",
+        "stable_stem",
+        "hopf_map",
         # Wave-439 formal-groups/chromatic canon.
         "formal_group",
         "lazard_ring",
