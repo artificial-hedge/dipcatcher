@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-391 category-theory-3 canon.
+        "monoidal_cat",
+        "closed_cat",
+        "presheaf",
+        "kan_extension",
+        "distributor",
+        "equivalence_cat",
         # Wave-390 design-theory canon.
         "latin_trade",
         "steiner_system",
