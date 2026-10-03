@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-423 homological-algebra-4 canon.
+        "groth_spectral",
+        "serre_ss2",
+        "hypercohom",
+        "deriv_hom",
+        "cartan_eilenberg",
+        "adams_diff",
         # Wave-422 Lie-theory-2 canon.
         "weyl_chamber",
         "root_height",

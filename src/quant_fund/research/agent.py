@@ -3375,6 +3375,14 @@ from quant_fund.research.benches_w422 import (
     bench_verma_module_family,
     bench_weyl_chamber_family,
 )
+from quant_fund.research.benches_w423 import (
+    bench_adams_diff_family,
+    bench_cartan_eilenberg_family,
+    bench_deriv_hom_family,
+    bench_groth_spectral_family,
+    bench_hypercohom_family,
+    bench_serre_ss2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3754,6 +3762,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "groth_spectral": bench_groth_spectral_family,
+        "serre_ss2": bench_serre_ss2_family,
+        "hypercohom": bench_hypercohom_family,
+        "deriv_hom": bench_deriv_hom_family,
+        "cartan_eilenberg": bench_cartan_eilenberg_family,
+        "adams_diff": bench_adams_diff_family,
         "weyl_chamber": bench_weyl_chamber_family,
         "root_height": bench_root_height_family,
         "borel_subalgebra": bench_borel_subalgebra_family,
