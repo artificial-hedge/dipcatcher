@@ -4791,6 +4791,14 @@ from quant_fund.research.benches_w599 import (
     bench_monad_theorem_family,
     bench_monadicity_family,
 )
+from quant_fund.research.benches_w600 import (
+    bench_a_infty_alg_family,
+    bench_koszul_duality_family,
+    bench_l_infty_alg_family,
+    bench_minimal_model_op_family,
+    bench_operad_cobar_family,
+    bench_operadic_bar_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5170,6 +5178,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "a_infty_alg": bench_a_infty_alg_family,
+        "l_infty_alg": bench_l_infty_alg_family,
+        "koszul_duality": bench_koszul_duality_family,
+        "minimal_model_op": bench_minimal_model_op_family,
+        "operadic_bar": bench_operadic_bar_family,
+        "operad_cobar": bench_operad_cobar_family,
         "monad_theorem": bench_monad_theorem_family,
         "klesli_cat": bench_klesli_cat_family,
         "codensity_monad": bench_codensity_monad_family,

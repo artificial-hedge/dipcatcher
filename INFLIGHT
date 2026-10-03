@@ -1,3 +1,4 @@
+feat(research): wave 600 — operad-theory canon (a_infty_alg, l_infty_alg, koszul_duality, minimal_model_op, operadic_bar, operad_cobar) (3555->3561 families)
 feat(research): wave 599 — monad-theory canon (monad_theorem, klesli_cat, codensity_monad, monadicity, distributive_law, algebra_cat) (3549->3555 families)
 feat(research): wave 598 — algebraic-K-4 canon (borel_regulator, soul_elem, lichtenbaum_k, bloch_beilinson, etale_ktheory, thh_trace) (3543->3549 families)
 feat(research): wave 597 — chromatic-homotopy canon (curtis_lower, bousfield_kan, lannes_t, dror_smith, telescope_conj, periodicity_thm) (3537->3543 families)
