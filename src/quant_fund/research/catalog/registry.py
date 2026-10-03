@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-959 operator-theory-3 canon.
+        "toeplitz_op",
+        "integral_op",
+        "differential_op",
+        "contraction_op",
+        "accretive_op",
+        "sectorial_op",
         # Wave-958 matrix-inequalities canon.
         "ky_fan",
         "lidskii_thm",
