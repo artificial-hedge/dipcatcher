@@ -1,3 +1,4 @@
+feat(research): wave 513 — categorification canon (categorify, khovanov_hom, hecke_cat, soergel_bim, rasmussen_inv, uq_sl2) (3033->3039 families)
 feat(research): wave 512 — super-geometry canon (super_space, super_manifold, super_lie, odd_variables, berezin_int, super_scheme) (3027->3033 families)
 feat(research): wave 511 — Fargues-Scholze canon (fs_diamond, geometric_satake, v_sheaf, bun_g, hecke_stack, y_diamond) (3021->3027 families)
 feat(research): wave 510 — spectral-AG canon (spectral_scheme2, connective_e_ring, spectral_alg, spectral_stack, elliptic_cohor, taf_lurie) (3015->3021 families)
