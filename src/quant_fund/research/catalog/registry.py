@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-562 symplectic-geometry-2 canon.
+        "gromov_width",
+        "hofer_metric",
+        "symplectic_capacity",
+        "symplectic_packing",
+        "mcduff_polterovich",
+        "ekeland_hofer",
         # Wave-561 minimal-surfaces canon.
         "minimal_surface",
         "plateau_problem",
