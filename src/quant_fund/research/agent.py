@@ -3231,6 +3231,14 @@ from quant_fund.research.benches_w404 import (
     bench_props_toy_family,
     bench_swiss_cheese_family,
 )
+from quant_fund.research.benches_w405 import (
+    bench_bounded_complex_family,
+    bench_derived_functor2_family,
+    bench_koszul_dual_family,
+    bench_mapping_cone_tri_family,
+    bench_t_structure_family,
+    bench_triangulated_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3610,6 +3618,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "derived_functor2": bench_derived_functor2_family,
+        "triangulated": bench_triangulated_family,
+        "bounded_complex": bench_bounded_complex_family,
+        "mapping_cone_tri": bench_mapping_cone_tri_family,
+        "koszul_dual": bench_koszul_dual_family,
+        "t_structure": bench_t_structure_family,
         "operad_algt": bench_operad_algt_family,
         "brace_operad": bench_brace_operad_family,
         "swiss_cheese": bench_swiss_cheese_family,
