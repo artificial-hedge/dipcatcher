@@ -206,20 +206,47 @@ def validate_fx1_output(text: str) -> str:
                 "fx-1 output contains a live-performance or synthetic-as-live "
                 "claim; the lab's evidence gates forbid this."
             )
-    if _SYNTHETIC_TOKEN.search(norm) and not _SYNTHETIC_LABEL.search(norm):
-        # The label rule targets *presentation* of synthetic results, not
-        # discussion. If no numeric claim accompanies the mention, the text
-        # is commentary (e.g. a refusal) and passes.
-        numeric = re.search(r"\d", norm)
-        presenting = re.search(
-            r"\b(shows?|prove[sd]?|achiev\w+|scor\w+|result\w*|accuracy|"
-            r"recover\w+|performance)\b",
-            norm,
-            re.IGNORECASE,
+    if _unlabeled_synthetic_claim(norm):
+        raise Fx1HonestyError(
+            "synthetic evidence presented (with numeric claims) without "
+            "an explicit SYNTHETIC label."
         )
-        if numeric and presenting:
-            raise Fx1HonestyError(
-                "synthetic evidence presented (with numeric claims) without "
-                "an explicit SYNTHETIC label."
-            )
     return text
+
+
+def _unlabeled_synthetic_claim(norm: str) -> bool:
+    """True when normalized text presents synthetic evidence with numeric
+    claims and no explicit SYNTHETIC label. The label rule targets
+    *presentation* of synthetic results, not discussion: a synthetic mention
+    without a numeric claim is commentary (e.g. a refusal) and passes."""
+    if not _SYNTHETIC_TOKEN.search(norm) or _SYNTHETIC_LABEL.search(norm):
+        return False
+    numeric = re.search(r"\d", norm)
+    presenting = re.search(
+        r"\b(shows?|prove[sd]?|achiev\w+|scor\w+|result\w*|accuracy|"
+        r"recover\w+|performance)\b",
+        norm,
+        re.IGNORECASE,
+    )
+    return bool(numeric and presenting)
+
+
+def honesty_categories(text: str) -> dict[str, bool]:
+    """Per-category verdicts behind :func:`validate_fx1_output`.
+
+    Every check is evaluated independently (no short-circuit) so callers can
+    report the full violation surface; ``any(result.values())`` is exactly
+    the gate's raise decision. Categories: ``forbidden_headline_metric``
+    (a forbidden token immediately followed by a numeric headline),
+    ``live_or_synthetic_claim`` (live-performance or synthetic-as-live
+    phrasing), ``unlabeled_synthetic`` (synthetic evidence presented with
+    numeric claims and no SYNTHETIC label).
+    """
+    norm = _normalize(text)
+    return {
+        "forbidden_headline_metric": _contains_forbidden_headline(norm) is not None,
+        "live_or_synthetic_claim": any(
+            pattern.search(norm) for pattern in _FORBIDDEN_CLAIM_PATTERNS
+        ),
+        "unlabeled_synthetic": _unlabeled_synthetic_claim(norm),
+    }

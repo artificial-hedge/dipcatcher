@@ -2525,6 +2525,111 @@
         "title": "MetricsResponse",
         "type": "object"
       },
+      "ModerationRequest": {
+        "additionalProperties": false,
+        "description": "OpenAI-compatible moderation request \u2014 ``input`` is one string or a\nlist (same caps as ``/harness/score``); ``model`` is accepted for wire\ncompatibility and reported back as the gate's canonical name.",
+        "properties": {
+          "input": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Input"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "title": "ModerationRequest",
+        "type": "object"
+      },
+      "ModerationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ModerationResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "model",
+          "results"
+        ],
+        "title": "ModerationResponse",
+        "type": "object"
+      },
+      "ModerationResult": {
+        "additionalProperties": false,
+        "description": "One input's moderation verdict. ``category_scores`` are deterministic\n0.0/1.0 \u2014 the gate is a lexical contract, not a learned classifier, so\nscores carry the verdict, not a confidence.",
+        "properties": {
+          "categories": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Categories",
+            "type": "object"
+          },
+          "category_applied_input_types": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "title": "Category Applied Input Types",
+            "type": "object"
+          },
+          "category_scores": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Category Scores",
+            "type": "object"
+          },
+          "flagged": {
+            "title": "Flagged",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "flagged",
+          "categories",
+          "category_scores",
+          "category_applied_input_types"
+        ],
+        "title": "ModerationResult",
+        "type": "object"
+      },
       "OpenAIBatchRequest": {
         "additionalProperties": true,
         "description": "``POST /v1/batches`` body.",
@@ -9274,6 +9379,112 @@
           }
         },
         "summary": "Openai Retrieve Model",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/moderations": {
+      "post": {
+        "description": "OpenAI-compatible moderation surface over the honesty gate: each\ninput is classified against the three gate categories (forbidden\nheadline metric, live/synthetic-as-live claim, unlabeled synthetic\nevidence) and flagged when any fires. The ``id`` is content-derived\n(``modr-<sha256>``) so identical inputs get identical receipts.\nAdvisory like the other preflight surfaces: no backend, no slot,\nstays up during drain.",
+        "operationId": "openai_create_moderation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModerationResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Create Moderation",
         "tags": [
           "openai"
         ]

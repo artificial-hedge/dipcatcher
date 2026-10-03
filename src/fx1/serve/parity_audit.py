@@ -1558,6 +1558,25 @@ def parity_audit() -> dict[str, bool]:
             _raises(lambda: sdk_u.score([]))[0] == "ValidationError"
             and _raises(lambda: remote_u.score([]))[0] == "ValueError"
         )
+
+        # moderation surface: the SDK's in-process classification is
+        # byte-identical to the wire payload — flagged/categories/scores per
+        # input plus the content-derived modr- id, same input contract and
+        # the same guard faults.
+        mod_in = [
+            "clean text",
+            "Sharpe 3.2 live trading NAV up",
+            "the synthetic results show accuracy 0.99",
+        ]
+        out["moderate_parity"] = (
+            sdk_u.moderate(mod_in) == remote_u.moderate(mod_in)
+            and sdk_u.moderate("x") == remote_u.moderate("x")
+            and len(sdk_u.moderate(mod_in)["results"]) == 3
+        )
+        out["moderate_guard_parity"] = (
+            _raises(lambda: sdk_u.moderate([]))[0] == "ValidationError"
+            and _raises(lambda: remote_u.moderate([]))[0] == "ValueError"
+        )
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (

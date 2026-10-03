@@ -13,7 +13,7 @@ integrator reference; `docs/FX1.md` has the model overview and
 | Typed SDK | `from fx1.sdk import Fx1Harness` | in-process Python — no socket |
 | Remote client | `fx1.serve.client.HarnessClient` | Python callers on a remote harness — same result types as the SDK |
 | TS client | `clients/typescript/fx1` (`HarnessApiClient`) | TypeScript/JS callers — generated from the pinned OpenAPI spec |
-| OpenAI-compatible | `GET /v1/models`, `POST /v1/chat/completions`, `/v1/responses`, `/v1/embeddings`, `/v1/files`, `/v1/batches` | drop-in for OpenAI SDKs / existing toolchains — set `base_url` to the harness |
+| OpenAI-compatible | `GET /v1/models`, `POST /v1/chat/completions`, `/v1/responses`, `/v1/embeddings`, `/v1/moderations`, `/v1/files`, `/v1/batches` | drop-in for OpenAI SDKs / existing toolchains — set `base_url` to the harness |
 | CLI | `fx1 harness …` | shell, CI, ops scripts |
 
 The Python surfaces share one error taxonomy (`KeyError` 404 /
@@ -195,6 +195,7 @@ same digested shape the job record embeds.
 | `POST /v1/chat/completions` | OpenAI-compatible gated completion (JSON or SSE `stream:true`) |
 | `POST /v1/responses` | OpenAI Responses surface — `input` string/items, `instructions`, `reasoning`, `text.format`; SSE `stream:true` emits the `response.*` event grammar |
 | `POST /v1/embeddings` | OpenAI `embeddings.create` — verbatim provider forward, 501 when the link has no embeddings channel |
+| `POST /v1/moderations` | OpenAI `moderations.create` shape over the honesty gate → per-input `{flagged, categories, category_scores, category_applied_input_types}` + content-derived `modr-<sha256>` id; categories are the gate's three checks (`forbidden_headline_metric`, `live_or_synthetic_claim`, `unlabeled_synthetic`) with deterministic 0/1 scores. Advisory: never touches a backend, stays up during drain — also `Fx1Harness.moderate` / `HarnessClient.moderate` |
 | `POST /v1/files` | multipart upload of a batch-input JSONL (`purpose=batch` only) |
 | `GET /v1/files` / `GET /v1/files/{id}` | list / retrieve uploaded + output files |
 | `GET /v1/files/{id}/content` | raw bytes — input JSONL in, batch result JSONL out |
