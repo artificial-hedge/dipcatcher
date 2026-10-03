@@ -4071,6 +4071,14 @@ from quant_fund.research.benches_w509 import (
     bench_l_adic_sheaf_family,
     bench_purity_thm_family,
 )
+from quant_fund.research.benches_w510 import (
+    bench_connective_e_ring_family,
+    bench_elliptic_cohor_family,
+    bench_spectral_alg_family,
+    bench_spectral_scheme2_family,
+    bench_spectral_stack_family,
+    bench_taf_lurie_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4450,6 +4458,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_scheme2": bench_spectral_scheme2_family,
+        "connective_e_ring": bench_connective_e_ring_family,
+        "spectral_alg": bench_spectral_alg_family,
+        "spectral_stack": bench_spectral_stack_family,
+        "elliptic_cohor": bench_elliptic_cohor_family,
+        "taf_lurie": bench_taf_lurie_family,
         "etale_site2": bench_etale_site2_family,
         "l_adic_sheaf": bench_l_adic_sheaf_family,
         "frobenius_action": bench_frobenius_action_family,
