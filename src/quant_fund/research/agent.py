@@ -6367,6 +6367,14 @@ from quant_fund.research.benches_w796 import (
     bench_random_bsde_family,
     bench_time_bsde_family,
 )
+from quant_fund.research.benches_w797 import (
+    bench_doubly_bsde_family,
+    bench_obstacle_bsde_family,
+    bench_quadratic_bsde_family,
+    bench_reflected_bsde2_family,
+    bench_second_bsde_family,
+    bench_super_linear_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6746,6 +6754,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "second_bsde": bench_second_bsde_family,
+        "doubly_bsde": bench_doubly_bsde_family,
+        "reflected_bsde2": bench_reflected_bsde2_family,
+        "obstacle_bsde": bench_obstacle_bsde_family,
+        "quadratic_bsde": bench_quadratic_bsde_family,
+        "super_linear": bench_super_linear_family,
         "four_step_scheme": bench_four_step_scheme_family,
         "decoupling_field2": bench_decoupling_field2_family,
         "quasi_bsde": bench_quasi_bsde_family,
