@@ -5087,6 +5087,14 @@ from quant_fund.research.benches_w636 import (
     bench_sylleptic_family,
     bench_yang_lee_cat_family,
 )
+from quant_fund.research.benches_w637 import (
+    bench_cocartesian_diamond_family,
+    bench_curve_padic_family,
+    bench_diamond_mod_family,
+    bench_etale_phiphi_family,
+    bench_fargues_scholze2_family,
+    bench_scholze_bc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5466,6 +5474,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fargues_scholze2": bench_fargues_scholze2_family,
+        "curve_padic": bench_curve_padic_family,
+        "diamond_mod": bench_diamond_mod_family,
+        "etale_phiphi": bench_etale_phiphi_family,
+        "cocartesian_diamond": bench_cocartesian_diamond_family,
+        "scholze_bc": bench_scholze_bc_family,
         "sylleptic": bench_sylleptic_family,
         "haagerup_sub": bench_haagerup_sub_family,
         "ek_subfactor": bench_ek_subfactor_family,
