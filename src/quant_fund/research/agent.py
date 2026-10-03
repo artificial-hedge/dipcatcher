@@ -5023,6 +5023,14 @@ from quant_fund.research.benches_w628 import (
     bench_operad_infty3_family,
     bench_operad_module_family,
 )
+from quant_fund.research.benches_w629 import (
+    bench_artinian_alg_family,
+    bench_deform_functor2_family,
+    bench_hull_deform_family,
+    bench_rim_deform_family,
+    bench_small_ext_family,
+    bench_tangent_def_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5402,6 +5410,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "deform_functor2": bench_deform_functor2_family,
+        "tangent_def": bench_tangent_def_family,
+        "rim_deform": bench_rim_deform_family,
+        "small_ext": bench_small_ext_family,
+        "hull_deform": bench_hull_deform_family,
+        "artinian_alg": bench_artinian_alg_family,
         "moerdijk_weiss": bench_moerdijk_weiss_family,
         "higher_operad": bench_higher_operad_family,
         "operad_infty3": bench_operad_infty3_family,
