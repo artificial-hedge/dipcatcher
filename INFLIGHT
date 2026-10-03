@@ -1,3 +1,4 @@
+feat(research): wave 918 — data-structures-4/geometry-3 canon (fractional_cascade, range_min_query, free_list, object_pool, welzl_circle, halfplane_isect) (5457->5463 families)
 feat(research): wave 917 — data-structures-3 canon (chained_hash, linear_probe, bucket_sort, shell_sort, rand_access_list, skew_list) (5451->5457 families)
 feat(research): wave 916 — data-structures-2 canon (soft_heap, hollow_heap, rank_pairing, hollow_dsu, da_trie, fst_index) (5445->5451 families)
 feat(research): wave 915 — BVP/tree-exotics canon (superposition_bvp, continuation_bvp, robbins_bvp, bvp_eigen, loser_tree, fusion_tree) (5439->5445 families)
