@@ -2668,6 +2668,14 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "gf2_factor",
         "lll_reduce",
         "newton_interp",
+        # Wave-222 number theory: Miller-Rabin, Pollard
+        # rho, Tonelli-Shanks, CF/Pell, CRT, EC scalar.
+        "miller_rabin",
+        "pollard_rho",
+        "tonelli_shanks",
+        "continued_fraction",
+        "crt_garner",
+        "ec_scalar",
     }
 )
 BENCHMARK_FAMILY_ORDER = (

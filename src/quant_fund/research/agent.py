@@ -1766,6 +1766,14 @@ from quant_fund.research.benches_w221 import (
     bench_poly_gcd_family,
     bench_resultant_family,
 )
+from quant_fund.research.benches_w222 import (
+    bench_continued_fraction_family,
+    bench_crt_garner_family,
+    bench_ec_scalar_family,
+    bench_miller_rabin_family,
+    bench_pollard_rho_family,
+    bench_tonelli_shanks_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4644,6 +4652,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "gf2_factor": bench_gf2_factor_family(),
         "lll_reduce": bench_lll_reduce_family(),
         "newton_interp": bench_newton_interp_family(),
+        "miller_rabin": bench_miller_rabin_family(),
+        "pollard_rho": bench_pollard_rho_family(),
+        "tonelli_shanks": bench_tonelli_shanks_family(),
+        "continued_fraction": bench_continued_fraction_family(),
+        "crt_garner": bench_crt_garner_family(),
+        "ec_scalar": bench_ec_scalar_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
