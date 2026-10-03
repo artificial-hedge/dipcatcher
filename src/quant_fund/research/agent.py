@@ -4863,6 +4863,14 @@ from quant_fund.research.benches_w608 import (
     bench_ladic_sheaf_family,
     bench_lisse_sheaf_family,
 )
+from quant_fund.research.benches_w609 import (
+    bench_brave_new_ring_family,
+    bench_e_infty_space_family,
+    bench_formal_moduli_family,
+    bench_log_ring_family,
+    bench_orient_cohom_family,
+    bench_thom_constr_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5242,6 +5250,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e_infty_space": bench_e_infty_space_family,
+        "brave_new_ring": bench_brave_new_ring_family,
+        "thom_constr": bench_thom_constr_family,
+        "log_ring": bench_log_ring_family,
+        "orient_cohom": bench_orient_cohom_family,
+        "formal_moduli": bench_formal_moduli_family,
         "etale_descent": bench_etale_descent_family,
         "etale_morphism": bench_etale_morphism_family,
         "fppf_site": bench_fppf_site_family,
