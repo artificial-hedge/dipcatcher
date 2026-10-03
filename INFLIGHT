@@ -1,3 +1,4 @@
+feat(research): wave 842 — spectral-methods canon (chebyshev_grid, fourier_galerkin, legendre_tau, chebyshev_collocation, spectral_deriv, dealiasing) (5001->5007 families)
 feat(research): wave 841 — orthogonal-polynomial canon (legendre_poly, chebyshev_t, hermite_poly, laguerre_poly, jacobi_poly, gegenbauer_poly) (4995->5001 families)
 feat(research): wave 840 — rational-approximation canon (pade_approx, rational_chebyshev, stieltjes_fraction, loewner_interp, nevanlinna_pick, schur_continued) (4989->4995 families)
 feat(research): wave 839 — approximation-theory canon (jackson_direct, chebyshev_alternation, kolmogorov_nwidth, bernstein_poly, markov_brothers, fourier_decay) (4983->4989 families)
