@@ -5495,6 +5495,14 @@ from quant_fund.research.benches_w687 import (
     bench_cat_glueable_family,
     bench_cat_univariant_family,
 )
+from quant_fund.research.benches_w688 import (
+    bench_spectral_cellular_family,
+    bench_spectral_cohomological_family,
+    bench_spectral_field_family,
+    bench_spectral_filtration_family,
+    bench_spectral_finite_family,
+    bench_spectral_lattice_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5874,6 +5882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_field": bench_spectral_field_family,
+        "spectral_lattice": bench_spectral_lattice_family,
+        "spectral_filtration": bench_spectral_filtration_family,
+        "spectral_cellular": bench_spectral_cellular_family,
+        "spectral_cohomological": bench_spectral_cohomological_family,
+        "spectral_finite": bench_spectral_finite_family,
         "cat_fibrant_obj": bench_cat_fibrant_obj_family,
         "cat_cofibrant": bench_cat_cofibrant_family,
         "cat_bicomplete": bench_cat_bicomplete_family,
