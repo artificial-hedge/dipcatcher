@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-422 Lie-theory-2 canon.
+        "weyl_chamber",
+        "root_height",
+        "borel_subalgebra",
+        "levi_factor",
+        "nilpotent_orbit",
+        "verma_module",
         # Wave-421 category-theory-4 canon.
         "traced_monoidal",
         "star_autonomous",
