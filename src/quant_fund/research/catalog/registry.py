@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-963 spectral-theory-2 canon.
+        "fredholm_index",
+        "weyl_theorem",
+        "essential_spectrum",
+        "browder_operator",
+        "riesz_schauder",
+        "atkinson_thm",
         # Wave-962 von-Neumann-algebra canon.
         "von_neumann_alg",
         "double_commutant",
