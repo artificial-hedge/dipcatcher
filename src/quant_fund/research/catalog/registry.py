@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-577 perverse-sheaves canon.
+        "perverse_sheaf",
+        "intersection_homology",
+        "nearby_cycles",
+        "d_module2",
+        "char_cycle",
+        "middle_perversity",
         # Wave-576 free-probability canon.
         "free_prob",
         "r_transform",
