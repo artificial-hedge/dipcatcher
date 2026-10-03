@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-427 number-theory-4 canon.
+        "elliptic_height",
+        "mordell_weil",
+        "lseries_toy",
+        "bsd_toy",
+        "modularity_toy",
+        "padic_integral",
         # Wave-426 homotopy-7 canon.
         "model_category",
         "quillen_adj",
