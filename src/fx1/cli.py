@@ -1405,6 +1405,31 @@ def harness_eval_cancel(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("eval-wait")
+def harness_eval_wait(
+    eval_id: str = typer.Argument(..., help="Eval id returned by harness eval --remote."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    wait_timeout_s: float | None = typer.Option(
+        None, "--wait-timeout", help="Give up waiting after N seconds (eval keeps running)."
+    ),
+    receipt: bool = typer.Option(
+        False, "--receipt", help="Print the sealed fx1_eval_record.v1 doc after the record."
+    ),
+) -> None:
+    """Re-attach to an eval submitted ``--no-wait`` and poll to terminal;
+    prints the terminal record (report carries the suite output)."""
+    _need_remote(remote)
+    client = _remote_client(remote or "", api_key, timeout_s)
+    rec = _or_exit(lambda: client.wait_eval(eval_id, poll_s=poll_s, timeout_s=wait_timeout_s))
+    typer.echo(json.dumps(rec, indent=2))
+    if receipt:
+        doc = _or_exit(lambda: client.eval_receipt(eval_id))
+        typer.echo(json.dumps(doc, indent=2, sort_keys=True))
+
+
 @harness_app.command("eval-diff")
 def harness_eval_diff(
     base_id: str = typer.Argument(..., help="Baseline eval id (terminal record)."),
@@ -1586,6 +1611,28 @@ def harness_ft_events(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("ft-wait")
+def harness_ft_wait(
+    job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    wait_timeout_s: float | None = typer.Option(
+        None, "--wait-timeout", help="Give up waiting after N seconds (job keeps running)."
+    ),
+) -> None:
+    """Re-attach to a job submitted ``--no-wait`` and poll to terminal;
+    prints the terminal record (``result_files`` carries the artifacts)."""
+    _need_remote(remote)
+    rec = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).wait_finetune_job(
+            job_id, poll_s=poll_s, timeout_s=wait_timeout_s
+        )
+    )
+    typer.echo(json.dumps(rec, indent=2))
+
+
 @harness_app.command("ft-cancel")
 def harness_ft_cancel(
     job_id: str = typer.Argument(..., help="ftjob- id from ft-create."),
@@ -1765,6 +1812,28 @@ def harness_batch_status(
     _need_remote(remote)
     st = _or_exit(lambda: _remote_client(remote or "", api_key, timeout_s).batch(batch_id))
     typer.echo(json.dumps(st, indent=2))
+
+
+@harness_app.command("batch-wait")
+def harness_batch_wait(
+    batch_id: str = typer.Argument(..., help="batch_ id from batch-submit."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+    poll_s: float = typer.Option(0.5, "--poll", help="Status poll interval, seconds."),
+    wait_timeout_s: float | None = typer.Option(
+        None, "--wait-timeout", help="Give up waiting after N seconds (batch keeps running)."
+    ),
+) -> None:
+    """Re-attach to a batch submitted ``--no-wait`` and poll to terminal;
+    prints the terminal record (``output_file_id`` feeds batch-output)."""
+    _need_remote(remote)
+    rec = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).wait_batch(
+            batch_id, poll_s=poll_s, timeout_s=wait_timeout_s
+        )
+    )
+    typer.echo(json.dumps(rec, indent=2))
 
 
 @harness_app.command("batch-cancel")

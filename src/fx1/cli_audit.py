@@ -151,11 +151,13 @@ def cli_audit() -> dict[str, Any]:
         "evals",
         "eval-status",
         "eval-cancel",
+        "eval-wait",
         "eval-diff",
         "ft-create",
         "ft-jobs",
         "ft-status",
         "ft-events",
+        "ft-wait",
         "ft-cancel",
         "files",
         "file-upload",
@@ -192,6 +194,7 @@ def cli_audit() -> dict[str, Any]:
             ("batch-submit", ["x.jsonl"]),
             ("batches", []),
             ("batch-status", ["batch_x"]),
+            ("batch-wait", ["batch_x"]),
             ("batch-cancel", ["batch_x"]),
             ("batch-output", ["batch_x"]),
         )
@@ -745,6 +748,7 @@ def cli_audit() -> dict[str, Any]:
             self.last_file_id: str | None = None
             self.last_batch_create: dict[str, Any] | None = None
             self.last_batch_id: str | None = None
+            self.last_wait_kw: dict[str, Any] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -928,11 +932,30 @@ def cli_audit() -> dict[str, Any]:
 
         def wait_finetune_job(self, job_id: str, **kw: Any) -> dict[str, Any]:
             self.last_ft_job = job_id
+            self.last_wait_kw = dict(kw)
             return {
                 "id": job_id,
                 "object": "fine_tuning.job",
                 "status": "succeeded",
                 "fine_tuned_model": "ft:fx1:x:000000000000",
+            }
+
+        def wait_eval(self, eval_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_job = eval_id
+            self.last_wait_kw = dict(kw)
+            return {
+                "eval_id": eval_id,
+                "suite": "capability",
+                "status": "succeeded",
+                "report": {"passed": 2},
+            }
+
+        def eval_receipt(self, eval_id: str) -> dict[str, Any]:
+            self.last_job = eval_id
+            return {
+                "schema": "fx1_eval_record.v1",
+                "eval_id": eval_id,
+                "receipt_sha256": "ab" * 32,
             }
 
         def finetune_jobs(self, **kw: Any) -> dict[str, Any]:
@@ -984,6 +1007,7 @@ def cli_audit() -> dict[str, Any]:
 
         def wait_batch(self, batch_id: str, **kw: Any) -> dict[str, Any]:
             self.last_batch_id = batch_id
+            self.last_wait_kw = dict(kw)
             return {
                 "id": batch_id,
                 "object": "batch",
@@ -1300,6 +1324,10 @@ def cli_audit() -> dict[str, Any]:
     out["ftevents_local_refused"] = rfe_local.exit_code == 2 and "--remote" in rfe_local.output
     rfc_local = runner.invoke(app, ["harness", "ft-cancel", "ftjob-x"])
     out["ftcancel_local_refused"] = rfc_local.exit_code == 2 and "--remote" in rfc_local.output
+    rew_local = runner.invoke(app, ["harness", "eval-wait", "ev-x"])
+    out["evalwait_local_refused"] = rew_local.exit_code == 2 and "--remote" in rew_local.output
+    rfw_local = runner.invoke(app, ["harness", "ft-wait", "ftjob-x"])
+    out["ftwait_local_refused"] = rfw_local.exit_code == 2 and "--remote" in rfw_local.output
     # ft-create local runs the in-process SDK twin synchronously — a
     # malformed corpus fails validation before any job exists (exit 2).
     import tempfile  # noqa: PLC0415
@@ -1599,6 +1627,43 @@ def cli_audit() -> dict[str, Any]:
             rfc.exit_code == 0
             and json.loads(rfc.stdout)["status"] == "cancelled"
             and remotes[-1].last_ft_job == "ftjob-x"
+        )
+
+        # the *-wait twins re-attach to a --no-wait submit: poll kwargs
+        # forward, the terminal record prints, eval-wait --receipt follows.
+        rew = runner.invoke(
+            app,
+            [
+                "harness",
+                "eval-wait",
+                "ev-9",
+                "--poll",
+                "0.2",
+                "--wait-timeout",
+                "5",
+                "--receipt",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_eval_wait"] = (
+            rew.exit_code == 0
+            and '"status": "succeeded"' in rew.stdout
+            and '"schema": "fx1_eval_record.v1"' in rew.stdout
+            and remotes[-1].last_wait_kw == {"poll_s": 0.2, "timeout_s": 5.0}
+        )
+        rfw = runner.invoke(app, ["harness", "ft-wait", "ftjob-9", "--remote", "http://h.test"])
+        out["remote_ft_wait"] = (
+            rfw.exit_code == 0
+            and json.loads(rfw.stdout)["fine_tuned_model"] == "ft:fx1:x:000000000000"
+            and remotes[-1].last_ft_job == "ftjob-9"
+            and remotes[-1].last_wait_kw == {"poll_s": 0.5, "timeout_s": None}
+        )
+        rbw = runner.invoke(app, ["harness", "batch-wait", "batch_z", "--remote", "http://h.test"])
+        out["remote_batch_wait"] = (
+            rbw.exit_code == 0
+            and json.loads(rbw.stdout)["output_file_id"] == "file-out"
+            and remotes[-1].last_batch_id == "batch_z"
         )
 
         # /v1/files + /v1/batches wire family
@@ -1948,6 +2013,10 @@ def cli_audit_bench() -> dict[str, Any]:
             "ft-status/ft-events/ft-cancel hold the OpenAI job grammar "
             "remote-side (upload → submit → wait, --no-wait prints the "
             "queued record) and refuse locally without --remote. "
+            "eval-wait/ft-wait/batch-wait re-attach to a --no-wait submit: "
+            "poll kwargs reach the client verbatim, the terminal record "
+            "prints, and eval-wait --receipt follows with the sealed doc; "
+            "all three refuse locally without --remote (exit 2). "
             "Flagged wart: "
             "the command is registered as 'maskedaEval'."
             if ok
