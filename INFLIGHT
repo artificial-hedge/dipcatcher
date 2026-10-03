@@ -1,3 +1,4 @@
+feat(research): wave 431 — motivic-homotopy canon (a1_homotopy, motivic_sphere, morel_degree, voevodsky_motive, slice_filtration, milnor_operations) (2541->2547 families)
 feat(research): wave 430 — higher-algebra canon (e_n_algebra, operad_infty, monoidal_infty, module_cat, brane_tensor, delooping) (2535->2541 families)
 feat(research): wave 429 — algebraic-K-theory canon (k0_group, k1_group, milnor_k2, quillen_q, k_theory_spec, bass_heller_swan) (2529->2535 families)
 feat(research): wave 428 — deformation-theory canon (deformation_functor, schlessinger, tangent_space_def, obstruction_theory, versal_deformation, maurer_cartan) (2523->2529 families)

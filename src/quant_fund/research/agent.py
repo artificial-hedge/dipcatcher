@@ -3439,6 +3439,14 @@ from quant_fund.research.benches_w430 import (
     bench_monoidal_infty_family,
     bench_operad_infty_family,
 )
+from quant_fund.research.benches_w431 import (
+    bench_a1_homotopy_family,
+    bench_milnor_operations_family,
+    bench_morel_degree_family,
+    bench_motivic_sphere_family,
+    bench_slice_filtration_family,
+    bench_voevodsky_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3818,6 +3826,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "a1_homotopy": bench_a1_homotopy_family,
+        "motivic_sphere": bench_motivic_sphere_family,
+        "morel_degree": bench_morel_degree_family,
+        "voevodsky_motive": bench_voevodsky_motive_family,
+        "slice_filtration": bench_slice_filtration_family,
+        "milnor_operations": bench_milnor_operations_family,
         "e_n_algebra": bench_e_n_algebra_family,
         "operad_infty": bench_operad_infty_family,
         "monoidal_infty": bench_monoidal_infty_family,

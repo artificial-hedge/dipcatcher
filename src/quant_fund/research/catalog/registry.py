@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-431 motivic-homotopy canon.
+        "a1_homotopy",
+        "motivic_sphere",
+        "morel_degree",
+        "voevodsky_motive",
+        "slice_filtration",
+        "milnor_operations",
         # Wave-430 higher-algebra canon.
         "e_n_algebra",
         "operad_infty",
