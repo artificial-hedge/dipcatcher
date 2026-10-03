@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-711 homotopy-31 canon.
+        "homotopy_sheaf2",
+        "stable_inf_cat",
+        "homotopy_stable4",
+        "homotopy_local",
+        "stable_sheaf2",
+        "stable_coalgebra",
         # Wave-710 higher-algebra-11 canon.
         "higher_algebra8",
         "operad_infty4",
