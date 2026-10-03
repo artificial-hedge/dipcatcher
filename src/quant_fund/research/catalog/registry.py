@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-913 interpolation-3 canon.
+        "scattered_interp",
+        "spline_interp",
+        "monotone_interp",
+        "akima_interp",
+        "pchip_interp",
+        "makima_interp",
         # Wave-912 spatial-index-2 canon.
         "octree_index",
         "range_tree",
