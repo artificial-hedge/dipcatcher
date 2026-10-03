@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-791 SPDE canon.
+        "spde_heat",
+        "stochastic_burgers",
+        "kpz_equation",
+        "doering_mueller",
+        "quasilinear_spde",
+        "paracontrolled_spde",
         # Wave-790 McKean-Vlasov canon.
         "mckean_vlasov",
         "mean_field_game2",

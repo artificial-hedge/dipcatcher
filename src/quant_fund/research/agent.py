@@ -6319,6 +6319,14 @@ from quant_fund.research.benches_w790 import (
     bench_propagation_chaos_family,
     bench_self_stabilizing_family,
 )
+from quant_fund.research.benches_w791 import (
+    bench_doering_mueller_family,
+    bench_kpz_equation_family,
+    bench_paracontrolled_spde_family,
+    bench_quasilinear_spde_family,
+    bench_spde_heat_family,
+    bench_stochastic_burgers_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6698,6 +6706,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spde_heat": bench_spde_heat_family,
+        "stochastic_burgers": bench_stochastic_burgers_family,
+        "kpz_equation": bench_kpz_equation_family,
+        "doering_mueller": bench_doering_mueller_family,
+        "quasilinear_spde": bench_quasilinear_spde_family,
+        "paracontrolled_spde": bench_paracontrolled_spde_family,
         "mckean_vlasov": bench_mckean_vlasov_family,
         "mean_field_game2": bench_mean_field_game2_family,
         "propagation_chaos": bench_propagation_chaos_family,
