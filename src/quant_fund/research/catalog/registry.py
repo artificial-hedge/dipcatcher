@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-915 BVP/tree-exotics canon.
+        "superposition_bvp",
+        "continuation_bvp",
+        "robbins_bvp",
+        "bvp_eigen",
+        "loser_tree",
+        "fusion_tree",
         # Wave-914 RK/BVP-methods-2 canon.
         "ralston_rk",
         "verner_rk",
