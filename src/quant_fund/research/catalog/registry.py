@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-293 graphics-3 canon.
+        "deferred_shade",
+        "sdf_raymarch",
+        "frustum_cull",
+        "lod_select",
+        "env_map",
+        "shadow_pcf",
         # Wave-292 networking-4 canon.
         "quic_streams",
         "tls13_trans",
