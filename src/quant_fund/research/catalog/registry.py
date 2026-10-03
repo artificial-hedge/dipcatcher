@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-1000 elasticity canon.
+        "navier_elasticity",
+        "kirchhoff_plate",
+        "mindlin_reissner",
+        "contact_mechanics",
+        "fracture_mechanics",
+        "homogenized_elasticity",
         # Wave-999 GMT-2 canon.
         "currents_theory",
         "varifold_theory",

@@ -7991,6 +7991,14 @@ from quant_fund.research.benches_w999 import (
     bench_rectifiable_measures_family,
     bench_varifold_theory_family,
 )
+from quant_fund.research.benches_w1000 import (
+    bench_contact_mechanics_family,
+    bench_fracture_mechanics_family,
+    bench_homogenized_elasticity_family,
+    bench_kirchhoff_plate_family,
+    bench_mindlin_reissner_family,
+    bench_navier_elasticity_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8362,6 +8370,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "navier_elasticity": bench_navier_elasticity_family,
+        "kirchhoff_plate": bench_kirchhoff_plate_family,
+        "mindlin_reissner": bench_mindlin_reissner_family,
+        "contact_mechanics": bench_contact_mechanics_family,
+        "fracture_mechanics": bench_fracture_mechanics_family,
+        "homogenized_elasticity": bench_homogenized_elasticity_family,
         "currents_theory": bench_currents_theory_family,
         "varifold_theory": bench_varifold_theory_family,
         "flat_chains": bench_flat_chains_family,
