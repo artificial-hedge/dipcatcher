@@ -4647,6 +4647,14 @@ from quant_fund.research.benches_w581 import (
     bench_lyndon_ss_family,
     bench_serre_ss4_family,
 )
+from quant_fund.research.benches_w582 import (
+    bench_arinkin_gaitsgory_family,
+    bench_derived_satake_family,
+    bench_fusion_product_family,
+    bench_geometric_satake2_family,
+    bench_nilp_cone_family,
+    bench_spectral_bung_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5026,6 +5034,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "arinkin_gaitsgory": bench_arinkin_gaitsgory_family,
+        "derived_satake": bench_derived_satake_family,
+        "spectral_bung": bench_spectral_bung_family,
+        "nilp_cone": bench_nilp_cone_family,
+        "geometric_satake2": bench_geometric_satake2_family,
+        "fusion_product": bench_fusion_product_family,
         "serre_ss4": bench_serre_ss4_family,
         "bockstein_ss": bench_bockstein_ss_family,
         "eilenberg_moore": bench_eilenberg_moore_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-582 geometric-Langlands-2 canon.
+        "arinkin_gaitsgory",
+        "derived_satake",
+        "spectral_bung",
+        "nilp_cone",
+        "geometric_satake2",
+        "fusion_product",
         # Wave-581 spectral-sequences canon.
         "serre_ss4",
         "bockstein_ss",
