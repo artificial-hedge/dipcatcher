@@ -1,3 +1,4 @@
+feat(research): wave 884 — wavelet-2/spectral-elem canon (wavelet_matrix, second_gen_wavelet, nodal_dg, multidomain_sem, boundary_element, marquina_flux) (5253->5259 families)
 feat(research): wave 883 — fixed-point-acceleration canon (tangent_predictor, is_drift, cv_optimal, nest_accel, subgradient_descent, min_var_closure) (5247->5253 families)
 feat(research): wave 882 — preconditioner/domain-decomposition canon (spai_precond, diagonal_scale, nonoverlap_dd, overlap_dd, restrictive_dd, balanced_dd) (5241->5247 families)
 feat(research): wave 881 — Krylov-solver canon (minres_solver, cgs_solver, tfqmr, qmr_solver, bicgstab2, block_cg) (5235->5241 families)
