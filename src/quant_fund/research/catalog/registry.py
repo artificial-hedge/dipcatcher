@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-457 double-category/proarrow canon.
+        "proarrow",
+        "virtual_equip",
+        "fibrant_double",
+        "tabulation",
+        "companion_conj",
+        "framed_bicat",
         # Wave-456 pure-motives canon.
         "chow_motive",
         "nori_motive",
