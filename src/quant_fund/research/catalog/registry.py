@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-634 category-9 canon.
+        "icon_cat",
+        "bicat2",
+        "vert_cat",
+        "double_lim",
+        "two_transform",
+        "cat_3cell",
         # Wave-633 motivic-11 canon.
         "motivic_coho2",
         "cone_theorem",
