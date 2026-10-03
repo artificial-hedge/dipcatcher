@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-724 arithmetic-cycles canon.
+        "coates_wiles",
+        "iwasawa_lfunc",
+        "greenberg_selmer",
+        "kurihara_iwasawa",
+        "heegner_cycle",
+        "gan_gross_prasad",
         # Wave-723 Iwasawa/Euler-system canon.
         "gross_zagier",
         "kolyvagin_sys",

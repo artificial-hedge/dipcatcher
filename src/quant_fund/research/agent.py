@@ -5783,6 +5783,14 @@ from quant_fund.research.benches_w723 import (
     bench_perrin_riou_family,
     bench_rubin_main_conj_family,
 )
+from quant_fund.research.benches_w724 import (
+    bench_coates_wiles_family,
+    bench_gan_gross_prasad_family,
+    bench_greenberg_selmer_family,
+    bench_heegner_cycle_family,
+    bench_iwasawa_lfunc_family,
+    bench_kurihara_iwasawa_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6162,6 +6170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "coates_wiles": bench_coates_wiles_family,
+        "iwasawa_lfunc": bench_iwasawa_lfunc_family,
+        "greenberg_selmer": bench_greenberg_selmer_family,
+        "kurihara_iwasawa": bench_kurihara_iwasawa_family,
+        "heegner_cycle": bench_heegner_cycle_family,
+        "gan_gross_prasad": bench_gan_gross_prasad_family,
         "gross_zagier": bench_gross_zagier_family,
         "kolyvagin_sys": bench_kolyvagin_sys_family,
         "euler_system": bench_euler_system_family,
