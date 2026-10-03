@@ -6663,6 +6663,14 @@ from quant_fund.research.benches_w833 import (
     bench_stable_limit_family,
     bench_strassen_flln_family,
 )
+from quant_fund.research.benches_w834 import (
+    bench_dirichlet_form_family,
+    bench_hypercontractive_family,
+    bench_log_sobolev_sem_family,
+    bench_markov_semigroup_family,
+    bench_poincare_semigroup_family,
+    bench_spectral_gap_sem_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7034,6 +7042,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dirichlet_form": bench_dirichlet_form_family,
+        "markov_semigroup": bench_markov_semigroup_family,
+        "poincare_semigroup": bench_poincare_semigroup_family,
+        "log_sobolev_sem": bench_log_sobolev_sem_family,
+        "hypercontractive": bench_hypercontractive_family,
+        "spectral_gap_sem": bench_spectral_gap_sem_family,
         "fclt_invariance": bench_fclt_invariance_family,
         "donsker_invariance": bench_donsker_invariance_family,
         "martingale_fclt": bench_martingale_fclt_family,
