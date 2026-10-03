@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-869 MC-variance-reduction canon.
+        "antithetic_var",
+        "control_variate",
+        "importance_sampling",
+        "stratified_var",
+        "common_random",
+        "conditional_mc",
         # Wave-868 continuation/homotopy canon.
         "arc_continuation",
         "pseudo_arclength",

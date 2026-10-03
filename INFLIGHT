@@ -1,3 +1,4 @@
+feat(research): wave 869 — MC-variance-reduction canon (antithetic_var, control_variate, importance_sampling, stratified_var, common_random, conditional_mc) (5163->5169 families)
 feat(research): wave 868 — continuation/homotopy canon (arc_continuation, pseudo_arclength, deflation_method, bifurcation_track, homotopy_solver, davidenko_ode) (5157->5163 families)
 feat(research): wave 867 — inverse-problem canon (tikhonov_reg, morozov_dp, l_curve_opt, iter_regularize, tv_denoise, bayes_inverse) (5151->5157 families)
 feat(research): wave 866 — model-order-reduction canon (pod_galerkin, reduced_basis, deim_point, greedy_rb, eim_interp, proper_gen) (5145->5151 families)
