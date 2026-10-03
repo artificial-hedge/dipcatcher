@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-636 tensor-category-3 canon.
+        "sylleptic",
+        "haagerup_sub",
+        "ek_subfactor",
+        "gyro_cat",
+        "yang_lee_cat",
+        "sovereign_cat",
         # Wave-635 commutative-algebra-5 canon.
         "excellent_ring",
         "zariski_main",
