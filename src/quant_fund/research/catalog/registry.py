@@ -2933,6 +2933,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         # Wave-260 matching canon.
         # Wave-261 robotics-2 canon.
         # Wave-262 HPC canon.
+        # Wave-263 real-time canon.
+        "edf_scheduler",
+        "rms_scheduler",
+        "wcet_est",
+        "debounce_fsm",
+        "watchdog_task",
+        "ring_buffer",
         "stencil_halo",
         "mesi_cache",
         "ring_allreduce",

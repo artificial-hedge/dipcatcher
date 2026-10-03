@@ -2095,6 +2095,14 @@ from quant_fund.research.benches_w262 import (
     bench_stencil_halo_family,
     bench_task_dag_family,
 )
+from quant_fund.research.benches_w263 import (
+    bench_debounce_fsm_family,
+    bench_edf_scheduler_family,
+    bench_ring_buffer_family,
+    bench_rms_scheduler_family,
+    bench_watchdog_task_family,
+    bench_wcet_est_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2354,6 +2362,12 @@ def _provenance(
         "simd_lanes": bench_simd_lanes_family,
         "task_dag": bench_task_dag_family,
         "numa_alloc": bench_numa_alloc_family,
+        "edf_scheduler": bench_edf_scheduler_family,
+        "rms_scheduler": bench_rms_scheduler_family,
+        "wcet_est": bench_wcet_est_family,
+        "debounce_fsm": bench_debounce_fsm_family,
+        "watchdog_task": bench_watchdog_task_family,
+        "ring_buffer": bench_ring_buffer_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
