@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-972 free-probability-2 canon.
+        "free_entropy",
+        "free_fisher_info",
+        "free_cumulant",
+        "freeness_check",
+        "matrix_model_free",
+        "free_berg",
         # Wave-971 noncommutative-geometry canon.
         "spectral_triple",
         "connes_metric",
