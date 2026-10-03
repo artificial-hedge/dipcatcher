@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-396 algebraic-number-theory-2 canon.
+        "cyclotomic_field",
+        "kronecker_weber",
+        "local_field",
+        "hensel_field",
+        "cm_points",
+        "idele_class",
         # Wave-395 combinatorial-enumeration canon.
         "catalan_dp",
         "stirling_cycle",
