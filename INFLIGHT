@@ -1,3 +1,4 @@
+feat(research): wave 846 — special-functions canon (gamma_fn, beta_fn, bessel_fn, airy_fn, error_fn, hypergeometric_fn) (5025->5031 families)
 feat(research): wave 845 — integral-transforms canon (laplace_transform, mellin_transform, hankel_transform, z_transform, hilbert_transform, abel_transform) (5019->5025 families)
 feat(research): wave 844 — asymptotic-analysis canon (asymptotic_series, poincare_expansion, steepest_descent, stationary_phase, borel_resum, wkb_approx) (5013->5019 families)
 feat(research): wave 843 — spline-theory canon (b_spline, de_boor, cardinal_spline, knot_insertion, blossoming, box_spline) (5007->5013 families)
