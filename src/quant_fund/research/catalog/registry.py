@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-950 tensor-algebra canon.
+        "tensor_contraction",
+        "khatri_rao",
+        "kron_product",
+        "hadamard_product",
+        "tensor_unfold",
+        "outer_product",
         # Wave-949 matrix-pencil canon.
         "matrix_pencil",
         "kronecker_canonical",
