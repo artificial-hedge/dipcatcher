@@ -5039,6 +5039,14 @@ from quant_fund.research.benches_w630 import (
     bench_joyal_horn_family,
     bench_quasi_cat2_family,
 )
+from quant_fund.research.benches_w631 import (
+    bench_constructible_sh_family,
+    bench_etale_cover3_family,
+    bench_etale_site3_family,
+    bench_ql_sheaf_family,
+    bench_torsion_sheaf_family,
+    bench_weil_sheaf_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5418,6 +5426,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "etale_cover3": bench_etale_cover3_family,
+        "etale_site3": bench_etale_site3_family,
+        "constructible_sh": bench_constructible_sh_family,
+        "weil_sheaf": bench_weil_sheaf_family,
+        "torsion_sheaf": bench_torsion_sheaf_family,
+        "ql_sheaf": bench_ql_sheaf_family,
         "quasi_cat2": bench_quasi_cat2_family,
         "inner_horn": bench_inner_horn_family,
         "joyal_horn": bench_joyal_horn_family,
