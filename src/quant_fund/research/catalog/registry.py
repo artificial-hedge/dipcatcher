@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-421 category-theory-4 canon.
+        "traced_monoidal",
+        "star_autonomous",
+        "frobenius_alg",
+        "span_compose",
+        "profunctor_toy",
+        "endo_coend",
         # Wave-420 algebraic-NT-3 canon.
         "dirichlet_unit",
         "regulator",
