@@ -4271,6 +4271,14 @@ from quant_fund.research.benches_w534 import (
     bench_harmonic_fn_family,
     bench_potential_thy_family,
 )
+from quant_fund.research.benches_w535 import (
+    bench_elliptic_est_family,
+    bench_fourier_io_family,
+    bench_propagation_sing_family,
+    bench_pseudodiff_op_family,
+    bench_symbol_calc_family,
+    bench_wavefront_set_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4650,6 +4658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "wavefront_set": bench_wavefront_set_family,
+        "pseudodiff_op": bench_pseudodiff_op_family,
+        "fourier_io": bench_fourier_io_family,
+        "symbol_calc": bench_symbol_calc_family,
+        "propagation_sing": bench_propagation_sing_family,
+        "elliptic_est": bench_elliptic_est_family,
         "harmonic_fn": bench_harmonic_fn_family,
         "potential_thy": bench_potential_thy_family,
         "capacity_theory": bench_capacity_theory_family,

@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-535 microlocal-analysis canon.
+        "wavefront_set",
+        "pseudodiff_op",
+        "fourier_io",
+        "symbol_calc",
+        "propagation_sing",
+        "elliptic_est",
         # Wave-534 potential-theory canon.
         "harmonic_fn",
         "potential_thy",
