@@ -6455,6 +6455,14 @@ from quant_fund.research.benches_w807 import (
     bench_secretary_dp_family,
     bench_snell_envelope_family,
 )
+from quant_fund.research.benches_w808 import (
+    bench_bene_filter_family,
+    bench_hidden_markov_filter_family,
+    bench_kalman_bucy_family,
+    bench_kushner_strat_family,
+    bench_particle_filter2_family,
+    bench_zakai_eq_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6834,6 +6842,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "zakai_eq": bench_zakai_eq_family,
+        "kushner_strat": bench_kushner_strat_family,
+        "kalman_bucy": bench_kalman_bucy_family,
+        "bene_filter": bench_bene_filter_family,
+        "hidden_markov_filter": bench_hidden_markov_filter_family,
+        "particle_filter2": bench_particle_filter2_family,
         "snell_envelope": bench_snell_envelope_family,
         "secretary_dp": bench_secretary_dp_family,
         "cayley_moser": bench_cayley_moser_family,
