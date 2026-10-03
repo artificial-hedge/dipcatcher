@@ -1,3 +1,4 @@
+feat(research): wave 266 — graphics-2 canon (triangle_raster, phong_shade, mipmap_sample, shadow_map, bump_map, ssao_lite) (1569->1575 families)
 owner: opencode (resumed session)
 slice: DATA-SNOOPING SUITE — max-level enhancement of the multiple-testing layer
 status: COMPLETE + VERIFIED 2026-09-17 ~18:45 IST
