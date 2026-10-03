@@ -6503,6 +6503,14 @@ from quant_fund.research.benches_w813 import (
     bench_speed_measure_family,
     bench_yosida_op_family,
 )
+from quant_fund.research.benches_w814 import (
+    bench_karal_flow_family,
+    bench_kunita_flow_family,
+    bench_liouville_flow_family,
+    bench_meyers_process_family,
+    bench_stochastic_damping_family,
+    bench_stochastic_flow_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -6874,6 +6882,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "stochastic_flow": bench_stochastic_flow_family,
+        "kunita_flow": bench_kunita_flow_family,
+        "liouville_flow": bench_liouville_flow_family,
+        "stochastic_damping": bench_stochastic_damping_family,
+        "meyers_process": bench_meyers_process_family,
+        "karal_flow": bench_karal_flow_family,
         "feller_boundary": bench_feller_boundary_family,
         "scale_measure": bench_scale_measure_family,
         "speed_measure": bench_speed_measure_family,
