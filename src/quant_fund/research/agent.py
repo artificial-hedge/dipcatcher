@@ -3223,6 +3223,14 @@ from quant_fund.research.benches_w403 import (
     bench_thom_spectrum_family,
     bench_toda_bracket_family,
 )
+from quant_fund.research.benches_w404 import (
+    bench_brace_operad_family,
+    bench_little_intervals_family,
+    bench_operad_algt_family,
+    bench_operad_homology_family,
+    bench_props_toy_family,
+    bench_swiss_cheese_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3602,6 +3610,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "operad_algt": bench_operad_algt_family,
+        "brace_operad": bench_brace_operad_family,
+        "swiss_cheese": bench_swiss_cheese_family,
+        "little_intervals": bench_little_intervals_family,
+        "operad_homology": bench_operad_homology_family,
+        "props_toy": bench_props_toy_family,
         "j_hom_toy": bench_j_hom_toy_family,
         "toda_bracket": bench_toda_bracket_family,
         "spectral_atiyah": bench_spectral_atiyah_family,
