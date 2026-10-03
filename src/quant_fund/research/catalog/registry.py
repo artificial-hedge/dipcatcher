@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-887 solver/transport canon.
+        "epi_rk",
+        "gauss_rk",
+        "adjoint_sparse",
+        "element_free",
+        "diffusion_approx_sp",
+        "importance_rel",
         # Wave-886 QMC/tensor canon.
         "faure_seq",
         "importance_mc",

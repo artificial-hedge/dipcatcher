@@ -7087,6 +7087,14 @@ from quant_fund.research.benches_w886 import (
     bench_importance_mc_family,
     bench_tensor_train_family,
 )
+from quant_fund.research.benches_w887 import (
+    bench_adjoint_sparse_family,
+    bench_diffusion_approx_sp_family,
+    bench_element_free_family,
+    bench_epi_rk_family,
+    bench_gauss_rk_family,
+    bench_importance_rel_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7458,6 +7466,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "epi_rk": bench_epi_rk_family,
+        "gauss_rk": bench_gauss_rk_family,
+        "adjoint_sparse": bench_adjoint_sparse_family,
+        "element_free": bench_element_free_family,
+        "diffusion_approx_sp": bench_diffusion_approx_sp_family,
+        "importance_rel": bench_importance_rel_family,
         "faure_seq": bench_faure_seq_family,
         "importance_mc": bench_importance_mc_family,
         "gauss_hermite": bench_gauss_hermite_family,
