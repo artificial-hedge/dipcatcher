@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-905 sorting canon.
+        "quicksort",
+        "mergesort",
+        "heapsort",
+        "introsort",
+        "timsort",
+        "radix_sort",
         # Wave-904 balanced-tree canon.
         "avl_tree",
         "red_black_tree",
