@@ -5999,6 +5999,14 @@ from quant_fund.research.benches_w750 import (
     bench_smirnov_ising_family,
     bench_thurston_tiling_family,
 )
+from quant_fund.research.benches_w751 import (
+    bench_ciucu_dimers_family,
+    bench_cohn_elkies_family,
+    bench_durfee_arctic_family,
+    bench_karl_dimers_family,
+    bench_kassel_kenyon_family,
+    bench_petrov_dimer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6378,6 +6386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "kassel_kenyon": bench_kassel_kenyon_family,
+        "ciucu_dimers": bench_ciucu_dimers_family,
+        "karl_dimers": bench_karl_dimers_family,
+        "petrov_dimer": bench_petrov_dimer_family,
+        "durfee_arctic": bench_durfee_arctic_family,
+        "cohn_elkies": bench_cohn_elkies_family,
         "smirnov_ising": bench_smirnov_ising_family,
         "chelkak_ising": bench_chelkak_ising_family,
         "kenyon_dimers": bench_kenyon_dimers_family,
