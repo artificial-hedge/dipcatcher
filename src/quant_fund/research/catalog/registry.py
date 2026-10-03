@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-923 Bayesian-nonparametrics canon.
+        "dirichlet_process",
+        "stick_breaking",
+        "pitman_yor",
+        "indian_buffet",
+        "chinese_restaurant",
+        "hierarchical_dp",
         # Wave-922 distributed-systems-6 canon.
         "abcast_lite",
         "cbc_bcast",
