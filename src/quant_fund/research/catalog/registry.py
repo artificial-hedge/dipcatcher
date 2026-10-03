@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-941 nonsmooth-Newton canon.
+        "limiting_subdiff",
+        "proximal_subdiff",
+        "ekeland_var",
+        "monteiro_semismooth",
+        "semismooth_newton",
+        "augmented_lagr",
         # Wave-940 variational-inequality canon.
         "subgradient_extragradient",
         "korpelevich_eg",
