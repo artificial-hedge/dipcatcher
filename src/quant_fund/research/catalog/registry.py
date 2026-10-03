@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-937 operator-splitting canon.
+        "douglas_rachford",
+        "peaceman_rachford",
+        "tseng_split",
+        "forward_backward",
+        "chambolle_pock",
+        "davis_yin",
         # Wave-936 nonsmooth-analysis canon.
         "subdiff_compute",
         "epigraph_proj",
