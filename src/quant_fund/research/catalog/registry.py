@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-456 pure-motives canon.
+        "chow_motive",
+        "nori_motive",
+        "num_equiv",
+        "standard_conj",
+        "voev_motive",
+        "tate_motive",
         # Wave-455 synthetic-math canon.
         "cubical_path",
         "hcomp_fill",

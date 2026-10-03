@@ -3639,6 +3639,14 @@ from quant_fund.research.benches_w455 import (
     bench_kan_op_family,
     bench_transport_coe_family,
 )
+from quant_fund.research.benches_w456 import (
+    bench_chow_motive_family,
+    bench_nori_motive_family,
+    bench_num_equiv_family,
+    bench_standard_conj_family,
+    bench_tate_motive_family,
+    bench_voev_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4018,6 +4026,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chow_motive": bench_chow_motive_family,
+        "nori_motive": bench_nori_motive_family,
+        "num_equiv": bench_num_equiv_family,
+        "standard_conj": bench_standard_conj_family,
+        "voev_motive": bench_voev_motive_family,
+        "tate_motive": bench_tate_motive_family,
         "cubical_path": bench_cubical_path_family,
         "hcomp_fill": bench_hcomp_fill_family,
         "glue_types": bench_glue_types_family,
