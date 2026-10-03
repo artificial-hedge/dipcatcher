@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-488 derived-geometry-3 canon.
+        "shifted_tangent",
+        "derived_quot",
+        "virtual_pull",
+        "intrinsic_be",
+        "d_critical",
+        "perfect_obstruction",
         # Wave-487 category-7 canon.
         "compact_obj",
         "dualizable_cat",

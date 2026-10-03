@@ -3895,6 +3895,14 @@ from quant_fund.research.benches_w487 import (
     bench_exact_cat_family,
     bench_prestack_family,
 )
+from quant_fund.research.benches_w488 import (
+    bench_d_critical_family,
+    bench_derived_quot_family,
+    bench_intrinsic_be_family,
+    bench_perfect_obstruction_family,
+    bench_shifted_tangent_family,
+    bench_virtual_pull_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4274,6 +4282,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "shifted_tangent": bench_shifted_tangent_family,
+        "derived_quot": bench_derived_quot_family,
+        "virtual_pull": bench_virtual_pull_family,
+        "intrinsic_be": bench_intrinsic_be_family,
+        "d_critical": bench_d_critical_family,
+        "perfect_obstruction": bench_perfect_obstruction_family,
         "compact_obj": bench_compact_obj_family,
         "dualizable_cat": bench_dualizable_cat_family,
         "comma_cat": bench_comma_cat_family,
