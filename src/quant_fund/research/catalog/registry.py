@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-406 homological-algebra-3 canon.
+        "poincare_duality2",
+        "universal_coeff",
+        "kunneth",
+        "leray_hirsch",
+        "hopf_algebra2",
+        "functor_derived",
         # Wave-405 derived-categories canon.
         "derived_functor2",
         "triangulated",
