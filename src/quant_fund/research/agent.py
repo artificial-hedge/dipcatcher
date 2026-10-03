@@ -5951,6 +5951,14 @@ from quant_fund.research.benches_w744 import (
     bench_kardar_parisi_family,
     bench_quastel_spohn_family,
 )
+from quant_fund.research.benches_w745 import (
+    bench_bernard_nicola_family,
+    bench_dotsenko_kpz_family,
+    bench_hairer_kpz_family,
+    bench_imamura_sasamoto_family,
+    bench_spohn_kpz_family,
+    bench_tracy_widom_kpz_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6330,6 +6338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dotsenko_kpz": bench_dotsenko_kpz_family,
+        "hairer_kpz": bench_hairer_kpz_family,
+        "bernard_nicola": bench_bernard_nicola_family,
+        "imamura_sasamoto": bench_imamura_sasamoto_family,
+        "tracy_widom_kpz": bench_tracy_widom_kpz_family,
+        "spohn_kpz": bench_spohn_kpz_family,
         "kardar_parisi": bench_kardar_parisi_family,
         "corwin_kpz": bench_corwin_kpz_family,
         "quastel_spohn": bench_quastel_spohn_family,
