@@ -3383,6 +3383,14 @@ from quant_fund.research.benches_w423 import (
     bench_hypercohom_family,
     bench_serre_ss2_family,
 )
+from quant_fund.research.benches_w424 import (
+    bench_closed_unbounded_family,
+    bench_club_set_family,
+    bench_mahlo_cardinal_family,
+    bench_partition_calc_family,
+    bench_stationary_set_family,
+    bench_ultrafilter_toy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3762,6 +3770,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "club_set": bench_club_set_family,
+        "stationary_set": bench_stationary_set_family,
+        "ultrafilter_toy": bench_ultrafilter_toy_family,
+        "partition_calc": bench_partition_calc_family,
+        "closed_unbounded": bench_closed_unbounded_family,
+        "mahlo_cardinal": bench_mahlo_cardinal_family,
         "groth_spectral": bench_groth_spectral_family,
         "serre_ss2": bench_serre_ss2_family,
         "hypercohom": bench_hypercohom_family,
