@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-645 algebraic-K-9 canon.
+        "witt_k",
+        "schlichting_k",
+        "balmer_k",
+        "hermitian_k3",
+        "thomason_les",
+        "vishik_k",
         # Wave-644 algebraic-K-8 canon.
         "s_multicat",
         "allday_k",
