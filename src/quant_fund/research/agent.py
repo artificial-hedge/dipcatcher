@@ -7007,6 +7007,14 @@ from quant_fund.research.benches_w876 import (
     bench_levenberg_marq_family,
     bench_moore_penrose_family,
 )
+from quant_fund.research.benches_w877 import (
+    bench_discrete_ordinates_family,
+    bench_moc_transport_family,
+    bench_pn_closure_family,
+    bench_spherical_harmonics_family,
+    bench_spn_equations_family,
+    bench_transport_sn_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7378,6 +7386,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "transport_sn": bench_transport_sn_family,
+        "discrete_ordinates": bench_discrete_ordinates_family,
+        "spherical_harmonics": bench_spherical_harmonics_family,
+        "spn_equations": bench_spn_equations_family,
+        "moc_transport": bench_moc_transport_family,
+        "pn_closure": bench_pn_closure_family,
         "moore_penrose": bench_moore_penrose_family,
         "landweber_iter": bench_landweber_iter_family,
         "conjugate_grad_ls": bench_conjugate_grad_ls_family,
