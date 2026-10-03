@@ -2247,6 +2247,14 @@ from quant_fund.research.benches_w281 import (
     bench_perm_group_family,
     bench_poly_ring_family,
 )
+from quant_fund.research.benches_w282 import (
+    bench_gray_code_family,
+    bench_inversion_count_family,
+    bench_latin_square_family,
+    bench_ramsey_bound_family,
+    bench_stirling_count_family,
+    bench_subset_sum_dp_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2620,6 +2628,12 @@ def _provenance(
         "poly_ring": bench_poly_ring_family,
         "ideal_member": bench_ideal_member_family,
         "matrix_grp": bench_matrix_grp_family,
+        "subset_sum_dp": bench_subset_sum_dp_family,
+        "stirling_count": bench_stirling_count_family,
+        "gray_code": bench_gray_code_family,
+        "inversion_count": bench_inversion_count_family,
+        "ramsey_bound": bench_ramsey_bound_family,
+        "latin_square": bench_latin_square_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

@@ -1,3 +1,4 @@
+feat(research): wave 282 — combinatorics canon (subset_sum_dp, stirling_count, gray_code, inversion_count, ramsey_bound, latin_square) (1665->1671 families)
 feat(research): wave 281 — abstract-algebra canon (group_table, perm_group, galois_field, poly_ring, ideal_member, matrix_grp) (1659->1665 families)
 feat(research): wave 280 — algebraic-topology canon (simp_betti, boundary_sq, euler_char, rips_h1, graph_h1, winding_deg) (1653->1659 families)
 feat(research): wave 279 — control-theory-3 canon (luen_obsv, dist_obsv, mrac_adapt, flat_track, lyap_synth, l2_gain) (1647->1653 families)

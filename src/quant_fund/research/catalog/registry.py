@@ -3054,6 +3054,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "poly_ring",
         "ideal_member",
         "matrix_grp",
+        # Wave-282 combinatorics canon.
+        "subset_sum_dp",
+        "stirling_count",
+        "gray_code",
+        "inversion_count",
+        "ramsey_bound",
+        "latin_square",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
