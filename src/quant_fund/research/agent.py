@@ -7911,6 +7911,14 @@ from quant_fund.research.benches_w989 import (
     bench_sg_calculus_family,
     bench_wave_eq_group_family,
 )
+from quant_fund.research.benches_w990 import (
+    bench_euler_lagrange_family,
+    bench_geodesic_var_family,
+    bench_isoperimetric_var_family,
+    bench_jacobi_eq_family,
+    bench_legendre_cond_family,
+    bench_soap_film_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8282,6 +8290,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "euler_lagrange": bench_euler_lagrange_family,
+        "legendre_cond": bench_legendre_cond_family,
+        "jacobi_eq": bench_jacobi_eq_family,
+        "geodesic_var": bench_geodesic_var_family,
+        "isoperimetric_var": bench_isoperimetric_var_family,
+        "soap_film": bench_soap_film_family,
         "parametrix": bench_parametrix_family,
         "wave_eq_group": bench_wave_eq_group_family,
         "propagation_thm": bench_propagation_thm_family,
