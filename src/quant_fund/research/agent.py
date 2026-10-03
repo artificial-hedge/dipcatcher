@@ -2656,6 +2656,14 @@ from quant_fund.research.benches_w332 import (
     bench_qchannel_family,
     bench_state_tomo_family,
 )
+from quant_fund.research.benches_w333 import (
+    bench_hensel_lift_family,
+    bench_poly_crt_family,
+    bench_poly_eval_interp_family,
+    bench_poly_factor_fp_family,
+    bench_sparse_interp_family,
+    bench_subresultant_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3035,6 +3043,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "poly_factor_fp": bench_poly_factor_fp_family,
+        "hensel_lift": bench_hensel_lift_family,
+        "poly_crt": bench_poly_crt_family,
+        "subresultant": bench_subresultant_family,
+        "sparse_interp": bench_sparse_interp_family,
+        "poly_eval_interp": bench_poly_eval_interp_family,
         "density_matrix": bench_density_matrix_family,
         "povm_measure": bench_povm_measure_family,
         "qchannel": bench_qchannel_family,

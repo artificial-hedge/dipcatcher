@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-333 computer-algebra-2 canon.
+        "poly_factor_fp",
+        "hensel_lift",
+        "poly_crt",
+        "subresultant",
+        "sparse_interp",
+        "poly_eval_interp",
         # Wave-332 quantum-information canon.
         "density_matrix",
         "povm_measure",
