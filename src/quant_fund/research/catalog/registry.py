@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-860 isogeometric/immersed-methods canon.
+        "iso_geom",
+        "nurbs_elem",
+        "xfem",
+        "immersed_boundary",
+        "cut_cell",
+        "fictitious_domain",
         # Wave-859 meshfree/moving-least-squares canon.
         "moving_least_sq",
         "mls_shape",
