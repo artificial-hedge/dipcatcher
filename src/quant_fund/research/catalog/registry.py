@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-327 zero-knowledge canon.
+        "r1cs_check",
+        "qap_encode",
+        "kzg_commit",
+        "bulletproof_ip",
+        "plonkish_gate",
+        "snark_circuit",
         # Wave-326 verification-3 canon.
         "timed_automata",
         "parity_game",
