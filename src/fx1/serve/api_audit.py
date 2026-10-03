@@ -9164,6 +9164,73 @@ def _probe_backend_probes(  # NOSONAR
         ).status_code
         == 400
     )
+    # --- expires_after / last_active_at / standing expiry -------------
+    exp_app = api_mod.create_app()
+    fbx = _TC2(exp_app)
+    vs_exp = fbx.post(
+        "/v1/vector_stores",
+        json={
+            "name": "ephemeral",
+            "expires_after": {"anchor": "last_active_at", "days": 1},
+        },
+    ).json()
+    vs_exp_id = str(vs_exp["id"])
+    out["vs_expires_after_create"] = (
+        vs_exp["expires_after"] == {"anchor": "last_active_at", "days": 1}
+        and vs_exp["expires_at"] == vs_exp["last_active_at"] + 86400
+        and vs_exp["last_active_at"] >= vs_exp["created_at"]
+        and vs_exp["status"] == "completed"
+    )
+    out["vs_expires_after_400"] = (
+        fbx.post(
+            "/v1/vector_stores",
+            json={"expires_after": {"anchor": "created_at", "days": 1}},
+        ).status_code
+        == 400
+        and fbx.post(
+            "/v1/vector_stores",
+            json={"expires_after": {"anchor": "last_active_at", "days": 0}},
+        ).status_code
+        == 400
+        and fbx.post(
+            "/v1/vector_stores",
+            json={"expires_after": {"anchor": "last_active_at", "days": 366}},
+        ).status_code
+        == 400
+    )
+    # deterministic expiry: stamp expires_at in the past on the record —
+    # the store flips read-only (writes/search refuse) while reads stay
+    exp_app.state.vs_store._stores[vs_exp_id].expires_at = 1
+    out["vs_expired_status"] = (
+        fbx.get(f"/v1/vector_stores/{vs_exp_id}").json()["status"] == "expired"
+    )
+    out["vs_expired_writes_410"] = (
+        fbx.post(f"/v1/vector_stores/{vs_exp_id}/files", json={"file_id": "file-x"}).status_code
+        == 410
+        and fbx.post(
+            f"/v1/vector_stores/{vs_exp_id}/file_batches",
+            json={"file_ids": ["file-x"]},
+        ).status_code
+        == 410
+        and fbx.post(f"/v1/vector_stores/{vs_exp_id}/search", json={"query": "x"}).status_code
+        == 410
+    )
+    # reads on an expired store still resolve
+    out["vs_expired_reads_ok"] = (
+        fbx.get(f"/v1/vector_stores/{vs_exp_id}/files").status_code == 200
+        and fbx.get(f"/v1/vector_stores/{vs_exp_id}").status_code == 200
+    )
+    vs_exp_rev = fbx.post(
+        f"/v1/vector_stores/{vs_exp_id}",
+        json={"expires_after": {"anchor": "last_active_at", "days": 7}},
+    ).json()
+    out["vs_expiry_revive_update"] = (
+        vs_exp_rev["status"] == "completed"
+        and vs_exp_rev["expires_at"] == vs_exp_rev["last_active_at"] + 7 * 86400
+        and fbx.post(f"/v1/vector_stores/{vs_exp_id}/search", json={"query": "x"}).status_code
+        == 200
+    )
+    fbx.delete(f"/v1/vector_stores/{vs_exp_id}")
     # delete tombstone + detach shape + 404 after
     out["vs_file_detach"] = fb.delete(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json() == {
         "id": vs_up["id"],

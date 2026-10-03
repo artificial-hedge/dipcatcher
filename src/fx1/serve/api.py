@@ -5407,6 +5407,7 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
                 name=body.name,
                 metadata=body.metadata,
                 file_ids=tuple(body.file_ids or ()),
+                expires_after=body.expires_after,
             )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
@@ -5436,7 +5437,12 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
         """Update a vector store — ``name``/``metadata`` replace
         wholesale when present."""
         try:
-            return vs_store.update(vector_store_id, name=body.name, metadata=body.metadata)
+            return vs_store.update(
+                vector_store_id,
+                name=body.name,
+                metadata=body.metadata,
+                expires_after=body.expires_after,
+            )
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
 

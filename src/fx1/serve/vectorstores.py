@@ -54,6 +54,7 @@ VS_MAX_STORES_ID = 512  # id length bound (path-safe vs_* ids are 36)
 VS_FILTER_DEPTH = 4
 VS_FILTER_LEAVES = 16
 VS_MAX_BATCH_FILES = 500  # file_ids per file_batch (OpenAI's cap)
+VS_MAX_EXPIRY_DAYS = 365  # expires_after.days bound (OpenAI's)
 
 _WORD = re.compile(r"[a-z0-9]+")
 
@@ -235,6 +236,34 @@ def validate_chunking_strategy(strategy: Any) -> dict[str, Any]:
     }
 
 
+def validate_expires_after(value: Any) -> dict[str, Any] | None:
+    """``expires_after`` — OpenAI's anchor policy object. Only
+    ``{"anchor": "last_active_at", "days": 1..365}`` exists today;
+    anything else fails closed ``invalid_expires_after``."""
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise VectorStoreError(400, "expires_after must be an object", "invalid_expires_after")
+    if set(value) - {"anchor", "days"}:
+        raise VectorStoreError(
+            400, "expires_after accepts only {anchor, days}", "invalid_expires_after"
+        )
+    if value.get("anchor") != "last_active_at":
+        raise VectorStoreError(
+            400,
+            "expires_after.anchor must be 'last_active_at'",
+            "invalid_expires_after",
+        )
+    days = value.get("days")
+    if not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= VS_MAX_EXPIRY_DAYS:
+        raise VectorStoreError(
+            400,
+            f"expires_after.days must be an int in [1, {VS_MAX_EXPIRY_DAYS}]",
+            "invalid_expires_after",
+        )
+    return {"anchor": "last_active_at", "days": days}
+
+
 def _strategy_window(strategy: dict[str, Any]) -> tuple[int, int]:
     """(chunk_words, step_words) — static token bounds map to words."""
     if strategy["type"] != "static":
@@ -341,6 +370,11 @@ class VSMeta(BaseModel):
     metadata: dict[str, Any] = {}
     usage_bytes: int = 0
     files: dict[str, VSFileRec] = {}
+    # expiry policy — ``last_active_at`` bumps on attach/batch/search;
+    # ``expires_at`` re-derives from it when ``expires_after`` is set
+    expires_after: dict[str, Any] | None = None
+    last_active_at: int = 0
+    expires_at: int | None = None
 
 
 class _Chunk(BaseModel):
@@ -353,15 +387,19 @@ class _Chunk(BaseModel):
 
 
 def vs_object(meta: VSMeta) -> dict[str, Any]:
-    """The OpenAI ``vector_store`` wire object."""
+    """The OpenAI ``vector_store`` wire object — ``status`` is
+    ``expired`` once ``now >= expires_at`` (the store stays queryable
+    for reads; writes/search refuse)."""
     completed = sum(1 for f in meta.files.values() if f.status == "completed")
     failed = sum(1 for f in meta.files.values() if f.status == "failed")
+    last_active = meta.last_active_at or meta.created_at
+    expired = meta.expires_at is not None and int(time.time()) >= meta.expires_at
     return {
         "id": meta.vs_id,
         "object": "vector_store",
         "created_at": meta.created_at,
         "name": meta.name,
-        "status": "completed",
+        "status": "expired" if expired else "completed",
         "usage_bytes": meta.usage_bytes,
         "file_counts": {
             "in_progress": 0,
@@ -370,6 +408,9 @@ def vs_object(meta: VSMeta) -> dict[str, Any]:
             "failed": failed,
             "total": len(meta.files),
         },
+        "last_active_at": last_active,
+        "expires_after": dict(meta.expires_after) if meta.expires_after else None,
+        "expires_at": meta.expires_at,
         "metadata": dict(meta.metadata),
     }
 
@@ -496,8 +537,17 @@ class VectorStoreStore:
                     if prev is not None:
                         prev.name = upd.get("name")
                         prev.metadata = dict(upd.get("metadata") or {})
+                        if "expires_after" in upd:
+                            prev.expires_after = upd["expires_after"]
+                            prev.expires_at = upd.get("expires_at")
                 elif "vs_delete" in payload:
                     self._drop(str(payload["vs_delete"]["vs_id"]))
+                elif "vs_touch" in payload:
+                    upd = payload["vs_touch"]
+                    prev = self._stores.get(str(upd["vs_id"]))
+                    if prev is not None:
+                        prev.last_active_at = int(upd.get("last_active_at") or 0)
+                        prev.expires_at = upd.get("expires_at")
                 elif "vs_file" in payload:
                     rec = VSFileRec.model_validate(payload["vs_file"])
                     self._restore_file(rec)
@@ -603,6 +653,28 @@ class VectorStoreStore:
         self._stores.move_to_end(vs_id)
         return meta
 
+    def _expired(self, meta: VSMeta) -> bool:
+        """Standing-expiry check — ``expires_at`` passed flips the store
+        read-only for writes/search; reads still resolve."""
+        return meta.expires_at is not None and int(time.time()) >= meta.expires_at
+
+    def _touch_locked(self, meta: VSMeta) -> None:
+        """Activity bump — attaches, batch creates, and searches count
+        as use; re-anchors ``expires_at`` when a policy is set."""
+        meta.last_active_at = int(time.time())
+        if meta.expires_after is not None:
+            meta.expires_at = meta.last_active_at + int(meta.expires_after["days"]) * 86400
+        if self._journal is not None:
+            self._journal.append(
+                {
+                    "vs_touch": {
+                        "vs_id": meta.vs_id,
+                        "last_active_at": meta.last_active_at,
+                        "expires_at": meta.expires_at,
+                    }
+                }
+            )
+
     def _idf_table(self, vs_id: str) -> dict[int, float]:
         if vs_id in self._idf_dirty or vs_id not in self._idf:
             chunks_by_file = self._chunks.get(vs_id, {})
@@ -624,13 +696,19 @@ class VectorStoreStore:
         name: str | None = None,
         metadata: dict[str, Any] | None = None,
         file_ids: list[str] | tuple[str, ...] = (),
+        expires_after: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         validate_metadata(metadata)
+        policy = validate_expires_after(expires_after)
+        created = int(time.time())
         meta = VSMeta(
             vs_id=f"vs_{uuid.uuid4().hex}",
             name=name,
-            created_at=int(time.time()),
+            created_at=created,
             metadata=dict(metadata or {}),
+            expires_after=policy,
+            last_active_at=created,
+            expires_at=created + policy["days"] * 86400 if policy else None,
         )
         with self._lock:
             self._stores[meta.vs_id] = meta
@@ -661,14 +739,21 @@ class VectorStoreStore:
         *,
         name: str | None = None,
         metadata: dict[str, Any] | None = None,
+        expires_after: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         validate_metadata(metadata)
+        policy = validate_expires_after(expires_after)
         with self._lock:
             meta = self._store(vs_id)
             if name is not None:
                 meta.name = name
             if metadata is not None:
                 meta.metadata = dict(metadata)
+            if policy is not None:
+                # re-anchor from recorded last activity — an expired
+                # store revives honestly here; status recomputes
+                meta.expires_after = policy
+                meta.expires_at = meta.last_active_at + policy["days"] * 86400
             if self._journal is not None:
                 self._journal.append(
                     {
@@ -676,6 +761,10 @@ class VectorStoreStore:
                             "vs_id": vs_id,
                             "name": meta.name,
                             "metadata": dict(meta.metadata),
+                            "expires_after": (
+                                dict(meta.expires_after) if meta.expires_after else None
+                            ),
+                            "expires_at": meta.expires_at,
                         }
                     }
                 )
@@ -720,6 +809,10 @@ class VectorStoreStore:
         got = self._reader(file_id) if self._reader is not None else None
         with self._lock:
             meta = self._store(vs_id)
+            if self._expired(meta):
+                raise VectorStoreError(
+                    410, f"vector store {vs_id!r} has expired", "vector_store_expired"
+                )
             if file_id in meta.files:
                 raise VectorStoreError(
                     409, f"file {file_id!r} is already attached", "file_already_attached"
@@ -754,6 +847,7 @@ class VectorStoreStore:
             self._index_file(meta, rec, content)
             if self._journal is not None:
                 self._journal.append({"vs_file": rec.model_dump(mode="json")})
+            self._touch_locked(meta)
             return vs_file_object(rec)
 
     def list_files(
@@ -863,7 +957,11 @@ class VectorStoreStore:
             )
         attrs = validate_attributes(attributes)
         strategy = validate_chunking_strategy(chunking_strategy)
-        self._store(vs_id)  # ghost store refuses the batch itself, 404
+        meta = self._store(vs_id)  # ghost store refuses the batch itself, 404
+        if self._expired(meta):
+            raise VectorStoreError(
+                410, f"vector store {vs_id!r} has expired", "vector_store_expired"
+            )
         created = int(time.time())
         rows: list[dict[str, Any]] = []
         counts = {"in_progress": 0, "completed": 0, "failed": 0, "cancelled": 0, "total": 0}
@@ -904,6 +1002,7 @@ class VectorStoreStore:
             self._batches.setdefault(vs_id, {})[batch.batch_id] = batch
             if self._journal is not None:
                 self._journal.append({"vs_batch": batch.model_dump(mode="json")})
+            self._touch_locked(meta)
         return vs_batch_object(batch)
 
     def _batch(self, vs_id: str, batch_id: str) -> VSBatchRec:
@@ -1000,8 +1099,16 @@ class VectorStoreStore:
         qvec_raw = _vec(_tokens(query))
         with self._lock:
             metas = [self._store(s) for s in dict.fromkeys(ids)]
+            for meta in metas:
+                if self._expired(meta):
+                    raise VectorStoreError(
+                        410,
+                        f"vector store {meta.vs_id!r} has expired",
+                        "vector_store_expired",
+                    )
             hits: list[dict[str, Any]] = []
             for meta in metas:
+                self._touch_locked(meta)
                 idf = self._idf_table(meta.vs_id)
                 # query vector gets the store's idf applied symmetrically
                 qvec = {h: v * idf.get(h, 0.0) for h, v in qvec_raw.items()}

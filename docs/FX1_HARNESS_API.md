@@ -258,8 +258,8 @@ same digested shape the job record embeds.
 | `GET /v1/conversations/{id}/items` | the conv's accumulated items, paged by item id (`?limit`, `?after`, `?before`, `?order`) |
 | `POST /v1/conversations/{id}/items` | append item dicts — returns the minted items as a `{object:"list"}` page (no `item_ids` alias — items mint per append) |
 | `DELETE /v1/conversations/{id}/items/{item_id}` | drop one item; returns the conv object |
-| `POST /v1/vector_stores` | mint a `vs_*` retrieval store (`name`, `file_ids` seed, `metadata`) — `Fx1Harness.vector_store_create` / `HarnessClient.vector_store_create` / `client.vectorStoreCreate` / `fx1 harness vs-create` |
-| `GET` / `POST` / `DELETE` `/v1/vector_stores/{id}` | fetch / rename+remetadata / delete the store (delete detaches member files; the `file-*` records survive) |
+| `POST /v1/vector_stores` | mint a `vs_*` retrieval store (`name`, `file_ids` seed, `metadata`, `expires_after` anchor policy) — `Fx1Harness.vector_store_create` / `HarnessClient.vector_store_create` / `client.vectorStoreCreate` / `fx1 harness vs-create` |
+| `GET` / `POST` / `DELETE` `/v1/vector_stores/{id}` | fetch / rename+remetadata+`expires_after` re-anchor / delete the store (delete detaches member files; the `file-*` records survive) |
 | `GET /v1/vector_stores` | newest-first page (`?limit≤100`, `?after`, `?before`, `?order`) — `fx1 harness vs-list` |
 | `POST /v1/vector_stores/{id}/files` | attach a `file-*` record (`attributes` string pairs ≤16, `chunking_strategy.static` overrides) → `vector_store.file`; a double-attach is `409 file_already_attached` — `fx1 harness vs-file-add` |
 | `GET /v1/vector_stores/{id}/files` | member page (`?limit`, `?after`, `?before`, `?order`, `?filter` in `in_progress|completed|cancelled|failed`) — bad filters fail closed `400 invalid_filters` |
@@ -888,6 +888,21 @@ verdicts (`filter` accepts an OpenAI status word); the rows
 are the batch's record — a later `DELETE` of a member file
 doesn't rewrite history. Batches journal under `--state-dir`
 like the stores themselves and disappear with their store.
+
+Stores support OpenAI's standing-expiry policy:
+`expires_after: {"anchor": "last_active_at", "days": 1..365}`
+on create/update (any other anchor or bound fails closed
+`400 invalid_expires_after`). `last_active_at` bumps on every
+attach, batch create, and search, and `expires_at` re-anchors
+from it; once `now >= expires_at` the store reports
+`status: "expired"` and refuses *writes* — file attaches,
+batch creates, and search return `410 vector_store_expired` —
+while reads (`GET` store/files/content, `DELETE`) still
+resolve. An `expires_after` update re-anchors from the
+recorded `last_active_at`, which can revive an expired store
+honestly (no undelete semantics — `status` recomputes).
+Activity bumps journal as `vs_touch` lines so replay
+preserves the expiry window.
 
 Identical contract in-process: `Fx1Harness.openai_file_create`
 (content bytes → `file-*`) + `vector_store_*` twin methods drive

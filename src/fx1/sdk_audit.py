@@ -752,6 +752,45 @@ def sdk_audit() -> dict[str, bool]:
         and _raises(lambda: sdk_vs.vector_store_file_batch_create("vs_ghost", ["f"]))
         == "OpenAICompatError"
     )
+    # expires_after / standing expiry — the in-process twin enforces the
+    # same anchor policy, expiry flip, and read/write split
+    _vs_e = sdk_vs.vector_store_create(
+        name="ephemeral", expires_after={"anchor": "last_active_at", "days": 1}
+    )
+    out["vs_expires_after"] = (
+        _vs_e["expires_after"] == {"anchor": "last_active_at", "days": 1}
+        and _vs_e["expires_at"] == _vs_e["last_active_at"] + 86400
+        and _vs_e["status"] == "completed"
+        and _vs_e["last_active_at"] >= _vs_e["created_at"]
+    )
+    sdk_vs._vs_store._stores[_vs_e["id"]].expires_at = 1
+    out["vs_expired_refusal"] = (
+        sdk_vs.vector_store_get(_vs_e["id"])["status"] == "expired"
+        and _raises(lambda: sdk_vs.vector_store_file_create(_vs_e["id"], _f2["id"]))
+        == "VectorStoreError"
+        and _raises(lambda: sdk_vs.vector_store_search(_vs_e["id"], "x")) == "OpenAICompatError"
+        and sdk_vs.vector_store_file_list(_vs_e["id"])["object"] == "list"
+    )
+    _vs_er = sdk_vs.vector_store_update(
+        _vs_e["id"], expires_after={"anchor": "last_active_at", "days": 3}
+    )
+    out["vs_expiry_revive"] = (
+        _vs_er["status"] == "completed"
+        and _vs_er["expires_at"] == _vs_er["last_active_at"] + 3 * 86400
+    )
+    sdk_vs.vector_store_delete(_vs_e["id"])
+    out["vs_expires_after_400"] = (
+        _raises(
+            lambda: sdk_vs.vector_store_create(expires_after={"anchor": "created_at", "days": 1})
+        )
+        == "VectorStoreError"
+        and _raises(
+            lambda: sdk_vs.vector_store_create(
+                expires_after={"anchor": "last_active_at", "days": 999}
+            )
+        )
+        == "VectorStoreError"
+    )
     out["vs_delete_lifecycle"] = (
         sdk_vs.vector_store_file_delete(_vs["id"], _f["id"])
         == {"id": _f["id"], "object": "vector_store.file.deleted", "deleted": True}

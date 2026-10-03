@@ -3408,6 +3408,11 @@ def harness_vs_create(
         None, "--file-ids", help="JSON array of file-* ids to attach at create."
     ),
     metadata: str | None = typer.Option(None, "--metadata", help="JSON object of string pairs."),
+    expires_after: str | None = typer.Option(
+        None,
+        "--expires-after",
+        help='JSON expiry policy — e.g. {"anchor":"last_active_at","days":7}',
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
@@ -3425,17 +3430,22 @@ def harness_vs_create(
             _bad_arg("--file-ids must be a JSON array of file-* ids")
         ids = parsed_ids
     meta = _json_meta(metadata)
+    expiry = _json_obj_opt(expires_after, "--expires-after")
     if remote is not None:
         out = _or_exit(
             lambda: _remote_client(remote, api_key, timeout_s).vector_store_create(
-                name=name, metadata=meta, file_ids=ids
+                name=name, metadata=meta, file_ids=ids, expires_after=expiry
             )
         )
         typer.echo(json.dumps(out, indent=2))
         return
     from fx1.sdk import Fx1Harness
 
-    out = _or_exit(lambda: Fx1Harness().vector_store_create(name=name, metadata=meta, file_ids=ids))
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_create(
+            name=name, metadata=meta, file_ids=ids, expires_after=expiry
+        )
+    )
     typer.echo(json.dumps(out, indent=2))
 
 
@@ -3467,17 +3477,24 @@ def harness_vs_update(
     metadata: str | None = typer.Option(
         None, "--metadata", help="JSON object of string pairs — replaces wholesale."
     ),
+    expires_after: str | None = typer.Option(
+        None,
+        "--expires-after",
+        help='JSON expiry policy — e.g. {"anchor":"last_active_at","days":7}',
+    ),
     remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
     api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
     timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
 ) -> None:
     """``POST /v1/vector_stores/{id}`` — set name/metadata (omitted
-    fields keep their current values)."""
+    fields keep their current values); ``--expires-after`` re-anchors
+    the expiry window from the store's last activity."""
     meta = _json_meta(metadata)
+    expiry = _json_obj_opt(expires_after, "--expires-after")
     if remote is not None:
         out = _or_exit(
             lambda: _remote_client(remote, api_key, timeout_s).vector_store_update(
-                vector_store_id, name=name, metadata=meta
+                vector_store_id, name=name, metadata=meta, expires_after=expiry
             )
         )
         typer.echo(json.dumps(out, indent=2))
@@ -3485,7 +3502,9 @@ def harness_vs_update(
     from fx1.sdk import Fx1Harness
 
     out = _or_exit(
-        lambda: Fx1Harness().vector_store_update(vector_store_id, name=name, metadata=meta)
+        lambda: Fx1Harness().vector_store_update(
+            vector_store_id, name=name, metadata=meta, expires_after=expiry
+        )
     )
     typer.echo(json.dumps(out, indent=2))
 

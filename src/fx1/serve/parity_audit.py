@@ -3660,6 +3660,32 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         == ("VectorStoreError", "vector_store_not_found")
         and _raises_code(lambda: remote.vector_store_get(_vs_wl["id"])) == ("KeyError", "")
     )
+    # expires_after parity — both legs mint/anchor the policy and fail
+    # closed identically on a bad anchor
+    _ve_sdk = sdk.vector_store_create(
+        name="exp", expires_after={"anchor": "last_active_at", "days": 2}
+    )
+    _ve_wl = remote.vector_store_create(
+        name="exp", expires_after={"anchor": "last_active_at", "days": 2}
+    )
+    out["vs_expires_parity"] = (
+        _ve_sdk["expires_after"]
+        == _ve_wl["expires_after"]
+        == {"anchor": "last_active_at", "days": 2}
+        and _ve_sdk["expires_at"] == _ve_sdk["last_active_at"] + 2 * 86400
+        and _ve_wl["expires_at"] == _ve_wl["last_active_at"] + 2 * 86400
+        and _ve_sdk["status"] == _ve_wl["status"] == "completed"
+        and _raises_code(
+            lambda: sdk.vector_store_create(expires_after={"anchor": "bogus", "days": 1})
+        )
+        == ("VectorStoreError", "invalid_expires_after")
+        and _raises_code(
+            lambda: remote.vector_store_create(expires_after={"anchor": "bogus", "days": 1})
+        )
+        == ("HarnessTransportError", "invalid_expires_after")
+    )
+    sdk.vector_store_delete(_ve_sdk["id"])
+    remote.vector_store_delete(_ve_wl["id"])
     # file_search on /v1/responses: same output grammar on both legs —
     # the retrieval item precedes the message, include gates results,
     # unknown stores fail closed the same way

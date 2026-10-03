@@ -4157,6 +4157,10 @@ export interface components {
          *     time (a bogus id fails the attach honestly).
          */
         OpenAIVectorStoreCreate: {
+            /** Expires After */
+            expires_after?: {
+                [key: string]: unknown;
+            } | null;
             /** File Ids */
             file_ids?: string[] | null;
             /** Metadata */
@@ -4242,9 +4246,14 @@ export interface components {
         /**
          * OpenAIVectorStoreUpdate
          * @description ``POST /v1/vector_stores/{id}`` body — ``name``/``metadata``
-         *     replace wholesale when present.
+         *     replace wholesale when present; ``expires_after`` re-anchors the
+         *     expiry window from ``last_active_at``.
          */
         OpenAIVectorStoreUpdate: {
+            /** Expires After */
+            expires_after?: {
+                [key: string]: unknown;
+            } | null;
             /** Metadata */
             metadata?: {
                 [key: string]: string;

@@ -2368,9 +2368,12 @@ class HarnessClient:
         name: str | None = None,
         metadata: dict[str, str] | None = None,
         file_ids: list[str] | None = None,
+        expires_after: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """``POST /v1/vector_stores`` — mint a ``vs_*`` retrieval store;
-        ``file_ids`` attach at create (a bogus id fails the call)."""
+        ``file_ids`` attach at create (a bogus id fails the call);
+        ``expires_after`` is the OpenAI anchor policy
+        ``{"anchor": "last_active_at", "days": 1..365}``."""
         payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
@@ -2378,6 +2381,8 @@ class HarnessClient:
             payload["metadata"] = metadata
         if file_ids is not None:
             payload["file_ids"] = file_ids
+        if expires_after is not None:
+            payload["expires_after"] = expires_after
         return dict(self._json("POST", "/v1/vector_stores", payload))
 
     def vector_store_get(self, vector_store_id: str) -> dict[str, Any]:
@@ -2396,14 +2401,18 @@ class HarnessClient:
         *,
         name: str | None = None,
         metadata: dict[str, str] | None = None,
+        expires_after: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """``POST /v1/vector_stores/{id}`` — name/metadata replace
-        wholesale when given."""
+        wholesale when given; ``expires_after`` re-anchors the expiry
+        window (revives an expired store)."""
         payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
         if metadata is not None:
             payload["metadata"] = metadata
+        if expires_after is not None:
+            payload["expires_after"] = expires_after
         return dict(
             self._json(
                 "POST",

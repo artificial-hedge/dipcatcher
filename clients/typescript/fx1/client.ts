@@ -1690,6 +1690,7 @@ export class HarnessApiClient {
     name?: string;
     fileIds?: string[];
     metadata?: Record<string, string>;
+    expiresAfter?: { anchor: "last_active_at"; days: number };
   }): Promise<Record<string, unknown>> {
     const res = await this.send({
       method: "POST",
@@ -1698,6 +1699,7 @@ export class HarnessApiClient {
         name: body?.name ?? null,
         file_ids: body?.fileIds ?? null,
         metadata: body?.metadata ?? null,
+        expires_after: body?.expiresAfter ?? null,
       },
       idempotent: false,
       headers: { "Content-Type": "application/json" },
@@ -1719,12 +1721,20 @@ export class HarnessApiClient {
    */
   async vectorStoreUpdate(
     vectorStoreId: string,
-    body: { name?: string; metadata?: Record<string, string> | null },
+    body: {
+      name?: string;
+      metadata?: Record<string, string> | null;
+      expiresAfter?: { anchor: "last_active_at"; days: number };
+    },
   ): Promise<Record<string, unknown>> {
     const res = await this.send({
       method: "POST",
       path: `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}`,
-      body: { name: body.name ?? null, metadata: body.metadata ?? null },
+      body: {
+        name: body.name ?? null,
+        metadata: body.metadata ?? null,
+        expires_after: body.expiresAfter ?? null,
+      },
       idempotent: false,
       headers: { "Content-Type": "application/json" },
     });

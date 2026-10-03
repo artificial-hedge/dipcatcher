@@ -104,6 +104,7 @@
       "inproc_vs_batch_ops": true,
       "inproc_vs_create": true,
       "inproc_vs_delete": true,
+      "inproc_vs_expires_after": true,
       "inproc_vs_file_add": true,
       "inproc_vs_search": true,
       "job_receipt_local_refused": true,
@@ -206,6 +207,7 @@
       "remote_vs_batch_files": true,
       "remote_vs_batch_get": true,
       "remote_vs_create": true,
+      "remote_vs_expires_after": true,
       "remote_vs_file_add": true,
       "remote_vs_files": true,
       "remote_vs_get_content_delete": true,
@@ -231,11 +233,11 @@
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "58e3b0884e64702f85d07327beaddc02f75a520e",
+  "git_revision": "6200f9881fa8f81c86133bc241da0bf351f51649",
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). respond --stream concatenates Responses delta frames on both surfaces (in-process SDK pairs and remote payload dicts), forwarding flag kwargs verbatim. ft-create/ft-jobs/ft-status/ft-events/ft-cancel hold the OpenAI job grammar remote-side (upload \u2192 submit \u2192 wait, --no-wait prints the queued record) and refuse locally without --remote. eval-wait/ft-wait/batch-wait re-attach to a --no-wait submit: poll kwargs reach the client verbatim, the terminal record prints, and eval-wait --receipt follows with the sealed doc; all three refuse locally without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
   "kind": "cli_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "4496383a3fd8f3189aaad1462df6e23b560b95756d9f5f002c0db7ff62c9f55b",
+  "receipt_sha256": "156ec99486cbfdb65a6f50e3ce7ebd827a85f101ea7b860f767c79040a013e1a",
   "research_only": true,
   "schema": "cli_audit.v1"
 }

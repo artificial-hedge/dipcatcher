@@ -3387,7 +3387,16 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             _vsc.exit_code == 0
             and json.loads(_vsc.stdout)["id"] == "vs_rem"
             and remotes[-1].vs_calls[-1]
-            == ("create", (), {"name": "kb", "metadata": None, "file_ids": None})
+            == (
+                "create",
+                (),
+                {
+                    "name": "kb",
+                    "metadata": None,
+                    "file_ids": None,
+                    "expires_after": None,
+                },
+            )
         )
         _vsu = runner.invoke(
             app,
@@ -3405,7 +3414,32 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             _vsu.exit_code == 0
             and json.loads(_vsu.stdout)["metadata"] == {"t": "a"}
             and remotes[-1].vs_calls[-1]
-            == ("update", ("vs_rem",), {"name": None, "metadata": {"t": "a"}})
+            == (
+                "update",
+                ("vs_rem",),
+                {"name": None, "metadata": {"t": "a"}, "expires_after": None},
+            )
+        )
+        _vsx = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-create",
+                "--expires-after",
+                '{"anchor": "last_active_at", "days": 2}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_expires_after"] = _vsx.exit_code == 0 and remotes[-1].vs_calls[-1] == (
+            "create",
+            (),
+            {
+                "name": None,
+                "metadata": None,
+                "file_ids": None,
+                "expires_after": {"anchor": "last_active_at", "days": 2},
+            },
         )
         _vsfa = runner.invoke(
             app,
@@ -3676,7 +3710,35 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             _vsc_i.exit_code == 0
             and json.loads(_vsc_i.stdout)["id"] == "vs_fake"
             and fake_vs.vs_calls[-1]
-            == ("create", (), {"name": "kb", "metadata": {"a": "1"}, "file_ids": None})
+            == (
+                "create",
+                (),
+                {
+                    "name": "kb",
+                    "metadata": {"a": "1"},
+                    "file_ids": None,
+                    "expires_after": None,
+                },
+            )
+        )
+        _vsx_i = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-update",
+                "vs_x",
+                "--expires-after",
+                '{"anchor": "last_active_at", "days": 5}',
+            ],
+        )
+        out["inproc_vs_expires_after"] = _vsx_i.exit_code == 0 and fake_vs.vs_calls[-1] == (
+            "update",
+            ("vs_x",),
+            {
+                "name": None,
+                "metadata": None,
+                "expires_after": {"anchor": "last_active_at", "days": 5},
+            },
         )
         _vsi = runner.invoke(
             app, ["harness", "vs-file-add", "vs_x", "file-1", "--attributes", '{"x": "y"}']

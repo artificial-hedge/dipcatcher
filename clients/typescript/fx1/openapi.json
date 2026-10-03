@@ -6240,6 +6240,18 @@
         "additionalProperties": true,
         "description": "``POST /v1/vector_stores`` body \u2014 ``name``/``metadata`` are free\nlabels; ``file_ids`` attaches existing ``file-*`` records at create\ntime (a bogus id fails the attach honestly).",
         "properties": {
+          "expires_after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires After"
+          },
           "file_ids": {
             "anyOf": [
               {
@@ -6445,8 +6457,20 @@
       },
       "OpenAIVectorStoreUpdate": {
         "additionalProperties": true,
-        "description": "``POST /v1/vector_stores/{id}`` body \u2014 ``name``/``metadata``\nreplace wholesale when present.",
+        "description": "``POST /v1/vector_stores/{id}`` body \u2014 ``name``/``metadata``\nreplace wholesale when present; ``expires_after`` re-anchors the\nexpiry window from ``last_active_at``.",
         "properties": {
+          "expires_after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires After"
+          },
           "metadata": {
             "anyOf": [
               {

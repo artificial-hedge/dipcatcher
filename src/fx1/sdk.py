@@ -3081,10 +3081,18 @@ class Fx1Harness:
         name: str | None = None,
         metadata: dict[str, str] | None = None,
         file_ids: list[str] | None = None,
+        expires_after: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """``POST /v1/vector_stores`` in-process — mints a ``vs_*`` store;
-        ``file_ids`` attach at create (an unresolvable id fails closed)."""
-        return self._vs_store.create(name=name, metadata=metadata, file_ids=tuple(file_ids or ()))
+        ``file_ids`` attach at create (an unresolvable id fails closed);
+        ``expires_after`` sets the OpenAI anchor policy
+        ``{"anchor": "last_active_at", "days": 1..365}``."""
+        return self._vs_store.create(
+            name=name,
+            metadata=metadata,
+            file_ids=tuple(file_ids or ()),
+            expires_after=expires_after,
+        )
 
     def vector_store_get(self, vector_store_id: str) -> dict[str, Any]:
         """``GET /v1/vector_stores/{id}`` in-process."""
@@ -3096,10 +3104,17 @@ class Fx1Harness:
         *,
         name: str | None = None,
         metadata: dict[str, str] | None = None,
+        expires_after: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """``POST /v1/vector_stores/{id}`` in-process — name/metadata
-        replace wholesale when given."""
-        return self._vs_store.update(vector_store_id, name=name, metadata=metadata)
+        replace wholesale when given; ``expires_after`` re-anchors the
+        expiry window (revives an expired store)."""
+        return self._vs_store.update(
+            vector_store_id,
+            name=name,
+            metadata=metadata,
+            expires_after=expires_after,
+        )
 
     def vector_store_delete(self, vector_store_id: str) -> dict[str, Any]:
         """``DELETE /v1/vector_stores/{id}`` in-process — the store and

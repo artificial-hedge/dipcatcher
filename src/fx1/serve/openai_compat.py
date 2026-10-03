@@ -1855,16 +1855,19 @@ class OpenAIVectorStoreCreate(_Model):
     name: str | None = Field(default=None, max_length=512)
     file_ids: list[str] | None = Field(default=None, max_length=64)
     metadata: dict[str, str] | None = None
+    expires_after: dict[str, Any] | None = None
 
 
 class OpenAIVectorStoreUpdate(_Model):
     """``POST /v1/vector_stores/{id}`` body — ``name``/``metadata``
-    replace wholesale when present."""
+    replace wholesale when present; ``expires_after`` re-anchors the
+    expiry window from ``last_active_at``."""
 
     model_config = ConfigDict(extra="allow")
 
     name: str | None = Field(default=None, max_length=512)
     metadata: dict[str, str] | None = None
+    expires_after: dict[str, Any] | None = None
 
 
 class OpenAIVectorStoreFileCreate(_Model):
