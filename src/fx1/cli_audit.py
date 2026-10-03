@@ -157,7 +157,149 @@ def cli_audit() -> dict[str, Any]:
         "ft-status",
         "ft-events",
         "ft-cancel",
+        "files",
+        "file-upload",
+        "file-content",
+        "file-delete",
+        "batch-submit",
+        "batches",
+        "batch-status",
+        "batch-cancel",
+        "batch-output",
+        "batch-run",
+        "models",
+        "model",
+        "respond",
+        "embed",
+        "moderate",
+        "chat-get",
+        "chat-delete",
+        "response-get",
+        "response-delete",
+        "score",
+        "commands",
     } <= hnames
+
+    # the files/batches family is wire-only — no --remote is exit 2 on
+    # every command, never a traceback.
+    out["harness_files_family_needs_remote"] = all(
+        runner.invoke(app, ["harness", name, *args]).exit_code == 2
+        for name, args in (
+            ("files", []),
+            ("file-upload", ["x.jsonl"]),
+            ("file-content", ["file-x"]),
+            ("file-delete", ["file-x"]),
+            ("batch-submit", ["x.jsonl"]),
+            ("batches", []),
+            ("batch-status", ["batch_x"]),
+            ("batch-cancel", ["batch_x"]),
+            ("batch-output", ["batch_x"]),
+        )
+    )
+    # ft-create: callback_secret without callback_url refuses before any
+    # network/backend work — the same guard as the wire's 422.
+    import tempfile as _tmpf  # noqa: PLC0415
+    from pathlib import Path as _P  # noqa: PLC0415
+
+    with _tmpf.TemporaryDirectory() as _td:
+        _cor = _P(_td) / "c.jsonl"
+        _cor.write_text(
+            '{"messages":[{"role":"user","content":"q"},{"role":"assistant","content":"a"}]}\n'
+        )
+        out["harness_ft_create_guard"] = (
+            runner.invoke(
+                app,
+                ["harness", "ft-create", str(_cor), "--callback-secret", "x"],
+            ).exit_code
+            == 2
+        )
+        # a real corpus on the in-process SDK path exits 0 with the
+        # terminal job record (synchronous stub runner).
+        _ok = runner.invoke(app, ["harness", "ft-create", str(_cor), "--epochs", "1"])
+        out["harness_ft_create_inprocess"] = _ok.exit_code == 0 and json.loads(_ok.stdout).get(
+            "status"
+        ) in {"succeeded", "failed"}
+
+        # batch-run is the in-process twin — no --remote needed.
+        _in = _P(_td) / "b.jsonl"
+        _in.write_text(
+            '{"custom_id":"r1","method":"POST","url":"/v1/chat/completions",'
+            '"body":{"model":"local_fx1","messages":[{"role":"user","content":"q"}]}}\n'
+        )
+        out["batch_run_missing_file_2"] = (
+            runner.invoke(app, ["harness", "batch-run", str(_P(_td) / "nope.jsonl")]).exit_code == 2
+        )
+        _bad = _P(_td) / "bad.jsonl"
+        _bad.write_text("not json\n")
+        out["batch_run_bad_jsonl_2"] = (
+            runner.invoke(app, ["harness", "batch-run", str(_bad)]).exit_code == 2
+        )
+        _outp = _P(_td) / "out.jsonl"
+        _rb = runner.invoke(app, ["harness", "batch-run", str(_in), "--out", str(_outp)])
+        _blob = json.loads(_rb.stdout) if _rb.exit_code == 0 else {}
+        out["batch_run_inprocess"] = (
+            _rb.exit_code == 0
+            and _blob.get("status") == "completed"
+            and _outp.exists()
+            and _outp.read_text().startswith("{")
+        )
+        # callback_secret alone → 2 (the wire's 422 twin)
+        out["batch_run_guard"] = (
+            runner.invoke(
+                app, ["harness", "batch-run", str(_in), "--callback-secret", "x"]
+            ).exit_code
+            == 2
+        )
+
+        # model inventory: the list envelope names fx1 in-process too.
+        _ml = runner.invoke(app, ["harness", "models"])
+        out["harness_models_inprocess"] = _ml.exit_code == 0 and any(
+            m.get("id") == "fx1" for m in json.loads(_ml.stdout).get("data", [])
+        )
+        out["harness_model_unknown_2"] = (
+            runner.invoke(app, ["harness", "model", "nope-model"]).exit_code == 2
+        )
+
+        # respond/embed/moderate: in-process legs — bad JSON flags are arg
+        # faults, a dead link is a clean 2 (never a traceback), and the
+        # moderation gate needs no backend at all.
+        out["harness_respond_bad_meta_2"] = (
+            runner.invoke(app, ["harness", "respond", "hi", "--metadata", "[1]"]).exit_code == 2
+        )
+        out["harness_respond_bad_fmt_2"] = (
+            runner.invoke(app, ["harness", "respond", "hi", "--format", "{bad"]).exit_code == 2
+        )
+        _rc = runner.invoke(app, ["harness", "respond", "hi", "--backend", "no-such"])
+        out["harness_respond_deadlink_2"] = _rc.exit_code == 2 and _rc.stderr.startswith("error:")
+        _ec = runner.invoke(app, ["harness", "embed", "hi", "--backend", "no-such"])
+        out["harness_embed_deadlink_2"] = _ec.exit_code == 2 and _ec.stderr.startswith("error:")
+        _mc = runner.invoke(app, ["harness", "moderate", "hello"])
+        out["harness_moderate_inprocess"] = _mc.exit_code == 0 and json.loads(_mc.stdout).get(
+            "id", ""
+        ).startswith("modr-")
+        _mf = runner.invoke(app, ["harness", "moderate", "our live trading sharpe is 9"])
+        out["harness_moderate_flags"] = (
+            _mf.exit_code == 0 and json.loads(_mf.stdout)["results"][0]["flagged"] is True
+        )
+        # stored-object retrieval: a missing id is a clean 2 in-process
+        # (the wire's 404), never a fabricated envelope.
+        out["harness_stored_missing_2"] = all(
+            runner.invoke(app, ["harness", name, "no-such-id"]).exit_code == 2
+            for name in ("chat-get", "chat-delete", "response-get", "response-delete")
+        )
+
+        # score preflight: the reward contract runs in-process with no model
+        # spend — banned-token text carries violations + the -10 total.
+        _sc = json.loads(runner.invoke(app, ["harness", "score", "our live sharpe is 9"]).stdout)[0]
+        out["harness_score_inprocess"] = bool(_sc["violations"]) and _sc["total"] < 0
+        # commands registry: the bogus-role fault is exit 2 (wire's 422 twin).
+        _cl = runner.invoke(app, ["harness", "commands", "--role", "evaluation"])
+        out["harness_commands_role"] = _cl.exit_code == 0 and all(
+            isinstance(n, str) for n in json.loads(_cl.stdout)["commands"]
+        )
+        out["harness_commands_bad_role_2"] = (
+            runner.invoke(app, ["harness", "commands", "--role", "bogus"]).exit_code == 2
+        )
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
     # a dead BYOK endpoint is a verdict, not a crash.
@@ -330,6 +472,23 @@ def cli_audit() -> dict[str, Any]:
                 kind="k",
                 verdict="ok",
                 digest_convention=None,
+            )
+
+        def verify_receipts(self, receipts: list[dict[str, Any]]) -> Any:
+            from fx1.sdk import ReceiptVerdict
+
+            return tuple(
+                ReceiptVerdict(
+                    valid=i == 0,
+                    path="<cli>",
+                    errors=() if i == 0 else ("bad",),
+                    warnings=(),
+                    schema_tag="x",
+                    kind="k",
+                    verdict="ok" if i == 0 else "invalid",
+                    digest_convention=None,
+                )
+                for i, _r in enumerate(receipts)
             )
 
         def health(self) -> Any:
@@ -566,12 +725,33 @@ def cli_audit() -> dict[str, Any]:
             self.last_ft_job: str | None = None
             self.last_ft_query: dict[str, Any] | None = None
             self.last_upload: dict[str, Any] | None = None
+            self.last_file_id: str | None = None
+            self.last_batch_create: dict[str, Any] | None = None
+            self.last_batch_id: str | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
 
         def commands(self, role: Any = None) -> list[str]:
-            return ["cmd-a"]
+            self.last_ft_query = {"commands_role": role}
+            return ["cmd-a"] if role is None else []
+
+        def verify_receipts(self, receipts: list[dict[str, Any]]) -> Any:
+            from fx1.sdk import ReceiptVerdict
+
+            return tuple(
+                ReceiptVerdict(
+                    valid=i == 0,
+                    path="<cli>",
+                    errors=() if i == 0 else ("bad",),
+                    warnings=(),
+                    schema_tag="x",
+                    kind="k",
+                    verdict="ok" if i == 0 else "invalid",
+                    digest_convention=None,
+                )
+                for i, _r in enumerate(receipts)
+            )
 
         def health(self) -> Any:
             from fx1.sdk import HarnessHealth
@@ -762,6 +942,151 @@ def cli_audit() -> dict[str, Any]:
         def cancel_finetune_job(self, job_id: str) -> dict[str, Any]:
             self.last_ft_job = job_id
             return {"id": job_id, "object": "fine_tuning.job", "status": "cancelled"}
+
+        def files(self) -> list[dict[str, Any]]:
+            return [{"id": "file-1", "object": "file", "purpose": "batch"}]
+
+        def file_content(self, file_id: str) -> bytes:
+            self.last_file_id = file_id
+            return b'{"custom_id":"r1"}\n'
+
+        def delete_file(self, file_id: str) -> dict[str, Any]:
+            self.last_file_id = file_id
+            return {"id": file_id, "object": "file", "deleted": True}
+
+        def create_batch(self, input_file_id: str, **kw: Any) -> dict[str, Any]:
+            rec = dict(kw)
+            rec["input_file_id"] = input_file_id
+            self.last_batch_create = rec
+            return {
+                "id": "batch_x",
+                "object": "batch",
+                "status": "validating",
+                "input_file_id": input_file_id,
+            }
+
+        def wait_batch(self, batch_id: str, **kw: Any) -> dict[str, Any]:
+            self.last_batch_id = batch_id
+            return {
+                "id": batch_id,
+                "object": "batch",
+                "status": "completed",
+                "output_file_id": "file-out",
+            }
+
+        def batches(self, **kw: Any) -> dict[str, Any]:
+            self.last_ft_query = dict(kw)
+            return {
+                "object": "list",
+                "data": [{"id": "batch_x", "object": "batch", "status": "completed"}],
+                "has_more": False,
+            }
+
+        def batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_batch_id = batch_id
+            return {
+                "id": batch_id,
+                "object": "batch",
+                "status": "completed",
+                "output_file_id": "file-out",
+            }
+
+        def cancel_batch(self, batch_id: str) -> dict[str, Any]:
+            self.last_batch_id = batch_id
+            return {"id": batch_id, "object": "batch", "status": "cancelling"}
+
+        def list_models(self) -> dict[str, Any]:
+            return {
+                "object": "list",
+                "data": [{"id": "fx1", "object": "model", "created": 1, "owned_by": "fx1"}],
+            }
+
+        def retrieve_model(self, model_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"model": model_id}
+            return {"id": model_id, "object": "model", "created": 1, "owned_by": "fx1"}
+
+        def responses_create(
+            self,
+            input: Any,
+            **kw: Any,  # noqa: A002
+        ) -> tuple[dict[str, Any], None]:
+            self.last_ft_query = {"input": input, **kw}
+            return (
+                {
+                    "id": "resp_x",
+                    "object": "response",
+                    "model": kw.get("model", "fx1"),
+                    "output": [
+                        {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "output_text", "text": "hi"}],
+                        }
+                    ],
+                },
+                None,
+            )
+
+        def embeddings_create(
+            self,
+            input: Any,
+            **kw: Any,  # noqa: A002
+        ) -> tuple[dict[str, Any], None]:
+            self.last_ft_query = {"input": input, **kw}
+            return (
+                {
+                    "object": "list",
+                    "data": [{"object": "embedding", "index": 0, "embedding": [0.1]}],
+                    "model": kw.get("model", "fx1"),
+                },
+                None,
+            )
+
+        def moderate(self, input: Any) -> dict[str, Any]:  # noqa: A002
+            self.last_ft_query = {"input": input}
+            return {
+                "id": "modr-x",
+                "model": "fx1-honesty-gate",
+                "results": [{"flagged": False, "categories": {}, "category_scores": {}}],
+            }
+
+        def retrieve_chat_completion(self, completion_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"chat_get": completion_id}
+            return {"id": completion_id, "object": "chat.completion"}
+
+        def delete_chat_completion(self, completion_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"chat_delete": completion_id}
+            return {
+                "id": completion_id,
+                "object": "chat.completion.deleted",
+                "deleted": True,
+            }
+
+        def retrieve_response(self, response_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"resp_get": response_id}
+            return {"id": response_id, "object": "response"}
+
+        def delete_response(self, response_id: str) -> dict[str, Any]:
+            self.last_ft_query = {"resp_delete": response_id}
+            return {
+                "id": response_id,
+                "object": "response.deleted",
+                "deleted": True,
+            }
+
+        def score(self, input: Any) -> list[dict[str, Any]]:  # noqa: A002
+            self.last_ft_query = {"score": input}
+            items = input if isinstance(input, list) else [input]
+            return [
+                {
+                    "object": "score",
+                    "index": i,
+                    "total": 0.0,
+                    "components": {},
+                    "violations": [],
+                }
+                for i, _t in enumerate(items)
+            ]
 
     remotes: list[_FakeRemote] = []
 
@@ -1124,8 +1449,32 @@ def cli_audit() -> dict[str, Any]:
                     "suffix": "pp",
                     "validation_file": None,
                     "seed": 11,
+                    "callback_url": None,
+                    "callback_secret": None,
                 }
                 and remotes[-1].last_ft_job == "ftjob-x"
+            )
+            # --callback-url/--callback-secret flow through to the client
+            rft_cb = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "ft-create",
+                    str(cpath),
+                    "--remote",
+                    "http://h.test",
+                    "--no-wait",
+                    "--callback-url",
+                    "https://hooks.test/ft",
+                    "--callback-secret",
+                    "whsec-cli",
+                ],
+            )
+            out["remote_ft_create_callback_kwargs"] = (
+                rft_cb.exit_code == 0
+                and remotes[-1].last_ft_create is not None
+                and remotes[-1].last_ft_create.get("callback_url") == "https://hooks.test/ft"
+                and remotes[-1].last_ft_create.get("callback_secret") == "whsec-cli"
             )
             rft_nw = runner.invoke(
                 app,
@@ -1155,6 +1504,30 @@ def cli_audit() -> dict[str, Any]:
                     ],
                 ).exit_code
                 == 2
+            )
+            # a file-* positional skips the upload — the id goes verbatim.
+            rft_id = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "ft-create",
+                    "file-preloaded",
+                    "--remote",
+                    "http://h.test",
+                    "--no-wait",
+                    "--validation-file",
+                    "file-val",
+                ],
+            )
+            out["remote_ft_create_fileid"] = (
+                rft_id.exit_code == 0
+                and remotes[-1].last_upload is None
+                and (remotes[-1].last_ft_create or {}).get("training_file") == "file-preloaded"
+                and (remotes[-1].last_ft_create or {}).get("validation_file") == "file-val"
+            )
+            # in-process, file-* ids are an arg fault — the twin needs bytes.
+            out["ft_create_fileid_inprocess_2"] = (
+                runner.invoke(app, ["harness", "ft-create", "file-x"]).exit_code == 2
             )
         rfj = runner.invoke(
             app,
@@ -1195,6 +1568,255 @@ def cli_audit() -> dict[str, Any]:
             and json.loads(rfc.stdout)["status"] == "cancelled"
             and remotes[-1].last_ft_job == "ftjob-x"
         )
+
+        # /v1/files + /v1/batches wire family
+        with tempfile.TemporaryDirectory() as bfd:
+            blines = _Path(bfd) / "in.jsonl"
+            blines.write_bytes(
+                b'{"custom_id":"r1","method":"POST","url":"/v1/chat/completions","body":{}}\n'
+            )
+            out["remote_files_list"] = (
+                runner.invoke(app, ["harness", "files", "--remote", "http://h.test"]).exit_code == 0
+            )
+            rfu = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "file-upload",
+                    str(blines),
+                    "--purpose",
+                    "batch",
+                    "--remote",
+                    "http://h.test",
+                ],
+            )
+            out["remote_file_upload_json"] = (
+                rfu.exit_code == 0
+                and json.loads(rfu.stdout)["id"] == "file-ft"
+                and remotes[-1].last_upload
+                == {
+                    "purpose": "batch",
+                    "filename": "in.jsonl",
+                    "n_bytes": len(blines.read_bytes()),
+                }
+            )
+            rfc_out = runner.invoke(
+                app, ["harness", "file-content", "file-9", "--remote", "http://h.test"]
+            )
+            out["remote_file_content_stdout"] = (
+                rfc_out.exit_code == 0
+                and rfc_out.stdout.startswith('{"custom_id"')
+                and remotes[-1].last_file_id == "file-9"
+            )
+            out["remote_file_delete_json"] = (
+                runner.invoke(
+                    app, ["harness", "file-delete", "file-9", "--remote", "http://h.test"]
+                ).exit_code
+                == 0
+                and remotes[-1].last_file_id == "file-9"
+            )
+            # batch-submit: upload (purpose=batch) → create → wait → print
+            rbsub = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch-submit",
+                    str(blines),
+                    "--remote",
+                    "http://h.test",
+                    "--metadata",
+                    '{"k":"v"}',
+                    "--callback-url",
+                    "https://hooks.test/b",
+                    "--callback-secret",
+                    "whsec-b",
+                ],
+            )
+            out["remote_batch_submit_terminal"] = (
+                rbsub.exit_code == 0
+                and json.loads(rbsub.stdout)["status"] == "completed"
+                and (remotes[-1].last_upload or {}).get("purpose") == "batch"
+                and remotes[-1].last_batch_create
+                == {
+                    "endpoint": "/v1/chat/completions",
+                    "metadata": {"k": "v"},
+                    "idempotency_key": None,
+                    "callback_url": "https://hooks.test/b",
+                    "callback_secret": "whsec-b",
+                    "input_file_id": "file-ft",
+                }
+                and remotes[-1].last_batch_id == "batch_x"
+            )
+            out["remote_batch_submit_bad_meta_2"] = (
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "batch-submit",
+                        str(blines),
+                        "--remote",
+                        "http://h.test",
+                        "--metadata",
+                        "[1]",
+                    ],
+                ).exit_code
+                == 2
+            )
+            out["remote_batches_list"] = runner.invoke(
+                app, ["harness", "batches", "--remote", "http://h.test"]
+            ).exit_code == 0 and remotes[-1].last_ft_query == {"limit": 20, "after": None}
+            out["remote_batch_status_json"] = (
+                runner.invoke(
+                    app,
+                    ["harness", "batch-status", "batch_x", "--remote", "http://h.test"],
+                ).exit_code
+                == 0
+                and remotes[-1].last_batch_id == "batch_x"
+            )
+            out["remote_batch_cancel_json"] = (
+                json.loads(
+                    runner.invoke(
+                        app,
+                        ["harness", "batch-cancel", "batch_x", "--remote", "http://h.test"],
+                    ).stdout
+                )["status"]
+                == "cancelling"
+            )
+            # batch-output: batch record → output_file_id → file bytes
+            rbo = runner.invoke(
+                app,
+                [
+                    "harness",
+                    "batch-output",
+                    "batch_x",
+                    "--remote",
+                    "http://h.test",
+                    "--out",
+                    str(_Path(bfd) / "out.jsonl"),
+                ],
+            )
+            out["remote_batch_output_writes_file"] = (
+                rbo.exit_code == 0
+                and (_Path(bfd) / "out.jsonl").read_bytes().startswith(b'{"custom_id"')
+                and remotes[-1].last_file_id == "file-out"
+            )
+
+        # a batch with no output_file_id exits 2, not a traceback
+        class _NoOutRemote(_FakeRemote):
+            def batch(self, batch_id: str) -> dict[str, Any]:
+                return {"id": batch_id, "object": "batch", "status": "failed"}
+
+        def _mk_noout(*a: Any, **kw: Any) -> _NoOutRemote:
+            nr = _NoOutRemote(*a, **kw)
+            remotes.append(nr)
+            return nr
+
+        with patch("fx1.serve.client.HarnessClient", side_effect=_mk_noout):
+            out["remote_batch_output_missing_2"] = (
+                runner.invoke(
+                    app,
+                    ["harness", "batch-output", "batch_x", "--remote", "http://h.test"],
+                ).exit_code
+                == 2
+            )
+
+        out["remote_models_list"] = (
+            json.loads(
+                runner.invoke(app, ["harness", "models", "--remote", "http://h.test"]).stdout
+            )
+            .get("data", [{}])[0]
+            .get("id")
+            == "fx1"
+        )
+        out["remote_model_retrieve"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "model", "ft:fx1-x", "--remote", "http://h.test"]
+                ).stdout
+            ).get("id")
+            == "ft:fx1-x"
+        )
+
+        _rr = runner.invoke(
+            app,
+            [
+                "harness",
+                "respond",
+                "say hi",
+                "--model",
+                "fx1",
+                "--backend",
+                "local_fx1",
+                "--checkpoint-dir",
+                "ckpt-x",
+                "--metadata",
+                '{"k":"v"}',
+                "--format",
+                '{"type":"json_object"}',
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_respond_kwargs"] = (
+            _rr.exit_code == 0
+            and (remotes[-1].last_ft_query or {}).get("text_format") == {"type": "json_object"}
+            and (remotes[-1].last_ft_query or {}).get("metadata") == {"k": "v"}
+            and json.loads(_rr.stdout).get("id") == "resp_x"
+        )
+        out["remote_embed"] = json.loads(
+            runner.invoke(
+                app,
+                ["harness", "embed", "a", "b", "--remote", "http://h.test"],
+            ).stdout
+        ).get("data", [{}])[0].get("embedding") == [0.1]
+        out["remote_moderate"] = (
+            json.loads(
+                runner.invoke(
+                    app, ["harness", "moderate", "hi", "--remote", "http://h.test"]
+                ).stdout
+            ).get("model")
+            == "fx1-honesty-gate"
+        )
+        out["remote_stored_family"] = all(
+            json.loads(
+                runner.invoke(app, ["harness", name, "id-x", "--remote", "http://h.test"]).stdout
+            ).get("id")
+            == "id-x"
+            for name in (
+                "chat-get",
+                "chat-delete",
+                "response-get",
+                "response-delete",
+            )
+        )
+        _rs = json.loads(
+            runner.invoke(app, ["harness", "score", "a", "b", "--remote", "http://h.test"]).stdout
+        )
+        out["remote_score"] = len(_rs) == 2 and _rs[0]["object"] == "score"
+        out["remote_commands_role"] = (
+            json.loads(
+                runner.invoke(
+                    app,
+                    [
+                        "harness",
+                        "commands",
+                        "--role",
+                        "evaluation",
+                        "--remote",
+                        "http://h.test",
+                    ],
+                ).stdout
+            )["commands"]
+            == []
+        )
+        # verify on a directory is one batch call on the wire; an invalid
+        # file exits 1 without aborting the rest.
+        with _tmpf.TemporaryDirectory() as _rd_s:
+            _rd = _P(_rd_s)
+            (_rd / "a.json").write_text('{"x": 1}')
+            (_rd / "b.json").write_text('{"y": 2}')
+            _dv = runner.invoke(app, ["harness", "verify", str(_rd), "--remote", "http://h.test"])
+        out["remote_verify_dir"] = _dv.exit_code == 1 and json.loads(_dv.stdout)["files"] == 2
 
     class _FailingRemote:
         def __init__(self, *a: Any, **kw: Any) -> None:
