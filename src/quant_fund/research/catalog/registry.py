@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-764 empirical-process canon.
+        "wiener_measure",
+        "dz_invariance",
+        "donsker_thm",
+        "empirical_process",
+        "donsker_class",
+        "osj_metric",
         # Wave-763 mixing/urn canon.
         "polya_urn",
         "hopf_chain",
