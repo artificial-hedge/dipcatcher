@@ -7135,6 +7135,14 @@ from quant_fund.research.benches_w892 import (
     bench_space_time_adapt_family,
     bench_wavelet_adapt_family,
 )
+from quant_fund.research.benches_w893 import (
+    bench_coarsening_mark_family,
+    bench_covello_est_family,
+    bench_dual_goal_est_family,
+    bench_galerkin_least_sq_family,
+    bench_pseudospectral_coll_family,
+    bench_tau_method_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7506,6 +7514,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "covello_est": bench_covello_est_family,
+        "dual_goal_est": bench_dual_goal_est_family,
+        "pseudospectral_coll": bench_pseudospectral_coll_family,
+        "tau_method": bench_tau_method_family,
+        "galerkin_least_sq": bench_galerkin_least_sq_family,
+        "coarsening_mark": bench_coarsening_mark_family,
         "space_time_adapt": bench_space_time_adapt_family,
         "greedy_marking": bench_greedy_marking_family,
         "form_analysis": bench_form_analysis_family,

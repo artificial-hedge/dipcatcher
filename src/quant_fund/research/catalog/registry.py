@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-893 collocation canon.
+        "covello_est",
+        "dual_goal_est",
+        "pseudospectral_coll",
+        "tau_method",
+        "galerkin_least_sq",
+        "coarsening_mark",
         # Wave-892 adaptive-mesh canon.
         "space_time_adapt",
         "greedy_marking",
