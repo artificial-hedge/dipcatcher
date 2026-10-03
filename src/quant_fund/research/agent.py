@@ -2600,6 +2600,14 @@ from quant_fund.research.benches_w325 import (
     bench_linear_use_family,
     bench_refinement_liquid_family,
 )
+from quant_fund.research.benches_w326 import (
+    bench_bisim_refine_family,
+    bench_ctl_mc_family,
+    bench_nba_emptiness_family,
+    bench_parity_game_family,
+    bench_timed_automata_family,
+    bench_wsts_cover_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2979,6 +2987,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "timed_automata": bench_timed_automata_family,
+        "parity_game": bench_parity_game_family,
+        "nba_emptiness": bench_nba_emptiness_family,
+        "ctl_mc": bench_ctl_mc_family,
+        "bisim_refine": bench_bisim_refine_family,
+        "wsts_cover": bench_wsts_cover_family,
         "borrow_check": bench_borrow_check_family,
         "lifetime_outlives": bench_lifetime_outlives_family,
         "linear_use": bench_linear_use_family,
