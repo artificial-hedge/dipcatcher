@@ -7399,6 +7399,14 @@ from quant_fund.research.benches_w925 import (
     bench_normalized_rm_family,
     bench_sigma_stable_family,
 )
+from quant_fund.research.benches_w926 import (
+    bench_alpha_divergence_family,
+    bench_amari_connection_family,
+    bench_csiszar_div_family,
+    bench_dual_connection_family,
+    bench_f_divergence_family,
+    bench_tsallis_entropy_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7770,6 +7778,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "f_divergence": bench_f_divergence_family,
+        "alpha_divergence": bench_alpha_divergence_family,
+        "csiszar_div": bench_csiszar_div_family,
+        "amari_connection": bench_amari_connection_family,
+        "dual_connection": bench_dual_connection_family,
+        "tsallis_entropy": bench_tsallis_entropy_family,
         "exchangeable_pf": bench_exchangeable_pf_family,
         "normalized_rm": bench_normalized_rm_family,
         "sigma_stable": bench_sigma_stable_family,
