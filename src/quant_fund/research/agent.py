@@ -7023,6 +7023,14 @@ from quant_fund.research.benches_w878 import (
     bench_low_rank_svd_family,
     bench_randomized_nystrom_family,
 )
+from quant_fund.research.benches_w879 import (
+    bench_etd_rk4_classic_family,
+    bench_expm_int_family,
+    bench_expokit_family,
+    bench_krylov_subspace_time_family,
+    bench_leja_point_family,
+    bench_phi_function_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7394,6 +7402,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "expm_int": bench_expm_int_family,
+        "expokit": bench_expokit_family,
+        "krylov_subspace_time": bench_krylov_subspace_time_family,
+        "leja_point": bench_leja_point_family,
+        "phi_function": bench_phi_function_family,
+        "etd_rk4_classic": bench_etd_rk4_classic_family,
         "low_rank_svd": bench_low_rank_svd_family,
         "h_matrix": bench_h_matrix_family,
         "hss_matrix": bench_hss_matrix_family,
