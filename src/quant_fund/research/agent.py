@@ -6815,6 +6815,14 @@ from quant_fund.research.benches_w852 import (
     bench_nystrom_method_family,
     bench_singular_integrals_family,
 )
+from quant_fund.research.benches_w853 import (
+    bench_gll_nodes_family,
+    bench_hp_refinement_family,
+    bench_mortar_method_family,
+    bench_sem_grid_family,
+    bench_spectral_element_family,
+    bench_tensor_product_sem_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7186,6 +7194,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "sem_grid": bench_sem_grid_family,
+        "gll_nodes": bench_gll_nodes_family,
+        "spectral_element": bench_spectral_element_family,
+        "mortar_method": bench_mortar_method_family,
+        "tensor_product_sem": bench_tensor_product_sem_family,
+        "hp_refinement": bench_hp_refinement_family,
         "bem_kernel": bench_bem_kernel_family,
         "fredholm_solve": bench_fredholm_solve_family,
         "nystrom_method": bench_nystrom_method_family,
