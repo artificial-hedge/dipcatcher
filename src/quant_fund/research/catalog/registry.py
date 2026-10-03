@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-603 topos-4 canon.
+        "slice_topos",
+        "logical_morph",
+        "classifying_topos",
+        "atomic_topos",
+        "essential_morph",
+        "giraud_axiom",
         # Wave-602 cyclic-homology canon.
         "cyclotomic_spec",
         "tr_structure",
