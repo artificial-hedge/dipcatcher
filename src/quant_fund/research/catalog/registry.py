@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-287 differential-geometry canon.
+        "first_ff",
+        "gauss_curve",
+        "frenet_frame",
+        "christoffel",
+        "geodesic_sphere",
+        "surf_area",
         # Wave-286 security-defensive canon.
         "beacon_detect",
         "entropy_dns",
