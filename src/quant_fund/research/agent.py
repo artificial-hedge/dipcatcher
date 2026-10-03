@@ -5567,6 +5567,14 @@ from quant_fund.research.benches_w696 import (
     bench_cat_pullback_family,
     bench_cat_rank_family,
 )
+from quant_fund.research.benches_w697 import (
+    bench_spectral_dedekind_family,
+    bench_spectral_dvr_family,
+    bench_spectral_excellent_family,
+    bench_spectral_jacobson_family,
+    bench_spectral_noether_family,
+    bench_spectral_regular_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5946,6 +5954,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "spectral_dvr": bench_spectral_dvr_family,
+        "spectral_noether": bench_spectral_noether_family,
+        "spectral_regular": bench_spectral_regular_family,
+        "spectral_dedekind": bench_spectral_dedekind_family,
+        "spectral_jacobson": bench_spectral_jacobson_family,
+        "spectral_excellent": bench_spectral_excellent_family,
         "cat_rank": bench_cat_rank_family,
         "cat_index": bench_cat_index_family,
         "cat_monotone": bench_cat_monotone_family,
