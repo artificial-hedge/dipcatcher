@@ -27,18 +27,23 @@ config the evidence was produced under.
 from __future__ import annotations
 
 import importlib
+import json
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import asdict, is_dataclass
+from datetime import date, datetime
+from enum import Enum
 from math import comb
 from typing import Any, Literal
 
+import numpy as np
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from fx1.eval.suite import ModelFn
 from fx1.serve.backends import SamplingParams
+from fx1.serve.journal import JobJournal
 
 __all__ = [
     "EVAL_SUITES",
@@ -105,14 +110,40 @@ def suite_accepts_judge(suite: str) -> bool:
     return _EVAL_RUNNERS[suite][2]
 
 
+def _jsonable(obj: Any) -> Any:
+    """Deep-normalize a report subtree to JSON-safe leaves — numpy
+    arrays/scalars, tuples/sets, enums, and date-likes convert;
+    anything still unserializable raises at the caller's check."""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, np.generic):
+        return obj.item()
+    if isinstance(obj, Enum):
+        return _jsonable(obj.value)
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    if isinstance(obj, Mapping):
+        return {str(k): _jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple, set, frozenset)):
+        return [_jsonable(v) for v in obj]
+    return obj
+
+
 def report_dump(report: Any) -> dict[str, Any]:
     """Serialize a suite report fail-closed — pydantic or dataclass,
-    nothing else seals into a record."""
+    nothing else seals into a record. The dict must be JSON-safe: it is
+    journaled and served verbatim, so numpy leaves/dataclasses are
+    normalized away rather than left to crash the serializer later."""
     if isinstance(report, BaseModel):
-        return report.model_dump(mode="json")
-    if is_dataclass(report) and not isinstance(report, type):
-        return asdict(report)
-    raise TypeError(f"eval report is not serializable: {type(report).__name__}")
+        out = _jsonable(report.model_dump(mode="python"))
+    elif is_dataclass(report) and not isinstance(report, type):
+        out = _jsonable(asdict(report))
+    else:
+        raise TypeError(f"eval report is not serializable: {type(report).__name__}")
+    if not isinstance(out, dict):
+        raise TypeError("eval report did not serialize to a dict")
+    json.dumps(out)  # fail-closed proof the dump is wire-safe
+    return out
 
 
 def metered_model(
@@ -183,14 +214,76 @@ class EvalRecord(BaseModel):
 class EvalStore:
     """Bounded LRU of eval records + an Idempotency-Key index — the
     ``_JobStore`` contract for eval submissions. Eviction drops the
-    idempotency mapping with the record."""
+    idempotency mapping with the record.
 
-    def __init__(self, max_entries: int) -> None:
+    With a ``JobJournal`` bound (``--state-dir`` on serve), every
+    transition is journaled before the store mutates, and boot replays
+    the chain: terminal records come back as-was; evals still queued or
+    running at the crash are restored as ``failed`` with an honest
+    restart error (never re-run — the request payload isn't journaled),
+    and their idempotency keys still resolve so a retried submission
+    returns the lost record instead of duplicating work.
+    """
+
+    def __init__(self, max_entries: int, journal: JobJournal | None = None) -> None:
         self._lock = threading.Lock()
         self._max = max_entries
         self._records: OrderedDict[str, EvalRecord] = OrderedDict()
         self._keys: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._record_key: dict[str, str] = {}
+        self._record_fp: dict[str, str] = {}
+        self._journal = journal
+        self.recover_warnings: list[str] = []
+        if journal is not None:
+            res = journal.replay()
+            self.recover_warnings = list(res.warnings)
+            now = time.time()
+            for payload in res.payloads:
+                for evict in payload.get("evicted") or ():
+                    self._drop(str(evict))
+                if "record" not in payload:
+                    continue
+                rec = EvalRecord.model_validate(payload["record"])
+                self._records[rec.eval_id] = rec
+                self._records.move_to_end(rec.eval_id)
+                key, fp = payload.get("key"), payload.get("fp")
+                if key is not None and fp is not None:
+                    self._keys[key] = (fp, rec.eval_id)
+                    self._record_key[rec.eval_id] = key
+                    self._record_fp[rec.eval_id] = fp
+            for rec in self._records.values():
+                if rec.status in ("queued", "running"):
+                    rec.status = "failed"
+                    rec.error = "process restarted before the eval reached a terminal state"
+                    rec.finished_at = now
+            self._compact_locked()
+
+    def _drop(self, eval_id: str) -> None:
+        self._records.pop(eval_id, None)
+        key = self._record_key.pop(eval_id, None)
+        self._record_fp.pop(eval_id, None)
+        if key is not None:
+            self._keys.pop(key, None)
+
+    def _record(self, rec: EvalRecord) -> dict[str, Any]:
+        return {
+            "record": rec.model_dump(mode="json"),
+            "key": self._record_key.get(rec.eval_id),
+            "fp": self._record_fp.get(rec.eval_id),
+        }
+
+    def _compact_locked(self) -> None:
+        """Rewrite the journal with only the live state — called on boot
+        post-replay so dead history and torn tails don't accumulate."""
+        if self._journal is not None:
+            self._journal.compact([self._record(r) for r in self._records.values()])
+
+    def mark(self, rec: EvalRecord) -> None:
+        """Journal a status transition made outside the store (the worker
+        mutates ``rec`` in place; this makes each hop durable)."""
+        if self._journal is not None:
+            with self._lock:
+                self._journal.append(self._record(rec))
 
     @property
     def capacity(self) -> int:
@@ -231,6 +324,8 @@ class EvalStore:
             if rec.status == "queued":
                 rec.status = "cancelled"
                 rec.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(rec))
                 return rec, "cancelled"
             return rec, rec.status
 
@@ -242,6 +337,8 @@ class EvalStore:
             for rec in out:
                 rec.status = "cancelled"
                 rec.finished_at = time.time()
+                if self._journal is not None:
+                    self._journal.append(self._record(rec))
             return out
 
     def get_key(self, key: str) -> tuple[str, str] | None:
@@ -263,11 +360,20 @@ class EvalStore:
             if key is not None and fingerprint is not None:
                 self._keys[key] = (fingerprint, record.eval_id)
                 self._record_key[record.eval_id] = key
+                self._record_fp[record.eval_id] = fingerprint
+            evicted: list[str] = []
             while len(self._records) > self._max:
                 evicted_id, _ = self._records.popitem(last=False)
                 old_key = self._record_key.pop(evicted_id, None)
+                self._record_fp.pop(evicted_id, None)
                 if old_key is not None:
                     self._keys.pop(old_key, None)
+                evicted.append(evicted_id)
+            if self._journal is not None:
+                payload = self._record(record)
+                if evicted:
+                    payload["evicted"] = evicted
+                self._journal.append(payload)
 
 
 def run_eval_record(
