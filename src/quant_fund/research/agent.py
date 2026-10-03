@@ -5215,6 +5215,14 @@ from quant_fund.research.benches_w652 import (
     bench_sheaf_motive_family,
     bench_strict_motive_family,
 )
+from quant_fund.research.benches_w653 import (
+    bench_ainf_cohom_family,
+    bench_fargues_scholze3_family,
+    bench_galois_padic_family,
+    bench_hodge_tate_padic_family,
+    bench_integral_padic2_family,
+    bench_period_ring_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5594,6 +5602,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fargues_scholze3": bench_fargues_scholze3_family,
+        "integral_padic2": bench_integral_padic2_family,
+        "ainf_cohom": bench_ainf_cohom_family,
+        "period_ring": bench_period_ring_family,
+        "galois_padic": bench_galois_padic_family,
+        "hodge_tate_padic": bench_hodge_tate_padic_family,
         "strict_motive": bench_strict_motive_family,
         "sheaf_motive": bench_sheaf_motive_family,
         "numerical_motive": bench_numerical_motive_family,

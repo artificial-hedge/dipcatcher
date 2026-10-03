@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-653 arithmetic-geometry-2 canon.
+        "fargues_scholze3",
+        "integral_padic2",
+        "ainf_cohom",
+        "period_ring",
+        "galois_padic",
+        "hodge_tate_padic",
         # Wave-652 motivic-12 canon.
         "strict_motive",
         "sheaf_motive",
