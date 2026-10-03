@@ -3967,6 +3967,14 @@ from quant_fund.research.benches_w496 import (
     bench_obstruction_2_family,
     bench_tangent_coh_family,
 )
+from quant_fund.research.benches_w497 import (
+    bench_fano_mori_family,
+    bench_flip_cone_family,
+    bench_klt_pair_family,
+    bench_minimal_model_family,
+    bench_mmp_algorithm_family,
+    bench_toric_flip_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4346,6 +4354,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "minimal_model": bench_minimal_model_family,
+        "klt_pair": bench_klt_pair_family,
+        "flip_cone": bench_flip_cone_family,
+        "fano_mori": bench_fano_mori_family,
+        "mmp_algorithm": bench_mmp_algorithm_family,
+        "toric_flip": bench_toric_flip_family,
         "derived_deformation": bench_derived_deformation_family,
         "formal_deformation": bench_formal_deformation_family,
         "dag_representation": bench_dag_representation_family,

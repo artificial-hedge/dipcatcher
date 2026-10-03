@@ -1,3 +1,4 @@
+feat(research): wave 497 — birational-geometry canon (minimal_model, klt_pair, flip_cone, fano_mori, mmp_algorithm, toric_flip) (2937->2943 families)
 feat(research): wave 496 — DAG-deformation canon (derived_deformation, formal_deformation, dag_representation, derived_moduli, tangent_coh, obstruction_2) (2931->2937 families)
 feat(research): wave 495 — infinity-2-category canon (globular_model, opetopic, theta_space, complicial, verity_gray, weak_infty) (2925->2931 families)
 feat(research): wave 494 — noncommutative-geometry canon (hochschild_coh, cyclic_coh, nc_scheme, calabi_yau_alg, ginzburg_dga, connes_nc) (2919->2925 families)
