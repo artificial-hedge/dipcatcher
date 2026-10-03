@@ -3061,6 +3061,20 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-348 graph-theory/combinatorics-2 canon.
+        "graph_coloring",
+        "euler_trail",
+        "matroid_greedy",
+        "planar_check",
+        "poset_dimension",
+        "ramsey_r33",
+        # Wave-347 topology-3/point-set canon.
+        "compact_space",
+        "connected_space",
+        "quotient_topology",
+        "product_topology",
+        "convergence_space",
+        "tietze_urysohn",
         # Wave-346 number-theory-2/homological-2 canon.
         "quadratic_recip",
         "elliptic_curve",

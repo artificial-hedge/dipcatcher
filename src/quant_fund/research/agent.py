@@ -2768,6 +2768,22 @@ from quant_fund.research.benches_w346 import (
     bench_p_adic_val_family,
     bench_quadratic_recip_family,
 )
+from quant_fund.research.benches_w347 import (
+    bench_compact_space_family,
+    bench_connected_space_family,
+    bench_convergence_space_family,
+    bench_product_topology_family,
+    bench_quotient_topology_family,
+    bench_tietze_urysohn_family,
+)
+from quant_fund.research.benches_w348 import (
+    bench_euler_trail_family,
+    bench_graph_coloring_family,
+    bench_matroid_greedy_family,
+    bench_planar_check_family,
+    bench_poset_dimension_family,
+    bench_ramsey_r33_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3147,6 +3163,18 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "graph_coloring": bench_graph_coloring_family,
+        "euler_trail": bench_euler_trail_family,
+        "matroid_greedy": bench_matroid_greedy_family,
+        "planar_check": bench_planar_check_family,
+        "poset_dimension": bench_poset_dimension_family,
+        "ramsey_r33": bench_ramsey_r33_family,
+        "compact_space": bench_compact_space_family,
+        "connected_space": bench_connected_space_family,
+        "quotient_topology": bench_quotient_topology_family,
+        "product_topology": bench_product_topology_family,
+        "convergence_space": bench_convergence_space_family,
+        "tietze_urysohn": bench_tietze_urysohn_family,
         "quadratic_recip": bench_quadratic_recip_family,
         "elliptic_curve": bench_elliptic_curve_family,
         "p_adic_val": bench_p_adic_val_family,
