@@ -5575,6 +5575,14 @@ from quant_fund.research.benches_w697 import (
     bench_spectral_noether_family,
     bench_spectral_regular_family,
 )
+from quant_fund.research.benches_w698 import (
+    bench_motivic_cartier_family,
+    bench_motivic_frobenius_family,
+    bench_motivic_hodge_family,
+    bench_motivic_lax_family,
+    bench_motivic_span_family,
+    bench_motivic_street_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5954,6 +5962,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_frobenius": bench_motivic_frobenius_family,
+        "motivic_cartier": bench_motivic_cartier_family,
+        "motivic_hodge": bench_motivic_hodge_family,
+        "motivic_span": bench_motivic_span_family,
+        "motivic_lax": bench_motivic_lax_family,
+        "motivic_street": bench_motivic_street_family,
         "spectral_dvr": bench_spectral_dvr_family,
         "spectral_noether": bench_spectral_noether_family,
         "spectral_regular": bench_spectral_regular_family,
