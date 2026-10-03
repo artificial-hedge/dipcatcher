@@ -32,6 +32,7 @@ def mobius(leq, elems: tuple[int, ...]) -> dict[tuple[int, int], int]:
 
 def _bench_zeta_mobius(seed: int = 0) -> float:
     checks = []
+
     def leq(a: int, b: int) -> bool:
         return a <= b
 
@@ -45,6 +46,7 @@ def _bench_zeta_mobius(seed: int = 0) -> float:
     checks.append(s == 0)
     s2 = sum(mu[(0, y)] for y in elems if leq(y, 0))
     checks.append(s2 == 1)
+
     # boolean lattice B2: mu(bottom, top) = +1
     def leq2(a: int, b: int) -> bool:
         return (a & b) == a

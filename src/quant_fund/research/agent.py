@@ -3151,6 +3151,14 @@ from quant_fund.research.benches_w394 import (
     bench_sperner_bound_family,
     bench_zeta_mobius_family,
 )
+from quant_fund.research.benches_w395 import (
+    bench_bell_triangle_family,
+    bench_catalan_dp_family,
+    bench_eulerian_num_family,
+    bench_inclusion_excl_family,
+    bench_partition_count_family,
+    bench_stirling_cycle_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3530,6 +3538,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "catalan_dp": bench_catalan_dp_family,
+        "stirling_cycle": bench_stirling_cycle_family,
+        "partition_count": bench_partition_count_family,
+        "bell_triangle": bench_bell_triangle_family,
+        "eulerian_num": bench_eulerian_num_family,
+        "inclusion_excl": bench_inclusion_excl_family,
         "downset_lattice": bench_downset_lattice_family,
         "zeta_mobius": bench_zeta_mobius_family,
         "linear_extension": bench_linear_extension_family,
