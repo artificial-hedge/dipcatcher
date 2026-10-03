@@ -5143,6 +5143,14 @@ from quant_fund.research.benches_w643 import (
     bench_snaith_split_family,
     bench_toda_smith_family,
 )
+from quant_fund.research.benches_w644 import (
+    bench_allday_k_family,
+    bench_hall_alg_family,
+    bench_residue_k_family,
+    bench_s_multicat_family,
+    bench_suslin_wagoner_family,
+    bench_weibel_nil_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5522,6 +5530,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "s_multicat": bench_s_multicat_family,
+        "allday_k": bench_allday_k_family,
+        "residue_k": bench_residue_k_family,
+        "suslin_wagoner": bench_suslin_wagoner_family,
+        "weibel_nil": bench_weibel_nil_family,
+        "hall_alg": bench_hall_alg_family,
         "toda_smith": bench_toda_smith_family,
         "mahowald_inv": bench_mahowald_inv_family,
         "calc_tower": bench_calc_tower_family,
