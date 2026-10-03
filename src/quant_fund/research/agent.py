@@ -6431,6 +6431,14 @@ from quant_fund.research.benches_w804 import (
     bench_smoothness_h_family,
     bench_watanabe_map_family,
 )
+from quant_fund.research.benches_w805 import (
+    bench_doss_sussmann_family,
+    bench_follmer_strat_family,
+    bench_ito_isometry_family,
+    bench_skorohod_lemma_family,
+    bench_stratonovich_conv_family,
+    bench_tanaka_meyer_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6810,6 +6818,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ito_isometry": bench_ito_isometry_family,
+        "stratonovich_conv": bench_stratonovich_conv_family,
+        "tanaka_meyer": bench_tanaka_meyer_family,
+        "follmer_strat": bench_follmer_strat_family,
+        "skorohod_lemma": bench_skorohod_lemma_family,
+        "doss_sussmann": bench_doss_sussmann_family,
         "nualart_zakai": bench_nualart_zakai_family,
         "watanabe_map": bench_watanabe_map_family,
         "malliavin_cov": bench_malliavin_cov_family,

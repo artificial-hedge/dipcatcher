@@ -1,3 +1,4 @@
+feat(research): wave 805 — stochastic-calculus canon (ito_isometry, stratonovich_conv, tanaka_meyer, follmer_strat, skorohod_lemma, doss_sussmann) (4785->4791 families)
 feat(research): wave 804 — Malliavin canon (nualart_zakai, watanabe_map, malliavin_cov, density_bound, absolute_cont, smoothness_h) (4779->4785 families)
 feat(research): wave 803 — signature canon (signature_kernel, pde_signature, truncated_sig, signature_gan2, expected_sig, sig_inversion) (4773->4779 families)
 feat(research): wave 802 — neural-SDE canon (latent_sde, neural_cde, neural_rde, sde_gan, sde_matching, logsig_rde) (4767->4773 families)
