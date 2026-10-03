@@ -3615,6 +3615,14 @@ from quant_fund.research.benches_w452 import (
     bench_opers_g_family,
     bench_ramified_l_family,
 )
+from quant_fund.research.benches_w453 import (
+    bench_bar_cobar_family,
+    bench_deligne_conj_family,
+    bench_factor_homology_family,
+    bench_hochschild_hom_family,
+    bench_operad_koszul_family,
+    bench_primitive_elts_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3994,6 +4002,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "operad_koszul": bench_operad_koszul_family,
+        "bar_cobar": bench_bar_cobar_family,
+        "factor_homology": bench_factor_homology_family,
+        "hochschild_hom": bench_hochschild_hom_family,
+        "deligne_conj": bench_deligne_conj_family,
+        "primitive_elts": bench_primitive_elts_family,
         "d_module": bench_d_module_family,
         "geometric_langlands": bench_geometric_langlands_family,
         "hecke_eig": bench_hecke_eig_family,
