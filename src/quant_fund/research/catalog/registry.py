@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-786 rough-path canon.
+        "rough_path",
+        "signature_transform2",
+        "controlled_path",
+        "lyons_lift",
+        "hairspring_map",
+        "area_mart",
         # Wave-785 semimartingale-2 canon.
         "usual_cond",
         "dolean_mart",
