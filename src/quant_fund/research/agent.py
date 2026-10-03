@@ -6943,6 +6943,14 @@ from quant_fund.research.benches_w868 import (
     bench_homotopy_solver_family,
     bench_pseudo_arclength_family,
 )
+from quant_fund.research.benches_w869 import (
+    bench_antithetic_var_family,
+    bench_common_random_family,
+    bench_conditional_mc_family,
+    bench_control_variate_family,
+    bench_importance_sampling_family,
+    bench_stratified_var_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7314,6 +7322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "antithetic_var": bench_antithetic_var_family,
+        "control_variate": bench_control_variate_family,
+        "importance_sampling": bench_importance_sampling_family,
+        "stratified_var": bench_stratified_var_family,
+        "common_random": bench_common_random_family,
+        "conditional_mc": bench_conditional_mc_family,
         "arc_continuation": bench_arc_continuation_family,
         "pseudo_arclength": bench_pseudo_arclength_family,
         "deflation_method": bench_deflation_method_family,
