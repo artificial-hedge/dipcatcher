@@ -1,3 +1,4 @@
+feat(research): wave 593 — nonabelian-Hodge canon (higgs_bundle2, hitchin_section, simpson_corr, nonabelian_hodge, harmonic_bdl, hodge_moduli) (3513->3519 families)
 feat(research): wave 592 — tensor-category canon (tensor_cat, braided_cat, rigid_cat, fusion_cat, spherical_cat, premodular) (3507->3513 families)
 feat(research): wave 591 — motivic-7 canon (friedlander_voev, motivic_eilenberg, motivic_zeta, motivic_purity, motivic_descent, motivic_invert) (3501->3507 families)
 feat(research): wave 590 — algebraic-K-3 canon (quillen_plus, gersten_ss, loday_k, volodin_k, suslin_k, bloch_k) (3495->3501 families)

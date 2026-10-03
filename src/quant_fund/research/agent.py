@@ -4735,6 +4735,14 @@ from quant_fund.research.benches_w592 import (
     bench_spherical_cat_family,
     bench_tensor_cat_family,
 )
+from quant_fund.research.benches_w593 import (
+    bench_harmonic_bdl_family,
+    bench_higgs_bundle2_family,
+    bench_hitchin_section_family,
+    bench_hodge_moduli_family,
+    bench_nonabelian_hodge_family,
+    bench_simpson_corr_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5114,6 +5122,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "higgs_bundle2": bench_higgs_bundle2_family,
+        "hitchin_section": bench_hitchin_section_family,
+        "simpson_corr": bench_simpson_corr_family,
+        "nonabelian_hodge": bench_nonabelian_hodge_family,
+        "harmonic_bdl": bench_harmonic_bdl_family,
+        "hodge_moduli": bench_hodge_moduli_family,
         "tensor_cat": bench_tensor_cat_family,
         "braided_cat": bench_braided_cat_family,
         "rigid_cat": bench_rigid_cat_family,
