@@ -1,3 +1,4 @@
+feat(research): wave 537 — Riemannian-geometry canon (riemann_metric, levi_civita, riemann_curvature, ricci_scalar, jacobi_field, comparison_thm) (3177->3183 families)
 feat(research): wave 536 — symplectic-geometry canon (symplectic_form, lagrangian_mfd, hamiltonian_flow, poisson_bracket, contact_geom, gromov_nonsq) (3171->3177 families)
 feat(research): wave 535 — microlocal-analysis canon (wavefront_set, pseudodiff_op, fourier_io, symbol_calc, propagation_sing, elliptic_est) (3165->3171 families)
 feat(research): wave 534 — potential-theory canon (harmonic_fn, potential_thy, capacity_theory, balayage, green_fn, fine_topology) (3159->3165 families)
