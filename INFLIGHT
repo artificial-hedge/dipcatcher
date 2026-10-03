@@ -1,3 +1,4 @@
+feat(research): wave 339 — algebra canon (field_ext, galois_group, splitting_field, lie_bracket, rep_theory, root_system) (1990->1996 families)
 feat(research): wave 338 — set-theory canon (ordinal_arith, cardinal_arith, transfinite_induct, well_founded, v_omega, ac_choice) (1984->1990 families)
 feat(research): wave 337 — lambda-calculus/rewriting canon (ski_combinator, de_bruijn, church_encoding, lambda_typing, unification, knuth_bendix) (1978->1984 families)
 feat(research): wave 336 — computability/model-theory canon (pr_functions, turing_degrees, busy_beaver, ultraproduct, ramsey_theory, compactness_lite) (1972->1978 families)

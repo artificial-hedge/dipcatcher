@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-339 algebra canon.
+        "field_ext",
+        "galois_group",
+        "splitting_field",
+        "lie_bracket",
+        "rep_theory",
+        "root_system",
         # Wave-338 set-theory canon.
         "ordinal_arith",
         "cardinal_arith",
