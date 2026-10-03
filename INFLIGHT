@@ -1,3 +1,4 @@
+feat(research): wave 794 — stochastic-control canon (dynamic_programming, verification_thm, hamilton_jacobi, viscosity_solution, quasi_variational, impulsive_control) (4719->4725 families)
 feat(research): wave 793 — stochastic-expansion canon (wong_zakai, stochastic_taylor, milstein_scheme, wagner_platen, cubature_wiener, rough_vol2) (4713->4719 families)
 feat(research): wave 792 — BSDE canon (bsde_solver, fbsde_markov, backward_sde, pardoux_peng, reflected_bsde, second_order_bsde) (4707->4713 families)
 feat(research): wave 791 — SPDE canon (spde_heat, stochastic_burgers, kpz_equation, doering_mueller, quasilinear_spde, paracontrolled_spde) (4701->4707 families)

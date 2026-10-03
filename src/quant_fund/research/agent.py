@@ -6343,6 +6343,14 @@ from quant_fund.research.benches_w793 import (
     bench_wagner_platen_family,
     bench_wong_zakai_family,
 )
+from quant_fund.research.benches_w794 import (
+    bench_dynamic_programming_family,
+    bench_hamilton_jacobi_family,
+    bench_impulsive_control_family,
+    bench_quasi_variational_family,
+    bench_verification_thm_family,
+    bench_viscosity_solution_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6722,6 +6730,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "dynamic_programming": bench_dynamic_programming_family,
+        "verification_thm": bench_verification_thm_family,
+        "hamilton_jacobi": bench_hamilton_jacobi_family,
+        "viscosity_solution": bench_viscosity_solution_family,
+        "quasi_variational": bench_quasi_variational_family,
+        "impulsive_control": bench_impulsive_control_family,
         "wong_zakai": bench_wong_zakai_family,
         "stochastic_taylor": bench_stochastic_taylor_family,
         "milstein_scheme": bench_milstein_scheme_family,
