@@ -309,6 +309,30 @@ def _surfaces(
     return sdk, _TC(app)
 
 
+def _start_hook_sink() -> tuple[str, list[tuple[dict[str, str], bytes]], Any]:
+    """Loopback webhook sink for parity probes — returns
+    ``(base_url, hits, server)``; each hit is ``(headers, raw_body)``.
+    Callers shut the server down."""
+    import threading as _threading  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    hits: list[tuple[dict[str, str], bytes]] = []
+
+    class _Sink(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            raw = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            hits.append((dict(self.headers.items()), raw))
+            self.send_response(404 if self.path == "/reject" else 200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), _Sink)
+    _threading.Thread(target=srv.serve_forever, daemon=True).start()
+    return f"http://127.0.0.1:{srv.server_address[1]}", hits, srv
+
+
 def _tc_transport(client: TestClient) -> Any:
     """Adapt HarnessClient's transport contract to a TestClient."""
 
@@ -1627,7 +1651,9 @@ def parity_audit() -> dict[str, bool]:
             art = spec.work_dir / "receipt.json"
             art.write_text("{}")
             return FTJobOutcome(
-                fine_tuned_model=spec.ft_model_name, artifacts={"receipt.json": art}
+                fine_tuned_model=spec.ft_model_name,
+                artifacts={"receipt.json": art},
+                checkpoint=str(spec.work_dir / "ckpt"),
             )
 
         sdk_ft, ft_wire = _surfaces(_UsageBackend, ft_runner=_ft_runner)
@@ -1665,6 +1691,118 @@ def parity_audit() -> dict[str, bool]:
             and _raises(lambda: remote_ft.cancel_finetune_job(wjob["id"]))[0]
             == "HarnessTransportError"
         )
+        # Registry parity: a succeeded job's ft: name lists + resolves on
+        # both surfaces, and completions naming it land on the local_fx1
+        # lane pinned at the job's checkpoint. Unknown ft: names 404.
+        sname = sjob.fine_tuned_model
+        wname = wfin["fine_tuned_model"]
+        out["ft_model_parity"] = (
+            sname in {m.id for m in sdk_ft.openai_models().data}
+            and sdk_ft.openai_model(sname).id == sname
+            and wname in {m["id"] for m in remote_ft.list_models()["data"]}
+            and remote_ft.retrieve_model(wname)["id"] == wname
+            and _raises(lambda: sdk_ft.openai_model("ft:fx1:ghost:000000000000"))[0]
+            == "OpenAICompatError"
+            and ft_wire.get("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
+        )
+        sresp, _scid = sdk_ft.openai_chat(
+            {"model": sname, "messages": [{"role": "user", "content": "hi"}]}
+        )
+        wresp = ft_wire.post(
+            "/v1/chat/completions",
+            json={"model": wname, "messages": [{"role": "user", "content": "hi"}]},
+        )
+        out["ft_model_route_parity"] = (
+            wresp.status_code == 200
+            and sresp.choices[0].message["content"]
+            == wresp.json()["choices"][0]["message"]["content"]
+            and sresp.system_fingerprint == "local_fx1"
+            and wresp.json()["system_fingerprint"] == "local_fx1"
+        )
+        wghost = ft_wire.post(
+            "/v1/chat/completions",
+            json={
+                "model": "ft:fx1:ghost:000000000000",
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+        out["ft_model_route_404_parity"] = (
+            _raises(
+                lambda: sdk_ft.openai_chat(
+                    {
+                        "model": "ft:fx1:ghost:000000000000",
+                        "messages": [{"role": "user", "content": "hi"}],
+                    }
+                )
+            )[0]
+            == "OpenAICompatError"
+            and wghost.status_code == 404
+            and wghost.json()["error"]["code"] == "model_not_found"
+        )
+        # Webhook parity: the fx1 terminal-webhook extension delivers over
+        # real HTTP on BOTH surfaces — in-process isn't silent — and both
+        # records carry the same verdict fields + HMAC headers.
+        import time as _time  # noqa: PLC0415
+
+        _wh, _wh_hits, _wh_srv = _start_hook_sink()
+        try:
+            sjob_wh = sdk_ft.create_finetune_job(
+                model="fx1",
+                training_jsonl=_corpus,
+                callback_url=f"{_wh}/sdk-ft",
+                callback_secret="pw",
+            )
+            wfid2 = remote_ft.upload_file(_corpus, filename="c2.jsonl", purpose="fine-tune")["id"]
+            wjob_wh = remote_ft.create_finetune_job(
+                model="fx1",
+                training_file=wfid2,
+                callback_url=f"{_wh}/wire-ft",
+                callback_secret="pw",
+            )
+            remote_ft.wait_finetune_job(wjob_wh["id"], timeout_s=30)
+            _dl = _time.monotonic() + 10.0
+            while len(_wh_hits) < 2 and _time.monotonic() < _dl:
+                _time.sleep(0.02)
+            # delivery lands in the worker's finally, after the terminal
+            # status — re-fetch once the hit arrived for the verdict.
+            wfin_wh = remote_ft.finetune_job(wjob_wh["id"])
+            from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+            _wh_signed = all(
+                verify_webhook(
+                    "pw",
+                    h.get("X-Fx1-Webhook-Timestamp"),
+                    h.get("X-Fx1-Webhook-Signature"),
+                    b,
+                )
+                for h, b in _wh_hits
+            )
+            out["ft_webhook_parity"] = (
+                len(_wh_hits) == 2
+                and _wh_signed
+                and sjob_wh.callback_status == "delivered"
+                and wfin_wh.get("callback_status") == "delivered"
+                and wfin_wh.get("callback_attempts") == 1
+                and "callback_secret" not in wfin_wh
+            )
+            out["ft_webhook_guard_parity"] = (
+                _raises(
+                    lambda: sdk_ft.create_finetune_job(
+                        model="fx1", training_jsonl=_corpus, callback_secret="x"
+                    )
+                )[0]
+                == "ValueError"
+                # wire 422 (code validation) maps to ValueError on the client
+                and _raises(
+                    lambda: remote_ft.create_finetune_job(
+                        model="fx1", training_file=wfid2, callback_secret="x"
+                    )
+                )[0]
+                == "ValueError"
+            )
+        finally:
+            _wh_srv.shutdown()
+            _wh_srv.server_close()
         # error mapping: the wire's codes map back to the SDK's classes
         dirty_remote = HarnessClient("http://harness.test", transport=_tc_transport(dirty_api))
         out["client_gate_maps_fx1honesty"] = (
@@ -2638,6 +2776,52 @@ def parity_audit() -> dict[str, bool]:
         and wire_out[1]["response"]["body"]["error"]["type"]
         == sdk_b_lines[1]["response"]["body"]["error"]["type"]
     )
+    # batch webhook parity: the wire submit + the SDK's in-process twin
+    # both POST the terminal envelope to the same sink — real HTTP on
+    # both surfaces — and both records carry the delivery verdict.
+    import time as _time2  # noqa: PLC0415
+
+    _bw, _bw_hits, _bw_srv = _start_hook_sink()
+    try:
+        up_w = c_b.upload_file((json.dumps(batch_lines[0]) + "\n").encode())
+        bwsub = c_b.create_batch(
+            up_w["id"],
+            endpoint="/v1/chat/completions",
+            callback_url=f"{_bw}/wire-batch",
+        )
+        c_b.wait_batch(bwsub["id"], timeout_s=30, poll_s=0.01)
+        sb_out, _sb_lines = sdk_b.openai_batch(
+            batch_lines[:1],
+            callback_url=f"{_bw}/sdk-batch",
+        )
+        _dl = _time2.monotonic() + 10.0
+        while len(_bw_hits) < 2 and _time2.monotonic() < _dl:
+            _time2.sleep(0.02)
+        bwt = c_b.batch(bwsub["id"])  # verdict lands in the worker's finally
+        out["batch_webhook_parity"] = (
+            len(_bw_hits) == 2
+            and bwt.get("callback_status") == "delivered"
+            and bwt.get("callback_attempts") == 1
+            and sb_out.get("callback_status") == "delivered"
+            and sb_out.get("callback_attempts") == 1
+            and all(json.loads(b)["status"] == "completed" for _h, b in _bw_hits)
+        )
+        out["batch_webhook_guard_parity"] = (
+            _raises(lambda: sdk_b.openai_batch(batch_lines[:1], callback_secret="x"))[0]
+            == "ValueError"
+            # wire 422 (code validation) maps to ValueError on the client
+            and _raises(
+                lambda: c_b.create_batch(
+                    up_w["id"],
+                    endpoint="/v1/chat/completions",
+                    callback_secret="x",
+                )
+            )[0]
+            == "ValueError"
+        )
+    finally:
+        _bw_srv.shutdown()
+        _bw_srv.server_close()
     out["client_batch_surface"] = (
         c_b.batch(bt["id"])["status"] == "completed"
         and any(b["id"] == bt["id"] for b in c_b.batches(limit=5)["data"])
@@ -2738,7 +2922,12 @@ def parity_audit_bench() -> dict[str, Any]:
             "create_finetune_job produces the same terminal job fields "
             "(status, ft:-name grammar, result_files, event feed) as the "
             "wire route under the same runner, and guards map "
-            "ValueError↔HarnessTransportError / KeyError↔KeyError. Flags: "
+            "ValueError↔HarnessTransportError / KeyError↔KeyError. The "
+            "model registry holds on both surfaces: a succeeded job's ft: "
+            "name lists and retrieves, completions naming it resolve to "
+            "local_fx1 at the job's checkpoint, and unregistered ft: names "
+            "fail closed (OpenAICompatError in-process, 404 on the wire). "
+            "Flags: "
             "unknown backend names are KeyError in-process "
             "vs 422 literal rejection over the wire (request validation "
             "runs before resolution); empty batches are [] in-process vs "

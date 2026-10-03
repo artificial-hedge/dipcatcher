@@ -30,11 +30,13 @@ import threading
 import time
 import urllib.parse
 import uuid
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from typing import Any, Literal
 
 import jsonschema
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from fx1.serve.webhooks import check_callback_url
 
 __all__ = [
     "OPENAI_BACKENDS",
@@ -411,21 +413,29 @@ class OpenAIChatResponse(_Model):
     usage: dict[str, int] | None = None
 
 
-def openai_models(*, created: int | None = None) -> OpenAIModelList:
+def openai_models(*, created: int | None = None, extra_ids: Iterable[str] = ()) -> OpenAIModelList:
     """The model inventory — `fx1` plus the backend names `model` may
     carry. ``created`` defaults to call time."""
     ts = int(time.time()) if created is None else created
-    return OpenAIModelList(data=[OpenAIModel(id=m, created=ts) for m in OPENAI_MODEL_IDS])
+    extra = [m for m in dict.fromkeys(extra_ids) if m not in OPENAI_MODEL_IDS]
+    return OpenAIModelList(
+        data=[OpenAIModel(id=m, created=ts) for m in (*OPENAI_MODEL_IDS, *sorted(extra))]
+    )
 
 
-def openai_model(model_id: str, *, created: int | None = None) -> OpenAIModel:
+def openai_model(
+    model_id: str,
+    *,
+    created: int | None = None,
+    extra_ids: Iterable[str] = (),
+) -> OpenAIModel:
     """One model card — ``GET /v1/models/{id}`` retrieve semantics.
 
     Unknown ids fail closed 404 (OpenAI's ``invalid_request_error`` /
     ``model_not_found``) — an SDK's ``models.retrieve`` never gets a
-    fabricated card.
+    fabricated card. ``extra_ids`` admits registered ``ft:`` models.
     """
-    if model_id not in OPENAI_MODEL_IDS:
+    if model_id not in OPENAI_MODEL_IDS and model_id not in frozenset(extra_ids):
         raise OpenAICompatError(
             f"The model '{model_id}' does not exist", status=404, code="model_not_found"
         )
@@ -509,16 +519,43 @@ def openai_messages(msgs: list[OpenAIChatMessage]) -> list[dict[str, Any]]:
 
 
 def _resolve_openai_link(
-    model: str, ext: OpenAIFx1 | None, hdrs: dict[str, str]
+    model: str,
+    ext: OpenAIFx1 | None,
+    hdrs: dict[str, str],
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> tuple[str, list[str], str | None, ByokOverride | None]:
     """Backend resolution shared by the chat and responses translators —
     ``fx1.backend`` > ``X-Fx1-Backend`` > a ``model`` naming a backend >
     ``byok`` when BYOK headers are present > ``hosted_k3``. Returns
-    ``(backend, fallbacks, checkpoint_dir, byok)``."""
+    ``(backend, fallbacks, checkpoint_dir, byok)``.
+
+    A ``model`` of the form ``ft:*`` names a registered fine-tuned model:
+    when no explicit backend was chosen (no ext/backend header and no
+    BYOK headers), it resolves to the ``local_fx1`` lane pinned at the
+    producing job's checkpoint. An unregistered ``ft:`` name is a
+    fail-closed 404 ``model_not_found`` — never a silent default link."""
     byok_headers = hdrs.get("x-fx1-byok-base-url")
+    explicit = (ext.backend if ext is not None else None) or hdrs.get("x-fx1-backend")
+    if (
+        explicit is None
+        and model not in OPENAI_BACKENDS
+        and not byok_headers
+        and model.startswith("ft:")
+    ):
+        checkpoint = ft_resolver(model) if ft_resolver is not None else None
+        if checkpoint is None:
+            raise OpenAICompatError(
+                f"The model '{model}' does not exist",
+                status=404,
+                code="model_not_found",
+            )
+        fallbacks_ft: list[str] = list(ext.fallbacks) if ext is not None else []
+        if not fallbacks_ft and hdrs.get("x-fx1-fallbacks"):
+            fallbacks_ft = [f.strip() for f in hdrs["x-fx1-fallbacks"].split(",") if f.strip()]
+        return "local_fx1", fallbacks_ft, checkpoint, None
     backend = (
-        (ext.backend if ext is not None else None)
-        or hdrs.get("x-fx1-backend")
+        explicit
         or (model if model in OPENAI_BACKENDS else None)
         # BYOK headers present and no explicit backend → the model string is
         # the upstream model (e.g. "gpt-4o"), the link is byok.
@@ -547,7 +584,10 @@ def _resolve_openai_link(
 
 
 def openai_to_kwargs(
-    body: OpenAIChatRequest, headers: Mapping[str, str] | None = None
+    body: OpenAIChatRequest,
+    headers: Mapping[str, str] | None = None,
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, Any]:
     """Translate an OpenAI request into ``complete`` kwargs.
 
@@ -565,7 +605,9 @@ def openai_to_kwargs(
     """
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver
+    )
     return {
         "backend": backend,
         "messages": openai_messages(body.messages),
@@ -1115,7 +1157,10 @@ def response_text_format(body: OpenAIResponseRequest) -> dict[str, Any] | None:
 
 
 def response_to_kwargs(
-    body: OpenAIResponseRequest, headers: Mapping[str, str] | None = None
+    body: OpenAIResponseRequest,
+    headers: Mapping[str, str] | None = None,
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, Any]:
     """Translate a Responses request into ``complete`` kwargs — the same
     backend-resolution order and the same extension/headers as the chat
@@ -1124,7 +1169,9 @@ def response_to_kwargs(
     ``user`` or ``safety_identifier``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver
+    )
     effort = (body.reasoning or {}).get("effort")
     return {
         "backend": backend,
@@ -1556,7 +1603,10 @@ def openai_embedding_envelope(
 
 
 def embeddings_to_kwargs(
-    body: OpenAIEmbeddingRequest, headers: Mapping[str, str] | None = None
+    body: OpenAIEmbeddingRequest,
+    headers: Mapping[str, str] | None = None,
+    *,
+    ft_resolver: Callable[[str], str | None] | None = None,
 ) -> dict[str, Any]:
     """Translate an embeddings request into call kwargs — same link
     resolution as chat (``fx1.backend`` > header > model > hosted_k3);
@@ -1565,7 +1615,9 @@ def embeddings_to_kwargs(
     ``encoding_format``, ``dimensions``, ``user``."""
     hdrs = {str(k).lower(): str(v) for k, v in (headers or {}).items()}
     ext = body.fx1
-    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(body.model, ext, hdrs)
+    backend, fallbacks, checkpoint_dir, byok = _resolve_openai_link(
+        body.model, ext, hdrs, ft_resolver=ft_resolver
+    )
     return {
         "backend": backend,
         "fallbacks": fallbacks,
@@ -1611,6 +1663,12 @@ class OpenAIBatchRequest(_Model):
     # only "24h" exists on the real surface; anything else refuses (422)
     completion_window: Literal["24h"] = "24h"
     metadata: dict[str, str] | None = None
+    # fx1 extension: terminal-state webhook — the finished batch envelope
+    # is POSTed to ``callback_url`` on completed/failed/expired/cancelled,
+    # signed with ``callback_secret`` via the X-Fx1-Webhook-* headers
+    # (never echoed on the record).
+    callback_url: str | None = None
+    callback_secret: str | None = None
 
     @field_validator("metadata")
     @classmethod
@@ -1618,6 +1676,17 @@ class OpenAIBatchRequest(_Model):
         if v is not None and len(v) > 16:
             raise ValueError("metadata must have <= 16 keys")
         return v
+
+    @field_validator("callback_url")
+    @classmethod
+    def _callback_url_http(cls, v: str | None) -> str | None:
+        return check_callback_url(v)
+
+    @model_validator(mode="after")
+    def _callback_secret_needs_url(self) -> OpenAIBatchRequest:
+        if self.callback_secret is not None and not self.callback_url:
+            raise ValueError("callback_secret requires callback_url")
+        return self
 
 
 def batch_line_shape(line: Any, *, endpoint: str, lineno: int) -> dict[str, Any]:
@@ -1699,6 +1768,12 @@ def batch_object(rec: Mapping[str, Any]) -> dict[str, Any]:
         "cancelled_at": rec.get("cancelled_at"),
         "request_counts": dict(rec["request_counts"]),
         "metadata": rec.get("metadata"),
+        # fx1 extension — terminal webhook bookkeeping (the same fields
+        # the /harness/* jobs surface); absent keys read as null.
+        "callback_url": rec.get("callback_url"),
+        "callback_status": rec.get("callback_status"),
+        "callback_attempts": rec.get("callback_attempts", 0),
+        "callback_error": rec.get("callback_error"),
     }
 
 

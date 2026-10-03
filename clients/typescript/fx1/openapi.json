@@ -2173,6 +2173,48 @@
       "FTJob": {
         "additionalProperties": false,
         "properties": {
+          "callback_attempts": {
+            "default": 0,
+            "title": "Callback Attempts",
+            "type": "integer"
+          },
+          "callback_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Error"
+          },
+          "callback_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "delivered",
+                  "failed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Status"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
           "created_at": {
             "title": "Created At",
             "type": "integer"
@@ -2457,6 +2499,28 @@
       "FTJobRequest": {
         "additionalProperties": false,
         "properties": {
+          "callback_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Secret"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
           "hyperparameters": {
             "anyOf": [
               {
@@ -3304,6 +3368,28 @@
         "additionalProperties": true,
         "description": "``POST /v1/batches`` body.",
         "properties": {
+          "callback_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Secret"
+          },
+          "callback_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Callback Url"
+          },
           "completion_window": {
             "const": "24h",
             "default": "24h",
@@ -8762,7 +8848,7 @@
         ]
       },
       "post": {
-        "description": "Submit a batch over an uploaded input file. One worker slot\nruns the whole batch through the gated route cores; ``expires_at``\nis +24h (the completion_window the surface declares).",
+        "description": "Submit a batch over an uploaded input file. One worker slot\nruns the whole batch through the gated route cores; ``expires_at``\nis +24h (the completion_window the surface declares).\n``callback_url``/``callback_secret`` are the fx1 webhook\nextension: the terminal batch envelope\n(completed/failed/expired/cancelled \u2014 including expiry observed\non read) is POSTed to the URL once, HMAC-signed when the secret\nis set; ``callback_status``/``callback_attempts``/\n``callback_error`` ride the projected record.",
         "operationId": "openai_batches_create",
         "parameters": [
           {
@@ -10135,7 +10221,7 @@
         ]
       },
       "post": {
-        "description": "Queue a gated fine-tuning run against an uploaded chat-format\nJSONL training file. File validation is synchronous \u2014 malformed\ncorpora 400 at submit, never limbo in ``validating_files``.",
+        "description": "Queue a gated fine-tuning run against an uploaded chat-format\nJSONL training file. File validation is synchronous \u2014 malformed\ncorpora 400 at submit, never limbo in ``validating_files``.\n``callback_url``/``callback_secret`` are the fx1 webhook\nextension: the terminal job record (succeeded/failed/cancelled)\nis POSTed to the URL, HMAC-signed when the secret is set \u2014 the\nsame delivery contract as ``/harness/jobs`` webhooks.",
         "operationId": "create_finetune_job",
         "parameters": [
           {
@@ -10661,7 +10747,7 @@
     },
     "/v1/models/{model}": {
       "get": {
-        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card.",
+        "description": "OpenAI's models.retrieve \u2014 one card for a listed id; unknown\nids fail closed 404 in the OpenAI error shape, never a\nfabricated card. Registered ``ft:`` fine-tunes resolve too.",
         "operationId": "openai_retrieve_model",
         "parameters": [
           {

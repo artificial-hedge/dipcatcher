@@ -2892,6 +2892,170 @@ def _probe_finetune(api_mod: Any, out: dict[str, Any]) -> None:
         time.sleep(0.02)
     out["ft_cancel_running_cooperative"] = cc.status_code == 200 and cjj["status"] == "cancelled"
 
+    # Model registry: a succeeded job with a checkpoint registers its
+    # ft: name into the model inventory, and a request naming it resolves
+    # to the local_fx1 lane pinned at the job's checkpoint — never the
+    # default link. Unregistered ft: names fail closed 404.
+    mname = fin["fine_tuned_model"]
+    models = ft.get("/v1/models").json()
+    out["ft_model_listed"] = mname in {m["id"] for m in models["data"]}
+    card = ft.get(f"/v1/models/{mname}")
+    out["ft_model_card_200"] = card.status_code == 200 and card.json()["id"] == mname
+    out["ft_model_ghost_404"] = ft.get("/v1/models/ft:fx1:ghost:000000000000").status_code == 404
+
+    resolved: list[tuple[str, Any]] = []
+
+    def _spy(name: str, *a: Any, **k: Any) -> Any:
+        resolved.append((name, k.get("checkpoint_dir") or (a[0] if a else None)))
+        raise RuntimeError("no engine — resolution reached")
+
+    ft2 = _TC3(api_mod.create_app(backend_resolver=_spy, ft_runner=_runner))
+    fid2 = ft2.post(
+        "/v1/files", files={"file": ("c.jsonl", _CORPUS)}, data={"purpose": "fine-tune"}
+    ).json()["id"]
+    j2 = ft2.post(
+        "/v1/fine_tuning/jobs", json={"model": "fx1", "training_file": fid2, "suffix": "r"}
+    ).json()
+    fin2 = j2
+    for _i in range(400):
+        fin2 = ft2.get(f"/v1/fine_tuning/jobs/{j2['id']}").json()
+        if fin2["status"] in ("succeeded", "failed", "cancelled"):
+            break
+        time.sleep(0.02)
+    ftname = fin2["fine_tuned_model"]
+    chat = ft2.post(
+        "/v1/chat/completions",
+        json={"model": ftname, "messages": [{"role": "user", "content": "hi"}]},
+    )
+    out["ft_model_routes_local_fx1"] = (
+        chat.status_code == 503
+        and resolved
+        and resolved[-1][0] == "local_fx1"
+        and str(resolved[-1][1]).endswith("ckpt")
+    )
+    ghost = ft2.post(
+        "/v1/chat/completions",
+        json={
+            "model": "ft:fx1:ghost:000000000000",
+            "messages": [{"role": "user", "content": "hi"}],
+        },
+    )
+    out["ft_model_unknown_404"] = (
+        ghost.status_code == 404 and ghost.json().get("error", {}).get("code") == "model_not_found"
+    )
+    # An explicit backend + checkpoint header still wins over an ft:
+    # model name — the registry never overrides a caller's stated link.
+    resolved.clear()
+    ft2.post(
+        "/v1/chat/completions",
+        json={"model": ftname, "messages": [{"role": "user", "content": "hi"}]},
+        headers={"X-Fx1-Backend": "local_fx1", "X-Fx1-Checkpoint-Dir": "/srv/fx1/explicit-ckpt"},
+    )
+    out["ft_model_explicit_backend_wins"] = bool(
+        resolved and resolved[-1] == ("local_fx1", "/srv/fx1/explicit-ckpt")
+    )
+
+    # Terminal webhooks on the /v1 surface — the fx1 extension mirrors
+    # the /harness/jobs contract: fire once at the terminal transition,
+    # HMAC-signed X-Fx1-Webhook-* headers when callback_secret is set,
+    # and the delivery verdict (status/attempts/error) rides the record.
+    import json as _json4  # noqa: PLC0415
+    import threading as _threading  # noqa: PLC0415
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer  # noqa: PLC0415
+
+    _ft_hits: list[tuple[dict[str, str], bytes]] = []
+
+    class _FTHook(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            raw = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            _ft_hits.append((dict(self.headers.items()), raw))
+            self.send_response(404 if self.path == "/reject" else 200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    _ft_srv = ThreadingHTTPServer(("127.0.0.1", 0), _FTHook)
+    _threading.Thread(target=_ft_srv.serve_forever, daemon=True).start()
+    _ft_cb = f"http://127.0.0.1:{_ft_srv.server_address[1]}/ft"
+
+    def _wait_cb(job_id: str) -> dict[str, Any]:
+        deadline = time.monotonic() + 10.0
+        j: dict[str, Any] = {}
+        while time.monotonic() < deadline:
+            j = _wait_ft(job_id)
+            if j.get("callback_status") is not None:
+                return j
+            time.sleep(0.02)
+        return j
+
+    cb_fid = _upload(_CORPUS).json()["id"]
+    cb_job = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={
+            "model": "fx1",
+            "training_file": cb_fid,
+            "callback_url": _ft_cb,
+            "callback_secret": "whsec-audit",
+        },
+    ).json()
+    cb_fin = _wait_cb(cb_job["id"])
+    signed_ok = False
+    if _ft_hits:
+        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+        _h, _b = _ft_hits[0]
+        signed_ok = verify_webhook(
+            "whsec-audit",
+            _h.get("X-Fx1-Webhook-Timestamp"),
+            _h.get("X-Fx1-Webhook-Signature"),
+            _b,
+        )
+    out["ft_webhook_fires_signed"] = (
+        len(_ft_hits) == 1
+        and cb_fin.get("callback_status") == "delivered"
+        and cb_fin.get("callback_attempts") == 1
+        and _json4.loads(_ft_hits[0][1])["status"] == "succeeded"
+        and signed_ok
+    )
+    out["ft_webhook_secret_never_serializes"] = (
+        "callback_secret" not in cb_fin and "callback_secret" not in _json4.loads(_ft_hits[0][1])
+    )
+    # 4xx is definitive — one attempt, no retry storm.
+    rj_fid = _upload(_CORPUS).json()["id"]
+    rj_job = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={
+            "model": "fx1",
+            "training_file": rj_fid,
+            "callback_url": _ft_cb.replace("/ft", "/reject"),
+        },
+    ).json()
+    rj_fin = _wait_cb(rj_job["id"])
+    out["ft_webhook_4xx_never_retried"] = (
+        rj_fin.get("callback_status") == "failed"
+        and rj_fin.get("callback_attempts") == 1
+        and len(_ft_hits) == 2
+        and "404" in (rj_fin.get("callback_error") or "")
+    )
+    # Submit-time guards: secret requires url; url must be http(s) with a
+    # host — both as the /v1 envelope's 422, never a queued zombie.
+    sec_only = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": cb_fid, "callback_secret": "x"},
+    )
+    bad_url = ft.post(
+        "/v1/fine_tuning/jobs",
+        json={"model": "fx1", "training_file": cb_fid, "callback_url": "ftp://x"},
+    )
+    out["ft_webhook_guards_422"] = (
+        sec_only.status_code == 422
+        and bad_url.status_code == 422
+        and sec_only.json().get("error", {}).get("code") == "validation"
+    )
+    _ft_srv.shutdown()
+    _ft_srv.server_close()
+
 
 def _probe_backend_probes(
     client: Any, uapp: Any, dirty: Any, api_mod: Any, out: dict[str, Any]
@@ -6590,6 +6754,107 @@ def _probe_backend_probes(
     out["batch_expiry_projection"] = (
         r_exp["status"] == "expired" and r_exp["expired_at"] is not None
     )
+    # Terminal webhooks on /v1/batches — the same fx1 extension as
+    # /harness/jobs and /v1/fine_tuning/jobs: fire once at terminal,
+    # signed when callback_secret is set, verdict rides the record.
+    _bwh_hits: list[dict[str, Any]] = []
+    _bwh_raw: list[bytes] = []
+    _bwh_hdrs: list[dict[str, str]] = []
+    _bwh_path_n: dict[str, int] = {}
+
+    class _BatchHook(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802 — http.server handler name
+            raw = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            _bwh_raw.append(raw)
+            _bwh_hdrs.append(dict(self.headers.items()))
+            _bwh_hits.append(_json.loads(raw))
+            _bwh_path_n[self.path] = _bwh_path_n.get(self.path, 0) + 1
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    _bwh_srv = ThreadingHTTPServer(("127.0.0.1", 0), _BatchHook)
+    _threading.Thread(target=_bwh_srv.serve_forever, daemon=True).start()
+    _bwh_url = f"http://127.0.0.1:{_bwh_srv.server_address[1]}"
+    bwh_fid = _upload(fb)["id"]
+    bwh = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": bwh_fid,
+            "endpoint": "/v1/chat/completions",
+            "callback_url": f"{_bwh_url}/batch-hook",
+            "callback_secret": "whsec-batch",
+        },
+    )
+    bwh_id = bwh.json()["id"]
+    bwh_fin = _wait_batch(fb, bwh_id)
+    deadline = time.monotonic() + 10.0
+    while bwh_fin.get("callback_status") is None and time.monotonic() < deadline:
+        time.sleep(0.02)
+        bwh_fin = fb.get(f"/v1/batches/{bwh_id}").json()
+    _bh = _bwh_hits[-1] if _bwh_hits else {}
+    _bh_ok = False
+    if _bwh_path_n.get("/batch-hook") == 1:
+        from fx1.serve.webhooks import verify_webhook  # noqa: PLC0415
+
+        _bh_ok = verify_webhook(
+            "whsec-batch",
+            _bwh_hdrs[-1].get("X-Fx1-Webhook-Timestamp"),
+            _bwh_hdrs[-1].get("X-Fx1-Webhook-Signature"),
+            _bwh_raw[-1],
+        )
+    out["batch_webhook_fires_signed"] = (
+        bwh_fin["status"] == "completed"
+        and bwh_fin.get("callback_status") == "delivered"
+        and bwh_fin.get("callback_attempts") == 1
+        and _bwh_path_n.get("/batch-hook") == 1
+        and _bh.get("id") == bwh_id
+        and _bh.get("status") == "completed"
+        and _bh_ok
+    )
+    out["batch_webhook_secret_never_serializes"] = "callback_secret" not in _bh
+    # Lazy expiry also fires — exactly once across reads.
+    exp_cb_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend())
+    past_cb = api_mod._BatchRecord(  # noqa: SLF001
+        batch_id="batch_past_cb",
+        input_file_id="file-x",
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+        status="in_progress",
+        created_at=1,
+        expires_at=2,
+        callback_url=f"{_bwh_url}/batch-expiry",
+    )
+    exp_cb_app.state.batch_store.put(past_cb)
+    exp_cbc = _TC2(exp_cb_app)
+    r_expc = exp_cbc.get("/v1/batches/batch_past_cb").json()
+    deadline = time.monotonic() + 10.0
+    while _bwh_path_n.get("/batch-expiry", 0) < 1 and time.monotonic() < deadline:
+        time.sleep(0.02)
+    exp_cbc.get("/v1/batches/batch_past_cb")
+    exp_cbc.get("/v1/batches/batch_past_cb")
+    time.sleep(0.1)
+    out["batch_webhook_expiry_fires_once"] = (
+        r_expc["status"] == "expired"
+        and r_expc.get("callback_status") == "delivered"
+        and _bwh_path_n.get("/batch-expiry") == 1
+    )
+    _bwh_srv.shutdown()
+    _bwh_srv.server_close()
+    # Submit-time guards: a secret without a url is a 422, never a zombie.
+    bad_cb = fb.post(
+        "/v1/batches",
+        json={
+            "input_file_id": bwh_fid,
+            "endpoint": "/v1/chat/completions",
+            "callback_secret": "x",
+        },
+    )
+    out["batch_webhook_guards_422"] = (
+        bad_cb.status_code == 422 and bad_cb.json().get("error", {}).get("code") == "validation"
+    )
     # over-capacity admission: a batch submit under a held inflight slot
     # is the same 503 over_capacity as the sync surface
     cap_app = api_mod.create_app(backend_resolver=lambda *a, **k: _OiBackend(), max_inflight=1)
@@ -6847,7 +7112,11 @@ def api_audit_bench() -> dict[str, Any]:
             "synchronous corpus validation (bad corpus/model/file "
             "fail closed 4xx before any queue), cooperative cancel, "
             "idempotent submit, events feed, artifacts re-registered as "
-            "fine-tune-result files."
+            "fine-tune-result files. A succeeded job's ft: name registers "
+            "into the model inventory (listed + retrievable), completions "
+            "naming it resolve to the local_fx1 lane pinned at the job's "
+            "checkpoint, explicit backend headers still override, and "
+            "unregistered ft: names fail closed 404 model_not_found."
             if ok
             else f"HARNESS API AUDIT DEFECT: {r}"
         ),
