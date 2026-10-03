@@ -4535,6 +4535,14 @@ from quant_fund.research.benches_w567 import (
     bench_macdonald_poly_family,
     bench_schubert_calc_family,
 )
+from quant_fund.research.benches_w568 import (
+    bench_contact_homology3_family,
+    bench_eliashberg_givental_family,
+    bench_floer_homol_family,
+    bench_reeb_orbit_family,
+    bench_sft_algebra_family,
+    bench_symplectic_field_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4914,6 +4922,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "symplectic_field": bench_symplectic_field_family,
+        "contact_homology3": bench_contact_homology3_family,
+        "floer_homol": bench_floer_homol_family,
+        "reeb_orbit": bench_reeb_orbit_family,
+        "sft_algebra": bench_sft_algebra_family,
+        "eliashberg_givental": bench_eliashberg_givental_family,
         "littlewood_richardson": bench_littlewood_richardson_family,
         "knuth_rsk": bench_knuth_rsk_family,
         "macdonald_poly": bench_macdonald_poly_family,
