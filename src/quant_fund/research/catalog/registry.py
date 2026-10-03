@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-833 functional-limit-theory canon.
+        "fclt_invariance",
+        "donsker_invariance",
+        "martingale_fclt",
+        "stable_limit",
+        "brownian_approx",
+        "strassen_flln",
         # Wave-832 weak-convergence-2 canon.
         "porte_manteau",
         "continuous_map",
