@@ -3911,6 +3911,14 @@ from quant_fund.research.benches_w489 import (
     bench_hecke_bm_family,
     bench_parabolic_grp_family,
 )
+from quant_fund.research.benches_w490 import (
+    bench_adelic_curve_family,
+    bench_arakelov_deg_family,
+    bench_arith_rr_family,
+    bench_arithmetic_chow_family,
+    bench_faltings_metric_family,
+    bench_height_arakelov_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4290,6 +4298,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "arakelov_deg": bench_arakelov_deg_family,
+        "adelic_curve": bench_adelic_curve_family,
+        "height_arakelov": bench_height_arakelov_family,
+        "faltings_metric": bench_faltings_metric_family,
+        "arithmetic_chow": bench_arithmetic_chow_family,
+        "arith_rr": bench_arith_rr_family,
         "building_toy": bench_building_toy_family,
         "coxeter_grp": bench_coxeter_grp_family,
         "bn_pair": bench_bn_pair_family,
