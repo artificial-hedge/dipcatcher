@@ -1,3 +1,4 @@
+feat(research): wave 591 — motivic-7 canon (friedlander_voev, motivic_eilenberg, motivic_zeta, motivic_purity, motivic_descent, motivic_invert) (3501->3507 families)
 feat(research): wave 590 — algebraic-K-3 canon (quillen_plus, gersten_ss, loday_k, volodin_k, suslin_k, bloch_k) (3495->3501 families)
 feat(research): wave 589 — topos-3 canon (cartesian_closed, internal_logic, subobject_lattice, power_object, pretopos, coherent_topos) (3489->3495 families)
 feat(research): wave 588 — homotopy-11 canon (ehp_sequence, james_period, whitehead_prod, freudenthal_susp, moore_space, unstable_adams) (3483->3489 families)
