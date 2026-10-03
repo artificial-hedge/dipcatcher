@@ -2023,6 +2023,14 @@ from quant_fund.research.benches_w253 import (
     bench_two_way_dfa_family,
     bench_weighted_fst_family,
 )
+from quant_fund.research.benches_w254 import (
+    bench_aead_etm_family,
+    bench_cbc_padding_family,
+    bench_hmac_construct_family,
+    bench_merkle_damgard_family,
+    bench_pbkdf2_kdf_family,
+    bench_tls_handshake_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2228,6 +2236,12 @@ def _provenance(
         "cfg_pda_equiv": bench_cfg_pda_equiv_family,
         "two_way_dfa": bench_two_way_dfa_family,
         "register_automata": bench_register_automata_family,
+        "tls_handshake": bench_tls_handshake_family,
+        "hmac_construct": bench_hmac_construct_family,
+        "aead_etm": bench_aead_etm_family,
+        "merkle_damgard": bench_merkle_damgard_family,
+        "cbc_padding": bench_cbc_padding_family,
+        "pbkdf2_kdf": bench_pbkdf2_kdf_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
