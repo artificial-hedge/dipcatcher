@@ -3303,6 +3303,14 @@ from quant_fund.research.benches_w413 import (
     bench_kummer_ext_family,
     bench_normal_basis_family,
 )
+from quant_fund.research.benches_w414 import (
+    bench_adams_ss_family,
+    bench_cofiber_family,
+    bench_exact_couple_family,
+    bench_obstruction_family,
+    bench_stable_homotopy_family,
+    bench_whitehead_thm_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3682,6 +3690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "exact_couple": bench_exact_couple_family,
+        "adams_ss": bench_adams_ss_family,
+        "stable_homotopy": bench_stable_homotopy_family,
+        "whitehead_thm": bench_whitehead_thm_family,
+        "obstruction": bench_obstruction_family,
+        "cofiber": bench_cofiber_family,
         "artin_lemma": bench_artin_lemma_family,
         "normal_basis": bench_normal_basis_family,
         "kummer_ext": bench_kummer_ext_family,
