@@ -6239,6 +6239,14 @@ from quant_fund.research.benches_w780 import (
     bench_mean_value_family,
     bench_orku_loss_family,
 )
+from quant_fund.research.benches_w781 import (
+    bench_karlin_mcg_family,
+    bench_keilson_stieltjes_family,
+    bench_korolyuk_family,
+    bench_palm_khinchin_family,
+    bench_regen_proc_family,
+    bench_wold_proc_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6618,6 +6626,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "karlin_mcg": bench_karlin_mcg_family,
+        "keilson_stieltjes": bench_keilson_stieltjes_family,
+        "palm_khinchin": bench_palm_khinchin_family,
+        "regen_proc": bench_regen_proc_family,
+        "wold_proc": bench_wold_proc_family,
+        "korolyuk": bench_korolyuk_family,
         "bcmp_net": bench_bcmp_net_family,
         "mean_value": bench_mean_value_family,
         "convoy_net": bench_convoy_net_family,
