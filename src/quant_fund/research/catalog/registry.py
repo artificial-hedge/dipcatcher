@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-561 minimal-surfaces canon.
+        "minimal_surface",
+        "plateau_problem",
+        "brakke_flow",
+        "almgren_pitts",
+        "simon_regularity",
+        "stable_minimal",
         # Wave-560 geometric-flows canon.
         "hamilton_ricci",
         "perelman_entropy",
