@@ -3399,6 +3399,14 @@ from quant_fund.research.benches_w425 import (
     bench_stack_morph_family,
     bench_stacky_curve_family,
 )
+from quant_fund.research.benches_w426 import (
+    bench_derived_alg_family,
+    bench_infinity_cat_family,
+    bench_model_category_family,
+    bench_quillen_adj_family,
+    bench_simplicial_set_family,
+    bench_stable_cat_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3778,6 +3786,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "model_category": bench_model_category_family,
+        "quillen_adj": bench_quillen_adj_family,
+        "simplicial_set": bench_simplicial_set_family,
+        "infinity_cat": bench_infinity_cat_family,
+        "derived_alg": bench_derived_alg_family,
+        "stable_cat": bench_stable_cat_family,
         "moduli_stack": bench_moduli_stack_family,
         "stacky_curve": bench_stacky_curve_family,
         "coarse_space": bench_coarse_space_family,
