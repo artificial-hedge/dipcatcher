@@ -5311,6 +5311,14 @@ from quant_fund.research.benches_w664 import (
     bench_structured_spec_family,
     bench_tmf_stack_family,
 )
+from quant_fund.research.benches_w665 import (
+    bench_cohen_moore2_family,
+    bench_homotopy_decomp_family,
+    bench_kervaire_inv2_family,
+    bench_moore_space2_family,
+    bench_unstable_vn_family,
+    bench_whitehead_product_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5690,6 +5698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cohen_moore2": bench_cohen_moore2_family,
+        "whitehead_product": bench_whitehead_product_family,
+        "homotopy_decomp": bench_homotopy_decomp_family,
+        "kervaire_inv2": bench_kervaire_inv2_family,
+        "unstable_vn": bench_unstable_vn_family,
+        "moore_space2": bench_moore_space2_family,
         "spectral_moduli": bench_spectral_moduli_family,
         "e_ring_moduli": bench_e_ring_moduli_family,
         "tmf_stack": bench_tmf_stack_family,
