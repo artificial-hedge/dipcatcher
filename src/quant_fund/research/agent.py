@@ -5247,6 +5247,14 @@ from quant_fund.research.benches_w656 import (
     bench_essentially_small_family,
     bench_finitely_accessible_family,
 )
+from quant_fund.research.benches_w657 import (
+    bench_bousfield_period_family,
+    bench_completion_htpy_family,
+    bench_homotopy_cartesian_family,
+    bench_p_local_htpy_family,
+    bench_ravenel_htpy_family,
+    bench_snake_constr_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5626,6 +5634,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "ravenel_htpy": bench_ravenel_htpy_family,
+        "bousfield_period": bench_bousfield_period_family,
+        "snake_constr": bench_snake_constr_family,
+        "homotopy_cartesian": bench_homotopy_cartesian_family,
+        "p_local_htpy": bench_p_local_htpy_family,
+        "completion_htpy": bench_completion_htpy_family,
         "essentially_small": bench_essentially_small_family,
         "finitely_accessible": bench_finitely_accessible_family,
         "admissible_cat": bench_admissible_cat_family,
