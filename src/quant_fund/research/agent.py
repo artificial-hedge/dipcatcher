@@ -3751,6 +3751,14 @@ from quant_fund.research.benches_w469 import (
     bench_fibered_cat_family,
     bench_weight_lim_family,
 )
+from quant_fund.research.benches_w470 import (
+    bench_e_infty2_family,
+    bench_h_space_family,
+    bench_james_constr_family,
+    bench_obstruction_th_family,
+    bench_power_op_family,
+    bench_rational_htpy_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4130,6 +4138,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "e_infty2": bench_e_infty2_family,
+        "power_op": bench_power_op_family,
+        "obstruction_th": bench_obstruction_th_family,
+        "rational_htpy": bench_rational_htpy_family,
+        "h_space": bench_h_space_family,
+        "james_constr": bench_james_constr_family,
         "enriched_cat": bench_enriched_cat_family,
         "weight_lim": bench_weight_lim_family,
         "fibered_cat": bench_fibered_cat_family,
