@@ -4951,6 +4951,14 @@ from quant_fund.research.benches_w619 import (
     bench_thick_spectrum_family,
     bench_unstable_htpy_family,
 )
+from quant_fund.research.benches_w620 import (
+    bench_band_gerbe_family,
+    bench_dm_stack2_family,
+    bench_gerbe2_family,
+    bench_inertia_stack_family,
+    bench_rigid_stack_family,
+    bench_root_stack_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5330,6 +5338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "gerbe2": bench_gerbe2_family,
+        "band_gerbe": bench_band_gerbe_family,
+        "rigid_stack": bench_rigid_stack_family,
+        "dm_stack2": bench_dm_stack2_family,
+        "inertia_stack": bench_inertia_stack_family,
+        "root_stack": bench_root_stack_family,
         "unstable_htpy": bench_unstable_htpy_family,
         "tame_htpy": bench_tame_htpy_family,
         "devissage_ss": bench_devissage_ss_family,
