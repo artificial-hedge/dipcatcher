@@ -2584,6 +2584,14 @@ from quant_fund.research.benches_w323 import (
     bench_session_types_family,
     bench_shift_reset_family,
 )
+from quant_fund.research.benches_w324 import (
+    bench_banerjee_dep_family,
+    bench_fourier_motzkin_family,
+    bench_omega_test_family,
+    bench_pluto_schedule_family,
+    bench_tiling_legality_family,
+    bench_vec_legality_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2963,6 +2971,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fourier_motzkin": bench_fourier_motzkin_family,
+        "banerjee_dep": bench_banerjee_dep_family,
+        "pluto_schedule": bench_pluto_schedule_family,
+        "tiling_legality": bench_tiling_legality_family,
+        "omega_test": bench_omega_test_family,
+        "vec_legality": bench_vec_legality_family,
         "free_monad": bench_free_monad_family,
         "alg_effects": bench_alg_effects_family,
         "shift_reset": bench_shift_reset_family,

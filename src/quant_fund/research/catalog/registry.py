@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-324 polyhedral-compiler canon.
+        "fourier_motzkin",
+        "banerjee_dep",
+        "pluto_schedule",
+        "tiling_legality",
+        "omega_test",
+        "vec_legality",
         # Wave-323 PL-7 effect/session-types canon.
         "free_monad",
         "alg_effects",
