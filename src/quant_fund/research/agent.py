@@ -6791,6 +6791,14 @@ from quant_fund.research.benches_w849 import (
     bench_muscl_reconstruct_family,
     bench_upwind_scheme_family,
 )
+from quant_fund.research.benches_w850 import (
+    bench_ausm_flux_family,
+    bench_godunov_exact_family,
+    bench_hllc_solver_family,
+    bench_lax_friedrichs_family,
+    bench_osher_solver_family,
+    bench_roe_solver_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7162,6 +7170,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "roe_solver": bench_roe_solver_family,
+        "hllc_solver": bench_hllc_solver_family,
+        "ausm_flux": bench_ausm_flux_family,
+        "lax_friedrichs": bench_lax_friedrichs_family,
+        "godunov_exact": bench_godunov_exact_family,
+        "osher_solver": bench_osher_solver_family,
         "fdm_grid": bench_fdm_grid_family,
         "compact_scheme": bench_compact_scheme_family,
         "crank_nicholson2": bench_crank_nicholson2_family,
