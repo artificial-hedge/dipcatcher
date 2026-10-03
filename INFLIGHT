@@ -1,3 +1,4 @@
+feat(research): wave 424 — set-theory-4 canon (club_set, stationary_set, ultrafilter_toy, partition_calc, closed_unbounded, mahlo_cardinal) (2499->2505 families)
 feat(research): wave 423 — homological-algebra-4 canon (groth_spectral, serre_ss2, hypercohom, deriv_hom, cartan_eilenberg, adams_diff) (2493->2499 families)
 feat(research): wave 422 — Lie-theory-2 canon (weyl_chamber, root_height, borel_subalgebra, levi_factor, nilpotent_orbit, verma_module) (2487->2493 families)
 feat(research): wave 421 — category-theory-4 canon (traced_monoidal, star_autonomous, frobenius_alg, span_compose, profunctor_toy, endo_coend) (2481->2487 families)

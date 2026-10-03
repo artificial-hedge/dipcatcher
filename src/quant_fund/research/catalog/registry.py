@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-424 set-theory-4 canon.
+        "club_set",
+        "stationary_set",
+        "ultrafilter_toy",
+        "partition_calc",
+        "closed_unbounded",
+        "mahlo_cardinal",
         # Wave-423 homological-algebra-4 canon.
         "groth_spectral",
         "serre_ss2",
