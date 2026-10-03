@@ -5639,6 +5639,14 @@ from quant_fund.research.benches_w705 import (
     bench_derived_stack3_family,
     bench_derived_topos_family,
 )
+from quant_fund.research.benches_w706 import (
+    bench_chromatic_base_family,
+    bench_chromatic_layer_family,
+    bench_chromatic_square2_family,
+    bench_elliptic_morava_family,
+    bench_lubin_tate3_family,
+    bench_morava_maven_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -6018,6 +6026,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chromatic_layer": bench_chromatic_layer_family,
+        "morava_maven": bench_morava_maven_family,
+        "chromatic_square2": bench_chromatic_square2_family,
+        "lubin_tate3": bench_lubin_tate3_family,
+        "elliptic_morava": bench_elliptic_morava_family,
+        "chromatic_base": bench_chromatic_base_family,
         "derived_geometry7": bench_derived_geometry7_family,
         "derived_abelian2": bench_derived_abelian2_family,
         "derived_stack3": bench_derived_stack3_family,
