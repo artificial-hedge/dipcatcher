@@ -2175,6 +2175,14 @@ from quant_fund.research.benches_w272 import (
     bench_sliding_mode_family,
     bench_smith_predictor_family,
 )
+from quant_fund.research.benches_w273 import (
+    bench_const_fold_family,
+    bench_inline_expand_family,
+    bench_loop_unroll_family,
+    bench_partial_eval_family,
+    bench_peephole_opt_family,
+    bench_strength_red_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2494,6 +2502,12 @@ def _provenance(
         "smith_predictor": bench_smith_predictor_family,
         "backstepping": bench_backstepping_family,
         "repetitive_ctrl": bench_repetitive_ctrl_family,
+        "partial_eval": bench_partial_eval_family,
+        "peephole_opt": bench_peephole_opt_family,
+        "strength_red": bench_strength_red_family,
+        "const_fold": bench_const_fold_family,
+        "loop_unroll": bench_loop_unroll_family,
+        "inline_expand": bench_inline_expand_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))
