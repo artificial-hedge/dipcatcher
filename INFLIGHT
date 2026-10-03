@@ -1,3 +1,4 @@
+feat(research): wave 531 — bifurcation-theory canon (saddle_node, hopf_bif, period_doubling, neimark_sacker, bogdanov_takens, homoclinic_bif) (3141->3147 families)
 feat(research): wave 530 — nonuniform-hyperbolicity canon (pesin_theory, nonuniform_hyp, dominated_split, osceledets_reg, lyapunov_chart, katok_horseshoe) (3135->3141 families)
 feat(research): wave 529 — KAM/Aubry-Mather canon (kam_theorem, aubry_mather, twist_map, cantorus, greene_crit, arnold_diff) (3129->3135 families)
 feat(research): wave 528 — thermodynamic-formalism canon (transfer_op, thermo_formal, pressure_thm, equilibrium_state, ruelle_zeta, lasota_yorke) (3123->3129 families)
