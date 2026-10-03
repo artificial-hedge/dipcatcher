@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-337 lambda-calculus/rewriting canon.
+        "ski_combinator",
+        "de_bruijn",
+        "church_encoding",
+        "lambda_typing",
+        "unification",
+        "knuth_bendix",
         # Wave-336 computability/model-theory canon.
         "pr_functions",
         "turing_degrees",
