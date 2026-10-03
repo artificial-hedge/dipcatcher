@@ -5167,6 +5167,14 @@ from quant_fund.research.benches_w646 import (
     bench_untilt2_family,
     bench_v_stack_family,
 )
+from quant_fund.research.benches_w647 import (
+    bench_arkowitz_htpy_family,
+    bench_bochner_htpy_family,
+    bench_kahn_priddy_family,
+    bench_lin_htpy_family,
+    bench_selick_htpy_family,
+    bench_tits_building_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5546,6 +5554,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "selick_htpy": bench_selick_htpy_family,
+        "arkowitz_htpy": bench_arkowitz_htpy_family,
+        "lin_htpy": bench_lin_htpy_family,
+        "kahn_priddy": bench_kahn_priddy_family,
+        "bochner_htpy": bench_bochner_htpy_family,
+        "tits_building": bench_tits_building_family,
         "fargues_cat": bench_fargues_cat_family,
         "v_stack": bench_v_stack_family,
         "untilt2": bench_untilt2_family,
