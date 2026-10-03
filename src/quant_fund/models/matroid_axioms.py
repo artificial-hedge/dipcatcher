@@ -41,9 +41,7 @@ def augmentation(indep: set[frozenset[int]]) -> bool:
     """Augmentation axiom: |I|<|J| => exists e in J\\I with I+e independent."""
     for i in indep:
         for j in indep:
-            if len(i) < len(j) and not any(
-                frozenset(set(i) | {e}) in indep for e in j - i
-            ):
+            if len(i) < len(j) and not any(frozenset(set(i) | {e}) in indep for e in j - i):
                 return False
     return True
 
