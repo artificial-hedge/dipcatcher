@@ -5255,6 +5255,14 @@ from quant_fund.research.benches_w657 import (
     bench_ravenel_htpy_family,
     bench_snake_constr_family,
 )
+from quant_fund.research.benches_w658 import (
+    bench_beilinson_regulator_family,
+    bench_f_motive_family,
+    bench_hodge_motive_family,
+    bench_motivic_galois_family,
+    bench_period_realization_family,
+    bench_tannakian_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5634,6 +5642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_galois": bench_motivic_galois_family,
+        "tannakian_motive": bench_tannakian_motive_family,
+        "period_realization": bench_period_realization_family,
+        "beilinson_regulator": bench_beilinson_regulator_family,
+        "hodge_motive": bench_hodge_motive_family,
+        "f_motive": bench_f_motive_family,
         "ravenel_htpy": bench_ravenel_htpy_family,
         "bousfield_period": bench_bousfield_period_family,
         "snake_constr": bench_snake_constr_family,
