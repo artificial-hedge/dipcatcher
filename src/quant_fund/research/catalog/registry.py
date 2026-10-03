@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-569 geometric-PDE canon.
+        "yamabe_problem",
+        "prescribed_curvature",
+        "nirenberg_problem",
+        "kazdan_warner",
+        "aubin_thm",
+        "trudinger_thm",
         # Wave-568 symplectic-field-theory canon.
         "symplectic_field",
         "contact_homology3",
