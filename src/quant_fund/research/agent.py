@@ -3951,6 +3951,14 @@ from quant_fund.research.benches_w494 import (
     bench_hochschild_coh_family,
     bench_nc_scheme_family,
 )
+from quant_fund.research.benches_w495 import (
+    bench_complicial_family,
+    bench_globular_model_family,
+    bench_opetopic_family,
+    bench_theta_space_family,
+    bench_verity_gray_family,
+    bench_weak_infty_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4330,6 +4338,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "globular_model": bench_globular_model_family,
+        "opetopic": bench_opetopic_family,
+        "theta_space": bench_theta_space_family,
+        "complicial": bench_complicial_family,
+        "verity_gray": bench_verity_gray_family,
+        "weak_infty": bench_weak_infty_family,
         "hochschild_coh": bench_hochschild_coh_family,
         "cyclic_coh": bench_cyclic_coh_family,
         "nc_scheme": bench_nc_scheme_family,
