@@ -3599,6 +3599,14 @@ from quant_fund.research.benches_w450 import (
     bench_stable_tstruct_family,
     bench_thh_tc_family,
 )
+from quant_fund.research.benches_w451 import (
+    bench_g_spectrum_family,
+    bench_mackey_functor_family,
+    bench_norm_map_family,
+    bench_ro_grading_family,
+    bench_tom_dieck_family,
+    bench_wirthmuller_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3978,6 +3986,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "g_spectrum": bench_g_spectrum_family,
+        "mackey_functor": bench_mackey_functor_family,
+        "norm_map": bench_norm_map_family,
+        "ro_grading": bench_ro_grading_family,
+        "wirthmuller": bench_wirthmuller_family,
+        "tom_dieck": bench_tom_dieck_family,
         "stable_infty": bench_stable_infty_family,
         "spectra_cat": bench_spectra_cat_family,
         "exact_seq": bench_exact_seq_family,
