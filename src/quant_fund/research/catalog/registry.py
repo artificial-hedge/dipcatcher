@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-721 mixed-motives canon.
+        "brown_motives",
+        "mzc_motive",
+        "zeta_element",
+        "mixed_elliptic",
+        "motivic_pi",
+        "beilinson_height",
         # Wave-720 derived-dimension canon.
         "cluster_tilting",
         "derived_morita",
