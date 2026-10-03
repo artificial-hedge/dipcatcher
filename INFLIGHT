@@ -1,3 +1,4 @@
+feat(research): wave 679 — motivic-17 canon (motivic_thh, motivic_realization, etale_motive, relative_motive, absolute_motive, motivic_heart) (4029->4035 families)
 feat(research): wave 678 — category-16 canon (simplicial_cat, homotopical_cat, relative_cat, equipment_cat, fibrant_cat, pointed_cat) (4023->4029 families)
 feat(research): wave 677 — category-15 canon (derivator_cat, quillen_cat, combinatorial_mc, cat_dg, univalent_cat, cat_structure) (4017->4023 families)
 feat(research): wave 676 — higher-algebra-7 canon (en_algebra2, thom_transpose, higher_brace2, koszul_operad2, operad_lie, center_hochschild) (4011->4017 families)
