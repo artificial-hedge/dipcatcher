@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-479 p-adic-3 canon.
+        "fargues_diam",
+        "tilting_equiv",
+        "scholze_diamond",
+        "ahb_ring",
+        "prism_2",
+        "drinfeld_sym",
         # Wave-478 motivic-4 canon.
         "levine_morel",
         "quadratic_k",
