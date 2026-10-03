@@ -1,3 +1,4 @@
+feat(research): wave 839 — approximation-theory canon (jackson_direct, chebyshev_alternation, kolmogorov_nwidth, bernstein_poly, markov_brothers, fourier_decay) (4983->4989 families)
 feat(research): wave 838 — discrete-geometry canon (radon_theorem, caratheodory_thm, farkas_lemma, separation_thm, lattice_point, tverberg_thm) (4977->4983 families)
 feat(research): wave 837 — convex-geometry canon (brunn_minkowski, alexandrov_fenchel, isoperimetric_ineq, minkowski_sum, mixed_volume, helly_theorem) (4971->4977 families)
 feat(research): wave 836 — integral-geometry canon (crofton_formula, kinematic_measure, buffon_needle, santalo_measure, kubota_mean_width, hadwiger_chars) (4965->4971 families)
