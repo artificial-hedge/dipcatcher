@@ -1,7 +1,7 @@
 {
   "kind": "cli_audit",
   "schema": "cli_audit.v1",
-  "git_revision": "fa5e5a44e86c9bf38204acf16a1ccc916cdff8fa",
+  "git_revision": "37bc85d2bb25cd7c857f5d563a1ede08b98e4fd7",
   "data_label": "SYNTHETIC",
   "research_only": true,
   "live_pnl_claim": false,
@@ -67,6 +67,7 @@
       "remote_compat_ok_exit0": true,
       "remote_jobs_json": true,
       "remote_cancel_json": true,
+      "remote_evaldiff_json": true,
       "remote_ready_under_drain_exit1": true,
       "ready_local_refused": true,
       "version_local_json": true,
@@ -80,6 +81,7 @@
       "jobs_local_refused": true,
       "cancel_local_refused": true,
       "job_receipt_local_refused": true,
+      "evaldiff_local_refused": true,
       "cli_run_idem_key_passed": true,
       "cli_submit_prints_job_id": true,
       "cli_submit_callback_url": true,
@@ -97,5 +99,5 @@
     "ok": true
   },
   "interpretation": "fx1 CLI holds: bare callback + help exit clean, fetch params must be a JSON object (exit 2), unknown sources/commands fail non-zero, judge resolution fails closed, dipbench smoke is SYNTHETIC-labeled, doctor emits presence-only JSON, and the completion log reads cleanly (empty window + missing-id exit 2 on both the record and its --receipt export); harness job --receipt prints the sealed fx1_job_record.v1 doc remote-side and refuses without --remote (exit 2). Flagged wart: the command is registered as 'maskedaEval'.",
-  "receipt_sha256": "15417ea200e9c33be38d3fcf8c98ea3dd93b028a1f70dd6d402b621cd95267e6"
+  "receipt_sha256": "45ccec4f38df0a6d546ac7225a450de54875aa37d32de56a94eb2b82c306ef1e"
 }

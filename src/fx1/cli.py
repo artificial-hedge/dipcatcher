@@ -1302,6 +1302,25 @@ def harness_eval_cancel(
     typer.echo(json.dumps(st, indent=2))
 
 
+@harness_app.command("eval-diff")
+def harness_eval_diff(
+    base_id: str = typer.Argument(..., help="Baseline eval id (terminal record)."),
+    candidate_id: str = typer.Argument(..., help="Candidate eval id (terminal record)."),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """Promotion-gate diff over two terminal evals: per-task transitions,
+    gate move, by_kind deltas, and a verdict. ``comparable`` needs the
+    same suite+seed and no stamped bank mismatch; non-terminal records
+    report a 409 conflict."""
+    _need_remote(remote)
+    st = _or_exit(
+        lambda: _remote_client(remote or "", api_key, timeout_s).diff_evals(base_id, candidate_id)
+    )
+    typer.echo(json.dumps(st, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

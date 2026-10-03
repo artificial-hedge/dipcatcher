@@ -147,6 +147,11 @@ def cli_audit() -> dict[str, Any]:
         "check-text",
         "completions",
         "completion",
+        "eval",
+        "evals",
+        "eval-status",
+        "eval-cancel",
+        "eval-diff",
     } <= hnames
 
     # probe verdicts are the exit code: 0 ok, 1 unhealthy, !=0 arg fault —
@@ -551,6 +556,7 @@ def cli_audit() -> dict[str, Any]:
             self.last_callback: str | None = None
             self.last_cb_secret: str | None = None
             self.last_compat_strict: bool | None = None
+            self.last_diff: tuple[str, str] | None = None
 
         def complete(self, messages: Any, **kw: Any) -> CompletionResult:
             return CompletionResult(backend="byok", model="remote-v0", content="remote-text")
@@ -645,6 +651,16 @@ def cli_audit() -> dict[str, Any]:
         def cancel_job(self, job_id: str) -> dict[str, Any]:
             self.last_job = job_id
             return {"job_id": job_id, "status": "cancelled", "result": None}
+
+        def diff_evals(self, base_id: str, candidate_id: str) -> dict[str, Any]:
+            self.last_diff = (base_id, candidate_id)
+            return {
+                "object": "eval_diff",
+                "base_eval_id": base_id,
+                "candidate_eval_id": candidate_id,
+                "comparable": True,
+                "verdict": "unchanged",
+            }
 
         def wait_run(self, job_id: str, **kw: Any) -> Any:
             from fx1.harness import HarnessResult
@@ -771,6 +787,14 @@ def cli_audit() -> dict[str, Any]:
             and json.loads(rcx.stdout)["status"] == "cancelled"
             and remotes[-1].last_job == "job-xyz"
         )
+        red = runner.invoke(
+            app, ["harness", "eval-diff", "ev-a", "ev-b", "--remote", "http://h.test"]
+        )
+        out["remote_evaldiff_json"] = (
+            red.exit_code == 0
+            and json.loads(red.stdout).get("object") == "eval_diff"
+            and remotes[-1].last_diff == ("ev-a", "ev-b")
+        )
 
     # ready under drain: client raises the mapped 503, CLI exits 1
     from fx1.serve.backends import BackendNotConfiguredError  # noqa: PLC0415
@@ -843,6 +867,8 @@ def cli_audit() -> dict[str, Any]:
     out["cancel_local_refused"] = rc_local.exit_code == 2 and "--remote" in rc_local.output
     rjr_local = runner.invoke(app, ["harness", "job", "j-9", "--receipt"])
     out["job_receipt_local_refused"] = rjr_local.exit_code == 2 and "--remote" in rjr_local.output
+    red_local = runner.invoke(app, ["harness", "eval-diff", "ev-a", "ev-b"])
+    out["evaldiff_local_refused"] = red_local.exit_code == 2 and "--remote" in red_local.output
 
     # --idempotency-key reaches the remote client verbatim
     with patch("fx1.serve.client.HarnessClient", side_effect=_mk_remote):
