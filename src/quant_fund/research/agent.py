@@ -2712,6 +2712,14 @@ from quant_fund.research.benches_w339 import (
     bench_root_system_family,
     bench_splitting_field_family,
 )
+from quant_fund.research.benches_w340 import (
+    bench_chain_complex_family,
+    bench_hilbert_series_family,
+    bench_sheaf_check_family,
+    bench_snake_lemma_family,
+    bench_tor_ext_family,
+    bench_variety_morph_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3091,6 +3099,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "chain_complex": bench_chain_complex_family,
+        "tor_ext": bench_tor_ext_family,
+        "sheaf_check": bench_sheaf_check_family,
+        "hilbert_series": bench_hilbert_series_family,
+        "snake_lemma": bench_snake_lemma_family,
+        "variety_morph": bench_variety_morph_family,
         "field_ext": bench_field_ext_family,
         "galois_group": bench_galois_group_family,
         "splitting_field": bench_splitting_field_family,

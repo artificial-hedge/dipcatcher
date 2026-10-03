@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-340 homological-algebra/algebraic-geometry canon.
+        "chain_complex",
+        "tor_ext",
+        "sheaf_check",
+        "hilbert_series",
+        "snake_lemma",
+        "variety_morph",
         # Wave-339 algebra canon.
         "field_ext",
         "galois_group",
