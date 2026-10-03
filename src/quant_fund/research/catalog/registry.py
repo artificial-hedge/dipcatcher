@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-410 set-theory-3 canon.
+        "forcing2",
+        "inner_model",
+        "descriptive3",
+        "recursion3",
+        "proof_mining",
+        "ordinal_notation",
         # Wave-409 homotopy-5 canon.
         "spectral_seq2",
         "eilenberg_zilber",

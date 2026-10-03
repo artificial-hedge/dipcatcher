@@ -1,3 +1,4 @@
+feat(research): wave 410 — set-theory-3 canon (forcing2, inner_model, descriptive3, recursion3, proof_mining, ordinal_notation) (2415->2421 families)
 feat(research): wave 409 — homotopy-5 canon (spectral_seq2, eilenberg_zilber, dold_kan, postnikov, stable_range, cohend) (2409->2415 families)
 feat(research): wave 408 — representation-theory-4 canon (schur_functor, brauer_alg, hecke_alg, casimir_op, weight_space, bz_category) (2403->2409 families)
 feat(research): wave 407 — algebraic-geometry-8 canon (cech_cohom, serre_duality, adjunction2, scheme_fiber, hilbert_scheme, flattening) (2397->2403 families)
