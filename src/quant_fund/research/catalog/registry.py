@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-284 bioinformatics-3 canon.
+        "nj_tree",
+        "fitch_pars",
+        "seed_extend",
+        "band_align",
+        "jc69_lik",
+        "codon_usage",
         # Wave-283 robotics-3 canon.
         "fk_dh",
         "ik_jac",
