@@ -5159,6 +5159,14 @@ from quant_fund.research.benches_w645 import (
     bench_vishik_k_family,
     bench_witt_k_family,
 )
+from quant_fund.research.benches_w646 import (
+    bench_bdr_plus_family,
+    bench_diamond_sheaf_family,
+    bench_fargues_cat_family,
+    bench_spatial_diamond_family,
+    bench_untilt2_family,
+    bench_v_stack_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5538,6 +5546,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fargues_cat": bench_fargues_cat_family,
+        "v_stack": bench_v_stack_family,
+        "untilt2": bench_untilt2_family,
+        "spatial_diamond": bench_spatial_diamond_family,
+        "diamond_sheaf": bench_diamond_sheaf_family,
+        "bdr_plus": bench_bdr_plus_family,
         "witt_k": bench_witt_k_family,
         "schlichting_k": bench_schlichting_k_family,
         "balmer_k": bench_balmer_k_family,
