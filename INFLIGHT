@@ -1,3 +1,4 @@
+feat(research): wave 605 — motivic-8 canon (motivic_steenrod, motivic_adem, power_operations, simplicial_motive, dk_motive, motivic_transfer) (3585->3591 families)
 feat(research): wave 604 — homotopy-12 canon (unstable_cohomology, may_ss, bokstedt_periodicity, topo_k_theory, elliptic_k, equivariant_cohomology2) (3579->3585 families)
 feat(research): wave 603 — topos-4 canon (slice_topos, logical_morph, classifying_topos, atomic_topos, essential_morph, giraud_axiom) (3573->3579 families)
 feat(research): wave 602 — cyclic-homology canon (cyclotomic_spec, tr_structure, tc_spec, negative_cyclic, periodic_cyclic, tate_construction) (3567->3573 families)
