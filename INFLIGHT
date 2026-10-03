@@ -1,3 +1,4 @@
+feat(research): wave 428 — deformation-theory canon (deformation_functor, schlessinger, tangent_space_def, obstruction_theory, versal_deformation, maurer_cartan) (2523->2529 families)
 feat(research): wave 427 — number-theory-4 canon (elliptic_height, mordell_weil, lseries_toy, bsd_toy, modularity_toy, padic_integral) (2517->2523 families)
 feat(research): wave 426 — homotopy-7 canon (model_category, quillen_adj, simplicial_set, infinity_cat, derived_alg, stable_cat) (2511->2517 families)
 feat(research): wave 425 — stacks/moduli canon (moduli_stack, stacky_curve, coarse_space, quotient_stack, gerbe_toy, stack_morph) (2505->2511 families)

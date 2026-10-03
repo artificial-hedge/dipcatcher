@@ -3415,6 +3415,14 @@ from quant_fund.research.benches_w427 import (
     bench_mordell_weil_family,
     bench_padic_integral_family,
 )
+from quant_fund.research.benches_w428 import (
+    bench_deformation_functor_family,
+    bench_maurer_cartan_family,
+    bench_obstruction_theory_family,
+    bench_schlessinger_family,
+    bench_tangent_space_def_family,
+    bench_versal_deformation_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3794,6 +3802,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "deformation_functor": bench_deformation_functor_family,
+        "schlessinger": bench_schlessinger_family,
+        "tangent_space_def": bench_tangent_space_def_family,
+        "obstruction_theory": bench_obstruction_theory_family,
+        "versal_deformation": bench_versal_deformation_family,
+        "maurer_cartan": bench_maurer_cartan_family,
         "elliptic_height": bench_elliptic_height_family,
         "mordell_weil": bench_mordell_weil_family,
         "lseries_toy": bench_lseries_toy_family,
