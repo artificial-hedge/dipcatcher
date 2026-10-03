@@ -1,3 +1,4 @@
+feat(research): wave 401 — proof-theory-3 canon (herbrand_thm, interp_equality, cut_elim_seq, finitary_induct, hilbert_system, reverse_math) (2361->2367 families)
 feat(research): wave 400 — algebraic-geometry-7 canon (etale_cover, jacobian_toy, hom_stack_toy, seesaw_theorem, picard_variety, dual_ab_var) (2355->2361 families)
 feat(research): wave 399 — model-theory-5 canon (ef_game_toy, vaught_test, real_closed, boolean_prime, fraisse_limit, qe_dense_order) (2349->2355 families)
 feat(research): wave 398 — representation-theory-3 canon (induced_char, artins_theorem, tensor_char, clifford_toy, schur_index, frobenius_group) (2343->2349 families)
