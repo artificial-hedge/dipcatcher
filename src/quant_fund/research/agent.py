@@ -7671,6 +7671,14 @@ from quant_fund.research.benches_w959 import (
     bench_sectorial_op_family,
     bench_toeplitz_op_family,
 )
+from quant_fund.research.benches_w960 import (
+    bench_banach_algebra_family,
+    bench_c_star_algebra_family,
+    bench_gelfand_transform_family,
+    bench_holomorphic_calculus_family,
+    bench_positive_functional_family,
+    bench_spectrum_algebra_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8042,6 +8050,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "banach_algebra": bench_banach_algebra_family,
+        "gelfand_transform": bench_gelfand_transform_family,
+        "c_star_algebra": bench_c_star_algebra_family,
+        "spectrum_algebra": bench_spectrum_algebra_family,
+        "holomorphic_calculus": bench_holomorphic_calculus_family,
+        "positive_functional": bench_positive_functional_family,
         "toeplitz_op": bench_toeplitz_op_family,
         "integral_op": bench_integral_op_family,
         "differential_op": bench_differential_op_family,
