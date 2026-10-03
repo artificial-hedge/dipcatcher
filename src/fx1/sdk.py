@@ -94,6 +94,7 @@ from fx1.serve.openai_compat import (
     OpenAIModelDelete,
     OpenAIModelList,
     OpenAIResponseRequest,
+    OpenAIVectorStoreSearch,
     batch_line_body,
     batch_line_shape,
     batch_output_line,
@@ -3168,6 +3169,60 @@ class Fx1Harness:
         """``GET /v1/vector_stores/{id}/files/{file_id}/content``
         in-process — the stored decoded text as text parts."""
         return self._vs_store.file_content(vector_store_id, file_id)
+
+    def vector_store_search(
+        self,
+        vector_store_id: str,
+        query: str | list[str],
+        *,
+        max_num_results: int | None = None,
+        filters: dict[str, Any] | None = None,
+        ranking_options: dict[str, Any] | None = None,
+        rewrite_query: bool | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/search`` in-process — the
+        ranked hits without a model call, as a
+        ``vector_store.search_results.page`` dict. Same fail-closed
+        contract as the wire: ``rewrite_query`` refused, ``ranker``
+        accepts only ``"auto"``, ``score_threshold`` bounds the cosine
+        floor."""
+        body = OpenAIVectorStoreSearch.model_validate(
+            {
+                "query": query,
+                "max_num_results": max_num_results,
+                "filters": filters,
+                "ranking_options": ranking_options,
+                "rewrite_query": rewrite_query,
+            }
+        )
+        q = body.query if isinstance(body.query, str) else " ".join(str(x) for x in body.query)
+        ro = body.ranking_options or {}
+        try:
+            hits = self._vs_store.search(
+                [vector_store_id],
+                q,
+                max_results=body.max_num_results or 10,
+                filters=body.filters,
+                score_threshold=ro.get("score_threshold"),
+            )
+        except VectorStoreError as exc:
+            raise OpenAICompatError(str(exc), status=exc.status, code=exc.code) from exc
+        return {
+            "object": "vector_store.search_results.page",
+            "search_query": q,
+            "data": [
+                {
+                    "file_id": h["file_id"],
+                    "filename": h["filename"],
+                    "score": h["score"],
+                    "attributes": h["attributes"],
+                    "content": [{"type": "text", "text": h["text"]}],
+                }
+                for h in hits
+            ],
+            "has_more": False,
+            "next_page": None,
+        }
 
     def openai_batch(
         self,

@@ -2523,6 +2523,33 @@ class HarnessClient:
             )
         )
 
+    def vector_store_search(
+        self,
+        vector_store_id: str,
+        query: str | list[str],
+        *,
+        max_num_results: int | None = None,
+        filters: dict[str, Any] | None = None,
+        ranking_options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """``POST /v1/vector_stores/{id}/search`` — ranked hits without
+        spending a response turn; a ``vector_store.search_results.page``
+        dict."""
+        payload: dict[str, Any] = {"query": query}
+        if max_num_results is not None:
+            payload["max_num_results"] = max_num_results
+        if filters is not None:
+            payload["filters"] = filters
+        if ranking_options is not None:
+            payload["ranking_options"] = ranking_options
+        return dict(
+            self._json(
+                "POST",
+                f"/v1/vector_stores/{urllib.parse.quote(vector_store_id)}/search",
+                payload,
+            )
+        )
+
     # ---- receipt store -------------------------------------------------------
 
     def receipts(self) -> tuple[ReceiptRef, ...]:

@@ -8791,14 +8791,14 @@ def _probe_backend_probes(  # NOSONAR
     # capabilities advertises the index bound + flag
     caps = fb.get("/harness/capabilities").json()
     out["capabilities_retrieval"] = (
-        caps["features"]["openai_retrieval"] is True and caps["limits"]["store_max"] == 256.0
+        caps["features"]["openai_retrieval"] is True and int(caps["limits"]["store_max"]) == 256
     )
     out["capabilities_vector_stores"] = (
         caps["features"]["openai_vector_stores"] is True
         and caps["features"]["openai_file_search"] is True
-        and caps["limits"]["vs_store_max"] == 256.0
-        and caps["limits"]["vs_file_max"] == 32.0
-        and caps["limits"]["vs_max_results"] == 50.0
+        and int(caps["limits"]["vs_store_max"]) == 256
+        and int(caps["limits"]["vs_file_max"]) == 32
+        and int(caps["limits"]["vs_max_results"]) == 50
     )
 
     # --- /v1/vector_stores + server-side file_search -----------------------
@@ -9025,6 +9025,74 @@ def _probe_backend_probes(  # NOSONAR
         fs_bterm["status"] == "completed"
         and fs_line["response"]["status_code"] == 200
         and any(o["type"] == "file_search_call" for o in fs_line["response"]["body"]["output"])
+    )
+    # --- POST /v1/vector_stores/{id}/search — ranked hits, no turn ----
+    vs_search = fb.post(f"/v1/vector_stores/{vs_id}/search", json={"query": "alpha"})
+    vs_search_page = vs_search.json()
+    out["vs_search"] = (
+        vs_search.status_code == 200
+        and vs_search_page["object"] == "vector_store.search_results.page"
+        and vs_search_page["search_query"] == "alpha"
+        and vs_search_page["data"][0]["file_id"] == vs_up["id"]
+        and vs_search_page["data"][0]["filename"] == "vs.jsonl"
+        and vs_search_page["data"][0]["content"][0]["type"] == "text"
+        and "alpha" in vs_search_page["data"][0]["content"][0]["text"]
+        and vs_search_page["has_more"] is False
+        and vs_search_page["next_page"] is None
+    )
+    vs_search_list = fb.post(
+        f"/v1/vector_stores/{vs_id}/search",
+        json={"query": ["alpha", "gamma"], "max_num_results": 5},
+    ).json()
+    out["vs_search_query_list"] = vs_search_list["search_query"] == "alpha gamma"
+    out["vs_search_threshold"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "alpha", "ranking_options": {"score_threshold": 0.999}},
+        ).json()["data"]
+        == []
+    )
+    out["vs_search_filters"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={
+                "query": "alpha",
+                "filters": {"type": "eq", "key": "team", "value": "nope"},
+            },
+        ).json()["data"]
+        == []
+        and fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "alpha", "filters": {"bad": "shape"}},
+        ).status_code
+        == 400
+    )
+    out["vs_search_404"] = (
+        fb.post("/v1/vector_stores/vs_nope/search", json={"query": "x"}).status_code == 404
+    )
+    out["vs_search_empty_400"] = (
+        fb.post(f"/v1/vector_stores/{vs_id}/search", json={"query": "  "}).status_code == 400
+    )
+    out["vs_search_rewrite_422"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "x", "rewrite_query": True},
+        ).status_code
+        == 422
+    )
+    out["vs_search_ranker_422"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "x", "ranking_options": {"ranker": "bm25"}},
+        ).status_code
+        == 422
+    )
+    out["vs_search_max_results_422"] = (
+        fb.post(
+            f"/v1/vector_stores/{vs_id}/search",
+            json={"query": "x", "max_num_results": 51},
+        ).status_code
+        == 422
     )
     # delete tombstone + detach shape + 404 after
     out["vs_file_detach"] = fb.delete(f"/v1/vector_stores/{vs_id}/files/{vs_up['id']}").json() == {

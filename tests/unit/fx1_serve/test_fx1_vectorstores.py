@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from fx1.sdk import Fx1Harness
 from fx1.serve.api import create_app
+from fx1.serve.openai_compat import OpenAICompatError
 from fx1.serve.vectorstores import (
     VS_MAX_ATTRS,
     VS_MAX_FILES,
@@ -445,3 +446,107 @@ class TestSdkVectorStores:
         h2 = Fx1Harness(state_dir=tmp_path, backend_resolver=lambda *a, **k: _B())
         assert h2.vector_store_get(vs["id"])["name"] == "kb"
         assert h2.vector_store_file_list(vs["id"])["data"][0]["id"] == up["id"]
+
+    def test_vs_search_route(self) -> None:
+        client = _client()
+        fid = _upload(client, b"epsilon transitions drive drift\n")
+        vs = client.post("/v1/vector_stores", json={"name": "kb"}).json()
+        client.post(f"/v1/vector_stores/{vs['id']}/files", json={"file_id": fid})
+        out = client.post(f"/v1/vector_stores/{vs['id']}/search", json={"query": "epsilon"})
+        assert out.status_code == 200, out.text
+        page = out.json()
+        assert page["object"] == "vector_store.search_results.page"
+        assert page["search_query"] == "epsilon"
+        assert page["data"][0]["file_id"] == fid
+        assert page["data"][0]["content"][0]["type"] == "text"
+        assert "epsilon" in page["data"][0]["content"][0]["text"]
+        assert page["has_more"] is False and page["next_page"] is None
+
+    def test_vs_search_query_list_and_score_threshold(self) -> None:
+        client = _client()
+        fid = _upload(client, b"epsilon transitions drive drift\n")
+        vs = client.post("/v1/vector_stores", json={"name": "kb"}).json()
+        client.post(f"/v1/vector_stores/{vs['id']}/files", json={"file_id": fid})
+        out = client.post(
+            f"/v1/vector_stores/{vs['id']}/search",
+            json={"query": ["epsilon", "drift"], "max_num_results": 5},
+        )
+        assert out.status_code == 200
+        assert out.json()["search_query"] == "epsilon drift"
+        # threshold above any lexical hit fails closed to empty, not an error
+        out2 = client.post(
+            f"/v1/vector_stores/{vs['id']}/search",
+            json={
+                "query": "epsilon",
+                "ranking_options": {"score_threshold": 0.999},
+            },
+        )
+        assert out2.status_code == 200
+        assert out2.json()["data"] == []
+
+    def test_vs_search_fail_closed(self) -> None:
+        client = _client()
+        vs = client.post("/v1/vector_stores", json={"name": "kb"}).json()
+        # ghost store → 404 vector_store_not_found
+        ghost = client.post("/v1/vector_stores/vs_ghost/search", json={"query": "x"})
+        assert ghost.status_code == 404
+        assert ghost.json()["error"]["code"] == "vector_store_not_found"
+        # empty query → 400
+        assert (
+            client.post(f"/v1/vector_stores/{vs['id']}/search", json={"query": "  "}).status_code
+            == 400
+        )
+        # rewrite_query refused
+        assert (
+            client.post(
+                f"/v1/vector_stores/{vs['id']}/search",
+                json={"query": "x", "rewrite_query": True},
+            ).status_code
+            == 422
+        )
+        # non-auto ranker refused; out-of-range threshold refused
+        assert (
+            client.post(
+                f"/v1/vector_stores/{vs['id']}/search",
+                json={"query": "x", "ranking_options": {"ranker": "bm25"}},
+            ).status_code
+            == 422
+        )
+        assert client.post(
+            f"/v1/vector_stores/{vs['id']}/search",
+            json={"query": "x", "ranking_options": {"score_threshold": 1.5}},
+        ).status_code in (400, 422)
+        # max_num_results over the bound → 422
+        assert (
+            client.post(
+                f"/v1/vector_stores/{vs['id']}/search",
+                json={"query": "x", "max_num_results": 51},
+            ).status_code
+            == 422
+        )
+
+    def test_sdk_vector_store_search_parity(self) -> None:
+        h = Fx1Harness(backend_resolver=lambda *a, **k: _B())
+        up = h.openai_file_create(content=b"epsilon transitions drive drift", filename="d.jsonl")
+        vs = h.vector_store_create(name="kb")
+        h.vector_store_file_create(vs["id"], up["id"], attributes={"team": "q"})
+        page = h.vector_store_search(vs["id"], "epsilon")
+        assert page["object"] == "vector_store.search_results.page"
+        assert page["data"][0]["file_id"] == up["id"]
+        assert page["data"][0]["attributes"] == {"team": "q"}
+        filtered = h.vector_store_search(
+            vs["id"], "epsilon", filters={"type": "eq", "key": "team", "value": "q"}
+        )
+        assert filtered["data"][0]["file_id"] == up["id"]
+        filtered_out = h.vector_store_search(
+            vs["id"], "epsilon", filters={"type": "eq", "key": "team", "value": "other"}
+        )
+        assert filtered_out["data"] == []
+        with pytest.raises(OpenAICompatError) as bad_filters:
+            h.vector_store_search(vs["id"], "epsilon", filters={"wrong": "shape"})
+        assert bad_filters.value.code == "invalid_filters"
+        with pytest.raises(ValueError, match="rewrite_query"):
+            h.vector_store_search(vs["id"], "x", rewrite_query=True)
+        with pytest.raises(OpenAICompatError) as ghost:
+            h.vector_store_search("vs_ghost", "x")
+        assert ghost.value.status == 404

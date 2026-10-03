@@ -1879,6 +1879,45 @@ class OpenAIVectorStoreFileCreate(_Model):
     chunking_strategy: dict[str, Any] | None = None
 
 
+class OpenAIVectorStoreSearch(_Model):
+    """``POST /v1/vector_stores/{id}/search`` body — query the store
+    directly without spending a response turn. ``query`` accepts a
+    string or a list of strings (joined with spaces). ``rewrite_query``
+    is refused: the store never rewrites the caller's query —
+    ``filters`` apply to file attributes (OpenAI's comparison grammar)
+    and ``ranking_options.score_threshold`` bounds the cosine floor
+    (``ranker`` accepts only ``"auto"`` — no other ranker exists)."""
+
+    model_config = ConfigDict(extra="allow")
+
+    query: str | list[str]
+    max_num_results: int | None = Field(default=None, ge=1, le=50)
+    filters: dict[str, Any] | None = None
+    ranking_options: dict[str, Any] | None = None
+    rewrite_query: bool | None = None
+
+    @model_validator(mode="after")
+    def _valid(self) -> OpenAIVectorStoreSearch:
+        if isinstance(self.query, list) and (
+            not self.query or any(not isinstance(q, str) for q in self.query)
+        ):
+            raise ValueError("query must be a string or a list of strings")
+        if self.rewrite_query:
+            raise ValueError("rewrite_query is not supported")
+        ro = self.ranking_options or {}
+        if not isinstance(ro, dict):
+            raise ValueError("ranking_options must be an object")
+        unknown = set(ro) - {"ranker", "score_threshold"}
+        if unknown:
+            raise ValueError(f"ranking_options keys unknown: {sorted(unknown)}")
+        if ro.get("ranker", "auto") != "auto":
+            raise ValueError("ranking_options.ranker accepts only 'auto'")
+        st = ro.get("score_threshold")
+        if st is not None and not isinstance(st, (int, float)):
+            raise ValueError("ranking_options.score_threshold must be a number")
+        return self
+
+
 def openai_response_events(
     *,
     text: str,

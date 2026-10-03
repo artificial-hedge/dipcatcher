@@ -1745,7 +1745,23 @@
           "422"
         ]
       }
+    },
+    "/v1/vector_stores/{vector_store_id}/search": {
+      "post": {
+        "params": [
+          {
+            "name": "vector_store_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "request_body_required": true,
+        "responses": [
+          "200",
+          "422"
+        ]
+      }
     }
   },
-  "schema_sha256": "dc873a400a1d0b68dd2a6f7edb9ab0433b15dd2208aa774c7a76cea158a112f6"
+  "schema_sha256": "2ecf16ec5fc33e4ec52ac59f74e308c2dfe7994d67add339ce6cb3e69d75189c"
 }

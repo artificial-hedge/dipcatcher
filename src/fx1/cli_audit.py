@@ -664,6 +664,16 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
                 "next_page": None,
             }
 
+        def vector_store_search(self, vs_id: str, query: Any, **kw: Any) -> dict[str, Any]:
+            self._vs_note("search", (vs_id, query), kw)
+            return {
+                "object": "vector_store.search_results.page",
+                "search_query": query if isinstance(query, str) else " ".join(query),
+                "data": [],
+                "has_more": False,
+                "next_page": None,
+            }
+
         def verify_receipt(self, receipt: dict[str, Any]) -> Any:
             from fx1.sdk import ReceiptVerdict
 
@@ -1921,6 +1931,16 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             return {
                 "object": "vector_store.file_content.page",
                 "data": [{"type": "text", "text": "chunk"}],
+                "has_more": False,
+                "next_page": None,
+            }
+
+        def vector_store_search(self, vs_id: str, query: Any, **kw: Any) -> dict[str, Any]:
+            self._vs_note("search", (vs_id, query), kw)
+            return {
+                "object": "vector_store.search_results.page",
+                "search_query": query if isinstance(query, str) else " ".join(query),
+                "data": [],
                 "has_more": False,
                 "next_page": None,
             }
@@ -3416,6 +3436,38 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             )["object"]
             == "vector_store.deleted"
         )
+        _vssrch = runner.invoke(
+            app,
+            [
+                "harness",
+                "vs-search",
+                "vs_rem",
+                "--query",
+                "alpha",
+                "--max-results",
+                "5",
+                "--filters",
+                '{"type": "eq", "key": "t", "value": "v"}',
+                "--score-threshold",
+                "0.2",
+                "--remote",
+                "http://h.test",
+            ],
+        )
+        out["remote_vs_search"] = (
+            _vssrch.exit_code == 0
+            and json.loads(_vssrch.stdout)["object"] == "vector_store.search_results.page"
+            and remotes[-1].vs_calls[-1]
+            == (
+                "search",
+                ("vs_rem", "alpha"),
+                {
+                    "max_num_results": 5,
+                    "filters": {"type": "eq", "key": "t", "value": "v"},
+                    "ranking_options": {"score_threshold": 0.2},
+                },
+            )
+        )
         out["remote_vs_all_hit_client"] = len(remotes) > _n_remote0
 
         _rs = json.loads(
@@ -3472,6 +3524,19 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             "object": "vector_store.deleted",
             "deleted": True,
         }
+        _vss_i = runner.invoke(
+            app,
+            ["harness", "vs-search", "vs_x", "--query", "alpha", "--score-threshold", "0.5"],
+        )
+        out["inproc_vs_search"] = _vss_i.exit_code == 0 and fake_vs.vs_calls[-1] == (
+            "search",
+            ("vs_x", "alpha"),
+            {
+                "max_num_results": None,
+                "filters": None,
+                "ranking_options": {"score_threshold": 0.5},
+            },
+        )
         out["vs_bad_args_exit2"] = (
             runner.invoke(app, ["harness", "vs-create", "--file-ids", "notjson"]).exit_code == 2
             and runner.invoke(
@@ -3479,6 +3544,11 @@ def cli_audit() -> dict[str, Any]:  # NOSONAR
             ).exit_code
             == 2
             and runner.invoke(app, ["harness", "vs-update", "vs_x", "--metadata", "[1]"]).exit_code
+            == 2
+            and runner.invoke(
+                app,
+                ["harness", "vs-search", "vs_x", "--query", "x", "--filters", "nope"],
+            ).exit_code
             == 2
         )
 

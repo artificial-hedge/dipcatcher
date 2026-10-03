@@ -265,6 +265,7 @@ same digested shape the job record embeds.
 | `GET /v1/vector_stores/{id}/files` | member page (`?limit`, `?after`, `?before`, `?order`, `?filter` in `in_progress|completed|cancelled|failed`) — bad filters fail closed `400 invalid_filters` |
 | `GET` / `DELETE` `/v1/vector_stores/{id}/files/{file_id}` | fetch / detach one member (`vector_store.file.deleted`) |
 | `GET /v1/vector_stores/{id}/files/{file_id}/content` | the stored decoded text as a `vector_store.file_content.page` of per-chunk `{type:"text",text}` parts — `fx1 harness vs-file-content` |
+| `POST /v1/vector_stores/{id}/search` | ranked hits without a response turn → `vector_store.search_results.page` (`query` string or list-joined, `max_num_results≤50`, `filters`, `ranking_options.score_threshold`; `rewrite_query`/non-`auto` rankers refused) — `Fx1Harness.vector_store_search` / `HarnessClient.vector_store_search` / `client.vectorStoreSearch` / `fx1 harness vs-search` |
 | `POST /v1/evals` | create an `eval` spec container (`name`, `data_source_config.item_schema` = suite knobs — credentials never on the spec) → `201`; `Fx1Harness.eval_spec_create` / `HarnessClient.eval_spec_create` / `client.evalSpecCreate` / `fx1 harness eval-spec-create` |
 | `GET /v1/evals` | newest-first spec page (`?limit≤100`, `?after=`); `Fx1Harness.eval_specs` / `HarnessClient.eval_specs` / `client.evalSpecs` / `fx1 harness eval-spec-list` |
 | `GET` / `POST` / `DELETE` `/v1/evals/{id}` | fetch / rename+remetadata / tombstone a spec — delete journals and orphans the `/v1` run subresources (records stay on `/harness/evals/{id}`) |
@@ -853,6 +854,19 @@ in-band:
   call; any other `tool_choice`/`parallel_tool_calls` without a
   `function` tool on the request is dropped rather than
   mistranslated.
+
+`POST /v1/vector_stores/{id}/search` queries one store directly —
+the same ranked hits the tool turn would inject, returned as a
+`vector_store.search_results.page` (`{file_id, filename, score,
+attributes, content:[{type:text}]}` entries, `has_more:false`) —
+for callers that want retrieval without spending a response turn.
+`query` accepts a string or a list (joined on spaces);
+`max_num_results` (≤50), `filters` (the OpenAI comparison/
+condition schema — `{type: "eq", key, value}` leaves and
+`and`/`or` trees ≤4 deep), and
+`ranking_options.score_threshold` all behave exactly as on the
+tool spec. `rewrite_query` and any ranker other than `"auto"`
+are fail-closed `422`s — no silent query mutation.
 
 Identical contract in-process: `Fx1Harness.openai_file_create`
 (content bytes → `file-*`) + `vector_store_*` twin methods drive

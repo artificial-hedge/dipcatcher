@@ -236,16 +236,19 @@
       "vs_fail_closed_parity": true,
       "vs_file_parity": true,
       "vs_parity": true,
+      "vs_search_fail_closed_parity": true,
+      "vs_search_list_parity": true,
+      "vs_search_parity": true,
       "writes_never_retry_by_default": true,
       "writes_retry_when_opted_in": true
     }
   },
   "data_label": "SYNTHETIC",
-  "git_revision": "5ccdbae60bcb7a331b6ad4c3fc693e60b443567a",
+  "git_revision": "1862b29fa50af07a68ecd476dafa98b124297aab",
   "interpretation": "three-surface parity holds: SDK, HTTP API, and HarnessClient return byte-identical content, envelopes, chunk lists, error classes, verifier verdicts, registry, and health over the same injected backend; the in-flight cap fails saturated work with 503+Retry-After while cheap routes respond, and releases cleanly. Both surfaces keep a per-call completion log whose records share prompt/output sha256s (the completion_id itself is a per-surface mint \u2014 not part of the parity claim). Each surface also exports its own logged call as a sealed fx1_completion_record.v1 receipt \u2014 same record hashes, each doc verifiable through either surface's verifier. A terminal wire job's fx1_job_record.v1 embeds the same digested run result that Fx1Harness.run_receipt seals in-process as fx1_run_result.v1 \u2014 identical on the shared fields. Fine-tuning parity holds: the SDK's synchronous create_finetune_job produces the same terminal job fields (status, ft:-name grammar, result_files, event feed) as the wire route under the same runner, and guards map ValueError\u2194HarnessTransportError / KeyError\u2194KeyError. The model registry holds on both surfaces: a succeeded job's ft: name lists and retrieves, completions naming it resolve to local_fx1 at the job's checkpoint, and unregistered ft: names fail closed (OpenAICompatError in-process, 404 on the wire). Flags: unknown backend names are KeyError in-process vs 422 literal rejection over the wire (request validation runs before resolution); empty batches are [] in-process vs 422 over the wire.",
   "kind": "parity_audit",
   "live_pnl_claim": false,
-  "receipt_sha256": "b5b9a9fd930d8b813d3cd230251c67bfa76b781f76a386e6f02c4e1eae3cb5a3",
+  "receipt_sha256": "c677d5ca10975f2fd712bac828581a7c3f9940df6f9d70249f6ef20692a89b4e",
   "research_only": true,
   "schema": "parity_audit.v1"
 }

@@ -1863,6 +1863,25 @@ export class HarnessApiClient {
     ) as Promise<Record<string, unknown>>;
   }
 
+  /**
+   * POST /v1/vector_stores/{id}/search — ranked hits without spending a
+   * response turn (`vector_store.search_results.page`).
+   */
+  vectorStoreSearch(
+    vectorStoreId: string,
+    body: {
+      query: string | string[];
+      max_num_results?: number;
+      filters?: Record<string, unknown>;
+      ranking_options?: { ranker?: "auto"; score_threshold?: number };
+    },
+  ): Promise<Record<string, unknown>> {
+    return this.post(
+      `/v1/vector_stores/${encodeURIComponent(vectorStoreId)}/search`,
+      body,
+    ) as Promise<Record<string, unknown>>;
+  }
+
   // ---- async jobs --------------------------------------------------------
 
   /** POST /harness/jobs — 202 + job id. */

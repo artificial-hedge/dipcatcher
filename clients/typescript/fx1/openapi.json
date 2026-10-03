@@ -6326,6 +6326,79 @@
         "title": "OpenAIVectorStoreFileCreate",
         "type": "object"
       },
+      "OpenAIVectorStoreSearch": {
+        "additionalProperties": true,
+        "description": "``POST /v1/vector_stores/{id}/search`` body \u2014 query the store\ndirectly without spending a response turn. ``query`` accepts a\nstring or a list of strings (joined with spaces). ``rewrite_query``\nis refused: the store never rewrites the caller's query \u2014\n``filters`` apply to file attributes (OpenAI's comparison grammar)\nand ``ranking_options.score_threshold`` bounds the cosine floor\n(``ranker`` accepts only ``\"auto\"`` \u2014 no other ranker exists).",
+        "properties": {
+          "filters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filters"
+          },
+          "max_num_results": {
+            "anyOf": [
+              {
+                "maximum": 50.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Num Results"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Query"
+          },
+          "ranking_options": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ranking Options"
+          },
+          "rewrite_query": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rewrite Query"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "OpenAIVectorStoreSearch",
+        "type": "object"
+      },
       "OpenAIVectorStoreUpdate": {
         "additionalProperties": true,
         "description": "``POST /v1/vector_stores/{id}`` body \u2014 ``name``/``metadata``\nreplace wholesale when present.",
@@ -18587,6 +18660,121 @@
           }
         },
         "summary": "Openai Vectorstore File Content",
+        "tags": [
+          "openai"
+        ]
+      }
+    },
+    "/v1/vector_stores/{vector_store_id}/search": {
+      "post": {
+        "description": "Direct store search \u2014 OpenAI's ``vector_stores.search``: the\nranked hits without spending a response turn. ``query`` may be a\nstring or list of strings (joined); ``filters`` evaluate against\nfile attributes; ``ranking_options.score_threshold`` bounds the\ncosine floor.",
+        "operationId": "openai_vectorstore_search",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vector_store_id",
+            "required": true,
+            "schema": {
+              "title": "Vector Store Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAIVectorStoreSearch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error",
+            "headers": {
+              "Cache-Control": {
+                "description": "Always `no-store`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Referrer-Policy": {
+                "description": "Always `no-referrer`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "description": "Always `nosniff`.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Fx1-Api-Version": {
+                "description": "Wire-contract version; clients gate on it via /harness/version.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-ID": {
+                "description": "Request id \u2014 echoed from the inbound X-Request-ID or minted.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Openai Vectorstore Search",
         "tags": [
           "openai"
         ]

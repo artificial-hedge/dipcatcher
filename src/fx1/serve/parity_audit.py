@@ -3728,6 +3728,43 @@ def parity_audit() -> dict[str, bool]:  # NOSONAR
         "vector_store_not_found",
     ) and _fs_err_wl == ("KeyError", "")
 
+    # POST /v1/vector_stores/{id}/search — the same ranked page on both
+    # legs (scores and content byte-identical), and the same mapped
+    # fault on a ghost store / bad filter
+    _vss_sdk = sdk.vector_store_search(_fs_sdk["id"], "epsilon")
+    _vss_wl = remote.vector_store_search(_fs_wl["id"], "epsilon")
+    out["vs_search_parity"] = (
+        _vss_sdk["object"] == _vss_wl["object"] == "vector_store.search_results.page"
+        and _vss_sdk["search_query"] == _vss_wl["search_query"] == "epsilon"
+        and _vss_sdk["data"][0]["file_id"] == _fs_f_sdk["id"]
+        and _vss_wl["data"][0]["file_id"] == _fs_f_wl["id"]
+        and _vss_sdk["data"][0]["score"] == _vss_wl["data"][0]["score"]
+        and _vss_sdk["data"][0]["content"] == _vss_wl["data"][0]["content"]
+        and _vss_sdk["has_more"] is _vss_wl["has_more"] is False
+        and _vss_sdk["next_page"] is _vss_wl["next_page"] is None
+    )
+    _vssq_sdk = sdk.vector_store_search(_fs_sdk["id"], ["gamma", "epsilon"], max_num_results=5)
+    _vssq_wl = remote.vector_store_search(_fs_wl["id"], ["gamma", "epsilon"], max_num_results=5)
+    out["vs_search_list_parity"] = (
+        _vssq_sdk["search_query"] == "gamma epsilon" == _vssq_wl["search_query"]
+        and len(_vssq_sdk["data"]) == len(_vssq_wl["data"]) > 0
+        and _vssq_sdk["data"][0]["score"] == _vssq_wl["data"][0]["score"]
+        and _vssq_sdk["data"][0]["content"] == _vssq_wl["data"][0]["content"]
+    )
+    out["vs_search_fail_closed_parity"] = (
+        _raises_code(lambda: sdk.vector_store_search("vs_ghost", "x"))
+        == ("OpenAICompatError", "vector_store_not_found")
+        and _raises_code(lambda: remote.vector_store_search("vs_ghost", "x")) == ("KeyError", "")
+        and _raises_code(
+            lambda: sdk.vector_store_search(_fs_sdk["id"], "x", filters={"bad": "shape"})
+        )
+        == ("OpenAICompatError", "invalid_filters")
+        and _raises_code(
+            lambda: remote.vector_store_search(_fs_wl["id"], "x", filters={"bad": "shape"})
+        )
+        == ("HarnessTransportError", "invalid_filters")
+    )
+
     # /harness/keys — the managed-key lifecycle is identical on both legs:
     # mint shows the raw secret once, list/get never carry it, revoke is a
     # tombstone, and unknown/already-revoked fail closed the same way

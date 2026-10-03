@@ -3687,6 +3687,53 @@ def harness_vs_file_content(
     typer.echo(json.dumps(out, indent=2))
 
 
+@harness_app.command("vs-search")
+def harness_vs_search(
+    vector_store_id: str = typer.Argument(..., help="Vector store id (vs_*)."),
+    query: str = typer.Option(..., "--query", "-q", help="Search query text."),
+    max_num_results: int | None = typer.Option(
+        None, "--max-results", help="Cap on returned hits (≤50)."
+    ),
+    filters_json: str | None = typer.Option(
+        None, "--filters", help="JSON attribute-filter object."
+    ),
+    score_threshold: float | None = typer.Option(
+        None, "--score-threshold", help="Cosine floor in [0,1]."
+    ),
+    remote: str | None = typer.Option(None, "--remote", help=_REMOTE_HELP),
+    api_key: str | None = typer.Option(None, "--api-key", help=_API_KEY_HELP),
+    timeout_s: float = typer.Option(30.0, "--timeout", help=_TIMEOUT_HELP),
+) -> None:
+    """``POST /v1/vector_stores/{id}/search`` — ranked hits without
+    spending a response turn."""
+    filters = _json_obj_opt(filters_json, "--filters")
+    ranking_options = {"score_threshold": score_threshold} if score_threshold is not None else None
+    if remote is not None:
+        out = _or_exit(
+            lambda: _remote_client(remote, api_key, timeout_s).vector_store_search(
+                vector_store_id,
+                query,
+                max_num_results=max_num_results,
+                filters=filters,
+                ranking_options=ranking_options,
+            )
+        )
+        typer.echo(json.dumps(out, indent=2))
+        return
+    from fx1.sdk import Fx1Harness
+
+    out = _or_exit(
+        lambda: Fx1Harness().vector_store_search(
+            vector_store_id,
+            query,
+            max_num_results=max_num_results,
+            filters=filters,
+            ranking_options=ranking_options,
+        )
+    )
+    typer.echo(json.dumps(out, indent=2))
+
+
 @app.command("eval")
 def eval_bank(
     backend: str = typer.Option("hosted_k3", help=_BACKEND_HELP),

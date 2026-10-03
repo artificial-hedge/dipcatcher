@@ -698,6 +698,29 @@ def sdk_audit() -> dict[str, bool]:
         )
         == "OpenAICompatError"
     )
+    # direct store search — the ranked page without spending a turn
+    _vss = sdk_vs.vector_store_search(_vs["id"], "epsilon")
+    out["vs_search"] = (
+        _vss["object"] == "vector_store.search_results.page"
+        and _vss["search_query"] == "epsilon"
+        and _vss["data"][0]["file_id"] == _f["id"]
+        and "epsilon" in _vss["data"][0]["content"][0]["text"]
+        and _vss["has_more"] is False
+        and _vss["next_page"] is None
+    )
+    out["vs_search_list_query"] = (
+        sdk_vs.vector_store_search(_vs["id"], ["epsilon", "alpha"], max_num_results=5)[
+            "search_query"
+        ]
+        == "epsilon alpha"
+    )
+    out["vs_search_fail_closed"] = (
+        _raises(lambda: sdk_vs.vector_store_search("vs_ghost", "x")) == "OpenAICompatError"
+        and _raises(lambda: sdk_vs.vector_store_search(_vs["id"], "x", rewrite_query=True))
+        == "ValidationError"
+        and _raises(lambda: sdk_vs.vector_store_search(_vs["id"], "x", filters={"bad": "shape"}))
+        == "OpenAICompatError"
+    )
     out["vs_delete_lifecycle"] = (
         sdk_vs.vector_store_file_delete(_vs["id"], _f["id"])
         == {"id": _f["id"], "object": "vector_store.file.deleted", "deleted": True}

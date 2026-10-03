@@ -281,7 +281,7 @@ def _cosine(qvec: dict[int, float], cvec: dict[int, float]) -> float:
     num = 0.0
     for h, qv in qvec.items():
         num += qv * cvec.get(h, 0.0)
-    if num == 0.0:
+    if not num:
         return 0.0
     qn = math.sqrt(sum(v * v for v in qvec.values()))
     cn = math.sqrt(sum(v * v for v in cvec.values()))

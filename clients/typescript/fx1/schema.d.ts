@@ -1836,6 +1836,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/vector_stores/{vector_store_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Openai Vectorstore Search
+         * @description Direct store search — OpenAI's ``vector_stores.search``: the
+         *     ranked hits without spending a response turn. ``query`` may be a
+         *     string or list of strings (joined); ``filters`` evaluate against
+         *     file attributes; ``ranking_options.score_threshold`` bounds the
+         *     cosine floor.
+         */
+        post: operations["openai_vectorstore_search"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4076,6 +4100,34 @@ export interface components {
             } | null;
             /** File Id */
             file_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIVectorStoreSearch
+         * @description ``POST /v1/vector_stores/{id}/search`` body — query the store
+         *     directly without spending a response turn. ``query`` accepts a
+         *     string or a list of strings (joined with spaces). ``rewrite_query``
+         *     is refused: the store never rewrites the caller's query —
+         *     ``filters`` apply to file attributes (OpenAI's comparison grammar)
+         *     and ``ranking_options.score_threshold`` bounds the cosine floor
+         *     (``ranker`` accepts only ``"auto"`` — no other ranker exists).
+         */
+        OpenAIVectorStoreSearch: {
+            /** Filters */
+            filters?: {
+                [key: string]: unknown;
+            } | null;
+            /** Max Num Results */
+            max_num_results?: number | null;
+            /** Query */
+            query: string | string[];
+            /** Ranking Options */
+            ranking_options?: {
+                [key: string]: unknown;
+            } | null;
+            /** Rewrite Query */
+            rewrite_query?: boolean | null;
         } & {
             [key: string]: unknown;
         };
@@ -9578,6 +9630,61 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Always `no-store`. */
+                    "Cache-Control"?: string;
+                    /** @description Always `no-referrer`. */
+                    "Referrer-Policy"?: string;
+                    /** @description Always `nosniff`. */
+                    "X-Content-Type-Options"?: string;
+                    /** @description Wire-contract version; clients gate on it via /harness/version. */
+                    "X-Fx1-Api-Version"?: string;
+                    /** @description Request id — echoed from the inbound X-Request-ID or minted. */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    openai_vectorstore_search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                vector_store_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIVectorStoreSearch"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

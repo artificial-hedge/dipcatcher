@@ -166,6 +166,7 @@ from fx1.serve.openai_compat import (
     OpenAIUploadCreateRequest,
     OpenAIVectorStoreCreate,
     OpenAIVectorStoreFileCreate,
+    OpenAIVectorStoreSearch,
     OpenAIVectorStoreUpdate,
     batch_line_body,
     batch_line_shape,
@@ -5563,6 +5564,49 @@ def _mount_complete_routes(  # noqa: C901 — eval submission shares the chain/j
             return vs_store.file_content(vector_store_id, file_id)
         except VectorStoreError as exc:
             raise _vs_err(exc) from exc
+
+    @app.post(
+        "/v1/vector_stores/{vector_store_id}/search",
+        response_model=None,
+        tags=["openai"],
+        operation_id="openai_vectorstore_search",
+    )
+    def openai_vectorstore_search(
+        vector_store_id: str, body: OpenAIVectorStoreSearch
+    ) -> dict[str, Any]:
+        """Direct store search — OpenAI's ``vector_stores.search``: the
+        ranked hits without spending a response turn. ``query`` may be a
+        string or list of strings (joined); ``filters`` evaluate against
+        file attributes; ``ranking_options.score_threshold`` bounds the
+        cosine floor."""
+        query = body.query if isinstance(body.query, str) else " ".join(str(q) for q in body.query)
+        ro = body.ranking_options or {}
+        try:
+            hits = vs_store.search(
+                [vector_store_id],
+                query,
+                max_results=body.max_num_results or 10,
+                filters=body.filters,
+                score_threshold=ro.get("score_threshold"),
+            )
+        except VectorStoreError as exc:
+            raise _vs_err(exc) from exc
+        return {
+            "object": "vector_store.search_results.page",
+            "search_query": query,
+            "data": [
+                {
+                    "file_id": h["file_id"],
+                    "filename": h["filename"],
+                    "score": h["score"],
+                    "attributes": h["attributes"],
+                    "content": [{"type": "text", "text": h["text"]}],
+                }
+                for h in hits
+            ],
+            "has_more": False,
+            "next_page": None,
+        }
 
     def _request_items(
         envelope_id: str,
