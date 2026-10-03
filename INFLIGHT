@@ -1,3 +1,4 @@
+feat(research): wave 799 — path-dependent PDE canon (path_dependent_pde, functional_ito, dupire_functional, viscosity_path, path_sobolev, kolmogorov_path) (4749->4755 families)
 feat(research): wave 798 — forward-SDE canon (forward_sde, random_sde, anticipating_sde, functional_sde, delayed_sde, neutral_sde) (4743->4749 families)
 feat(research): wave 797 — 2BSDE canon (second_bsde, doubly_bsde, reflected_bsde2, obstacle_bsde, quadratic_bsde, super_linear) (4737->4743 families)
 feat(research): wave 796 — FBSDE-2/decoupling canon (four_step_scheme, decoupling_field2, quasi_bsde, coupled_fbsde, random_bsde, time_bsde) (4731->4737 families)
