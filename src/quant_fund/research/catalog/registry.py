@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-977 Bochner/vector-valued canon.
+        "bochner_integral",
+        "lusin_rep",
+        "radon_nikodym_prop",
+        "bochner_meas",
+        "norm_integrable",
+        "pettis_weak",
         # Wave-976 nuclear-spaces canon.
         "nuclear_map",
         "frechet_nuclear",

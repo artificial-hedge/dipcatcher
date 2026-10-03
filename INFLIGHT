@@ -1,3 +1,4 @@
+feat(research): wave 977 — Bochner/vector-valued canon (bochner_integral, lusin_rep, radon_nikodym_prop, bochner_meas, norm_integrable, pettis_weak) (5811->5817 families)
 feat(research): wave 976 — nuclear-spaces canon (nuclear_map, frechet_nuclear, gelfand_triple, hilbert_schmidt_emb, trace_duality, diam_dim) (5805->5811 families)
 feat(research): wave 975 — distribution-theory canon (schwartz_dist, temper_dist, dist_convolution, sing_support, paley_wiener, sobolev_trace) (5799->5805 families)
 feat(research): wave 974 — interpolation-theory canon (real_interp_k, complex_interp, lorentz_space, marcinkiewicz_interp, peetre_kfunctor, reiteration_thm) (5793->5799 families)
