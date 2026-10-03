@@ -1,0 +1,72 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/serial_real_drill.py",
+  "receipt_sha256": "e68e035c1073ff728bc64727a14fb429003a8fff952970b74a9dfff9aa8d7cac",
+  "replay": {
+    "argv": [
+      "scripts/serial_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/serial_watch_140b073ea589b0c7.json",
+        "sha256": "b761d0a7b5f73b711c1ba02accbfca5c09206f071fca8a9520860c865de4a20e"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_1e8e1446e506fce1.json",
+        "sha256": "30cb78079cb4baf19f22d8ac459eb03f157f49eff2250499a936c87bcd976976"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_2c14615c26efd19b.json",
+        "sha256": "b90d2efaa694eb46c93cae795b121fe7019fceb4ea37d52e5242eeb417a6519e"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_46445c3b227aa15e.json",
+        "sha256": "46017d116935aa1bbd6392afc8359960e2f47ec46306b6fc67bb4b8e6182e4c0"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_47297eff3cb55178.json",
+        "sha256": "a416331d122d804237117f8d89cbd445bb7f0442b28fba198d35714f8106dcc7"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_4f4a495b59d022fb.json",
+        "sha256": "6479f6806cc7b9cfb8f0c0f2fb292011d9a6293305c316232621c03fa6f748b9"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_771602cd1580476c.json",
+        "sha256": "52d8269ee60d1f98c119d5fc179c4a6176445c837ee05900a5ef54044c815866"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_85db152db863d25d.json",
+        "sha256": "4cc2079dbbfd83e0ae07fcba82e8319e18dd33aaf9589f8e11387433c88caad1"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_8977244ef78bfd2f.json",
+        "sha256": "7f6c4e9d74a471019bba9fd44fc3193eb1a0f4ab7c1e6e0cc6f35cd8ebc5d57f"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_a6fd40311ce0fa04.json",
+        "sha256": "dcb4c9013319c21e5af8dbdc53f65b93656e5679ea4ca46ac8a335529fbad490"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_d311f5ea367a66a9.json",
+        "sha256": "4b748b61f2cb5a6e7a4eb58fd58cd9fd98247520129c27f904138c2f1d2c3c7f"
+      },
+      {
+        "path": "data/metadata/replay/serial_watch_dbd21a6c99c81e00.json",
+        "sha256": "072bbfebb6ed9a089476aa711cf717ab8cf7347644c63281b8c34875a3a4a36f"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

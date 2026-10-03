@@ -549,6 +549,76 @@ def replay_cmd(
     raise typer.Exit(code=0 if body["verdict"] == "pass" else 1)
 
 
+@app.command("replay-all")
+def replay_all_cmd(
+    carriers_dir: Path = typer.Option(
+        Path("data/manifests/replay"),
+        "--dir",
+        help="Directory of replay_manifest.v1 carriers to sweep.",
+    ),
+    out: Path | None = typer.Option(
+        None,
+        "--out",
+        help="Coverage receipt path (default: receipts/replay_coverage_<digest16>.json).",
+    ),
+    timeout: float = typer.Option(
+        120.0, "--timeout", help="Subprocess timeout in seconds per replayed lane."
+    ),
+    strict: bool = typer.Option(
+        False,
+        "--strict",
+        help="Exit 1 on any failed replay, or if nothing ran (all skipped). "
+        "Carriers skipped for unverified inputs (e.g. tape absent in CI) "
+        "are tolerated but reported.",
+    ),
+) -> None:
+    """Sweep every committed replay carrier and seal a ``replay_coverage.v1``.
+
+    Runs ``run_replay`` over each ``replay_manifest.v1`` in the carriers
+    directory, aggregates per-carrier verdicts and claim-equality counts
+    into one sealed coverage receipt — the corpus's single reproducibility
+    number. ``skipped`` (inputs unverified / committed-overwrite guard)
+    is honest, never counted as a failure; ``fail`` means the lane ran
+    and diverged. ``--strict`` exits non-zero when any carrier fails or
+    when every carrier skipped — an all-skip run proves nothing.
+    """
+    import quant_fund.research.replay_sweep as _replay_sweep_mod
+    from quant_fund.research.receipt_v2 import seal_receipt, wrap_receipt_v2
+    from quant_fund.utils.atomicio import atomic_write_text
+
+    root = Path.cwd()
+    try:
+        body = _replay_sweep_mod.run_replay_sweep(carriers_dir, root=root, timeout_s=timeout)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+    document = seal_receipt(
+        wrap_receipt_v2(
+            body,
+            code_files=(Path(_replay_sweep_mod.__file__),),
+            verdict=body["verdict"],
+            dataset={"carriers_dir": body["carriers_dir"]},
+            params={"timeout_s": body["timeout_s"]},
+        )
+    )
+    digest = str(document["receipt_sha256"])
+    out_path = out if out is not None else Path("receipts") / f"replay_coverage_{digest[:16]}.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_text(out_path, json.dumps(document, indent=2, sort_keys=True) + "\n")
+    for row in body["rows"]:
+        typer.echo(f"carrier {row['carrier']}: verdict={row['verdict']}")
+    typer.echo(
+        f"carriers={body['n_carriers']} pass={body['n_pass']} "
+        f"fail={body['n_fail']} skipped={body['n_skipped']} "
+        f"coverage={body['coverage']:.4f} "
+        f"claims_byte_equal={body['n_claims_byte_equal']}/{body['n_claims_total']}"
+    )
+    typer.echo(f"verdict={body['verdict']} receipt={out_path}")
+    if strict and (body["n_fail"] > 0 or body["n_pass"] == 0):
+        raise typer.Exit(code=1)
+    raise typer.Exit(code=0 if body["verdict"] == "pass" else 1)
+
+
 @app.command("vol-bench")
 def vol_bench(
     config: Path = typer.Option(Path("configs/research.yaml")),

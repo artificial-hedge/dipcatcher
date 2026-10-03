@@ -1,0 +1,52 @@
+{
+  "data_label": "yahoo_eod",
+  "kind": "replay_manifest",
+  "live_pnl_claim": false,
+  "producer": "scripts/drift_real_drill.py",
+  "receipt_sha256": "3397beb2b5f86d091b04cf1877cb586e08e102de63ed8d5d3a0dab8faf6ce5d3",
+  "replay": {
+    "argv": [
+      "scripts/drift_real_drill.py",
+      "data/file_us_wide/bronze/bars.parquet",
+      "--out",
+      "data/metadata/replay"
+    ],
+    "artifacts": [
+      {
+        "path": "data/metadata/replay/drift_real_drill_gaussian_pit.json",
+        "sha256": "54b7bc26b8dbb7734ae53c8be59146c4205ec3d77ff336bf6dbefec2872ba696"
+      },
+      {
+        "path": "data/metadata/replay/drift_real_drill_gaussian_minus_conf_t_pinball.json",
+        "sha256": "ef330be8f00223d030efca815d6800e3f0ac948b08d99a2a34de3c8236de60ec"
+      }
+    ],
+    "input_tapes": [
+      {
+        "manifest": "data/manifests/yahoo_eod_us_wide.json"
+      }
+    ]
+  },
+  "reproduces": [
+    {
+      "claim_diff_keys": [
+        "eprocess"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "295b0855243a56848751ec6b8f51eaa6698d8c683a4276b11d6c3e7645d80f64",
+      "drift_reason": "lane_evolution",
+      "receipt": "receipts/drift_real_drill_gaussian_pit.json"
+    },
+    {
+      "claim_diff_keys": [
+        "eprocess"
+      ],
+      "claims_equal": false,
+      "committed_sha256": "732ca9cc14ab246e90c1dcb28002e014cf5ad0b03a0e2e6f56c7a787577d801b",
+      "drift_reason": "lane_evolution",
+      "receipt": "receipts/drift_real_drill_gaussian_minus_conf_t_pinball.json"
+    }
+  ],
+  "research_only": true,
+  "schema": "replay_manifest.v1"
+}

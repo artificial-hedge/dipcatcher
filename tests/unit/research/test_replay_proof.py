@@ -164,10 +164,14 @@ def test_missing_artifact_fails(tmp_path: Path) -> None:
 
 def test_nonzero_exit_fails(tmp_path: Path) -> None:
     """The lane exits non-zero → fail even though artifact bytes match."""
-    artifact = tmp_path / _ARTIFACT_REL
-    artifact.parent.mkdir(parents=True, exist_ok=True)
-    artifact.write_text(_ARTIFACT_CONTENT, encoding="utf-8")
-    argv = [sys.executable, "-c", "import sys; sys.exit(3)"]
+    (tmp_path / _ARTIFACT_REL).parent.mkdir(parents=True, exist_ok=True)
+    argv = [
+        sys.executable,
+        "-c",
+        "import pathlib, sys\n"
+        f"pathlib.Path({_ARTIFACT_REL!r}).write_text({_ARTIFACT_CONTENT!r})\n"
+        "sys.exit(3)\n",
+    ]
     receipt = _receipt_with_manifest(
         tmp_path, argv, [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
     )
@@ -177,6 +181,22 @@ def test_nonzero_exit_fails(tmp_path: Path) -> None:
     assert body["all_match"] is False
     assert body["verdict"] == "fail"
     assert replay_proof_contract_errors(body) == []
+
+
+def test_stale_artifact_does_not_satisfy_pin(tmp_path: Path) -> None:
+    """A pre-placed file must not count — replay deletes declared artifacts first."""
+    artifact = tmp_path / _ARTIFACT_REL
+    artifact.parent.mkdir(parents=True, exist_ok=True)
+    artifact.write_text(_ARTIFACT_CONTENT, encoding="utf-8")
+    argv = [sys.executable, "-c", "import sys; sys.exit(0)"]  # writes nothing
+    receipt = _receipt_with_manifest(
+        tmp_path, argv, [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}]
+    )
+    body = run_replay(receipt, root=tmp_path)
+    assert body["exit_code"] == 0
+    assert body["artifacts"][0]["match"] is False
+    assert body["artifacts"][0]["note"] == "artifact_missing"
+    assert body["verdict"] == "fail"
 
 
 def test_timeout_fails(tmp_path: Path) -> None:
@@ -355,3 +375,265 @@ def test_committed_lane_forged_digest_fails(tmp_path: Path, declared: Path) -> N
     assert body["all_match"] is False
     assert body["verdict"] == "fail"
     assert replay_proof_contract_errors(body) == []
+
+
+def _tape_manifest(root: Path, tapes: list[dict[str, Any]], name: str = "tape.json") -> Path:
+    """Write a seal-valid tape_manifest.v1 into root/data/manifests."""
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+    body = {
+        "schema": "tape_manifest.v1",
+        "source_label": name.removesuffix(".json"),
+        "tape_files": tapes,
+        "frame_csv_sha256": "f" * 64,
+        "n_rows": 1,
+        "n_names": 1,
+        "window": None,
+        "collected_at": "2026-01-01T00:00:00+00:00",
+        "promotion_receipt_sha256": None,
+    }
+    manifest = {**body, "receipt_sha256": hash_bytes(canonical_json_bytes(body))}
+    return _write_receipt(root / "data" / "manifests", manifest, name=name)
+
+
+def _with_tapes(root: Path, tapes: list[dict[str, Any]], *, name: str = "receipt.json") -> Path:
+    body = {
+        "kind": "demo.v1",
+        "research_only": True,
+        "live_pnl_claim": False,
+        "data_label": "SYNTHETIC",
+        "replay": {
+            "argv": _WRITE_ARTIFACT_ARGV,
+            "artifacts": [{"path": _ARTIFACT_REL, "sha256": _ARTIFACT_SHA256}],
+            "input_tapes": tapes,
+        },
+    }
+    return _write_receipt(root, body, name=name)
+
+
+def test_input_tapes_verified_then_executes(tmp_path: Path) -> None:
+    """A literal path pin that matches executes argv and passes."""
+    tape = tmp_path / "data" / "raw" / "bars.parquet"
+    tape.parent.mkdir(parents=True)
+    tape.write_bytes(b"tape-bytes")
+    receipt = _with_tapes(
+        tmp_path, [{"path": "data/raw/bars.parquet", "sha256": _file_sha256(tape)}]
+    )
+    body = run_replay(receipt, root=tmp_path)
+    assert body["inputs_ok"] is True
+    assert body["input_tapes"][0]["match"] is True
+    assert body["exit_code"] == 0 and body["verdict"] == "pass"
+    assert replay_proof_contract_errors(body) == []
+
+
+def test_input_tape_drift_blocks_execution(tmp_path: Path) -> None:
+    """A tampered tape never reaches the lane — no subprocess spawns."""
+    tape = tmp_path / "data" / "raw" / "bars.parquet"
+    tape.parent.mkdir(parents=True)
+    tape.write_bytes(b"tape-bytes")
+    receipt = _with_tapes(tmp_path, [{"path": "data/raw/bars.parquet", "sha256": "0" * 64}])
+    body = run_replay(receipt, root=tmp_path)
+    assert body["inputs_ok"] is False
+    assert body["input_tapes"][0]["note"] == "input_tape_drift"
+    assert body["execution_skipped"] == "inputs_not_verified"
+    assert body["exit_code"] is None and body["all_match"] is False
+    assert body["verdict"] == "fail"
+    assert not (tmp_path / _ARTIFACT_REL).exists()  # argv never ran
+    assert replay_proof_contract_errors(body) == []
+
+
+def test_input_tape_missing_blocks_execution(tmp_path: Path) -> None:
+    receipt = _with_tapes(tmp_path, [{"path": "data/raw/gone.parquet", "sha256": "a" * 64}])
+    body = run_replay(receipt, root=tmp_path)
+    assert body["inputs_ok"] is False
+    assert body["input_tapes"][0]["note"] == "input_tape_missing"
+    assert body["verdict"] == "fail"
+    assert replay_proof_contract_errors(body) == []
+
+
+def test_input_tapes_manifest_expansion(tmp_path: Path) -> None:
+    """A {manifest} entry expands to the committed manifest's tape_files."""
+    tape = tmp_path / "data" / "raw" / "yahoo_eod.parquet"
+    tape.parent.mkdir(parents=True)
+    tape.write_bytes(b"bars")
+    _tape_manifest(
+        tmp_path,
+        [
+            {
+                "path": "data/raw/yahoo_eod.parquet",
+                "sha256": _file_sha256(tape),
+                "n_bytes": 4,
+            }
+        ],
+        name="yahoo_eod.json",
+    )
+    receipt = _with_tapes(tmp_path, [{"manifest": "data/manifests/yahoo_eod.json"}])
+    body = run_replay(receipt, root=tmp_path)
+    assert body["inputs_ok"] is True
+    assert body["input_tapes"][0]["via_manifest"] == "data/manifests/yahoo_eod.json"
+    assert body["exit_code"] == 0 and body["verdict"] == "pass"
+    assert replay_proof_contract_errors(body) == []
+
+
+def test_input_tapes_manifest_invalid_fails(tmp_path: Path) -> None:
+    """A manifest reference whose seal does not verify fails closed."""
+    tape = tmp_path / "data" / "raw" / "t.parquet"
+    tape.parent.mkdir(parents=True)
+    tape.write_bytes(b"x")
+    path = _tape_manifest(
+        tmp_path,
+        [{"path": "data/raw/t.parquet", "sha256": _file_sha256(tape), "n_bytes": 1}],
+        name="t.json",
+    )
+    # Corrupt the committed manifest AFTER sealing.
+    doc = json.loads(path.read_text())
+    doc["n_rows"] = 999
+    path.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n")
+    receipt = _with_tapes(tmp_path, [{"manifest": "data/manifests/t.json"}])
+    body = run_replay(receipt, root=tmp_path)
+    assert body["inputs_ok"] is False
+    assert body["input_tapes"][0]["note"] == "manifest_invalid"
+    assert body["verdict"] == "fail"
+    assert replay_proof_contract_errors(body) == []
+
+
+def test_input_tapes_manifest_missing_fails(tmp_path: Path) -> None:
+    receipt = _with_tapes(tmp_path, [{"manifest": "data/manifests/nope.json"}])
+    body = run_replay(receipt, root=tmp_path)
+    assert body["input_tapes"][0]["note"] == "manifest_missing"
+    assert body["verdict"] == "fail"
+
+
+def test_input_tapes_malformed_rejected() -> None:
+    from quant_fund.research.replay_proof import replay_manifest_errors
+
+    base = {"argv": ["x"], "artifacts": [{"path": "p", "sha256": "a" * 64}]}
+    for tapes in (
+        "nope",
+        [42],
+        [{"path": "p"}],  # pin without sha
+        [{"path": "p", "sha256": "a" * 64, "manifest": "m"}],  # both
+        [{}],  # neither
+    ):
+        errors = replay_manifest_errors({**base, "input_tapes": tapes})
+        assert errors and all("input_tapes" in e for e in errors), (tapes, errors)
+
+
+def test_contract_catches_inputs_ok_lie(tmp_path: Path) -> None:
+    """A body claiming inputs_ok while a tape row fails is caught."""
+    tape = tmp_path / "data" / "raw" / "bars.parquet"
+    tape.parent.mkdir(parents=True)
+    tape.write_bytes(b"tape-bytes")
+    receipt = _with_tapes(
+        tmp_path, [{"path": "data/raw/bars.parquet", "sha256": _file_sha256(tape)}]
+    )
+    body = run_replay(receipt, root=tmp_path)
+    assert body["verdict"] == "pass"
+    forged = {k: v for k, v in body.items() if k != "receipt_sha256"}
+    forged["input_tapes"] = [
+        {**row, "match": False, "note": "input_tape_drift"} for row in body["input_tapes"]
+    ]
+    # inputs_ok still claims True — the re-derivation must catch it.
+    errors = replay_proof_contract_errors(forged)
+    assert "inputs_ok" in errors or any(e == "input_tapes[0].match" for e in errors)
+
+
+# --- committed drill replay carriers ----------------------------------------
+
+CARRIER_DIR = REPO_ROOT / "data" / "manifests" / "replay"
+
+# Real-drill receipts that have no producer by design (kept in lock-step with
+# UNREPRODUCIBLE in scripts/gen_drill_replay_manifests.py).
+UNREPRODUCIBLE_RECEIPTS = {
+    "corpus_real_drill.json": "rolling audit over the live receipts corpus",
+    "emerge_real_drill.json": "composite over other lanes' outputs, not a tape",
+    "honest_verdict_real_drill.json": "pre-convention writer, superseded by verdict_real_drill",
+}
+
+
+def _carrier_dir() -> list[Path]:
+    if not CARRIER_DIR.is_dir():
+        return []
+    return sorted(CARRIER_DIR.glob("*.json"))
+
+
+def _committed_real_drills() -> list[Path]:
+    receipts_dir = REPO_ROOT / "receipts"
+    if not receipts_dir.is_dir():
+        return []
+    return sorted(
+        p
+        for p in receipts_dir.glob("*.json")
+        if "real_drill" in p.name or p.name.startswith("serial_watch_")
+    )
+
+
+def test_every_real_drill_receipt_has_a_carrier_or_reason() -> None:
+    """Completeness ratchet: every committed real-drill receipt is either
+    reproduced by a carrier manifest or explicitly unreproducible."""
+    carriers = _carrier_dir()
+    covered: set[str] = set()
+    for carrier in carriers:
+        body = json.loads(carrier.read_text())
+        for entry in body.get("reproduces", []):
+            covered.add(str(entry.get("receipt", "")).rsplit("/", 1)[-1])
+        # serial's digest-named outputs are covered via the carrier's artifacts
+        if carrier.name == "serial.json":
+            covered.update(p.name for p in (REPO_ROOT / "receipts").glob("serial_watch_*.json"))
+    uncovered = [
+        p.name
+        for p in _committed_real_drills()
+        if p.name not in covered and p.name not in UNREPRODUCIBLE_RECEIPTS
+    ]
+    assert not uncovered, f"real-drill receipts without a replay carrier: {uncovered}"
+    stale = [n for n in UNREPRODUCIBLE_RECEIPTS if not (REPO_ROOT / "receipts" / n).exists()]
+    assert not stale, f"unreproducible entries for absent receipts: {stale}"
+
+
+def test_carriers_are_sealed_and_wellformed() -> None:
+    from quant_fund.research.replay_proof import replay_manifest_errors
+    from quant_fund.utils.hashing import canonical_json_bytes, hash_bytes
+
+    carriers = _carrier_dir()
+    assert carriers, "no committed replay carriers under data/manifests/replay/"
+    for carrier in carriers:
+        body = json.loads(carrier.read_text())
+        assert body.get("schema") == "replay_manifest.v1", carrier.name
+        seal = body.get("receipt_sha256")
+        stripped = {k: v for k, v in body.items() if k != "receipt_sha256"}
+        assert hash_bytes(canonical_json_bytes(stripped)) == seal, carrier.name
+        assert replay_manifest_errors(body["replay"]) == [], carrier.name
+        # a false claims_equal must carry a written drift reason
+        for entry in body.get("reproduces", []):
+            if entry.get("claims_equal") is False:
+                assert entry.get("drift_reason"), (carrier.name, entry["receipt"])
+
+
+def test_carrier_input_tapes_resolve_to_committed_manifest() -> None:
+    for carrier in _carrier_dir():
+        body = json.loads(carrier.read_text())
+        for tape in body["replay"].get("input_tapes", []):
+            if "manifest" in tape:
+                manifest = REPO_ROOT / tape["manifest"]
+                assert manifest.is_file(), (carrier.name, tape["manifest"])
+                mbody = json.loads(manifest.read_text())
+                assert mbody.get("schema") == "tape_manifest.v1"
+
+
+def test_artifact_overwrites_committed_is_blocked(tmp_path: Path) -> None:
+    """A manifest declaring a git-tracked artifact path must not execute —
+    replay must never clobber committed evidence."""
+    marker = tmp_path / "tracked.txt"
+    marker.write_text("committed bytes")
+    subprocess = __import__("subprocess")
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "tracked.txt"], cwd=tmp_path, check=True)
+    receipt = _receipt_with_manifest(
+        tmp_path,
+        [sys.executable, "-c", "pass"],
+        [{"path": "tracked.txt", "sha256": _file_sha256(marker)}],
+    )
+    body = run_replay(receipt, root=tmp_path)
+    assert body["verdict"] == "fail"
+    assert body.get("spawn_error", "").startswith("artifact_overwrites_committed")
+    assert body["exit_code"] is None

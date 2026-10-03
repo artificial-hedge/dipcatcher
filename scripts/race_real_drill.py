@@ -80,7 +80,7 @@ def main() -> int:
         bars.group_by("symbol")
         .agg(pl.len())
         .filter(pl.col("len") >= args.n_train + args.n_eval + 1)
-        .sort("len", descending=True)
+        .sort(["len", "symbol"], descending=[True, False])
         .head(args.n_symbols)["symbol"]
         .to_list()
     )
@@ -109,6 +109,8 @@ def main() -> int:
         n_chunks=args.n_chunks,
         seed=args.seed,
     )
+    for stamp in ("code_revision", "meta", "generated_at", "generated_at_commit", "git_revision"):
+        receipt.pop(stamp, None)
     sealed = seal_receipt(receipt)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(sealed, indent=2, sort_keys=True) + "\n")

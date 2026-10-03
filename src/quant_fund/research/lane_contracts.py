@@ -407,4 +407,11 @@ def lane_contract_errors(payload: Mapping[str, Any]) -> list[str]:
         from quant_fund.research.vol_of_vol import vol_of_vol_contract_errors
 
         return vol_of_vol_contract_errors(payload)
+    if schema == "replay_coverage.v1" or payload.get("kind") in (
+        "replay_coverage",
+        "replay_coverage.v1",
+    ):
+        from quant_fund.research.replay_sweep import replay_coverage_contract_errors
+
+        return replay_coverage_contract_errors(payload)
     return []

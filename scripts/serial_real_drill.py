@@ -27,7 +27,16 @@ from quant_fund.research.fleet_eval import DEFAULT_TAUS, fleet_head_factories
 from quant_fund.research.receipt_v2 import verify_receipt_file
 from quant_fund.research.serial_watch import serial_report, write_serial_receipt
 
-BARS = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/file_us_wide/bronze/bars.parquet")
+BARS = Path("data/file_us_wide/bronze/bars.parquet")
+OUT_DIR = Path("receipts")
+_args = sys.argv[1:]
+if "--out" in _args:
+    _i = _args.index("--out")
+    OUT_DIR = Path(_args[_i + 1])
+    _args = _args[:_i] + _args[_i + 2 :]
+_pos = [a for a in _args if not a.startswith("--")]
+if _pos:
+    BARS = Path(_pos[0])
 SYMBOL = "NVDA"
 N_TRAIN = 1000
 N_EVAL = 300
@@ -114,7 +123,9 @@ def main() -> None:
             "n_pit_nan_dropped": n_nan,
             "pit_construction": "pit_values interp, clipped to (1e-9, 1-1e-9)",
         }
-        path = write_serial_receipt(receipt, Path("receipts"))
+        receipt.pop("code_revision", None)
+        receipt.pop("meta", None)
+        path = write_serial_receipt(receipt, OUT_DIR)
         ok = verify_receipt_file(path)
         summary["heads"][name] = {
             "receipt": path.name,

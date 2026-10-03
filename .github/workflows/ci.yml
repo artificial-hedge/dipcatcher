@@ -696,6 +696,8 @@ jobs:
       - name: Admission gate on diff-changed receipts
         if: github.event_name == 'pull_request'
         run: make admission-gate ADMISSION_BASE=FETCH_HEAD
+      - name: Replay carriers (byte-exact artifact reproduction)
+        run: make replay-sweep
 
   pretrade-risk:
     runs-on: ubuntu-latest
