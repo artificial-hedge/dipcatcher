@@ -4311,6 +4311,14 @@ from quant_fund.research.benches_w539 import (
     bench_roth_thm2_family,
     bench_subspace_thm_family,
 )
+from quant_fund.research.benches_w540 import (
+    bench_baker_thm_family,
+    bench_gelfond_schneider_family,
+    bench_hermite_lindemann_family,
+    bench_lindemann_weier_family,
+    bench_schanuel_conj_family,
+    bench_siegel_shidlovskii_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4690,6 +4698,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "hermite_lindemann": bench_hermite_lindemann_family,
+        "gelfond_schneider": bench_gelfond_schneider_family,
+        "baker_thm": bench_baker_thm_family,
+        "lindemann_weier": bench_lindemann_weier_family,
+        "schanuel_conj": bench_schanuel_conj_family,
+        "siegel_shidlovskii": bench_siegel_shidlovskii_family,
         "dirichlet_approx": bench_dirichlet_approx_family,
         "roth_thm2": bench_roth_thm2_family,
         "continued_frac2": bench_continued_frac2_family,
