@@ -3271,6 +3271,14 @@ from quant_fund.research.benches_w409 import (
     bench_spectral_seq2_family,
     bench_stable_range_family,
 )
+from quant_fund.research.benches_w410 import (
+    bench_descriptive3_family,
+    bench_forcing2_family,
+    bench_inner_model_family,
+    bench_ordinal_notation_family,
+    bench_proof_mining_family,
+    bench_recursion3_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -3650,6 +3658,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "forcing2": bench_forcing2_family,
+        "inner_model": bench_inner_model_family,
+        "descriptive3": bench_descriptive3_family,
+        "recursion3": bench_recursion3_family,
+        "proof_mining": bench_proof_mining_family,
+        "ordinal_notation": bench_ordinal_notation_family,
         "spectral_seq2": bench_spectral_seq2_family,
         "eilenberg_zilber": bench_eilenberg_zilber_family,
         "dold_kan": bench_dold_kan_family,
