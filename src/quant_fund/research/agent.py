@@ -2303,6 +2303,14 @@ from quant_fund.research.benches_w288 import (
     bench_radon_nikodym_family,
     bench_weak_conv_family,
 )
+from quant_fund.research.benches_w289 import (
+    bench_adjunction_family,
+    bench_fin_cat_family,
+    bench_functor_check_family,
+    bench_limit_prod_family,
+    bench_monad_laws_family,
+    bench_nat_trans_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2682,6 +2690,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fin_cat": bench_fin_cat_family,
+        "functor_check": bench_functor_check_family,
+        "nat_trans": bench_nat_trans_family,
+        "adjunction": bench_adjunction_family,
+        "limit_prod": bench_limit_prod_family,
+        "monad_laws": bench_monad_laws_family,
         "leb_measure": bench_leb_measure_family,
         "leb_integral": bench_leb_integral_family,
         "conv_prob": bench_conv_prob_family,

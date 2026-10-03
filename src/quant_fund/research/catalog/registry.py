@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-289 category-theory canon.
+        "fin_cat",
+        "functor_check",
+        "nat_trans",
+        "adjunction",
+        "limit_prod",
+        "monad_laws",
         # Wave-288 measure-theory canon.
         "leb_measure",
         "leb_integral",
