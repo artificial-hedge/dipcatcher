@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-737 LQG-2 canon.
+        "sheffield_quantum",
+        "gaines_sle",
+        "miller_wu",
+        "rhoade_vargas",
+        "ding_dupias",
+        "gwynne_miller",
         # Wave-736 LQG canon.
         "sheffield_gff",
         "berestycki_sheffield",
