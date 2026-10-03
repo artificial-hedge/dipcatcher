@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-464 chromatic-2 canon.
+        "morava_e",
+        "tmf_spectrum",
+        "k_n_local",
+        "chromatic_conv",
+        "nilpotence_dev",
+        "telescopic",
         # Wave-463 arithmetic-D-modules canon.
         "overconv_dm",
         "arithmetic_dm",
