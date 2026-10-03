@@ -4831,6 +4831,14 @@ from quant_fund.research.benches_w604 import (
     bench_topo_k_theory_family,
     bench_unstable_cohomology_family,
 )
+from quant_fund.research.benches_w605 import (
+    bench_dk_motive_family,
+    bench_motivic_adem_family,
+    bench_motivic_steenrod_family,
+    bench_motivic_transfer_family,
+    bench_power_operations_family,
+    bench_simplicial_motive_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5210,6 +5218,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "motivic_steenrod": bench_motivic_steenrod_family,
+        "motivic_adem": bench_motivic_adem_family,
+        "power_operations": bench_power_operations_family,
+        "simplicial_motive": bench_simplicial_motive_family,
+        "dk_motive": bench_dk_motive_family,
+        "motivic_transfer": bench_motivic_transfer_family,
         "unstable_cohomology": bench_unstable_cohomology_family,
         "may_ss": bench_may_ss_family,
         "bokstedt_periodicity": bench_bokstedt_periodicity_family,
