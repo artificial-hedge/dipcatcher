@@ -5519,6 +5519,14 @@ from quant_fund.research.benches_w690 import (
     bench_stable_module_family,
     bench_stable_monoid_family,
 )
+from quant_fund.research.benches_w691 import (
+    bench_cat_fusion_family,
+    bench_cat_pretopos_family,
+    bench_cat_ribbon_family,
+    bench_cat_semiadd_family,
+    bench_cat_semisimple_family,
+    bench_cat_tannakian2_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5898,6 +5906,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "cat_pretopos": bench_cat_pretopos_family,
+        "cat_semisimple": bench_cat_semisimple_family,
+        "cat_fusion": bench_cat_fusion_family,
+        "cat_tannakian2": bench_cat_tannakian2_family,
+        "cat_ribbon": bench_cat_ribbon_family,
+        "cat_semiadd": bench_cat_semiadd_family,
         "homotopy_sheaf": bench_homotopy_sheaf_family,
         "homotopy_model": bench_homotopy_model_family,
         "stable_monoid": bench_stable_monoid_family,
