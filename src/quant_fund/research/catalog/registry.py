@@ -2970,6 +2970,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "ransac_plane",
         "epipolar_8pt",
         "stereo_disparity",
+        # Wave-270 computational-physics-2 canon.
+        "lj_md",
+        "fdtd_wave",
+        "lattice_boltzmann",
+        "ising_metro",
+        "pic_plasma",
+        "dmc_solver",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
