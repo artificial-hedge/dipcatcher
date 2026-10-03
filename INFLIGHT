@@ -1,3 +1,4 @@
+feat(research): wave 864 — stochastic-Galerkin/UQ canon (stochastic_galerkin, poly_chaos_uq, intrusive_pce, nonintrusive_pce, stochastic_colloc, stochastic_fem) (5133->5139 families)
 feat(research): wave 863 — domain-decomposition canon (schwarz_add, schwarz_mult, coarse_correction, mortar_dd, feti_lite, bddc_lite) (5127->5133 families)
 feat(research): wave 862 — sparse-grid/dimension-adaptive canon (smolyak_grid, sparse_tensor, anisotropic_quad, gerstner_griebel, combination_technique, dimension_adaptive) (5121->5127 families)
 feat(research): wave 861 — time-marching/ODE canon (imex_rk, ssp_rk, exponential_euler, rosenbrock_w, ars_imex, dirk_scheme) (5115->5121 families)

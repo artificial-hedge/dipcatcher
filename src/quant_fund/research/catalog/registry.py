@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-864 stochastic-Galerkin/UQ canon.
+        "stochastic_galerkin",
+        "poly_chaos_uq",
+        "intrusive_pce",
+        "nonintrusive_pce",
+        "stochastic_colloc",
+        "stochastic_fem",
         # Wave-863 domain-decomposition canon.
         "schwarz_add",
         "schwarz_mult",
