@@ -1,3 +1,5 @@
+feat(research): wave 323 — PL-7 effect/session-types canon (free_monad, alg_effects, shift_reset, row_types, session_types, gradual_types) (1894->1900 families)
+feat(research): wave 322 — verification-2 canon (weakest_precond, sygus_synth, horn_clauses, interpolant_mc, predicate_abs, cegis_loop) (1888->1894 families)
 feat(research): wave 321 — shape-analysis canon (three_valued_logic, shape_graph, separation_logic, context_pta, recency_abstraction, interproc_summary) (1882->1888 families)
 feat(research): wave 320 — abstract-interpretation canon (interval_analysis, sign_domain, zone_dbm, affine_karr, chaotic_widen, andersen_pta) (1876->1882 families)
 feat(research): wave 319 — proof-automation canon (congruence_closure, ring_normalize, omega_lia, nelson_oppen, term_rewrite, tseitin_cnf) (1870->1876 families)
