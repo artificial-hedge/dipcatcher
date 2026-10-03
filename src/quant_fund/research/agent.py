@@ -7663,6 +7663,14 @@ from quant_fund.research.benches_w958 import (
     bench_pinching_ineq_family,
     bench_von_neumann_trace_family,
 )
+from quant_fund.research.benches_w959 import (
+    bench_accretive_op_family,
+    bench_contraction_op_family,
+    bench_differential_op_family,
+    bench_integral_op_family,
+    bench_sectorial_op_family,
+    bench_toeplitz_op_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8034,6 +8042,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "toeplitz_op": bench_toeplitz_op_family,
+        "integral_op": bench_integral_op_family,
+        "differential_op": bench_differential_op_family,
+        "contraction_op": bench_contraction_op_family,
+        "accretive_op": bench_accretive_op_family,
+        "sectorial_op": bench_sectorial_op_family,
         "ky_fan": bench_ky_fan_family,
         "lidskii_thm": bench_lidskii_thm_family,
         "von_neumann_trace": bench_von_neumann_trace_family,
