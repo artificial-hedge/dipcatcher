@@ -1,3 +1,4 @@
+feat(research): wave 545 — Thurston-geometrization canon (thurston_geometrization, eight_geometries, seifert_fibered, haken_mfd, jsj_decomp, ricci_flow) (3225->3231 families)
 feat(research): wave 544 — Kleinian-groups canon (kleinian_group, limit_set, hyperbolic_3mfd, mostow_rigidity, jorgensen_thurston, tameness_thm) (3219->3225 families)
 feat(research): wave 543 — Riemann-surfaces canon (riemann_surface, branched_cover, abel_jacobi, riemann_hurwitz, fuchsian_group, teichmuller_space) (3213->3219 families)
 feat(research): wave 542 — several-complex-variables canon (hartogs_thm, domain_holo, pseudoconvex, levi_problem, oka_coherence, d_bar_neumann) (3207->3213 families)
