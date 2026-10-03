@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-358 functional-analysis-2 canon.
+        "open_mapping",
+        "uniform_bounded",
+        "weak_convergence",
+        "banach_alaoglu",
+        "reflexive_space",
+        "closed_graph",
         # Wave-357 differential-geometry-2 canon.
         "connection_form",
         "parallel_transport",
