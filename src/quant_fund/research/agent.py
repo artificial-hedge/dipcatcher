@@ -7015,6 +7015,14 @@ from quant_fund.research.benches_w877 import (
     bench_spn_equations_family,
     bench_transport_sn_family,
 )
+from quant_fund.research.benches_w878 import (
+    bench_block_low_rank_family,
+    bench_h_matrix_family,
+    bench_hss_matrix_family,
+    bench_kronecker_approx_family,
+    bench_low_rank_svd_family,
+    bench_randomized_nystrom_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -7386,6 +7394,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "low_rank_svd": bench_low_rank_svd_family,
+        "h_matrix": bench_h_matrix_family,
+        "hss_matrix": bench_hss_matrix_family,
+        "randomized_nystrom": bench_randomized_nystrom_family,
+        "block_low_rank": bench_block_low_rank_family,
+        "kronecker_approx": bench_kronecker_approx_family,
         "transport_sn": bench_transport_sn_family,
         "discrete_ordinates": bench_discrete_ordinates_family,
         "spherical_harmonics": bench_spherical_harmonics_family,
