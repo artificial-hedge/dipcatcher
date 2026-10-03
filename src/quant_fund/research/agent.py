@@ -4839,6 +4839,14 @@ from quant_fund.research.benches_w605 import (
     bench_power_operations_family,
     bench_simplicial_motive_family,
 )
+from quant_fund.research.benches_w606 import (
+    bench_connective_k_family,
+    bench_higher_k_family,
+    bench_k_spectrum_family,
+    bench_karoubi_k_family,
+    bench_nil_k_family,
+    bench_pedersen_weibel_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5218,6 +5226,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "connective_k": bench_connective_k_family,
+        "higher_k": bench_higher_k_family,
+        "k_spectrum": bench_k_spectrum_family,
+        "nil_k": bench_nil_k_family,
+        "karoubi_k": bench_karoubi_k_family,
+        "pedersen_weibel": bench_pedersen_weibel_family,
         "motivic_steenrod": bench_motivic_steenrod_family,
         "motivic_adem": bench_motivic_adem_family,
         "power_operations": bench_power_operations_family,
