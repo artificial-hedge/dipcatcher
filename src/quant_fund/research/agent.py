@@ -2255,6 +2255,14 @@ from quant_fund.research.benches_w282 import (
     bench_stirling_count_family,
     bench_subset_sum_dp_family,
 )
+from quant_fund.research.benches_w283 import (
+    bench_bezier_curve_family,
+    bench_fk_dh_family,
+    bench_ik_jac_family,
+    bench_odom_comp_family,
+    bench_pot_field_family,
+    bench_ray_lidar_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -2634,6 +2642,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fk_dh": bench_fk_dh_family,
+        "ik_jac": bench_ik_jac_family,
+        "ray_lidar": bench_ray_lidar_family,
+        "pot_field": bench_pot_field_family,
+        "bezier_curve": bench_bezier_curve_family,
+        "odom_comp": bench_odom_comp_family,
     }
     config_hash = hash_bytes(json.dumps(config.dump(), sort_keys=True, default=str).encode("utf-8"))
     data_hash = hash_bytes(json.dumps(scope, sort_keys=True).encode("utf-8"))

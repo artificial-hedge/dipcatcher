@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-283 robotics-3 canon.
+        "fk_dh",
+        "ik_jac",
+        "ray_lidar",
+        "pot_field",
+        "bezier_curve",
+        "odom_comp",
         "divide_conquer_eig",
         "dqds",
         "block_lanczos",
