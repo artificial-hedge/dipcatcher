@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-750 dimer/Ising canon.
+        "smirnov_ising",
+        "chelkak_ising",
+        "kenyon_dimers",
+        "thurston_tiling",
+        "duminil_copin2",
+        "hongler_ising",
         # Wave-749 vertex-model-2 canon.
         "bufetov_sixv",
         "borodin_bufetov",
