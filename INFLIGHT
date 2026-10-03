@@ -1,3 +1,4 @@
+feat(research): wave 724 — arithmetic-cycles canon (coates_wiles, iwasawa_lfunc, greenberg_selmer, kurihara_iwasawa, heegner_cycle, gan_gross_prasad) (4299->4305 families)
 feat(research): wave 723 — Iwasawa/Euler-system canon (gross_zagier, kolyvagin_sys, euler_system, iwasawa_motive, rubin_main_conj, perrin_riou) (4293->4299 families)
 feat(research): wave 722 — special-values canon (period_poly, specialization_motive, borel_motivic, zagier_polylog, deligne_period, motivic_multiple_zeta) (4287->4293 families)
 feat(research): wave 721 — mixed-motives canon (brown_motives, mzc_motive, zeta_element, mixed_elliptic, motivic_pi, beilinson_height) (4281->4287 families)
