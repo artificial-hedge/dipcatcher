@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-602 cyclic-homology canon.
+        "cyclotomic_spec",
+        "tr_structure",
+        "tc_spec",
+        "negative_cyclic",
+        "periodic_cyclic",
+        "tate_construction",
         # Wave-601 derived-geometry-4 canon.
         "dg_algebra",
         "derived_loop",
