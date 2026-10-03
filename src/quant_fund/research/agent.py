@@ -7879,6 +7879,14 @@ from quant_fund.research.benches_w985 import (
     bench_hardy_h1_family,
     bench_john_nirenberg_family,
 )
+from quant_fund.research.benches_w986 import (
+    bench_ap_weight_family,
+    bench_calderon_zygmund_family,
+    bench_cotlar_ineq_family,
+    bench_cz_decomp_family,
+    bench_good_lambda_family,
+    bench_reverse_holder_family,
+)
 from quant_fund.research.catalog import (
     BENCHMARK_CATALOG_VERSION,
     RESEARCH_RECEIPT_SCHEMA_VERSION,
@@ -8250,6 +8258,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "calderon_zygmund": bench_calderon_zygmund_family,
+        "cz_decomp": bench_cz_decomp_family,
+        "cotlar_ineq": bench_cotlar_ineq_family,
+        "good_lambda": bench_good_lambda_family,
+        "ap_weight": bench_ap_weight_family,
+        "reverse_holder": bench_reverse_holder_family,
         "hardy_h1": bench_hardy_h1_family,
         "bmo_space": bench_bmo_space_family,
         "atomic_h1": bench_atomic_h1_family,
