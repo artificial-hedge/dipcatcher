@@ -4335,6 +4335,14 @@ from quant_fund.research.benches_w542 import (
     bench_oka_coherence_family,
     bench_pseudoconvex_family,
 )
+from quant_fund.research.benches_w543 import (
+    bench_abel_jacobi_family,
+    bench_branched_cover_family,
+    bench_fuchsian_group_family,
+    bench_riemann_hurwitz_family,
+    bench_riemann_surface_family,
+    bench_teichmuller_space_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4714,6 +4722,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "riemann_surface": bench_riemann_surface_family,
+        "branched_cover": bench_branched_cover_family,
+        "abel_jacobi": bench_abel_jacobi_family,
+        "riemann_hurwitz": bench_riemann_hurwitz_family,
+        "fuchsian_group": bench_fuchsian_group_family,
+        "teichmuller_space": bench_teichmuller_space_family,
         "hartogs_thm": bench_hartogs_thm_family,
         "domain_holo": bench_domain_holo_family,
         "pseudoconvex": bench_pseudoconvex_family,

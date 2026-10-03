@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-543 Riemann-surfaces canon.
+        "riemann_surface",
+        "branched_cover",
+        "abel_jacobi",
+        "riemann_hurwitz",
+        "fuchsian_group",
+        "teichmuller_space",
         # Wave-542 several-complex-variables canon.
         "hartogs_thm",
         "domain_holo",
