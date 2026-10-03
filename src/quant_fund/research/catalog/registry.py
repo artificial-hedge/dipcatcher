@@ -3061,6 +3061,13 @@ OPTIONAL_BENCHMARK_FAMILIES = frozenset(
         "inversion_count",
         "ramsey_bound",
         "latin_square",
+        # Wave-405 derived-categories canon.
+        "derived_functor2",
+        "triangulated",
+        "bounded_complex",
+        "mapping_cone_tri",
+        "koszul_dual",
+        "t_structure",
         # Wave-404 operad-2 canon.
         "operad_algt",
         "brace_operad",
