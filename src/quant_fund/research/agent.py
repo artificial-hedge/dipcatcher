@@ -1565,6 +1565,14 @@ from quant_fund.research.benches_w196 import (
     bench_power_iter_family,
     bench_qr_eig_family,
 )
+from quant_fund.research.benches_w197 import (
+    bench_base_stock_family,
+    bench_clark_scarf_family,
+    bench_eoq_model_family,
+    bench_newsvendor_family,
+    bench_ss_policy_family,
+    bench_wagner_whitin_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -4292,6 +4300,12 @@ def run_research(config: AppConfig) -> ResearchNotebook:
         "qr_eig": bench_qr_eig_family(),
         "hessenberg_red": bench_hessenberg_red_family(),
         "bidiag_svd": bench_bidiag_svd_family(),
+        "eoq_model": bench_eoq_model_family(),
+        "newsvendor": bench_newsvendor_family(),
+        "ss_policy": bench_ss_policy_family(),
+        "wagner_whitin": bench_wagner_whitin_family(),
+        "base_stock": bench_base_stock_family(),
+        "clark_scarf": bench_clark_scarf_family(),
     }
 
     hyps = _build_hypotheses(families, rankers)
