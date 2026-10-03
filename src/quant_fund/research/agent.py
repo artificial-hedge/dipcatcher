@@ -4935,6 +4935,14 @@ from quant_fund.research.benches_w617 import (
     bench_k_theory4_family,
     bench_khomo_k_family,
 )
+from quant_fund.research.benches_w618 import (
+    bench_ad_period_family,
+    bench_b_drb_family,
+    bench_fontaine_curve_family,
+    bench_perfectoid_c_family,
+    bench_phi_mod_family,
+    bench_untilt_family,
+)
 from quant_fund.research.benches_w810 import (
     bench_anytime_valid,
     bench_distributional_ml,
@@ -5314,6 +5322,12 @@ def _provenance(
         "inversion_count": bench_inversion_count_family,
         "ramsey_bound": bench_ramsey_bound_family,
         "latin_square": bench_latin_square_family,
+        "fontaine_curve": bench_fontaine_curve_family,
+        "untilt": bench_untilt_family,
+        "perfectoid_c": bench_perfectoid_c_family,
+        "b_drb": bench_b_drb_family,
+        "phi_mod": bench_phi_mod_family,
+        "ad_period": bench_ad_period_family,
         "gillet_thomason": bench_gillet_thomason_family,
         "khomo_k": bench_khomo_k_family,
         "k_theory4": bench_k_theory4_family,
